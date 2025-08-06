@@ -1,0 +1,48 @@
+{
+  "files.exclude": {
+    "**/bin/**": true,
+    "**/obj/**": true,
+    "**/.vs/**": true,
+    "**/packages/**": true,
+    "**/*.dll": true,
+    "**/*.exe": true,
+    "**/*.pdb": true,
+    "**/TestResults/**": true
+  },
+
+  "omnisharp.enableRoslynAnalyzers": false,
+  "omnisharp.useModernNet": true,
+  "omnisharp.defaultLaunchSolution": "BusBuddy.sln",
+  "omnisharp.projectLoadTimeout": 120,
+  "dotnet.backgroundAnalysis.analyzerDiagnosticsScope": "none",
+  "dotnet.backgroundAnalysis.compilerDiagnosticsScope": "openFiles",
+  "csharp.semanticHighlighting.enabled": false,
+  "problems.showCurrentInStatus": false,
+  "dotnet.completion.showCompletionItemsFromUnimportedNamespaces": false,
+  "csharp.format.enable": false,
+
+  "powershell.powerShellDefaultVersion": "PowerShell 7.5.2",
+  "powershell.powerShellExePath": "C:\\Program Files\\PowerShell\\7\\pwsh.exe",
+  "powershell.startAutomatically": true,
+  "powershell.enableProfileLoading": true,
+
+  "terminal.integrated.profiles.windows": {
+    "PowerShell 7.5.2": {
+      "path": "C:\\Program Files\\PowerShell\\7\\pwsh.exe",
+      "args": ["-NoProfile", "-NoExit", "-Command",
+               "& 'C:\\Users\\steve.mckitrick\\Desktop\\BusBuddy\\PowerShell\\Profiles\\Microsoft.PowerShell_profile.ps1'"]
+    }
+  },
+  "terminal.integrated.defaultProfile.windows": "PowerShell 7.5.2",
+
+  "editor.smoothScrolling": false,
+  "editor.cursorBlinking": "solid",
+  "editor.fontLigatures": false,
+  "editor.occurrencesHighlight": "off",
+  "editor.selectionHighlight": false,
+
+  "taskExplorer.enableTaskRunner": true,
+  "taskExplorer.showTaskTreeLevel": "all",
+
+  "settingsSync.keybindingsPerPlatform": false
+}

@@ -1,0 +1,462 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+
+  <!-- Dashboard Strings -->
+  <data name="DashboardTitle" xml:space="preserve">
+    <value>Dashboard</value>
+    <comment>Dashboard page title</comment>
+  </data>
+  <data name="DashboardSubtitle" xml:space="preserve">
+    <value>Fleet Overview &amp; Key Metrics</value>
+    <comment>Dashboard subtitle</comment>
+  </data>
+  <data name="FleetOverview" xml:space="preserve">
+    <value>Fleet Overview</value>
+    <comment>Fleet overview section title</comment>
+  </data>
+  <data name="KeyMetrics" xml:space="preserve">
+    <value>Key Metrics</value>
+    <comment>Key metrics section title</comment>
+  </data>
+  <data name="RecentActivity" xml:space="preserve">
+    <value>Recent Activity</value>
+    <comment>Recent activity section title</comment>
+  </data>
+  <data name="QuickActions" xml:space="preserve">
+    <value>Quick Actions</value>
+    <comment>Quick actions section title</comment>
+  </data>
+  <data name="Alerts" xml:space="preserve">
+    <value>Alerts</value>
+    <comment>Alerts section title</comment>
+  </data>
+  <data name="Notifications" xml:space="preserve">
+    <value>Notifications</value>
+    <comment>Notifications section title</comment>
+  </data>
+
+  <!-- Statistics -->
+  <data name="TotalBuses" xml:space="preserve">
+    <value>Total Buses</value>
+    <comment>Total buses statistic label</comment>
+  </data>
+  <data name="ActiveBuses" xml:space="preserve">
+    <value>Active Buses</value>
+    <comment>Active buses statistic label</comment>
+  </data>
+  <data name="TotalDrivers" xml:space="preserve">
+    <value>Total Drivers</value>
+    <comment>Total drivers statistic label</comment>
+  </data>
+  <data name="ActiveDrivers" xml:space="preserve">
+    <value>Active Drivers</value>
+    <comment>Active drivers statistic label</comment>
+  </data>
+  <data name="TotalStudents" xml:space="preserve">
+    <value>Total Students</value>
+    <comment>Total students statistic label</comment>
+  </data>
+  <data name="ActiveStudents" xml:space="preserve">
+    <value>Active Students</value>
+    <comment>Active students statistic label</comment>
+  </data>
+  <data name="TotalRoutes" xml:space="preserve">
+    <value>Total Routes</value>
+    <comment>Total routes statistic label</comment>
+  </data>
+  <data name="ActiveRoutes" xml:space="preserve">
+    <value>Active Routes</value>
+    <comment>Active routes statistic label</comment>
+  </data>
+  <data name="MaintenanceAlerts" xml:space="preserve">
+    <value>Maintenance Alerts</value>
+    <comment>Maintenance alerts statistic label</comment>
+  </data>
+  <data name="FuelCostThisMonth" xml:space="preserve">
+    <value>Fuel Cost This Month</value>
+    <comment>Fuel cost this month statistic label</comment>
+  </data>
+  <data name="AvgFuelEfficiency" xml:space="preserve">
+    <value>Avg Fuel Efficiency</value>
+    <comment>Average fuel efficiency statistic label</comment>
+  </data>
+  <data name="TotalMileage" xml:space="preserve">
+    <value>Total Mileage</value>
+    <comment>Total mileage statistic label</comment>
+  </data>
+
+  <!-- Chart Titles -->
+  <data name="FuelConsumptionChart" xml:space="preserve">
+    <value>Fuel Consumption</value>
+    <comment>Fuel consumption chart title</comment>
+  </data>
+  <data name="MaintenanceCostChart" xml:space="preserve">
+    <value>Maintenance Costs</value>
+    <comment>Maintenance cost chart title</comment>
+  </data>
+  <data name="BusUtilizationChart" xml:space="preserve">
+    <value>Bus Utilization</value>
+    <comment>Bus utilization chart title</comment>
+  </data>
+  <data name="RoutePerformanceChart" xml:space="preserve">
+    <value>Route Performance</value>
+    <comment>Route performance chart title</comment>
+  </data>
+  <data name="DriverPerformanceChart" xml:space="preserve">
+    <value>Driver Performance</value>
+    <comment>Driver performance chart title</comment>
+  </data>
+  <data name="StudentAttendanceChart" xml:space="preserve">
+    <value>Student Attendance</value>
+    <comment>Student attendance chart title</comment>
+  </data>
+
+  <!-- Time Periods -->
+  <data name="Today" xml:space="preserve">
+    <value>Today</value>
+    <comment>Today time period</comment>
+  </data>
+  <data name="ThisWeek" xml:space="preserve">
+    <value>This Week</value>
+    <comment>This week time period</comment>
+  </data>
+  <data name="ThisMonth" xml:space="preserve">
+    <value>This Month</value>
+    <comment>This month time period</comment>
+  </data>
+  <data name="LastMonth" xml:space="preserve">
+    <value>Last Month</value>
+    <comment>Last month time period</comment>
+  </data>
+  <data name="Last3Months" xml:space="preserve">
+    <value>Last 3 Months</value>
+    <comment>Last 3 months time period</comment>
+  </data>
+  <data name="LastYear" xml:space="preserve">
+    <value>Last Year</value>
+    <comment>Last year time period</comment>
+  </data>
+
+  <!-- Quick Actions -->
+  <data name="AddNewBus" xml:space="preserve">
+    <value>Add New Bus</value>
+    <comment>Add new bus quick action</comment>
+  </data>
+  <data name="AddNewDriver" xml:space="preserve">
+    <value>Add New Driver</value>
+    <comment>Add new driver quick action</comment>
+  </data>
+  <data name="AddNewStudent" xml:space="preserve">
+    <value>Add New Student</value>
+    <comment>Add new student quick action</comment>
+  </data>
+  <data name="CreateRoute" xml:space="preserve">
+    <value>Create Route</value>
+    <comment>Create route quick action</comment>
+  </data>
+  <data name="ScheduleMaintenance" xml:space="preserve">
+    <value>Schedule Maintenance</value>
+    <comment>Schedule maintenance quick action</comment>
+  </data>
+  <data name="ViewReports" xml:space="preserve">
+    <value>View Reports</value>
+    <comment>View reports quick action</comment>
+  </data>
+  <data name="GenerateReport" xml:space="preserve">
+    <value>Generate Report</value>
+    <comment>Generate report quick action</comment>
+  </data>
+  <data name="ExportData" xml:space="preserve">
+    <value>Export Data</value>
+    <comment>Export data quick action</comment>
+  </data>
+  <data name="ImportData" xml:space="preserve">
+    <value>Import Data</value>
+    <comment>Import data quick action</comment>
+  </data>
+  <data name="BackupDatabase" xml:space="preserve">
+    <value>Backup Database</value>
+    <comment>Backup database quick action</comment>
+  </data>
+
+  <!-- Status Indicators -->
+  <data name="Operational" xml:space="preserve">
+    <value>Operational</value>
+    <comment>Operational status</comment>
+  </data>
+  <data name="OutOfService" xml:space="preserve">
+    <value>Out of Service</value>
+    <comment>Out of service status</comment>
+  </data>
+  <data name="InMaintenance" xml:space="preserve">
+    <value>In Maintenance</value>
+    <comment>In maintenance status</comment>
+  </data>
+  <data name="Available" xml:space="preserve">
+    <value>Available</value>
+    <comment>Available status</comment>
+  </data>
+  <data name="Assigned" xml:space="preserve">
+    <value>Assigned</value>
+    <comment>Assigned status</comment>
+  </data>
+  <data name="OnDuty" xml:space="preserve">
+    <value>On Duty</value>
+    <comment>On duty status</comment>
+  </data>
+  <data name="OffDuty" xml:space="preserve">
+    <value>Off Duty</value>
+    <comment>Off duty status</comment>
+  </data>
+  <data name="OnRoute" xml:space="preserve">
+    <value>On Route</value>
+    <comment>On route status</comment>
+  </data>
+  <data name="Delayed" xml:space="preserve">
+    <value>Delayed</value>
+    <comment>Delayed status</comment>
+  </data>
+  <data name="OnTime" xml:space="preserve">
+    <value>On Time</value>
+    <comment>On time status</comment>
+  </data>
+  <data name="Early" xml:space="preserve">
+    <value>Early</value>
+    <comment>Early status</comment>
+  </data>
+
+  <!-- Priority Levels -->
+  <data name="Low" xml:space="preserve">
+    <value>Low</value>
+    <comment>Low priority</comment>
+  </data>
+  <data name="Medium" xml:space="preserve">
+    <value>Medium</value>
+    <comment>Medium priority</comment>
+  </data>
+  <data name="High" xml:space="preserve">
+    <value>High</value>
+    <comment>High priority</comment>
+  </data>
+  <data name="Critical" xml:space="preserve">
+    <value>Critical</value>
+    <comment>Critical priority</comment>
+  </data>
+  <data name="Urgent" xml:space="preserve">
+    <value>Urgent</value>
+    <comment>Urgent priority</comment>
+  </data>
+
+  <!-- Weather Conditions -->
+  <data name="Sunny" xml:space="preserve">
+    <value>Sunny</value>
+    <comment>Sunny weather condition</comment>
+  </data>
+  <data name="Cloudy" xml:space="preserve">
+    <value>Cloudy</value>
+    <comment>Cloudy weather condition</comment>
+  </data>
+  <data name="Rainy" xml:space="preserve">
+    <value>Rainy</value>
+    <comment>Rainy weather condition</comment>
+  </data>
+  <data name="Snowy" xml:space="preserve">
+    <value>Snowy</value>
+    <comment>Snowy weather condition</comment>
+  </data>
+  <data name="Foggy" xml:space="preserve">
+    <value>Foggy</value>
+    <comment>Foggy weather condition</comment>
+  </data>
+  <data name="Windy" xml:space="preserve">
+    <value>Windy</value>
+    <comment>Windy weather condition</comment>
+  </data>
+
+  <!-- Units -->
+  <data name="Miles" xml:space="preserve">
+    <value>miles</value>
+    <comment>Miles unit</comment>
+  </data>
+  <data name="Kilometers" xml:space="preserve">
+    <value>km</value>
+    <comment>Kilometers unit</comment>
+  </data>
+  <data name="Gallons" xml:space="preserve">
+    <value>gallons</value>
+    <comment>Gallons unit</comment>
+  </data>
+  <data name="Liters" xml:space="preserve">
+    <value>liters</value>
+    <comment>Liters unit</comment>
+  </data>
+  <data name="MPG" xml:space="preserve">
+    <value>mpg</value>
+    <comment>Miles per gallon unit</comment>
+  </data>
+  <data name="KPL" xml:space="preserve">
+    <value>kpl</value>
+    <comment>Kilometers per liter unit</comment>
+  </data>
+  <data name="Hours" xml:space="preserve">
+    <value>hours</value>
+    <comment>Hours unit</comment>
+  </data>
+  <data name="Minutes" xml:space="preserve">
+    <value>minutes</value>
+    <comment>Minutes unit</comment>
+  </data>
+  <data name="Seconds" xml:space="preserve">
+    <value>seconds</value>
+    <comment>Seconds unit</comment>
+  </data>
+  <data name="Passengers" xml:space="preserve">
+    <value>passengers</value>
+    <comment>Passengers unit</comment>
+  </data>
+
+  <!-- Performance Metrics -->
+  <data name="OnTimePerformance" xml:space="preserve">
+    <value>On-Time Performance</value>
+    <comment>On-time performance metric</comment>
+  </data>
+  <data name="FuelEfficiency" xml:space="preserve">
+    <value>Fuel Efficiency</value>
+    <comment>Fuel efficiency metric</comment>
+  </data>
+  <data name="MaintenanceCost" xml:space="preserve">
+    <value>Maintenance Cost</value>
+    <comment>Maintenance cost metric</comment>
+  </data>
+  <data name="Utilization" xml:space="preserve">
+    <value>Utilization</value>
+    <comment>Utilization metric</comment>
+  </data>
+  <data name="Attendance" xml:space="preserve">
+    <value>Attendance</value>
+    <comment>Attendance metric</comment>
+  </data>
+  <data name="SafetyScore" xml:space="preserve">
+    <value>Safety Score</value>
+    <comment>Safety score metric</comment>
+  </data>
+  <data name="CustomerSatisfaction" xml:space="preserve">
+    <value>Customer Satisfaction</value>
+    <comment>Customer satisfaction metric</comment>
+  </data>
+
+  <!-- Trends -->
+  <data name="Improving" xml:space="preserve">
+    <value>Improving</value>
+    <comment>Improving trend</comment>
+  </data>
+  <data name="Declining" xml:space="preserve">
+    <value>Declining</value>
+    <comment>Declining trend</comment>
+  </data>
+  <data name="Stable" xml:space="preserve">
+    <value>Stable</value>
+    <comment>Stable trend</comment>
+  </data>
+  <data name="Increasing" xml:space="preserve">
+    <value>Increasing</value>
+    <comment>Increasing trend</comment>
+  </data>
+  <data name="Decreasing" xml:space="preserve">
+    <value>Decreasing</value>
+    <comment>Decreasing trend</comment>
+  </data>
+
+  <!-- Filter Options -->
+  <data name="All" xml:space="preserve">
+    <value>All</value>
+    <comment>All filter option</comment>
+  </data>
+  <data name="FilterBy" xml:space="preserve">
+    <value>Filter By</value>
+    <comment>Filter by label</comment>
+  </data>
+  <data name="SortBy" xml:space="preserve">
+    <value>Sort By</value>
+    <comment>Sort by label</comment>
+  </data>
+  <data name="GroupBy" xml:space="preserve">
+    <value>Group By</value>
+    <comment>Group by label</comment>
+  </data>
+  <data name="SearchPlaceholder" xml:space="preserve">
+    <value>Search...</value>
+    <comment>Search placeholder text</comment>
+  </data>
+  <data name="NoResultsFound" xml:space="preserve">
+    <value>No results found</value>
+    <comment>No results found message</comment>
+  </data>
+  <data name="ShowMore" xml:space="preserve">
+    <value>Show More</value>
+    <comment>Show more button text</comment>
+  </data>
+  <data name="ShowLess" xml:space="preserve">
+    <value>Show Less</value>
+    <comment>Show less button text</comment>
+  </data>
+
+</root>

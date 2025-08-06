@@ -1,0 +1,37 @@
+<Project>
+  <!-- When running from solution root, target BusBuddy.WPF by default -->
+  <PropertyGroup Condition="'$(MSBuildProjectFile)' == '$(MSBuildProjectDirectory)\BusBuddy.sln'">
+    <DefaultProject>BusBuddy.WPF</DefaultProject>
+  </PropertyGroup>
+
+  <!-- Build Logging Targets -->
+  <Target Name="EnsureLogDirectory" BeforeTargets="BeforeBuild">
+    <MakeDir Directories="$(LogFileDirectory)" Condition="!Exists('$(LogFileDirectory)')" />
+  </Target>
+
+  <Target Name="LogBuildStart" BeforeTargets="BeforeBuild">
+    <Message Text="Starting build for $(MSBuildProjectName) at $([System.DateTime]::Now)" 
+             Importance="high" />
+    <WriteLinesToFile File="$(MSBuildLogFile)" 
+                      Lines="========================================" 
+                      Overwrite="false" 
+                      Condition="$(BuildLoggerEnabled) == 'true'" />
+    <WriteLinesToFile File="$(MSBuildLogFile)" 
+                      Lines="Build started for $(MSBuildProjectName) - $(Configuration) at $([System.DateTime]::Now)" 
+                      Overwrite="false" 
+                      Condition="$(BuildLoggerEnabled) == 'true'" />
+  </Target>
+
+  <Target Name="LogBuildEnd" AfterTargets="AfterBuild">
+    <WriteLinesToFile File="$(MSBuildLogFile)" 
+                      Lines="Build completed for $(MSBuildProjectName) - $(Configuration) at $([System.DateTime]::Now)" 
+                      Overwrite="false" 
+                      Condition="$(BuildLoggerEnabled) == 'true'" />
+    <WriteLinesToFile File="$(MSBuildLogFile)" 
+                      Lines="========================================" 
+                      Overwrite="false" 
+                      Condition="$(BuildLoggerEnabled) == 'true'" />
+    <Message Text="Build completed for $(MSBuildProjectName) at $([System.DateTime]::Now)" 
+             Importance="high" />
+  </Target>
+</Project>

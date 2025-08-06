@@ -1,0 +1,1323 @@
+# ===================================================
+# BUILD RESULTS AND ARTIFACTS
+# ===================================================
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
+[Ww][Ii][Nn]32/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+bld/
+[Bb]in/
+[Oo]bj/
+
+# Visual Studio/MSBuild
+*.user
+*.vspscc
+*.vssscc
+.builds
+*.pidb
+*.svclog
+*.scc
+
+# Test Results
+[Tt]est[Rr]esult*/
+[Bb]uild[Ll]og.*
+
+# NuGet
+*.nupkg
+*.snupkg
+**/[Pp]ackages/*
+!**/[Pp]ackages/build/
+*.nuget.props
+*.nuget.targets
+project.lock.json
+project.fragment.lock.json
+packages.lock.json
+
+# ===================================================
+# LOGS AND DIAGNOSTICS
+# ===================================================
+# Marker files (allow these specific ones)
+!logs/app_started.marker
+!logs/application_started_successfully.marker
+!logs/pre_dashboard_init.marker
+!build-error-analysis.json
+
+# All log files (comprehensive exclusion)
+*.log
+logs/*.log
+logs/build-run-pipeline-*.log
+logs/msbuild-*.log
+logs/health-check.log
+logs/theme-check-report-*.json
+
+# Build logs
+*.tlog
+*.ilog
+
+# Temporary log files (size optimization)
+logs/health-check.log
+logs/theme-check-report-*.json
+logs/*.tmp
+logs/*.temp
+logs/size-analysis-*.json
+logs/repository-analysis-*.json
+
+# PowerShell session logs and diagnostic reports
+session-errors-*.json
+diagnostic-*.json
+test-results-*.json
+health-check-*.json
+system-diagnostic-*.json
+build-performance-*.json
+repo-size-*.json
+
+# CI/CD artifacts and large temporary files
+*.artifact
+*.backup
+*.cache
+temp-*
+tmp-*
+
+# ===================================================
+# DEVELOPMENT TOOLS AND AUTOMATION
+# ===================================================
+# Allow important development automation files
+!check-admin.bat
+!run-admin-optimization.bat
+!run-dell-optimization.ps1
+!start-admin-optimization.ps1
+!fix-execution-policy.ps1
+!QUICK-START.md
+!Documentation/HOME-COMPUTER-SETUP-GUIDE.md
+!Documentation/PROGRESS-TRACKING-GUIDE.md
+
+# Benchmark and performance testing
+!benchmark-*.ps1
+!benchmark-results-*.json
+
+# Test settings and configurations
+!testsettings.runsettings.xml
+
+# VS Code development configurations
+!.vscode/powershell-problem-matcher.json
+
+# ===================================================
+# CODING STANDARDS AND DOCUMENTATION
+# ===================================================
+# Allow all standards documentation and configuration
+!Standards/
+!Standards/**/*.md
+!CODING-STANDARDS-HIERARCHY.md
+!BusBuddy-Practical.ruleset
+!BusBuddy.ruleset
+!OPTIMIZATION-EDUCATION.md
+
+# Development and diagnostic scripts
+!cleanup-legacy-files.ps1
+!debug-app-startup.ps1
+!fix-analyzer-warnings.ps1
+!phase1-completion-verification.ps1
+!run-comprehensive-pipeline.ps1
+!run-with-logging.ps1
+!Intel-Hybrid-Performance-Optimizer.ps1
+
+# Project tracking and rewards
+!steve-rewards.json
+
+# VS Code backup files (keep for reference)
+!.vscode/*.backup-*
+
+# ===================================================
+# POWERSHELL CONFIGURATION AND SCRIPTS
+# ===================================================
+# Exclude general PowerShell files
+*.ps1xml
+*profile*.ps1
+*.ps1.bak
+*.psm1.bak
+PowerShell_transcript.*.txt
+powershell_ise_transcript.*.txt
+
+# Include BusBuddy PowerShell scripts
+!BusBuddy-PowerShell-Profile.ps1
+!.vscode/BusBuddy-Advanced-Workflows.ps1
+!Tools/Scripts/*.ps1
+!PSScriptAnalyzerSettings.psd1
+!PowerShell-Compatibility-Wrapper.psm1
+!PowerShell-Session-Persistence.ps1
+!PowerShell-ExecutionPolicy-Fix-Guide.md
+!POWERSHELL-PROFILE-GUIDE.md
+!steve-happiness-tracker.ps1
+!benchmark-*.ps1
+!test-*.ps1
+!validate-*.ps1
+!optimize-*.ps1
+!Load-AdminFunctions.ps1
+
+# Exclude PowerShell session transcripts and sensitive admin files
+EMERGENCY_*.ps1
+IMMEDIATE_*.ps1
+
+# PowerShell session logs and diagnostic reports
+session-errors-*.json
+diagnostic-*.json
+test-results-*.json
+health-check-*.json
+system-diagnostic-*.json
+build-performance-*.json
+
+# Syncfusion Development Resources (Symbolic Links)
+Syncfusion-Samples/
+Syncfusion-Installation/
+
+# Visual Studio cache/options directory
+.vs/
+# Uncomment if you have tasks that create the project's static files in wwwroot
+#wwwroot/
+
+# Visual Studio 2017 auto generated files
+Generated\ Files/
+
+# MSTest test Results
+[Tt]est[Rr]esult*/
+[Bb]uild[Ll]og.*
+
+
+# NUnit
+*.VisualState.xml
+TestResult.xml
+nunit-*.xml
+
+# Build Results of an ATL Project
+[Dd]ebugPS/
+[Rr]eleasePS/
+dlldata.c
+
+# Benchmark Results
+BenchmarkDotNet.Artifacts/
+
+# .NET Core
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+# ASP.NET Scaffolding
+ScaffoldingReadMe.txt
+
+# StyleCop
+StyleCopReport.xml
+
+# Files built by Visual Studio
+*_i.c
+*_p.c
+*_h.h
+*.ilk
+*.meta
+*.obj
+*.iobj
+*.pch
+*.pdb
+*.ipdb
+*.pgc
+*.pgd
+*.rsp
+*.sbr
+*.tlb
+*.tli
+*.tlh
+*.tmp
+*.tmp_proj
+*_wpftmp.csproj
+*.tlog
+*.vspscc
+*.vssscc
+.builds
+*.pidb
+*.svclog
+*.scc
+
+# Chutzpah Test files
+_Chutzpah*
+
+# Visual C++ cache files
+ipch/
+*.aps
+*.ncb
+*.opendb
+*.opensdf
+*.sdf
+*.cachefile
+*.VC.db
+*.VC.VC.opendb
+
+# Visual Studio profiler
+*.psess
+*.vsp
+*.vspx
+*.sap
+
+# Visual Studio Trace Files
+*.e2e
+
+# TFS 2012 Local Workspace
+$tf/
+
+# Guidance Automation Toolkit
+*.gpState
+
+# ReSharper is a .NET coding add-in
+_ReSharper*/
+*.[Rr]e[Ss]harper
+*.DotSettings.user
+
+# TeamCity is a build add-in
+_TeamCity*
+
+# DotCover is a Code Coverage Tool
+*.dotCover
+
+# AxoCover is a Code Coverage Tool
+.axoCover/*
+!.axoCover/settings.json
+
+# Coverlet is a free, cross platform Code Coverage Tool
+coverage*.json
+coverage*.xml
+coverage*.info
+
+# Visual Studio code coverage results
+*.coverage
+*.coveragexml
+
+# NCrunch
+_NCrunch_*
+.*crunch*.local.xml
+nCrunchTemp_*
+
+# MightyMoose
+*.mm.*
+AutoTest.Net/
+
+# Web workbench (sass)
+.sass-cache/
+
+# Installshield output folder
+[Ee]xpress/
+
+# DocProject is a documentation generator add-in
+DocProject/buildhelp/
+DocProject/Help/*.HxT
+DocProject/Help/*.HxC
+DocProject/Help/*.hhc
+DocProject/Help/*.hhk
+DocProject/Help/*.hhp
+DocProject/Help/Html2
+DocProject/Help/html
+
+# Click-Once directory
+publish/
+
+# Publish Web Output
+*.[Pp]ublish.xml
+*.azurePubxml
+# Note: Comment the next line if you want to checkin your web deploy settings,
+# but database connection strings (with potential passwords) will be unencrypted
+*.pubxml
+*.publishproj
+
+# Microsoft Azure Web App publish settings. Comment the next line if you want to
+# checkin your Azure Web App publish settings, but sensitive information contained
+# in these files may be unencrypted
+*.azurePubxml
+
+# Microsoft Azure Build Output
+csx/
+*.build.csdef
+
+# Microsoft Azure Emulator
+ecf/
+rcf/
+
+# Windows Store app package directories and files
+AppPackages/
+BundleArtifacts/
+Package.StoreAssociation.xml
+_pkginfo.txt
+*.appx
+*.appxbundle
+*.appxupload
+
+# Visual Studio cache files
+# files ending in .cache can be ignored
+*.[Cc]ache
+# but keep track of directories ending in .cache
+!?*.[Cc]ache/
+
+# Others
+ClientBin/
+~$*
+*~
+*.dbmdl
+*.dbproj.schemaview
+*.jfm
+*.pfx
+*.publishsettings
+orleans.codegen.cs
+
+# Including strong name files can present a security risk
+# (https://github.com/github/gitignore/pull/2483#issue-259490424)
+#*.snk
+
+# Since there are multiple workflows, uncomment the next line to ignore bower_components
+# (https://github.com/github/gitignore/pull/1529#issuecomment-104372622)
+#bower_components/
+
+# RIA/Silverlight projects
+Generated_Code/
+
+# Backup & report files from converting an old project file
+# to a newer Visual Studio version. Backup files are not needed,
+# because we have git ;-)
+_UpgradeReport_Files/
+Backup*/
+UpgradeLog*.XML
+UpgradeLog*.htm
+CConversionLog*
+
+# ===================================================
+# GITHUB-SPECIFIC LARGE FILE HANDLING
+# ===================================================
+# GitHub enforces a strict file size limit of 100MB per file
+# Files approaching or exceeding this limit should use Git LFS
+# See: https://docs.github.com/en/repositories/working-with-files/managing-large-files
+
+# Large file patterns that should use Git LFS if needed
+*.psd             # Consider using Git LFS for Photoshop files
+*.ai              # Consider using Git LFS for Adobe Illustrator files
+*.pdf             # Consider using Git LFS for large PDF documents
+*.zip             # Avoid committing zip archives to git directly
+*.7z              # Avoid committing compressed archives
+*.mp4             # Consider using Git LFS for videos
+*.mov             # Consider using Git LFS for videos
+*.sqlite          # Consider using Git LFS for SQLite databases
+*.bak             # Consider using Git LFS for large backup files
+
+# PowerShell Documentation Management
+PowerShell/*.pdf  # Exclude large PDF documentation files (e.g., powershell-scripting-powershell-7.5.pdf)
+!Documentation/PowerShell-7.5.2-Reference.md  # Include AI-accessible reference
+!Tools/Scripts/PDF-to-Markdown-Converter.ps1  # Include conversion utilities
+temp_pdf_conversion/  # Exclude temporary conversion files
+*.hocr  # Exclude OCR output files
+page_*.png  # Exclude page image files
+page_*.tiff  # Exclude page image files
+
+# Syncfusion Documentation and Large Files (NEVER commit these!)
+SF Documentation/
+libs/*/Utilities/Extensions/VS*/
+*.vsix            # Visual Studio extensions are large
+syncfusion-*.pdf  # Syncfusion documentation PDFs
+**/syncfusion-windowsforms-*.pdf
+
+# Files larger than 50MB should never be committed directly
+# Use Git LFS if these file types are absolutely necessary
+*.iso
+*.dmg
+*.pkg
+*.deb
+*.rpm
+
+# Database files (LFS candidates if added to repo)
+*.mdf
+*.ldf
+*.ndf
+
+# Business Intelligence projects
+*.rdl.data
+*.bim.layout
+*.bim_*.settings
+*.rptproj.rsuser
+*- [Bb]ackup.rdl
+*- [Bb]ackup ([0-9]).rdl
+*- [Bb]ackup ([0-9][0-9]).rdl
+
+# Microsoft Fakes
+FakesAssemblies/
+
+# GhostDoc plugin setting file
+*.GhostDoc.xml
+
+# Node.js Tools for Visual Studio
+.ntvs_analysis.dat
+node_modules/
+
+# Visual Studio 6 build log
+*.plg
+
+# Visual Studio 6 workspace options file
+*.opt
+
+# Visual Studio 6 auto-generated workspace file (contains which files were open etc.)
+*.vbw
+
+# Visual Studio 6 auto-generated project file (contains which files were open etc.)
+*.vbp
+
+# Visual Studio 6 workspace and project file (working project files containing files to include in project)
+*.dsw
+*.dsp
+
+# Visual Studio 6 technical files
+*.ncb
+*.aps
+
+# Visual Studio LightSwitch build output
+**/*.HTMLClient/GeneratedArtifacts
+**/*.DesktopClient/GeneratedArtifacts
+**/*.DesktopClient/ModelManifest.xml
+**/*.Server/GeneratedArtifacts
+**/*.Server/ModelManifest.xml
+_Pvt_Extensions
+
+# Paket dependency manager
+.paket/paket.exe
+paket-files/
+
+# FAKE - F# Make
+.fake/
+
+# CodeRush personal settings
+.cr/personal
+
+# Python Tools for Visual Studio (PTVS)
+__pycache__/
+*.pyc
+
+# Cake - Uncomment if you are using it
+# tools/**
+# !tools/packages.config
+
+# Tabs Studio
+*.tss
+
+# Telerik's JustMock configuration file
+*.jmconfig
+
+# BizTalk build output
+*.btp.cs
+*.btm.cs
+*.odx.cs
+*.xsd.cs
+
+# OpenCover UI analysis results
+OpenCover/
+
+# Azure Stream Analytics local run output
+ASALocalRun/
+
+# MSBuild Binary and Structured Log
+*.binlog
+
+# NVidia Nsight GPU debugger configuration file
+*.nvuser
+
+# MFractors (Xamarin productivity tool) working folder
+.mfractor/
+
+# Local History for Visual Studio
+.localhistory/
+
+# Visual Studio History (VSHistory) files
+.vshistory/
+
+# BeatPulse healthcheck temp database
+healthchecksdb
+
+# Backup folder for Package Reference Convert tool in Visual Studio 2017
+MigrationBackup/
+
+# Ionide (cross platform F# VS Code tools) working folder
+.ionide/
+
+# Fody - auto-generated XML schema
+FodyWeavers.xsd
+
+# Executables
+codecov.exe
+
+# ===================================================
+# VS CODE CONFIGURATION - ALLOW FOR REVIEW
+# ===================================================
+# Allow all .vscode files to be committed
+# DO NOT use .vscode/* exclusion pattern
+
+# Only exclude specific user-specific VS Code files
+.vscode/ipch/
+.vscode/chrome/
+.vscode/*.code-snippets
+.vscode-test/
+*.code-workspace
+
+# Local History for Visual Studio Code
+.history/
+
+# Windows Installer files from build outputs (but allow specific installers)
+*.cab
+*.msix
+*.msm
+*.msp
+# Exclude installer files
+AzureCLI.msi
+
+# JetBrains Rider
+*.sln.iml
+
+# Local Config files
+BusBuddy-PS7Config.yml
+
+# Syncfusion license keys in individual files
+Syncfusion.Licensing.Key.txt
+
+# User-specific files with potential license information
+appsettings.Development.json
+appsettings.local.json
+appsettings.Production.json
+appsettings.Staging.json
+!appsettings.json
+!appsettings.test.json
+!appsettings.azure.json
+
+# ===================================================
+# TEST RESULTS AND COVERAGE
+# ===================================================
+# Test Results directories
+TestResults/
+coverage/
+test-output/
+CoverageReport/
+
+# Generated test reports and coverage files
+*.trx
+*.html.coverage
+*.xml.coverage
+coverage.cobertura.xml
+coverage.opencover.xml
+lcov.info
+*.coverage
+*.coveragexml
+coverage*.json
+coverage*.xml
+coverage*.info
+
+# NUnit
+*.VisualState.xml
+TestResult.xml
+nunit-*.xml
+
+# ===================================================
+# EDITOR BACKUP FILES
+# ===================================================
+*.bak
+*.backup
+*~
+*.swp
+*.Designer.cs.backup
+
+# ===================================================
+# CRITICAL SECURITY PATTERNS
+# ===================================================
+# Files that may contain hardcoded credentials
+*-credentials.ps1
+*-secrets.ps1
+**/secrets/**
+**/*secret*
+**/*credential*
+**/*password*
+
+# Database connection files with hardcoded credentials
+*-connection-test.ps1
+*-db-test.ps1
+Quick-Azure-Test.ps1.bak
+*azure-test*.ps1.bak
+
+# PowerShell files with potential credential exposure
+*admin*.ps1
+*login*.ps1
+*auth*.ps1
+
+# Configuration files that might contain credentials
+*.config.user
+*settings.local.*
+*local.settings.*
+
+# ===================================================
+# ENVIRONMENT AND SECRETS
+# ===================================================
+# Local environment files
+.env
+.env.local
+.env.*
+
+# API Keys and Secrets (NEVER commit these!)
+*.key
+*.secret
+*apikey*
+*api-key*
+*api_key*
+secrets.json
+appsettings.Production.json
+appsettings.Staging.json
+*-connection-string.txt
+EMERGENCY_*.ps1
+IMMEDIATE_*.ps1
+BusBuddy.Core/lib/Syncfusion*.dll
+azure-connection-string.txt
+
+# Specific API key patterns
+*xai*key*
+*api*key*
+*syncfusion*key*
+*license*key*
+# Prevent hardcoded keys in any file
+**/prove-*api*.ps1
+**/test-*api*.ps1
+
+# ===================================================
+# AI TOOLS AND XAI INTEGRATION - COMPLETE EXCLUSION
+# ===================================================
+# Block ALL AI-related directories and files to prevent XAI key leaks
+AI-Assistant/
+XAI-Integration/
+**/AI-Assistant/**
+**/XAI-Integration/**
+
+# AI tool executables and configurations
+*ai-assistant*
+*xai-*
+*grok-*
+*openai-*
+*anthropic-*
+*claude-*
+
+# Exception: Allow Grok repository access guide (no secrets)
+!GROK-REPOSITORY-ACCESS.md
+
+# Exception: Allow AI Assistant Guide (documentation only, no secrets)
+!AI-ASSISTANT-GUIDE.md
+
+# AI API keys and tokens (comprehensive patterns)
+*xai_api_key*
+*XAI_API_KEY*
+*grok*key*
+*grok*token*
+*ai*token*
+*ai*secret*
+*.ai-key
+*.xai-key
+*-ai-key.*
+*-xai-key.*
+
+# AI configuration files
+ai-config.*
+xai-config.*
+grok-config.*
+*ai-settings*
+*xai-settings*
+.airc
+.xairc
+
+# AI demo and test files
+**/demo-ai-*
+**/test-ai-*
+**/prove-ai-*
+**/ai-demo*
+**/ai-test*
+demo-*ai*.ps1
+test-*ai*.ps1
+prove-*ai*.ps1
+
+# AI batch files and scripts
+*ai*.bat
+*xai*.bat
+*grok*.bat
+ai-*.ps1
+xai-*.ps1
+grok-*.ps1
+
+# AI documentation that might contain keys
+*AI*.md
+*XAI*.md
+*GROK*.md
+AI-*.md
+XAI-*.md
+
+# Exception: Allow Grok repository access guide (no secrets)
+!GROK-REPOSITORY-ACCESS.md
+
+# Configuration files with secrets
+config.json
+local.settings.json
+user-secrets.json
+
+# Google Earth Engine Security
+keys/
+
+# JSON files - exclude sensitive ones but include essential configuration
+# First exclude specific sensitive files
+bus-buddy-gee-key.json
+*-service-account-*.json
+*config.secrets.json
+*credentials*.json
+
+# Then include essential config files that should be tracked
+!appsettings.json
+!appsettings.test.json
+!appsettings.azure.json
+!global.json
+!package.json
+!.vscode/*.json
+!PSScriptAnalyzerSettings.psd1
+
+# PowerShell analysis and configuration
+*.ps1xml
+*profile*.ps1
+!BusBuddy-PowerShell-Profile.ps1
+!.vscode/BusBuddy-Advanced-Workflows.ps1
+!PSScriptAnalyzerSettings.psd1
+
+# Temporary PowerShell files
+*.ps1.bak
+*.psm1.bak
+PowerShell_transcript.*.txt
+powershell_ise_transcript.*.txt
+
+# Google Cloud credentials
+google-cloud-keyfile.json
+gcp-credentials.json
+
+# Orphaned files and reports
+orphaned-files-report-*.json
+*orphaned*.json
+
+# .NET 8 specific
+*.runtimeconfig.json
+*.deps.json
+*.dll.config
+
+# ===================================================
+# WPF AND XAML SPECIFIC
+# ===================================================
+# WPF specific temp files
+*.baml
+*.g.i.cs
+*.g.cs
+*_Content.g.cs
+*_MarkupCompile.cache
+*_MarkupCompile.lref
+*.xaml.g.cs
+
+# XAML Designer and Blend
+*.xaml.designer.cs.backup
+Expression Blend/
+*.blend
+
+# Syncfusion specific (keep license tracking but exclude logs)
+SyncfusionLogs/
+*.syncfusion.log
+Syncfusion.Licensing.Key.txt
+
+# Modern .NET publish artifacts
+publish/
+*.PublishSettings
+FolderProfile.pubxml.user
+
+# ===================================================
+# GITHUB ACTIONS AND WORKFLOW EXCEPTIONS
+# ===================================================
+# Never ignore GitHub workflow directories/files
+!.github/
+!.github/workflows/
+!.github/ISSUE_TEMPLATE/
+!.github/PULL_REQUEST_TEMPLATE.md
+!.github/CODEOWNERS
+!.github/dependabot.yml
+!.github/copilot-instructions.md
+
+# Important repository documentation
+!README.md
+!LICENSE
+!CONTRIBUTING.md
+!CODE_OF_CONDUCT.md
+!SECURITY.md
+
+# ===================================================
+# FINAL LOG HANDLING (applies last)
+# ===================================================
+# General log exclusion (place at end to override earlier patterns)
+*.log
+
+# Important logs to include (these override the *.log exclusion)
+!logs/configuration-*.log
+!logs/startup-*.log
+!logs/health-*.log
+
+# ===================================================
+# GITHUB FILE SIZE LIMITS & BINARY PROTECTION
+# ===================================================
+# GitHub has a strict file size limit of 100MB per file
+# Files larger than 50MB will trigger a warning
+# Files larger than 100MB will be rejected
+
+# Large binary files that should never be committed
+*.dll
+*.exe
+*.msi
+*.zip
+*.7z
+*.rar
+*.tar
+*.gz
+*.bz2
+*.iso
+*.dmg
+*.pkg
+*.deb
+*.rpm
+
+# Syncfusion binaries (can be very large)
+**/Syncfusion*.dll
+**/syncfusion*.dll
+Syncfusion*/
+syncfusion*/
+
+# .NET runtime and framework files
+**/Microsoft.*.dll
+**/System.*.dll
+**/netstandard*.dll
+**/mscorlib*.dll
+
+# For large files, consider:
+# 1. Using Git LFS: https://git-lfs.github.com/
+# 2. Keeping large files in separate storage (Azure Blob, S3)
+# 3. Using .gitattributes to configure Git LFS for specific file types
+#
+# To setup Git LFS:
+# $ git lfs install
+# $ git lfs track "*.psd" "*.pdf" "*.zip"
+# $ git add .gitattributes
+
+# ===================================================
+# GITHUB FILE SIZE LIMITS
+# ===================================================
+# GitHub has a strict file size limit of 100MB per file
+# Files larger than 50MB will trigger a warning
+# Files larger than 100MB will be rejected
+#
+# For large files, consider:
+# 1. Using Git LFS: https://git-lfs.github.com/
+# 2. Keeping large files in separate storage (Azure Blob, S3)
+# 3. Using .gitattributes to configure Git LFS for specific file types
+#
+# To setup Git LFS:
+# $ git lfs install
+# $ git lfs track "*.psd" "*.pdf" "*.zip"
+# $ git add .gitattributes
+
+# ===================================================
+# LARGE SYNCFUSION FILES EXCLUSIONS
+# ===================================================
+# Exclude large Syncfusion documentation and template files
+libs/*/Utilities/Extensions/**/*.vsix
+libs/*/Documentation/*.pdf
+SF Documentation/*.pdf
+**/Syncfusion*Template*Studio*.vsix
+**/syncfusion-windowsforms-part*.pdf
+
+# Exclude other large binary files
+*.iso
+*.dmg
+*.exe.config
+build-artifacts/
+large-files/
+
+# ===================================================
+# AI-ASSISTANT PRIVATE TOOL EXCLUSION
+# ===================================================
+# Keep AI-Assistant tool private - not ready for public GitHub community
+AI-Assistant/
+**/AI-Assistant/**
+AI-Assistant.*
+
+# AI-Assistant related files and outputs
+ai-assistant.*
+*ai-assistant*
+start-ai-busbuddy.*
+smart-build-intelligence*
+smart-runtime-intelligence*
+syncfusion-api-analyzer*
+
+# Private development notes (remove before public release)
+PRIVATE-REPO-CLEANUP-NOTES.md
+*PRIVATE*.md
+*private*.md
+
+# NOTE: Before making repository public, remove AI-Assistant
+# references from README.md (lines containing "AI-Assistant")# ===================================================
+# FINAL AI SECURITY LOCKDOWN & PHD MENTOR SYSTEM
+# ===================================================
+# Absolute prevention of AI tools and XAI keys in repository
+# This section overrides any previous inclusion patterns
+
+# Complete AI directory exclusion (no exceptions)
+XAI-Integration/
+ai-tools/
+xai-tools/
+grok-tools/
+
+# All AI-related file patterns (comprehensive)
+**/AI-*
+**/XAI-*
+**/ai-*
+**/xai-*
+**/grok-*
+**/*ai*key*
+**/*xai*key*
+**/*grok*key*
+**/*ai*token*
+**/*xai*token*
+**/*grok*token*
+
+# VS Code AI efficiency helpers - ALLOW THESE SPECIFIC FILES
+!.vscode/ai-efficiency-enforcement.md
+!.vscode/ai-efficiency-functions.ps1
+!.vscode/ai-quick-reference.md
+**/*grok*token*
+
+# Environment files that might contain AI keys
+.env.ai
+.env.xai
+.env.grok
+*ai.env
+*xai.env
+*grok.env
+
+# Never commit any AI integration files
+*-ai-integration.*
+*-xai-integration.*
+*-grok-integration.*
+ai-integration-*
+xai-integration-*
+grok-integration-*
+
+# PhD Mentor System Files - ALLOW THESE SPECIFIC FILES
+# These are safe to track as they contain no hardcoded keys
+!unlock-phd-mentor.ps1
+!phd-mentor-helper.ps1
+!FUTURE-AI-AGENTS-PhD-MENTOR-GUIDE.md
+
+# PhD Mentor Generated Files - EXCLUDE THESE
+phd-mentor-response-*.txt
+phd-mentor-access.log
+phd-mentor-error.log
+
+# Additional XAI Service Files in BusBuddy.Core and BusBuddy.WPF
+# Allow these as they are part of the application architecture
+!BusBuddy.Core/Configuration/XAIDocumentationSettings.cs
+!BusBuddy.Core/Services/*XAI*.cs
+!BusBuddy.WPF/Services/*XAI*.cs
+!BusBuddy.WPF/Services/XAI/
+!BusBuddy.WPF/ViewModels/**/XAI*
+!BusBuddy.WPF/Views/XAI/
+
+# Steve Happiness Tracker - ALLOW
+!steve-happiness-tracker.ps1
+
+# ===================================================
+# AZURE CONFIGURATION INFRASTRUCTURE - ALLOW ALL
+# ===================================================
+# Azure Configuration Service and Options
+!BusBuddy.Core/Configuration/
+!BusBuddy.Core/Configuration/*.cs
+!BusBuddy.Core/Services/AzureConfigurationService.cs
+
+# Azure Configuration Files Structure
+!Configuration/
+!Configuration/Production/
+!Configuration/Production/appsettings.azure.json
+!Configuration/Development/
+
+# Grok 4 Integration Documentation
+!Documentation/GROK-4-UPGRADE-SUMMARY.md
+
+# Dependency Management for Azure Packages
+!dependency-management.ps1
+!NuGet.config
+# ==========================================================
+# .NET 9 & BUSBUDDY ENHANCED PATTERNS (Added 2025-07-28)
+# ==========================================================
+
+# PowerShell development artifacts that constantly appear
+PowerShell/BusBuddy PowerShell Environment/Modules/BusBuddy/Functions/AI/MCPStatus.ps1
+PowerShell/BusBuddy PowerShell Environment/Modules/BusBuddy/Functions/Utilities/Phase2.ps1
+PowerShell/BusBuddy PowerShell Environment/Modules/BusBuddy/Rules/
+
+# Analysis and diagnostic scripts (auto-generated)
+analyze-*.ps1
+Analysis-Results/
+GitHub-Environment-Analysis-*.json
+GitHub-Environment-Analysis-*-prompt.txt
+fix-github-actions-net9.ps1
+
+# Development session artifacts
+PowerShell-Diagnostic-Report-*.json
+workflow-report.json
+github-actions-summary.json
+
+# MCP and AI integration files
+mcp-diagnostic-*.ps1
+tavily-mcp-config.json
+ai-analysis-*.json
+
+# .NET 9 specific build artifacts
+*.runtimeconfig.json
+*.deps.json
+*.dll.config
+ref/
+runtimes/
+
+# .NET 9 AOT (Ahead of Time) compilation
+aot/
+*.aot
+*.ni.dll
+*.ni.exe
+
+# Enhanced NuGet patterns
+**/packages/
+*.nupkg
+.nuget/
+nuget.exe
+
+# Enhanced Visual Studio patterns
+.vs/
+.vscode/settings.json
+.vscode/launch.json
+.vscode/tasks.json
+.vscode/.ropeproject/
+
+# PowerShell Gallery and module cache
+PSModuleCache/
+PowerShellGet/
+PackageManagement/
+
+# Temporary development files
+*.tmp
+*.temp
+temp/
+tmp/
+
+# Large file patterns (repository bloat prevention)
+*.zip
+*.7z
+*.rar
+*.iso
+*.vmdk
+*.vhd
+
+# Database files that shouldn't be tracked
+*.sdf
+*.mdf
+*.ldf
+LocalDB/
+
+# Enhanced log patterns
+logs/
+*.log
+*.log.*
+*.tlog
+*.trace
+
+# Backup files
+*.bak
+*.backup
+*~
+.#*
+
+# Testing artifacts
+TestResults/
+coverage/
+*.trx
+*.coverage
+*.coveragexml
+
+# Performance testing
+BenchmarkDotNet.Artifacts/
+*.BenchmarkDotNet/
+
+# Documentation generation
+docs/api/
+docs/_build/
+docfx_project/
+
+# Archive and backup patterns
+Archive/
+Backup/
+Old/
+Legacy/
+
+# ===================================================
+# DEBUG SYMBOLS AND VISUAL STUDIO DEBUGGING
+# ===================================================
+# Symbol files and debugging databases
+*.pdb
+*.ipdb
+*.idb
+
+# Visual Studio debugger files
+*.vspx
+*.psess
+*.vsp
+*.sap
+
+# Symbol server cache
+SymbolCache/
+.symcache/
+
+# Visual Studio symbol server downloads
+*.pdb.tmp
+*.dll.pdb
+*.exe.pdb
+
+# Debugging and profiling
+*.diagsession
+*.dvl
+*.e2e
+
+# JIT debugging
+*.jmc
+
+# Debug output and trace files
+*.trace
+*.etl
+*.etw
+
+# ===================================================
+# .NET 9 & DEBUGGING ENHANCEMENTS
+# ===================================================
+# Enhanced debugging symbol patterns
+**/*.pdb
+**/*.ipdb
+**/ref/*.pdb
+**/ref/*.ipdb
+
+# Symbol server temporary files
+*.pdb.tmp
+*.dll.pdb.tmp
+*.exe.pdb.tmp
+
+# Visual Studio debugger worker process files
+vsdbg/
+.vsdbg/
+vsdbg.exe
+
+# Debug configuration overrides
+*.debugsettings
+launchSettings.json.user
+
+# ===================================================
+# FINAL AI SECURITY LOCKDOWN & PHD MENTOR SYSTEM
+# ===================================================
+# Absolute prevention of AI tools and XAI keys in repository
+# This section overrides any previous inclusion patterns
+
+# Complete AI directory exclusion (no exceptions)
+XAI-Integration/
+ai-tools/
+xai-tools/
+grok-tools/
+
+# All AI-related file patterns (comprehensive)
+**/AI-*
+**/XAI-*
+**/ai-*
+**/xai-*
+**/grok-*
+**/*ai*key*
+**/*xai*key*
+**/*grok*key*
+**/*ai*token*
+**/*xai*token*
+**/*grok*token*
+
+# VS Code AI efficiency helpers - ALLOW THESE SPECIFIC FILES
+!.vscode/ai-efficiency-enforcement.md
+!.vscode/ai-efficiency-functions.ps1
+!.vscode/ai-quick-reference.md
+**/*grok*token*
+
+# Environment files that might contain AI keys
+.env.ai
+.env.xai
+.env.grok
+*ai.env
+*xai.env
+*grok.env
+
+# Never commit any AI integration files
+*-ai-integration.*
+*-xai-integration.*
+*-grok-integration.*
+ai-integration-*
+xai-integration-*
+grok-integration-*
+
+# PhD Mentor System Files - ALLOW THESE SPECIFIC FILES
+# These are safe to track as they contain no hardcoded keys
+!unlock-phd-mentor.ps1
+!phd-mentor-helper.ps1
+!FUTURE-AI-AGENTS-PhD-MENTOR-GUIDE.md
+
+# PhD Mentor Generated Files - EXCLUDE THESE
+phd-mentor-response-*.txt
+phd-mentor-access.log
+phd-mentor-error.log
+
+# Additional XAI Service Files in BusBuddy.Core and BusBuddy.WPF
+# Allow these as they are part of the application architecture
+!BusBuddy.Core/Configuration/XAIDocumentationSettings.cs
+!BusBuddy.Core/Services/*XAI*.cs
+!BusBuddy.WPF/Services/*XAI*.cs
+!BusBuddy.WPF/Services/XAI/
+!BusBuddy.WPF/ViewModels/**/XAI*
+!BusBuddy.WPF/Views/XAI/
+
+# Steve Happiness Tracker - ALLOW
+!steve-happiness-tracker.ps1
+
+# ===================================================
+# AZURE CONFIGURATION INFRASTRUCTURE - ALLOW ALL
+# ===================================================
+# Azure Configuration Service and Options
+!BusBuddy.Core/Configuration/
+!BusBuddy.Core/Configuration/*.cs
+!BusBuddy.Core/Services/AzureConfigurationService.cs
+
+# Azure Configuration Files Structure
+!Configuration/
+!Configuration/Production/
+!Configuration/Production/appsettings.azure.json
+!Configuration/Development/
+
+# Grok 4 Integration Documentation
+!Documentation/GROK-4-UPGRADE-SUMMARY.md
+
+# Dependency Management for Azure Packages
+!dependency-management.ps1
+!NuGet.config
+
+# Validation Reports
+*Validation-Report*.json
+*-Report-*.json

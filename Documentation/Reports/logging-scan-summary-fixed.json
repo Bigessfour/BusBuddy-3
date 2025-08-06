@@ -1,0 +1,13 @@
+{
+  "scanMetadata": {
+    "timestamp": "2025-07-25 16:03:22",
+    "workspace": "C:\\Users\\biges\\Desktop\\BusBuddy\\BusBuddy",
+    "description": "Microsoft.Extensions.Logging scan results"
+  },
+  "results": {
+    "status": "completed",
+    "filesScanned": 354,
+    "issuesFound": 0,
+    "summary": "No Microsoft.Extensions.Logging usage found requiring replacement"
+  }
+}

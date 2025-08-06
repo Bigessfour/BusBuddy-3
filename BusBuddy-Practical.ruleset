@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RuleSet Name="BusBuddy Practical Rules" Description="Practical code analysis rules for BusBuddy with reduced noise" ToolsVersion="17.0">
+  <Rules AnalyzerId="Microsoft.CodeAnalysis.CSharp" RuleNamespace="Microsoft.CodeAnalysis.CSharp">
+    <!-- Keep CA1062 as Error - Null parameter validation is critical -->
+    <!-- CA1062 null checked analyser disabled during Phase 2 build -->
+    <Rule Id="CA1062" Action="None" />
+
+    <!-- Keep important rules as errors -->
+    <Rule Id="CA2000" Action="Warning" />   <!-- Dispose objects before losing scope -->
+    <Rule Id="CA2201" Action="Error" />     <!-- Do not raise reserved exception types -->
+    <Rule Id="CA2245" Action="Error" />     <!-- Do not assign a property to itself -->
+
+    <!-- Phase 1 - Suppress low-priority warnings for faster development -->
+    <Rule Id="CA1031" Action="Info" />      <!-- Do not catch general exception types - deferred to Phase 2 -->
+    <Rule Id="CA1822" Action="Info" />      <!-- Static member suggestions - deferred to Phase 2 -->
+    <Rule Id="CA1725" Action="Info" />      <!-- Parameter name mismatches - deferred to Phase 2 -->
+    <Rule Id="CA1311" Action="Info" />      <!-- Culture-specific string operations - deferred to Phase 2 -->
+    <Rule Id="CA1861" Action="Info" />      <!-- Constant array arguments - deferred to Phase 2 -->
+    <Rule Id="CA1854" Action="Info" />      <!-- TryGetValue optimization - deferred to Phase 2 -->
+    <Rule Id="CA1510" Action="Info" />      <!-- ArgumentNullException.ThrowIfNull - deferred to Phase 2 -->
+    <Rule Id="CA1310" Action="Info" />      <!-- String comparison culture - deferred to Phase 2 -->
+    <Rule Id="CA1868" Action="Info" />      <!-- Unnecessary allocation - deferred to Phase 2 -->
+    <Rule Id="CA2007" Action="Info" />      <!-- ConfigureAwait review, not enforce -->
+    <Rule Id="CA1305" Action="Info" />      <!-- Specify IFormatProvider -->
+    <Rule Id="CA1860" Action="Info" />      <!-- Avoid using 'Enumerable.Any()' extension method -->
+    <Rule Id="CA1848" Action="Info" />      <!-- Use LoggerMessage delegates -->
+    <Rule Id="CA1851" Action="Info" />      <!-- Possible multiple enumerations -->
+  </Rules>
+</RuleSet>

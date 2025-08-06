@@ -1,0 +1,38 @@
+[1mdiff --git a/.gitignore b/.gitignore[m
+[1mindex c28e569..851b482 100644[m
+[1m--- a/.gitignore[m
+[1m+++ b/.gitignore[m
+[36m@@ -406,23 +406,18 @@[m [mFodyWeavers.xsd[m
+ codecov.exe[m
+ [m
+ # ===================================================[m
+[31m-# VS CODE CONFIGURATION[m
+[32m+[m[32m# VS CODE CONFIGURATION - ALLOW FOR REVIEW[m
+ # ===================================================[m
+[31m-# Exclude VS Code folder by default[m
+[31m-.vscode/*[m
+[31m-[m
+[31m-# Include specific VS Code configuration files[m
+[31m-!.vscode/settings.json[m
+[31m-!.vscode/tasks.json[m
+[31m-!.vscode/launch.json[m
+[31m-!.vscode/extensions.json[m
+[31m-!.vscode/language-settings.json[m
+[31m-!.vscode/xaml-style-enforcement.json[m
+[31m-!.vscode/powershell-style-enforcement.json[m
+[31m-!.vscode/powershell-extension-config.json[m
+[31m-!.vscode/keybindings.json[m
+[31m-!.vscode/BusBuddy-Advanced-Workflows.ps1[m
+[32m+[m[32m# VS Code directory is explicitly allowed for full review[m
+[32m+[m[32m# All .vscode contents will be committed and pushed[m
+[32m+[m[32m# DO NOT exclude the .vscode directory[m
+[32m+[m
+[32m+[m[32m# Only exclude user-specific VS Code files[m
+[32m+[m[32m.vscode/ipch/[m
+ *.code-workspace[m
+[32m+[m[32m.vscode/chrome[m
+[32m+[m[32m.vscode/*.code-snippets[m
+[32m+[m[32m.vscode-test/[m
+ [m
+ # Local History for Visual Studio Code[m
+ .history/[m

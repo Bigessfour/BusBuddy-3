@@ -1,0 +1,19 @@
+🚌 BUS ROUTE SCHEDULE
+=====================
+Route: Route-2
+Bus: Bus-002
+Driver: Sarah Thompson
+Estimated Travel Time: 36 minutes
+
+PICKUP SCHEDULE:
+  06:45 - David Wilson at 321 Elm St
+  06:48 - Emma Davis at 654 Maple Dr
+  06:51 - Frank Miller at 987 Cedar Ln
+
+STUDENTS ON ROUTE (3):
+  • David Wilson (Grade 2)
+  • Emma Davis (Grade 5)
+  • Frank Miller (Grade 1)
+
+Generated: 08/04/2025 04:28:42
+Status: Optimized

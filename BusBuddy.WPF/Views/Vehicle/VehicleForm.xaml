@@ -1,0 +1,440 @@
+<!--
+╔══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
+║                                              🚌 BUSBUDDY VEHICLE FORM - STEP 3 IMPLEMENTATION 🚌                                                                    ║
+║                                           Phase 1: Standard WPF → Phase 2: Syncfusion Controls                                                                     ║
+╚══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
+-->
+
+<Window x:Class="BusBuddy.WPF.Views.Vehicle.VehicleForm"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:syncfusion="http://schemas.syncfusion.com/wpf"
+        mc:Ignorable="d"
+        Title="Vehicle Form"
+        Height="400"
+        Width="600">
+
+    <Window.Resources>
+        <!-- Value Converters for Phase 1 -->
+        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+
+        <!-- Simple inverse boolean converter for Phase 1 -->
+        <Style x:Key="InverseBooleanStyle" TargetType="Control">
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsBusy}" Value="True">
+                    <Setter Property="IsEnabled" Value="False"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding IsBusy}" Value="False">
+                    <Setter Property="IsEnabled" Value="True"/>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+    </Window.Resources>
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════ -->
+        <!-- HEADER WITH FLEET DASHBOARD -->
+        <!-- ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════ -->
+        <Border Grid.Row="0"
+                Background="#2D2D30"
+                Padding="20,15">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Title and Search -->
+                <StackPanel Grid.Column="0" Orientation="Horizontal">
+                    <TextBlock Text="🚌 Vehicle Management"
+                               FontSize="24"
+                               FontWeight="Bold"
+                               Foreground="White"
+                               VerticalAlignment="Center"/>
+
+                    <!-- Step 3: Search input (Phase 1: TextBox → Phase 2: SfTextBox) -->
+                    <syncfusion:SfMaskedEdit x:Name="SearchBox"
+                             Width="300"
+                             Margin="30,0,0,0"
+                             Text="{Binding SearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                             VerticalAlignment="Center"
+                             Background="#3C3C3C"
+                             Foreground="White"
+                             BorderBrush="#555555"
+                             Padding="10,5"/>
+                </StackPanel>
+
+                <!-- Step 3: Mini-dashboard with fleet statistics -->
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="20,0,0,0">
+                    <Border Background="#323130" CornerRadius="8" Padding="15,10" Margin="0,0,10,0">
+                        <StackPanel>
+                            <TextBlock Text="Total Vehicles" FontSize="10" Foreground="#CCCCCC"/>
+                            <TextBlock Text="{Binding TotalVehicles}" FontSize="18" FontWeight="Bold" Foreground="White"/>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Background="#2ECC71" CornerRadius="8" Padding="15,10" Margin="0,0,10,0">
+                        <StackPanel>
+                            <TextBlock Text="Active" FontSize="10" Foreground="White"/>
+                            <TextBlock Text="{Binding ActiveVehicles}" FontSize="18" FontWeight="Bold" Foreground="White"/>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Background="#FF8C00" CornerRadius="8" Padding="15,10">
+                        <StackPanel>
+                            <TextBlock Text="Maintenance" FontSize="10" Foreground="White"/>
+                            <TextBlock Text="{Binding VehiclesInMaintenance}" FontSize="18" FontWeight="Bold" Foreground="White"/>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════ -->
+        <!-- MAIN CONTENT AREA -->
+        <!-- ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════ -->
+        <Grid Grid.Row="1" Margin="20">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="2*"/>  <!-- Vehicle List -->
+                <ColumnDefinition Width="20"/>  <!-- Splitter -->
+                <ColumnDefinition Width="1*"/>  <!-- Details/Edit Form -->
+            </Grid.ColumnDefinitions>
+
+            <!-- ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════ -->
+            <!-- LEFT PANEL: VEHICLE LIST (Phase 1: DataGrid → Phase 2: SfDataGrid) -->
+            <!-- ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════ -->
+            <Border Grid.Column="0"
+                    Background="#252526"
+                    CornerRadius="8"
+                    Padding="15">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- List Header -->
+                    <TextBlock Grid.Row="0"
+                               Text="Fleet Vehicles"
+                               FontSize="16"
+                               FontWeight="SemiBold"
+                               Foreground="White"
+                               Margin="0,0,0,15"/>
+
+                    <!-- Step 3: Vehicle list with Core service integration -->
+                    <syncfusion:SfDataGrid Grid.Row="1"
+                              x:Name="VehicleGrid"
+                              ItemsSource="{Binding Vehicles}"
+                              SelectedItem="{Binding SelectedVehicle, Mode=TwoWay}"
+                              AutoGenerateColumns="False"
+                              AllowEditing="False"
+                              AllowSorting="True"
+                              AllowFiltering="True"
+                              SelectionMode="Single"
+                              GridLinesVisibility="Both"
+                              HeaderLinesVisibility="Both"
+                              ShowRowHeader="False">
+
+                        <syncfusion:SfDataGrid.Columns>
+                            <syncfusion:GridTextColumn HeaderText="Bus #"
+                                                MappingName="BusNumber"
+                                                Width="80"/>
+                            <syncfusion:GridTextColumn HeaderText="License"
+                                                MappingName="LicenseNumber"
+                                                Width="100"/>
+                            <syncfusion:GridTextColumn HeaderText="Make"
+                                                MappingName="Make"
+                                                Width="80"/>
+                            <syncfusion:GridTextColumn HeaderText="Model"
+                                                MappingName="Model"
+                                                Width="90"/>
+                            <syncfusion:GridTextColumn HeaderText="Year"
+                                                MappingName="Year"
+                                                Width="60"/>
+                            <syncfusion:GridTextColumn HeaderText="Capacity"
+                                                MappingName="Capacity"
+                                                Width="70"/>
+                            <syncfusion:GridTemplateColumn HeaderText="Status" Width="90">
+                                <syncfusion:GridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <Border CornerRadius="12"
+                                                Padding="8,4"
+                                                HorizontalAlignment="Center"
+                                                VerticalAlignment="Center">
+                                            <Border.Style>
+                                                <Style TargetType="Border">
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding Status}" Value="Active">
+                                                            <Setter Property="Background" Value="#2ECC71"/>
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding Status}" Value="Maintenance">
+                                                            <Setter Property="Background" Value="#FF8C00"/>
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding Status}" Value="OutOfService">
+                                                            <Setter Property="Background" Value="#E74C3C"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Border.Style>
+                                            <TextBlock Text="{Binding Status}"
+                                                       FontSize="10"
+                                                       FontWeight="SemiBold"
+                                                       Foreground="White"/>
+                                        </Border>
+                                    </DataTemplate>
+                                </syncfusion:GridTemplateColumn.CellTemplate>
+                            </syncfusion:GridTemplateColumn>
+                        </syncfusion:SfDataGrid.Columns>
+                    </syncfusion:SfDataGrid>
+
+                    <!-- List Actions -->
+                    <StackPanel Grid.Row="2"
+                                Orientation="Horizontal"
+                                Margin="0,15,0,0">
+                        <syncfusion:ButtonAdv Content="➕ New Vehicle"
+                                Command="{Binding NewVehicleCommand}"
+                                Background="#0078D4"
+                                Foreground="White"
+                                BorderThickness="0"
+                                Padding="15,8"
+                                Margin="0,0,10,0"
+                                Cursor="Hand"/>
+                        <syncfusion:ButtonAdv Content="🔄 Refresh"
+                                Command="{Binding RefreshCommand}"
+                                Background="#5A5A5A"
+                                Foreground="White"
+                                BorderThickness="0"
+                                Padding="15,8"
+                                Cursor="Hand"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <!-- Column Splitter -->
+            <GridSplitter Grid.Column="1"
+                          Width="2"
+                          Background="#323130"
+                          VerticalAlignment="Stretch"
+                          HorizontalAlignment="Center"/>
+
+            <!-- ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════ -->
+            <!-- RIGHT PANEL: VEHICLE DETAILS/EDIT FORM -->
+            <!-- ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════ -->
+            <Border Grid.Column="2"
+                    Background="#252526"
+                    CornerRadius="8"
+                    Padding="20">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel DataContext="{Binding CurrentVehicle}">
+
+                        <!-- Form Header -->
+                        <TextBlock Text="Vehicle Details"
+                                   FontSize="16"
+                                   FontWeight="SemiBold"
+                                   Foreground="White"
+                                   Margin="0,0,0,20"/>
+
+                        <!-- Step 3: Form inputs with Core service integration -->
+
+                        <!-- Bus Number -->
+                        <TextBlock Text="Bus Number:"
+                                   FontSize="12"
+                                   Foreground="#CCCCCC"
+                                   Margin="0,0,0,5"/>
+                        <syncfusion:SfMaskedEdit Text="{Binding BusNumber, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                 Background="#3C3C3C"
+                                 Foreground="White"
+                                 BorderBrush="#555555"
+                                 Padding="8,5"
+                                 Margin="0,0,0,15"/>
+
+                        <!-- License Number -->
+                        <TextBlock Text="License Number:"
+                                   FontSize="12"
+                                   Foreground="#CCCCCC"
+                                   Margin="0,0,0,5"/>
+                        <syncfusion:SfMaskedEdit Text="{Binding LicenseNumber, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                 Background="#3C3C3C"
+                                 Foreground="White"
+                                 BorderBrush="#555555"
+                                 Padding="8,5"
+                                 Margin="0,0,0,15"/>
+
+                        <!-- Make -->
+                        <TextBlock Text="Make:"
+                                   FontSize="12"
+                                   Foreground="#CCCCCC"
+                                   Margin="0,0,0,5"/>
+                        <syncfusion:SfMaskedEdit Text="{Binding Make, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                 Background="#3C3C3C"
+                                 Foreground="White"
+                                 BorderBrush="#555555"
+                                 Padding="8,5"
+                                 Margin="0,0,0,15"/>
+
+                        <!-- Model -->
+                        <TextBlock Text="Model:"
+                                   FontSize="12"
+                                   Foreground="#CCCCCC"
+                                   Margin="0,0,0,5"/>
+                        <syncfusion:SfMaskedEdit Text="{Binding Model, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                 Background="#3C3C3C"
+                                 Foreground="White"
+                                 BorderBrush="#555555"
+                                 Padding="8,5"
+                                 Margin="0,0,0,15"/>
+
+                        <!-- Year and Capacity Row -->
+                        <Grid Margin="0,0,0,15">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="10"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+
+                            <!-- Year -->
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Text="Year:"
+                                           FontSize="12"
+                                           Foreground="#CCCCCC"
+                                           Margin="0,0,0,5"/>
+                                <syncfusion:SfMaskedEdit Text="{Binding Year, Mode=TwoWay}"
+                                         Background="#3C3C3C"
+                                         Foreground="White"
+                                         BorderBrush="#555555"
+                                         Padding="8,5"/>
+                            </StackPanel>
+
+                            <!-- Capacity -->
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Text="Capacity:"
+                                           FontSize="12"
+                                           Foreground="#CCCCCC"
+                                           Margin="0,0,0,5"/>
+                                <syncfusion:SfMaskedEdit Text="{Binding Capacity, Mode=TwoWay}"
+                                         Background="#3C3C3C"
+                                         Foreground="White"
+                                         BorderBrush="#555555"
+                                         Padding="8,5"/>
+                            </StackPanel>
+                        </Grid>
+
+                        <!-- Status -->
+                        <TextBlock Text="Status:"
+                                   FontSize="12"
+                                   Foreground="#CCCCCC"
+                                   Margin="0,0,0,5"/>
+                        <syncfusion:ComboBoxAdv SelectedItem="{Binding Status, Mode=TwoWay}"
+                                  Background="#3C3C3C"
+                                  Foreground="White"
+                                  BorderBrush="#555555"
+                                  Padding="8,5"
+                                  Margin="0,0,0,20">
+                            <ComboBoxItem Content="Active"/>
+                            <ComboBoxItem Content="Maintenance"/>
+                            <ComboBoxItem Content="OutOfService"/>
+                            <ComboBoxItem Content="Retired"/>
+                        </syncfusion:ComboBoxAdv>
+
+                        <!-- Action Buttons -->
+                        <StackPanel Orientation="Horizontal"
+                                    HorizontalAlignment="Right"
+                                    Margin="0,20,0,0">
+                            <syncfusion:ButtonAdv Content="💾 Save"
+                                    Command="{Binding DataContext.SaveVehicleCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                    Style="{StaticResource InverseBooleanStyle}"
+                                    Background="#2ECC71"
+                                    Foreground="White"
+                                    BorderThickness="0"
+                                    Padding="15,8"
+                                    Margin="0,0,10,0"
+                                    Cursor="Hand"/>
+                            <syncfusion:ButtonAdv Content="🗑️ Delete"
+                                    Command="{Binding DataContext.DeleteVehicleCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                    Style="{StaticResource InverseBooleanStyle}"
+                                    Background="#E74C3C"
+                                    Foreground="White"
+                                    BorderThickness="0"
+                                    Padding="15,8"
+                                    Cursor="Hand"/>
+                        </StackPanel>
+
+                        <!-- Step 3: Fleet utilization display -->
+                        <Border Background="#1E1E1E"
+                                CornerRadius="8"
+                                Padding="15"
+                                Margin="0,30,0,0"
+                                Height="150">
+                            <Grid>
+                                <TextBlock Text="Fleet Utilization"
+                                           FontSize="14"
+                                           FontWeight="SemiBold"
+                                           Foreground="White"
+                                           VerticalAlignment="Top"/>
+
+                                <!-- Phase 1: Simple utilization display -->
+                                <StackPanel VerticalAlignment="Center"
+                                            HorizontalAlignment="Center">
+                                    <TextBlock Text="{Binding DataContext.FleetUtilization, RelativeSource={RelativeSource AncestorType=UserControl}, StringFormat={}{0:F1}%}"
+                                               FontSize="36"
+                                               FontWeight="Bold"
+                                               Foreground="#0078D4"
+                                               HorizontalAlignment="Center"/>
+                                    <TextBlock Text="Fleet Active"
+                                               FontSize="12"
+                                               Foreground="#CCCCCC"
+                                               HorizontalAlignment="Center"/>
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+
+                    </StackPanel>
+                </ScrollViewer>
+            </Border>
+        </Grid>
+
+        <!-- ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════ -->
+        <!-- STATUS BAR -->
+        <!-- ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════ -->
+        <Border Grid.Row="2"
+                Background="#323130"
+                Padding="15,8">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Status Message -->
+                <TextBlock Grid.Column="0"
+                           Text="{Binding StatusMessage}"
+                           Foreground="#CCCCCC"
+                           FontSize="12"
+                           VerticalAlignment="Center"/>
+
+                <!-- Busy Indicator (Phase 1: Simple text → Phase 2: SfBusyIndicator) -->
+                <StackPanel Grid.Column="1"
+                            Orientation="Horizontal"
+                            Visibility="{Binding IsBusy, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <TextBlock Text="⏳"
+                               FontSize="16"
+                               Margin="0,0,10,0"
+                               VerticalAlignment="Center"/>
+                    <TextBlock Text="Processing..."
+                               Foreground="#0078D4"
+                               FontSize="12"
+                               VerticalAlignment="Center"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+    </Grid>
+</Window>
+

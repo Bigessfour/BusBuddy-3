@@ -1,0 +1,181 @@
+<!--
+╔══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
+║                                            🔒 BUSBUDDY SYNCFUSION THEME COMPLIANCE REFERENCE 🔒                                                                      ║
+║                                                        [REUSABLE CONTROL]                                                                                             ║
+║  📋 REQUIRED STANDARDS: This reusable control MUST follow the universal standards defined in:                                                                         ║
+║     - BusBuddy.WPF\Resources\SyncfusionFluentDarkTheme.xaml (Universal Control Standards)                                                                             ║
+║     - Documentation\SyncfusionThemeImplementationGuide.md (Implementation Guide)                                                                                       ║
+║  📚 DEVELOPMENT REFERENCE: See Documentation\SyncfusionThemeImplementationGuide.md for copy-paste templates                                                          ║
+╚══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
+-->
+
+<UserControl x:Class="BusBuddy.WPF.Controls.StudentStatisticsPanel"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:syncfusion="http://schemas.syncfusion.com/wpf"
+             xmlns:syncfusionskin="clr-namespace:Syncfusion.SfSkinManager;assembly=Syncfusion.SfSkinManager.WPF"
+             mc:Ignorable="d">
+    <UserControl.Resources>
+        <!-- All styles now defined globally in CustomStyles.xaml -->
+        <!-- This prevents duplicate definitions and resource conflicts -->
+    </UserControl.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <TextBlock Grid.Row="0"
+                   Text="Student Statistics"
+                   Style="{StaticResource SectionHeaderStyle}"/>
+
+        <!-- Stats Cards -->
+        <WrapPanel Grid.Row="1" Orientation="Horizontal">
+            <!-- Total Students -->
+            <Border Style="{StaticResource StatCardStyle}" Width="150">
+                <StackPanel>
+                    <TextBlock Text="{Binding TotalStudents}"
+                               Style="{StaticResource StatNumberStyle}"/>
+                    <TextBlock Text="Total Students"
+                               Style="{StaticResource StatLabelStyle}"/>
+                </StackPanel>
+            </Border>
+
+            <!-- Active Students -->
+            <Border Style="{StaticResource StatCardStyle}" Width="150">
+                <StackPanel>
+                    <TextBlock Text="{Binding ActiveStudents}"
+                               Style="{StaticResource StatNumberStyle}"/>
+                    <TextBlock Text="Active Students"
+                               Style="{StaticResource StatLabelStyle}"/>
+                </StackPanel>
+            </Border>
+
+            <!-- Inactive Students -->
+            <Border Style="{StaticResource StatCardStyle}" Width="150">
+                <StackPanel>
+                    <TextBlock Text="{Binding InactiveStudents}"
+                               Style="{StaticResource StatNumberStyle}"/>
+                    <TextBlock Text="Inactive Students"
+                               Style="{StaticResource StatLabelStyle}"/>
+                </StackPanel>
+            </Border>
+
+            <!-- With Route -->
+            <Border Style="{StaticResource StatCardStyle}" Width="150">
+                <StackPanel>
+                    <TextBlock Text="{Binding StudentsWithRoutes}"
+                               Style="{StaticResource StatNumberStyle}"/>
+                    <TextBlock Text="With Routes"
+                               Style="{StaticResource StatLabelStyle}"/>
+                </StackPanel>
+            </Border>
+
+            <!-- Without Route -->
+            <Border Style="{StaticResource StatCardStyle}" Width="150">
+                <StackPanel>
+                    <TextBlock Text="{Binding StudentsWithoutRoutes}"
+                               Style="{StaticResource StatNumberStyle}"/>
+                    <TextBlock Text="Without Routes"
+                               Style="{StaticResource StatLabelStyle}"/>
+                </StackPanel>
+            </Border>
+        </WrapPanel>
+
+        <!-- Charts -->
+        <Grid Grid.Row="2" Margin="5,15,5,5">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Grade Distribution Chart -->
+            <Border Grid.Column="0"
+                    BorderBrush="#DDDDDD"
+                    BorderThickness="1"
+                    CornerRadius="8"
+                    Padding="10"
+                    Margin="0,0,5,0">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Grid.Row="0"
+                               Text="Grade Distribution"
+                               FontWeight="SemiBold"
+                               Margin="0,0,0,10"/>
+
+                    <syncfusion:SfChart Grid.Row="1"
+                                       Margin="0,5,0,0"
+                                       Header=""
+                                       >
+                        <syncfusion:SfChart.PrimaryAxis>
+                            <syncfusion:CategoryAxis Header="Grade"
+                                                    FontSize="12"/>
+                        </syncfusion:SfChart.PrimaryAxis>
+                        <syncfusion:SfChart.SecondaryAxis>
+                            <syncfusion:NumericalAxis Header="Students"
+                                                     FontSize="12"/>
+                        </syncfusion:SfChart.SecondaryAxis>
+
+                        <syncfusion:ColumnSeries ItemsSource="{Binding GradeDistribution}"
+                                                 XBindingPath="Grade"
+                                                 YBindingPath="Count"
+                                                 Palette="Metro"
+                                                 EnableAnimation="True"/>
+                    </syncfusion:SfChart>
+                </Grid>
+            </Border>
+
+            <!-- Active/Inactive Pie Chart -->
+            <Border Grid.Column="1"
+                    BorderBrush="#DDDDDD"
+                    BorderThickness="1"
+                    CornerRadius="8"
+                    Padding="10"
+                    Margin="5,0,0,0">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Grid.Row="0"
+                               Text="Student Status"
+                               FontWeight="SemiBold"
+                               Margin="0,0,0,10"/>
+
+                    <syncfusion:SfChart Grid.Row="1"
+                                       Margin="0,5,0,0"
+                                       Header=""
+                                       >
+                        <syncfusion:PieSeries ItemsSource="{Binding StatusDistribution}"
+                                             XBindingPath="Status"
+                                             YBindingPath="Count"
+                                             EnableAnimation="True"
+                                             ExplodeIndex="0"
+                                             ExplodeRadius="10"
+                                             Palette="Metro">
+                            <syncfusion:PieSeries.AdornmentsInfo>
+                                <syncfusion:ChartAdornmentInfo ShowLabel="True"
+                                                              ShowConnectorLine="True"
+                                                              ConnectorHeight="20"
+                                                              SegmentLabelContent="Percentage"/>
+                            </syncfusion:PieSeries.AdornmentsInfo>
+                        </syncfusion:PieSeries>
+                    </syncfusion:SfChart>
+                </Grid>
+            </Border>
+        </Grid>
+    </Grid>
+</UserControl>
+
+
+

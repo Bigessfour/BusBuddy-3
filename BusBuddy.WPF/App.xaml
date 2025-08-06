@@ -1,0 +1,61 @@
+<Application x:Class="BusBuddy.WPF.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:BusBuddy.WPF">
+             <!-- StartupUri removed - handled programmatically in App.xaml.cs OnStartup method -->
+             <!-- xmlns:converters="clr-namespace:BusBuddy.WPF.Converters" Temporarily disabled for MVP -->
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <!-- Our custom MenuStyles.xaml -->
+                <ResourceDictionary Source="Resources/MenuStyles.xaml"/>
+
+                <!-- Syncfusion V30 Validated Resource Dictionary with proper theme brushes -->
+                <ResourceDictionary Source="Resources/SyncfusionV30_Validated_ResourceDictionary.xaml"/>
+
+                <!-- Phase 1: Basic styling without complex Syncfusion theme loading -->
+                <!-- Note: Syncfusion themes will be applied programmatically via SfSkinManager in App.xaml.cs -->
+                <ResourceDictionary>
+                    <!-- Enhanced color palette for StudentsView and other components -->
+                    <SolidColorBrush x:Key="PrimaryBrush" Color="#FF007ACC"/>
+                    <SolidColorBrush x:Key="SecondaryBrush" Color="#FFF0F0F0"/>
+                    <SolidColorBrush x:Key="AccentBrush" Color="#FF16A085"/>
+                    <SolidColorBrush x:Key="TertiaryBrush" Color="#FFE8E8E8"/>
+                    <SolidColorBrush x:Key="ContentBackgroundBrush" Color="#F5F5F5"/>
+
+                    <!-- Vehicle Form Styles -->
+                    <Style x:Key="VehicleFormContainer" TargetType="Grid">
+                        <Setter Property="Margin" Value="20"/>
+                        <Setter Property="Background" Value="{DynamicResource ContentBackgroundBrush}"/>
+                    </Style>
+
+                    <!-- Driver Form Styles -->
+                    <Style x:Key="DriverFormContainer" TargetType="Grid">
+                        <Setter Property="Margin" Value="20"/>
+                        <Setter Property="Background" Value="{DynamicResource ContentBackgroundBrush}"/>
+                    </Style>
+
+                    <!-- AI Enhancement Button Style -->
+                    <Style x:Key="AIEnhancementButton" TargetType="Button">
+                        <Setter Property="Background" Value="#FF007ACC"/>
+                        <Setter Property="Foreground" Value="White"/>
+                        <Setter Property="Padding" Value="12,6"/>
+                        <Setter Property="Margin" Value="5"/>
+                        <Setter Property="BorderThickness" Value="0"/>
+                        <Setter Property="FontWeight" Value="SemiBold"/>
+                        <Setter Property="Cursor" Value="Hand"/>
+                    </Style>
+                </ResourceDictionary>
+            </ResourceDictionary.MergedDictionaries>
+
+            <!-- Essential Converters for Phase 1 -->
+            <!-- Note: InverseBooleanConverter will be created if it doesn't exist -->
+            <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+
+            <!-- Form Navigation Commands (for expansion) -->
+            <x:Static Member="ApplicationCommands.New" x:Key="NewItemCommand"/>
+            <x:Static Member="ApplicationCommands.Save" x:Key="SaveItemCommand"/>
+            <x:Static Member="ApplicationCommands.Delete" x:Key="DeleteItemCommand"/>
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>

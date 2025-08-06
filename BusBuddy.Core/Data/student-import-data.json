@@ -1,0 +1,229 @@
+[
+  {
+    "parentGuardian": "John Smith",
+    "address": "123 Oak Street, Lamar, PA 16848",
+    "city": "Lamar",
+    "county": "Clinton",
+    "homePhone": "(570) 726-3456",
+    "cellPhone": "(570) 555-0123",
+    "emergencyContact": "Mary Smith",
+    "jointParent": "Jane Smith",
+    "students": [
+      {
+        "firstName": "Emma",
+        "lastName": "Smith",
+        "grade": "3",
+        "fullTime": "AM_PM",
+        "infrequently": "",
+        "dateOfBirth": "2016-09-15",
+        "specialNeeds": false,
+        "medicalNotes": "",
+        "allergies": "",
+        "medications": "",
+        "transportationNotes": "Regular schedule"
+      },
+      {
+        "firstName": "Michael",
+        "lastName": "Smith",
+        "grade": "1",
+        "fullTime": "AM_PM",
+        "infrequently": "",
+        "dateOfBirth": "2018-04-22",
+        "specialNeeds": false,
+        "medicalNotes": "",
+        "allergies": "Peanuts",
+        "medications": "",
+        "transportationNotes": "Regular schedule"
+      }
+    ]
+  },
+  {
+    "parentGuardian": "Sarah Johnson",
+    "address": "456 Pine Avenue, Springfield, PA 19064",
+    "city": "Springfield",
+    "county": "Delaware",
+    "homePhone": "(610) 555-7890",
+    "cellPhone": "(610) 555-7891",
+    "emergencyContact": "Robert Johnson",
+    "jointParent": "",
+    "students": [
+      {
+        "firstName": "Ashley",
+        "lastName": "Johnson",
+        "grade": "5",
+        "fullTime": "AM_PM",
+        "infrequently": "",
+        "dateOfBirth": "2014-11-08",
+        "specialNeeds": true,
+        "medicalNotes": "Requires assistance boarding bus",
+        "allergies": "",
+        "medications": "Daily inhaler",
+        "transportationNotes": "Special needs transportation required"
+      }
+    ]
+  },
+  {
+    "parentGuardian": "David Wilson",
+    "address": "789 Maple Drive, Franklin, PA 19001",
+    "city": "Franklin",
+    "county": "Montgomery",
+    "homePhone": "(484) 555-2468",
+    "cellPhone": "(484) 555-2469",
+    "emergencyContact": "Linda Wilson",
+    "jointParent": "Carol Wilson",
+    "students": [
+      {
+        "firstName": "Ryan",
+        "lastName": "Wilson",
+        "grade": "2",
+        "fullTime": "AM_PM",
+        "infrequently": "",
+        "dateOfBirth": "2017-01-30",
+        "specialNeeds": false,
+        "medicalNotes": "",
+        "allergies": "",
+        "medications": "",
+        "transportationNotes": "Regular schedule"
+      },
+      {
+        "firstName": "Sofia",
+        "lastName": "Wilson",
+        "grade": "K",
+        "fullTime": "AM_PM",
+        "infrequently": "",
+        "dateOfBirth": "2019-06-12",
+        "specialNeeds": false,
+        "medicalNotes": "",
+        "allergies": "Milk products",
+        "medications": "",
+        "transportationNotes": "Kindergarten early dismissal on Wednesdays"
+      }
+    ]
+  },
+  {
+    "parentGuardian": "Michelle Brown",
+    "address": "321 Cedar Lane, Westfield, PA 16950",
+    "city": "Westfield",
+    "county": "Tioga",
+    "homePhone": "(570) 555-3579",
+    "cellPhone": "(570) 555-3580",
+    "emergencyContact": "James Brown",
+    "jointParent": "",
+    "students": [
+      {
+        "firstName": "Tyler",
+        "lastName": "Brown",
+        "grade": "4",
+        "fullTime": "AM_PM",
+        "infrequently": "Sports practice Tuesdays and Thursdays",
+        "dateOfBirth": "2015-03-18",
+        "specialNeeds": false,
+        "medicalNotes": "",
+        "allergies": "",
+        "medications": "",
+        "transportationNotes": "Stays for after-school sports program"
+      }
+    ]
+  },
+  {
+    "parentGuardian": "Patricia Davis",
+    "address": "654 Birch Street, Chester, PA 19013",
+    "city": "Chester",
+    "county": "Delaware",
+    "homePhone": "(610) 555-4682",
+    "cellPhone": "(610) 555-4683",
+    "emergencyContact": "William Davis",
+    "jointParent": "Mark Davis",
+    "students": [
+      {
+        "firstName": "Olivia",
+        "lastName": "Davis",
+        "grade": "6",
+        "fullTime": "AM_PM",
+        "infrequently": "",
+        "dateOfBirth": "2013-08-25",
+        "specialNeeds": false,
+        "medicalNotes": "",
+        "allergies": "",
+        "medications": "",
+        "transportationNotes": "Regular schedule"
+      },
+      {
+        "firstName": "Nathan",
+        "lastName": "Davis",
+        "grade": "3",
+        "fullTime": "AM_PM",
+        "infrequently": "",
+        "dateOfBirth": "2016-12-03",
+        "specialNeeds": false,
+        "medicalNotes": "",
+        "allergies": "Bee stings",
+        "medications": "EpiPen emergency use",
+        "transportationNotes": "Carries emergency medication"
+      }
+    ]
+  },
+  {
+    "parentGuardian": "Kevin Martinez",
+    "address": "987 Elm Court, Lamar, PA 16848",
+    "city": "Lamar",
+    "county": "Clinton",
+    "homePhone": "(570) 726-5924",
+    "cellPhone": "(570) 555-5925",
+    "emergencyContact": "Maria Martinez",
+    "jointParent": "Rosa Martinez",
+    "students": [
+      {
+        "firstName": "Diego",
+        "lastName": "Martinez",
+        "grade": "7",
+        "fullTime": "AM_PM",
+        "infrequently": "",
+        "dateOfBirth": "2012-07-14",
+        "specialNeeds": false,
+        "medicalNotes": "",
+        "allergies": "",
+        "medications": "",
+        "transportationNotes": "Regular schedule"
+      }
+    ]
+  },
+  {
+    "parentGuardian": "Angela Garcia",
+    "address": "147 Willow Road, Springfield, PA 19064",
+    "city": "Springfield",
+    "county": "Delaware",
+    "homePhone": "(610) 555-8147",
+    "cellPhone": "(610) 555-8148",
+    "emergencyContact": "Carlos Garcia",
+    "jointParent": "",
+    "students": [
+      {
+        "firstName": "Isabella",
+        "lastName": "Garcia",
+        "grade": "2",
+        "fullTime": "AM_PM",
+        "infrequently": "",
+        "dateOfBirth": "2017-05-09",
+        "specialNeeds": false,
+        "medicalNotes": "",
+        "allergies": "",
+        "medications": "",
+        "transportationNotes": "Regular schedule"
+      },
+      {
+        "firstName": "Sebastian",
+        "lastName": "Garcia",
+        "grade": "4",
+        "fullTime": "AM_PM",
+        "infrequently": "",
+        "dateOfBirth": "2015-10-17",
+        "specialNeeds": false,
+        "medicalNotes": "",
+        "allergies": "Shellfish",
+        "medications": "",
+        "transportationNotes": "Regular schedule"
+      }
+    ]
+  }
+]

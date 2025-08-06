@@ -1,0 +1,733 @@
+{
+  "version": "2.0.0",
+  "options": {
+    "cwd": "${workspaceFolder}",
+    "env": {
+      "DOTNET_CLI_TELEMETRY_OPTOUT": "1",
+      "DOTNET_NOLOGO": "1",
+      "DOTNET_ENVIRONMENT": "Development"
+    }
+  },
+  "tasks": [
+    {
+      "label": "🔧 BB Enhanced: Debug & Format Files",
+      "type": "shell",
+      "command": "pwsh.exe",
+      "args": [
+        "-ExecutionPolicy",
+        "Bypass",
+        "-Command",
+        "Set-Location '${workspaceFolder}'; . '.\\AI-Assistant\\Scripts\\load-bus-buddy-profile.ps1' -Quiet; bb-debug-files -AutoFix -Verbose"
+      ],
+      "group": {
+        "kind": "build",
+        "isDefault": false
+      },
+      "isBackground": false,
+      "runOptions": {
+        "instanceLimit": 1
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": true,
+        "panel": "shared",
+        "showReuseMessage": false,
+        "clear": true
+      },
+      "detail": "🔧 Use developed BusBuddy File Debugger tool to debug and format all C# and XAML files (PREFERRED over manual fixes)"
+    },
+    {
+      "label": "🎨 BB Enhanced: Format Files Only",
+      "type": "shell",
+      "command": "pwsh.exe",
+      "args": [
+        "-ExecutionPolicy",
+        "Bypass",
+        "-Command",
+        "Set-Location '${workspaceFolder}'; . '.\\AI-Assistant\\Scripts\\load-bus-buddy-profile.ps1' -Quiet; bb-format-files"
+      ],
+      "group": "build",
+      "isBackground": false,
+      "runOptions": {
+        "instanceLimit": 1
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": true,
+        "panel": "shared",
+        "showReuseMessage": false,
+        "clear": true
+      },
+      "detail": "🎨 Use developed tool to format C# and XAML files without validation (tool over manual formatting)"
+    },
+    {
+      "label": "✅ BB Enhanced: Validate Files Only",
+      "type": "shell",
+      "command": "pwsh.exe",
+      "args": [
+        "-ExecutionPolicy",
+        "Bypass",
+        "-Command",
+        "Set-Location '${workspaceFolder}'; . '.\\AI-Assistant\\Scripts\\load-bus-buddy-profile.ps1' -Quiet; bb-validate-files -Verbose"
+      ],
+      "group": "test",
+      "isBackground": false,
+      "runOptions": {
+        "instanceLimit": 1
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": true,
+        "panel": "shared",
+        "showReuseMessage": false,
+        "clear": true
+      },
+      "detail": "✅ Use developed tool to validate C# and XAML files without making changes"
+    },
+    {
+      "label": "🚀 BB Enhanced: Build with Auto-Format",
+      "type": "shell",
+      "command": "pwsh.exe",
+      "args": [
+        "-ExecutionPolicy",
+        "Bypass",
+        "-Command",
+        "Set-Location '${workspaceFolder}'; . '.\\AI-Assistant\\Scripts\\load-bus-buddy-profile.ps1' -Quiet; bb-build -FormatFirst"
+      ],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "isBackground": false,
+      "runOptions": {
+        "instanceLimit": 1
+      },
+      "problemMatcher": [
+        "$msCompile"
+      ],
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": true,
+        "panel": "shared",
+        "showReuseMessage": false,
+        "clear": true
+      },
+      "detail": "🚀 Enhanced build that auto-formats files first using developed tools, then builds solution"
+    },
+    {
+      "label": "🏃 BB Enhanced: Run with Auto-Format & Build",
+      "type": "shell",
+      "command": "pwsh.exe",
+      "args": [
+        "-ExecutionPolicy",
+        "Bypass",
+        "-Command",
+        "Set-Location '${workspaceFolder}'; . '.\\AI-Assistant\\Scripts\\load-bus-buddy-profile.ps1' -Quiet; bb-run -BuildFirst -FormatFirst"
+      ],
+      "group": "build",
+      "isBackground": false,
+      "runOptions": {
+        "instanceLimit": 1
+      },
+      "problemMatcher": [
+        "$msCompile"
+      ],
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": true,
+        "panel": "shared",
+        "showReuseMessage": false,
+        "clear": true
+      },
+      "detail": "🏃 Complete workflow: auto-format files → build → run BusBuddy application"
+    },
+    {
+      "label": "🔍 BB Enhanced: Health Check",
+      "type": "shell",
+      "command": "pwsh.exe",
+      "args": [
+        "-ExecutionPolicy",
+        "Bypass",
+        "-Command",
+        "Set-Location '${workspaceFolder}'; . '.\\AI-Assistant\\Scripts\\load-bus-buddy-profile.ps1' -Quiet; bb-health"
+      ],
+      "group": "test",
+      "isBackground": false,
+      "runOptions": {
+        "instanceLimit": 1
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": true,
+        "panel": "shared",
+        "showReuseMessage": false,
+        "clear": true
+      },
+      "detail": "🔍 Comprehensive health check of development environment using enhanced profile"
+    },
+    {
+      "label": "Terminal Reset",
+      "type": "shell",
+      "command": "cmd",
+      "args": [
+        "/c",
+        "echo Terminal reset complete"
+      ],
+      "group": "none",
+      "problemMatcher": [],
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": true,
+        "panel": "new",
+        "showReuseMessage": false,
+        "clear": true
+      },
+      "detail": "Reset terminal state - creates a fresh terminal"
+    },
+    {
+      "label": "PS Fixed: Load Bus Buddy Profiles",
+      "type": "shell",
+      "command": "pwsh.exe",
+      "args": [
+        "-ExecutionPolicy",
+        "Bypass",
+        "-Command",
+        "Set-Location '${workspaceFolder}'; Write-Host '🚌 Loading Bus Buddy profiles...' -ForegroundColor Cyan; if (Test-Path '.\\AI-Assistant\\Scripts\\load-bus-buddy-profile.ps1') { & '.\\AI-Assistant\\Scripts\\load-bus-buddy-profile.ps1' -Quiet; Write-Host '✅ Bus Buddy profiles loaded successfully' -ForegroundColor Green } else { Write-Host '⚠️ Bus Buddy profiles not found' -ForegroundColor Yellow }"
+      ],
+      "group": "none",
+      "isBackground": false,
+      "runOptions": {
+        "instanceLimit": 1
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": true,
+        "panel": "dedicated",
+        "showReuseMessage": true,
+        "clear": true
+      },
+      "detail": "Load Bus Buddy PowerShell profiles for development"
+    },
+    {
+      "label": "Load AI-Assistant Environment",
+      "type": "shell",
+      "command": "pwsh.exe",
+      "args": [
+        "-ExecutionPolicy",
+        "Bypass",
+        "-NoExit",
+        "-Command",
+        "Set-Location '${workspaceFolder}'; Write-Host '🚌 Loading Bus Buddy Development Environment...' -ForegroundColor Cyan; . '.\\load-bus-buddy-profile.ps1' -Verbose; Write-Host '✅ Bus Buddy environment ready! Use bb-help for commands.' -ForegroundColor Green"
+      ],
+      "group": {
+        "kind": "build",
+        "isDefault": false
+      },
+      "isBackground": false,
+      "runOptions": {
+        "instanceLimit": 1,
+        "reevaluateOnRerun": true
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": true,
+        "panel": "new",
+        "showReuseMessage": false,
+        "clear": true,
+        "group": "busbuddy-dev"
+      },
+      "detail": "🚌 Load Bus Buddy Development Environment with all bb- commands available"
+    },
+    {
+      "label": "BB: Run App",
+      "type": "shell",
+      "command": "pwsh.exe",
+      "args": [
+        "-ExecutionPolicy",
+        "Bypass",
+        "-Command",
+        "Set-Location '${workspaceFolder}'; Write-Host '🚌 Starting BusBuddy application...' -ForegroundColor Cyan; if (Get-Command bb-run -ErrorAction SilentlyContinue) { bb-run } else { dotnet run --project \"BusBuddy.WPF\\BusBuddy.WPF.csproj\" }"
+      ],
+      "group": "build",
+      "dependsOn": [
+        "PS Fixed: Load Bus Buddy Profiles"
+      ],
+      "runOptions": {
+        "instanceLimit": 1
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": true,
+        "panel": "dedicated",
+        "showReuseMessage": false,
+        "clear": true
+      },
+      "detail": "🚌 Run BusBuddy application with profiles loaded first - consolidated from all run tasks"
+    },
+    {
+      "label": "BB: AI Analysis",
+      "type": "shell",
+      "command": "pwsh.exe",
+      "args": [
+        "-ExecutionPolicy",
+        "Bypass",
+        "-Command",
+        "Set-Location '${workspaceFolder}'; Write-Host '🤖 Starting AI Analysis...' -ForegroundColor Cyan; if (Get-Command bb-ai-analyze -ErrorAction SilentlyContinue) { bb-ai-analyze } else { Write-Host 'Loading AI Assistant first...' -ForegroundColor Yellow; . '.\\AI-Assistant\\Scripts\\load-bus-buddy-profile.ps1' -Quiet; bb-ai-analyze }"
+      ],
+      "group": "test",
+      "dependsOn": [
+        "PS Fixed: Load Bus Buddy Profiles"
+      ],
+      "runOptions": {
+        "instanceLimit": 1
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": true,
+        "panel": "dedicated",
+        "showReuseMessage": false,
+        "clear": true
+      },
+      "detail": "🤖 Run comprehensive AI analysis on BusBuddy project with Grok integration"
+    },
+    {
+      "label": "BB: Grok Integration Test",
+      "type": "shell",
+      "command": "pwsh.exe",
+      "args": [
+        "-ExecutionPolicy",
+        "Bypass",
+        "-Command",
+        "Set-Location '${workspaceFolder}'; . '.\\AI-Assistant\\Scripts\\test-grok-integration.ps1'"
+      ],
+      "group": "test",
+      "dependsOn": [
+        "PS Fixed: Load Bus Buddy Profiles"
+      ],
+      "runOptions": {
+        "instanceLimit": 1
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": true,
+        "panel": "dedicated",
+        "showReuseMessage": false,
+        "clear": true
+      },
+      "detail": "🤖 Test BusBuddy's Grok AI integration features and connectivity"
+    },
+    {
+      "label": "Direct: Build Solution (CMD)",
+      "type": "shell",
+      "command": "dotnet",
+      "args": [
+        "build",
+        "BusBuddy.sln",
+        "--verbosity",
+        "minimal",
+        "--nologo"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}",
+        "shell": {
+          "executable": "cmd.exe",
+          "args": [
+            "/c"
+          ]
+        }
+      },
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "runOptions": {
+        "instanceLimit": 1
+      },
+      "problemMatcher": [
+        "$msCompile"
+      ],
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "showReuseMessage": true,
+        "clear": false
+      },
+      "detail": "Clean build output - minimal verbosity, shows only errors/warnings/summary"
+    },
+    {
+      "label": "Direct: Run Application (FIXED)",
+      "type": "shell",
+      "command": "dotnet",
+      "args": [
+        "run",
+        "--project",
+        "BusBuddy.WPF/BusBuddy.WPF.csproj"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "group": "build",
+      "runOptions": {
+        "instanceLimit": 1
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "dedicated",
+        "showReuseMessage": true,
+        "clear": false
+      },
+      "detail": "Direct dotnet run command without PowerShell wrapper - WORKING"
+    },
+    {
+      "label": "🚀 Enhanced: Clean-Build-Run with Performance",
+      "type": "shell",
+      "command": "pwsh.exe",
+      "args": [
+        "-ExecutionPolicy",
+        "Bypass",
+        "-Command",
+        "& { if (-not (Test-Path logs)) { New-Item -Type Directory -Path logs | Out-Null }; $ts = Get-Date -Format 'yyyyMMdd-HHmmss'; $log = Join-Path logs \"enhanced-run-$ts.log\"; Write-Host '🧹 Step 1: Cleaning solution...' -ForegroundColor Yellow; $start1 = Get-Date; $output1 = dotnet clean BusBuddy.sln --verbosity minimal 2>&1; $output1 | Out-File -FilePath $log; $time1 = (Get-Date) - $start1; $sec1 = [math]::Round($time1.TotalSeconds, 2); Write-Host \"✅ Clean completed in ${sec1}s\" -ForegroundColor Green; Write-Host '🔨 Step 2: Building solution...' -ForegroundColor Yellow; $start2 = Get-Date; $output2 = dotnet build BusBuddy.sln --verbosity minimal --nologo 2>&1; $output2 | Out-File -FilePath $log -Append; $time2 = (Get-Date) - $start2; $sec2 = [math]::Round($time2.TotalSeconds, 2); if ($LASTEXITCODE -eq 0) { Write-Host \"✅ Build completed in ${sec2}s\" -ForegroundColor Green; Write-Host '🚀 Step 3: Running application...' -ForegroundColor Cyan; $total = [math]::Round(($time1 + $time2).TotalSeconds, 2); Write-Host \"📊 Performance Summary:\" -ForegroundColor Magenta; Write-Host \"   Clean: ${sec1}s\" -ForegroundColor Gray; Write-Host \"   Build: ${sec2}s\" -ForegroundColor Gray; Write-Host \"   Total: ${total}s\" -ForegroundColor Gray; Write-Host \"📝 Log: $log\" -ForegroundColor Gray; dotnet run --project BusBuddy.WPF\\BusBuddy.WPF.csproj } else { Write-Host '❌ Build failed' -ForegroundColor Red; Write-Host \"📝 Check: $log\" -ForegroundColor Yellow; exit 1 } }"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "group": {
+        "kind": "build",
+        "isDefault": false
+      },
+      "runOptions": {
+        "instanceLimit": 1
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": true,
+        "panel": "dedicated",
+        "showReuseMessage": false,
+        "clear": true
+      },
+      "detail": "🚀 Enhanced workflow: Clean → Build → Run with performance timing and logging"
+    },
+    {
+      "label": "PS Fixed: Test Solution",
+      "type": "shell",
+      "command": "pwsh.exe",
+      "args": [
+        "-ExecutionPolicy",
+        "Bypass",
+        "-Command",
+        "Set-Location '${workspaceFolder}'; if (Test-Path '.\\AI-Assistant\\Scripts\\load-bus-buddy-profile.ps1') { & '.\\AI-Assistant\\Scripts\\load-bus-buddy-profile.ps1' -Quiet; bb-test } else { dotnet test BusBuddy.sln }"
+      ],
+      "group": "test",
+      "runOptions": {
+        "instanceLimit": 1
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "dedicated",
+        "showReuseMessage": true,
+        "clear": false
+      },
+      "detail": "Fixed: Run tests using correct PowerShell -Command syntax"
+    },
+    {
+      "label": "PS Fixed: Health Check",
+      "type": "shell",
+      "command": "pwsh.exe",
+      "args": [
+        "-ExecutionPolicy",
+        "Bypass",
+        "-Command",
+        "Set-Location '${workspaceFolder}'; if (Test-Path '.\\AI-Assistant\\Scripts\\load-bus-buddy-profile.ps1') { & '.\\AI-Assistant\\Scripts\\load-bus-buddy-profile.ps1' -Quiet; bb-health } else { Write-Host 'Basic health check'; dotnet build BusBuddy.sln --verbosity quiet && Write-Host 'Build: OK' -ForegroundColor Green || Write-Host 'Build: FAILED' -ForegroundColor Red }"
+      ],
+      "group": "test",
+      "runOptions": {
+        "instanceLimit": 1
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "showReuseMessage": true,
+        "clear": true
+      },
+      "detail": "Fixed: Health check using script block syntax"
+    },
+    {
+      "label": "PS Fixed: Advanced Diagnostics",
+      "type": "shell",
+      "command": "pwsh.exe",
+      "args": [
+        "-ExecutionPolicy",
+        "Bypass",
+        "-Command",
+        "Set-Location '${workspaceFolder}'; if (Test-Path '.\\AI-Assistant\\Scripts\\load-bus-buddy-profile.ps1') { & '.\\AI-Assistant\\Scripts\\load-bus-buddy-profile.ps1' -Quiet; bb-diagnostic } else { Write-Host 'Basic diagnostic check'; Get-ChildItem -Recurse -Include '*.cs','*.xaml','*.ps1' | Measure-Object | Select-Object Count }"
+      ],
+      "group": "test",
+      "runOptions": {
+        "reevaluateOnRerun": true,
+        "instanceLimit": 1
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "dedicated",
+        "showReuseMessage": true,
+        "clear": true
+      },
+      "detail": "Fixed: Comprehensive diagnostics using correct PowerShell -Command syntax"
+    },
+    {
+      "label": "🔗 GitHub: Complete Automated Workflow",
+      "type": "shell",
+      "command": "pwsh.exe",
+      "args": [
+        "-ExecutionPolicy",
+        "Bypass",
+        "-Command",
+        "Set-Location '${workspaceFolder}'; . '.\\Tools\\Scripts\\GitHub\\BusBuddy-GitHub-Automation.ps1'; Invoke-CompleteGitHubWorkflow -GenerateCommitMessage -WaitForCompletion -AnalyzeResults -AutoFix"
+      ],
+      "group": "build",
+      "isBackground": false,
+      "runOptions": {
+        "instanceLimit": 1
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": true,
+        "panel": "dedicated",
+        "showReuseMessage": true,
+        "clear": true
+      },
+      "detail": "Complete automated workflow: stage, commit, push, monitor, analyze, and fix issues"
+    },
+    {
+      "label": "📦 GitHub: Smart Stage and Commit",
+      "type": "shell",
+      "command": "pwsh.exe",
+      "args": [
+        "-ExecutionPolicy",
+        "Bypass",
+        "-Command",
+        "Set-Location '${workspaceFolder}'; . '.\\Tools\\Scripts\\GitHub\\BusBuddy-GitHub-Automation.ps1'; $staged = Invoke-SmartGitStaging -InteractiveMode; if ($staged.Count -gt 0) { New-IntelligentCommit -StagedFiles $staged -GenerateMessage }"
+      ],
+      "group": "build",
+      "isBackground": false,
+      "runOptions": {
+        "instanceLimit": 1
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": true,
+        "panel": "dedicated",
+        "showReuseMessage": true,
+        "clear": true
+      },
+      "detail": "Intelligent staging and commit with interactive mode and generated messages"
+    },
+    {
+      "label": "📦 Restore Packages (Status Report)",
+      "type": "shell",
+      "command": "dotnet",
+      "args": [
+        "restore",
+        "BusBuddy.sln",
+        "--verbosity",
+        "normal",
+        "--nologo",
+        "--force"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}",
+        "shell": {
+          "executable": "cmd.exe",
+          "args": [
+            "/c"
+          ]
+        }
+      },
+      "group": "build",
+      "runOptions": {
+        "instanceLimit": 1
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "showReuseMessage": true,
+        "clear": true
+      },
+      "detail": "📦 Restore packages only - shows package sources, restore performance, cache hits, and dependency status"
+    },
+    {
+      "label": "🔧 BB: Debug Files",
+      "type": "shell",
+      "command": "pwsh.exe",
+      "args": [
+        "-ExecutionPolicy",
+        "Bypass",
+        "-Command",
+        "Set-Location '${workspaceFolder}'; if (Get-Command bb-debug-files -ErrorAction SilentlyContinue) { bb-debug-files -AutoFix -Verbose } else { . '.\\load-bus-buddy-profile.ps1' -Quiet; bb-debug-files -AutoFix -Verbose }"
+      ],
+      "group": "test",
+      "isBackground": false,
+      "runOptions": {
+        "instanceLimit": 1
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": true,
+        "panel": "shared",
+        "showReuseMessage": true,
+        "clear": true
+      },
+      "detail": "🔧 Debug and format C# and XAML files with best practices validation"
+    },
+    {
+      "label": "🎨 BB: Format Files Only",
+      "type": "shell",
+      "command": "pwsh.exe",
+      "args": [
+        "-ExecutionPolicy",
+        "Bypass",
+        "-Command",
+        "Set-Location '${workspaceFolder}'; if (Get-Command bb-format-files -ErrorAction SilentlyContinue) { bb-format-files } else { . '.\\load-bus-buddy-profile.ps1' -Quiet; bb-format-files }"
+      ],
+      "group": "build",
+      "isBackground": false,
+      "runOptions": {
+        "instanceLimit": 1
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": true,
+        "panel": "shared",
+        "showReuseMessage": true,
+        "clear": false
+      },
+      "detail": "🎨 Format C# and XAML files using best practices (no validation)"
+    },
+    {
+      "label": "✅ BB: Validate Files Only",
+      "type": "shell",
+      "command": "pwsh.exe",
+      "args": [
+        "-ExecutionPolicy",
+        "Bypass",
+        "-Command",
+        "Set-Location '${workspaceFolder}'; if (Get-Command bb-validate-files -ErrorAction SilentlyContinue) { bb-validate-files -Verbose } else { . '.\\load-bus-buddy-profile.ps1' -Quiet; bb-validate-files -Verbose }"
+      ],
+      "group": "test",
+      "isBackground": false,
+      "runOptions": {
+        "instanceLimit": 1
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": true,
+        "panel": "shared",
+        "showReuseMessage": true,
+        "clear": true
+      },
+      "detail": "✅ Validate C# and XAML files without making changes"
+    },
+    {
+      "label": "🔍 BB: Run Diagnostics",
+      "type": "shell",
+      "command": "pwsh.exe",
+      "args": [
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "${workspaceFolder}/run-bb-diagnostics.ps1"
+      ],
+      "group": "test",
+      "isBackground": false,
+      "runOptions": {
+        "instanceLimit": 1
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": true,
+        "panel": "dedicated",
+        "showReuseMessage": true,
+        "clear": true
+      },
+      "detail": "🔍 Comprehensive bb-run diagnostics with clean output and process monitoring"
+    },
+    {
+      "label": "🔧 Fix CA2000 Warnings",
+      "type": "shell",
+      "command": "pwsh.exe",
+      "args": [
+        "-ExecutionPolicy",
+        "Bypass",
+        "-Command",
+        "Set-Location '${workspaceFolder}'; Write-Host '🔧 Fixing CA2000 IDisposable Warnings' -ForegroundColor Cyan; Write-Host ''; Write-Host 'Identified Issues:' -ForegroundColor Yellow; Write-Host '1. OptimizedXAIService.cs(78,27) - HttpClientHandler not disposed' -ForegroundColor Red; Write-Host '2. WpfThemeManager.cs(89,45) - Theme object not disposed' -ForegroundColor Red; Write-Host ''; Write-Host 'These warnings indicate memory leaks where IDisposable objects' -ForegroundColor Gray; Write-Host 'are created but not properly disposed of.' -ForegroundColor Gray; Write-Host ''; Write-Host 'Solutions needed:' -ForegroundColor Yellow; Write-Host '• Wrap HttpClientHandler in using statement or dispose manually' -ForegroundColor White; Write-Host '• Properly dispose Theme objects in WpfThemeManager' -ForegroundColor White; Write-Host '• Consider using dependency injection for HttpClient' -ForegroundColor White; Write-Host ''; Write-Host 'Run this task to identify the exact lines requiring fixes.' -ForegroundColor Cyan"
+      ],
+      "group": "test",
+      "isBackground": false,
+      "runOptions": {
+        "instanceLimit": 1
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": true,
+        "panel": "shared",
+        "showReuseMessage": true,
+        "clear": true
+      },
+      "detail": "🔧 Guidance for fixing CA2000 IDisposable warnings in OptimizedXAIService and WpfThemeManager"
+    }
+  ]
+}

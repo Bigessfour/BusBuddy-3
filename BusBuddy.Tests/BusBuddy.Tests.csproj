@@ -1,0 +1,78 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+
+    <!-- Enhanced MSB3027/MSB3021 File Lock Prevention for Test Projects -->
+    <UseSharedCompilation>false</UseSharedCompilation>
+    <BuildInParallel>false</BuildInParallel>
+    <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
+    <ShadowCopyFiles>true</ShadowCopyFiles>
+    <ProduceOnlyReferenceAssembly>false</ProduceOnlyReferenceAssembly>
+    <AutoGenerateBindingRedirects>false</AutoGenerateBindingRedirects>
+
+    <!-- Test-specific lock prevention -->
+    <VSTestUseMSBuildOutput>false</VSTestUseMSBuildOutput>
+    <TestProjectForVSTest>true</TestProjectForVSTest>
+    <RunAnalyzersDuringBuild>false</RunAnalyzersDuringBuild>
+
+    <!-- Prevent testhost from holding locks -->
+    <TestHostLaunchTimeout>30000</TestHostLaunchTimeout>
+    <TestHostTerminateTimeout>5000</TestHostTerminateTimeout>
+
+    <!-- MSB4181 Prevention -->
+    <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+    <EnableDefaultItems>true</EnableDefaultItems>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- NUnit Testing Framework -->
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.9.0" />
+    <PackageReference Include="Microsoft.TestPlatform.TestHost" Version="17.9.0" />
+    <PackageReference Include="NUnit" Version="$(NUnitVersion)" />
+    <PackageReference Include="NUnit3TestAdapter" Version="4.6.0" />
+
+    <!-- FluentAssertions for readable test assertions -->
+    <PackageReference Include="FluentAssertions" Version="$(FluentAssertionsVersion)" />
+
+    <!-- Code Coverage -->
+    <PackageReference Include="coverlet.collector" Version="$(CoverletVersion)">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+
+    <!-- Mocking Framework -->
+    <PackageReference Include="Moq" Version="$(MoqVersion)" />
+
+    <!-- Entity Framework In-Memory Database for testing -->
+    <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="$(EntityFrameworkVersion)" />
+
+    <!-- Syncfusion WPF Controls for UI Testing -->
+    <PackageReference Include="Syncfusion.SfGrid.WPF" Version="$(SyncfusionVersion)" />
+    <PackageReference Include="Syncfusion.SfChart.WPF" Version="$(SyncfusionVersion)" />
+    <PackageReference Include="Syncfusion.Tools.WPF" Version="$(SyncfusionVersion)" />
+    <PackageReference Include="Syncfusion.Shared.WPF" Version="$(SyncfusionVersion)" />
+    <PackageReference Include="Syncfusion.SfSkinManager.WPF" Version="$(SyncfusionVersion)" />
+    <PackageReference Include="Syncfusion.Themes.FluentDark.WPF" Version="$(SyncfusionVersion)" />
+    <!-- Removed System.Reflection.MetadataLoadContext - using centralized version from Directory.Packages.props -->
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\BusBuddy.Core\BusBuddy.Core.csproj" />
+    <ProjectReference Include="..\BusBuddy.WPF\BusBuddy.WPF.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="ViewModels\" />
+    <Folder Include="Services\" />
+    <Folder Include="Integration\" />
+  </ItemGroup>
+
+</Project>

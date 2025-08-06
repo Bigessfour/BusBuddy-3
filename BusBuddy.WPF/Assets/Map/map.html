@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BusBuddy Map</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <style>
+    html, body, #map { height: 100%; margin: 0; padding: 0; }
+    #map { background: #F5F6F5; }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    var map = L.map('map').setView([39.5, -98.35], 4); // Centered on US
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+    // Layer group for dynamic routes
+    var routeLayer = L.geoJSON(null, {
+      style: { color: '#005566', weight: 3 }
+    }).addTo(map);
+
+    // JS interop: loadGeoJson from WPF
+    window.loadGeoJson = function(geojson) {
+      routeLayer.clearLayers();
+      routeLayer.addData(geojson);
+      if (routeLayer.getLayers().length > 0) {
+        map.fitBounds(routeLayer.getBounds());
+      }
+    };
+
+    // JS interop: zoom controls
+    window.zoomInMap = function() { map.zoomIn(); };
+    window.zoomOutMap = function() { map.zoomOut(); };
+  </script>
+</body>
+</html>

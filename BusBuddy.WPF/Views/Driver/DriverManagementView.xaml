@@ -1,0 +1,56 @@
+<UserControl x:Class="BusBuddy.WPF.Views.Driver.DriverManagementView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:syncfusion="http://schemas.syncfusion.com/wpf"
+             mc:Ignorable="d"
+             d:DesignHeight="450" d:DesignWidth="800">
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock Grid.Row="0"
+                   Text="Driver Management"
+                   FontSize="24"
+                   FontWeight="Bold"
+                   Margin="20,10"/>
+
+        <StackPanel Grid.Row="1"
+                    Orientation="Horizontal"
+                    Margin="20,10">
+            <syncfusion:ButtonAdv Content="Add Driver"
+                    Width="100"
+                    Height="35"
+                    Margin="0,0,10,0"/>
+            <syncfusion:ButtonAdv Content="Edit Driver"
+                    Width="100"
+                    Height="35"
+                    Margin="0,0,10,0"/>
+            <syncfusion:ButtonAdv Content="Delete Driver"
+                    Width="100"
+                    Height="35"/>
+        </StackPanel>
+
+        <syncfusion:SfDataGrid Grid.Row="2"
+                               ItemsSource="{Binding Drivers}"
+                               SelectedItem="{Binding SelectedDriver}"
+                               AutoGenerateColumns="False"
+                               AllowEditing="False"
+                               AllowSorting="True"
+                               AllowFiltering="True"
+                               Margin="20">
+            <syncfusion:SfDataGrid.Columns>
+                <syncfusion:GridTextColumn HeaderText="Driver Name" MappingName="DriverName" Width="200"/>
+                <syncfusion:GridTextColumn HeaderText="License" MappingName="LicenseNumber" Width="150"/>
+                <syncfusion:GridTextColumn HeaderText="Phone" MappingName="Phone" Width="120"/>
+                <syncfusion:GridTextColumn HeaderText="Status" MappingName="Status" Width="100"/>
+            </syncfusion:SfDataGrid.Columns>
+        </syncfusion:SfDataGrid>
+    </Grid>
+</UserControl>
+

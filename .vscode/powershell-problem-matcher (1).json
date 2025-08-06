@@ -1,0 +1,151 @@
+{
+  "version": "2.0.0",
+  "problemMatchers": [
+    {
+      "name": "powershell7-syntax",
+      "message": 4
+    }
+  ]
+},
+{
+  "name": "busbuddy-ps7-runtime",
+  "label": "BusBuddy PowerShell 7.5.2 Runtime Matcher",
+  "owner": "busbuddy",
+  "source": "BusBuddy PowerShell",
+  "applyTo": "allDocuments",
+  "fileLocation": [
+    "relative",
+    "${workspaceFolder}"
+  ],
+  "pattern": [
+    {
+      "regexp": "^BusBuddy: (.*):(\\d+):(\\d+):\\s+(error|warning)\\s+(.*)$",
+      "file": 1,
+      "line": 2,
+      "column": 3,
+      "severity": 4,
+      "message": 5
+    }
+  ]
+}
+]
+}l": "PowerShell 7.5.2 Syntax Errors","owner": "powershell",
+"source": "PowerShell",
+"applyTo": "allDocuments",
+"fileLocation": [
+"relative",
+"${workspaceFolder}"
+],
+"severity": "error",
+"pattern": [
+{
+"regexp": "^(.*):(\\d+):(\\d+):\\s+(error|warning|info)\\s+(.*)$",
+"file": 1,
+"line": 2,
+"column": 3,
+"severity": 4,
+"message": 5
+}
+],
+"background": {
+"activeOnStart": false,
+"beginsPattern": "^Starting PowerShell analysis",
+"endsPattern": "^Analysis complete"
+}
+},
+{
+"name": "powershell7-compatible",
+"label": "PowerShell 7.5.2 Compatible Analysis",
+"owner": "powershell",
+"source": "PSScriptAnalyzer",
+"applyTo": "allDocuments",
+"fileLocation": [
+"relative",
+"${workspaceFolder}"
+],
+"severity": "warning",
+"pattern": [
+{
+"regexp": "^(.+?)\\((\\d+),(\\d+)\\):\\s+(Error|Warning|Information):\\s+(.*)$",
+"file": 1,
+"line": 2,
+"column": 3,
+"severity": 4,
+"message": 5
+}
+],
+"background": {
+"activeOnStart": false,
+"beginsPattern": "^Starting script analysis",
+"endsPattern": "^Script analysis complete"
+}
+},
+{
+"name": "powershell7-runtime",
+"label": "PowerShell 7.5.2 Runtime Errors",
+"owner": "powershell",
+"source": "PowerShell Runtime",
+"applyTo": "allDocuments",
+"fileLocation": [
+"relative",
+"${workspaceFolder}"
+],
+"severity": "error",
+"pattern": [
+{
+"regexp": "^At\\s+(.+?):(\\d+)\\s+char:(\\d+)$",
+"file": 1,
+"line": 2,
+"column": 3,
+"loop": true
+},
+{
+"regexp": "^(.*)$",
+"message": 1
+}
+]
+},
+{
+"name": "powershell7-parser-exclude-modern-syntax",
+"label": "PowerShell 7.5.2 Parser (Excludes Modern Syntax)",
+"owner": "powershell",
+"source": "PowerShell Parser",
+"applyTo": "allDocuments",
+"fileLocation": [
+"relative",
+"${workspaceFolder}"
+],
+"severity": "error",
+"pattern": [
+{
+"regexp": "^(.+?):(\\d+):(\\d+):\\s+(.*?)(?<!\\bUnexpected token '\\?\\?'|\\bUnexpected token '&&'|\\bUnexpected token '\\|\\|'|\\bThe token '\\?\\?'|\\bThe token '&&'|\\bThe token '\\|\\|'|\\bUnexpected token '\\?\\.'|\\bUnexpected token '\\?\\['|ternary\\s+operator|null\\s+conditional).+$",
+"file": 1,
+"line": 2,
+"column": 3,
+"message": 4
+}
+]
+},
+{
+"name": "busbuddy-ps7-runtime",
+"label": "BusBuddy PowerShell 7.5.2 Runtime Matcher",
+"owner": "busbuddy",
+"source": "BusBuddy PowerShell",
+"applyTo": "allDocuments",
+"fileLocation": [
+"relative",
+"${workspaceFolder}"
+],
+"pattern": [
+{
+"regexp": "^BusBuddy: (.*):(\\d+):(\\d+):\\s+(error|warning)\\s+(.*)$",
+"file": 1,
+"line": 2,
+"column": 3,
+"severity": 4,
+"message": 5
+}
+]
+}
+]
+}

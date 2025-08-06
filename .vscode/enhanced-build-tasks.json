@@ -1,0 +1,65 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "🔍 BB: Enhanced Build with Problem Capture",
+            "type": "shell",
+            "command": "pwsh.exe",
+            "args": [
+                "-ExecutionPolicy",
+                "Bypass",
+                "-Command",
+                "& { Set-Location '${workspaceFolder}'; if (Test-Path '.\\load-bus-buddy-profiles.ps1') { & '.\\load-bus-buddy-profiles.ps1' -Quiet; Write-Host '✅ Profiles loaded' -ForegroundColor Green } else { Write-Host '⚠️ Profiles not found' -ForegroundColor Yellow }; Write-Host '🔍 Running enhanced build with problem capture...' -ForegroundColor Cyan; bb-build -CaptureProblemList -AnalyzeProblems -ExportResults -Verbosity normal }"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": false
+            },
+            "runOptions": {
+                "instanceLimit": 1
+            },
+            "isBackground": false,
+            "detail": "🔍 Enhanced build with comprehensive problem capture, analysis, and export"
+        },
+        {
+            "label": "🤖 BB: Enhanced Build with Auto-Fix",
+            "type": "shell",
+            "command": "pwsh.exe",
+            "args": [
+                "-ExecutionPolicy",
+                "Bypass",
+                "-Command",
+                "& { Set-Location '${workspaceFolder}'; if (Test-Path '.\\load-bus-buddy-profiles.ps1') { & '.\\load-bus-buddy-profiles.ps1' -Quiet; Write-Host '✅ Profiles loaded' -ForegroundColor Green } else { Write-Host '⚠️ Profiles not found' -ForegroundColor Yellow }; Write-Host '🤖 Running enhanced build with auto-fix...' -ForegroundColor Cyan; bb-build -Clean -Restore -CaptureProblemList -AnalyzeProblems -AutoFix -ExportResults -Verbosity normal }"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": false
+            },
+            "runOptions": {
+                "instanceLimit": 1
+            },
+            "isBackground": false,
+            "detail": "🤖 Enhanced build with automatic problem fixing and comprehensive analysis"
+        },
+        {
+            "label": "📊 BB: Build Analysis Report",
+            "type": "shell",
+            "command": "pwsh.exe",
+            "args": [
+                "-ExecutionPolicy",
+                "Bypass",
+                "-Command",
+                "& { Set-Location '${workspaceFolder}'; if (Test-Path '.\\load-bus-buddy-profiles.ps1') { & '.\\load-bus-buddy-profiles.ps1' -Quiet; Write-Host '✅ Profiles loaded' -ForegroundColor Green } else { Write-Host '⚠️ Profiles not found' -ForegroundColor Yellow }; Write-Host '📊 Generating comprehensive build analysis...' -ForegroundColor Cyan; $results = bb-build -CaptureProblemList -AnalyzeProblems -ExportResults -RunAnalysis -Verbosity detailed; Write-Host ''; Write-Host '📋 Analysis Results:' -ForegroundColor Blue; Write-Host \"  • Build Success: $($results.Success)\" -ForegroundColor $(if($results.Success) {'Green'} else {'Red'}); Write-Host \"  • Total Problems: $($results.Problems.Count)\" -ForegroundColor Yellow; Write-Host \"  • Duration: $([math]::Round($results.Duration.TotalSeconds, 1))s\" -ForegroundColor Gray; if (Test-Path './logs/build-analysis') { Write-Host '📄 Reports exported to: ./logs/build-analysis' -ForegroundColor Green } }"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": false
+            },
+            "runOptions": {
+                "instanceLimit": 1
+            },
+            "isBackground": false,
+            "detail": "📊 Comprehensive build analysis with detailed reporting and export"
+        }
+    ]
+}

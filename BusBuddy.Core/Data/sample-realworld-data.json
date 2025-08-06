@@ -1,0 +1,398 @@
+{
+  "Drivers": [
+    {
+      "DriverId": 1,
+      "FirstName": "Alice",
+      "LastName": "Smith",
+      "LicenseNumber": "D12345"
+    },
+    {
+      "DriverId": 2,
+      "FirstName": "Bob",
+      "LastName": "Johnson",
+      "LicenseNumber": "D23456"
+    },
+    {
+      "DriverId": 3,
+      "FirstName": "Carlos",
+      "LastName": "Martinez",
+      "LicenseNumber": "D34567"
+    },
+    {
+      "DriverId": 4,
+      "FirstName": "Diana",
+      "LastName": "Nguyen",
+      "LicenseNumber": "D45678"
+    },
+    {
+      "DriverId": 5,
+      "FirstName": "Ethan",
+      "LastName": "Brown",
+      "LicenseNumber": "D56789"
+    },
+    {
+      "DriverId": 6,
+      "FirstName": "Fatima",
+      "LastName": "Ali",
+      "LicenseNumber": "D67890"
+    },
+    {
+      "DriverId": 7,
+      "FirstName": "George",
+      "LastName": "Wright",
+      "LicenseNumber": "D78901"
+    },
+    {
+      "DriverId": 8,
+      "FirstName": "Hannah",
+      "LastName": "Lee",
+      "LicenseNumber": "D89012"
+    },
+    {
+      "DriverId": 9,
+      "FirstName": "Ivan",
+      "LastName": "Petrov",
+      "LicenseNumber": "D90123"
+    },
+    {
+      "DriverId": 10,
+      "FirstName": "Julia",
+      "LastName": "Kim",
+      "LicenseNumber": "D01234"
+    },
+    {
+      "DriverId": 11,
+      "FirstName": "Kevin",
+      "LastName": "Miller",
+      "LicenseNumber": "D11223"
+    },
+    {
+      "DriverId": 12,
+      "FirstName": "Laura",
+      "LastName": "Garcia",
+      "LicenseNumber": "D22334"
+    },
+    {
+      "DriverId": 13,
+      "FirstName": "Mohammed",
+      "LastName": "Hassan",
+      "LicenseNumber": "D33445"
+    },
+    {
+      "DriverId": 14,
+      "FirstName": "Nina",
+      "LastName": "Kowalski",
+      "LicenseNumber": "D44556"
+    },
+    {
+      "DriverId": 15,
+      "FirstName": "Oscar",
+      "LastName": "Silva",
+      "LicenseNumber": "D55667"
+    },
+    {
+      "DriverId": 16,
+      "FirstName": "Priya",
+      "LastName": "Singh",
+      "LicenseNumber": "D66778"
+    },
+    {
+      "DriverId": 17,
+      "FirstName": "Quentin",
+      "LastName": "Dupont",
+      "LicenseNumber": "D77889"
+    },
+    {
+      "DriverId": 18,
+      "FirstName": "Rosa",
+      "LastName": "Fernandez",
+      "LicenseNumber": "D88990"
+    },
+    {
+      "DriverId": 19,
+      "FirstName": "Sam",
+      "LastName": "O'Connor",
+      "LicenseNumber": "D99001"
+    },
+    {
+      "DriverId": 20,
+      "FirstName": "Tina",
+      "LastName": "Chen",
+      "LicenseNumber": "D10112"
+    }
+  ],
+  "Vehicles": [
+    {
+      "VehicleId": 1,
+      "RegistrationNumber": "ABC123",
+      "Model": "Ford Transit"
+    },
+    {
+      "VehicleId": 2,
+      "RegistrationNumber": "XYZ789",
+      "Model": "Mercedes Sprinter"
+    },
+    {
+      "VehicleId": 3,
+      "RegistrationNumber": "JKL456",
+      "Model": "Volkswagen Crafter"
+    },
+    {
+      "VehicleId": 4,
+      "RegistrationNumber": "MNO321",
+      "Model": "Renault Master"
+    },
+    {
+      "VehicleId": 5,
+      "RegistrationNumber": "PQR654",
+      "Model": "Iveco Daily"
+    },
+    {
+      "VehicleId": 6,
+      "RegistrationNumber": "STU987",
+      "Model": "Peugeot Boxer"
+    },
+    {
+      "VehicleId": 7,
+      "RegistrationNumber": "VWX246",
+      "Model": "Citroen Jumper"
+    },
+    {
+      "VehicleId": 8,
+      "RegistrationNumber": "YZA135",
+      "Model": "Fiat Ducato"
+    },
+    {
+      "VehicleId": 9,
+      "RegistrationNumber": "BCD864",
+      "Model": "Nissan NV400"
+    },
+    {
+      "VehicleId": 10,
+      "RegistrationNumber": "EFG579",
+      "Model": "Opel Movano"
+    },
+    {
+      "VehicleId": 11,
+      "RegistrationNumber": "HIJ753",
+      "Model": "Toyota Proace"
+    },
+    {
+      "VehicleId": 12,
+      "RegistrationNumber": "KLM159",
+      "Model": "Hyundai H350"
+    }
+  ],
+  "Activities": [
+    {
+      "ActivityId": 1,
+      "DriverId": 1,
+      "VehicleId": 1,
+      "StartTime": "2025-07-25T08:00:00",
+      "EndTime": "2025-07-25T10:00:00"
+    },
+    {
+      "ActivityId": 2,
+      "DriverId": 2,
+      "VehicleId": 2,
+      "StartTime": "2025-07-25T09:00:00",
+      "EndTime": "2025-07-25T11:00:00"
+    },
+    {
+      "ActivityId": 3,
+      "DriverId": 3,
+      "VehicleId": 3,
+      "StartTime": "2025-07-25T10:00:00",
+      "EndTime": "2025-07-25T12:00:00"
+    },
+    {
+      "ActivityId": 4,
+      "DriverId": 4,
+      "VehicleId": 4,
+      "StartTime": "2025-07-25T11:00:00",
+      "EndTime": "2025-07-25T13:00:00"
+    },
+    {
+      "ActivityId": 5,
+      "DriverId": 5,
+      "VehicleId": 5,
+      "StartTime": "2025-07-25T12:00:00",
+      "EndTime": "2025-07-25T14:00:00"
+    },
+    {
+      "ActivityId": 6,
+      "DriverId": 6,
+      "VehicleId": 6,
+      "StartTime": "2025-07-25T13:00:00",
+      "EndTime": "2025-07-25T15:00:00"
+    },
+    {
+      "ActivityId": 7,
+      "DriverId": 7,
+      "VehicleId": 7,
+      "StartTime": "2025-07-25T14:00:00",
+      "EndTime": "2025-07-25T16:00:00"
+    },
+    {
+      "ActivityId": 8,
+      "DriverId": 8,
+      "VehicleId": 8,
+      "StartTime": "2025-07-25T15:00:00",
+      "EndTime": "2025-07-25T17:00:00"
+    },
+    {
+      "ActivityId": 9,
+      "DriverId": 9,
+      "VehicleId": 9,
+      "StartTime": "2025-07-25T16:00:00",
+      "EndTime": "2025-07-25T18:00:00"
+    },
+    {
+      "ActivityId": 10,
+      "DriverId": 10,
+      "VehicleId": 10,
+      "StartTime": "2025-07-25T17:00:00",
+      "EndTime": "2025-07-25T19:00:00"
+    },
+    {
+      "ActivityId": 11,
+      "DriverId": 11,
+      "VehicleId": 11,
+      "StartTime": "2025-07-25T18:00:00",
+      "EndTime": "2025-07-25T20:00:00"
+    },
+    {
+      "ActivityId": 12,
+      "DriverId": 12,
+      "VehicleId": 12,
+      "StartTime": "2025-07-25T19:00:00",
+      "EndTime": "2025-07-25T21:00:00"
+    },
+    {
+      "ActivityId": 13,
+      "DriverId": 13,
+      "VehicleId": 1,
+      "StartTime": "2025-07-25T20:00:00",
+      "EndTime": "2025-07-25T22:00:00"
+    },
+    {
+      "ActivityId": 14,
+      "DriverId": 14,
+      "VehicleId": 2,
+      "StartTime": "2025-07-25T21:00:00",
+      "EndTime": "2025-07-25T23:00:00"
+    },
+    {
+      "ActivityId": 15,
+      "DriverId": 15,
+      "VehicleId": 3,
+      "StartTime": "2025-07-25T22:00:00",
+      "EndTime": "2025-07-26T00:00:00"
+    },
+    {
+      "ActivityId": 16,
+      "DriverId": 16,
+      "VehicleId": 4,
+      "StartTime": "2025-07-26T06:00:00",
+      "EndTime": "2025-07-26T08:00:00"
+    },
+    {
+      "ActivityId": 17,
+      "DriverId": 17,
+      "VehicleId": 5,
+      "StartTime": "2025-07-26T07:00:00",
+      "EndTime": "2025-07-26T09:00:00"
+    },
+    {
+      "ActivityId": 18,
+      "DriverId": 18,
+      "VehicleId": 6,
+      "StartTime": "2025-07-26T08:00:00",
+      "EndTime": "2025-07-26T10:00:00"
+    },
+    {
+      "ActivityId": 19,
+      "DriverId": 19,
+      "VehicleId": 7,
+      "StartTime": "2025-07-26T09:00:00",
+      "EndTime": "2025-07-26T11:00:00"
+    },
+    {
+      "ActivityId": 20,
+      "DriverId": 20,
+      "VehicleId": 8,
+      "StartTime": "2025-07-26T10:00:00",
+      "EndTime": "2025-07-26T12:00:00"
+    },
+    {
+      "ActivityId": 21,
+      "DriverId": 1,
+      "VehicleId": 9,
+      "StartTime": "2025-07-26T11:00:00",
+      "EndTime": "2025-07-26T13:00:00"
+    },
+    {
+      "ActivityId": 22,
+      "DriverId": 2,
+      "VehicleId": 10,
+      "StartTime": "2025-07-26T12:00:00",
+      "EndTime": "2025-07-26T14:00:00"
+    },
+    {
+      "ActivityId": 23,
+      "DriverId": 3,
+      "VehicleId": 11,
+      "StartTime": "2025-07-26T13:00:00",
+      "EndTime": "2025-07-26T15:00:00"
+    },
+    {
+      "ActivityId": 24,
+      "DriverId": 4,
+      "VehicleId": 12,
+      "StartTime": "2025-07-26T14:00:00",
+      "EndTime": "2025-07-26T16:00:00"
+    },
+    {
+      "ActivityId": 25,
+      "DriverId": 5,
+      "VehicleId": 1,
+      "StartTime": "2025-07-26T15:00:00",
+      "EndTime": "2025-07-26T17:00:00"
+    },
+    {
+      "ActivityId": 26,
+      "DriverId": 6,
+      "VehicleId": 2,
+      "StartTime": "2025-07-26T16:00:00",
+      "EndTime": "2025-07-26T18:00:00"
+    },
+    {
+      "ActivityId": 27,
+      "DriverId": 7,
+      "VehicleId": 3,
+      "StartTime": "2025-07-26T17:00:00",
+      "EndTime": "2025-07-26T19:00:00"
+    },
+    {
+      "ActivityId": 28,
+      "DriverId": 8,
+      "VehicleId": 4,
+      "StartTime": "2025-07-26T18:00:00",
+      "EndTime": "2025-07-26T20:00:00"
+    },
+    {
+      "ActivityId": 29,
+      "DriverId": 9,
+      "VehicleId": 5,
+      "StartTime": "2025-07-26T19:00:00",
+      "EndTime": "2025-07-26T21:00:00"
+    },
+    {
+      "ActivityId": 30,
+      "DriverId": 10,
+      "VehicleId": 6,
+      "StartTime": "2025-07-26T20:00:00",
+      "EndTime": "2025-07-26T22:00:00"
+    }
+  ]
+}

@@ -1,0 +1,75 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0-windows</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+
+    <!-- Suppress MSBuild warning about locked DLLs during clean -->
+    <NoWarn>MSB3061</NoWarn>
+
+    <!-- Core Project Identification -->
+    <ProjectName>BusBuddy.Core</ProjectName>
+    <IsBusinessLogicLayer>true</IsBusinessLogicLayer>
+
+    <!-- MSB3027/MSB3021 File Lock Prevention -->
+    <UseSharedCompilation>false</UseSharedCompilation>
+    <BuildInParallel>false</BuildInParallel>
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+    <ShadowCopyFiles>false</ShadowCopyFiles>
+    <ProduceOnlyReferenceAssembly>false</ProduceOnlyReferenceAssembly>
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+    <GenerateBindingRedirectsOutputType>true</GenerateBindingRedirectsOutputType>
+  </PropertyGroup>
+
+  <!-- Core Business Logic Packages -->
+  <ItemGroup>
+    <!-- Database and EF Core (Versions managed by Directory.Build.props) -->
+    <PackageReference Include="Microsoft.Data.SqlClient" Version="$(SqlClientVersion)" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="$(EntityFrameworkVersion)" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.7">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="$(EntityFrameworkVersion)" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="$(EntityFrameworkVersion)" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="$(EntityFrameworkVersion)" />
+
+    <!-- Google Earth Engine Integration -->
+    <PackageReference Include="Google.Apis.Auth" Version="$(GoogleApisVersion)" />
+    <PackageReference Include="Google.Apis.Core" Version="$(GoogleApisVersion)" />
+    <PackageReference Include="Google.Cloud.Storage.V1" Version="$(GoogleCloudStorageVersion)" />
+    <PackageReference Include="Google.Apis.Drive.v3" Version="$(GoogleApisDriveVersion)" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="9.0.7" />
+
+    <!-- xAI Grok API Integration (OpenAI-compatible) -->
+    <PackageReference Include="OpenAI" Version="$(OpenAIVersion)" />
+
+    <!-- Resilience and HTTP -->
+    <PackageReference Include="Polly" Version="$(PollyVersion)" />
+    <PackageReference Include="System.Net.Http.Json" Version="$(SystemNetHttpJsonVersion)" />
+
+    <!-- Azure Authentication (Optional for Azure SQL Managed Identity) -->
+    <PackageReference Include="Azure.Identity" Version="$(AzureIdentityVersion)" />
+
+    <!-- Serilog Extensions - Extensions.Logging only, rest in Directory.Build.props -->
+    <PackageReference Include="Serilog.Extensions.Logging" Version="$(SerilogExtensionsLoggingVersion)" />
+
+    <!-- 📄 Syncfusion PDF Generation for Core Services -->
+    <PackageReference Include="Syncfusion.Pdf.NET" Version="$(SyncfusionVersion)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="appsettings.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <!-- JSON data files for import -->
+    <Content Include="Data\enhanced-realworld-data.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Data\sample-realworld-data.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+</Project>

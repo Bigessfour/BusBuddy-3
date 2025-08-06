@@ -1,0 +1,2507 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>BusBuddy.Core</name>
+    </assembly>
+    <members>
+        <member name="T:BusBuddy.Core.Configuration.DevelopmentHelper">
+            <summary>
+            Helper class for environment-specific configuration and development features
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Configuration.DevelopmentHelper.IsDevelopment(Microsoft.Extensions.Configuration.IConfiguration)">
+            <summary>
+            Check if application is running in development mode
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Configuration.DevelopmentHelper.GetOptimalLogLevel(Microsoft.Extensions.Configuration.IConfiguration)">
+            <summary>
+            Get optimized logging configuration for current environment
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Configuration.DevelopmentHelper.ShouldEnablePerformanceMonitoring(Microsoft.Extensions.Configuration.IConfiguration)">
+            <summary>
+            Get performance monitoring settings based on environment
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Configuration.DevelopmentHelper.GetOptimalPageSize(Microsoft.Extensions.Configuration.IConfiguration)">
+            <summary>
+            Get recommended page size for data queries based on environment
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Configuration.DevelopmentHelper.ShouldEnableSeedData(Microsoft.Extensions.Configuration.IConfiguration)">
+            <summary>
+            Check if seed data features should be enabled
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Configuration.DevelopmentHelper.GetMemoryWarningThreshold(Microsoft.Extensions.Configuration.IConfiguration)">
+            <summary>
+            Get memory usage warning threshold based on environment
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Configuration.DevelopmentHelper.GetDatabaseTimeout(Microsoft.Extensions.Configuration.IConfiguration)">
+            <summary>
+            Get database query timeout based on environment
+            </summary>
+        </member>
+        <member name="T:BusBuddy.Core.Configuration.EnhancedDatabaseStartup">
+            <summary>
+            Startup configuration for enhanced database operations with comprehensive error handling
+            Implements all the recommended patterns for handling SqlException, InvalidCastException, and WPF binding issues
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Configuration.EnhancedDatabaseStartup.AddEnhancedDatabase(Microsoft.Extensions.DependencyInjection.IServiceCollection,Microsoft.Extensions.Configuration.IConfiguration,Microsoft.Extensions.Hosting.IHostEnvironment)">
+            <summary>
+            Configures enhanced database services with resilience patterns
+            Call this from your WPF App.xaml.cs or DI container setup
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Configuration.EnhancedDatabaseStartup.InitializeDatabaseAsync(System.IServiceProvider)">
+            <summary>
+            Initializes and validates database on application startup
+            Call this from your WPF App.xaml.cs OnStartup method
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Configuration.EnhancedDatabaseStartup.ConfigureGlobalExceptionHandling">
+            <summary>
+            Configures global exception handling for applications
+            Call this from your application startup to handle unhandled database exceptions
+            </summary>
+        </member>
+        <member name="T:BusBuddy.Core.Configuration.ExceptionExtensions">
+            <summary>
+            Extension methods for exception type checking
+            </summary>
+        </member>
+        <member name="T:BusBuddy.Core.Configuration.DatabaseInitializationResult">
+            <summary>
+            Result of database initialization
+            </summary>
+        </member>
+        <member name="T:BusBuddy.Core.Configuration.DatabaseValidationService">
+            <summary>
+            Service for validating and fixing database issues
+            </summary>
+        </member>
+        <member name="T:BusBuddy.Core.Configuration.DatabaseMigrationService">
+            <summary>
+            Service for managing database migrations
+            </summary>
+        </member>
+        <member name="T:BusBuddy.Core.Data.BusBuddyDbContext">
+            <summary>
+            Enhanced Entity Framework DbContext for BusBuddy application
+            Supports agile schema evolution with audit fields, soft deletes, and JSON columns
+            Optimized for Syncfusion Windows Forms with comprehensive indexing and performance features
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Data.BusBuddyDbContext.SeedTestData(BusBuddy.Core.Data.BusBuddyDbContext,System.Action{BusBuddy.Core.Data.BusBuddyDbContext})">
+            <summary>
+            Helper for test code: seed minimal data for a test scenario
+            </summary>
+        </member>
+        <member name="P:BusBuddy.Core.Data.BusBuddyDbContext.SkipGlobalSeedData">
+            <summary>
+            Controls whether to skip global data seeding (for test isolation)
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Data.BusBuddyDbContext.SetAuditUser(System.String)">
+            <summary>
+            Set the current audit user for tracking purposes
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Data.BusBuddyDbContext.GetCurrentAuditUser">
+            <summary>
+            Get the current audit user
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Data.BusBuddyDbContext.ConfigureGlobalQueryFilters(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <summary>
+            Configure global query filters for soft deletes
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Data.BusBuddyDbContext.SaveChanges">
+            <summary>
+            Override SaveChanges to apply audit fields with concurrency protection
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Data.BusBuddyDbContext.SaveChangesAsync(System.Threading.CancellationToken)">
+            <summary>
+            Override SaveChangesAsync to apply audit fields with concurrency protection
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Data.BusBuddyDbContext.HandleConcurrencyException(Microsoft.EntityFrameworkCore.DbUpdateConcurrencyException)">
+            <summary>
+            Handle database concurrency exceptions with detailed logging
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Data.BusBuddyDbContext.ApplyAuditFields">
+            <summary>
+            Apply audit fields to entities before saving
+            </summary>
+        </member>
+        <member name="T:BusBuddy.Core.Data.BusBuddyDbContextFactory">
+            <summary>
+            Factory for creating DbContext instances, useful for async and multi-threaded scenarios
+            where a context might be needed outside the standard DI lifecycle
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Data.BusBuddyDbContextFactory.CreateDbContext">
+            <summary>
+            Creates a new instance of BusBuddyDbContext with proper configuration
+            Use this method when you need a fresh context outside the DI lifecycle
+            </summary>
+            <returns>A new instance of BusBuddyDbContext</returns>
+        </member>
+        <member name="M:BusBuddy.Core.Data.BusBuddyDbContextFactory.CreateWriteDbContext">
+            <summary>
+            Creates a new instance of BusBuddyDbContext for write operations
+            </summary>
+            <returns>A new instance of BusBuddyDbContext configured for tracking changes</returns>
+        </member>
+        <member name="M:BusBuddy.Core.Data.BusBuddyDbContextFactory.CreateDbContext(System.String[])">
+            <summary>
+            Creates a new instance of BusBuddyDbContext for design-time use
+            This is typically used by EF Core tools for migrations and scaffolding
+            </summary>
+            <param name="args">Command-line arguments (not used)</param>
+            <returns>A new instance of BusBuddyDbContext configured for design-time services</returns>
+        </member>
+        <member name="T:BusBuddy.Core.Data.IBusBuddyDbContextFactory">
+            <summary>
+            Interface for the DbContext factory to enable proper dependency injection
+            </summary>
+        </member>
+        <member name="T:BusBuddy.Core.Data.DatabaseNullFixMigration">
+            <summary>
+            Migration to fix NULL values in required string columns that cause SqlNullValueException
+            This addresses the issue where Entity Framework cannot read NULL values into non-nullable string properties
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Data.DatabaseNullFixMigration.FixNullValuesAsync">
+            <summary>
+            Fix all NULL values in required string columns to prevent SqlNullValueException
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Data.DatabaseNullFixMigration.FixDriverNullValues">
+            <summary>
+            Fix NULL values in the Drivers table
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Data.DatabaseNullFixMigration.FixBusNullValues">
+            <summary>
+            Fix NULL values in the Vehicles table
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Data.DatabaseNullFixMigration.FixRouteNullValues">
+            <summary>
+            Fix NULL values in the Routes table
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Data.DatabaseNullFixMigration.FixActivityNullValues">
+            <summary>
+            Fix NULL values in the Activities table
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Data.DatabaseNullFixMigration.GetNullValueCountsAsync">
+            <summary>
+            Check if any required string columns still contain NULL values
+            </summary>
+        </member>
+        <member name="T:BusBuddy.Core.Data.Interfaces.IActivityRepository">
+            <summary>
+            Activity-specific repository interface
+            Extends generic repository with activity-specific operations
+            </summary>
+        </member>
+        <member name="T:BusBuddy.Core.Data.Interfaces.IFuelRepository">
+            <summary>
+            Additional repository interfaces for comprehensive data access
+            </summary>
+        </member>
+        <member name="T:BusBuddy.Core.Data.Interfaces.IBusRepository">
+            <summary>
+            Bus-specific repository interface
+            Extends generic repository with bus/vehicle-specific operations
+            </summary>
+        </member>
+        <member name="T:BusBuddy.Core.Data.Interfaces.IDriverRepository">
+            <summary>
+            Driver-specific repository interface
+            Extends generic repository with driver-specific operations
+            </summary>
+        </member>
+        <member name="T:BusBuddy.Core.Data.Interfaces.IRepository`1">
+            <summary>
+            Generic repository interface for common CRUD operations
+            Supports async operations for better performance with Syncfusion controls
+            </summary>
+            <typeparam name="T">Entity type</typeparam>
+        </member>
+        <member name="T:BusBuddy.Core.Data.Interfaces.IRouteRepository">
+            <summary>
+            Route-specific repository interface
+            Extends generic repository with route-specific operations
+            </summary>
+        </member>
+        <member name="T:BusBuddy.Core.Data.Interfaces.IStudentRepository">
+            <summary>
+            Student-specific repository interface
+            Extends generic repository with student-specific operations
+            </summary>
+        </member>
+        <member name="T:BusBuddy.Core.Data.Repositories.ActivityRepository">
+            <summary>
+            Activity-specific repository implementation
+            Extends generic repository with activity-specific operations
+            </summary>
+        </member>
+        <member name="T:BusBuddy.Core.Data.Repositories.ActivityScheduleRepository">
+            <summary>
+            ActivitySchedule-specific repository implementation
+            Extends generic repository with activity schedule operations
+            </summary>
+        </member>
+        <member name="T:BusBuddy.Core.Data.Repositories.BusRepository">
+            <summary>
+            Bus-specific repository implementation
+            Extends generic repository with bus/vehicle-specific operations
+            </summary>
+        </member>
+        <member name="T:BusBuddy.Core.Data.Repositories.DriverRepository">
+            <summary>
+            Driver-specific repository implementation
+            Extends generic repository with driver-specific operations
+            </summary>
+        </member>
+        <member name="T:BusBuddy.Core.Data.Repositories.FuelRepository">
+            <summary>
+            Fuel-specific repository implementation
+            Extends generic repository with fuel record operations
+            </summary>
+        </member>
+        <member name="T:BusBuddy.Core.Data.Repositories.MaintenanceRepository">
+            <summary>
+            Maintenance-specific repository implementation
+            Extends generic repository with maintenance record operations
+            </summary>
+        </member>
+        <member name="T:BusBuddy.Core.Data.Repositories.Repository`1">
+            <summary>
+            Generic repository implementation for common CRUD operations
+            Supports both async and sync operations for Syncfusion compatibility
+            Includes soft delete functionality and audit tracking
+            </summary>
+            <typeparam name="T">Entity type</typeparam>
+        </member>
+        <member name="T:BusBuddy.Core.Data.Repositories.RouteRepository">
+            <summary>
+            Route-specific repository implementation
+            Extends generic repository with route-specific operations
+            </summary>
+        </member>
+        <member name="T:BusBuddy.Core.Data.Repositories.ScheduleRepository">
+            <summary>
+            Schedule-specific repository implementation
+            Extends generic repository with schedule operations
+            </summary>
+        </member>
+        <member name="T:BusBuddy.Core.Data.Repositories.SchoolCalendarRepository">
+            <summary>
+            SchoolCalendar-specific repository implementation
+            Extends generic repository with school calendar operations
+            </summary>
+        </member>
+        <member name="T:BusBuddy.Core.Data.Repositories.StudentRepository">
+            <summary>
+            Student-specific repository implementation
+            Extends generic repository with student-specific operations
+            </summary>
+        </member>
+        <member name="T:BusBuddy.Core.Data.Repositories.VehicleRepository">
+            <summary>
+            Thread-safe repository for Vehicle (Bus) entities with optimized query patterns
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Data.Repositories.VehicleRepository.GetAllWithRoutesAsync">
+            <summary>
+            Get all vehicles with their routes using split queries to prevent cartesian explosion
+            Each thread gets its own context for thread safety
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Data.Repositories.VehicleRepository.GetVehicleWithDetailsAsync(System.Int32)">
+            <summary>
+            Get a vehicle with all related data using split queries
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Data.Repositories.VehicleRepository.GetActiveVehiclesAsync">
+            <summary>
+            Gets vehicles matching specific criteria
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Data.Repositories.VehicleRepository.GetVehiclesDueForMaintenanceAsync">
+            <summary>
+            Gets vehicles with maintenance records that are due for service
+            </summary>
+        </member>
+        <member name="T:BusBuddy.Core.Data.Repositories.IVehicleRepository">
+            <summary>
+            Interface for the Vehicle repository with specialized methods
+            </summary>
+        </member>
+        <member name="T:BusBuddy.Core.Data.SeedDataService">
+            <summary>
+            Service for seeding real-world transportation data into BusBuddy database
+            Provides infrastructure for importing, validating, and managing seed data
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Data.SeedDataService.AnalyzeDataStructureAsync">
+            <summary>
+            Analyzes current data structure requirements for real-world data integration
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Data.SeedDataService.PrepareForRealWorldDataAsync">
+            <summary>
+            Prepares database for real-world data seeding
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Data.SeedDataService.SeedRealWorldDataAsync(System.String)">
+            <summary>
+            Seeds real-world transportation data from provided JSON file
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Data.SeedDataService.SeedSampleDataAsync">
+            <summary>
+            Seeds sample transportation data for development and testing
+            </summary>
+        </member>
+        <member name="T:BusBuddy.Core.Data.DataStructureAnalysis">
+            <summary>
+            Analysis of data structure requirements for real-world transportation data
+            </summary>
+        </member>
+        <member name="T:BusBuddy.Core.Data.DriverRequirements">
+            <summary>
+            Requirements analysis for driver data structure
+            </summary>
+        </member>
+        <member name="T:BusBuddy.Core.Data.VehicleRequirements">
+            <summary>
+            Requirements analysis for vehicle data structure
+            </summary>
+        </member>
+        <member name="T:BusBuddy.Core.Data.ActivityScheduleRequirements">
+            <summary>
+            Requirements analysis for activity schedule data structure
+            </summary>
+        </member>
+        <member name="T:BusBuddy.Core.Data.SeedDataResult">
+            <summary>
+            Result of data seeding operation
+            </summary>
+        </member>
+        <member name="T:BusBuddy.Core.Data.RealWorldTransportationData">
+            <summary>
+            Real-world transportation data structure for JSON import
+            </summary>
+        </member>
+        <member name="T:BusBuddy.Core.Data.RealWorldDriver">
+            <summary>
+            Real-world driver data structure
+            </summary>
+        </member>
+        <member name="T:BusBuddy.Core.Data.RealWorldVehicle">
+            <summary>
+            Real-world vehicle data structure
+            </summary>
+        </member>
+        <member name="T:BusBuddy.Core.Data.RealWorldActivity">
+            <summary>
+            Real-world activity/trip data structure
+            </summary>
+        </member>
+        <member name="T:BusBuddy.Core.Data.UnitOfWork.IUnitOfWork">
+            <summary>
+            Unit of Work interface for managing transactions and coordinating repositories
+            Ensures data consistency across multiple repository operations
+            </summary>
+        </member>
+        <member name="T:BusBuddy.Core.Data.UnitOfWork.UnitOfWork">
+            <summary>
+            Unit of Work implementation for managing transactions and coordinating repositories
+            Ensures data consistency across multiple repository operations
+            </summary>
+        </member>
+        <member name="T:BusBuddy.Core.Extensions.ActivityLogServiceExtensions">
+            <summary>
+            Extension methods for IActivityLogService to handle common logging scenarios
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Extensions.ActivityLogServiceExtensions.LogExceptionAsync(BusBuddy.Core.Services.IActivityLogService,System.String,System.String,System.Exception)">
+            <summary>
+            Logs an exception with properly formatted and truncated details
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Extensions.ActivityLogServiceExtensions.LogCreateAsync``1(BusBuddy.Core.Services.IActivityLogService,System.String,``0)">
+            <summary>
+            Logs a CRUD operation for an entity with appropriate context
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Extensions.ActivityLogServiceExtensions.LogUpdateAsync``1(BusBuddy.Core.Services.IActivityLogService,System.String,``0)">
+            <summary>
+            Logs an update operation for an entity with appropriate context
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Extensions.ActivityLogServiceExtensions.LogDeleteAsync``1(BusBuddy.Core.Services.IActivityLogService,System.String,``0)">
+            <summary>
+            Logs a delete operation for an entity with appropriate context
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Extensions.ActivityLogServiceExtensions.LogViewAsync``1(BusBuddy.Core.Services.IActivityLogService,System.String,``0)">
+            <summary>
+            Logs a view operation for an entity with appropriate context
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Extensions.ActivityLogServiceExtensions.LogBulkOperationAsync``1(BusBuddy.Core.Services.IActivityLogService,System.String,System.String,System.Collections.Generic.IEnumerable{``0},System.String)">
+            <summary>
+            Logs a bulk operation on multiple entities
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Extensions.ActivityLogServiceExtensions.LogUserAuthenticationAsync(BusBuddy.Core.Services.IActivityLogService,System.String,System.Boolean,System.String)">
+            <summary>
+            Logs user authentication events
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Extensions.ActivityLogServiceExtensions.LogSystemEventAsync(BusBuddy.Core.Services.IActivityLogService,System.String,System.String,System.String)">
+            <summary>
+            Logs a system event that isn't tied to a specific entity
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Extensions.ActivityLogServiceExtensions.LogConfigurationChangeAsync(BusBuddy.Core.Services.IActivityLogService,System.String,System.String,System.String,System.String)">
+            <summary>
+            Logs a configuration change
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Extensions.ActivityLogServiceExtensions.FormatExceptionForLogging(System.Exception)">
+            <summary>
+            Formats an exception for database logging with size constraints in mind
+            </summary>
+        </member>
+        <member name="T:BusBuddy.Core.Extensions.DatabaseOperationExtensions">
+            <summary>
+            Extension methods for enhanced database operations with resilience patterns
+            Implements the recommended patterns for handling SqlException and InvalidCastException
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Extensions.DatabaseOperationExtensions.AddDatabaseResilience(Microsoft.Extensions.DependencyInjection.IServiceCollection)">
+            <summary>
+            Configures database services with resilience patterns
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Extensions.DatabaseOperationExtensions.SafeQueryAsync``1(Microsoft.EntityFrameworkCore.DbContext,System.Linq.IQueryable{``0},System.String)">
+            <summary>
+            Executes a query with automatic retry and exception handling
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Extensions.DatabaseOperationExtensions.SafeExecuteAsync``1(Microsoft.EntityFrameworkCore.DbContext,System.Func{System.Threading.Tasks.Task{``0}},System.String,System.Boolean)">
+            <summary>
+            Safely executes a database command with transaction support
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Extensions.DatabaseOperationExtensions.ValidateEntity``1(``0)">
+            <summary>
+            Validates entity before saving to prevent common exceptions
+            </summary>
+        </member>
+        <member name="T:BusBuddy.Core.Extensions.SafeDatabaseOperations">
+            <summary>
+            Service providing safe database operations with comprehensive error handling
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Extensions.SafeDatabaseOperations.GetBusesAsync(BusBuddy.Core.Data.BusBuddyDbContext)">
+            <summary>
+            Safely retrieves buses with enhanced error handling
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Extensions.SafeDatabaseOperations.GetDriversAsync(BusBuddy.Core.Data.BusBuddyDbContext)">
+            <summary>
+            Safely retrieves drivers with enhanced error handling
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Extensions.SafeDatabaseOperations.GetRoutesAsync(BusBuddy.Core.Data.BusBuddyDbContext)">
+            <summary>
+            Safely retrieves routes with related data
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Extensions.SafeDatabaseOperations.SaveEntityAsync``1(BusBuddy.Core.Data.BusBuddyDbContext,``0)">
+            <summary>
+            Safely saves an entity with validation and error handling
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Extensions.SafeDatabaseOperations.UpdateEntityAsync``1(BusBuddy.Core.Data.BusBuddyDbContext,``0)">
+            <summary>
+            Safely updates an entity with validation and error handling
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Extensions.SafeDatabaseOperations.CheckDatabaseHealthAsync(BusBuddy.Core.Data.BusBuddyDbContext)">
+            <summary>
+            Performs database health check and reports issues
+            </summary>
+        </member>
+        <member name="T:BusBuddy.Core.Extensions.DbContextExtensions">
+            <summary>
+            Extensions for DbContext to improve logging and performance tracking
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Extensions.DbContextExtensions.ExecuteWithLoggingAsync``1(Microsoft.EntityFrameworkCore.DbContext,System.String,System.Func{System.Threading.Tasks.Task{``0}},System.String,System.Object)">
+            <summary>
+            Executes a query with detailed performance logging
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Extensions.DbContextExtensions.SaveChangesWithLoggingAsync(Microsoft.EntityFrameworkCore.DbContext,System.String,System.String,System.Object)">
+            <summary>
+            Executes an update/insert/delete operation with detailed performance logging
+            </summary>
+        </member>
+        <member name="T:BusBuddy.Core.Extensions.EFCoreDebuggingExtensions">
+            <summary>
+            Extensions for enhanced EF Core debugging capabilities following Microsoft best practices
+            Provides comprehensive debugging tools for SQL Server Express interactions
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Extensions.EFCoreDebuggingExtensions.EnableComprehensiveDebugging(Microsoft.EntityFrameworkCore.DbContextOptionsBuilder)">
+            <summary>
+            Configure DbContext for comprehensive debugging and logging
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Extensions.EFCoreDebuggingExtensions.GetChangeTrackerDebugInfo(Microsoft.EntityFrameworkCore.DbContext)">
+            <summary>
+            Get detailed change tracker debug information
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Extensions.EFCoreDebuggingExtensions.GetEntityKeyInfo(Microsoft.EntityFrameworkCore.ChangeTracking.EntityEntry)">
+            <summary>
+            Get entity key information for debugging
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Extensions.EFCoreDebuggingExtensions.ExecuteWithDebugInfoAsync``1(Microsoft.EntityFrameworkCore.DbContext,System.Func{System.Threading.Tasks.Task{``0}},System.String)">
+            <summary>
+            Execute query with comprehensive performance and debugging information
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Extensions.EFCoreDebuggingExtensions.GetDatabaseDiagnosticsAsync(Microsoft.EntityFrameworkCore.DbContext)">
+            <summary>
+            Get database connection and query statistics
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Extensions.EFCoreDebuggingExtensions.ResetForDebugging(Microsoft.EntityFrameworkCore.DbContext)">
+            <summary>
+            Clear change tracker and reset context state for debugging
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Extensions.EFCoreDebuggingExtensions.GenerateDebugMigrationScriptAsync(Microsoft.EntityFrameworkCore.DbContext,System.String,System.String)">
+            <summary>
+            Generate SQL script for creating the database schema
+            </summary>
+        </member>
+        <member name="T:BusBuddy.Core.Extensions.DatabaseDiagnostics">
+            <summary>
+            Comprehensive database diagnostics information for debugging
+            </summary>
+        </member>
+        <member name="T:BusBuddy.Core.Extensions.ServiceCollectionExtensions">
+            <summary>
+            Extension methods for registering data services with dependency injection
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Extensions.ServiceCollectionExtensions.AddDataServices(Microsoft.Extensions.DependencyInjection.IServiceCollection,Microsoft.Extensions.Configuration.IConfiguration)">
+            <summary>
+            Register all data services including DbContext, repositories, and Unit of Work
+            </summary>
+        </member>
+        <member name="T:BusBuddy.Core.Utilities.LoggingExtensions">
+            <summary>
+            Provides extension methods for enhanced logging functionality
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Utilities.LoggingExtensions.TrackPerformance``1(Serilog.ILogger,System.String,System.Func{``0},System.String,System.Object)">
+            <summary>
+            Measures and logs the execution time of an operation
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Utilities.LoggingExtensions.TrackPerformanceAsync``1(Serilog.ILogger,System.String,System.Func{System.Threading.Tasks.Task{``0}},System.String,System.Object)">
+            <summary>
+            Measures and logs the execution time of an asynchronous operation
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Utilities.LoggingExtensions.ExecuteWithTracking``1(Serilog.ILogger,System.String,System.Func{``0})">
+            <summary>
+            Helper method to execute and track a synchronous operation
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Utilities.LoggingExtensions.ExecuteWithTrackingAsync``1(Serilog.ILogger,System.String,System.Func{System.Threading.Tasks.Task{``0}})">
+            <summary>
+            Helper method to execute and track an asynchronous operation
+            </summary>
+        </member>
+        <member name="T:BusBuddy.Core.Utilities.DatabaseNullFixUtility">
+            <summary>
+            Console utility to immediately fix NULL values in the database
+            Run this to resolve SqlNullValueException errors
+            </summary>
+        </member>
+        <member name="T:BusBuddy.Core.Utilities.DatabaseResilienceService">
+            <summary>
+            Service for implementing database resilience patterns and handling transient faults
+            Provides retry logic, circuit breaker pattern, and comprehensive error handling
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Utilities.DatabaseResilienceService.ExecuteWithResilienceAsync``1(System.Func{System.Threading.Tasks.Task{``0}},System.String,System.Int32,System.Nullable{System.TimeSpan})">
+            <summary>
+            Executes a database operation with retry logic and circuit breaker pattern
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Utilities.DatabaseResilienceService.ShouldRetry(System.Exception,System.Int32,System.Int32)">
+            <summary>
+            Determines if an exception should trigger a retry
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Utilities.DatabaseResilienceService.IsTransientSqlError(Microsoft.Data.SqlClient.SqlException)">
+            <summary>
+            Checks if SQL error is transient and worth retrying
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Utilities.DatabaseResilienceService.RecordFailure">
+            <summary>
+            Records a failure for circuit breaker pattern
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Utilities.DatabaseResilienceService.ResetCircuitBreaker">
+            <summary>
+            Resets the circuit breaker after successful operation
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Utilities.DatabaseResilienceService.IsCircuitBreakerOpen">
+            <summary>
+            Checks if circuit breaker is open (blocking operations)
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Utilities.DatabaseResilienceService.CheckDatabaseHealthAsync(Microsoft.EntityFrameworkCore.DbContext)">
+            <summary>
+            Validates database connection and schema
+            </summary>
+        </member>
+        <member name="T:BusBuddy.Core.Utilities.DatabaseHealthResult">
+            <summary>
+            Result of database health check
+            </summary>
+        </member>
+        <member name="T:BusBuddy.Core.Utilities.DatabaseOperationException">
+            <summary>
+            Custom exception for database operation failures
+            </summary>
+        </member>
+        <member name="T:BusBuddy.Core.Utilities.DatabaseSchemaValidator">
+            <summary>
+            Utility to validate and patch database schema when migrations cannot be used
+            Provides a holistic approach to ensure all required columns exist in the database
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Utilities.DatabaseSchemaValidator.ValidateRoutesTable(Microsoft.Data.SqlClient.SqlConnection)">
+            <summary>
+            Comprehensive validation of the Routes table
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Utilities.DatabaseSchemaValidator.ValidateActivitiesTable(Microsoft.Data.SqlClient.SqlConnection)">
+            <summary>
+            Validates the Activities table schema
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Utilities.DatabaseSchemaValidator.ValidateDriversTable(Microsoft.Data.SqlClient.SqlConnection)">
+            <summary>
+            Validates the Drivers table schema
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Utilities.DatabaseSchemaValidator.ValidateVehiclesTable(Microsoft.Data.SqlClient.SqlConnection)">
+            <summary>
+            Validates the Vehicles (Buses) table schema
+            </summary>
+        </member>
+        <member name="T:BusBuddy.Core.Utilities.DatabaseValidator">
+            <summary>
+            Utility class for validating database data integrity
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Utilities.DatabaseValidator.ValidateDatabaseDataAsync(System.Boolean)">
+            <summary>
+            Validates the database data integrity
+            </summary>
+            <param name="breakOnIssue">If true, will call Debugger.Break() when issues are found (only in debug mode)</param>
+            <returns>A collection of validation issues found</returns>
+        </member>
+        <member name="M:BusBuddy.Core.Utilities.DatabaseValidator.RunAutomaticFixesAsync(System.Boolean)">
+            <summary>
+            Runs automatic fixes for common database integrity issues
+            </summary>
+            <param name="breakOnFix">If true, will call Debugger.Break() when fixes are applied (only in debug mode)</param>
+            <returns>The number of issues fixed</returns>
+        </member>
+        <member name="T:BusBuddy.Core.Utilities.EnvironmentHelper">
+            <summary>
+            Helper class for environment-related utilities
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Utilities.EnvironmentHelper.IsDevelopment">
+            <summary>
+            Checks if the application is running in development mode
+            </summary>
+            <returns>True if running in development environment, false otherwise</returns>
+        </member>
+        <member name="M:BusBuddy.Core.Utilities.EnvironmentHelper.GetEnvironmentName">
+            <summary>
+            Gets the current environment name
+            </summary>
+            <returns>The environment name (Development, Staging, Production) or "Production" if not set</returns>
+        </member>
+        <member name="M:BusBuddy.Core.Utilities.EnvironmentHelper.IsSensitiveDataLoggingEnabled">
+            <summary>
+            Checks if sensitive data logging should be enabled
+            </summary>
+            <returns>True if sensitive data logging should be enabled, false otherwise</returns>
+        </member>
+        <member name="T:BusBuddy.Core.Utilities.ExceptionHelper">
+            <summary>
+            Utility class for handling and diagnosing common exceptions in BusBuddy
+            Specifically designed to address SqlException, InvalidCastException, and ArgumentException issues
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Utilities.ExceptionHelper.AnalyzeSqlException(Microsoft.Data.SqlClient.SqlException)">
+            <summary>
+            Analyzes and provides detailed information about SQL Server exceptions
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Utilities.ExceptionHelper.AnalyzeEfException(Microsoft.EntityFrameworkCore.DbUpdateException)">
+            <summary>
+            Analyzes Entity Framework specific exceptions
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Utilities.ExceptionHelper.AnalyzeInvalidCastException(System.InvalidCastException)">
+            <summary>
+            Analyzes InvalidCastException which commonly occurs with NULL values
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Utilities.ExceptionHelper.AnalyzeArgumentException(System.ArgumentException)">
+            <summary>
+            Analyzes ArgumentException which can occur during WPF binding or validation
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Utilities.ExceptionHelper.AnalyzeException(System.Exception)">
+            <summary>
+            Comprehensive exception analyzer that handles multiple exception types
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Utilities.ExceptionHelper.ExecuteWithRetryAsync``1(System.Func{System.Threading.Tasks.Task{``0}},System.Int32)">
+            <summary>
+            Safe method to execute database operations with automatic retry and detailed error reporting
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Utilities.ExceptionHelper.IsTransientError(Microsoft.Data.SqlClient.SqlException)">
+            <summary>
+            Determines if a SQL exception is transient (temporary) and worth retrying
+            </summary>
+        </member>
+        <member name="T:BusBuddy.Core.Interceptors.DatabaseDebuggingInterceptor">
+            <summary>
+            EF Core interceptor for debugging SQL queries and performance monitoring
+            Captures detailed information about database interactions for SQL Server Express debugging
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Interceptors.DatabaseDebuggingInterceptor.GetRecentQueries(System.Int32)">
+            <summary>
+            Get recent query execution information for debugging
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Interceptors.DatabaseDebuggingInterceptor.GetPerformanceStats">
+            <summary>
+            Get performance statistics for recent queries
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Interceptors.DatabaseDebuggingInterceptor.ClearHistory">
+            <summary>
+            Clear recent query history
+            </summary>
+        </member>
+        <member name="T:BusBuddy.Core.Interceptors.QueryExecutionInfo">
+            <summary>
+            Information about a query execution for debugging purposes
+            </summary>
+        </member>
+        <member name="T:BusBuddy.Core.Interceptors.QueryPerformanceStats">
+            <summary>
+            Performance statistics for query debugging
+            </summary>
+        </member>
+        <member name="T:BusBuddy.Core.Logging.ActivityLoggingPerformanceTracker">
+            <summary>
+            Provides DEBUG instrumentation for activity logging services
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Logging.ActivityLoggingPerformanceTracker.#ctor(System.String,System.String,System.String)">
+            <summary>
+            Creates a new instance of the ActivityLoggingPerformanceTracker for DEBUG instrumentation
+            </summary>
+            <param name="operationName">Name of the logging operation</param>
+            <param name="additionalContext">Optional additional context information</param>
+            <param name="callerMemberName">Automatically populated with the calling method name</param>
+        </member>
+        <member name="M:BusBuddy.Core.Logging.ActivityLoggingPerformanceTracker.Complete(System.String)">
+            <summary>
+            Logs completion of the operation with timing information
+            </summary>
+            <param name="result">Optional result information</param>
+        </member>
+        <member name="M:BusBuddy.Core.Logging.ActivityLoggingPerformanceTracker.Error(System.Exception)">
+            <summary>
+            Logs an error that occurred during the operation
+            </summary>
+            <param name="exception">The exception that occurred</param>
+        </member>
+        <member name="M:BusBuddy.Core.Logging.ActivityLoggingPerformanceTracker.Dispose">
+            <summary>
+            Disposes the tracker and logs completion if not already logged
+            </summary>
+        </member>
+        <member name="T:BusBuddy.Core.Logging.QueryTrackingEnricher">
+            <summary>
+            Serilog enricher to track and flag redundant database queries
+            </summary>
+        </member>
+        <member name="T:BusBuddy.Core.Migrations.InitialCreate">
+            <inheritdoc />
+        </member>
+        <member name="M:BusBuddy.Core.Migrations.InitialCreate.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:BusBuddy.Core.Migrations.InitialCreate.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:BusBuddy.Core.Migrations.InitialCreate.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:BusBuddy.Core.Migrations.AddActivityLogTimestampIndex">
+            <inheritdoc />
+        </member>
+        <member name="M:BusBuddy.Core.Migrations.AddActivityLogTimestampIndex.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:BusBuddy.Core.Migrations.AddActivityLogTimestampIndex.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:BusBuddy.Core.Migrations.AddActivityLogTimestampIndex.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:BusBuddy.Core.Migrations.AddSportsCategory">
+            <inheritdoc />
+        </member>
+        <member name="M:BusBuddy.Core.Migrations.AddSportsCategory.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:BusBuddy.Core.Migrations.AddSportsCategory.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:BusBuddy.Core.Migrations.AddSportsCategory.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:BusBuddy.Core.Migrations.FixSeedDataStaticDates">
+            <inheritdoc />
+        </member>
+        <member name="M:BusBuddy.Core.Migrations.FixSeedDataStaticDates.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:BusBuddy.Core.Migrations.FixSeedDataStaticDates.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:BusBuddy.Core.Migrations.FixSeedDataStaticDates.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:BusBuddy.Core.Models.Activity">
+            <summary>
+            Represents an activity record for bus operations
+            Based on Activities Table from BusBuddy Tables schema
+            Matches requirements: Date, Activity, Destination, Leave Time, Event Time, Requested By, Assigned Vehicle, Driver
+            Enhanced for Syncfusion data binding with INotifyPropertyChanged support
+            </summary>
+        </member>
+        <member name="T:BusBuddy.Core.Models.ActivitySchedule">
+            <summary>
+            Represents activity schedule information for Syncfusion scheduling
+            Based on Activity Schedule requirements from BusBuddy Tables schema
+            Built for Syncfusion scheduling methodology integration
+            Captures scheduled records of all Sports Trips and Activities
+            </summary>
+        </member>
+        <member name="T:BusBuddy.Core.Models.Base.BaseEntity">
+            <summary>
+            Base entity class with audit fields and common properties
+            Supports agile schema evolution with audit tracking and soft deletes
+            Implements INotifyPropertyChanged for Syncfusion data binding
+            </summary>
+        </member>
+        <member name="P:BusBuddy.Core.Models.Base.BaseEntity.Id">
+            <summary>
+            Primary key - override in derived classes if needed
+            </summary>
+        </member>
+        <member name="P:BusBuddy.Core.Models.Base.BaseEntity.CreatedDate">
+            <summary>
+            Audit field: When the record was created
+            </summary>
+        </member>
+        <member name="P:BusBuddy.Core.Models.Base.BaseEntity.UpdatedDate">
+            <summary>
+            Audit field: When the record was last updated
+            </summary>
+        </member>
+        <member name="P:BusBuddy.Core.Models.Base.BaseEntity.CreatedBy">
+            <summary>
+            Audit field: Who created the record
+            </summary>
+        </member>
+        <member name="P:BusBuddy.Core.Models.Base.BaseEntity.UpdatedBy">
+            <summary>
+            Audit field: Who last updated the record
+            </summary>
+        </member>
+        <member name="P:BusBuddy.Core.Models.Base.BaseEntity.IsDeleted">
+            <summary>
+            Soft delete flag - records are marked as deleted instead of being physically removed
+            </summary>
+        </member>
+        <member name="P:BusBuddy.Core.Models.Base.BaseEntity.CustomFields">
+            <summary>
+            JSON column for storing custom/dynamic fields to support schema evolution
+            Allows adding fields without database schema changes
+            </summary>
+        </member>
+        <member name="P:BusBuddy.Core.Models.Base.BaseEntity.IsActive">
+            <summary>
+            Computed property: Opposite of IsDeleted for UI convenience
+            </summary>
+        </member>
+        <member name="P:BusBuddy.Core.Models.Base.BaseEntity.RowVersion">
+            <summary>
+            Computed property: Version for optimistic concurrency control
+            </summary>
+        </member>
+        <member name="P:BusBuddy.Core.Models.Base.BaseEntity.DaysOld">
+            <summary>
+            Computed property: Days since creation
+            </summary>
+        </member>
+        <member name="P:BusBuddy.Core.Models.Base.BaseEntity.DaysSinceUpdate">
+            <summary>
+            Computed property: Days since last update
+            </summary>
+        </member>
+        <member name="P:BusBuddy.Core.Models.Base.BaseEntity.AuditInfo">
+            <summary>
+            Computed property: Display text for audit information
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Models.Base.BaseEntity.Validate(System.ComponentModel.DataAnnotations.ValidationContext)">
+            <summary>
+            Extension point for derived classes to add custom validation
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Models.Base.BaseEntity.OnSaving">
+            <summary>
+            Extension point for derived classes to perform pre-save operations
+            </summary>
+        </member>
+        <member name="E:BusBuddy.Core.Models.Base.BaseEntity.PropertyChanged">
+            <summary>
+            INotifyPropertyChanged implementation for Syncfusion data binding
+            </summary>
+        </member>
+        <member name="T:BusBuddy.Core.Models.Bus">
+            <summary>
+            Represents a school bus vehicle in the fleet
+            Based on Vehicle Table from BusBuddy Tables schema
+            Matches requirements: Bus #, Year, Make, Model, Seating Capacity, VIN Number, License Number, Date Last Inspection
+            Enhanced for Syncfusion data binding with INotifyPropertyChanged support and comprehensive NULL handling
+            </summary>
+        </member>
+        <member name="T:BusBuddy.Core.Models.Color">
+            <summary>
+            Core color structure for Bus Buddy application
+            Represents ARGB color values without UI framework dependencies
+            Can be converted to WPF colors in the UI layer
+            </summary>
+        </member>
+        <member name="P:BusBuddy.Core.Models.Color.R">
+            <summary>
+            Red component (0-255)
+            </summary>
+        </member>
+        <member name="P:BusBuddy.Core.Models.Color.G">
+            <summary>
+            Green component (0-255)
+            </summary>
+        </member>
+        <member name="P:BusBuddy.Core.Models.Color.B">
+            <summary>
+            Blue component (0-255)
+            </summary>
+        </member>
+        <member name="P:BusBuddy.Core.Models.Color.A">
+            <summary>
+            Alpha component (0-255, where 255 is fully opaque)
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Models.Color.#ctor(System.Byte,System.Byte,System.Byte,System.Byte)">
+            <summary>
+            Creates a new Color with the specified ARGB values
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Models.Color.#ctor(System.Byte,System.Byte,System.Byte)">
+            <summary>
+            Creates a new Color with the specified RGB values (fully opaque)
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Models.Color.ToString">
+            <summary>
+            Returns a hexadecimal string representation of the color
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Models.Color.FromArgb(System.Int32)">
+            <summary>
+            Creates a Color from ARGB integer value
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Models.Color.ToArgb">
+            <summary>
+            Converts to ARGB integer value
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Models.Color.Equals(System.Object)">
+            <summary>
+            Equality comparison
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Models.Color.GetHashCode">
+            <summary>
+            Hash code generation
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Models.Color.op_Equality(BusBuddy.Core.Models.Color,BusBuddy.Core.Models.Color)">
+            <summary>
+            Equality operator
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Models.Color.op_Inequality(BusBuddy.Core.Models.Color,BusBuddy.Core.Models.Color)">
+            <summary>
+            Inequality operator
+            </summary>
+        </member>
+        <member name="T:BusBuddy.Core.Models.Driver">
+            <summary>
+            Represents a school bus driver
+            Based on Drivers Table from BusBuddy Tables schema
+            Matches requirements: Driver Name, Driver Phone, Driver Email, Address, City, State, Zip, Drivers Licence Type, Training Complete
+            Enhanced for Syncfusion data binding with INotifyPropertyChanged support
+            </summary>
+        </member>
+        <member name="T:BusBuddy.Core.Models.Fuel">
+            <summary>
+            Represents a fuel record for bus fleet management
+            Based on Fuel Table from BusBuddy Tables schema
+            Matches requirements: Fuel Date, Fuel Location, Vehicle Fueled, Vehicle Odometer Reading, Fuel Type
+            Enhanced for Syncfusion data binding with INotifyPropertyChanged support
+            </summary>
+        </member>
+        <member name="T:BusBuddy.Core.Models.Maintenance">
+            <summary>
+            Represents a maintenance record for bus fleet management
+            Based on Maintenance Table from BusBuddy Tables schema
+            Matches requirements: Date, Vehicle, Odometer Reading, Maintenance Completed, Vendor, Repair Cost
+            Enhanced for Syncfusion data binding with INotifyPropertyChanged support
+            </summary>
+        </member>
+        <member name="T:BusBuddy.Core.Models.Route">
+            <summary>
+            Represents a daily route record
+            Based on Routes Table from BusBuddy Tables schema
+            Enhanced with proper DateTime handling and NULL safety
+            </summary>
+        </member>
+        <member name="T:BusBuddy.Core.Models.RouteStop">
+            <summary>
+            Represents individual stops along a bus route
+            Extended model for detailed route management with GPS coordinates and timing
+            </summary>
+        </member>
+        <member name="T:BusBuddy.Core.Models.Schedule">
+            <summary>
+            Represents a scheduled bus operation for daily routes and sports/activity trips
+            Unified model for all scheduling needs including regular routes and sports trips
+            Extended model for enhanced scheduling functionality with Syncfusion components
+            </summary>
+        </member>
+        <member name="T:BusBuddy.Core.Models.SchoolCalendar">
+            <summary>
+            Represents school calendar information
+            Based on School Calendar requirements from BusBuddy Tables schema
+            Captures school dates, holidays, events like Thanksgiving Break, Christmas Break, Spring Break
+            School Year begins July 1 and ends June 30th
+            </summary>
+        </member>
+        <member name="T:BusBuddy.Core.Models.Student">
+            <summary>
+            Represents a student in the school bus system
+            Based on Students Table from BusBuddy Tables schema
+            Enhanced for Syncfusion data binding with INotifyPropertyChanged support
+            </summary>
+        </member>
+        <member name="T:BusBuddy.Core.Models.StudentSchedule">
+            <summary>
+            Represents the relationship between students and scheduled trips
+            Enables assignment of students to specific scheduled trips/activities
+            Bridge table for many-to-many relationship between Students and Schedules
+            </summary>
+        </member>
+        <member name="T:BusBuddy.Core.Models.Trips.TripType">
+            <summary>
+            Trip type enumeration for athletic and field trips
+            </summary>
+        </member>
+        <member name="T:BusBuddy.Core.Models.Trips.TripEvent">
+            <summary>
+            Enhanced trip event model for athletic and field trips
+            Core domain model without UI dependencies
+            </summary>
+        </member>
+        <member name="P:BusBuddy.Core.Models.Trips.TripEvent.DisplayTripType">
+            <summary>
+            Gets a formatted display name for the trip type
+            </summary>
+        </member>
+        <member name="P:BusBuddy.Core.Models.Trips.TripEvent.IsAthleticTrip">
+            <summary>
+            Gets whether this trip is an athletic trip
+            </summary>
+        </member>
+        <member name="P:BusBuddy.Core.Models.Trips.TripEvent.HasUnassignedResources">
+            <summary>
+            Gets whether vehicle or driver assignments are missing
+            </summary>
+        </member>
+        <member name="P:BusBuddy.Core.Models.Trips.TripEvent.AssignmentStatus">
+            <summary>
+            Gets formatted assignment status
+            </summary>
+        </member>
+        <member name="P:BusBuddy.Core.Models.Trips.TripEvent.StartTime">
+            <summary>
+            Gets the start time for scheduling purposes
+            </summary>
+        </member>
+        <member name="P:BusBuddy.Core.Models.Trips.TripEvent.EndTime">
+            <summary>
+            Gets the end time for scheduling purposes
+            </summary>
+        </member>
+        <member name="P:BusBuddy.Core.Models.Trips.TripEvent.Subject">
+            <summary>
+            Gets the subject/title for display
+            </summary>
+        </member>
+        <member name="P:BusBuddy.Core.Models.Trips.TripEvent.Notes">
+            <summary>
+            Gets trip notes for display
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Models.Trips.TripEvent.CreateSample(BusBuddy.Core.Models.Trips.TripType,System.DateTime,System.String,System.String)">
+            <summary>
+            Creates a sample trip event for testing
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Services.ActivityLogService.GetLogsPagedAsync(System.Int32,System.Int32)">
+            <summary>
+            Get activity logs with pagination support for better performance
+            </summary>
+            <param name="pageNumber">Page number (1-based)</param>
+            <param name="pageSize">Number of records per page (default: 50)</param>
+            <returns>Paged activity logs</returns>
+        </member>
+        <member name="T:BusBuddy.Core.Services.ActivityScheduleService">
+            <summary>
+            Implementation of the IActivityScheduleService interface
+            Provides operations for managing activity schedules
+            </summary>
+        </member>
+        <member name="T:BusBuddy.Core.Services.ActivityService">
+            <summary>
+            Service for managing Activity/Schedule operations
+            </summary>
+        </member>
+        <member name="T:BusBuddy.Core.Services.AddressValidationService">
+            <summary>
+            Implementation of address validation service that uses a combination of
+            basic regex validation and the database of known bus stops
+            In a production environment, this would likely call an external geocoding API
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Services.AddressValidationService.ValidateAddressAsync(System.String,System.String,System.String,System.String)">
+            <inheritdoc />
+        </member>
+        <member name="M:BusBuddy.Core.Services.AddressValidationService.FindNearbyBusStopsAsync(System.String,System.String,System.String,System.String)">
+            <inheritdoc />
+        </member>
+        <member name="M:BusBuddy.Core.Services.AddressValidationService.GetDistanceToBusStopAsync(System.String,System.String)">
+            <inheritdoc />
+        </member>
+        <member name="M:BusBuddy.Core.Services.AddressValidationService.FormatAddress(System.String,System.String,System.String,System.String)">
+            <inheritdoc />
+        </member>
+        <member name="M:BusBuddy.Core.Services.AddressValidationService.ParseAddress(System.String)">
+            <inheritdoc />
+        </member>
+        <member name="T:BusBuddy.Core.Services.AIEnhancedRouteService">
+            <summary>
+            AI-Enhanced Route Service that combines existing route management with xAI intelligence
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Services.AIEnhancedRouteService.GetAIRouteAnalysisAsync(System.Int32)">
+            <summary>
+            Get AI-enhanced route analysis combining local data with satellite intelligence
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Services.AIEnhancedRouteService.GetRoutesWithAISummaryAsync">
+            <summary>
+            Get all routes with AI enhancement summary
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Services.AIEnhancedRouteService.OptimizeRouteAsync(System.Int32)">
+            <summary>
+            Optimize route using AI recommendations
+            </summary>
+        </member>
+        <member name="T:BusBuddy.Core.Services.RouteAnalysisResult">
+            <summary>
+            Result of AI-enhanced route analysis
+            </summary>
+        </member>
+        <member name="T:BusBuddy.Core.Services.RouteWithAISummary">
+            <summary>
+            Route with AI summary information
+            </summary>
+        </member>
+        <member name="T:BusBuddy.Core.Services.BusBuddyAIReportingService">
+            <summary>
+            Advanced AI Reporting Service for BusBuddy with caching, context awareness, and performance monitoring
+            Implements all expert recommendations from xAI API consultation
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Services.BusBuddyAIReportingService.GenerateReportAsync(System.String,System.String,System.Collections.Generic.Dictionary{System.String,System.Object})">
+            <summary>
+            Generate comprehensive AI reports with context awareness and performance monitoring
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Services.BusBuddyAIReportingService.CallAIWithRetryAsync(System.String,System.String,System.Int32)">
+            <summary>
+            AI API call with exponential backoff retry logic
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Services.BusBuddyAIReportingService.CacheReportAsync(System.String,BusBuddy.Core.Services.AIReportResponse)">
+            <summary>
+            Cache AI report responses to improve performance and reduce costs
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Services.BusBuddyAIReportingService.TryGetCachedReport(System.String,BusBuddy.Core.Services.AIReportResponse@)">
+            <summary>
+            Get cached report if available
+            </summary>
+        </member>
+        <member name="T:BusBuddy.Core.Services.TransportationContext">
+            <summary>
+            Transportation context caching service for AI context awareness
+            </summary>
+        </member>
+        <member name="T:BusBuddy.Core.Services.ContextAwarePromptBuilder">
+            <summary>
+            Context-aware prompt builder with real-time data integration
+            </summary>
+        </member>
+        <member name="T:BusBuddy.Core.Services.PromptTemplates">
+            <summary>
+            Custom prompt templates for different Bus Buddy scenarios
+            </summary>
+        </member>
+        <member name="T:BusBuddy.Core.Services.BusCachingService">
+            <summary>
+            Service to cache bus entity data and reduce redundant database queries
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Services.BusCachingService.GetAllBusesAsync(System.Func{System.Threading.Tasks.Task{System.Collections.Generic.List{BusBuddy.Core.Models.Bus}}})">
+            <summary>
+            Get all buses from cache or using the provided factory method
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Services.BusCachingService.GetBusByIdAsync(System.Int32,System.Func{System.Int32,System.Threading.Tasks.Task{BusBuddy.Core.Models.Bus}})">
+            <summary>
+            Get bus by ID from cache or using the provided factory method
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Services.BusCachingService.InvalidateBusCache(System.Int32)">
+            <summary>
+            Invalidate the cache for a specific bus and the all buses collection
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Services.BusCachingService.InvalidateAllBusCache">
+            <summary>
+            Invalidate the entire bus cache
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Services.BusCachingService.Dispose">
+            <summary>
+            Dispose of resources
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Services.BusCachingService.Dispose(System.Boolean)">
+            <summary>
+            Protected dispose method
+            </summary>
+        </member>
+        <member name="T:BusBuddy.Core.Services.DatabaseNullFixService">
+            <summary>
+            Service to fix NULL values in database that cause SqlNullValueException
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Services.DatabaseNullFixService.FixNullValuesNowAsync">
+            <summary>
+            Execute the NULL value fix migration immediately
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Services.DatabaseNullFixService.GetNullCountsAsync">
+            <summary>
+            Get count of NULL values in critical tables
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Services.DatabaseNullFixService.FixDriverNullsImmediateAsync">
+            <summary>
+            Execute immediate SQL fix for Drivers table NULL values
+            </summary>
+        </member>
+        <member name="T:BusBuddy.Core.Services.DatabasePerformanceOptimizer">
+            <summary>
+            Service for optimizing database performance and identifying slow queries
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Services.DatabasePerformanceOptimizer.AnalyzePerformanceAsync">
+            <summary>
+            Analyze and optimize common database queries
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Services.DatabasePerformanceOptimizer.ApplyOptimizationsAsync">
+            <summary>
+            Apply recommended performance optimizations
+            </summary>
+        </member>
+        <member name="T:BusBuddy.Core.Services.DataIntegrityService">
+            <summary>
+            Enhanced service for cleaning up NULL values, ensuring data integrity, and debugging EF Core interactions
+            Includes comprehensive EF Core debugging capabilities for SQL Server Express
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Services.DataIntegrityService.GetEFCoreDebugInfoAsync">
+            <summary>
+            Enable EF Core debugging with SQL query logging and change tracking
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Services.DataIntegrityService.GenerateMigrationScriptAsync">
+            <summary>
+            Generate SQL script for pending migrations
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Services.DataIntegrityService.ValidateDatabaseSchemaAsync">
+            <summary>
+            Validate database schema against current model
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Services.DataIntegrityService.ExecuteAdvancedDataIntegrityCheckAsync">
+            <summary>
+            Execute raw SQL with debugging and performance monitoring
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Services.DataIntegrityService.AnalyzeQueryPerformanceAsync">
+            <summary>
+            Monitor EF Core query performance and identify slow queries
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Services.DataIntegrityService.ScanForIssuesAsync">
+            <summary>
+            Scan database for NULL values in required fields
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Services.DataIntegrityService.FixDataIssuesAsync">
+            <summary>
+            Fix NULL values and data integrity issues
+            </summary>
+        </member>
+        <member name="T:BusBuddy.Core.Services.DriverService">
+            <summary>
+            Service implementation for managing school bus drivers
+            Provides CRUD operations and business logic for driver management, including route assignments
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Services.DriverService.FixNullDriverValuesIfNeeded(BusBuddy.Core.Data.BusBuddyDbContext)">
+            <summary>
+            Fix NULL values in the Drivers table to prevent SqlNullValueException
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Services.DriverService.SerializeDriverForDiagnostics(BusBuddy.Core.Models.Driver)">
+            <summary>
+            Serializes a driver object for diagnostic viewing
+            Only available in DEBUG builds
+            </summary>
+        </member>
+        <member name="T:BusBuddy.Core.Services.EFCoreDebuggingService">
+            <summary>
+            Comprehensive EF Core debugging service following Microsoft debugging best practices
+            Provides tools for debugging migrations, models, repositories, and SQL Server Express interactions
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Services.EFCoreDebuggingService.GenerateFullDebugReportAsync">
+            <summary>
+            Generate comprehensive EF Core debugging report
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Services.EFCoreDebuggingService.DebugMigrationsAsync">
+            <summary>
+            Debug specific migration issues
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Services.EFCoreDebuggingService.DebugQueryPerformanceAsync(System.String)">
+            <summary>
+            Debug specific query performance issues
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Services.EFCoreDebuggingService.ExportDebugDataAsync(System.String)">
+            <summary>
+            Export debugging information to files for analysis
+            </summary>
+        </member>
+        <member name="T:BusBuddy.Core.Services.FleetMonitoringService">
+            <summary>
+            Production Fleet Monitoring Service
+            Provides real-time monitoring, automated alerts, and proactive maintenance scheduling
+            </summary>
+        </member>
+        <member name="T:BusBuddy.Core.Services.FleetAlert">
+            <summary>
+            Fleet alert data structure
+            </summary>
+        </member>
+        <member name="T:BusBuddy.Core.Services.FleetAlertType">
+            <summary>
+            Types of fleet alerts
+            </summary>
+        </member>
+        <member name="T:BusBuddy.Core.Services.AlertPriority">
+            <summary>
+            Alert priority levels
+            </summary>
+        </member>
+        <member name="T:BusBuddy.Core.Services.FuelService">
+            <summary>
+            Fuel service implementation using Entity Framework
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Services.GeoDataService.Dispose">
+            <summary>
+            Dispose of resources
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Services.GeoDataService.Dispose(System.Boolean)">
+            <summary>
+            Protected dispose method
+            </summary>
+        </member>
+        <member name="T:BusBuddy.Core.Services.GoogleEarthEngineService">
+            <summary>
+            Google Earth Engine Integration Service
+            Provides satellite imagery, terrain analysis, and route optimization
+            using Google Earth Engine private license capabilities
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Services.GoogleEarthEngineService.#ctor(Microsoft.Extensions.Configuration.IConfiguration)">
+            <summary>
+            Required configuration keys:
+              GoogleEarthEngine:ProjectId
+              GoogleEarthEngine:ServiceAccountEmail
+              GoogleEarthEngine:ServiceAccountKeyPath
+            Service account must have Earth Engine and Drive read/write permissions.
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Services.GoogleEarthEngineService.GetRouteGeoJsonAsync(System.String)">
+            <summary>
+            Retrieves GeoJSON route data from Google Earth Engine for a given region or asset using the official export workflow.
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Services.GoogleEarthEngineService.PollForExportAndGetDriveFileIdAsync(System.String,System.String,System.Int32,System.Int32)">
+            <summary>
+            Polls the GEE export task until completion and returns the resulting Drive file ID.
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Services.GoogleEarthEngineService.TryDeleteDriveFileAsync(System.String,System.String)">
+            <summary>
+            Attempts to delete a file from Google Drive after download to avoid clutter/quota issues.
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Services.GoogleEarthEngineService.DownloadGeoJsonFromDriveAsync(System.String,System.String)">
+            <summary>
+            Downloads the exported GeoJSON file from Google Drive using the Drive API.
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Services.GoogleEarthEngineService.GetGoogleAccessTokenAsync">
+            <summary>
+            Authenticates using a Google service account key and returns an OAuth2 access token for Earth Engine and Drive APIs.
+            </summary>
+        </member>
+        <member name="T:BusBuddy.Core.Services.IAddressValidationService">
+            <summary>
+            Service for validating addresses and finding nearby bus stops
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Services.IAddressValidationService.ValidateAddressAsync(System.String,System.String,System.String,System.String)">
+            <summary>
+            Validates an address and returns normalized version if valid
+            </summary>
+            <param name="address">The address to validate</param>
+            <param name="city">The city</param>
+            <param name="state">The state</param>
+            <param name="zip">The zip code</param>
+            <returns>Tuple with validity result and normalized address if valid</returns>
+        </member>
+        <member name="M:BusBuddy.Core.Services.IAddressValidationService.FindNearbyBusStopsAsync(System.String,System.String,System.String,System.String)">
+            <summary>
+            Finds nearby bus stops for a validated address
+            </summary>
+            <param name="address">The validated address</param>
+            <param name="city">The city</param>
+            <param name="state">The state</param>
+            <param name="zip">The zip code</param>
+            <returns>List of nearby bus stop names</returns>
+        </member>
+        <member name="M:BusBuddy.Core.Services.IAddressValidationService.GetDistanceToBusStopAsync(System.String,System.String)">
+            <summary>
+            Gets the distance between an address and a bus stop
+            </summary>
+            <param name="address">The address</param>
+            <param name="busStop">The bus stop name</param>
+            <returns>Distance in miles</returns>
+        </member>
+        <member name="M:BusBuddy.Core.Services.IAddressValidationService.FormatAddress(System.String,System.String,System.String,System.String)">
+            <summary>
+            Formats an address for display
+            </summary>
+            <param name="address">Street address</param>
+            <param name="city">City</param>
+            <param name="state">State</param>
+            <param name="zip">Zip code</param>
+            <returns>Formatted address string</returns>
+        </member>
+        <member name="M:BusBuddy.Core.Services.IAddressValidationService.ParseAddress(System.String)">
+            <summary>
+            Parses a formatted address into components
+            </summary>
+            <param name="formattedAddress">The full formatted address</param>
+            <returns>Tuple with address components</returns>
+        </member>
+        <member name="T:BusBuddy.Core.Services.IDriverService">
+            <summary>
+            Service interface for managing school bus drivers
+            Provides CRUD operations and business logic for driver management, including route assignments
+            </summary>
+        </member>
+        <member name="T:BusBuddy.Core.Services.IFuelService">
+            <summary>
+            Interface for Fuel management service
+            </summary>
+        </member>
+        <member name="T:BusBuddy.Core.Services.IMaintenanceService">
+            <summary>
+            Interface for Maintenance management service
+            </summary>
+        </member>
+        <member name="T:BusBuddy.Core.Services.Interfaces.IActivityScheduleService">
+            <summary>
+            Service interface for managing activity schedules
+            Provides operations for creating, retrieving, updating, and deleting activity schedules
+            </summary>
+        </member>
+        <member name="T:BusBuddy.Core.Services.Interfaces.IActivityService">
+            <summary>
+            Service interface for managing activity scheduling operations
+            Provides methods for managing bus activity scheduling and related operations
+            </summary>
+        </member>
+        <member name="T:BusBuddy.Core.Services.Interfaces.RecurrenceType">
+            <summary>
+            Defines recurrence types for recurring activities
+            </summary>
+        </member>
+        <member name="T:BusBuddy.Core.Services.Interfaces.IBusService">
+            <summary>
+            Service interface for managing buses/vehicles
+            </summary>
+        </member>
+        <member name="T:BusBuddy.Core.Services.Interfaces.IStudentScheduleService">
+            <summary>
+            Service interface for managing student-schedule assignments
+            Handles the relationship between students and scheduled trips/activities
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Services.Interfaces.IStudentScheduleService.AssignStudentToScheduleAsync(System.Int32,System.Int32,System.String,System.String,System.String)">
+            <summary>
+            Assigns a student to a regular schedule
+            </summary>
+            <param name="studentId">Student ID</param>
+            <param name="scheduleId">Schedule ID</param>
+            <param name="pickupLocation">Optional pickup location</param>
+            <param name="dropoffLocation">Optional dropoff location</param>
+            <param name="notes">Optional notes</param>
+            <returns>Created StudentSchedule</returns>
+        </member>
+        <member name="M:BusBuddy.Core.Services.Interfaces.IStudentScheduleService.AssignStudentToActivityScheduleAsync(System.Int32,System.Int32,System.String,System.String,System.String)">
+            <summary>
+            Assigns a student to an activity schedule
+            </summary>
+            <param name="studentId">Student ID</param>
+            <param name="activityScheduleId">Activity Schedule ID</param>
+            <param name="pickupLocation">Optional pickup location</param>
+            <param name="dropoffLocation">Optional dropoff location</param>
+            <param name="notes">Optional notes</param>
+            <returns>Created StudentSchedule</returns>
+        </member>
+        <member name="M:BusBuddy.Core.Services.Interfaces.IStudentScheduleService.AssignStudentsToScheduleAsync(System.Collections.Generic.List{System.Int32},System.Int32,System.String)">
+            <summary>
+            Assigns multiple students to a schedule
+            </summary>
+            <param name="studentIds">List of student IDs</param>
+            <param name="scheduleId">Schedule ID</param>
+            <param name="assignmentType">Type of assignment (Regular, Activity, SportTrip)</param>
+            <returns>List of created StudentSchedules</returns>
+        </member>
+        <member name="M:BusBuddy.Core.Services.Interfaces.IStudentScheduleService.RemoveStudentFromScheduleAsync(System.Int32,System.Int32)">
+            <summary>
+            Removes a student from a schedule
+            </summary>
+            <param name="studentId">Student ID</param>
+            <param name="scheduleId">Schedule ID</param>
+            <returns>True if successful</returns>
+        </member>
+        <member name="M:BusBuddy.Core.Services.Interfaces.IStudentScheduleService.RemoveStudentFromActivityScheduleAsync(System.Int32,System.Int32)">
+            <summary>
+            Removes a student from an activity schedule
+            </summary>
+            <param name="studentId">Student ID</param>
+            <param name="activityScheduleId">Activity Schedule ID</param>
+            <returns>True if successful</returns>
+        </member>
+        <member name="M:BusBuddy.Core.Services.Interfaces.IStudentScheduleService.GetStudentsForScheduleAsync(System.Int32)">
+            <summary>
+            Gets all students assigned to a schedule
+            </summary>
+            <param name="scheduleId">Schedule ID</param>
+            <returns>List of students</returns>
+        </member>
+        <member name="M:BusBuddy.Core.Services.Interfaces.IStudentScheduleService.GetStudentsForActivityScheduleAsync(System.Int32)">
+            <summary>
+            Gets all students assigned to an activity schedule
+            </summary>
+            <param name="activityScheduleId">Activity Schedule ID</param>
+            <returns>List of students</returns>
+        </member>
+        <member name="M:BusBuddy.Core.Services.Interfaces.IStudentScheduleService.GetSchedulesForStudentAsync(System.Int32)">
+            <summary>
+            Gets all schedules for a student
+            </summary>
+            <param name="studentId">Student ID</param>
+            <returns>List of schedules with assignment details</returns>
+        </member>
+        <member name="M:BusBuddy.Core.Services.Interfaces.IStudentScheduleService.GetActivitySchedulesForStudentAsync(System.Int32)">
+            <summary>
+            Gets all activity schedules for a student
+            </summary>
+            <param name="studentId">Student ID</param>
+            <returns>List of activity schedules with assignment details</returns>
+        </member>
+        <member name="M:BusBuddy.Core.Services.Interfaces.IStudentScheduleService.ConfirmStudentAttendanceAsync(System.Int32,System.Boolean)">
+            <summary>
+            Confirms a student's attendance for a scheduled trip
+            </summary>
+            <param name="studentScheduleId">StudentSchedule ID</param>
+            <param name="attended">Whether the student attended</param>
+            <returns>True if successful</returns>
+        </member>
+        <member name="M:BusBuddy.Core.Services.Interfaces.IStudentScheduleService.UpdateStudentAssignmentAsync(BusBuddy.Core.Models.StudentSchedule)">
+            <summary>
+            Updates student assignment details
+            </summary>
+            <param name="studentSchedule">StudentSchedule to update</param>
+            <returns>True if successful</returns>
+        </member>
+        <member name="M:BusBuddy.Core.Services.Interfaces.IStudentScheduleService.GetStudentAssignmentStatisticsAsync">
+            <summary>
+            Gets student assignment statistics
+            </summary>
+            <returns>Dictionary of statistics</returns>
+        </member>
+        <member name="T:BusBuddy.Core.Services.ISeedDataService">
+            <summary>
+            Interface for seeding development data
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Services.ISeedDataService.SeedActivityLogsAsync(System.Int32)">
+            <summary>
+            Seed sample activity logs for development/testing
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Services.ISeedDataService.SeedDriversAsync(System.Int32)">
+            <summary>
+            Seed sample drivers for development/testing
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Services.ISeedDataService.SeedBusesAsync(System.Int32)">
+            <summary>
+            Seed sample buses for development/testing
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Services.ISeedDataService.SeedActivitiesAsync(System.Int32)">
+            <summary>
+            Seed sample activities for development/testing
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Services.ISeedDataService.SeedAllAsync">
+            <summary>
+            Seed all development data
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Services.ISeedDataService.ClearSeedDataAsync">
+            <summary>
+            Clear all seeded data (use with caution!)
+            </summary>
+        </member>
+        <member name="T:BusBuddy.Core.Services.IStudentService">
+            <summary>
+            Service interface for managing student transportation records
+            Provides CRUD operations and business logic for student management
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Services.IStudentService.GetAllStudentsAsync">
+            <summary>
+            Gets all students from the database
+            </summary>
+            <returns>List of all students</returns>
+        </member>
+        <member name="M:BusBuddy.Core.Services.IStudentService.GetStudentByIdAsync(System.Int32)">
+            <summary>
+            Gets a specific student by ID
+            </summary>
+            <param name="studentId">The student ID</param>
+            <returns>Student if found, null otherwise</returns>
+        </member>
+        <member name="M:BusBuddy.Core.Services.IStudentService.GetStudentsByGradeAsync(System.String)">
+            <summary>
+            Gets students by grade level
+            </summary>
+            <param name="grade">Grade level to filter by</param>
+            <returns>List of students in the specified grade</returns>
+        </member>
+        <member name="M:BusBuddy.Core.Services.IStudentService.GetStudentsByRouteAsync(System.String)">
+            <summary>
+            Gets students assigned to a specific route
+            </summary>
+            <param name="routeName">Route name to filter by</param>
+            <returns>List of students on the specified route</returns>
+        </member>
+        <member name="M:BusBuddy.Core.Services.IStudentService.GetActiveStudentsAsync">
+            <summary>
+            Gets active students only
+            </summary>
+            <returns>List of active students</returns>
+        </member>
+        <member name="M:BusBuddy.Core.Services.IStudentService.GetStudentsBySchoolAsync(System.String)">
+            <summary>
+            Gets students by school
+            </summary>
+            <param name="school">School name to filter by</param>
+            <returns>List of students at the specified school</returns>
+        </member>
+        <member name="M:BusBuddy.Core.Services.IStudentService.SearchStudentsAsync(System.String)">
+            <summary>
+            Searches students by name or student number
+            </summary>
+            <param name="searchTerm">Term to search for</param>
+            <returns>List of matching students</returns>
+        </member>
+        <member name="M:BusBuddy.Core.Services.IStudentService.AddStudentAsync(BusBuddy.Core.Models.Student)">
+            <summary>
+            Adds a new student to the database
+            </summary>
+            <param name="student">Student to add</param>
+            <returns>The created student with ID</returns>
+        </member>
+        <member name="M:BusBuddy.Core.Services.IStudentService.UpdateStudentAsync(BusBuddy.Core.Models.Student)">
+            <summary>
+            Updates an existing student
+            </summary>
+            <param name="student">Student to update</param>
+            <returns>True if successful, false otherwise</returns>
+        </member>
+        <member name="M:BusBuddy.Core.Services.IStudentService.DeleteStudentAsync(System.Int32)">
+            <summary>
+            Deletes a student from the database
+            </summary>
+            <param name="studentId">ID of the student to delete</param>
+            <returns>True if successful, false otherwise</returns>
+        </member>
+        <member name="M:BusBuddy.Core.Services.IStudentService.ValidateStudentAsync(BusBuddy.Core.Models.Student)">
+            <summary>
+            Validates student data before save
+            </summary>
+            <param name="student">Student to validate</param>
+            <returns>List of validation errors, empty if valid</returns>
+        </member>
+        <member name="M:BusBuddy.Core.Services.IStudentService.GetStudentStatisticsAsync">
+            <summary>
+            Gets student count statistics
+            </summary>
+            <returns>Dictionary with count statistics</returns>
+        </member>
+        <member name="M:BusBuddy.Core.Services.IStudentService.AssignStudentToRouteAsync(System.Int32,System.String,System.String)">
+            <summary>
+            Assigns a student to a route
+            </summary>
+            <param name="studentId">Student ID</param>
+            <param name="amRoute">AM route name</param>
+            <param name="pmRoute">PM route name</param>
+            <returns>True if successful</returns>
+        </member>
+        <member name="M:BusBuddy.Core.Services.IStudentService.UpdateStudentActiveStatusAsync(System.Int32,System.Boolean)">
+            <summary>
+            Updates student active status
+            </summary>
+            <param name="studentId">Student ID</param>
+            <param name="isActive">New active status</param>
+            <returns>True if successful</returns>
+        </member>
+        <member name="M:BusBuddy.Core.Services.IStudentService.GetStudentsWithMissingInfoAsync">
+            <summary>
+            Gets students with missing required information
+            </summary>
+            <returns>List of students with incomplete data</returns>
+        </member>
+        <member name="M:BusBuddy.Core.Services.IStudentService.ExportStudentsToCsvAsync">
+            <summary>
+            Exports student data to CSV format
+            </summary>
+            <returns>CSV string containing student data</returns>
+        </member>
+        <member name="M:BusBuddy.Core.Services.IStudentService.AssignStudentToBusStopAsync(System.Int32,System.String)">
+            <summary>
+            Assigns a student to a specific bus stop
+            </summary>
+            <param name="studentId">Student ID</param>
+            <param name="busStop">Bus stop name</param>
+            <returns>True if successful</returns>
+        </member>
+        <member name="M:BusBuddy.Core.Services.IStudentService.UpdateStudentAddressAsync(System.Int32,System.String,System.String,System.String,System.String)">
+            <summary>
+            Updates a student's address information
+            </summary>
+            <param name="studentId">Student ID</param>
+            <param name="homeAddress">Home address</param>
+            <param name="city">City</param>
+            <param name="state">State (2-letter abbreviation)</param>
+            <param name="zip">ZIP code</param>
+            <returns>True if successful</returns>
+        </member>
+        <member name="M:BusBuddy.Core.Services.IStudentService.UpdateStudentContactInfoAsync(System.Int32,System.String,System.String,System.String)">
+            <summary>
+            Updates a student's primary contact information
+            </summary>
+            <param name="studentId">Student ID</param>
+            <param name="parentGuardian">Parent or guardian name</param>
+            <param name="homePhone">Home phone number</param>
+            <param name="emergencyPhone">Emergency phone number</param>
+            <returns>True if successful</returns>
+        </member>
+        <member name="M:BusBuddy.Core.Services.IStudentService.UpdateEmergencyContactAsync(System.Int32,System.String,System.String,System.String,System.String)">
+            <summary>
+            Updates a student's emergency contact information
+            </summary>
+            <param name="studentId">Student ID</param>
+            <param name="alternativeContact">Alternative contact name</param>
+            <param name="alternativePhone">Alternative contact phone</param>
+            <param name="doctorName">Doctor name</param>
+            <param name="doctorPhone">Doctor phone</param>
+            <returns>True if successful</returns>
+        </member>
+        <member name="M:BusBuddy.Core.Services.IStudentService.GetStudentDiagnosticsAsync(System.Int32)">
+            <summary>
+            Provides detailed diagnostic information about a student record
+            Only available in DEBUG builds
+            </summary>
+            <param name="studentId">Student ID</param>
+            <returns>Dictionary with diagnostic information</returns>
+        </member>
+        <member name="M:BusBuddy.Core.Services.IStudentService.GetStudentOperationMetricsAsync">
+            <summary>
+            Provides student data operation metrics for system diagnostics
+            Only available in DEBUG builds
+            </summary>
+            <returns>Dictionary with operation metrics</returns>
+        </member>
+        <member name="T:BusBuddy.Core.Services.IUserContextService">
+            <summary>
+            Service for managing current user context and authentication
+            </summary>
+        </member>
+        <member name="P:BusBuddy.Core.Services.IUserContextService.CurrentUserId">
+            <summary>
+            Gets the current authenticated user's identifier
+            </summary>
+        </member>
+        <member name="P:BusBuddy.Core.Services.IUserContextService.CurrentUserName">
+            <summary>
+            Gets the current authenticated user's display name
+            </summary>
+        </member>
+        <member name="P:BusBuddy.Core.Services.IUserContextService.CurrentUserEmail">
+            <summary>
+            Gets the current authenticated user's email
+            </summary>
+        </member>
+        <member name="P:BusBuddy.Core.Services.IUserContextService.IsAuthenticated">
+            <summary>
+            Checks if a user is currently authenticated
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Services.IUserContextService.SetCurrentUser(System.String,System.String,System.String)">
+            <summary>
+            Sets the current user context (for future authentication integration)
+            </summary>
+            <param name="userId">User identifier</param>
+            <param name="userName">User display name</param>
+            <param name="userEmail">User email</param>
+        </member>
+        <member name="M:BusBuddy.Core.Services.IUserContextService.ClearCurrentUser">
+            <summary>
+            Clears the current user context (logout)
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Services.IUserContextService.GetCurrentUserForAudit">
+            <summary>
+            Gets the current user for audit trail purposes
+            </summary>
+            <returns>User identifier for database audit fields</returns>
+        </member>
+        <member name="T:BusBuddy.Core.Services.MaintenanceService">
+            <summary>
+            Maintenance service implementation using Entity Framework
+            </summary>
+        </member>
+        <member name="T:BusBuddy.Core.Services.OptimizedXAIService">
+            <summary>
+            Highly optimized XAI Service for Bus Buddy with advanced performance features:
+            - Token efficiency and budget management
+            - Response caching with smart invalidation
+            - Request batching and parallel processing
+            - Connection pooling and retry policies
+            - Performance monitoring and metrics
+            - Response streaming for large requests
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Services.OptimizedXAIService.ProcessRequestAsync(System.String,System.String)">
+            <summary>
+            Process a single request with optimization features
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Services.OptimizedXAIService.ProcessBatchRequestsAsync(System.Collections.Generic.IEnumerable{System.String})">
+            <summary>
+            Process multiple requests in parallel with batching
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Services.OptimizedXAIService.StreamResponseAsync(System.String)">
+            <summary>
+            Stream large responses for better user experience with enhanced token validation
+            </summary>
+        </member>
+        <member name="F:BusBuddy.Core.Services.OptimizedXAIService._totalRequests">
+            <summary>
+            Get current performance metrics
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Services.OptimizedXAIService.OptimizePrompt(System.String,System.String)">
+            <summary>
+            Optimize prompts for token efficiency
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Services.OptimizedXAIService.EstimateTokens(System.String)">
+            <summary>
+            Estimate token count for budget management
+            </summary>
+            <summary>
+            Enhanced token estimation using tokenizer patterns optimized for Grok models
+            Based on XAI documentation recommendations for accurate token counting
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Services.OptimizedXAIService.TokenizeText(System.String)">
+            <summary>
+            Tokenizes text using patterns optimized for Grok model tokenizer
+            Implements subword tokenization similar to GPT-style tokenizers
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Services.OptimizedXAIService.SplitWordOnPunctuation(System.String,System.Char[])">
+            <summary>
+            Splits a word on punctuation marks, treating each punctuation as a separate token
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Services.OptimizedXAIService.ApplySubwordTokenization(System.String)">
+            <summary>
+            Applies subword tokenization similar to Byte-Pair Encoding (BPE)
+            Optimized for Grok model tokenizer behavior
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Services.OptimizedXAIService.IsVowel(System.Char)">
+            <summary>
+            Helper method to identify vowels for better subword tokenization
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Services.OptimizedXAIService.ValidateTokenCount(System.Int32,System.Boolean)">
+            <summary>
+            Validates token count against XAI model limits and provides optimization suggestions
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Services.OptimizedXAIService.GetCachedOrExecuteAsync(System.String)">
+            <summary>
+            Get cached response or execute API request
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Services.OptimizedXAIService.ExecuteApiRequestAsync(System.String)">
+            <summary>
+            Execute the actual API request with retry policy
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Services.OptimizedXAIService.ProcessBatchAsync">
+            <summary>
+            Process batched requests for efficiency
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Services.OptimizedXAIService.ComputeCacheKey(System.String)">
+            <summary>
+            Compute cache key from prompt
+            </summary>
+        </member>
+        <member name="T:BusBuddy.Core.Services.TokenBudgetManager">
+            <summary>
+            Token budget manager for cost control
+            </summary>
+        </member>
+        <member name="T:BusBuddy.Core.Services.PerformanceMetrics">
+            <summary>
+            Performance metrics for monitoring
+            </summary>
+        </member>
+        <member name="T:BusBuddy.Core.Services.XAIResponse">
+            <summary>
+            XAI API response models
+            </summary>
+        </member>
+        <member name="T:BusBuddy.Core.Services.PdfReportService">
+            <summary>
+            Service for generating PDF reports using Syncfusion PDF libraries
+            Provides professional PDF generation for various report types
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Services.PdfReportService.GenerateActivityCalendarReport(System.Collections.Generic.List{BusBuddy.Core.Models.Activity},System.DateTime,System.DateTime)">
+            <summary>
+            Generates a professional PDF calendar report for activities within a date range
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Services.PdfReportService.GenerateActivityReport(BusBuddy.Core.Models.Activity)">
+            <summary>
+            Generates a professional PDF report for a single activity
+            </summary>
+        </member>
+        <member name="T:BusBuddy.Core.Services.RouteService">
+            <summary>
+            Service implementation for Route management operations
+            Addresses critical blocker: Missing RouteService implementation
+            Adapted to work with the actual Route model structure (daily route records)
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Services.ScheduleService.GetSchedulesByCategoryAsync(System.String)">
+            <summary>
+            Filters schedules by sports category for dropdown focus
+            </summary>
+            <param name="category">Sports category to filter by (e.g., "Volleyball", "Football", "Activity")</param>
+            <returns>Filtered list of schedules</returns>
+        </member>
+        <member name="M:BusBuddy.Core.Services.ScheduleService.DeriveTripDetails(BusBuddy.Core.Models.Schedule)">
+            <summary>
+            Derives trip details from schedule properties
+            Auto-sets DestinationTown if Location indicates "Away" game
+            </summary>
+            <param name="schedule">Schedule to derive details for</param>
+        </member>
+        <member name="M:BusBuddy.Core.Services.ScheduleService.ExtractTownFromLocation(System.String)">
+            <summary>
+            Extracts town/city name from a location string
+            </summary>
+            <param name="location">Location string to parse</param>
+            <returns>Extracted town name or null if not found</returns>
+        </member>
+        <member name="T:BusBuddy.Core.Services.SeedDataService">
+            <summary>
+            Service for seeding development data when running in development mode
+            Helps populate empty databases with sample data for testing
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Services.SeedDataService.SeedActivityLogsAsync(System.Int32)">
+            <summary>
+            Seed sample activity logs for development/testing
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Services.SeedDataService.SeedDriversAsync(System.Int32)">
+            <summary>
+            Seed sample drivers for development/testing
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Services.SeedDataService.SeedBusesAsync(System.Int32)">
+            <summary>
+            Seed sample buses for development/testing
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Services.SeedDataService.SeedActivitiesAsync(System.Int32)">
+            <summary>
+            Seed sample activities for development/testing
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Services.SeedDataService.SeedAllAsync">
+            <summary>
+            Seed all development data
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Services.SeedDataService.ClearSeedDataAsync">
+            <summary>
+            Clear all seeded data (use with caution!)
+            </summary>
+        </member>
+        <member name="T:BusBuddy.Core.Services.SmartRouteOptimizationService">
+            <summary>
+            AI-Enhanced Route Optimization Service for Production Use
+            Provides intelligent route planning, efficiency analysis, and optimization recommendations
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Services.SmartRouteOptimizationService.AnalyzeRouteEfficiencyAsync">
+            <summary>
+            Analyzes current route efficiency and provides optimization recommendations
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Services.SmartRouteOptimizationService.GenerateOptimizedRoutesAsync(BusBuddy.Core.Services.OptimizationParameters)">
+            <summary>
+            Generates optimized route suggestions based on current data and constraints
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Services.SmartRouteOptimizationService.MonitorRoutePerformanceAsync(System.Int32)">
+            <summary>
+            Provides real-time route performance monitoring and alerts
+            </summary>
+        </member>
+        <member name="T:BusBuddy.Core.Services.RouteOptimizationReport">
+            <summary>
+            Comprehensive route optimization analysis report
+            </summary>
+        </member>
+        <member name="T:BusBuddy.Core.Services.RouteOptimizationSuggestion">
+            <summary>
+            Specific route optimization suggestion
+            </summary>
+        </member>
+        <member name="T:BusBuddy.Core.Services.RoutePerformanceAlert">
+            <summary>
+            Real-time route performance monitoring
+            </summary>
+        </member>
+        <member name="T:BusBuddy.Core.Services.OptimizationParameters">
+            <summary>
+            Route optimization parameters
+            </summary>
+        </member>
+        <member name="T:BusBuddy.Core.Services.OptimizationType">
+            <summary>
+            Types of route optimization
+            </summary>
+        </member>
+        <member name="T:BusBuddy.Core.Services.ComplexityLevel">
+            <summary>
+            Implementation complexity levels
+            </summary>
+        </member>
+        <member name="T:BusBuddy.Core.Services.RouteStatus">
+            <summary>
+            Route performance status
+            </summary>
+        </member>
+        <member name="T:BusBuddy.Core.Services.StudentScheduleService">
+            <summary>
+            Service implementation for managing student-schedule assignments
+            Handles the relationship between students and scheduled trips/activities
+            </summary>
+        </member>
+        <member name="T:BusBuddy.Core.Services.StudentService">
+            <summary>
+            Service implementation for managing student transportation records
+            Provides CRUD operations and business logic for student management
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Services.StudentService.GetStudentDiagnosticsAsync(System.Int32)">
+            <summary>
+            Provides detailed diagnostic information about a student record
+            Only available in DEBUG builds
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Services.StudentService.CalculateRecordCompleteness(BusBuddy.Core.Models.Student)">
+            <summary>
+            Calculates the completeness percentage of a student record
+            Only available in DEBUG builds
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Services.StudentService.SerializeStudentForDiagnostics(BusBuddy.Core.Models.Student)">
+            <summary>
+            Serializes a student object for diagnostic viewing
+            Only available in DEBUG builds
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Services.StudentService.GetStudentOperationMetricsAsync">
+            <summary>
+            Provides student data operation metrics for system diagnostics
+            Only available in DEBUG builds
+            </summary>
+        </member>
+        <member name="T:BusBuddy.Core.Services.UserContextService">
+            <summary>
+            Implementation of user context service for Bus Buddy application
+            Provides current user information for audit trails and authentication
+            </summary>
+        </member>
+        <member name="P:BusBuddy.Core.Services.UserContextService.CurrentUserId">
+            <summary>
+            Gets the current authenticated user's identifier
+            </summary>
+        </member>
+        <member name="P:BusBuddy.Core.Services.UserContextService.CurrentUserName">
+            <summary>
+            Gets the current authenticated user's display name
+            </summary>
+        </member>
+        <member name="P:BusBuddy.Core.Services.UserContextService.CurrentUserEmail">
+            <summary>
+            Gets the current authenticated user's email
+            </summary>
+        </member>
+        <member name="P:BusBuddy.Core.Services.UserContextService.IsAuthenticated">
+            <summary>
+            Checks if a user is currently authenticated
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Services.UserContextService.SetCurrentUser(System.String,System.String,System.String)">
+            <summary>
+            Sets the current user context
+            </summary>
+            <param name="userId">User identifier</param>
+            <param name="userName">User display name</param>
+            <param name="userEmail">User email</param>
+        </member>
+        <member name="M:BusBuddy.Core.Services.UserContextService.ClearCurrentUser">
+            <summary>
+            Clears the current user context (logout)
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Services.UserContextService.GetCurrentUserForAudit">
+            <summary>
+            Gets the current user for audit trail purposes
+            </summary>
+            <returns>User identifier for database audit fields</returns>
+        </member>
+        <member name="M:BusBuddy.Core.Services.UserContextService.SetDefaultUser">
+            <summary>
+            Sets up a default system user for initial operation
+            </summary>
+        </member>
+        <member name="T:BusBuddy.Core.Services.IUserSettingsService">
+            <summary>
+            Service for managing user-specific settings that persist between application sessions
+            </summary>
+        </member>
+        <member name="T:BusBuddy.Core.Services.XAIService">
+            <summary>
+            xAI (Grok) Integration Service for Advanced AI-Powered Transportation Intelligence
+            Programmatically locked documentation references maintained in XAIDocumentationSettings
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Services.XAIService.AnalyzeRouteOptimizationAsync(BusBuddy.Core.Services.XAIService.RouteAnalysisRequest)">
+            <summary>
+            Analyzes route optimization using xAI Grok intelligence
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Services.XAIService.PredictMaintenanceNeedsAsync(BusBuddy.Core.Services.XAIService.MaintenanceAnalysisRequest)">
+            <summary>
+            Predicts maintenance needs using AI analysis
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Services.XAIService.AnalyzeSafetyRisksAsync(BusBuddy.Core.Services.XAIService.SafetyAnalysisRequest)">
+            <summary>
+            Analyzes safety risks using AI intelligence
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Services.XAIService.OptimizeStudentAssignmentsAsync(BusBuddy.Core.Services.XAIService.StudentOptimizationRequest)">
+            <summary>
+            Optimizes student assignments using AI
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Services.XAIService.SendChatMessageAsync(System.String,System.String)">
+            <summary>
+            Sends a general chat message to xAI Grok for AI AssistView integration
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Services.XAIService.GetOfficialDocumentationUrl">
+            <summary>
+            Gets the official xAI overview documentation URL
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Services.XAIService.GetChatApiGuideUrl">
+            <summary>
+            Gets the xAI Chat API guide URL
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Services.XAIService.GetApiReferenceUrl">
+            <summary>
+            Gets the xAI API reference URL
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Services.XAIService.GetAllDocumentationUrls">
+            <summary>
+            Gets all available documentation URLs
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Core.Services.XAIService.ValidateDocumentationUrls">
+            <summary>
+            Validates that all documentation URLs are accessible
+            </summary>
+        </member>
+        <member name="T:BusBuddy.Configuration.XAIDocumentationSettings">
+            <summary>
+            Configuration settings for xAI API documentation URLs
+            Provides programmatic access to official xAI documentation links
+            </summary>
+        </member>
+        <member name="P:BusBuddy.Configuration.XAIDocumentationSettings.BaseUrl">
+            <summary>
+            Base URL for xAI documentation (https://docs.x.ai)
+            </summary>
+        </member>
+        <member name="P:BusBuddy.Configuration.XAIDocumentationSettings.OverviewGuide">
+            <summary>
+            Relative path to the overview guide (/docs/overview)
+            </summary>
+        </member>
+        <member name="P:BusBuddy.Configuration.XAIDocumentationSettings.ChatGuide">
+            <summary>
+            Relative path to the chat API guide (/docs/guides/chat)
+            </summary>
+        </member>
+        <member name="P:BusBuddy.Configuration.XAIDocumentationSettings.ApiReference">
+            <summary>
+            Relative path to the API reference (/docs/api-reference)
+            </summary>
+        </member>
+        <member name="P:BusBuddy.Configuration.XAIDocumentationSettings.ModelsGuide">
+            <summary>
+            Relative path to the models guide (/docs/models)
+            </summary>
+        </member>
+        <member name="P:BusBuddy.Configuration.XAIDocumentationSettings.AuthenticationGuide">
+            <summary>
+            Relative path to the authentication guide (/docs/authentication)
+            </summary>
+        </member>
+        <member name="P:BusBuddy.Configuration.XAIDocumentationSettings.RateLimitsGuide">
+            <summary>
+            Relative path to the rate limits guide (/docs/rate-limits)
+            </summary>
+        </member>
+        <member name="P:BusBuddy.Configuration.XAIDocumentationSettings.LastUpdated">
+            <summary>
+            Last updated date for documentation tracking
+            </summary>
+        </member>
+        <member name="P:BusBuddy.Configuration.XAIDocumentationSettings.Version">
+            <summary>
+            Documentation version
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Configuration.XAIDocumentationSettings.GetFullUrl(System.String)">
+            <summary>
+            Gets the full URL for a relative documentation path
+            </summary>
+            <param name="relativePath">The relative path to append to the base URL</param>
+            <returns>The complete documentation URL</returns>
+        </member>
+        <member name="M:BusBuddy.Configuration.XAIDocumentationSettings.GetOverviewUrl">
+            <summary>
+            Gets the full URL for the overview guide
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Configuration.XAIDocumentationSettings.GetChatGuideUrl">
+            <summary>
+            Gets the full URL for the chat API guide
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Configuration.XAIDocumentationSettings.GetApiReferenceUrl">
+            <summary>
+            Gets the full URL for the API reference
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Configuration.XAIDocumentationSettings.GetModelsGuideUrl">
+            <summary>
+            Gets the full URL for the models guide
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Configuration.XAIDocumentationSettings.GetAuthenticationGuideUrl">
+            <summary>
+            Gets the full URL for the authentication guide
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Configuration.XAIDocumentationSettings.GetRateLimitsGuideUrl">
+            <summary>
+            Gets the full URL for the rate limits guide
+            </summary>
+        </member>
+        <member name="M:BusBuddy.Configuration.XAIDocumentationSettings.ValidateUrls">
+            <summary>
+            Validates that all documentation URLs are properly formatted
+            </summary>
+            <returns>True if all URLs are valid, false otherwise</returns>
+        </member>
+        <member name="M:BusBuddy.Configuration.XAIDocumentationSettings.GetAllUrls">
+            <summary>
+            Gets all documentation URLs as a dictionary
+            </summary>
+            <returns>Dictionary of documentation name to URL mappings</returns>
+        </member>
+    </members>
+</doc>

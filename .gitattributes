@@ -1,0 +1,115 @@
+###############################################################################
+# Set default behavior to automatically normalize line endings
+###############################################################################
+* text=auto
+
+###############################################################################
+# Set default behavior for command prompt diff
+###############################################################################
+*.cs     diff=csharp
+*.xaml   diff=xml
+*.csproj diff=xml
+*.sln    text
+*.json   diff=json
+*.ps1    diff=powershell
+
+###############################################################################
+# Set file types that should be treated as binary
+###############################################################################
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.mov binary
+*.mp4 binary
+*.mp3 binary
+*.exe binary
+*.dll binary
+*.zip binary
+*.7z binary
+*.ttf binary
+*.otf binary
+*.eot binary
+*.woff binary
+*.woff2 binary
+*.psd binary
+*.ai binary
+*.pdf binary
+
+###############################################################################
+# Configure Git LFS for large files
+###############################################################################
+# Image files
+*.psd filter=lfs diff=lfs merge=lfs -text
+*.ai filter=lfs diff=lfs merge=lfs -text
+*.pdf filter=lfs diff=lfs merge=lfs -text
+
+# Videos
+*.mp4 filter=lfs diff=lfs merge=lfs -text
+*.mov filter=lfs diff=lfs merge=lfs -text
+
+# Archives
+*.zip filter=lfs diff=lfs merge=lfs -text
+*.7z filter=lfs diff=lfs merge=lfs -text
+
+# Database files
+*.mdf filter=lfs diff=lfs merge=lfs -text
+*.ldf filter=lfs diff=lfs merge=lfs -text
+*.ndf filter=lfs diff=lfs merge=lfs -text
+
+# Other large file types
+*.sqlite filter=lfs diff=lfs merge=lfs -text
+
+###############################################################################
+# Declare files that will always have CRLF line endings on checkout
+###############################################################################
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+###############################################################################
+# Declare files that will always have LF line endings on checkout
+###############################################################################
+*.sh text eol=lf
+*.md text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+
+###############################################################################
+# BusBuddy-specific file handling for cross-platform compatibility
+###############################################################################
+# PowerShell files - use LF for cross-platform compatibility
+*.ps1 text eol=lf
+*.psm1 text eol=lf
+*.psd1 text eol=lf
+
+# JSON configuration files - standardize on LF
+*.json text eol=lf
+.vscode/*.json text eol=lf
+
+# VS Code configuration files
+.vscode/tasks.json text eol=lf
+.vscode/settings.json text eol=lf
+.vscode/launch.json text eol=lf
+.vscode/extensions.json text eol=lf
+
+# C# and .NET project files - use LF for consistency
+*.cs text eol=lf
+*.csproj text eol=lf
+*.sln text eol=lf
+*.props text eol=lf
+*.targets text eol=lf
+
+# XAML files - use LF for consistency
+*.xaml text eol=lf
+
+# Configuration and data files
+*.config text eol=lf
+*.xml text eol=lf
+*.ruleset text eol=lf
+
+# Documentation files
+*.md text eol=lf
+README* text eol=lf
+CONTRIBUTING* text eol=lf
+LICENSE* text eol=lf

@@ -1,0 +1,219 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+
+  <!-- Application Title -->
+  <data name="ApplicationTitle" xml:space="preserve">
+    <value>Bus Buddy - Transportation Management System</value>
+    <comment>Main application title shown in window title bar</comment>
+  </data>
+
+  <!-- Navigation -->
+  <data name="Navigation" xml:space="preserve">
+    <value>🧭 Navigation</value>
+    <comment>Navigation panel header</comment>
+  </data>
+
+  <data name="Dashboard" xml:space="preserve">
+    <value>Dashboard</value>
+    <comment>Dashboard navigation item</comment>
+  </data>
+
+  <data name="BusManagement" xml:space="preserve">
+    <value>Bus Management</value>
+    <comment>Bus management navigation item</comment>
+  </data>
+
+  <data name="DriverManagement" xml:space="preserve">
+    <value>Driver Management</value>
+    <comment>Driver management navigation item</comment>
+  </data>
+
+  <data name="RouteManagement" xml:space="preserve">
+    <value>Route Management</value>
+    <comment>Route management navigation item</comment>
+  </data>
+
+  <data name="ScheduleManagement" xml:space="preserve">
+    <value>Schedule Management</value>
+    <comment>Schedule management navigation item</comment>
+  </data>
+
+  <data name="StudentManagement" xml:space="preserve">
+    <value>Student Management</value>
+    <comment>Student management navigation item</comment>
+  </data>
+
+  <data name="Maintenance" xml:space="preserve">
+    <value>Maintenance</value>
+    <comment>Maintenance navigation item</comment>
+  </data>
+
+  <data name="FuelManagement" xml:space="preserve">
+    <value>Fuel Management</value>
+    <comment>Fuel management navigation item</comment>
+  </data>
+
+  <data name="ActivityLog" xml:space="preserve">
+    <value>Activity Log</value>
+    <comment>Activity log navigation item</comment>
+  </data>
+
+  <data name="XAIChat" xml:space="preserve">
+    <value>XAI Chat</value>
+    <comment>XAI Chat navigation item</comment>
+  </data>
+
+  <data name="GoogleEarth" xml:space="preserve">
+    <value>Google Earth</value>
+    <comment>Google Earth navigation item</comment>
+  </data>
+
+  <data name="Settings" xml:space="preserve">
+    <value>Settings</value>
+    <comment>Settings navigation item</comment>
+  </data>
+
+  <!-- Dashboard -->
+  <data name="BusBuddyDashboard" xml:space="preserve">
+    <value>🚌 Bus Buddy Dashboard</value>
+    <comment>Dashboard panel header</comment>
+  </data>
+
+  <data name="DashboardTooltip" xml:space="preserve">
+    <value>Main dashboard with fleet overview</value>
+    <comment>Dashboard tooltip text</comment>
+  </data>
+
+  <!-- Common Actions -->
+  <data name="Add" xml:space="preserve">
+    <value>Add</value>
+    <comment>Add button text</comment>
+  </data>
+
+  <data name="Edit" xml:space="preserve">
+    <value>Edit</value>
+    <comment>Edit button text</comment>
+  </data>
+
+  <data name="Delete" xml:space="preserve">
+    <value>Delete</value>
+    <comment>Delete button text</comment>
+  </data>
+
+  <data name="Save" xml:space="preserve">
+    <value>Save</value>
+    <comment>Save button text</comment>
+  </data>
+
+  <data name="Cancel" xml:space="preserve">
+    <value>Cancel</value>
+    <comment>Cancel button text</comment>
+  </data>
+
+  <data name="OK" xml:space="preserve">
+    <value>OK</value>
+    <comment>OK button text</comment>
+  </data>
+
+  <data name="Close" xml:space="preserve">
+    <value>Close</value>
+    <comment>Close button text</comment>
+  </data>
+
+  <!-- Loading and Status -->
+  <data name="Loading" xml:space="preserve">
+    <value>Loading...</value>
+    <comment>Loading text for busy indicators</comment>
+  </data>
+
+  <data name="PleaseWait" xml:space="preserve">
+    <value>Please wait...</value>
+    <comment>Please wait message</comment>
+  </data>
+
+  <!-- Error Messages -->
+  <data name="ErrorOccurred" xml:space="preserve">
+    <value>An error occurred</value>
+    <comment>Generic error message</comment>
+  </data>
+
+  <data name="OperationFailed" xml:space="preserve">
+    <value>Operation failed</value>
+    <comment>Operation failed message</comment>
+  </data>
+
+  <data name="OperationSuccessful" xml:space="preserve">
+    <value>Operation completed successfully</value>
+    <comment>Success message</comment>
+  </data>
+
+  <!-- Tooltips -->
+  <data name="NavigateToSection" xml:space="preserve">
+    <value>Navigate to section</value>
+    <comment>Default navigation tooltip</comment>
+  </data>
+
+  <data name="CurrentActiveView" xml:space="preserve">
+    <value>Current active view</value>
+    <comment>Active view tooltip</comment>
+  </data>
+
+</root>

@@ -1,0 +1,219 @@
+<ResourceDictionary
+  xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+  <!--  ===============================================================================  -->
+  <!--  BUSBUDDY SYNCFUSION V30.1.42 RESOURCE DICTIONARY  -->
+  <!--  ===============================================================================  -->
+  <!--  🚌 BUSBUDDY COMPLETE INVENTORY - COLORS AND BRUSHES ONLY  -->
+  <!--  ✅ OFFICIAL API COMPLIANCE: Theme management via SfSkinManager in App.xaml.cs  -->
+  <!--  ✅ CUSTOM THEME SETTINGS: FluentDark/FluentLight settings registered  -->
+  <!--  ✅ PROPER INITIALIZATION: ApplyThemeAsDefaultStyle = true before ApplicationTheme  -->
+  <!--  Note: Syncfusion control styles applied via registered theme settings  -->
+  <!--  Control-specific styles use explicit CLR namespaces in individual views  -->
+  <!--  ===============================================================================  -->
+
+  <!--  ===============================================================================  -->
+  <!--  SECTION 1: BUSBUDDY BRAND COLOR PALETTE  -->
+  <!--  ===============================================================================  -->
+
+  <!--  Primary Brand Colors  -->
+  <Color x:Key="BusBuddy.Primary">#0078D4</Color>
+  <Color x:Key="BusBuddy.SchoolBusYellow">#FFD700</Color>
+  <Color x:Key="BusBuddy.SafetyOrange">#FF8C00</Color>
+  <Color x:Key="BusBuddy.FleetGreen">#2ECC71</Color>
+
+  <!--  Surface Colors (FluentDark Compatible)  -->
+  <Color x:Key="BusBuddy.Surface.Dark">#1E1E1E</Color>
+  <Color x:Key="BusBuddy.Surface.Medium">#252526</Color>
+  <Color x:Key="BusBuddy.Surface.Light">#2D2D30</Color>
+  <Color x:Key="BusBuddy.Surface.Border">#323130</Color>
+
+  <!--  Text Colors  -->
+  <Color x:Key="BusBuddy.Text.Primary">#FFFFFF</Color>
+  <Color x:Key="BusBuddy.Text.Secondary">#CCCCCC</Color>
+  <Color x:Key="BusBuddy.Text.Disabled">#666666</Color>
+
+  <!--  State Colors  -->
+  <Color x:Key="BusBuddy.State.Hover">#404040</Color>
+  <Color x:Key="BusBuddy.State.Pressed">#4D4D4D</Color>
+  <Color x:Key="BusBuddy.State.Selected">#0078D4</Color>
+
+  <!--  Semantic Colors  -->
+  <Color x:Key="BusBuddy.Semantic.Error">#DC3545</Color>
+  <Color x:Key="BusBuddy.Semantic.Warning">#FFC107</Color>
+  <Color x:Key="BusBuddy.Semantic.Success">#28A745</Color>
+  <Color x:Key="BusBuddy.Semantic.Info">#17A2B8</Color>
+
+  <!--  Legacy Compatibility Colors (AddEditScheduleDialog)  -->
+  <Color x:Key="SuccessColor">#28A745</Color>
+  <Color x:Key="ErrorColor">#DC3545</Color>
+
+  <!--  ===============================================================================  -->
+  <!--  SECTION 2: BRAND BRUSHES  -->
+  <!--  ===============================================================================  -->
+
+  <SolidColorBrush x:Key="BusBuddy.Brush.Primary"
+                   Color="{StaticResource BusBuddy.Primary}"/>
+  <SolidColorBrush x:Key="BusBuddy.Brush.SchoolBusYellow"
+                   Color="{StaticResource BusBuddy.SchoolBusYellow}"/>
+  <SolidColorBrush x:Key="BusBuddy.Brush.SafetyOrange"
+                   Color="{StaticResource BusBuddy.SafetyOrange}"/>
+  <SolidColorBrush x:Key="BusBuddy.Brush.FleetGreen"
+                   Color="{StaticResource BusBuddy.FleetGreen}"/>
+
+  <SolidColorBrush x:Key="BusBuddy.Brush.Surface.Dark"
+                   Color="{StaticResource BusBuddy.Surface.Dark}"/>
+  <SolidColorBrush x:Key="BusBuddy.Brush.Surface.Medium"
+                   Color="{StaticResource BusBuddy.Surface.Medium}"/>
+  <SolidColorBrush x:Key="BusBuddy.Brush.Surface.Light"
+                   Color="{StaticResource BusBuddy.Surface.Light}"/>
+  <SolidColorBrush x:Key="BusBuddy.Brush.Surface.Border"
+                   Color="{StaticResource BusBuddy.Surface.Border}"/>
+
+  <SolidColorBrush x:Key="BusBuddy.Brush.Text.Primary"
+                   Color="{StaticResource BusBuddy.Text.Primary}"/>
+  <SolidColorBrush x:Key="BusBuddy.Brush.Text.Secondary"
+                   Color="{StaticResource BusBuddy.Text.Secondary}"/>
+  <SolidColorBrush x:Key="BusBuddy.Brush.Text.Disabled"
+                   Color="{StaticResource BusBuddy.Text.Disabled}"/>
+
+  <SolidColorBrush x:Key="BusBuddy.Brush.State.Hover"
+                   Color="{StaticResource BusBuddy.State.Hover}"/>
+  <SolidColorBrush x:Key="BusBuddy.Brush.State.Pressed"
+                   Color="{StaticResource BusBuddy.State.Pressed}"/>
+  <SolidColorBrush x:Key="BusBuddy.Brush.State.Selected"
+                   Color="{StaticResource BusBuddy.State.Selected}"/>
+
+  <SolidColorBrush x:Key="BusBuddy.Brush.Semantic.Error"
+                   Color="{StaticResource BusBuddy.Semantic.Error}"/>
+  <SolidColorBrush x:Key="BusBuddy.Brush.Semantic.Warning"
+                   Color="{StaticResource BusBuddy.Semantic.Warning}"/>
+  <SolidColorBrush x:Key="BusBuddy.Brush.Semantic.Success"
+                   Color="{StaticResource BusBuddy.Semantic.Success}"/>
+  <SolidColorBrush x:Key="BusBuddy.Brush.Semantic.Info"
+                   Color="{StaticResource BusBuddy.Semantic.Info}"/>
+
+  <!--  ===============================================================================  -->
+  <!--  SECTION 2.1: FLUENTLIGHT THEME COMPATIBLE COLORS  -->
+  <!--  ===============================================================================  -->
+  <!--  FluentLight-specific colors for proper light mode support  -->
+
+  <!--  FluentLight Surface Colors  -->
+  <Color x:Key="BusBuddy.Surface.LightMode.Background">#FFFFFF</Color>
+  <Color x:Key="BusBuddy.Surface.LightMode.Surface">#F3F2F1</Color>
+  <Color x:Key="BusBuddy.Surface.LightMode.Border">#E1DFDD</Color>
+  <Color x:Key="BusBuddy.Surface.LightMode.Accent">#FAFAFA</Color>
+
+  <!--  FluentLight Text Colors  -->
+  <Color x:Key="BusBuddy.Text.LightMode.Primary">#000000</Color>
+  <Color x:Key="BusBuddy.Text.LightMode.Secondary">#323130</Color>
+  <Color x:Key="BusBuddy.Text.LightMode.Disabled">#A19F9D</Color>
+
+  <!--  FluentLight State Colors  -->
+  <Color x:Key="BusBuddy.State.LightMode.Hover">#F3F2F1</Color>
+  <Color x:Key="BusBuddy.State.LightMode.Pressed">#EDEBE9</Color>
+
+  <!--  FluentLight Brushes  -->
+  <SolidColorBrush x:Key="BusBuddy.Brush.Surface.LightMode.Background"
+                   Color="{StaticResource BusBuddy.Surface.LightMode.Background}"/>
+  <SolidColorBrush x:Key="BusBuddy.Brush.Surface.LightMode.Surface"
+                   Color="{StaticResource BusBuddy.Surface.LightMode.Surface}"/>
+  <SolidColorBrush x:Key="BusBuddy.Brush.Surface.LightMode.Border"
+                   Color="{StaticResource BusBuddy.Surface.LightMode.Border}"/>
+  <SolidColorBrush x:Key="BusBuddy.Brush.Surface.LightMode.Accent"
+                   Color="{StaticResource BusBuddy.Surface.LightMode.Accent}"/>
+
+  <SolidColorBrush x:Key="BusBuddy.Brush.Text.LightMode.Primary"
+                   Color="{StaticResource BusBuddy.Text.LightMode.Primary}"/>
+  <SolidColorBrush x:Key="BusBuddy.Brush.Text.LightMode.Secondary"
+                   Color="{StaticResource BusBuddy.Text.LightMode.Secondary}"/>
+  <SolidColorBrush x:Key="BusBuddy.Brush.Text.LightMode.Disabled"
+                   Color="{StaticResource BusBuddy.Text.LightMode.Disabled}"/>
+
+  <SolidColorBrush x:Key="BusBuddy.Brush.State.LightMode.Hover"
+                   Color="{StaticResource BusBuddy.State.LightMode.Hover}"/>
+  <SolidColorBrush x:Key="BusBuddy.Brush.State.LightMode.Pressed"
+                   Color="{StaticResource BusBuddy.State.LightMode.Pressed}"/>
+
+  <!--  ===============================================================================  -->
+  <!--  SECTION 3: SYNCFUSION CONTROL DOCUMENTATION  -->
+  <!--  ===============================================================================  -->
+  <!--  CONTROLS IDENTIFIED IN BUSBUDDY WORKSPACE:  -->
+  <!--
+    ║  ✅ HIGH USAGE CONTROLS (Used in 10+ views):
+    ║     • ButtonAdv - Primary action buttons (50+ instances)
+    ║     • SfDataGrid - Data tables (20+ instances)
+    ║     • SfBusyIndicator - Loading states (15+ instances)
+    ║     • ComboBoxAdv/ComboBoxItemAdv - Dropdowns (15+ instances)
+    ║     • SfTextBoxExt - Text inputs (30+ instances)
+    ║
+    ║  ✅ MEDIUM USAGE CONTROLS (Used in 5-10 views):
+    ║     • SfTreeGrid - Hierarchical data (Route management)
+    ║     • DockingManager - Layout management (Main window)
+    ║     • SfNavigationDrawer - Side navigation
+    ║     • SfCircularProgressBar - Progress indication
+    ║
+    ║  ✅ SPECIALIZED CONTROLS (Specific features):
+    ║     • SfScheduler - Schedule management
+    ║     • SfChart - Data visualization
+    ║     • SfGauge - Dashboard metrics
+    ║     • SfMap - Geographic data
+    ║     • SfRichTextBoxAdv - Rich text editing
+    ║     • SfChat - Communication features
+    ║     • PdfViewerControl - Document viewing
+    ║     • SfSpreadsheet - Data analysis
+    ║
+    ║  📦 SYNCFUSION PACKAGES INSTALLED (30.1.42):
+    ║     • Syncfusion.Licensing
+    ║     • Syncfusion.SfSkinManager.WPF
+    ║     • Syncfusion.Themes.FluentDark.WPF
+    ║     • Syncfusion.Themes.FluentLight.WPF
+    ║     • Syncfusion.Shared.WPF
+    ║     • Syncfusion.Tools.WPF
+    ║     • Syncfusion.SfInput.WPF
+    ║     • Syncfusion.SfGrid.WPF
+    ║     • Syncfusion.SfChart.WPF
+    ║     • Syncfusion.SfNavigationDrawer.WPF
+    ║     • Syncfusion.SfBusyIndicator.WPF
+    ║     • Syncfusion.SfProgressBar.WPF
+    ║     • Syncfusion.SfTreeView.WPF
+    ║     • Syncfusion.SfChat.WPF
+    ║     • Syncfusion.SfRichTextBoxAdv.WPF
+    ║     • Syncfusion.SfScheduler.WPF
+    ║     • Syncfusion.SfGauge.WPF
+    ║     • Syncfusion.SfAccordion.WPF
+    ║     • Syncfusion.SfMaps.WPF
+    ║     • Syncfusion.PdfViewer.WPF
+    ║     • Syncfusion.SfSpreadsheet.WPF
+    ║     • Syncfusion.Edit.WPF
+    ║     • Syncfusion.Grid.WPF
+    ║     • Syncfusion.Pdf.NET (Core project)
+    ║
+    ║  🎨 NAMESPACE PATTERNS IN USE:
+    ║     • xmlns:syncfusion="http://schemas.syncfusion.com/wpf"
+    ║     • xmlns:syncfusionskin="clr-namespace:Syncfusion.SfSkinManager;assembly=Syncfusion.SfSkinManager.WPF"
+    ║     • xmlns:syncfusionnavigation="clr-namespace:Syncfusion.UI.Xaml.NavigationDrawer;assembly=Syncfusion.SfNavigationDrawer.WPF"
+    ║     • xmlns:syncfusiontools="clr-namespace:Syncfusion.Windows.Tools.Controls;assembly=Syncfusion.Tools.WPF"
+    ║     • xmlns:syncfusionGrid="clr-namespace:Syncfusion.UI.Xaml.Grid;assembly=Syncfusion.SfGrid.WPF"
+    ║     • xmlns:syncfusionButton="clr-namespace:Syncfusion.Windows.Tools.Controls;assembly=Syncfusion.Tools.WPF"
+    ║     • xmlns:syncfusionInput="clr-namespace:Syncfusion.Windows.Controls.Input;assembly=Syncfusion.SfInput.WPF"
+    ║     • xmlns:syncfusionBusy="clr-namespace:Syncfusion.Windows.Controls.Notification;assembly=Syncfusion.SfBusyIndicator.WPF"
+    ║     • xmlns:syncfusionChart="clr-namespace:Syncfusion.UI.Xaml.Charts;assembly=Syncfusion.SfChart.WPF"
+    ║
+    ║  💡 CONTROL STYLE IMPLEMENTATION STRATEGY:
+    ║     • Styles applied via FluentDark/FluentLight themes
+    ║     • Individual views use explicit CLR namespace declarations
+    ║     • This resource dictionary provides ONLY colors and brushes
+    ║     • Control-specific styles defined in individual XAML files
+    ║
+    ║  ⚠️  IMPORTANT NOTES:
+    ║     • All controls validated against Syncfusion WPF 30.1.40 API
+    ║     • ButtonAdv uses Label property (NOT Content)
+    ║     • FluentDark theme applied via SfSkinManager
+    ║     • License registration required in App.xaml.cs
+    ║
+    ╚══════════════════════════════════════════════════════════════════════════════╝
+    -->
+
+</ResourceDictionary>

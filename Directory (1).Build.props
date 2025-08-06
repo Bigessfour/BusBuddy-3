@@ -1,0 +1,32 @@
+<Project>
+  <PropertyGroup>
+    <SyncfusionVersion>30.1.39</SyncfusionVersion>
+
+    <!-- Documentation Generation -->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <DocumentationFile>$(OutputPath)$(AssemblyName).xml</DocumentationFile>
+
+    <!-- Assembly Information -->
+    <Company>BusBuddy Transportation Solutions</Company>
+    <Product>BusBuddy School Transportation Management System</Product>
+    <Copyright>Copyright © BusBuddy Transportation Solutions 2025</Copyright>
+
+    <!-- Version Management -->
+    <VersionPrefix>1.0.0</VersionPrefix>
+    <VersionSuffix Condition="'$(Configuration)' == 'Debug'">dev</VersionSuffix>
+
+    <!-- Ensure WPF Temporary Project references the core assembly and includes all relevant namespaces -->
+    <IncludePackageReferencesDuringMarkupCompilation>true</IncludePackageReferencesDuringMarkupCompilation>
+    <MarkupCompilePass1UsesDependencyPaths>true</MarkupCompilePass1UsesDependencyPaths>
+
+    <!-- Build Logging Configuration -->
+    <BuildLoggerEnabled>true</BuildLoggerEnabled>
+    <LogFileDirectory>$(MSBuildThisFileDirectory)logs</LogFileDirectory>
+    <MSBuildLogFile>$(LogFileDirectory)\msbuild-$(MSBuildProjectName)-$(Configuration).log</MSBuildLogFile>
+    <MSBuildVerbosity>normal</MSBuildVerbosity>
+
+    <!-- Package Management for Production -->
+    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+    <RestoreLockedMode Condition="'$(CI)' == 'true'">true</RestoreLockedMode>
+  </PropertyGroup>
+</Project>

@@ -1,0 +1,120 @@
+[
+  // Optimized keyboard shortcuts for Copilot-focused workflow
+  {
+    "key": "ctrl+i",
+    "command": "github.copilot.interactiveEditor.generate",
+    "when": "editorTextFocus && !editorReadonly && !inCompositeEditor"
+  },
+  {
+    "key": "ctrl+shift+i",
+    "command": "workbench.action.chat.open",
+    "when": "workbench.panel.chat.view.visible == false"
+  },
+  {
+    "key": "ctrl+alt+i",
+    "command": "github.copilot.terminal.explainTerminalSelectionContextMenu",
+    "when": "terminalFocus && terminalTextSelected"
+  },
+  {
+    "key": "ctrl+k ctrl+i",
+    "command": "github.copilot.interactiveEditor.explain",
+    "when": "editorTextFocus && !editorReadonly"
+  },
+  {
+    "key": "ctrl+k ctrl+f",
+    "command": "github.copilot.interactiveEditor.fix",
+    "when": "editorTextFocus && !editorReadonly"
+  },
+  {
+    "key": "ctrl+k ctrl+d",
+    "command": "github.copilot.interactiveEditor.generateDocs",
+    "when": "editorTextFocus && !editorReadonly"
+  },
+  {
+    "key": "f2",
+    "command": "editor.action.rename",
+    "when": "editorHasRenameProvider && editorTextFocus && !editorReadonly"
+  },
+  {
+    "key": "f12",
+    "command": "editor.action.revealDefinition",
+    "when": "editorHasDefinitionProvider && editorTextFocus"
+  },
+  {
+    "key": "shift+f12",
+    "command": "references-view.findReferences",
+    "when": "editorHasReferenceProvider && editorTextFocus"
+  },
+  {
+    "key": "ctrl+shift+o",
+    "command": "workbench.action.gotoSymbol"
+  },
+  {
+    "key": "ctrl+t",
+    "command": "workbench.action.showAllSymbols"
+  },
+  {
+    "key": "ctrl+shift+p",
+    "command": "workbench.action.showCommands"
+  },
+  {
+    "key": "ctrl+shift+e",
+    "command": "workbench.view.explorer"
+  },
+  {
+    "key": "ctrl+shift+f",
+    "command": "workbench.view.search"
+  },
+  {
+    "key": "ctrl+shift+g",
+    "command": "workbench.view.scm"
+  },
+  {
+    "key": "ctrl+shift+d",
+    "command": "workbench.view.debug"
+  },
+  {
+    "key": "ctrl+shift+x",
+    "command": "workbench.view.extensions"
+  },
+  {
+    "key": "ctrl+shift+u",
+    "command": "workbench.action.output.toggleOutput"
+  },
+  {
+    "key": "ctrl+shift+y",
+    "command": "workbench.debug.action.toggleRepl"
+  },
+  {
+    "key": "ctrl+shift+c",
+    "command": "workbench.action.terminal.openNativeConsole"
+  },
+  {
+    "key": "ctrl+shift+`",
+    "command": "workbench.action.terminal.new"
+  },
+
+  // 🎯 TASK EXPLORER EXCLUSIVE KEYBINDINGS
+  {
+    "key": "ctrl+shift+t",
+    "command": "taskExplorer.refresh"
+  },
+  {
+    "key": "ctrl+alt+t",
+    "command": "workbench.view.extension.taskExplorer"
+  },
+
+  // 🚫 DISABLE COMPETING TASK SHORTCUTS
+  {
+    "key": "ctrl+shift+p",
+    "command": "-workbench.action.tasks.runTask"
+  },
+  {
+    "key": "ctrl+p",
+    "command": "-workbench.action.quickOpen"
+  },
+  {
+    "key": "f1",
+    "command": "-workbench.action.showCommands"
+  }
+]

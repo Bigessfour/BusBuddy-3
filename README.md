@@ -1,0 +1,340 @@
+# 🚌 BusBuddy - School Transportation Management System
+
+> **Modern WPF application for comprehensive school bus fleet management, built with .NET 9.0 and Syncfusion controls.**
+
+[![Build Status](https://img.shields.io/badge/build-passing-brightgreen)](https://github.com/Bigessfour/BusBuddy-2)
+[![.NET](https://img.shields.io/badge/.NET-9.0-blue)](https://dotnet.microsoft.com/download/dotnet/9.0)
+[![PowerShell](https://img.shields.io/badge/PowerShell-7.5.2-blue)](https://github.com/PowerShell/PowerShell)
+[![Syncfusion](https://img.shields.io/badge/Syncfusion-30.1.42-orange)](https://www.syncfusion.com/wpf-controls)
+
+## 🎯 **Project Vision**
+
+BusBuddy streamlines school transportation operations through intelligent route management, vehicle tracking, and student assignment systems. Built with modern .NET technologies and professional-grade UI components.
+
+### **Core Features**
+- 🚌 **Fleet Management**: Vehicle tracking, maintenance scheduling, driver assignments
+- 📍 **Route Optimization**: Google Earth Engine integration for efficient route planning
+- 👥 **Student Management**: Student enrollment, route assignments, pickup/dropoff tracking
+- 📊 **Analytics Dashboard**: Real-time metrics, performance reports, operational insights
+- 🔧 **Maintenance Tracking**: Scheduled maintenance, repair history, compliance monitoring
+
+## 🚀 **Quick Start**
+
+### **Prerequisites**
+- **Windows 10/11** (for WPF)
+- **.NET 9.0 SDK** (9.0.303 or later)
+- **PowerShell 7.5.2+** (for automation)
+- **Visual Studio Code** (recommended) or Visual Studio 2022
+
+### **Installation**
+```bash
+# Clone the repository
+git clone https://github.com/Bigessfour/BusBuddy-2.git
+cd BusBuddy-2
+
+# Load PowerShell automation
+Import-Module .\PowerShell\Modules\BusBuddy\BusBuddy.psm1
+
+# Build and run
+bb-build && bb-run
+```
+
+### **Development Setup**
+```powershell
+# Complete development environment setup
+bb-dev-session
+
+# Verify system health
+bb-health
+
+# Run tests
+bb-test
+```
+
+## 🏗️ **Architecture**
+
+### **Technology Stack**
+| Component | Technology | Version |
+|-----------|------------|---------|
+| **Framework** | .NET | 9.0.303 |
+| **UI Framework** | WPF | Built-in |
+| **UI Controls** | Syncfusion Essential Studio | 30.1.42 |
+| **Data Access** | Entity Framework Core | 9.0.7 |
+| **Database** | SQL Server / LocalDB | Latest |
+| **Logging** | Serilog | 4.3.0 |
+| **Testing** | NUnit | 4.3.1 |
+| **MVVM** | CommunityToolkit.MVVM | 8.3.2 |
+
+### **Project Structure**
+```
+BusBuddy/
+├── 🏢 BusBuddy.Core/           # Business logic, data access, services
+├── 🎨 BusBuddy.WPF/            # WPF UI layer with Syncfusion controls
+├── 🧪 BusBuddy.Tests/          # Unit and integration tests
+├── 🔧 PowerShell/              # Build automation and utilities
+├── 📚 Documentation/           # Project documentation
+└── 📋 Standards/               # Development standards and guidelines
+```
+
+### **Design Patterns**
+- **MVVM**: Model-View-ViewModel for clean separation of concerns
+- **Dependency Injection**: Built-in .NET DI container
+- **Repository Pattern**: Data access abstraction
+- **Command Pattern**: User actions through ICommand interface
+
+## 🔧 **Development**
+
+### **PowerShell Automation**
+BusBuddy includes a comprehensive PowerShell module for development tasks:
+
+```powershell
+# Essential commands
+bb-build              # Build the solution
+bb-run                # Run the application
+bb-test               # Execute all tests
+bb-health             # System diagnostics
+bb-dev-session        # Complete development setup
+
+# Advanced commands
+bb-xaml-validate      # Validate XAML files
+bb-catch-errors       # Execute with exception capture
+bb-commands           # List all available commands
+```
+
+### **Building**
+```bash
+# Standard .NET CLI
+dotnet restore
+dotnet build BusBuddy.sln
+dotnet run --project BusBuddy.WPF/BusBuddy.WPF.csproj
+
+# Or use PowerShell automation
+bb-build && bb-run
+```
+
+### **Testing**
+```bash
+# Run all tests
+dotnet test BusBuddy.sln
+
+# Or use PowerShell
+bb-test
+```
+
+## 🎨 **UI Design**
+
+BusBuddy uses Syncfusion Essential Studio for WPF to provide a modern, professional user interface:
+
+### **Key UI Components**
+- **SfDataGrid**: Advanced data grid with sorting, filtering, and editing
+- **DockingManager**: Professional layout management
+- **SfChart**: Rich charting and visualization
+- **NavigationDrawer**: Modern navigation patterns
+- **SfScheduler**: Calendar and scheduling interface
+
+### **Themes**
+- **FluentDark**: Modern dark theme
+- **FluentLight**: Clean light theme
+- **Custom**: BusBuddy-specific styling
+
+## 📊 **Features**
+
+### **Core Modules**
+
+#### **🚌 Vehicle Management**
+- Fleet inventory and specifications
+- Maintenance scheduling and tracking
+- Driver assignments and qualifications
+- Fuel consumption monitoring
+- Inspection compliance
+
+#### **📍 Route Management**
+- Interactive route planning with Google Earth Engine
+- Stop optimization and timing
+- Student assignment to routes
+- Real-time tracking and updates
+- Performance analytics
+
+#### **👥 Student Management**
+- Student enrollment and profiles
+- Route assignments and pickup locations
+- Attendance tracking
+- Parent communication
+- Special needs accommodation
+
+#### **📈 Analytics & Reporting**
+- Operational dashboards
+- Performance metrics
+- Cost analysis
+- Compliance reporting
+- Predictive maintenance
+
+## 🛠️ **Configuration**
+
+### **Database Setup**
+```bash
+# Create/update database
+dotnet ef database update
+
+# Add new migration
+dotnet ef migrations add NewMigrationName
+```
+
+### **Environment Variables**
+- `SYNCFUSION_LICENSE_KEY`: Syncfusion license key
+- `ConnectionStrings__DefaultConnection`: Database connection string
+- `GoogleEarthEngine__ApiKey`: Google Earth Engine API key
+
+### **Development Settings**
+Configuration is managed through `appsettings.json` files in each project:
+- `BusBuddy.Core/appsettings.json`: Core configuration
+- `BusBuddy.WPF/appsettings.json`: UI-specific settings
+
+## 🧪 **Testing** - Advanced NUnit Integration
+
+### **PowerShell Testing Module** ✨ **NEW**
+BusBuddy includes a comprehensive testing infrastructure with VS Code NUnit Test Runner integration:
+
+```powershell
+# Load advanced testing module
+Import-Module ".\PowerShell\Modules\BusBuddy.Testing\BusBuddy.Testing.psd1"
+
+# Quick testing commands
+bb-test                    # Run all tests
+bb-test -TestSuite Unit    # Run unit tests only
+bb-test-watch              # Continuous testing with file monitoring
+bb-test-report             # Generate comprehensive markdown report
+bb-test-status             # Check current test status
+```
+
+### **Test Structure**
+- **Unit Tests**: `BusBuddy.Tests/Core/` - Core business logic validation
+- **Integration Tests**: `BusBuddy.Tests/Phase3Tests/` - Database and service interactions
+- **Validation Tests**: `BusBuddy.Tests/ValidationTests/` - Input validation and error handling
+
+### **Test Categories**
+| Category | Filter | Description |
+|----------|--------|-------------|
+| **All** | No filter | Complete test suite |
+| **Unit** | `Category=Unit` | Core business logic |
+| **Integration** | `Category=Integration` | Database/service interactions |
+| **Validation** | `Category=Validation` | Input validation & error handling |
+| **Core** | `TestName~Core` | BusBuddy.Core project tests |
+| **WPF** | `TestName~WPF` | UI and presentation layer |
+
+### **VS Code Integration**
+- **NUnit Test Runner Extension**: Automatic test discovery and execution
+- **Task Explorer**: Run "🧪 BB: Phase 4 Modular Tests" for comprehensive testing
+- **Watch Mode**: Use "🔄 BB: Phase 4 Test Watch" for continuous testing
+
+### **Advanced Features**
+- **Watch Mode**: Monitors `*.cs` and `*.xaml` files for changes, auto-runs tests
+- **Detailed Reporting**: Markdown reports with metrics, environment details, and recommendations
+- **Category-Based Testing**: Focus on specific test types during development
+- **Microsoft Compliance**: PowerShell 7.5.2 standards-compliant automation
+
+### **Coverage**
+Test coverage reports are generated in `TestResults/` directory with detailed TRX files and comprehensive markdown reports in `Documentation/Reports/`.
+
+## 📚 **Documentation**
+
+### **For Developers**
+- [**System Architecture**](Documentation/PHASE-2-IMPLEMENTATION-PLAN.md)
+- [**Development Standards**](Standards/MASTER-STANDARDS.md)
+- [**PowerShell Reference**](Documentation/PowerShell-7.5.2-Reference.md)
+- [**Phase 4 Status**](Documentation/Phase4-Milestone-Report.md)
+
+### **For AI Assistants**
+- [**AI Assistant Guide**](Grok%20Resources/GROK-README.md)
+- [**Repository Navigation**](Grok%20Resources/AI-ASSISTANT-GUIDE.md)
+
+## 🤝 **Contributing**
+
+### **Development Workflow**
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feature/amazing-feature`
+3. Follow the [development standards](Standards/MASTER-STANDARDS.md)
+4. Commit changes: `git commit -m 'Add amazing feature'`
+5. Push to branch: `git push origin feature/amazing-feature`
+6. Open a Pull Request
+
+### **Standards**
+- ✅ **Syncfusion controls only** (no standard WPF controls)
+- ✅ **Serilog logging** (no Microsoft.Extensions.Logging)
+- ✅ **PowerShell 7.5.2 compliance** (no Write-Host)
+- ✅ **.NET 9.0 target framework**
+- ✅ **MVVM pattern** with proper separation of concerns
+
+### **Code Quality**
+- All tests must pass: `bb-test`
+- Code analysis must pass: `bb-build`
+- XAML validation: `bb-xaml-validate`
+- PowerShell compliance: Follow Microsoft standards
+
+## 📈 **Project Status**
+
+### **Current Phase**: Active Development (Phase 4 Complete)
+- ✅ **Foundation**: Complete (.NET 9, Syncfusion, EF Core)
+- ✅ **Testing Infrastructure**: Operational (NUnit, coverage reporting)
+- ✅ **PowerShell Automation**: Stable module system
+- 🟡 **UI Migration**: Completing Syncfusion control migration
+- 🟡 **Student Management**: Core features under development
+- 🎯 **Route Optimization**: Next major milestone
+
+### **Metrics**
+- **Build Status**: ✅ Passing
+- **Test Coverage**: 85%+ target
+- **Code Quality**: Meets established standards
+- **Documentation**: Comprehensive and current
+
+## 🌟 **Roadmap**
+
+### **Upcoming Features**
+- 🎯 **Student Entry System**: Complete student-to-route assignment
+- 📱 **Mobile Companion**: Driver mobile app
+- 🔔 **Real-time Notifications**: Parent and administrator alerts
+- 🤖 **AI Route Optimization**: Machine learning for route efficiency
+- 📊 **Advanced Analytics**: Predictive maintenance and cost optimization
+
+### **Long-term Vision**
+- Integration with state transportation reporting systems
+- Multi-district support
+- IoT device integration for real-time tracking
+- Environmental impact tracking and reporting
+
+## 📞 **Support**
+
+### **Getting Help**
+- 📚 **Documentation**: Start with this README and linked guides
+- 🔧 **PowerShell**: Use `bb-health` for system diagnostics
+- 🐛 **Issues**: Create GitHub issues for bugs or feature requests
+- 💬 **Discussions**: Use GitHub discussions for questions
+
+### **Troubleshooting**
+```powershell
+# System health check
+bb-health
+
+# Build diagnostics
+bb-build 2>&1 | tee build-output.log
+
+# XAML validation
+bb-xaml-validate
+```
+
+## 📄 **License**
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🙏 **Acknowledgments**
+
+- **Syncfusion**: Professional WPF controls
+- **Microsoft**: .NET platform and development tools
+- **PowerShell Team**: Advanced automation capabilities
+- **NUnit Team**: Comprehensive testing framework
+
+---
+
+**Built with ❤️ for school transportation professionals**
+
+*Last Updated: August 3, 2025*

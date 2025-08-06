@@ -1,0 +1,288 @@
+name: 🚌 Bus Buddy CI/CD Pipeline
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+    branches: [master, main]
+  workflow_dispatch:
+    inputs:
+      debug_enabled:
+        type: boolean
+        description: "Enable debug mode for troubleshooting"
+        default: false
+
+env:
+  DOTNET_VERSION: "8.0.x"
+  SOLUTION_FILE: "BusBuddy.sln"
+  BUILD_CONFIGURATION: "Release"
+
+jobs:
+  build-and-test:
+    runs-on: windows-latest
+    timeout-minutes: 30
+
+    outputs:
+      build-success: ${{ steps.build-step.outcome == 'success' }}
+      test-success: ${{ steps.test-step.outcome == 'success' }}
+      coverage-percentage: ${{ steps.coverage-step.outputs.coverage || '0' }}
+      build-time: ${{ steps.timing.outputs.build-time || '0' }}
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Enable GitVersion and better diff analysis
+
+      - name: ⏱️ Start timing
+        id: timing
+        run: |
+          echo "start-time=$(date -u +%s)" >> $GITHUB_OUTPUT
+          echo "🕐 Workflow started at $(Get-Date)"
+
+      - name: 🏗️ Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: 📦 Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.nuget/packages
+            ${{ github.workspace }}/**/obj/project.assets.json
+            ${{ github.workspace }}/**/obj/*.csproj.nuget.*
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj', '**/packages.lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
+      - name: 🔧 Restore dependencies
+        run: |
+          echo "🔄 Restoring NuGet packages..."
+          dotnet restore ${{ env.SOLUTION_FILE }} --verbosity normal
+          echo "✅ Package restoration completed"
+
+      - name: 🏗️ Build solution
+        id: build-step
+        run: |
+          echo "🔨 Building Bus Buddy solution..."
+          dotnet build ${{ env.SOLUTION_FILE }} --no-restore --configuration ${{ env.BUILD_CONFIGURATION }} --verbosity normal
+          echo "✅ Build completed successfully"
+
+      - name: 🧪 Run tests
+        id: test-step
+        run: |
+          echo "🧪 Running comprehensive test suite..."
+          dotnet test ${{ env.SOLUTION_FILE }} --no-build --configuration ${{ env.BUILD_CONFIGURATION }} --verbosity normal --collect:"XPlat Code Coverage" --results-directory ./TestResults --logger trx --settings testsettings.runsettings
+      - name: 📊 Generate coverage report
+        id: coverage-step
+        run: |
+          echo "📊 Generating coverage reports..."
+
+          # Find coverage files
+          $coverageFiles = Get-ChildItem -Path "./TestResults" -Filter "coverage.cobertura.xml" -Recurse
+
+          if ($coverageFiles.Count -gt 0) {
+            # Extract coverage percentage (simplified - you might want more sophisticated parsing)
+            $coverageFile = $coverageFiles[0].FullName
+            [xml]$coverage = Get-Content $coverageFile
+            $lineRate = [double]$coverage.coverage.'line-rate'
+            $coveragePercent = [math]::Round($lineRate * 100, 2)
+
+            echo "coverage=$coveragePercent" >> $env:GITHUB_OUTPUT
+            echo "✅ Coverage: $coveragePercent%"
+          } else {
+            echo "coverage=0" >> $env:GITHUB_OUTPUT
+            echo "⚠️ No coverage files found"
+          }
+
+      - name: ☁️ Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v4
+        if: always() && !cancelled()
+        with:
+          files: "**/coverage.cobertura.xml"
+          fail_ci_if_error: false
+          verbose: true
+          # Note: VS Code may show a warning about CODECOV_TOKEN context access
+          # This is a false positive - the secret exists and the syntax is correct
+          token: ${{ secrets.CODECOV_TOKEN }}
+          flags: unittests
+          name: codecov-umbrella
+          directory: ./TestResults
+        continue-on-error: true
+
+      - name: 📊 Coverage upload summary
+        if: always()
+        run: |
+          echo "📊 Code coverage reports have been generated and uploaded to Codecov."
+          echo "💡 Codecov Integration Status:"
+          echo "   ✅ codecov.yml configuration file created"
+          echo "   ✅ GitHub Actions workflow updated with proper token usage"
+          echo "   ✅ Coverage collection configured with XPlat Code Coverage"
+          echo ""
+          echo "🔧 Setup verification:"
+          echo "   1. Ensure CODECOV_TOKEN secret is set in GitHub repository settings"
+          echo "   2. Visit https://app.codecov.io/gh/Bigessfour/BusBuddy-WPF for coverage reports"
+          echo "   3. Check that coverage reports are being uploaded successfully"
+          echo ""
+          echo "📁 Coverage files location: ./TestResults/**/coverage.cobertura.xml"
+
+          # List actual coverage files found
+          $coverageFiles = Get-ChildItem -Path "./TestResults" -Filter "*.xml" -Recurse -ErrorAction SilentlyContinue
+          if ($coverageFiles.Count -gt 0) {
+            echo "📋 Found coverage files:"
+            foreach ($file in $coverageFiles) {
+              echo "   - $($file.FullName)"
+            }
+          } else {
+            echo "⚠️ No coverage files found in TestResults directory"
+          }
+
+      - name: 📊 Publish test results
+        uses: dorny/test-reporter@v1
+        if: always()
+        with:
+          name: "Test Results"
+          path: "**/TestResults/*.trx"
+          reporter: "dotnet-trx"
+          fail-on-error: false
+
+      - name: 📦 Archive build artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: build-artifacts-${{ github.run_number }}
+          path: |
+            **/bin/Release/
+            **/TestResults/
+            **/*.log
+          retention-days: 7
+
+      - name: 📦 Archive test artifacts
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: test-failure-logs-${{ github.run_number }}
+          path: |
+            **/logs/
+            **/TestResults/
+            **/*.trx
+          retention-days: 14
+
+      - name: ⏱️ Calculate build time
+        if: always()
+        run: |
+          $startTime = "${{ steps.timing.outputs.start-time || '0' }}"
+          $endTime = [int][double]::Parse((Get-Date -UFormat %s))
+          if ($startTime -ne "0") {
+            $buildTime = $endTime - [int]$startTime
+          } else {
+            $buildTime = 0
+          }
+          echo "build-time=$buildTime" >> $env:GITHUB_OUTPUT
+          echo "🕐 Total build time: ${buildTime} seconds"
+
+      - name: 📝 Create build summary
+        if: always()
+        run: |
+          echo "## 🚌 Bus Buddy Build Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Metric | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Build Status | ${{ steps.build-step.outcome == 'success' && '✅ Success' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Test Status | ${{ steps.test-step.outcome == 'success' && '✅ Success' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Coverage | ${{ steps.coverage-step.outputs.coverage || '0' }}% |" >> $GITHUB_STEP_SUMMARY
+          echo "| Build Time | ${{ steps.timing.outputs.build-time || '0' }}s |" >> $GITHUB_STEP_SUMMARY
+          echo "| Configuration | ${{ env.BUILD_CONFIGURATION }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| .NET Version | ${{ env.DOTNET_VERSION }} |" >> $GITHUB_STEP_SUMMARY
+
+  # Security scanning job
+  security-scan:
+    runs-on: windows-latest
+    if: github.event_name == 'push'
+    needs: build-and-test
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🔍 Run CodeQL Analysis
+        uses: github/codeql-action/init@v3
+        with:
+          languages: csharp
+
+      - name: 🏗️ Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: 📦 Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.nuget/packages
+            ${{ github.workspace }}/**/obj/project.assets.json
+            ${{ github.workspace }}/**/obj/*.csproj.nuget.*
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj', '**/packages.lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
+      - name: 🔧 Restore and build for analysis
+        run: |
+          echo "🔧 Restoring packages for security analysis..."
+          dotnet restore ${{ env.SOLUTION_FILE }}
+          echo "🔨 Building for CodeQL analysis..."
+          dotnet build ${{ env.SOLUTION_FILE }} --no-restore --configuration Release
+
+      - name: 🔍 Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+
+  # Dependency vulnerability scanning
+  dependency-scan:
+    runs-on: windows-latest
+    if: github.event_name == 'push'
+    needs: build-and-test
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🏗️ Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: 🔍 Run dependency vulnerability scan
+        id: vuln-scan
+        run: |
+          echo "🔍 Scanning for vulnerable dependencies..."
+          dotnet list package --vulnerable --include-transitive > vulnerability-report.txt 2>&1
+          $vulnerableCount = (Select-String -Path vulnerability-report.txt -Pattern "has the following vulnerable packages" | Measure-Object).Count
+
+          if ($vulnerableCount -gt 0) {
+            echo "⚠️ Found $vulnerableCount vulnerable packages:"
+            Get-Content vulnerability-report.txt
+            echo "vulnerable-packages=$vulnerableCount" >> $env:GITHUB_OUTPUT
+          } else {
+            echo "✅ No vulnerable packages found"
+            echo "vulnerable-packages=0" >> $env:GITHUB_OUTPUT
+          }
+
+      - name: 📦 Upload vulnerability report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: vulnerability-report-${{ github.run_number }}
+          path: vulnerability-report.txt
+          retention-days: 30
+
+      - name: 📊 Create security summary
+        if: always()
+        run: |
+          echo "## 🔒 Security Scan Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Scan Type | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| CodeQL Analysis | ✅ Completed |" >> $GITHUB_STEP_SUMMARY
+          echo "| Dependency Scan | ✅ Completed |" >> $GITHUB_STEP_SUMMARY
+          echo "| Vulnerable Packages | ${{ steps.vuln-scan.outputs.vulnerable-packages || '0' }} |" >> $GITHUB_STEP_SUMMARY

@@ -1,0 +1,60 @@
+{
+  "recommendations": [
+    // C# Development and Corruption Detection
+    "ms-dotnettools.csharp",
+    "ms-dotnettools.csdevkit",
+    "ms-dotnettools.vscode-dotnet-runtime",
+    "ms-dotnettools.vscode-dotnet-pack",
+    "josefpihrt-vscode.roslynator",
+    // XAML Development and Formatting
+    "ms-dotnettools.xaml",
+    "noesistechnologies.noesisgui-tools",
+    "doggy8088.netcore-extension-pack",
+    "redhat.vscode-xml",
+    "rogalmic.vscode-xml-complete",
+    // Testing and Test Explorer
+    "ms-vscode.test-adapter-converter",
+    // PowerShell Development (v2025.2.0 — Latest Stable)
+    "ms-vscode.powershell",
+    // Advanced PowerShell Tools (Preview for bleeding edge features)
+    // CRITICAL: Provides enhanced PS7.5 syntax highlighting, ternary operators, null conditionals
+    // and modern PowerShell 7.5.2 language features (2025 updates)
+    "ms-vscode.powershell-preview",
+    // AI-Native Development (BusBuddy's AI-first approach)
+    "github.copilot",
+    "github.copilot-chat",
+    // Syncfusion Development Support
+    "syncfusioninc.maui-vscode-extensions",
+    // Task Management (EXCLUSIVE METHOD)
+    "spmeesseman.vscode-taskexplorer",
+    // Enhanced Productivity
+    "ms-vscode.vscode-json",
+    "aaron-bond.better-comments",
+    "streetsidesoftware.code-spell-checker",
+    "ms-vscode.hexeditor",
+    "ms-vscode.vscode-yaml",
+    // Git and Version Control
+    "eamodio.gitlens",
+    "github.vscode-pull-request-github",
+    // Enhanced IntelliSense
+    "ms-vscode.vscode-typescript-next",
+    "bradlc.vscode-tailwindcss"
+  ],
+  "unwantedRecommendations": [
+    // Block competing task runners
+    "formulahendry.auto-close-tag",
+    "formulahendry.auto-rename-tag",
+    // CRITICAL: Block TypeScript linting to prevent conflicts with PSScriptAnalyzer
+    // Prevents linting conflicts with PowerShell 7.5.2 syntax analysis
+    "ms-vscode.vscode-typescript-tslint-plugin",
+    // Block competing XAML formatters
+    "DotJoshJohnson.xml",
+    // Block npm/node task runners
+    "eg2.vscode-npm-script",
+    // Block competing test extensions
+    "hbenl.vscode-test-explorer",
+    "kavod-io.vscode-jest-test-adapter",
+    // Block competing XML/XAML tools
+    "ms-vscode.vscode-xml"
+  ]
+}

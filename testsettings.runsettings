@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RunSettings>
+  <!-- Configuration for running tests -->
+  <RunConfiguration>
+    <!-- Parallel execution settings -->
+    <MaxCpuCount>0</MaxCpuCount>
+    <ResultsDirectory>.\TestResults</ResultsDirectory>
+    <TreatTestAdapterErrorsAsWarnings>false</TreatTestAdapterErrorsAsWarnings>
+  </RunConfiguration>
+
+  <!-- Test framework configuration -->
+  <TestRunParameters>
+    <!-- Custom test parameters -->
+    <Parameter name="DatabaseConnectionString" value="Server=(localdb)\\mssqllocaldb;Database=BusBuddyTest;Trusted_Connection=true;" />
+    <Parameter name="EnableDetailedLogging" value="true" />
+    <Parameter name="TestTimeout" value="30000" />
+  </TestRunParameters>
+
+  <!-- Data collection configuration for code coverage -->
+  <DataCollectionRunSettings>
+    <DataCollectors>
+      <DataCollector friendlyName="XPlat code coverage">
+        <Configuration>
+          <Format>cobertura</Format>
+          <Exclude>
+            <!-- Exclude test projects from coverage -->
+            [BusBuddy.Tests]*
+            <!-- Exclude generated files -->
+            [*]*.g.cs
+            [*]*.Designer.cs
+            <!-- Exclude third-party assemblies -->
+            [Syncfusion.*]*
+            [Microsoft.*]*
+            [System.*]*
+          </Exclude>
+          <Include>
+            <!-- Include main projects -->
+            [BusBuddy.Core]*
+            [BusBuddy.WPF]*
+          </Include>
+          <ExcludeByAttribute>
+            <!-- Exclude methods/classes with these attributes -->
+            Obsolete
+            GeneratedCodeAttribute
+            CompilerGeneratedAttribute
+          </ExcludeByAttribute>
+          <ExcludeByFile>
+            <!-- Exclude files by pattern -->
+            **/Migrations/**
+            **/*.Designer.cs
+            **/*.g.cs
+            **/*.g.i.cs
+          </ExcludeByFile>
+        </Configuration>
+      </DataCollector>
+    </DataCollectors>
+  </DataCollectionRunSettings>
+
+  <!-- MSTest configuration -->
+  <MSTest>
+    <Parallelize>
+      <Workers>0</Workers>
+      <Scope>method</Scope>
+    </Parallelize>
+    <ForcedLegacyMode>false</ForcedLegacyMode>
+  </MSTest>
+
+  <!-- Logger configuration -->
+  <LoggerRunSettings>
+    <Loggers>
+      <Logger friendlyName="console" enabled="True">
+        <Configuration>
+          <Verbosity>detailed</Verbosity>
+        </Configuration>
+      </Logger>
+      <Logger friendlyName="trx" enabled="True">
+        <Configuration>
+          <LogFileName>TestResults.trx</LogFileName>
+        </Configuration>
+      </Logger>
+    </Loggers>
+  </LoggerRunSettings>
+</RunSettings>

@@ -1,0 +1,289 @@
+<UserControl x:Class="BusBuddy.WPF.Views.Student.StudentsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:syncfusion="http://schemas.syncfusion.com/wpf"
+             mc:Ignorable="d"
+             d:DesignHeight="450" d:DesignWidth="800">
+
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/SyncfusionV30_Validated_ResourceDictionary.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+            <!-- Required converter for Visibility bindings -->
+            <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+            <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+                <Setter Property="Margin" Value="5"/>
+                <Setter Property="Padding" Value="10,5"/>
+                <Setter Property="MinWidth" Value="80"/>
+            </Style>
+        </ResourceDictionary>
+    </UserControl.Resources>
+
+    <Grid Margin="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <Border Grid.Row="0" Background="#007ACC"
+                CornerRadius="5" Padding="15" Margin="0,0,0,10">
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Text="&#xE716;" FontFamily="Segoe MDL2 Assets"
+                          FontSize="24" Foreground="White" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                <TextBlock Text="Student Management" FontSize="20" FontWeight="Bold"
+                          Foreground="White" VerticalAlignment="Center"/>
+            </StackPanel>
+        </Border>
+
+        <!-- Enhanced Toolbar for Route Building -->
+        <Border Grid.Row="1" Background="#F5F5F5"
+                CornerRadius="3" Padding="10" Margin="0,0,0,10">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Main Actions -->
+                <StackPanel Grid.Column="0" Orientation="Horizontal">
+                    <syncfusion:ButtonAdv Name="AddStudentButton" Content="➕ Add Student"
+                            Command="{Binding AddStudentCommand}"
+                            Background="{StaticResource BusBuddy.Brush.Primary}" Foreground="White"/>
+                    <syncfusion:ButtonAdv Name="EditStudentButton" Content="✏️ Edit Student"
+                            Command="{Binding EditStudentCommand}"
+                            IsEnabled="{Binding HasSelectedStudent}"/>
+                    <syncfusion:ButtonAdv Name="DeleteStudentButton" Content="🗑️ Delete Student"
+                            Command="{Binding DeleteStudentCommand}"
+                            IsEnabled="{Binding HasSelectedStudent}"/>
+                    <Separator Margin="10,0"/>
+
+                    <!-- Bulk Operations -->
+                    <syncfusion:ButtonAdv Name="ImportStudentsButton" Content="📥 Import CSV"
+                            Command="{Binding ImportStudentsCommand}"
+                            Background="{StaticResource BusBuddy.Brush.FleetGreen}" Foreground="White"/>
+                    <syncfusion:ButtonAdv Name="BulkAssignRouteButton" Content="🚌 Bulk Assign Route"
+                            Command="{Binding BulkAssignRouteCommand}"
+                            IsEnabled="{Binding HasSelectedStudents}"
+                            Background="{StaticResource BusBuddy.Brush.SafetyOrange}" Foreground="White"/>
+                    <Separator Margin="10,0"/>
+
+                    <!-- AI & Mapping -->
+                    <syncfusion:ButtonAdv Name="OptimizeRoutesButton" Content="🤖 AI Optimize"
+                            Command="{Binding OptimizeRoutesCommand}"
+                            Background="{StaticResource BusBuddy.Brush.Semantic.Warning}" Foreground="White"/>
+                    <syncfusion:ButtonAdv Name="ViewMapButton" Content="🗺️ View Map"
+                            Command="{Binding ViewMapCommand}"
+                            Background="{StaticResource BusBuddy.Brush.Semantic.Info}" Foreground="White"/>
+                </StackPanel>
+
+                <!-- Quick Actions -->
+                <StackPanel Grid.Column="1" Orientation="Horizontal">
+                    <syncfusion:ButtonAdv Name="RefreshButton" Content="🔄 Refresh"
+                            Command="{Binding RefreshCommand}"/>
+                    <syncfusion:ButtonAdv Name="ExportButton" Content="📤 Export"
+                            Command="{Binding ExportCommand}"/>
+
+                    <!-- Quick Filter -->
+                    <TextBox Name="QuickSearchBox" Width="150" Margin="10,0,0,0"
+                            Text="{Binding QuickSearchText, UpdateSourceTrigger=PropertyChanged}">
+                        <TextBox.Style>
+                            <Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="TextBox">
+                                            <Border Background="{TemplateBinding Background}"
+                                                   BorderBrush="{TemplateBinding BorderBrush}"
+                                                   BorderThickness="{TemplateBinding BorderThickness}"
+                                                   CornerRadius="3">
+                                                <Grid>
+                                                    <ScrollViewer x:Name="PART_ContentHost" />
+                                                    <TextBlock Text="🔍 Quick search..."
+                                                              Foreground="Gray"
+                                                              IsHitTestVisible="False"
+                                                              Margin="5,0,0,0"
+                                                              VerticalAlignment="Center">
+                                                        <TextBlock.Style>
+                                                            <Style TargetType="TextBlock">
+                                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding Text, RelativeSource={RelativeSource AncestorType=TextBox}}" Value="">
+                                                                        <Setter Property="Visibility" Value="Visible"/>
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </TextBlock.Style>
+                                                    </TextBlock>
+                                                </Grid>
+                                            </Border>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                            </Style>
+                        </TextBox.Style>
+                    </TextBox>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- Student Data Grid - Enhanced for Route Building -->
+        <syncfusion:SfDataGrid Grid.Row="2"
+                               Name="StudentsDataGrid"
+                               ItemsSource="{Binding Students}"
+                               SelectedItem="{Binding SelectedStudent, Mode=TwoWay}"
+                               AutoGenerateColumns="False"
+                               AllowEditing="True"
+                               EditTrigger="OnTap"
+                               AllowSorting="True"
+                               AllowFiltering="True"
+                               AllowGrouping="True"
+                               ShowGroupDropArea="True"
+                               ShowRowHeader="True"
+                               SelectionMode="Single"
+                               GridLinesVisibility="Both"
+                               HeaderLinesVisibility="Both"
+                               ColumnSizer="Star"
+                               AddNewRowPosition="Top"
+                               ShowBusyIndicator="True"
+                               NavigationMode="Cell"
+                               AllowResizingColumns="True">
+
+            <!-- Table Summary for Route Analytics -->
+            <syncfusion:SfDataGrid.TableSummaryRows>
+                <syncfusion:GridTableSummaryRow ShowSummaryInRow="False">
+                    <syncfusion:GridTableSummaryRow.SummaryColumns>
+                        <syncfusion:GridSummaryColumn Name="TotalStudents"
+                                                    MappingName="StudentNumber"
+                                                    SummaryType="CountAggregate"
+                                                    Format="'Total: {Count:0}'" />
+                        <syncfusion:GridSummaryColumn Name="ActiveCount"
+                                                    MappingName="Active"
+                                                    SummaryType="CountAggregate"
+                                                    Format="'Active: {Count:0}'" />
+                    </syncfusion:GridTableSummaryRow.SummaryColumns>
+                </syncfusion:GridTableSummaryRow>
+            </syncfusion:SfDataGrid.TableSummaryRows>
+
+            <!-- Group Summary for Route Assignment Analysis -->
+            <syncfusion:SfDataGrid.GroupSummaryRows>
+                <syncfusion:GridSummaryRow ShowSummaryInRow="True">
+                    <syncfusion:GridSummaryRow.SummaryColumns>
+                        <syncfusion:GridSummaryColumn Name="GroupCount"
+                                                    MappingName="StudentNumber"
+                                                    SummaryType="CountAggregate"
+                                                    Format="'{Count} students in this group'" />
+                    </syncfusion:GridSummaryRow.SummaryColumns>
+                </syncfusion:GridSummaryRow>
+            </syncfusion:SfDataGrid.GroupSummaryRows>
+
+            <syncfusion:SfDataGrid.Columns>
+                <syncfusion:GridTextColumn HeaderText="Student ID"
+                                         MappingName="StudentNumber"
+                                         Width="100"
+                                         AllowEditing="True"/>
+                <syncfusion:GridTextColumn HeaderText="Name"
+                                         MappingName="StudentName"
+                                         Width="180"
+                                         AllowEditing="True"/>
+                <syncfusion:GridComboBoxColumn HeaderText="Grade"
+                                             MappingName="Grade"
+                                             Width="80"
+                                             ItemsSource="{Binding AvailableGrades}"
+                                             AllowEditing="True"/>
+                <syncfusion:GridComboBoxColumn HeaderText="School"
+                                             MappingName="School"
+                                             Width="150"
+                                             ItemsSource="{Binding AvailableSchools}"
+                                             AllowEditing="True"/>
+                <syncfusion:GridTextColumn HeaderText="Address"
+                                         MappingName="HomeAddress"
+                                         Width="200"
+                                         AllowEditing="True"/>
+                <syncfusion:GridTextColumn HeaderText="City"
+                                         MappingName="City"
+                                         Width="120"
+                                         AllowEditing="True"/>
+                <syncfusion:GridTextColumn HeaderText="Phone"
+                                         MappingName="HomePhone"
+                                         Width="120"
+                                         AllowEditing="True"/>
+                <syncfusion:GridTextColumn HeaderText="Parent/Guardian"
+                                         MappingName="ParentGuardian"
+                                         Width="150"
+                                         AllowEditing="True"/>
+                <syncfusion:GridComboBoxColumn HeaderText="AM Route"
+                                             MappingName="AMRoute"
+                                             Width="120"
+                                             ItemsSource="{Binding AvailableRoutes}"
+                                             DisplayMemberPath="RouteName"
+                                             AllowEditing="True"/>
+                <syncfusion:GridComboBoxColumn HeaderText="PM Route"
+                                             MappingName="PMRoute"
+                                             Width="120"
+                                             ItemsSource="{Binding AvailableRoutes}"
+                                             DisplayMemberPath="RouteName"
+                                             AllowEditing="True"/>
+                <syncfusion:GridCheckBoxColumn HeaderText="Active"
+                                             MappingName="Active"
+                                             Width="80"/>
+                <syncfusion:GridTemplateColumn HeaderText="Actions" Width="100" AllowFiltering="False" AllowSorting="False">
+                    <syncfusion:GridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                <Button Content="🗺️" ToolTip="View on Map"
+                                       Command="{Binding DataContext.ViewOnMapCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                       CommandParameter="{Binding}"
+                                       Width="25" Height="25" Margin="2"/>
+                                <Button Content="🎯" ToolTip="AI Route Suggest"
+                                       Command="{Binding DataContext.SuggestRouteCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                       CommandParameter="{Binding}"
+                                       Width="25" Height="25" Margin="2"/>
+                            </StackPanel>
+                        </DataTemplate>
+                    </syncfusion:GridTemplateColumn.CellTemplate>
+                </syncfusion:GridTemplateColumn>
+            </syncfusion:SfDataGrid.Columns>
+        </syncfusion:SfDataGrid>
+
+        <!-- Enhanced Status Bar with Route Analytics -->
+        <Border Grid.Row="3" Background="{StaticResource BusBuddy.Brush.Surface.Light}"
+                CornerRadius="3" Padding="10" Margin="0,10,0,0">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Statistics -->
+                <StackPanel Grid.Column="0" Orientation="Horizontal">
+                    <TextBlock Text="📊 Students: " FontWeight="SemiBold"/>
+                    <TextBlock Text="{Binding TotalStudents}" FontWeight="Bold" Margin="0,0,15,0"/>
+                    <TextBlock Text="✅ Active: " FontWeight="SemiBold"/>
+                    <TextBlock Text="{Binding ActiveStudents}" FontWeight="Bold" Margin="0,0,15,0"/>
+                    <TextBlock Text="🚌 With Routes: " FontWeight="SemiBold"/>
+                    <TextBlock Text="{Binding StudentsWithRoutes}" FontWeight="Bold" Margin="0,0,15,0"/>
+                    <TextBlock Text="⚠️ Unassigned: " FontWeight="SemiBold"/>
+                    <TextBlock Text="{Binding UnassignedStudents}" FontWeight="Bold" Margin="0,0,15,0"/>
+                    <TextBlock Text="🎯 Selected: " FontWeight="SemiBold"/>
+                    <TextBlock Text="{Binding SelectedStudent.StudentName, FallbackValue='None'}" FontWeight="Bold"/>
+                </StackPanel>
+
+                <!-- Quick Actions & Filter Status -->
+                <StackPanel Grid.Column="1" Orientation="Horizontal">
+                    <TextBlock Text="{Binding FilterStatusText}" FontStyle="Italic" Margin="0,0,10,0"/>
+                    <syncfusion:ButtonAdv Content="📋 Summary" Width="80" Height="25"
+                            Command="{Binding ShowSummaryCommand}"
+                            ToolTip="Show route assignment summary"/>
+                    <syncfusion:ButtonAdv Content="⚡ Quick Actions" Width="100" Height="25" Margin="5,0,0,0"
+                            Command="{Binding ShowQuickActionsCommand}"
+                            ToolTip="Show quick action menu"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>

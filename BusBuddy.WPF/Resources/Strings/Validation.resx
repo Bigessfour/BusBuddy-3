@@ -1,0 +1,328 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+
+  <!-- Field Validation Messages -->
+  <data name="Required" xml:space="preserve">
+    <value>This field is required.</value>
+    <comment>Generic required field validation message</comment>
+  </data>
+  <data name="InvalidFormat" xml:space="preserve">
+    <value>Invalid format.</value>
+    <comment>Generic invalid format validation message</comment>
+  </data>
+  <data name="InvalidLength" xml:space="preserve">
+    <value>Invalid length. Must be between {0} and {1} characters.</value>
+    <comment>Invalid length validation message with min/max parameters</comment>
+  </data>
+  <data name="InvalidRange" xml:space="preserve">
+    <value>Value must be between {0} and {1}.</value>
+    <comment>Invalid range validation message with min/max parameters</comment>
+  </data>
+
+  <!-- Email Validation -->
+  <data name="InvalidEmail" xml:space="preserve">
+    <value>Please enter a valid email address.</value>
+    <comment>Invalid email validation message</comment>
+  </data>
+  <data name="EmailTooLong" xml:space="preserve">
+    <value>Email address is too long. Maximum length is {0} characters.</value>
+    <comment>Email too long validation message</comment>
+  </data>
+
+  <!-- Phone Number Validation -->
+  <data name="InvalidPhoneNumber" xml:space="preserve">
+    <value>Please enter a valid phone number.</value>
+    <comment>Invalid phone number validation message</comment>
+  </data>
+  <data name="PhoneNumberTooShort" xml:space="preserve">
+    <value>Phone number is too short. Minimum length is {0} digits.</value>
+    <comment>Phone number too short validation message</comment>
+  </data>
+  <data name="PhoneNumberTooLong" xml:space="preserve">
+    <value>Phone number is too long. Maximum length is {0} digits.</value>
+    <comment>Phone number too long validation message</comment>
+  </data>
+
+  <!-- Date Validation -->
+  <data name="InvalidDate" xml:space="preserve">
+    <value>Please enter a valid date.</value>
+    <comment>Invalid date validation message</comment>
+  </data>
+  <data name="DateTooEarly" xml:space="preserve">
+    <value>Date cannot be earlier than {0}.</value>
+    <comment>Date too early validation message</comment>
+  </data>
+  <data name="DateTooLate" xml:space="preserve">
+    <value>Date cannot be later than {0}.</value>
+    <comment>Date too late validation message</comment>
+  </data>
+  <data name="FutureDate" xml:space="preserve">
+    <value>Date cannot be in the future.</value>
+    <comment>Future date not allowed validation message</comment>
+  </data>
+  <data name="PastDate" xml:space="preserve">
+    <value>Date cannot be in the past.</value>
+    <comment>Past date not allowed validation message</comment>
+  </data>
+
+  <!-- Time Validation -->
+  <data name="InvalidTime" xml:space="preserve">
+    <value>Please enter a valid time.</value>
+    <comment>Invalid time validation message</comment>
+  </data>
+  <data name="TimeOutOfRange" xml:space="preserve">
+    <value>Time must be between {0} and {1}.</value>
+    <comment>Time out of range validation message</comment>
+  </data>
+
+  <!-- Number Validation -->
+  <data name="InvalidNumber" xml:space="preserve">
+    <value>Please enter a valid number.</value>
+    <comment>Invalid number validation message</comment>
+  </data>
+  <data name="NumberTooSmall" xml:space="preserve">
+    <value>Number must be at least {0}.</value>
+    <comment>Number too small validation message</comment>
+  </data>
+  <data name="NumberTooLarge" xml:space="preserve">
+    <value>Number cannot exceed {0}.</value>
+    <comment>Number too large validation message</comment>
+  </data>
+  <data name="MustBePositive" xml:space="preserve">
+    <value>Value must be positive.</value>
+    <comment>Must be positive number validation message</comment>
+  </data>
+  <data name="MustBeNonNegative" xml:space="preserve">
+    <value>Value must be zero or positive.</value>
+    <comment>Must be non-negative number validation message</comment>
+  </data>
+
+  <!-- Student-Specific Validation -->
+  <data name="InvalidStudentId" xml:space="preserve">
+    <value>Please enter a valid student ID.</value>
+    <comment>Invalid student ID validation message</comment>
+  </data>
+  <data name="StudentIdExists" xml:space="preserve">
+    <value>Student ID already exists.</value>
+    <comment>Student ID already exists validation message</comment>
+  </data>
+  <data name="InvalidGrade" xml:space="preserve">
+    <value>Please select a valid grade level.</value>
+    <comment>Invalid grade validation message</comment>
+  </data>
+  <data name="InvalidAge" xml:space="preserve">
+    <value>Age must be between {0} and {1} years.</value>
+    <comment>Invalid age validation message</comment>
+  </data>
+
+  <!-- Bus-Specific Validation -->
+  <data name="InvalidBusNumber" xml:space="preserve">
+    <value>Please enter a valid bus number.</value>
+    <comment>Invalid bus number validation message</comment>
+  </data>
+  <data name="BusNumberExists" xml:space="preserve">
+    <value>Bus number already exists.</value>
+    <comment>Bus number already exists validation message</comment>
+  </data>
+  <data name="InvalidLicensePlate" xml:space="preserve">
+    <value>Please enter a valid license plate.</value>
+    <comment>Invalid license plate validation message</comment>
+  </data>
+  <data name="LicensePlateExists" xml:space="preserve">
+    <value>License plate already exists.</value>
+    <comment>License plate already exists validation message</comment>
+  </data>
+  <data name="InvalidCapacity" xml:space="preserve">
+    <value>Bus capacity must be between {0} and {1} passengers.</value>
+    <comment>Invalid bus capacity validation message</comment>
+  </data>
+  <data name="InvalidMileage" xml:space="preserve">
+    <value>Mileage must be a positive number.</value>
+    <comment>Invalid mileage validation message</comment>
+  </data>
+
+  <!-- Driver-Specific Validation -->
+  <data name="InvalidLicenseNumber" xml:space="preserve">
+    <value>Please enter a valid license number.</value>
+    <comment>Invalid license number validation message</comment>
+  </data>
+  <data name="LicenseNumberExists" xml:space="preserve">
+    <value>License number already exists.</value>
+    <comment>License number already exists validation message</comment>
+  </data>
+  <data name="LicenseExpired" xml:space="preserve">
+    <value>License has expired. Please renew before assigning routes.</value>
+    <comment>License expired validation message</comment>
+  </data>
+  <data name="LicenseExpiringSoon" xml:space="preserve">
+    <value>License expires within {0} days. Please renew soon.</value>
+    <comment>License expiring soon validation message</comment>
+  </data>
+  <data name="InvalidExperience" xml:space="preserve">
+    <value>Experience must be a non-negative number.</value>
+    <comment>Invalid experience validation message</comment>
+  </data>
+
+  <!-- Route-Specific Validation -->
+  <data name="InvalidRouteNumber" xml:space="preserve">
+    <value>Please enter a valid route number.</value>
+    <comment>Invalid route number validation message</comment>
+  </data>
+  <data name="RouteNumberExists" xml:space="preserve">
+    <value>Route number already exists.</value>
+    <comment>Route number already exists validation message</comment>
+  </data>
+  <data name="InvalidDistance" xml:space="preserve">
+    <value>Distance must be a positive number.</value>
+    <comment>Invalid distance validation message</comment>
+  </data>
+  <data name="InvalidDuration" xml:space="preserve">
+    <value>Duration must be a positive number.</value>
+    <comment>Invalid duration validation message</comment>
+  </data>
+  <data name="RouteHasNoStops" xml:space="preserve">
+    <value>Route must have at least one stop.</value>
+    <comment>Route has no stops validation message</comment>
+  </data>
+
+  <!-- Schedule-Specific Validation -->
+  <data name="InvalidScheduleType" xml:space="preserve">
+    <value>Please select a valid schedule type.</value>
+    <comment>Invalid schedule type validation message</comment>
+  </data>
+  <data name="EndTimeBeforeStartTime" xml:space="preserve">
+    <value>End time cannot be before start time.</value>
+    <comment>End time before start time validation message</comment>
+  </data>
+  <data name="ScheduleConflict" xml:space="preserve">
+    <value>Schedule conflicts with existing schedule.</value>
+    <comment>Schedule conflict validation message</comment>
+  </data>
+  <data name="NoDaysSelected" xml:space="preserve">
+    <value>Please select at least one day.</value>
+    <comment>No days selected validation message</comment>
+  </data>
+
+  <!-- Maintenance-Specific Validation -->
+  <data name="InvalidMaintenanceType" xml:space="preserve">
+    <value>Please select a valid maintenance type.</value>
+    <comment>Invalid maintenance type validation message</comment>
+  </data>
+  <data name="InvalidCost" xml:space="preserve">
+    <value>Cost must be a positive number.</value>
+    <comment>Invalid cost validation message</comment>
+  </data>
+  <data name="CompletedDateBeforeScheduled" xml:space="preserve">
+    <value>Completed date cannot be before scheduled date.</value>
+    <comment>Completed date before scheduled validation message</comment>
+  </data>
+
+  <!-- Fuel-Specific Validation -->
+  <data name="InvalidFuelAmount" xml:space="preserve">
+    <value>Fuel amount must be a positive number.</value>
+    <comment>Invalid fuel amount validation message</comment>
+  </data>
+  <data name="InvalidFuelCost" xml:space="preserve">
+    <value>Fuel cost must be a positive number.</value>
+    <comment>Invalid fuel cost validation message</comment>
+  </data>
+  <data name="InvalidOdometerReading" xml:space="preserve">
+    <value>Odometer reading must be greater than the previous reading.</value>
+    <comment>Invalid odometer reading validation message</comment>
+  </data>
+
+  <!-- General Validation -->
+  <data name="SelectionRequired" xml:space="preserve">
+    <value>Please make a selection.</value>
+    <comment>Selection required validation message</comment>
+  </data>
+  <data name="InvalidSelection" xml:space="preserve">
+    <value>Invalid selection.</value>
+    <comment>Invalid selection validation message</comment>
+  </data>
+  <data name="DuplicateEntry" xml:space="preserve">
+    <value>Duplicate entry detected.</value>
+    <comment>Duplicate entry validation message</comment>
+  </data>
+  <data name="InvalidPassword" xml:space="preserve">
+    <value>Password must be at least {0} characters long and contain at least one uppercase letter, one lowercase letter, and one number.</value>
+    <comment>Invalid password validation message</comment>
+  </data>
+  <data name="PasswordMismatch" xml:space="preserve">
+    <value>Passwords do not match.</value>
+    <comment>Password mismatch validation message</comment>
+  </data>
+
+  <!-- File Validation -->
+  <data name="InvalidFileFormat" xml:space="preserve">
+    <value>Invalid file format. Supported formats: {0}</value>
+    <comment>Invalid file format validation message</comment>
+  </data>
+  <data name="FileTooLarge" xml:space="preserve">
+    <value>File is too large. Maximum size is {0} MB.</value>
+    <comment>File too large validation message</comment>
+  </data>
+  <data name="FileNotFound" xml:space="preserve">
+    <value>File not found.</value>
+    <comment>File not found validation message</comment>
+  </data>
+
+</root>

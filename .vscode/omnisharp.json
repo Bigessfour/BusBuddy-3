@@ -1,0 +1,20 @@
+{
+  "FormattingOptions": {
+    "EnableEditorConfigSupport": true,
+    "OrganizeImports": false
+  },
+  "RoslynExtensionsOptions": {
+    "EnableImportCompletion": true,
+    "EnableAnalyzersSupport": true
+  },
+  "MsBuild": {
+    "LoadProjectsOnDemand": false,
+    "EnablePackageAutoRestore": true,
+    "UseLegacySdkResolver": false
+  },
+  "Razor": {
+    "Disabled": true
+  },
+  "enableMsBuildLoadProjectsOnDemand": false,
+  "enableRoslynAnalyzers": true
+}

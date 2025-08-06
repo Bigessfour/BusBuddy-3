@@ -1,0 +1,452 @@
+<Window x:Class="BusBuddy.WPF.Views.Student.StudentForm"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:syncfusion="http://schemas.syncfusion.com/wpf"
+        xmlns:syncfusionshared="clr-namespace:Syncfusion.Windows.Shared;assembly=Syncfusion.Shared.Wpf"
+        mc:Ignorable="d"
+        Title="Student Form" Height="600" Width="800">
+
+    <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/SyncfusionV30_Validated_ResourceDictionary.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+            <!-- Required converter for Visibility bindings -->
+            <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+            <Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
+                <Setter Property="Margin" Value="0,0,0,10"/>
+                <Setter Property="Padding" Value="8"/>
+                <Setter Property="Height" Value="35"/>
+            </Style>
+            <Style TargetType="ComboBox" BasedOn="{StaticResource {x:Type ComboBox}}">
+                <Setter Property="Margin" Value="0,0,0,10"/>
+                <Setter Property="Padding" Value="8"/>
+                <Setter Property="Height" Value="35"/>
+            </Style>
+            <Style TargetType="Label" BasedOn="{StaticResource {x:Type Label}}">
+                <Setter Property="Margin" Value="0,0,0,5"/>
+                <Setter Property="FontWeight" Value="SemiBold"/>
+            </Style>
+            <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+                <Setter Property="Margin" Value="5"/>
+                <Setter Property="Padding" Value="15,8"/>
+                <Setter Property="MinWidth" Value="100"/>
+            </Style>
+        </ResourceDictionary>
+    </Window.Resources>
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="20">
+        <Grid MaxWidth="600">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <!-- Global Error Panel -->
+            <Border Grid.Row="0" Background="#E74C3C" CornerRadius="5" Padding="15" Margin="0,0,0,10"
+                    Visibility="{Binding HasGlobalError, Converter={StaticResource BooleanToVisibilityConverter}}">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <TextBlock Grid.Column="0" Text="⚠️" FontSize="16" Foreground="White"
+                              VerticalAlignment="Center" Margin="0,0,10,0"/>
+                    <TextBlock Grid.Column="1" Text="{Binding GlobalErrorMessage}"
+                              Foreground="White" FontWeight="Bold" TextWrapping="Wrap"
+                              VerticalAlignment="Center"/>
+                    <syncfusion:ButtonAdv Grid.Column="2" Content="✖"
+                                         Command="{Binding ClearGlobalErrorCommand}"
+                                         Background="Transparent" Foreground="White"
+                                         BorderThickness="1" BorderBrush="White"
+                                         Width="30" Height="30"
+                                         ToolTip="Clear error message"/>
+                </Grid>
+            </Border>
+
+            <!-- Header -->
+            <Border Grid.Row="1" Background="{StaticResource BusBuddy.Brush.Primary}"
+                    CornerRadius="5" Padding="15" Margin="0,0,0,20">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="&#xE716;" FontFamily="Segoe MDL2 Assets"
+                              FontSize="24" Foreground="White" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                    <TextBlock Text="{Binding FormTitle}" FontSize="18" FontWeight="Bold"
+                              Foreground="White" VerticalAlignment="Center"/>
+                </StackPanel>
+            </Border>
+
+            <!-- Form Content -->
+            <StackPanel Grid.Row="2">
+                <!-- Basic Information -->
+                <GroupBox Header="Basic Information" Margin="0,0,0,15" Padding="15">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,0,10,0">
+                            <Label Content="Student Name *"/>
+                            <syncfusion:SfMaskedEdit Name="StudentNameTextBox"
+                                     Value="{Binding Student.StudentName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True}"
+                                     Watermark="Enter student's full name"/>
+                        </StackPanel>
+
+                        <StackPanel Grid.Row="0" Grid.Column="1" Margin="10,0,0,0">
+                            <Label Content="Student Number"/>
+                            <syncfusion:SfMaskedEdit Name="StudentNumberTextBox"
+                                     Value="{Binding Student.StudentNumber, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                     Watermark="Auto-generated if empty"/>
+                        </StackPanel>
+
+                        <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,10,0">
+                            <Label Content="Grade *"/>
+                            <syncfusion:ComboBoxAdv Name="GradeComboBox"
+                                      Text="{Binding Student.Grade, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                      IsEditable="True">
+                                <ComboBoxItem Content="K"/>
+                                <ComboBoxItem Content="1"/>
+                                <ComboBoxItem Content="2"/>
+                                <ComboBoxItem Content="3"/>
+                                <ComboBoxItem Content="4"/>
+                                <ComboBoxItem Content="5"/>
+                                <ComboBoxItem Content="6"/>
+                                <ComboBoxItem Content="7"/>
+                                <ComboBoxItem Content="8"/>
+                                <ComboBoxItem Content="9"/>
+                                <ComboBoxItem Content="10"/>
+                                <ComboBoxItem Content="11"/>
+                                <ComboBoxItem Content="12"/>
+                            </syncfusion:ComboBoxAdv>
+                        </StackPanel>
+
+                        <StackPanel Grid.Row="1" Grid.Column="1" Margin="10,0,0,0">
+                            <Label Content="School"/>
+                            <syncfusion:SfMaskedEdit Name="SchoolTextBox"
+                                     Value="{Binding Student.School, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                        </StackPanel>
+
+                        <StackPanel Grid.Row="2" Grid.Column="0" Margin="0,0,10,0">
+                            <Label Content="Date of Birth"/>
+                            <DatePicker Name="DateOfBirthPicker"
+                                       SelectedDate="{Binding Student.DateOfBirth, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                       Margin="0,0,0,0"/>
+                        </StackPanel>
+
+                        <StackPanel Grid.Row="2" Grid.Column="1" Margin="10,0,0,0">
+                            <!-- Empty for now - can add more fields later -->
+                        </StackPanel>
+
+                        <StackPanel Grid.Row="3" Grid.ColumnSpan="2">
+                            <CheckBox Name="ActiveCheckBox"
+                                      Content="Active Student"
+                                      IsChecked="{Binding Student.Active, Mode=TwoWay}"
+                                      Margin="0,10,0,0"/>
+                        </StackPanel>
+                    </Grid>
+                </GroupBox>
+
+                <!-- Address Information -->
+                <GroupBox Header="Address Information" Margin="0,0,0,15" Padding="15">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <StackPanel Grid.Row="0" Grid.ColumnSpan="3">
+                            <Label Content="Home Address *"/>
+                            <syncfusion:SfMaskedEdit Name="HomeAddressTextBox"
+                                     Value="{Binding Student.HomeAddress, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True}"
+                                     Watermark="123 Main Street"/>
+                        </StackPanel>
+
+                        <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,10,0">
+                            <Label Content="City *"/>
+                            <syncfusion:SfMaskedEdit Name="CityTextBox"
+                                     Value="{Binding Student.City, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True}"
+                                     Watermark="City name"/>
+                        </StackPanel>
+
+                        <StackPanel Grid.Row="1" Grid.Column="1" Margin="10,0,10,0">
+                            <Label Content="State *"/>
+                            <syncfusion:ComboBoxAdv Name="StateComboBox"
+                                      Text="{Binding Student.State, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                      IsEditable="True" Width="80">
+                                <ComboBoxItem Content="IL"/>
+                                <ComboBoxItem Content="IN"/>
+                                <ComboBoxItem Content="IA"/>
+                                <ComboBoxItem Content="WI"/>
+                                <ComboBoxItem Content="MO"/>
+                            </syncfusion:ComboBoxAdv>
+                        </StackPanel>
+
+                        <StackPanel Grid.Row="1" Grid.Column="2" Margin="10,0,0,0">
+                            <Label Content="ZIP Code *"/>
+                            <syncfusion:SfMaskedEdit Name="ZipTextBox"
+                                     Value="{Binding Student.Zip, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True}"
+                                     Mask="#####(-####)?"
+                                     PromptChar="_"
+                                     Watermark="12345"
+                                     Width="100"/>
+                        </StackPanel>
+
+                        <StackPanel Grid.Row="2" Grid.ColumnSpan="3">
+                            <syncfusion:ButtonAdv Name="ValidateAddressButton"
+                                    Content="Validate Address"
+                                    Command="{Binding ValidateAddressCommand}"
+                                    HorizontalAlignment="Left"
+                                    Margin="0,10,0,0"/>
+                            <TextBlock Name="AddressValidationMessage"
+                                       Text="{Binding AddressValidationMessage}"
+                                       Foreground="{Binding AddressValidationColor}"
+                                       Margin="0,5,0,0"
+                                       TextWrapping="Wrap"/>
+                        </StackPanel>
+                    </Grid>
+                </GroupBox>
+
+                <!-- Contact Information -->
+                <GroupBox Header="Contact Information" Margin="0,0,0,15" Padding="15">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,0,10,0">
+                            <Label Content="Home Phone"/>
+                            <syncfusion:SfMaskedEdit Name="HomePhoneTextBox"
+                                     Value="{Binding Student.HomePhone, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True}"
+                                     Mask="(###) ###-####"
+                                     PromptChar="_"
+                                     Watermark="(555) 123-4567"/>
+                        </StackPanel>
+
+                        <StackPanel Grid.Row="0" Grid.Column="1" Margin="10,0,0,0">
+                            <Label Content="Emergency Phone"/>
+                            <syncfusion:SfMaskedEdit Name="EmergencyPhoneTextBox"
+                                     Value="{Binding Student.EmergencyPhone, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True}"
+                                     Mask="(###) ###-####"
+                                     PromptChar="_"
+                                     Watermark="(555) 123-4567"/>
+                        </StackPanel>
+
+                        <StackPanel Grid.Row="1" Grid.ColumnSpan="2">
+                            <Label Content="Parent/Guardian"/>
+                            <syncfusion:SfMaskedEdit Name="ParentGuardianTextBox"
+                                     Value="{Binding Student.ParentGuardian, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                        </StackPanel>
+                    </Grid>
+                </GroupBox>
+
+                <!-- Transportation Information -->
+                <GroupBox Header="Transportation Information" Margin="0,0,0,15" Padding="15">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <!-- Route Assignment -->
+                        <Grid Grid.Row="0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+
+                            <StackPanel Grid.Column="0" Margin="0,0,10,0">
+                                <Label Content="AM Route"/>
+                                <syncfusion:ComboBoxAdv Name="AMRouteComboBox"
+                                          Text="{Binding Student.AMRoute, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                          ItemsSource="{Binding AvailableRoutes}"
+                                          IsEditable="True"/>
+                            </StackPanel>
+
+                            <StackPanel Grid.Column="1" Margin="10,0,10,0">
+                                <Label Content="PM Route"/>
+                                <syncfusion:ComboBoxAdv Name="PMRouteComboBox"
+                                          Text="{Binding Student.PMRoute, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                          ItemsSource="{Binding AvailableRoutes}"
+                                          IsEditable="True"/>
+                            </StackPanel>
+
+                            <StackPanel Grid.Column="2" Margin="10,0,0,0">
+                                <Label Content="Bus Stop"/>
+                                <syncfusion:ComboBoxAdv Name="BusStopComboBox"
+                                          Text="{Binding Student.BusStop, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                          ItemsSource="{Binding FilteredBusStops}"
+                                          IsEditable="True"/>
+                            </StackPanel>
+                        </Grid>
+
+                        <!-- AI and Mapping Actions -->
+                        <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,15,0,0">
+                            <syncfusion:ButtonAdv Name="SuggestRoutesButton"
+                                    Content="🤖 AI Suggest Routes"
+                                    Command="{Binding SuggestRoutesCommand}"
+                                    Background="#E67E22" Foreground="White"
+                                    ToolTip="Use xAI Grok to suggest optimal routes based on address"/>
+                            <syncfusion:ButtonAdv Name="ViewOnMapButton"
+                                    Content="🗺️ View on Map"
+                                    Command="{Binding ViewOnMapCommand}"
+                                    Background="#3498DB" Foreground="White"
+                                    Margin="10,0,0,0"
+                                    ToolTip="Show student location on Google Earth Engine map"/>
+                            <syncfusion:ButtonAdv Name="ImportCsvButton"
+                                    Content="📥 Import CSV"
+                                    Command="{Binding ImportCsvCommand}"
+                                    Background="#16A085" Foreground="White"
+                                    Margin="10,0,0,0"
+                                    ToolTip="Import student data from CSV file"/>
+                        </StackPanel>
+                    </Grid>
+                </GroupBox>
+
+                <!-- Special Needs and Safety -->
+                <GroupBox Header="Special Needs and Safety Requirements" Margin="0,0,0,15" Padding="15">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <!-- Special Needs Flags -->
+                        <Grid Grid.Row="0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+
+                            <CheckBox Grid.Column="0" Name="RequiresWheelchairCheckBox"
+                                    Content="Wheelchair Accessible"
+                                    IsChecked="{Binding Student.RequiresWheelchair, Mode=TwoWay}"
+                                    VerticalAlignment="Center"/>
+                            <CheckBox Grid.Column="1" Name="RequiresSeatBeltCheckBox"
+                                    Content="Seat Belt Required"
+                                    IsChecked="{Binding Student.RequiresSeatBelt, Mode=TwoWay}"
+                                    VerticalAlignment="Center"/>
+                            <CheckBox Grid.Column="2" Name="RequiresAideCheckBox"
+                                    Content="Aide Required"
+                                    IsChecked="{Binding Student.RequiresAide, Mode=TwoWay}"
+                                    VerticalAlignment="Center"/>
+                            <CheckBox Grid.Column="3" Name="HasMedicalNeedsCheckBox"
+                                    Content="Medical Needs"
+                                    IsChecked="{Binding Student.HasMedicalNeeds, Mode=TwoWay}"
+                                    VerticalAlignment="Center"/>
+                        </Grid>
+
+                        <!-- Special Instructions -->
+                        <StackPanel Grid.Row="1" Margin="0,10,0,0">
+                            <Label Content="Special Instructions"/>
+                            <syncfusion:SfTextBoxExt Name="SpecialInstructionsTextBox"
+                                       Text="{Binding Student.SpecialInstructions, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                       AcceptsReturn="True"
+                                       TextWrapping="Wrap"
+                                       Height="60"
+                                       VerticalScrollBarVisibility="Auto"
+                                       Watermark="Enter any special transportation instructions..."/>
+                        </StackPanel>
+
+                        <!-- Emergency Contact -->
+                        <Grid Grid.Row="2" Margin="0,10,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+
+                            <StackPanel Grid.Column="0" Margin="0,0,10,0">
+                                <Label Content="Emergency Contact Name"/>
+                                <syncfusion:SfTextBoxExt Name="EmergencyContactNameTextBox"
+                                           Text="{Binding Student.EmergencyContactName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                           Watermark="Emergency contact full name"/>
+                            </StackPanel>
+
+                            <StackPanel Grid.Column="1" Margin="10,0,0,0">
+                                <Label Content="Emergency Contact Phone"/>
+                                <syncfusion:SfMaskedEdit Name="EmergencyContactPhoneMaskedEdit"
+                                           Value="{Binding Student.EmergencyContactPhone, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                           Mask="(###) ###-####"
+                                           PromptChar="_"
+                                           Watermark="(555) 123-4567"/>
+                            </StackPanel>
+                        </Grid>
+                    </Grid>
+                </GroupBox>
+            </StackPanel>
+
+            <!-- Form Actions with Validation Status -->
+            <Border Grid.Row="3" Background="{StaticResource BusBuddy.Brush.Surface.Light}"
+                    CornerRadius="3" Padding="15" Margin="0,20,0,0">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Validation Status -->
+                    <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,10">
+                        <syncfusion:SfBusyIndicator Name="ValidationBusyIndicator"
+                                      AnimationType="DualRing"
+                                      Visibility="{Binding IsValidating, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                      Width="20" Height="20"
+                                      Margin="0,0,10,0"/>
+                        <TextBlock Name="ValidationStatusTextBlock"
+                                 Text="{Binding ValidationStatus}"
+                                 Foreground="{Binding ValidationStatusBrush}"
+                                 VerticalAlignment="Center"
+                                 FontWeight="Bold"/>
+                    </StackPanel>
+
+                    <!-- Action Buttons -->
+                    <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right">
+                        <syncfusion:ButtonAdv Name="ValidateButton"
+                                Content="🔍 Validate Data"
+                                Command="{Binding ValidateDataCommand}"
+                                Background="#9B59B6" Foreground="White"
+                                Margin="0,0,10,0"
+                                ToolTip="Validate all student data and address"/>
+                        <syncfusion:ButtonAdv Name="SaveButton" Content="💾 Save Student"
+                                Command="{Binding SaveCommand}"
+                                Background="{StaticResource BusBuddy.Brush.Primary}" Foreground="White"
+                                Margin="0,0,10,0"
+                                IsEnabled="{Binding CanSave}"
+                                IsDefault="True"
+                                ToolTip="Save student information to database"/>
+                        <syncfusion:ButtonAdv Name="CancelButton" Content="❌ Cancel"
+                                Command="{Binding CancelCommand}"
+                                Background="#E74C3C" Foreground="White"
+                                IsCancel="True"
+                                ToolTip="Cancel and return to students list"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+        </Grid>
+    </ScrollViewer>
+</Window>

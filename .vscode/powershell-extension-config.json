@@ -1,0 +1,78 @@
+{
+  "_description": "PowerShell Extension v2025.6.1 Advanced Configuration",
+  "_version": "2025.6.1",
+  "_lastUpdated": "August 1, 2025",
+  "extensionFeatures": {
+    "intelliSense": {
+      "enabled": true,
+      "parameterHints": true,
+      "completionTriggers": [
+        ".",
+        "::",
+        "-",
+        "$",
+        "(",
+        "["
+      ],
+      "showDocumentation": true,
+      "includeSystemModules": true
+    },
+    "debugging": {
+      "enableConditionalBreakpoints": true,
+      "enableDataBreakpoints": true,
+      "enableLogPoints": true,
+      "temporaryConsole": false,
+      "startupScript": "${workspaceFolder}/PowerShell/Profiles/Microsoft.PowerShell_profile.ps1",
+      "env": {
+        "BUSBUDDY_DEBUG_ENABLED": "true"
+      }
+    },
+    "scriptAnalysis": {
+      "enableRealTime": true,
+      "enableOnSave": true,
+      "severity": "Warning",
+      "customRules": true,
+      "settingsPath": "${workspaceFolder}/PowerShell/PSScriptAnalyzerSettings.psd1"
+    },
+    "formatting": {
+      "preset": "OTBS",
+      "autoFormat": true,
+      "formatOnSave": true,
+      "correctCasing": true,
+      "trimWhitespace": true,
+      "alignAssignments": true,
+      "useCorrectCasing": true
+    },
+    "codeActions": {
+      "enableQuickFix": true,
+      "enableRefactoring": true,
+      "enableExtractFunction": true,
+      "enableExtractVariable": true
+    }
+  },
+  "projectIntegration": {
+    "busbuddy": {
+      "profileScript": "PowerShell/Profiles/Microsoft.PowerShell_profile.ps1",
+      "workflowScript": "PowerShell/Modules/BusBuddy/BusBuddy.psm1",
+      "taskExplorerIntegration": true,
+      "debuggerIntegration": true
+    }
+  },
+  "performanceOptimizations": {
+    "enableAsyncCompletion": true,
+    "enableFastScriptAnalysis": true,
+    "optimizeForLargeFiles": true,
+    "cacheModuleInfo": true,
+    "backgroundProcessing": true,
+    "enableModernSyntaxSupport": true
+  },
+  "workspaceSettings": {
+    "defaultProfile": "PowerShell 7.5.2",
+    "autoLoadProfiles": true,
+    "integratedTerminal": {
+      "useWorkspaceProfile": true,
+      "preserveSession": true,
+      "showOnStartup": false
+    }
+  }
+}

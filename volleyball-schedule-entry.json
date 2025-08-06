@@ -1,0 +1,33 @@
+{
+  "scheduleEntry": {
+    "activityType": "High School Volleyball",
+    "destination": "Kit Carson",
+    "date": "2025-07-23",
+    "eventTime": "09:00:00",
+    "leaveTime": "08:15:00",
+    "returnTime": "12:00:00",
+    "requestedBy": "Athletic Director",
+    "notes": "JV Girls and Varsity Girls volleyball @ Kit Carson (away game). Both teams need transportation. @ indicates away game requiring bus assignment.",
+    "status": "Pending Assignment",
+    "studentsCount": 24,
+    "expectedPassengers": 26,
+    "requiresTransportation": true,
+    "awayGame": true,
+    "teams": [
+      "Junior Varsity Girls Volleyball",
+      "Varsity Girls Volleyball"
+    ],
+    "assignmentStatus": {
+      "busAssigned": false,
+      "driverAssigned": false,
+      "currentBusId": null,
+      "currentDriverId": null
+    },
+    "schedulingNotes": {
+      "estimatedTravelTime": "45 minutes",
+      "departureTime": "8:15 AM (45 min before 9:00 AM game)",
+      "returnTime": "Approximately 12:00 PM (assuming 2.5 hour event)",
+      "capacity": "Standard bus (up to 48 passengers) sufficient for 2 teams + coaches"
+    }
+  }
+}

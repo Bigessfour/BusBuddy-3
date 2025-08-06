@@ -1,0 +1,228 @@
+<UserControl x:Class="BusBuddy.WPF.Views.Route.RouteAssignmentView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:syncfusion="http://schemas.syncfusion.com/wpf"
+             xmlns:shared="clr-namespace:Syncfusion.Windows.Shared;assembly=Syncfusion.Shared.WPF"
+             mc:Ignorable="d"
+             d:DesignHeight="800" d:DesignWidth="1200">
+
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <Border Grid.Row="0" Background="#007ACC" CornerRadius="5" Padding="15" Margin="0,0,0,20">
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Text="🗺️" FontSize="24" Foreground="White" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                <TextBlock Text="Route Assignment - MVP Route Builder" FontSize="18" FontWeight="Bold"
+                          Foreground="White" VerticalAlignment="Center"/>
+            </StackPanel>
+        </Border>
+
+        <!-- Main Content -->
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="2*"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="2*"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Unassigned Students -->
+            <GroupBox Grid.Column="0" Header="📚 Unassigned Students" Margin="0,0,10,0">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Search Filter -->
+                    <syncfusion:SfMaskedEdit Grid.Row="0"
+                             Text="{Binding StudentSearchText, Mode=TwoWay}"
+                             Margin="10,10,10,15"
+                             Height="35">
+                        <TextBox.Style>
+                            <Style TargetType="TextBox">
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="TextBox">
+                                            <Border Background="White" BorderBrush="#CCCCCC" BorderThickness="1" CornerRadius="3">
+                                                <ScrollViewer x:Name="PART_ContentHost" Padding="8,5"/>
+                                            </Border>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                            </Style>
+                        </TextBox.Style>
+                    </syncfusion:SfMaskedEdit>
+
+                    <!-- Students Grid -->
+                    <syncfusion:SfDataGrid Grid.Row="1"
+                                          x:Name="UnassignedStudentsGrid"
+                                          ItemsSource="{Binding UnassignedStudents}"
+                                          SelectedItem="{Binding SelectedStudent, Mode=TwoWay}"
+                                          AutoGenerateColumns="False"
+                                          AllowSorting="True"
+                                          AllowFiltering="True"
+                                          SelectionMode="Single"
+                                          GridLinesVisibility="Both">
+                        <syncfusion:SfDataGrid.Columns>
+                            <syncfusion:GridTextColumn HeaderText="Name" MappingName="StudentName" Width="150"/>
+                            <syncfusion:GridTextColumn HeaderText="Grade" MappingName="Grade" Width="60"/>
+                            <syncfusion:GridTextColumn HeaderText="Address" MappingName="HomeAddress" Width="200"/>
+                            <syncfusion:GridTextColumn HeaderText="City" MappingName="City" Width="100"/>
+                        </syncfusion:SfDataGrid.Columns>
+                    </syncfusion:SfDataGrid>
+
+                    <!-- Student Count -->
+                    <TextBlock Grid.Row="2"
+                              Text="{Binding UnassignedStudentCount, StringFormat='Unassigned: {0} students'}"
+                              Margin="10,10,10,5" FontWeight="SemiBold"/>
+                </Grid>
+            </GroupBox>
+
+            <!-- Assignment Buttons -->
+            <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="10,0">
+                <syncfusion:ButtonAdv Content="➡️ Assign"
+                                     Command="{Binding AssignStudentCommand}"
+                                     Margin="0,0,0,10" Padding="15,8"
+                                     Background="#107C10" Foreground="White"
+                                     IsEnabled="{Binding CanAssignStudent}"/>
+                <syncfusion:ButtonAdv Content="⬅️ Remove"
+                                     Command="{Binding RemoveStudentCommand}"
+                                     Margin="0,0,0,10" Padding="15,8"
+                                     Background="#D13438" Foreground="White"
+                                     IsEnabled="{Binding CanRemoveStudent}"/>
+                <syncfusion:ButtonAdv Content="🔄 Auto Assign"
+                                     Command="{Binding AutoAssignCommand}"
+                                     Padding="15,8"
+                                     Background="#8B5CF6" Foreground="White"/>
+            </StackPanel>
+
+            <!-- Route Assignment -->
+            <GroupBox Grid.Column="2" Header="🚌 Route Assignment" Margin="10,0,10,0">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Route Selection -->
+                    <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="10,10,10,15">
+                        <Label Content="Select Route:" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                        <syncfusion:ComboBoxAdv ItemsSource="{Binding AvailableRoutes}"
+                                              SelectedItem="{Binding SelectedRoute, Mode=TwoWay}"
+                                              DisplayMemberPath="RouteName"
+                                              Width="200" Margin="0,0,10,0"/>
+                        <syncfusion:ButtonAdv Content="➕ New Route"
+                                             Command="{Binding CreateRouteCommand}"
+                                             Padding="12,6" Background="#007ACC" Foreground="White"/>
+                    </StackPanel>
+
+                    <!-- Route Info -->
+                    <Border Grid.Row="1" Background="#F0F0F0" Padding="10" Margin="10,0,10,15" CornerRadius="3">
+                        <StackPanel>
+                            <TextBlock Text="{Binding SelectedRoute.RouteName, StringFormat='Route: {0}'}"
+                                      FontWeight="SemiBold" Margin="0,0,0,5"/>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="{Binding SelectedRoute.AssignedStudents.Count, StringFormat='Students: {0}'}"
+                                          Margin="0,0,15,0"/>
+                                <TextBlock Text="{Binding SelectedRoute.AssignedBus, StringFormat='Bus: {0}'}"
+                                          Margin="0,0,15,0"/>
+                                <TextBlock Text="{Binding SelectedRoute.AssignedDriver, StringFormat='Driver: {0}'}"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Assigned Students Grid -->
+                    <syncfusion:SfDataGrid Grid.Row="2"
+                                          x:Name="AssignedStudentsGrid"
+                                          ItemsSource="{Binding SelectedRoute.AssignedStudents}"
+                                          SelectedItem="{Binding SelectedAssignedStudent, Mode=TwoWay}"
+                                          AutoGenerateColumns="False"
+                                          AllowSorting="True"
+                                          SelectionMode="Single"
+                                          GridLinesVisibility="Both">
+                        <syncfusion:SfDataGrid.Columns>
+                            <syncfusion:GridTextColumn HeaderText="Name" MappingName="StudentName" Width="120"/>
+                            <syncfusion:GridTextColumn HeaderText="Grade" MappingName="Grade" Width="60"/>
+                            <syncfusion:GridTextColumn HeaderText="Address" MappingName="HomeAddress" Width="180"/>
+                            <syncfusion:GridNumericColumn HeaderText="Stop #" MappingName="StopNumber" Width="70"/>
+                        </syncfusion:SfDataGrid.Columns>
+                    </syncfusion:SfDataGrid>
+
+                    <!-- Assigned Count -->
+                    <TextBlock Grid.Row="3"
+                              Text="{Binding AssignedStudentCount, StringFormat='Assigned: {0} students'}"
+                              Margin="10,10,10,5" FontWeight="SemiBold"/>
+                </Grid>
+            </GroupBox>
+
+            <!-- Route Configuration -->
+            <GroupBox Grid.Column="4" Header="⚙️ Route Config" Margin="10,0,0,0">
+                <StackPanel Margin="10">
+                    <!-- Bus Assignment -->
+                    <Label Content="Assign Bus:"/>
+                    <syncfusion:ComboBoxAdv ItemsSource="{Binding AvailableBuses}"
+                                          SelectedItem="{Binding SelectedRoute.AssignedBus, Mode=TwoWay}"
+                                          DisplayMemberPath="BusNumber"
+                                          Margin="0,0,0,15"/>
+
+                    <!-- Driver Assignment -->
+                    <Label Content="Assign Driver:"/>
+                    <syncfusion:ComboBoxAdv ItemsSource="{Binding AvailableDrivers}"
+                                          SelectedItem="{Binding SelectedRoute.AssignedDriver, Mode=TwoWay}"
+                                          DisplayMemberPath="DriverName"
+                                          Margin="0,0,0,15"/>
+
+                    <!-- Route Actions -->
+                    <syncfusion:ButtonAdv Content="💾 Save Route"
+                                         Command="{Binding SaveRouteCommand}"
+                                         Margin="0,0,0,10" Padding="12,8"
+                                         Background="#107C10" Foreground="White"/>
+                    <syncfusion:ButtonAdv Content="🗑️ Delete Route"
+                                         Command="{Binding DeleteRouteCommand}"
+                                         Margin="0,0,0,10" Padding="12,8"
+                                         Background="#D13438" Foreground="White"/>
+                    <syncfusion:ButtonAdv Content="📋 View Schedule"
+                                         Command="{Binding ViewScheduleCommand}"
+                                         Padding="12,8"
+                                         Background="#8B5CF6" Foreground="White"/>
+                </StackPanel>
+            </GroupBox>
+        </Grid>
+
+        <!-- Status Bar -->
+        <Border Grid.Row="2" Background="#F5F5F5" Padding="15,10" Margin="0,20,0,0" CornerRadius="3">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0"
+                          Text="{Binding StatusMessage}"
+                          VerticalAlignment="Center"/>
+                <StackPanel Grid.Column="1" Orientation="Horizontal">
+                    <syncfusion:ButtonAdv Content="🔄 Refresh Data"
+                                         Command="{Binding RefreshDataCommand}"
+                                         Margin="0,0,10,0" Padding="12,6"
+                                         Background="#5A5A5A" Foreground="White"/>
+                    <syncfusion:ButtonAdv Content="📊 Generate Report"
+                                         Command="{Binding GenerateReportCommand}"
+                                         Padding="12,6"
+                                         Background="#FF8C00" Foreground="White"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>
+

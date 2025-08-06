@@ -1,0 +1,609 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!-- Microsoft ResX Schema -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+
+  <!-- Application Title and Branding -->
+  <data name="AppTitle" xml:space="preserve">
+    <value>Bus Buddy</value>
+    <comment>Main application title</comment>
+  </data>
+  <data name="AppSubtitle" xml:space="preserve">
+    <value>School Transportation Management System</value>
+    <comment>Application subtitle/description</comment>
+  </data>
+  <data name="AppVersion" xml:space="preserve">
+    <value>Version 1.0.0</value>
+    <comment>Application version display</comment>
+  </data>
+
+  <!-- Navigation Menu Items -->
+  <data name="Nav_Dashboard" xml:space="preserve">
+    <value>🏠 Dashboard</value>
+    <comment>Navigation menu item for Dashboard</comment>
+  </data>
+  <data name="Nav_Students" xml:space="preserve">
+    <value>👨‍🎓 Students</value>
+    <comment>Navigation menu item for Students</comment>
+  </data>
+  <data name="Nav_Buses" xml:space="preserve">
+    <value>🚌 Buses</value>
+    <comment>Navigation menu item for Buses</comment>
+  </data>
+  <data name="Nav_Drivers" xml:space="preserve">
+    <value>👨‍💼 Drivers</value>
+    <comment>Navigation menu item for Drivers</comment>
+  </data>
+  <data name="Nav_Routes" xml:space="preserve">
+    <value>🛣️ Routes</value>
+    <comment>Navigation menu item for Routes</comment>
+  </data>
+  <data name="Nav_Schedules" xml:space="preserve">
+    <value>📅 Schedules</value>
+    <comment>Navigation menu item for Schedules</comment>
+  </data>
+  <data name="Nav_Maintenance" xml:space="preserve">
+    <value>🔧 Maintenance</value>
+    <comment>Navigation menu item for Maintenance</comment>
+  </data>
+  <data name="Nav_Fuel" xml:space="preserve">
+    <value>⛽ Fuel</value>
+    <comment>Navigation menu item for Fuel</comment>
+  </data>
+  <data name="Nav_Activity" xml:space="preserve">
+    <value>📊 Activity</value>
+    <comment>Navigation menu item for Activity</comment>
+  </data>
+  <data name="Nav_Tickets" xml:space="preserve">
+    <value>🎫 Tickets</value>
+    <comment>Navigation menu item for Tickets</comment>
+  </data>
+  <data name="Nav_Settings" xml:space="preserve">
+    <value>⚙️ Settings</value>
+    <comment>Navigation menu item for Settings</comment>
+  </data>
+  <data name="Nav_XAIChat" xml:space="preserve">
+    <value>🤖 AI Assistant</value>
+    <comment>Navigation menu item for XAI Chat</comment>
+  </data>
+
+  <!-- Common Actions -->
+  <data name="Action_Add" xml:space="preserve">
+    <value>Add</value>
+    <comment>Generic Add action</comment>
+  </data>
+  <data name="Action_Edit" xml:space="preserve">
+    <value>Edit</value>
+    <comment>Generic Edit action</comment>
+  </data>
+  <data name="Action_Delete" xml:space="preserve">
+    <value>Delete</value>
+    <comment>Generic Delete action</comment>
+  </data>
+  <data name="Action_Save" xml:space="preserve">
+    <value>Save</value>
+    <comment>Generic Save action</comment>
+  </data>
+  <data name="Action_Cancel" xml:space="preserve">
+    <value>Cancel</value>
+    <comment>Generic Cancel action</comment>
+  </data>
+  <data name="Action_Search" xml:space="preserve">
+    <value>Search</value>
+    <comment>Generic Search action</comment>
+  </data>
+  <data name="Action_Filter" xml:space="preserve">
+    <value>Filter</value>
+    <comment>Generic Filter action</comment>
+  </data>
+  <data name="Action_Refresh" xml:space="preserve">
+    <value>Refresh</value>
+    <comment>Generic Refresh action</comment>
+  </data>
+  <data name="Action_Export" xml:space="preserve">
+    <value>Export</value>
+    <comment>Generic Export action</comment>
+  </data>
+  <data name="Action_Import" xml:space="preserve">
+    <value>Import</value>
+    <comment>Generic Import action</comment>
+  </data>
+  <data name="Action_Print" xml:space="preserve">
+    <value>Print</value>
+    <comment>Generic Print action</comment>
+  </data>
+  <data name="Action_Close" xml:space="preserve">
+    <value>Close</value>
+    <comment>Generic Close action</comment>
+  </data>
+
+  <!-- Common Labels -->
+  <data name="Label_Name" xml:space="preserve">
+    <value>Name</value>
+    <comment>Generic Name label</comment>
+  </data>
+  <data name="Label_Description" xml:space="preserve">
+    <value>Description</value>
+    <comment>Generic Description label</comment>
+  </data>
+  <data name="Label_Status" xml:space="preserve">
+    <value>Status</value>
+    <comment>Generic Status label</comment>
+  </data>
+  <data name="Label_Date" xml:space="preserve">
+    <value>Date</value>
+    <comment>Generic Date label</comment>
+  </data>
+  <data name="Label_Time" xml:space="preserve">
+    <value>Time</value>
+    <comment>Generic Time label</comment>
+  </data>
+  <data name="Label_Address" xml:space="preserve">
+    <value>Address</value>
+    <comment>Generic Address label</comment>
+  </data>
+  <data name="Label_Phone" xml:space="preserve">
+    <value>Phone</value>
+    <comment>Generic Phone label</comment>
+  </data>
+  <data name="Label_Email" xml:space="preserve">
+    <value>Email</value>
+    <comment>Generic Email label</comment>
+  </data>
+  <data name="Label_Loading" xml:space="preserve">
+    <value>Loading...</value>
+    <comment>Generic Loading message</comment>
+  </data>
+  <data name="Label_NoData" xml:space="preserve">
+    <value>No data available</value>
+    <comment>Generic No data message</comment>
+  </data>
+
+  <!-- Student Management -->
+  <data name="Student_Title" xml:space="preserve">
+    <value>Student Management</value>
+    <comment>Student management page title</comment>
+  </data>
+  <data name="Student_AddNew" xml:space="preserve">
+    <value>Add New Student</value>
+    <comment>Add new student action</comment>
+  </data>
+  <data name="Student_FirstName" xml:space="preserve">
+    <value>First Name</value>
+    <comment>Student first name label</comment>
+  </data>
+  <data name="Student_LastName" xml:space="preserve">
+    <value>Last Name</value>
+    <comment>Student last name label</comment>
+  </data>
+  <data name="Student_Grade" xml:space="preserve">
+    <value>Grade</value>
+    <comment>Student grade label</comment>
+  </data>
+  <data name="Student_School" xml:space="preserve">
+    <value>School</value>
+    <comment>Student school label</comment>
+  </data>
+  <data name="Student_Route" xml:space="preserve">
+    <value>Route</value>
+    <comment>Student route assignment label</comment>
+  </data>
+  <data name="Student_Guardian" xml:space="preserve">
+    <value>Guardian</value>
+    <comment>Student guardian label</comment>
+  </data>
+  <data name="Student_Emergency" xml:space="preserve">
+    <value>Emergency Contact</value>
+    <comment>Student emergency contact label</comment>
+  </data>
+
+  <!-- Bus Management -->
+  <data name="Bus_Title" xml:space="preserve">
+    <value>Bus Management</value>
+    <comment>Bus management page title</comment>
+  </data>
+  <data name="Bus_Number" xml:space="preserve">
+    <value>Bus Number</value>
+    <comment>Bus number label</comment>
+  </data>
+  <data name="Bus_LicensePlate" xml:space="preserve">
+    <value>License Plate</value>
+    <comment>Bus license plate label</comment>
+  </data>
+  <data name="Bus_Capacity" xml:space="preserve">
+    <value>Capacity</value>
+    <comment>Bus capacity label</comment>
+  </data>
+  <data name="Bus_Year" xml:space="preserve">
+    <value>Year</value>
+    <comment>Bus year label</comment>
+  </data>
+  <data name="Bus_Make" xml:space="preserve">
+    <value>Make</value>
+    <comment>Bus make label</comment>
+  </data>
+  <data name="Bus_Model" xml:space="preserve">
+    <value>Model</value>
+    <comment>Bus model label</comment>
+  </data>
+  <data name="Bus_Mileage" xml:space="preserve">
+    <value>Mileage</value>
+    <comment>Bus mileage label</comment>
+  </data>
+
+  <!-- Driver Management -->
+  <data name="Driver_Title" xml:space="preserve">
+    <value>Driver Management</value>
+    <comment>Driver management page title</comment>
+  </data>
+  <data name="Driver_LicenseNumber" xml:space="preserve">
+    <value>License Number</value>
+    <comment>Driver license number label</comment>
+  </data>
+  <data name="Driver_LicenseExpiry" xml:space="preserve">
+    <value>License Expiry</value>
+    <comment>Driver license expiry label</comment>
+  </data>
+  <data name="Driver_HireDate" xml:space="preserve">
+    <value>Hire Date</value>
+    <comment>Driver hire date label</comment>
+  </data>
+  <data name="Driver_Experience" xml:space="preserve">
+    <value>Experience</value>
+    <comment>Driver experience label</comment>
+  </data>
+
+  <!-- Route Management -->
+  <data name="Route_Title" xml:space="preserve">
+    <value>Route Management</value>
+    <comment>Route management page title</comment>
+  </data>
+  <data name="Route_Number" xml:space="preserve">
+    <value>Route Number</value>
+    <comment>Route number label</comment>
+  </data>
+  <data name="Route_StartLocation" xml:space="preserve">
+    <value>Start Location</value>
+    <comment>Route start location label</comment>
+  </data>
+  <data name="Route_EndLocation" xml:space="preserve">
+    <value>End Location</value>
+    <comment>Route end location label</comment>
+  </data>
+  <data name="Route_Distance" xml:space="preserve">
+    <value>Distance</value>
+    <comment>Route distance label</comment>
+  </data>
+  <data name="Route_Duration" xml:space="preserve">
+    <value>Duration</value>
+    <comment>Route duration label</comment>
+  </data>
+  <data name="Route_Stops" xml:space="preserve">
+    <value>Stops</value>
+    <comment>Route stops label</comment>
+  </data>
+
+  <!-- Schedule Management -->
+  <data name="Schedule_Title" xml:space="preserve">
+    <value>Schedule Management</value>
+    <comment>Schedule management page title</comment>
+  </data>
+  <data name="Schedule_Type" xml:space="preserve">
+    <value>Schedule Type</value>
+    <comment>Schedule type label</comment>
+  </data>
+  <data name="Schedule_StartTime" xml:space="preserve">
+    <value>Start Time</value>
+    <comment>Schedule start time label</comment>
+  </data>
+  <data name="Schedule_EndTime" xml:space="preserve">
+    <value>End Time</value>
+    <comment>Schedule end time label</comment>
+  </data>
+  <data name="Schedule_Days" xml:space="preserve">
+    <value>Days</value>
+    <comment>Schedule days label</comment>
+  </data>
+  <data name="Schedule_Active" xml:space="preserve">
+    <value>Active</value>
+    <comment>Schedule active status label</comment>
+  </data>
+
+  <!-- Maintenance Management -->
+  <data name="Maintenance_Title" xml:space="preserve">
+    <value>Maintenance Tracking</value>
+    <comment>Maintenance tracking page title</comment>
+  </data>
+  <data name="Maintenance_Type" xml:space="preserve">
+    <value>Maintenance Type</value>
+    <comment>Maintenance type label</comment>
+  </data>
+  <data name="Maintenance_ScheduledDate" xml:space="preserve">
+    <value>Scheduled Date</value>
+    <comment>Maintenance scheduled date label</comment>
+  </data>
+  <data name="Maintenance_CompletedDate" xml:space="preserve">
+    <value>Completed Date</value>
+    <comment>Maintenance completed date label</comment>
+  </data>
+  <data name="Maintenance_Cost" xml:space="preserve">
+    <value>Cost</value>
+    <comment>Maintenance cost label</comment>
+  </data>
+  <data name="Maintenance_Notes" xml:space="preserve">
+    <value>Notes</value>
+    <comment>Maintenance notes label</comment>
+  </data>
+
+  <!-- Fuel Management -->
+  <data name="Fuel_Title" xml:space="preserve">
+    <value>Fuel Management</value>
+    <comment>Fuel management page title</comment>
+  </data>
+  <data name="Fuel_Date" xml:space="preserve">
+    <value>Fuel Date</value>
+    <comment>Fuel date label</comment>
+  </data>
+  <data name="Fuel_Amount" xml:space="preserve">
+    <value>Amount</value>
+    <comment>Fuel amount label</comment>
+  </data>
+  <data name="Fuel_Cost" xml:space="preserve">
+    <value>Cost</value>
+    <comment>Fuel cost label</comment>
+  </data>
+  <data name="Fuel_Station" xml:space="preserve">
+    <value>Station</value>
+    <comment>Fuel station label</comment>
+  </data>
+  <data name="Fuel_Odometer" xml:space="preserve">
+    <value>Odometer</value>
+    <comment>Fuel odometer reading label</comment>
+  </data>
+
+  <!-- Activity Logging -->
+  <data name="Activity_Title" xml:space="preserve">
+    <value>Activity Logging</value>
+    <comment>Activity logging page title</comment>
+  </data>
+  <data name="Activity_User" xml:space="preserve">
+    <value>User</value>
+    <comment>Activity user label</comment>
+  </data>
+  <data name="Activity_Action" xml:space="preserve">
+    <value>Action</value>
+    <comment>Activity action label</comment>
+  </data>
+  <data name="Activity_Timestamp" xml:space="preserve">
+    <value>Timestamp</value>
+    <comment>Activity timestamp label</comment>
+  </data>
+  <data name="Activity_Details" xml:space="preserve">
+    <value>Details</value>
+    <comment>Activity details label</comment>
+  </data>
+
+  <!-- Ticket Management -->
+  <data name="Ticket_Title" xml:space="preserve">
+    <value>Ticket Management</value>
+    <comment>Ticket management page title</comment>
+  </data>
+  <data name="Ticket_Number" xml:space="preserve">
+    <value>Ticket Number</value>
+    <comment>Ticket number label</comment>
+  </data>
+  <data name="Ticket_Priority" xml:space="preserve">
+    <value>Priority</value>
+    <comment>Ticket priority label</comment>
+  </data>
+  <data name="Ticket_Category" xml:space="preserve">
+    <value>Category</value>
+    <comment>Ticket category label</comment>
+  </data>
+  <data name="Ticket_AssignedTo" xml:space="preserve">
+    <value>Assigned To</value>
+    <comment>Ticket assigned to label</comment>
+  </data>
+  <data name="Ticket_CreatedBy" xml:space="preserve">
+    <value>Created By</value>
+    <comment>Ticket created by label</comment>
+  </data>
+  <data name="Ticket_CreatedDate" xml:space="preserve">
+    <value>Created Date</value>
+    <comment>Ticket created date label</comment>
+  </data>
+  <data name="Ticket_Subject" xml:space="preserve">
+    <value>Subject</value>
+    <comment>Ticket subject label</comment>
+  </data>
+
+  <!-- Settings -->
+  <data name="Settings_Title" xml:space="preserve">
+    <value>Settings</value>
+    <comment>Settings page title</comment>
+  </data>
+  <data name="Settings_General" xml:space="preserve">
+    <value>General</value>
+    <comment>General settings section</comment>
+  </data>
+  <data name="Settings_Database" xml:space="preserve">
+    <value>Database</value>
+    <comment>Database settings section</comment>
+  </data>
+  <data name="Settings_Security" xml:space="preserve">
+    <value>Security</value>
+    <comment>Security settings section</comment>
+  </data>
+  <data name="Settings_Notifications" xml:space="preserve">
+    <value>Notifications</value>
+    <comment>Notifications settings section</comment>
+  </data>
+  <data name="Settings_Appearance" xml:space="preserve">
+    <value>Appearance</value>
+    <comment>Appearance settings section</comment>
+  </data>
+
+  <!-- XAI Chat -->
+  <data name="XAI_Title" xml:space="preserve">
+    <value>AI Assistant</value>
+    <comment>XAI Chat page title</comment>
+  </data>
+  <data name="XAI_TypeMessage" xml:space="preserve">
+    <value>Type your message here...</value>
+    <comment>XAI Chat input placeholder</comment>
+  </data>
+  <data name="XAI_Send" xml:space="preserve">
+    <value>Send</value>
+    <comment>XAI Chat send button</comment>
+  </data>
+  <data name="XAI_ClearChat" xml:space="preserve">
+    <value>Clear Chat</value>
+    <comment>XAI Chat clear button</comment>
+  </data>
+  <data name="XAI_Thinking" xml:space="preserve">
+    <value>AI is thinking...</value>
+    <comment>XAI Chat thinking message</comment>
+  </data>
+
+  <!-- Status Messages -->
+  <data name="Status_Active" xml:space="preserve">
+    <value>Active</value>
+    <comment>Active status</comment>
+  </data>
+  <data name="Status_Inactive" xml:space="preserve">
+    <value>Inactive</value>
+    <comment>Inactive status</comment>
+  </data>
+  <data name="Status_Pending" xml:space="preserve">
+    <value>Pending</value>
+    <comment>Pending status</comment>
+  </data>
+  <data name="Status_Completed" xml:space="preserve">
+    <value>Completed</value>
+    <comment>Completed status</comment>
+  </data>
+  <data name="Status_InProgress" xml:space="preserve">
+    <value>In Progress</value>
+    <comment>In Progress status</comment>
+  </data>
+  <data name="Status_Cancelled" xml:space="preserve">
+    <value>Cancelled</value>
+    <comment>Cancelled status</comment>
+  </data>
+
+  <!-- Error Messages -->
+  <data name="Error_Generic" xml:space="preserve">
+    <value>An error occurred. Please try again.</value>
+    <comment>Generic error message</comment>
+  </data>
+  <data name="Error_NetworkConnection" xml:space="preserve">
+    <value>Network connection error. Please check your connection and try again.</value>
+    <comment>Network error message</comment>
+  </data>
+  <data name="Error_DatabaseConnection" xml:space="preserve">
+    <value>Database connection error. Please contact support.</value>
+    <comment>Database error message</comment>
+  </data>
+  <data name="Error_ValidationFailed" xml:space="preserve">
+    <value>Validation failed. Please check your input and try again.</value>
+    <comment>Validation error message</comment>
+  </data>
+  <data name="Error_AccessDenied" xml:space="preserve">
+    <value>Access denied. You do not have permission to perform this action.</value>
+    <comment>Access denied error message</comment>
+  </data>
+  <data name="Error_RecordNotFound" xml:space="preserve">
+    <value>Record not found.</value>
+    <comment>Record not found error message</comment>
+  </data>
+
+  <!-- Success Messages -->
+  <data name="Success_RecordSaved" xml:space="preserve">
+    <value>Record saved successfully.</value>
+    <comment>Record saved success message</comment>
+  </data>
+  <data name="Success_RecordDeleted" xml:space="preserve">
+    <value>Record deleted successfully.</value>
+    <comment>Record deleted success message</comment>
+  </data>
+  <data name="Success_RecordUpdated" xml:space="preserve">
+    <value>Record updated successfully.</value>
+    <comment>Record updated success message</comment>
+  </data>
+  <data name="Success_OperationCompleted" xml:space="preserve">
+    <value>Operation completed successfully.</value>
+    <comment>Operation completed success message</comment>
+  </data>
+
+  <!-- Confirmation Messages -->
+  <data name="Confirm_DeleteRecord" xml:space="preserve">
+    <value>Are you sure you want to delete this record? This action cannot be undone.</value>
+    <comment>Delete confirmation message</comment>
+  </data>
+  <data name="Confirm_UnsavedChanges" xml:space="preserve">
+    <value>You have unsaved changes. Are you sure you want to continue?</value>
+    <comment>Unsaved changes confirmation message</comment>
+  </data>
+  <data name="Confirm_Exit" xml:space="preserve">
+    <value>Are you sure you want to exit?</value>
+    <comment>Exit confirmation message</comment>
+  </data>
+
+</root>

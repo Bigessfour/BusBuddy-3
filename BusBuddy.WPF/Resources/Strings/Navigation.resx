@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+
+  <!-- Navigation Menu Items -->
+  <data name="Dashboard" xml:space="preserve">
+    <value>Dashboard</value>
+    <comment>Main dashboard navigation item</comment>
+  </data>
+  <data name="BusManagement" xml:space="preserve">
+    <value>Bus Management</value>
+    <comment>Bus management navigation item</comment>
+  </data>
+  <data name="DriverManagement" xml:space="preserve">
+    <value>Driver Management</value>
+    <comment>Driver management navigation item</comment>
+  </data>
+  <data name="StudentManagement" xml:space="preserve">
+    <value>Student Management</value>
+    <comment>Student management navigation item</comment>
+  </data>
+  <data name="RouteManagement" xml:space="preserve">
+    <value>Route Management</value>
+    <comment>Route management navigation item</comment>
+  </data>
+  <data name="ScheduleManagement" xml:space="preserve">
+    <value>Schedule Management</value>
+    <comment>Schedule management navigation item</comment>
+  </data>
+  <data name="MaintenanceTracking" xml:space="preserve">
+    <value>Maintenance Tracking</value>
+    <comment>Maintenance tracking navigation item</comment>
+  </data>
+  <data name="FuelManagement" xml:space="preserve">
+    <value>Fuel Management</value>
+    <comment>Fuel management navigation item</comment>
+  </data>
+  <data name="ActivityLogging" xml:space="preserve">
+    <value>Activity Logging</value>
+    <comment>Activity logging navigation item</comment>
+  </data>
+  <data name="TicketManagement" xml:space="preserve">
+    <value>Ticket Management</value>
+    <comment>Ticket management navigation item</comment>
+  </data>
+  <data name="Settings" xml:space="preserve">
+    <value>Settings</value>
+    <comment>Settings navigation item</comment>
+  </data>
+  <data name="XAIChat" xml:space="preserve">
+    <value>AI Assistant</value>
+    <comment>XAI Chat navigation item</comment>
+  </data>
+
+  <!-- Navigation Tooltips -->
+  <data name="DashboardTooltip" xml:space="preserve">
+    <value>View fleet overview and key metrics</value>
+    <comment>Dashboard tooltip</comment>
+  </data>
+  <data name="BusManagementTooltip" xml:space="preserve">
+    <value>Manage bus fleet and vehicle information</value>
+    <comment>Bus management tooltip</comment>
+  </data>
+  <data name="DriverManagementTooltip" xml:space="preserve">
+    <value>Manage driver records and assignments</value>
+    <comment>Driver management tooltip</comment>
+  </data>
+  <data name="StudentManagementTooltip" xml:space="preserve">
+    <value>Manage student records and transportation</value>
+    <comment>Student management tooltip</comment>
+  </data>
+  <data name="RouteManagementTooltip" xml:space="preserve">
+    <value>Plan and manage transportation routes</value>
+    <comment>Route management tooltip</comment>
+  </data>
+  <data name="ScheduleManagementTooltip" xml:space="preserve">
+    <value>Create and manage transportation schedules</value>
+    <comment>Schedule management tooltip</comment>
+  </data>
+  <data name="MaintenanceTrackingTooltip" xml:space="preserve">
+    <value>Track vehicle maintenance and repairs</value>
+    <comment>Maintenance tracking tooltip</comment>
+  </data>
+  <data name="FuelManagementTooltip" xml:space="preserve">
+    <value>Monitor fuel consumption and costs</value>
+    <comment>Fuel management tooltip</comment>
+  </data>
+  <data name="ActivityLoggingTooltip" xml:space="preserve">
+    <value>View system activity and logs</value>
+    <comment>Activity logging tooltip</comment>
+  </data>
+  <data name="TicketManagementTooltip" xml:space="preserve">
+    <value>Manage tickets and incidents</value>
+    <comment>Ticket management tooltip</comment>
+  </data>
+  <data name="SettingsTooltip" xml:space="preserve">
+    <value>Configure application settings</value>
+    <comment>Settings tooltip</comment>
+  </data>
+  <data name="XAIChatTooltip" xml:space="preserve">
+    <value>Chat with AI assistant for help</value>
+    <comment>XAI Chat tooltip</comment>
+  </data>
+
+</root>

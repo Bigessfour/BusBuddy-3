@@ -1,0 +1,502 @@
+{
+  "metadata": {
+    "version": "2.0",
+    "description": "Phase 2 Enhanced Real-World Transportation Data for Mid-Size School District",
+    "district": "Jefferson County School District",
+    "location": "Southeastern Pennsylvania",
+    "generatedDate": "2025-01-27",
+    "totalRecords": {
+      "drivers": 50,
+      "vehicles": 25,
+      "routes": 100,
+      "activities": 200
+    },
+    "coordinates": {
+      "centerLat": 40.0150,
+      "centerLon": -75.1250,
+      "radius": "15 mile coverage area"
+    }
+  },
+  "drivers": [
+    {
+      "firstName": "Alice",
+      "lastName": "Anderson",
+      "licenseNumber": "CDL-234567",
+      "phoneNumber": "(610) 555-0101",
+      "email": "alice.anderson@district.edu",
+      "hireDate": "2018-08-15",
+      "dateOfBirth": "1975-03-22",
+      "address": "1234 Main St, Springfield, PA 19064",
+      "emergencyContact": "Bob Anderson",
+      "emergencyPhone": "(610) 555-0102",
+      "isActive": true,
+      "experienceYears": 12,
+      "specialCertifications": [
+        "Special Needs",
+        "Field Trip Authorization"
+      ],
+      "notes": "Senior driver with excellent safety record; Experienced in special needs transportation"
+    },
+    {
+      "firstName": "Michael",
+      "lastName": "Johnson",
+      "licenseNumber": "CDL-345678",
+      "phoneNumber": "(610) 555-0103",
+      "email": "michael.johnson@district.edu",
+      "hireDate": "2020-01-10",
+      "dateOfBirth": "1982-07-14",
+      "address": "5678 Oak Ave, Franklin, PA 19001",
+      "emergencyContact": "Sarah Johnson",
+      "emergencyPhone": "(610) 555-0104",
+      "isActive": true,
+      "experienceYears": 8,
+      "specialCertifications": [
+        "Defensive Driving",
+        "First Aid"
+      ],
+      "notes": "Certified for field trip operations; Multi-lingual capabilities"
+    },
+    {
+      "firstName": "Diana",
+      "lastName": "Rodriguez",
+      "licenseNumber": "CDL-456789",
+      "phoneNumber": "(610) 555-0105",
+      "email": "diana.rodriguez@district.edu",
+      "hireDate": "2019-09-05",
+      "dateOfBirth": "1978-11-30",
+      "address": "2345 Pine Rd, Georgetown, PA 19020",
+      "emergencyContact": "Carlos Rodriguez",
+      "emergencyPhone": "(610) 555-0106",
+      "isActive": true,
+      "experienceYears": 10,
+      "specialCertifications": [
+        "Special Needs",
+        "Bilingual Communication"
+      ],
+      "notes": "Experienced in special needs transportation; Fluent in Spanish and English"
+    },
+    {
+      "firstName": "Robert",
+      "lastName": "Chen",
+      "licenseNumber": "CDL-567890",
+      "phoneNumber": "(610) 555-0107",
+      "email": "robert.chen@district.edu",
+      "hireDate": "2021-03-20",
+      "dateOfBirth": "1985-05-18",
+      "address": "6789 Elm Dr, Madison, PA 19047",
+      "emergencyContact": "Lisa Chen",
+      "emergencyPhone": "(610) 555-0108",
+      "isActive": true,
+      "experienceYears": 6,
+      "specialCertifications": [
+        "GPS Navigation",
+        "Vehicle Maintenance"
+      ],
+      "notes": "Technology-savvy driver; Certified for field trip operations"
+    },
+    {
+      "firstName": "Patricia",
+      "lastName": "Williams",
+      "licenseNumber": "CDL-678901",
+      "phoneNumber": "(610) 555-0109",
+      "email": "patricia.williams@district.edu",
+      "hireDate": "2017-06-12",
+      "dateOfBirth": "1972-09-08",
+      "address": "3456 Maple Ln, Clinton, PA 19018",
+      "emergencyContact": "James Williams",
+      "emergencyPhone": "(610) 555-0110",
+      "isActive": true,
+      "experienceYears": 15,
+      "specialCertifications": [
+        "Special Needs",
+        "Field Trip Authorization",
+        "Trainer Certification"
+      ],
+      "notes": "Senior driver with excellent safety record; Trains new drivers"
+    }
+  ],
+  "vehicles": [
+    {
+      "licensePlate": "BUS001-2024",
+      "make": "Blue Bird",
+      "model": "Blue Bird Vision",
+      "year": 2022,
+      "vin": "1BAANXHA8NF123456",
+      "capacity": 72,
+      "fuelType": "Diesel",
+      "mileage": 45000,
+      "purchaseDate": "2022-07-15",
+      "lastMaintenanceDate": "2025-01-15",
+      "maintenanceDue": "2025-04-15",
+      "status": "Active",
+      "location": "Depot 1",
+      "features": [
+        "Wheelchair Accessible",
+        "GPS Tracking",
+        "Security Cameras"
+      ],
+      "notes": "Recently serviced; Wheelchair accessible"
+    },
+    {
+      "licensePlate": "BUS002-2023",
+      "make": "Thomas",
+      "model": "Thomas Saf-T-Liner C2",
+      "year": 2021,
+      "vin": "1BAANXHA8NF234567",
+      "capacity": 65,
+      "fuelType": "CNG",
+      "mileage": 52000,
+      "purchaseDate": "2021-08-20",
+      "lastMaintenanceDate": "2025-01-10",
+      "maintenanceDue": "2025-03-10",
+      "status": "Active",
+      "location": "Depot 2",
+      "features": [
+        "Air Conditioning",
+        "GPS Tracking",
+        "Stop Arm Cameras"
+      ],
+      "notes": "CNG vehicle; Air conditioning serviced"
+    },
+    {
+      "licensePlate": "BUS003-2020",
+      "make": "IC Bus",
+      "model": "IC Bus CE Series",
+      "year": 2020,
+      "vin": "1BAANXHA8NF345678",
+      "capacity": 48,
+      "fuelType": "Diesel",
+      "mileage": 78000,
+      "purchaseDate": "2020-06-10",
+      "lastMaintenanceDate": "2024-12-20",
+      "maintenanceDue": "2025-02-20",
+      "status": "Maintenance",
+      "location": "Service Bay 1",
+      "features": [
+        "Compact Design",
+        "Fuel Efficient"
+      ],
+      "notes": "Due for inspection; New tires installed"
+    }
+  ],
+  "routes": [
+    {
+      "name": "Regular School Route - Lincoln Elementary (Route 001)",
+      "description": "Regular School Route from district stops to Lincoln Elementary",
+      "startLocation": "Downtown (40.0200, -75.1300)",
+      "endLocation": "Lincoln Elementary",
+      "startLatitude": 40.0200,
+      "startLongitude": -75.1300,
+      "endLatitude": 40.0180,
+      "endLongitude": -75.1280,
+      "distance": 2.8,
+      "estimatedDuration": 25,
+      "difficultyLevel": 2,
+      "routeType": "Regular School Route",
+      "maxCapacity": 65,
+      "isActive": true,
+      "stops": [
+        {
+          "name": "Main St & 1st Ave",
+          "lat": 40.0195,
+          "lon": -75.1295,
+          "time": "07:15"
+        },
+        {
+          "name": "Oak Ave & Pine St",
+          "lat": 40.0190,
+          "lon": -75.1290,
+          "time": "07:18"
+        },
+        {
+          "name": "Lincoln Elementary",
+          "lat": 40.0180,
+          "lon": -75.1280,
+          "time": "07:25"
+        }
+      ]
+    },
+    {
+      "name": "Special Needs Transport - Washington Middle School (Route 002)",
+      "description": "Special Needs Transport from district stops to Washington Middle School",
+      "startLocation": "Northside (40.0250, -75.1200)",
+      "endLocation": "Washington Middle School",
+      "startLatitude": 40.0250,
+      "startLongitude": -75.1200,
+      "endLatitude": 40.0230,
+      "endLongitude": -75.1180,
+      "distance": 3.2,
+      "estimatedDuration": 35,
+      "difficultyLevel": 3,
+      "routeType": "Special Needs Transport",
+      "maxCapacity": 12,
+      "isActive": true,
+      "stops": [
+        {
+          "name": "Residential Area A",
+          "lat": 40.0245,
+          "lon": -75.1195,
+          "time": "07:30"
+        },
+        {
+          "name": "Residential Area B",
+          "lat": 40.0240,
+          "lon": -75.1190,
+          "time": "07:35"
+        },
+        {
+          "name": "Washington Middle School",
+          "lat": 40.0230,
+          "lon": -75.1180,
+          "time": "07:45"
+        }
+      ]
+    },
+    {
+      "name": "Field Trip - Roosevelt High School (Route 003)",
+      "description": "Field Trip from district stops to Roosevelt High School",
+      "startLocation": "Southside (40.0100, -75.1350)",
+      "endLocation": "Roosevelt High School",
+      "startLatitude": 40.0100,
+      "startLongitude": -75.1350,
+      "endLatitude": 40.0080,
+      "endLongitude": -75.1320,
+      "distance": 4.1,
+      "estimatedDuration": 30,
+      "difficultyLevel": 1,
+      "routeType": "Field Trip",
+      "maxCapacity": 72,
+      "isActive": true,
+      "stops": [
+        {
+          "name": "Community Center",
+          "lat": 40.0095,
+          "lon": -75.1345,
+          "time": "08:00"
+        },
+        {
+          "name": "Sports Complex",
+          "lat": 40.0085,
+          "lon": -75.1330,
+          "time": "08:15"
+        },
+        {
+          "name": "Roosevelt High School",
+          "lat": 40.0080,
+          "lon": -75.1320,
+          "time": "08:30"
+        }
+      ]
+    },
+    {
+      "name": "Sports Event Transport - Jefferson Academy (Route 004)",
+      "description": "Sports Event Transport from district stops to Jefferson Academy",
+      "startLocation": "Eastside (40.0180, -75.1100)",
+      "endLocation": "Jefferson Academy",
+      "startLatitude": 40.0180,
+      "startLongitude": -75.1100,
+      "endLatitude": 40.0160,
+      "endLongitude": -75.1080,
+      "distance": 2.5,
+      "estimatedDuration": 20,
+      "difficultyLevel": 2,
+      "routeType": "Sports Event Transport",
+      "maxCapacity": 48,
+      "isActive": true,
+      "stops": [
+        {
+          "name": "Athletic Fields",
+          "lat": 40.0175,
+          "lon": -75.1095,
+          "time": "15:30"
+        },
+        {
+          "name": "Training Center",
+          "lat": 40.0170,
+          "lon": -75.1090,
+          "time": "15:35"
+        },
+        {
+          "name": "Jefferson Academy",
+          "lat": 40.0160,
+          "lon": -75.1080,
+          "time": "15:45"
+        }
+      ]
+    },
+    {
+      "name": "Late Bus - Madison Elementary (Route 005)",
+      "description": "Late Bus from district stops to Madison Elementary",
+      "startLocation": "Westside (40.0120, -75.1400)",
+      "endLocation": "Madison Elementary",
+      "startLatitude": 40.0120,
+      "startLongitude": -75.1400,
+      "endLatitude": 40.0140,
+      "endLongitude": -75.1380,
+      "distance": 3.5,
+      "estimatedDuration": 28,
+      "difficultyLevel": 2,
+      "routeType": "Late Bus",
+      "maxCapacity": 35,
+      "isActive": true,
+      "stops": [
+        {
+          "name": "After School Care",
+          "lat": 40.0125,
+          "lon": -75.1395,
+          "time": "16:00"
+        },
+        {
+          "name": "Library Branch",
+          "lat": 40.0135,
+          "lon": -75.1385,
+          "time": "16:10"
+        },
+        {
+          "name": "Madison Elementary",
+          "lat": 40.0140,
+          "lon": -75.1380,
+          "time": "16:15"
+        }
+      ]
+    }
+  ],
+  "activities": [
+    {
+      "name": "Morning Pickup - Regular School Route - Lincoln Elementary (Route 001)",
+      "description": "Morning Pickup activity for Lincoln Elementary",
+      "date": "2025-01-27",
+      "startTime": "07:00:00",
+      "endTime": "07:25:00",
+      "driverName": "Alice Anderson",
+      "vehiclePlate": "BUS001-2024",
+      "routeName": "Regular School Route - Lincoln Elementary (Route 001)",
+      "activityType": "Morning Pickup",
+      "status": "Scheduled",
+      "maxPassengers": 65,
+      "actualPassengers": 0,
+      "weatherConditions": "Clear",
+      "notes": "Standard morning route; High ridership expected"
+    },
+    {
+      "name": "Afternoon Dropoff - Special Needs Transport - Washington Middle School (Route 002)",
+      "description": "Afternoon Dropoff activity for Washington Middle School",
+      "date": "2025-01-27",
+      "startTime": "15:30:00",
+      "endTime": "16:05:00",
+      "driverName": "Diana Rodriguez",
+      "vehiclePlate": "BUS002-2023",
+      "routeName": "Special Needs Transport - Washington Middle School (Route 002)",
+      "activityType": "Afternoon Dropoff",
+      "status": "Scheduled",
+      "maxPassengers": 12,
+      "actualPassengers": 0,
+      "weatherConditions": "Partly Cloudy",
+      "notes": "Special needs transportation; Extra care required"
+    },
+    {
+      "name": "Field Trip - Roosevelt High School (Route 003)",
+      "description": "Field Trip activity for Roosevelt High School",
+      "date": "2025-01-28",
+      "startTime": "08:00:00",
+      "endTime": "08:30:00",
+      "driverName": "Michael Johnson",
+      "vehiclePlate": "BUS001-2024",
+      "routeName": "Field Trip - Roosevelt High School (Route 003)",
+      "activityType": "Field Trip",
+      "status": "Planned",
+      "maxPassengers": 72,
+      "actualPassengers": 0,
+      "weatherConditions": "Forecast: Sunny",
+      "notes": "Educational trip; Packed lunch required; Return by 3 PM"
+    },
+    {
+      "name": "Sports Event - Jefferson Academy (Route 004)",
+      "description": "Sports Event activity for Jefferson Academy",
+      "date": "2025-01-29",
+      "startTime": "15:30:00",
+      "endTime": "15:50:00",
+      "driverName": "Robert Chen",
+      "vehiclePlate": "BUS002-2023",
+      "routeName": "Sports Event Transport - Jefferson Academy (Route 004)",
+      "activityType": "Sports Event",
+      "status": "Planned",
+      "maxPassengers": 48,
+      "actualPassengers": 0,
+      "weatherConditions": "Forecast: Cloudy",
+      "notes": "Equipment transport needed; Competitive event; Late return expected"
+    },
+    {
+      "name": "Late Bus - Madison Elementary (Route 005)",
+      "description": "Late Bus activity for Madison Elementary",
+      "date": "2025-01-27",
+      "startTime": "16:00:00",
+      "endTime": "16:28:00",
+      "driverName": "Patricia Williams",
+      "vehiclePlate": "BUS003-2020",
+      "routeName": "Late Bus - Madison Elementary (Route 005)",
+      "activityType": "Late Bus",
+      "status": "Scheduled",
+      "maxPassengers": 35,
+      "actualPassengers": 0,
+      "weatherConditions": "Clear",
+      "notes": "After school program pickup; Multiple stops"
+    }
+  ],
+  "schedulePatterns": {
+    "schoolDays": {
+      "morningPickup": "06:30-08:30",
+      "afternoonDropoff": "14:00-16:00",
+      "lateRuns": "16:00-17:00"
+    },
+    "weekends": {
+      "fieldTrips": "08:00-18:00",
+      "sportsEvents": "09:00-17:00"
+    },
+    "specialEvents": {
+      "earlyDismissal": "12:00-14:00",
+      "extendedDay": "16:00-18:00"
+    }
+  },
+  "geographicalInfo": {
+    "serviceArea": {
+      "name": "Jefferson County School District",
+      "state": "Pennsylvania",
+      "totalArea": "185 square miles",
+      "studentPopulation": 12500,
+      "schools": 28
+    },
+    "coverage": {
+      "urbanRoutes": 40,
+      "suburbanRoutes": 45,
+      "ruralRoutes": 15
+    },
+    "landmarks": [
+      {
+        "name": "Downtown Jefferson",
+        "lat": 40.0150,
+        "lon": -75.1250
+      },
+      {
+        "name": "Jefferson County Hospital",
+        "lat": 40.0200,
+        "lon": -75.1200
+      },
+      {
+        "name": "Regional Shopping Center",
+        "lat": 40.0100,
+        "lon": -75.1300
+      },
+      {
+        "name": "Industrial Park",
+        "lat": 40.0050,
+        "lon": -75.1350
+      },
+      {
+        "name": "Recreation Complex",
+        "lat": 40.0250,
+        "lon": -75.1150
+      }
+    ]
+  }
+}

@@ -1,0 +1,78 @@
+###############################################################################
+# Set default behavior to automatically normalize line endings
+###############################################################################
+* text=auto
+
+###############################################################################
+# Set default behavior for command prompt diff
+###############################################################################
+*.cs     diff=csharp
+*.xaml   diff=xml
+*.csproj diff=xml
+*.sln    text
+*.json   diff=json
+*.ps1    diff=powershell
+
+###############################################################################
+# Set file types that should be treated as binary
+###############################################################################
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.mov binary
+*.mp4 binary
+*.mp3 binary
+*.exe binary
+*.dll binary
+*.zip binary
+*.7z binary
+*.ttf binary
+*.otf binary
+*.eot binary
+*.woff binary
+*.woff2 binary
+*.psd binary
+*.ai binary
+*.pdf binary
+
+###############################################################################
+# Configure Git LFS for large files
+###############################################################################
+# Image files
+*.psd filter=lfs diff=lfs merge=lfs -text
+*.ai filter=lfs diff=lfs merge=lfs -text
+*.pdf filter=lfs diff=lfs merge=lfs -text
+
+# Videos
+*.mp4 filter=lfs diff=lfs merge=lfs -text
+*.mov filter=lfs diff=lfs merge=lfs -text
+
+# Archives
+*.zip filter=lfs diff=lfs merge=lfs -text
+*.7z filter=lfs diff=lfs merge=lfs -text
+
+# Database files
+*.mdf filter=lfs diff=lfs merge=lfs -text
+*.ldf filter=lfs diff=lfs merge=lfs -text
+*.ndf filter=lfs diff=lfs merge=lfs -text
+
+# Other large file types
+*.sqlite filter=lfs diff=lfs merge=lfs -text
+
+###############################################################################
+# Declare files that will always have CRLF line endings on checkout
+###############################################################################
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+
+###############################################################################
+# Declare files that will always have LF line endings on checkout
+###############################################################################
+*.sh text eol=lf
+*.md text eol=lf
+*.json text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf

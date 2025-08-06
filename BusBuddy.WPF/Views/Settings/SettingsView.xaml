@@ -1,0 +1,6 @@
+<UserControl x:Class="BusBuddy.WPF.Views.Settings.SettingsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:syncfusion="http://schemas.syncfusion.com/wpf">
+    <TextBlock Text="Settings - Coming Soon" FontSize="16"/>
+</UserControl>

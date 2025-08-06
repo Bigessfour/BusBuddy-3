@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+╔══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
+║                                            🔒 BUSBUDDY SYNCFUSION THEME COMPLIANCE REFERENCE 🔒                                                                      ║
+║                                                          [SUPPORTING DIALOG VIEW]                                                                                      ║
+║  📋 REQUIRED STANDARDS: This supporting dialog MUST follow the universal standards defined in:                                                                         ║
+║     - BusBuddy.WPF\Resources\SyncfusionFluentDarkTheme.xaml (Universal Control Standards)                                                                             ║
+║     - Documentation\SyncfusionThemeImplementationGuide.md (Implementation Guide)                                                                                       ║
+║  📚 DEVELOPMENT REFERENCE: See Documentation\SyncfusionThemeImplementationGuide.md for copy-paste templates                                                          ║
+╚══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
+-->
+<Window x:Class="BusBuddy.WPF.Views.Fuel.FuelDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:syncfusion="http://schemas.syncfusion.com/wpf"
+        mc:Ignorable="d"
+        Title="{Binding DialogTitle}"
+        Height="500"
+        Width="600"
+        WindowStartupLocation="CenterOwner">
+
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock Text="{Binding DialogTitle}"
+                   FontSize="20"
+                   FontWeight="Bold"
+                   Margin="0,0,0,20"/>
+
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <TextBlock Grid.Row="0" Grid.Column="0" Text="Fuel Date:" Margin="0,5,10,5" VerticalAlignment="Center"/>
+            <DatePicker Grid.Row="0" Grid.Column="1"
+                        SelectedDate="{Binding Fuel.FuelDate}"
+                        Margin="0,5,0,5"/>
+
+            <TextBlock Grid.Row="1" Grid.Column="0" Text="Fuel Location:" Margin="0,5,10,5" VerticalAlignment="Center"/>
+            <syncfusion:ComboBoxAdv Grid.Row="1" Grid.Column="1"
+                      ItemsSource="{Binding FuelLocations}"
+                      SelectedItem="{Binding Fuel.FuelLocation}"
+                      Margin="0,5,0,5"/>
+
+            <TextBlock Grid.Row="2" Grid.Column="0" Text="Bus:" Margin="0,5,10,5" VerticalAlignment="Center"/>
+            <syncfusion:ComboBoxAdv Grid.Row="2" Grid.Column="1"
+                      ItemsSource="{Binding AvailableBuses}"
+                      SelectedItem="{Binding SelectedBus}"
+                      DisplayMemberPath="BusNumber"
+                      Margin="0,5,0,5"/>
+
+            <TextBlock Grid.Row="3" Grid.Column="0" Text="Odometer Reading:" Margin="0,5,10,5" VerticalAlignment="Center"/>
+            <syncfusion:DoubleTextBox Grid.Row="3" Grid.Column="1"
+                                       Value="{Binding Fuel.VehicleOdometerReading}"
+                                       MinValue="0"
+                                       Margin="0,5,0,5"/>
+
+            <TextBlock Grid.Row="4" Grid.Column="0" Text="Fuel Type:" Margin="0,5,10,5" VerticalAlignment="Center"/>
+            <syncfusion:ComboBoxAdv Grid.Row="4" Grid.Column="1"
+                      ItemsSource="{Binding FuelTypes}"
+                      SelectedItem="{Binding Fuel.FuelType}"
+                      Margin="0,5,0,5"/>
+
+            <TextBlock Grid.Row="5" Grid.Column="0" Text="Gallons:" Margin="0,5,10,5" VerticalAlignment="Center"/>
+            <syncfusion:DoubleTextBox Grid.Row="5" Grid.Column="1"
+                                       Value="{Binding Fuel.Gallons}"
+                                       NumberDecimalDigits="3"
+                                       MinValue="0"
+                                       Margin="0,5,0,5"/>
+
+            <TextBlock Grid.Row="6" Grid.Column="0" Text="Price per Gallon ($):" Margin="0,5,10,5" VerticalAlignment="Center"/>
+            <syncfusion:DoubleTextBox Grid.Row="6" Grid.Column="1"
+                                       Value="{Binding Fuel.PricePerGallon}"
+                                       NumberDecimalDigits="3"
+                                       MinValue="0"
+                                       Margin="0,5,0,5"
+                                       ValueChanged="PricePerGallon_ValueChanged"/>
+
+            <TextBlock Grid.Row="7" Grid.Column="0" Text="Total Cost ($):" Margin="0,5,10,5" VerticalAlignment="Center"/>
+            <syncfusion:DoubleTextBox Grid.Row="7" Grid.Column="1"
+                                       Value="{Binding Fuel.TotalCost}"
+                                       NumberDecimalDigits="2"
+                                       MinValue="0"
+                                       Margin="0,5,0,5"
+                                       ValueChanged="TotalCost_ValueChanged"/>
+
+            <TextBlock Grid.Row="8" Grid.Column="0" Text="Notes:" Margin="0,5,10,5" VerticalAlignment="Top"/>
+            <syncfusion:SfMaskedEdit Grid.Row="8" Grid.Column="1"
+                     Text="{Binding Fuel.Notes}"
+                     Height="80"
+                     TextWrapping="Wrap"
+                     AcceptsReturn="True"
+                     VerticalScrollBarVisibility="Auto"
+                     Margin="0,5,0,5"/>
+
+            <StackPanel Grid.Row="9" Grid.Column="1" Orientation="Horizontal" Margin="0,10,0,0">
+                <TextBlock Text="MPG: " FontWeight="Bold"/>
+                <TextBlock Text="{Binding MPG, StringFormat=N2}" Margin="5,0,0,0"/>
+                <TextBlock Text=" mpg" Margin="5,0,0,0"/>
+            </StackPanel>
+        </Grid>
+
+        <StackPanel Grid.Row="2"
+                    Orientation="Horizontal"
+                    HorizontalAlignment="Right"
+                    Margin="0,20,0,0">
+            <syncfusion:ButtonAdv Content="Cancel"
+                    Width="100"
+                    Margin="0,0,10,0"
+                    Click="CancelButton_Click"
+                    Style="{StaticResource BusBuddyButtonAdvStyle}"/>
+            <syncfusion:ButtonAdv Content="Save"
+                    Width="100"
+                    Click="SaveButton_Click"
+                    IsEnabled="{Binding IsValid}"
+                    Style="{StaticResource BusBuddyButtonAdvStyle}"/>
+        </StackPanel>
+    </Grid>
+</Window>
+
+
+
+
+

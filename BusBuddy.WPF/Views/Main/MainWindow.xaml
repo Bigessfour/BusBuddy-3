@@ -1,0 +1,241 @@
+<Window x:Class="BusBuddy.WPF.Views.Main.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:syncfusion="http://schemas.syncfusion.com/wpf"
+        xmlns:route="clr-namespace:BusBuddy.WPF.Views.Route"
+        mc:Ignorable="d"
+        Title="🚌 BusBuddy MVP - Student Route Management"
+        Height="900"
+        Width="1400"
+        WindowStartupLocation="CenterScreen"
+        WindowState="Maximized">
+
+    <!-- MVP-Ready UI with DockingManager for professional layout -->
+    <!-- Trigger language server refresh -->
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <Border Grid.Row="0" Background="#007ACC" Padding="20">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <TextBlock Grid.Row="0" Text="🚌 BusBuddy MVP - Transportation Management"
+                           FontSize="28" FontWeight="Bold" Foreground="White"
+                           HorizontalAlignment="Center"/>
+                <TextBlock Grid.Row="1" Text="Students | Routes | Buses | Drivers - Monday Ready Demo"
+                           FontSize="16" Foreground="White" Opacity="0.9"
+                           HorizontalAlignment="Center" Margin="0,8,0,0"/>
+
+                <!-- Navigation Buttons -->
+                <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,15,0,0">
+                    <syncfusion:ButtonAdv Label="📚 Students" Margin="0,0,10,0" Padding="15,8"
+                                          Background="#0078D4" Foreground="White" BorderThickness="0"
+                                          Click="StudentsButton_Click" FontSize="14" FontWeight="SemiBold"/>
+                    <syncfusion:ButtonAdv Label="🚌 Routes" Margin="0,0,10,0" Padding="15,8"
+                                          Background="#8B5CF6" Foreground="White" BorderThickness="0"
+                                          Click="RouteManagementButton_Click" FontSize="14" FontWeight="SemiBold"/>
+                    <syncfusion:ButtonAdv Label="🚐 Buses" Margin="0,0,10,0" Padding="15,8"
+                                          Background="#DC2626" Foreground="White" BorderThickness="0"
+                                          Click="VehiclesButton_Click" FontSize="14" FontWeight="SemiBold"/>
+                    <syncfusion:ButtonAdv Label="👨‍✈️ Drivers" Padding="15,8"
+                                          Background="#107C10" Foreground="White" BorderThickness="0"
+                                          Click="DriversButton_Click" FontSize="14" FontWeight="SemiBold"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- Main Content Area with DockingManager -->
+        <syncfusion:DockingManager Name="MainDockingManager"
+                                   UseDocumentContainer="True"
+                                   PersistState="True"
+                                   Grid.Row="1">
+
+            <!-- Students Panel -->
+            <ContentControl syncfusion:DockingManager.Header="📚 Students"
+                            syncfusion:DockingManager.State="Dock"
+                            syncfusion:DockingManager.SideInDockedMode="Left"
+                            syncfusion:DockingManager.DesiredWidthInDockedMode="350">
+                <Grid Margin="15">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <syncfusion:SfDataGrid Grid.Row="0" x:Name="StudentsGrid"
+                                          ItemsSource="{Binding Students}"
+                                          AutoGenerateColumns="False"
+                                          AllowEditing="False"
+                                          AllowSorting="True"
+                                          AllowFiltering="True"
+                                          SelectionMode="Single"
+                                          GridLinesVisibility="Both"
+                                          HeaderLinesVisibility="Both">
+                        <syncfusion:SfDataGrid.Columns>
+                            <syncfusion:GridTextColumn HeaderText="Student #" MappingName="StudentNumber" Width="100"/>
+                            <syncfusion:GridTextColumn HeaderText="Name" MappingName="StudentName" Width="140"/>
+                            <syncfusion:GridTextColumn HeaderText="Grade" MappingName="Grade" Width="60"/>
+                            <syncfusion:GridTextColumn HeaderText="Address" MappingName="HomeAddress" Width="180"/>
+                        </syncfusion:SfDataGrid.Columns>
+                    </syncfusion:SfDataGrid>
+
+                    <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,15,0,0">
+                        <syncfusion:ButtonAdv Label="➕ Add Student" Margin="0,0,10,0" Padding="12,6"
+                                              Background="#0078D4" Foreground="White" BorderThickness="0"
+                                              Click="AddStudent_Click"/>
+                        <syncfusion:ButtonAdv Label="📝 Edit Student" Padding="12,6"
+                                              Background="#5A5A5A" Foreground="White" BorderThickness="0"
+                                              Click="EditStudent_Click"/>
+                    </StackPanel>
+                </Grid>
+            </ContentControl>
+
+            <!-- Routes Panel -->
+            <ContentControl syncfusion:DockingManager.Header="🚌 Routes"
+                            syncfusion:DockingManager.State="Dock"
+                            syncfusion:DockingManager.SideInDockedMode="Right"
+                            syncfusion:DockingManager.DesiredWidthInDockedMode="380">
+                <Grid Margin="15">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <syncfusion:SfDataGrid Grid.Row="0" x:Name="RoutesGrid"
+                                          ItemsSource="{Binding Routes}"
+                                          AutoGenerateColumns="False"
+                                          AllowEditing="False"
+                                          AllowSorting="True"
+                                          AllowFiltering="True"
+                                          SelectionMode="Single"
+                                          GridLinesVisibility="Both"
+                                          HeaderLinesVisibility="Both">
+                        <syncfusion:SfDataGrid.Columns>
+                            <syncfusion:GridTextColumn HeaderText="Route Name" MappingName="RouteName" Width="120"/>
+                            <syncfusion:GridTextColumn HeaderText="School" MappingName="School" Width="140"/>
+                            <syncfusion:GridTextColumn HeaderText="Description" MappingName="Description" Width="180"/>
+                            <syncfusion:GridDateTimeColumn HeaderText="Date" MappingName="Date" Width="100"/>
+                        </syncfusion:SfDataGrid.Columns>
+                    </syncfusion:SfDataGrid>
+
+                    <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,15,0,0">
+                        <syncfusion:ButtonAdv Label="🗺️ Optimize Routes" Margin="0,0,10,0" Padding="12,6"
+                                              Background="#8B5CF6" Foreground="White" BorderThickness="0"/>
+                        <syncfusion:ButtonAdv Label="📄 Export Schedules" Padding="12,6"
+                                              Background="#DC2626" Foreground="White" BorderThickness="0"/>
+                    </StackPanel>
+                </Grid>
+            </ContentControl>
+
+            <!-- Buses Panel -->
+            <ContentControl syncfusion:DockingManager.Header="🚐 Buses"
+                            syncfusion:DockingManager.State="Document">
+                <Grid Margin="15">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <syncfusion:SfDataGrid Grid.Row="0" x:Name="BusesGrid"
+                                          ItemsSource="{Binding Buses}"
+                                          AutoGenerateColumns="False"
+                                          AllowEditing="False"
+                                          AllowSorting="True"
+                                          AllowFiltering="True"
+                                          SelectionMode="Single"
+                                          GridLinesVisibility="Both"
+                                          HeaderLinesVisibility="Both">
+                        <syncfusion:SfDataGrid.Columns>
+                            <syncfusion:GridTextColumn HeaderText="Bus #" MappingName="BusNumber" Width="120"/>
+                            <syncfusion:GridTextColumn HeaderText="License" MappingName="LicenseNumber" Width="120"/>
+                            <syncfusion:GridTextColumn HeaderText="Make" MappingName="Make" Width="100"/>
+                            <syncfusion:GridTextColumn HeaderText="Model" MappingName="Model" Width="120"/>
+                            <syncfusion:GridNumericColumn HeaderText="Year" MappingName="Year" Width="80"/>
+                            <syncfusion:GridNumericColumn HeaderText="Capacity" MappingName="SeatingCapacity" Width="80"/>
+                        </syncfusion:SfDataGrid.Columns>
+                    </syncfusion:SfDataGrid>
+
+                    <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,15,0,0">
+                        <syncfusion:ButtonAdv Label="➕ Add Bus" Margin="0,0,10,0" Padding="12,6"
+                                              Background="#0078D4" Foreground="White" BorderThickness="0"
+                                              Click="AddBus_Click"/>
+                        <syncfusion:ButtonAdv Label="🔧 Maintenance" Margin="0,0,10,0" Padding="12,6"
+                                              Background="#FF8C00" Foreground="White" BorderThickness="0"/>
+                        <syncfusion:ButtonAdv Label="📊 Fleet Status" Padding="12,6"
+                                              Background="#32CD32" Foreground="White" BorderThickness="0"/>
+                    </StackPanel>
+                </Grid>
+            </ContentControl>
+
+            <!-- Drivers Panel -->
+            <ContentControl syncfusion:DockingManager.Header="👨‍✈️ Drivers"
+                            syncfusion:DockingManager.State="Document">
+                <Grid Margin="15">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <syncfusion:SfDataGrid Grid.Row="0" x:Name="DriversGrid"
+                                          ItemsSource="{Binding Drivers}"
+                                          AutoGenerateColumns="False"
+                                          AllowEditing="False"
+                                          AllowSorting="True"
+                                          AllowFiltering="True"
+                                          SelectionMode="Single"
+                                          GridLinesVisibility="Both"
+                                          HeaderLinesVisibility="Both">
+                        <syncfusion:SfDataGrid.Columns>
+                            <syncfusion:GridTextColumn HeaderText="Name" MappingName="DriverName" Width="150"/>
+                            <syncfusion:GridTextColumn HeaderText="License Type" MappingName="DriversLicenceType" Width="120"/>
+                            <syncfusion:GridTextColumn HeaderText="Phone" MappingName="DriverPhone" Width="120"/>
+                            <syncfusion:GridTextColumn HeaderText="Email" MappingName="DriverEmail" Width="200"/>
+                        </syncfusion:SfDataGrid.Columns>
+                    </syncfusion:SfDataGrid>
+
+                    <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,15,0,0">
+                        <syncfusion:ButtonAdv Label="➕ Add Driver" Margin="0,0,10,0" Padding="12,6"
+                                              Background="#0078D4" Foreground="White" BorderThickness="0"
+                                              Click="AddDriver_Click"/>
+                        <syncfusion:ButtonAdv Label="🚌 Assign Bus" Margin="0,0,10,0" Padding="12,6"
+                                              Background="#107C10" Foreground="White" BorderThickness="0"/>
+                        <syncfusion:ButtonAdv Label="📅 Schedule" Padding="12,6"
+                                              Background="#6B46C1" Foreground="White" BorderThickness="0"/>
+                    </StackPanel>
+                </Grid>
+            </ContentControl>
+
+            <!-- Route Assignment Panel -->
+            <ContentControl syncfusion:DockingManager.Header="🗺️ Route Assignments"
+                            syncfusion:DockingManager.State="Document">
+                <route:RouteAssignmentView/>
+            </ContentControl>
+
+        </syncfusion:DockingManager>
+
+        <!-- Status Bar -->
+        <Border Grid.Row="2" Background="#1E1E1E" Padding="15,12">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0"
+                           Text="🎯 MVP Ready: Students ✅ | Routes ✅ | Buses ✅ | Drivers ✅ | PowerShell Demo: bb-route-demo"
+                           Foreground="White" VerticalAlignment="Center" FontSize="14"/>
+                <TextBlock Grid.Column="1" Text="✅ Monday Demo Ready"
+                           Foreground="#10B981" VerticalAlignment="Center" FontSize="14" FontWeight="SemiBold"/>
+            </Grid>
+        </Border>
+    </Grid>
+</Window>

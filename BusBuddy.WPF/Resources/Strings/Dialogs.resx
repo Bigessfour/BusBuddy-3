@@ -1,0 +1,602 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+
+  <!-- Common Dialog Titles -->
+  <data name="ConfirmTitle" xml:space="preserve">
+    <value>Confirm</value>
+    <comment>Confirmation dialog title</comment>
+  </data>
+  <data name="WarningTitle" xml:space="preserve">
+    <value>Warning</value>
+    <comment>Warning dialog title</comment>
+  </data>
+  <data name="ErrorTitle" xml:space="preserve">
+    <value>Error</value>
+    <comment>Error dialog title</comment>
+  </data>
+  <data name="InformationTitle" xml:space="preserve">
+    <value>Information</value>
+    <comment>Information dialog title</comment>
+  </data>
+  <data name="SuccessTitle" xml:space="preserve">
+    <value>Success</value>
+    <comment>Success dialog title</comment>
+  </data>
+  <data name="InputTitle" xml:space="preserve">
+    <value>Input Required</value>
+    <comment>Input dialog title</comment>
+  </data>
+
+  <!-- Common Dialog Buttons -->
+  <data name="OK" xml:space="preserve">
+    <value>OK</value>
+    <comment>OK button text</comment>
+  </data>
+  <data name="Cancel" xml:space="preserve">
+    <value>Cancel</value>
+    <comment>Cancel button text</comment>
+  </data>
+  <data name="Yes" xml:space="preserve">
+    <value>Yes</value>
+    <comment>Yes button text</comment>
+  </data>
+  <data name="No" xml:space="preserve">
+    <value>No</value>
+    <comment>No button text</comment>
+  </data>
+  <data name="Apply" xml:space="preserve">
+    <value>Apply</value>
+    <comment>Apply button text</comment>
+  </data>
+  <data name="Reset" xml:space="preserve">
+    <value>Reset</value>
+    <comment>Reset button text</comment>
+  </data>
+  <data name="Continue" xml:space="preserve">
+    <value>Continue</value>
+    <comment>Continue button text</comment>
+  </data>
+  <data name="Back" xml:space="preserve">
+    <value>Back</value>
+    <comment>Back button text</comment>
+  </data>
+  <data name="Next" xml:space="preserve">
+    <value>Next</value>
+    <comment>Next button text</comment>
+  </data>
+  <data name="Finish" xml:space="preserve">
+    <value>Finish</value>
+    <comment>Finish button text</comment>
+  </data>
+  <data name="Skip" xml:space="preserve">
+    <value>Skip</value>
+    <comment>Skip button text</comment>
+  </data>
+  <data name="Retry" xml:space="preserve">
+    <value>Retry</value>
+    <comment>Retry button text</comment>
+  </data>
+  <data name="Abort" xml:space="preserve">
+    <value>Abort</value>
+    <comment>Abort button text</comment>
+  </data>
+  <data name="Ignore" xml:space="preserve">
+    <value>Ignore</value>
+    <comment>Ignore button text</comment>
+  </data>
+
+  <!-- Student Management Dialogs -->
+  <data name="AddStudentTitle" xml:space="preserve">
+    <value>Add New Student</value>
+    <comment>Add student dialog title</comment>
+  </data>
+  <data name="EditStudentTitle" xml:space="preserve">
+    <value>Edit Student</value>
+    <comment>Edit student dialog title</comment>
+  </data>
+  <data name="DeleteStudentTitle" xml:space="preserve">
+    <value>Delete Student</value>
+    <comment>Delete student dialog title</comment>
+  </data>
+  <data name="DeleteStudentMessage" xml:space="preserve">
+    <value>Are you sure you want to delete this student? This action cannot be undone.</value>
+    <comment>Delete student confirmation message</comment>
+  </data>
+  <data name="StudentDetailsTitle" xml:space="preserve">
+    <value>Student Details</value>
+    <comment>Student details dialog title</comment>
+  </data>
+  <data name="AssignRouteTitle" xml:space="preserve">
+    <value>Assign Route</value>
+    <comment>Assign route dialog title</comment>
+  </data>
+  <data name="UnassignRouteTitle" xml:space="preserve">
+    <value>Unassign Route</value>
+    <comment>Unassign route dialog title</comment>
+  </data>
+  <data name="UnassignRouteMessage" xml:space="preserve">
+    <value>Are you sure you want to unassign this student from their current route?</value>
+    <comment>Unassign route confirmation message</comment>
+  </data>
+  <data name="AdvancedSearchTitle" xml:space="preserve">
+    <value>Advanced Search</value>
+    <comment>Advanced search dialog title</comment>
+  </data>
+
+  <!-- Bus Management Dialogs -->
+  <data name="AddBusTitle" xml:space="preserve">
+    <value>Add New Bus</value>
+    <comment>Add bus dialog title</comment>
+  </data>
+  <data name="EditBusTitle" xml:space="preserve">
+    <value>Edit Bus</value>
+    <comment>Edit bus dialog title</comment>
+  </data>
+  <data name="DeleteBusTitle" xml:space="preserve">
+    <value>Delete Bus</value>
+    <comment>Delete bus dialog title</comment>
+  </data>
+  <data name="DeleteBusMessage" xml:space="preserve">
+    <value>Are you sure you want to delete this bus? This action cannot be undone.</value>
+    <comment>Delete bus confirmation message</comment>
+  </data>
+  <data name="BusDetailsTitle" xml:space="preserve">
+    <value>Bus Details</value>
+    <comment>Bus details dialog title</comment>
+  </data>
+  <data name="AssignDriverTitle" xml:space="preserve">
+    <value>Assign Driver</value>
+    <comment>Assign driver dialog title</comment>
+  </data>
+  <data name="UnassignDriverTitle" xml:space="preserve">
+    <value>Unassign Driver</value>
+    <comment>Unassign driver dialog title</comment>
+  </data>
+  <data name="UnassignDriverMessage" xml:space="preserve">
+    <value>Are you sure you want to unassign the driver from this bus?</value>
+    <comment>Unassign driver confirmation message</comment>
+  </data>
+
+  <!-- Driver Management Dialogs -->
+  <data name="AddDriverTitle" xml:space="preserve">
+    <value>Add New Driver</value>
+    <comment>Add driver dialog title</comment>
+  </data>
+  <data name="EditDriverTitle" xml:space="preserve">
+    <value>Edit Driver</value>
+    <comment>Edit driver dialog title</comment>
+  </data>
+  <data name="DeleteDriverTitle" xml:space="preserve">
+    <value>Delete Driver</value>
+    <comment>Delete driver dialog title</comment>
+  </data>
+  <data name="DeleteDriverMessage" xml:space="preserve">
+    <value>Are you sure you want to delete this driver? This action cannot be undone.</value>
+    <comment>Delete driver confirmation message</comment>
+  </data>
+  <data name="DriverDetailsTitle" xml:space="preserve">
+    <value>Driver Details</value>
+    <comment>Driver details dialog title</comment>
+  </data>
+  <data name="LicenseExpiryWarningTitle" xml:space="preserve">
+    <value>License Expiry Warning</value>
+    <comment>License expiry warning dialog title</comment>
+  </data>
+  <data name="LicenseExpiryWarningMessage" xml:space="preserve">
+    <value>Driver's license expires in {0} days. Please ensure renewal is completed before assignment.</value>
+    <comment>License expiry warning message</comment>
+  </data>
+
+  <!-- Route Management Dialogs -->
+  <data name="AddRouteTitle" xml:space="preserve">
+    <value>Add New Route</value>
+    <comment>Add route dialog title</comment>
+  </data>
+  <data name="EditRouteTitle" xml:space="preserve">
+    <value>Edit Route</value>
+    <comment>Edit route dialog title</comment>
+  </data>
+  <data name="DeleteRouteTitle" xml:space="preserve">
+    <value>Delete Route</value>
+    <comment>Delete route dialog title</comment>
+  </data>
+  <data name="DeleteRouteMessage" xml:space="preserve">
+    <value>Are you sure you want to delete this route? This action cannot be undone.</value>
+    <comment>Delete route confirmation message</comment>
+  </data>
+  <data name="RouteDetailsTitle" xml:space="preserve">
+    <value>Route Details</value>
+    <comment>Route details dialog title</comment>
+  </data>
+  <data name="AddStopTitle" xml:space="preserve">
+    <value>Add Stop</value>
+    <comment>Add stop dialog title</comment>
+  </data>
+  <data name="EditStopTitle" xml:space="preserve">
+    <value>Edit Stop</value>
+    <comment>Edit stop dialog title</comment>
+  </data>
+  <data name="DeleteStopTitle" xml:space="preserve">
+    <value>Delete Stop</value>
+    <comment>Delete stop dialog title</comment>
+  </data>
+  <data name="DeleteStopMessage" xml:space="preserve">
+    <value>Are you sure you want to delete this stop?</value>
+    <comment>Delete stop confirmation message</comment>
+  </data>
+  <data name="RoutePlanningTitle" xml:space="preserve">
+    <value>Route Planning</value>
+    <comment>Route planning dialog title</comment>
+  </data>
+  <data name="OptimizeRouteTitle" xml:space="preserve">
+    <value>Optimize Route</value>
+    <comment>Optimize route dialog title</comment>
+  </data>
+
+  <!-- Schedule Management Dialogs -->
+  <data name="AddScheduleTitle" xml:space="preserve">
+    <value>Add New Schedule</value>
+    <comment>Add schedule dialog title</comment>
+  </data>
+  <data name="EditScheduleTitle" xml:space="preserve">
+    <value>Edit Schedule</value>
+    <comment>Edit schedule dialog title</comment>
+  </data>
+  <data name="DeleteScheduleTitle" xml:space="preserve">
+    <value>Delete Schedule</value>
+    <comment>Delete schedule dialog title</comment>
+  </data>
+  <data name="DeleteScheduleMessage" xml:space="preserve">
+    <value>Are you sure you want to delete this schedule? This action cannot be undone.</value>
+    <comment>Delete schedule confirmation message</comment>
+  </data>
+  <data name="ScheduleDetailsTitle" xml:space="preserve">
+    <value>Schedule Details</value>
+    <comment>Schedule details dialog title</comment>
+  </data>
+  <data name="ScheduleConflictTitle" xml:space="preserve">
+    <value>Schedule Conflict</value>
+    <comment>Schedule conflict dialog title</comment>
+  </data>
+  <data name="ScheduleConflictMessage" xml:space="preserve">
+    <value>This schedule conflicts with an existing schedule. Please choose a different time or resolve the conflict.</value>
+    <comment>Schedule conflict message</comment>
+  </data>
+  <data name="ActivityScheduleTitle" xml:space="preserve">
+    <value>Activity Schedule</value>
+    <comment>Activity schedule dialog title</comment>
+  </data>
+  <data name="GenerateScheduleReportTitle" xml:space="preserve">
+    <value>Generate Schedule Report</value>
+    <comment>Generate schedule report dialog title</comment>
+  </data>
+
+  <!-- Maintenance Management Dialogs -->
+  <data name="AddMaintenanceTitle" xml:space="preserve">
+    <value>Add Maintenance Record</value>
+    <comment>Add maintenance dialog title</comment>
+  </data>
+  <data name="EditMaintenanceTitle" xml:space="preserve">
+    <value>Edit Maintenance Record</value>
+    <comment>Edit maintenance dialog title</comment>
+  </data>
+  <data name="DeleteMaintenanceTitle" xml:space="preserve">
+    <value>Delete Maintenance Record</value>
+    <comment>Delete maintenance dialog title</comment>
+  </data>
+  <data name="DeleteMaintenanceMessage" xml:space="preserve">
+    <value>Are you sure you want to delete this maintenance record? This action cannot be undone.</value>
+    <comment>Delete maintenance confirmation message</comment>
+  </data>
+  <data name="MaintenanceDetailsTitle" xml:space="preserve">
+    <value>Maintenance Details</value>
+    <comment>Maintenance details dialog title</comment>
+  </data>
+  <data name="MaintenanceAlertsTitle" xml:space="preserve">
+    <value>Maintenance Alerts</value>
+    <comment>Maintenance alerts dialog title</comment>
+  </data>
+  <data name="MaintenanceDueTitle" xml:space="preserve">
+    <value>Maintenance Due</value>
+    <comment>Maintenance due dialog title</comment>
+  </data>
+  <data name="MaintenanceDueMessage" xml:space="preserve">
+    <value>Maintenance is due for Bus #{0}. Please schedule maintenance as soon as possible.</value>
+    <comment>Maintenance due message</comment>
+  </data>
+  <data name="MaintenanceOverdueTitle" xml:space="preserve">
+    <value>Maintenance Overdue</value>
+    <comment>Maintenance overdue dialog title</comment>
+  </data>
+  <data name="MaintenanceOverdueMessage" xml:space="preserve">
+    <value>Maintenance is overdue for Bus #{0}. Please schedule maintenance immediately.</value>
+    <comment>Maintenance overdue message</comment>
+  </data>
+
+  <!-- Fuel Management Dialogs -->
+  <data name="AddFuelRecordTitle" xml:space="preserve">
+    <value>Add Fuel Record</value>
+    <comment>Add fuel record dialog title</comment>
+  </data>
+  <data name="EditFuelRecordTitle" xml:space="preserve">
+    <value>Edit Fuel Record</value>
+    <comment>Edit fuel record dialog title</comment>
+  </data>
+  <data name="DeleteFuelRecordTitle" xml:space="preserve">
+    <value>Delete Fuel Record</value>
+    <comment>Delete fuel record dialog title</comment>
+  </data>
+  <data name="DeleteFuelRecordMessage" xml:space="preserve">
+    <value>Are you sure you want to delete this fuel record? This action cannot be undone.</value>
+    <comment>Delete fuel record confirmation message</comment>
+  </data>
+  <data name="FuelRecordDetailsTitle" xml:space="preserve">
+    <value>Fuel Record Details</value>
+    <comment>Fuel record details dialog title</comment>
+  </data>
+  <data name="FuelEfficiencyReportTitle" xml:space="preserve">
+    <value>Fuel Efficiency Report</value>
+    <comment>Fuel efficiency report dialog title</comment>
+  </data>
+
+  <!-- Ticket Management Dialogs -->
+  <data name="AddTicketTitle" xml:space="preserve">
+    <value>Add New Ticket</value>
+    <comment>Add ticket dialog title</comment>
+  </data>
+  <data name="EditTicketTitle" xml:space="preserve">
+    <value>Edit Ticket</value>
+    <comment>Edit ticket dialog title</comment>
+  </data>
+  <data name="DeleteTicketTitle" xml:space="preserve">
+    <value>Delete Ticket</value>
+    <comment>Delete ticket dialog title</comment>
+  </data>
+  <data name="DeleteTicketMessage" xml:space="preserve">
+    <value>Are you sure you want to delete this ticket? This action cannot be undone.</value>
+    <comment>Delete ticket confirmation message</comment>
+  </data>
+  <data name="TicketDetailsTitle" xml:space="preserve">
+    <value>Ticket Details</value>
+    <comment>Ticket details dialog title</comment>
+  </data>
+  <data name="CloseTicketTitle" xml:space="preserve">
+    <value>Close Ticket</value>
+    <comment>Close ticket dialog title</comment>
+  </data>
+  <data name="CloseTicketMessage" xml:space="preserve">
+    <value>Are you sure you want to close this ticket? Please ensure all issues have been resolved.</value>
+    <comment>Close ticket confirmation message</comment>
+  </data>
+  <data name="ReopenTicketTitle" xml:space="preserve">
+    <value>Reopen Ticket</value>
+    <comment>Reopen ticket dialog title</comment>
+  </data>
+  <data name="ReopenTicketMessage" xml:space="preserve">
+    <value>Are you sure you want to reopen this ticket?</value>
+    <comment>Reopen ticket confirmation message</comment>
+  </data>
+
+  <!-- Settings Dialogs -->
+  <data name="SettingsTitle" xml:space="preserve">
+    <value>Settings</value>
+    <comment>Settings dialog title</comment>
+  </data>
+  <data name="DatabaseSettingsTitle" xml:space="preserve">
+    <value>Database Settings</value>
+    <comment>Database settings dialog title</comment>
+  </data>
+  <data name="BackupSettingsTitle" xml:space="preserve">
+    <value>Backup Settings</value>
+    <comment>Backup settings dialog title</comment>
+  </data>
+  <data name="SecuritySettingsTitle" xml:space="preserve">
+    <value>Security Settings</value>
+    <comment>Security settings dialog title</comment>
+  </data>
+  <data name="NotificationSettingsTitle" xml:space="preserve">
+    <value>Notification Settings</value>
+    <comment>Notification settings dialog title</comment>
+  </data>
+  <data name="PreferencesTitle" xml:space="preserve">
+    <value>Preferences</value>
+    <comment>Preferences dialog title</comment>
+  </data>
+
+  <!-- Import/Export Dialogs -->
+  <data name="ImportDataTitle" xml:space="preserve">
+    <value>Import Data</value>
+    <comment>Import data dialog title</comment>
+  </data>
+  <data name="ExportDataTitle" xml:space="preserve">
+    <value>Export Data</value>
+    <comment>Export data dialog title</comment>
+  </data>
+  <data name="SelectFileTitle" xml:space="preserve">
+    <value>Select File</value>
+    <comment>Select file dialog title</comment>
+  </data>
+  <data name="SaveFileTitle" xml:space="preserve">
+    <value>Save File</value>
+    <comment>Save file dialog title</comment>
+  </data>
+  <data name="ImportSuccessTitle" xml:space="preserve">
+    <value>Import Successful</value>
+    <comment>Import success dialog title</comment>
+  </data>
+  <data name="ImportSuccessMessage" xml:space="preserve">
+    <value>Data imported successfully. {0} records were imported.</value>
+    <comment>Import success message</comment>
+  </data>
+  <data name="ImportErrorTitle" xml:space="preserve">
+    <value>Import Error</value>
+    <comment>Import error dialog title</comment>
+  </data>
+  <data name="ImportErrorMessage" xml:space="preserve">
+    <value>An error occurred while importing data. Please check the file format and try again.</value>
+    <comment>Import error message</comment>
+  </data>
+  <data name="ExportSuccessTitle" xml:space="preserve">
+    <value>Export Successful</value>
+    <comment>Export success dialog title</comment>
+  </data>
+  <data name="ExportSuccessMessage" xml:space="preserve">
+    <value>Data exported successfully to {0}.</value>
+    <comment>Export success message</comment>
+  </data>
+  <data name="ExportErrorTitle" xml:space="preserve">
+    <value>Export Error</value>
+    <comment>Export error dialog title</comment>
+  </data>
+  <data name="ExportErrorMessage" xml:space="preserve">
+    <value>An error occurred while exporting data. Please try again.</value>
+    <comment>Export error message</comment>
+  </data>
+
+  <!-- Report Dialogs -->
+  <data name="GenerateReportTitle" xml:space="preserve">
+    <value>Generate Report</value>
+    <comment>Generate report dialog title</comment>
+  </data>
+  <data name="ReportParametersTitle" xml:space="preserve">
+    <value>Report Parameters</value>
+    <comment>Report parameters dialog title</comment>
+  </data>
+  <data name="ReportPreviewTitle" xml:space="preserve">
+    <value>Report Preview</value>
+    <comment>Report preview dialog title</comment>
+  </data>
+  <data name="PrintReportTitle" xml:space="preserve">
+    <value>Print Report</value>
+    <comment>Print report dialog title</comment>
+  </data>
+  <data name="SaveReportTitle" xml:space="preserve">
+    <value>Save Report</value>
+    <comment>Save report dialog title</comment>
+  </data>
+
+  <!-- About Dialog -->
+  <data name="AboutTitle" xml:space="preserve">
+    <value>About Bus Buddy</value>
+    <comment>About dialog title</comment>
+  </data>
+  <data name="AboutMessage" xml:space="preserve">
+    <value>Bus Buddy - School Transportation Management System
+Version 1.0.0
+Copyright © 2025 All rights reserved.</value>
+    <comment>About dialog message</comment>
+  </data>
+
+  <!-- Loading and Progress Dialogs -->
+  <data name="LoadingTitle" xml:space="preserve">
+    <value>Loading</value>
+    <comment>Loading dialog title</comment>
+  </data>
+  <data name="LoadingMessage" xml:space="preserve">
+    <value>Please wait while the operation completes...</value>
+    <comment>Loading dialog message</comment>
+  </data>
+  <data name="ProcessingTitle" xml:space="preserve">
+    <value>Processing</value>
+    <comment>Processing dialog title</comment>
+  </data>
+  <data name="ProcessingMessage" xml:space="preserve">
+    <value>Processing your request...</value>
+    <comment>Processing dialog message</comment>
+  </data>
+
+  <!-- Connection Dialogs -->
+  <data name="ConnectionErrorTitle" xml:space="preserve">
+    <value>Connection Error</value>
+    <comment>Connection error dialog title</comment>
+  </data>
+  <data name="ConnectionErrorMessage" xml:space="preserve">
+    <value>Unable to connect to the database. Please check your connection settings and try again.</value>
+    <comment>Connection error message</comment>
+  </data>
+  <data name="ReconnectTitle" xml:space="preserve">
+    <value>Reconnect</value>
+    <comment>Reconnect dialog title</comment>
+  </data>
+  <data name="ReconnectMessage" xml:space="preserve">
+    <value>Connection lost. Would you like to reconnect?</value>
+    <comment>Reconnect message</comment>
+  </data>
+
+  <!-- Bulk Operations Dialogs -->
+  <data name="BulkDeleteTitle" xml:space="preserve">
+    <value>Bulk Delete</value>
+    <comment>Bulk delete dialog title</comment>
+  </data>
+  <data name="BulkDeleteMessage" xml:space="preserve">
+    <value>Are you sure you want to delete {0} selected items? This action cannot be undone.</value>
+    <comment>Bulk delete confirmation message</comment>
+  </data>
+  <data name="BulkUpdateTitle" xml:space="preserve">
+    <value>Bulk Update</value>
+    <comment>Bulk update dialog title</comment>
+  </data>
+  <data name="BulkUpdateMessage" xml:space="preserve">
+    <value>Are you sure you want to update {0} selected items?</value>
+    <comment>Bulk update confirmation message</comment>
+  </data>
+
+</root>

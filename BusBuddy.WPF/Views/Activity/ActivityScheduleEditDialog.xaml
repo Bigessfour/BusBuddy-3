@@ -1,0 +1,63 @@
+<Window x:Class="BusBuddy.WPF.Views.Activity.ActivityScheduleEditDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:syncfusion="http://schemas.syncfusion.com/wpf"
+        Title="Edit Activity Schedule"
+        Height="400"
+        Width="500"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize">
+
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Title -->
+        <TextBlock Grid.Row="0"
+                   Text="Activity Schedule Details"
+                   FontSize="18"
+                   FontWeight="Bold"
+                   Margin="0,0,0,20"/>
+
+        <!-- Activity Name -->
+        <StackPanel Grid.Row="1" Margin="0,0,0,10">
+            <TextBlock Text="Activity Name:" Margin="0,0,0,5"/>
+            <syncfusion:SfMaskedEdit x:Name="ActivityNameTextBox" Height="30" Padding="5"/>
+        </StackPanel>
+
+        <!-- Date -->
+        <StackPanel Grid.Row="2" Margin="0,0,0,10">
+            <TextBlock Text="Date:" Margin="0,0,0,5"/>
+            <syncfusion:SfMaskedEdit x:Name="ActivityDateTextBox" Height="30" Padding="5" Text="{Binding ActivityDate, Mode=TwoWay}"/>
+        </StackPanel>
+
+        <!-- Time -->
+        <StackPanel Grid.Row="3" Margin="0,0,0,10">
+            <TextBlock Text="Time:" Margin="0,0,0,5"/>
+            <syncfusion:SfMaskedEdit x:Name="ActivityTimeTextBox" Height="30" Padding="5"/>
+        </StackPanel>
+
+        <!-- Buttons -->
+        <StackPanel Grid.Row="5"
+                    Orientation="Horizontal"
+                    HorizontalAlignment="Right"
+                    Margin="0,20,0,0">
+            <syncfusion:ButtonAdv x:Name="SaveButton"
+                    Content="Save"
+                    Width="80"
+                    Height="35"
+                    Margin="0,0,10,0"/>
+            <syncfusion:ButtonAdv x:Name="CancelButton"
+                    Content="Cancel"
+                    Width="80"
+                    Height="35"/>
+        </StackPanel>
+    </Grid>
+</Window>
+
