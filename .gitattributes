@@ -1,12 +1,13 @@
 # Set default behavior to automatically normalize line endings.
 * text=auto
 
-# Force CRLF for all text files that should have it.
-*.{cs,xaml,xml,ps1,psm1,psd1,json,ruleset,md,sln,csproj,config,targets,props} text eol=crlf
-*.cmd text eol=crlf
-*.bat text eol=crlf
+# Force CRLF for all text files that should have it for this Windows-based .NET project.
+*.{cs,xaml,xml,ps1,psm1,psd1,json,ruleset,md,sln,csproj,config,targets,props,cmd,bat} text eol=crlf
+README* text eol=crlf
+CONTRIBUTING* text eol=crlf
+LICENSE* text eol=crlf
 
-# Force LF for files that should always have it.
+# Force LF for files that should always have it (e.g., shell scripts for cross-platform use).
 *.sh text eol=lf
 
 # Mark binary files to prevent them from being changed.
@@ -35,7 +36,7 @@
 *.ndf binary
 *.sqlite binary
 
-# Git LFS tracking
+# Git LFS tracking (if used)
 *.psd filter=lfs diff=lfs merge=lfs -text
 *.ai filter=lfs diff=lfs merge=lfs -text
 *.pdf filter=lfs diff=lfs merge=lfs -text
@@ -47,18 +48,3 @@
 *.ldf filter=lfs diff=lfs merge=lfs -text
 *.ndf filter=lfs diff=lfs merge=lfs -text
 *.sqlite filter=lfs diff=lfs merge=lfs -text
-*.targets text eol=lf
-
-# XAML files - use LF for consistency
-*.xaml text eol=lf
-
-# Configuration and data files
-*.config text eol=lf
-*.xml text eol=lf
-*.ruleset text eol=lf
-
-# Documentation files
-*.md text eol=lf
-README* text eol=lf
-CONTRIBUTING* text eol=lf
-LICENSE* text eol=lf
