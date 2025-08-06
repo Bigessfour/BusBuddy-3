@@ -284,10 +284,10 @@ bb-xaml-validate    # Ensures only Syncfusion controls in XAML
 ### **✅ FIXED: Version Consistency Achieved**
 
 **Before (INCONSISTENT):**
+<<<<<<< HEAD
 - ❌ `BusBuddy.Core.csproj`: `net8.0-windows` 
-- ✅ `BusBuddy.WPF.csproj`: `net9.0-windows`
-- ✅ `BusBuddy.Tests.csproj`: `net9.0-windows`
-- ✅ `global.json`: .NET SDK 9.0.303
+=======
+- ❌ `BusBuddy.Core.csproj`: `net9.0-windows` 
 - ✅ `Directory.Build.props`: `net9.0-windows`
 
 **After (CONSISTENT):**

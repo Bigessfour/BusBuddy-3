@@ -247,7 +247,7 @@ dotnet build "BusBuddy Blazer.sln"
 dotnet clean "BusBuddy Blazer.sln"
 
 # Direct executable (after build)
-.\bin\Debug\net8.0-windows\BusBuddy.exe
+.\bin\Debug\net9.0-windows\BusBuddy.exe
 ```
 
 **Expected Behavior:**

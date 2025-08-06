@@ -63,13 +63,7 @@
     <None Update="appsettings.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <!-- JSON data files for import -->
-    <Content Include="Data\enhanced-realworld-data.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Data\sample-realworld-data.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
+    <!-- No JSON data files included: seeding deprecated for greenfield reset -->
   </ItemGroup>
 
 </Project>

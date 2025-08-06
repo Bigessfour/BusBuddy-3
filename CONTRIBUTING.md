@@ -6,7 +6,7 @@ Thank you for your interest in contributing to BusBuddy! This document provides 
 
 ### Prerequisites
 - Visual Studio 2022 (Community, Professional, or Enterprise)
-- .NET 8.0 SDK
+- .NET 9.0 SDK
 - SQL Server (LocalDB, Express, or full version)
 - Syncfusion WPF License (Community or Commercial)
 

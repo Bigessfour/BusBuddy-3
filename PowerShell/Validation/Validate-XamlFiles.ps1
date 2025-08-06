@@ -24,9 +24,10 @@ if (-not $global:SerilogInitialized) {
         # Try to load Serilog from common locations
         $serilogFound = $false
         $serilogPaths = @(
-            (Join-Path $PSScriptRoot "..\..\BusBuddy.WPF\bin\Debug\net8.0-windows\Serilog.dll"),
+            (Join-Path $PSScriptRoot "..\..\BusBuddy.WPF\bin\Debug\net9.0-windows\Serilog.dll"),
             (Join-Path $env:USERPROFILE ".nuget\packages\serilog\3.1.1\lib\net7.0\Serilog.dll"),
-            (Join-Path $env:USERPROFILE ".nuget\packages\serilog\4.3.0\lib\net8.0\Serilog.dll")
+            (Join-Path $env:USERPROFILE ".nuget\packages\serilog\4.3.0\lib\net9.0\Serilog.dll")
+        )
         )
 
         foreach ($path in $serilogPaths) {

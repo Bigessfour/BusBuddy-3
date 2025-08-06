@@ -1,3 +1,325 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using BusBuddy.Core.Models;
+using BusBuddy.Core.Utilities;
+
+namespace BusBuddy.Core.Data;
+
+public class SeedDataService
+{
+    private readonly BusBuddyDbContext _context;
+    private readonly ILogger<SeedDataService> _logger;
+
+    public SeedDataService(BusBuddyDbContext context, ILogger<SeedDataService> logger)
+    {
+        _context = context ?? throw new ArgumentNullException(nameof(context));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    }
+
+    /// <summary>
+    /// Seeds Wiley School District data from JSON file into the database.
+    /// Uses resilient execution for database operations.
+    /// </summary>
+    public async Task SeedWileySchoolDistrictDataAsync()
+    {
+        try
+        {
+            _logger.LogInformation("Starting Wiley School District data seeding.");
+
+            string jsonPath = Path.Combine("Data", "wiley-school-district-data.json");
+            if (!File.Exists(jsonPath))
+            {
+                _logger.LogWarning("JSON file not found: {JsonPath}", jsonPath);
+                return;
+            }
+
+            var students = JsonDataImporter.Import<List<Student>>(jsonPath);
+
+            if (students == null || students.Count == 0)
+            {
+                _logger.LogWarning("No data to seed from JSON.");
+                return;
+            }
+
+            await ResilientDbExecution.ExecuteAsync(async () =>
+            {
+                _context.Students.AddRange(students);
+                await _context.SaveChangesAsync();
+            }, _logger);
+
+            _logger.LogInformation("Seeded {Count} students successfully.", students.Count);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error during Wiley School District data seeding.");
+            throw;
+        }
+    }
+}
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using BusBuddy.Core.Models;
+using BusBuddy.Core.Utilities;
+
+namespace BusBuddy.Core.Data;
+
+public class SeedDataService
+{
+    private readonly BusBuddyDbContext _context;
+    private readonly ILogger<SeedDataService> _logger;
+
+    public SeedDataService(BusBuddyDbContext context, ILogger<SeedDataService> logger)
+    {
+        _context = context ?? throw new ArgumentNullException(nameof(context));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    }
+
+    /// <summary>
+    /// Seeds Wiley School District data from JSON file into the database.
+    /// Uses resilient execution for database operations.
+    /// </summary>
+    public async Task SeedWileySchoolDistrictDataAsync()
+    {
+        try
+        {
+            _logger.LogInformation("Starting Wiley School District data seeding.");
+
+            string jsonPath = Path.Combine("Data", "wiley-school-district-data.json");
+            if (!File.Exists(jsonPath))
+            {
+                _logger.LogWarning("JSON file not found: {JsonPath}", jsonPath);
+                return;
+            }
+
+            var students = JsonDataImporter.Import<List<Student>>(jsonPath);
+
+            if (students == null || students.Count == 0)
+            {
+                _logger.LogWarning("No data to seed from JSON.");
+                return;
+            }
+
+            await ResilientDbExecution.ExecuteAsync(async () =>
+            {
+                _context.Students.AddRange(students);
+                await _context.SaveChangesAsync();
+            }, _logger);
+
+            _logger.LogInformation("Seeded {Count} students successfully.", students.Count);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error during Wiley School District data seeding.");
+            throw;
+        }
+    }
+}
+<<<<<<< HEAD
+=======
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using BusBuddy.Core.Models;
+using BusBuddy.Core.Utilities; // Assume JsonDataImporter is here
+
+namespace BusBuddy.Core.Data
+{
+    public class SeedDataService
+    {
+        private readonly BusBuddyDbContext _context;
+        private readonly ILogger<SeedDataService> _logger;
+
+        public SeedDataService(BusBuddyDbContext context, ILogger<SeedDataService> logger)
+        {
+            this._context = context ?? throw new ArgumentNullException(nameof(context));
+            this._logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        }
+
+        /// <summary>
+        /// Seeds Wiley School District data from JSON file into the database.
+        /// Uses resilient execution for database operations.
+        /// </summary>
+        public async Task SeedWileySchoolDistrictDataAsync()
+        {
+            try
+            {
+                _logger.LogInformation("Starting Wiley School District data seeding.");
+
+                string jsonPath = Path.Combine("Data", "wiley-school-district-data.json");
+                if (!File.Exists(jsonPath))
+                {
+                    _logger.LogWarning("JSON file not found: {JsonPath}", jsonPath);
+                    return;
+                }
+
+                // Use JsonDataImporter for JSON deserialization (assume it returns List<Student>)
+                var students = JsonDataImporter.Import<List<Student>>(jsonPath);
+
+                if (students == null || students.Count == 0)
+                {
+                    _logger.LogWarning("No data to seed from JSON.");
+                    return;
+                }
+
+                // Resilient execution for adding data
+                await ResilientDbExecution.ExecuteAsync(async () =>
+                {
+                    _context.Students.AddRange(students);
+                    await _context.SaveChangesAsync();
+                }, _logger);
+
+                _logger.LogInformation("Seeded {Count} students successfully.", students.Count);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error during Wiley School District data seeding.");
+                throw;
+            }
+        }
+    }
+}
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using BusBuddy.Core.Models;
+using BusBuddy.Core.Utilities; // Assume JsonDataImporter is here
+
+namespace BusBuddy.Core.Data
+{
+    public class SeedDataService
+    {
+        private readonly BusBuddyDbContext _context;
+        private readonly ILogger<SeedDataService> _logger;
+
+        public SeedDataService(BusBuddyDbContext context, ILogger<SeedDataService> logger)
+        {
+            this._context = context ?? throw new ArgumentNullException(nameof(context));
+            this._logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        }
+
+        /// <summary>
+        /// Seeds Wiley School District data from JSON file into the database.
+        /// Uses resilient execution for database operations.
+        /// </summary>
+        public async Task SeedWileySchoolDistrictDataAsync()
+        {
+            try
+            {
+                _logger.LogInformation("Starting Wiley School District data seeding.");
+
+                string jsonPath = Path.Combine("Data", "wiley-school-district-data.json");
+                if (!File.Exists(jsonPath))
+                {
+                    _logger.LogWarning("JSON file not found: {JsonPath}", jsonPath);
+                    return;
+                }
+
+                // Use JsonDataImporter for JSON deserialization (assume it returns List<Student>)
+                var students = JsonDataImporter.Import<List<Student>>(jsonPath);
+
+                if (students == null || students.Count == 0)
+                {
+                    _logger.LogWarning("No data to seed from JSON.");
+                    return;
+                }
+
+                // Resilient execution for adding data
+                await ResilientDbExecution.ExecuteAsync(async () =>
+                {
+                    _context.Students.AddRange(students);
+                    await _context.SaveChangesAsync();
+                }, _logger);
+
+                _logger.LogInformation("Seeded {Count} students successfully.", students.Count);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error during Wiley School District data seeding.");
+                throw;
+            }
+        }
+    }
+[end of file]
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Text.Json;
+using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using BusBuddy.Core.Models;
+using BusBuddy.Core.Utilities; // Assume JsonDataImporter is here
+
+namespace BusBuddy.Core.Data;
+
+public class SeedDataService
+{
+    private readonly BusBuddyDbContext _context;
+
+    public SeedDataService(BusBuddyDbContext context, ILogger<SeedDataService> logger)
+    {
+        _context = context ?? throw new ArgumentNullException(nameof(context));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+
+    }
+
+    /// <summary>
+    /// Seeds Wiley School District data from JSON file into the database.
+    /// Uses resilient execution for database operations.
+    /// </summary>
+    public async Task SeedWileySchoolDistrictDataAsync()
+    {
+        try
+        {
+            _logger.LogInformation("Starting Wiley School District data seeding.");
+
+            string jsonPath = Path.Combine("Data", "wiley-school-district-data.json");
+            if (!File.Exists(jsonPath))
+            {
+                _logger.LogWarning("JSON file not found: {JsonPath}", jsonPath);
+                return;
+            }
+
+            // Use JsonDataImporter for JSON deserialization (assume it returns List<Student>)
+            var students = JsonDataImporter.Import<List<Student>>(jsonPath);
+
+            if (students == null || students.Count == 0)
+            {
+                _logger.LogWarning("No data to seed from JSON.");
+                return;
+            }
+
+            // Resilient execution for adding data
+            await ResilientDbExecution.ExecuteAsync(async () =>
+            {
+                _context.Students.AddRange(students);
+                await _context.SaveChangesAsync();
+            }, _logger);
+
+            _logger.LogInformation("Seeded {Count} students successfully.", students.Count);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error during Wiley School District data seeding.");
+            throw;
+        }
+    }
+}
+>>>>>>> df2d18d (chore: stage and commit all changes after migration to BusBuddy-3 repo (CRLF to LF warnings acknowledged))
 using System.IO;
 using System.Text.Json;
 using BusBuddy.Core.Models;
@@ -7,13 +329,76 @@ using Microsoft.EntityFrameworkCore;
 using Serilog;
 using Serilog.Context;
 
+<<<<<<< HEAD
 namespace BusBuddy.Core.Data;
+=======
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+>>>>>>> df2d18d (chore: stage and commit all changes after migration to BusBuddy-3 repo (CRLF to LF warnings acknowledged))
 
 /// <summary>
 /// Service for seeding real-world transportation data into BusBuddy database
 /// Provides infrastructure for importing, validating, and managing seed data
 /// </summary>
+<<<<<<< HEAD
 public class SeedDataService
+=======
+
+    public class SeedDataService
+    {
+        private readonly BusBuddyDbContext _context;
+        private readonly ILogger<SeedDataService> _logger;
+
+        public SeedDataService(BusBuddyDbContext context, ILogger<SeedDataService> logger)
+        {
+            this._context = context ?? throw new ArgumentNullException(nameof(context));
+            this._logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        }
+
+        /// <summary>
+        /// Seeds Wiley School District data from JSON file into the database.
+        /// Uses resilient execution for database operations.
+        /// </summary>
+        public async Task SeedWileySchoolDistrictDataAsync()
+        {
+            try
+            {
+                _logger.LogInformation("Starting Wiley School District data seeding.");
+
+                string jsonPath = Path.Combine("Data", "wiley-school-district-data.json");
+                if (!File.Exists(jsonPath))
+                {
+                    _logger.LogWarning("JSON file not found: {JsonPath}", jsonPath);
+                    return;
+                }
+
+                // Use JsonDataImporter for JSON deserialization (assume it returns List<Student>)
+                var students = JsonDataImporter.Import<List<Student>>(jsonPath);
+
+                if (students == null || students.Count == 0)
+                {
+                    _logger.LogWarning("No data to seed from JSON.");
+                    return;
+                }
+
+                // Resilient execution for adding data
+                await ResilientDbExecution.ExecuteAsync(async () =>
+                {
+                    _context.Students.AddRange(students);
+                    await _context.SaveChangesAsync();
+                }, _logger);
+
+                _logger.LogInformation("Seeded {Count} students successfully.", students.Count);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error during Wiley School District data seeding.");
+                throw;
+            }
+        }
+    }
+>>>>>>> df2d18d (chore: stage and commit all changes after migration to BusBuddy-3 repo (CRLF to LF warnings acknowledged))
 {
     private readonly IBusBuddyDbContextFactory _contextFactory;
     private static readonly ILogger Logger = Log.ForContext<SeedDataService>();
@@ -111,69 +496,65 @@ public class SeedDataService
 
             await context.SaveChangesAsync();
             result.EndTime = DateTime.UtcNow;
-            result.Success = true;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Text.Json;
+using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using BusBuddy.Core.Models;
+using BusBuddy.Core.Utilities;
 
-            Logger.Information("Real-world data seeding completed: {DriversSeeded} drivers, {VehiclesSeeded} vehicles, {ActivitiesSeeded} activities",
-                result.DriversSeeded, result.VehiclesSeeded, result.ActivitiesSeeded);
+namespace BusBuddy.Core.Data;
 
-            return result;
-        }
-        catch (Exception ex)
-        {
-            Logger.Error(ex, "Failed to seed real-world transportation data");
-            return new SeedDataResult { Success = false, ErrorMessage = ex.Message };
-        }
+public class SeedDataService
+{
+    private readonly BusBuddyDbContext _context;
+    private readonly ILogger<SeedDataService> _logger;
+
+    public SeedDataService(BusBuddyDbContext context, ILogger<SeedDataService> logger)
+    {
+        _context = context ?? throw new ArgumentNullException(nameof(context));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
-    /// <summary>
-    /// Seeds sample transportation data for development and testing
-    /// </summary>
-    public async Task<SeedDataResult> SeedSampleDataAsync()
+    public async Task SeedWileySchoolDistrictDataAsync()
     {
         try
         {
-            using var context = _contextFactory.CreateDbContext();
-            Logger.Information("Seeding sample transportation data");
+            _logger.LogInformation("Starting Wiley School District data seeding.");
 
-            var result = new SeedDataResult { StartTime = DateTime.UtcNow };
+            string jsonPath = Path.Combine("Data", "wiley-school-district-data.json");
+            if (!File.Exists(jsonPath))
+            {
+                _logger.LogWarning("JSON file not found: {JsonPath}", jsonPath);
+                return;
+            }
 
-            // Seed Drivers (15-20 real-world driver profiles)
-            result.DriversSeeded = await SeedSampleDriversAsync(context);
+            var students = JsonDataImporter.Import<List<Student>>(jsonPath);
 
-            // Seed Vehicles (10-15 realistic bus fleet)
-            result.VehiclesSeeded = await SeedSampleVehiclesAsync(context);
+            if (students == null || students.Count == 0)
+            {
+                _logger.LogWarning("No data to seed from JSON.");
+                return;
+            }
 
-            // Seed Activity Schedules (25-30 realistic transportation activities)
-            result.ActivitiesSeeded = await SeedSampleActivitiesAsync(context);
+            await ResilientDbExecution.ExecuteAsync(async () =>
+            {
+                _context.Students.AddRange(students);
+                await _context.SaveChangesAsync();
+            }, _logger);
 
-            // Seed Routes (3 realistic routes)
-            result.RoutesSeeded = await SeedSampleRoutesAsync(context);
-
-            await context.SaveChangesAsync();
-            result.EndTime = DateTime.UtcNow;
-            result.Success = true;
-
-            Logger.Information("Sample data seeding completed: {DriversSeeded} drivers, {VehiclesSeeded} vehicles, {ActivitiesSeeded} activities, {RoutesSeeded} routes",
-                result.DriversSeeded, result.VehiclesSeeded, result.ActivitiesSeeded, result.RoutesSeeded);
-
-            return result;
+            _logger.LogInformation("Seeded {Count} students successfully.", students.Count);
         }
         catch (Exception ex)
         {
-            Logger.Error(ex, "Failed to seed sample transportation data");
-            return new SeedDataResult { Success = false, ErrorMessage = ex.Message };
+            _logger.LogError(ex, "Error during Wiley School District data seeding.");
+            throw;
         }
     }
-
-    private async Task<DriverRequirements> AnalyzeDriverRequirementsAsync(BusBuddyDbContext context)
-    {
-        var existingCount = await context.Drivers.CountAsync();
-        return new DriverRequirements
-        {
-            ExistingCount = existingCount,
-            RequiredFields = new[] { "DriverName", "DriverPhone", "DriversLicenceType", "TrainingComplete" },
-            OptionalFields = new[] { "DriverEmail", "Address", "City", "State", "Zip" },
-            DataValidationRules = new[]
+}
             {
                 "DriverName: Required, Max 100 characters",
                 "DriverPhone: Optional, Max 20 characters",

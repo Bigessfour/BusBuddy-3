@@ -42,7 +42,7 @@
 
   <!-- Property Groups: Logical organization -->
   <PropertyGroup>
-    <TargetFramework>net8.0-windows</TargetFramework>
+    <TargetFramework>net9.0-windows</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
@@ -65,7 +65,7 @@
 ```xml
 <Project>
   <PropertyGroup>
-    <TargetFramework>net8.0-windows</TargetFramework>
+    <TargetFramework>net9.0-windows</TargetFramework>
     <OutputType>WinExe</OutputType>
   </PropertyGroup>
 
@@ -82,7 +82,7 @@
 <!-- This section defines the core project properties -->
 <PropertyGroup Label="Core Configuration">
   <!-- Target the latest .NET 8.0 LTS framework -->
-  <TargetFramework>net8.0-windows</TargetFramework>
+  <TargetFramework>net9.0-windows</TargetFramework>
 </PropertyGroup>
 ```
 
@@ -94,7 +94,7 @@
 
   <!-- 🏗️ CORE PROJECT CONFIGURATION -->
   <PropertyGroup Label="Framework and Language">
-    <TargetFramework>net8.0-windows</TargetFramework>
+    <TargetFramework>net9.0-windows</TargetFramework>
     <UseWPF>true</UseWPF>
     <Nullable>enable</Nullable>
   </PropertyGroup>
@@ -232,7 +232,11 @@
 
   <!-- 🏗️ FRAMEWORK CONFIGURATION -->
   <PropertyGroup Label="Framework Settings">
+<<<<<<< HEAD
     <TargetFramework>net8.0-windows</TargetFramework>
+=======
+    <TargetFramework>net9.0-windows</TargetFramework>
+>>>>>>> df2d18d (chore: stage and commit all changes after migration to BusBuddy-3 repo (CRLF to LF warnings acknowledged))
     <UseWPF Condition="'$(IsWPFProject)' == 'true'">true</UseWPF>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
@@ -288,7 +292,7 @@ $xml.Validate($null)
 <!-- DON'T: Missing namespace declarations -->
 <Project>
   <PropertyGroup>
-    <targetFramework>net8.0</targetFramework>
+    <targetFramework>net9.0</targetFramework>
   </PropertyGroup>
 </Project>
 
@@ -304,7 +308,7 @@ $xml.Validate($null)
 <!-- DO: Proper MSBuild SDK -->
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net9.0</TargetFramework>
   </PropertyGroup>
 </Project>
 

@@ -29,10 +29,10 @@
     Note: The version parameter overrides the channel parameter when any version other than 'latest' is used.
 .PARAMETER Quality
     Download the latest build of specified quality in the channel. The possible values are: daily, preview, GA.
-    Works only in combination with channel. Not applicable for STS and LTS channels and will be ignored if those channels are used. 
+    Works only in combination with channel. Not applicable for STS and LTS channels and will be ignored if those channels are used.
     For SDK use channel in A.B.Cxx format: using quality together with channel in A.B format is not supported.
     Supported since 5.0 release.
-    Note: The version parameter overrides the channel parameter when any version other than 'latest' is used, and therefore overrides the quality.     
+    Note: The version parameter overrides the channel parameter when any version other than 'latest' is used, and therefore overrides the quality.
 .PARAMETER Version
     Default: latest
     Represents a build version on specific channel. Possible values:
@@ -103,7 +103,7 @@
     Installs the .NET SDK version 7.0.401
 .EXAMPLE
     dotnet-install.ps1 -Channel 8.0 -Quality GA
-    Installs the latest GA (general availability) version of the .NET 8.0 SDK
+    Installs the latest GA (general availability) version of the .NET 9.0 SDK
 #>
 [cmdletbinding()]
 param(
@@ -121,7 +121,7 @@ param(
     [switch]$NoPath,
     [string]$AzureFeed,
     [string]$UncachedFeed,
-    [string]$FeedCredential,
+    [SecureString]$FeedCredential,
     [string]$ProxyAddress,
     [switch]$ProxyUseDefaultCredentials,
     [string[]]$ProxyBypassList = @(),
@@ -146,21 +146,23 @@ function Say($str) {
     }
 }
 
-function Say-Warning($str) {
+function Write-WarningMessage($str) {
     try {
         Write-Warning "dotnet-install: $str"
     }
     catch {
+<<<<<<< HEAD
         # Some platforms cannot utilize Write-Warning (Azure Functions, for instance). Fall back to Write-Output
+=======
+>>>>>>> df2d18d (chore: stage and commit all changes after migration to BusBuddy-3 repo (CRLF to LF warnings acknowledged))
         Write-Output "dotnet-install: Warning: $str"
     }
 }
 
 # Writes a line with error style settings.
 # Use this function to show a human-readable comment along with an exception.
-function Say-Error($str) {
+function Write-ErrorMessage($str) {
     try {
-        # Write-Error is quite oververbose for the purpose of the function, let's write one line with error style settings.
         $Host.UI.WriteErrorLine("dotnet-install: $str")
     }
     catch {
@@ -168,12 +170,15 @@ function Say-Error($str) {
     }
 }
 
-function Say-Verbose($str) {
+function Write-VerboseMessage($str) {
     try {
         Write-Verbose "dotnet-install: $str"
     }
     catch {
+<<<<<<< HEAD
         # Some platforms cannot utilize Write-Verbose (Azure Functions, for instance). Fall back to Write-Output
+=======
+>>>>>>> df2d18d (chore: stage and commit all changes after migration to BusBuddy-3 repo (CRLF to LF warnings acknowledged))
         Write-Output "dotnet-install: $str"
     }
 }
@@ -190,7 +195,11 @@ function Get-Remote-File-Size($zipUri) {
         $fileSize = $response.Headers["Content-Length"]
         if ((![string]::IsNullOrEmpty($fileSize))) {
             Say "Remote file $zipUri size is $fileSize bytes."
-        
+<<<<<<< HEAD
+
+=======
+
+>>>>>>> df2d18d (chore: stage and commit all changes after migration to BusBuddy-3 repo (CRLF to LF warnings acknowledged))
             return $fileSize
         }
     }
@@ -201,10 +210,11 @@ function Get-Remote-File-Size($zipUri) {
     return $null
 }
 
-function Say-Invocation($Invocation) {
+function Write-InvocationMessage($Invocation) {
     $command = $Invocation.MyCommand;
-    $args = (($Invocation.BoundParameters.Keys | foreach { "-$_ `"$($Invocation.BoundParameters[$_])`"" }) -join " ")
-    Say-Verbose "$command $args"
+    $boundArgs = (($Invocation.BoundParameters.Keys | ForEach-Object { "-$_ `"$($Invocation.BoundParameters[$_])`"" }) -join " ")
+    Write-VerboseMessage "$command $boundArgs"
+>>>>>>> df2d18d (chore: stage and commit all changes after migration to BusBuddy-3 repo (CRLF to LF warnings acknowledged))
 }
 
 function Invoke-With-Retry([ScriptBlock]$ScriptBlock, [System.Threading.CancellationToken]$cancellationToken = [System.Threading.CancellationToken]::None, [int]$MaxAttempts = 3, [int]$SecondsBetweenAttempts = 1) {
@@ -238,15 +248,27 @@ function Get-Machine-Architecture() {
     # To get the correct architecture, we need to use PROCESSOR_ARCHITEW6432.
     # PS x64 doesn't define this, so we fall back to PROCESSOR_ARCHITECTURE.
     # Possible values: amd64, x64, x86, arm64, arm
+<<<<<<< HEAD
     if ( $ENV:PROCESSOR_ARCHITEW6432 -ne $null ) {
         return $ENV:PROCESSOR_ARCHITEW6432
     }
 
-    try {        
+    try {
         if ( ((Get-CimInstance -ClassName CIM_OperatingSystem).OSArchitecture) -like "ARM*") {
             if ( [Environment]::Is64BitOperatingSystem ) {
                 return "arm64"
-            }  
+            }
+=======
+    if ( $null -ne $ENV:PROCESSOR_ARCHITEW6432 ) {
+        return $ENV:PROCESSOR_ARCHITEW6432
+    }
+
+    try {
+        if ( ((Get-CimInstance -ClassName CIM_OperatingSystem).OSArchitecture) -like "ARM*") {
+            if ( [Environment]::Is64BitOperatingSystem ) {
+                return "arm64"
+            }
+>>>>>>> df2d18d (chore: stage and commit all changes after migration to BusBuddy-3 repo (CRLF to LF warnings acknowledged))
             return "arm"
         }
     }
@@ -273,7 +295,11 @@ function Get-CLIArchitecture-From-Architecture([string]$Architecture) {
     }
 }
 
+<<<<<<< HEAD
 function ValidateFeedCredential([string] $FeedCredential) {
+=======
+function ValidateFeedCredential([System.Security.SecureString] $FeedCredential) {
+>>>>>>> df2d18d (chore: stage and commit all changes after migration to BusBuddy-3 repo (CRLF to LF warnings acknowledged))
     if ($Internal -and [string]::IsNullOrWhitespace($FeedCredential)) {
         $message = "Provide credentials via -FeedCredential parameter."
         if ($DryRun) {
@@ -283,7 +309,11 @@ function ValidateFeedCredential([string] $FeedCredential) {
             throw "$message"
         }
     }
-    
+<<<<<<< HEAD
+
+=======
+
+>>>>>>> df2d18d (chore: stage and commit all changes after migration to BusBuddy-3 repo (CRLF to LF warnings acknowledged))
     #FeedCredential should start with "?", for it to be added to the end of the link.
     #adding "?" at the beginning of the FeedCredential if needed.
     if ((![string]::IsNullOrWhitespace($FeedCredential)) -and ($FeedCredential[0] -ne '?')) {
@@ -411,7 +441,11 @@ function GetHTTPResponse([Uri] $Uri, [bool]$HeaderOnly, [bool]$DisableRedirect, 
                     UseDefaultCredentials = $ProxyUseDefaultCredentials;
                     BypassList            = $ProxyBypassList;
                 }
-            }       
+<<<<<<< HEAD
+            }
+=======
+            }
+>>>>>>> df2d18d (chore: stage and commit all changes after migration to BusBuddy-3 repo (CRLF to LF warnings acknowledged))
             if ($DisableRedirect) {
                 $HttpClientHandler.AllowAutoRedirect = $false
             }
@@ -566,7 +600,11 @@ function Parse-Jsonfile-For-Version([string]$JSonFile) {
     else {
         throw "Unable to find the SDK node in '$JSonFile'"
     }
+<<<<<<< HEAD
     If ($Version -eq $null) {
+=======
+    If ($null -eq $Version) {
+>>>>>>> df2d18d (chore: stage and commit all changes after migration to BusBuddy-3 repo (CRLF to LF warnings acknowledged))
         throw "Unable to find the SDK:version node in '$JSonFile'"
     }
     return $Version
@@ -581,7 +619,11 @@ function Get-Specific-Version-From-Version([string]$AzureFeed, [string]$Channel,
             return $LatestVersionInfo.Version
         }
         else {
-            return $Version 
+<<<<<<< HEAD
+            return $Version
+=======
+            return $Version
+>>>>>>> df2d18d (chore: stage and commit all changes after migration to BusBuddy-3 repo (CRLF to LF warnings acknowledged))
         }
     }
     else {
@@ -647,7 +689,11 @@ function Get-Product-Version([string]$AzureFeed, [string]$SpecificVersion, [stri
     # Try to get the version number, using the productVersion.txt file located next to the installer file.
     $ProductVersionTxtURLs = (Get-Product-Version-Url $AzureFeed $SpecificVersion $PackageDownloadLink -Flattened $true),
                              (Get-Product-Version-Url $AzureFeed $SpecificVersion $PackageDownloadLink -Flattened $false)
-    
+<<<<<<< HEAD
+
+=======
+
+>>>>>>> df2d18d (chore: stage and commit all changes after migration to BusBuddy-3 repo (CRLF to LF warnings acknowledged))
     Foreach ($ProductVersionTxtURL in $ProductVersionTxtURLs) {
         Say-Verbose "Checking for the existence of $ProductVersionTxtURL"
 
@@ -664,7 +710,11 @@ function Get-Product-Version([string]$AzureFeed, [string]$SpecificVersion, [stri
             else {
                 Say-Verbose "Got StatusCode $($productVersionResponse.StatusCode) when trying to get productVersion.txt at $productVersionTxtUrl."
             }
-        } 
+<<<<<<< HEAD
+        }
+=======
+        }
+>>>>>>> df2d18d (chore: stage and commit all changes after migration to BusBuddy-3 repo (CRLF to LF warnings acknowledged))
         catch {
             Say-Verbose "Could not read productVersion.txt at $productVersionTxtUrl (Exception: '$($_.Exception.Message)'. )"
         }
@@ -711,7 +761,11 @@ function Get-Product-Version-Url([string]$AzureFeed, [string]$SpecificVersion, [
         elseif ($Runtime -eq "windowsdesktop") {
             # The windows desktop runtime is part of the core runtime layout prior to 5.0
             $ProductVersionTxtURL = "$AzureFeed/Runtime/$SpecificVersion/$pvFileName"
+<<<<<<< HEAD
             if ($majorVersion -ne $null -and $majorVersion -ge 5) {
+=======
+            if ($null -ne $majorVersion -and $majorVersion -ge 5) {
+>>>>>>> df2d18d (chore: stage and commit all changes after migration to BusBuddy-3 repo (CRLF to LF warnings acknowledged))
                 $ProductVersionTxtURL = "$AzureFeed/WindowsDesktop/$SpecificVersion/$pvFileName"
             }
         }
@@ -746,7 +800,11 @@ function Get-ProductVersionFromDownloadLink([string]$PackageDownloadLink, [strin
         Say-Verbose "Using the default value '$SpecificVersion' as the product version."
         $productVersion = $SpecificVersion
     }
-    return $productVersion 
+<<<<<<< HEAD
+    return $productVersion
+=======
+    return $productVersion
+>>>>>>> df2d18d (chore: stage and commit all changes after migration to BusBuddy-3 repo (CRLF to LF warnings acknowledged))
 }
 
 function Get-User-Share-Path() {
@@ -825,7 +883,11 @@ function Get-List-Of-Directories-And-Versions-To-Unpack-From-Dotnet-Package([Sys
 
     $ret = $ret | Sort-Object | Get-Unique
 
+<<<<<<< HEAD
     $values = ($ret | foreach { "$_" }) -join ";"
+=======
+    $values = ($ret | ForEach-Object { "$_" }) -join ";"
+>>>>>>> df2d18d (chore: stage and commit all changes after migration to BusBuddy-3 repo (CRLF to LF warnings acknowledged))
     Say-Verbose "Directories to unpack: $values"
 
     return $ret
@@ -892,7 +954,11 @@ function DownloadFile($Source, [string]$OutPath) {
     }
 
     $Stream = $null
-    
+<<<<<<< HEAD
+
+=======
+
+>>>>>>> df2d18d (chore: stage and commit all changes after migration to BusBuddy-3 repo (CRLF to LF warnings acknowledged))
     try {
         $Response = GetHTTPResponse -Uri $Source
         $Stream = $Response.Content.ReadAsStreamAsync().Result
@@ -914,14 +980,22 @@ function ValidateRemoteLocalFileSizes([string]$LocalFileOutPath, $SourceUri) {
         $remoteFileSize = Get-Remote-File-Size -zipUri $SourceUri
         $fileSize = [long](Get-Item $LocalFileOutPath).Length
         Say "Downloaded file $SourceUri size is $fileSize bytes."
-    
+<<<<<<< HEAD
+
+=======
+
+>>>>>>> df2d18d (chore: stage and commit all changes after migration to BusBuddy-3 repo (CRLF to LF warnings acknowledged))
         if ((![string]::IsNullOrEmpty($remoteFileSize)) -and !([string]::IsNullOrEmpty($fileSize)) ) {
             if ($remoteFileSize -ne $fileSize) {
                 Say "The remote and local file sizes are not equal. Remote file size is $remoteFileSize bytes and local size is $fileSize bytes. The local package may be corrupted."
             }
             else {
                 Say "The remote and local file sizes are equal."
-            }   
+<<<<<<< HEAD
+            }
+=======
+            }
+>>>>>>> df2d18d (chore: stage and commit all changes after migration to BusBuddy-3 repo (CRLF to LF warnings acknowledged))
         }
         else {
             Say "Either downloaded or local package size can not be measured. One of them may be corrupted."
@@ -966,7 +1040,11 @@ function Prepend-Sdk-InstallRoot-To-Path([string]$InstallRoot) {
 
 function PrintDryRunOutput($Invocation, $DownloadLinks) {
     Say "Payload URLs:"
-    
+<<<<<<< HEAD
+
+=======
+
+>>>>>>> df2d18d (chore: stage and commit all changes after migration to BusBuddy-3 repo (CRLF to LF warnings acknowledged))
     for ($linkIndex = 0; $linkIndex -lt $DownloadLinks.count; $linkIndex++) {
         Say "URL #$linkIndex - $($DownloadLinks[$linkIndex].type): $($DownloadLinks[$linkIndex].downloadLink)"
     }
@@ -993,15 +1071,24 @@ function PrintDryRunOutput($Invocation, $DownloadLinks) {
 }
 
 function Get-AkaMSDownloadLink([string]$Channel, [string]$Quality, [bool]$Internal, [string]$Product, [string]$Architecture) {
-    Say-Invocation $MyInvocation 
+<<<<<<< HEAD
+    Say-Invocation $MyInvocation
+=======
+    Say-Invocation $MyInvocation
+>>>>>>> df2d18d (chore: stage and commit all changes after migration to BusBuddy-3 repo (CRLF to LF warnings acknowledged))
 
     #quality is not supported for LTS or STS channel
     if (![string]::IsNullOrEmpty($Quality) -and (@("LTS", "STS") -contains $Channel)) {
         $Quality = ""
         Say-Warning "Specifying quality for STS or LTS channel is not supported, the quality will be ignored."
     }
-    Say-Verbose "Retrieving primary payload URL from aka.ms link for channel: '$Channel', quality: '$Quality' product: '$Product', os: 'win', architecture: '$Architecture'." 
-   
+<<<<<<< HEAD
+    Say-Verbose "Retrieving primary payload URL from aka.ms link for channel: '$Channel', quality: '$Quality' product: '$Product', os: 'win', architecture: '$Architecture'."
+
+=======
+    Say-Verbose "Retrieving primary payload URL from aka.ms link for channel: '$Channel', quality: '$Quality' product: '$Product', os: 'win', architecture: '$Architecture'."
+
+>>>>>>> df2d18d (chore: stage and commit all changes after migration to BusBuddy-3 repo (CRLF to LF warnings acknowledged))
     #construct aka.ms link
     $akaMsLink = "https://aka.ms/dotnet"
     if ($Internal) {
@@ -1064,7 +1151,11 @@ function Get-AkaMSDownloadLink([string]$Channel, [string]$Quality, [bool]$Intern
 
 function Get-AkaMsLink-And-Version([string] $NormalizedChannel, [string] $NormalizedQuality, [bool] $Internal, [string] $ProductName, [string] $Architecture) {
     $AkaMsDownloadLink = Get-AkaMSDownloadLink -Channel $NormalizedChannel -Quality $NormalizedQuality -Internal $Internal -Product $ProductName -Architecture $Architecture
-   
+<<<<<<< HEAD
+
+=======
+
+>>>>>>> df2d18d (chore: stage and commit all changes after migration to BusBuddy-3 repo (CRLF to LF warnings acknowledged))
     if ([string]::IsNullOrEmpty($AkaMsDownloadLink)) {
         if (-not [string]::IsNullOrEmpty($NormalizedQuality)) {
             # if quality is specified - exit with error - there is no fallback approach
@@ -1081,7 +1172,11 @@ function Get-AkaMsLink-And-Version([string] $NormalizedChannel, [string] $Normal
 
         #get version from the path
         $pathParts = $AkaMsDownloadLink.Split('/')
-        if ($pathParts.Length -ge 2) { 
+<<<<<<< HEAD
+        if ($pathParts.Length -ge 2) {
+=======
+        if ($pathParts.Length -ge 2) {
+>>>>>>> df2d18d (chore: stage and commit all changes after migration to BusBuddy-3 repo (CRLF to LF warnings acknowledged))
             $SpecificVersion = $pathParts[$pathParts.Length - 2]
             Say-Verbose "Version: '$SpecificVersion'."
         }
@@ -1118,7 +1213,11 @@ function Get-Feeds-To-Use() {
 }
 
 function Resolve-AssetName-And-RelativePath([string] $Runtime) {
-    
+<<<<<<< HEAD
+
+=======
+
+>>>>>>> df2d18d (chore: stage and commit all changes after migration to BusBuddy-3 repo (CRLF to LF warnings acknowledged))
     if ($Runtime -eq "dotnet") {
         $assetName = ".NET Core Runtime"
         $dotnetPackageRelativePath = "shared\Microsoft.NETCore.App"
@@ -1213,11 +1312,19 @@ if ($Version.ToLowerInvariant() -ne "latest" -and -not [string]::IsNullOrEmpty($
 # aka.ms links can only be used if the user did not request a specific version via the command line or a global.json file.
 if ([string]::IsNullOrEmpty($JSonFile) -and ($Version -eq "latest")) {
     ($DownloadLink, $SpecificVersion, $EffectiveVersion) = Get-AkaMsLink-And-Version $NormalizedChannel $NormalizedQuality $Internal $NormalizedProduct $CLIArchitecture
-    
+<<<<<<< HEAD
+
     if ($null -ne $DownloadLink) {
         $DownloadLinks += New-Object PSObject -Property @{downloadLink = "$DownloadLink"; specificVersion = "$SpecificVersion"; effectiveVersion = "$EffectiveVersion"; type = 'aka.ms' }
         Say-Verbose "Generated aka.ms link $DownloadLink with version $EffectiveVersion"
-        
+
+=======
+
+    if ($null -ne $DownloadLink) {
+        $DownloadLinks += New-Object PSObject -Property @{downloadLink = "$DownloadLink"; specificVersion = "$SpecificVersion"; effectiveVersion = "$EffectiveVersion"; type = 'aka.ms' }
+        Say-Verbose "Generated aka.ms link $DownloadLink with version $EffectiveVersion"
+
+>>>>>>> df2d18d (chore: stage and commit all changes after migration to BusBuddy-3 repo (CRLF to LF warnings acknowledged))
         if (-Not $DryRun) {
             Say-Verbose "Checking if the version $EffectiveVersion is already installed"
             if (Is-Dotnet-Package-Installed -InstallRoot $InstallRoot -RelativePathToPackage $dotnetPackageRelativePath -SpecificVersion $EffectiveVersion) {
@@ -1237,15 +1344,26 @@ if ([string]::IsNullOrEmpty($NormalizedQuality) -and 0 -eq $DownloadLinks.count)
             $SpecificVersion = Get-Specific-Version-From-Version -AzureFeed $feed -Channel $Channel -Version $Version -JSonFile $JSonFile
             $DownloadLink, $EffectiveVersion = Get-Download-Link -AzureFeed $feed -SpecificVersion $SpecificVersion -CLIArchitecture $CLIArchitecture
             $LegacyDownloadLink = Get-LegacyDownload-Link -AzureFeed $feed -SpecificVersion $SpecificVersion -CLIArchitecture $CLIArchitecture
-            
+<<<<<<< HEAD
+
             $DownloadLinks += New-Object PSObject -Property @{downloadLink = "$DownloadLink"; specificVersion = "$SpecificVersion"; effectiveVersion = "$EffectiveVersion"; type = 'primary' }
             Say-Verbose "Generated primary link $DownloadLink with version $EffectiveVersion"
-    
+
+=======
+
+            $DownloadLinks += New-Object PSObject -Property @{downloadLink = "$DownloadLink"; specificVersion = "$SpecificVersion"; effectiveVersion = "$EffectiveVersion"; type = 'primary' }
+            Say-Verbose "Generated primary link $DownloadLink with version $EffectiveVersion"
+
+>>>>>>> df2d18d (chore: stage and commit all changes after migration to BusBuddy-3 repo (CRLF to LF warnings acknowledged))
             if (-not [string]::IsNullOrEmpty($LegacyDownloadLink)) {
                 $DownloadLinks += New-Object PSObject -Property @{downloadLink = "$LegacyDownloadLink"; specificVersion = "$SpecificVersion"; effectiveVersion = "$EffectiveVersion"; type = 'legacy' }
                 Say-Verbose "Generated legacy link $LegacyDownloadLink with version $EffectiveVersion"
             }
-    
+<<<<<<< HEAD
+
+=======
+
+>>>>>>> df2d18d (chore: stage and commit all changes after migration to BusBuddy-3 repo (CRLF to LF warnings acknowledged))
             if (-Not $DryRun) {
                 Say-Verbose "Checking if the version $EffectiveVersion is already installed"
                 if (Is-Dotnet-Package-Installed -InstallRoot $InstallRoot -RelativePathToPackage $dotnetPackageRelativePath -SpecificVersion $EffectiveVersion) {
@@ -1295,7 +1413,11 @@ foreach ($link in $DownloadLinks) {
         if ($PSItem.Exception.Data.Contains("StatusCode")) {
             $StatusCode = $PSItem.Exception.Data["StatusCode"]
         }
-    
+<<<<<<< HEAD
+
+=======
+
+>>>>>>> df2d18d (chore: stage and commit all changes after migration to BusBuddy-3 repo (CRLF to LF warnings acknowledged))
         if ($PSItem.Exception.Data.Contains("ErrorMessage")) {
             $ErrorMessage = $PSItem.Exception.Data["ErrorMessage"]
         }

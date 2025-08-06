@@ -178,7 +178,6 @@ namespace BusBuddy.WPF
                 ConfigureServicesForMigration();
                 Log.Information("🚌 EF migration configuration completed");
                 return;
-            }
 
             // Enforce STA thread state for normal WPF operation
             if (threadState != ApartmentState.STA)

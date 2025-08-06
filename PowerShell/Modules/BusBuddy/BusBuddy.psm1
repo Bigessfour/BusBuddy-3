@@ -1953,7 +1953,11 @@ function Invoke-BusBuddyReport {
 
         # Build the API call to our .NET PDF service
         $projectPath = Split-Path $PSScriptRoot -Parent | Split-Path -Parent
+<<<<<<< HEAD
         $exePath = Join-Path $projectPath "BusBuddy.WPF\bin\Debug\net8.0-windows\BusBuddy.exe"
+=======
+        $exePath = Join-Path $projectPath "BusBuddy.WPF\bin\Debug\net9.0-windows\BusBuddy.exe"
+>>>>>>> df2d18d (chore: stage and commit all changes after migration to BusBuddy-3 repo (CRLF to LF warnings acknowledged))
 
         if (Test-Path $exePath) {
             # Call the .NET application with report generation parameters
@@ -2116,7 +2120,11 @@ IMPLEMENTATION STEPS:
 
             # Build the API call to our .NET service
             $projectPath = Split-Path $PSScriptRoot -Parent | Split-Path -Parent
+<<<<<<< HEAD
             $exePath = Join-Path $projectPath "BusBuddy.WPF\bin\Debug\net8.0-windows\BusBuddy.exe"
+=======
+            $exePath = Join-Path $projectPath "BusBuddy.WPF\bin\Debug\net9.0-windows\BusBuddy.exe"
+>>>>>>> df2d18d (chore: stage and commit all changes after migration to BusBuddy-3 repo (CRLF to LF warnings acknowledged))
 
             if (Test-Path $exePath) {
                 # Call the .NET application with route optimization parameters
@@ -2326,8 +2334,13 @@ function Start-BusBuddyRuntimeErrorCapture {
         $projectRoot = Get-BusBuddyProjectRoot
         $possibleDumpLocations = @(
             Join-Path $projectRoot "logs"
+<<<<<<< HEAD
             Join-Path $projectRoot "BusBuddy.WPF\bin\Debug\net8.0-windows"
             Join-Path $projectRoot "BusBuddy.WPF\bin\Release\net8.0-windows"
+=======
+            Join-Path $projectRoot "BusBuddy.WPF\bin\Debug\net9.0-windows"
+            Join-Path $projectRoot "BusBuddy.WPF\bin\Release\net9.0-windows"
+>>>>>>> df2d18d (chore: stage and commit all changes after migration to BusBuddy-3 repo (CRLF to LF warnings acknowledged))
             $env:TEMP,
             $env:LOCALAPPDATA
         )

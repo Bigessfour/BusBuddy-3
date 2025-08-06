@@ -1919,7 +1919,7 @@ dotnet_diagnostic.CS1061.severity = error
 ## Build Configuration Standards
 
 ### **MSBuild Property Standards**
-- **TargetFramework**: net8.0-windows for WPF projects
+**TargetFramework**: net9.0-windows for WPF projects
 - **LangVersion**: 12 (C# 12 features)
 - **Nullable**: enable (nullable reference types)
 - **ImplicitUsings**: enable (common namespace imports)

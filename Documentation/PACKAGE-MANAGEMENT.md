@@ -149,7 +149,7 @@ public partial class App : Application
 <Project>
   <PropertyGroup>
     <!-- Core Framework Versions -->
-    <TargetFramework>net8.0-windows</TargetFramework>
+    <TargetFramework>net9.0-windows</TargetFramework>
     <UseWPF>true</UseWPF>
 
     <!-- Package Versions -->
