@@ -621,15 +621,15 @@ public class StudentService : IStudentService
             }
 
             // Find bus for route
-            var vehicle = await context.Vehicles.FirstOrDefaultAsync(v => v.Make == route.RouteName || v.BusNumber == route.RouteName || v.BusNumber == route.RouteName.Replace(" Route", ""));
-            if (vehicle == null)
+            var bus = await context.Buses.FirstOrDefaultAsync(v => v.Make == route.RouteName || v.BusNumber == route.RouteName || v.BusNumber == route.RouteName.Replace(" Route", ""));
+            if (bus == null)
             {
                 continue;
             }
 
             // Check bus capacity
-            var assignedCount = await busService.GetAssignedStudentCountAsync(context, vehicle.VehicleId);
-            if (assignedCount >= vehicle.SeatingCapacity)
+            var assignedCount = await busService.GetAssignedStudentCountAsync(context, bus.VehicleId);
+            if (assignedCount >= bus.SeatingCapacity)
             {
                 continue;
             }
@@ -638,7 +638,7 @@ public class StudentService : IStudentService
             var assignment = new RouteAssignment
             {
                 RouteId = route.RouteId,
-                VehicleId = vehicle.VehicleId,
+                VehicleId = bus.VehicleId,
                 AssignmentDate = System.DateTime.Today
             };
             newAssignments.Add(assignment);
@@ -658,13 +658,13 @@ public class StudentService : IStudentService
     private bool IsAddressInRouteBoundary(string address, string boundaries)
     {
         // Simple example: match keywords (expand as needed)
-        if (string.IsNullOrEmpty(address) || string.IsNullOrEmpty(boundaries)) return false;
+        if (string.IsNullOrEmpty(address) || string.IsNullOrEmpty(boundaries)) { return false; }
         address = address.ToLower();
         boundaries = boundaries.ToLower();
-        if (boundaries.Contains("east") && address.Contains("east")) return true;
-        if (boundaries.Contains("west") && address.Contains("west")) return true;
-        if (boundaries.Contains("south") && address.Contains("south")) return true;
-        if (boundaries.Contains("north") && address.Contains("north")) return true;
+        if (boundaries.Contains("east") && address.Contains("east")) { return true; }
+        if (boundaries.Contains("west") && address.Contains("west")) { return true; }
+        if (boundaries.Contains("south") && address.Contains("south")) { return true; }
+        if (boundaries.Contains("north") && address.Contains("north")) { return true; }
         // Add more logic as needed
         return false;
     }

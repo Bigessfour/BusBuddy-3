@@ -377,7 +377,7 @@ namespace BusBuddy.Core.Services
                 using var context = _contextFactory.CreateDbContext();
 
                 // Get all active buses
-                var allBuses = await context.Vehicles
+                var allBuses = await context.Buses
                     .Where(v => v.Status == "Active")
                     .ToListAsync();
 
@@ -614,12 +614,12 @@ namespace BusBuddy.Core.Services
                     .Select(g => new { VehicleId = g.Key, Count = g.Count() })
                     .ToListAsync();
 
-                var vehicleNames = await context.Vehicles
+                var busNames = await context.Buses
                     .Where(v => vehicleStats.Select(s => s.VehicleId).Contains(v.VehicleId))
                     .ToDictionaryAsync(v => v.VehicleId, v => $"{v.Make} {v.Model} ({v.BusNumber})");
 
                 return vehicleStats.ToDictionary(
-                    s => vehicleNames.TryGetValue(s.VehicleId, out var name) ? name : $"Vehicle {s.VehicleId}",
+                    s => busNames.TryGetValue(s.VehicleId, out var name) ? name : $"Bus {s.VehicleId}",
                     s => s.Count);
             }
             catch (Exception ex)
@@ -828,7 +828,7 @@ namespace BusBuddy.Core.Services
                     .Take(5)
                     .ToListAsync();
 
-                var busDetails = await context.Vehicles
+                var busDetails = await context.Buses
                     .Where(v => busUseFrequency.Select(b => b.VehicleId).Contains(v.VehicleId))
                     .ToDictionaryAsync(v => v.VehicleId, v => $"{v.Make} {v.Model} ({v.BusNumber})");
 

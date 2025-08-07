@@ -101,7 +101,7 @@
                                     <Setter.Value>
                                         <VisualBrush AlignmentX="Left" AlignmentY="Center" Stretch="None">
                                             <VisualBrush.Visual>
-                                                <Label Content="Search vehicles by make, model, or plate number..."
+                                                <Label Content="Search buses by make, model, or plate number..."
                                                       Foreground="Gray" Background="Transparent"/>
                                             </VisualBrush.Visual>
                                         </VisualBrush>
@@ -341,4 +341,3 @@
         </Border>
     </Grid>
 </UserControl>
-

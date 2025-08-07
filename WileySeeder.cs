@@ -158,17 +158,18 @@ class Program
                     .CountAsync();
 
                 // Count routes
+
                 var routeCount = await context.Routes
                     .Where(r => r.School == "Wiley School District")
                     .CountAsync();
 
-                // Count vehicles
-                var vehicleCount = await context.Vehicles.CountAsync();
+                // Count buses (formerly vehicles)
+                var busCount = await context.Buses.CountAsync();
 
                 Log.Information("📊 Verification Results:");
                 Log.Information("   👥 Wiley Students: {StudentCount}", studentCount);
                 Log.Information("   🚌 Wiley Routes: {RouteCount}", routeCount);
-                Log.Information("   🚐 Total Vehicles: {VehicleCount}", vehicleCount);
+                Log.Information("   � Total Buses: {BusCount}", busCount);
 
                 // Verify expected student count
                 if (studentCount >= 5)

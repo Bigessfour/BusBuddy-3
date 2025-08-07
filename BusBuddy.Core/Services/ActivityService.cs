@@ -12,7 +12,7 @@ namespace BusBuddy.Core.Services;
 /// </summary>
 public class ActivityService : IActivityService
 {
-    private readonly BusBuddyDbContext _context;
+    private readonly BusBuddy.Core.Data.BusBuddyDbContext _context;
     private readonly PdfReportService _pdfReportService;
     private static readonly ILogger Logger = Log.ForContext<ActivityService>();
 
@@ -462,13 +462,13 @@ public class ActivityService : IActivityService
             Logger.Information("Finding available vehicles for activity on {Date} from {StartTime} to {EndTime}",
                 activityDate, startTime, endTime);
 
-            // Get all active vehicles
-            var allVehicles = await _context.Vehicles
+            // Get all active buses
+            var allBuses = await _context.Buses
                 .Where(v => v.Status == "Active")
                 .ToListAsync();
 
-            // Get IDs of vehicles that are already scheduled during this time
-            var busyVehicleIds = await _context.Activities
+            // Get IDs of buses that are already scheduled during this time
+            var busyBusIds = await _context.Activities
                 .Where(a =>
                     a.Date.Date == activityDate.Date &&
                     a.Status != "Cancelled" &&
@@ -479,9 +479,9 @@ public class ActivityService : IActivityService
                 .Distinct()
                 .ToListAsync();
 
-            // Return vehicles that aren't busy
-            return allVehicles
-                .Where(v => !busyVehicleIds.Contains(v.VehicleId))
+            // Return buses that aren't busy
+            return allBuses
+                .Where(v => !busyBusIds.Contains(v.VehicleId))
                 .ToList();
         }
         catch (Exception ex)
@@ -959,15 +959,14 @@ public class ActivityService : IActivityService
             // Check if vehicle exists and is active
             if (activity.AssignedVehicleId > 0)
             {
-                var vehicle = await _context.Vehicles.FindAsync(activity.AssignedVehicleId);
-                if (vehicle == null)
+                var bus = await _context.Buses.FindAsync(activity.AssignedVehicleId);
+                if (bus == null)
                 {
-                    errors.Add("Selected vehicle does not exist");
+                    errors.Add("Selected bus does not exist");
                 }
-
-                else if (vehicle.Status != "Active")
+                else if (bus.Status != "Active")
                 {
-                    errors.Add("Selected vehicle is not active");
+                    errors.Add("Selected bus is not active");
                 }
 
             }

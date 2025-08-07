@@ -24,7 +24,7 @@ namespace BusBuddy.Core.Extensions
         public static IServiceCollection AddDataServices(this IServiceCollection services, IConfiguration configuration)
         {
             // Register DbContext with proper configuration-based connection string
-            services.AddTransient<BusBuddyDbContext>(provider =>
+            services.AddTransient<BusBuddy.Core.Data.BusBuddyDbContext>(provider =>
             {
                 var optionsBuilder = new DbContextOptionsBuilder<BusBuddyDbContext>();
 

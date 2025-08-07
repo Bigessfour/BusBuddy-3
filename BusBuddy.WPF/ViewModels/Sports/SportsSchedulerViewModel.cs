@@ -41,7 +41,7 @@ namespace BusBuddy.WPF.ViewModels.Sports
         /// <summary>
         /// Available vehicles for assignment
         /// </summary>
-        public ObservableCollection<BusModel> AvailableVehicles { get; set; } = new();
+5        public ObservableCollection<BusModel> AvailableBuses { get; set; } = new();
 
         /// <summary>
         /// Available drivers for assignment
@@ -75,11 +75,11 @@ namespace BusBuddy.WPF.ViewModels.Sports
             }
         }
 
-        private BusModel? _selectedVehicle;
-        public BusModel? SelectedVehicle
+        private BusModel? _selectedBus;
+        public BusModel? SelectedBus
         {
-            get => _selectedVehicle;
-            set => SetProperty(ref _selectedVehicle, value);
+            get => _selectedBus;
+            set => SetProperty(ref _selectedBus, value);
         }
 
         private DriverModel? _selectedDriver;
@@ -197,7 +197,7 @@ namespace BusBuddy.WPF.ViewModels.Sports
             AddSportsEventCommand = new AsyncRelayCommand(AddSportsEventAsync);
             EditActivityCommand = new AsyncRelayCommand(EditActivityAsync, () => SelectedActivity != null);
             DeleteActivityCommand = new AsyncRelayCommand(DeleteActivityAsync, () => SelectedActivity != null);
-            AssignVehicleCommand = new AsyncRelayCommand(AssignVehicleAsync, () => SelectedActivity != null && SelectedVehicle != null);
+            AssignVehicleCommand = new AsyncRelayCommand(AssignVehicleAsync, () => SelectedActivity != null && SelectedBus != null);
             AssignDriverCommand = new AsyncRelayCommand(AssignDriverAsync, () => SelectedActivity != null && SelectedDriver != null);
             CheckConflictsCommand = new AsyncRelayCommand(CheckConflictsAsync);
             RefreshCommand = new AsyncRelayCommand(RefreshDataAsync);
@@ -261,10 +261,10 @@ namespace BusBuddy.WPF.ViewModels.Sports
                         SportsActivities.Add(activity);
                     }
 
-                    AvailableVehicles.Clear();
+                    AvailableBuses.Clear();
                     foreach (var vehicle in vehicles)
                     {
-                        AvailableVehicles.Add(vehicle);
+                        AvailableBuses.Add(vehicle);
                     }
 
                     AvailableDrivers.Clear();
@@ -344,7 +344,7 @@ namespace BusBuddy.WPF.ViewModels.Sports
         /// </summary>
         private async Task AssignVehicleAsync()
         {
-            if (SelectedActivity == null || SelectedVehicle == null)
+            if (SelectedActivity == null || SelectedBus == null)
             {
                 return;
             }
@@ -354,10 +354,10 @@ namespace BusBuddy.WPF.ViewModels.Sports
                 using (LogContext.PushProperty("Operation", "AssignVehicle"))
                 {
                     Logger.Information("Assigning vehicle {BusNumber} to activity {ActivityId}",
-                        SelectedVehicle.BusNumber, SelectedActivity.ActivityId);
+                        SelectedBus.BusNumber, SelectedActivity.ActivityId);
 
                     // Check for conflicts
-                    var hasConflict = await CheckVehicleConflictAsync(SelectedVehicle, SelectedActivity);
+                    var hasConflict = await CheckVehicleConflictAsync(SelectedBus, SelectedActivity);
                     if (hasConflict)
                     {
                         var result = MessageBox.Show(
@@ -373,8 +373,8 @@ namespace BusBuddy.WPF.ViewModels.Sports
                     }
 
                     // Update assignment
-                    SelectedActivity.AssignedVehicleId = SelectedVehicle.VehicleId;
-                    SelectedActivity.AssignedVehicle = SelectedVehicle;
+                    SelectedActivity.AssignedVehicleId = SelectedBus.VehicleId;
+                    SelectedActivity.AssignedVehicle = SelectedBus;
 
                     await _context.SaveChangesAsync();
 

@@ -23,7 +23,7 @@ namespace BusBuddy.Core.Utilities
         {
             try
             {
-                var context = serviceProvider.GetRequiredService<BusBuddyDbContext>();
+                var context = serviceProvider.GetRequiredService<BusBuddy.Core.Data.BusBuddyDbContext>();
                 var connectionString = context.Database.GetConnectionString();
 
                 if (string.IsNullOrEmpty(connectionString))

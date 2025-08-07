@@ -30,7 +30,7 @@ public class DatabasePerformanceOptimizer
         // Test common queries with performance measurement
         await MeasureQueryPerformance(result, "GetAllBuses", async () =>
         {
-            return await context.Vehicles
+            return await context.Buses
                 .AsNoTracking()
                 .Where(v => v.Status == "Active")
                 .Select(v => new { v.VehicleId, v.BusNumber, v.Make, v.Model, v.Status })

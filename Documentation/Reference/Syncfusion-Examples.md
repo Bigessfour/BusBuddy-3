@@ -137,8 +137,8 @@ bb-mvp-check             # MVP readiness validation
 ### SfDataGrid - Vehicle/Student Management
 ```xml
 <!-- XAML: Basic SfDataGrid Pattern -->
-<syncfusion:SfDataGrid x:Name="VehiclesGrid"
-                       ItemsSource="{Binding Vehicles}"
+<syncfusion:SfDataGrid x:Name="BusesGrid"
+                       ItemsSource="{Binding Buses}"
                        SelectedItem="{Binding SelectedVehicle}"
                        AutoGenerateColumns="False"
                        AllowEditing="False"

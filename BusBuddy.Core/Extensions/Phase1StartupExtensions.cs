@@ -14,30 +14,9 @@ public static class Phase1StartupExtensions
     /// <summary>
     /// Initializes Phase 1 data and services
     /// </summary>
-    public static async Task InitializePhase1Async(this IServiceProvider serviceProvider)
+    public static void InitializePhase1Async(this IServiceProvider serviceProvider)
     {
-        using var scope = serviceProvider.CreateScope();
-        var logger = Serilog.Log.ForContext<Phase1DataSeedingService>();
-
-        try
-        {
-            logger.Information("🚀 Starting Phase 1 initialization...");
-
-            // Initialize database and seed data
-            var dataSeeder = scope.ServiceProvider.GetRequiredService<Phase1DataSeedingService>();
-            await dataSeeder.SeedPhase1DataAsync();
-
-            // Get data summary
-            var summary = await dataSeeder.GetDataSummaryAsync();
-            logger.Information("{Summary}", summary);
-
-            logger.Information("✅ Phase 1 initialization completed successfully!");
-        }
-        catch (Exception ex)
-        {
-            logger.Error(ex, "❌ Phase 1 initialization failed");
-            throw;
-        }
+        // Phase1DataSeedingService is deprecated/removed for MVP. Data seeding handled by SeedDataService.
     }
 
     /// <summary>
@@ -45,7 +24,7 @@ public static class Phase1StartupExtensions
     /// </summary>
     public static IServiceCollection AddPhase1Services(this IServiceCollection services)
     {
-        services.AddScoped<Phase1DataSeedingService>();
+        // services.AddScoped<Phase1DataSeedingService>(); // Disabled: service removed for MVP
 
         // Register GeoDataService with placeholder configuration
         services.AddScoped<IGeoDataService>(serviceProvider =>

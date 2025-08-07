@@ -133,7 +133,7 @@ namespace BusBuddy.Core.Services
                         Logger.Error("Invalid route ID: {RouteId}", schedule.RouteId);
                         throw new ArgumentException("Invalid route ID.");
                     }
-                    if (!await context.Vehicles.AnyAsync(b => b.VehicleId == schedule.BusId))
+                    if (!await context.Buses.AnyAsync(b => b.VehicleId == schedule.BusId))
                     {
                         Logger.Error("Invalid bus ID: {BusId}", schedule.BusId);
                         throw new ArgumentException("Invalid bus ID.");
@@ -207,7 +207,7 @@ namespace BusBuddy.Core.Services
                         Logger.Error("Invalid route ID: {RouteId}", schedule.RouteId);
                         throw new ArgumentException("Invalid route ID.");
                     }
-                    if (!await context.Vehicles.AnyAsync(b => b.VehicleId == schedule.BusId))
+                    if (!await context.Buses.AnyAsync(b => b.VehicleId == schedule.BusId))
                     {
                         Logger.Error("Invalid bus ID: {BusId}", schedule.BusId);
                         throw new ArgumentException("Invalid bus ID.");

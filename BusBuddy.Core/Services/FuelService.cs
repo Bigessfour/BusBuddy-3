@@ -143,7 +143,7 @@ public class FuelService : IFuelService
     {
         using var context = _contextFactory.CreateDbContext();
         // This is a simplified calculation - in a real system you'd track odometer readings
-        var vehicle = await context.Vehicles.FindAsync(vehicleId);
+        var vehicle = await context.Buses.FindAsync(vehicleId);
         if (vehicle?.MilesPerGallon.HasValue == true)
         {
             return vehicle.MilesPerGallon.Value;

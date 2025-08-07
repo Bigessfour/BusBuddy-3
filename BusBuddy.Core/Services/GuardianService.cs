@@ -11,7 +11,8 @@ namespace BusBuddy.Core.Services
 {
     public class GuardianService : IGuardianService
     {
-        private readonly BusBuddyDbContext _context;
+        // Use the canonical context type
+        private readonly BusBuddy.Core.Data.BusBuddyDbContext _context;
         private readonly ILogger _logger;
 
         public GuardianService(BusBuddyDbContext context, ILogger logger)

@@ -105,7 +105,7 @@ namespace BusBuddy.WPF.ViewModels
                 }
                 // Example: Load buses from context
                 using var context = _contextFactory.CreateDbContext();
-                var buses = await context.Vehicles.ToListAsync();
+                var buses = await context.Buses.ToListAsync();
                 Buses.Clear();
                 foreach (var bus in buses)
                 {
@@ -180,8 +180,9 @@ namespace BusBuddy.WPF.ViewModels
                 RouteCapacities.Clear();
                 foreach (var route in routes)
                 {
-                    var bus = await context.Vehicles.FirstOrDefaultAsync(v => v.Description == route.RouteName || v.BusNumber == route.RouteName || v.BusNumber == route.RouteName.Replace(" Route", ""));
-                    var assignedCount = await context.Students.CountAsync(s => s.RouteAssignmentId != null && context.RouteAssignments.Any(ra => ra.RouteAssignmentId == s.RouteAssignmentId && ra.RouteId == route.RouteId));
+                    var bus = await context.Buses.FirstOrDefaultAsync(v => v.Description == route.RouteName || v.BusNumber == route.RouteName || v.BusNumber == route.RouteName.Replace(" Route", ""));
+                    // TODO: RouteAssignments removed. Replace with new assignment logic if needed.
+                    var assignedCount = await context.Students.CountAsync(s => s.RouteId == route.RouteId);
                     RouteCapacities.Add(new RouteCapacityChartItem
                     {
                         BusNumber = bus?.BusNumber ?? "",

@@ -9,7 +9,7 @@ namespace BusBuddy.Core.Services
     /// </summary>
     public class DatabaseNullFixService
     {
-        private readonly BusBuddyDbContext _context;
+        private readonly BusBuddy.Core.Data.BusBuddyDbContext _context;
         private static readonly ILogger Logger = Log.ForContext<DatabaseNullFixService>();
 
         public DatabaseNullFixService(BusBuddyDbContext context)

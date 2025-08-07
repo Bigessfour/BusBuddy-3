@@ -37,7 +37,7 @@ Created three new scripts to help troubleshoot migration issues:
 
 #### `Test-MVP-Functionality.ps1`
 - Tests database connection
-- Verifies MVP tables exist (Students, Routes, Vehicles)
+- Verifies MVP tables exist (Students, Routes, Buses)
 - Validates application build
 - Provides manual testing checklist
 

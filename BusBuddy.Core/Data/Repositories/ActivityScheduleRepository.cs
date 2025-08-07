@@ -11,7 +11,7 @@ namespace BusBuddy.Core.Data.Repositories;
 /// </summary>
 public class ActivityScheduleRepository : Repository<ActivitySchedule>, IActivityScheduleRepository
 {
-    public ActivityScheduleRepository(BusBuddyDbContext context, IUserContextService userContextService) : base(context, userContextService)
+    public ActivityScheduleRepository(BusBuddy.Core.Data.BusBuddyDbContext context, IUserContextService userContextService) : base(context, userContextService)
     {
     }
 

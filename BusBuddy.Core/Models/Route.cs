@@ -169,7 +169,9 @@ public partial class Route : INotifyPropertyChanged
     public bool HasPMAssignment => PMVehicleId.HasValue && PMDriverId.HasValue;
     public decimal TotalMiles => (AMEndMiles - AMBeginMiles ?? 0) + (PMEndMiles - PMBeginMiles ?? 0);
 
-    public required string School { get; set; }
+    [StringLength(100)]
+    [Display(Name = "School")]
+    public string? School { get; set; }
 
     [StringLength(200)]
     [Display(Name = "Route Description")]

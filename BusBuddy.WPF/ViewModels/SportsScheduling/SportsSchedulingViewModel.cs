@@ -24,12 +24,12 @@ namespace BusBuddy.WPF.ViewModels.SportsScheduling
 
         // Collections
         private ObservableCollection<SportsEvent> _sportsEvents = new();
-        private ObservableCollection<BusBuddy.Core.Models.Bus> _availableVehicles = new();
+        private ObservableCollection<BusBuddy.Core.Models.Bus> _availableBuses = new();
         private ObservableCollection<Driver> _availableDrivers = new();
 
         // Selected items
         private SportsEvent? _selectedEvent;
-        private BusBuddy.Core.Models.Bus? _selectedVehicle;
+        private BusBuddy.Core.Models.Bus? _selectedBus;
         private Driver? _selectedDriver;
 
         // UI state properties
@@ -72,10 +72,10 @@ namespace BusBuddy.WPF.ViewModels.SportsScheduling
             set => SetProperty(ref _sportsEvents, value);
         }
 
-        public ObservableCollection<BusBuddy.Core.Models.Bus> AvailableVehicles
+        public ObservableCollection<BusBuddy.Core.Models.Bus> AvailableBuses
         {
-            get => _availableVehicles;
-            set => SetProperty(ref _availableVehicles, value);
+            get => _availableBuses;
+            set => SetProperty(ref _availableBuses, value);
         }
 
         public ObservableCollection<Driver> AvailableDrivers
@@ -101,12 +101,12 @@ namespace BusBuddy.WPF.ViewModels.SportsScheduling
             }
         }
 
-        public BusBuddy.Core.Models.Bus? SelectedVehicle
+        public BusBuddy.Core.Models.Bus? SelectedBus
         {
-            get => _selectedVehicle;
+            get => _selectedBus;
             set
             {
-                if (SetProperty(ref _selectedVehicle, value))
+                if (SetProperty(ref _selectedBus, value))
                 {
                     // Notify UI that assignment capability may have changed
                     OnPropertyChanged(nameof(CanAssignResources));
@@ -304,7 +304,7 @@ namespace BusBuddy.WPF.ViewModels.SportsScheduling
         {
             return !IsLoading &&
                    SelectedEvent != null &&
-                   SelectedVehicle != null &&
+                   SelectedBus != null &&
                    SelectedDriver != null &&
                    SelectedEvent.VehicleId == null &&
                    SelectedEvent.DriverId == null;
@@ -312,9 +312,9 @@ namespace BusBuddy.WPF.ViewModels.SportsScheduling
 
         private async Task AssignResourcesAsync()
         {
-            if (!CanAssignResources() || SelectedEvent == null || SelectedVehicle == null || SelectedDriver == null)
+            if (!CanAssignResources() || SelectedEvent == null || SelectedBus == null || SelectedDriver == null)
             {
-                MessageBox.Show("Please select an unassigned event, an available vehicle, and an available driver.",
+                MessageBox.Show("Please select an unassigned event, an available bus, and an available driver.",
                     "Selection Required", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
@@ -325,26 +325,26 @@ namespace BusBuddy.WPF.ViewModels.SportsScheduling
                 StatusMessage = "Assigning resources...";
 
                 var success = await _schedulingService.AssignVehicleAndDriverAsync(
-                    SelectedEvent.Id, SelectedVehicle.Id, SelectedDriver.Id);
+                    SelectedEvent.Id, SelectedBus.Id, SelectedDriver.Id);
 
                 if (success)
                 {
                     // Update the event
-                    SelectedEvent.VehicleId = SelectedVehicle.Id;
+                    SelectedEvent.VehicleId = SelectedBus.Id;
                     SelectedEvent.DriverId = SelectedDriver.Id;
-                    SelectedEvent.Vehicle = SelectedVehicle;
+                    SelectedEvent.Vehicle = SelectedBus;
                     SelectedEvent.Driver = SelectedDriver;
                     SelectedEvent.Status = "Assigned";
 
                     StatusMessage = "Resources assigned successfully";
-                    MessageBox.Show($"Vehicle '{SelectedVehicle.LicensePlate}' and Driver '{SelectedDriver.Name}' have been assigned to '{SelectedEvent.EventName}'.",
+                    MessageBox.Show($"Bus '{SelectedBus.LicensePlate}' and Driver '{SelectedDriver.Name}' have been assigned to '{SelectedEvent.EventName}'.",
                         "Assignment Successful", MessageBoxButton.OK, MessageBoxImage.Information);
 
                     // Refresh available resources
                     await LoadAvailableResourcesAsync();
 
                     Logger.Information("Assigned Vehicle {VehicleId} and Driver {DriverId} to Event {EventId}",
-                        SelectedVehicle.Id, SelectedDriver.Id, SelectedEvent.Id);
+                        SelectedBus.Id, SelectedDriver.Id, SelectedEvent.Id);
                 }
                 else
                 {
@@ -406,16 +406,16 @@ namespace BusBuddy.WPF.ViewModels.SportsScheduling
 
             try
             {
-                var vehicles = await _schedulingService.GetAvailableVehiclesAsync(
+                var buses = await _schedulingService.GetAvailableVehiclesAsync(
                     SelectedEvent.StartTime, SelectedEvent.EndTime, SelectedEvent.TeamSize);
 
                 var drivers = await _schedulingService.GetAvailableDriversAsync(
                     SelectedEvent.StartTime, SelectedEvent.EndTime);
 
-                AvailableVehicles.Clear();
-                foreach (var vehicle in vehicles)
+                AvailableBuses.Clear();
+                foreach (var bus in buses)
                 {
-                    AvailableVehicles.Add(vehicle);
+                    AvailableBuses.Add(bus);
                 }
 
                 AvailableDrivers.Clear();
@@ -424,8 +424,8 @@ namespace BusBuddy.WPF.ViewModels.SportsScheduling
                     AvailableDrivers.Add(driver);
                 }
 
-                Logger.Information("Loaded {VehicleCount} available vehicles and {DriverCount} available drivers for event {EventId}",
-                    vehicles.Count, drivers.Count, SelectedEvent.Id);
+                Logger.Information("Loaded {BusCount} available buses and {DriverCount} available drivers for event {EventId}",
+                    buses.Count, drivers.Count, SelectedEvent.Id);
             }
             catch (Exception ex)
             {
@@ -436,9 +436,9 @@ namespace BusBuddy.WPF.ViewModels.SportsScheduling
         private void ClearSelection()
         {
             SelectedEvent = null;
-            SelectedVehicle = null;
+            SelectedBus = null;
             SelectedDriver = null;
-            AvailableVehicles.Clear();
+            AvailableBuses.Clear();
             AvailableDrivers.Clear();
             StatusMessage = "Selection cleared";
         }

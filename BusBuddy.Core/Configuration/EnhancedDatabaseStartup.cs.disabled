@@ -234,7 +234,7 @@ public class DatabaseValidationService
             // Check table mappings
             var tableChecks = new Dictionary<string, string>
             {
-                { "Vehicles", "Bus entity should map to Vehicles table" },
+                { "Buses", "Bus entity should map to Buses table" },
                 { "Drivers", "Driver entity should map to Drivers table" },
                 { "Routes", "Route entity should map to Routes table" },
                 { "Schedules", "Schedule entity should map to Schedules table" }
@@ -263,10 +263,10 @@ public class DatabaseValidationService
             // Check column mappings for critical relationships
             var columnChecks = new Dictionary<string, string>
             {
-                { "SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'Schedules' AND COLUMN_NAME = 'VehicleId'",
-                  "Schedules table should have VehicleId column for BusId mapping" },
-                { "SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'Vehicles' AND COLUMN_NAME = 'VehicleId'",
-                  "Vehicles table should have VehicleId as primary key" }
+                { "SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'Schedules' AND COLUMN_NAME = 'BusId'",
+                  "Schedules table should have BusId column for Bus mapping" },
+                { "SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'Buses' AND COLUMN_NAME = 'BusId'",
+                  "Buses table should have BusId as primary key" }
             };
 
             foreach (var check in columnChecks)

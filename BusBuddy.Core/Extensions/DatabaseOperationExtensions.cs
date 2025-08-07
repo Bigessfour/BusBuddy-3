@@ -157,13 +157,13 @@ public class SafeDatabaseOperations
     /// <summary>
     /// Safely retrieves buses with enhanced error handling
     /// </summary>
-    public async Task<List<Models.Bus>> GetBusesAsync(BusBuddyDbContext context)
+    public async Task<List<Models.Bus>> GetBusesAsync(BusBuddy.Core.Data.BusBuddyDbContext context)
     {
         ArgumentNullException.ThrowIfNull(context);
         return await _resilienceService.ExecuteWithResilienceAsync(async () =>
         {
             return await context.SafeQueryAsync(
-                context.Vehicles.Where(v => v.Status == "Active"),
+                context.Buses.Where(v => v.Status == "Active"),
                 "GetBuses");
         }, "GetBuses");
     }

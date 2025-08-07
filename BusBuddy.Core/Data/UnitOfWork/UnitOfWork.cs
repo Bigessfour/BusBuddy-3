@@ -13,7 +13,7 @@ namespace BusBuddy.Core.Data.UnitOfWork;
 /// </summary>
 public class UnitOfWork : IUnitOfWork
 {
-    private readonly BusBuddyDbContext _context;
+    private readonly BusBuddy.Core.Data.BusBuddyDbContext _context;
     private readonly IUserContextService _userContextService;
     private IDbContextTransaction? _transaction;
     private string? _currentAuditUser;

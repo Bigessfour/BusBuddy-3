@@ -103,7 +103,7 @@ namespace BusBuddy.WPF.Views.Main
                 //
                 // <syncfusion:SfDataGrid x:Name="StudentsGrid" ItemsSource="{Binding Students}" ... />
                 // <syncfusion:SfDataGrid x:Name="RoutesGrid" ItemsSource="{Binding Routes}" ... />
-                // <syncfusion:SfDataGrid x:Name="BusesGrid" ItemsSource="{Binding Vehicles}" ... />
+                // <syncfusion:SfDataGrid x:Name="BusesGrid" ItemsSource="{Binding Buses}" ... />
                 // <syncfusion:SfDataGrid x:Name="DriversGrid" ItemsSource="{Binding Drivers}" ... />
                 //
                 // Required using statement at top of file:

@@ -172,47 +172,6 @@ IF NOT EXISTS (
     WHERE [MigrationId] = N'20250804210443_InitialCreate'
 )
 BEGIN
-    CREATE TABLE [Vehicles] (
-        [VehicleId] int NOT NULL IDENTITY,
-        [BusNumber] nvarchar(20) NOT NULL DEFAULT N'',
-        [Year] int NOT NULL,
-        [Make] nvarchar(50) NOT NULL DEFAULT N'',
-        [Model] nvarchar(50) NOT NULL DEFAULT N'',
-        [SeatingCapacity] int NOT NULL,
-        [VIN] nvarchar(17) NOT NULL DEFAULT N'',
-        [LicenseNumber] nvarchar(20) NOT NULL DEFAULT N'',
-        [Status] nvarchar(20) NOT NULL DEFAULT N'Active',
-        [DateLastInspection] datetime2 NULL,
-        [CurrentOdometer] int NULL,
-        [PurchaseDate] datetime2 NULL,
-        [PurchasePrice] decimal(10,2) NULL,
-        [InsurancePolicyNumber] nvarchar(100) NULL,
-        [InsuranceExpiryDate] datetime2 NULL,
-        [CreatedDate] datetime2 NOT NULL DEFAULT (GETUTCDATE()),
-        [UpdatedDate] datetime2 NULL,
-        [CreatedBy] nvarchar(100) NULL,
-        [UpdatedBy] nvarchar(100) NULL,
-        [Department] nvarchar(50) NULL,
-        [FleetType] nvarchar(20) NULL,
-        [FuelCapacity] decimal(8,2) NULL,
-        [FuelType] nvarchar(20) NULL,
-        [MilesPerGallon] decimal(6,2) NULL,
-        [NextMaintenanceDue] datetime2 NULL,
-        [NextMaintenanceMileage] int NULL,
-        [LastServiceDate] datetime2 NULL,
-        [SpecialEquipment] nvarchar(1000) NULL,
-        [GPSTracking] bit NOT NULL,
-        [GPSDeviceId] nvarchar(100) NULL,
-        [Notes] nvarchar(1000) NULL,
-        CONSTRAINT [PK_Vehicles] PRIMARY KEY ([VehicleId])
-    );
-END;
-
-IF NOT EXISTS (
-    SELECT * FROM [__EFMigrationsHistory]
-    WHERE [MigrationId] = N'20250804210443_InitialCreate'
-)
-BEGIN
     CREATE TABLE [Fuel] (
         [FuelId] int NOT NULL IDENTITY,
         [FuelDate] datetime2 NOT NULL,
@@ -1136,6 +1095,47 @@ END;
 IF NOT EXISTS (
     SELECT * FROM [__EFMigrationsHistory]
     WHERE [MigrationId] = N'20250804210443_InitialCreate'
+)
+BEGIN
+    CREATE INDEX [IX_Vehicles_MakeModelYear] ON [Vehicles] ([Make], [Model], [Year]);
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20250804210443_InitialCreate'
+)
+BEGIN
+    CREATE INDEX [IX_Vehicles_Status] ON [Vehicles] ([Status]);
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20250804210443_InitialCreate'
+)
+BEGIN
+    CREATE UNIQUE INDEX [IX_Vehicles_VINNumber] ON [Vehicles] ([VIN]);
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20250804210443_InitialCreate'
+)
+BEGIN
+    INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
+    VALUES (N'20250804210443_InitialCreate', N'9.0.7');
+END;
+
+COMMIT;
+GO
+    WHERE [MigrationId] = N'20250804210443_InitialCreate'
+)
+BEGIN
+    INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
+    VALUES (N'20250804210443_InitialCreate', N'9.0.7');
+END;
+
+COMMIT;
+GO
 )
 BEGIN
     CREATE INDEX [IX_Vehicles_MakeModelYear] ON [Vehicles] ([Make], [Model], [Year]);

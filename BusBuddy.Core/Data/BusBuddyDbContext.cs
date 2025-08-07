@@ -61,7 +61,7 @@ public class BusBuddyDbContext : DbContext
     public string GetCurrentAuditUser() => _currentAuditUser;
 
     // DbSets for all entities
-    public virtual DbSet<Bus> Vehicles { get; set; } = null!;
+    public virtual DbSet<Bus> Buses { get; set; } = null!;
     public virtual DbSet<ActivityLog> ActivityLogs { get; set; } = null!;
     public virtual DbSet<Driver> Drivers { get; set; } = null!;
     public virtual DbSet<Route> Routes { get; set; } = null!;
@@ -77,12 +77,14 @@ public class BusBuddyDbContext : DbContext
     public virtual DbSet<RouteStop> RouteStops { get; set; } = null!;
     public virtual DbSet<SchoolCalendar> SchoolCalendar { get; set; } = null!;
     public virtual DbSet<ActivitySchedule> ActivitySchedule { get; set; } = null!;
-    public virtual DbSet<SportsEvent> SportsEvents { get; set; } = null!;
+    // Removed legacy SportsEvents DbSet; use canonical DbContext only
     public virtual DbSet<Destination> Destinations { get; set; } = null!;
     public virtual DbSet<RouteAssignment> RouteAssignments { get; set; } = null!;
 
+    public virtual DbSet<SportsEvent> SportsEvents { get; set; } = null!;
+
     // Compatibility aliases for legacy code
-    public virtual DbSet<Bus> Buses => Vehicles;
+    // Removed legacy Vehicles property; use Buses only
     public virtual DbSet<Fuel> Fuels => FuelRecords;
     public virtual DbSet<Maintenance> Maintenances => MaintenanceRecords;
     public virtual DbSet<ActivitySchedule> ActivitySchedules => ActivitySchedule;
@@ -183,7 +185,7 @@ public class BusBuddyDbContext : DbContext
         // Configure Bus (Vehicle) entity with enhanced audit and indexing
         modelBuilder.Entity<Bus>(entity =>
         {
-            entity.ToTable("Vehicles");
+            entity.ToTable("Buses");
             entity.HasKey(e => e.VehicleId);
             // Remove the HasColumnName mapping since VehicleId should map to VehicleId column
 
@@ -215,16 +217,16 @@ public class BusBuddyDbContext : DbContext
             entity.Property(e => e.CreatedDate).HasDefaultValueSql("GETUTCDATE()");
 
             // Unique constraints
-            entity.HasIndex(e => e.BusNumber).IsUnique().HasDatabaseName("IX_Vehicles_BusNumber");
-            entity.HasIndex(e => e.VINNumber).IsUnique().HasDatabaseName("IX_Vehicles_VINNumber");
-            entity.HasIndex(e => e.LicenseNumber).IsUnique().HasDatabaseName("IX_Vehicles_LicenseNumber");
+            entity.HasIndex(e => e.BusNumber).IsUnique().HasDatabaseName("IX_Buses_BusNumber");
+            entity.HasIndex(e => e.VINNumber).IsUnique().HasDatabaseName("IX_Buses_VINNumber");
+            entity.HasIndex(e => e.LicenseNumber).IsUnique().HasDatabaseName("IX_Buses_LicenseNumber");
 
             // Performance indexes
-            entity.HasIndex(e => e.Status).HasDatabaseName("IX_Vehicles_Status");
-            entity.HasIndex(e => e.DateLastInspection).HasDatabaseName("IX_Vehicles_DateLastInspection");
-            entity.HasIndex(e => e.InsuranceExpiryDate).HasDatabaseName("IX_Vehicles_InsuranceExpiryDate");
-            entity.HasIndex(e => e.FleetType).HasDatabaseName("IX_Vehicles_FleetType");
-            entity.HasIndex(e => new { e.Make, e.Model, e.Year }).HasDatabaseName("IX_Vehicles_MakeModelYear");
+            entity.HasIndex(e => e.Status).HasDatabaseName("IX_Buses_Status");
+            entity.HasIndex(e => e.DateLastInspection).HasDatabaseName("IX_Buses_DateLastInspection");
+            entity.HasIndex(e => e.InsuranceExpiryDate).HasDatabaseName("IX_Buses_InsuranceExpiryDate");
+            entity.HasIndex(e => e.FleetType).HasDatabaseName("IX_Buses_FleetType");
+            entity.HasIndex(e => new { e.Make, e.Model, e.Year }).HasDatabaseName("IX_Buses_MakeModelYear");
         });
 
         // Configure Driver entity with enhanced features
@@ -370,7 +372,7 @@ public class BusBuddyDbContext : DbContext
             entity.HasIndex(e => e.DriverId).HasDatabaseName("IX_Activities_DriverId");
             entity.HasIndex(e => e.RouteId).HasDatabaseName("IX_Activities_RouteId");
             entity.HasIndex(e => new { e.Date, e.LeaveTime, e.EventTime }).HasDatabaseName("IX_Activities_DateTimeRange");
-            entity.HasIndex(e => new { e.AssignedVehicleId, e.Date, e.LeaveTime }).HasDatabaseName("IX_Activities_VehicleSchedule");
+            entity.HasIndex(e => new { e.AssignedVehicleId, e.Date, e.LeaveTime }).HasDatabaseName("IX_Activities_BusSchedule");
             entity.HasIndex(e => new { e.DriverId, e.Date, e.LeaveTime }).HasDatabaseName("IX_Activities_DriverSchedule");
             entity.HasIndex(e => e.ApprovalRequired).HasDatabaseName("IX_Activities_ApprovalRequired");
         });
@@ -651,7 +653,7 @@ public class BusBuddyDbContext : DbContext
             entity.HasIndex(e => e.VehicleId).HasDatabaseName("IX_TripEvents_VehicleId");
             entity.HasIndex(e => e.DriverId).HasDatabaseName("IX_TripEvents_DriverId");
             entity.HasIndex(e => e.RouteId).HasDatabaseName("IX_TripEvents_RouteId");
-            entity.HasIndex(e => new { e.VehicleId, e.LeaveTime }).HasDatabaseName("IX_TripEvents_VehicleSchedule");
+            entity.HasIndex(e => new { e.VehicleId, e.LeaveTime }).HasDatabaseName("IX_TripEvents_BusSchedule");
             entity.HasIndex(e => new { e.DriverId, e.LeaveTime }).HasDatabaseName("IX_TripEvents_DriverSchedule");
             entity.HasIndex(e => e.ApprovalRequired).HasDatabaseName("IX_TripEvents_ApprovalRequired");
         });

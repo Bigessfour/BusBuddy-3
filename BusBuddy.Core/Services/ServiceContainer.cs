@@ -12,7 +12,7 @@ namespace BusBuddy.Core.Services
         public static void ConfigureServices(IServiceCollection services, IConfiguration configuration)
         {
             // Note: DbContext is registered in the WPF App.xaml.cs to avoid duplicate registration
-            // services.AddDbContext<BusBuddyDbContext> is handled by the main application
+            // services.AddDbContext<BusBuddy.Core.Data.BusBuddyDbContext> is handled by the main application
 
             services.AddScoped<IUnitOfWork, UnitOfWork>();
             services.AddScoped<IActivityService, ActivityService>();

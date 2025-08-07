@@ -36,7 +36,7 @@
     <!-- NUnit Testing Framework -->
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
     <PackageReference Include="Microsoft.TestPlatform.TestHost" Version="17.14.1" />
-    <PackageReference Include="NUnit" Version="$(NUnitVersion)" />
+    <PackageReference Include="NUnit" Version="4.3.2" />
     <PackageReference Include="NUnit3TestAdapter" Version="4.6.0" />
 
     <!-- FluentAssertions for readable test assertions -->
@@ -49,7 +49,7 @@
     </PackageReference>
 
     <!-- Mocking Framework -->
-    <PackageReference Include="Moq" Version="$(MoqVersion)" />
+    <PackageReference Include="Moq" Version="4.20.72" />
 
     <!-- Entity Framework In-Memory Database for testing -->
     <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="$(EntityFrameworkVersion)" />

@@ -14,7 +14,7 @@ namespace BusBuddy.Core.Utilities
     /// </summary>
     public class DatabaseValidator
     {
-        private readonly IBusBuddyDbContextFactory _contextFactory;
+        private readonly BusBuddy.Core.Data.IBusBuddyDbContextFactory _contextFactory;
         private static readonly ILogger Logger = Log.ForContext<DatabaseValidator>();
 
         public DatabaseValidator(
@@ -37,26 +37,25 @@ namespace BusBuddy.Core.Utilities
                 using var context = _contextFactory.CreateDbContext();
 
                 // Validate Vehicles table for NULL values in critical columns
-                var vehiclesWithNullValues = await context.Vehicles
+                var busesWithNullValues = await context.Buses
                     .Where(v => v.BusNumber == null ||
                             v.Make == null ||
                             v.Model == null ||
                             v.LicenseNumber == null ||
                             v.VINNumber == null)
-                    .Select(v => new { v.VehicleId, v.BusNumber })
                     .ToListAsync();
 
-                if (vehiclesWithNullValues.Any())
+                if (busesWithNullValues.Any())
                 {
-                    var vehicleIdsWithNulls = string.Join(", ", vehiclesWithNullValues.Select(v => $"{v.VehicleId} ({v.BusNumber ?? "null"})"));
-                    issues.Add($"Found {vehiclesWithNullValues.Count} vehicles with NULL values in critical fields: {vehicleIdsWithNulls}");
-                    Logger.Warning("Found {Count} vehicles with NULL values in critical fields: {VehicleIds}",
-                        vehiclesWithNullValues.Count, vehicleIdsWithNulls);
+                    var busIdsWithNulls = string.Join(", ", busesWithNullValues.Select(b => $"{b.VehicleId} ({b.BusNumber ?? "null"})"));
+                    issues.Add($"Found {busesWithNullValues.Count} buses with NULL values in critical fields: {busIdsWithNulls}");
+                    Logger.Warning("Found {Count} buses with NULL values in critical fields: {BusIds}",
+                        busesWithNullValues.Count, busIdsWithNulls);
 
                     // Break into the debugger if requested and in debug mode
                     if (breakOnIssue && Debugger.IsAttached)
                     {
-                        Logger.Debug("NULL values found in vehicles");
+                        Logger.Debug("NULL values found in buses");
                         // Debugger.Break(); // Commented out to prevent unwanted breaks
                     }
                 }
@@ -64,8 +63,8 @@ namespace BusBuddy.Core.Utilities
                 // Check for invalid foreign keys in Routes
                 var routesWithInvalidVehicles = await context.Routes
                     .Where(r =>
-                        (r.AMVehicleId.HasValue && !context.Vehicles.Any(v => v.VehicleId == r.AMVehicleId)) ||
-                        (r.PMVehicleId.HasValue && !context.Vehicles.Any(v => v.VehicleId == r.PMVehicleId)))
+                        (r.AMVehicleId.HasValue && !context.Buses.Any(v => v.VehicleId == r.AMVehicleId)) ||
+                        (r.PMVehicleId.HasValue && !context.Buses.Any(v => v.VehicleId == r.PMVehicleId)))
                     .Select(r => r.RouteId)
                     .ToListAsync();
 
@@ -133,7 +132,7 @@ namespace BusBuddy.Core.Utilities
                 using var context = _contextFactory.CreateWriteDbContext();
 
                 // Fix NULL values in Vehicles table
-                var vehiclesWithNullValues = await context.Vehicles
+                var busesWithNullValues = await context.Buses
                     .Where(v => v.BusNumber == null ||
                             v.Make == null ||
                             v.Model == null ||
@@ -142,43 +141,43 @@ namespace BusBuddy.Core.Utilities
                             v.Status == null)
                     .ToListAsync();
 
-                foreach (var vehicle in vehiclesWithNullValues)
+                foreach (var bus in busesWithNullValues)
                 {
                     bool changed = false;
 
-                    if (vehicle.BusNumber == null)
+                    if (bus.BusNumber == null)
                     {
-                        vehicle.BusNumber = $"Bus-{vehicle.VehicleId}";
+                        bus.BusNumber = $"Bus-{bus.VehicleId}";
                         changed = true;
                     }
 
-                    if (vehicle.Make == null)
+                    if (bus.Make == null)
                     {
-                        vehicle.Make = "Unknown";
+                        bus.Make = "Unknown";
                         changed = true;
                     }
 
-                    if (vehicle.Model == null)
+                    if (bus.Model == null)
                     {
-                        vehicle.Model = "Unknown";
+                        bus.Model = "Unknown";
                         changed = true;
                     }
 
-                    if (vehicle.LicenseNumber == null)
+                    if (bus.LicenseNumber == null)
                     {
-                        vehicle.LicenseNumber = $"LIC-{vehicle.VehicleId}";
+                        bus.LicenseNumber = $"LIC-{bus.VehicleId}";
                         changed = true;
                     }
 
-                    if (vehicle.VINNumber == null)
+                    if (bus.VINNumber == null)
                     {
-                        vehicle.VINNumber = $"VIN-{vehicle.VehicleId}";
+                        bus.VINNumber = $"VIN-{bus.VehicleId}";
                         changed = true;
                     }
 
-                    if (vehicle.Status == null)
+                    if (bus.Status == null)
                     {
-                        vehicle.Status = "Active";
+                        bus.Status = "Active";
                         changed = true;
                     }
 
@@ -189,7 +188,7 @@ namespace BusBuddy.Core.Utilities
                         // Break into the debugger for the first fix if requested and in debug mode
                         if (breakOnFix && Debugger.IsAttached && fixCount == 1)
                         {
-                            Logger.Debug("Database fix applied for Vehicle ID {VehicleId}", vehicle.VehicleId);
+                            Logger.Debug("Database fix applied for Bus ID {BusId}", bus.VehicleId);
                             // Debugger.Break(); // Commented out to prevent unwanted breaks
                         }
                     }
@@ -199,7 +198,7 @@ namespace BusBuddy.Core.Utilities
                 if (fixCount > 0)
                 {
                     await context.SaveChangesAsync();
-                    Logger.Information("Fixed {Count} vehicles with NULL values", fixCount);
+                    Logger.Information("Fixed {Count} buses with NULL values", fixCount);
                 }
             }
             catch (Exception ex)

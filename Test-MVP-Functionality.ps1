@@ -42,9 +42,10 @@ try {
     $Command.CommandText = "SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'Routes'"
     $RoutesExists = $Command.ExecuteScalar()
 
-    # Check for Vehicles table
-    $Command.CommandText = "SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'Vehicles'"
-    $VehiclesExists = $Command.ExecuteScalar()
+
+    # Check for Buses table (formerly Vehicles)
+    $Command.CommandText = "SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'Buses'"
+    $BusesExists = $Command.ExecuteScalar()
 
     $Connection.Close()
 

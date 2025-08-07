@@ -31,7 +31,7 @@ public class VehicleService
             Logger.Warning("VIN validation failed: invalid length or empty");
             return false;
         }
-        var exists = await _context.Vehicles.AnyAsync(v => v.VINNumber == vin);
+        var exists = await _context.Buses.AnyAsync(v => v.VINNumber == vin);
         if (exists)
         {
             Logger.Warning("VIN validation failed: duplicate VIN {VIN}", vin);

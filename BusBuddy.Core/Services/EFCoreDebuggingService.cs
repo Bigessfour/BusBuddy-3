@@ -135,13 +135,13 @@ public class EFCoreDebuggingService
 
             // Test different query patterns
             await TestQueryPattern(context, debugInfo, "Simple Count", async () =>
-                await context.Vehicles.CountAsync());
+                await context.Buses.CountAsync());
 
             await TestQueryPattern(context, debugInfo, "Where Filter", async () =>
-                await context.Vehicles.Where(v => v.Status == "Active").CountAsync());
+                await context.Buses.Where(v => v.Status == "Active").CountAsync());
 
             await TestQueryPattern(context, debugInfo, "Include Navigation", async () =>
-                await context.Vehicles.Include(v => v.AMRoutes).Take(5).ToListAsync());
+                await context.Buses.Include(v => v.AMRoutes).Take(5).ToListAsync());
 
             await TestQueryPattern(context, debugInfo, "Complex Join", async () =>
                 await context.Routes
@@ -220,7 +220,7 @@ public class EFCoreDebuggingService
             // Test each entity set
             var entityTypes = new (string Name, Func<Task<object>> TestFunc)[]
             {
-                ("Vehicles", async () => await context.Vehicles.Take(1).ToListAsync()),
+                ("Buses", async () => await context.Buses.Take(1).ToListAsync()),
                 ("Drivers", async () => await context.Drivers.Take(1).ToListAsync()),
                 ("Routes", async () => await context.Routes.Take(1).ToListAsync()),
                 ("Students", async () => await context.Students.Take(1).ToListAsync())
@@ -254,7 +254,7 @@ public class EFCoreDebuggingService
         try
         {
             // Test read operations
-            var busCount = await context.Vehicles.CountAsync();
+            var busCount = await context.Buses.CountAsync();
             operationResults.Add($"Bus Count: {busCount}");
 
             var driverCount = await context.Drivers.CountAsync();
@@ -264,7 +264,7 @@ public class EFCoreDebuggingService
             operationResults.Add($"Route Count: {routeCount}");
 
             // Test a simple query with filtering
-            var activeBusCount = await context.Vehicles.CountAsync(v => v.Status == "Active");
+            var activeBusCount = await context.Buses.CountAsync(v => v.Status == "Active");
             operationResults.Add($"Active Bus Count: {activeBusCount}");
         }
         catch (Exception ex)

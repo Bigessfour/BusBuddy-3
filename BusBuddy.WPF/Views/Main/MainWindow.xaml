@@ -47,7 +47,7 @@
                                           Click="RouteManagementButton_Click" FontSize="14" FontWeight="SemiBold"/>
                     <syncfusion:ButtonAdv Label="🚐 Buses" Margin="0,0,10,0" Padding="15,8"
                                           Background="#DC2626" Foreground="White" BorderThickness="0"
-                                          Click="VehiclesButton_Click" FontSize="14" FontWeight="SemiBold"/>
+                                          Click="BusesButton_Click" FontSize="14" FontWeight="SemiBold"/>
                     <syncfusion:ButtonAdv Label="👨‍✈️ Drivers" Padding="15,8"
                                           Background="#107C10" Foreground="White" BorderThickness="0"
                                           Click="DriversButton_Click" FontSize="14" FontWeight="SemiBold"/>

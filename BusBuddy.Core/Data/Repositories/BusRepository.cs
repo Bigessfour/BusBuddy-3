@@ -11,7 +11,7 @@ namespace BusBuddy.Core.Data.Repositories;
 /// </summary>
 public class BusRepository : Repository<Bus>, IBusRepository
 {
-    public BusRepository(BusBuddyDbContext context, IUserContextService userContextService) : base(context, userContextService)
+    public BusRepository(BusBuddy.Core.Data.BusBuddyDbContext context, IUserContextService userContextService) : base(context, userContextService)
     {
     }
 

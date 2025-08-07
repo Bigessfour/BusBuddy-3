@@ -9,7 +9,7 @@ namespace BusBuddy.Core.Data
     /// </summary>
     public class DatabaseNullFixMigration
     {
-        private readonly BusBuddyDbContext _context;
+        private readonly BusBuddy.Core.Data.BusBuddyDbContext _context;
 
         public DatabaseNullFixMigration(BusBuddyDbContext context)
         {

@@ -6,7 +6,7 @@ using System.Diagnostics;
 namespace BusBuddy.Core.Extensions
 {
     /// <summary>
-    /// Extensions for BusBuddyDbContext to improve logging and performance tracking
+    /// Extensions for BusBuddy.Core.Data.BusBuddyDbContext to improve logging and performance tracking
     /// </summary>
     public static class DbContextExtensions
     {

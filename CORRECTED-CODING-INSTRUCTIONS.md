@@ -166,7 +166,7 @@ bb-commands       # List all commands
 
 ### **🚌 Core Business Context**
 - **School transportation management system** for bus fleet operations
-- **Key entities**: Vehicles, Drivers, Routes, Maintenance, Fuel, Activities
+- **Key entities**: Buses, Drivers, Routes, Maintenance, Fuel, Activities
 - **Primary users**: Transportation coordinators, mechanics, administrators
 - **Critical features**: Safety compliance, route optimization, maintenance tracking
 

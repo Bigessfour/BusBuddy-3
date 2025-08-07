@@ -81,7 +81,7 @@ public class TransportationDataSeeder
     public async Task SeedRealisticDataAsync()
     {
         await SeedDriversAsync(50);      // Professional drivers
-        await SeedVehiclesAsync(25);     // Mixed fleet
+        await SeedBusesAsync(25);     // Mixed fleet
         await SeedRoutesAsync(30);       // City routes
         await SeedActivitiesAsync(200);  // Monthly schedule
     }

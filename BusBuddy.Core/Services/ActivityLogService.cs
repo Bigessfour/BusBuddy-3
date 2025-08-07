@@ -13,7 +13,7 @@ namespace BusBuddy.Core.Services
 {
     public class ActivityLogService : IActivityLogService
     {
-        private readonly BusBuddyDbContext _db;
+        private readonly BusBuddy.Core.Data.BusBuddyDbContext _db;
         private static readonly ILogger Logger = Log.ForContext<ActivityLogService>();
 
         public ActivityLogService(BusBuddyDbContext db)

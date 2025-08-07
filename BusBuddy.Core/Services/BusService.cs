@@ -57,9 +57,9 @@ namespace BusBuddy.Core.Services
                                 // Use projection to handle NULL values safely
                                 // Debug.Assert to help find issues during debugging
                                 Debug.Assert(context != null, "DbContext is null");
-                                Debug.Assert(context.Vehicles != null, "Vehicles DbSet is null");
+                                Debug.Assert(context.Buses != null, "Buses DbSet is null");
 
-                                return await context.Vehicles
+                                return await context.Buses
                                     .AsNoTracking() // Use AsNoTracking for better performance in read operations
                                     .Select(v => new Bus
                                     {
@@ -150,10 +150,10 @@ namespace BusBuddy.Core.Services
                     using var context = _contextFactory.CreateDbContext();
 
                     // Get total count for pagination
-                    var totalCount = await context.Vehicles.CountAsync();
+                    var totalCount = await context.Buses.CountAsync();
 
                     // Start with base query
-                    var query = context.Vehicles.AsNoTracking();
+                    var query = context.Buses.AsNoTracking();
 
                     // Apply sorting
                     if (!string.IsNullOrEmpty(sortColumn))
@@ -238,7 +238,7 @@ namespace BusBuddy.Core.Services
                         var context = _contextFactory.CreateDbContext();
                         try
                         {
-                            return await context.Vehicles
+                            return await context.Buses
                                 .AsNoTracking() // Use AsNoTracking for better performance in read operations
                                 .Include(v => v.AMRoutes)
                                 .Include(v => v.PMRoutes)
@@ -286,7 +286,7 @@ namespace BusBuddy.Core.Services
                 Logger.Information("Adding new bus entity: {BusNumber}", bus.BusNumber);
 
                 using var context = _contextFactory.CreateWriteDbContext();
-                context.Vehicles.Add(bus);
+                context.Buses.Add(bus);
 
                 using (LogContext.PushProperty("OperationName", "AddBus"))
                 using (LogContext.PushProperty("DatabaseOperation", true))
@@ -337,7 +337,7 @@ namespace BusBuddy.Core.Services
                     bus.VehicleId, bus.BusNumber);
 
                 using var context = _contextFactory.CreateWriteDbContext();
-                context.Vehicles.Update(bus);
+                context.Buses.Update(bus);
 
                 using (LogContext.PushProperty("OperationName", "UpdateBus"))
                 using (LogContext.PushProperty("DatabaseOperation", true))
@@ -392,7 +392,7 @@ namespace BusBuddy.Core.Services
                 Logger.Information("Deleting bus entity with ID: {BusId}", busId);
 
                 using var context = _contextFactory.CreateWriteDbContext();
-                var bus = await context.Vehicles.FindAsync(busId);
+                var bus = await context.Buses.FindAsync(busId);
                 if (bus != null)
                 {
                     using (LogContext.PushProperty("BusNumber", bus.BusNumber))
@@ -400,7 +400,7 @@ namespace BusBuddy.Core.Services
                         Logger.Information("Found bus to delete: {BusNumber} (ID: {BusId})",
                             bus.BusNumber, busId);
 
-                        context.Vehicles.Remove(bus);
+                        context.Buses.Remove(bus);
 
                         using (LogContext.PushProperty("OperationName", "DeleteBus"))
                         using (LogContext.PushProperty("DatabaseOperation", true))
@@ -755,7 +755,7 @@ namespace BusBuddy.Core.Services
                 try
                 {
                     using var context = _contextFactory.CreateDbContext();
-                    return await context.Vehicles
+                    return await context.Buses
                         .AsNoTracking()
                         .Where(b => b.Status == "Active")
                         .ToListAsync();
@@ -778,7 +778,7 @@ namespace BusBuddy.Core.Services
                 try
                 {
                     using var context = _contextFactory.CreateDbContext();
-                    return await context.Vehicles
+                    return await context.Buses
                         .AsNoTracking()
                         .Where(b => b.Status == status)
                         .ToListAsync();
@@ -801,7 +801,7 @@ namespace BusBuddy.Core.Services
                 try
                 {
                     using var context = _contextFactory.CreateDbContext();
-                    return await context.Vehicles
+                    return await context.Buses
                         .AsNoTracking()
                         .Where(b => b.FleetType == type)
                         .ToListAsync();
@@ -824,7 +824,7 @@ namespace BusBuddy.Core.Services
                 try
                 {
                     using var context = _contextFactory.CreateDbContext();
-                    return await context.Vehicles
+                    return await context.Buses
                         .AsNoTracking()
                         .Where(b =>
                             b.BusNumber.Contains(searchTerm) ||
@@ -866,7 +866,7 @@ namespace BusBuddy.Core.Services
                         try
                         {
                             // Use projection to select only the fields we need
-                            var result = await context.Vehicles
+                            var result = await context.Buses
                                 .AsNoTracking()
                                 .Select(b => new BusInfo
                                 {
@@ -917,7 +917,7 @@ namespace BusBuddy.Core.Services
                 try
                 {
                     // Use projection to select only the fields we need
-                    var bus = await context.Vehicles
+                    var bus = await context.Buses
                         .AsNoTracking()
                         .Where(v => v.VehicleId == busId)
                         .Select(b => new BusInfo
@@ -976,7 +976,7 @@ namespace BusBuddy.Core.Services
         public async Task<int> GetAssignedStudentCountAsync(BusBuddyDbContext context, int vehicleId)
         {
             return await context.Students.CountAsync(s => s.RouteAssignmentId != null &&
-                context.RouteAssignments.Any(ra => ra.RouteAssignmentId == s.RouteAssignmentId && ra.VehicleId == vehicleId));
+                context.RouteAssignments.Any(ra => ra.RouteAssignmentId == s.RouteAssignmentId && ra.BusId == vehicleId));
         }
 
     }

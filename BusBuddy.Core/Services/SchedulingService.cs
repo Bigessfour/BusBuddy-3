@@ -36,7 +36,7 @@ namespace BusBuddy.Core.Services
     public class SchedulingService : ISchedulingService
     {
         private static readonly ILogger Logger = Log.ForContext<SchedulingService>();
-        private readonly BusBuddyDbContext _context;
+        private readonly BusBuddy.Core.Data.BusBuddyDbContext _context;
 
         public SchedulingService(BusBuddyDbContext context)
         {

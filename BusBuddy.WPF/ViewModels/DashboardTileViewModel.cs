@@ -135,14 +135,14 @@ namespace BusBuddy.WPF.ViewModels
             try
             {
                 // Get real fleet data from repository
-                var vehicleCountByStatus = await _unitOfWork.Buses.GetVehicleCountByStatusAsync();
+                var busCountByStatus = await _unitOfWork.Buses.GetBusCountByStatusAsync();
 
                 // Map status values to our display properties
-                ActiveBusCount = vehicleCountByStatus.GetValueOrDefault("Active", 0);
-                MaintenanceBusCount = vehicleCountByStatus.GetValueOrDefault("Maintenance", 0) +
-                                     vehicleCountByStatus.GetValueOrDefault("In Maintenance", 0);
-                OutOfServiceCount = vehicleCountByStatus.GetValueOrDefault("Out of Service", 0) +
-                                   vehicleCountByStatus.GetValueOrDefault("Inactive", 0);
+                ActiveBusCount = busCountByStatus.GetValueOrDefault("Active", 0);
+                MaintenanceBusCount = busCountByStatus.GetValueOrDefault("Maintenance", 0) +
+                                     busCountByStatus.GetValueOrDefault("In Maintenance", 0);
+                OutOfServiceCount = busCountByStatus.GetValueOrDefault("Out of Service", 0) +
+                                   busCountByStatus.GetValueOrDefault("Inactive", 0);
 
                 LastUpdated = DateTime.Now;
             }
@@ -207,12 +207,12 @@ namespace BusBuddy.WPF.ViewModels
                 // Get real maintenance data from repository
                 var upcomingMaintenance = await _unitOfWork.MaintenanceRecords.GetUpcomingMaintenanceAsync(30);
                 var overdueMaintenance = await _unitOfWork.MaintenanceRecords.GetOverdueMaintenanceAsync();
-                var vehiclesDueForInspection = await _unitOfWork.Buses.GetVehiclesWithExpiredInspectionAsync();
+                var busesDueForInspection = await _unitOfWork.Buses.GetBusesWithExpiredInspectionAsync();
 
                 // Calculate counts based on real data
                 UpcomingMaintenanceCount = upcomingMaintenance.Count();
                 OverdueMaintenanceCount = overdueMaintenance.Count();
-                CriticalMaintenanceCount = vehiclesDueForInspection.Count();
+                CriticalMaintenanceCount = busesDueForInspection.Count();
 
                 LastUpdated = DateTime.Now;
             }

@@ -18,7 +18,7 @@ namespace BusBuddy.Core.Utilities
     /// </summary>
     public class JsonDataImporter
     {
-        private readonly BusBuddyDbContext _context;
+        private readonly BusBuddy.Core.Data.BusBuddyDbContext _context;
         private static readonly ILogger Logger = Log.ForContext<JsonDataImporter>();
 
         // Cache JsonSerializerOptions to avoid creating new instances for every operation

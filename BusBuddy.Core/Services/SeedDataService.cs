@@ -1,9 +1,12 @@
-using BusBuddy.Core.Data;
-using BusBuddy.Core.Models;
+using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.Linq;
+using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
-using Serilog.Context;
-using System.Globalization;
+using BusBuddy.Core.Data;
+using BusBuddy.Core.Models;
 
 namespace BusBuddy.Core.Services
 {
@@ -136,10 +139,10 @@ namespace BusBuddy.Core.Services
                 using var context = _contextFactory.CreateDbContext();
 
                 // Check if buses already exist
-                var existingCount = await context.Vehicles.CountAsync();
+                var existingCount = await context.Buses.CountAsync();
                 if (existingCount >= count)
                 {
-                    Logger.Information("Vehicles already contain {ExistingCount} records. Skipping seed.", existingCount);
+                    Logger.Information("Buses already contain {ExistingCount} records. Skipping seed.", existingCount);
                     return;
                 }
 
@@ -175,7 +178,7 @@ namespace BusBuddy.Core.Services
                     });
                 }
 
-                context.Vehicles.AddRange(buses);
+                context.Buses.AddRange(buses);
                 await context.SaveChangesAsync();
 
                 Logger.Information("Successfully seeded {Count} buses", count);
@@ -213,58 +216,151 @@ namespace BusBuddy.Core.Services
         }
 
         /// <summary>
-        /// Seed sample students for development/testing
+        /// Seed students from real-world CSV data (BusRiders_25-26.xlsz.csv)
         /// </summary>
-        public async Task SeedStudentsAsync(int count = 25)
+        public async Task SeedStudentsFromCsvAsync()
         {
+            // Full CSV content should be embedded here in production
+            const string csvData = @"
+Fname,Lname,Student #,Grade,Address,City,State,County,Parent/Guardian,Home Phone,Emergency Phone
+John,Smith,1001,5,123 Main St,Springfield,OH,Clark,Jane Smith,555-1234,555-5678
+Mary,Smith,,3,123 Main St,Springfield,OH,Clark,,,
+Tom,Brown,1003,4,456 Oak Ave,Springfield,OH,Clark,Robert Brown,555-8765,555-4321
+Sue,Brown,,2,456 Oak Ave,Springfield,OH,Clark,,,
+";
             try
             {
                 using var context = _contextFactory.CreateDbContext();
-
-                // Check if students already exist
                 var existingCount = await context.Students.CountAsync();
-                if (existingCount >= count)
+                if (existingCount > 0)
                 {
-                    Logger.Information("Students already contain {ExistingCount} records. Skipping seed.", existingCount);
+                    Logger.Information("Students already exist. Skipping CSV seed.");
                     return;
                 }
-
-                Logger.Information("Seeding {Count} sample students...", count);
-
-                var random = new Random();
-                var firstNames = new[] { "Alex", "Jamie", "Taylor", "Jordan", "Casey", "Riley", "Morgan", "Avery", "Dakota", "Sage", "Parker", "Quinn", "Blake", "Rowan", "Cameron" };
-                var lastNames = new[] { "Anderson", "Brown", "Davis", "Garcia", "Johnson", "Jones", "Martinez", "Miller", "Moore", "Rodriguez", "Smith", "Taylor", "Thomas", "White", "Wilson" };
-                var grades = new[] { "K", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12" };
-                var schools = new[] { "Elementary School", "Middle School", "High School", "Primary Academy", "Learning Center" };
-
-                var students = new List<Student>();
-                for (int i = 0; i < count; i++)
+                var lines = csvData.Trim().Split('\n');
+                if (lines.Length < 2)
                 {
-                    var firstName = firstNames[random.Next(firstNames.Length)];
-                    var lastName = lastNames[random.Next(lastNames.Length)];
-                    var grade = grades[random.Next(grades.Length)];
+                    Logger.Warning("No student data found in CSV.");
+                    return;
+                }
+                var header = lines[0].Split(',');
+                int idxFname = Array.IndexOf(header, "Fname");
+                int idxLname = Array.IndexOf(header, "Lname");
+                int idxStudentNum = Array.IndexOf(header, "Student #");
+                int idxGrade = Array.IndexOf(header, "Grade");
+                int idxAddress = Array.IndexOf(header, "Address");
+                int idxCity = Array.IndexOf(header, "City");
+                int idxState = Array.IndexOf(header, "State");
+                int idxCounty = Array.IndexOf(header, "County");
+                int idxParent = Array.IndexOf(header, "Parent/Guardian");
+                int idxHomePhone = Array.IndexOf(header, "Home Phone");
+                int idxEmergencyPhone = Array.IndexOf(header, "Emergency Phone");
 
-                    students.Add(new Student
+                string lastParent = string.Empty;
+                string lastHomePhone = string.Empty;
+                string lastEmergencyPhone = string.Empty;
+                int familyId = 1;
+                int studentAutoId = 1;
+                var families = new List<Family>();
+                var students = new List<Student>();
+
+                for (int i = 1; i < lines.Length; i++)
+                {
+                    var row = lines[i].Trim();
+                    if (string.IsNullOrWhiteSpace(row))
                     {
-                        StudentName = $"{firstName} {lastName}",
-                        StudentNumber = $"STU{(1000 + i):D4}",
-                        Grade = grade,
-                        School = schools[random.Next(schools.Length)],
-                        HomeAddress = $"{random.Next(100, 9999)} {lastNames[random.Next(lastNames.Length)]} St",
-                        ParentGuardian = $"{firstNames[random.Next(firstNames.Length)]} {lastName}",
-                        HomePhone = $"555-{random.Next(100, 999)}-{random.Next(1000, 9999)}",
-                        EmergencyPhone = $"555-{random.Next(100, 999)}-{random.Next(1000, 9999)}"
-                    });
+                        continue;
+                    }
+                    var cols = row.Split(',');
+                    if (cols.Length < header.Length)
+                    {
+                        Logger.Warning($"Skipping row {i + 1}: not enough columns.");
+                        continue;
+                    }
+
+                    string fname = cols[idxFname].Trim();
+                    string lname = cols[idxLname].Trim();
+                    string studentNum = cols[idxStudentNum].Trim();
+                    string grade = cols[idxGrade].Trim();
+                    string address = cols[idxAddress].Trim();
+                    string city = cols[idxCity].Trim();
+                    string state = cols[idxState].Trim();
+                    string county = cols[idxCounty].Trim();
+                    string parent = cols[idxParent].Trim();
+                    string homePhone = cols[idxHomePhone].Trim();
+                    string emergencyPhone = cols[idxEmergencyPhone].Trim();
+
+                    // Skip row if no student name
+                    if (string.IsNullOrWhiteSpace(fname) && string.IsNullOrWhiteSpace(lname))
+                    {
+                        Logger.Warning($"Skipping row {i + 1}: missing student name.");
+                        continue;
+                    }
+
+                    // Fill down family info
+                    if (!string.IsNullOrEmpty(parent))
+                    {
+                        lastParent = parent;
+                    }
+                    if (!string.IsNullOrEmpty(homePhone))
+                    {
+                        lastHomePhone = homePhone;
+                    }
+                    if (!string.IsNullOrEmpty(emergencyPhone))
+                    {
+                        lastEmergencyPhone = emergencyPhone;
+                    }
+
+                    // Compose fields
+                    string studentName = $"{fname} {lname}".Trim();
+                    string homeAddress = $"{address}, {city}, {state}, {county}".Replace("  ", " ").Trim(',').Trim();
+                    string finalStudentNum = !string.IsNullOrWhiteSpace(studentNum) ? studentNum : $"STU{studentAutoId++.ToString("D4", CultureInfo.InvariantCulture)}";
+                    string finalGrade = string.IsNullOrWhiteSpace(grade) ? string.Empty : grade;
+
+                    // Create or find family (simple: new family if parent/phone changes)
+                    var family = families.LastOrDefault(f => f.ParentGuardian == lastParent && f.HomePhone == lastHomePhone);
+                    if (family == null)
+                    {
+                        family = new Family
+                        {
+                            FamilyId = familyId++,
+                            ParentGuardian = lastParent,
+                            Address = address,
+                            City = city,
+                            County = county,
+                            HomePhone = lastHomePhone,
+                            CreatedDate = DateTime.UtcNow,
+                            CreatedBy = "SeedDataService"
+                        };
+                        families.Add(family);
+                    }
+
+                    var student = new Student
+                    {
+                        StudentName = studentName,
+                        StudentNumber = finalStudentNum,
+                        Grade = finalGrade,
+                        HomeAddress = homeAddress,
+                        ParentGuardian = lastParent,
+                        HomePhone = lastHomePhone,
+                        EmergencyPhone = lastEmergencyPhone,
+                        School = "Wiley School District",
+                        Family = family,
+                        FamilyId = family.FamilyId,
+                        CreatedDate = DateTime.UtcNow,
+                        CreatedBy = "SeedDataService"
+                    };
+                    students.Add(student);
                 }
 
+                context.Families.AddRange(families);
                 context.Students.AddRange(students);
                 await context.SaveChangesAsync();
-
-                Logger.Information("Successfully seeded {Count} students", count);
+                Logger.Information("Seeded {Count} students from CSV.", students.Count);
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Error seeding students");
+                Logger.Error(ex, "Error seeding students from CSV");
                 throw;
             }
         }
@@ -292,7 +388,7 @@ namespace BusBuddy.Core.Services
                 var routeNames = new[] { "North Elementary", "South Elementary", "Middle School Express", "High School Route A", "High School Route B", "Elementary East", "Elementary West", "Special Needs Route" };
                 var schools = new[] { "Washington Elementary", "Lincoln Middle School", "Roosevelt High School", "Jefferson Elementary", "Madison High School" };
                 var drivers = await context.Drivers.Take(count).ToListAsync();
-                var vehicles = await context.Vehicles.Take(count).ToListAsync();
+                var buses = await context.Buses.Take(count).ToListAsync();
 
                 var routes = new List<Route>();
                 for (int i = 0; i < count; i++)
@@ -306,9 +402,9 @@ namespace BusBuddy.Core.Services
                         Description = $"Daily route for {routeName}",
                         School = schools[random.Next(schools.Length)],
                         AMDriverId = drivers.Count > i ? drivers[i].DriverId : null,
-                        AMVehicleId = vehicles.Count > i ? vehicles[i].VehicleId : null,
+                        AMVehicleId = buses.Count > i ? buses[i].VehicleId : null,
                         PMDriverId = drivers.Count > i && drivers.Count > i + count/2 ? drivers[i + count/2].DriverId : null,
-                        PMVehicleId = vehicles.Count > i && vehicles.Count > i + count/2 ? vehicles[i + count/2].VehicleId : null,
+                        PMVehicleId = buses.Count > i && buses.Count > i + count/2 ? buses[i + count/2].VehicleId : null,
                         AMRiders = random.Next(5, 25),
                         PMRiders = random.Next(5, 25),
                         IsActive = random.Next(0, 10) > 1 // 90% active
@@ -337,7 +433,7 @@ namespace BusBuddy.Core.Services
             await SeedActivityLogsAsync(100);
             await SeedDriversAsync(15);
             await SeedBusesAsync(12);
-            await SeedStudentsAsync(25);
+            await SeedStudentsFromCsvAsync();
             await SeedRoutesAsync(8);
             await SeedActivitiesAsync(25);
 

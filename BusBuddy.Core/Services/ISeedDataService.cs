@@ -7,10 +7,10 @@ namespace BusBuddy.Core.Services
     {
         /// <summary>
         /// Seed sample activity logs for development/testing
-        /// </summary>
-        Task SeedActivityLogsAsync(int count = 50);
-
         /// <summary>
+        /// Seed students from real-world CSV data (BusRiders_25-26.xlsz.csv)
+        /// </summary>
+        Task SeedStudentsFromCsvAsync();
         /// Seed sample drivers for development/testing
         /// </summary>
         Task SeedDriversAsync(int count = 10);

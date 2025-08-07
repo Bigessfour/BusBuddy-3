@@ -43,12 +43,12 @@ namespace BusBuddy.Core.Services
             {
                 // Create a new scoped DbContext for this operation to avoid threading issues
                 using var scope = _serviceProvider.CreateScope();
-                using var context = scope.ServiceProvider.GetRequiredService<BusBuddyDbContext>();
+                using var context = scope.ServiceProvider.GetRequiredService<BusBuddy.Core.Data.BusBuddyDbContext>();
 
                 // Use EF Core async methods to avoid DbContext threading issues
                 System.Diagnostics.Debug.WriteLine("[DEBUG] DashboardMetricsService: Starting bus count query");
                 var busStopwatch = System.Diagnostics.Stopwatch.StartNew();
-                var busCount = await context.Vehicles.CountAsync(b => b.Status == "Active");
+                var busCount = await context.Buses.CountAsync(b => b.Status == "Active");
                 busStopwatch.Stop();
                 System.Diagnostics.Debug.WriteLine($"[DEBUG] Query result BusCount: {busCount} (took {busStopwatch.ElapsedMilliseconds}ms)");
 

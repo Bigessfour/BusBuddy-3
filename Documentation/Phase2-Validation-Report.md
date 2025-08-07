@@ -28,7 +28,7 @@ Your comprehensive analysis was accurate on all key points. The Phase 2 developm
 - ✅ **EF Core Integration**: Properly uses `DbContext` and async patterns
 - ✅ **Null Safety**: All 23 nullable reference warnings fixed with null coalescing operators
 - ✅ **Error Handling**: Comprehensive try-catch blocks with structured logging
-- ✅ **Entity Relationships**: Proper foreign key handling for drivers, vehicles, routes, activities
+- ✅ **Entity Relationships**: Proper foreign key handling for drivers, buses, routes, activities
 - ✅ **Performance**: Efficient bulk loading with batched SaveChanges operations
 
 **Code Quality Improvements Applied**:

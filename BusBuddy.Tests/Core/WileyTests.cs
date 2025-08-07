@@ -57,7 +57,7 @@ public class WileyTests
         Assert.That(_context, Is.Not.Null);
         Assert.That(_busService, Is.Not.Null);
         // Arrange: Get Bus #17 and ensure capacity
-        var bus = _context!.Vehicles.FirstOrDefault(v => v.BusNumber == "17");
+        var bus = _context!.Buses.FirstOrDefault(v => v.BusNumber == "17");
         Assert.That(bus, Is.Not.Null, "Bus #17 must exist");
         var assignedCount = await _busService!.GetAssignedStudentCountAsync(_context, bus!.VehicleId);
 
