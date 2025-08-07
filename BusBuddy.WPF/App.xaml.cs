@@ -242,6 +242,7 @@ namespace BusBuddy.WPF
             }
         }
 
+        }
         private void ConfigureServicesForMigration()
         {
             try
@@ -260,7 +261,6 @@ namespace BusBuddy.WPF
                 services.AddDataServices(configuration);
 
                 ServiceProvider = services.BuildServiceProvider();
-
                 Log.Information("✅ Minimal services configured for EF migration");
             }
             catch (Exception ex)
@@ -268,6 +268,7 @@ namespace BusBuddy.WPF
                 Log.Error(ex, "❌ Failed to configure services for EF migration");
                 throw; // Re-throw for migration operations
             }
+
         }
 
         private void ConfigureServices()

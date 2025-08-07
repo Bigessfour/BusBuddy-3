@@ -726,7 +726,7 @@ namespace BusBuddy.Core.Migrations
                 name: "IX_ActivityLogs_Timestamp",
                 table: "ActivityLogs",
                 column: "Timestamp",
-                descending: new bool[0]);
+                descending: System.Array.Empty<bool>());
 
             migrationBuilder.CreateIndex(
                 name: "IX_ActivitySchedule_ActivityId",

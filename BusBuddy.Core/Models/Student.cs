@@ -12,6 +12,12 @@ namespace BusBuddy.Core.Models;
 [Table("Students")]
 public class Student : INotifyPropertyChanged
 {
+  // For compatibility with legacy and ViewModel code
+  [NotMapped]
+  public int? RouteId {
+    get => RouteAssignmentId;
+    set => RouteAssignmentId = value;
+  }
   [Key]
   public int StudentId { get; set; }
 

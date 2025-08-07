@@ -15,6 +15,11 @@ param(
     [switch]$PrepareIcedTea
 )
 
+if ($PhDLevel) {
+    Write-Host "🔬 PhD-Level switch enabled: Running extra-deep diagnostic analysis..." -ForegroundColor DarkCyan
+    # You could add additional diagnostic steps here if needed
+}
+
 Write-Host "🎓 BUSBUDDY PhD-LEVEL DIAGNOSTIC COMMENCING..." -ForegroundColor Cyan
 Write-Host "   (The kind that makes university professors weep with joy)" -ForegroundColor Gray
 

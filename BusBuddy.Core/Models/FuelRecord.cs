@@ -7,7 +7,7 @@ namespace BusBuddy.Core.Models
     {
         public int Id { get; set; }
         public int BusId { get; set; }
-        public Bus Bus { get; set; }
+        public required Bus Bus { get; set; }
         public DateTime Date { get; set; }
         public double Gallons { get; set; }
         public double Cost { get; set; }

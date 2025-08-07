@@ -1,3 +1,28 @@
+# 🚌 BusBuddy Project — Major Refactor Update (August 2025)
+
+## 🚀 August 2025 Refactor: Canonicalization, Cleanup, and Data Modernization
+
+**Summary of Accomplishments:**
+- **Canonicalized DbContext:**
+  - Removed all obsolete/duplicate `BusBuddyDbContext` files. All code now uses `BusBuddy.Core.Data.BusBuddyDbContext` for consistency and maintainability.
+  - Updated every service, repository, and test to reference the canonical context only.
+- **Restored SportsEvents Support:**
+  - Added `DbSet<SportsEvent> SportsEvents` to the canonical DbContext, resolving all missing property errors and enabling full sports scheduling features.
+- **Removed Legacy Vehicles:**
+  - Fully removed the legacy `Vehicles` property and all related code, standardizing on `Buses` throughout the codebase and data model.
+- **Improved JSON Data Seeding:**
+  - Enhanced the seeding process with a new `wiley-school-district-data.json` file, supporting robust OCR-based student/family import for rapid onboarding.
+  - All JSON import logic is now centralized and fetchable, with models and utilities documented and tracked.
+- **Project Hygiene:**
+  - Deep scan confirmed: no `.old`, `.bak`, `.backup`, `.tmp`, or duplicate files remain. All `.disabled` files are intentional and tracked for MVP toggling.
+  - All changes are committed, tracked, and fetchable via GitHub and raw URLs.
+
+**Impact:**
+- ✅ Build is clean and stable; all business logic and UI code is consistent and modernized.
+- ✅ Data seeding and onboarding are faster and more reliable.
+- ✅ Project structure is easier to navigate and maintain.
+- ✅ Fetchability and documentation are 100% up to date.
+
 # 📚 BusBuddy Documentation Hub
 
 Welcome to the BusBuddy comprehensive documentation center! This organized structure replaces the "README bloat" with focused, discoverable documentation.

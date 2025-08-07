@@ -976,7 +976,7 @@ namespace BusBuddy.Core.Services
         public async Task<int> GetAssignedStudentCountAsync(BusBuddyDbContext context, int vehicleId)
         {
             return await context.Students.CountAsync(s => s.RouteAssignmentId != null &&
-                context.RouteAssignments.Any(ra => ra.RouteAssignmentId == s.RouteAssignmentId && ra.BusId == vehicleId));
+                context.RouteAssignments.Any(ra => ra.RouteAssignmentId == s.RouteAssignmentId && ra.VehicleId == vehicleId));
         }
 
     }

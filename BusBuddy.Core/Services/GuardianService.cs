@@ -75,7 +75,10 @@ namespace BusBuddy.Core.Services
             try
             {
                 var existing = await _context.Guardians.FindAsync(guardian.GuardianId);
-                if (existing == null) return null;
+                if (existing == null)
+                {
+                    return null;
+                }
 
                 _context.Entry(existing).CurrentValues.SetValues(guardian);
                 await _context.SaveChangesAsync();
@@ -96,7 +99,10 @@ namespace BusBuddy.Core.Services
             try
             {
                 var guardian = await _context.Guardians.FindAsync(guardianId);
-                if (guardian == null) return false;
+                if (guardian == null)
+                {
+                    return false;
+                }
 
                 _context.Guardians.Remove(guardian);
                 await _context.SaveChangesAsync();
@@ -120,8 +126,11 @@ namespace BusBuddy.Core.Services
                     .ThenInclude(f => f.Guardians)
                     .FirstOrDefaultAsync(s => s.StudentId == studentId);
 
-                // Use null-conditional operator to avoid possible null dereference
-                return student?.Family?.Guardians != null ? student.Family.Guardians.ToList() : new List<Guardian>();
+                if (student?.Family?.Guardians != null)
+                {
+                    return student.Family.Guardians.ToList();
+                }
+                return new List<Guardian>();
             }
             catch (Exception ex)
             {

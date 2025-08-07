@@ -672,6 +672,14 @@ namespace BusBuddy.WPF.Views.Main
             // Future: Update visual selection state
             Logger.Debug("Navigation selection updated");
         }
+
+        // Event handler for Buses button click (from MainWindow.xaml)
+        private void BusesButton_Click(object sender, RoutedEventArgs e)
+        {
+            Logger.Information("Buses button clicked");
+            // TODO: Implement navigation or logic for Buses button
+            MessageBox.Show("Buses button clicked.", "BusBuddy", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
     }
 
     /// <summary>

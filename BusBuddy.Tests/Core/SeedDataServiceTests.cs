@@ -19,9 +19,11 @@ namespace BusBuddy.Tests.Core
             var mockFactory = new Mock<IBusBuddyDbContextFactory>();
             var students = new List<Student>();
             var families = new List<Family>();
+            var studentsDbSet = CreateMockDbSet(students);
+            var familiesDbSet = CreateMockDbSet(families);
             var mockContext = new Mock<BusBuddyDbContext>();
-            mockContext.Setup(c => c.Students).ReturnsDbSet(students);
-            mockContext.Setup(c => c.Families).ReturnsDbSet(families);
+            mockContext.Setup(c => c.Students).Returns(studentsDbSet.Object);
+            mockContext.Setup(c => c.Families).Returns(familiesDbSet.Object);
             mockFactory.Setup(f => f.CreateDbContext()).Returns(mockContext.Object);
 
             var service = new SeedDataService(mockFactory.Object);
@@ -30,7 +32,7 @@ namespace BusBuddy.Tests.Core
             Assert.That(students.Count, Is.EqualTo(4)); // Adjust to CSV row count
             Assert.That(students.Select(s => s.StudentNumber).Distinct().Count(), Is.EqualTo(students.Count));
         }
-
+#pragma warning disable CS1998 // Async method lacks 'await' operators and will run synchronously
         [Test]
         public async Task SeedStudentsFromCsvAsync_GeneratesStudentNumber_WhenMissing()
         {
@@ -59,5 +61,18 @@ namespace BusBuddy.Tests.Core
             // var familyIds = students.Select(s => s.FamilyId).Distinct().ToList();
             // Assert.That(familyIds.Count, Is.EqualTo(1));
         }
+#pragma warning restore CS1998
+    // Helper for EF Core 9: manually mock DbSet<T> for in-memory lists
+    private static Mock<DbSet<T>> CreateMockDbSet<T>(IList<T> sourceList) where T : class
+    {
+        var queryable = sourceList.AsQueryable();
+        var mockSet = new Mock<DbSet<T>>();
+        mockSet.As<IQueryable<T>>().Setup(m => m.Provider).Returns(queryable.Provider);
+        mockSet.As<IQueryable<T>>().Setup(m => m.Expression).Returns(queryable.Expression);
+        mockSet.As<IQueryable<T>>().Setup(m => m.ElementType).Returns(queryable.ElementType);
+        mockSet.As<IQueryable<T>>().Setup(m => m.GetEnumerator()).Returns(() => queryable.GetEnumerator());
+        mockSet.Setup(d => d.Add(It.IsAny<T>())).Callback<T>(sourceList.Add);
+        return mockSet;
+    }
     }
 }

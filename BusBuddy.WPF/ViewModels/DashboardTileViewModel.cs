@@ -135,7 +135,7 @@ namespace BusBuddy.WPF.ViewModels
             try
             {
                 // Get real fleet data from repository
-                var busCountByStatus = await _unitOfWork.Buses.GetBusCountByStatusAsync();
+                var busCountByStatus = await _unitOfWork.Buses.GetVehicleCountByStatusAsync();
 
                 // Map status values to our display properties
                 ActiveBusCount = busCountByStatus.GetValueOrDefault("Active", 0);
@@ -207,7 +207,7 @@ namespace BusBuddy.WPF.ViewModels
                 // Get real maintenance data from repository
                 var upcomingMaintenance = await _unitOfWork.MaintenanceRecords.GetUpcomingMaintenanceAsync(30);
                 var overdueMaintenance = await _unitOfWork.MaintenanceRecords.GetOverdueMaintenanceAsync();
-                var busesDueForInspection = await _unitOfWork.Buses.GetBusesWithExpiredInspectionAsync();
+                var busesDueForInspection = await _unitOfWork.Buses.GetVehiclesWithExpiredInspectionAsync();
 
                 // Calculate counts based on real data
                 UpcomingMaintenanceCount = upcomingMaintenance.Count();

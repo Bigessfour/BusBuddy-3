@@ -38,10 +38,11 @@ namespace BusBuddy.WPF.ViewModels.Sports
         /// </summary>
         public ObservableCollection<ActivityModel> SportsActivities { get; set; } = new();
 
+
         /// <summary>
         /// Available vehicles for assignment
         /// </summary>
-5        public ObservableCollection<BusModel> AvailableBuses { get; set; } = new();
+        public ObservableCollection<BusModel> AvailableBuses { get; set; } = new();
 
         /// <summary>
         /// Available drivers for assignment

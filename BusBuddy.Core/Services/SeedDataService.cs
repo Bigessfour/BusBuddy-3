@@ -216,18 +216,18 @@ namespace BusBuddy.Core.Services
         }
 
         /// <summary>
-        /// Seed students from real-world CSV data (BusRiders_25-26.xlsz.csv)
+        /// Seed students from real-world CSV data (BusRiders_25-26.xlsz.csv).
         /// </summary>
         public async Task SeedStudentsFromCsvAsync()
         {
-            // Full CSV content should be embedded here in production
+            // Embedded CSV content from BusRiders_25-26.xlsz.csv
             const string csvData = @"
-Fname,Lname,Student #,Grade,Address,City,State,County,Parent/Guardian,Home Phone,Emergency Phone
-John,Smith,1001,5,123 Main St,Springfield,OH,Clark,Jane Smith,555-1234,555-5678
-Mary,Smith,,3,123 Main St,Springfield,OH,Clark,,,
-Tom,Brown,1003,4,456 Oak Ave,Springfield,OH,Clark,Robert Brown,555-8765,555-4321
-Sue,Brown,,2,456 Oak Ave,Springfield,OH,Clark,,,
-";
+Student,,,Parent,,,,,,,,Joint Parent,,,,,,,Econtact,,
+Fname,Lname,Grade,Fname,Lname,Address,City,State,County,Hphone,Cphone,Jparent FirstName,Jparent LastName,Address,City,State,County,Cphone ,Econtact FirstName,Econtact LastName,Econtact Phone
+Blakelynn,Sutphin,7,Brittany ,Higgins,35616 County Road LL,Wiley,CO,Prowers,,719-691-9240,John,Sutphin,8276 County Highway 196,Lamar,CO,,719-940-9011,Tara,Parmely,719-940-8272
+Annistyn,Sutphin,3,,,,,,,,,,,,,,,,,,
+"; // Truncated for brevity; use full CSV in production
+
             try
             {
                 using var context = _contextFactory.CreateDbContext();
@@ -237,98 +237,131 @@ Sue,Brown,,2,456 Oak Ave,Springfield,OH,Clark,,,
                     Logger.Information("Students already exist. Skipping CSV seed.");
                     return;
                 }
-                var lines = csvData.Trim().Split('\n');
-                if (lines.Length < 2)
+                var lines = csvData.Trim().Split(new[] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries);
+                if (lines.Length < 3)
                 {
                     Logger.Warning("No student data found in CSV.");
                     return;
                 }
-                var header = lines[0].Split(',');
+                var header = lines[1].Split(',');
                 int idxFname = Array.IndexOf(header, "Fname");
                 int idxLname = Array.IndexOf(header, "Lname");
-                int idxStudentNum = Array.IndexOf(header, "Student #");
                 int idxGrade = Array.IndexOf(header, "Grade");
-                int idxAddress = Array.IndexOf(header, "Address");
-                int idxCity = Array.IndexOf(header, "City");
-                int idxState = Array.IndexOf(header, "State");
-                int idxCounty = Array.IndexOf(header, "County");
-                int idxParent = Array.IndexOf(header, "Parent/Guardian");
-                int idxHomePhone = Array.IndexOf(header, "Home Phone");
-                int idxEmergencyPhone = Array.IndexOf(header, "Emergency Phone");
+                int idxParentFname = Array.IndexOf(header, "Fname", 3);
+                int idxParentLname = Array.IndexOf(header, "Lname", 4);
+                int idxAddress = Array.IndexOf(header, "Address", 6);
+                int idxCity = Array.IndexOf(header, "City", 7);
+                int idxState = Array.IndexOf(header, "State", 8);
+                int idxCounty = Array.IndexOf(header, "County", 9);
+                int idxHphone = Array.IndexOf(header, "Hphone");
+                int idxCphone = Array.IndexOf(header, "Cphone");
+                int idxJointParentFname = Array.IndexOf(header, "Jparent FirstName");
+                int idxJointParentLname = Array.IndexOf(header, "Jparent LastName");
+                int idxJointParentCphone = Array.IndexOf(header, "Cphone ");
+                int idxEcontactFname = Array.IndexOf(header, "Econtact FirstName");
+                int idxEcontactLname = Array.IndexOf(header, "Econtact LastName");
+                int idxEcontactPhone = Array.IndexOf(header, "Econtact Phone");
 
                 string lastParent = string.Empty;
-                string lastHomePhone = string.Empty;
-                string lastEmergencyPhone = string.Empty;
+                string lastJointParent = string.Empty;
+                string lastAddress = string.Empty;
+                string lastCity = string.Empty;
+                string lastState = string.Empty;
+                string lastCounty = string.Empty;
+                string lastHphone = string.Empty;
+                string lastCphone = string.Empty;
+                string lastJointCphone = string.Empty;
+                string lastEcontact = string.Empty;
+                string lastEcontactPhone = string.Empty;
                 int familyId = 1;
-                int studentAutoId = 1;
+                int studentNum = 1;
                 var families = new List<Family>();
                 var students = new List<Student>();
 
-                for (int i = 1; i < lines.Length; i++)
+                for (int i = 2; i < lines.Length; i++)
                 {
                     var row = lines[i].Trim();
-                    if (string.IsNullOrWhiteSpace(row))
-                    {
+                    if (string.IsNullOrWhiteSpace(row) || row.All(c => c == ','))
                         continue;
-                    }
                     var cols = row.Split(',');
-                    if (cols.Length < header.Length)
-                    {
-                        Logger.Warning($"Skipping row {i + 1}: not enough columns.");
-                        continue;
-                    }
+                    // Student fields
+                    string fname = idxFname >= 0 && idxFname < cols.Length ? cols[idxFname].Trim() : string.Empty;
+                    string lname = idxLname >= 0 && idxLname < cols.Length ? cols[idxLname].Trim() : string.Empty;
+                    string grade = idxGrade >= 0 && idxGrade < cols.Length ? cols[idxGrade].Trim() : "Unknown";
+                    // Parent fields
+                    string parentFname = idxParentFname >= 0 && idxParentFname < cols.Length ? cols[idxParentFname].Trim() : string.Empty;
+                    string parentLname = idxParentLname >= 0 && idxParentLname < cols.Length ? cols[idxParentLname].Trim() : string.Empty;
+                    string address = idxAddress >= 0 && idxAddress < cols.Length ? cols[idxAddress].Trim() : string.Empty;
+                    string city = idxCity >= 0 && idxCity < cols.Length ? cols[idxCity].Trim() : string.Empty;
+                    string state = idxState >= 0 && idxState < cols.Length ? cols[idxState].Trim() : string.Empty;
+                    string county = idxCounty >= 0 && idxCounty < cols.Length ? cols[idxCounty].Trim() : string.Empty;
+                    string hphone = idxHphone >= 0 && idxHphone < cols.Length ? cols[idxHphone].Trim() : string.Empty;
+                    string cphone = idxCphone >= 0 && idxCphone < cols.Length ? cols[idxCphone].Trim() : string.Empty;
+                    // Joint parent
+                    string jointFname = idxJointParentFname >= 0 && idxJointParentFname < cols.Length ? cols[idxJointParentFname].Trim() : string.Empty;
+                    string jointLname = idxJointParentLname >= 0 && idxJointParentLname < cols.Length ? cols[idxJointParentLname].Trim() : string.Empty;
+                    string jointCphone = idxJointParentCphone >= 0 && idxJointParentCphone < cols.Length ? cols[idxJointParentCphone].Trim() : string.Empty;
+                    // Emergency contact
+                    string econtactFname = idxEcontactFname >= 0 && idxEcontactFname < cols.Length ? cols[idxEcontactFname].Trim() : string.Empty;
+                    string econtactLname = idxEcontactLname >= 0 && idxEcontactLname < cols.Length ? cols[idxEcontactLname].Trim() : string.Empty;
+                    string econtactPhone = idxEcontactPhone >= 0 && idxEcontactPhone < cols.Length ? cols[idxEcontactPhone].Trim() : string.Empty;
 
-                    string fname = cols[idxFname].Trim();
-                    string lname = cols[idxLname].Trim();
-                    string studentNum = cols[idxStudentNum].Trim();
-                    string grade = cols[idxGrade].Trim();
-                    string address = cols[idxAddress].Trim();
-                    string city = cols[idxCity].Trim();
-                    string state = cols[idxState].Trim();
-                    string county = cols[idxCounty].Trim();
-                    string parent = cols[idxParent].Trim();
-                    string homePhone = cols[idxHomePhone].Trim();
-                    string emergencyPhone = cols[idxEmergencyPhone].Trim();
+                    // Fill down family info if blank
+                    if (!string.IsNullOrEmpty(parentFname) || !string.IsNullOrEmpty(parentLname))
+                        lastParent = $"{parentFname} {parentLname}".Trim();
+                    if (!string.IsNullOrEmpty(jointFname) || !string.IsNullOrEmpty(jointLname))
+                        lastJointParent = $"{jointFname} {jointLname}".Trim();
+                    if (!string.IsNullOrEmpty(address)) lastAddress = address;
+                    if (!string.IsNullOrEmpty(city)) lastCity = city;
+                    if (!string.IsNullOrEmpty(state)) lastState = state;
+                    if (!string.IsNullOrEmpty(county)) lastCounty = county;
+                    if (!string.IsNullOrEmpty(hphone)) lastHphone = hphone;
+                    if (!string.IsNullOrEmpty(cphone)) lastCphone = cphone;
+                    if (!string.IsNullOrEmpty(jointCphone)) lastJointCphone = jointCphone;
+                    if (!string.IsNullOrEmpty(econtactFname) || !string.IsNullOrEmpty(econtactLname))
+                        lastEcontact = $"{econtactFname} {econtactLname}".Trim();
+                    if (!string.IsNullOrEmpty(econtactPhone)) lastEcontactPhone = econtactPhone;
 
-                    // Skip row if no student name
-                    if (string.IsNullOrWhiteSpace(fname) && string.IsNullOrWhiteSpace(lname))
+                    // Compose ParentGuardian field
+                    string parentGuardian = lastParent;
+                    if (!string.IsNullOrEmpty(lastJointParent))
+                        parentGuardian = $"{lastParent} & {lastJointParent}";
+
+                    // Compose HomeAddress
+                    string homeAddress = $"{lastAddress}, {lastCity}, {lastState}, {lastCounty}".Replace("  ", " ").Trim(',').Trim();
+
+                    // Compose HomePhone (prefer home, fallback to cell)
+                    string homePhone = !string.IsNullOrEmpty(lastHphone) ? lastHphone : lastCphone;
+
+                    // Compose EmergencyPhone
+                    string emergencyPhone = !string.IsNullOrEmpty(lastEcontactPhone) ? $"{lastEcontactPhone} ({lastEcontact})" : string.Empty;
+
+                    // Compose StudentName
+                    string studentName = $"{fname} {lname}".Trim();
+                    if (string.IsNullOrWhiteSpace(studentName))
                     {
                         Logger.Warning($"Skipping row {i + 1}: missing student name.");
                         continue;
                     }
 
-                    // Fill down family info
-                    if (!string.IsNullOrEmpty(parent))
-                    {
-                        lastParent = parent;
-                    }
-                    if (!string.IsNullOrEmpty(homePhone))
-                    {
-                        lastHomePhone = homePhone;
-                    }
-                    if (!string.IsNullOrEmpty(emergencyPhone))
-                    {
-                        lastEmergencyPhone = emergencyPhone;
-                    }
+                    // Compose StudentNumber
+                    string studentNumber = $"WSD{studentNum++.ToString("D4", CultureInfo.InvariantCulture)}";
 
-                    // Compose fields
-                    string studentName = $"{fname} {lname}".Trim();
-                    string homeAddress = $"{address}, {city}, {state}, {county}".Replace("  ", " ").Trim(',').Trim();
-                    string finalStudentNum = !string.IsNullOrWhiteSpace(studentNum) ? studentNum : $"STU{studentAutoId++.ToString("D4", CultureInfo.InvariantCulture)}";
-                    string finalGrade = string.IsNullOrWhiteSpace(grade) ? string.Empty : grade;
-
-                    // Create or find family (simple: new family if parent/phone changes)
-                    var family = families.LastOrDefault(f => f.ParentGuardian == lastParent && f.HomePhone == lastHomePhone);
+                    // Create or find family (by parentGuardian and homePhone)
+                    var family = families.LastOrDefault(f => f.ParentGuardian == parentGuardian && f.HomePhone == homePhone);
                     if (family == null)
                     {
                         family = new Family
                         {
                             FamilyId = familyId++,
-                            ParentGuardian = lastParent,
-                            Address = address,
-                            City = city,
-                            County = county,
-                            HomePhone = lastHomePhone,
+                            ParentGuardian = parentGuardian,
+                            Address = lastAddress,
+                            City = lastCity,
+                            County = lastCounty,
+                            HomePhone = homePhone,
+                            CellPhone = lastCphone,
+                            JointParent = lastJointParent,
+                            EmergencyContact = lastEcontact,
                             CreatedDate = DateTime.UtcNow,
                             CreatedBy = "SeedDataService"
                         };
@@ -338,13 +371,13 @@ Sue,Brown,,2,456 Oak Ave,Springfield,OH,Clark,,,
                     var student = new Student
                     {
                         StudentName = studentName,
-                        StudentNumber = finalStudentNum,
-                        Grade = finalGrade,
+                        Grade = grade,
                         HomeAddress = homeAddress,
-                        ParentGuardian = lastParent,
-                        HomePhone = lastHomePhone,
-                        EmergencyPhone = lastEmergencyPhone,
+                        ParentGuardian = parentGuardian,
+                        HomePhone = homePhone,
+                        EmergencyPhone = emergencyPhone,
                         School = "Wiley School District",
+                        StudentNumber = studentNumber,
                         Family = family,
                         FamilyId = family.FamilyId,
                         CreatedDate = DateTime.UtcNow,
@@ -424,7 +457,7 @@ Sue,Brown,,2,456 Oak Ave,Springfield,OH,Clark,,,
         }
 
         /// <summary>
-        /// Seed all development data
+        /// Seed all development data.
         /// </summary>
         public async Task SeedAllAsync()
         {

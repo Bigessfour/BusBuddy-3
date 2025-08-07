@@ -109,7 +109,7 @@ namespace BusBuddy.Core.Extensions
             services.AddScoped<BusBuddy.Core.Services.DatabaseNullFixService>();
 
             // Register Phase 2 Data Seeding Service
-            services.AddScoped<IPhase2DataSeederService, Phase2DataSeederService>();
+            // services.AddScoped<IPhase2DataSeederService, Phase2DataSeederService>();
 
             return services;
         }
