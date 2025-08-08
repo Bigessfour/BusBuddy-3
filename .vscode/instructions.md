@@ -10,7 +10,122 @@ BusBuddy is a transportation management system designed to help school districts
 - [Project Status & Roadmap](#-project-status--roadmap)
 - [Development Environment Setup](#-development-environment-setup)
 - [Problem Resolution Approaches](#-problem-resolution-approaches)
-- [Git & Repository Tips](#-git--repository-tips)
+- [Git & RThe VS Code task `🔍 BB: Mandatory PowerShell 7.5.2 Syntax Check` will verify all scripts against these standards.
+
+---
+
+## 📚 **Documentation Maintenance & Updates**
+
+### 🎯 **Critical Documentation Files - Update Requirements**
+
+BusBuddy maintains two critical documentation files that **MUST** be updated with each significant development session:
+
+#### **📋 FILE-FETCHABILITY-GUIDE.md**
+**Location**: `Documentation/FILE-FETCHABILITY-GUIDE.md`
+**Purpose**: Comprehensive inventory of all project files for team access and AI assistance
+
+**Update Triggers** (Always update when):
+- ✅ New files added to the project (PowerShell scripts, documentation, configuration)
+- ✅ New infrastructure configured (Azure resources, database changes, CI/CD)
+- ✅ New PowerShell commands or modules created
+- ✅ Major technology updates (.NET versions, package updates)
+- ✅ New testing infrastructure or tools implemented
+
+**Update Requirements**:
+```markdown
+## Required Sections to Update:
+1. **Session Information** - Latest accomplishments and status
+2. **Azure Infrastructure** - Database configs, connection strings, firewall rules
+3. **PowerShell Commands** - New bb-* commands and capabilities
+4. **Project Statistics** - File counts, infrastructure metrics
+5. **Raw URL Access** - GitHub links for new files and scripts
+```
+
+#### **📈 GROK-README.md** 
+**Location**: `GROK-README.md` (project root)
+**Purpose**: Development session status, progress tracking, and current project state
+
+**Update Triggers** (Always update when):
+- ✅ Development session completed with significant changes
+- ✅ Infrastructure changes (Azure, database, CI/CD pipeline)
+- ✅ Technology stack updates or version changes
+- ✅ MVP milestone progress or completion
+- ✅ Major bug fixes or architectural changes
+
+**Update Requirements**:
+```markdown
+## Required Sections to Update:
+1. **Session Summary** - Date, accomplishments, current status
+2. **Technology Stack** - Version updates, new packages
+3. **Infrastructure Status** - Azure SQL, database configuration
+4. **MVP Progress** - Phase completion, next priorities
+5. **Current Issues** - Known problems and workarounds
+```
+
+### 🔄 **Documentation Update Workflow**
+
+#### **Standard Update Process**:
+```powershell
+# 1. Update documentation files with current session info
+# 2. Review and remove outdated information
+# 3. Commit documentation updates
+git add Documentation/FILE-FETCHABILITY-GUIDE.md GROK-README.md
+git commit -m "docs: update session documentation with [specific changes]"
+git push origin master
+```
+
+#### **Quarterly Review Process** (Remove Legacy Content):
+1. **Review outdated sections** - Remove references to deprecated features
+2. **Update technology versions** - Ensure all version numbers are current
+3. **Validate links and URLs** - Check GitHub raw URLs and documentation links
+4. **Consolidate duplicate information** - Merge similar sections
+5. **Archive completed phases** - Move completed milestones to archive section
+
+### 🚫 **Legacy Content Removal Guidelines**
+
+#### **What to Remove**:
+- ❌ **Outdated version references** (old .NET versions, deprecated packages)
+- ❌ **Completed temporary workarounds** (fixed compatibility issues)
+- ❌ **Obsolete PowerShell commands** (replaced or deprecated functions)
+- ❌ **Old infrastructure references** (replaced servers, outdated connection strings)
+- ❌ **Duplicate sections** (merged or consolidated information)
+
+#### **What to Preserve**:
+- ✅ **Historical context** (why decisions were made)
+- ✅ **Working solutions** (current implementations and patterns)
+- ✅ **Migration notes** (upgrade paths and compatibility information)
+- ✅ **Current infrastructure** (operational Azure resources, active configurations)
+
+### 📝 **Documentation Standards Enforcement**
+
+#### **Pre-Commit Checklist**:
+```markdown
+Before committing code changes, verify:
+□ FILE-FETCHABILITY-GUIDE.md updated with new files/infrastructure
+□ GROK-README.md updated with session progress and current status
+□ Outdated references removed or updated
+□ All GitHub raw URLs tested and functional
+□ Version numbers reflect current technology stack
+□ Azure infrastructure documentation matches actual configuration
+```
+
+#### **Monthly Documentation Health Check**:
+```powershell
+# Validate documentation completeness and accuracy
+bb-documentation-check    # Custom command to verify doc standards
+bb-link-validation       # Check all GitHub raw URLs and external links
+bb-version-audit         # Verify all version references are current
+```
+
+### 🎯 **Documentation Quality Metrics**
+
+- **Accuracy**: All technical details must match current implementation
+- **Completeness**: All major features and infrastructure documented
+- **Currency**: Information updated within last 30 days for active features
+- **Accessibility**: All files available via GitHub raw URLs
+- **Searchability**: Clear section headers and organized content structure
+
+**Remember**: Documentation is as critical as code - keep it current, accurate, and accessible! 📖✨pository Tips](#-git--repository-tips)
 - [VS Code Integration](#-vs-code-integration)
 - [Syncfusion Implementation](#-syncfusion-implementation)
 - [Debugging & Troubleshooting](#-debugging--troubleshooting)
