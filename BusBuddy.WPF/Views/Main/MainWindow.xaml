@@ -130,9 +130,11 @@
 
                     <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,15,0,0">
                         <syncfusion:ButtonAdv Content="🗺️ Optimize Routes" Margin="0,0,10,0" Padding="12,6"
-                                              Background="#8B5CF6" Foreground="White" BorderThickness="0"/>
+                                              Background="#8B5CF6" Foreground="White" BorderThickness="0"
+                                              Click="OptimizeRoutes_Click"/>
                         <syncfusion:ButtonAdv Content="📄 Export Schedules" Padding="12,6"
-                                              Background="#DC2626" Foreground="White" BorderThickness="0"/>
+                                              Background="#DC2626" Foreground="White" BorderThickness="0"
+                                              Click="ExportSchedules_Click"/>
                     </StackPanel>
                 </Grid>
             </ContentControl>
@@ -170,9 +172,11 @@
                                               Background="#0078D4" Foreground="White" BorderThickness="0"
                                               Click="AddBus_Click"/>
                         <syncfusion:ButtonAdv Content="🔧 Maintenance" Margin="0,0,10,0" Padding="12,6"
-                                              Background="#FF8C00" Foreground="White" BorderThickness="0"/>
+                                              Background="#FF8C00" Foreground="White" BorderThickness="0"
+                                              Click="Maintenance_Click"/>
                         <syncfusion:ButtonAdv Content="📊 Fleet Status" Padding="12,6"
-                                              Background="#32CD32" Foreground="White" BorderThickness="0"/>
+                                              Background="#32CD32" Foreground="White" BorderThickness="0"
+                                              Click="FleetStatus_Click"/>
                     </StackPanel>
                 </Grid>
             </ContentControl>
@@ -208,9 +212,11 @@
                                               Background="#0078D4" Foreground="White" BorderThickness="0"
                                               Click="AddDriver_Click"/>
                         <syncfusion:ButtonAdv Content="🚌 Assign Bus" Margin="0,0,10,0" Padding="12,6"
-                                              Background="#107C10" Foreground="White" BorderThickness="0"/>
+                                              Background="#107C10" Foreground="White" BorderThickness="0"
+                                              Click="AssignBus_Click"/>
                         <syncfusion:ButtonAdv Content="📅 Schedule" Padding="12,6"
-                                              Background="#6B46C1" Foreground="White" BorderThickness="0"/>
+                                              Background="#6B46C1" Foreground="White" BorderThickness="0"
+                                              Click="Schedule_Click"/>
                     </StackPanel>
                 </Grid>
             </ContentControl>

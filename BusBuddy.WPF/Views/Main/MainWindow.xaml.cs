@@ -42,6 +42,7 @@ using BusBuddy.WPF.Views.Driver;
 using BusBuddy.WPF.Views.Analytics;
 using BusBuddy.WPF.Views.Route;
 using BusBuddy.WPF.Views.Settings;
+using BusBuddy.WPF.Views.Vehicle;
 using Syncfusion.SfSkinManager;
 using Serilog;
 
@@ -258,8 +259,29 @@ namespace BusBuddy.WPF.Views.Main
         {
             Logger.Debug("RouteManagementButton_Click event triggered");
             Logger.Information("Route management navigation requested");
-            // Future: Navigate to route management view
-            Logger.Debug("Route management navigation logic completed");
+            try
+            {
+                // Create a window to host the RouteManagementView
+                var routeWindow = new Window
+                {
+                    Title = "🗺️ Route Management",
+                    Width = 1200,
+                    Height = 800,
+                    WindowStartupLocation = WindowStartupLocation.CenterOwner,
+                    Owner = this,
+                    Content = new RouteManagementView()
+                };
+
+                Logger.Debug("Showing RouteManagementView in modal dialog");
+                routeWindow.ShowDialog();
+                Logger.Information("RouteManagementView dialog closed");
+                RefreshRoutesGrid();
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Error opening Route Management view");
+                MessageBox.Show($"Error opening Route Management view: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
         private void AnalyticsButton_Click(object sender, RoutedEventArgs e)
@@ -274,8 +296,29 @@ namespace BusBuddy.WPF.Views.Main
         {
             Logger.Debug("DriversButton_Click event triggered");
             Logger.Information("Drivers navigation requested");
-            // Future: Navigate to drivers view
-            Logger.Debug("Drivers navigation logic completed");
+            try
+            {
+                // Create a window to host the DriversView
+                var driversWindow = new Window
+                {
+                    Title = "👨‍✈️ Driver Management",
+                    Width = 1000,
+                    Height = 700,
+                    WindowStartupLocation = WindowStartupLocation.CenterOwner,
+                    Owner = this,
+                    Content = new DriversView()
+                };
+
+                Logger.Debug("Showing DriversView in modal dialog");
+                driversWindow.ShowDialog();
+                Logger.Information("DriversView dialog closed");
+                RefreshDriversGrid();
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Error opening Drivers view");
+                MessageBox.Show($"Error opening Drivers view: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
         private void VehiclesButton_Click(object sender, RoutedEventArgs e)
@@ -389,6 +432,99 @@ namespace BusBuddy.WPF.Views.Main
             {
                 Logger.Error(ex, "Error opening Driver form");
                 MessageBox.Show($"Error opening Driver form: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        // Routes panel event handlers
+        private void OptimizeRoutes_Click(object sender, RoutedEventArgs e)
+        {
+            Logger.Debug("OptimizeRoutes_Click event triggered");
+            Logger.Information("Route optimization requested");
+            try
+            {
+                MessageBox.Show("Route optimization feature will be implemented in next phase.\n\nComing soon:\n• AI-powered route optimization\n• Traffic pattern analysis\n• Fuel efficiency calculations",
+                    "Route Optimization", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Error in route optimization");
+            }
+        }
+
+        private void ExportSchedules_Click(object sender, RoutedEventArgs e)
+        {
+            Logger.Debug("ExportSchedules_Click event triggered");
+            Logger.Information("Schedule export requested");
+            try
+            {
+                MessageBox.Show("Schedule export feature will be implemented in next phase.\n\nComing soon:\n• PDF export of route schedules\n• Excel format support\n• Custom report templates",
+                    "Export Schedules", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Error in schedule export");
+            }
+        }
+
+        // Bus panel event handlers
+        private void Maintenance_Click(object sender, RoutedEventArgs e)
+        {
+            Logger.Debug("Maintenance_Click event triggered");
+            Logger.Information("Maintenance management requested");
+            try
+            {
+                MessageBox.Show("Maintenance management feature will be implemented in next phase.\n\nComing soon:\n• Scheduled maintenance tracking\n• Service history logs\n• Maintenance alerts and reminders",
+                    "Maintenance Management", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Error in maintenance management");
+            }
+        }
+
+        private void FleetStatus_Click(object sender, RoutedEventArgs e)
+        {
+            Logger.Debug("FleetStatus_Click event triggered");
+            Logger.Information("Fleet status requested");
+            try
+            {
+                MessageBox.Show("Fleet status dashboard will be implemented in next phase.\n\nComing soon:\n• Real-time fleet monitoring\n• Vehicle location tracking\n• Performance metrics dashboard",
+                    "Fleet Status", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Error in fleet status");
+            }
+        }
+
+        // Driver panel event handlers
+        private void AssignBus_Click(object sender, RoutedEventArgs e)
+        {
+            Logger.Debug("AssignBus_Click event triggered");
+            Logger.Information("Bus assignment requested");
+            try
+            {
+                MessageBox.Show("Bus assignment feature will be implemented in next phase.\n\nComing soon:\n• Driver-to-bus assignments\n• Route scheduling\n• Automatic assignment optimization",
+                    "Assign Bus", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Error in bus assignment");
+            }
+        }
+
+        private void Schedule_Click(object sender, RoutedEventArgs e)
+        {
+            Logger.Debug("Schedule_Click event triggered");
+            Logger.Information("Driver scheduling requested");
+            try
+            {
+                MessageBox.Show("Driver scheduling feature will be implemented in next phase.\n\nComing soon:\n• Shift management\n• Availability tracking\n• Schedule conflict detection",
+                    "Driver Scheduling", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Error in driver scheduling");
             }
         }
 
@@ -648,9 +784,31 @@ namespace BusBuddy.WPF.Views.Main
         // Event handler for Buses button click (from MainWindow.xaml)
         private void BusesButton_Click(object sender, RoutedEventArgs e)
         {
-            Logger.Information("Buses button clicked");
-            // TODO: Implement navigation or logic for Buses button
-            MessageBox.Show("Buses button clicked.", "BusBuddy", MessageBoxButton.OK, MessageBoxImage.Information);
+            Logger.Debug("BusesButton_Click event triggered");
+            Logger.Information("Buses navigation requested");
+            try
+            {
+                // Create a window to host the VehicleManagementView
+                var busesWindow = new Window
+                {
+                    Title = "🚐 Bus Management",
+                    Width = 1200,
+                    Height = 800,
+                    WindowStartupLocation = WindowStartupLocation.CenterOwner,
+                    Owner = this,
+                    Content = new VehicleManagementView()
+                };
+
+                Logger.Debug("Showing VehicleManagementView in modal dialog");
+                busesWindow.ShowDialog();
+                Logger.Information("VehicleManagementView dialog closed");
+                RefreshBusesGrid();
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Error opening Bus Management view");
+                MessageBox.Show($"Error opening Bus Management view: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
     }
 
