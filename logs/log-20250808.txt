@@ -1,0 +1,518 @@
+2025-08-08 07:17:16.131 -06:00 [INF] 🚌 🚌 Serilog initialized using configuration from appsettings.json
+2025-08-08 07:17:16.141 -06:00 [INF] 🚌 🚌 BusBuddy MVP starting...
+2025-08-08 07:17:16.156 -06:00 [INF] 🚌 🚌 BusBuddy starting on thread 2 with apartment state: "STA"
+2025-08-08 07:17:16.161 -06:00 [INF] 🚌 🚌 Command line args: C:\Users\biges\Desktop\BusBuddy\BusBuddy.WPF\bin\Debug\net9.0-windows\BusBuddy.WPF.dll
+2025-08-08 07:17:16.162 -06:00 [INF] 🚌 🚌 EF Migration mode: false
+2025-08-08 07:17:16.162 -06:00 [INF] 🚌 🚌 Design-time mode: false
+2025-08-08 07:17:16.164 -06:00 [INF] 🚌 🚌 Initializing BusBuddy MVP application
+2025-08-08 07:17:16.363 -06:00 [INF] 🚌 🔧 Setting up full DI container for UI application...
+2025-08-08 07:17:16.379 -06:00 [INF] 🚌 ✅ Full DI container configured successfully for UI application
+2025-08-08 07:17:16.393 -06:00 [INF] 🚌 Starting Wiley School District data seeding operation
+2025-08-08 07:17:18.870 -06:00 [ERR] 🚌 Database operation Database EnsureCreated failed permanently after 1 attempts
+Microsoft.Data.SqlClient.SqlException (0x80131904): Cannot open server 'busbuddy-server-sm2' requested by the login. Client with IP address '216.147.124.207' is not allowed to access the server.  To enable access, use the Azure Management Portal or run sp_set_firewall_rule on the master database to create a firewall rule for this IP address or address range.  It may take up to five minutes for this change to take effect.
+   at Microsoft.Data.SqlClient.SqlInternalConnection.OnError(SqlException exception, Boolean breakConnection, Action`1 wrapCloseInAction)
+   at Microsoft.Data.SqlClient.TdsParser.ThrowExceptionAndWarning(TdsParserStateObject stateObj, SqlCommand command, Boolean callerHasConnectionLock, Boolean asyncClose)
+   at Microsoft.Data.SqlClient.TdsParser.TryRun(RunBehavior runBehavior, SqlCommand cmdHandler, SqlDataReader dataStream, BulkCopySimpleResultSet bulkCopyHandler, TdsParserStateObject stateObj, Boolean& dataReady)
+   at Microsoft.Data.SqlClient.TdsParser.Run(RunBehavior runBehavior, SqlCommand cmdHandler, SqlDataReader dataStream, BulkCopySimpleResultSet bulkCopyHandler, TdsParserStateObject stateObj)
+   at Microsoft.Data.SqlClient.SqlInternalConnectionTds.CompleteLogin(Boolean enlistOK)
+   at Microsoft.Data.SqlClient.SqlInternalConnectionTds.AttemptOneLogin(ServerInfo serverInfo, String newPassword, SecureString newSecurePassword, TimeoutTimer timeout, Boolean withFailover)
+   at Microsoft.Data.SqlClient.SqlInternalConnectionTds.LoginNoFailover(ServerInfo serverInfo, String newPassword, SecureString newSecurePassword, Boolean redirectedUserInstance, SqlConnectionString connectionOptions, SqlCredential credential, TimeoutTimer timeout)
+   at Microsoft.Data.SqlClient.SqlInternalConnectionTds.OpenLoginEnlist(TimeoutTimer timeout, SqlConnectionString connectionOptions, SqlCredential credential, String newPassword, SecureString newSecurePassword, Boolean redirectedUserInstance)
+   at Microsoft.Data.SqlClient.SqlInternalConnectionTds..ctor(DbConnectionPoolIdentity identity, SqlConnectionString connectionOptions, SqlCredential credential, Object providerInfo, String newPassword, SecureString newSecurePassword, Boolean redirectedUserInstance, SqlConnectionString userConnectionOptions, SessionData reconnectSessionData, Boolean applyTransientFaultHandling, String accessToken, DbConnectionPool pool, Func`3 accessTokenCallback)
+   at Microsoft.Data.SqlClient.SqlConnectionFactory.CreateConnection(DbConnectionOptions options, DbConnectionPoolKey poolKey, Object poolGroupProviderInfo, DbConnectionPool pool, DbConnection owningConnection, DbConnectionOptions userOptions)
+   at Microsoft.Data.ProviderBase.DbConnectionFactory.CreatePooledConnection(DbConnectionPool pool, DbConnection owningObject, DbConnectionOptions options, DbConnectionPoolKey poolKey, DbConnectionOptions userOptions)
+   at Microsoft.Data.ProviderBase.DbConnectionPool.CreateObject(DbConnection owningObject, DbConnectionOptions userOptions, DbConnectionInternal oldConnection)
+   at Microsoft.Data.ProviderBase.DbConnectionPool.UserCreateRequest(DbConnection owningObject, DbConnectionOptions userOptions, DbConnectionInternal oldConnection)
+   at Microsoft.Data.ProviderBase.DbConnectionPool.TryGetConnection(DbConnection owningObject, UInt32 waitForMultipleObjectsTimeout, Boolean allowCreate, Boolean onlyOneCheckConnection, DbConnectionOptions userOptions, DbConnectionInternal& connection)
+   at Microsoft.Data.ProviderBase.DbConnectionPool.WaitForPendingOpen()
+--- End of stack trace from previous location ---
+   at Microsoft.EntityFrameworkCore.Storage.RelationalConnection.OpenInternalAsync(Boolean errorsExpected, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalConnection.OpenInternalAsync(Boolean errorsExpected, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalConnection.OpenAsync(CancellationToken cancellationToken, Boolean errorsExpected)
+   at Microsoft.EntityFrameworkCore.SqlServer.Storage.Internal.SqlServerDatabaseCreator.<>c__DisplayClass20_0.<<ExistsAsync>b__0>d.MoveNext()
+--- End of stack trace from previous location ---
+   at Microsoft.EntityFrameworkCore.SqlServer.Storage.Internal.SqlServerDatabaseCreator.<>c__DisplayClass20_0.<<ExistsAsync>b__0>d.MoveNext()
+--- End of stack trace from previous location ---
+   at Microsoft.EntityFrameworkCore.SqlServer.Storage.Internal.SqlServerDatabaseCreator.<>c__DisplayClass20_0.<<ExistsAsync>b__0>d.MoveNext()
+--- End of stack trace from previous location ---
+   at Microsoft.EntityFrameworkCore.SqlServer.Storage.Internal.SqlServerExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalDatabaseCreator.EnsureCreatedAsync(CancellationToken cancellationToken)
+   at BusBuddy.WPF.App.<>c__DisplayClass10_0.<<ConfigureServices>b__1>d.MoveNext() in C:\Users\biges\Desktop\BusBuddy\BusBuddy.WPF\App.xaml.cs:line 282
+--- End of stack trace from previous location ---
+   at BusBuddy.Core.Utilities.ResilientDbExecution.ExecuteWithResilienceAsync[T](Func`1 operation, String operationName, Int32 maxRetries) in C:\Users\biges\Desktop\BusBuddy\BusBuddy.Core\Utilities\ResilientDbExecution.cs:line 44
+ClientConnectionId:eb1c50c8-a199-4456-9659-ae8cd10ad0cb
+Error Number:40615,State:1,Class:14
+2025-08-08 07:17:18.888 -06:00 [WRN] 🚌 ⚠️ Failed to seed database with JSON data: Cannot open server 'busbuddy-server-sm2' requested by the login. Client with IP address '216.147.124.207' is not allowed to access the server.  To enable access, use the Azure Management Portal or run sp_set_firewall_rule on the master database to create a firewall rule for this IP address or address range.  It may take up to five minutes for this change to take effect.
+Microsoft.Data.SqlClient.SqlException (0x80131904): Cannot open server 'busbuddy-server-sm2' requested by the login. Client with IP address '216.147.124.207' is not allowed to access the server.  To enable access, use the Azure Management Portal or run sp_set_firewall_rule on the master database to create a firewall rule for this IP address or address range.  It may take up to five minutes for this change to take effect.
+   at Microsoft.Data.SqlClient.SqlInternalConnection.OnError(SqlException exception, Boolean breakConnection, Action`1 wrapCloseInAction)
+   at Microsoft.Data.SqlClient.TdsParser.ThrowExceptionAndWarning(TdsParserStateObject stateObj, SqlCommand command, Boolean callerHasConnectionLock, Boolean asyncClose)
+   at Microsoft.Data.SqlClient.TdsParser.TryRun(RunBehavior runBehavior, SqlCommand cmdHandler, SqlDataReader dataStream, BulkCopySimpleResultSet bulkCopyHandler, TdsParserStateObject stateObj, Boolean& dataReady)
+   at Microsoft.Data.SqlClient.TdsParser.Run(RunBehavior runBehavior, SqlCommand cmdHandler, SqlDataReader dataStream, BulkCopySimpleResultSet bulkCopyHandler, TdsParserStateObject stateObj)
+   at Microsoft.Data.SqlClient.SqlInternalConnectionTds.CompleteLogin(Boolean enlistOK)
+   at Microsoft.Data.SqlClient.SqlInternalConnectionTds.AttemptOneLogin(ServerInfo serverInfo, String newPassword, SecureString newSecurePassword, TimeoutTimer timeout, Boolean withFailover)
+   at Microsoft.Data.SqlClient.SqlInternalConnectionTds.LoginNoFailover(ServerInfo serverInfo, String newPassword, SecureString newSecurePassword, Boolean redirectedUserInstance, SqlConnectionString connectionOptions, SqlCredential credential, TimeoutTimer timeout)
+   at Microsoft.Data.SqlClient.SqlInternalConnectionTds.OpenLoginEnlist(TimeoutTimer timeout, SqlConnectionString connectionOptions, SqlCredential credential, String newPassword, SecureString newSecurePassword, Boolean redirectedUserInstance)
+   at Microsoft.Data.SqlClient.SqlInternalConnectionTds..ctor(DbConnectionPoolIdentity identity, SqlConnectionString connectionOptions, SqlCredential credential, Object providerInfo, String newPassword, SecureString newSecurePassword, Boolean redirectedUserInstance, SqlConnectionString userConnectionOptions, SessionData reconnectSessionData, Boolean applyTransientFaultHandling, String accessToken, DbConnectionPool pool, Func`3 accessTokenCallback)
+   at Microsoft.Data.SqlClient.SqlConnectionFactory.CreateConnection(DbConnectionOptions options, DbConnectionPoolKey poolKey, Object poolGroupProviderInfo, DbConnectionPool pool, DbConnection owningConnection, DbConnectionOptions userOptions)
+   at Microsoft.Data.ProviderBase.DbConnectionFactory.CreatePooledConnection(DbConnectionPool pool, DbConnection owningObject, DbConnectionOptions options, DbConnectionPoolKey poolKey, DbConnectionOptions userOptions)
+   at Microsoft.Data.ProviderBase.DbConnectionPool.CreateObject(DbConnection owningObject, DbConnectionOptions userOptions, DbConnectionInternal oldConnection)
+   at Microsoft.Data.ProviderBase.DbConnectionPool.UserCreateRequest(DbConnection owningObject, DbConnectionOptions userOptions, DbConnectionInternal oldConnection)
+   at Microsoft.Data.ProviderBase.DbConnectionPool.TryGetConnection(DbConnection owningObject, UInt32 waitForMultipleObjectsTimeout, Boolean allowCreate, Boolean onlyOneCheckConnection, DbConnectionOptions userOptions, DbConnectionInternal& connection)
+   at Microsoft.Data.ProviderBase.DbConnectionPool.WaitForPendingOpen()
+--- End of stack trace from previous location ---
+   at Microsoft.EntityFrameworkCore.Storage.RelationalConnection.OpenInternalAsync(Boolean errorsExpected, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalConnection.OpenInternalAsync(Boolean errorsExpected, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalConnection.OpenAsync(CancellationToken cancellationToken, Boolean errorsExpected)
+   at Microsoft.EntityFrameworkCore.SqlServer.Storage.Internal.SqlServerDatabaseCreator.<>c__DisplayClass20_0.<<ExistsAsync>b__0>d.MoveNext()
+--- End of stack trace from previous location ---
+   at Microsoft.EntityFrameworkCore.SqlServer.Storage.Internal.SqlServerDatabaseCreator.<>c__DisplayClass20_0.<<ExistsAsync>b__0>d.MoveNext()
+--- End of stack trace from previous location ---
+   at Microsoft.EntityFrameworkCore.SqlServer.Storage.Internal.SqlServerDatabaseCreator.<>c__DisplayClass20_0.<<ExistsAsync>b__0>d.MoveNext()
+--- End of stack trace from previous location ---
+   at Microsoft.EntityFrameworkCore.SqlServer.Storage.Internal.SqlServerExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalDatabaseCreator.EnsureCreatedAsync(CancellationToken cancellationToken)
+   at BusBuddy.WPF.App.<>c__DisplayClass10_0.<<ConfigureServices>b__1>d.MoveNext() in C:\Users\biges\Desktop\BusBuddy\BusBuddy.WPF\App.xaml.cs:line 282
+--- End of stack trace from previous location ---
+   at BusBuddy.Core.Utilities.ResilientDbExecution.ExecuteWithResilienceAsync[T](Func`1 operation, String operationName, Int32 maxRetries) in C:\Users\biges\Desktop\BusBuddy\BusBuddy.Core\Utilities\ResilientDbExecution.cs:line 44
+   at BusBuddy.WPF.App.<>c.<<ConfigureServices>b__10_0>d.MoveNext() in C:\Users\biges\Desktop\BusBuddy\BusBuddy.WPF\App.xaml.cs:line 281
+ClientConnectionId:eb1c50c8-a199-4456-9659-ae8cd10ad0cb
+Error Number:40615,State:1,Class:14
+2025-08-08 07:17:19.536 -06:00 [ERR] 🚌 Database operation SeedWileySchoolDistrictData failed permanently after 1 attempts
+Microsoft.Data.SqlClient.SqlException (0x80131904): Cannot open server 'busbuddy-server-sm2' requested by the login. Client with IP address '216.147.124.207' is not allowed to access the server.  To enable access, use the Azure Management Portal or run sp_set_firewall_rule on the master database to create a firewall rule for this IP address or address range.  It may take up to five minutes for this change to take effect.
+   at Microsoft.Data.SqlClient.SqlInternalConnection.OnError(SqlException exception, Boolean breakConnection, Action`1 wrapCloseInAction)
+   at Microsoft.Data.SqlClient.TdsParser.ThrowExceptionAndWarning(TdsParserStateObject stateObj, SqlCommand command, Boolean callerHasConnectionLock, Boolean asyncClose)
+   at Microsoft.Data.SqlClient.TdsParser.TryRun(RunBehavior runBehavior, SqlCommand cmdHandler, SqlDataReader dataStream, BulkCopySimpleResultSet bulkCopyHandler, TdsParserStateObject stateObj, Boolean& dataReady)
+   at Microsoft.Data.SqlClient.TdsParser.Run(RunBehavior runBehavior, SqlCommand cmdHandler, SqlDataReader dataStream, BulkCopySimpleResultSet bulkCopyHandler, TdsParserStateObject stateObj)
+   at Microsoft.Data.SqlClient.SqlInternalConnectionTds.CompleteLogin(Boolean enlistOK)
+   at Microsoft.Data.SqlClient.SqlInternalConnectionTds.AttemptOneLogin(ServerInfo serverInfo, String newPassword, SecureString newSecurePassword, TimeoutTimer timeout, Boolean withFailover)
+   at Microsoft.Data.SqlClient.SqlInternalConnectionTds.LoginNoFailover(ServerInfo serverInfo, String newPassword, SecureString newSecurePassword, Boolean redirectedUserInstance, SqlConnectionString connectionOptions, SqlCredential credential, TimeoutTimer timeout)
+   at Microsoft.Data.SqlClient.SqlInternalConnectionTds.OpenLoginEnlist(TimeoutTimer timeout, SqlConnectionString connectionOptions, SqlCredential credential, String newPassword, SecureString newSecurePassword, Boolean redirectedUserInstance)
+   at Microsoft.Data.SqlClient.SqlInternalConnectionTds..ctor(DbConnectionPoolIdentity identity, SqlConnectionString connectionOptions, SqlCredential credential, Object providerInfo, String newPassword, SecureString newSecurePassword, Boolean redirectedUserInstance, SqlConnectionString userConnectionOptions, SessionData reconnectSessionData, Boolean applyTransientFaultHandling, String accessToken, DbConnectionPool pool, Func`3 accessTokenCallback)
+   at Microsoft.Data.SqlClient.SqlConnectionFactory.CreateConnection(DbConnectionOptions options, DbConnectionPoolKey poolKey, Object poolGroupProviderInfo, DbConnectionPool pool, DbConnection owningConnection, DbConnectionOptions userOptions)
+   at Microsoft.Data.ProviderBase.DbConnectionFactory.CreatePooledConnection(DbConnectionPool pool, DbConnection owningObject, DbConnectionOptions options, DbConnectionPoolKey poolKey, DbConnectionOptions userOptions)
+   at Microsoft.Data.ProviderBase.DbConnectionPool.CreateObject(DbConnection owningObject, DbConnectionOptions userOptions, DbConnectionInternal oldConnection)
+   at Microsoft.Data.ProviderBase.DbConnectionPool.UserCreateRequest(DbConnection owningObject, DbConnectionOptions userOptions, DbConnectionInternal oldConnection)
+   at Microsoft.Data.ProviderBase.DbConnectionPool.TryGetConnection(DbConnection owningObject, UInt32 waitForMultipleObjectsTimeout, Boolean allowCreate, Boolean onlyOneCheckConnection, DbConnectionOptions userOptions, DbConnectionInternal& connection)
+   at Microsoft.Data.ProviderBase.DbConnectionPool.WaitForPendingOpen()
+--- End of stack trace from previous location ---
+   at Microsoft.EntityFrameworkCore.Storage.RelationalConnection.OpenInternalAsync(Boolean errorsExpected, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalConnection.OpenInternalAsync(Boolean errorsExpected, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalConnection.OpenAsync(CancellationToken cancellationToken, Boolean errorsExpected)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable`1.AsyncEnumerator.InitializeReaderAsync(AsyncEnumerator enumerator, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.SqlServer.Storage.Internal.SqlServerExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable`1.AsyncEnumerator.MoveNextAsync()
+   at Microsoft.EntityFrameworkCore.Query.ShapedQueryCompilingExpressionVisitor.SingleAsync[TSource](IAsyncEnumerable`1 asyncEnumerable, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.ShapedQueryCompilingExpressionVisitor.SingleAsync[TSource](IAsyncEnumerable`1 asyncEnumerable, CancellationToken cancellationToken)
+   at BusBuddy.Core.Services.StudentService.<>c__DisplayClass33_1.<<SeedWileySchoolDistrictDataAsync>b__1>d.MoveNext() in C:\Users\biges\Desktop\BusBuddy\BusBuddy.Core\Services\StudentService.cs:line 1226
+--- End of stack trace from previous location ---
+   at BusBuddy.Core.Utilities.ResilientDbExecution.ExecuteWithResilienceAsync[T](Func`1 operation, String operationName, Int32 maxRetries) in C:\Users\biges\Desktop\BusBuddy\BusBuddy.Core\Utilities\ResilientDbExecution.cs:line 44
+ClientConnectionId:8bb36e57-607f-4893-9c45-2b5948df757f
+Error Number:40615,State:1,Class:14
+2025-08-08 07:17:19.540 -06:00 [ERR] 🚌 Error during Wiley School District data seeding
+Microsoft.Data.SqlClient.SqlException (0x80131904): Cannot open server 'busbuddy-server-sm2' requested by the login. Client with IP address '216.147.124.207' is not allowed to access the server.  To enable access, use the Azure Management Portal or run sp_set_firewall_rule on the master database to create a firewall rule for this IP address or address range.  It may take up to five minutes for this change to take effect.
+   at Microsoft.Data.SqlClient.SqlInternalConnection.OnError(SqlException exception, Boolean breakConnection, Action`1 wrapCloseInAction)
+   at Microsoft.Data.SqlClient.TdsParser.ThrowExceptionAndWarning(TdsParserStateObject stateObj, SqlCommand command, Boolean callerHasConnectionLock, Boolean asyncClose)
+   at Microsoft.Data.SqlClient.TdsParser.TryRun(RunBehavior runBehavior, SqlCommand cmdHandler, SqlDataReader dataStream, BulkCopySimpleResultSet bulkCopyHandler, TdsParserStateObject stateObj, Boolean& dataReady)
+   at Microsoft.Data.SqlClient.TdsParser.Run(RunBehavior runBehavior, SqlCommand cmdHandler, SqlDataReader dataStream, BulkCopySimpleResultSet bulkCopyHandler, TdsParserStateObject stateObj)
+   at Microsoft.Data.SqlClient.SqlInternalConnectionTds.CompleteLogin(Boolean enlistOK)
+   at Microsoft.Data.SqlClient.SqlInternalConnectionTds.AttemptOneLogin(ServerInfo serverInfo, String newPassword, SecureString newSecurePassword, TimeoutTimer timeout, Boolean withFailover)
+   at Microsoft.Data.SqlClient.SqlInternalConnectionTds.LoginNoFailover(ServerInfo serverInfo, String newPassword, SecureString newSecurePassword, Boolean redirectedUserInstance, SqlConnectionString connectionOptions, SqlCredential credential, TimeoutTimer timeout)
+   at Microsoft.Data.SqlClient.SqlInternalConnectionTds.OpenLoginEnlist(TimeoutTimer timeout, SqlConnectionString connectionOptions, SqlCredential credential, String newPassword, SecureString newSecurePassword, Boolean redirectedUserInstance)
+   at Microsoft.Data.SqlClient.SqlInternalConnectionTds..ctor(DbConnectionPoolIdentity identity, SqlConnectionString connectionOptions, SqlCredential credential, Object providerInfo, String newPassword, SecureString newSecurePassword, Boolean redirectedUserInstance, SqlConnectionString userConnectionOptions, SessionData reconnectSessionData, Boolean applyTransientFaultHandling, String accessToken, DbConnectionPool pool, Func`3 accessTokenCallback)
+   at Microsoft.Data.SqlClient.SqlConnectionFactory.CreateConnection(DbConnectionOptions options, DbConnectionPoolKey poolKey, Object poolGroupProviderInfo, DbConnectionPool pool, DbConnection owningConnection, DbConnectionOptions userOptions)
+   at Microsoft.Data.ProviderBase.DbConnectionFactory.CreatePooledConnection(DbConnectionPool pool, DbConnection owningObject, DbConnectionOptions options, DbConnectionPoolKey poolKey, DbConnectionOptions userOptions)
+   at Microsoft.Data.ProviderBase.DbConnectionPool.CreateObject(DbConnection owningObject, DbConnectionOptions userOptions, DbConnectionInternal oldConnection)
+   at Microsoft.Data.ProviderBase.DbConnectionPool.UserCreateRequest(DbConnection owningObject, DbConnectionOptions userOptions, DbConnectionInternal oldConnection)
+   at Microsoft.Data.ProviderBase.DbConnectionPool.TryGetConnection(DbConnection owningObject, UInt32 waitForMultipleObjectsTimeout, Boolean allowCreate, Boolean onlyOneCheckConnection, DbConnectionOptions userOptions, DbConnectionInternal& connection)
+   at Microsoft.Data.ProviderBase.DbConnectionPool.WaitForPendingOpen()
+--- End of stack trace from previous location ---
+   at Microsoft.EntityFrameworkCore.Storage.RelationalConnection.OpenInternalAsync(Boolean errorsExpected, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalConnection.OpenInternalAsync(Boolean errorsExpected, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalConnection.OpenAsync(CancellationToken cancellationToken, Boolean errorsExpected)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable`1.AsyncEnumerator.InitializeReaderAsync(AsyncEnumerator enumerator, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.SqlServer.Storage.Internal.SqlServerExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable`1.AsyncEnumerator.MoveNextAsync()
+   at Microsoft.EntityFrameworkCore.Query.ShapedQueryCompilingExpressionVisitor.SingleAsync[TSource](IAsyncEnumerable`1 asyncEnumerable, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.ShapedQueryCompilingExpressionVisitor.SingleAsync[TSource](IAsyncEnumerable`1 asyncEnumerable, CancellationToken cancellationToken)
+   at BusBuddy.Core.Services.StudentService.<>c__DisplayClass33_1.<<SeedWileySchoolDistrictDataAsync>b__1>d.MoveNext() in C:\Users\biges\Desktop\BusBuddy\BusBuddy.Core\Services\StudentService.cs:line 1226
+--- End of stack trace from previous location ---
+   at BusBuddy.Core.Utilities.ResilientDbExecution.ExecuteWithResilienceAsync[T](Func`1 operation, String operationName, Int32 maxRetries) in C:\Users\biges\Desktop\BusBuddy\BusBuddy.Core\Utilities\ResilientDbExecution.cs:line 44
+   at BusBuddy.Core.Services.StudentService.SeedWileySchoolDistrictDataAsync() in C:\Users\biges\Desktop\BusBuddy\BusBuddy.Core\Services\StudentService.cs:line 1224
+ClientConnectionId:8bb36e57-607f-4893-9c45-2b5948df757f
+Error Number:40615,State:1,Class:14
+2025-08-08 07:17:19.545 -06:00 [INF] 🚌 🚌 Wiley seeding result: Success=False, RecordsSeeded=0, Error=Cannot open server 'busbuddy-server-sm2' requested by the login. Client with IP address '216.147.124.207' is not allowed to access the server.  To enable access, use the Azure Management Portal or run sp_set_firewall_rule on the master database to create a firewall rule for this IP address or address range.  It may take up to five minutes for this change to take effect.
+2025-08-08 07:17:19.550 -06:00 [INF] 🚌 🏗️ Creating MainWindow for full UI application
+2025-08-08 07:17:19.550 -06:00 [INF] 🚌 🎯 Creating MainWindow with dependency injection
+2025-08-08 07:17:19.552 -06:00 [INF] 🚌 MainWindowViewModel initialized with sample data
+2025-08-08 07:17:19.555 -06:00 [INF] 🚌 ✅ MainWindowViewModel created successfully via DI
+2025-08-08 07:17:19.647 -06:00 [DBG] 🚌 MainWindow constructor starting
+2025-08-08 07:17:19.647 -06:00 [DBG] 🚌 Calling InitializeComponent for MainWindow XAML
+2025-08-08 07:17:22.369 -06:00 [INF] 🚌 Loaded 3 stops for route Route 1
+2025-08-08 07:17:22.370 -06:00 [INF] 🚌 Loaded mock data: 25 students, 5 routes, 10 buses, 8 drivers
+2025-08-08 07:17:22.370 -06:00 [INF] 🚌 Enhanced RouteAssignmentViewModel initialized with route building capabilities
+2025-08-08 07:17:22.370 -06:00 [INF] 🚌 RouteAssignmentView initialized successfully with MVP route building interface
+2025-08-08 07:17:22.419 -06:00 [DBG] 🚌 Applying Syncfusion theme
+2025-08-08 07:17:22.804 -06:00 [DBG] 🚌 ApplySyncfusionTheme method started
+2025-08-08 07:17:22.804 -06:00 [DBG] 🚌 Configuring Syncfusion SfSkinManager global settings
+2025-08-08 07:17:22.805 -06:00 [DBG] 🚌 Creating FluentDark theme instance
+2025-08-08 07:17:23.220 -06:00 [DBG] 🚌 Applying FluentDark theme to MainWindow
+2025-08-08 07:17:23.478 -06:00 [INF] 🚌 Applied FluentDark theme successfully
+2025-08-08 07:17:23.478 -06:00 [DBG] 🚌 ApplySyncfusionTheme completed with FluentDark
+2025-08-08 07:17:23.478 -06:00 [DBG] 🚌 Initializing MainWindow components
+2025-08-08 07:17:23.478 -06:00 [DBG] 🚌 InitializeMainWindow method started
+2025-08-08 07:17:23.478 -06:00 [DBG] 🚌 Creating MainWindowViewModel instance
+2025-08-08 07:17:23.479 -06:00 [INF] 🚌 MainWindow data context initialized
+2025-08-08 07:17:23.479 -06:00 [DBG] 🚌 InitializeMainWindow method completed
+2025-08-08 07:17:23.479 -06:00 [DBG] 🚌 Attaching Syncfusion event hooks
+2025-08-08 07:17:23.479 -06:00 [INF] 🚌 Syncfusion event hooks prepared (awaiting XAML control definitions)
+2025-08-08 07:17:23.479 -06:00 [INF] 🚌 MainWindow initialized successfully with Syncfusion DockingManager
+2025-08-08 07:17:23.479 -06:00 [DBG] 🚌 MainWindow constructor completed successfully
+2025-08-08 07:17:24.809 -06:00 [INF] 🚌 🚌 BusBuddy MVP application started successfully
+2025-08-08 07:17:27.303 -06:00 [INF] 🚌 🚌 BusBuddy MVP application shutting down
+2025-08-08 07:17:33.999 -06:00 [INF] 🚌 🚌 Serilog initialized using configuration from appsettings.json
+2025-08-08 07:17:34.017 -06:00 [INF] 🚌 🚌 BusBuddy MVP starting...
+2025-08-08 07:17:34.034 -06:00 [INF] 🚌 🚌 BusBuddy starting on thread 2 with apartment state: "STA"
+2025-08-08 07:17:34.038 -06:00 [INF] 🚌 🚌 Command line args: C:\Users\biges\Desktop\BusBuddy\BusBuddy.WPF\bin\Debug\net9.0-windows\BusBuddy.WPF.dll
+2025-08-08 07:17:34.038 -06:00 [INF] 🚌 🚌 EF Migration mode: false
+2025-08-08 07:17:34.038 -06:00 [INF] 🚌 🚌 Design-time mode: false
+2025-08-08 07:17:34.038 -06:00 [INF] 🚌 🚌 Initializing BusBuddy MVP application
+2025-08-08 07:17:34.041 -06:00 [INF] 🚌 🔧 Setting up full DI container for UI application...
+2025-08-08 07:17:34.063 -06:00 [INF] 🚌 ✅ Full DI container configured successfully for UI application
+2025-08-08 07:17:34.092 -06:00 [INF] 🚌 Starting Wiley School District data seeding operation
+2025-08-08 07:17:36.321 -06:00 [ERR] 🚌 Database operation Database EnsureCreated failed permanently after 1 attempts
+Microsoft.Data.SqlClient.SqlException (0x80131904): Cannot open server 'busbuddy-server-sm2' requested by the login. Client with IP address '216.147.124.207' is not allowed to access the server.  To enable access, use the Azure Management Portal or run sp_set_firewall_rule on the master database to create a firewall rule for this IP address or address range.  It may take up to five minutes for this change to take effect.
+   at Microsoft.Data.SqlClient.SqlInternalConnection.OnError(SqlException exception, Boolean breakConnection, Action`1 wrapCloseInAction)
+   at Microsoft.Data.SqlClient.TdsParser.ThrowExceptionAndWarning(TdsParserStateObject stateObj, SqlCommand command, Boolean callerHasConnectionLock, Boolean asyncClose)
+   at Microsoft.Data.SqlClient.TdsParser.TryRun(RunBehavior runBehavior, SqlCommand cmdHandler, SqlDataReader dataStream, BulkCopySimpleResultSet bulkCopyHandler, TdsParserStateObject stateObj, Boolean& dataReady)
+   at Microsoft.Data.SqlClient.TdsParser.Run(RunBehavior runBehavior, SqlCommand cmdHandler, SqlDataReader dataStream, BulkCopySimpleResultSet bulkCopyHandler, TdsParserStateObject stateObj)
+   at Microsoft.Data.SqlClient.SqlInternalConnectionTds.CompleteLogin(Boolean enlistOK)
+   at Microsoft.Data.SqlClient.SqlInternalConnectionTds.AttemptOneLogin(ServerInfo serverInfo, String newPassword, SecureString newSecurePassword, TimeoutTimer timeout, Boolean withFailover)
+   at Microsoft.Data.SqlClient.SqlInternalConnectionTds.LoginNoFailover(ServerInfo serverInfo, String newPassword, SecureString newSecurePassword, Boolean redirectedUserInstance, SqlConnectionString connectionOptions, SqlCredential credential, TimeoutTimer timeout)
+   at Microsoft.Data.SqlClient.SqlInternalConnectionTds.OpenLoginEnlist(TimeoutTimer timeout, SqlConnectionString connectionOptions, SqlCredential credential, String newPassword, SecureString newSecurePassword, Boolean redirectedUserInstance)
+   at Microsoft.Data.SqlClient.SqlInternalConnectionTds..ctor(DbConnectionPoolIdentity identity, SqlConnectionString connectionOptions, SqlCredential credential, Object providerInfo, String newPassword, SecureString newSecurePassword, Boolean redirectedUserInstance, SqlConnectionString userConnectionOptions, SessionData reconnectSessionData, Boolean applyTransientFaultHandling, String accessToken, DbConnectionPool pool, Func`3 accessTokenCallback)
+   at Microsoft.Data.SqlClient.SqlConnectionFactory.CreateConnection(DbConnectionOptions options, DbConnectionPoolKey poolKey, Object poolGroupProviderInfo, DbConnectionPool pool, DbConnection owningConnection, DbConnectionOptions userOptions)
+   at Microsoft.Data.ProviderBase.DbConnectionFactory.CreatePooledConnection(DbConnectionPool pool, DbConnection owningObject, DbConnectionOptions options, DbConnectionPoolKey poolKey, DbConnectionOptions userOptions)
+   at Microsoft.Data.ProviderBase.DbConnectionPool.CreateObject(DbConnection owningObject, DbConnectionOptions userOptions, DbConnectionInternal oldConnection)
+   at Microsoft.Data.ProviderBase.DbConnectionPool.UserCreateRequest(DbConnection owningObject, DbConnectionOptions userOptions, DbConnectionInternal oldConnection)
+   at Microsoft.Data.ProviderBase.DbConnectionPool.TryGetConnection(DbConnection owningObject, UInt32 waitForMultipleObjectsTimeout, Boolean allowCreate, Boolean onlyOneCheckConnection, DbConnectionOptions userOptions, DbConnectionInternal& connection)
+   at Microsoft.Data.ProviderBase.DbConnectionPool.WaitForPendingOpen()
+--- End of stack trace from previous location ---
+   at Microsoft.EntityFrameworkCore.Storage.RelationalConnection.OpenInternalAsync(Boolean errorsExpected, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalConnection.OpenInternalAsync(Boolean errorsExpected, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalConnection.OpenAsync(CancellationToken cancellationToken, Boolean errorsExpected)
+   at Microsoft.EntityFrameworkCore.SqlServer.Storage.Internal.SqlServerDatabaseCreator.<>c__DisplayClass20_0.<<ExistsAsync>b__0>d.MoveNext()
+--- End of stack trace from previous location ---
+   at Microsoft.EntityFrameworkCore.SqlServer.Storage.Internal.SqlServerDatabaseCreator.<>c__DisplayClass20_0.<<ExistsAsync>b__0>d.MoveNext()
+--- End of stack trace from previous location ---
+   at Microsoft.EntityFrameworkCore.SqlServer.Storage.Internal.SqlServerDatabaseCreator.<>c__DisplayClass20_0.<<ExistsAsync>b__0>d.MoveNext()
+--- End of stack trace from previous location ---
+   at Microsoft.EntityFrameworkCore.SqlServer.Storage.Internal.SqlServerExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalDatabaseCreator.EnsureCreatedAsync(CancellationToken cancellationToken)
+   at BusBuddy.WPF.App.<>c__DisplayClass10_0.<<ConfigureServices>b__1>d.MoveNext() in C:\Users\biges\Desktop\BusBuddy\BusBuddy.WPF\App.xaml.cs:line 282
+--- End of stack trace from previous location ---
+   at BusBuddy.Core.Utilities.ResilientDbExecution.ExecuteWithResilienceAsync[T](Func`1 operation, String operationName, Int32 maxRetries) in C:\Users\biges\Desktop\BusBuddy\BusBuddy.Core\Utilities\ResilientDbExecution.cs:line 44
+ClientConnectionId:09a2c023-0427-4a36-be5d-c0a2e30985c3
+Error Number:40615,State:1,Class:14
+2025-08-08 07:17:36.378 -06:00 [WRN] 🚌 ⚠️ Failed to seed database with JSON data: Cannot open server 'busbuddy-server-sm2' requested by the login. Client with IP address '216.147.124.207' is not allowed to access the server.  To enable access, use the Azure Management Portal or run sp_set_firewall_rule on the master database to create a firewall rule for this IP address or address range.  It may take up to five minutes for this change to take effect.
+Microsoft.Data.SqlClient.SqlException (0x80131904): Cannot open server 'busbuddy-server-sm2' requested by the login. Client with IP address '216.147.124.207' is not allowed to access the server.  To enable access, use the Azure Management Portal or run sp_set_firewall_rule on the master database to create a firewall rule for this IP address or address range.  It may take up to five minutes for this change to take effect.
+   at Microsoft.Data.SqlClient.SqlInternalConnection.OnError(SqlException exception, Boolean breakConnection, Action`1 wrapCloseInAction)
+   at Microsoft.Data.SqlClient.TdsParser.ThrowExceptionAndWarning(TdsParserStateObject stateObj, SqlCommand command, Boolean callerHasConnectionLock, Boolean asyncClose)
+   at Microsoft.Data.SqlClient.TdsParser.TryRun(RunBehavior runBehavior, SqlCommand cmdHandler, SqlDataReader dataStream, BulkCopySimpleResultSet bulkCopyHandler, TdsParserStateObject stateObj, Boolean& dataReady)
+   at Microsoft.Data.SqlClient.TdsParser.Run(RunBehavior runBehavior, SqlCommand cmdHandler, SqlDataReader dataStream, BulkCopySimpleResultSet bulkCopyHandler, TdsParserStateObject stateObj)
+   at Microsoft.Data.SqlClient.SqlInternalConnectionTds.CompleteLogin(Boolean enlistOK)
+   at Microsoft.Data.SqlClient.SqlInternalConnectionTds.AttemptOneLogin(ServerInfo serverInfo, String newPassword, SecureString newSecurePassword, TimeoutTimer timeout, Boolean withFailover)
+   at Microsoft.Data.SqlClient.SqlInternalConnectionTds.LoginNoFailover(ServerInfo serverInfo, String newPassword, SecureString newSecurePassword, Boolean redirectedUserInstance, SqlConnectionString connectionOptions, SqlCredential credential, TimeoutTimer timeout)
+   at Microsoft.Data.SqlClient.SqlInternalConnectionTds.OpenLoginEnlist(TimeoutTimer timeout, SqlConnectionString connectionOptions, SqlCredential credential, String newPassword, SecureString newSecurePassword, Boolean redirectedUserInstance)
+   at Microsoft.Data.SqlClient.SqlInternalConnectionTds..ctor(DbConnectionPoolIdentity identity, SqlConnectionString connectionOptions, SqlCredential credential, Object providerInfo, String newPassword, SecureString newSecurePassword, Boolean redirectedUserInstance, SqlConnectionString userConnectionOptions, SessionData reconnectSessionData, Boolean applyTransientFaultHandling, String accessToken, DbConnectionPool pool, Func`3 accessTokenCallback)
+   at Microsoft.Data.SqlClient.SqlConnectionFactory.CreateConnection(DbConnectionOptions options, DbConnectionPoolKey poolKey, Object poolGroupProviderInfo, DbConnectionPool pool, DbConnection owningConnection, DbConnectionOptions userOptions)
+   at Microsoft.Data.ProviderBase.DbConnectionFactory.CreatePooledConnection(DbConnectionPool pool, DbConnection owningObject, DbConnectionOptions options, DbConnectionPoolKey poolKey, DbConnectionOptions userOptions)
+   at Microsoft.Data.ProviderBase.DbConnectionPool.CreateObject(DbConnection owningObject, DbConnectionOptions userOptions, DbConnectionInternal oldConnection)
+   at Microsoft.Data.ProviderBase.DbConnectionPool.UserCreateRequest(DbConnection owningObject, DbConnectionOptions userOptions, DbConnectionInternal oldConnection)
+   at Microsoft.Data.ProviderBase.DbConnectionPool.TryGetConnection(DbConnection owningObject, UInt32 waitForMultipleObjectsTimeout, Boolean allowCreate, Boolean onlyOneCheckConnection, DbConnectionOptions userOptions, DbConnectionInternal& connection)
+   at Microsoft.Data.ProviderBase.DbConnectionPool.WaitForPendingOpen()
+--- End of stack trace from previous location ---
+   at Microsoft.EntityFrameworkCore.Storage.RelationalConnection.OpenInternalAsync(Boolean errorsExpected, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalConnection.OpenInternalAsync(Boolean errorsExpected, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalConnection.OpenAsync(CancellationToken cancellationToken, Boolean errorsExpected)
+   at Microsoft.EntityFrameworkCore.SqlServer.Storage.Internal.SqlServerDatabaseCreator.<>c__DisplayClass20_0.<<ExistsAsync>b__0>d.MoveNext()
+--- End of stack trace from previous location ---
+   at Microsoft.EntityFrameworkCore.SqlServer.Storage.Internal.SqlServerDatabaseCreator.<>c__DisplayClass20_0.<<ExistsAsync>b__0>d.MoveNext()
+--- End of stack trace from previous location ---
+   at Microsoft.EntityFrameworkCore.SqlServer.Storage.Internal.SqlServerDatabaseCreator.<>c__DisplayClass20_0.<<ExistsAsync>b__0>d.MoveNext()
+--- End of stack trace from previous location ---
+   at Microsoft.EntityFrameworkCore.SqlServer.Storage.Internal.SqlServerExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalDatabaseCreator.EnsureCreatedAsync(CancellationToken cancellationToken)
+   at BusBuddy.WPF.App.<>c__DisplayClass10_0.<<ConfigureServices>b__1>d.MoveNext() in C:\Users\biges\Desktop\BusBuddy\BusBuddy.WPF\App.xaml.cs:line 282
+--- End of stack trace from previous location ---
+   at BusBuddy.Core.Utilities.ResilientDbExecution.ExecuteWithResilienceAsync[T](Func`1 operation, String operationName, Int32 maxRetries) in C:\Users\biges\Desktop\BusBuddy\BusBuddy.Core\Utilities\ResilientDbExecution.cs:line 44
+   at BusBuddy.WPF.App.<>c.<<ConfigureServices>b__10_0>d.MoveNext() in C:\Users\biges\Desktop\BusBuddy\BusBuddy.WPF\App.xaml.cs:line 281
+ClientConnectionId:09a2c023-0427-4a36-be5d-c0a2e30985c3
+Error Number:40615,State:1,Class:14
+2025-08-08 07:17:36.634 -06:00 [ERR] 🚌 Database operation SeedWileySchoolDistrictData failed permanently after 1 attempts
+Microsoft.Data.SqlClient.SqlException (0x80131904): Cannot open server 'busbuddy-server-sm2' requested by the login. Client with IP address '216.147.124.207' is not allowed to access the server.  To enable access, use the Azure Management Portal or run sp_set_firewall_rule on the master database to create a firewall rule for this IP address or address range.  It may take up to five minutes for this change to take effect.
+   at Microsoft.Data.SqlClient.SqlInternalConnection.OnError(SqlException exception, Boolean breakConnection, Action`1 wrapCloseInAction)
+   at Microsoft.Data.SqlClient.TdsParser.ThrowExceptionAndWarning(TdsParserStateObject stateObj, SqlCommand command, Boolean callerHasConnectionLock, Boolean asyncClose)
+   at Microsoft.Data.SqlClient.TdsParser.TryRun(RunBehavior runBehavior, SqlCommand cmdHandler, SqlDataReader dataStream, BulkCopySimpleResultSet bulkCopyHandler, TdsParserStateObject stateObj, Boolean& dataReady)
+   at Microsoft.Data.SqlClient.TdsParser.Run(RunBehavior runBehavior, SqlCommand cmdHandler, SqlDataReader dataStream, BulkCopySimpleResultSet bulkCopyHandler, TdsParserStateObject stateObj)
+   at Microsoft.Data.SqlClient.SqlInternalConnectionTds.CompleteLogin(Boolean enlistOK)
+   at Microsoft.Data.SqlClient.SqlInternalConnectionTds.AttemptOneLogin(ServerInfo serverInfo, String newPassword, SecureString newSecurePassword, TimeoutTimer timeout, Boolean withFailover)
+   at Microsoft.Data.SqlClient.SqlInternalConnectionTds.LoginNoFailover(ServerInfo serverInfo, String newPassword, SecureString newSecurePassword, Boolean redirectedUserInstance, SqlConnectionString connectionOptions, SqlCredential credential, TimeoutTimer timeout)
+   at Microsoft.Data.SqlClient.SqlInternalConnectionTds.OpenLoginEnlist(TimeoutTimer timeout, SqlConnectionString connectionOptions, SqlCredential credential, String newPassword, SecureString newSecurePassword, Boolean redirectedUserInstance)
+   at Microsoft.Data.SqlClient.SqlInternalConnectionTds..ctor(DbConnectionPoolIdentity identity, SqlConnectionString connectionOptions, SqlCredential credential, Object providerInfo, String newPassword, SecureString newSecurePassword, Boolean redirectedUserInstance, SqlConnectionString userConnectionOptions, SessionData reconnectSessionData, Boolean applyTransientFaultHandling, String accessToken, DbConnectionPool pool, Func`3 accessTokenCallback)
+   at Microsoft.Data.SqlClient.SqlConnectionFactory.CreateConnection(DbConnectionOptions options, DbConnectionPoolKey poolKey, Object poolGroupProviderInfo, DbConnectionPool pool, DbConnection owningConnection, DbConnectionOptions userOptions)
+   at Microsoft.Data.ProviderBase.DbConnectionFactory.CreatePooledConnection(DbConnectionPool pool, DbConnection owningObject, DbConnectionOptions options, DbConnectionPoolKey poolKey, DbConnectionOptions userOptions)
+   at Microsoft.Data.ProviderBase.DbConnectionPool.CreateObject(DbConnection owningObject, DbConnectionOptions userOptions, DbConnectionInternal oldConnection)
+   at Microsoft.Data.ProviderBase.DbConnectionPool.UserCreateRequest(DbConnection owningObject, DbConnectionOptions userOptions, DbConnectionInternal oldConnection)
+   at Microsoft.Data.ProviderBase.DbConnectionPool.TryGetConnection(DbConnection owningObject, UInt32 waitForMultipleObjectsTimeout, Boolean allowCreate, Boolean onlyOneCheckConnection, DbConnectionOptions userOptions, DbConnectionInternal& connection)
+   at Microsoft.Data.ProviderBase.DbConnectionPool.WaitForPendingOpen()
+--- End of stack trace from previous location ---
+   at Microsoft.EntityFrameworkCore.Storage.RelationalConnection.OpenInternalAsync(Boolean errorsExpected, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalConnection.OpenInternalAsync(Boolean errorsExpected, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalConnection.OpenAsync(CancellationToken cancellationToken, Boolean errorsExpected)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable`1.AsyncEnumerator.InitializeReaderAsync(AsyncEnumerator enumerator, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.SqlServer.Storage.Internal.SqlServerExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable`1.AsyncEnumerator.MoveNextAsync()
+   at Microsoft.EntityFrameworkCore.Query.ShapedQueryCompilingExpressionVisitor.SingleAsync[TSource](IAsyncEnumerable`1 asyncEnumerable, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.ShapedQueryCompilingExpressionVisitor.SingleAsync[TSource](IAsyncEnumerable`1 asyncEnumerable, CancellationToken cancellationToken)
+   at BusBuddy.Core.Services.StudentService.<>c__DisplayClass33_1.<<SeedWileySchoolDistrictDataAsync>b__1>d.MoveNext() in C:\Users\biges\Desktop\BusBuddy\BusBuddy.Core\Services\StudentService.cs:line 1226
+--- End of stack trace from previous location ---
+   at BusBuddy.Core.Utilities.ResilientDbExecution.ExecuteWithResilienceAsync[T](Func`1 operation, String operationName, Int32 maxRetries) in C:\Users\biges\Desktop\BusBuddy\BusBuddy.Core\Utilities\ResilientDbExecution.cs:line 44
+ClientConnectionId:aae67051-1954-4dd4-9f05-a90df364d743
+Error Number:40615,State:1,Class:14
+2025-08-08 07:17:36.642 -06:00 [ERR] 🚌 Error during Wiley School District data seeding
+Microsoft.Data.SqlClient.SqlException (0x80131904): Cannot open server 'busbuddy-server-sm2' requested by the login. Client with IP address '216.147.124.207' is not allowed to access the server.  To enable access, use the Azure Management Portal or run sp_set_firewall_rule on the master database to create a firewall rule for this IP address or address range.  It may take up to five minutes for this change to take effect.
+   at Microsoft.Data.SqlClient.SqlInternalConnection.OnError(SqlException exception, Boolean breakConnection, Action`1 wrapCloseInAction)
+   at Microsoft.Data.SqlClient.TdsParser.ThrowExceptionAndWarning(TdsParserStateObject stateObj, SqlCommand command, Boolean callerHasConnectionLock, Boolean asyncClose)
+   at Microsoft.Data.SqlClient.TdsParser.TryRun(RunBehavior runBehavior, SqlCommand cmdHandler, SqlDataReader dataStream, BulkCopySimpleResultSet bulkCopyHandler, TdsParserStateObject stateObj, Boolean& dataReady)
+   at Microsoft.Data.SqlClient.TdsParser.Run(RunBehavior runBehavior, SqlCommand cmdHandler, SqlDataReader dataStream, BulkCopySimpleResultSet bulkCopyHandler, TdsParserStateObject stateObj)
+   at Microsoft.Data.SqlClient.SqlInternalConnectionTds.CompleteLogin(Boolean enlistOK)
+   at Microsoft.Data.SqlClient.SqlInternalConnectionTds.AttemptOneLogin(ServerInfo serverInfo, String newPassword, SecureString newSecurePassword, TimeoutTimer timeout, Boolean withFailover)
+   at Microsoft.Data.SqlClient.SqlInternalConnectionTds.LoginNoFailover(ServerInfo serverInfo, String newPassword, SecureString newSecurePassword, Boolean redirectedUserInstance, SqlConnectionString connectionOptions, SqlCredential credential, TimeoutTimer timeout)
+   at Microsoft.Data.SqlClient.SqlInternalConnectionTds.OpenLoginEnlist(TimeoutTimer timeout, SqlConnectionString connectionOptions, SqlCredential credential, String newPassword, SecureString newSecurePassword, Boolean redirectedUserInstance)
+   at Microsoft.Data.SqlClient.SqlInternalConnectionTds..ctor(DbConnectionPoolIdentity identity, SqlConnectionString connectionOptions, SqlCredential credential, Object providerInfo, String newPassword, SecureString newSecurePassword, Boolean redirectedUserInstance, SqlConnectionString userConnectionOptions, SessionData reconnectSessionData, Boolean applyTransientFaultHandling, String accessToken, DbConnectionPool pool, Func`3 accessTokenCallback)
+   at Microsoft.Data.SqlClient.SqlConnectionFactory.CreateConnection(DbConnectionOptions options, DbConnectionPoolKey poolKey, Object poolGroupProviderInfo, DbConnectionPool pool, DbConnection owningConnection, DbConnectionOptions userOptions)
+   at Microsoft.Data.ProviderBase.DbConnectionFactory.CreatePooledConnection(DbConnectionPool pool, DbConnection owningObject, DbConnectionOptions options, DbConnectionPoolKey poolKey, DbConnectionOptions userOptions)
+   at Microsoft.Data.ProviderBase.DbConnectionPool.CreateObject(DbConnection owningObject, DbConnectionOptions userOptions, DbConnectionInternal oldConnection)
+   at Microsoft.Data.ProviderBase.DbConnectionPool.UserCreateRequest(DbConnection owningObject, DbConnectionOptions userOptions, DbConnectionInternal oldConnection)
+   at Microsoft.Data.ProviderBase.DbConnectionPool.TryGetConnection(DbConnection owningObject, UInt32 waitForMultipleObjectsTimeout, Boolean allowCreate, Boolean onlyOneCheckConnection, DbConnectionOptions userOptions, DbConnectionInternal& connection)
+   at Microsoft.Data.ProviderBase.DbConnectionPool.WaitForPendingOpen()
+--- End of stack trace from previous location ---
+   at Microsoft.EntityFrameworkCore.Storage.RelationalConnection.OpenInternalAsync(Boolean errorsExpected, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalConnection.OpenInternalAsync(Boolean errorsExpected, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalConnection.OpenAsync(CancellationToken cancellationToken, Boolean errorsExpected)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable`1.AsyncEnumerator.InitializeReaderAsync(AsyncEnumerator enumerator, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.SqlServer.Storage.Internal.SqlServerExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable`1.AsyncEnumerator.MoveNextAsync()
+   at Microsoft.EntityFrameworkCore.Query.ShapedQueryCompilingExpressionVisitor.SingleAsync[TSource](IAsyncEnumerable`1 asyncEnumerable, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.ShapedQueryCompilingExpressionVisitor.SingleAsync[TSource](IAsyncEnumerable`1 asyncEnumerable, CancellationToken cancellationToken)
+   at BusBuddy.Core.Services.StudentService.<>c__DisplayClass33_1.<<SeedWileySchoolDistrictDataAsync>b__1>d.MoveNext() in C:\Users\biges\Desktop\BusBuddy\BusBuddy.Core\Services\StudentService.cs:line 1226
+--- End of stack trace from previous location ---
+   at BusBuddy.Core.Utilities.ResilientDbExecution.ExecuteWithResilienceAsync[T](Func`1 operation, String operationName, Int32 maxRetries) in C:\Users\biges\Desktop\BusBuddy\BusBuddy.Core\Utilities\ResilientDbExecution.cs:line 44
+   at BusBuddy.Core.Services.StudentService.SeedWileySchoolDistrictDataAsync() in C:\Users\biges\Desktop\BusBuddy\BusBuddy.Core\Services\StudentService.cs:line 1224
+ClientConnectionId:aae67051-1954-4dd4-9f05-a90df364d743
+Error Number:40615,State:1,Class:14
+2025-08-08 07:17:36.651 -06:00 [INF] 🚌 🚌 Wiley seeding result: Success=False, RecordsSeeded=0, Error=Cannot open server 'busbuddy-server-sm2' requested by the login. Client with IP address '216.147.124.207' is not allowed to access the server.  To enable access, use the Azure Management Portal or run sp_set_firewall_rule on the master database to create a firewall rule for this IP address or address range.  It may take up to five minutes for this change to take effect.
+2025-08-08 07:17:36.653 -06:00 [INF] 🚌 🏗️ Creating MainWindow for full UI application
+2025-08-08 07:17:36.653 -06:00 [INF] 🚌 🎯 Creating MainWindow with dependency injection
+2025-08-08 07:17:36.655 -06:00 [INF] 🚌 MainWindowViewModel initialized with sample data
+2025-08-08 07:17:36.658 -06:00 [INF] 🚌 ✅ MainWindowViewModel created successfully via DI
+2025-08-08 07:17:36.703 -06:00 [DBG] 🚌 MainWindow constructor starting
+2025-08-08 07:17:36.703 -06:00 [DBG] 🚌 Calling InitializeComponent for MainWindow XAML
+2025-08-08 07:17:37.588 -06:00 [INF] 🚌 Loaded 3 stops for route Route 1
+2025-08-08 07:17:37.588 -06:00 [INF] 🚌 Loaded mock data: 25 students, 5 routes, 10 buses, 8 drivers
+2025-08-08 07:17:37.589 -06:00 [INF] 🚌 Enhanced RouteAssignmentViewModel initialized with route building capabilities
+2025-08-08 07:17:37.589 -06:00 [INF] 🚌 RouteAssignmentView initialized successfully with MVP route building interface
+2025-08-08 07:17:37.650 -06:00 [DBG] 🚌 Applying Syncfusion theme
+2025-08-08 07:17:37.651 -06:00 [DBG] 🚌 ApplySyncfusionTheme method started
+2025-08-08 07:17:37.651 -06:00 [DBG] 🚌 Configuring Syncfusion SfSkinManager global settings
+2025-08-08 07:17:37.652 -06:00 [DBG] 🚌 Creating FluentDark theme instance
+2025-08-08 07:17:37.653 -06:00 [DBG] 🚌 Applying FluentDark theme to MainWindow
+2025-08-08 07:17:37.972 -06:00 [INF] 🚌 Applied FluentDark theme successfully
+2025-08-08 07:17:37.972 -06:00 [DBG] 🚌 ApplySyncfusionTheme completed with FluentDark
+2025-08-08 07:17:37.972 -06:00 [DBG] 🚌 Initializing MainWindow components
+2025-08-08 07:17:37.973 -06:00 [DBG] 🚌 InitializeMainWindow method started
+2025-08-08 07:17:37.973 -06:00 [DBG] 🚌 Creating MainWindowViewModel instance
+2025-08-08 07:17:37.973 -06:00 [INF] 🚌 MainWindow data context initialized
+2025-08-08 07:17:37.973 -06:00 [DBG] 🚌 InitializeMainWindow method completed
+2025-08-08 07:17:37.973 -06:00 [DBG] 🚌 Attaching Syncfusion event hooks
+2025-08-08 07:17:37.974 -06:00 [INF] 🚌 Syncfusion event hooks prepared (awaiting XAML control definitions)
+2025-08-08 07:17:37.974 -06:00 [INF] 🚌 MainWindow initialized successfully with Syncfusion DockingManager
+2025-08-08 07:17:37.974 -06:00 [DBG] 🚌 MainWindow constructor completed successfully
+2025-08-08 07:17:39.329 -06:00 [INF] 🚌 🚌 BusBuddy MVP application started successfully
+2025-08-08 07:37:09.183 -06:00 [INF] 🚌 🚌 Serilog initialized using configuration from appsettings.json
+2025-08-08 07:37:09.209 -06:00 [INF] 🚌 🚌 BusBuddy MVP starting...
+2025-08-08 07:37:09.234 -06:00 [INF] 🚌 🚌 BusBuddy starting on thread 2 with apartment state: "STA"
+2025-08-08 07:37:09.242 -06:00 [INF] 🚌 🚌 Command line args: C:\Users\biges\Desktop\BusBuddy\BusBuddy.WPF\bin\Debug\net9.0-windows\BusBuddy.WPF.dll
+2025-08-08 07:37:09.243 -06:00 [INF] 🚌 🚌 EF Migration mode: false
+2025-08-08 07:37:09.243 -06:00 [INF] 🚌 🚌 Design-time mode: false
+2025-08-08 07:37:09.243 -06:00 [INF] 🚌 🚌 Initializing BusBuddy MVP application
+2025-08-08 07:37:09.249 -06:00 [INF] 🚌 🔧 Setting up full DI container for UI application...
+2025-08-08 07:37:09.294 -06:00 [INF] 🚌 ✅ Full DI container configured successfully for UI application
+2025-08-08 07:37:09.332 -06:00 [INF] 🚌 Starting Wiley School District data seeding operation
+2025-08-08 07:37:12.952 -06:00 [ERR] 🚌 Database operation Database EnsureCreated failed permanently after 1 attempts
+Microsoft.Data.SqlClient.SqlException (0x80131904): Cannot open server 'busbuddy-server-sm2' requested by the login. Client with IP address '216.147.124.207' is not allowed to access the server.  To enable access, use the Azure Management Portal or run sp_set_firewall_rule on the master database to create a firewall rule for this IP address or address range.  It may take up to five minutes for this change to take effect.
+   at Microsoft.Data.SqlClient.SqlInternalConnection.OnError(SqlException exception, Boolean breakConnection, Action`1 wrapCloseInAction)
+   at Microsoft.Data.SqlClient.TdsParser.ThrowExceptionAndWarning(TdsParserStateObject stateObj, SqlCommand command, Boolean callerHasConnectionLock, Boolean asyncClose)
+   at Microsoft.Data.SqlClient.TdsParser.TryRun(RunBehavior runBehavior, SqlCommand cmdHandler, SqlDataReader dataStream, BulkCopySimpleResultSet bulkCopyHandler, TdsParserStateObject stateObj, Boolean& dataReady)
+   at Microsoft.Data.SqlClient.TdsParser.Run(RunBehavior runBehavior, SqlCommand cmdHandler, SqlDataReader dataStream, BulkCopySimpleResultSet bulkCopyHandler, TdsParserStateObject stateObj)
+   at Microsoft.Data.SqlClient.SqlInternalConnectionTds.CompleteLogin(Boolean enlistOK)
+   at Microsoft.Data.SqlClient.SqlInternalConnectionTds.AttemptOneLogin(ServerInfo serverInfo, String newPassword, SecureString newSecurePassword, TimeoutTimer timeout, Boolean withFailover)
+   at Microsoft.Data.SqlClient.SqlInternalConnectionTds.LoginNoFailover(ServerInfo serverInfo, String newPassword, SecureString newSecurePassword, Boolean redirectedUserInstance, SqlConnectionString connectionOptions, SqlCredential credential, TimeoutTimer timeout)
+   at Microsoft.Data.SqlClient.SqlInternalConnectionTds.OpenLoginEnlist(TimeoutTimer timeout, SqlConnectionString connectionOptions, SqlCredential credential, String newPassword, SecureString newSecurePassword, Boolean redirectedUserInstance)
+   at Microsoft.Data.SqlClient.SqlInternalConnectionTds..ctor(DbConnectionPoolIdentity identity, SqlConnectionString connectionOptions, SqlCredential credential, Object providerInfo, String newPassword, SecureString newSecurePassword, Boolean redirectedUserInstance, SqlConnectionString userConnectionOptions, SessionData reconnectSessionData, Boolean applyTransientFaultHandling, String accessToken, DbConnectionPool pool, Func`3 accessTokenCallback)
+   at Microsoft.Data.SqlClient.SqlConnectionFactory.CreateConnection(DbConnectionOptions options, DbConnectionPoolKey poolKey, Object poolGroupProviderInfo, DbConnectionPool pool, DbConnection owningConnection, DbConnectionOptions userOptions)
+   at Microsoft.Data.ProviderBase.DbConnectionFactory.CreatePooledConnection(DbConnectionPool pool, DbConnection owningObject, DbConnectionOptions options, DbConnectionPoolKey poolKey, DbConnectionOptions userOptions)
+   at Microsoft.Data.ProviderBase.DbConnectionPool.CreateObject(DbConnection owningObject, DbConnectionOptions userOptions, DbConnectionInternal oldConnection)
+   at Microsoft.Data.ProviderBase.DbConnectionPool.UserCreateRequest(DbConnection owningObject, DbConnectionOptions userOptions, DbConnectionInternal oldConnection)
+   at Microsoft.Data.ProviderBase.DbConnectionPool.TryGetConnection(DbConnection owningObject, UInt32 waitForMultipleObjectsTimeout, Boolean allowCreate, Boolean onlyOneCheckConnection, DbConnectionOptions userOptions, DbConnectionInternal& connection)
+   at Microsoft.Data.ProviderBase.DbConnectionPool.WaitForPendingOpen()
+--- End of stack trace from previous location ---
+   at Microsoft.EntityFrameworkCore.Storage.RelationalConnection.OpenInternalAsync(Boolean errorsExpected, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalConnection.OpenInternalAsync(Boolean errorsExpected, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalConnection.OpenAsync(CancellationToken cancellationToken, Boolean errorsExpected)
+   at Microsoft.EntityFrameworkCore.SqlServer.Storage.Internal.SqlServerDatabaseCreator.<>c__DisplayClass20_0.<<ExistsAsync>b__0>d.MoveNext()
+--- End of stack trace from previous location ---
+   at Microsoft.EntityFrameworkCore.SqlServer.Storage.Internal.SqlServerDatabaseCreator.<>c__DisplayClass20_0.<<ExistsAsync>b__0>d.MoveNext()
+--- End of stack trace from previous location ---
+   at Microsoft.EntityFrameworkCore.SqlServer.Storage.Internal.SqlServerDatabaseCreator.<>c__DisplayClass20_0.<<ExistsAsync>b__0>d.MoveNext()
+--- End of stack trace from previous location ---
+   at Microsoft.EntityFrameworkCore.SqlServer.Storage.Internal.SqlServerExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalDatabaseCreator.EnsureCreatedAsync(CancellationToken cancellationToken)
+   at BusBuddy.WPF.App.<>c__DisplayClass10_0.<<ConfigureServices>b__1>d.MoveNext() in C:\Users\biges\Desktop\BusBuddy\BusBuddy.WPF\App.xaml.cs:line 282
+--- End of stack trace from previous location ---
+   at BusBuddy.Core.Utilities.ResilientDbExecution.ExecuteWithResilienceAsync[T](Func`1 operation, String operationName, Int32 maxRetries) in C:\Users\biges\Desktop\BusBuddy\BusBuddy.Core\Utilities\ResilientDbExecution.cs:line 44
+ClientConnectionId:8e49bfdd-3ff2-4371-8cab-22ad4322a41f
+Error Number:40615,State:1,Class:14
+2025-08-08 07:37:13.010 -06:00 [WRN] 🚌 ⚠️ Failed to seed database with JSON data: Cannot open server 'busbuddy-server-sm2' requested by the login. Client with IP address '216.147.124.207' is not allowed to access the server.  To enable access, use the Azure Management Portal or run sp_set_firewall_rule on the master database to create a firewall rule for this IP address or address range.  It may take up to five minutes for this change to take effect.
+Microsoft.Data.SqlClient.SqlException (0x80131904): Cannot open server 'busbuddy-server-sm2' requested by the login. Client with IP address '216.147.124.207' is not allowed to access the server.  To enable access, use the Azure Management Portal or run sp_set_firewall_rule on the master database to create a firewall rule for this IP address or address range.  It may take up to five minutes for this change to take effect.
+   at Microsoft.Data.SqlClient.SqlInternalConnection.OnError(SqlException exception, Boolean breakConnection, Action`1 wrapCloseInAction)
+   at Microsoft.Data.SqlClient.TdsParser.ThrowExceptionAndWarning(TdsParserStateObject stateObj, SqlCommand command, Boolean callerHasConnectionLock, Boolean asyncClose)
+   at Microsoft.Data.SqlClient.TdsParser.TryRun(RunBehavior runBehavior, SqlCommand cmdHandler, SqlDataReader dataStream, BulkCopySimpleResultSet bulkCopyHandler, TdsParserStateObject stateObj, Boolean& dataReady)
+   at Microsoft.Data.SqlClient.TdsParser.Run(RunBehavior runBehavior, SqlCommand cmdHandler, SqlDataReader dataStream, BulkCopySimpleResultSet bulkCopyHandler, TdsParserStateObject stateObj)
+   at Microsoft.Data.SqlClient.SqlInternalConnectionTds.CompleteLogin(Boolean enlistOK)
+   at Microsoft.Data.SqlClient.SqlInternalConnectionTds.AttemptOneLogin(ServerInfo serverInfo, String newPassword, SecureString newSecurePassword, TimeoutTimer timeout, Boolean withFailover)
+   at Microsoft.Data.SqlClient.SqlInternalConnectionTds.LoginNoFailover(ServerInfo serverInfo, String newPassword, SecureString newSecurePassword, Boolean redirectedUserInstance, SqlConnectionString connectionOptions, SqlCredential credential, TimeoutTimer timeout)
+   at Microsoft.Data.SqlClient.SqlInternalConnectionTds.OpenLoginEnlist(TimeoutTimer timeout, SqlConnectionString connectionOptions, SqlCredential credential, String newPassword, SecureString newSecurePassword, Boolean redirectedUserInstance)
+   at Microsoft.Data.SqlClient.SqlInternalConnectionTds..ctor(DbConnectionPoolIdentity identity, SqlConnectionString connectionOptions, SqlCredential credential, Object providerInfo, String newPassword, SecureString newSecurePassword, Boolean redirectedUserInstance, SqlConnectionString userConnectionOptions, SessionData reconnectSessionData, Boolean applyTransientFaultHandling, String accessToken, DbConnectionPool pool, Func`3 accessTokenCallback)
+   at Microsoft.Data.SqlClient.SqlConnectionFactory.CreateConnection(DbConnectionOptions options, DbConnectionPoolKey poolKey, Object poolGroupProviderInfo, DbConnectionPool pool, DbConnection owningConnection, DbConnectionOptions userOptions)
+   at Microsoft.Data.ProviderBase.DbConnectionFactory.CreatePooledConnection(DbConnectionPool pool, DbConnection owningObject, DbConnectionOptions options, DbConnectionPoolKey poolKey, DbConnectionOptions userOptions)
+   at Microsoft.Data.ProviderBase.DbConnectionPool.CreateObject(DbConnection owningObject, DbConnectionOptions userOptions, DbConnectionInternal oldConnection)
+   at Microsoft.Data.ProviderBase.DbConnectionPool.UserCreateRequest(DbConnection owningObject, DbConnectionOptions userOptions, DbConnectionInternal oldConnection)
+   at Microsoft.Data.ProviderBase.DbConnectionPool.TryGetConnection(DbConnection owningObject, UInt32 waitForMultipleObjectsTimeout, Boolean allowCreate, Boolean onlyOneCheckConnection, DbConnectionOptions userOptions, DbConnectionInternal& connection)
+   at Microsoft.Data.ProviderBase.DbConnectionPool.WaitForPendingOpen()
+--- End of stack trace from previous location ---
+   at Microsoft.EntityFrameworkCore.Storage.RelationalConnection.OpenInternalAsync(Boolean errorsExpected, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalConnection.OpenInternalAsync(Boolean errorsExpected, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalConnection.OpenAsync(CancellationToken cancellationToken, Boolean errorsExpected)
+   at Microsoft.EntityFrameworkCore.SqlServer.Storage.Internal.SqlServerDatabaseCreator.<>c__DisplayClass20_0.<<ExistsAsync>b__0>d.MoveNext()
+--- End of stack trace from previous location ---
+   at Microsoft.EntityFrameworkCore.SqlServer.Storage.Internal.SqlServerDatabaseCreator.<>c__DisplayClass20_0.<<ExistsAsync>b__0>d.MoveNext()
+--- End of stack trace from previous location ---
+   at Microsoft.EntityFrameworkCore.SqlServer.Storage.Internal.SqlServerDatabaseCreator.<>c__DisplayClass20_0.<<ExistsAsync>b__0>d.MoveNext()
+--- End of stack trace from previous location ---
+   at Microsoft.EntityFrameworkCore.SqlServer.Storage.Internal.SqlServerExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalDatabaseCreator.EnsureCreatedAsync(CancellationToken cancellationToken)
+   at BusBuddy.WPF.App.<>c__DisplayClass10_0.<<ConfigureServices>b__1>d.MoveNext() in C:\Users\biges\Desktop\BusBuddy\BusBuddy.WPF\App.xaml.cs:line 282
+--- End of stack trace from previous location ---
+   at BusBuddy.Core.Utilities.ResilientDbExecution.ExecuteWithResilienceAsync[T](Func`1 operation, String operationName, Int32 maxRetries) in C:\Users\biges\Desktop\BusBuddy\BusBuddy.Core\Utilities\ResilientDbExecution.cs:line 44
+   at BusBuddy.WPF.App.<>c.<<ConfigureServices>b__10_0>d.MoveNext() in C:\Users\biges\Desktop\BusBuddy\BusBuddy.WPF\App.xaml.cs:line 281
+ClientConnectionId:8e49bfdd-3ff2-4371-8cab-22ad4322a41f
+Error Number:40615,State:1,Class:14
+2025-08-08 07:37:13.264 -06:00 [ERR] 🚌 Database operation SeedWileySchoolDistrictData failed permanently after 1 attempts
+Microsoft.Data.SqlClient.SqlException (0x80131904): Cannot open server 'busbuddy-server-sm2' requested by the login. Client with IP address '216.147.124.207' is not allowed to access the server.  To enable access, use the Azure Management Portal or run sp_set_firewall_rule on the master database to create a firewall rule for this IP address or address range.  It may take up to five minutes for this change to take effect.
+   at Microsoft.Data.SqlClient.SqlInternalConnection.OnError(SqlException exception, Boolean breakConnection, Action`1 wrapCloseInAction)
+   at Microsoft.Data.SqlClient.TdsParser.ThrowExceptionAndWarning(TdsParserStateObject stateObj, SqlCommand command, Boolean callerHasConnectionLock, Boolean asyncClose)
+   at Microsoft.Data.SqlClient.TdsParser.TryRun(RunBehavior runBehavior, SqlCommand cmdHandler, SqlDataReader dataStream, BulkCopySimpleResultSet bulkCopyHandler, TdsParserStateObject stateObj, Boolean& dataReady)
+   at Microsoft.Data.SqlClient.TdsParser.Run(RunBehavior runBehavior, SqlCommand cmdHandler, SqlDataReader dataStream, BulkCopySimpleResultSet bulkCopyHandler, TdsParserStateObject stateObj)
+   at Microsoft.Data.SqlClient.SqlInternalConnectionTds.CompleteLogin(Boolean enlistOK)
+   at Microsoft.Data.SqlClient.SqlInternalConnectionTds.AttemptOneLogin(ServerInfo serverInfo, String newPassword, SecureString newSecurePassword, TimeoutTimer timeout, Boolean withFailover)
+   at Microsoft.Data.SqlClient.SqlInternalConnectionTds.LoginNoFailover(ServerInfo serverInfo, String newPassword, SecureString newSecurePassword, Boolean redirectedUserInstance, SqlConnectionString connectionOptions, SqlCredential credential, TimeoutTimer timeout)
+   at Microsoft.Data.SqlClient.SqlInternalConnectionTds.OpenLoginEnlist(TimeoutTimer timeout, SqlConnectionString connectionOptions, SqlCredential credential, String newPassword, SecureString newSecurePassword, Boolean redirectedUserInstance)
+   at Microsoft.Data.SqlClient.SqlInternalConnectionTds..ctor(DbConnectionPoolIdentity identity, SqlConnectionString connectionOptions, SqlCredential credential, Object providerInfo, String newPassword, SecureString newSecurePassword, Boolean redirectedUserInstance, SqlConnectionString userConnectionOptions, SessionData reconnectSessionData, Boolean applyTransientFaultHandling, String accessToken, DbConnectionPool pool, Func`3 accessTokenCallback)
+   at Microsoft.Data.SqlClient.SqlConnectionFactory.CreateConnection(DbConnectionOptions options, DbConnectionPoolKey poolKey, Object poolGroupProviderInfo, DbConnectionPool pool, DbConnection owningConnection, DbConnectionOptions userOptions)
+   at Microsoft.Data.ProviderBase.DbConnectionFactory.CreatePooledConnection(DbConnectionPool pool, DbConnection owningObject, DbConnectionOptions options, DbConnectionPoolKey poolKey, DbConnectionOptions userOptions)
+   at Microsoft.Data.ProviderBase.DbConnectionPool.CreateObject(DbConnection owningObject, DbConnectionOptions userOptions, DbConnectionInternal oldConnection)
+   at Microsoft.Data.ProviderBase.DbConnectionPool.UserCreateRequest(DbConnection owningObject, DbConnectionOptions userOptions, DbConnectionInternal oldConnection)
+   at Microsoft.Data.ProviderBase.DbConnectionPool.TryGetConnection(DbConnection owningObject, UInt32 waitForMultipleObjectsTimeout, Boolean allowCreate, Boolean onlyOneCheckConnection, DbConnectionOptions userOptions, DbConnectionInternal& connection)
+   at Microsoft.Data.ProviderBase.DbConnectionPool.WaitForPendingOpen()
+--- End of stack trace from previous location ---
+   at Microsoft.EntityFrameworkCore.Storage.RelationalConnection.OpenInternalAsync(Boolean errorsExpected, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalConnection.OpenInternalAsync(Boolean errorsExpected, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalConnection.OpenAsync(CancellationToken cancellationToken, Boolean errorsExpected)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable`1.AsyncEnumerator.InitializeReaderAsync(AsyncEnumerator enumerator, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.SqlServer.Storage.Internal.SqlServerExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable`1.AsyncEnumerator.MoveNextAsync()
+   at Microsoft.EntityFrameworkCore.Query.ShapedQueryCompilingExpressionVisitor.SingleAsync[TSource](IAsyncEnumerable`1 asyncEnumerable, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.ShapedQueryCompilingExpressionVisitor.SingleAsync[TSource](IAsyncEnumerable`1 asyncEnumerable, CancellationToken cancellationToken)
+   at BusBuddy.Core.Services.StudentService.<>c__DisplayClass33_1.<<SeedWileySchoolDistrictDataAsync>b__1>d.MoveNext() in C:\Users\biges\Desktop\BusBuddy\BusBuddy.Core\Services\StudentService.cs:line 1226
+--- End of stack trace from previous location ---
+   at BusBuddy.Core.Utilities.ResilientDbExecution.ExecuteWithResilienceAsync[T](Func`1 operation, String operationName, Int32 maxRetries) in C:\Users\biges\Desktop\BusBuddy\BusBuddy.Core\Utilities\ResilientDbExecution.cs:line 44
+ClientConnectionId:e86f378d-a620-406b-ad64-8fd081a54fc7
+Error Number:40615,State:1,Class:14
+2025-08-08 07:37:13.272 -06:00 [ERR] 🚌 Error during Wiley School District data seeding
+Microsoft.Data.SqlClient.SqlException (0x80131904): Cannot open server 'busbuddy-server-sm2' requested by the login. Client with IP address '216.147.124.207' is not allowed to access the server.  To enable access, use the Azure Management Portal or run sp_set_firewall_rule on the master database to create a firewall rule for this IP address or address range.  It may take up to five minutes for this change to take effect.
+   at Microsoft.Data.SqlClient.SqlInternalConnection.OnError(SqlException exception, Boolean breakConnection, Action`1 wrapCloseInAction)
+   at Microsoft.Data.SqlClient.TdsParser.ThrowExceptionAndWarning(TdsParserStateObject stateObj, SqlCommand command, Boolean callerHasConnectionLock, Boolean asyncClose)
+   at Microsoft.Data.SqlClient.TdsParser.TryRun(RunBehavior runBehavior, SqlCommand cmdHandler, SqlDataReader dataStream, BulkCopySimpleResultSet bulkCopyHandler, TdsParserStateObject stateObj, Boolean& dataReady)
+   at Microsoft.Data.SqlClient.TdsParser.Run(RunBehavior runBehavior, SqlCommand cmdHandler, SqlDataReader dataStream, BulkCopySimpleResultSet bulkCopyHandler, TdsParserStateObject stateObj)
+   at Microsoft.Data.SqlClient.SqlInternalConnectionTds.CompleteLogin(Boolean enlistOK)
+   at Microsoft.Data.SqlClient.SqlInternalConnectionTds.AttemptOneLogin(ServerInfo serverInfo, String newPassword, SecureString newSecurePassword, TimeoutTimer timeout, Boolean withFailover)
+   at Microsoft.Data.SqlClient.SqlInternalConnectionTds.LoginNoFailover(ServerInfo serverInfo, String newPassword, SecureString newSecurePassword, Boolean redirectedUserInstance, SqlConnectionString connectionOptions, SqlCredential credential, TimeoutTimer timeout)
+   at Microsoft.Data.SqlClient.SqlInternalConnectionTds.OpenLoginEnlist(TimeoutTimer timeout, SqlConnectionString connectionOptions, SqlCredential credential, String newPassword, SecureString newSecurePassword, Boolean redirectedUserInstance)
+   at Microsoft.Data.SqlClient.SqlInternalConnectionTds..ctor(DbConnectionPoolIdentity identity, SqlConnectionString connectionOptions, SqlCredential credential, Object providerInfo, String newPassword, SecureString newSecurePassword, Boolean redirectedUserInstance, SqlConnectionString userConnectionOptions, SessionData reconnectSessionData, Boolean applyTransientFaultHandling, String accessToken, DbConnectionPool pool, Func`3 accessTokenCallback)
+   at Microsoft.Data.SqlClient.SqlConnectionFactory.CreateConnection(DbConnectionOptions options, DbConnectionPoolKey poolKey, Object poolGroupProviderInfo, DbConnectionPool pool, DbConnection owningConnection, DbConnectionOptions userOptions)
+   at Microsoft.Data.ProviderBase.DbConnectionFactory.CreatePooledConnection(DbConnectionPool pool, DbConnection owningObject, DbConnectionOptions options, DbConnectionPoolKey poolKey, DbConnectionOptions userOptions)
+   at Microsoft.Data.ProviderBase.DbConnectionPool.CreateObject(DbConnection owningObject, DbConnectionOptions userOptions, DbConnectionInternal oldConnection)
+   at Microsoft.Data.ProviderBase.DbConnectionPool.UserCreateRequest(DbConnection owningObject, DbConnectionOptions userOptions, DbConnectionInternal oldConnection)
+   at Microsoft.Data.ProviderBase.DbConnectionPool.TryGetConnection(DbConnection owningObject, UInt32 waitForMultipleObjectsTimeout, Boolean allowCreate, Boolean onlyOneCheckConnection, DbConnectionOptions userOptions, DbConnectionInternal& connection)
+   at Microsoft.Data.ProviderBase.DbConnectionPool.WaitForPendingOpen()
+--- End of stack trace from previous location ---
+   at Microsoft.EntityFrameworkCore.Storage.RelationalConnection.OpenInternalAsync(Boolean errorsExpected, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalConnection.OpenInternalAsync(Boolean errorsExpected, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalConnection.OpenAsync(CancellationToken cancellationToken, Boolean errorsExpected)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable`1.AsyncEnumerator.InitializeReaderAsync(AsyncEnumerator enumerator, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.SqlServer.Storage.Internal.SqlServerExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable`1.AsyncEnumerator.MoveNextAsync()
+   at Microsoft.EntityFrameworkCore.Query.ShapedQueryCompilingExpressionVisitor.SingleAsync[TSource](IAsyncEnumerable`1 asyncEnumerable, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.ShapedQueryCompilingExpressionVisitor.SingleAsync[TSource](IAsyncEnumerable`1 asyncEnumerable, CancellationToken cancellationToken)
+   at BusBuddy.Core.Services.StudentService.<>c__DisplayClass33_1.<<SeedWileySchoolDistrictDataAsync>b__1>d.MoveNext() in C:\Users\biges\Desktop\BusBuddy\BusBuddy.Core\Services\StudentService.cs:line 1226
+--- End of stack trace from previous location ---
+   at BusBuddy.Core.Utilities.ResilientDbExecution.ExecuteWithResilienceAsync[T](Func`1 operation, String operationName, Int32 maxRetries) in C:\Users\biges\Desktop\BusBuddy\BusBuddy.Core\Utilities\ResilientDbExecution.cs:line 44
+   at BusBuddy.Core.Services.StudentService.SeedWileySchoolDistrictDataAsync() in C:\Users\biges\Desktop\BusBuddy\BusBuddy.Core\Services\StudentService.cs:line 1224
+ClientConnectionId:e86f378d-a620-406b-ad64-8fd081a54fc7
+Error Number:40615,State:1,Class:14
+2025-08-08 07:37:13.282 -06:00 [INF] 🚌 🚌 Wiley seeding result: Success=False, RecordsSeeded=0, Error=Cannot open server 'busbuddy-server-sm2' requested by the login. Client with IP address '216.147.124.207' is not allowed to access the server.  To enable access, use the Azure Management Portal or run sp_set_firewall_rule on the master database to create a firewall rule for this IP address or address range.  It may take up to five minutes for this change to take effect.
+2025-08-08 07:37:13.285 -06:00 [INF] 🚌 🏗️ Creating MainWindow for full UI application
+2025-08-08 07:37:13.285 -06:00 [INF] 🚌 🎯 Creating MainWindow with dependency injection
+2025-08-08 07:37:13.288 -06:00 [INF] 🚌 MainWindowViewModel initialized with sample data
+2025-08-08 07:37:13.292 -06:00 [INF] 🚌 ✅ MainWindowViewModel created successfully via DI
+2025-08-08 07:37:13.356 -06:00 [DBG] 🚌 MainWindow constructor starting
+2025-08-08 07:37:13.356 -06:00 [DBG] 🚌 Calling InitializeComponent for MainWindow XAML
+2025-08-08 07:37:14.221 -06:00 [INF] 🚌 Loaded 3 stops for route Route 1
+2025-08-08 07:37:14.221 -06:00 [INF] 🚌 Loaded mock data: 25 students, 5 routes, 10 buses, 8 drivers
+2025-08-08 07:37:14.221 -06:00 [INF] 🚌 Enhanced RouteAssignmentViewModel initialized with route building capabilities
+2025-08-08 07:37:14.222 -06:00 [INF] 🚌 RouteAssignmentView initialized successfully with MVP route building interface
+2025-08-08 07:37:14.254 -06:00 [DBG] 🚌 Applying Syncfusion theme
+2025-08-08 07:37:14.254 -06:00 [DBG] 🚌 ApplySyncfusionTheme method started
+2025-08-08 07:37:14.254 -06:00 [DBG] 🚌 Configuring Syncfusion SfSkinManager global settings
+2025-08-08 07:37:14.255 -06:00 [DBG] 🚌 Creating FluentDark theme instance
+2025-08-08 07:37:14.256 -06:00 [DBG] 🚌 Applying FluentDark theme to MainWindow
+2025-08-08 07:37:14.469 -06:00 [INF] 🚌 Applied FluentDark theme successfully
+2025-08-08 07:37:14.469 -06:00 [DBG] 🚌 ApplySyncfusionTheme completed with FluentDark
+2025-08-08 07:37:14.470 -06:00 [DBG] 🚌 Initializing MainWindow components
+2025-08-08 07:37:14.470 -06:00 [DBG] 🚌 InitializeMainWindow method started
+2025-08-08 07:37:14.470 -06:00 [DBG] 🚌 Creating MainWindowViewModel instance
+2025-08-08 07:37:14.470 -06:00 [INF] 🚌 MainWindow data context initialized
+2025-08-08 07:37:14.471 -06:00 [DBG] 🚌 InitializeMainWindow method completed
+2025-08-08 07:37:14.471 -06:00 [DBG] 🚌 Attaching Syncfusion event hooks
+2025-08-08 07:37:14.471 -06:00 [INF] 🚌 Syncfusion event hooks prepared (awaiting XAML control definitions)
+2025-08-08 07:37:14.471 -06:00 [INF] 🚌 MainWindow initialized successfully with Syncfusion DockingManager
+2025-08-08 07:37:14.471 -06:00 [DBG] 🚌 MainWindow constructor completed successfully
+2025-08-08 07:37:15.507 -06:00 [INF] 🚌 🚌 BusBuddy MVP application started successfully
+2025-08-08 07:37:21.271 -06:00 [INF] 🚌 🚌 BusBuddy MVP application shutting down
