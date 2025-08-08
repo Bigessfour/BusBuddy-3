@@ -848,6 +848,72 @@ All Azure SQL integration steps have been completed, tested, and validated:
 ### **Current Issues Requiring Attention**
 - None. All previously reported build/test errors and warnings are resolved.
 
+### **📝 Comprehensive Logging Infrastructure**
+
+**BusBuddy maintains extensive logging across multiple systems for debugging, monitoring, and diagnostics:**
+
+#### **🔧 Primary Application Logs (Serilog)**
+**Configuration:** [`appsettings.json`](https://raw.githubusercontent.com/BIIGELOW/BusBuddy/master/appsettings.json) - Structured logging with multiple outputs
+- **📂 logs/build.log** - Build process logging with rolling files ([logs directory](https://github.com/BIIGELOW/BusBuddy/tree/master/logs))
+- **📂 logs/busbuddy-.log** - Main application logs (daily rolling)
+- **📂 logs/application.log** - Console and debug output
+- **📂 logs/bootstrap-{date}.txt** - Application startup logging
+- **📂 logs/log-{date}.txt** - General application events
+- **📂 logs/errors-actionable-{date}.log** - Filtered actionable errors
+- **📂 logs/ui-interactions-{date}.log** - UI interaction tracking
+
+#### **🧪 Test & Build Logs**
+**Location:** [`TestResults/`](https://github.com/BIIGELOW/BusBuddy/tree/master/TestResults) directory with timestamped files
+- **📊 phase4-build-log-{timestamp}.txt** - PowerShell build logging
+- **📊 phase4-test-log-{timestamp}.txt** - Test execution detailed logs
+- **📊 phase4-test-std{out|err}-{timestamp}.txt** - Test output streams
+- **📊 bbtest-{errors|output}-{timestamp}.log** - BusBuddy test command logs
+- **📊 build-log-{timestamp}.txt** - Direct build output
+- **📊 *.trx files** - Visual Studio test result XML files
+
+#### **⚡ PowerShell Module Logging**
+**Configuration:** [`BusBuddy.psm1`](https://raw.githubusercontent.com/BIIGELOW/BusBuddy/master/PowerShell/Modules/BusBuddy/BusBuddy.psm1) and [`exception capture modules`](https://raw.githubusercontent.com/BIIGELOW/BusBuddy/master/PowerShell/Modules/BusBuddy.ExceptionCapture.psm1)
+- **📜 logs/errors.log** - PowerShell exception tracking
+- **📜 logs/execution.log** - PowerShell execution monitoring
+- **📜 logs/startup-errors.log** - Application startup error capture
+- **📜 bb-run-diagnostic-{timestamp}.log** - Diagnostic command output
+
+#### **🛠️ Development & Diagnostic Logs**
+**Locations:** Root directory and specialized folders
+- **📋 [`runtime-errors-fixed.log`](https://raw.githubusercontent.com/BIIGELOW/BusBuddy/master/runtime-errors-fixed.log)** - Fixed runtime error tracking
+- **📋 [`run-output.log`](https://raw.githubusercontent.com/BIIGELOW/BusBuddy/master/run-output.log) & [`run-output-2.log`](https://raw.githubusercontent.com/BIIGELOW/BusBuddy/master/run-output-2.log)** - Application execution logs
+- **📋 [`Reset-PowerShell.log`](https://raw.githubusercontent.com/BIIGELOW/BusBuddy/master/Reset-PowerShell.log)** - PowerShell reset operation logs
+- **📋 [`profile_dump.txt`](https://raw.githubusercontent.com/BIIGELOW/BusBuddy/master/profile_dump.txt)** - PowerShell profile debugging
+
+#### **🎯 Logging Configuration Highlights**
+```json
+// appsettings.json Serilog Configuration
+"Serilog": {
+  "WriteTo": [
+    { "Name": "File", "Args": { "path": "logs/build.log" } },
+    { "Name": "File", "Args": { "path": "logs/busbuddy-.log", "rollingInterval": "Day" } },
+    { "Name": "File", "Args": { "path": "logs/application.log" } },
+    { "Name": "Console" },
+    { "Name": "Debug" }
+  ]
+}
+```
+**📖 Full Configuration:** [`appsettings.json`](https://raw.githubusercontent.com/BIIGELOW/BusBuddy/master/appsettings.json)
+
+#### **📈 PowerShell Exception Capture System**
+**Module:** [`BusBuddy.ExceptionCapture.psm1`](https://raw.githubusercontent.com/BIIGELOW/BusBuddy/master/PowerShell/Modules/BusBuddy.ExceptionCapture.psm1) - Enterprise-grade error monitoring
+- **Real-time Monitoring:** `Start-BusBuddyErrorMonitoring -LogPath "logs\errors.log"`
+- **Exception Analysis:** `Get-BusBuddyExceptionSummary -LogPath "logs\errors.log"`
+- **Startup Capture:** `Start-BusBuddyWithCapture -LogPath "logs\startup-errors.log"`
+
+#### **🔍 Diagnostic Command Integration**
+**Script:** [`run-bb-diagnostics.ps1`](https://raw.githubusercontent.com/BIIGELOW/BusBuddy/master/run-bb-diagnostics.ps1) - Automated diagnostic logging
+- **Automatic Log Creation:** `logs\bb-run-diagnostic-{timestamp}.log`
+- **Comprehensive Output:** Application startup, build, and error analysis
+- **Integration:** Available via `bb-diagnostics` PowerShell command
+
+**💡 Usage Tip:** Use `bb-health` to check log health and `bb-logs` to view recent log entries across all systems.
+
 ### **🔧 Available Development Commands**
 ```powershell
 # Core Development Commands (Updated August 8, 2025)
