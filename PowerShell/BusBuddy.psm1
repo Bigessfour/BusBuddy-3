@@ -1,3 +1,7 @@
+
+# Import bbAntiRegression for profile integration
+. "$PSScriptRoot\Modules\BusBuddy\bb-anti-regression.ps1"
+
 function Invoke-BusBuddyWileySeed {
     [CmdletBinding()]
     param()
