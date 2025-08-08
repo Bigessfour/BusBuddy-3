@@ -114,7 +114,7 @@ public class BusBuddyDbContext : DbContext
                 return;
             }
 
-            // 2. Try to get Azure SQL connection from appsettings (BusBuddyDb)
+            // 2. Try to get connection from appsettings (try BusBuddyDb first, then DefaultConnection)
             try
             {
                 var environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production";
@@ -124,13 +124,17 @@ public class BusBuddyDbContext : DbContext
                     .AddJsonFile($"appsettings.{environment}.json", optional: true)
                     .AddEnvironmentVariables();
                 var config = configBuilder.Build();
-                var connString = config.GetConnectionString("BusBuddyDb");
+
+                // Try BusBuddyDb first, then DefaultConnection
+                var connString = config.GetConnectionString("BusBuddyDb") ?? config.GetConnectionString("DefaultConnection");
                 if (!string.IsNullOrWhiteSpace(connString))
                 {
-                    logger.Information("Using BusBuddyDb connection string from appsettings");
+                    logger.Information("Using connection string from appsettings: {ConnectionName}",
+                        config.GetConnectionString("BusBuddyDb") != null ? "BusBuddyDb" : "DefaultConnection");
                     optionsBuilder.UseSqlServer(connString, sqlOptions =>
                     {
-                        sqlOptions.EnableRetryOnFailure();
+                        sqlOptions.EnableRetryOnFailure(5, TimeSpan.FromSeconds(10), new[] { 40613, 40501, 40197, 10928, 10929, 10060, 10054, 10053 });
+                        sqlOptions.CommandTimeout(60);
                     });
                     ConfigureEfLogging(optionsBuilder);
                     return;
@@ -138,7 +142,7 @@ public class BusBuddyDbContext : DbContext
             }
             catch (Exception ex)
             {
-                logger.Warning(ex, "Failed to load BusBuddyDb connection string from appsettings");
+                logger.Warning(ex, "Failed to load connection string from appsettings");
             }
 
             // Fallback to LocalDB (EF Core config guidance)
@@ -180,7 +184,7 @@ public class BusBuddyDbContext : DbContext
         // Configure Bus (Vehicle) entity with enhanced audit and indexing
         modelBuilder.Entity<Bus>(entity =>
         {
-            entity.ToTable("Buses");
+            entity.ToTable("Vehicles"); // Map Bus entity to existing Vehicles table
             entity.HasKey(e => e.VehicleId);
             // Remove the HasColumnName mapping since VehicleId should map to VehicleId column
 
@@ -212,16 +216,16 @@ public class BusBuddyDbContext : DbContext
             entity.Property(e => e.CreatedDate).HasDefaultValueSql("GETUTCDATE()");
 
             // Unique constraints
-            entity.HasIndex(e => e.BusNumber).IsUnique().HasDatabaseName("IX_Buses_BusNumber");
-            entity.HasIndex(e => e.VINNumber).IsUnique().HasDatabaseName("IX_Buses_VINNumber");
-            entity.HasIndex(e => e.LicenseNumber).IsUnique().HasDatabaseName("IX_Buses_LicenseNumber");
+            entity.HasIndex(e => e.BusNumber).IsUnique().HasDatabaseName("IX_Vehicles_BusNumber");
+            entity.HasIndex(e => e.VINNumber).IsUnique().HasDatabaseName("IX_Vehicles_VINNumber");
+            entity.HasIndex(e => e.LicenseNumber).IsUnique().HasDatabaseName("IX_Vehicles_LicenseNumber");
 
             // Performance indexes
-            entity.HasIndex(e => e.Status).HasDatabaseName("IX_Buses_Status");
-            entity.HasIndex(e => e.DateLastInspection).HasDatabaseName("IX_Buses_DateLastInspection");
-            entity.HasIndex(e => e.InsuranceExpiryDate).HasDatabaseName("IX_Buses_InsuranceExpiryDate");
-            entity.HasIndex(e => e.FleetType).HasDatabaseName("IX_Buses_FleetType");
-            entity.HasIndex(e => new { e.Make, e.Model, e.Year }).HasDatabaseName("IX_Buses_MakeModelYear");
+            entity.HasIndex(e => e.Status).HasDatabaseName("IX_Vehicles_Status");
+            entity.HasIndex(e => e.DateLastInspection).HasDatabaseName("IX_Vehicles_DateLastInspection");
+            entity.HasIndex(e => e.InsuranceExpiryDate).HasDatabaseName("IX_Vehicles_InsuranceExpiryDate");
+            entity.HasIndex(e => e.FleetType).HasDatabaseName("IX_Vehicles_FleetType");
+            entity.HasIndex(e => new { e.Make, e.Model, e.Year }).HasDatabaseName("IX_Vehicles_MakeModelYear");
         });
 
         // Configure Driver entity with enhanced features
