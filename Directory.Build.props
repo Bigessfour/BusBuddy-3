@@ -10,16 +10,16 @@
 
     <!-- Syncfusion Version — Standardized for MVP stability -->
     <SyncfusionVersion>30.1.42</SyncfusionVersion>
-    <!-- Entity Framework Version — Confirmed for .NET 9 compatibility -->
-    <EntityFrameworkVersion>9.0.7</EntityFrameworkVersion>
+    <!-- Entity Framework Version — Updated to 9.0.8 for consistency -->
+    <EntityFrameworkVersion>9.0.8</EntityFrameworkVersion>
     <!-- Serilog Version — Pure Serilog, no Microsoft.Extensions -->
     <SerilogVersion>4.3.0</SerilogVersion>
 
     <!-- 🚌 BusBuddy Core Package Versions (Centralized for Solution) -->
     <!-- Syncfusion Version — Standardized for MVP stability -->
     <SyncfusionVersion>30.1.42</SyncfusionVersion>
-    <!-- Entity Framework Version — Confirmed for .NET 9 compatibility -->
-    <EntityFrameworkVersion>9.0.7</EntityFrameworkVersion>
+    <!-- Entity Framework Version — Updated to 9.0.8 for consistency -->
+    <EntityFrameworkVersion>9.0.8</EntityFrameworkVersion>
     <!-- Serilog Version — Pure Serilog, no Microsoft.Extensions -->
     <SerilogVersion>4.3.0</SerilogVersion>
     <SerilogSinksFileVersion>7.0.0</SerilogSinksFileVersion>
@@ -48,6 +48,13 @@
     <OpenAIVersion>2.0.0-beta.10</OpenAIVersion>
     <PollyVersion>8.4.1</PollyVersion>
     <SystemNetHttpJsonVersion>9.0.7</SystemNetHttpJsonVersion>
+
+    <!-- Microsoft.Extensions Package Versions — Consistent versioning -->
+    <MicrosoftExtensionsVersion>9.0.8</MicrosoftExtensionsVersion>
+    <MicrosoftExtensionsDependencyInjectionVersion>9.0.8</MicrosoftExtensionsDependencyInjectionVersion>
+    <MicrosoftExtensionsHostingVersion>9.0.8</MicrosoftExtensionsHostingVersion>
+    <MicrosoftExtensionsLoggingVersion>9.0.8</MicrosoftExtensionsLoggingVersion>
+
     <AzureIdentityVersion>1.13.0</AzureIdentityVersion>
     <MoqVersion>4.20.72</MoqVersion>
     <CoverletVersion>6.0.2</CoverletVersion>
