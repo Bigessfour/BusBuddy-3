@@ -72,9 +72,9 @@ try {
     Write-Information "📊 Step 3: Creating monitoring dashboard configuration" -InformationAction Continue
 
     $dashboardConfig = @{
-        "name" = "BusBuddy Production Monitoring"
-        "description" = "Comprehensive monitoring dashboard for BusBuddy MVP"
-        "widgets" = @(
+        name = "BusBuddy Production Monitoring"
+        description = "Comprehensive monitoring dashboard for BusBuddy MVP"
+        widgets = @(
             @{
                 "type" = "ApplicationInsights"
                 "title" = "Application Health Overview"
