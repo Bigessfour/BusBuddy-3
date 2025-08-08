@@ -224,9 +224,19 @@ dotnet ef migrations add NewMigrationName
 ```
 
 ### **Environment Variables**
-- `SYNCFUSION_LICENSE_KEY`: Syncfusion license key
+- `SYNCFUSION_LICENSE_KEY`: **Community License key** (required for production)
+  - **Community License**: Free for individual developers and small teams
+  - **Setup**: Set your actual license key from Syncfusion account
+  - **Format**: Long alphanumeric string (200+ characters)
+  - **Example**: `[System.Environment]::SetEnvironmentVariable("SYNCFUSION_LICENSE_KEY", "YOUR_ACTUAL_LICENSE_KEY", "User")`
 - `ConnectionStrings__DefaultConnection`: Database connection string
 - `GoogleEarthEngine__ApiKey`: Google Earth Engine API key
+
+### **Syncfusion Community License Setup**
+1. **Get License**: Visit [Syncfusion Community License](https://www.syncfusion.com/products/communitylicense) 
+2. **Generate Key**: Login to your Syncfusion account and generate license key
+3. **Set Environment**: Replace placeholder with your actual key (NOT "TRIAL_MODE")
+4. **Verify**: Application should start without trial dialogs
 
 ### **Development Settings**
 Configuration is managed through `appsettings.json` files in each project:

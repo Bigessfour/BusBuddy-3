@@ -643,8 +643,7 @@ function Invoke-BusBuddyRun {
 
         # Use automatic error capture unless disabled
         if (-not $NoErrorCapture -and (Get-Command Invoke-BusBuddyWithExceptionCapture -ErrorAction SilentlyContinue)) {
-            $logPath = Join-Path $projectRoot "logs\application-startup.log"
-            Invoke-BusBuddyWithExceptionCapture -Command "dotnet" -Arguments @("run", "--project", "BusBuddy.WPF/BusBuddy.WPF.csproj") -Context "Application Startup" -LogPath $logPath
+            Invoke-BusBuddyWithExceptionCapture -Command "dotnet" -Arguments @("run", "--project", "BusBuddy.WPF/BusBuddy.WPF.csproj") -Context "Application Startup"
         } else {
             # Fallback to direct execution
             dotnet run --project BusBuddy.WPF/BusBuddy.WPF.csproj
