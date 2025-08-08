@@ -50,6 +50,8 @@ namespace BusBuddy.WPF
                 configuration = new ConfigurationBuilder()
                     .SetBasePath(AppDomain.CurrentDomain.BaseDirectory) // Use app directory for config file
                     .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+                    .AddJsonFile("appsettings.azure.json", optional: true, reloadOnChange: true)
+                    .AddEnvironmentVariables()
                     .Build();
 
                 _bootstrapLogger?.Information("✅ Configuration loaded successfully");
@@ -303,6 +305,8 @@ namespace BusBuddy.WPF
                     var configuration = new ConfigurationBuilder()
                         .SetBasePath(AppDomain.CurrentDomain.BaseDirectory)
                         .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
+                        .AddJsonFile("appsettings.azure.json", optional: true, reloadOnChange: true)
+                        .AddEnvironmentVariables()
                         .Build();
 
                     fallbackServices.AddSingleton<IConfiguration>(configuration);

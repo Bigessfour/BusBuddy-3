@@ -122,7 +122,9 @@ namespace BusBuddy.Core.Services
             try
             {
                 var guardians = await _context.Guardians
-                    .Where(g => g.Family != null && g.Family.Students != null && g.Family.Students.Any(s => s.StudentId == studentId))
+                    .Include(g => g.Family!)
+                        .ThenInclude(f => f.Students)
+                    .Where(g => g.Family != null && g.Family.Students.Any(s => s.StudentId == studentId))
                     .ToListAsync();
 
                 return guardians;
