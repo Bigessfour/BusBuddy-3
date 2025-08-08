@@ -747,11 +747,14 @@ Examples:
             _syncfusionLicenseChecked = true;
             try
             {
-                var licenseKey = Environment.GetEnvironmentVariable("SYNCFUSION_LICENSE_KEY");
+                // Check Process level first, then User level, then Machine level
+                var licenseKey = Environment.GetEnvironmentVariable("SYNCFUSION_LICENSE_KEY") ??
+                               Environment.GetEnvironmentVariable("SYNCFUSION_LICENSE_KEY", EnvironmentVariableTarget.User) ??
+                               Environment.GetEnvironmentVariable("SYNCFUSION_LICENSE_KEY", EnvironmentVariableTarget.Machine);
 
                 if (string.IsNullOrWhiteSpace(licenseKey))
                 {
-                    _bootstrapLogger?.Warning("⚠️ SYNCFUSION_LICENSE_KEY environment variable not set. Running in trial mode.");
+                    _bootstrapLogger?.Warning("⚠️ SYNCFUSION_LICENSE_KEY environment variable not set at Process, User, or Machine level. Running in trial mode.");
                     LogSyncfusionDiagnostics();
                     return; // trial mode – do not attempt registration
                 }
@@ -759,11 +762,16 @@ Examples:
                 if (ValidateSyncfusionLicenseKey(licenseKey))
                 {
                     Syncfusion.Licensing.SyncfusionLicenseProvider.RegisterLicense(licenseKey);
-                    _bootstrapLogger?.Information("✅ Syncfusion license registered successfully");
+                    _bootstrapLogger?.Information("✅ Syncfusion license registered successfully for version 30.1.42");
+
+                    // Log additional diagnostics to help verify registration
+                    _bootstrapLogger?.Information("🔍 License Key Length: {Length} characters", licenseKey.Length);
+                    _bootstrapLogger?.Information("💡 If you see trial watermarks, verify your license key is valid and current");
                 }
                 else
                 {
                     _bootstrapLogger?.Warning("⚠️ Provided Syncfusion license key failed validation. Running in trial mode.");
+                    _bootstrapLogger?.Information("💡 License key should be a long alphanumeric string from your Syncfusion account");
                     LogSyncfusionDiagnostics();
                 }
             }
@@ -819,24 +827,40 @@ Examples:
 
             logger.Information("🔍 Syncfusion Diagnostics:");
             logger.Information("   Version: 30.1.42 (as defined in Directory.Build.props)");
-            logger.Information("   Platform: WPF (.NET 8.0-windows)");
+            logger.Information("   Platform: WPF (.NET 9.0-windows)");
             logger.Information("   License Type: Offline validation (no internet required)");
             logger.Information("   Registration Location: App() constructor (before any control initialization)");
 
             // Check environment variable
             var envLicenseKey = Environment.GetEnvironmentVariable("SYNCFUSION_LICENSE_KEY");
-            logger.Information("   Environment Variable SYNCFUSION_LICENSE_KEY: {Status}",
-                string.IsNullOrEmpty(envLicenseKey) ? "Not Set" : "Set (length: " + envLicenseKey.Length + ")");
+            if (string.IsNullOrEmpty(envLicenseKey))
+            {
+                logger.Information("   Environment Variable SYNCFUSION_LICENSE_KEY: Not Set");
+                logger.Information("   💡 To fix: Set SYNCFUSION_LICENSE_KEY environment variable to your license key");
+                logger.Information("   💡 Get license key from: https://www.syncfusion.com/account/downloads");
+            }
+            else
+            {
+                logger.Information("   Environment Variable SYNCFUSION_LICENSE_KEY: Set (length: {Length})", envLicenseKey.Length);
+                logger.Information("   💡 License key format looks {Status}",
+                    ValidateSyncfusionLicenseKey(envLicenseKey) ? "valid" : "invalid");
+            }
 
             // Check for common Syncfusion assemblies
             try
             {
                 var syncfusionAssembly = typeof(Syncfusion.Licensing.SyncfusionLicenseProvider).Assembly;
                 logger.Information("   Syncfusion.Licensing Assembly: {Version}", syncfusionAssembly.GetName().Version);
+
+                // Try to get some version info from a main Syncfusion assembly
+                var gridAssembly = System.Reflection.Assembly.LoadFrom(
+                    Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Syncfusion.SfGrid.WPF.dll"));
+                logger.Information("   Syncfusion.SfGrid.WPF Assembly: {Version}", gridAssembly.GetName().Version);
             }
             catch (Exception ex)
             {
-                logger.Warning("   Syncfusion.Licensing Assembly: Error loading - {Error}", ex.Message);
+                logger.Warning("   Syncfusion Assembly Check: Error loading - {Error}", ex.Message);
+                logger.Information("   💡 This may indicate missing Syncfusion packages or incorrect installation");
             }
         }
     }

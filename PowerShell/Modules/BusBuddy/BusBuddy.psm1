@@ -2619,6 +2619,13 @@ Set-Alias -Name 'bbRun' -Value 'Invoke-BusBuddyRun' -Description 'Run the Bus Bu
 Set-Alias -Name 'bbTest' -Value 'Invoke-BusBuddyTest' -Description 'Run Bus Buddy tests'
 Set-Alias -Name 'bbClean' -Value 'Invoke-BusBuddyClean' -Description 'Clean build artifacts'
 Set-Alias -Name 'bbRestore' -Value 'Invoke-BusBuddyRestore' -Description 'Restore NuGet packages'
+
+# Add kebab-case aliases for consistency
+Set-Alias -Name 'bb-build' -Value 'Invoke-BusBuddyBuild' -Description 'Build the Bus Buddy solution (kebab-case)'
+Set-Alias -Name 'bb-run' -Value 'Invoke-BusBuddyRun' -Description 'Run the Bus Buddy application (kebab-case)'
+Set-Alias -Name 'bb-test' -Value 'Invoke-BusBuddyTest' -Description 'Run Bus Buddy tests (kebab-case)'
+Set-Alias -Name 'bb-clean' -Value 'Invoke-BusBuddyClean' -Description 'Clean build artifacts (kebab-case)'
+Set-Alias -Name 'bb-restore' -Value 'Invoke-BusBuddyRestore' -Description 'Restore NuGet packages (kebab-case)'
 Set-Alias -Name 'bbHealth' -Value 'Invoke-BusBuddyHealthCheck' -Description 'Check system health'
 Set-Alias -Name 'bbDevSession' -Value 'Start-BusBuddyDevSession' -Description 'Start development session'
 Set-Alias -Name 'bbInfo' -Value 'Get-BusBuddyInfo' -Description 'Show module information'
@@ -2686,7 +2693,9 @@ Export-ModuleMember -Function @(
     'bbAntiRegression', 'bbMvp', 'bbMvpCheck', 'bbEnvCheck', 'bbRoutes',
     'bbRouteOptimize', 'bbGenerateReport', 'bbRouteDemo', 'bbRouteStatus', 'bbCopilotRef',
     'bbCaptureRuntimeErrors', 'bbDiagnostic', 'bbWelcome', 'bbTestFull', 'bbTestErrors',
-    'bbTestLog', 'bbTestWatch'
+    'bbTestLog', 'bbTestWatch',
+    # Kebab-case aliases for consistency
+    'bb-build', 'bb-run', 'bb-test', 'bb-clean', 'bb-restore'
 )
 
 #endregion
