@@ -108,15 +108,40 @@ public class BusBuddyDbContext : DbContext
                 optionsBuilder.UseSqlServer(envOverride, sql =>
                 {
                     sql.CommandTimeout(60);
-                    sql.EnableRetryOnFailure(5, TimeSpan.FromSeconds(10),
-                        new[] { 40613, 40501, 40197, 10928, 10929, 10060, 10054, 10053 });
+                    sql.EnableRetryOnFailure();
                 });
                 ConfigureEfLogging(optionsBuilder);
                 return;
             }
 
-            // ✅ MVP simplification: Removed ConfigurationBuilder usage to eliminate dependency causing CS0246.
-            // Fallback to LocalDB (EF Core config guidance: https://learn.microsoft.com/ef/core/dbcontext-configuration/)
+            // 2. Try to get Azure SQL connection from appsettings (BusBuddyDb)
+            try
+            {
+                var environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production";
+                var configBuilder = new ConfigurationBuilder()
+                    .SetBasePath(Directory.GetCurrentDirectory())
+                    .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
+                    .AddJsonFile($"appsettings.{environment}.json", optional: true)
+                    .AddEnvironmentVariables();
+                var config = configBuilder.Build();
+                var connString = config.GetConnectionString("BusBuddyDb");
+                if (!string.IsNullOrWhiteSpace(connString))
+                {
+                    logger.Information("Using BusBuddyDb connection string from appsettings");
+                    optionsBuilder.UseSqlServer(connString, sqlOptions =>
+                    {
+                        sqlOptions.EnableRetryOnFailure();
+                    });
+                    ConfigureEfLogging(optionsBuilder);
+                    return;
+                }
+            }
+            catch (Exception ex)
+            {
+                logger.Warning(ex, "Failed to load BusBuddyDb connection string from appsettings");
+            }
+
+            // Fallback to LocalDB (EF Core config guidance)
             UseLocalDbFallback(optionsBuilder, logger);
             ConfigureEfLogging(optionsBuilder);
         }

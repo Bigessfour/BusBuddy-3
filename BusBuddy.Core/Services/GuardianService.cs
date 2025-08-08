@@ -126,7 +126,7 @@ namespace BusBuddy.Core.Services
                     .ThenInclude(f => f.Guardians)
                     .FirstOrDefaultAsync(s => s.StudentId == studentId);
 
-                if (student != null && student.Family != null && student.Family.Guardians != null)
+                if (student?.Family?.Guardians != null)
                 {
                     return student.Family.Guardians.ToList();
                 }

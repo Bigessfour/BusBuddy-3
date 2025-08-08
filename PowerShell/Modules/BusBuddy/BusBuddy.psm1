@@ -36,11 +36,11 @@ function Get-BusBuddyTestOutput {
     if (-not (Test-Path "logs")) {
         New-Item -ItemType Directory -Path "logs" -Force | Out-Null
     }
-    Write-Host "🧪 Running $TestSuite tests..." -ForegroundColor Cyan
-    Write-Host "📝 Verbosity: $Verbosity" -ForegroundColor Gray
-    Write-Host "📁 Project: $ProjectPath" -ForegroundColor Gray
+    Write-Information "🧪 Running $TestSuite tests..." -InformationAction Continue
+    Write-Information "📝 Verbosity: $Verbosity" -InformationAction Continue
+    Write-Information "📁 Project: $ProjectPath" -InformationAction Continue
     if ($SaveToFile) {
-        Write-Host "💾 Full output will be saved to: $outputFile" -ForegroundColor Yellow
+        Write-Information "💾 Full output will be saved to: $outputFile" -InformationAction Continue
     }
     if (-not $Filter) {
         $Filter = switch ($TestSuite) {
@@ -57,7 +57,7 @@ function Get-BusBuddyTestOutput {
     $env:DOTNET_NOLOGO = "false"  # We want full output
     try {
         $startTime = Get-Date
-        Write-Host "🏗️ Building solution first..." -ForegroundColor Yellow
+        Write-Information "🏗️ Building solution first..." -InformationAction Continue
         $buildCmd = "dotnet build $ProjectPath --configuration Debug --verbosity $Verbosity"
         $buildStdOutPath = "logs/build-stdout-$timestamp.log"
         $buildStdErrPath = "logs/build-stderr-$timestamp.log"
@@ -66,22 +66,22 @@ function Get-BusBuddyTestOutput {
         $buildStderr = $buildOutput | Where-Object { $_ -match 'error' -or $_ -match 'FAILED' }
         $buildExitCode = $LASTEXITCODE
         if ($buildExitCode -ne 0) {
-            Write-Host "❌ Build failed! Cannot proceed with testing." -ForegroundColor Red
-            Write-Host "Build errors:" -ForegroundColor Red
-            Write-Host $buildStderr -ForegroundColor Red
+            Write-Error "❌ Build failed! Cannot proceed with testing."
+            Write-Error "Build errors:"
+            Write-Error $1
             return @{
                 ExitCode = $buildExitCode
                 Status = "BuildFailed"
                 BuildOutput = $buildStdout + $buildStderr
             }
         }
-        Write-Host "✅ Build successful, proceeding with tests..." -ForegroundColor Green
+        Write-Output "✅ Build successful, proceeding with tests..."
         $testCmd = "dotnet test $ProjectPath --configuration Debug --verbosity $Verbosity --logger trx --results-directory TestResults --collect:XPlat\ Code\ Coverage --no-build"
         if ($Filter) {
             $testCmd += " --filter '$Filter'"
-            Write-Host "🔍 Filter applied: $Filter" -ForegroundColor Gray
+            Write-Information "🔍 Filter applied: $Filter" -InformationAction Continue
         }
-        Write-Host "🧪 Executing tests..." -ForegroundColor Cyan
+        Write-Information "🧪 Executing tests..." -InformationAction Continue
         $testStdOutPath = "logs/test-stdout-$timestamp.log"
         $testOutput = & $testCmd 2>&1 | Tee-Object -FilePath $testStdOutPath
         $testStdout = Get-Content $testStdOutPath -Raw
@@ -115,36 +115,36 @@ $testStderr
 "@
         if ($SaveToFile) {
             $fullOutput | Out-File -FilePath $outputFile -Encoding UTF8 -Width 500
-            Write-Host "✅ Complete test log saved to: $outputFile" -ForegroundColor Green
+            Write-Output "✅ Complete test log saved to: $outputFile"
         }
         $passedTests = [regex]::Matches($testStdout, "Passed:\s+(\d+)") | ForEach-Object { [int]$_.Groups[1].Value } | Measure-Object -Sum | Select-Object -ExpandProperty Sum
         $failedTests = [regex]::Matches($testStdout, "Failed:\s+(\d+)") | ForEach-Object { [int]$_.Groups[1].Value } | Measure-Object -Sum | Select-Object -ExpandProperty Sum
         $skippedTests = [regex]::Matches($testStdout, "Skipped:\s+(\d+)") | ForEach-Object { [int]$_.Groups[1].Value } | Measure-Object -Sum | Select-Object -ExpandProperty Sum
         $errorLines = ($testStdout + $testStderr) -split "`n" | Where-Object { $_ -match "FAILED|ERROR|Exception|error CS\d+|error MSB\d+" }
         if ($errorLines -or $failedTests -gt 0) {
-            Write-Host "`n❌ TEST ISSUES FOUND:" -ForegroundColor Red
-            Write-Host "=" * 60 -ForegroundColor Red
+            Write-Error "`n❌ TEST ISSUES FOUND:"
+            Write-Information "=" -InformationAction Continue * 60 -ForegroundColor Red
             if ($failedTests -gt 0) {
-                Write-Host "Failed Tests: $failedTests" -ForegroundColor Red
+                Write-Error "Failed Tests: $failedTests"
             }
             $errorLines | ForEach-Object {
-                Write-Host $_ -ForegroundColor Red
+                Write-Error $1
             }
-            Write-Host "=" * 60 -ForegroundColor Red
+            Write-Information "=" -InformationAction Continue * 60 -ForegroundColor Red
             if ($SaveToFile) {
-                Write-Host "🔍 Full details in: $outputFile" -ForegroundColor Yellow
+                Write-Information "🔍 Full details in: $outputFile" -InformationAction Continue
             }
         } else {
-            Write-Host "✅ All tests passed!" -ForegroundColor Green
+            Write-Output "✅ All tests passed!"
         }
-        Write-Host "`n📊 TEST SUMMARY:" -ForegroundColor Cyan
-        Write-Host "   Test Suite: $TestSuite" -ForegroundColor Gray
-        Write-Host "   Duration: $($duration.TotalSeconds) seconds" -ForegroundColor Gray
-        Write-Host "   Passed: $passedTests" -ForegroundColor Green
-        Write-Host "   Failed: $failedTests" -ForegroundColor $(if ($failedTests -gt 0) { "Red" } else { "Gray" })
-        Write-Host "   Skipped: $skippedTests" -ForegroundColor Yellow
-        Write-Host "   Build Status: $(if ($buildExitCode -eq 0) { "SUCCESS ✅" } else { "FAILED ❌" })" -ForegroundColor $(if ($buildExitCode -eq 0) { "Green" } else { "Red" })
-        Write-Host "   Test Status: $(if ($testExitCode -eq 0) { "SUCCESS ✅" } else { "FAILED ❌" })" -ForegroundColor $(if ($testExitCode -eq 0) { "Green" } else { "Red" })
+        Write-Information "`n📊 TEST SUMMARY:" -InformationAction Continue
+        Write-Information "   Test Suite: $TestSuite" -InformationAction Continue
+        Write-Information "   Duration: $($duration.TotalSeconds) seconds" -InformationAction Continue
+        Write-Output "   Passed: $passedTests"
+        Write-Information "   Failed: $failedTests" -InformationAction Continue -ForegroundColor $(if ($failedTests -gt 0) { "Red" } else { "Gray" })
+        Write-Information "   Skipped: $skippedTests" -InformationAction Continue
+        Write-Information "   Build Status: $(if ($buildExitCode -eq 0) { " -InformationAction ContinueSUCCESS ✅" } else { "FAILED ❌" })" -ForegroundColor $(if ($buildExitCode -eq 0) { "Green" } else { "Red" })
+        Write-Information "   Test Status: $(if ($testExitCode -eq 0) { " -InformationAction ContinueSUCCESS ✅" } else { "FAILED ❌" })" -ForegroundColor $(if ($testExitCode -eq 0) { "Green" } else { "Red" })
         return @{
             ExitCode = $testExitCode
             Duration = $duration
@@ -200,12 +200,12 @@ function Get-BusBuddyTestLog {
     #>
     $latestLog = Get-ChildItem "logs\test-output-*.log" | Sort-Object LastWriteTime -Descending | Select-Object -First 1
     if ($latestLog) {
-        Write-Host "📄 Most recent test log: $($latestLog.Name)" -ForegroundColor Cyan
-        Write-Host "📅 Created: $($latestLog.LastWriteTime)" -ForegroundColor Gray
-        Write-Host ""
+        Write-Information "📄 Most recent test log: $($latestLog.Name)" -InformationAction Continue
+        Write-Information "📅 Created: $($latestLog.LastWriteTime)" -InformationAction Continue
+        Write-Information "" -InformationAction Continue
         Get-Content $latestLog.FullName
     } else {
-    Write-Host "No test logs found. Run bbTestFull first." -ForegroundColor Yellow
+    Write-Information "No test logs found. Run bbTestFull first." -InformationAction Continue
     }
 }
 
@@ -219,8 +219,8 @@ function Start-BusBuddyTestWatch {
         [ValidateSet('All', 'Unit', 'Integration', 'Validation', 'Core', 'WPF')]
         [string]$TestSuite = 'Unit'
     )
-    Write-Host "🔄 Starting watch mode for $TestSuite tests..." -ForegroundColor Cyan
-    Write-Host "Press Ctrl+C to stop watching" -ForegroundColor Yellow
+    Write-Information "🔄 Starting watch mode for $TestSuite tests..." -InformationAction Continue
+    Write-Information "Press Ctrl+C to stop watching" -InformationAction Continue
     Get-BusBuddyTestOutput -TestSuite $TestSuite -SaveToFile
     $watcher = New-Object System.IO.FileSystemWatcher
     $watcher.Path = $PWD.Path
@@ -230,9 +230,9 @@ function Start-BusBuddyTestWatch {
     $action = {
         $path = $Event.SourceEventArgs.FullPath
         $changeType = $Event.SourceEventArgs.ChangeType
-        Write-Host "📝 File changed: $path" -ForegroundColor Gray
+        Write-Information "📝 File changed: $path" -InformationAction Continue
         Start-Sleep -Seconds 1  # Debounce
-        Write-Host "🔄 Re-running tests..." -ForegroundColor Cyan
+        Write-Information "🔄 Re-running tests..." -InformationAction Continue
     Get-BusBuddyTestOutput -TestSuite $using:TestSuite -SaveToFile
     }
     Register-ObjectEvent -InputObject $watcher -EventName "Changed" -Action $action
@@ -746,20 +746,20 @@ function Invoke-BusBuddyTest {
                            $testOutput -match "Microsoft\.TestPlatform\.CoreUtilities.*Version=15\.0\.0\.0"
 
             if ($hasNet9Issue) {
-                Write-Host "`n🚨 KNOWN .NET 9 COMPATIBILITY ISSUE DETECTED" -ForegroundColor Yellow
-                Write-Host "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -ForegroundColor Yellow
-                Write-Host "❌ Microsoft.TestPlatform.CoreUtilities v15.0.0.0 not found" -ForegroundColor Red
-                Write-Host "🔍 This is a documented .NET 9 compatibility issue with test platform" -ForegroundColor Cyan
-                Write-Host ""
-                Write-Host "📋 WORKAROUND OPTIONS:" -ForegroundColor Green
-                Write-Host "  1. Install VS Code NUnit Test Runner extension for UI testing" -ForegroundColor White
-                Write-Host "  2. Use Visual Studio Test Explorer instead of command line" -ForegroundColor White
-                Write-Host "  3. Temporarily downgrade to .NET 8.0 for testing (not recommended)" -ForegroundColor Gray
-                Write-Host ""
-                Write-Host "📁 Test logs saved to:" -ForegroundColor Cyan
-                Write-Host "   Output: $testOutputFile" -ForegroundColor Gray
-                Write-Host "   Errors: $testErrorFile" -ForegroundColor Gray
-                Write-Host "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -ForegroundColor Yellow
+                Write-Information "`n🚨 KNOWN .NET 9 COMPATIBILITY ISSUE DETECTED" -InformationAction Continue
+                Write-Information "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -InformationAction Continue
+                Write-Error "❌ Microsoft.TestPlatform.CoreUtilities v15.0.0.0 not found"
+                Write-Information "🔍 This is a documented .NET 9 compatibility issue with test platform" -InformationAction Continue
+                Write-Information "" -InformationAction Continue
+                Write-Information "📋 WORKAROUND OPTIONS:" -InformationAction Continue
+                Write-Information "  1. Install VS Code NUnit Test Runner extension for UI testing" -InformationAction Continue
+                Write-Information "  2. Use Visual Studio Test Explorer instead of command line" -InformationAction Continue
+                Write-Information "  3. Temporarily downgrade to .NET 8.0 for testing (not recommended)" -InformationAction Continue
+                Write-Information "" -InformationAction Continue
+                Write-Information "📁 Test logs saved to:" -InformationAction Continue
+                Write-Information "   Output: $testOutputFile" -InformationAction Continue
+                Write-Information "   Errors: $testErrorFile" -InformationAction Continue
+                Write-Information "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -InformationAction Continue
 
                 return @{
                     ExitCode = $testExitCode
@@ -2655,3 +2655,4 @@ try {
 } catch {
     Write-Information "Non-fatal error occurred during module export." -InformationAction Continue
 }
+

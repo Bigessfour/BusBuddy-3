@@ -25,13 +25,13 @@
   <!-- Core Business Logic Packages -->
   <ItemGroup>
     <!-- Database and EF Core (Versions managed by Directory.Build.props) -->
-    <PackageReference Include="Microsoft.Data.SqlClient" Version="$(SqlClientVersion)" />
+    <PackageReference Include="Microsoft.Data.SqlClient" Version="5.2.1" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="$(EntityFrameworkVersion)" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.7">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
-    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="$(EntityFrameworkVersion)" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="9.0.7" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="$(EntityFrameworkVersion)" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="$(EntityFrameworkVersion)" />
 
@@ -41,6 +41,8 @@
     <PackageReference Include="Google.Cloud.Storage.V1" Version="$(GoogleCloudStorageVersion)" />
     <PackageReference Include="Google.Apis.Drive.v3" Version="$(GoogleApisDriveVersion)" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="9.0.7" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="9.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="9.0.0" />
 
     <!-- xAI Grok API Integration (OpenAI-compatible) -->
     <PackageReference Include="OpenAI" Version="$(OpenAIVersion)" />
@@ -50,7 +52,7 @@
     <PackageReference Include="System.Net.Http.Json" Version="$(SystemNetHttpJsonVersion)" />
 
     <!-- Azure Authentication (Optional for Azure SQL Managed Identity) -->
-    <PackageReference Include="Azure.Identity" Version="$(AzureIdentityVersion)" />
+    <PackageReference Include="Azure.Identity" Version="1.12.0" />
 
     <!-- Serilog Extensions - Extensions.Logging only, rest in Directory.Build.props -->
     <PackageReference Include="Serilog.Extensions.Logging" Version="$(SerilogExtensionsLoggingVersion)" />

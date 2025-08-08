@@ -278,20 +278,36 @@ The `bbTest` command has been completely refactored to provide professional-grad
 
 ### **🔧 Available Development Commands**
 ```powershell
-# Core Development
-bb-build          # Build solution
-bb-run            # Run application
-bb-test           # 🆕 ENHANCED - Execute tests with .NET 9 compatibility detection & workarounds
-bb-health         # System health check
+# Core Development Commands (Updated August 8, 2025)
+bbBuild           # Build solution
+bbRun             # Run application  
+bbTest            # 🆕 ENHANCED - Execute tests with .NET 9 compatibility detection & workarounds
+bbHealth          # System health check
+bbClean           # Clean build artifacts
+bbRestore         # Restore NuGet packages
 
-# Advanced Workflows
-bb-dev-session    # Complete development environment setup
-bb-quick-test     # Rapid build-test-validate cycle
-bb-diagnostic     # Full system health analysis
-bb-report         # Generate project status report
+# Advanced Development Workflows
+bbDevSession      # Complete development environment setup
+bbInfo            # Show module information
+bbCommands        # List all available commands
 
-# Enhanced Testing Infrastructure (NEW)
-bb-test           # Phase 4 NUnit integration with professional error handling
+# XAML & Validation
+bbXamlValidate    # Validate all XAML files
+bbCatchErrors     # Run with exception capture
+bbAntiRegression  # Run anti-regression checks
+bbCaptureRuntimeErrors # Comprehensive runtime error monitoring
+
+# MVP Focus Commands
+bbMvp             # Evaluate features & scope management
+bbMvpCheck        # Check MVP readiness
+
+# XAI Route Optimization
+bbRoutes          # Main route optimization system
+bbRouteDemo       # Demo with sample data (READY NOW!)
+bbRouteStatus     # Check system status
+
+# Enhanced Testing Infrastructure (Phase 4 NUnit Integration)
+bbTest            # Phase 4 NUnit integration with professional error handling
                   # - Detects .NET 9 compatibility issues
                   # - Provides clear workaround guidance
                   # - Saves detailed logs to TestResults directory
@@ -353,7 +369,7 @@ This session demonstrated excellent development velocity with significant progre
 - **Integration Issues:** Proactive testing and documentation minimize integration risks
 
 ### **Mitigation Strategies**
-- **Regular Health Checks:** bb-health command provides continuous monitoring
+- **Regular Health Checks:** bbHealth command provides continuous monitoring
 - **Automated Testing:** Comprehensive test suite catches regressions early
 - **Documentation Standards:** Clear documentation prevents knowledge gaps
 - **Version Control:** Clean git history enables easy rollbacks if needed

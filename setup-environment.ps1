@@ -240,11 +240,11 @@ $(if ($isGoogleDrive) { "🔄 Google Drive Sync Setup" } else { "📁 Git Clone 
 ✅ Next Steps:
 1. Open VS Code in this directory: code .
 2. Open a new terminal (should auto-load profile)
-3. Run: bb-health (to verify everything works)
+3. Run: Test-BusBuddyHealth (to verify everything works)
 4. Run: bb-help (to see all available commands)
 
 🚀 Quick Test Commands:
-   bb-health                    # Comprehensive health check
+    Test-BusBuddyHealth          # Comprehensive health check
    bb-debug-files -AutoFix      # Test file debugging tool
    bb-build -FormatFirst        # Test enhanced build system
 

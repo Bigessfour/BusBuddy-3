@@ -1,4 +1,4 @@
-function bb-wiley-seed {
+function Invoke-BusBuddyWileySeed {
     [CmdletBinding()]
     param()
     $scriptPath = Join-Path $PSScriptRoot 'Scripts/WileySeed.ps1'
@@ -10,8 +10,7 @@ function bb-wiley-seed {
     & $scriptPath
 }
 
-# bb-health: Run the BusBuddy health check script
-function bb-health {
+function Test-BusBuddyHealth {
     [CmdletBinding()]
     param()
     $healthScript = Join-Path $PSScriptRoot 'Modules/BusBuddy/bb-health.ps1'

@@ -211,7 +211,7 @@ namespace BusBuddy.Core.Migrations
                         .HasDatabaseName("IX_Activities_Status");
 
                     b.HasIndex("AssignedVehicleId", "Date", "LeaveTime")
-                        .HasDatabaseName("IX_Activities_VehicleSchedule");
+                        .HasDatabaseName("IX_Activities_BusSchedule");
 
                     b.HasIndex("Date", "LeaveTime", "EventTime")
                         .HasDatabaseName("IX_Activities_DateTimeRange");
@@ -501,32 +501,32 @@ namespace BusBuddy.Core.Migrations
 
                     b.HasIndex("BusNumber")
                         .IsUnique()
-                        .HasDatabaseName("IX_Vehicles_BusNumber");
+                        .HasDatabaseName("IX_Buses_BusNumber");
 
                     b.HasIndex("DateLastInspection")
-                        .HasDatabaseName("IX_Vehicles_DateLastInspection");
+                        .HasDatabaseName("IX_Buses_DateLastInspection");
 
                     b.HasIndex("FleetType")
-                        .HasDatabaseName("IX_Vehicles_FleetType");
+                        .HasDatabaseName("IX_Buses_FleetType");
 
                     b.HasIndex("InsuranceExpiryDate")
-                        .HasDatabaseName("IX_Vehicles_InsuranceExpiryDate");
+                        .HasDatabaseName("IX_Buses_InsuranceExpiryDate");
 
                     b.HasIndex("LicenseNumber")
                         .IsUnique()
-                        .HasDatabaseName("IX_Vehicles_LicenseNumber");
+                        .HasDatabaseName("IX_Buses_LicenseNumber");
 
                     b.HasIndex("Status")
-                        .HasDatabaseName("IX_Vehicles_Status");
+                        .HasDatabaseName("IX_Buses_Status");
 
                     b.HasIndex("VINNumber")
                         .IsUnique()
-                        .HasDatabaseName("IX_Vehicles_VINNumber");
+                        .HasDatabaseName("IX_Buses_VINNumber");
 
                     b.HasIndex("Make", "Model", "Year")
-                        .HasDatabaseName("IX_Vehicles_MakeModelYear");
+                        .HasDatabaseName("IX_Buses_MakeModelYear");
 
-                    b.ToTable("Vehicles", (string)null);
+                    b.ToTable("Buses", (string)null);
 
                     b.HasData(
                         new
@@ -857,29 +857,25 @@ namespace BusBuddy.Core.Migrations
                         .ValueGeneratedOnAdd()
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)")
-                        .HasDefaultValue("")
-                        .HasAnnotation("Relational:JsonPropertyName", "address");
+                        .HasDefaultValue("");
 
                     b.Property<string>("CellPhone")
                         .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)")
-                        .HasAnnotation("Relational:JsonPropertyName", "cellPhone");
+                        .HasColumnType("nvarchar(20)");
 
                     b.Property<string>("City")
                         .IsRequired()
                         .ValueGeneratedOnAdd()
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)")
-                        .HasDefaultValue("")
-                        .HasAnnotation("Relational:JsonPropertyName", "city");
+                        .HasDefaultValue("");
 
                     b.Property<string>("County")
                         .IsRequired()
                         .ValueGeneratedOnAdd()
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)")
-                        .HasDefaultValue("")
-                        .HasAnnotation("Relational:JsonPropertyName", "county");
+                        .HasDefaultValue("");
 
                     b.Property<string>("CreatedBy")
                         .HasMaxLength(100)
@@ -892,26 +888,22 @@ namespace BusBuddy.Core.Migrations
 
                     b.Property<string>("EmergencyContact")
                         .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)")
-                        .HasAnnotation("Relational:JsonPropertyName", "emergencyContact");
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<string>("HomePhone")
                         .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)")
-                        .HasAnnotation("Relational:JsonPropertyName", "homePhone");
+                        .HasColumnType("nvarchar(20)");
 
                     b.Property<string>("JointParent")
                         .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)")
-                        .HasAnnotation("Relational:JsonPropertyName", "jointParent");
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<string>("ParentGuardian")
                         .IsRequired()
                         .ValueGeneratedOnAdd()
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)")
-                        .HasDefaultValue("")
-                        .HasAnnotation("Relational:JsonPropertyName", "parentGuardian");
+                        .HasDefaultValue("");
 
                     b.Property<string>("UpdatedBy")
                         .HasMaxLength(100)
@@ -993,6 +985,69 @@ namespace BusBuddy.Core.Migrations
                         .HasDatabaseName("IX_Fuel_VehicleDate");
 
                     b.ToTable("Fuel", (string)null);
+                });
+
+            modelBuilder.Entity("BusBuddy.Core.Models.Guardian", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Address")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)")
+                        .HasDefaultValue("");
+
+                    b.Property<string>("Email")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<int>("FamilyId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("FirstName")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasDefaultValue("");
+
+                    b.Property<int>("GuardianId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("LastName")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasDefaultValue("");
+
+                    b.Property<double?>("Latitude")
+                        .HasColumnType("float");
+
+                    b.Property<double?>("Longitude")
+                        .HasColumnType("float");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("Phone")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)")
+                        .HasDefaultValue("");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FamilyId");
+
+                    b.ToTable("Guardians", (string)null);
                 });
 
             modelBuilder.Entity("BusBuddy.Core.Models.Maintenance", b =>
@@ -1213,10 +1268,8 @@ namespace BusBuddy.Core.Migrations
                         .HasDefaultValue("");
 
                     b.Property<string>("School")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("nvarchar(max)")
-                        .HasDefaultValue("");
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<int?>("StopCount")
                         .HasColumnType("int");
@@ -1262,6 +1315,9 @@ namespace BusBuddy.Core.Migrations
                     b.Property<DateTime>("AssignmentDate")
                         .HasColumnType("datetime2");
 
+                    b.Property<int?>("GuardianId")
+                        .HasColumnType("int");
+
                     b.Property<int>("RouteId")
                         .HasColumnType("int");
 
@@ -1269,6 +1325,8 @@ namespace BusBuddy.Core.Migrations
                         .HasColumnType("int");
 
                     b.HasKey("RouteAssignmentId");
+
+                    b.HasIndex("GuardianId");
 
                     b.HasIndex("RouteId");
 
@@ -1691,7 +1749,7 @@ namespace BusBuddy.Core.Migrations
                     b.Property<DateTime?>("EnrollmentDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<int?>("FamilyId")
+                    b.Property<int>("FamilyId")
                         .HasColumnType("int");
 
                     b.Property<bool>("FieldTripPermission")
@@ -2008,7 +2066,7 @@ namespace BusBuddy.Core.Migrations
                         .HasDatabaseName("IX_TripEvents_DriverSchedule");
 
                     b.HasIndex("VehicleId", "LeaveTime")
-                        .HasDatabaseName("IX_TripEvents_VehicleSchedule");
+                        .HasDatabaseName("IX_TripEvents_BusSchedule");
 
                     b.ToTable("TripEvents", (string)null);
                 });
@@ -2090,6 +2148,18 @@ namespace BusBuddy.Core.Migrations
                     b.Navigation("Vehicle");
                 });
 
+            modelBuilder.Entity("BusBuddy.Core.Models.Guardian", b =>
+                {
+                    b.HasOne("BusBuddy.Core.Models.Family", "Family")
+                        .WithMany("Guardians")
+                        .HasForeignKey("FamilyId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("FK_Guardians_Family");
+
+                    b.Navigation("Family");
+                });
+
             modelBuilder.Entity("BusBuddy.Core.Models.Maintenance", b =>
                 {
                     b.HasOne("BusBuddy.Core.Models.Bus", "Vehicle")
@@ -2139,6 +2209,10 @@ namespace BusBuddy.Core.Migrations
 
             modelBuilder.Entity("BusBuddy.Core.Models.RouteAssignment", b =>
                 {
+                    b.HasOne("BusBuddy.Core.Models.Guardian", "Guardian")
+                        .WithMany()
+                        .HasForeignKey("GuardianId");
+
                     b.HasOne("BusBuddy.Core.Models.Route", "Route")
                         .WithMany()
                         .HasForeignKey("RouteId")
@@ -2150,6 +2224,8 @@ namespace BusBuddy.Core.Migrations
                         .HasForeignKey("VehicleId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Guardian");
 
                     b.Navigation("Route");
 
@@ -2215,15 +2291,18 @@ namespace BusBuddy.Core.Migrations
 
             modelBuilder.Entity("BusBuddy.Core.Models.Student", b =>
                 {
-                    b.HasOne("BusBuddy.Core.Models.Family", null)
+                    b.HasOne("BusBuddy.Core.Models.Family", "Family")
                         .WithMany("Students")
                         .HasForeignKey("FamilyId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
                         .HasConstraintName("FK_Students_Family");
 
                     b.HasOne("BusBuddy.Core.Models.RouteAssignment", "RouteAssignment")
                         .WithMany()
                         .HasForeignKey("RouteAssignmentId");
+
+                    b.Navigation("Family");
 
                     b.Navigation("RouteAssignment");
                 });
@@ -2330,6 +2409,8 @@ namespace BusBuddy.Core.Migrations
 
             modelBuilder.Entity("BusBuddy.Core.Models.Family", b =>
                 {
+                    b.Navigation("Guardians");
+
                     b.Navigation("Students");
                 });
 

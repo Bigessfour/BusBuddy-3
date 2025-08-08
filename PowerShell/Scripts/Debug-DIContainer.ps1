@@ -38,7 +38,7 @@ $envInfo.GetEnumerator() | ForEach-Object {
 #region BusBuddy Health Check
 Write-Host "`n🏥 BusBuddy Health Check:" -ForegroundColor Yellow
 try {
-    $healthResult = bb-health
+    $healthResult = Test-BusBuddyHealth
     Write-Host "  ✅ Health check completed successfully" -ForegroundColor Green
 } catch {
     Write-Host "  ❌ Health check failed: $($_.Exception.Message)" -ForegroundColor Red

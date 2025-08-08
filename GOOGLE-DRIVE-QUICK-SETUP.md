@@ -40,8 +40,8 @@ code .
 ### Step 5: Test Everything Works
 ```powershell
 # Open a new VS Code terminal and run:
-bb-health
-bb-help
+bbHealth
+bbCommands
 
 # You should see:
 # 🚌 BusBuddy Enhanced Development Profile v2.0
@@ -67,12 +67,13 @@ After setup, you'll have these commands immediately available:
 # Development workflow
 bb-build -FormatFirst           # Enhanced build with auto-formatting
 bb-run -BuildFirst -FormatFirst # Complete workflow: format → build → run
-bb-debug-files -AutoFix         # Use your developed file debugger tool
+# Debug utilities
+bbCatchErrors                   # Enhanced error capture
+bbCaptureRuntimeErrors          # Comprehensive runtime error monitoring
 
 # Utilities
-bb-health                       # Check environment health
-bb-help                         # Show all available commands
-bb-open [file]                  # Open files in VS Code
+bbHealth                        # Check environment health
+bbCommands                      # Show all available commands
 ```
 
 ## 🔧 If You Need to Install VS Code Extensions
@@ -90,9 +91,9 @@ code --install-extension ms-vscode.vscode-xml
 You'll know it's working when:
 
 1. **VS Code terminal shows**: `🚌 BusBuddy Enhanced Development Profile v2.0`
-2. **`bb-health` passes**: All green checkmarks
+2. **`bbHealth` passes**: All green checkmarks
 3. **Task Explorer shows**: Enhanced BB tasks with 🔧, 🎨, ✅, 🚀 icons
-4. **File debugger works**: `bb-debug-files` executes without errors
+4. **Commands work**: `bbCommands` shows all available functions
 
 ## 💡 Pro Tips
 

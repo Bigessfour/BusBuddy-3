@@ -13,10 +13,10 @@ applyTo: '**'
 
 ### Debugging & Troubleshooting
 For technical error resolution (e.g., CS0103, CS0246), see `.github/copilot-instructions.md`. Use these steps for project-specific issues:
-- Run `bb-health` to diagnose environment issues.
-- Check build output with `bb-build` for detailed error information.
-- Use `bb-run` for runtime logging and testing.
-- Export diagnostics with `bb-debug-export` (if available).
+- Run `bbHealth` to diagnose environment issues.
+- Check build output with `bbBuild` for detailed error information.
+- Use `bbRun` for runtime logging and testing.
+- Export diagnostics with available PowerShell functions.
 
 #### 🔧 **Problem Resolution Approach**ignment) and how to achieve a runnable MVP with minimal build errors.
 
@@ -71,7 +71,7 @@ For technical error resolution (e.g., CS0103, CS0246), see `.github/copilot-inst
 2. **Load PowerShell Environment**:
    ```powershell
    pwsh -ExecutionPolicy Bypass -File "load-bus-buddy-profiles.ps1"
-   bb-health -Quick
+   bbHealth
    ```
 
 3. **Disable Non-MVP Services** (if build errors persist):

@@ -463,30 +463,38 @@ The refactored `bbTest` now gracefully handles the known .NET 9 issue:
 
 ### **🎛️ PowerShell Commands Available**
 ```powershell
-# Core Build Commands
-bb-build                             # Build solution
-bb-run                               # Run application
-bb-test                              # 🆕 ENHANCED - Run tests with .NET 9 compatibility detection
-bb-clean                             # Clean build artifacts
-bb-restore                           # Restore packages
+# Core Build Commands (Updated August 8, 2025)
+bbBuild                              # Build solution
+bbRun                                # Run application
+bbTest                               # 🆕 ENHANCED - Run tests with .NET 9 compatibility detection
+bbClean                              # Clean build artifacts
+bbRestore                            # Restore packages
 
 # Health & Diagnostics
-bb-health                            # System health check
-bb-diagnostic                        # Full diagnostics
-bb-debug-start                       # Start debug capture
-bb-debug-export                      # Export debug data
+bbHealth                             # System health check
+bbInfo                               # Show module information
+bbCommands                           # List all available commands
+
+# XAML & Validation Commands
+bbXamlValidate                       # Validate all XAML files
+bbAntiRegression                     # Anti-regression validation
+bbCatchErrors                        # Run with exception capture
+bbCaptureRuntimeErrors               # Comprehensive runtime error monitoring
 
 # MVP Commands
-bb-mvp-check                         # MVP functionality check
-bb-anti-regression                   # Anti-regression validation
-bb-xaml-validate                     # XAML validation
+bbMvp                                # Evaluate features & scope management
+bbMvpCheck                           # MVP functionality check
+
+# XAI Route Optimization
+bbRoutes                             # Main route optimization system
+bbRouteDemo                          # Demo with sample data
+bbRouteStatus                        # Check system status
+
+# Enhanced Development
+bbDevSession                         # Start development session
 
 # Testing Commands (Enhanced)
-bb-test                              # 🆕 Enhanced test execution with .NET 9 detection
-bb-test-full                         # Full test suite with enhanced reporting
-bb-test-errors                       # Show test errors only
-bb-test-log                          # Show latest test log
-bb-test-watch                        # Continuous test watch
+bbTest                               # 🆕 Enhanced test execution with .NET 9 detection
 
 # Azure Commands (Verified Infrastructure)
 bb-azure-setup                       # ✅ Azure SQL setup (infrastructure operational)
@@ -576,7 +584,7 @@ dotnet ef database update --project BusBuddy.Core.csproj
 az sql db show --resource-group BusBuddy-RG --server busbuddy-server-sm2 --name BusBuddyDB
 
 # Run health check with Azure backend
-bb-health                           # Includes Azure database connectivity check
+bbHealth                             # Includes Azure database connectivity check
 ```
 
 **⚠️ Important**: All Azure SQL Database infrastructure is **already provisioned and operational**. No new resources need to be created to avoid duplication costs (~$15/month Standard S0).

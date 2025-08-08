@@ -73,7 +73,7 @@ function Test-BusBuddyEnvironment {
 
     # 4. Essential Commands Test
     Write-Host "4. Essential Commands..." -ForegroundColor Yellow
-    $essentialCommands = @('bb-build', 'bb-run', 'bb-health', 'bb-mvp', 'bb-mvp-check')
+    $essentialCommands = @('bb-build', 'bb-run', 'Test-BusBuddyHealth', 'bb-mvp', 'bb-mvp-check')
     $commandsWorking = 0
 
     foreach ($cmd in $essentialCommands) {
@@ -143,7 +143,7 @@ function Test-BusBuddyEnvironment {
         Write-Output "   All critical systems are operational"
         Write-Output ""
         Write-Output "🚀 Quick Start Commands:"
-        Write-Output "   bb-health      - System health check"
+    Write-Output "   Test-BusBuddyHealth - System health check"
         Write-Output "   bb-mvp -JustShow - Show MVP priorities"
         Write-Output "   bb-build       - Build the solution"
         Write-Output "   bb-run         - Run the application"

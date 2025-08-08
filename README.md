@@ -1,4 +1,11 @@
-# 🚌 BusBuddy - School Transportation Management System
+# 🚌 BusBuddy - School Transportation Manag# Start development environment
+bbDevSession
+
+# Verify system health
+bbHealth
+
+# Run tests
+bbTeststem
 
 > **Modern WPF application for comprehensive school bus fleet management, built with .NET 9.0 and Syncfusion controls.**
 
@@ -88,12 +95,12 @@ BusBuddy/
 BusBuddy includes a comprehensive PowerShell module for development tasks:
 
 ```powershell
-# Essential commands
-bb-build              # Build the solution
-bb-run                # Run the application
-bb-test               # Execute all tests
-bb-health             # System diagnostics
-bb-dev-session        # Complete development setup
+# Essential commands (Updated August 8, 2025)
+bbBuild               # Build the solution
+bbRun                 # Run the application
+bbTest                # Execute all tests
+bbHealth              # System diagnostics
+bbDevSession          # Complete development setup
 
 # Advanced commands
 bb-xaml-validate      # Validate XAML files
@@ -306,14 +313,14 @@ Test coverage reports are generated in `TestResults/` directory with detailed TR
 
 ### **Getting Help**
 - 📚 **Documentation**: Start with this README and linked guides
-- 🔧 **PowerShell**: Use `bb-health` for system diagnostics
+- 🔧 **PowerShell**: Use `bbHealth` for system diagnostics
 - 🐛 **Issues**: Create GitHub issues for bugs or feature requests
 - 💬 **Discussions**: Use GitHub discussions for questions
 
 ### **Troubleshooting**
 ```powershell
 # System health check
-bb-health
+bbHealth
 
 # Build diagnostics
 bb-build 2>&1 | tee build-output.log

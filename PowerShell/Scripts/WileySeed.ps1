@@ -1,6 +1,6 @@
 # WileySeed.ps1
 # Calls StudentService.SeedWileySchoolDistrictDataAsync via dotnet run --project BusBuddy.WPF
-# Usage: bb-wiley-seed
+# Usage: Invoke-BusBuddyWileySeed
 
 param(
     [string]$ProjectPath = "BusBuddy.WPF/BusBuddy.WPF.csproj"

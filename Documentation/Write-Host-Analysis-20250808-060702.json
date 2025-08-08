@@ -1,0 +1,25 @@
+{
+  "MultilineOutput": [],
+  "UnknownPatterns": [
+    {
+      "Context": "        }\n    \n        # Check 3: PowerShell Write-Host violations\n        Write-BusBuddyStatus \"Checking PowerShell compliance...\" -Type Info\n        try {",
+      "Content": "# Check 3: PowerShell Write-Host violations",
+      "LineNumber": 1519
+    },
+    {
+      "Context": "        try {\n            $psFiles = Get-ChildItem -Path \"$projectRoot\\PowerShell\" -Include \"*.ps1\", \"*.psm1\" -Recurse -ErrorAction SilentlyContinue\n            $psViolations = $psFiles | Select-String -Pattern \"Write-Host\" -ErrorAction SilentlyContinue |\n                Where-Object { $_.Line -notmatch \"Module loaded|ForegroundColor|BusBuddy PowerShell Module\" }\n    ",
+      "Content": "$psViolations = $psFiles | Select-String -Pattern \"Write-Host\" -ErrorAction SilentlyContinue |",
+      "LineNumber": 1523
+    }
+  ],
+  "ComplexExpressions": [
+    {
+      "Context": "    \n            if ($psViolations) {\n                $issues += \"❌ PowerShell Write-Host violations: $($psViolations.Count)\"\n                if ($Detailed) {\n                    $psViolations | ForEach-Object {",
+      "Content": "$issues += \"❌ PowerShell Write-Host violations: $($psViolations.Count)\"",
+      "LineNumber": 1527
+    }
+  ],
+  "LoopOutput": [],
+  "VariableOutput": [],
+  "ConditionalOutput": []
+}
