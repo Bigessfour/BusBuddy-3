@@ -86,6 +86,10 @@ repo-size-*.json
 temp-*
 tmp-*
 
+# Local analysis artifacts and profile dumps
+Analysis-Results/
+profile_dump.txt
+
 # ===================================================
 # DEVELOPMENT TOOLS AND AUTOMATION
 # ===================================================
