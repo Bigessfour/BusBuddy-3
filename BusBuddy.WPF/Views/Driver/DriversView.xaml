@@ -1,9 +1,3 @@
-<!--
-╔══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
-║                                              🔒 BUSBUDDY SYNCFUSION THEME COMPLIANCE REFERENCE 🔒                                                                    ║
-╚══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
--->
-
 <UserControl x:Class="BusBuddy.WPF.Views.Driver.DriversView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -13,32 +7,188 @@
              mc:Ignorable="d"
              d:DesignHeight="450" d:DesignWidth="800">
 
-    <Grid>
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/SyncfusionV30_Validated_ResourceDictionary.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+            <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+            <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+                <Setter Property="Margin" Value="5"/>
+                <Setter Property="Padding" Value="10,5"/>
+                <Setter Property="MinWidth" Value="80"/>
+            </Style>
+        </ResourceDictionary>
+    </UserControl.Resources>
+
+    <Grid Margin="10">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <TextBlock Grid.Row="0"
-                   Text="Drivers"
-                   FontSize="24"
-                   FontWeight="Bold"
-                   Margin="20,10"/>
+        <!-- Header -->
+        <Border Grid.Row="0" Background="#007ACC"
+                CornerRadius="5" Padding="15" Margin="0,0,0,10">
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Text="&#xE7C4;" FontFamily="Segoe MDL2 Assets"
+                          FontSize="24" Foreground="White" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                <TextBlock Text="Driver Management" FontSize="20" FontWeight="Bold"
+                          Foreground="White" VerticalAlignment="Center"/>
+            </StackPanel>
+        </Border>
 
-        <syncfusion:SfDataGrid Grid.Row="1"
+        <!-- Toolbar -->
+        <Border Grid.Row="1" Background="#F5F5F5"
+                CornerRadius="3" Padding="10" Margin="0,0,0,10">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Main Actions -->
+                <StackPanel Grid.Column="0" Orientation="Horizontal">
+                    <syncfusion:ButtonAdv Name="AddDriverButton" Content="➕ Add Driver"
+                            Command="{Binding AddDriverCommand}"
+                            Background="{StaticResource BusBuddy.Brush.Primary}" Foreground="White"
+                            AutomationProperties.Name="Add Driver"
+                            AutomationProperties.HelpText="Opens form to add a new driver to the system"/>
+                    <syncfusion:ButtonAdv Name="EditDriverButton" Content="✏️ Edit Driver"
+                            Command="{Binding EditDriverCommand}"
+                            IsEnabled="{Binding HasSelectedDriver}"
+                            AutomationProperties.Name="Edit Driver"
+                            AutomationProperties.HelpText="Opens form to edit the currently selected driver"/>
+                    <syncfusion:ButtonAdv Name="DeleteDriverButton" Content="🗑️ Delete Driver"
+                            Command="{Binding DeleteDriverCommand}"
+                            IsEnabled="{Binding HasSelectedDriver}"
+                            AutomationProperties.Name="Delete Driver"
+                            AutomationProperties.HelpText="Removes the currently selected driver from the system"/>
+                    <Separator Margin="10,0"/>
+
+                    <!-- Driver Specific Actions -->
+                    <syncfusion:ButtonAdv Name="ViewLicenseButton" Content="📄 View License"
+                            Command="{Binding ViewLicenseCommand}"
+                            IsEnabled="{Binding HasSelectedDriver}"
+                            Background="{StaticResource BusBuddy.Brush.Semantic.Info}" Foreground="White"
+                            AutomationProperties.Name="View License Details"
+                            AutomationProperties.HelpText="View license information and expiration details"/>
+                    <syncfusion:ButtonAdv Name="TrainingRecordsButton" Content="🎓 Training"
+                            Command="{Binding ViewTrainingCommand}"
+                            IsEnabled="{Binding HasSelectedDriver}"
+                            Background="{StaticResource BusBuddy.Brush.SafetyOrange}" Foreground="White"
+                            AutomationProperties.Name="View Training Records"
+                            AutomationProperties.HelpText="View and manage driver training records"/>
+                </StackPanel>
+
+                <!-- Quick Actions -->
+                <StackPanel Grid.Column="1" Orientation="Horizontal">
+                    <syncfusion:ButtonAdv Name="RefreshButton" Content="🔄 Refresh"
+                            Command="{Binding RefreshCommand}"
+                            AutomationProperties.Name="Refresh Driver List"
+                            AutomationProperties.HelpText="Reload driver data from the database"/>
+                    <syncfusion:ButtonAdv Name="ExportButton" Content="📤 Export"
+                            Command="{Binding ExportCommand}"
+                            AutomationProperties.Name="Export Drivers"
+                            AutomationProperties.HelpText="Export driver data to CSV file"/>
+
+                    <!-- Quick Filter -->
+                    <TextBox Name="QuickSearchBox" Width="150" Margin="10,0,0,0"
+                            Text="{Binding QuickSearchText, UpdateSourceTrigger=PropertyChanged}"
+                            AutomationProperties.Name="Quick Search Drivers"
+                            AutomationProperties.HelpText="Type to search drivers by name, license, or status">
+                        <TextBox.Style>
+                            <Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="TextBox">
+                                            <Border Background="{TemplateBinding Background}"
+                                                   BorderBrush="{TemplateBinding BorderBrush}"
+                                                   BorderThickness="{TemplateBinding BorderThickness}"
+                                                   CornerRadius="3">
+                                                <Grid>
+                                                    <ScrollViewer x:Name="PART_ContentHost" />
+                                                    <TextBlock Text="🔍 Search drivers..."
+                                                              Foreground="Gray"
+                                                              IsHitTestVisible="False"
+                                                              Margin="5,0,0,0"
+                                                              VerticalAlignment="Center">
+                                                        <TextBlock.Style>
+                                                            <Style TargetType="TextBlock">
+                                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding Text, RelativeSource={RelativeSource AncestorType=TextBox}}" Value="">
+                                                                        <Setter Property="Visibility" Value="Visible"/>
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </TextBlock.Style>
+                                                    </TextBlock>
+                                                </Grid>
+                                            </Border>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                            </Style>
+                        </TextBox.Style>
+                    </TextBox>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- Drivers Data Grid -->
+        <syncfusion:SfDataGrid Grid.Row="2"
+                               Name="DriversDataGrid"
                                ItemsSource="{Binding Drivers}"
-                               SelectedItem="{Binding SelectedDriver}"
+                               SelectedItem="{Binding SelectedDriver, Mode=TwoWay}"
                                AutoGenerateColumns="False"
                                AllowEditing="False"
                                AllowSorting="True"
                                AllowFiltering="True"
-                               Margin="20">
+                               AllowGrouping="True"
+                               ShowGroupDropArea="True"
+                               ShowRowHeader="True"
+                               SelectionMode="Single"
+                               GridLinesVisibility="Both"
+                               HeaderLinesVisibility="Both"
+                               ColumnSizer="Star"
+                               AutomationProperties.Name="Drivers Data Grid"
+                               AutomationProperties.HelpText="Grid displaying all drivers with their license and qualification information">
             <syncfusion:SfDataGrid.Columns>
-                <syncfusion:GridTextColumn HeaderText="ID" MappingName="DriverId" Width="80"/>
-                <syncfusion:GridTextColumn HeaderText="Name" MappingName="DriverName" Width="200"/>
-                <syncfusion:GridTextColumn HeaderText="License" MappingName="LicenseNumber" Width="150"/>
+                <syncfusion:GridTextColumn HeaderText="Driver ID" MappingName="DriverId" Width="100"/>
+                <syncfusion:GridTextColumn HeaderText="Driver Name" MappingName="DriverName" Width="200"/>
+                <syncfusion:GridTextColumn HeaderText="License Number" MappingName="LicenseNumber" Width="150"/>
+                <syncfusion:GridTextColumn HeaderText="License Class" MappingName="LicenseClass" Width="100"/>
+                <syncfusion:GridDateTimeColumn HeaderText="License Expiry" MappingName="LicenseExpiryDate" Width="120" DisplayBinding="{Binding LicenseExpiryDate, StringFormat=MM/dd/yyyy}"/>
+                <syncfusion:GridTextColumn HeaderText="Phone" MappingName="DriverPhone" Width="120"/>
                 <syncfusion:GridTextColumn HeaderText="Status" MappingName="Status" Width="100"/>
+                <syncfusion:GridCheckBoxColumn HeaderText="Training Complete" MappingName="TrainingComplete" Width="130"/>
+                <syncfusion:GridTextColumn HeaderText="Endorsements" MappingName="Endorsements" Width="150"/>
             </syncfusion:SfDataGrid.Columns>
         </syncfusion:SfDataGrid>
+
+        <!-- Status Bar -->
+        <Border Grid.Row="3" Background="#E9ECEF" CornerRadius="3" Padding="10" Margin="0,10,0,0">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <TextBlock Grid.Column="0" Text="{Binding StatusMessage}"
+                          VerticalAlignment="Center" Foreground="#6C757D"/>
+
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="Total Drivers: " Foreground="#6C757D"/>
+                    <TextBlock Text="{Binding TotalDrivers}" FontWeight="Bold" Foreground="#007ACC" Margin="0,0,15,0"/>
+                    <TextBlock Text="Active: " Foreground="#6C757D"/>
+                    <TextBlock Text="{Binding ActiveDrivers}" FontWeight="Bold" Foreground="#28A745" Margin="0,0,15,0"/>
+                    <TextBlock Text="Training Pending: " Foreground="#6C757D"/>
+                    <TextBlock Text="{Binding TrainingPendingDrivers}" FontWeight="Bold" Foreground="#FFC107"/>
+                </StackPanel>
+            </Grid>
+        </Border>
     </Grid>
 </UserControl>

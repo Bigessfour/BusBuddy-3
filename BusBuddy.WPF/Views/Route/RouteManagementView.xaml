@@ -6,40 +6,228 @@
              xmlns:syncfusion="http://schemas.syncfusion.com/wpf"
              mc:Ignorable="d"
              d:DesignHeight="600" d:DesignWidth="1000">
+
     <UserControl.Resources>
-        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/SyncfusionV30_Validated_ResourceDictionary.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+            <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+            <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+                <Setter Property="Margin" Value="5"/>
+                <Setter Property="Padding" Value="10,5"/>
+                <Setter Property="MinWidth" Value="80"/>
+            </Style>
+        </ResourceDictionary>
     </UserControl.Resources>
+
     <Grid Background="{DynamicResource FluentDarkBackgroundBrush}">
         <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
-        <StackPanel Orientation="Horizontal" Grid.Row="0" Margin="10">
-            <Button Content="Generate Schedule"
-                    Command="{Binding GenerateScheduleCommand}"
-                    Style="{DynamicResource PrimaryButtonStyle}" Margin="0,0,10,0"/>
-            <Button Content="View Map"
-                    Command="{Binding ViewMapCommand}"
-                    Style="{DynamicResource PrimaryButtonStyle}"/>
-        </StackPanel>
-        <syncfusion:SfDataGrid Grid.Row="1"
+
+        <!-- Header -->
+        <Border Grid.Row="0" Background="#007ACC"
+                CornerRadius="5" Padding="15" Margin="10,10,10,0">
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Text="&#xE1C4;" FontFamily="Segoe MDL2 Assets"
+                          FontSize="24" Foreground="White" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                <TextBlock Text="Route Management &amp; Planning" FontSize="20" FontWeight="Bold"
+                          Foreground="White" VerticalAlignment="Center"/>
+            </StackPanel>
+        </Border>
+
+        <!-- Enhanced Toolbar -->
+        <Border Grid.Row="1" Background="#F5F5F5"
+                CornerRadius="3" Padding="10" Margin="10,10,10,0">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Main Actions -->
+                <StackPanel Grid.Column="0" Orientation="Horizontal">
+                    <!-- Route Operations -->
+                    <syncfusion:ButtonAdv Name="AddRouteButton" Content="➕ Add Route"
+                            Command="{Binding AddRouteCommand}"
+                            Background="{StaticResource BusBuddy.Brush.Primary}" Foreground="White"
+                            AutomationProperties.Name="Add Route"
+                            AutomationProperties.HelpText="Create a new bus route"/>
+                    <syncfusion:ButtonAdv Name="EditRouteButton" Content="✏️ Edit Route"
+                            Command="{Binding EditRouteCommand}"
+                            IsEnabled="{Binding HasSelectedRoute}"
+                            AutomationProperties.Name="Edit Route"
+                            AutomationProperties.HelpText="Edit the selected route"/>
+                    <syncfusion:ButtonAdv Name="DeleteRouteButton" Content="🗑️ Delete Route"
+                            Command="{Binding DeleteRouteCommand}"
+                            IsEnabled="{Binding HasSelectedRoute}"
+                            AutomationProperties.Name="Delete Route"
+                            AutomationProperties.HelpText="Delete the selected route"/>
+                    <Separator Margin="10,0"/>
+
+                    <!-- Planning Operations -->
+                    <syncfusion:ButtonAdv Name="GenerateScheduleButton" Content="📅 Generate Schedule"
+                            Command="{Binding GenerateScheduleCommand}"
+                            Background="{StaticResource BusBuddy.Brush.FleetGreen}" Foreground="White"
+                            AutomationProperties.Name="Generate Schedule"
+                            AutomationProperties.HelpText="Generate optimized route schedules"/>
+                    <syncfusion:ButtonAdv Name="ViewMapButton" Content="🗺️ View Map"
+                            Command="{Binding ViewMapCommand}"
+                            Background="{StaticResource BusBuddy.Brush.Semantic.Info}" Foreground="White"
+                            AutomationProperties.Name="View Map"
+                            AutomationProperties.HelpText="View routes on interactive map"/>
+                    <Separator Margin="10,0"/>
+
+                    <!-- Assignment Operations -->
+                    <syncfusion:ButtonAdv Name="AssignStudentsButton" Content="👥 Assign Students"
+                            Command="{Binding AssignStudentsCommand}"
+                            IsEnabled="{Binding HasSelectedRoute}"
+                            Background="{StaticResource BusBuddy.Brush.SafetyOrange}" Foreground="White"
+                            AutomationProperties.Name="Assign Students to Route"
+                            AutomationProperties.HelpText="Assign students to the selected route"/>
+                    <syncfusion:ButtonAdv Name="AssignVehicleButton" Content="🚌 Assign Vehicle"
+                            Command="{Binding AssignVehicleCommand}"
+                            IsEnabled="{Binding HasSelectedRoute}"
+                            Background="{StaticResource BusBuddy.Brush.Semantic.Warning}" Foreground="White"
+                            AutomationProperties.Name="Assign Vehicle to Route"
+                            AutomationProperties.HelpText="Assign vehicle to the selected route"/>
+                </StackPanel>
+
+                <!-- Export and Print Actions -->
+                <StackPanel Grid.Column="1" Orientation="Horizontal">
+                    <!-- Export Options -->
+                    <syncfusion:ButtonAdv Name="ExportCsvButton" Content="📊 Export CSV"
+                            Command="{Binding ExportCsvCommand}"
+                            Background="#28A745" Foreground="White"
+                            AutomationProperties.Name="Export to CSV"
+                            AutomationProperties.HelpText="Export route data to CSV file"/>
+                    <syncfusion:ButtonAdv Name="ExportReportButton" Content="📄 Export Report"
+                            Command="{Binding ExportReportCommand}"
+                            Background="#17A2B8" Foreground="White"
+                            AutomationProperties.Name="Export Report"
+                            AutomationProperties.HelpText="Export detailed route report"/>
+
+                    <!-- Print Options -->
+                    <syncfusion:ButtonAdv Name="PrintScheduleButton" Content="🖨️ Print Schedule"
+                            Command="{Binding PrintScheduleCommand}"
+                            Background="#6F42C1" Foreground="White"
+                            AutomationProperties.Name="Print Schedule"
+                            AutomationProperties.HelpText="Print route schedules"/>
+                    <syncfusion:ButtonAdv Name="PrintRouteMapsButton" Content="🗺️ Print Maps"
+                            Command="{Binding PrintRouteMapsCommand}"
+                            Background="#E83E8C" Foreground="White"
+                            AutomationProperties.Name="Print Route Maps"
+                            AutomationProperties.HelpText="Print route maps and directions"/>
+
+                    <Separator Margin="10,0"/>
+
+                    <!-- Quick Actions -->
+                    <syncfusion:ButtonAdv Name="RefreshButton" Content="🔄 Refresh"
+                            Command="{Binding RefreshCommand}"
+                            AutomationProperties.Name="Refresh Routes"
+                            AutomationProperties.HelpText="Reload route data from database"/>
+
+                    <!-- Quick Filter -->
+                    <TextBox Name="QuickSearchBox" Width="150" Margin="10,0,0,0"
+                            Text="{Binding QuickSearchText, UpdateSourceTrigger=PropertyChanged}"
+                            AutomationProperties.Name="Quick Search Routes"
+                            AutomationProperties.HelpText="Type to search routes by name or description">
+                        <TextBox.Style>
+                            <Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="TextBox">
+                                            <Border Background="{TemplateBinding Background}"
+                                                   BorderBrush="{TemplateBinding BorderBrush}"
+                                                   BorderThickness="{TemplateBinding BorderThickness}"
+                                                   CornerRadius="3">
+                                                <Grid>
+                                                    <ScrollViewer x:Name="PART_ContentHost" />
+                                                    <TextBlock Text="🔍 Search routes..."
+                                                              Foreground="Gray"
+                                                              IsHitTestVisible="False"
+                                                              Margin="5,0,0,0"
+                                                              VerticalAlignment="Center">
+                                                        <TextBlock.Style>
+                                                            <Style TargetType="TextBlock">
+                                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding Text, RelativeSource={RelativeSource AncestorType=TextBox}}" Value="">
+                                                                        <Setter Property="Visibility" Value="Visible"/>
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </TextBlock.Style>
+                                                    </TextBlock>
+                                                </Grid>
+                                            </Border>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                            </Style>
+                        </TextBox.Style>
+                    </TextBox>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- Routes Data Grid -->
+        <syncfusion:SfDataGrid Grid.Row="2"
+                              Name="RoutesDataGrid"
                               ItemsSource="{Binding Routes}"
+                              SelectedItem="{Binding SelectedRoute, Mode=TwoWay}"
                               AutoGenerateColumns="False"
                               AllowSorting="True"
                               AllowFiltering="True"
-                              SelectionMode="Single"
-                              ColumnSizer="Star"
+                              AllowGrouping="True"
+                              ShowGroupDropArea="True"
                               ShowRowHeader="True"
-                              Background="{DynamicResource FluentDarkBackgroundBrush}">
+                              SelectionMode="Single"
+                              GridLinesVisibility="Both"
+                              HeaderLinesVisibility="Both"
+                              ColumnSizer="Star"
+                              Margin="10"
+                              Background="{DynamicResource FluentDarkBackgroundBrush}"
+                              AutomationProperties.Name="Routes Data Grid"
+                              AutomationProperties.HelpText="Grid displaying all routes with their assignments and schedule information">
             <syncfusion:SfDataGrid.Columns>
                 <syncfusion:GridTextColumn MappingName="RouteName" HeaderText="Route Name" Width="150"/>
                 <syncfusion:GridTextColumn MappingName="RouteDescription" HeaderText="Description" Width="200"/>
+                <syncfusion:GridTextColumn MappingName="School" HeaderText="School" Width="150"/>
                 <syncfusion:GridTextColumn MappingName="Path" HeaderText="Path" Width="200"/>
                 <syncfusion:GridTextColumn MappingName="BusNumber" HeaderText="Bus Number" Width="100"/>
                 <syncfusion:GridTextColumn MappingName="VINNumber" HeaderText="VIN" Width="180"/>
+                <syncfusion:GridTextColumn MappingName="AssignedStudentsCount" HeaderText="Students Count" Width="120"/>
                 <syncfusion:GridTextColumn MappingName="AssignedStudents" HeaderText="Assigned Students" Width="250"/>
+                <syncfusion:GridDateTimeColumn MappingName="Date" HeaderText="Date" Width="100" DisplayBinding="{Binding Date, StringFormat=MM/dd/yyyy}"/>
+                <syncfusion:GridTextColumn MappingName="Status" HeaderText="Status" Width="100"/>
             </syncfusion:SfDataGrid.Columns>
         </syncfusion:SfDataGrid>
+
+        <!-- Status Bar -->
+        <Border Grid.Row="3" Background="#E9ECEF" CornerRadius="3" Padding="10" Margin="10,0,10,10">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <TextBlock Grid.Column="0" Text="{Binding StatusMessage}"
+                          VerticalAlignment="Center" Foreground="#6C757D"/>
+
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="Total Routes: " Foreground="#6C757D"/>
+                    <TextBlock Text="{Binding TotalRoutes}" FontWeight="Bold" Foreground="#007ACC" Margin="0,0,15,0"/>
+                    <TextBlock Text="Active: " Foreground="#6C757D"/>
+                    <TextBlock Text="{Binding ActiveRoutes}" FontWeight="Bold" Foreground="#28A745" Margin="0,0,15,0"/>
+                    <TextBlock Text="Students Assigned: " Foreground="#6C757D"/>
+                    <TextBlock Text="{Binding TotalAssignedStudents}" FontWeight="Bold" Foreground="#17A2B8"/>
+                </StackPanel>
+            </Grid>
+        </Border>
     </Grid>
 </UserControl>

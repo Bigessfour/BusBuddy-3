@@ -1,0 +1,268 @@
+<UserControl x:Class="BusBuddy.WPF.Views.Reports.ReportsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:syncfusion="http://schemas.syncfusion.com/wpf"
+             mc:Ignorable="d"
+             d:DesignHeight="600" d:DesignWidth="1000">
+
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/SyncfusionV30_Validated_ResourceDictionary.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+            <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+            <Style TargetType="GroupBox">
+                <Setter Property="Margin" Value="10"/>
+                <Setter Property="Padding" Value="15"/>
+                <Setter Property="Background" Value="#F8F9FA"/>
+                <Setter Property="BorderBrush" Value="#DEE2E6"/>
+                <Setter Property="BorderThickness" Value="1"/>
+            </Style>
+        </ResourceDictionary>
+    </UserControl.Resources>
+
+    <Grid Margin="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <Border Grid.Row="0" Background="#007ACC"
+                CornerRadius="5" Padding="15" Margin="0,0,0,10">
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Text="&#xE8F1;" FontFamily="Segoe MDL2 Assets"
+                          FontSize="24" Foreground="White" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                <TextBlock Text="Reports &amp; Analytics" FontSize="20" FontWeight="Bold"
+                          Foreground="White" VerticalAlignment="Center"/>
+            </StackPanel>
+        </Border>
+
+        <!-- Report Categories -->
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <!-- Student Reports -->
+                <GroupBox Grid.Row="0" Grid.Column="0" Header="Student Reports">
+                    <StackPanel>
+                        <TextBlock Text="Generate reports related to student information and assignments"
+                                  Foreground="#6C757D" Margin="0,0,0,15" TextWrapping="Wrap"/>
+
+                        <syncfusion:ButtonAdv Content="📊 Student Roster Report"
+                                Command="{Binding GenerateStudentRosterCommand}"
+                                Background="#28A745" Foreground="White" Margin="0,5"
+                                AutomationProperties.Name="Generate Student Roster Report"
+                                AutomationProperties.HelpText="Generate complete student roster with contact information"/>
+
+                        <syncfusion:ButtonAdv Content="🚌 Student Route Assignments"
+                                Command="{Binding GenerateStudentRouteReportCommand}"
+                                Background="#17A2B8" Foreground="White" Margin="0,5"
+                                AutomationProperties.Name="Generate Student Route Report"
+                                AutomationProperties.HelpText="Generate report of student route assignments"/>
+
+                        <syncfusion:ButtonAdv Content="📈 Student Enrollment Summary"
+                                Command="{Binding GenerateEnrollmentSummaryCommand}"
+                                Background="#6F42C1" Foreground="White" Margin="0,5"
+                                AutomationProperties.Name="Generate Enrollment Summary"
+                                AutomationProperties.HelpText="Generate summary of student enrollment by grade and school"/>
+
+                        <syncfusion:ButtonAdv Content="📍 Unassigned Students Report"
+                                Command="{Binding GenerateUnassignedStudentsCommand}"
+                                Background="#FFC107" Foreground="Black" Margin="0,5"
+                                AutomationProperties.Name="Generate Unassigned Students Report"
+                                AutomationProperties.HelpText="Generate report of students without route assignments"/>
+                    </StackPanel>
+                </GroupBox>
+
+                <!-- Route Reports -->
+                <GroupBox Grid.Row="0" Grid.Column="1" Header="Route Reports">
+                    <StackPanel>
+                        <TextBlock Text="Generate reports related to routes, schedules, and transportation planning"
+                                  Foreground="#6C757D" Margin="0,0,0,15" TextWrapping="Wrap"/>
+
+                        <syncfusion:ButtonAdv Content="🗺️ Route Summary Report"
+                                Command="{Binding GenerateRouteSummaryCommand}"
+                                Background="#007ACC" Foreground="White" Margin="0,5"
+                                AutomationProperties.Name="Generate Route Summary Report"
+                                AutomationProperties.HelpText="Generate comprehensive route summary with student counts"/>
+
+                        <syncfusion:ButtonAdv Content="📅 Daily Schedule Report"
+                                Command="{Binding GenerateDailyScheduleCommand}"
+                                Background="#28A745" Foreground="White" Margin="0,5"
+                                AutomationProperties.Name="Generate Daily Schedule Report"
+                                AutomationProperties.HelpText="Generate daily transportation schedule"/>
+
+                        <syncfusion:ButtonAdv Content="🚌 Vehicle Assignment Report"
+                                Command="{Binding GenerateVehicleAssignmentCommand}"
+                                Background="#DC3545" Foreground="White" Margin="0,5"
+                                AutomationProperties.Name="Generate Vehicle Assignment Report"
+                                AutomationProperties.HelpText="Generate report of vehicle assignments to routes"/>
+
+                        <syncfusion:ButtonAdv Content="⚡ Route Efficiency Report"
+                                Command="{Binding GenerateRouteEfficiencyCommand}"
+                                Background="#E83E8C" Foreground="White" Margin="0,5"
+                                AutomationProperties.Name="Generate Route Efficiency Report"
+                                AutomationProperties.HelpText="Generate route efficiency and optimization analysis"/>
+                    </StackPanel>
+                </GroupBox>
+
+                <!-- Driver Reports -->
+                <GroupBox Grid.Row="1" Grid.Column="0" Header="Driver Reports">
+                    <StackPanel>
+                        <TextBlock Text="Generate reports related to driver information, licenses, and compliance"
+                                  Foreground="#6C757D" Margin="0,0,0,15" TextWrapping="Wrap"/>
+
+                        <syncfusion:ButtonAdv Content="👨‍✈️ Driver Roster Report"
+                                Command="{Binding GenerateDriverRosterCommand}"
+                                Background="#6C757D" Foreground="White" Margin="0,5"
+                                AutomationProperties.Name="Generate Driver Roster Report"
+                                AutomationProperties.HelpText="Generate complete driver roster with contact information"/>
+
+                        <syncfusion:ButtonAdv Content="📄 License Expiration Report"
+                                Command="{Binding GenerateLicenseExpirationCommand}"
+                                Background="#FD7E14" Foreground="White" Margin="0,5"
+                                AutomationProperties.Name="Generate License Expiration Report"
+                                AutomationProperties.HelpText="Generate report of driver license expiration dates"/>
+
+                        <syncfusion:ButtonAdv Content="🎓 Training Status Report"
+                                Command="{Binding GenerateTrainingStatusCommand}"
+                                Background="#20C997" Foreground="White" Margin="0,5"
+                                AutomationProperties.Name="Generate Training Status Report"
+                                AutomationProperties.HelpText="Generate report of driver training completion status"/>
+
+                        <syncfusion:ButtonAdv Content="⚖️ Compliance Report"
+                                Command="{Binding GenerateComplianceReportCommand}"
+                                Background="#6610F2" Foreground="White" Margin="0,5"
+                                AutomationProperties.Name="Generate Compliance Report"
+                                AutomationProperties.HelpText="Generate driver compliance and certification report"/>
+                    </StackPanel>
+                </GroupBox>
+
+                <!-- Fleet Reports -->
+                <GroupBox Grid.Row="1" Grid.Column="1" Header="Fleet Reports">
+                    <StackPanel>
+                        <TextBlock Text="Generate reports related to vehicle fleet management and maintenance"
+                                  Foreground="#6C757D" Margin="0,0,0,15" TextWrapping="Wrap"/>
+
+                        <syncfusion:ButtonAdv Content="🚐 Fleet Inventory Report"
+                                Command="{Binding GenerateFleetInventoryCommand}"
+                                Background="#495057" Foreground="White" Margin="0,5"
+                                AutomationProperties.Name="Generate Fleet Inventory Report"
+                                AutomationProperties.HelpText="Generate complete fleet inventory with vehicle details"/>
+
+                        <syncfusion:ButtonAdv Content="🔧 Maintenance Schedule Report"
+                                Command="{Binding GenerateMaintenanceScheduleCommand}"
+                                Background="#FD7E14" Foreground="White" Margin="0,5"
+                                AutomationProperties.Name="Generate Maintenance Schedule Report"
+                                AutomationProperties.HelpText="Generate upcoming maintenance schedule"/>
+
+                        <syncfusion:ButtonAdv Content="⛽ Fuel Usage Report"
+                                Command="{Binding GenerateFuelUsageCommand}"
+                                Background="#198754" Foreground="White" Margin="0,5"
+                                AutomationProperties.Name="Generate Fuel Usage Report"
+                                AutomationProperties.HelpText="Generate fuel consumption and cost analysis"/>
+
+                        <syncfusion:ButtonAdv Content="📊 Fleet Utilization Report"
+                                Command="{Binding GenerateFleetUtilizationCommand}"
+                                Background="#0DCAF0" Foreground="Black" Margin="0,5"
+                                AutomationProperties.Name="Generate Fleet Utilization Report"
+                                AutomationProperties.HelpText="Generate vehicle utilization and efficiency report"/>
+                    </StackPanel>
+                </GroupBox>
+
+                <!-- Custom Reports -->
+                <GroupBox Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2" Header="Custom Reports &amp; Export Options">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <StackPanel Grid.Column="0" Margin="0,0,10,0">
+                            <TextBlock Text="Export Options" FontWeight="Bold" Margin="0,0,0,10"/>
+
+                            <syncfusion:ButtonAdv Content="📊 Export to CSV"
+                                    Command="{Binding ExportAllDataToCsvCommand}"
+                                    Background="#28A745" Foreground="White" Margin="0,5"
+                                    AutomationProperties.Name="Export All Data to CSV"
+                                    AutomationProperties.HelpText="Export all system data to CSV format"/>
+
+                            <syncfusion:ButtonAdv Content="📄 Export to PDF"
+                                    Command="{Binding ExportAllDataToPdfCommand}"
+                                    Background="#DC3545" Foreground="White" Margin="0,5"
+                                    AutomationProperties.Name="Export All Data to PDF"
+                                    AutomationProperties.HelpText="Export formatted reports to PDF"/>
+
+                            <syncfusion:ButtonAdv Content="📈 Export to Excel"
+                                    Command="{Binding ExportAllDataToExcelCommand}"
+                                    Background="#198754" Foreground="White" Margin="0,5"
+                                    AutomationProperties.Name="Export All Data to Excel"
+                                    AutomationProperties.HelpText="Export data to Excel workbook"/>
+                        </StackPanel>
+
+                        <StackPanel Grid.Column="1" Margin="10,0,0,0">
+                            <TextBlock Text="Print Options" FontWeight="Bold" Margin="0,0,0,10"/>
+
+                            <syncfusion:ButtonAdv Content="🖨️ Print Student Lists"
+                                    Command="{Binding PrintStudentListsCommand}"
+                                    Background="#6F42C1" Foreground="White" Margin="0,5"
+                                    AutomationProperties.Name="Print Student Lists"
+                                    AutomationProperties.HelpText="Print formatted student lists by route"/>
+
+                            <syncfusion:ButtonAdv Content="🗺️ Print Route Maps"
+                                    Command="{Binding PrintRouteMapsCommand}"
+                                    Background="#E83E8C" Foreground="White" Margin="0,5"
+                                    AutomationProperties.Name="Print Route Maps"
+                                    AutomationProperties.HelpText="Print route maps and directions"/>
+
+                            <syncfusion:ButtonAdv Content="📅 Print Schedules"
+                                    Command="{Binding PrintSchedulesCommand}"
+                                    Background="#FD7E14" Foreground="White" Margin="0,5"
+                                    AutomationProperties.Name="Print Schedules"
+                                    AutomationProperties.HelpText="Print transportation schedules"/>
+                        </StackPanel>
+                    </Grid>
+                </GroupBox>
+            </Grid>
+        </ScrollViewer>
+
+        <!-- Status Bar -->
+        <Border Grid.Row="2" Background="#E9ECEF" CornerRadius="3" Padding="10" Margin="0,10,0,0">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <TextBlock Grid.Column="0" Text="{Binding StatusMessage}"
+                          VerticalAlignment="Center" Foreground="#6C757D"/>
+
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Border Background="#FFF3CD" BorderBrush="#FFC107" BorderThickness="1"
+                            CornerRadius="3" Padding="8,4" Margin="0,0,10,0"
+                            Visibility="{Binding IsGeneratingReport, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="⏳" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                            <TextBlock Text="Generating report..." VerticalAlignment="Center" FontSize="12"/>
+                        </StackPanel>
+                    </Border>
+
+                    <TextBlock Text="Last Generated: " Foreground="#6C757D"/>
+                    <TextBlock Text="{Binding LastReportGenerated}" FontWeight="Bold" Foreground="#007ACC"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>

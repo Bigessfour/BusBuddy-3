@@ -54,44 +54,64 @@
                 <StackPanel Grid.Column="0" Orientation="Horizontal">
                     <syncfusion:ButtonAdv Name="AddStudentButton" Content="➕ Add Student"
                             Command="{Binding AddStudentCommand}"
-                            Background="{StaticResource BusBuddy.Brush.Primary}" Foreground="White"/>
+                            Background="{StaticResource BusBuddy.Brush.Primary}" Foreground="White"
+                            AutomationProperties.Name="Add Student"
+                            AutomationProperties.HelpText="Opens form to add a new student to the system"/>
                     <syncfusion:ButtonAdv Name="EditStudentButton" Content="✏️ Edit Student"
                             Command="{Binding EditStudentCommand}"
-                            IsEnabled="{Binding HasSelectedStudent}"/>
+                            IsEnabled="{Binding HasSelectedStudent}"
+                            AutomationProperties.Name="Edit Student"
+                            AutomationProperties.HelpText="Opens form to edit the currently selected student"/>
                     <syncfusion:ButtonAdv Name="DeleteStudentButton" Content="🗑️ Delete Student"
                             Command="{Binding DeleteStudentCommand}"
-                            IsEnabled="{Binding HasSelectedStudent}"/>
+                            IsEnabled="{Binding HasSelectedStudent}"
+                            AutomationProperties.Name="Delete Student"
+                            AutomationProperties.HelpText="Removes the currently selected student from the system"/>
                     <Separator Margin="10,0"/>
 
                     <!-- Bulk Operations -->
                     <syncfusion:ButtonAdv Name="ImportStudentsButton" Content="📥 Import CSV"
                             Command="{Binding ImportStudentsCommand}"
-                            Background="{StaticResource BusBuddy.Brush.FleetGreen}" Foreground="White"/>
+                            Background="{StaticResource BusBuddy.Brush.FleetGreen}" Foreground="White"
+                            AutomationProperties.Name="Import Students from CSV"
+                            AutomationProperties.HelpText="Import multiple students from a CSV file"/>
                     <syncfusion:ButtonAdv Name="BulkAssignRouteButton" Content="🚌 Bulk Assign Route"
                             Command="{Binding BulkAssignRouteCommand}"
                             IsEnabled="{Binding HasSelectedStudents}"
-                            Background="{StaticResource BusBuddy.Brush.SafetyOrange}" Foreground="White"/>
+                            Background="{StaticResource BusBuddy.Brush.SafetyOrange}" Foreground="White"
+                            AutomationProperties.Name="Bulk Assign Route"
+                            AutomationProperties.HelpText="Assign routes to multiple selected students at once"/>
                     <Separator Margin="10,0"/>
 
                     <!-- AI & Mapping -->
                     <syncfusion:ButtonAdv Name="OptimizeRoutesButton" Content="🤖 AI Optimize"
                             Command="{Binding OptimizeRoutesCommand}"
-                            Background="{StaticResource BusBuddy.Brush.Semantic.Warning}" Foreground="White"/>
+                            Background="{StaticResource BusBuddy.Brush.Semantic.Warning}" Foreground="White"
+                            AutomationProperties.Name="AI Optimize Routes"
+                            AutomationProperties.HelpText="Use artificial intelligence to optimize route assignments"/>
                     <syncfusion:ButtonAdv Name="ViewMapButton" Content="🗺️ View Map"
                             Command="{Binding ViewMapCommand}"
-                            Background="{StaticResource BusBuddy.Brush.Semantic.Info}" Foreground="White"/>
+                            Background="{StaticResource BusBuddy.Brush.Semantic.Info}" Foreground="White"
+                            AutomationProperties.Name="View Map"
+                            AutomationProperties.HelpText="Display student locations on interactive map"/>
                 </StackPanel>
 
                 <!-- Quick Actions -->
                 <StackPanel Grid.Column="1" Orientation="Horizontal">
                     <syncfusion:ButtonAdv Name="RefreshButton" Content="🔄 Refresh"
-                            Command="{Binding RefreshCommand}"/>
+                            Command="{Binding RefreshCommand}"
+                            AutomationProperties.Name="Refresh Student List"
+                            AutomationProperties.HelpText="Reload student data from the database"/>
                     <syncfusion:ButtonAdv Name="ExportButton" Content="📤 Export"
-                            Command="{Binding ExportCommand}"/>
+                            Command="{Binding ExportCommand}"
+                            AutomationProperties.Name="Export Students"
+                            AutomationProperties.HelpText="Export student data to CSV file"/>
 
                     <!-- Quick Filter -->
                     <TextBox Name="QuickSearchBox" Width="150" Margin="10,0,0,0"
-                            Text="{Binding QuickSearchText, UpdateSourceTrigger=PropertyChanged}">
+                            Text="{Binding QuickSearchText, UpdateSourceTrigger=PropertyChanged}"
+                            AutomationProperties.Name="Quick Search"
+                            AutomationProperties.HelpText="Type to search students by name, ID, or route">
                         <TextBox.Style>
                             <Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
                                 <Setter Property="Template">
@@ -148,6 +168,8 @@
                                GridLinesVisibility="Both"
                                HeaderLinesVisibility="Both"
                                ColumnSizer="Star"
+                               AutomationProperties.Name="Students Data Grid"
+                               AutomationProperties.HelpText="Grid displaying all students with their route assignments and contact information"
                                AddNewRowPosition="Top"
                                ShowBusyIndicator="True"
                                NavigationMode="Cell"
