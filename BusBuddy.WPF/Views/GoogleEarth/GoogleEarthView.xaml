@@ -13,6 +13,7 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:syncfusion="http://schemas.syncfusion.com/wpf"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:local="clr-namespace:BusBuddy.WPF.Views.GoogleEarth"
              xmlns:viewModels="clr-namespace:BusBuddy.WPF.ViewModels.GoogleEarth"
@@ -80,17 +81,17 @@
                         </StackPanel>
                     </Border>
 
-                    <ComboBox x:Name="MapLayerComboBox"
-                              Width="150"
-                              Height="32"
-                              Margin="16,0"
-                              SelectedIndex="0"
-                              SelectionChanged="MapLayerComboBox_SelectionChanged">
-                        <ComboBoxItem Content="Satellite"/>
-                        <ComboBoxItem Content="Terrain"/>
-                        <ComboBoxItem Content="Hybrid"/>
-                        <ComboBoxItem Content="Roadmap"/>
-                    </ComboBox>
+                    <syncfusion:ComboBoxAdv x:Name="MapLayerComboBox"
+                                            Width="150"
+                                            Height="32"
+                                            Margin="16,0"
+                                            SelectedIndex="0"
+                                            SelectionChanged="MapLayerComboBox_SelectionChanged">
+                        <syncfusion:ComboBoxItemAdv Content="Satellite"/>
+                        <syncfusion:ComboBoxItemAdv Content="Terrain"/>
+                        <syncfusion:ComboBoxItemAdv Content="Hybrid"/>
+                        <syncfusion:ComboBoxItemAdv Content="Roadmap"/>
+                    </syncfusion:ComboBoxAdv>
                 </StackPanel>
             </Grid>
         </Border>
@@ -200,12 +201,12 @@
                                            Foreground="#2D3748"
                                            Margin="0,0,0,4"/>
 
-                                <ComboBox SelectedIndex="1">
-                                    <ComboBoxItem Content="5 seconds"/>
-                                    <ComboBoxItem Content="10 seconds"/>
-                                    <ComboBoxItem Content="30 seconds"/>
-                                    <ComboBoxItem Content="1 minute"/>
-                                </ComboBox>
+                                <syncfusion:ComboBoxAdv SelectedIndex="1">
+                                    <syncfusion:ComboBoxItemAdv Content="5 seconds"/>
+                                    <syncfusion:ComboBoxItemAdv Content="10 seconds"/>
+                                    <syncfusion:ComboBoxItemAdv Content="30 seconds"/>
+                                    <syncfusion:ComboBoxItemAdv Content="1 minute"/>
+                                </syncfusion:ComboBoxAdv>
                             </StackPanel>
                         </Border>
 
@@ -222,28 +223,29 @@
                                            Foreground="#2D3748"
                                            Margin="0,0,0,12"/>
 
-                                <DataGrid x:Name="BusListGrid"
-                                          ItemsSource="{Binding ActiveBuses}"
-                                          SelectedItem="{Binding SelectedBus}"
-                                          Height="200"
-                                          AutoGenerateColumns="False"
-                                          HeadersVisibility="Column"
-                                          GridLinesVisibility="None"
-                                          CanUserAddRows="False"
-                                          CanUserDeleteRows="False"
-                                          IsReadOnly="True">
-                                    <DataGrid.Columns>
-                                        <DataGridTextColumn Header="Bus #"
-                                                            Binding="{Binding BusNumber}"
-                                                            Width="60"/>
-                                        <DataGridTextColumn Header="Route"
-                                                            Binding="{Binding RouteNumber}"
-                                                            Width="60"/>
-                                        <DataGridTextColumn Header="Status"
-                                                            Binding="{Binding Status}"
-                                                            Width="80"/>
-                                    </DataGrid.Columns>
-                                </DataGrid>
+                                <syncfusion:SfDataGrid x:Name="BusListGrid"
+                                                       ItemsSource="{Binding ActiveBuses}"
+                                                       SelectedItem="{Binding SelectedBus}"
+                                                       Height="200"
+                                                       AutoGenerateColumns="False"
+                                                       AllowEditing="False"
+                                                       AllowSorting="True"
+                                                       AllowFiltering="False"
+                                                       SelectionMode="Single"
+                                                       GridLinesVisibility="Both"
+                                                       HeaderLinesVisibility="All">
+                                    <syncfusion:SfDataGrid.Columns>
+                                        <syncfusion:GridTextColumn HeaderText="Bus #"
+                                                                   MappingName="BusNumber"
+                                                                   Width="60"/>
+                                        <syncfusion:GridTextColumn HeaderText="Route"
+                                                                   MappingName="RouteNumber"
+                                                                   Width="60"/>
+                                        <syncfusion:GridTextColumn HeaderText="Status"
+                                                                   MappingName="Status"
+                                                                   Width="80"/>
+                                    </syncfusion:SfDataGrid.Columns>
+                                </syncfusion:SfDataGrid>
 
                                 <Button Content="📍 Track Selected"
                                         Command="{Binding TrackSelectedBusCommand}"

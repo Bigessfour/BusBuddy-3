@@ -1,7 +1,7 @@
 # bb-anti-regression.ps1 - BusBuddy Anti-Regression Compliance Check
 # Refactored for direct import and profile integration (2025-08-08)
 
-<#!
+<#
 .SYNOPSIS
     BusBuddy anti-regression check (PowerShell, WPF, Logging compliance)
 .DESCRIPTION
@@ -34,8 +34,8 @@ function bbAntiRegression {
     }
     $summary['WriteHost'] = $writeHostHits.Count
     if ($Detailed -and $writeHostHits.Count) {
-        Write-Output "❌ Write-Host violations: $($writeHostHits.Count)"
-        $writeHostHits | ForEach-Object { Write-Output ("  $($_.File):$($_.Line): $($_.Text)") }
+        Write-Information "❌ Write-Host violations: $($writeHostHits.Count)" -InformationAction Continue
+        $writeHostHits | ForEach-Object { Write-Information "  $($_.File):$($_.Line): $($_.Text)" -InformationAction Continue }
     }
 
     # 2. Microsoft.Extensions.Logging violations
@@ -47,8 +47,8 @@ function bbAntiRegression {
     }
     $summary['Logging'] = $loggingHits.Count
     if ($Detailed -and $loggingHits.Count) {
-        Write-Output "❌ Microsoft.Extensions.Logging violations: $($loggingHits.Count)"
-        $loggingHits | ForEach-Object { Write-Output ("  $($_.File):$($_.Line): $($_.Text)") }
+        Write-Information "❌ Microsoft.Extensions.Logging violations: $($loggingHits.Count)" -InformationAction Continue
+        $loggingHits | ForEach-Object { Write-Information "  $($_.File):$($_.Line): $($_.Text)" -InformationAction Continue }
     }
 
     # 3. Standard WPF controls (DataGrid, ComboBox, etc.)
@@ -60,19 +60,19 @@ function bbAntiRegression {
     }
     $summary['WPF'] = $wpfHits.Count
     if ($Detailed -and $wpfHits.Count) {
-        Write-Output "❌ Standard WPF control violations: $($wpfHits.Count)"
-        $wpfHits | ForEach-Object { Write-Output ("  $($_.File):$($_.Line): $($_.Text)") }
+        Write-Information "❌ Standard WPF control violations: $($wpfHits.Count)" -InformationAction Continue
+        $wpfHits | ForEach-Object { Write-Information "  $($_.File):$($_.Line): $($_.Text)" -InformationAction Continue }
     }
 
     # Summary
-    Write-Output "🛡️ BusBuddy Anti-Regression Summary:"
-    Write-Output ("  Write-Host: $($summary['WriteHost'])")
-    Write-Output ("  Microsoft.Extensions.Logging: $($summary['Logging'])")
-    Write-Output ("  Standard WPF controls: $($summary['WPF'])")
+    Write-Information "🛡️ BusBuddy Anti-Regression Summary:" -InformationAction Continue
+    Write-Information "  Write-Host: $($summary['WriteHost'])" -InformationAction Continue
+    Write-Information "  Microsoft.Extensions.Logging: $($summary['Logging'])" -InformationAction Continue
+    Write-Information "  Standard WPF controls: $($summary['WPF'])" -InformationAction Continue
     if ($summary.Values | Where-Object { $_ -gt 0 }) {
-        Write-Output "❌ Violations found. See above for details."
+        Write-Information "❌ Violations found. See above for details." -InformationAction Continue
     } else {
-        Write-Output "✅ No anti-regression violations detected."
+        Write-Information "✅ No anti-regression violations detected." -InformationAction Continue
     }
 }
 
