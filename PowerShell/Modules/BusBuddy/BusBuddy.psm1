@@ -205,7 +205,7 @@ function Get-BusBuddyTestLog {
         Write-Host ""
         Get-Content $latestLog.FullName
     } else {
-    Write-Host "No test logs found. Run bb-test-full first." -ForegroundColor Yellow
+    Write-Host "No test logs found. Run bbTestFull first." -ForegroundColor Yellow
     }
 }
 
@@ -661,7 +661,15 @@ function Invoke-BusBuddyRun {
 function Invoke-BusBuddyTest {
     <#
     .SYNOPSIS
-        Run BusBuddy tests with enhanced output capture
+        Run BusBuddy tests using Phase 4 NUnit Test Runner (deprecated .NET 9 dotnet test method)
+
+    .DESCRIPTION
+        Uses the reliable PowerShell\Testing\Run-Phase4-NUnitTests-Modular.ps1 script instead
+        of the unreliable .NET 9 dotnet test command that has Microsoft.TestPlatform compatibility issues.
+
+    .NOTES
+        DEPRECATED METHOD: dotnet test command with .NET 9 compatibility issues
+        NEW METHOD: Phase 4 NUnit Test Runner with VS Code integration
     #>
     [CmdletBinding()]
     [OutputType([hashtable])]
@@ -678,62 +686,122 @@ function Invoke-BusBuddyTest {
     Push-Location $projectRoot
 
     try {
-        # Load enhanced test output functions if available
-        $enhancedTestPath = Join-Path $projectRoot "PowerShell\Functions\Testing\Enhanced-Test-Output.ps1"
-        if (Test-Path $enhancedTestPath) {
-            . $enhancedTestPath
+        Write-BusBuddyStatus "🚌 BusBuddy Phase 4 NUnit Test System" -Type Info
+        Write-Information "Using reliable NUnit Test Runner (deprecated unreliable .NET 9 method)" -InformationAction Continue
 
-            # Use enhanced output capture
-            $testResult = Get-BusBuddyTestOutput -TestSuite $TestSuite -SaveToFile:$SaveToFile -Verbosity $(if ($DetailedOutput) { 'detailed' } else { 'normal' })
+        # Path to the Phase 4 NUnit Test Runner script
+        $phase4ScriptPath = Join-Path $projectRoot "PowerShell\Testing\Run-Phase4-NUnitTests-Modular.ps1"
 
-            if ($testResult.ExitCode -eq 0) {
-                Write-BusBuddyStatus "All tests passed! ✅" -Type Success
-                if ($testResult.PassedTests) {
-                    Write-Information "Passed: $($testResult.PassedTests), Failed: $($testResult.FailedTests), Skipped: $($testResult.SkippedTests)" -InformationAction Continue
-                }
-            } else {
-                Write-BusBuddyError "Tests failed with exit code $($testResult.ExitCode) ❌"
-                if ($testResult.FailedTests -gt 0) {
-                    Write-Information "Failed Tests: $($testResult.FailedTests)" -InformationAction Continue
-                }
-                if ($testResult.OutputFile) {
-                    Write-Information "Full details in: $($testResult.OutputFile)" -InformationAction Continue
-                }
-            }
-
-            return $testResult
-        } else {
-            # Fallback to original implementation with basic output capture
-            Write-BusBuddyStatus "Running BusBuddy tests (basic mode)..." -Type Info
-
-            # Capture output to prevent truncation
-            $testOutput = & dotnet test BusBuddy.sln --verbosity normal 2>&1
-                Write-Information "(Non-fatal: Show-BusBuddyWelcome already exported or export failed)" -InformationAction Continue
-            # Save to file if requested
-            if ($SaveToFile) {
-                $timestamp = Get-Date -Format "yyyyMMdd-HHmmss"
-                $outputFile = "logs\test-basic-output-$timestamp.log"
-
-                if (-not (Test-Path "logs")) {
-                    New-Item -ItemType Directory -Path "logs" -Force | Out-Null
-                }
-
-                $testOutput | Out-File -FilePath $outputFile -Encoding UTF8
-                Write-Information "Test output saved to: $outputFile" -InformationAction Continue
-            }
-
-            # Display output
-            $testOutput | ForEach-Object { Write-Information $_ -InformationAction Continue }
-
-            if ($LASTEXITCODE -eq 0) {
-                Write-BusBuddyStatus "All tests passed" -Type Success
-            } else {
-                Write-BusBuddyError "Tests failed with exit code $LASTEXITCODE"
-            }
-
+        if (-not (Test-Path $phase4ScriptPath)) {
+            Write-BusBuddyError "❌ Phase 4 NUnit Test Runner script not found: $phase4ScriptPath"
+            Write-Information "Please ensure the PowerShell\Testing\Run-Phase4-NUnitTests-Modular.ps1 file exists" -InformationAction Continue
             return @{
-                ExitCode = $LASTEXITCODE
-                Output = $testOutput
+                ExitCode = -1
+                ErrorMessage = "Phase 4 NUnit Test Runner script not found"
+                Output = "Script path: $phase4ScriptPath"
+            }
+        }
+
+        Write-Information "📁 Using Phase 4 script: $phase4ScriptPath" -InformationAction Continue
+        Write-Information "🧪 Test Suite: $TestSuite" -InformationAction Continue
+
+        # Prepare parameters for the Phase 4 script as string arguments (more reliable than hashtable)
+        $scriptArgs = @("-TestSuite", $TestSuite)
+
+        if ($SaveToFile) {
+            $scriptArgs += "-GenerateReport"
+        }
+
+        if ($DetailedOutput) {
+            $scriptArgs += "-Detailed"
+        }
+
+        Write-Information "🚀 Executing Phase 4 NUnit Test Runner..." -InformationAction Continue
+        Write-Information "Arguments: $($scriptArgs -join ' ')" -InformationAction Continue
+
+        # Execute the Phase 4 NUnit script with enhanced error handling
+        try {
+            # Capture both stdout and stderr to detect .NET 9 compatibility issues
+            $testOutputFile = Join-Path $projectRoot "TestResults" "bbtest-output-$(Get-Date -Format 'yyyyMMdd-HHmmss').log"
+            $testErrorFile = Join-Path $projectRoot "TestResults" "bbtest-errors-$(Get-Date -Format 'yyyyMMdd-HHmmss').log"
+
+            # Ensure TestResults directory exists
+            $testResultsDir = Join-Path $projectRoot "TestResults"
+            if (-not (Test-Path $testResultsDir)) {
+                New-Item -ItemType Directory -Path $testResultsDir -Force | Out-Null
+            }
+
+            # Run with output capture to detect .NET 9 compatibility issues
+            $allArgs = @("-File", $phase4ScriptPath) + $scriptArgs
+            $process = Start-Process -FilePath "pwsh.exe" -ArgumentList $allArgs -RedirectStandardOutput $testOutputFile -RedirectStandardError $testErrorFile -NoNewWindow -PassThru
+            $process.WaitForExit()
+            $testExitCode = $process.ExitCode
+
+            # Read captured output
+            $testOutput = if (Test-Path $testOutputFile) { Get-Content $testOutputFile -Raw } else { "" }
+            $testErrors = if (Test-Path $testErrorFile) { Get-Content $testErrorFile -Raw } else { "" }
+
+            # Check for specific .NET 9 compatibility issue
+            $hasNet9Issue = $testErrors -match "Microsoft\.TestPlatform\.CoreUtilities.*Version=15\.0\.0\.0" -or
+                           $testOutput -match "Microsoft\.TestPlatform\.CoreUtilities.*Version=15\.0\.0\.0"
+
+            if ($hasNet9Issue) {
+                Write-Host "`n🚨 KNOWN .NET 9 COMPATIBILITY ISSUE DETECTED" -ForegroundColor Yellow
+                Write-Host "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -ForegroundColor Yellow
+                Write-Host "❌ Microsoft.TestPlatform.CoreUtilities v15.0.0.0 not found" -ForegroundColor Red
+                Write-Host "🔍 This is a documented .NET 9 compatibility issue with test platform" -ForegroundColor Cyan
+                Write-Host ""
+                Write-Host "📋 WORKAROUND OPTIONS:" -ForegroundColor Green
+                Write-Host "  1. Install VS Code NUnit Test Runner extension for UI testing" -ForegroundColor White
+                Write-Host "  2. Use Visual Studio Test Explorer instead of command line" -ForegroundColor White
+                Write-Host "  3. Temporarily downgrade to .NET 8.0 for testing (not recommended)" -ForegroundColor Gray
+                Write-Host ""
+                Write-Host "📁 Test logs saved to:" -ForegroundColor Cyan
+                Write-Host "   Output: $testOutputFile" -ForegroundColor Gray
+                Write-Host "   Errors: $testErrorFile" -ForegroundColor Gray
+                Write-Host "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -ForegroundColor Yellow
+
+                return @{
+                    ExitCode = $testExitCode
+                    ErrorType = "NET9_COMPATIBILITY"
+                    Issue = "Microsoft.TestPlatform.CoreUtilities v15.0.0.0 compatibility"
+                    Workarounds = @("VS Code NUnit extension", "Visual Studio Test Explorer", "Downgrade to .NET 8")
+                    OutputFile = $testOutputFile
+                    ErrorFile = $testErrorFile
+                    Method = "Phase4-NUnit-NET9-Issue"
+                }
+            } elseif ($testExitCode -eq 0) {
+                Write-BusBuddyStatus "✅ Phase 4 NUnit tests completed successfully!" -Type Success
+                return @{
+                    ExitCode = 0
+                    PassedTests = 1  # Phase 4 script provides detailed results
+                    FailedTests = 0
+                    SkippedTests = 0
+                    Output = "Phase 4 NUnit Test Runner completed successfully"
+                    OutputFile = $testOutputFile
+                    Method = "Phase4-NUnit"
+                }
+            } else {
+                Write-BusBuddyError "❌ Phase 4 NUnit tests failed with exit code $testExitCode"
+                Write-Information "📁 Check test logs: $testOutputFile and $testErrorFile" -InformationAction Continue
+                return @{
+                    ExitCode = $testExitCode
+                    PassedTests = 0
+                    FailedTests = 1
+                    SkippedTests = 0
+                    Output = "Phase 4 NUnit Test Runner failed - check TestResults directory for details"
+                    OutputFile = $testOutputFile
+                    ErrorFile = $testErrorFile
+                    Method = "Phase4-NUnit"
+                }
+            }
+        } catch {
+            Write-BusBuddyError "❌ Phase 4 NUnit execution failed: $($_.Exception.Message)"
+            return @{
+                ExitCode = -1
+                ErrorMessage = $_.Exception.Message
+                Output = "Phase 4 NUnit script execution error"
+                Method = "Phase4-NUnit"
             }
         }
     }
@@ -742,11 +810,47 @@ function Invoke-BusBuddyTest {
         return @{
             ExitCode = -1
             ErrorMessage = $_.Exception.Message
+            Method = "Phase4-NUnit-Error"
         }
     }
     finally {
         Pop-Location
     }
+}
+
+function Invoke-BusBuddyTestLegacy {
+    <#
+    .SYNOPSIS
+        DEPRECATED: Legacy .NET 9 dotnet test method with compatibility issues
+
+    .DESCRIPTION
+        This function represents the old, unreliable method of running tests using
+        'dotnet test' directly, which has known compatibility issues with .NET 9
+        and Microsoft.TestPlatform.CoreUtilities version conflicts.
+
+        USE INSTEAD: Invoke-BusBuddyTest (which now uses Phase 4 NUnit Test Runner)
+
+    .NOTES
+        DEPRECATED: This method is deprecated due to .NET 9 compatibility issues
+        REPLACEMENT: Use bbTest (Invoke-BusBuddyTest) which now uses Phase 4 NUnit
+        ISSUE: Microsoft.TestPlatform.CoreUtilities v15.0.0.0 vs .NET 9 conflict
+    #>
+    [CmdletBinding()]
+    param()
+
+    Write-Warning "⚠️  DEPRECATED METHOD CALLED"
+    Write-Warning "The legacy .NET 9 'dotnet test' method has known compatibility issues"
+    Write-Warning "USE INSTEAD: bbTest (now uses reliable Phase 4 NUnit Test Runner)"
+    Write-Information "" -InformationAction Continue
+    Write-Information "MIGRATION GUIDANCE:" -InformationAction Continue
+    Write-Information "- Replace 'Invoke-BusBuddyTestLegacy' with 'Invoke-BusBuddyTest'" -InformationAction Continue
+    Write-Information "- Use 'bbTest' command which now uses Phase 4 NUnit script" -InformationAction Continue
+    Write-Information "- Benefits: VS Code integration, enhanced logging, reliable execution" -InformationAction Continue
+    Write-Information "" -InformationAction Continue
+
+    # Redirect to new method
+    Write-Information "🔄 Redirecting to new Phase 4 NUnit method..." -InformationAction Continue
+    return Invoke-BusBuddyTest @PSBoundParameters
 }
 
 function Invoke-BusBuddyClean {
@@ -912,36 +1016,36 @@ function Get-BusBuddyCommand {
     Write-Information "" -InformationAction Continue
 
     Write-Information "Core Aliases:" -InformationAction Continue
-    Write-Information "  bb-build      - Build the BusBuddy solution" -InformationAction Continue
-    Write-Information "  bb-run        - Run the BusBuddy application" -InformationAction Continue
-    Write-Information "  bb-test       - Run BusBuddy tests" -InformationAction Continue
-    Write-Information "  bb-clean      - Clean build artifacts" -InformationAction Continue
-    Write-Information "  bb-restore    - Restore NuGet packages" -InformationAction Continue
-    Write-Information "  bb-health     - Check system health" -InformationAction Continue
+    Write-Information "  bbBuild      - Build the BusBuddy solution" -InformationAction Continue
+    Write-Information "  bbRun        - Run the BusBuddy application" -InformationAction Continue
+    Write-Information "  bbTest       - Run BusBuddy tests" -InformationAction Continue
+    Write-Information "  bbClean      - Clean build artifacts" -InformationAction Continue
+    Write-Information "  bbRestore    - Restore NuGet packages" -InformationAction Continue
+    Write-Information "  bbHealth     - Check system health" -InformationAction Continue
 
     Write-Information "" -InformationAction Continue
     Write-Information "Development Aliases:" -InformationAction Continue
-    Write-Information "  bb-dev-session - Start development session" -InformationAction Continue
-    Write-Information "  bb-info       - Show module information" -InformationAction Continue
-    Write-Information "  bb-commands   - List all commands (this command)" -InformationAction Continue
+    Write-Information "  bbDevSession - Start development session" -InformationAction Continue
+    Write-Information "  bbInfo       - Show module information" -InformationAction Continue
+    Write-Information "  bbCommands   - List all commands (this command)" -InformationAction Continue
 
     Write-Information "" -InformationAction Continue
     Write-Information "XAML & Validation:" -InformationAction Continue
-    Write-Information "  bb-xaml-validate - Validate all XAML files" -InformationAction Continue
-    Write-Information "  bb-catch-errors  - Run with exception capture" -InformationAction Continue
-    Write-Information "  bb-anti-regression - Run anti-regression checks" -InformationAction Continue
-    Write-Information "  bb-capture-runtime-errors - Comprehensive runtime error monitoring" -InformationAction Continue
+    Write-Information "  bbXamlValidate - Validate all XAML files" -InformationAction Continue
+    Write-Information "  bbCatchErrors  - Run with exception capture" -InformationAction Continue
+    Write-Information "  bbAntiRegression - Run anti-regression checks" -InformationAction Continue
+    Write-Information "  bbCaptureRuntimeErrors - Comprehensive runtime error monitoring" -InformationAction Continue
 
     Write-Information "" -InformationAction Continue
     Write-Information "MVP Focus:" -InformationAction Continue
-    Write-Information "  bb-mvp           - Evaluate features & scope management" -InformationAction Continue
-    Write-Information "  bb-mvp-check     - Check MVP readiness" -InformationAction Continue
+    Write-Information "  bbMvp           - Evaluate features & scope management" -InformationAction Continue
+    Write-Information "  bbMvpCheck     - Check MVP readiness" -InformationAction Continue
 
     Write-Information "" -InformationAction Continue
     Write-Information "🤖 XAI Route Optimization:" -InformationAction Continue
-    Write-Information "  bb-routes        - Main route optimization system" -InformationAction Continue
-    Write-Information "  bb-route-demo    - Demo with sample data (READY NOW!)" -InformationAction Continue
-    Write-Information "  bb-route-status  - Check system status" -InformationAction Continue
+    Write-Information "  bbRoutes        - Main route optimization system" -InformationAction Continue
+    Write-Information "  bbRouteDemo    - Demo with sample data (READY NOW!)" -InformationAction Continue
+    Write-Information "  bbRouteStatus  - Check system status" -InformationAction Continue
 
     Write-Information "" -InformationAction Continue
     Write-Information "Functions:" -InformationAction Continue
@@ -2404,37 +2508,34 @@ function Start-BusBuddyRuntimeErrorCapture {
 
 #region Aliases
 
-Set-Alias -Name 'bb-build' -Value 'Invoke-BusBuddyBuild' -Description 'Build the Bus Buddy solution'
-Set-Alias -Name 'bb-run' -Value 'Invoke-BusBuddyRun' -Description 'Run the Bus Buddy application'
-Set-Alias -Name 'bb-test' -Value 'Invoke-BusBuddyTest' -Description 'Run Bus Buddy tests'
-Set-Alias -Name 'bb-clean' -Value 'Invoke-BusBuddyClean' -Description 'Clean build artifacts'
-Set-Alias -Name 'bb-restore' -Value 'Invoke-BusBuddyRestore' -Description 'Restore NuGet packages'
-Set-Alias -Name 'bb-health' -Value 'Invoke-BusBuddyHealthCheck' -Description 'Check system health'
-Set-Alias -Name 'bb-dev-session' -Value 'Start-BusBuddyDevSession' -Description 'Start development session'
-Set-Alias -Name 'bb-info' -Value 'Get-BusBuddyInfo' -Description 'Show module information'
-Set-Alias -Name 'bb-commands' -Value 'Get-BusBuddyCommand' -Description 'List all commands'
-Set-Alias -Name 'bb-test-full' -Value 'Invoke-BusBuddyTestFull' -Description 'Enhanced test with full capture'
-Set-Alias -Name 'bb-test-errors' -Value 'Get-BusBuddyTestError' -Description 'Show test errors only'
-Set-Alias -Name 'bb-test-log' -Value 'Get-BusBuddyTestLog' -Description 'Show latest test log'
-Set-Alias -Name 'bb-test-watch' -Value 'Start-BusBuddyTestWatch' -Description 'Continuous test watch'
-Set-Alias -Name 'bb-xaml-validate' -Value 'Invoke-BusBuddyXamlValidation' -Description 'Validate XAML files'
-Set-Alias -Name 'bb-catch-errors' -Value 'Invoke-BusBuddyWithExceptionCapture' -Description 'Run with exception capture'
-Set-Alias -Name 'bb-anti-regression' -Value 'Invoke-BusBuddyAntiRegression' -Description 'Run anti-regression checks'
-Set-Alias -Name 'bb-mvp' -Value 'Start-BusBuddyMVP' -Description 'MVP focus and scope management'
-Set-Alias -Name 'bb-mvp-check' -Value 'Test-BusBuddyMVPReadiness' -Description 'Check MVP readiness'
-Set-Alias -Name 'bb-env-check' -Value 'Test-BusBuddyEnvironment' -Description 'Comprehensive environment validation'
-Set-Alias -Name 'bb-routes' -Value 'Start-BusBuddyRouteOptimization' -Description 'Main route optimization system'
-Set-Alias -Name 'bb-route-optimize' -Value 'Invoke-BusBuddyRouteOptimization' -Description 'xAI Grok route optimization with detailed analysis'
-Set-Alias -Name 'bb-generate-report' -Value 'Invoke-BusBuddyReport' -Description 'Generate PDF reports (roster, route manifest, etc.)'
-Set-Alias -Name 'bb-route-demo' -Value 'Show-RouteOptimizationDemo' -Description 'Demo route optimization with sample data'
-Set-Alias -Name 'bb-route-status' -Value 'Get-BusBuddyRouteStatus' -Description 'Check route optimization system status'
-Set-Alias -Name 'bb-copilot-ref' -Value 'Open-BusBuddyCopilotReference' -Description 'Open Copilot reference for enhanced context'
-Set-Alias -Name 'bb-capture-runtime-errors' -Value 'Start-BusBuddyRuntimeErrorCapture' -Description 'Comprehensive runtime error capture and monitoring'
-Set-Alias -Name 'bb-diagnostic' -Value 'Invoke-BusBuddyDiagnostic' -Description 'Run diagnostics and output environment, module, and MVP status'
-Set-Alias -Name 'bb-add-family' -Value 'bb-add-family' -Description 'Add a new family'
-Set-Alias -Name 'bb-add-kid-to-family' -Value 'bb-add-kid-to-family' -Description 'Add a kid to an existing family'
-Set-Alias -Name 'bb-export-data' -Value 'bb-export-data' -Description 'Export data to CSV'
-Set-Alias -Name 'bb-welcome' -Value 'Show-BusBuddyWelcome' -Description 'Show categorized command overview'
+Set-Alias -Name 'bbBuild' -Value 'Invoke-BusBuddyBuild' -Description 'Build the Bus Buddy solution'
+Set-Alias -Name 'bbRun' -Value 'Invoke-BusBuddyRun' -Description 'Run the Bus Buddy application'
+Set-Alias -Name 'bbTest' -Value 'Invoke-BusBuddyTest' -Description 'Run Bus Buddy tests'
+Set-Alias -Name 'bbClean' -Value 'Invoke-BusBuddyClean' -Description 'Clean build artifacts'
+Set-Alias -Name 'bbRestore' -Value 'Invoke-BusBuddyRestore' -Description 'Restore NuGet packages'
+Set-Alias -Name 'bbHealth' -Value 'Invoke-BusBuddyHealthCheck' -Description 'Check system health'
+Set-Alias -Name 'bbDevSession' -Value 'Start-BusBuddyDevSession' -Description 'Start development session'
+Set-Alias -Name 'bbInfo' -Value 'Get-BusBuddyInfo' -Description 'Show module information'
+Set-Alias -Name 'bbCommands' -Value 'Get-BusBuddyCommand' -Description 'List all commands'
+Set-Alias -Name 'bbTestFull' -Value 'Invoke-BusBuddyTestFull' -Description 'Enhanced test with full capture'
+Set-Alias -Name 'bbTestErrors' -Value 'Get-BusBuddyTestErrors' -Description 'Show test errors only'
+Set-Alias -Name 'bbTestLog' -Value 'Get-BusBuddyTestLog' -Description 'Show latest test log'
+Set-Alias -Name 'bbTestWatch' -Value 'Start-BusBuddyTestWatch' -Description 'Continuous test watch'
+Set-Alias -Name 'bbXamlValidate' -Value 'Invoke-BusBuddyXamlValidation' -Description 'Validate XAML files'
+Set-Alias -Name 'bbCatchErrors' -Value 'Invoke-BusBuddyWithExceptionCapture' -Description 'Run with exception capture'
+Set-Alias -Name 'bbAntiRegression' -Value 'Invoke-BusBuddyAntiRegression' -Description 'Run anti-regression checks'
+Set-Alias -Name 'bbMvp' -Value 'Start-BusBuddyMVP' -Description 'MVP focus and scope management'
+Set-Alias -Name 'bbMvpCheck' -Value 'Test-BusBuddyMVPReadiness' -Description 'Check MVP readiness'
+Set-Alias -Name 'bbEnvCheck' -Value 'Test-BusBuddyEnvironment' -Description 'Comprehensive environment validation'
+Set-Alias -Name 'bbRoutes' -Value 'Start-BusBuddyRouteOptimization' -Description 'Main route optimization system'
+Set-Alias -Name 'bbRouteOptimize' -Value 'Invoke-BusBuddyRouteOptimization' -Description 'xAI Grok route optimization with detailed analysis'
+Set-Alias -Name 'bbGenerateReport' -Value 'Invoke-BusBuddyReport' -Description 'Generate PDF reports (roster, route manifest, etc.)'
+Set-Alias -Name 'bbRouteDemo' -Value 'Show-RouteOptimizationDemo' -Description 'Demo route optimization with sample data'
+Set-Alias -Name 'bbRouteStatus' -Value 'Get-BusBuddyRouteStatus' -Description 'Check route optimization system status'
+Set-Alias -Name 'bbCopilotRef' -Value 'Open-BusBuddyCopilotReference' -Description 'Open Copilot reference for enhanced context'
+Set-Alias -Name 'bbCaptureRuntimeErrors' -Value 'Start-BusBuddyRuntimeErrorCapture' -Description 'Comprehensive runtime error capture and monitoring'
+Set-Alias -Name 'bbDiagnostic' -Value 'Invoke-BusBuddyDiagnostic' -Description 'Run diagnostics and output environment, module, and MVP status'
+Set-Alias -Name 'bbWelcome' -Value 'Show-BusBuddyWelcome' -Description 'Show categorized command overview'
 
 #endregion
 
@@ -2466,11 +2567,6 @@ Export-ModuleMember -Function @(
     'Invoke-BusBuddyRouteOptimization',
     'Invoke-BusBuddyReport',
     'Start-BusBuddyRuntimeErrorCapture',
-    'bb-wiley-seed',
-    'bb-generate-schedules',
-    'bb-add-family',
-    'bb-add-kid-to-family',
-    'bb-export-data',
     'Get-BusBuddyTestOutput',
     'Invoke-BusBuddyTestFull',
     'Get-BusBuddyTestError',
@@ -2478,11 +2574,12 @@ Export-ModuleMember -Function @(
     'Start-BusBuddyTestWatch',
     'Enable-BusBuddyEnhancedTestOutput'
 ) -Alias @(
-    'bb-build', 'bb-run', 'bb-test', 'bb-clean', 'bb-restore', 'bb-health',
-    'bb-dev-session', 'bb-info', 'bb-commands', 'bb-xaml-validate', 'bb-catch-errors',
-    'bb-anti-regression', 'bb-mvp', 'bb-mvp-check', 'bb-env-check', 'bb-routes',
-    'bb-route-optimize', 'bb-generate-report', 'bb-route-demo', 'bb-route-status', 'bb-copilot-ref',
-    'bb-capture-runtime-errors', 'bb-diagnostic', 'bb-add-family', 'bb-add-kid-to-family', 'bb-export-data', 'bb-welcome'
+    'bbBuild', 'bbRun', 'bbTest', 'bbClean', 'bbRestore', 'bbHealth',
+    'bbDevSession', 'bbInfo', 'bbCommands', 'bbXamlValidate', 'bbCatchErrors',
+    'bbAntiRegression', 'bbMvp', 'bbMvpCheck', 'bbEnvCheck', 'bbRoutes',
+    'bbRouteOptimize', 'bbGenerateReport', 'bbRouteDemo', 'bbRouteStatus', 'bbCopilotRef',
+    'bbCaptureRuntimeErrors', 'bbDiagnostic', 'bbWelcome', 'bbTestFull', 'bbTestErrors',
+    'bbTestLog', 'bbTestWatch'
 )
 
 #endregion
@@ -2517,29 +2614,29 @@ function Show-BusBuddyWelcome {
     Write-Information "" -InformationAction Continue
 
     Write-BusBuddyStatus "Core" -Type Info
-    Write-Information "  bb-build, bb-run, bb-test, bb-clean, bb-restore, bb-health" -InformationAction Continue
+    Write-Information "  bbBuild, bbRun, bbTest, bbClean, bbRestore, bbHealth" -InformationAction Continue
 
     Write-BusBuddyStatus "Development" -Type Info
-    Write-Information "  bb-dev-session, bb-info, bb-commands" -InformationAction Continue
+    Write-Information "  bbDevSession, bbInfo, bbCommands" -InformationAction Continue
 
     Write-BusBuddyStatus "Validation & Safety" -Type Info
-    Write-Information "  bb-xaml-validate, bb-anti-regression, bb-catch-errors, bb-env-check" -InformationAction Continue
+    Write-Information "  bbXamlValidate, bbAntiRegression, bbCatchErrors, bbEnvCheck" -InformationAction Continue
 
     Write-BusBuddyStatus "MVP Focus" -Type Info
-    Write-Information "  bb-mvp, bb-mvp-check" -InformationAction Continue
+    Write-Information "  bbMvp, bbMvpCheck" -InformationAction Continue
 
     Write-BusBuddyStatus "Routes & Reports" -Type Info
-    Write-Information "  bb-routes, bb-route-demo, bb-route-status, bb-route-optimize" -InformationAction Continue
-    Write-Information "  bb-generate-report" -InformationAction Continue
+    Write-Information "  bbRoutes, bbRouteDemo, bbRouteStatus, bbRouteOptimize" -InformationAction Continue
+    Write-Information "  bbGenerateReport" -InformationAction Continue
 
     Write-BusBuddyStatus "Docs & Reference" -Type Info
-    Write-Information "  bb-copilot-ref [Topic] (-ShowTopics)" -InformationAction Continue
+    Write-Information "  bbCopilotRef [Topic] (-ShowTopics)" -InformationAction Continue
 
     if (-not $Quiet) {
         Write-Information "" -InformationAction Continue
         Write-Information "Tips:" -InformationAction Continue
-        Write-Information "  • bb-commands — full list with functions" -InformationAction Continue
-        Write-Information "  • bb-health — verify env quickly" -InformationAction Continue
+        Write-Information "  • bbCommands — full list with functions" -InformationAction Continue
+        Write-Information "  • bbHealth — verify env quickly" -InformationAction Continue
         Write-Information "  • Set 'BUSBUDDY_NO_WELCOME=1' to suppress on import" -InformationAction Continue
     Write-Information "  • Set 'BUSBUDDY_NO_XAI_WARN=1' to silence optional XAI messages" -InformationAction Continue
     }

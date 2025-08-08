@@ -77,8 +77,8 @@ function Invoke-BusBuddyTestNoTruncate {
     return $result.ExitCode
 }
 
-# Create aliases for bb-* commands (aliases are allowed)
-Set-Alias -Name "bb-build-full" -Value "Invoke-BusBuddyBuildNoTruncate" -Description "MVP build with no truncation"
-Set-Alias -Name "bb-test-full" -Value "Invoke-BusBuddyTestNoTruncate" -Description "MVP test with no truncation"
+# Create aliases for bb* commands
+Set-Alias -Name "bbBuildFull" -Value "Invoke-BusBuddyBuildNoTruncate" -Description "MVP build with no truncation"
+Set-Alias -Name "bbTestFull" -Value "Invoke-BusBuddyTestNoTruncate" -Description "MVP test with no truncation"
 
-Export-ModuleMember -Function Invoke-CommandWithFullOutput, Invoke-BusBuddyBuildNoTruncate, Invoke-BusBuddyTestNoTruncate -Alias "bb-build-full", "bb-test-full"
+Export-ModuleMember -Function Invoke-CommandWithFullOutput, Invoke-BusBuddyBuildNoTruncate, Invoke-BusBuddyTestNoTruncate -Alias "bbBuildFull", "bbTestFull"

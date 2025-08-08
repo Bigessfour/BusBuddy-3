@@ -34,8 +34,8 @@
     <XamlBehaviorsVersion>1.1.135</XamlBehaviorsVersion>
 
     <!-- Testing Package Versions -->
-    <NUnitVersion>4.3.1</NUnitVersion>
-    <TestSdkVersion>17.12.0</TestSdkVersion>
+    <NUnitVersion>4.3.2</NUnitVersion>
+    <TestSdkVersion>17.14.1</TestSdkVersion>
     <FluentAssertionsVersion>6.12.2</FluentAssertionsVersion>
     <CoverletVersion>6.0.2</CoverletVersion>
     <MoqVersion>4.20.72</MoqVersion>

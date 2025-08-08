@@ -15,7 +15,7 @@
     Copyright 2025 - BusBuddy
 #>
 
-function BusBuddyUseBBPrefix {
+function Test-BusBuddyBBPrefix {
     <#
     .SYNOPSIS
         Enforce bb- prefix for BusBuddy-specific functions
@@ -53,7 +53,7 @@ function BusBuddyUseBBPrefix {
     return $results
 }
 
-function BusBuddyRequireErrorActionPreference {
+function Test-BusBuddyErrorActionPreference {
     <#
     .SYNOPSIS
         Enforce ErrorActionPreference in scripts
@@ -100,7 +100,7 @@ function BusBuddyRequireErrorActionPreference {
     return $results
 }
 
-function BusBuddyAvoidHardcodedPaths {
+function Test-BusBuddyNoHardcodedPaths {
     <#
     .SYNOPSIS
         Avoid hardcoded paths in favor of dynamic path resolution
@@ -138,7 +138,7 @@ function BusBuddyAvoidHardcodedPaths {
     return $results
 }
 
-function BusBuddyUseWriteHostSparingly {
+function Test-BusBuddyWriteHostUsage {
     <#
     .SYNOPSIS
         Suggest using Write-Information or Write-Verbose instead of Write-Host
@@ -172,7 +172,7 @@ function BusBuddyUseWriteHostSparingly {
     return $results
 }
 
-function BusBuddyRequireVersion75 {
+function Test-BusBuddyVersion75 {
     <#
     .SYNOPSIS
         Ensure scripts require PowerShell 7.5
@@ -211,4 +211,4 @@ function BusBuddyRequireVersion75 {
 }
 
 # Export the custom rules
-Export-ModuleMember -Function BusBuddyUseBBPrefix, BusBuddyRequireErrorActionPreference, BusBuddyAvoidHardcodedPaths, BusBuddyUseWriteHostSparingly, BusBuddyRequireVersion75
+Export-ModuleMember -Function Test-BusBuddyBBPrefix, Test-BusBuddyErrorActionPreference, Test-BusBuddyNoHardcodedPaths, Test-BusBuddyWriteHostUsage, Test-BusBuddyVersion75

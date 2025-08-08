@@ -144,12 +144,12 @@ function Invoke-ComprehensiveXamlValidation {
 #region Export Module Members (Microsoft PowerShell 7.5.2 Standard)
 
 # Create alias
-Set-Alias -Name 'bb-xaml-validate' -Value 'Invoke-ComprehensiveXamlValidation' -Description 'Comprehensive XAML validation'
+Set-Alias -Name 'bbXamlValidate' -Value 'Invoke-ComprehensiveXamlValidation' -Description 'Comprehensive XAML validation'
 
 Export-ModuleMember -Function @(
     'Invoke-ComprehensiveXamlValidation'
 ) -Alias @(
-    'bb-xaml-validate'
+    'bbXamlValidate'
 )
 
 #endregion

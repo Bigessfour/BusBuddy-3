@@ -1,9 +1,12 @@
 {
     "cSpell.words": [
         "ASPNETCORE",
+        "bbtest",
+        "buildtransitive",
         "busbuddy",
         "centralus",
         "clrstack",
+        "contentfiles",
         "costmanagement",
         "ecxr",
         "Fetchability",
@@ -16,6 +19,7 @@
         "pscustomobject",
         "Serilog",
         "sympath",
+        "testhost",
         "Wintellect"
     ]
 }

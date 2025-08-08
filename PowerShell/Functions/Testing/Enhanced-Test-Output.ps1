@@ -27,9 +27,9 @@ function Get-BusBuddyTestOutput {
         Custom test filter expression
 
     .EXAMPLE
-        # Deprecated: Use bb-test or bb-test-full instead
-        bb-test -TestSuite "Unit"
-        bb-test-full -TestSuite "Core"
+        # Deprecated: Use bbTest or bbTestFull instead
+        bbTest -TestSuite "Unit"
+        bbTestFull -TestSuite "Core"
     #>
     [CmdletBinding()]
     param(
@@ -48,11 +48,11 @@ function Get-BusBuddyTestOutput {
         [string]$Verbosity = 'normal'
     )
 
-    Write-Warning "Get-BusBuddyTestOutput is deprecated. Please use bb-test or bb-test-full to run tests via the NUnit Test Runner extension."
-    return @{ Status = "Deprecated"; Message = "Use bb-test or bb-test-full for all test automation." }
+    Write-Warning "Get-BusBuddyTestOutput is deprecated. Please use bbTest or bbTestFull to run tests via the NUnit Test Runner extension."
+    return @{ Status = "Deprecated"; Message = "Use bbTest or bbTestFull for all test automation." }
 }
 
-function bb-test-full {
+function Invoke-BusBuddyTestFull {
     <#
     .SYNOPSIS
         Enhanced bb-test with complete output capture (PowerShell 7.5.2 best practices)
@@ -70,10 +70,10 @@ function bb-test-full {
         # For now, simulate output
         Write-Output "[NUnit Test Runner] Executed $TestSuite tests. See extension UI for results."
     } catch {
-        Write-Error "bb-test-full failed: $($_.Exception.Message)" -ErrorAction Stop
+        Write-Error "bbTestFull failed: $($_.Exception.Message)" -ErrorAction Stop
     }
 }
-function bb-test {
+function Invoke-BusBuddyTestSimple {
     [CmdletBinding()]
     param(
         [ValidateSet('All', 'Unit', 'Integration', 'Validation', 'Core', 'WPF')]
@@ -86,7 +86,7 @@ function bb-test {
     Write-Output "[NUnit Test Runner] Executed $TestSuite tests. See extension UI for results."
 }
 
-function bb-test-errors {
+function Get-BusBuddyTestErrors {
     <#
     .SYNOPSIS
         Get only test errors without full output
@@ -97,10 +97,10 @@ function bb-test-errors {
         [string]$TestSuite = 'All'
     )
 
-    Write-Warning "bb-test-errors is deprecated. Use bb-test or bb-test-full and review results in the NUnit Test Runner extension UI."
+    Write-Warning "Get-BusBuddyTestErrors is deprecated. Use bbTest or bbTestFull and review results in the NUnit Test Runner extension UI."
 }
 
-function bb-test-log {
+function Get-BusBuddyTestLog {
     <#
     .SYNOPSIS
         Show the most recent test log
@@ -113,11 +113,11 @@ function bb-test-log {
         Write-Information "" -InformationAction Continue
         Get-Content $latestLog.FullName
     } else {
-        Write-Information "No test logs found. Run bb-test-full first." -InformationAction Continue
+        Write-Information "No test logs found. Run bbTestFull first." -InformationAction Continue
     }
 }
 
-function bb-test-watch {
+function Start-BusBuddyTestWatch {
     <#
     .SYNOPSIS
         Continuous testing with file monitoring and full output capture
@@ -128,10 +128,10 @@ function bb-test-watch {
         [string]$TestSuite = 'Unit'
     )
 
-    Write-Warning "bb-test-watch is deprecated. Use bb-test or bb-test-full for test automation. For continuous testing, use the NUnit Test Runner extension's watch mode."
+    Write-Warning "Start-BusBuddyTestWatch is deprecated. Use bbTest or bbTestFull for test automation. For continuous testing, use the NUnit Test Runner extension's watch mode."
 }
 
 #endregion
 
 # Export functions
-Export-ModuleMember -Function Get-BusBuddyTestOutput, bb-test-full, bb-test-errors, bb-test-log, bb-test-watch
+Export-ModuleMember -Function Get-BusBuddyTestOutput, Invoke-BusBuddyTestFull, Get-BusBuddyTestErrors, Get-BusBuddyTestLog, Start-BusBuddyTestWatch
