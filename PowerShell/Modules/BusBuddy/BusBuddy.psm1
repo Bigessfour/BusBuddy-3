@@ -2612,43 +2612,55 @@ function Start-BusBuddyRuntimeErrorCapture {
 
 #endregion
 
-#region Aliases
+#region Aliases - Safe Alias Creation with Conflict Resolution
 
-Set-Alias -Name 'bbBuild' -Value 'Invoke-BusBuddyBuild' -Description 'Build the Bus Buddy solution'
-Set-Alias -Name 'bbRun' -Value 'Invoke-BusBuddyRun' -Description 'Run the Bus Buddy application'
-Set-Alias -Name 'bbTest' -Value 'Invoke-BusBuddyTest' -Description 'Run Bus Buddy tests'
-Set-Alias -Name 'bbClean' -Value 'Invoke-BusBuddyClean' -Description 'Clean build artifacts'
-Set-Alias -Name 'bbRestore' -Value 'Invoke-BusBuddyRestore' -Description 'Restore NuGet packages'
+# Core aliases with safe creation
+try { Set-Alias -Name 'bbBuild' -Value 'Invoke-BusBuddyBuild' -Description 'Build the Bus Buddy solution' -Force } catch { }
+try { Set-Alias -Name 'bbRun' -Value 'Invoke-BusBuddyRun' -Description 'Run the Bus Buddy application' -Force } catch { }
+try { Set-Alias -Name 'bbTest' -Value 'Invoke-BusBuddyTest' -Description 'Run Bus Buddy tests' -Force } catch { }
+try { Set-Alias -Name 'bbClean' -Value 'Invoke-BusBuddyClean' -Description 'Clean build artifacts' -Force } catch { }
+try { Set-Alias -Name 'bbRestore' -Value 'Invoke-BusBuddyRestore' -Description 'Restore NuGet packages' -Force } catch { }
 
-# Add kebab-case aliases for consistency
-Set-Alias -Name 'bb-build' -Value 'Invoke-BusBuddyBuild' -Description 'Build the Bus Buddy solution (kebab-case)'
-Set-Alias -Name 'bb-run' -Value 'Invoke-BusBuddyRun' -Description 'Run the Bus Buddy application (kebab-case)'
-Set-Alias -Name 'bb-test' -Value 'Invoke-BusBuddyTest' -Description 'Run Bus Buddy tests (kebab-case)'
-Set-Alias -Name 'bb-clean' -Value 'Invoke-BusBuddyClean' -Description 'Clean build artifacts (kebab-case)'
-Set-Alias -Name 'bb-restore' -Value 'Invoke-BusBuddyRestore' -Description 'Restore NuGet packages (kebab-case)'
-Set-Alias -Name 'bbHealth' -Value 'Invoke-BusBuddyHealthCheck' -Description 'Check system health'
-Set-Alias -Name 'bbDevSession' -Value 'Start-BusBuddyDevSession' -Description 'Start development session'
-Set-Alias -Name 'bbInfo' -Value 'Get-BusBuddyInfo' -Description 'Show module information'
-Set-Alias -Name 'bbCommands' -Value 'Get-BusBuddyCommand' -Description 'List all commands'
-Set-Alias -Name 'bbTestFull' -Value 'Invoke-BusBuddyTestFull' -Description 'Enhanced test with full capture'
-Set-Alias -Name 'bbTestErrors' -Value 'Get-BusBuddyTestErrors' -Description 'Show test errors only'
-Set-Alias -Name 'bbTestLog' -Value 'Get-BusBuddyTestLog' -Description 'Show latest test log'
-Set-Alias -Name 'bbTestWatch' -Value 'Start-BusBuddyTestWatch' -Description 'Continuous test watch'
-Set-Alias -Name 'bbXamlValidate' -Value 'Invoke-BusBuddyXamlValidation' -Description 'Validate XAML files'
-Set-Alias -Name 'bbCatchErrors' -Value 'Invoke-BusBuddyWithExceptionCapture' -Description 'Run with exception capture'
-Set-Alias -Name 'bbAntiRegression' -Value 'Invoke-BusBuddyAntiRegression' -Description 'Run anti-regression checks'
-Set-Alias -Name 'bbMvp' -Value 'Start-BusBuddyMVP' -Description 'MVP focus and scope management'
-Set-Alias -Name 'bbMvpCheck' -Value 'Test-BusBuddyMVPReadiness' -Description 'Check MVP readiness'
-Set-Alias -Name 'bbEnvCheck' -Value 'Test-BusBuddyEnvironment' -Description 'Comprehensive environment validation'
-Set-Alias -Name 'bbRoutes' -Value 'Start-BusBuddyRouteOptimization' -Description 'Main route optimization system'
-Set-Alias -Name 'bbRouteOptimize' -Value 'Invoke-BusBuddyRouteOptimization' -Description 'xAI Grok route optimization with detailed analysis'
-Set-Alias -Name 'bbGenerateReport' -Value 'Invoke-BusBuddyReport' -Description 'Generate PDF reports (roster, route manifest, etc.)'
-Set-Alias -Name 'bbRouteDemo' -Value 'Show-RouteOptimizationDemo' -Description 'Demo route optimization with sample data'
-Set-Alias -Name 'bbRouteStatus' -Value 'Get-BusBuddyRouteStatus' -Description 'Check route optimization system status'
-Set-Alias -Name 'bbCopilotRef' -Value 'Open-BusBuddyCopilotReference' -Description 'Open Copilot reference for enhanced context'
-Set-Alias -Name 'bbCaptureRuntimeErrors' -Value 'Start-BusBuddyRuntimeErrorCapture' -Description 'Comprehensive runtime error capture and monitoring'
-Set-Alias -Name 'bbDiagnostic' -Value 'Invoke-BusBuddyDiagnostic' -Description 'Run diagnostics and output environment, module, and MVP status'
-Set-Alias -Name 'bbWelcome' -Value 'Show-BusBuddyWelcome' -Description 'Show categorized command overview'
+# Kebab-case aliases for consistency (with conflict resolution)
+try { Set-Alias -Name 'bb-build' -Value 'Invoke-BusBuddyBuild' -Description 'Build the Bus Buddy solution (kebab-case)' -Force } catch { }
+try { Set-Alias -Name 'bb-run' -Value 'Invoke-BusBuddyRun' -Description 'Run the Bus Buddy application (kebab-case)' -Force } catch { }
+try { Set-Alias -Name 'bb-test' -Value 'Invoke-BusBuddyTest' -Description 'Run Bus Buddy tests (kebab-case)' -Force } catch { }
+try { Set-Alias -Name 'bb-clean' -Value 'Invoke-BusBuddyClean' -Description 'Clean build artifacts (kebab-case)' -Force } catch { }
+try { Set-Alias -Name 'bb-restore' -Value 'Invoke-BusBuddyRestore' -Description 'Restore NuGet packages (kebab-case)' -Force } catch { }
+# Development and utility aliases
+try { Set-Alias -Name 'bbHealth' -Value 'Invoke-BusBuddyHealthCheck' -Description 'Check system health' -Force } catch { }
+try { Set-Alias -Name 'bbDevSession' -Value 'Start-BusBuddyDevSession' -Description 'Start development session' -Force } catch { }
+try { Set-Alias -Name 'bbInfo' -Value 'Get-BusBuddyInfo' -Description 'Show module information' -Force } catch { }
+try { Set-Alias -Name 'bbCommands' -Value 'Get-BusBuddyCommand' -Description 'List all commands' -Force } catch { }
+
+# Testing aliases
+try { Set-Alias -Name 'bbTestFull' -Value 'Invoke-BusBuddyTestFull' -Description 'Enhanced test with full capture' -Force } catch { }
+try { Set-Alias -Name 'bbTestErrors' -Value 'Get-BusBuddyTestErrors' -Description 'Show test errors only' -Force } catch { }
+try { Set-Alias -Name 'bbTestLog' -Value 'Get-BusBuddyTestLog' -Description 'Show latest test log' -Force } catch { }
+try { Set-Alias -Name 'bbTestWatch' -Value 'Start-BusBuddyTestWatch' -Description 'Continuous test watch' -Force } catch { }
+
+# Validation and quality aliases
+try { Set-Alias -Name 'bbXamlValidate' -Value 'Invoke-BusBuddyXamlValidation' -Description 'Validate XAML files' -Force } catch { }
+try { Set-Alias -Name 'bbCatchErrors' -Value 'Invoke-BusBuddyWithExceptionCapture' -Description 'Run with exception capture' -Force } catch { }
+try { Set-Alias -Name 'bbAntiRegression' -Value 'Invoke-BusBuddyAntiRegression' -Description 'Run anti-regression checks' -Force } catch { }
+
+# MVP and project management aliases
+try { Set-Alias -Name 'bbMvp' -Value 'Start-BusBuddyMVP' -Description 'MVP focus and scope management' -Force } catch { }
+try { Set-Alias -Name 'bbMvpCheck' -Value 'Test-BusBuddyMVPReadiness' -Description 'Check MVP readiness' -Force } catch { }
+try { Set-Alias -Name 'bbEnvCheck' -Value 'Test-BusBuddyEnvironment' -Description 'Comprehensive environment validation' -Force } catch { }
+
+# Route optimization aliases
+try { Set-Alias -Name 'bbRoutes' -Value 'Start-BusBuddyRouteOptimization' -Description 'Main route optimization system' -Force } catch { }
+try { Set-Alias -Name 'bbRouteOptimize' -Value 'Invoke-BusBuddyRouteOptimization' -Description 'xAI Grok route optimization with detailed analysis' -Force } catch { }
+try { Set-Alias -Name 'bbGenerateReport' -Value 'Invoke-BusBuddyReport' -Description 'Generate PDF reports (roster, route manifest, etc.)' -Force } catch { }
+try { Set-Alias -Name 'bbRouteDemo' -Value 'Show-RouteOptimizationDemo' -Description 'Demo route optimization with sample data' -Force } catch { }
+try { Set-Alias -Name 'bbRouteStatus' -Value 'Get-BusBuddyRouteStatus' -Description 'Check route optimization system status' -Force } catch { }
+
+# Documentation and diagnostics aliases
+try { Set-Alias -Name 'bbCopilotRef' -Value 'Open-BusBuddyCopilotReference' -Description 'Open Copilot reference for enhanced context' -Force } catch { }
+try { Set-Alias -Name 'bbCaptureRuntimeErrors' -Value 'Start-BusBuddyRuntimeErrorCapture' -Description 'Comprehensive runtime error capture and monitoring' -Force } catch { }
+try { Set-Alias -Name 'bbDiagnostic' -Value 'Invoke-BusBuddyDiagnostic' -Description 'Run diagnostics and output environment, module, and MVP status' -Force } catch { }
+try { Set-Alias -Name 'bbWelcome' -Value 'Show-BusBuddyWelcome' -Description 'Show categorized command overview' -Force } catch { }
 
 #endregion
 
