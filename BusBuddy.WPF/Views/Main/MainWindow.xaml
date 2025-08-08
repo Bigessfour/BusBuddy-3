@@ -39,16 +39,16 @@
 
                 <!-- Navigation Buttons -->
                 <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,15,0,0">
-                    <syncfusion:ButtonAdv Label="📚 Students" Margin="0,0,10,0" Padding="15,8"
+                    <syncfusion:ButtonAdv Content="📚 Students" Margin="0,0,10,0" Padding="15,8"
                                           Background="#0078D4" Foreground="White" BorderThickness="0"
                                           Click="StudentsButton_Click" FontSize="14" FontWeight="SemiBold"/>
-                    <syncfusion:ButtonAdv Label="🚌 Routes" Margin="0,0,10,0" Padding="15,8"
+                    <syncfusion:ButtonAdv Content="🚌 Routes" Margin="0,0,10,0" Padding="15,8"
                                           Background="#8B5CF6" Foreground="White" BorderThickness="0"
                                           Click="RouteManagementButton_Click" FontSize="14" FontWeight="SemiBold"/>
-                    <syncfusion:ButtonAdv Label="🚐 Buses" Margin="0,0,10,0" Padding="15,8"
+                    <syncfusion:ButtonAdv Content="🚐 Buses" Margin="0,0,10,0" Padding="15,8"
                                           Background="#DC2626" Foreground="White" BorderThickness="0"
                                           Click="BusesButton_Click" FontSize="14" FontWeight="SemiBold"/>
-                    <syncfusion:ButtonAdv Label="👨‍✈️ Drivers" Padding="15,8"
+                    <syncfusion:ButtonAdv Content="👨‍✈️ Drivers" Padding="15,8"
                                           Background="#107C10" Foreground="White" BorderThickness="0"
                                           Click="DriversButton_Click" FontSize="14" FontWeight="SemiBold"/>
                 </StackPanel>
@@ -90,10 +90,10 @@
                     </syncfusion:SfDataGrid>
 
                     <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,15,0,0">
-                        <syncfusion:ButtonAdv Label="➕ Add Student" Margin="0,0,10,0" Padding="12,6"
+                        <syncfusion:ButtonAdv Content="➕ Add Student" Margin="0,0,10,0" Padding="12,6"
                                               Background="#0078D4" Foreground="White" BorderThickness="0"
                                               Click="AddStudent_Click"/>
-                        <syncfusion:ButtonAdv Label="📝 Edit Student" Padding="12,6"
+                        <syncfusion:ButtonAdv Content="📝 Edit Student" Padding="12,6"
                                               Background="#5A5A5A" Foreground="White" BorderThickness="0"
                                               Click="EditStudent_Click"/>
                     </StackPanel>
@@ -129,9 +129,9 @@
                     </syncfusion:SfDataGrid>
 
                     <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,15,0,0">
-                        <syncfusion:ButtonAdv Label="🗺️ Optimize Routes" Margin="0,0,10,0" Padding="12,6"
+                        <syncfusion:ButtonAdv Content="🗺️ Optimize Routes" Margin="0,0,10,0" Padding="12,6"
                                               Background="#8B5CF6" Foreground="White" BorderThickness="0"/>
-                        <syncfusion:ButtonAdv Label="📄 Export Schedules" Padding="12,6"
+                        <syncfusion:ButtonAdv Content="📄 Export Schedules" Padding="12,6"
                                               Background="#DC2626" Foreground="White" BorderThickness="0"/>
                     </StackPanel>
                 </Grid>
@@ -166,12 +166,12 @@
                     </syncfusion:SfDataGrid>
 
                     <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,15,0,0">
-                        <syncfusion:ButtonAdv Label="➕ Add Bus" Margin="0,0,10,0" Padding="12,6"
+                        <syncfusion:ButtonAdv Content="➕ Add Bus" Margin="0,0,10,0" Padding="12,6"
                                               Background="#0078D4" Foreground="White" BorderThickness="0"
                                               Click="AddBus_Click"/>
-                        <syncfusion:ButtonAdv Label="🔧 Maintenance" Margin="0,0,10,0" Padding="12,6"
+                        <syncfusion:ButtonAdv Content="🔧 Maintenance" Margin="0,0,10,0" Padding="12,6"
                                               Background="#FF8C00" Foreground="White" BorderThickness="0"/>
-                        <syncfusion:ButtonAdv Label="📊 Fleet Status" Padding="12,6"
+                        <syncfusion:ButtonAdv Content="📊 Fleet Status" Padding="12,6"
                                               Background="#32CD32" Foreground="White" BorderThickness="0"/>
                     </StackPanel>
                 </Grid>
@@ -204,12 +204,12 @@
                     </syncfusion:SfDataGrid>
 
                     <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,15,0,0">
-                        <syncfusion:ButtonAdv Label="➕ Add Driver" Margin="0,0,10,0" Padding="12,6"
+                        <syncfusion:ButtonAdv Content="➕ Add Driver" Margin="0,0,10,0" Padding="12,6"
                                               Background="#0078D4" Foreground="White" BorderThickness="0"
                                               Click="AddDriver_Click"/>
-                        <syncfusion:ButtonAdv Label="🚌 Assign Bus" Margin="0,0,10,0" Padding="12,6"
+                        <syncfusion:ButtonAdv Content="🚌 Assign Bus" Margin="0,0,10,0" Padding="12,6"
                                               Background="#107C10" Foreground="White" BorderThickness="0"/>
-                        <syncfusion:ButtonAdv Label="📅 Schedule" Padding="12,6"
+                        <syncfusion:ButtonAdv Content="📅 Schedule" Padding="12,6"
                                               Background="#6B46C1" Foreground="White" BorderThickness="0"/>
                     </StackPanel>
                 </Grid>

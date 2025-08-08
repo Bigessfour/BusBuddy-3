@@ -1226,13 +1226,49 @@ public class StudentService : IStudentService
                 var existing = await context.Students.CountAsync();
                 if (existing >= 5)
                 {
+                    Logger.Information("Wiley seeding skipped: {ExistingCount} students already exist", existing);
                     return new SeedResult { Success = true, RecordsSeeded = 0, ErrorMessage = "Already seeded" };
                 }
 
-                context.Students.AddRange(studentsToSeed);
-                recordsSeeded = studentsToSeed.Count;
-                await context.SaveChangesAsync();
-                return new SeedResult { Success = true, RecordsSeeded = recordsSeeded };
+                // Check for duplicate StudentNumbers before adding
+                var existingStudentNumbers = await context.Students
+                    .Select(s => s.StudentNumber)
+                    .ToListAsync();
+
+                var studentsToAdd = studentsToSeed
+                    .Where(s => !existingStudentNumbers.Contains(s.StudentNumber))
+                    .ToList();
+
+                if (!studentsToAdd.Any())
+                {
+                    Logger.Information("Wiley seeding skipped: All student numbers already exist");
+                    return new SeedResult { Success = true, RecordsSeeded = 0, ErrorMessage = "Duplicate student numbers" };
+                }
+
+                Logger.Information("Adding {Count} Wiley students to database", studentsToAdd.Count);
+                context.Students.AddRange(studentsToAdd);
+                recordsSeeded = studentsToAdd.Count;
+
+                try
+                {
+                    await context.SaveChangesAsync();
+                    Logger.Information("Successfully saved {Count} Wiley students", studentsToAdd.Count);
+                    return new SeedResult { Success = true, RecordsSeeded = recordsSeeded };
+                }
+                catch (Exception saveEx)
+                {
+                    Logger.Error(saveEx, "SaveChanges failed for Wiley seeding. Inner exception: {InnerException}",
+                        saveEx.InnerException?.Message ?? "None");
+
+                    // Log specific SQL errors if available
+                    if (saveEx.InnerException is Microsoft.Data.SqlClient.SqlException sqlEx)
+                    {
+                        Logger.Error("SQL Error {Number}: {Message}, Severity: {Severity}, State: {State}",
+                            sqlEx.Number, sqlEx.Message, sqlEx.Class, sqlEx.State);
+                    }
+
+                    throw; // Re-throw for ResilientDbExecution to handle
+                }
             }, "SeedWileySchoolDistrictData", maxRetries: 3);
             stopwatch.Stop();
             return new SeedResult {

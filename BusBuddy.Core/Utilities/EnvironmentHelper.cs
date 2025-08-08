@@ -1,5 +1,6 @@
 using System;
 using Microsoft.Extensions.Configuration;
+using System.Text.RegularExpressions;
 
 namespace BusBuddy.Core.Utilities
 {
@@ -109,26 +110,49 @@ namespace BusBuddy.Core.Utilities
         /// <returns>The appropriate connection string for the current environment and database provider</returns>
         public static string GetConnectionString(IConfiguration configuration)
         {
+            string? raw = null;
+
             if (IsUsingAzureSql(configuration))
             {
                 // Prefer Azure AD interactive/password auth first, then fallback to SQL auth, then default, then sqlite
-                return configuration.GetConnectionString("AzureADConnection") ??
-                       configuration.GetConnectionString("AzureConnection") ??
-                       configuration.GetConnectionString("DefaultConnection") ??
-                       "Data Source=BusBuddy.db";
+                raw = configuration.GetConnectionString("AzureADConnection") ??
+                      configuration.GetConnectionString("AzureConnection") ??
+                      configuration.GetConnectionString("DefaultConnection") ??
+                      "Data Source=BusBuddy.db";
             }
             else if (IsUsingLocalDb(configuration))
             {
-                return configuration.GetConnectionString("LocalConnection") ??
-                       configuration.GetConnectionString("DefaultConnection") ??
-                       "Data Source=BusBuddy.db";
+                raw = configuration.GetConnectionString("LocalConnection") ??
+                      configuration.GetConnectionString("DefaultConnection") ??
+                      "Data Source=BusBuddy.db";
             }
             else
             {
-                return configuration.GetConnectionString("BusBuddyDatabase") ??
-                       configuration.GetConnectionString("DefaultConnection") ??
-                       "Data Source=BusBuddy.db";
+                raw = configuration.GetConnectionString("BusBuddyDatabase") ??
+                      configuration.GetConnectionString("DefaultConnection") ??
+                      "Data Source=BusBuddy.db";
             }
+
+            return ExpandEnvironmentPlaceholders(raw);
+        }
+
+        /// <summary>
+        /// Expands ${ENV_VAR} placeholders in configuration strings using current process environment variables.
+        /// Leaves placeholders intact if the environment variable is not set.
+        /// </summary>
+        private static string ExpandEnvironmentPlaceholders(string value)
+        {
+            if (string.IsNullOrEmpty(value))
+            {
+                return value;
+            }
+
+            return Regex.Replace(value, @"\$\{([A-Za-z0-9_]+)\}", match =>
+            {
+                var varName = match.Groups[1].Value;
+                var envValue = Environment.GetEnvironmentVariable(varName);
+                return string.IsNullOrEmpty(envValue) ? match.Value : envValue;
+            });
         }
     }
 }
