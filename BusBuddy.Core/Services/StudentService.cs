@@ -3,6 +3,7 @@ using BusBuddy.Core.Models;
 using System.IO;
 using BusBuddy.Core.Utilities;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Serilog;
 using System.Text;
 using System.Linq; // Added for FirstOrDefault in seeding path resolution
@@ -1187,18 +1188,41 @@ public class StudentService : IStudentService
         try
         {
             Logger.Information("Starting Wiley School District data seeding operation");
-            // Updated path resolution: try multiple documented candidate locations
-            var baseDir = AppDomain.CurrentDomain.BaseDirectory;
-            var candidatePaths = new[]
+
+            // Use WileyJsonPath from appsettings.json configuration
+            var configuration = new ConfigurationBuilder()
+                .SetBasePath(Directory.GetCurrentDirectory())
+                .AddJsonFile("appsettings.json", optional: true)
+                .AddEnvironmentVariables()
+                .Build();
+
+            var configPath = configuration["WileyJsonPath"];
+            var jsonPath = string.Empty;
+            var allPaths = new List<string>(); // Track all attempted paths for error logging
+
+            if (!string.IsNullOrEmpty(configPath) && File.Exists(configPath))
             {
-                Path.Combine(baseDir, "Data", "wiley-school-district-data.json"),
-                Path.Combine(baseDir, "BusBuddy.Core", "Data", "wiley-school-district-data.json"),
-                Path.GetFullPath(Path.Combine(baseDir, "..", "BusBuddy.Core", "Data", "wiley-school-district-data.json"))
-            };
-            var jsonPath = candidatePaths.FirstOrDefault(File.Exists) ?? string.Empty;
+                jsonPath = configPath;
+                Logger.Information("Using configured JSON path: {Path}", jsonPath);
+            }
+            else
+            {
+                // Fallback: try multiple documented candidate locations
+                var baseDir = AppDomain.CurrentDomain.BaseDirectory;
+                var candidatePaths = new[]
+                {
+                    Path.Combine(baseDir, "Data", "wiley-school-district-data.json"),
+                    Path.Combine(baseDir, "BusBuddy.Core", "Data", "wiley-school-district-data.json"),
+                    Path.GetFullPath(Path.Combine(baseDir, "..", "BusBuddy.Core", "Data", "wiley-school-district-data.json")),
+                    @"c:\Users\biges\Desktop\BusBuddy\BusBuddy.Core\Data\wiley-school-district-data.json"
+                };
+                allPaths.AddRange(candidatePaths);
+                jsonPath = candidatePaths.FirstOrDefault(File.Exists) ?? string.Empty;
+                Logger.Information("Using fallback path resolution: {Path}", jsonPath);
+            }
             if (string.IsNullOrEmpty(jsonPath))
             {
-                Logger.Error("Wiley JSON file not found. Paths tried: {Paths}", string.Join(" | ", candidatePaths));
+                Logger.Error("Wiley JSON file not found. Paths tried: {Paths}", string.Join(" | ", allPaths));
                 return new SeedResult { Success = false, ErrorMessage = "JSON file not found", RecordsSeeded = 0, Duration = stopwatch.Elapsed, CompletedAt = DateTime.UtcNow };
             }
             var json = await File.ReadAllTextAsync(jsonPath);

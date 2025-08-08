@@ -3138,3 +3138,321 @@ Error Number:547,State:0,Class:16
 2025-08-08 13:44:26.192 -06:00 [DBG] 🚌 Drivers navigation logic completed
 2025-08-08 13:44:26.787 -06:00 [INF] 🚌 Buses button clicked
 2025-08-08 13:44:29.644 -06:00 [INF] 🚌 🚌 BusBuddy MVP application shutting down
+2025-08-08 13:54:41.225 -06:00 [INF] 🚌 🚌 Serilog initialized using configuration from appsettings.json
+2025-08-08 13:54:41.238 -06:00 [INF] 🚌 🚌 BusBuddy MVP starting...
+2025-08-08 13:54:41.248 -06:00 [INF] 🚌 🚌 BusBuddy starting on thread 2 with apartment state: "STA"
+2025-08-08 13:54:41.250 -06:00 [INF] 🚌 🚌 Command line args: C:\Users\biges\Desktop\BusBuddy\BusBuddy.WPF\bin\Debug\net9.0-windows\BusBuddy.WPF.dll
+2025-08-08 13:54:41.250 -06:00 [INF] 🚌 🚌 EF Migration mode: false
+2025-08-08 13:54:41.250 -06:00 [INF] 🚌 🚌 Design-time mode: false
+2025-08-08 13:54:41.250 -06:00 [INF] 🚌 🚌 Initializing BusBuddy MVP application
+2025-08-08 13:54:41.253 -06:00 [INF] 🚌 🔧 Setting up full DI container for UI application...
+2025-08-08 13:54:41.268 -06:00 [INF] 🚌 ✅ Full DI container configured successfully for UI application
+2025-08-08 13:54:41.287 -06:00 [INF] 🚌 Starting Wiley School District data seeding operation
+2025-08-08 13:54:42.662 -06:00 [ERR] 🚌 Database operation SeedWileySchoolDistrictData failed permanently after 1 attempts
+Microsoft.Data.SqlClient.SqlException (0x80131904): Invalid object name 'Students'.
+   at Microsoft.Data.SqlClient.SqlCommand.<>c.<ExecuteDbDataReaderAsync>b__195_0(Task`1 result)
+   at System.Threading.Tasks.ContinuationResultTaskFromResultTask`2.InnerInvoke()
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+--- End of stack trace from previous location ---
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+   at System.Threading.Tasks.Task.ExecuteWithThreadLocal(Task& currentTaskSlot, Thread threadPoolThread)
+--- End of stack trace from previous location ---
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable`1.AsyncEnumerator.InitializeReaderAsync(AsyncEnumerator enumerator, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.SqlServer.Storage.Internal.SqlServerExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable`1.AsyncEnumerator.MoveNextAsync()
+   at Microsoft.EntityFrameworkCore.Query.ShapedQueryCompilingExpressionVisitor.SingleAsync[TSource](IAsyncEnumerable`1 asyncEnumerable, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.ShapedQueryCompilingExpressionVisitor.SingleAsync[TSource](IAsyncEnumerable`1 asyncEnumerable, CancellationToken cancellationToken)
+   at BusBuddy.Core.Services.StudentService.<>c__DisplayClass33_1.<<SeedWileySchoolDistrictDataAsync>b__1>d.MoveNext() in C:\Users\biges\Desktop\BusBuddy\BusBuddy.Core\Services\StudentService.cs:line 1226
+--- End of stack trace from previous location ---
+   at BusBuddy.Core.Utilities.ResilientDbExecution.ExecuteWithResilienceAsync[T](Func`1 operation, String operationName, Int32 maxRetries) in C:\Users\biges\Desktop\BusBuddy\BusBuddy.Core\Utilities\ResilientDbExecution.cs:line 44
+ClientConnectionId:92d6dbce-81f8-46b2-91ad-a8a8539c9716
+Error Number:208,State:1,Class:16
+2025-08-08 13:54:42.676 -06:00 [ERR] 🚌 Error during Wiley School District data seeding
+Microsoft.Data.SqlClient.SqlException (0x80131904): Invalid object name 'Students'.
+   at Microsoft.Data.SqlClient.SqlCommand.<>c.<ExecuteDbDataReaderAsync>b__195_0(Task`1 result)
+   at System.Threading.Tasks.ContinuationResultTaskFromResultTask`2.InnerInvoke()
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+--- End of stack trace from previous location ---
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+   at System.Threading.Tasks.Task.ExecuteWithThreadLocal(Task& currentTaskSlot, Thread threadPoolThread)
+--- End of stack trace from previous location ---
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable`1.AsyncEnumerator.InitializeReaderAsync(AsyncEnumerator enumerator, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.SqlServer.Storage.Internal.SqlServerExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable`1.AsyncEnumerator.MoveNextAsync()
+   at Microsoft.EntityFrameworkCore.Query.ShapedQueryCompilingExpressionVisitor.SingleAsync[TSource](IAsyncEnumerable`1 asyncEnumerable, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.ShapedQueryCompilingExpressionVisitor.SingleAsync[TSource](IAsyncEnumerable`1 asyncEnumerable, CancellationToken cancellationToken)
+   at BusBuddy.Core.Services.StudentService.<>c__DisplayClass33_1.<<SeedWileySchoolDistrictDataAsync>b__1>d.MoveNext() in C:\Users\biges\Desktop\BusBuddy\BusBuddy.Core\Services\StudentService.cs:line 1226
+--- End of stack trace from previous location ---
+   at BusBuddy.Core.Utilities.ResilientDbExecution.ExecuteWithResilienceAsync[T](Func`1 operation, String operationName, Int32 maxRetries) in C:\Users\biges\Desktop\BusBuddy\BusBuddy.Core\Utilities\ResilientDbExecution.cs:line 44
+   at BusBuddy.Core.Services.StudentService.SeedWileySchoolDistrictDataAsync() in C:\Users\biges\Desktop\BusBuddy\BusBuddy.Core\Services\StudentService.cs:line 1224
+ClientConnectionId:92d6dbce-81f8-46b2-91ad-a8a8539c9716
+Error Number:208,State:1,Class:16
+2025-08-08 13:54:42.679 -06:00 [INF] 🚌 🚌 Wiley seeding result: Success=False, RecordsSeeded=0, Error=Invalid object name 'Students'.
+2025-08-08 13:54:42.679 -06:00 [INF] 🚌 🏗️ Creating MainWindow for full UI application
+2025-08-08 13:54:42.679 -06:00 [INF] 🚌 🎯 Creating MainWindow with dependency injection
+2025-08-08 13:54:42.680 -06:00 [INF] 🚌 MainWindowViewModel initialized with sample data
+2025-08-08 13:54:42.681 -06:00 [INF] 🚌 ✅ MainWindowViewModel created successfully via DI
+2025-08-08 13:54:42.702 -06:00 [DBG] 🚌 MainWindow constructor starting
+2025-08-08 13:54:42.703 -06:00 [DBG] 🚌 Calling InitializeComponent for MainWindow XAML
+2025-08-08 13:54:42.795 -06:00 [ERR] 🚌 ❌ Error during database seeding
+Microsoft.Data.SqlClient.SqlException (0x80131904): Invalid object name 'Students'.
+   at Microsoft.Data.SqlClient.SqlCommand.<>c.<ExecuteDbDataReaderAsync>b__195_0(Task`1 result)
+   at System.Threading.Tasks.ContinuationResultTaskFromResultTask`2.InnerInvoke()
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+--- End of stack trace from previous location ---
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+   at System.Threading.Tasks.Task.ExecuteWithThreadLocal(Task& currentTaskSlot, Thread threadPoolThread)
+--- End of stack trace from previous location ---
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable`1.AsyncEnumerator.InitializeReaderAsync(AsyncEnumerator enumerator, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.SqlServer.Storage.Internal.SqlServerExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable`1.AsyncEnumerator.MoveNextAsync()
+   at Microsoft.EntityFrameworkCore.Query.ShapedQueryCompilingExpressionVisitor.SingleAsync[TSource](IAsyncEnumerable`1 asyncEnumerable, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.ShapedQueryCompilingExpressionVisitor.SingleAsync[TSource](IAsyncEnumerable`1 asyncEnumerable, CancellationToken cancellationToken)
+   at BusBuddy.Core.Utilities.JsonDataImporter.SeedDatabaseIfEmptyAsync(BusBuddyDbContext context) in C:\Users\biges\Desktop\BusBuddy\BusBuddy.Core\Utilities\JsonDataImporter.cs:line 338
+ClientConnectionId:92d6dbce-81f8-46b2-91ad-a8a8539c9716
+Error Number:208,State:1,Class:16
+2025-08-08 13:54:43.102 -06:00 [INF] 🚌 Loaded 3 stops for route Route 1
+2025-08-08 13:54:43.102 -06:00 [INF] 🚌 Loaded mock data: 25 students, 5 routes, 10 buses, 8 drivers
+2025-08-08 13:54:43.102 -06:00 [INF] 🚌 Enhanced RouteAssignmentViewModel initialized with route building capabilities
+2025-08-08 13:54:43.103 -06:00 [INF] 🚌 RouteAssignmentView initialized successfully with MVP route building interface
+2025-08-08 13:54:43.152 -06:00 [DBG] 🚌 Applying Syncfusion theme
+2025-08-08 13:54:43.153 -06:00 [DBG] 🚌 ApplySyncfusionTheme method started
+2025-08-08 13:54:43.153 -06:00 [DBG] 🚌 Configuring Syncfusion SfSkinManager global settings
+2025-08-08 13:54:43.154 -06:00 [DBG] 🚌 Creating FluentDark theme instance
+2025-08-08 13:54:43.155 -06:00 [DBG] 🚌 Applying FluentDark theme to MainWindow
+2025-08-08 13:54:43.377 -06:00 [INF] 🚌 Applied FluentDark theme successfully
+2025-08-08 13:54:43.377 -06:00 [DBG] 🚌 ApplySyncfusionTheme completed with FluentDark
+2025-08-08 13:54:43.377 -06:00 [DBG] 🚌 Initializing MainWindow components
+2025-08-08 13:54:43.377 -06:00 [DBG] 🚌 InitializeMainWindow method started
+2025-08-08 13:54:43.377 -06:00 [DBG] 🚌 Creating MainWindowViewModel instance
+2025-08-08 13:54:43.377 -06:00 [DBG] 🚌 No DataContext found, creating new MainWindowViewModel
+2025-08-08 13:54:43.377 -06:00 [INF] 🚌 MainWindow data context initialized with new ViewModel
+2025-08-08 13:54:43.377 -06:00 [DBG] 🚌 InitializeMainWindow method completed
+2025-08-08 13:54:43.377 -06:00 [DBG] 🚌 Attaching Syncfusion event hooks
+2025-08-08 13:54:43.378 -06:00 [INF] 🚌 Syncfusion event hooks ready (basic functionality enabled)
+2025-08-08 13:54:43.378 -06:00 [INF] 🚌 MainWindow initialized successfully with Syncfusion DockingManager
+2025-08-08 13:54:43.378 -06:00 [DBG] 🚌 MainWindow constructor completed successfully
+2025-08-08 13:54:44.992 -06:00 [INF] 🚌 🚌 BusBuddy MVP application started successfully
+2025-08-08 13:54:54.337 -06:00 [DBG] 🚌 AddStudent_Click event triggered
+2025-08-08 13:54:54.338 -06:00 [DBG] 🚌 Creating new StudentForm dialog
+2025-08-08 13:54:54.383 -06:00 [INF] 🚌 Loading form data
+2025-08-08 13:54:54.384 -06:00 [INF] 🚌 Loaded 4 routes and 15 bus stops
+2025-08-08 13:54:54.384 -06:00 [DBG] 🚌 Showing StudentForm modal dialog
+2025-08-08 13:54:56.185 -06:00 [DBG] 🚌 StudentForm dialog result: false
+2025-08-08 13:54:56.186 -06:00 [DBG] 🚌 Student form was cancelled or closed without saving
+2025-08-08 13:54:58.988 -06:00 [INF] 🚌 Buses button clicked
+2025-08-08 13:55:01.668 -06:00 [DBG] 🚌 RouteManagementButton_Click event triggered
+2025-08-08 13:55:01.668 -06:00 [INF] 🚌 Route management navigation requested
+2025-08-08 13:55:01.668 -06:00 [DBG] 🚌 Route management navigation logic completed
+2025-08-08 13:55:02.900 -06:00 [DBG] 🚌 StudentsButton_Click event triggered
+2025-08-08 13:55:02.900 -06:00 [INF] 🚌 Students navigation requested
+2025-08-08 13:55:02.920 -06:00 [INF] 🚌 Loading students from database
+2025-08-08 13:55:02.921 -06:00 [INF] 🚌 Creating design-time BusBuddyDbContext
+2025-08-08 13:55:02.921 -06:00 [INF] 🚌 Using BUSBUDDY_CONNECTION environment override
+2025-08-08 13:55:02.996 -06:00 [INF] 🚌 Creating design-time BusBuddyDbContext
+2025-08-08 13:55:02.996 -06:00 [INF] 🚌 Using BUSBUDDY_CONNECTION environment override
+2025-08-08 13:55:03.034 -06:00 [DBG] 🚌 Showing StudentsView in modal dialog
+2025-08-08 13:55:03.161 -06:00 [INF] 🚌 Loaded 0 students
+2025-08-08 13:55:03.166 -06:00 [INF] 🚌 Reference data loaded: 14 grades, 0 schools, 0 routes
+2025-08-08 13:55:06.528 -06:00 [INF] 🚌 StudentsView dialog closed
+2025-08-08 13:55:06.530 -06:00 [DBG] 🚌 RefreshStudentsGrid method started
+2025-08-08 13:55:06.530 -06:00 [WRN] 🚌 DataContext is not MainWindowViewModel, cannot refresh students
+2025-08-08 13:56:00.780 -06:00 [INF] 🚌 🚌 BusBuddy MVP application shutting down
+2025-08-08 14:12:12.736 -06:00 [INF] 🚌 🚌 Serilog initialized using configuration from appsettings.json
+2025-08-08 14:12:12.754 -06:00 [INF] 🚌 🚌 BusBuddy MVP starting...
+2025-08-08 14:12:12.769 -06:00 [INF] 🚌 🚌 BusBuddy starting on thread 2 with apartment state: "STA"
+2025-08-08 14:12:12.771 -06:00 [INF] 🚌 🚌 Command line args: C:\Users\biges\Desktop\BusBuddy\BusBuddy.WPF\bin\Debug\net9.0-windows\BusBuddy.WPF.dll --test-seed
+2025-08-08 14:12:12.772 -06:00 [INF] 🚌 🚌 EF Migration mode: false
+2025-08-08 14:12:12.772 -06:00 [INF] 🚌 🚌 Design-time mode: false
+2025-08-08 14:12:12.772 -06:00 [INF] 🚌 🚌 Initializing BusBuddy MVP application
+2025-08-08 14:12:12.775 -06:00 [INF] 🚌 🔧 Setting up full DI container for UI application...
+2025-08-08 14:12:12.799 -06:00 [INF] 🚌 ✅ Full DI container configured successfully for UI application
+2025-08-08 14:12:12.821 -06:00 [INF] 🚌 Starting Wiley School District data seeding operation
+2025-08-08 14:12:12.822 -06:00 [INF] 🚌 Using configured JSON path: c:\Users\biges\Desktop\BusBuddy\BusBuddy.Core\Data\wiley-school-district-data.json
+2025-08-08 14:12:16.225 -06:00 [ERR] 🚌 Database operation SeedWileySchoolDistrictData failed permanently after 1 attempts
+System.InvalidOperationException: An exception has been raised that is likely due to a transient failure. Consider enabling transient error resiliency by adding 'EnableRetryOnFailure' to the 'UseSqlServer' call.
+ ---> Microsoft.Data.SqlClient.SqlException (0x80131904): Cannot open database "BusBuddyDB" requested by the login. The login failed.
+Login failed for user 'busbuddy_admin'.
+   at Microsoft.Data.SqlClient.SqlInternalConnection.OnError(SqlException exception, Boolean breakConnection, Action`1 wrapCloseInAction)
+   at Microsoft.Data.SqlClient.TdsParser.ThrowExceptionAndWarning(TdsParserStateObject stateObj, SqlCommand command, Boolean callerHasConnectionLock, Boolean asyncClose)
+   at Microsoft.Data.SqlClient.TdsParser.TryRun(RunBehavior runBehavior, SqlCommand cmdHandler, SqlDataReader dataStream, BulkCopySimpleResultSet bulkCopyHandler, TdsParserStateObject stateObj, Boolean& dataReady)
+   at Microsoft.Data.SqlClient.TdsParser.Run(RunBehavior runBehavior, SqlCommand cmdHandler, SqlDataReader dataStream, BulkCopySimpleResultSet bulkCopyHandler, TdsParserStateObject stateObj)
+   at Microsoft.Data.SqlClient.SqlInternalConnectionTds.CompleteLogin(Boolean enlistOK)
+   at Microsoft.Data.SqlClient.SqlInternalConnectionTds.AttemptOneLogin(ServerInfo serverInfo, String newPassword, SecureString newSecurePassword, TimeoutTimer timeout, Boolean withFailover)
+   at Microsoft.Data.SqlClient.SqlInternalConnectionTds.LoginNoFailover(ServerInfo serverInfo, String newPassword, SecureString newSecurePassword, Boolean redirectedUserInstance, SqlConnectionString connectionOptions, SqlCredential credential, TimeoutTimer timeout)
+   at Microsoft.Data.SqlClient.SqlInternalConnectionTds.OpenLoginEnlist(TimeoutTimer timeout, SqlConnectionString connectionOptions, SqlCredential credential, String newPassword, SecureString newSecurePassword, Boolean redirectedUserInstance)
+   at Microsoft.Data.SqlClient.SqlInternalConnectionTds..ctor(DbConnectionPoolIdentity identity, SqlConnectionString connectionOptions, SqlCredential credential, Object providerInfo, String newPassword, SecureString newSecurePassword, Boolean redirectedUserInstance, SqlConnectionString userConnectionOptions, SessionData reconnectSessionData, Boolean applyTransientFaultHandling, String accessToken, DbConnectionPool pool, Func`3 accessTokenCallback)
+   at Microsoft.Data.SqlClient.SqlConnectionFactory.CreateConnection(DbConnectionOptions options, DbConnectionPoolKey poolKey, Object poolGroupProviderInfo, DbConnectionPool pool, DbConnection owningConnection, DbConnectionOptions userOptions)
+   at Microsoft.Data.ProviderBase.DbConnectionFactory.CreatePooledConnection(DbConnectionPool pool, DbConnection owningObject, DbConnectionOptions options, DbConnectionPoolKey poolKey, DbConnectionOptions userOptions)
+   at Microsoft.Data.ProviderBase.DbConnectionPool.CreateObject(DbConnection owningObject, DbConnectionOptions userOptions, DbConnectionInternal oldConnection)
+   at Microsoft.Data.ProviderBase.DbConnectionPool.UserCreateRequest(DbConnection owningObject, DbConnectionOptions userOptions, DbConnectionInternal oldConnection)
+   at Microsoft.Data.ProviderBase.DbConnectionPool.TryGetConnection(DbConnection owningObject, UInt32 waitForMultipleObjectsTimeout, Boolean allowCreate, Boolean onlyOneCheckConnection, DbConnectionOptions userOptions, DbConnectionInternal& connection)
+   at Microsoft.Data.ProviderBase.DbConnectionPool.WaitForPendingOpen()
+--- End of stack trace from previous location ---
+   at Microsoft.EntityFrameworkCore.Storage.RelationalConnection.OpenInternalAsync(Boolean errorsExpected, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalConnection.OpenInternalAsync(Boolean errorsExpected, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalConnection.OpenAsync(CancellationToken cancellationToken, Boolean errorsExpected)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable`1.AsyncEnumerator.InitializeReaderAsync(AsyncEnumerator enumerator, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.SqlServer.Storage.Internal.SqlServerExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
+ClientConnectionId:16964a95-5278-4be1-a44c-2d4d496fc18c
+Error Number:4060,State:2,Class:11
+   --- End of inner exception stack trace ---
+   at Microsoft.EntityFrameworkCore.SqlServer.Storage.Internal.SqlServerExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable`1.AsyncEnumerator.MoveNextAsync()
+   at Microsoft.EntityFrameworkCore.Query.ShapedQueryCompilingExpressionVisitor.SingleAsync[TSource](IAsyncEnumerable`1 asyncEnumerable, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.ShapedQueryCompilingExpressionVisitor.SingleAsync[TSource](IAsyncEnumerable`1 asyncEnumerable, CancellationToken cancellationToken)
+   at BusBuddy.Core.Services.StudentService.<>c__DisplayClass33_1.<<SeedWileySchoolDistrictDataAsync>b__1>d.MoveNext() in C:\Users\biges\Desktop\BusBuddy\BusBuddy.Core\Services\StudentService.cs:line 1250
+--- End of stack trace from previous location ---
+   at BusBuddy.Core.Utilities.ResilientDbExecution.ExecuteWithResilienceAsync[T](Func`1 operation, String operationName, Int32 maxRetries) in C:\Users\biges\Desktop\BusBuddy\BusBuddy.Core\Utilities\ResilientDbExecution.cs:line 44
+2025-08-08 14:12:16.243 -06:00 [ERR] 🚌 Error during Wiley School District data seeding
+System.InvalidOperationException: An exception has been raised that is likely due to a transient failure. Consider enabling transient error resiliency by adding 'EnableRetryOnFailure' to the 'UseSqlServer' call.
+ ---> Microsoft.Data.SqlClient.SqlException (0x80131904): Cannot open database "BusBuddyDB" requested by the login. The login failed.
+Login failed for user 'busbuddy_admin'.
+   at Microsoft.Data.SqlClient.SqlInternalConnection.OnError(SqlException exception, Boolean breakConnection, Action`1 wrapCloseInAction)
+   at Microsoft.Data.SqlClient.TdsParser.ThrowExceptionAndWarning(TdsParserStateObject stateObj, SqlCommand command, Boolean callerHasConnectionLock, Boolean asyncClose)
+   at Microsoft.Data.SqlClient.TdsParser.TryRun(RunBehavior runBehavior, SqlCommand cmdHandler, SqlDataReader dataStream, BulkCopySimpleResultSet bulkCopyHandler, TdsParserStateObject stateObj, Boolean& dataReady)
+   at Microsoft.Data.SqlClient.TdsParser.Run(RunBehavior runBehavior, SqlCommand cmdHandler, SqlDataReader dataStream, BulkCopySimpleResultSet bulkCopyHandler, TdsParserStateObject stateObj)
+   at Microsoft.Data.SqlClient.SqlInternalConnectionTds.CompleteLogin(Boolean enlistOK)
+   at Microsoft.Data.SqlClient.SqlInternalConnectionTds.AttemptOneLogin(ServerInfo serverInfo, String newPassword, SecureString newSecurePassword, TimeoutTimer timeout, Boolean withFailover)
+   at Microsoft.Data.SqlClient.SqlInternalConnectionTds.LoginNoFailover(ServerInfo serverInfo, String newPassword, SecureString newSecurePassword, Boolean redirectedUserInstance, SqlConnectionString connectionOptions, SqlCredential credential, TimeoutTimer timeout)
+   at Microsoft.Data.SqlClient.SqlInternalConnectionTds.OpenLoginEnlist(TimeoutTimer timeout, SqlConnectionString connectionOptions, SqlCredential credential, String newPassword, SecureString newSecurePassword, Boolean redirectedUserInstance)
+   at Microsoft.Data.SqlClient.SqlInternalConnectionTds..ctor(DbConnectionPoolIdentity identity, SqlConnectionString connectionOptions, SqlCredential credential, Object providerInfo, String newPassword, SecureString newSecurePassword, Boolean redirectedUserInstance, SqlConnectionString userConnectionOptions, SessionData reconnectSessionData, Boolean applyTransientFaultHandling, String accessToken, DbConnectionPool pool, Func`3 accessTokenCallback)
+   at Microsoft.Data.SqlClient.SqlConnectionFactory.CreateConnection(DbConnectionOptions options, DbConnectionPoolKey poolKey, Object poolGroupProviderInfo, DbConnectionPool pool, DbConnection owningConnection, DbConnectionOptions userOptions)
+   at Microsoft.Data.ProviderBase.DbConnectionFactory.CreatePooledConnection(DbConnectionPool pool, DbConnection owningObject, DbConnectionOptions options, DbConnectionPoolKey poolKey, DbConnectionOptions userOptions)
+   at Microsoft.Data.ProviderBase.DbConnectionPool.CreateObject(DbConnection owningObject, DbConnectionOptions userOptions, DbConnectionInternal oldConnection)
+   at Microsoft.Data.ProviderBase.DbConnectionPool.UserCreateRequest(DbConnection owningObject, DbConnectionOptions userOptions, DbConnectionInternal oldConnection)
+   at Microsoft.Data.ProviderBase.DbConnectionPool.TryGetConnection(DbConnection owningObject, UInt32 waitForMultipleObjectsTimeout, Boolean allowCreate, Boolean onlyOneCheckConnection, DbConnectionOptions userOptions, DbConnectionInternal& connection)
+   at Microsoft.Data.ProviderBase.DbConnectionPool.WaitForPendingOpen()
+--- End of stack trace from previous location ---
+   at Microsoft.EntityFrameworkCore.Storage.RelationalConnection.OpenInternalAsync(Boolean errorsExpected, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalConnection.OpenInternalAsync(Boolean errorsExpected, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalConnection.OpenAsync(CancellationToken cancellationToken, Boolean errorsExpected)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable`1.AsyncEnumerator.InitializeReaderAsync(AsyncEnumerator enumerator, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.SqlServer.Storage.Internal.SqlServerExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
+ClientConnectionId:16964a95-5278-4be1-a44c-2d4d496fc18c
+Error Number:4060,State:2,Class:11
+   --- End of inner exception stack trace ---
+   at Microsoft.EntityFrameworkCore.SqlServer.Storage.Internal.SqlServerExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable`1.AsyncEnumerator.MoveNextAsync()
+   at Microsoft.EntityFrameworkCore.Query.ShapedQueryCompilingExpressionVisitor.SingleAsync[TSource](IAsyncEnumerable`1 asyncEnumerable, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.ShapedQueryCompilingExpressionVisitor.SingleAsync[TSource](IAsyncEnumerable`1 asyncEnumerable, CancellationToken cancellationToken)
+   at BusBuddy.Core.Services.StudentService.<>c__DisplayClass33_1.<<SeedWileySchoolDistrictDataAsync>b__1>d.MoveNext() in C:\Users\biges\Desktop\BusBuddy\BusBuddy.Core\Services\StudentService.cs:line 1250
+--- End of stack trace from previous location ---
+   at BusBuddy.Core.Utilities.ResilientDbExecution.ExecuteWithResilienceAsync[T](Func`1 operation, String operationName, Int32 maxRetries) in C:\Users\biges\Desktop\BusBuddy\BusBuddy.Core\Utilities\ResilientDbExecution.cs:line 44
+   at BusBuddy.Core.Services.StudentService.SeedWileySchoolDistrictDataAsync() in C:\Users\biges\Desktop\BusBuddy\BusBuddy.Core\Services\StudentService.cs:line 1248
+2025-08-08 14:12:16.248 -06:00 [INF] 🚌 🚌 Wiley seeding result: Success=False, RecordsSeeded=0, Error=An exception has been raised that is likely due to a transient failure. Consider enabling transient error resiliency by adding 'EnableRetryOnFailure' to the 'UseSqlServer' call.
+2025-08-08 14:12:16.249 -06:00 [INF] 🚌 🏗️ Creating MainWindow for full UI application
+2025-08-08 14:12:16.250 -06:00 [INF] 🚌 🎯 Creating MainWindow with dependency injection
+2025-08-08 14:12:16.251 -06:00 [INF] 🚌 MainWindowViewModel initialized with sample data
+2025-08-08 14:12:16.253 -06:00 [INF] 🚌 ✅ MainWindowViewModel created successfully via DI
+2025-08-08 14:12:16.280 -06:00 [DBG] 🚌 MainWindow constructor starting
+2025-08-08 14:12:16.280 -06:00 [DBG] 🚌 Calling InitializeComponent for MainWindow XAML
+2025-08-08 14:12:16.903 -06:00 [INF] 🚌 Loaded 3 stops for route Route 1
+2025-08-08 14:12:16.904 -06:00 [INF] 🚌 Loaded mock data: 25 students, 5 routes, 10 buses, 8 drivers
+2025-08-08 14:12:16.904 -06:00 [INF] 🚌 Enhanced RouteAssignmentViewModel initialized with route building capabilities
+2025-08-08 14:12:16.904 -06:00 [INF] 🚌 RouteAssignmentView initialized successfully with MVP route building interface
+2025-08-08 14:12:16.967 -06:00 [DBG] 🚌 Applying Syncfusion theme
+2025-08-08 14:12:16.968 -06:00 [DBG] 🚌 ApplySyncfusionTheme method started
+2025-08-08 14:12:16.968 -06:00 [DBG] 🚌 Configuring Syncfusion SfSkinManager global settings
+2025-08-08 14:12:16.969 -06:00 [DBG] 🚌 Creating FluentDark theme instance
+2025-08-08 14:12:16.971 -06:00 [DBG] 🚌 Applying FluentDark theme to MainWindow
+2025-08-08 14:12:17.388 -06:00 [INF] 🚌 Applied FluentDark theme successfully
+2025-08-08 14:12:17.389 -06:00 [DBG] 🚌 ApplySyncfusionTheme completed with FluentDark
+2025-08-08 14:12:17.389 -06:00 [DBG] 🚌 Initializing MainWindow components
+2025-08-08 14:12:17.389 -06:00 [DBG] 🚌 InitializeMainWindow method started
+2025-08-08 14:12:17.389 -06:00 [DBG] 🚌 Creating MainWindowViewModel instance
+2025-08-08 14:12:17.389 -06:00 [DBG] 🚌 No DataContext found, creating new MainWindowViewModel
+2025-08-08 14:12:17.390 -06:00 [INF] 🚌 MainWindow data context initialized with new ViewModel
+2025-08-08 14:12:17.390 -06:00 [DBG] 🚌 InitializeMainWindow method completed
+2025-08-08 14:12:17.390 -06:00 [DBG] 🚌 Attaching Syncfusion event hooks
+2025-08-08 14:12:17.390 -06:00 [INF] 🚌 Syncfusion event hooks ready (basic functionality enabled)
+2025-08-08 14:12:17.390 -06:00 [INF] 🚌 MainWindow initialized successfully with Syncfusion DockingManager
+2025-08-08 14:12:17.390 -06:00 [DBG] 🚌 MainWindow constructor completed successfully
+2025-08-08 14:12:19.096 -06:00 [INF] 🚌 🚌 BusBuddy MVP application started successfully
+2025-08-08 14:13:20.481 -06:00 [INF] 🚌 🌱 Database is empty, attempting to seed with JSON data
+2025-08-08 14:13:20.484 -06:00 [INF] 🚌 Starting JSON student data import from: C:\Users\biges\Desktop\BusBuddy\BusBuddy.WPF\bin\Debug\net9.0-windows\Data\wiley-school-district-data.json
+2025-08-08 14:13:21.669 -06:00 [INF] 🚌 JSON import completed: 0 students, 10 families added
+2025-08-08 14:13:21.669 -06:00 [INF] 🚌 ✅ Successfully seeded database with 0 students from 10 families
+2025-08-08 14:13:23.830 -06:00 [INF] 🚌 Loaded 3 stops for route Route 1
+2025-08-08 14:13:23.831 -06:00 [INF] 🚌 Loaded mock data: 25 students, 5 routes, 10 buses, 8 drivers
+2025-08-08 14:13:23.831 -06:00 [INF] 🚌 Data refreshed successfully
+2025-08-08 14:13:25.234 -06:00 [INF] 🚌 🚌 BusBuddy MVP application shutting down
+2025-08-08 14:14:20.804 -06:00 [INF] 🚌 🚌 Serilog initialized using configuration from appsettings.json
+2025-08-08 14:14:20.814 -06:00 [INF] 🚌 🚌 BusBuddy MVP starting...
+2025-08-08 14:14:20.822 -06:00 [INF] 🚌 🚌 BusBuddy starting on thread 2 with apartment state: "STA"
+2025-08-08 14:14:20.824 -06:00 [INF] 🚌 🚌 Command line args: C:\Users\biges\Desktop\BusBuddy\BusBuddy.WPF\bin\Debug\net9.0-windows\BusBuddy.WPF.dll
+2025-08-08 14:14:20.824 -06:00 [INF] 🚌 🚌 EF Migration mode: false
+2025-08-08 14:14:20.824 -06:00 [INF] 🚌 🚌 Design-time mode: false
+2025-08-08 14:14:20.824 -06:00 [INF] 🚌 🚌 Initializing BusBuddy MVP application
+2025-08-08 14:14:20.826 -06:00 [INF] 🚌 🔧 Setting up full DI container for UI application...
+2025-08-08 14:14:20.836 -06:00 [INF] 🚌 ✅ Full DI container configured successfully for UI application
+2025-08-08 14:14:20.848 -06:00 [INF] 🚌 Starting Wiley School District data seeding operation
+2025-08-08 14:14:20.848 -06:00 [INF] 🚌 Using configured JSON path: c:\Users\biges\Desktop\BusBuddy\BusBuddy.Core\Data\wiley-school-district-data.json
+2025-08-08 14:14:22.143 -06:00 [INF] 🚌 Adding 5 Wiley students to database
+2025-08-08 14:14:22.173 -06:00 [INF] 🚌 🌱 Database is empty, attempting to seed with JSON data
+2025-08-08 14:14:22.176 -06:00 [INF] 🚌 Starting JSON student data import from: C:\Users\biges\Desktop\BusBuddy\BusBuddy.WPF\bin\Debug\net9.0-windows\Data\wiley-school-district-data.json
+2025-08-08 14:14:22.400 -06:00 [INF] 🚌 Successfully saved 5 Wiley students
+2025-08-08 14:14:22.402 -06:00 [INF] 🚌 🚌 Wiley seeding result: Success=True, RecordsSeeded=5, Error=
+2025-08-08 14:14:22.403 -06:00 [INF] 🚌 🏗️ Creating MainWindow for full UI application
+2025-08-08 14:14:22.403 -06:00 [INF] 🚌 🎯 Creating MainWindow with dependency injection
+2025-08-08 14:14:22.404 -06:00 [INF] 🚌 MainWindowViewModel initialized with sample data
+2025-08-08 14:14:22.406 -06:00 [INF] 🚌 ✅ MainWindowViewModel created successfully via DI
+2025-08-08 14:14:22.444 -06:00 [DBG] 🚌 MainWindow constructor starting
+2025-08-08 14:14:22.444 -06:00 [DBG] 🚌 Calling InitializeComponent for MainWindow XAML
+2025-08-08 14:14:22.816 -06:00 [INF] 🚌 JSON import completed: 0 students, 0 families added
+2025-08-08 14:14:22.816 -06:00 [INF] 🚌 ✅ Successfully seeded database with 0 students from 0 families
+2025-08-08 14:14:22.840 -06:00 [INF] 🚌 Loaded 3 stops for route Route 1
+2025-08-08 14:14:22.841 -06:00 [INF] 🚌 Loaded mock data: 25 students, 5 routes, 10 buses, 8 drivers
+2025-08-08 14:14:22.841 -06:00 [INF] 🚌 Enhanced RouteAssignmentViewModel initialized with route building capabilities
+2025-08-08 14:14:22.841 -06:00 [INF] 🚌 RouteAssignmentView initialized successfully with MVP route building interface
+2025-08-08 14:14:22.875 -06:00 [DBG] 🚌 Applying Syncfusion theme
+2025-08-08 14:14:22.876 -06:00 [DBG] 🚌 ApplySyncfusionTheme method started
+2025-08-08 14:14:22.876 -06:00 [DBG] 🚌 Configuring Syncfusion SfSkinManager global settings
+2025-08-08 14:14:22.876 -06:00 [DBG] 🚌 Creating FluentDark theme instance
+2025-08-08 14:14:22.877 -06:00 [DBG] 🚌 Applying FluentDark theme to MainWindow
+2025-08-08 14:14:23.069 -06:00 [INF] 🚌 Applied FluentDark theme successfully
+2025-08-08 14:14:23.069 -06:00 [DBG] 🚌 ApplySyncfusionTheme completed with FluentDark
+2025-08-08 14:14:23.070 -06:00 [DBG] 🚌 Initializing MainWindow components
+2025-08-08 14:14:23.070 -06:00 [DBG] 🚌 InitializeMainWindow method started
+2025-08-08 14:14:23.070 -06:00 [DBG] 🚌 Creating MainWindowViewModel instance
+2025-08-08 14:14:23.070 -06:00 [DBG] 🚌 No DataContext found, creating new MainWindowViewModel
+2025-08-08 14:14:23.070 -06:00 [INF] 🚌 MainWindow data context initialized with new ViewModel
+2025-08-08 14:14:23.070 -06:00 [DBG] 🚌 InitializeMainWindow method completed
+2025-08-08 14:14:23.070 -06:00 [DBG] 🚌 Attaching Syncfusion event hooks
+2025-08-08 14:14:23.070 -06:00 [INF] 🚌 Syncfusion event hooks ready (basic functionality enabled)
+2025-08-08 14:14:23.070 -06:00 [INF] 🚌 MainWindow initialized successfully with Syncfusion DockingManager
+2025-08-08 14:14:23.070 -06:00 [DBG] 🚌 MainWindow constructor completed successfully
+2025-08-08 14:14:24.062 -06:00 [INF] 🚌 🚌 BusBuddy MVP application started successfully
+2025-08-08 14:14:29.952 -06:00 [INF] 🚌 Saved route Route 1
+2025-08-08 14:14:31.706 -06:00 [INF] 🚌 Loaded 3 stops for route Route 1
+2025-08-08 14:14:31.706 -06:00 [INF] 🚌 Loaded mock data: 25 students, 5 routes, 10 buses, 8 drivers
+2025-08-08 14:14:31.706 -06:00 [INF] 🚌 Data refreshed successfully
+2025-08-08 14:14:35.529 -06:00 [DBG] 🚌 AddDriver_Click event triggered
+2025-08-08 14:14:35.529 -06:00 [DBG] 🚌 Creating new DriverForm dialog
+2025-08-08 14:14:35.537 -06:00 [DBG] 🚌 Showing DriverForm modal dialog
+2025-08-08 14:14:38.730 -06:00 [DBG] 🚌 DriverForm dialog result: false
+2025-08-08 14:14:38.730 -06:00 [DBG] 🚌 Driver form was cancelled or closed without saving
+2025-08-08 14:14:39.788 -06:00 [DBG] 🚌 StudentsButton_Click event triggered
+2025-08-08 14:14:39.788 -06:00 [INF] 🚌 Students navigation requested
+2025-08-08 14:14:39.798 -06:00 [INF] 🚌 Loading students from database
+2025-08-08 14:14:39.798 -06:00 [INF] 🚌 Creating design-time BusBuddyDbContext
+2025-08-08 14:14:39.798 -06:00 [INF] 🚌 Using Azure SQL credential fallback for design-time context
+2025-08-08 14:14:39.851 -06:00 [INF] 🚌 Creating design-time BusBuddyDbContext
+2025-08-08 14:14:39.851 -06:00 [INF] 🚌 Using Azure SQL credential fallback for design-time context
+2025-08-08 14:14:39.866 -06:00 [DBG] 🚌 Showing StudentsView in modal dialog
+2025-08-08 14:14:40.203 -06:00 [INF] 🚌 Loaded 5 students
+2025-08-08 14:14:40.506 -06:00 [INF] 🚌 Reference data loaded: 14 grades, 1 schools, 0 routes
+2025-08-08 14:14:45.311 -06:00 [INF] 🚌 Show summary command executed
+2025-08-08 14:14:46.035 -06:00 [INF] 🚌 Show quick actions command executed
+2025-08-08 14:14:47.828 -06:00 [INF] 🚌 StudentsView dialog closed
+2025-08-08 14:14:47.828 -06:00 [DBG] 🚌 RefreshStudentsGrid method started
+2025-08-08 14:14:47.828 -06:00 [WRN] 🚌 DataContext is not MainWindowViewModel, cannot refresh students
+2025-08-08 14:14:52.840 -06:00 [INF] 🚌 🚌 BusBuddy MVP application shutting down
