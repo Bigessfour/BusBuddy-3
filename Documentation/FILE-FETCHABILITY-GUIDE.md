@@ -1,13 +1,68 @@
-# 🚌 BusBuddy - Complete File Fetchability Guide
+# � BusBuddy File Fetchability Guide
 
-**🎯 Status**: FULLY UPDATED - All files tracked & fetchable with comprehensive PowerShell refactoring completed ✅
-**📅 Updated**: August 8, 2025 06:15:00 PST  
-**🚀 Health**: Complete project inventory with 750+ files, enhanced testing infrastructure, MVP-ready status confirmed
-**📊 Latest Session**: PowerShell Command Standardization & Refactoring Complete - All documentation updated, 49 Write-Host violations fixed, MVP confirmed ready to ship
+**Complete reference for locating files and documentation in the BusBuddy project**
+
+**🎯 Status**: DOCUMENTATION CONSOLIDATED - Reduced from 230+ to 8 essential markdown files ✅
+**📅 Updated**: Current Session  
+**🚀 Health**: Streamlined documentation structure, MVP-ready status maintained
+**📊 Latest**: Major documentation consolidation completed with essential guides created
 
 ---
 
-## 🎉 **Recent Major Updates (Commit: 29b7dc1)**
+## 📚 **Essential Documentation** (Root Directory)
+
+### **Primary Setup and Development**
+- **`README.md`** - Project overview and quick start
+- **`SETUP-GUIDE.md`** - Complete installation and configuration guide
+- **`DEVELOPMENT-GUIDE.md`** - Development practices, patterns, and workflows
+- **`COMMAND-REFERENCE.md`** - PowerShell command reference
+- **`GROK-README.md`** - Current project status and AI assistant context
+
+### **Project Information**
+- **`CONTRIBUTING.md`** - Contribution guidelines
+- **`LICENSE-ETHICAL.md`** - Ethical use license
+- **`CHAT-TRANSFER-HANDOFF.md`** - AI assistant handoff procedures
+
+## 🗂️ **Project Structure**
+
+### **Core Application**
+```
+BusBuddy/
+├── BusBuddy.Core/               # Business logic and data access
+│   ├── Models/                  # Domain entities (Student, Route, etc.)
+│   ├── Services/                # Business services
+│   ├── Data/                    # Entity Framework contexts
+│   ├── Interfaces/              # Service contracts
+│   └── Migrations/              # Database migrations
+├── BusBuddy.WPF/               # WPF presentation layer
+│   ├── Views/                   # XAML views
+│   ├── ViewModels/              # MVVM view models
+│   ├── Resources/               # Styles and themes
+│   ├── Controls/                # Custom controls
+│   └── Utilities/               # UI helpers
+└── BusBuddy.Tests/             # Test suite
+```
+
+### **Development Tools**
+```
+PowerShell/
+├── Modules/
+│   └── BusBuddy/
+│       └── BusBuddy.psm1        # Main PowerShell module (2658 lines)
+├── Profiles/                    # PowerShell profiles
+├── Scripts/                     # Utility scripts
+└── Validation/                  # Code quality scripts
+    ├── Fix-WriteHostViolations.ps1
+    └── Analyze-RemainingViolations.ps1
+```
+
+### **Configuration Files**
+- **`BusBuddy.sln`** - Visual Studio solution file
+- **`Directory.Build.props`** - MSBuild properties
+- **`global.json`** - .NET SDK configuration
+- **`NuGet.config`** - Package sources
+- **`codecov.yml`** - Code coverage configuration
+- **`BusBuddy-Practical.ruleset`** - Code analysis rules
 
 ### **PowerShell Command Standardization Completed**
 - ✅ **All Documentation Updated**: Command references changed from `bb-*` to `bb*` format across all files

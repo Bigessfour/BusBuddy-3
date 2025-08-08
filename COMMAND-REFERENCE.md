@@ -1,52 +1,336 @@
-# 📚 AI-Assistant Command Reference
+# � BusBuddy PowerShell Command Reference
 
-Complete reference for all Universal AI-Assistant commands.
+**Comprehensive guide to all available PowerShell commands for BusBuddy development**
 
-## 🎯 Core Commands
+## 📋 **Command Categories**
 
-### `ai-health`
-**Purpose**: Check development environment health and configuration
-**Syntax**: `ai-health [-Verbose] [-ProjectPath <path>]`
+### **�️ Core Development Commands**
 
-**Examples**:
+#### **bbBuild**
 ```powershell
-ai-health                           # Basic health check
-ai-health -Verbose                  # Detailed diagnostics
-ai-health -ProjectPath "C:\Dev\App" # Check specific project
+bbBuild
+```
+- **Purpose**: Build the entire BusBuddy solution
+- **What it does**: Runs `dotnet build BusBuddy.sln`
+- **Output**: Build status, compilation errors/warnings
+- **Success criteria**: 0 errors (warnings acceptable during MVP)
+
+#### **bbRun**
+```powershell
+bbRun
+```
+- **Purpose**: Launch the BusBuddy WPF application
+- **What it does**: Runs `dotnet run --project BusBuddy.WPF`
+- **Output**: Application starts with main dashboard
+- **Notes**: Application should display student and route management UI
+
+#### **bbTest**
+```powershell
+bbTest
+```
+- **Purpose**: Execute the test suite
+- **What it does**: Attempts to run `dotnet test`
+- **Known Issue**: .NET 9 compatibility problems with Microsoft.TestPlatform.CoreUtilities
+- **Alternative**: Use VS Code NUnit Test Runner extension
+
+#### **bbClean**
+```powershell
+bbClean
+```
+- **Purpose**: Clean build artifacts
+- **What it does**: Runs `dotnet clean BusBuddy.sln`
+- **Use case**: Before fresh builds or when resolving build issues
+
+#### **bbRestore**
+```powershell
+bbRestore
+```
+- **Purpose**: Restore NuGet packages
+- **What it does**: Runs `dotnet restore BusBuddy.sln`
+- **Use case**: After cloning repository or package updates
+
+### **🔍 Quality Assurance Commands**
+
+#### **bbHealth**
+```powershell
+bbHealth
+```
+- **Purpose**: Comprehensive system health check
+- **What it checks**:
+  - .NET SDK version and installation
+  - PowerShell version
+  - Git status
+  - Build health
+  - Database connectivity
+  - Essential files and directories
+- **Success output**: All checks show ✅ green
+- **Failure indicators**: ❌ red marks with specific issues
+
+#### **bbMvpCheck**
+```powershell
+bbMvpCheck
+```
+- **Purpose**: Verify MVP (Minimum Viable Product) readiness
+- **What it validates**:
+  - Core student management functionality
+  - Route assignment capabilities
+  - Database operations
+  - Essential UI components
+  - Application startup
+- **Success message**: `"MVP READY! You can ship this!"`
+- **Critical for**: Deployment decisions and release readiness
+
+#### **bbAntiRegression**
+```powershell
+bbAntiRegression
+```
+- **Purpose**: Prevent regression to deprecated patterns
+- **What it scans for**:
+  - ❌ `Microsoft.Extensions.Logging` usage (should use Serilog)
+  - ❌ Standard WPF controls like `<DataGrid>` (should use Syncfusion)
+  - ❌ `Write-Host` in PowerShell (should use proper output streams)
+- **Output**: List of violations with file locations
+- **Action required**: Fix violations before committing
+
+#### **bbXamlValidate**
+```powershell
+bbXamlValidate
+```
+- **Purpose**: Ensure XAML files use only Syncfusion controls
+- **What it validates**:
+  - Syncfusion namespace declarations
+  - No standard WPF controls in XAML
+  - Proper control usage patterns
+- **Success criteria**: All XAML files comply with Syncfusion standards
+
+### **🎯 XAI Route Optimization Commands**
+
+#### **bbRoutes**
+```powershell
+bbRoutes
+```
+- **Purpose**: Run XAI-powered route optimization
+- **What it does**: Optimizes bus routes using AI algorithms
+- **Integration**: Uses XAI service for intelligent route planning
+- **Output**: Optimized route recommendations
+
+#### **bbRouteDemo**
+```powershell
+bbRouteDemo
+```
+- **Purpose**: Demonstrate route optimization with sample data
+- **What it does**: Runs route optimization using predefined test data
+- **Use case**: Testing and demonstration of XAI capabilities
+
+#### **bbRouteStatus**
+```powershell
+bbRouteStatus
+```
+- **Purpose**: Check status of route optimization processes
+- **What it displays**: Current optimization job status and progress
+- **Use case**: Monitoring long-running optimization tasks
+
+### **🚀 Advanced Workflow Commands**
+
+#### **bbDevSession**
+```powershell
+bbDevSession
+```
+- **Purpose**: Start complete development environment
+- **What it does**:
+  - Loads all PowerShell modules
+  - Sets up development aliases
+  - Configures environment variables
+  - Prepares debugging tools
+  - Opens VS Code if available
+- **Use case**: Beginning of development session
+
+#### **bbQuickTest**
+```powershell
+bbQuickTest
+```
+- **Purpose**: Rapid build-test-validate cycle
+- **What it executes**:
+  1. Clean build artifacts
+  2. Build solution
+  3. Run tests (if available)
+  4. Validate MVP status
+- **Use case**: Quick validation during development
+
+#### **bbDiagnostic**
+```powershell
+bbDiagnostic
+```
+- **Purpose**: Comprehensive system analysis
+- **What it analyzes**:
+  - Environment configuration
+  - Package versions
+  - Build status
+  - Database connectivity
+  - File system health
+  - PowerShell module status
+- **Output**: Detailed diagnostic report
+
+#### **bbReport**
+```powershell
+bbReport
+```
+- **Purpose**: Generate comprehensive project status report
+- **What it includes**:
+  - System health summary
+  - Build status
+  - MVP readiness
+  - Code quality metrics
+  - Database status
+- **Output**: Formatted report for project stakeholders
+
+### **🛠️ Utility Commands**
+
+#### **bbCommands**
+```powershell
+bbCommands
+```
+- **Purpose**: List all available BusBuddy commands
+- **Output**: Complete command reference with descriptions
+- **Use case**: Discovery and reference
+
+#### **bbOpen**
+```powershell
+bbOpen
+```
+- **Purpose**: Open BusBuddy project in VS Code
+- **What it does**: Launches `code .` in project directory
+- **Detects**: VS Code or VS Code Insiders installation
+
+### **🔧 Debug Commands**
+
+#### **bbDebugStart**
+```powershell
+bbDebugStart
+```
+- **Purpose**: Start debug filter and monitoring
+- **What it does**: Activates real-time debug output filtering
+- **Integration**: Uses DebugHelper.StartAutoFilter() from App.xaml.cs
+
+#### **bbDebugExport**
+```powershell
+bbDebugExport
+```
+- **Purpose**: Export debug data to JSON
+- **Output**: Structured debug information for analysis
+- **Use case**: Troubleshooting and performance analysis
+
+## 📊 **Command Usage Patterns**
+
+### **Daily Development Workflow**
+```powershell
+# Start development session
+bbDevSession
+
+# Verify system health
+bbHealth
+
+# Make code changes...
+
+# Validate changes
+bbBuild
+bbAntiRegression
+bbXamlValidate
+bbMvpCheck
+
+# Commit when MVP check passes
 ```
 
-**What it checks**:
-- PowerShell version (7.5+ required)
-- Project type detection
-- Required tools availability (.NET SDK, Node.js, Python, etc.)
-- File structure validation
-- Environment variables
-- VS Code configuration
-
----
-
-### `ai-help`
-**Purpose**: Display all available commands and quick reference
-**Syntax**: `ai-help [command]`
-
-**Examples**:
+### **Quick Build Cycle**
 ```powershell
-ai-help                    # Show all commands
-ai-help ai-debug-files     # Help for specific command
+# Quick validation
+bbQuickTest
+
+# If issues found:
+bbClean
+bbBuild
+bbMvpCheck
 ```
 
----
+### **Route Optimization Workflow**
+```powershell
+# Run route optimization
+bbRoutes
 
-### `ai-init-project`
-**Purpose**: Initialize AI-Assistant for specific project type
-**Syntax**: `ai-init-project -ProjectType <type> [-Force]`
+# Check status
+bbRouteStatus
 
-**Supported Project Types**:
-- `DotNet` - .NET projects (C#, F#, VB.NET)
-- `NodeJS` - Node.js projects (JavaScript, TypeScript)
-- `Python` - Python projects
-- `PowerShell` - PowerShell modules and scripts
-- `Generic` - Universal project support
+# Demo with sample data
+bbRouteDemo
+```
+
+### **Troubleshooting Workflow**
+```powershell
+# Comprehensive analysis
+bbHealth
+bbDiagnostic
+
+# If build issues:
+bbClean
+bbRestore
+bbBuild
+
+# Generate report for support
+bbReport
+```
+
+## ⚠️ **Important Notes**
+
+### **Command Naming**
+- All commands use **camelCase** format (e.g., `bbHealth`, not `bb-health`)
+- Prefix `bb` identifies BusBuddy-specific commands
+- Commands are case-sensitive in PowerShell
+
+### **MVP Requirements**
+- `bbMvpCheck` **must** return "MVP READY!" before any deployment
+- All anti-regression checks **must** pass before committing
+- Build **must** complete with 0 errors (warnings acceptable)
+
+### **Known Issues**
+- **Test Platform**: .NET 9 compatibility issues with test runner
+  - **Solution**: Use VS Code NUnit Test Runner extension
+- **PowerShell**: Some legacy Write-Host violations remain
+  - **Status**: 49 violations fixed, 7 remaining (5.4% improvement)
+
+### **Quality Gates**
+1. **bbHealth** - All checks must pass
+2. **bbBuild** - 0 errors required
+3. **bbAntiRegression** - 0 violations allowed
+4. **bbXamlValidate** - Syncfusion compliance required
+5. **bbMvpCheck** - Must show "MVP READY!"
+
+## 🎯 **Success Criteria**
+
+### **For Development**
+- `bbHealth` shows all ✅ green checkmarks
+- `bbBuild` completes with 0 errors
+- `bbMvpCheck` reports "MVP READY! You can ship this!"
+
+### **For Deployment**
+- All quality gates passed
+- No anti-regression violations
+- XAML validation successful
+- MVP functionality verified
+
+## 📚 **Additional Resources**
+
+- **Setup Guide**: `SETUP-GUIDE.md`
+- **Development Guide**: `DEVELOPMENT-GUIDE.md`
+- **Project Status**: `GROK-README.md`
+- **File Guide**: `Documentation/FILE-FETCHABILITY-GUIDE.md`
+
+## 🆘 **Getting Help**
+
+1. **Command Discovery**: `bbCommands`
+2. **System Health**: `bbHealth`
+3. **Diagnostic Info**: `bbDiagnostic`
+4. **Project Status**: `bbReport`
+5. **Documentation**: Check `Documentation/` folder
 
 **Examples**:
 ```powershell
