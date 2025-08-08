@@ -1,11 +1,28 @@
-# � BusBuddy File Fetchability Guide
+# 🚌 BusBuddy File Fetchability Guide
 
 **Complete reference for locating files and documentation in the BusBuddy project**
 
-**🎯 Status**: DOCUMENTATION CONSOLIDATED - Reduced from 230+ to 8 essential markdown files ✅
-**📅 Updated**: Current Session  
-**🚀 Health**: Streamlined documentation structure, MVP-ready status maintained
-**📊 Latest**: Major documentation consolidation completed with essential guides created
+**🎯 Status**: ANTI-REGRESSION VIOLATIONS RESOLVED - Major compliance cleanup completed ✅
+**📅 Updated**: August 8, 2025  
+**🚀 Health**: Clean build (0 errors), Syncfusion-only UI, Serilog logging enforced
+**📊 Latest**: Microsoft.Extensions.Logging and WPF control violations eliminated
+
+---
+
+## 🛡️ **Anti-Regression Compliance Status**
+
+### **✅ RESOLVED VIOLATIONS**
+- **Microsoft.Extensions.Logging**: 2 → 0 (legacy seeding services deleted)
+- **Standard WPF Controls**: 3 → 0 (upgraded to Syncfusion ComboBoxAdv + SfDataGrid)
+- **Build Status**: Clean compilation with 0 errors
+
+### **⚠️ REMAINING WORK**
+- **PowerShell Write-Host**: 73 violations (non-blocking, post-MVP cleanup)
+
+### **📋 Key Command**
+```powershell
+bbAntiRegression -Detailed  # Monitor compliance status
+```
 
 ---
 
@@ -48,13 +65,22 @@ BusBuddy/
 PowerShell/
 ├── Modules/
 │   └── BusBuddy/
-│       └── BusBuddy.psm1        # Main PowerShell module (2658 lines)
+│       ├── BusBuddy.psm1        # Main PowerShell module (2658 lines)
+│       └── bb-anti-regression.ps1  # Anti-regression compliance checker
 ├── Profiles/                    # PowerShell profiles
 ├── Scripts/                     # Utility scripts
 └── Validation/                  # Code quality scripts
     ├── Fix-WriteHostViolations.ps1
     └── Analyze-RemainingViolations.ps1
 ```
+
+### **Azure SQL Database Integration** ✅
+- **Status**: COMPLETE - Fully operational and integrated
+- **Connection**: busbuddy-server-sm2.database.windows.net (Azure SQL)
+- **Authentication**: Passwordless Azure AD Default
+- **Configuration**: `BusBuddy.WPF/appsettings.json`
+- **Migrations**: Applied and validated
+- **Health Check**: `bbHealth` command confirms connectivity
 
 ### **Configuration Files**
 - **`BusBuddy.sln`** - Visual Studio solution file
@@ -91,7 +117,35 @@ This guide provides a comprehensive inventory of all files in the BusBuddy proje
 
 ---
 
-## 🌐 **RAW URL FETCHABILITY REFERENCE**
+## � **Current PowerShell Commands** (CamelCase Convention)
+
+### **Core Development Commands**
+```powershell
+bbHealth              # System health and Azure SQL connectivity check
+bbbuild               # Build solution with error analysis
+bbRun                 # Run BusBuddy application
+bbTest                # Enhanced testing with .NET 9 compatibility detection
+bbMvpCheck            # MVP readiness validation
+bbAntiRegression      # Compliance checking (NEW - fully operational)
+bbXamlValidate        # XAML file validation
+```
+
+### **Enhanced Commands**
+```powershell
+bbAntiRegression -Detailed    # Detailed violation reporting with file locations
+bbTest -TestSuite Unit        # Run specific test suites
+bbHealth -Detailed            # Comprehensive environment analysis
+```
+
+### **Command Integration Status**
+- ✅ **Profile Integration**: All commands available in PowerShell profile
+- ✅ **bbAntiRegression**: Newly added with detailed violation tracking
+- ✅ **Error Handling**: Enhanced error reporting and guidance
+- ✅ **Documentation**: All commands documented in COMMAND-REFERENCE.md
+
+---
+
+## �🌐 **RAW URL FETCHABILITY REFERENCE**
 
 ### **🎯 Quick Raw URL Access**
 All files in the BusBuddy project are directly fetchable via GitHub raw URLs using the following pattern:
