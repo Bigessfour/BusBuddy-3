@@ -33,25 +33,26 @@
         # Module management
         'Import-BusBuddyFunction',
         'Import-BusBuddyFunctionCategory',
-        
+
         # Core functions
         'Get-BusBuddyProjectRoot',
         'Write-BusBuddyStatus',
         'Write-BusBuddyError',
         'Invoke-BusBuddyDotNetCommand',
-        
+
         # Build functions
         'Invoke-BusBuddyBuild',
         'Invoke-BusBuddyRun',
         'Invoke-BusBuddyTest',
         'Invoke-BusBuddyClean',
         'Invoke-BusBuddyRestore',
-        
+
         # Development functions
         'Invoke-BusBuddyHealthCheck',
         'Start-BusBuddyDevSession',
-        'Get-BusBuddyCommands',
-        'Get-BusBuddyInfo'
+    'Get-BusBuddyCommand',
+    'Get-BusBuddyInfo',
+    'Show-BusBuddyWelcome'
     )
 
     # Cmdlets to export from this module
@@ -71,7 +72,8 @@
         'bb-commands',
         'bb-info',
         'bb-happiness',
-        'bb-dev-session'
+    'bb-dev-session',
+    'bb-welcome'
     )
 
     # List of all files packaged with this module

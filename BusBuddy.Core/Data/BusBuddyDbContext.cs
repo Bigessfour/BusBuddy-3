@@ -5,6 +5,7 @@ using BusBuddy.Core.Models.Trips;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
 using Serilog.Context;
+using Microsoft.Extensions.Configuration; // Added for dynamic configuration
 
 namespace BusBuddy.Core.Data;
 /// <summary>
@@ -96,59 +97,28 @@ public class BusBuddyDbContext : DbContext
         ArgumentNullException.ThrowIfNull(optionsBuilder);
         if (!optionsBuilder.IsConfigured)
         {
-            // Serilog-based approach: Use simple connection string for MVP
             var logger = Log.ForContext<BusBuddyDbContext>();
-            logger.Information("Configuring DbContext with default connection and retry strategy");
+            logger.Information("Starting DbContext configuration (dynamic)");
 
-            // Default connection string for MVP - simple and reliable
-            const string defaultConnectionString = "Data Source=(localdb)\\MSSQLLocalDB;Initial Catalog=BusBuddy;Integrated Security=True;MultipleActiveResultSets=True";
-
-            // Use SQL Server for Phase 1 development with transient fault handling
-            optionsBuilder.UseSqlServer(defaultConnectionString, sqlOptions =>
+            // 1. Environment variable hard override (preferred)
+            var envOverride = Environment.GetEnvironmentVariable("BUSBUDDY_CONNECTION");
+            if (!string.IsNullOrWhiteSpace(envOverride))
             {
-                // SQL Server-specific configuration with retry strategy
-                sqlOptions.CommandTimeout(60);
-
-                // Enable retry on failure for transient exceptions (like Error 40613)
-                sqlOptions.EnableRetryOnFailure(
-                    maxRetryCount: 5,                              // Number of retry attempts
-                    maxRetryDelay: TimeSpan.FromSeconds(10),       // Maximum backoff delay
-                    errorNumbersToAdd: new[] { 40613, 40501, 40197, 10928, 10929, 10060, 10054, 10053 }  // Azure SQL transient errors
-                );
-
-                logger.Information("Enabled transient fault retry strategy: 5 attempts, max 10s delay");
-            });
-
-            // Add detailed logging for SQL exceptions with Serilog enrichments
-            optionsBuilder.LogTo(message =>
-            {
-                using (LogContext.PushProperty("DatabaseContext", "BusBuddyDbContext"))
-                using (LogContext.PushProperty("SourceContext", "EntityFramework"))
+                logger.Information("Using BUSBUDDY_CONNECTION environment override");
+                optionsBuilder.UseSqlServer(envOverride, sql =>
                 {
-                    var logger = Log.ForContext("SourceContext", "BusBuddyDbContext");
-                    if (message.Contains("warn", StringComparison.OrdinalIgnoreCase) ||
-                        message.Contains("warning", StringComparison.OrdinalIgnoreCase))
-                    {
-                        logger.Warning("EF Core: {Message}", message);
-                    }
-                    else if (message.Contains("error", StringComparison.OrdinalIgnoreCase) ||
-                             message.Contains("exception", StringComparison.OrdinalIgnoreCase))
-                    {
-                        logger.Error("EF Core: {Message}", message);
-                    }
-                    else
-                    {
-                        logger.Information("EF Core: {Message}", message);
-                    }
-                }
-            });
-
-            // Enable sensitive data logging in debug mode only
-            if (System.Diagnostics.Debugger.IsAttached)
-            {
-                optionsBuilder.EnableSensitiveDataLogging();
-                optionsBuilder.EnableDetailedErrors();
+                    sql.CommandTimeout(60);
+                    sql.EnableRetryOnFailure(5, TimeSpan.FromSeconds(10),
+                        new[] { 40613, 40501, 40197, 10928, 10929, 10060, 10054, 10053 });
+                });
+                ConfigureEfLogging(optionsBuilder);
+                return;
             }
+
+            // ✅ MVP simplification: Removed ConfigurationBuilder usage to eliminate dependency causing CS0246.
+            // Fallback to LocalDB (EF Core config guidance: https://learn.microsoft.com/ef/core/dbcontext-configuration/)
+            UseLocalDbFallback(optionsBuilder, logger);
+            ConfigureEfLogging(optionsBuilder);
         }
     }
 
@@ -513,6 +483,8 @@ public class BusBuddyDbContext : DbContext
                   .HasForeignKey(s => s.FamilyId)
                   .OnDelete(DeleteBehavior.Cascade)
                   .HasConstraintName("FK_Students_Family");
+        });
+
         // Configure Guardian entity
         modelBuilder.Entity<Guardian>(entity =>
         {
@@ -526,7 +498,6 @@ public class BusBuddyDbContext : DbContext
             entity.Property(e => e.Notes).HasMaxLength(500);
             entity.Property(e => e.Latitude).HasColumnType("float");
             entity.Property(e => e.Longitude).HasColumnType("float");
-        });
         });
 
         // Configure Schedule entity
@@ -1009,5 +980,47 @@ public class BusBuddyDbContext : DbContext
             entity.Entity.OnSaving();
         }
         */
+    }
+
+    private static void UseLocalDbFallback(DbContextOptionsBuilder optionsBuilder, ILogger logger)
+    {
+        const string fallback = "Data Source=(localdb)\\MSSQLLocalDB;Initial Catalog=BusBuddy;Integrated Security=True;MultipleActiveResultSets=True";
+        logger.Information("Using LocalDB fallback connection");
+        optionsBuilder.UseSqlServer(fallback, sql =>
+        {
+            sql.CommandTimeout(60);
+            sql.EnableRetryOnFailure(5, TimeSpan.FromSeconds(10), new[] { 40613, 40501, 40197, 10928, 10929, 10060, 10054, 10053 });
+        });
+    }
+
+    // Centralized EF Core logging configuration (same logic as earlier implementation)
+    private static void ConfigureEfLogging(DbContextOptionsBuilder optionsBuilder)
+    {
+        optionsBuilder.LogTo(message =>
+        {
+            using (LogContext.PushProperty("DatabaseContext", "BusBuddyDbContext"))
+            using (LogContext.PushProperty("SourceContext", "EntityFramework"))
+            {
+                var innerLogger = Log.ForContext("SourceContext", "BusBuddyDbContext");
+                if (message.Contains("warn", StringComparison.OrdinalIgnoreCase) || message.Contains("warning", StringComparison.OrdinalIgnoreCase))
+                {
+                    innerLogger.Warning("EF Core: {Message}", message);
+                }
+                else if (message.Contains("error", StringComparison.OrdinalIgnoreCase) || message.Contains("exception", StringComparison.OrdinalIgnoreCase))
+                {
+                    innerLogger.Error("EF Core: {Message}", message);
+                }
+                else
+                {
+                    innerLogger.Information("EF Core: {Message}", message);
+                }
+            }
+        });
+
+        if (System.Diagnostics.Debugger.IsAttached)
+        {
+            optionsBuilder.EnableSensitiveDataLogging();
+            optionsBuilder.EnableDetailedErrors();
+        }
     }
 }

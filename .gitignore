@@ -1063,3 +1063,35 @@ phd-mentor-error.log
 # Validation Reports
 *Validation-Report*.json
 *-Report-*.json
+
+# Ignore build artifacts and intermediates
+*.xml
+*.props
+*.log
+
+# Ignore test and environment config
+*.runsettings
+testsettings.runsettings
+*.user
+*.suo
+.vs/
+
+# Ignore data exports and temp data
+*.csv
+*.xls*
+*.bak
+*.backup*
+
+# Ignore app settings and secrets
+appsettings.json
+appsettings.*.json
+global.json
+
+# Ignore designer and generated files
+*.Designer.cs
+*.resx
+*.disabled
+
+# Ignore other temp or tool files
+*.tmp
+*.temp

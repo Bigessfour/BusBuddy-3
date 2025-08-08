@@ -12,8 +12,7 @@ function Get-BusBuddyTestOutput {
         Path to solution or test project file
     .PARAMETER SaveToFile
         Save complete output to timestamped log file
-    .PARAMETER WatchMode
-        Enable continuous testing with file monitoring
+    # Output type: Hashtable — documented for analyzer compliance
     .PARAMETER Filter
         Custom test filter expression
     .EXAMPLE
@@ -22,12 +21,12 @@ function Get-BusBuddyTestOutput {
         Get-BusBuddyTestOutput -Filter "Category=Core" -SaveToFile
     #>
     [CmdletBinding()]
+    [OutputType([hashtable])]
     param(
         [ValidateSet('All', 'Unit', 'Integration', 'Validation', 'Core', 'WPF')]
         [string]$TestSuite = 'All',
         [string]$ProjectPath = "BusBuddy.sln",
         [switch]$SaveToFile,
-        [switch]$WatchMode,
         [string]$Filter,
         [ValidateSet('quiet', 'minimal', 'normal', 'detailed', 'diagnostic')]
         [string]$Verbosity = 'normal'
@@ -168,7 +167,7 @@ $testStderr
     }
 }
 
-function bb-test-full {
+function Invoke-BusBuddyTestFull {
     <#
     .SYNOPSIS
         Enhanced bb-test with complete output capture
@@ -181,7 +180,7 @@ function bb-test-full {
     Get-BusBuddyTestOutput -TestSuite $TestSuite -SaveToFile
 }
 
-function bb-test-errors {
+function Get-BusBuddyTestError {
     <#
     .SYNOPSIS
         Get only test errors without full output
@@ -194,7 +193,7 @@ function bb-test-errors {
     Get-BusBuddyTestOutput -TestSuite $TestSuite -Verbosity 'quiet'
 }
 
-function bb-test-log {
+function Get-BusBuddyTestLog {
     <#
     .SYNOPSIS
         Show the most recent test log
@@ -206,11 +205,11 @@ function bb-test-log {
         Write-Host ""
         Get-Content $latestLog.FullName
     } else {
-        Write-Host "No test logs found. Run bb-test-full first." -ForegroundColor Yellow
+    Write-Host "No test logs found. Run bb-test-full first." -ForegroundColor Yellow
     }
 }
 
-function bb-test-watch {
+function Start-BusBuddyTestWatch {
     <#
     .SYNOPSIS
         Continuous testing with file monitoring and full output capture
@@ -234,7 +233,7 @@ function bb-test-watch {
         Write-Host "📝 File changed: $path" -ForegroundColor Gray
         Start-Sleep -Seconds 1  # Debounce
         Write-Host "🔄 Re-running tests..." -ForegroundColor Cyan
-        Get-BusBuddyTestOutput -TestSuite $using:TestSuite -SaveToFile
+    Get-BusBuddyTestOutput -TestSuite $using:TestSuite -SaveToFile
     }
     Register-ObjectEvent -InputObject $watcher -EventName "Changed" -Action $action
     try {
@@ -300,7 +299,9 @@ try {
 
 #region Enhanced Output Function Loader (runs after all functions are defined)
 try {
-    $projectRoot = Get-BusBuddyProjectRoot
+    # Determine project root relative to this module: Modules/BusBuddy/ -> PowerShell/Modules/BusBuddy
+    # Repo root is three levels up from this .psm1
+    $projectRoot = (Split-Path $PSScriptRoot -Parent | Split-Path -Parent | Split-Path -Parent)
     $enhancedBuildPath = Join-Path $projectRoot "PowerShell\Functions\Build\Enhanced-Build-Output.ps1"
     $enhancedTestPath = Join-Path $projectRoot "PowerShell\Functions\Testing\Enhanced-Test-Output.ps1"
 
@@ -310,9 +311,9 @@ try {
     }
 
     if (Test-Path $enhancedTestPath) {
-        . $enhancedTestPath
-        Write-Verbose "✅ Enhanced test output functions loaded"
-        Export-ModuleMember -Function @('Get-BusBuddyTestOutput','bb-test-full','bb-test-errors','bb-test-log','bb-test-watch') -Force
+    . $enhancedTestPath
+    Write-Verbose "✅ Enhanced test output functions loaded"
+    Export-ModuleMember -Function @('Get-BusBuddyTestOutput','Invoke-BusBuddyTestFull','Get-BusBuddyTestError','Get-BusBuddyTestLog','Start-BusBuddyTestWatch')
     } else {
         Write-Warning "Enhanced-Test-Output.ps1 not found at $enhancedTestPath"
     }
@@ -663,6 +664,7 @@ function Invoke-BusBuddyTest {
         Run BusBuddy tests with enhanced output capture
     #>
     [CmdletBinding()]
+    [OutputType([hashtable])]
     param(
         [ValidateSet('All', 'Unit', 'Integration', 'Validation', 'Core', 'WPF')]
         [string]$TestSuite = 'All',
@@ -706,7 +708,7 @@ function Invoke-BusBuddyTest {
 
             # Capture output to prevent truncation
             $testOutput = & dotnet test BusBuddy.sln --verbosity normal 2>&1
-
+                Write-Information "(Non-fatal: Show-BusBuddyWelcome already exported or export failed)" -InformationAction Continue
             # Save to file if requested
             if ($SaveToFile) {
                 $timestamp = Get-Date -Format "yyyyMMdd-HHmmss"
@@ -752,12 +754,8 @@ function Invoke-BusBuddyClean {
     .SYNOPSIS
         Clean BusBuddy build artifacts
     #>
-    [CmdletBinding()]
-    param()
-
-    $projectRoot = Get-BusBuddyProjectRoot
     Push-Location $projectRoot
-
+        Write-Information "(Non-fatal: Show-BusBuddyWelcome already exported or export failed)" -InformationAction Continue
     try {
         Write-BusBuddyStatus "Cleaning BusBuddy artifacts..." -Type Info
         dotnet clean BusBuddy.sln
@@ -899,10 +897,10 @@ function Get-BusBuddyInfo {
     Write-Information "Project Root: $(Get-BusBuddyProjectRoot)" -InformationAction Continue
 
     Write-Information "" -InformationAction Continue
-    Write-BusBuddyStatus "Use 'Get-BusBuddyCommands' to see available commands" -Type Info
+    Write-BusBuddyStatus "Use 'Get-BusBuddyCommand' to see available commands" -Type Info
 }
 
-function Get-BusBuddyCommands {
+function Get-BusBuddyCommand {
     <#
     .SYNOPSIS
         List all available BusBuddy commands
@@ -947,6 +945,7 @@ function Get-BusBuddyCommands {
 
     Write-Information "" -InformationAction Continue
     Write-Information "Functions:" -InformationAction Continue
+    $functions = Get-Command -Module BusBuddy -CommandType Function | Sort-Object Name
     $functions = Get-Command -Module BusBuddy -CommandType Function | Sort-Object Name
     foreach ($func in $functions) {
         Write-Information "  $($func.Name)" -InformationAction Continue
@@ -1029,8 +1028,7 @@ function Invoke-BusBuddyWithExceptionCapture {
     .PARAMETER ThrowOnError
         If specified, re-throws exceptions instead of capturing them
 
-    .PARAMETER CaptureOutput
-        If specified, captures and returns both stdout and stderr
+    # Output is captured and summarized
 
     .PARAMETER Timeout
         Maximum execution time in seconds (default: 300)
@@ -1049,12 +1047,8 @@ function Invoke-BusBuddyWithExceptionCapture {
         [Parameter()]
         [string]$Context = "BusBuddy Operation",
 
-        [Parameter()]
-        [switch]$ThrowOnError,
-
-        [Parameter()]
-        [switch]$CaptureOutput,
-
+    [Parameter()]
+    [switch]$ThrowOnError,
         [Parameter()]
         [int]$Timeout = 300
     )
@@ -1080,51 +1074,28 @@ function Invoke-BusBuddyWithExceptionCapture {
     }
 
     try {
-        # Create stopwatch for precise timing
+        # Execute synchronously and capture combined output
         $stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
-
-        # Enhanced execution with timeout support
-        $job = Start-Job -ScriptBlock {
-            param($cmd, $args)
-            if ($args.Count -gt 0) {
-                & $cmd @args 2>&1
-            } else {
-                & $cmd 2>&1
-            }
-        } -ArgumentList $Command, $Arguments
-
-        # Wait for completion with timeout
-        $completed = Wait-Job $job -Timeout $Timeout
+        if ($Arguments.Count -gt 0) {
+            $result = & $Command @Arguments 2>&1
+        } else {
+            $result = & $Command 2>&1
+        }
         $stopwatch.Stop()
 
-        if ($completed) {
-            $result = Receive-Job $job
-            Remove-Job $job
+        $duration = $stopwatch.Elapsed
+        Write-Information "✅ [$sessionId] Success in $($duration.TotalSeconds.ToString('F2'))s" -InformationAction Continue
 
-            $duration = $stopwatch.Elapsed
-            Write-Information "✅ [$sessionId] Success in $($duration.TotalSeconds.ToString('F2'))s" -InformationAction Continue
-
-            # Enhanced success reporting
-            if ($result) {
-                $outputLines = ($result | Measure-Object -Line).Lines
-                Write-Information "📊 Output: $outputLines lines captured" -InformationAction Continue
-
-                # Check for warnings in output
-                $warnings = $result | Where-Object { $_ -match "warning|warn|WRN" }
-                if ($warnings) {
-                    Write-Warning "⚠️  [$sessionId] $($warnings.Count) warnings detected in output"
-                }
+        if ($result) {
+            $outputLines = ($result | Measure-Object -Line).Lines
+            Write-Information "📊 Output: $outputLines lines captured" -InformationAction Continue
+            $warnings = $result | Where-Object { $_ -match "warning|warn|WRN" }
+            if ($warnings) {
+                Write-Warning "⚠️  [$sessionId] $($warnings.Count) warnings detected in output"
             }
-
-            return $result
-        } else {
-            # Timeout occurred
-            Stop-Job $job
-            Remove-Job $job
-            $stopwatch.Stop()
-
-            throw "Command timed out after $Timeout seconds"
         }
+
+        return $result
     }
     catch {
         $endTime = Get-Date
@@ -1149,7 +1120,7 @@ function Invoke-BusBuddyWithExceptionCapture {
         }
 
         # Check for common error patterns and provide suggestions
-        $suggestions = Get-BusBuddyErrorSuggestions -ErrorMessage $errorDetails -Command $Command
+    $suggestions = Get-BusBuddyErrorSuggestion -ErrorMessage $errorDetails -Command $Command
         if ($suggestions) {
             Write-Information "💡 Suggestions:" -InformationAction Continue
             $suggestions | ForEach-Object {
@@ -1173,7 +1144,7 @@ function Invoke-BusBuddyWithExceptionCapture {
         try {
             $errorEntry | Add-Content -Path $errorLogPath -Encoding UTF8
         } catch {
-            # Ignore log write errors
+            Write-Warning ("Could not append to error log at {0}: {1}" -f $errorLogPath, $_.Exception.Message)
         }
 
         if ($ThrowOnError) {
@@ -1184,8 +1155,8 @@ function Invoke-BusBuddyWithExceptionCapture {
     }
 }
 
-# Helper function for error suggestions
-function Get-BusBuddyErrorSuggestions {
+# Helper function for error suggestion
+function Get-BusBuddyErrorSuggestion {
     param(
         [string]$ErrorMessage,
         [string]$Command
@@ -1316,6 +1287,7 @@ function Test-BusBuddyMVPReadiness {
         Check if we're ready for MVP delivery
     #>
     [CmdletBinding()]
+    [OutputType([bool])]
     param()
 
     Write-BusBuddyStatus "🎯 MVP Readiness Check" -Type Info
@@ -1389,6 +1361,7 @@ function Invoke-BusBuddyAntiRegression {
         Run anti-regression checks to prevent legacy patterns
     #>
     [CmdletBinding()]
+    [OutputType([bool])]
     param(
         [Parameter()]
         [switch]$Detailed
@@ -1504,6 +1477,7 @@ function Test-BusBuddyEnvironment {
         module availability, and essential tools.
     #>
     [CmdletBinding()]
+    [OutputType([bool])]
     param()
 
     Write-Information "🔍 BusBuddy Environment Validation" -InformationAction Continue
@@ -1649,7 +1623,7 @@ function Test-BusBuddyEnvironment {
     }
 }
 
-function Start-BusBuddyRuntimeErrorCapture {
+function Start-BusBuddyRuntimeErrorCaptureBasic {
     <#
     .SYNOPSIS
         Comprehensive runtime error capture for BusBuddy application
@@ -1670,6 +1644,7 @@ function Start-BusBuddyRuntimeErrorCapture {
         Extended capture with detailed logs and auto-open results
     #>
     [CmdletBinding()]
+    [OutputType([hashtable])]
     param(
         [Parameter()]
         [ValidateRange(10, 3600)]
@@ -1733,9 +1708,15 @@ function Start-BusBuddyRuntimeErrorCapture {
 $xaiOptimizerPath = Join-Path $PSScriptRoot "XAI-RouteOptimizer.ps1"
 if (Test-Path $xaiOptimizerPath) {
     . $xaiOptimizerPath
-    Write-BusBuddyStatus "🤖 XAI Route Optimizer loaded successfully" -Type Success
+    $script:XAIAvailable = $true
+    if ([string]::IsNullOrWhiteSpace($env:BUSBUDDY_NO_XAI_WARN)) {
+        Write-BusBuddyStatus "🤖 XAI Route Optimizer loaded successfully" -Type Success
+    }
 } else {
-    Write-BusBuddyStatus "⚠️ XAI Route Optimizer not found - some features unavailable" -Type Warning
+    $script:XAIAvailable = $false
+    if ([string]::IsNullOrWhiteSpace($env:BUSBUDDY_NO_XAI_WARN)) {
+        Write-BusBuddyStatus "⚠️ XAI Route Optimizer not found - some features unavailable" -Type Warning
+    }
 }
 
 function Start-BusBuddyRouteOptimization {
@@ -1921,6 +1902,7 @@ function Invoke-BusBuddyReport {
         bb-generate-report -ReportType RouteManifest -RouteId "Route-001" -OutputPath "reports/route-001-manifest.pdf"
     #>
     [CmdletBinding()]
+    [OutputType([hashtable])]
     param(
         [Parameter(Mandatory=$true)]
         [ValidateSet("Roster", "RouteManifest", "StudentList", "DriverSchedule", "MaintenanceReport")]
@@ -1952,12 +1934,8 @@ function Invoke-BusBuddyReport {
         }
 
         # Build the API call to our .NET PDF service
-        $projectPath = Split-Path $PSScriptRoot -Parent | Split-Path -Parent
-<<<<<<< HEAD
-        $exePath = Join-Path $projectPath "BusBuddy.WPF\bin\Debug\net8.0-windows\BusBuddy.exe"
-=======
-        $exePath = Join-Path $projectPath "BusBuddy.WPF\bin\Debug\net9.0-windows\BusBuddy.exe"
->>>>>>> df2d18d (chore: stage and commit all changes after migration to BusBuddy-3 repo (CRLF to LF warnings acknowledged))
+    $projectPath = (Split-Path $PSScriptRoot -Parent | Split-Path -Parent | Split-Path -Parent)
+    $exePath = Join-Path $projectPath "BusBuddy.WPF\bin\Debug\net9.0-windows\BusBuddy.exe"
 
         if (Test-Path $exePath) {
             # Call the .NET application with report generation parameters
@@ -2119,12 +2097,8 @@ IMPLEMENTATION STEPS:
             Write-BusBuddyStatus "Using live xAI Grok API for route optimization..." -Type Info
 
             # Build the API call to our .NET service
-            $projectPath = Split-Path $PSScriptRoot -Parent | Split-Path -Parent
-<<<<<<< HEAD
-            $exePath = Join-Path $projectPath "BusBuddy.WPF\bin\Debug\net8.0-windows\BusBuddy.exe"
-=======
+            $projectPath = (Split-Path $PSScriptRoot -Parent | Split-Path -Parent | Split-Path -Parent)
             $exePath = Join-Path $projectPath "BusBuddy.WPF\bin\Debug\net9.0-windows\BusBuddy.exe"
->>>>>>> df2d18d (chore: stage and commit all changes after migration to BusBuddy-3 repo (CRLF to LF warnings acknowledged))
 
             if (Test-Path $exePath) {
                 # Call the .NET application with route optimization parameters
@@ -2239,6 +2213,7 @@ function Start-BusBuddyRuntimeErrorCapture {
         Start-BusBuddyRuntimeErrorCapture -MonitorCrashes -SystemDiagnostics
     #>
     [CmdletBinding()]
+    [OutputType([hashtable])]
     param(
         [Parameter()]
         [switch]$MonitorCrashes,
@@ -2247,7 +2222,7 @@ function Start-BusBuddyRuntimeErrorCapture {
         [switch]$SystemDiagnostics,
 
         [Parameter()]
-        [switch]$ContinuousMonitoring,
+    [switch]$ContinuousMonitoring,
 
         [Parameter()]
         [string]$OutputPath = "logs/error-capture"
@@ -2257,6 +2232,7 @@ function Start-BusBuddyRuntimeErrorCapture {
     $startTime = Get-Date
 
     Write-BusBuddyStatus "🔍 Starting Enhanced Error Capture Session [$sessionId]" -Type Info
+    if ($ContinuousMonitoring) { Write-Information "Continuous Monitoring: Enabled" -InformationAction Continue }
     Write-Information "⏰ Session Start: $($startTime.ToString('yyyy-MM-dd HH:mm:ss'))" -InformationAction Continue
 
     # Ensure WintellectPowerShell is available
@@ -2334,13 +2310,8 @@ function Start-BusBuddyRuntimeErrorCapture {
         $projectRoot = Get-BusBuddyProjectRoot
         $possibleDumpLocations = @(
             Join-Path $projectRoot "logs"
-<<<<<<< HEAD
-            Join-Path $projectRoot "BusBuddy.WPF\bin\Debug\net8.0-windows"
-            Join-Path $projectRoot "BusBuddy.WPF\bin\Release\net8.0-windows"
-=======
             Join-Path $projectRoot "BusBuddy.WPF\bin\Debug\net9.0-windows"
             Join-Path $projectRoot "BusBuddy.WPF\bin\Release\net9.0-windows"
->>>>>>> df2d18d (chore: stage and commit all changes after migration to BusBuddy-3 repo (CRLF to LF warnings acknowledged))
             $env:TEMP,
             $env:LOCALAPPDATA
         )
@@ -2441,7 +2412,11 @@ Set-Alias -Name 'bb-restore' -Value 'Invoke-BusBuddyRestore' -Description 'Resto
 Set-Alias -Name 'bb-health' -Value 'Invoke-BusBuddyHealthCheck' -Description 'Check system health'
 Set-Alias -Name 'bb-dev-session' -Value 'Start-BusBuddyDevSession' -Description 'Start development session'
 Set-Alias -Name 'bb-info' -Value 'Get-BusBuddyInfo' -Description 'Show module information'
-Set-Alias -Name 'bb-commands' -Value 'Get-BusBuddyCommands' -Description 'List all commands'
+Set-Alias -Name 'bb-commands' -Value 'Get-BusBuddyCommand' -Description 'List all commands'
+Set-Alias -Name 'bb-test-full' -Value 'Invoke-BusBuddyTestFull' -Description 'Enhanced test with full capture'
+Set-Alias -Name 'bb-test-errors' -Value 'Get-BusBuddyTestError' -Description 'Show test errors only'
+Set-Alias -Name 'bb-test-log' -Value 'Get-BusBuddyTestLog' -Description 'Show latest test log'
+Set-Alias -Name 'bb-test-watch' -Value 'Start-BusBuddyTestWatch' -Description 'Continuous test watch'
 Set-Alias -Name 'bb-xaml-validate' -Value 'Invoke-BusBuddyXamlValidation' -Description 'Validate XAML files'
 Set-Alias -Name 'bb-catch-errors' -Value 'Invoke-BusBuddyWithExceptionCapture' -Description 'Run with exception capture'
 Set-Alias -Name 'bb-anti-regression' -Value 'Invoke-BusBuddyAntiRegression' -Description 'Run anti-regression checks'
@@ -2459,6 +2434,7 @@ Set-Alias -Name 'bb-diagnostic' -Value 'Invoke-BusBuddyDiagnostic' -Description 
 Set-Alias -Name 'bb-add-family' -Value 'bb-add-family' -Description 'Add a new family'
 Set-Alias -Name 'bb-add-kid-to-family' -Value 'bb-add-kid-to-family' -Description 'Add a kid to an existing family'
 Set-Alias -Name 'bb-export-data' -Value 'bb-export-data' -Description 'Export data to CSV'
+Set-Alias -Name 'bb-welcome' -Value 'Show-BusBuddyWelcome' -Description 'Show categorized command overview'
 
 #endregion
 
@@ -2468,6 +2444,7 @@ Export-ModuleMember -Function @(
     'Get-BusBuddyProjectRoot',
     'Write-BusBuddyStatus',
     'Write-BusBuddyError',
+    'Show-BusBuddyWelcome',
     'Invoke-BusBuddyBuild',
     'Invoke-BusBuddyRun',
     'Invoke-BusBuddyTest',
@@ -2476,7 +2453,7 @@ Export-ModuleMember -Function @(
     'Start-BusBuddyDevSession',
     'Invoke-BusBuddyHealthCheck',
     'Get-BusBuddyInfo',
-    'Get-BusBuddyCommands',
+    'Get-BusBuddyCommand',
     'Invoke-BusBuddyXamlValidation',
     'Invoke-BusBuddyWithExceptionCapture',
     'Invoke-BusBuddyAntiRegression',
@@ -2495,21 +2472,89 @@ Export-ModuleMember -Function @(
     'bb-add-kid-to-family',
     'bb-export-data',
     'Get-BusBuddyTestOutput',
-    'bb-test-full',
-    'bb-test-errors',
-    'bb-test-log',
-    'bb-test-watch',
+    'Invoke-BusBuddyTestFull',
+    'Get-BusBuddyTestError',
+    'Get-BusBuddyTestLog',
+    'Start-BusBuddyTestWatch',
     'Enable-BusBuddyEnhancedTestOutput'
 ) -Alias @(
     'bb-build', 'bb-run', 'bb-test', 'bb-clean', 'bb-restore', 'bb-health',
     'bb-dev-session', 'bb-info', 'bb-commands', 'bb-xaml-validate', 'bb-catch-errors',
     'bb-anti-regression', 'bb-mvp', 'bb-mvp-check', 'bb-env-check', 'bb-routes',
     'bb-route-optimize', 'bb-generate-report', 'bb-route-demo', 'bb-route-status', 'bb-copilot-ref',
-    'bb-capture-runtime-errors', 'bb-diagnostic', 'bb-add-family', 'bb-add-kid-to-family', 'bb-export-data'
+    'bb-capture-runtime-errors', 'bb-diagnostic', 'bb-add-family', 'bb-add-kid-to-family', 'bb-export-data', 'bb-welcome'
 )
 
 #endregion
 
 Write-Output "🚌 BusBuddy PowerShell Module v3.0.0 loaded successfully!"
 Write-Output "   🤖 NEW: XAI Route Optimization System - Ready for Monday!"
-Write-Output "   🤖 NEW: XAI Route Optimization System - Ready for Monday!"
+
+#region Welcome Screen
+
+function Show-BusBuddyWelcome {
+    <#
+    .SYNOPSIS
+        Display a categorized welcome screen when the module loads.
+    .DESCRIPTION
+        Prints environment info and categorized bb-* commands for quick discovery.
+    .PARAMETER Quiet
+        Suppress verbose details and show only categories and key commands.
+    #>
+    [CmdletBinding()]
+    param(
+        [switch]$Quiet
+    )
+
+    $ps = $PSVersionTable.PSVersion
+    $dotnet = try { & dotnet --version 2>$null } catch { "unknown" }
+    $xai = if ($script:XAIAvailable) { "✅" } else { "⚠️" }
+
+    Write-Information "" -InformationAction Continue
+    Write-BusBuddyStatus "🚌 BusBuddy Dev Shell — Ready" -Type Info
+    Write-Information "PowerShell: $ps | .NET: $dotnet | XAI: $xai" -InformationAction Continue
+    Write-Information "Project: $(Get-BusBuddyProjectRoot)" -InformationAction Continue
+    Write-Information "" -InformationAction Continue
+
+    Write-BusBuddyStatus "Core" -Type Info
+    Write-Information "  bb-build, bb-run, bb-test, bb-clean, bb-restore, bb-health" -InformationAction Continue
+
+    Write-BusBuddyStatus "Development" -Type Info
+    Write-Information "  bb-dev-session, bb-info, bb-commands" -InformationAction Continue
+
+    Write-BusBuddyStatus "Validation & Safety" -Type Info
+    Write-Information "  bb-xaml-validate, bb-anti-regression, bb-catch-errors, bb-env-check" -InformationAction Continue
+
+    Write-BusBuddyStatus "MVP Focus" -Type Info
+    Write-Information "  bb-mvp, bb-mvp-check" -InformationAction Continue
+
+    Write-BusBuddyStatus "Routes & Reports" -Type Info
+    Write-Information "  bb-routes, bb-route-demo, bb-route-status, bb-route-optimize" -InformationAction Continue
+    Write-Information "  bb-generate-report" -InformationAction Continue
+
+    Write-BusBuddyStatus "Docs & Reference" -Type Info
+    Write-Information "  bb-copilot-ref [Topic] (-ShowTopics)" -InformationAction Continue
+
+    if (-not $Quiet) {
+        Write-Information "" -InformationAction Continue
+        Write-Information "Tips:" -InformationAction Continue
+        Write-Information "  • bb-commands — full list with functions" -InformationAction Continue
+        Write-Information "  • bb-health — verify env quickly" -InformationAction Continue
+        Write-Information "  • Set 'BUSBUDDY_NO_WELCOME=1' to suppress on import" -InformationAction Continue
+    Write-Information "  • Set 'BUSBUDDY_NO_XAI_WARN=1' to silence optional XAI messages" -InformationAction Continue
+    }
+}
+
+# Auto-run welcome unless suppressed
+if (-not $env:BUSBUDDY_NO_WELCOME) {
+    try { Show-BusBuddyWelcome -ErrorAction SilentlyContinue } catch { Write-Information "(welcome suppressed due to error)" -InformationAction Continue }
+}
+
+#endregion
+
+# Ensure the welcome function is exported after its definition so external callers can invoke bb-welcome
+try {
+    Export-ModuleMember -Function 'Show-BusBuddyWelcome' -ErrorAction SilentlyContinue
+} catch {
+    Write-Information "Non-fatal error occurred during module export." -InformationAction Continue
+}

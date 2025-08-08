@@ -72,6 +72,7 @@ function bb-test-full {
     } catch {
         Write-Error "bb-test-full failed: $($_.Exception.Message)" -ErrorAction Stop
     }
+}
 function bb-test {
     [CmdletBinding()]
     param(
@@ -107,12 +108,12 @@ function bb-test-log {
     $latestLog = Get-ChildItem "logs\test-output-*.log" | Sort-Object LastWriteTime -Descending | Select-Object -First 1
 
     if ($latestLog) {
-        Write-Host "📄 Most recent test log: $($latestLog.Name)" -ForegroundColor Cyan
-        Write-Host "📅 Created: $($latestLog.LastWriteTime)" -ForegroundColor Gray
-        Write-Host ""
+        Write-Information "📄 Most recent test log: $($latestLog.Name)" -InformationAction Continue
+        Write-Information "📅 Created: $($latestLog.LastWriteTime)" -InformationAction Continue
+        Write-Information "" -InformationAction Continue
         Get-Content $latestLog.FullName
     } else {
-        Write-Host "No test logs found. Run bb-test-full first." -ForegroundColor Yellow
+        Write-Information "No test logs found. Run bb-test-full first." -InformationAction Continue
     }
 }
 

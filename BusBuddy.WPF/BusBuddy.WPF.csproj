@@ -131,4 +131,11 @@
   -->
 
   <!-- SDK automatically includes XAML files with EnableDefaultPageItems=true -->
+
+  <!-- Add Wiley data JSON so it is available at runtime for seeding -->
+  <ItemGroup>
+    <None Include="..\BusBuddy.Core\Data\wiley-school-district-data.json" Link="Data\wiley-school-district-data.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
 </Project>

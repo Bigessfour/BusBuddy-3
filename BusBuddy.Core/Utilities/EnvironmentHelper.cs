@@ -111,7 +111,9 @@ namespace BusBuddy.Core.Utilities
         {
             if (IsUsingAzureSql(configuration))
             {
-                return configuration.GetConnectionString("AzureConnection") ??
+                // Prefer Azure AD interactive/password auth first, then fallback to SQL auth, then default, then sqlite
+                return configuration.GetConnectionString("AzureADConnection") ??
+                       configuration.GetConnectionString("AzureConnection") ??
                        configuration.GetConnectionString("DefaultConnection") ??
                        "Data Source=BusBuddy.db";
             }

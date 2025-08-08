@@ -19,7 +19,7 @@
 #>
 
 # Initialize Serilog for PowerShell module following BusBuddy patterns
-if (-not $global:SerilogInitialized) {
+if (-not $script:SerilogInitialized) {
     try {
         # Try to load Serilog from common locations
         $serilogFound = $false
@@ -27,7 +27,6 @@ if (-not $global:SerilogInitialized) {
             (Join-Path $PSScriptRoot "..\..\BusBuddy.WPF\bin\Debug\net9.0-windows\Serilog.dll"),
             (Join-Path $env:USERPROFILE ".nuget\packages\serilog\3.1.1\lib\net7.0\Serilog.dll"),
             (Join-Path $env:USERPROFILE ".nuget\packages\serilog\4.3.0\lib\net9.0\Serilog.dll")
-        )
         )
 
         foreach ($path in $serilogPaths) {
@@ -42,21 +41,21 @@ if (-not $global:SerilogInitialized) {
             # Try to configure Serilog logger
             try {
                 # Use simplified Serilog configuration that works with PowerShell
-                $global:SerilogInitialized = $true
+                $script:SerilogInitialized = $true
                 Write-Output "✅ Serilog assembly loaded for XAML validation module"
             }
             catch {
                 Write-Warning "Serilog assembly loaded but configuration failed: $($_.Exception.Message)"
-                $global:SerilogInitialized = $false
+                $script:SerilogInitialized = $false
             }
         } else {
             Write-Warning "Serilog assembly not found. Using Write-Output fallback for logging."
-            $global:SerilogInitialized = $false
+            $script:SerilogInitialized = $false
         }
     }
     catch {
         Write-Warning "Failed to initialize Serilog: $($_.Exception.Message). Using Write-Output fallback."
-        $global:SerilogInitialized = $false
+        $script:SerilogInitialized = $false
     }
 }
 
@@ -375,10 +374,10 @@ function Invoke-ComprehensiveXamlValidation {
                     ValidationMetadata = @{
                         PowerShellVersion = $PSVersionTable.PSVersion.ToString()
                         ModuleVersion = "2.1"
-                        SerilogEnabled = $global:SerilogInitialized
+            SerilogEnabled = $global:SerilogInitialized
                         ValidationDate = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
                     }
-                }
+        }
 
                 $jsonOutput | ConvertTo-Json -Depth 10 | Out-File -FilePath $OutputJson -Encoding utf8
                 Write-ValidationLog -Level "Information" -Message "📄 JSON report written to {Path}" -Properties @{ Path = $OutputJson }

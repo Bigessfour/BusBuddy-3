@@ -31,6 +31,7 @@ namespace BusBuddy.WPF
     {
         public static IServiceProvider? ServiceProvider { get; private set; }
         private static ILogger? _bootstrapLogger;
+        private static bool _syncfusionLicenseChecked; // guard to ensure single execution
 
         public App()
         {
@@ -40,49 +41,7 @@ namespace BusBuddy.WPF
             _bootstrapLogger?.Information("🚌 BusBuddy bootstrap starting...");
 
             // Register Syncfusion license before any UI initialization
-            // CRITICAL: Must register BEFORE any Syncfusion control is initialized
-            try
-            {
-                var licenseKey = Environment.GetEnvironmentVariable("SYNCFUSION_LICENSE_KEY");
-
-                if (ValidateSyncfusionLicenseKey(licenseKey))
-                {
-                    // Register valid license key
-                    Syncfusion.Licensing.SyncfusionLicenseProvider.RegisterLicense(licenseKey);
-                    _bootstrapLogger?.Information("✅ Syncfusion license registered successfully with valid key");
-
-                    // License registration successful
-                    _bootstrapLogger?.Information("✅ Syncfusion license validation completed");
-                }
-                else
-                {
-                    // For development/trial: Use community edition or trial without registration
-                    // This prevents application freeze from invalid license key
-                    _bootstrapLogger?.Warning("⚠️ No valid Syncfusion license key found. Application will run in trial mode.");
-                    Console.WriteLine("Warning: No valid Syncfusion license key found. Application will run in trial mode.");
-                    Console.WriteLine("Set SYNCFUSION_LICENSE_KEY environment variable with your valid license key.");
-
-                    // Log diagnostic information
-                    LogSyncfusionDiagnostics();
-
-                    // Trial mode - no license key provided
-                    _bootstrapLogger?.Information("✅ Syncfusion trial mode available");
-
-                    // Do NOT register invalid keys - let Syncfusion handle trial mode gracefully
-                }
-            }
-            catch (Exception ex)
-            {
-                _bootstrapLogger?.Error(ex, "❌ Critical error during Syncfusion license registration: {ErrorMessage}", ex.Message);
-                Console.WriteLine($"Critical Error: Syncfusion license registration failed: {ex.Message}");
-
-                // Log additional diagnostic information
-                LogSyncfusionDiagnostics();
-
-                // Application may freeze if Syncfusion controls are used with invalid license
-                // Consider showing error dialog and graceful shutdown
-                throw new InvalidOperationException("Syncfusion license validation failed. Application cannot start safely.", ex);
-            }
+            EnsureSyncfusionLicenseRegistered();
 
             // Load configuration from appsettings.json
             IConfiguration configuration;
@@ -178,6 +137,7 @@ namespace BusBuddy.WPF
                 ConfigureServicesForMigration();
                 Log.Information("🚌 EF migration configuration completed");
                 return;
+            }
 
             // Enforce STA thread state for normal WPF operation
             if (threadState != ApartmentState.STA)
@@ -242,7 +202,6 @@ namespace BusBuddy.WPF
             }
         }
 
-        }
         private void ConfigureServicesForMigration()
         {
             try
@@ -355,8 +314,8 @@ namespace BusBuddy.WPF
                     Log.Error(fallbackEx, "❌ Even fallback service configuration failed");
                     ServiceProvider = null;
                 }
-            }
-        }
+            } // end outer catch for ConfigureServices
+        } // end ConfigureServices method
 
         private MainWindow CreateMainWindow()
         {
@@ -777,30 +736,76 @@ Examples:
         }
 
         /// <summary>
+        /// Ensures Syncfusion license registration (runs only once). Based on Syncfusion WPF licensing documentation.
+        /// </summary>
+        private static void EnsureSyncfusionLicenseRegistered()
+        {
+            if (_syncfusionLicenseChecked)
+            {
+                return; // already attempted
+            }
+            _syncfusionLicenseChecked = true;
+            try
+            {
+                var licenseKey = Environment.GetEnvironmentVariable("SYNCFUSION_LICENSE_KEY");
+
+                if (string.IsNullOrWhiteSpace(licenseKey))
+                {
+                    _bootstrapLogger?.Warning("⚠️ SYNCFUSION_LICENSE_KEY environment variable not set. Running in trial mode.");
+                    LogSyncfusionDiagnostics();
+                    return; // trial mode – do not attempt registration
+                }
+
+                if (ValidateSyncfusionLicenseKey(licenseKey))
+                {
+                    Syncfusion.Licensing.SyncfusionLicenseProvider.RegisterLicense(licenseKey);
+                    _bootstrapLogger?.Information("✅ Syncfusion license registered successfully");
+                }
+                else
+                {
+                    _bootstrapLogger?.Warning("⚠️ Provided Syncfusion license key failed validation. Running in trial mode.");
+                    LogSyncfusionDiagnostics();
+                }
+            }
+            catch (Exception ex)
+            {
+                _bootstrapLogger?.Error(ex, "❌ Syncfusion license registration attempt failed: {ErrorMessage}", ex.Message);
+                LogSyncfusionDiagnostics();
+                // Allow fallback to trial mode without throwing to keep app usable
+            }
+        }
+
+        /// <summary>
         /// Validates Syncfusion license key format and provides diagnostic information
         /// Based on Syncfusion documentation for version 30.1.42
         /// </summary>
-        /// <param name="licenseKey">The license key to validate</param>
-        /// <returns>True if license key appears valid, false otherwise</returns>
         private static bool ValidateSyncfusionLicenseKey(string licenseKey)
         {
             if (string.IsNullOrWhiteSpace(licenseKey))
+            {
                 return false;
+            }
 
             // Check for common invalid placeholder values
             var invalidPlaceholders = new[] { "YOUR_LICENSE_KEY", "YOUR LICENSE KEY", "PLACEHOLDER", "TRIAL", "DEMO" };
             if (invalidPlaceholders.Any(placeholder =>
                 licenseKey.Equals(placeholder, StringComparison.OrdinalIgnoreCase)))
+            {
                 return false;
+            }
 
             // Basic format validation - Syncfusion keys are typically long base64-like strings
             if (licenseKey.Length < 20)
+            {
                 return false;
+            }
 
             // Additional validation - license keys shouldn't contain common file paths or environment indicators
             var suspiciousPatterns = new[] { "\\", "/", "C:", "D:", "temp", "test", "dev" };
             if (suspiciousPatterns.Any(pattern => licenseKey.Contains(pattern, StringComparison.OrdinalIgnoreCase)))
+            {
                 return false;
+            }
 
             return true;
         }

@@ -5,6 +5,7 @@ using BusBuddy.Core.Utilities;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
 using System.Text;
+using System.Linq; // Added for FirstOrDefault in seeding path resolution
 
 namespace BusBuddy.Core.Services;
 
@@ -194,7 +195,10 @@ public class StudentService : IStudentService
             // Find route name for the given routeId
             var route = await context.Routes.FindAsync(routeId);
             if (route == null || string.IsNullOrEmpty(route.RouteName))
+            {
                 return new List<Student>();
+            }
+
             var routeName = route.RouteName;
             return await context.Students
                 .Where(s => s.AMRoute == routeName || s.PMRoute == routeName)
@@ -1183,10 +1187,18 @@ public class StudentService : IStudentService
         try
         {
             Logger.Information("Starting Wiley School District data seeding operation");
-            var jsonPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "BusBuddy.Core", "Data", "wiley-school-district-data.json");
-            if (!File.Exists(jsonPath))
+            // Updated path resolution: try multiple documented candidate locations
+            var baseDir = AppDomain.CurrentDomain.BaseDirectory;
+            var candidatePaths = new[]
             {
-                Logger.Error($"Wiley JSON file not found: {jsonPath}");
+                Path.Combine(baseDir, "Data", "wiley-school-district-data.json"),
+                Path.Combine(baseDir, "BusBuddy.Core", "Data", "wiley-school-district-data.json"),
+                Path.GetFullPath(Path.Combine(baseDir, "..", "BusBuddy.Core", "Data", "wiley-school-district-data.json"))
+            };
+            var jsonPath = candidatePaths.FirstOrDefault(File.Exists) ?? string.Empty;
+            if (string.IsNullOrEmpty(jsonPath))
+            {
+                Logger.Error("Wiley JSON file not found. Paths tried: {Paths}", string.Join(" | ", candidatePaths));
                 return new SeedResult { Success = false, ErrorMessage = "JSON file not found", RecordsSeeded = 0, Duration = stopwatch.Elapsed, CompletedAt = DateTime.UtcNow };
             }
             var json = await File.ReadAllTextAsync(jsonPath);
@@ -1212,7 +1224,11 @@ public class StudentService : IStudentService
             var result = await ResilientDbExecution.ExecuteWithResilienceAsync(async () => {
                 using var context = _contextFactory.CreateDbContext();
                 var existing = await context.Students.CountAsync();
-                if (existing >= 5) return new SeedResult { Success = true, RecordsSeeded = 0, ErrorMessage = "Already seeded" };
+                if (existing >= 5)
+                {
+                    return new SeedResult { Success = true, RecordsSeeded = 0, ErrorMessage = "Already seeded" };
+                }
+
                 context.Students.AddRange(studentsToSeed);
                 recordsSeeded = studentsToSeed.Count;
                 await context.SaveChangesAsync();
