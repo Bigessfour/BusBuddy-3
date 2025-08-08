@@ -60,25 +60,25 @@
                         <TextBlock Text="Generate reports related to student information and assignments"
                                   Foreground="#6C757D" Margin="0,0,0,15" TextWrapping="Wrap"/>
 
-                        <syncfusion:ButtonAdv Content="📊 Student Roster Report"
+                        <syncfusion:ButtonAdv Label="📊 Student Roster Report"
                                 Command="{Binding GenerateStudentRosterCommand}"
                                 Background="#28A745" Foreground="White" Margin="0,5"
                                 AutomationProperties.Name="Generate Student Roster Report"
                                 AutomationProperties.HelpText="Generate complete student roster with contact information"/>
 
-                        <syncfusion:ButtonAdv Content="🚌 Student Route Assignments"
+                        <syncfusion:ButtonAdv Label="🚌 Student Route Assignments"
                                 Command="{Binding GenerateStudentRouteReportCommand}"
                                 Background="#17A2B8" Foreground="White" Margin="0,5"
                                 AutomationProperties.Name="Generate Student Route Report"
                                 AutomationProperties.HelpText="Generate report of student route assignments"/>
 
-                        <syncfusion:ButtonAdv Content="📈 Student Enrollment Summary"
+                        <syncfusion:ButtonAdv Label="📈 Student Enrollment Summary"
                                 Command="{Binding GenerateEnrollmentSummaryCommand}"
                                 Background="#6F42C1" Foreground="White" Margin="0,5"
                                 AutomationProperties.Name="Generate Enrollment Summary"
                                 AutomationProperties.HelpText="Generate summary of student enrollment by grade and school"/>
 
-                        <syncfusion:ButtonAdv Content="📍 Unassigned Students Report"
+                        <syncfusion:ButtonAdv Label="📍 Unassigned Students Report"
                                 Command="{Binding GenerateUnassignedStudentsCommand}"
                                 Background="#FFC107" Foreground="Black" Margin="0,5"
                                 AutomationProperties.Name="Generate Unassigned Students Report"
@@ -92,25 +92,25 @@
                         <TextBlock Text="Generate reports related to routes, schedules, and transportation planning"
                                   Foreground="#6C757D" Margin="0,0,0,15" TextWrapping="Wrap"/>
 
-                        <syncfusion:ButtonAdv Content="🗺️ Route Summary Report"
+                        <syncfusion:ButtonAdv Label="🗺️ Route Summary Report"
                                 Command="{Binding GenerateRouteSummaryCommand}"
                                 Background="#007ACC" Foreground="White" Margin="0,5"
                                 AutomationProperties.Name="Generate Route Summary Report"
                                 AutomationProperties.HelpText="Generate comprehensive route summary with student counts"/>
 
-                        <syncfusion:ButtonAdv Content="📅 Daily Schedule Report"
+                        <syncfusion:ButtonAdv Label="📅 Daily Schedule Report"
                                 Command="{Binding GenerateDailyScheduleCommand}"
                                 Background="#28A745" Foreground="White" Margin="0,5"
                                 AutomationProperties.Name="Generate Daily Schedule Report"
                                 AutomationProperties.HelpText="Generate daily transportation schedule"/>
 
-                        <syncfusion:ButtonAdv Content="🚌 Vehicle Assignment Report"
+                        <syncfusion:ButtonAdv Label="🚌 Vehicle Assignment Report"
                                 Command="{Binding GenerateVehicleAssignmentCommand}"
                                 Background="#DC3545" Foreground="White" Margin="0,5"
                                 AutomationProperties.Name="Generate Vehicle Assignment Report"
                                 AutomationProperties.HelpText="Generate report of vehicle assignments to routes"/>
 
-                        <syncfusion:ButtonAdv Content="⚡ Route Efficiency Report"
+                        <syncfusion:ButtonAdv Label="⚡ Route Efficiency Report"
                                 Command="{Binding GenerateRouteEfficiencyCommand}"
                                 Background="#E83E8C" Foreground="White" Margin="0,5"
                                 AutomationProperties.Name="Generate Route Efficiency Report"
@@ -124,25 +124,25 @@
                         <TextBlock Text="Generate reports related to driver information, licenses, and compliance"
                                   Foreground="#6C757D" Margin="0,0,0,15" TextWrapping="Wrap"/>
 
-                        <syncfusion:ButtonAdv Content="👨‍✈️ Driver Roster Report"
+                        <syncfusion:ButtonAdv Label="👨‍✈️ Driver Roster Report"
                                 Command="{Binding GenerateDriverRosterCommand}"
                                 Background="#6C757D" Foreground="White" Margin="0,5"
                                 AutomationProperties.Name="Generate Driver Roster Report"
                                 AutomationProperties.HelpText="Generate complete driver roster with contact information"/>
 
-                        <syncfusion:ButtonAdv Content="📄 License Expiration Report"
+                        <syncfusion:ButtonAdv Label="📄 License Expiration Report"
                                 Command="{Binding GenerateLicenseExpirationCommand}"
                                 Background="#FD7E14" Foreground="White" Margin="0,5"
                                 AutomationProperties.Name="Generate License Expiration Report"
                                 AutomationProperties.HelpText="Generate report of driver license expiration dates"/>
 
-                        <syncfusion:ButtonAdv Content="🎓 Training Status Report"
+                        <syncfusion:ButtonAdv Label="🎓 Training Status Report"
                                 Command="{Binding GenerateTrainingStatusCommand}"
                                 Background="#20C997" Foreground="White" Margin="0,5"
                                 AutomationProperties.Name="Generate Training Status Report"
                                 AutomationProperties.HelpText="Generate report of driver training completion status"/>
 
-                        <syncfusion:ButtonAdv Content="⚖️ Compliance Report"
+                        <syncfusion:ButtonAdv Label="⚖️ Compliance Report"
                                 Command="{Binding GenerateComplianceReportCommand}"
                                 Background="#6610F2" Foreground="White" Margin="0,5"
                                 AutomationProperties.Name="Generate Compliance Report"
@@ -156,25 +156,25 @@
                         <TextBlock Text="Generate reports related to vehicle fleet management and maintenance"
                                   Foreground="#6C757D" Margin="0,0,0,15" TextWrapping="Wrap"/>
 
-                        <syncfusion:ButtonAdv Content="🚐 Fleet Inventory Report"
+                        <syncfusion:ButtonAdv Label="🚐 Fleet Inventory Report"
                                 Command="{Binding GenerateFleetInventoryCommand}"
                                 Background="#495057" Foreground="White" Margin="0,5"
                                 AutomationProperties.Name="Generate Fleet Inventory Report"
                                 AutomationProperties.HelpText="Generate complete fleet inventory with vehicle details"/>
 
-                        <syncfusion:ButtonAdv Content="🔧 Maintenance Schedule Report"
+                        <syncfusion:ButtonAdv Label="🔧 Maintenance Schedule Report"
                                 Command="{Binding GenerateMaintenanceScheduleCommand}"
                                 Background="#FD7E14" Foreground="White" Margin="0,5"
                                 AutomationProperties.Name="Generate Maintenance Schedule Report"
                                 AutomationProperties.HelpText="Generate upcoming maintenance schedule"/>
 
-                        <syncfusion:ButtonAdv Content="⛽ Fuel Usage Report"
+                        <syncfusion:ButtonAdv Label="⛽ Fuel Usage Report"
                                 Command="{Binding GenerateFuelUsageCommand}"
                                 Background="#198754" Foreground="White" Margin="0,5"
                                 AutomationProperties.Name="Generate Fuel Usage Report"
                                 AutomationProperties.HelpText="Generate fuel consumption and cost analysis"/>
 
-                        <syncfusion:ButtonAdv Content="📊 Fleet Utilization Report"
+                        <syncfusion:ButtonAdv Label="📊 Fleet Utilization Report"
                                 Command="{Binding GenerateFleetUtilizationCommand}"
                                 Background="#0DCAF0" Foreground="Black" Margin="0,5"
                                 AutomationProperties.Name="Generate Fleet Utilization Report"
@@ -193,19 +193,19 @@
                         <StackPanel Grid.Column="0" Margin="0,0,10,0">
                             <TextBlock Text="Export Options" FontWeight="Bold" Margin="0,0,0,10"/>
 
-                            <syncfusion:ButtonAdv Content="📊 Export to CSV"
+                            <syncfusion:ButtonAdv Label="📊 Export to CSV"
                                     Command="{Binding ExportAllDataToCsvCommand}"
                                     Background="#28A745" Foreground="White" Margin="0,5"
                                     AutomationProperties.Name="Export All Data to CSV"
                                     AutomationProperties.HelpText="Export all system data to CSV format"/>
 
-                            <syncfusion:ButtonAdv Content="📄 Export to PDF"
+                            <syncfusion:ButtonAdv Label="📄 Export to PDF"
                                     Command="{Binding ExportAllDataToPdfCommand}"
                                     Background="#DC3545" Foreground="White" Margin="0,5"
                                     AutomationProperties.Name="Export All Data to PDF"
                                     AutomationProperties.HelpText="Export formatted reports to PDF"/>
 
-                            <syncfusion:ButtonAdv Content="📈 Export to Excel"
+                            <syncfusion:ButtonAdv Label="📈 Export to Excel"
                                     Command="{Binding ExportAllDataToExcelCommand}"
                                     Background="#198754" Foreground="White" Margin="0,5"
                                     AutomationProperties.Name="Export All Data to Excel"
@@ -215,19 +215,19 @@
                         <StackPanel Grid.Column="1" Margin="10,0,0,0">
                             <TextBlock Text="Print Options" FontWeight="Bold" Margin="0,0,0,10"/>
 
-                            <syncfusion:ButtonAdv Content="🖨️ Print Student Lists"
+                            <syncfusion:ButtonAdv Label="🖨️ Print Student Lists"
                                     Command="{Binding PrintStudentListsCommand}"
                                     Background="#6F42C1" Foreground="White" Margin="0,5"
                                     AutomationProperties.Name="Print Student Lists"
                                     AutomationProperties.HelpText="Print formatted student lists by route"/>
 
-                            <syncfusion:ButtonAdv Content="🗺️ Print Route Maps"
+                            <syncfusion:ButtonAdv Label="🗺️ Print Route Maps"
                                     Command="{Binding PrintRouteMapsCommand}"
                                     Background="#E83E8C" Foreground="White" Margin="0,5"
                                     AutomationProperties.Name="Print Route Maps"
                                     AutomationProperties.HelpText="Print route maps and directions"/>
 
-                            <syncfusion:ButtonAdv Content="📅 Print Schedules"
+                            <syncfusion:ButtonAdv Label="📅 Print Schedules"
                                     Command="{Binding PrintSchedulesCommand}"
                                     Background="#FD7E14" Foreground="White" Margin="0,5"
                                     AutomationProperties.Name="Print Schedules"

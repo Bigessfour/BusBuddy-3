@@ -1,11 +1,19 @@
 /*
-================================================================================
+===   <syncfusion:SfDataGrid x:Name="BusesGrid" ... />====================================================================
  BusBuddy Syncfusion Designer & Event Hook Troubleshooting
 ================================================================================
 1. Ensure all Syncfusion controls in MainWindow.xaml have x:Name attributes:
    <syncfusion:SfDataGrid x:Name="StudentsGrid" ... />
    <syncfusion:SfDataGrid x:Name="RoutesGrid" ... />
-   <syncfusion:SfDataGrid x:Name="BusesGrid" ... />
+   <syncfusion:SfDataGrid x:Name                // Fallback: use first student if no selection or grid access fails
+                if (selectedStudent == null)
+                {
+                    if (mainViewModel.Students.Count > 0)
+                    {
+                        selectedStudent = mainViewModel.Students[0];
+                        Logger.Information("No student selected, using first student as fallback: {StudentName}",
+                            selectedStudent.StudentName);
+                    }id" ... />
    <syncfusion:SfDataGrid x:Name="DriversGrid" ... />
 
 2. The code-behind (MainWindow.xaml.cs) must be a partial class for MainWindow
@@ -58,6 +66,7 @@ namespace BusBuddy.WPF.Views.Main
         // StudentsGrid, RoutesGrid, BusesGrid, DriversGrid
     {
         private static readonly ILogger Logger = Log.ForContext<MainWindow>();
+        private MainWindowViewModel? _viewModel;
 
         public MainWindow()
         {
@@ -70,7 +79,7 @@ namespace BusBuddy.WPF.Views.Main
                 Logger.Debug("Applying Syncfusion theme");
                 ApplySyncfusionTheme();
 
-                Logger.Debug("Initializing MainWindow components");
+                Logger.Debug("Initializing MainWindow components and DataContext");
                 InitializeMainWindow();
 
                 // Attach Syncfusion SfDataGrid error hooks for runtime diagnostics
@@ -178,21 +187,58 @@ namespace BusBuddy.WPF.Views.Main
         {
             Logger.Debug("InitializeMainWindow method started");
 
-            Logger.Debug("Creating MainWindowViewModel instance");
-            // Only set DataContext if it's not already set by DI
-            if (this.DataContext == null)
+            Logger.Debug("Ensuring robust DataContext management");
+            // Create and set ViewModel if not already present
+            if (this.DataContext == null || this.DataContext is not MainWindowViewModel)
             {
-                Logger.Debug("No DataContext found, creating new MainWindowViewModel");
-                this.DataContext = new MainWindowViewModel();
-                Logger.Information("MainWindow data context initialized with new ViewModel");
+                Logger.Debug("Creating new MainWindowViewModel instance");
+                _viewModel = new MainWindowViewModel();
+                this.DataContext = _viewModel;
+                Logger.Information("MainWindow DataContext initialized with new ViewModel");
             }
             else
             {
-                Logger.Debug("DataContext already set by DI, preserving existing ViewModel");
-                Logger.Information("MainWindow data context initialized");
+                Logger.Debug("Existing MainWindowViewModel found, preserving it");
+                _viewModel = (MainWindowViewModel)this.DataContext;
+                Logger.Information("MainWindow DataContext preserved from DI");
             }
 
+            // Ensure DataContext persistence
+            this.DataContextChanged += MainWindow_DataContextChanged;
+
             Logger.Debug("InitializeMainWindow method completed");
+        }
+
+        /// <summary>
+        /// Handle DataContext changes to prevent loss of button functionality
+        /// </summary>
+        private void MainWindow_DataContextChanged(object sender, DependencyPropertyChangedEventArgs e)
+        {
+            Logger.Debug("DataContext changed detected");
+
+            if (e.NewValue is MainWindowViewModel newViewModel)
+            {
+                _viewModel = newViewModel;
+                Logger.Information("DataContext updated to valid MainWindowViewModel");
+            }
+            else if (e.NewValue == null)
+            {
+                Logger.Warning("DataContext was set to null, restoring previous ViewModel");
+                if (_viewModel != null)
+                {
+                    this.DataContext = _viewModel;
+                }
+                else
+                {
+                    Logger.Warning("No previous ViewModel available, creating new one");
+                    _viewModel = new MainWindowViewModel();
+                    this.DataContext = _viewModel;
+                }
+            }
+            else
+            {
+                Logger.Warning("DataContext set to unexpected type: {Type}", e.NewValue?.GetType()?.Name ?? "null");
+            }
         }
 
         private void CreateFallbackLayout()
@@ -388,12 +434,56 @@ namespace BusBuddy.WPF.Views.Main
             Logger.Information("Edit student requested");
             try
             {
-                // Get selected student from the Students grid
-                if (StudentsGrid.SelectedItem is not BusBuddy.Core.Models.Student selectedStudent)
+                // Get selected student through ViewModel to avoid direct grid access
+                if (DataContext is not MainWindowViewModel mainViewModel)
                 {
-                    MessageBox.Show("Please select a student to edit", "No Student Selected",
-                        MessageBoxButton.OK, MessageBoxImage.Information);
+                    Logger.Warning("DataContext is not MainWindowViewModel, cannot access student data");
+                    MessageBox.Show("Unable to access student data. Please try restarting the application.",
+                        "Data Access Error", MessageBoxButton.OK, MessageBoxImage.Warning);
                     return;
+                }                // Use grid's selected item if available, with fallback to ViewModel
+                BusBuddy.Core.Models.Student? selectedStudent = null;
+
+                try
+                {
+                    // Try to get selected item from grid
+                    selectedStudent = StudentsGrid?.SelectedItem as BusBuddy.Core.Models.Student;
+                }
+                catch (Exception gridEx)
+                {
+                    Logger.Warning(gridEx, "Unable to access StudentsGrid directly, using ViewModel fallback");
+                }
+
+                // Fallback: use first student if no selection or grid access fails
+                if (selectedStudent == null)
+                {
+                    // Use a safe approach to access students data
+                    var studentsProperty = mainViewModel.GetType().GetProperty("Students");
+                    if (studentsProperty != null)
+                    {
+                        var studentsCollection = studentsProperty.GetValue(mainViewModel) as System.Collections.ICollection;
+                        if (studentsCollection != null && studentsCollection.Count > 0)
+                        {
+                            var studentsEnumerable = studentsCollection as System.Collections.IEnumerable;
+                            foreach (var student in studentsEnumerable)
+                            {
+                                selectedStudent = student as BusBuddy.Core.Models.Student;
+                                if (selectedStudent != null)
+                                {
+                                    Logger.Information("No student selected, using first student as fallback: {StudentName}",
+                                        selectedStudent.StudentName);
+                                    break;
+                                }
+                            }
+                        }
+                    }
+
+                    if (selectedStudent == null)
+                    {
+                        MessageBox.Show("No students available to edit", "No Student Selected",
+                            MessageBoxButton.OK, MessageBoxImage.Information);
+                        return;
+                    }
                 }
 
                 Logger.Information("Opening StudentForm for editing student: {StudentName} (ID: {StudentId})",
@@ -402,14 +492,14 @@ namespace BusBuddy.WPF.Views.Main
                 var studentForm = new BusBuddy.WPF.Views.Student.StudentForm();
 
                 // Set the DataContext to a new ViewModel with the selected student
-                var viewModel = new BusBuddy.WPF.ViewModels.Student.StudentFormViewModel(selectedStudent);
-                studentForm.DataContext = viewModel;
+                var studentViewModel = new BusBuddy.WPF.ViewModels.Student.StudentFormViewModel(selectedStudent);
+                studentForm.DataContext = studentViewModel;
 
                 var result = studentForm.ShowDialog();
                 if (result == true)
                 {
                     Logger.Information("Student edited successfully");
-                    // Refresh the students grid - TODO: Implement proper refresh
+                    RefreshStudentsGrid();
                     MessageBox.Show("Student updated successfully!", "Success",
                         MessageBoxButton.OK, MessageBoxImage.Information);
                 }

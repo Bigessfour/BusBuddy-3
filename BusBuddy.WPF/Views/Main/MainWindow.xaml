@@ -41,16 +41,24 @@
                 <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,15,0,0">
                     <syncfusion:ButtonAdv Label="📚 Students" Margin="0,0,10,0" Padding="15,8"
                                           Background="#0078D4" Foreground="White" BorderThickness="0"
-                                          Click="StudentsButton_Click" FontSize="14" FontWeight="SemiBold"/>
+                                          Click="StudentsButton_Click" FontSize="14" FontWeight="SemiBold"
+                                          ToolTip="Manage student records and information"
+                                          AutomationProperties.Name="Students Management"/>
                     <syncfusion:ButtonAdv Label="🚌 Routes" Margin="0,0,10,0" Padding="15,8"
                                           Background="#8B5CF6" Foreground="White" BorderThickness="0"
-                                          Click="RouteManagementButton_Click" FontSize="14" FontWeight="SemiBold"/>
+                                          Click="RouteManagementButton_Click" FontSize="14" FontWeight="SemiBold"
+                                          ToolTip="Plan and manage transportation routes"
+                                          AutomationProperties.Name="Route Management"/>
                     <syncfusion:ButtonAdv Label="🚐 Buses" Margin="0,0,10,0" Padding="15,8"
                                           Background="#DC2626" Foreground="White" BorderThickness="0"
-                                          Click="BusesButton_Click" FontSize="14" FontWeight="SemiBold"/>
+                                          Click="BusesButton_Click" FontSize="14" FontWeight="SemiBold"
+                                          ToolTip="Manage bus fleet and vehicle information"
+                                          AutomationProperties.Name="Bus Management"/>
                     <syncfusion:ButtonAdv Label="👨‍✈️ Drivers" Padding="15,8"
                                           Background="#107C10" Foreground="White" BorderThickness="0"
-                                          Click="DriversButton_Click" FontSize="14" FontWeight="SemiBold"/>
+                                          Click="DriversButton_Click" FontSize="14" FontWeight="SemiBold"
+                                          ToolTip="Manage driver information and schedules"
+                                          AutomationProperties.Name="Driver Management"/>
                 </StackPanel>
             </Grid>
         </Border>
@@ -80,7 +88,9 @@
                                           AllowFiltering="True"
                                           SelectionMode="Single"
                                           GridLinesVisibility="Both"
-                                          HeaderLinesVisibility="Both">
+                                          HeaderLinesVisibility="Both"
+                                          AutomationProperties.Name="Students Data Grid"
+                                          ToolTip="List of all students with their information">
                         <syncfusion:SfDataGrid.Columns>
                             <syncfusion:GridTextColumn HeaderText="Student #" MappingName="StudentNumber" Width="100"/>
                             <syncfusion:GridTextColumn HeaderText="Name" MappingName="StudentName" Width="140"/>
@@ -92,10 +102,14 @@
                     <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,15,0,0">
                         <syncfusion:ButtonAdv Label="➕ Add Student" Margin="0,0,10,0" Padding="12,6"
                                               Background="#0078D4" Foreground="White" BorderThickness="0"
-                                              Click="AddStudent_Click"/>
+                                              Click="AddStudent_Click"
+                                              ToolTip="Add a new student to the system"
+                                              AutomationProperties.Name="Add New Student"/>
                         <syncfusion:ButtonAdv Label="📝 Edit Student" Padding="12,6"
                                               Background="#5A5A5A" Foreground="White" BorderThickness="0"
-                                              Click="EditStudent_Click"/>
+                                              Click="EditStudent_Click"
+                                              ToolTip="Edit selected student information"
+                                              AutomationProperties.Name="Edit Selected Student"/>
                     </StackPanel>
                 </Grid>
             </ContentControl>
@@ -119,7 +133,9 @@
                                           AllowFiltering="True"
                                           SelectionMode="Single"
                                           GridLinesVisibility="Both"
-                                          HeaderLinesVisibility="Both">
+                                          HeaderLinesVisibility="Both"
+                                          AutomationProperties.Name="Routes Data Grid"
+                                          ToolTip="List of all transportation routes">
                         <syncfusion:SfDataGrid.Columns>
                             <syncfusion:GridTextColumn HeaderText="Route Name" MappingName="RouteName" Width="120"/>
                             <syncfusion:GridTextColumn HeaderText="School" MappingName="School" Width="140"/>
@@ -131,10 +147,14 @@
                     <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,15,0,0">
                         <syncfusion:ButtonAdv Label="🗺️ Optimize Routes" Margin="0,0,10,0" Padding="12,6"
                                               Background="#8B5CF6" Foreground="White" BorderThickness="0"
-                                              Click="OptimizeRoutes_Click"/>
+                                              Click="OptimizeRoutes_Click"
+                                              ToolTip="Optimize route efficiency and timing"
+                                              AutomationProperties.Name="Optimize Transportation Routes"/>
                         <syncfusion:ButtonAdv Label="📄 Export Schedules" Padding="12,6"
                                               Background="#DC2626" Foreground="White" BorderThickness="0"
-                                              Click="ExportSchedules_Click"/>
+                                              Click="ExportSchedules_Click"
+                                              ToolTip="Export route schedules to file"
+                                              AutomationProperties.Name="Export Route Schedules"/>
                     </StackPanel>
                 </Grid>
             </ContentControl>
@@ -156,7 +176,9 @@
                                           AllowFiltering="True"
                                           SelectionMode="Single"
                                           GridLinesVisibility="Both"
-                                          HeaderLinesVisibility="Both">
+                                          HeaderLinesVisibility="Both"
+                                          AutomationProperties.Name="Buses Data Grid"
+                                          ToolTip="List of all buses in the fleet">
                         <syncfusion:SfDataGrid.Columns>
                             <syncfusion:GridTextColumn HeaderText="Bus #" MappingName="BusNumber" Width="120"/>
                             <syncfusion:GridTextColumn HeaderText="License" MappingName="LicenseNumber" Width="120"/>
@@ -170,13 +192,19 @@
                     <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,15,0,0">
                         <syncfusion:ButtonAdv Label="➕ Add Bus" Margin="0,0,10,0" Padding="12,6"
                                               Background="#0078D4" Foreground="White" BorderThickness="0"
-                                              Click="AddBus_Click"/>
+                                              Click="AddBus_Click"
+                                              ToolTip="Add a new bus to the fleet"
+                                              AutomationProperties.Name="Add New Bus"/>
                         <syncfusion:ButtonAdv Label="🔧 Maintenance" Margin="0,0,10,0" Padding="12,6"
                                               Background="#FF8C00" Foreground="White" BorderThickness="0"
-                                              Click="Maintenance_Click"/>
+                                              Click="Maintenance_Click"
+                                              ToolTip="Schedule and track bus maintenance"
+                                              AutomationProperties.Name="Bus Maintenance"/>
                         <syncfusion:ButtonAdv Label="📊 Fleet Status" Padding="12,6"
                                               Background="#32CD32" Foreground="White" BorderThickness="0"
-                                              Click="FleetStatus_Click"/>
+                                              Click="FleetStatus_Click"
+                                              ToolTip="View current fleet status and availability"
+                                              AutomationProperties.Name="Fleet Status Overview"/>
                     </StackPanel>
                 </Grid>
             </ContentControl>
@@ -198,7 +226,9 @@
                                           AllowFiltering="True"
                                           SelectionMode="Single"
                                           GridLinesVisibility="Both"
-                                          HeaderLinesVisibility="Both">
+                                          HeaderLinesVisibility="Both"
+                                          AutomationProperties.Name="Drivers Data Grid"
+                                          ToolTip="List of all drivers and their information">
                         <syncfusion:SfDataGrid.Columns>
                             <syncfusion:GridTextColumn HeaderText="Name" MappingName="DriverName" Width="150"/>
                             <syncfusion:GridTextColumn HeaderText="License Type" MappingName="DriversLicenceType" Width="120"/>
@@ -210,13 +240,19 @@
                     <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,15,0,0">
                         <syncfusion:ButtonAdv Label="➕ Add Driver" Margin="0,0,10,0" Padding="12,6"
                                               Background="#0078D4" Foreground="White" BorderThickness="0"
-                                              Click="AddDriver_Click"/>
+                                              Click="AddDriver_Click"
+                                              ToolTip="Add a new driver to the system"
+                                              AutomationProperties.Name="Add New Driver"/>
                         <syncfusion:ButtonAdv Label="🚌 Assign Bus" Margin="0,0,10,0" Padding="12,6"
                                               Background="#107C10" Foreground="White" BorderThickness="0"
-                                              Click="AssignBus_Click"/>
+                                              Click="AssignBus_Click"
+                                              ToolTip="Assign a bus to the selected driver"
+                                              AutomationProperties.Name="Assign Bus to Driver"/>
                         <syncfusion:ButtonAdv Label="📅 Schedule" Padding="12,6"
                                               Background="#6B46C1" Foreground="White" BorderThickness="0"
-                                              Click="Schedule_Click"/>
+                                              Click="Schedule_Click"
+                                              ToolTip="Manage driver schedules and assignments"
+                                              AutomationProperties.Name="Driver Schedule Management"/>
                     </StackPanel>
                 </Grid>
             </ContentControl>

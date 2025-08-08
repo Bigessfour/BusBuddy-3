@@ -266,7 +266,8 @@
                                  Foreground="White"
                                  BorderBrush="#555555"
                                  Padding="8,5"
-                                 Margin="0,0,0,15"/>
+                                 Margin="0,0,0,15"
+                                 AutomationProperties.Name="License Number Input"/>
 
                         <!-- Make -->
                         <TextBlock Text="Make:"
@@ -337,7 +338,7 @@
                                   Foreground="White"
                                   BorderBrush="#555555"
                                   Padding="8,5"
-                                  Margin="0,0,0,20">
+                                  Margin="0,0,0,20" AutomationProperties.Name="Status Selection">
                             <ComboBoxItem Content="Active"/>
                             <ComboBoxItem Content="Maintenance"/>
                             <ComboBoxItem Content="OutOfService"/>
