@@ -58,6 +58,14 @@
 
   <!-- WPF-Specific Syncfusion Packages (not included in Directory.Build.props) -->
   <ItemGroup>
+    <PackageReference Include="Azure.Identity" Version="1.14.2" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.8" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="9.0.8" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="9.0.8">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.Identity.Client" Version="4.74.1" />
     <PackageReference Include="Serilog.Settings.Configuration" Version="9.0.0" />
     <PackageReference Include="Syncfusion.SfGrid.WPF" Version="$(SyncfusionVersion)" />
     <PackageReference Include="Syncfusion.SfChart.WPF" Version="$(SyncfusionVersion)" />
@@ -88,14 +96,19 @@
 
     <!-- Microsoft.Extensions packages for dependency injection and hosting -->
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="$(EntityFrameworkVersion)" />
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="$(EntityFrameworkVersion)" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.8" />
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="$(EntityFrameworkVersion)" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="$(EntityFrameworkVersion)" />
     <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="$(EntityFrameworkVersion)" />
 
     <!-- SQLite Entity Framework packages -->
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="$(EntityFrameworkVersion)" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="$(EntityFrameworkVersion)" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.8">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
 
     <!-- Serilog packages for complete logging functionality -->
     <PackageReference Include="Serilog" Version="$(SerilogVersion)" />
