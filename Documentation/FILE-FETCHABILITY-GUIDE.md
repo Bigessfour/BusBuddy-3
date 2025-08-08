@@ -19,6 +19,162 @@ This guide provides a comprehensive inventory of all files in the BusBuddy proje
 
 ---
 
+## 🌐 **RAW URL FETCHABILITY REFERENCE**
+
+### **🎯 Quick Raw URL Access**
+All files in the BusBuddy project are directly fetchable via GitHub raw URLs using the following pattern:
+
+**Base URL**: `https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/`
+
+### **📁 Key File Categories with Direct URLs**
+
+#### **🏗️ Core Project Files**
+```bash
+# Main solution and configuration
+https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.sln
+https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/Directory.Build.props
+https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/global.json
+https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/NuGet.config
+
+# README and documentation
+https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/README.md
+https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/GROK-README.md
+```
+
+#### **🧪 Enhanced Testing Infrastructure**
+```bash
+# Main bbTest enhanced function (2600+ lines)
+https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/PowerShell/Modules/BusBuddy/BusBuddy.psm1
+
+# Phase 4 NUnit Integration (402 lines)
+https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/PowerShell/Testing/Run-Phase4-NUnitTests-Modular.ps1
+
+# Enhanced test output functions
+https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/PowerShell/Functions/Testing/Enhanced-Test-Output.ps1
+
+# Testing module initialization
+https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/PowerShell/Modules/BusBuddy.Testing/Initialize-BusBuddyTesting.ps1
+```
+
+#### **🎨 WPF & Syncfusion Implementation**
+```bash
+# Main WPF project file
+https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.WPF/BusBuddy.WPF.csproj
+
+# Main application entry point
+https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.WPF/App.xaml
+https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.WPF/App.xaml.cs
+
+# Main window with Syncfusion integration
+https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.WPF/MainWindow.xaml
+https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.WPF/MainWindow.xaml.cs
+
+# Student management (SfDataGrid implementation)
+https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.WPF/Views/Student/StudentsView.xaml
+https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.WPF/ViewModels/Student/StudentsViewModel.cs
+```
+
+#### **🗄️ Database & Entity Framework**
+```bash
+# Core project file (.NET 9.0)
+https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.Core/BusBuddy.Core.csproj
+
+# Database context
+https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.Core/Data/BusBuddyDbContext.cs
+
+# Core services
+https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.Core/Services/StudentService.cs
+https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.Core/Services/RouteService.cs
+https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.Core/Services/VehicleService.cs
+
+# Domain models
+https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.Core/Models/Student.cs
+https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.Core/Models/Route.cs
+https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.Core/Models/Vehicle.cs
+```
+
+#### **💻 PowerShell Development Tools**
+```bash
+# Main BusBuddy module (enhanced bbTest, 2600+ lines)
+https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/PowerShell/Modules/BusBuddy/BusBuddy.psm1
+
+# PowerShell profile
+https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/PowerShell/Profile/Microsoft.PowerShell_profile.ps1
+
+# Build and utility modules
+https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/PowerShell/Modules/BusBuddy.BuildOutput/BusBuddy.BuildOutput.psm1
+https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/PowerShell/Modules/BusBuddy.ExceptionCapture/BusBuddy.ExceptionCapture.psm1
+
+# Validation scripts
+https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/PowerShell/Validation/Anti-Regression-Remediation-Plan.ps1
+https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/PowerShell/Validation/Invoke-BusBuddyXamlValidation.ps1
+```
+
+#### **📚 Documentation Hub**
+```bash
+# This file (FILE-FETCHABILITY-GUIDE.md)
+https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/Documentation/FILE-FETCHABILITY-GUIDE.md
+
+# Development standards
+https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/CORRECTED-CODING-INSTRUCTIONS.md
+
+# Reference documentation
+https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/Documentation/Reference/PowerShell-Commands.md
+https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/Documentation/Reference/Syncfusion-Examples.md
+https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/Documentation/Reference/Database-Schema.md
+
+# Development guides
+https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/Documentation/Development/CODING-STANDARDS-HIERARCHY.md
+https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/Documentation/Development/VSCODE-EXTENSIONS.md
+```
+
+#### **🧪 Test Infrastructure (.NET 9.0)**
+```bash
+# Test project file
+https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.Tests/BusBuddy.Tests.csproj
+
+# Core tests
+https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.Tests/Core/StudentServiceTests.cs
+https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.Tests/Core/RouteServiceTests.cs
+
+# UI tests (Syncfusion)
+https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.Tests/UI/StudentsViewTests.cs
+https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.Tests/UI/MainWindowTests.cs
+```
+
+#### **⚙️ VS Code Configuration**
+```bash
+# VS Code settings
+https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/.vscode/settings.json
+https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/.vscode/tasks.json
+https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/.vscode/launch.json
+
+# Extension configuration
+https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/.vscode/extensions.json
+```
+
+### **🛠️ URL Construction Helper**
+**Pattern**: `https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/[relative-file-path]`
+
+**Examples**:
+- PowerShell Module: `PowerShell/Modules/BusBuddy/BusBuddy.psm1`
+- XAML View: `BusBuddy.WPF/Views/Student/StudentsView.xaml`
+- Service Class: `BusBuddy.Core/Services/StudentService.cs`
+- Documentation: `Documentation/FILE-FETCHABILITY-GUIDE.md`
+
+### **📁 Quick Access by Category**
+| Category | Key Files | Direct Access |
+|----------|-----------|---------------|
+| **bbTest Enhanced** | `BusBuddy.psm1` | [Download](https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/PowerShell/Modules/BusBuddy/BusBuddy.psm1) |
+| **Phase 4 NUnit** | `Run-Phase4-NUnitTests-Modular.ps1` | [Download](https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/PowerShell/Testing/Run-Phase4-NUnitTests-Modular.ps1) |
+| **Main App** | `App.xaml.cs` | [Download](https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.WPF/App.xaml.cs) |
+| **Students View** | `StudentsView.xaml` | [Download](https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.WPF/Views/Student/StudentsView.xaml) |
+| **Database Context** | `BusBuddyDbContext.cs` | [Download](https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.Core/Data/BusBuddyDbContext.cs) |
+
+**💡 Pro Tip**: Replace `[relative-file-path]` with any file path from the project structure below to get direct raw access!
+
+---
+
 ## 🆕 **LATEST UPDATES - August 8, 2025**
 
 ### **🧪 bbTest Function Refactoring Complete**
