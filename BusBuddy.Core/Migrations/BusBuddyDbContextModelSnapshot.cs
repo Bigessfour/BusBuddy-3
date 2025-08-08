@@ -501,32 +501,32 @@ namespace BusBuddy.Core.Migrations
 
                     b.HasIndex("BusNumber")
                         .IsUnique()
-                        .HasDatabaseName("IX_Buses_BusNumber");
+                        .HasDatabaseName("IX_Vehicles_BusNumber");
 
                     b.HasIndex("DateLastInspection")
-                        .HasDatabaseName("IX_Buses_DateLastInspection");
+                        .HasDatabaseName("IX_Vehicles_DateLastInspection");
 
                     b.HasIndex("FleetType")
-                        .HasDatabaseName("IX_Buses_FleetType");
+                        .HasDatabaseName("IX_Vehicles_FleetType");
 
                     b.HasIndex("InsuranceExpiryDate")
-                        .HasDatabaseName("IX_Buses_InsuranceExpiryDate");
+                        .HasDatabaseName("IX_Vehicles_InsuranceExpiryDate");
 
                     b.HasIndex("LicenseNumber")
                         .IsUnique()
-                        .HasDatabaseName("IX_Buses_LicenseNumber");
+                        .HasDatabaseName("IX_Vehicles_LicenseNumber");
 
                     b.HasIndex("Status")
-                        .HasDatabaseName("IX_Buses_Status");
+                        .HasDatabaseName("IX_Vehicles_Status");
 
                     b.HasIndex("VINNumber")
                         .IsUnique()
-                        .HasDatabaseName("IX_Buses_VINNumber");
+                        .HasDatabaseName("IX_Vehicles_VINNumber");
 
                     b.HasIndex("Make", "Model", "Year")
-                        .HasDatabaseName("IX_Buses_MakeModelYear");
+                        .HasDatabaseName("IX_Vehicles_MakeModelYear");
 
-                    b.ToTable("Buses", (string)null);
+                    b.ToTable("Vehicles", (string)null);
 
                     b.HasData(
                         new
