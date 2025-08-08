@@ -25,12 +25,12 @@ namespace BusBuddy.WPF.ViewModels.SportsScheduling
         // Collections
         private ObservableCollection<SportsEvent> _sportsEvents = new();
         private ObservableCollection<BusBuddy.Core.Models.Bus> _availableBuses = new();
-        private ObservableCollection<Driver> _availableDrivers = new();
+        private ObservableCollection<BusBuddy.Core.Models.Driver> _availableDrivers = new();
 
         // Selected items
         private SportsEvent? _selectedEvent;
         private BusBuddy.Core.Models.Bus? _selectedBus;
-        private Driver? _selectedDriver;
+        private BusBuddy.Core.Models.Driver? _selectedDriver;
 
         // UI state properties
         private bool _isLoading;
@@ -78,7 +78,7 @@ namespace BusBuddy.WPF.ViewModels.SportsScheduling
             set => SetProperty(ref _availableBuses, value);
         }
 
-        public ObservableCollection<Driver> AvailableDrivers
+        public ObservableCollection<BusBuddy.Core.Models.Driver> AvailableDrivers
         {
             get => _availableDrivers;
             set => SetProperty(ref _availableDrivers, value);
@@ -114,7 +114,7 @@ namespace BusBuddy.WPF.ViewModels.SportsScheduling
             }
         }
 
-        public Driver? SelectedDriver
+        public BusBuddy.Core.Models.Driver? SelectedDriver
         {
             get => _selectedDriver;
             set
@@ -325,26 +325,26 @@ namespace BusBuddy.WPF.ViewModels.SportsScheduling
                 StatusMessage = "Assigning resources...";
 
                 var success = await _schedulingService.AssignVehicleAndDriverAsync(
-                    SelectedEvent.Id, SelectedBus.Id, SelectedDriver.Id);
+                    SelectedEvent.Id, SelectedBus.Id, SelectedDriver.DriverId);
 
                 if (success)
                 {
                     // Update the event
                     SelectedEvent.VehicleId = SelectedBus.Id;
-                    SelectedEvent.DriverId = SelectedDriver.Id;
+                    SelectedEvent.DriverId = SelectedDriver.DriverId;
                     SelectedEvent.Vehicle = SelectedBus;
                     SelectedEvent.Driver = SelectedDriver;
                     SelectedEvent.Status = "Assigned";
 
                     StatusMessage = "Resources assigned successfully";
-                    MessageBox.Show($"Bus '{SelectedBus.LicensePlate}' and Driver '{SelectedDriver.Name}' have been assigned to '{SelectedEvent.EventName}'.",
+                    MessageBox.Show($"Bus '{SelectedBus.LicensePlate}' and Driver '{SelectedDriver.DriverName}' have been assigned to '{SelectedEvent.EventName}'.",
                         "Assignment Successful", MessageBoxButton.OK, MessageBoxImage.Information);
 
                     // Refresh available resources
                     await LoadAvailableResourcesAsync();
 
                     Logger.Information("Assigned Vehicle {VehicleId} and Driver {DriverId} to Event {EventId}",
-                        SelectedBus.Id, SelectedDriver.Id, SelectedEvent.Id);
+                        SelectedBus.Id, SelectedDriver.DriverId, SelectedEvent.Id);
                 }
                 else
                 {

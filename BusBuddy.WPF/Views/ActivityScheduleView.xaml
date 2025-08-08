@@ -21,13 +21,13 @@
                        FontSize="24"
                        FontWeight="Bold"
                        VerticalAlignment="Center"/>
-            <syncfusion:ButtonAdv Content="🔄 Refresh"
+            <syncfusion:ButtonAdv Label="🔄 Refresh"
                     Margin="20,0,10,0"
                     Padding="10,5"
                     Background="#3498DB"
                     Foreground="White"
                     BorderThickness="0"/>
-            <syncfusion:ButtonAdv Content="➕ Add Activity"
+            <syncfusion:ButtonAdv Label="➕ Add Activity"
                     Margin="10,0"
                     Padding="10,5"
                     Background="#27AE60"

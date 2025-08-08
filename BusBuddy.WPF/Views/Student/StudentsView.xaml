@@ -276,10 +276,10 @@
                 <!-- Quick Actions & Filter Status -->
                 <StackPanel Grid.Column="1" Orientation="Horizontal">
                     <TextBlock Text="{Binding FilterStatusText}" FontStyle="Italic" Margin="0,0,10,0"/>
-                    <syncfusion:ButtonAdv Content="📋 Summary" Width="80" Height="25"
+                    <syncfusion:ButtonAdv Label="📋 Summary" Width="80" Height="25"
                             Command="{Binding ShowSummaryCommand}"
                             ToolTip="Show route assignment summary"/>
-                    <syncfusion:ButtonAdv Content="⚡ Quick Actions" Width="100" Height="25" Margin="5,0,0,0"
+                    <syncfusion:ButtonAdv Label="⚡ Quick Actions" Width="100" Height="25" Margin="5,0,0,0"
                             Command="{Binding ShowQuickActionsCommand}"
                             ToolTip="Show quick action menu"/>
                 </StackPanel>

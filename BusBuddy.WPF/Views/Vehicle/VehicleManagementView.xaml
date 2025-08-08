@@ -53,15 +53,15 @@
 
             <!-- Action Buttons -->
             <StackPanel Orientation="Horizontal" Margin="50,0,0,0">
-                <syncfusion:ButtonAdv Content="➕ Add Vehicle"
+                <syncfusion:ButtonAdv Label="➕ Add Vehicle"
                        Command="{Binding AddVehicleCommand}"
                        Style="{StaticResource ActionButtonStyle}"
                        Background="#2E7D32"/>
-                <syncfusion:ButtonAdv Content="✏️ Edit Selected"
+                <syncfusion:ButtonAdv Label="✏️ Edit Selected"
                        Command="{Binding EditVehicleCommand}"
                        Style="{StaticResource ActionButtonStyle}"
                        Background="#1565C0"/>
-                <syncfusion:ButtonAdv Content="🗑️ Delete"
+                <syncfusion:ButtonAdv Label="🗑️ Delete"
                        Command="{Binding DeleteVehicleCommand}"
                        Style="{StaticResource ActionButtonStyle}"
                        Background="#C62828"/>
@@ -275,11 +275,11 @@
                                    Orientation="Horizontal"
                                    HorizontalAlignment="Right"
                                    Margin="0,20,0,0">
-                            <syncfusion:ButtonAdv Content="💾 Save"
+                            <syncfusion:ButtonAdv Label="💾 Save"
                                    Command="{Binding SaveVehicleCommand}"
                                    Style="{StaticResource ActionButtonStyle}"
                                    Background="#2E7D32"/>
-                            <syncfusion:ButtonAdv Content="❌ Cancel"
+                            <syncfusion:ButtonAdv Label="❌ Cancel"
                                    Command="{Binding CancelEditCommand}"
                                    Style="{StaticResource ActionButtonStyle}"
                                    Background="#757575"/>

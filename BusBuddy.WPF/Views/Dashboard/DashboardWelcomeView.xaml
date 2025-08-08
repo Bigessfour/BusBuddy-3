@@ -27,15 +27,15 @@
                        HorizontalAlignment="Center"
                        Margin="0,0,0,40"/>
 
-            <syncfusion:ButtonAdv Content="Manage Students"
+            <syncfusion:ButtonAdv Label="Manage Students"
                                   Width="150"
                                   Height="40"
                                   Margin="10"/>
-            <syncfusion:ButtonAdv Content="Manage Routes"
+            <syncfusion:ButtonAdv Label="Manage Routes"
                                   Width="150"
                                   Height="40"
                                   Margin="10"/>
-            <syncfusion:ButtonAdv Content="Manage Vehicles"
+            <syncfusion:ButtonAdv Label="Manage Vehicles"
                                   Width="150"
                                   Height="40"
                                   Margin="10"/>

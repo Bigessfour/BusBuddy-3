@@ -36,8 +36,8 @@ namespace BusBuddy.WPF.ViewModels
         }
 
         // 👤 Phase 2+ Enhancement: Selected driver for details/editing
-        private Driver? _selectedDriver;
-        public Driver? SelectedDriver
+        private BusBuddy.Core.Models.Driver? _selectedDriver;
+        public BusBuddy.Core.Models.Driver? SelectedDriver
         {
             get => _selectedDriver;
             set
@@ -51,13 +51,13 @@ namespace BusBuddy.WPF.ViewModels
         }
 
         // 📊 Collections for data binding
-        private ObservableCollection<Driver> _drivers = new();
-        public ObservableCollection<Driver> Drivers
+        private ObservableCollection<BusBuddy.Core.Models.Driver> _drivers = new();
+        public ObservableCollection<BusBuddy.Core.Models.Driver> Drivers
         {
             get => _drivers;
             set => SetProperty(ref _drivers, value);
         }
-        public ObservableCollection<Driver> FilteredDrivers { get; } = new();
+        public ObservableCollection<BusBuddy.Core.Models.Driver> FilteredDrivers { get; } = new();
 
         // 🎯 Phase 2+ Enhancement: Command Pattern Implementation
         public ICommand LoadDriversCommand { get; }

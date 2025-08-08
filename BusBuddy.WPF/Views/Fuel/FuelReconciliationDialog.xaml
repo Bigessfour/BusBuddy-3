@@ -191,15 +191,15 @@
                     Orientation="Horizontal"
                     HorizontalAlignment="Right"
                     Margin="0,15,0,0">
-            <syncfusion:ButtonAdv Content="Export Report"
+            <syncfusion:ButtonAdv Label="Export Report"
                     Command="{Binding ExportCommand}"
                     Width="120"
                     Margin="0,0,10,0"/>
-            <syncfusion:ButtonAdv Content="Print"
+            <syncfusion:ButtonAdv Label="Print"
                     Command="{Binding PrintCommand}"
                     Width="80"
                     Margin="0,0,10,0"/>
-            <syncfusion:ButtonAdv Content="Close"
+            <syncfusion:ButtonAdv Label="Close"
                     Width="80"
                     Click="CloseButton_Click"/>
         </StackPanel>

@@ -33,6 +33,7 @@ using System;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using Microsoft.Extensions.DependencyInjection;
 using Syncfusion.UI.Xaml.Grid;
 using BusBuddy.WPF.ViewModels;
 using BusBuddy.WPF.Views.Dashboard;
@@ -385,7 +386,40 @@ namespace BusBuddy.WPF.Views.Main
         private void EditStudent_Click(object sender, RoutedEventArgs e)
         {
             Logger.Information("Edit student requested");
-            MessageBox.Show("Edit Student functionality will be implemented in next phase", "Coming Soon", MessageBoxButton.OK, MessageBoxImage.Information);
+            try
+            {
+                // Get selected student from the Students grid
+                if (StudentsGrid.SelectedItem is not BusBuddy.Core.Models.Student selectedStudent)
+                {
+                    MessageBox.Show("Please select a student to edit", "No Student Selected",
+                        MessageBoxButton.OK, MessageBoxImage.Information);
+                    return;
+                }
+
+                Logger.Information("Opening StudentForm for editing student: {StudentName} (ID: {StudentId})",
+                    selectedStudent.StudentName, selectedStudent.StudentId);
+
+                var studentForm = new BusBuddy.WPF.Views.Student.StudentForm();
+
+                // Set the DataContext to a new ViewModel with the selected student
+                var viewModel = new BusBuddy.WPF.ViewModels.Student.StudentFormViewModel(selectedStudent);
+                studentForm.DataContext = viewModel;
+
+                var result = studentForm.ShowDialog();
+                if (result == true)
+                {
+                    Logger.Information("Student edited successfully");
+                    // Refresh the students grid - TODO: Implement proper refresh
+                    MessageBox.Show("Student updated successfully!", "Success",
+                        MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Error opening Student form for editing");
+                MessageBox.Show($"Error opening Student form for editing: {ex.Message}", "Error",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
         private void AddBus_Click(object sender, RoutedEventArgs e)
@@ -457,12 +491,42 @@ namespace BusBuddy.WPF.Views.Main
             Logger.Information("Schedule export requested");
             try
             {
-                MessageBox.Show("Schedule export feature will be implemented in next phase.\n\nComing soon:\n• PDF export of route schedules\n• Excel format support\n• Custom report templates",
-                    "Export Schedules", MessageBoxButton.OK, MessageBoxImage.Information);
+                var exportService = App.ServiceProvider?.GetService<BusBuddy.WPF.Services.RouteExportService>();
+                if (exportService == null)
+                {
+                    MessageBox.Show("Export service not available", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    return;
+                }
+
+                var csvTask = exportService.ExportRoutesToCsvAsync();
+                var reportTask = exportService.GenerateRouteReportAsync();
+
+                Task.Run(async () =>
+                {
+                    try
+                    {
+                        var csvPath = await csvTask;
+                        var reportPath = await reportTask;
+
+                        Application.Current.Dispatcher.Invoke(() =>
+                        {
+                            MessageBox.Show($"Schedules exported successfully!\n\nCSV Report: {csvPath}\nDetailed Report: {reportPath}",
+                                "Export Complete", MessageBoxButton.OK, MessageBoxImage.Information);
+                        });
+                    }
+                    catch (Exception ex)
+                    {
+                        Application.Current.Dispatcher.Invoke(() =>
+                        {
+                            MessageBox.Show($"Export failed: {ex.Message}", "Export Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                        });
+                    }
+                });
             }
             catch (Exception ex)
             {
                 Logger.Error(ex, "Error in schedule export");
+                MessageBox.Show($"Export failed: {ex.Message}", "Export Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 

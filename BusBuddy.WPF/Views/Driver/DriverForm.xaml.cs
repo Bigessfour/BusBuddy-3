@@ -1,4 +1,6 @@
 using System.Windows;
+using BusBuddy.WPF.ViewModels.Driver;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace BusBuddy.WPF.Views.Driver
 {
@@ -11,7 +13,12 @@ namespace BusBuddy.WPF.Views.Driver
         public DriverForm()
         {
             InitializeComponent();
-            // TODO: Set DataContext to DriverFormViewModel
+
+            // Set DataContext to DriverFormViewModel using DI
+            if (App.ServiceProvider != null)
+            {
+                DataContext = App.ServiceProvider.GetRequiredService<DriverFormViewModel>();
+            }
         }
     }
 }

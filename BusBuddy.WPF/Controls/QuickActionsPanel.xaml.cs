@@ -19,22 +19,50 @@ namespace BusBuddy.WPF.Controls
         private void AddVehicle_Click(object sender, RoutedEventArgs e)
         {
             Logger.Information("Add vehicle action requested");
-            MessageBox.Show("Add Vehicle functionality will be implemented in next phase.",
-                "Coming Soon", MessageBoxButton.OK, MessageBoxImage.Information);
+            try
+            {
+                var busForm = new BusBuddy.WPF.Views.Bus.BusForm();
+                var result = busForm.ShowDialog();
+                if (result == true)
+                {
+                    MessageBox.Show("Vehicle added successfully!", "Success",
+                        MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Error opening Bus form");
+                MessageBox.Show($"Error opening Bus form: {ex.Message}", "Error",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
         private void AddDriver_Click(object sender, RoutedEventArgs e)
         {
             Logger.Information("Add driver action requested");
-            MessageBox.Show("Add Driver functionality will be implemented in next phase.",
-                "Coming Soon", MessageBoxButton.OK, MessageBoxImage.Information);
+            try
+            {
+                var driverForm = new BusBuddy.WPF.Views.Driver.DriverForm();
+                var result = driverForm.ShowDialog();
+                if (result == true)
+                {
+                    MessageBox.Show("Driver added successfully!", "Success",
+                        MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Error opening Driver form");
+                MessageBox.Show($"Error opening Driver form: {ex.Message}", "Error",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
         private void ScheduleRoute_Click(object sender, RoutedEventArgs e)
         {
             Logger.Information("Schedule route action requested");
-            MessageBox.Show("Schedule Route functionality will be implemented in next phase.",
-                "Coming Soon", MessageBoxButton.OK, MessageBoxImage.Information);
+            MessageBox.Show("Route management feature available from the main menu (Routes tab).",
+                "Route Management", MessageBoxButton.OK, MessageBoxImage.Information);
         }
     }
 }

@@ -43,13 +43,13 @@
                HorizontalAlignment="Center" Margin="10"/>
 
         <StackPanel Grid.Row="1" Orientation="Vertical" HorizontalAlignment="Center">
-            <syncfusion:ButtonAdv Content="Add Vehicle"
+            <syncfusion:ButtonAdv Label="Add Vehicle"
                     Style="{StaticResource QuickActionButtonStyle}"
                     Click="AddVehicle_Click"/>
-            <syncfusion:ButtonAdv Content="Add Driver"
+            <syncfusion:ButtonAdv Label="Add Driver"
                     Style="{StaticResource QuickActionButtonStyle}"
                     Click="AddDriver_Click"/>
-            <syncfusion:ButtonAdv Content="Schedule Route"
+            <syncfusion:ButtonAdv Label="Schedule Route"
                     Style="{StaticResource QuickActionButtonStyle}"
                     Click="ScheduleRoute_Click"/>
         </StackPanel>

@@ -62,13 +62,13 @@
         <StackPanel Grid.Row="2"
                     Orientation="Horizontal"
                     HorizontalAlignment="Right">
-            <syncfusion:ButtonAdv Content="No, Cancel"
+            <syncfusion:ButtonAdv Label="No, Cancel"
                     Width="100"
                     Height="35"
                     Margin="0,0,10,0"
                     Click="NoButton_Click"
                     IsCancel="True"/>
-            <syncfusion:ButtonAdv Content="Yes, Continue"
+            <syncfusion:ButtonAdv Label="Yes, Continue"
                     Width="120"
                     Height="35"
                     Click="YesButton_Click"

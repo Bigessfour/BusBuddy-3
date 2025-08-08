@@ -1099,3 +1099,6 @@ global.json
 # Ignore other temp or tool files
 *.tmp
 *.temp
+# Local database files
+*.db
+BusBuddy.db

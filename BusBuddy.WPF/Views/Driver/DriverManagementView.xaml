@@ -23,15 +23,15 @@
         <StackPanel Grid.Row="1"
                     Orientation="Horizontal"
                     Margin="20,10">
-            <syncfusion:ButtonAdv Content="Add Driver"
+            <syncfusion:ButtonAdv Label="Add Driver"
                     Width="100"
                     Height="35"
                     Margin="0,0,10,0"/>
-            <syncfusion:ButtonAdv Content="Edit Driver"
+            <syncfusion:ButtonAdv Label="Edit Driver"
                     Width="100"
                     Height="35"
                     Margin="0,0,10,0"/>
-            <syncfusion:ButtonAdv Content="Delete Driver"
+            <syncfusion:ButtonAdv Label="Delete Driver"
                     Width="100"
                     Height="35"/>
         </StackPanel>

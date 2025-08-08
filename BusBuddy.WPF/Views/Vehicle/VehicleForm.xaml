@@ -199,7 +199,7 @@
                     <StackPanel Grid.Row="2"
                                 Orientation="Horizontal"
                                 Margin="0,15,0,0">
-                        <syncfusion:ButtonAdv Content="➕ New Vehicle"
+                        <syncfusion:ButtonAdv Label="➕ New Vehicle"
                                 Command="{Binding NewVehicleCommand}"
                                 Background="#0078D4"
                                 Foreground="White"
@@ -207,7 +207,7 @@
                                 Padding="15,8"
                                 Margin="0,0,10,0"
                                 Cursor="Hand"/>
-                        <syncfusion:ButtonAdv Content="🔄 Refresh"
+                        <syncfusion:ButtonAdv Label="🔄 Refresh"
                                 Command="{Binding RefreshCommand}"
                                 Background="#5A5A5A"
                                 Foreground="White"
@@ -348,7 +348,7 @@
                         <StackPanel Orientation="Horizontal"
                                     HorizontalAlignment="Right"
                                     Margin="0,20,0,0">
-                            <syncfusion:ButtonAdv Content="💾 Save"
+                            <syncfusion:ButtonAdv Label="💾 Save"
                                     Command="{Binding DataContext.SaveVehicleCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                     Style="{StaticResource InverseBooleanStyle}"
                                     Background="#2ECC71"
@@ -357,7 +357,7 @@
                                     Padding="15,8"
                                     Margin="0,0,10,0"
                                     Cursor="Hand"/>
-                            <syncfusion:ButtonAdv Content="🗑️ Delete"
+                            <syncfusion:ButtonAdv Label="🗑️ Delete"
                                     Command="{Binding DataContext.DeleteVehicleCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                     Style="{StaticResource InverseBooleanStyle}"
                                     Background="#E74C3C"

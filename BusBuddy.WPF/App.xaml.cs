@@ -263,12 +263,14 @@ namespace BusBuddy.WPF
                 // Register UI services (commented out for MVP - services don't exist yet)
                 // services.AddTransient<BusBuddy.WPF.Services.DialogService>();
                 // services.AddTransient<BusBuddy.WPF.Services.NavigationService>();
+                services.AddTransient<BusBuddy.WPF.Services.RouteExportService>();
 
                 // Register ViewModels for dependency injection
                 services.AddTransient<BusBuddy.WPF.ViewModels.MainWindowViewModel>();
                 services.AddTransient<BusBuddy.WPF.ViewModels.DashboardViewModel>();
                 services.AddTransient<BusBuddy.WPF.ViewModels.Student.StudentsViewModel>();
                 services.AddTransient<BusBuddy.WPF.ViewModels.Route.RouteManagementViewModel>();
+                services.AddTransient<BusBuddy.WPF.ViewModels.Driver.DriverFormViewModel>();
 
                 ServiceProvider = services.BuildServiceProvider();
 

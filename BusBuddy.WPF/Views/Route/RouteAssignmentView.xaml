@@ -90,17 +90,17 @@
 
             <!-- Assignment Buttons -->
             <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="10,0">
-                <syncfusion:ButtonAdv Content="➡️ Assign"
+                <syncfusion:ButtonAdv Label="➡️ Assign"
                                      Command="{Binding AssignStudentCommand}"
                                      Margin="0,0,0,10" Padding="15,8"
                                      Background="#107C10" Foreground="White"
                                      IsEnabled="{Binding CanAssignStudent}"/>
-                <syncfusion:ButtonAdv Content="⬅️ Remove"
+                <syncfusion:ButtonAdv Label="⬅️ Remove"
                                      Command="{Binding RemoveStudentCommand}"
                                      Margin="0,0,0,10" Padding="15,8"
                                      Background="#D13438" Foreground="White"
                                      IsEnabled="{Binding CanRemoveStudent}"/>
-                <syncfusion:ButtonAdv Content="🔄 Auto Assign"
+                <syncfusion:ButtonAdv Label="🔄 Auto Assign"
                                      Command="{Binding AutoAssignCommand}"
                                      Padding="15,8"
                                      Background="#8B5CF6" Foreground="White"/>
@@ -123,7 +123,7 @@
                                               SelectedItem="{Binding SelectedRoute, Mode=TwoWay}"
                                               DisplayMemberPath="RouteName"
                                               Width="200" Margin="0,0,10,0"/>
-                        <syncfusion:ButtonAdv Content="➕ New Route"
+                        <syncfusion:ButtonAdv Label="➕ New Route"
                                              Command="{Binding CreateRouteCommand}"
                                              Padding="12,6" Background="#007ACC" Foreground="White"/>
                     </StackPanel>
@@ -185,15 +185,15 @@
                                           Margin="0,0,0,15"/>
 
                     <!-- Route Actions -->
-                    <syncfusion:ButtonAdv Content="💾 Save Route"
+                    <syncfusion:ButtonAdv Label="💾 Save Route"
                                          Command="{Binding SaveRouteCommand}"
                                          Margin="0,0,0,10" Padding="12,8"
                                          Background="#107C10" Foreground="White"/>
-                    <syncfusion:ButtonAdv Content="🗑️ Delete Route"
+                    <syncfusion:ButtonAdv Label="🗑️ Delete Route"
                                          Command="{Binding DeleteRouteCommand}"
                                          Margin="0,0,0,10" Padding="12,8"
                                          Background="#D13438" Foreground="White"/>
-                    <syncfusion:ButtonAdv Content="📋 View Schedule"
+                    <syncfusion:ButtonAdv Label="📋 View Schedule"
                                          Command="{Binding ViewScheduleCommand}"
                                          Padding="12,8"
                                          Background="#8B5CF6" Foreground="White"/>
@@ -212,11 +212,11 @@
                           Text="{Binding StatusMessage}"
                           VerticalAlignment="Center"/>
                 <StackPanel Grid.Column="1" Orientation="Horizontal">
-                    <syncfusion:ButtonAdv Content="🔄 Refresh Data"
+                    <syncfusion:ButtonAdv Label="🔄 Refresh Data"
                                          Command="{Binding RefreshDataCommand}"
                                          Margin="0,0,10,0" Padding="12,6"
                                          Background="#5A5A5A" Foreground="White"/>
-                    <syncfusion:ButtonAdv Content="📊 Generate Report"
+                    <syncfusion:ButtonAdv Label="📊 Generate Report"
                                          Command="{Binding GenerateReportCommand}"
                                          Padding="12,6"
                                          Background="#FF8C00" Foreground="White"/>
