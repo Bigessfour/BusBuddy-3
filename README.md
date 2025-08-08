@@ -6,8 +6,8 @@
 [![.NET](https://img.shields.io/badge/.NET-9.0.304-blue)](https://dotnet.microsoft.com/download/dotnet/9.0)
 [![PowerShell](https://img.shields.io/badge/PowerShell-7.5.2-blue)](https://github.com/PowerShell/PowerShell)
 [![Syncfusion](https://img.shields.io/badge/Syncfusion-30.1.42%20✅%20Licensed-orange)](https://www.syncfusion.com/wpf-controls)
-[![MVP Status](https://img.shields.io/badge/MVP-✅%20READY%20TO%20DEPLOY-brightgreen)](https://github.com/Bigessfour/BusBuddy-3)
-[![Production](https://img.shields.io/badge/Production-🚀%20Ready-success)](https://github.com/Bigessfour/BusBuddy-3)
+[![MVP Status](https://img.shields.io/badge/MVP-⚠️%20Development-yellow)](https://github.com/Bigessfour/BusBuddy-3)
+[![Production](https://img.shields.io/badge/Production-�%20In%20Progress-yellow)](https://github.com/Bigessfour/BusBuddy-3)
 
 ## 🎯 **Project Vision**
 
@@ -37,17 +37,23 @@ cd BusBuddy
 # Load PowerShell automation
 Import-Module .\PowerShell\Modules\BusBuddy\BusBuddy.psm1
 
-# Build and run (production ready!)
-bbbuild && bbRun
+# Build and run (MVP development version)
+bbBuild && bbRun
+
+# Check for known issues before deployment
+bbHealth
 ```
 
-### **✅ Production-Ready Status**
-**All issues resolved - Ready for immediate deployment:**
-- ✅ **Build Status**: Clean build with 0 errors
-- ✅ **Package Integrity**: All version conflicts resolved
+**⚠️ Note**: Before production deployment, please review the "Known Risks" section below.
+
+### **📋 Current Build Status**
+**MVP functionality operational with ongoing improvements:**
+- ✅ **Build Status**: Clean build with 0 errors (warnings addressed)
+- ✅ **Package Integrity**: Version conflicts resolved
 - ✅ **Syncfusion License**: Configured and operational
 - ✅ **MVP Validation**: Core functionality confirmed working
-- ✅ **Environment**: .NET 9.0.304, PowerShell 7.5.2 operational
+- ⚠️ **Environment**: .NET 9.0.304, PowerShell 7.5.2 operational
+- 🔄 **Production Readiness**: In progress (see Known Risks section)
 
 ### **Development Setup**
 ```powershell
@@ -63,12 +69,13 @@ bbTest
 
 ## 📊 **Current Status (August 8, 2025)**
 
-### **🎉 MVP Ready to Ship!**
-- ✅ **Build Status**: Clean build (0 errors, warnings only)
-- ✅ **MVP Verification**: `bbMvpCheck` confirms "You can ship this!"
+### **🎉 MVP Core Features Ready**
+- ✅ **Build Status**: Clean build (0 errors, warnings documented)
+- ✅ **MVP Verification**: `bbMvpCheck` confirms core functionality working
 - ✅ **Core Features**: Student management and route assignment functional
-- ✅ **Documentation**: All command references updated and standardized
+- ✅ **Documentation**: Command references updated and standardized
 - ✅ **PowerShell Automation**: 20+ working commands with enterprise-grade tooling
+- ⚠️ **Production Status**: See Known Risks section below
 
 ### **Recent Achievements (Commit: 29b7dc1)**
 - ✅ **Command Standardization**: Updated all commands from `bb-*` to `bb*` format
@@ -102,6 +109,47 @@ bbRoutes              # XAI route optimization system
 bbRouteDemo           # Demo with sample data
 bbRouteStatus         # Check optimization status
 ```
+
+## ⚠️ **Known Risks & Issues**
+
+### **Database & Migration Concerns**
+- **Migration History**: Potential migration history out of sync between environments
+- **Seeding Issues**: Database seeding shows "0 records" despite "Already seeded" messages
+- **Schema Changes**: Possible regression in UI data binding due to recent schema modifications
+- **LocalDB vs Production**: Differences between LocalDB development and production SQL Server behavior
+
+### **UI & Data Binding Risks**
+- **Syncfusion Migration**: Ongoing migration from standard WPF to Syncfusion controls may introduce temporary inconsistencies
+- **Data Binding**: Schema changes may affect existing MVVM data binding patterns
+- **Performance**: Large datasets may impact UI responsiveness during initial load
+- **Theme Consistency**: FluentDark/FluentLight theme application may be incomplete across all controls
+
+### **PowerShell & Automation**
+- **Module Compliance**: BusBuddy.psm1 has 45% compliance with Microsoft PowerShell standards
+- **Write-Host Usage**: 50+ Write-Host violations need remediation for enterprise deployment
+- **Command Standardization**: Recent `bb-*` to `bb*` format changes may require workflow adjustments
+- **Environment Dependencies**: PowerShell 7.5.2+ requirement may limit deployment environments
+
+### **External Dependencies**
+- **Syncfusion Licensing**: Community license limitations in production environments
+- **Google Earth Engine**: API rate limits and authentication dependencies
+- **Azure SQL**: Network connectivity and firewall configuration requirements
+- **Package Versions**: .NET 9.0.304 and associated package dependencies still stabilizing
+
+### **Production Readiness Gaps**
+- **Error Handling**: Exception handling patterns need standardization across modules
+- **Logging**: Transition from multiple logging frameworks to Serilog-only not fully complete
+- **Security**: Production security review and hardening pending
+- **Performance Testing**: Load testing with realistic data volumes not yet conducted
+- **Backup & Recovery**: Database backup and disaster recovery procedures not implemented
+
+### **Recommended Actions Before Production**
+1. **Database Audit**: Verify migration state and seeding integrity across all environments
+2. **UI Testing**: Comprehensive testing of all Syncfusion controls with real data
+3. **PowerShell Remediation**: Address Write-Host violations and improve module compliance
+4. **Security Review**: Conduct security assessment and implement recommended hardening
+5. **Performance Testing**: Test with production-scale data volumes
+6. **Documentation**: Complete deployment and operational procedures documentation
 
 ## 🏗️ **Architecture**
 
@@ -335,19 +383,21 @@ Test coverage reports are generated in `TestResults/` directory with detailed TR
 
 ## 📈 **Project Status**
 
-### **Current Phase**: Active Development (Phase 4 Complete)
+### **Current Phase**: MVP Development (Phase 4 Complete)
 - ✅ **Foundation**: Complete (.NET 9, Syncfusion, EF Core)
 - ✅ **Testing Infrastructure**: Operational (NUnit, coverage reporting)
-- ✅ **PowerShell Automation**: Stable module system
-- 🟡 **UI Migration**: Completing Syncfusion control migration
-- 🟡 **Student Management**: Core features under development
+- ✅ **PowerShell Automation**: Core functionality stable (compliance improvements needed)
+- 🟡 **UI Migration**: Completing Syncfusion control migration (some inconsistencies remain)
+- 🟡 **Student Management**: Core features functional (production hardening in progress)
+- 🔄 **Production Readiness**: Requires addressing known risks listed above
 - 🎯 **Route Optimization**: Next major milestone
 
-### **Metrics**
-- **Build Status**: ✅ Passing
-- **Test Coverage**: 85%+ target
-- **Code Quality**: Meets established standards
-- **Documentation**: Comprehensive and current
+### **Quality Metrics**
+- **Build Status**: ✅ Passing (0 errors, warnings documented)
+- **Test Coverage**: 75%+ achieved (85% target)
+- **Code Quality**: Meets development standards (production review pending)
+- **Documentation**: Comprehensive for development (operational docs needed)
+- **PowerShell Compliance**: 45% (Microsoft standards remediation in progress)
 
 ## 🌟 **Roadmap**
 
@@ -399,4 +449,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 **Built with ❤️ for school transportation professionals**
 
-*Last Updated: August 3, 2025*
+*Last Updated: August 8, 2025*
