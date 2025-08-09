@@ -2612,6 +2612,308 @@ function Start-BusBuddyRuntimeErrorCapture {
 
 #endregion
 
+#region Azure Firewall Management Functions
+
+function Update-BusBuddyAzureFirewall {
+    <#
+    .SYNOPSIS
+        Automatically updates Azure SQL firewall rules for BusBuddy dynamic IP addresses
+    .DESCRIPTION
+        Fetches current public IP and adds it to Azure SQL firewall rules.
+        Handles Starlink and work ISP dynamic IP changes automatically.
+        Based on Microsoft Azure SQL firewall configuration best practices.
+    .PARAMETER ResourceGroupName
+        Azure resource group containing the SQL server (auto-detected from config if not specified)
+    .PARAMETER ServerName
+        Azure SQL server name (default: busbuddy-server-sm2 from appsettings.azure.json)
+    .PARAMETER CleanupOldRules
+        Remove old dynamic IP rules to keep firewall clean
+    .PARAMETER Force
+        Skip confirmation prompts
+    .EXAMPLE
+        Update-BusBuddyAzureFirewall
+    .EXAMPLE
+        Update-BusBuddyAzureFirewall -CleanupOldRules -Force
+    .NOTES
+        Reference: https://learn.microsoft.com/en-us/azure/azure-sql/database/firewall-configure
+        Requires Az PowerShell module: Install-Module -Name Az.Sql -Scope CurrentUser
+        Auto-integrates with BusBuddy appsettings.azure.json configuration
+    #>
+    [CmdletBinding(SupportsShouldProcess)]
+    [OutputType([hashtable])]
+    param (
+        [Parameter(Mandatory = $false)]
+        [string]$ResourceGroupName,
+
+        [Parameter(Mandatory = $false)]
+        [string]$ServerName,
+
+        [Parameter(Mandatory = $false)]
+        [switch]$CleanupOldRules,
+
+        [Parameter(Mandatory = $false)]
+        [switch]$Force
+    )
+
+    try {
+        Write-Information "🚌 BusBuddy Azure SQL Firewall Updater" -InformationAction Continue
+        Write-Information "=" * 50 -InformationAction Continue
+
+        # Get BusBuddy Azure configuration
+        $config = Get-BusBuddyAzureConfig
+        if (-not $config) {
+            throw "Could not load BusBuddy Azure configuration from appsettings.azure.json"
+        }
+
+        # Use configuration values if not provided
+        if (-not $ServerName) {
+            $ServerName = $config.ServerName
+            if (-not $ServerName) {
+                throw "Server name not found in configuration and not provided"
+            }
+        }
+
+        if (-not $ResourceGroupName) {
+            $ResourceGroupName = $config.ResourceGroup
+            if (-not $ResourceGroupName) {
+                Write-Warning "Resource group not specified in config. Please provide it manually."
+                $ResourceGroupName = Read-Host "Enter Azure Resource Group name"
+                if (-not $ResourceGroupName) {
+                    throw "Resource group is required"
+                }
+            }
+        }
+
+        # Call the main update script
+        $scriptPath = Join-Path $PSScriptRoot "..\..\Scripts\Update-AzureFirewall.ps1"
+        if (-not (Test-Path $scriptPath)) {
+            throw "Update-AzureFirewall.ps1 script not found at: $scriptPath"
+        }
+
+        $params = @{
+            ResourceGroupName = $ResourceGroupName
+            ServerName = $ServerName
+            CleanupOldRules = $CleanupOldRules
+        }
+
+        Write-Information "🎯 Target: $ServerName in $ResourceGroupName" -InformationAction Continue
+
+        if ($Force -or $PSCmdlet.ShouldProcess("Azure SQL Server $ServerName", "Update firewall rules")) {
+            $result = & $scriptPath @params
+
+            if ($result.Success) {
+                Write-BusBuddyStatus "✅ Azure firewall updated successfully" -Type Success
+                Write-Information "   IP Address: $($result.IPAddress)" -InformationAction Continue
+                Write-Information "   Rule Name: $($result.RuleName)" -InformationAction Continue
+                Write-Information "⏱️ Allow up to 5 minutes for rule propagation" -InformationAction Continue
+            } else {
+                Write-BusBuddyError "Failed to update Azure firewall" -Exception ([System.Exception]::new($result.Error)) -Context "Azure Firewall"
+            }
+
+            return $result
+        }
+    }
+    catch {
+        Write-BusBuddyError "Azure firewall update failed" -Exception $_ -Context "Azure Firewall Management"
+        return @{
+            Success = $false
+            Error = $_.Exception.Message
+            Timestamp = Get-Date
+        }
+    }
+}
+
+function Get-BusBuddyAzureConfig {
+    <#
+    .SYNOPSIS
+        Extracts Azure configuration from BusBuddy appsettings files
+    .DESCRIPTION
+        Parses appsettings.azure.json to extract server name, resource group, and other Azure settings
+    .EXAMPLE
+        Get-BusBuddyAzureConfig
+    #>
+    [CmdletBinding()]
+    [OutputType([hashtable])]
+    param()
+
+    try {
+        $configFile = "appsettings.azure.json"
+        if (-not (Test-Path $configFile)) {
+            Write-Warning "appsettings.azure.json not found in current directory"
+            return $null
+        }
+
+        $config = Get-Content $configFile -Raw | ConvertFrom-Json
+
+        # Extract server name from connection string
+        $connectionString = $config.ConnectionStrings.DefaultConnection
+        if ($connectionString -match 'Server=tcp:([^.,]+)') {
+            $serverName = $matches[1]
+        } else {
+            Write-Warning "Could not extract server name from connection string"
+            $serverName = $null
+        }
+
+        # Try to find resource group in various config locations
+        $resourceGroup = $null
+        if ($config.Azure.ResourceGroup) {
+            $resourceGroup = $config.Azure.ResourceGroup
+        } elseif ($config.ResourceGroup) {
+            $resourceGroup = $config.ResourceGroup
+        }
+
+        return @{
+            ServerName = $serverName
+            ResourceGroup = $resourceGroup
+            DatabaseName = "BusBuddyDB"
+            ConnectionString = $connectionString
+            Config = $config
+        }
+    }
+    catch {
+        Write-Warning "Failed to parse Azure configuration: $($_.Exception.Message)"
+        return $null
+    }
+}
+
+function Test-BusBuddyAzureConnection {
+    <#
+    .SYNOPSIS
+        Tests Azure SQL connection for BusBuddy database
+    .DESCRIPTION
+        Validates network connectivity and firewall rules for Azure SQL Database
+        Provides detailed diagnostics for connection issues
+    .EXAMPLE
+        Test-BusBuddyAzureConnection
+    .EXAMPLE
+        Test-BusBuddyAzureConnection -UpdateFirewall
+    #>
+    [CmdletBinding()]
+    [OutputType([hashtable])]
+    param (
+        [Parameter(Mandatory = $false)]
+        [switch]$UpdateFirewall
+    )
+
+    try {
+        Write-Information "🔍 Testing BusBuddy Azure SQL Connection" -InformationAction Continue
+        Write-Information "=" * 45 -InformationAction Continue
+
+        # Get configuration
+        $config = Get-BusBuddyAzureConfig
+        if (-not $config) {
+            throw "Could not load Azure configuration"
+        }
+
+        # Test network connectivity
+        Write-Information "🌐 Testing network connectivity..." -InformationAction Continue
+        $serverFqdn = "$($config.ServerName).database.windows.net"
+
+        try {
+            $tcpTest = Test-NetConnection -ComputerName $serverFqdn -Port 1433 -WarningAction SilentlyContinue
+            if ($tcpTest.TcpTestSucceeded) {
+                Write-Information "✅ Network connectivity: SUCCESS" -InformationAction Continue
+            } else {
+                Write-Information "❌ Network connectivity: FAILED" -InformationAction Continue
+                Write-Information "   This may indicate firewall or network issues" -InformationAction Continue
+            }
+        }
+        catch {
+            Write-Information "❌ Network test failed: $($_.Exception.Message)" -InformationAction Continue
+        }
+
+        # Get current IP
+        try {
+            $currentIP = (Invoke-RestMethod -Uri "https://api.ipify.org" -TimeoutSec 10).Trim()
+            Write-Information "📍 Current public IP: $currentIP" -InformationAction Continue
+        }
+        catch {
+            Write-Warning "Could not determine current IP address"
+            $currentIP = "Unknown"
+        }
+
+        # Test SQL connection
+        Write-Information "🔐 Testing SQL authentication..." -InformationAction Continue
+
+        $connectionSuccess = $false
+        $connectionError = $null
+
+        try {
+            # Use .NET SqlConnection for direct testing
+            $connectionString = $config.ConnectionString
+            # Replace environment variables for testing
+            $testConnectionString = $connectionString -replace '\$\{AZURE_SQL_USER\}', $env:AZURE_SQL_USER -replace '\$\{AZURE_SQL_PASSWORD\}', $env:AZURE_SQL_PASSWORD
+
+            if ($testConnectionString -match '\$\{') {
+                Write-Warning "Environment variables not set: AZURE_SQL_USER, AZURE_SQL_PASSWORD"
+                Write-Information "💡 Set environment variables or use manual portal test" -InformationAction Continue
+            } else {
+                Add-Type -AssemblyName System.Data
+                $sqlConnection = New-Object System.Data.SqlClient.SqlConnection($testConnectionString)
+                $sqlConnection.Open()
+                $sqlConnection.Close()
+                $connectionSuccess = $true
+                Write-Information "✅ SQL connection: SUCCESS" -InformationAction Continue
+            }
+        }
+        catch {
+            $connectionError = $_.Exception.Message
+            Write-Information "❌ SQL connection: FAILED" -InformationAction Continue
+            Write-Information "   Error: $connectionError" -InformationAction Continue
+
+            # Check for firewall-related errors
+            if ($connectionError -like "*Client with IP address*not allowed*") {
+                Write-Information "🛡️ Firewall issue detected!" -InformationAction Continue
+                if ($UpdateFirewall) {
+                    Write-Information "🔧 Attempting to update firewall rules..." -InformationAction Continue
+                    $firewallResult = Update-BusBuddyAzureFirewall -Force
+                    if ($firewallResult.Success) {
+                        Write-Information "✅ Firewall updated. Retry connection in 5 minutes." -InformationAction Continue
+                    }
+                } else {
+                    Write-Information "💡 Run with -UpdateFirewall to automatically fix" -InformationAction Continue
+                }
+            }
+        }
+
+        # Summary
+        Write-Information "`n📋 Connection Test Summary:" -InformationAction Continue
+        Write-Information "   Server: $serverFqdn" -InformationAction Continue
+        Write-Information "   Database: $($config.DatabaseName)" -InformationAction Continue
+        Write-Information "   Current IP: $currentIP" -InformationAction Continue
+        Write-Information "   Network: $(if ($tcpTest.TcpTestSucceeded) { '✅' } else { '❌' })" -InformationAction Continue
+        Write-Information "   SQL Auth: $(if ($connectionSuccess) { '✅' } else { '❌' })" -InformationAction Continue
+
+        if (-not $connectionSuccess) {
+            Write-Information "`n🔧 Troubleshooting options:" -InformationAction Continue
+            Write-Information "1. Update firewall: bb-azure-firewall" -InformationAction Continue
+            Write-Information "2. Use local database: Set DatabaseProvider=Local" -InformationAction Continue
+            Write-Information "3. Check Azure portal: https://portal.azure.com" -InformationAction Continue
+            Write-Information "4. Verify credentials: echo `$env:AZURE_SQL_USER" -InformationAction Continue
+        }
+
+        return @{
+            Success = $connectionSuccess
+            NetworkConnectivity = $tcpTest.TcpTestSucceeded
+            CurrentIP = $currentIP
+            Server = $serverFqdn
+            Database = $config.DatabaseName
+            Error = $connectionError
+            Timestamp = Get-Date
+        }
+    }
+    catch {
+        Write-BusBuddyError "Azure connection test failed" -Exception $_ -Context "Azure Connection Test"
+        return @{
+            Success = $false
+            Error = $_.Exception.Message
+            Timestamp = Get-Date
+        }
+    }
+}
+
+#endregion
+
 #region Aliases - Safe Alias Creation with Conflict Resolution
 
 # Core aliases with safe creation
@@ -2648,6 +2950,14 @@ try { Set-Alias -Name 'bbAntiRegression' -Value 'Invoke-BusBuddyAntiRegression' 
 try { Set-Alias -Name 'bbMvp' -Value 'Start-BusBuddyMVP' -Description 'MVP focus and scope management' -Force } catch { }
 try { Set-Alias -Name 'bbMvpCheck' -Value 'Test-BusBuddyMVPReadiness' -Description 'Check MVP readiness' -Force } catch { }
 try { Set-Alias -Name 'bbEnvCheck' -Value 'Test-BusBuddyEnvironment' -Description 'Comprehensive environment validation' -Force } catch { }
+
+# Azure and cloud infrastructure aliases
+try { Set-Alias -Name 'bbAzureFirewall' -Value 'Update-BusBuddyAzureFirewall' -Description 'Update Azure SQL firewall rules' -Force } catch { }
+try { Set-Alias -Name 'bb-azure-firewall' -Value 'Update-BusBuddyAzureFirewall' -Description 'Update Azure SQL firewall rules (kebab-case)' -Force } catch { }
+try { Set-Alias -Name 'bbAzureTest' -Value 'Test-BusBuddyAzureConnection' -Description 'Test Azure SQL connection' -Force } catch { }
+try { Set-Alias -Name 'bb-azure-test' -Value 'Test-BusBuddyAzureConnection' -Description 'Test Azure SQL connection (kebab-case)' -Force } catch { }
+try { Set-Alias -Name 'bbAzureConfig' -Value 'Get-BusBuddyAzureConfig' -Description 'Show Azure configuration' -Force } catch { }
+try { Set-Alias -Name 'bb-azure-config' -Value 'Get-BusBuddyAzureConfig' -Description 'Show Azure configuration (kebab-case)' -Force } catch { }
 
 # Route optimization aliases
 try { Set-Alias -Name 'bbRoutes' -Value 'Start-BusBuddyRouteOptimization' -Description 'Main route optimization system' -Force } catch { }
@@ -2698,6 +3008,9 @@ Export-ModuleMember -Function @(
     'Get-BusBuddyTestError',
     'Get-BusBuddyTestLog',
     'Start-BusBuddyTestWatch',
+    'Update-BusBuddyAzureFirewall',
+    'Get-BusBuddyAzureConfig',
+    'Test-BusBuddyAzureConnection',
     'Enable-BusBuddyEnhancedTestOutput'
 ) -Alias @(
     'bbBuild', 'bbRun', 'bbTest', 'bbClean', 'bbRestore', 'bbHealth',
