@@ -6,6 +6,7 @@ using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using BusBuddy.Core.Models;
+using System.Windows.Data;
 using BusBuddy.Core.Services;
 using BusBuddy.Core;
 using BusBuddy.Core.Data;
@@ -43,6 +44,8 @@ namespace BusBuddy.WPF.ViewModels.Student
             _contextFactory = new BusBuddyDbContextFactory();
             _addressService = new AddressService();
             Students = new ObservableCollection<Core.Models.Student>();
+            StudentsView = CollectionViewSource.GetDefaultView(Students);
+            StudentsView.Filter = StudentFilter;
 
             InitializeCommands();
             _ = LoadStudentsAsync();
@@ -57,6 +60,8 @@ namespace BusBuddy.WPF.ViewModels.Student
             _contextFactory = new BusBuddyDbContextFactory(); // For testing, can inject a mock factory
             _addressService = addressService;
             Students = new ObservableCollection<Core.Models.Student>();
+            StudentsView = CollectionViewSource.GetDefaultView(Students);
+            StudentsView.Filter = StudentFilter;
 
             InitializeCommands();
         }
@@ -67,6 +72,11 @@ namespace BusBuddy.WPF.ViewModels.Student
         /// Collection of all students for display in the data grid
         /// </summary>
         public ObservableCollection<Core.Models.Student> Students { get; }
+
+    /// <summary>
+    /// View over Students that supports filtering/sorting/grouping for UI binding
+    /// </summary>
+    public ICollectionView StudentsView { get; }
 
         /// <summary>
         /// Currently selected student in the data grid
@@ -91,7 +101,7 @@ namespace BusBuddy.WPF.ViewModels.Student
         /// <summary>
         /// Total number of students
         /// </summary>
-        public int TotalStudents => Students.Count;
+    public int TotalStudents => Students.Count;
 
         /// <summary>
         /// Number of active students
@@ -127,7 +137,7 @@ namespace BusBuddy.WPF.ViewModels.Student
         /// <summary>
         /// Status text showing current filter state
         /// </summary>
-        public string FilterStatusText => string.IsNullOrEmpty(QuickSearchText) ? "" : $"Filtered: '{QuickSearchText}'";
+    public string FilterStatusText => string.IsNullOrEmpty(QuickSearchText) ? "" : $"Filtered: '{QuickSearchText}'";
 
         /// <summary>
         /// Available grades for dropdown selection
@@ -414,10 +424,30 @@ namespace BusBuddy.WPF.ViewModels.Student
         /// </summary>
         private void ApplyQuickFilter()
         {
-            // Note: In a real implementation, this would filter the view
-            // For now, we'll just log the filter change
+            // Refresh the ICollectionView to apply predicate
+            StudentsView.Refresh();
             Logger.Information("Quick filter applied: {FilterText}", QuickSearchText);
             StatusMessage = string.IsNullOrEmpty(QuickSearchText) ? "Filter cleared" : $"Filtering by: {QuickSearchText}";
+        }
+
+        private bool StudentFilter(object obj)
+        {
+            if (obj is not Core.Models.Student s)
+            {
+                return false;
+            }
+            if (string.IsNullOrWhiteSpace(QuickSearchText))
+            {
+                return true;
+            }
+
+            var q = QuickSearchText.Trim();
+            // Case-insensitive contains across key fields
+            return (s.StudentName?.IndexOf(q, StringComparison.OrdinalIgnoreCase) >= 0)
+                   || (s.StudentNumber?.IndexOf(q, StringComparison.OrdinalIgnoreCase) >= 0)
+                   || (s.AMRoute?.IndexOf(q, StringComparison.OrdinalIgnoreCase) >= 0)
+                   || (s.PMRoute?.IndexOf(q, StringComparison.OrdinalIgnoreCase) >= 0)
+                   || (s.School?.IndexOf(q, StringComparison.OrdinalIgnoreCase) >= 0);
         }
 
         private void ExecuteImportStudents()
@@ -497,7 +527,10 @@ namespace BusBuddy.WPF.ViewModels.Student
         {
             try
             {
-                if (student == null) return;
+                if (student == null)
+                {
+                    return;
+                }
                 Logger.Information("View student {StudentId} on map", student.StudentId);
                 StatusMessage = $"Showing {student.StudentName} on map";
                 // TODO: Show specific student location on map
@@ -513,7 +546,10 @@ namespace BusBuddy.WPF.ViewModels.Student
         {
             try
             {
-                if (student == null) return;
+                if (student == null)
+                {
+                    return;
+                }
                 Logger.Information("AI route suggestion for student {StudentId}", student.StudentId);
                 StatusMessage = $"Getting AI route suggestions for {student.StudentName}";
                 // TODO: Integrate xAI Grok for route suggestions
@@ -570,7 +606,9 @@ namespace BusBuddy.WPF.ViewModels.Student
                 AvailableGrades.Clear();
                 var grades = new[] { "Pre-K", "K", "1st", "2nd", "3rd", "4th", "5th", "6th", "7th", "8th", "9th", "10th", "11th", "12th" };
                 foreach (var grade in grades)
+                {
                     AvailableGrades.Add(grade);
+                }
 
                 using var context = _contextFactory.CreateDbContext();
                 AvailableSchools.Clear();
@@ -580,13 +618,17 @@ namespace BusBuddy.WPF.ViewModels.Student
                     .Distinct()
                     .ToListAsync();
                 foreach (var school in schools)
+                {
                     AvailableSchools.Add(school);
+                }
 
                 // Load available routes
                 AvailableRoutes.Clear();
                 var routes = await context.Routes.ToListAsync();
                 foreach (var route in routes)
+                {
                     AvailableRoutes.Add(route);
+                }
 
                 Logger.Information("Reference data loaded: {GradeCount} grades, {SchoolCount} schools, {RouteCount} routes",
                     AvailableGrades.Count, AvailableSchools.Count, AvailableRoutes.Count);

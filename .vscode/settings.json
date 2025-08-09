@@ -8,15 +8,20 @@
         "centralus",
         "Chromeless",
         "clrstack",
+        "compli",
         "contentfiles",
         "costmanagement",
+        "Dedup",
         "ecxr",
         "Fetchability",
+        "fluentdark",
+        "fluentlight",
         "GETUTCDATE",
         "globalconfig",
         "LASTEXITCODE",
         "Licence",
         "localdb",
+        "mscorlib",
         "MVVM",
         "NOLOGO",
         "omnisharp",
@@ -27,7 +32,9 @@
         "Starlink",
         "sympath",
         "syncfusionshared",
+        "TCODE",
         "testhost",
+        "winget",
         "Wintellect"
     ],
 
@@ -43,5 +50,7 @@
             "path": "C:\\Program Files\\PowerShell\\7\\pwsh.exe"
         }
     },
-    "terminal.integrated.defaultProfile.windows": "PowerShell"
+    "terminal.integrated.defaultProfile.windows": "PowerShell",
+    "prettyxml.settings.enableLogs": true,
+    "prettyxml.settings.formatOnSave": true
 }

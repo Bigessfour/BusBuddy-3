@@ -6,6 +6,8 @@ using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Media;
+using Syncfusion.Windows.Shared;
+using Syncfusion.SfSkinManager;
 using BusBuddy.Core.Models;
 using BusBuddy.Core.Services;
 using BusBuddy.Core.Services.Interfaces;
@@ -16,7 +18,7 @@ using CommunityToolkit.Mvvm.Input;
 
 namespace BusBuddy.WPF.Views.Fuel
 {
-    public partial class FuelReconciliationDialog : Window, INotifyPropertyChanged
+    public partial class FuelReconciliationDialog : ChromelessWindow, INotifyPropertyChanged
     {
         private static readonly ILogger Logger = Log.ForContext<FuelReconciliationDialog>();
 
@@ -184,6 +186,7 @@ namespace BusBuddy.WPF.Views.Fuel
             _busService = busService ?? throw new ArgumentNullException(nameof(busService));
 
             InitializeComponent();
+            ApplySyncfusionTheme();
             DataContext = this;
 
             // Initialize commands
@@ -460,6 +463,31 @@ namespace BusBuddy.WPF.Views.Fuel
         protected virtual void OnPropertyChanged([CallerMemberName] string? propertyName = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
+
+        /// <summary>
+        /// Apply Syncfusion theme with FluentDark default and FluentWhite fallback
+        /// </summary>
+        private void ApplySyncfusionTheme()
+        {
+            SfSkinManager.ApplyThemeAsDefaultStyle = true;
+            try
+            {
+                using var fluentDarkTheme = new Theme("FluentDark");
+                SfSkinManager.SetTheme(this, fluentDarkTheme);
+            }
+            catch
+            {
+                try
+                {
+                    using var fluentWhiteTheme = new Theme("FluentWhite");
+                    SfSkinManager.SetTheme(this, fluentWhiteTheme);
+                }
+                catch
+                {
+                    // Continue without theme if both fail
+                }
+            }
         }
     }
 

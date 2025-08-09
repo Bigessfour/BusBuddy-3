@@ -981,6 +981,21 @@ function Invoke-BusBuddyHealthCheck {
     }
 }
 
+function Test-BusBuddyHealth {
+    <#
+    .SYNOPSIS
+        Run BusBuddy health check (alias for Invoke-BusBuddyHealthCheck)
+    .DESCRIPTION
+        Performs comprehensive health check of the BusBuddy system including .NET version,
+        PowerShell version, and required project files.
+    #>
+    [CmdletBinding()]
+    param()
+
+    # Call the main health check function
+    Invoke-BusBuddyHealthCheck
+}
+
 function Get-BusBuddyInfo {
     <#
     .SYNOPSIS
@@ -2950,69 +2965,377 @@ function Test-BusBuddyAzureConnection {
 #region Aliases - Safe Alias Creation with Conflict Resolution
 
 # Core aliases with safe creation
-try { Set-Alias -Name 'bbBuild' -Value 'Invoke-BusBuddyBuild' -Description 'Build the Bus Buddy solution' -Force } catch { }
-try { Set-Alias -Name 'bbRun' -Value 'Invoke-BusBuddyRun' -Description 'Run the Bus Buddy application' -Force } catch { }
-try { Set-Alias -Name 'bbTest' -Value 'Invoke-BusBuddyTest' -Description 'Run Bus Buddy tests' -Force } catch { }
-try { Set-Alias -Name 'bbClean' -Value 'Invoke-BusBuddyClean' -Description 'Clean build artifacts' -Force } catch { }
-try { Set-Alias -Name 'bbRestore' -Value 'Invoke-BusBuddyRestore' -Description 'Restore NuGet packages' -Force } catch { }
+try { Set-Alias -Name 'bbBuild' -Value 'Invoke-BusBuddyBuild' -Description 'Build the Bus Buddy solution' -Force } catch { Write-Error "Alias 'bbBuild' could not be set: $($_.Exception.Message)" -ErrorAction SilentlyContinue }
+try { Set-Alias -Name 'bbRun' -Value 'Invoke-BusBuddyRun' -Description 'Run the Bus Buddy application' -Force } catch { Write-Error "Alias 'bbRun' could not be set: $($_.Exception.Message)" -ErrorAction SilentlyContinue }
+try { Set-Alias -Name 'bbTest' -Value 'Invoke-BusBuddyTest' -Description 'Run Bus Buddy tests' -Force } catch { Write-Error "Alias 'bbTest' could not be set: $($_.Exception.Message)" -ErrorAction SilentlyContinue }
+try { Set-Alias -Name 'bbClean' -Value 'Invoke-BusBuddyClean' -Description 'Clean build artifacts' -Force } catch { Write-Error "Alias 'bbClean' could not be set: $($_.Exception.Message)" -ErrorAction SilentlyContinue }
+try { Set-Alias -Name 'bbRestore' -Value 'Invoke-BusBuddyRestore' -Description 'Restore NuGet packages' -Force } catch { Write-Error "Alias 'bbRestore' could not be set: $($_.Exception.Message)" -ErrorAction SilentlyContinue }
 
 # Kebab-case aliases for consistency (with conflict resolution)
-try { Set-Alias -Name 'bb-build' -Value 'Invoke-BusBuddyBuild' -Description 'Build the Bus Buddy solution (kebab-case)' -Force } catch { }
-try { Set-Alias -Name 'bb-run' -Value 'Invoke-BusBuddyRun' -Description 'Run the Bus Buddy application (kebab-case)' -Force } catch { }
-try { Set-Alias -Name 'bb-test' -Value 'Invoke-BusBuddyTest' -Description 'Run Bus Buddy tests (kebab-case)' -Force } catch { }
-try { Set-Alias -Name 'bb-clean' -Value 'Invoke-BusBuddyClean' -Description 'Clean build artifacts (kebab-case)' -Force } catch { }
-try { Set-Alias -Name 'bb-restore' -Value 'Invoke-BusBuddyRestore' -Description 'Restore NuGet packages (kebab-case)' -Force } catch { }
+try { Set-Alias -Name 'bb-build' -Value 'Invoke-BusBuddyBuild' -Description 'Build the Bus Buddy solution (kebab-case)' -Force } catch { Write-Error "Alias 'bb-build' could not be set: $($_.Exception.Message)" -ErrorAction SilentlyContinue }
+try { Set-Alias -Name 'bb-run' -Value 'Invoke-BusBuddyRun' -Description 'Run the Bus Buddy application (kebab-case)' -Force } catch { Write-Error "Alias 'bb-run' could not be set: $($_.Exception.Message)" -ErrorAction SilentlyContinue }
+try { Set-Alias -Name 'bb-test' -Value 'Invoke-BusBuddyTest' -Description 'Run Bus Buddy tests (kebab-case)' -Force } catch { Write-Error "Alias 'bb-test' could not be set: $($_.Exception.Message)" -ErrorAction SilentlyContinue }
+try { Set-Alias -Name 'bb-clean' -Value 'Invoke-BusBuddyClean' -Description 'Clean build artifacts (kebab-case)' -Force } catch { Write-Error "Alias 'bb-clean' could not be set: $($_.Exception.Message)" -ErrorAction SilentlyContinue }
+try { Set-Alias -Name 'bb-restore' -Value 'Invoke-BusBuddyRestore' -Description 'Restore NuGet packages (kebab-case)' -Force } catch { Write-Error "Alias 'bb-restore' could not be set: $($_.Exception.Message)" -ErrorAction SilentlyContinue }
 
 # Kebab-case for development/utilities (to match documentation and manifests)
-try { Set-Alias -Name 'bb-health' -Value 'Invoke-BusBuddyHealthCheck' -Description 'Check system health (kebab-case)' -Force } catch { }
-try { Set-Alias -Name 'bb-dev-session' -Value 'Start-BusBuddyDevSession' -Description 'Start development session (kebab-case)' -Force } catch { }
-try { Set-Alias -Name 'bb-info' -Value 'Get-BusBuddyInfo' -Description 'Show module information (kebab-case)' -Force } catch { }
-try { Set-Alias -Name 'bb-commands' -Value 'Get-BusBuddyCommand' -Description 'List all commands (kebab-case)' -Force } catch { }
-try { Set-Alias -Name 'bb-welcome' -Value 'Show-BusBuddyWelcome' -Description 'Show categorized command overview (kebab-case)' -Force } catch { }
+try { Set-Alias -Name 'bb-health' -Value 'Invoke-BusBuddyHealthCheck' -Description 'Check system health (kebab-case)' -Force } catch { Write-Error "Alias 'bb-health' could not be set: $($_.Exception.Message)" -ErrorAction SilentlyContinue }
+try { Set-Alias -Name 'bb-dev-session' -Value 'Start-BusBuddyDevSession' -Description 'Start development session (kebab-case)' -Force } catch { Write-Error "Alias 'bb-dev-session' could not be set: $($_.Exception.Message)" -ErrorAction SilentlyContinue }
+try { Set-Alias -Name 'bb-info' -Value 'Get-BusBuddyInfo' -Description 'Show module information (kebab-case)' -Force } catch { Write-Error "Alias 'bb-info' could not be set: $($_.Exception.Message)" -ErrorAction SilentlyContinue }
+try { Set-Alias -Name 'bb-commands' -Value 'Get-BusBuddyCommand' -Description 'List all commands (kebab-case)' -Force } catch { Write-Error "Alias 'bb-commands' could not be set: $($_.Exception.Message)" -ErrorAction SilentlyContinue }
+try { Set-Alias -Name 'bb-welcome' -Value 'Show-BusBuddyWelcome' -Description 'Show categorized command overview (kebab-case)' -Force } catch { Write-Error "Alias 'bb-welcome' could not be set: $($_.Exception.Message)" -ErrorAction SilentlyContinue }
 # Development and utility aliases
-try { Set-Alias -Name 'bbHealth' -Value 'Invoke-BusBuddyHealthCheck' -Description 'Check system health' -Force } catch { }
-try { Set-Alias -Name 'bbDevSession' -Value 'Start-BusBuddyDevSession' -Description 'Start development session' -Force } catch { }
-try { Set-Alias -Name 'bbInfo' -Value 'Get-BusBuddyInfo' -Description 'Show module information' -Force } catch { }
-try { Set-Alias -Name 'bbCommands' -Value 'Get-BusBuddyCommand' -Description 'List all commands' -Force } catch { }
+try { Set-Alias -Name 'bbHealth' -Value 'Invoke-BusBuddyHealthCheck' -Description 'Check system health' -Force } catch { Write-Error "Alias 'bbHealth' could not be set: $($_.Exception.Message)" -ErrorAction SilentlyContinue }
+try { Set-Alias -Name 'bbDevSession' -Value 'Start-BusBuddyDevSession' -Description 'Start development session' -Force } catch { Write-Error "Alias 'bbDevSession' could not be set: $($_.Exception.Message)" -ErrorAction SilentlyContinue }
+try { Set-Alias -Name 'bbInfo' -Value 'Get-BusBuddyInfo' -Description 'Show module information' -Force } catch { Write-Error "Alias 'bbInfo' could not be set: $($_.Exception.Message)" -ErrorAction SilentlyContinue }
+try { Set-Alias -Name 'bbCommands' -Value 'Get-BusBuddyCommand' -Description 'List all commands' -Force } catch { Write-Error "Alias 'bbCommands' could not be set: $($_.Exception.Message)" -ErrorAction SilentlyContinue }
 
 # Testing aliases
-try { Set-Alias -Name 'bbTestFull' -Value 'Invoke-BusBuddyTestFull' -Description 'Enhanced test with full capture' -Force } catch { }
-try { Set-Alias -Name 'bbTestErrors' -Value 'Get-BusBuddyTestErrors' -Description 'Show test errors only' -Force } catch { }
-try { Set-Alias -Name 'bbTestLog' -Value 'Get-BusBuddyTestLog' -Description 'Show latest test log' -Force } catch { }
-try { Set-Alias -Name 'bbTestWatch' -Value 'Start-BusBuddyTestWatch' -Description 'Continuous test watch' -Force } catch { }
+try { Set-Alias -Name 'bbTestFull' -Value 'Invoke-BusBuddyTestFull' -Description 'Enhanced test with full capture' -Force } catch { Write-Error "Alias 'bbTestFull' could not be set: $($_.Exception.Message)" -ErrorAction SilentlyContinue }
+try { Set-Alias -Name 'bbTestErrors' -Value 'Get-BusBuddyTestErrors' -Description 'Show test errors only' -Force } catch { Write-Error "Alias 'bbTestErrors' could not be set: $($_.Exception.Message)" -ErrorAction SilentlyContinue }
+try { Set-Alias -Name 'bbTestLog' -Value 'Get-BusBuddyTestLog' -Description 'Show latest test log' -Force } catch { Write-Error "Alias 'bbTestLog' could not be set: $($_.Exception.Message)" -ErrorAction SilentlyContinue }
+try { Set-Alias -Name 'bbTestWatch' -Value 'Start-BusBuddyTestWatch' -Description 'Continuous test watch' -Force } catch { Write-Error "Alias 'bbTestWatch' could not be set: $($_.Exception.Message)" -ErrorAction SilentlyContinue }
 
 # Validation and quality aliases
-try { Set-Alias -Name 'bbXamlValidate' -Value 'Invoke-BusBuddyXamlValidation' -Description 'Validate XAML files' -Force } catch { }
-try { Set-Alias -Name 'bbCatchErrors' -Value 'Invoke-BusBuddyWithExceptionCapture' -Description 'Run with exception capture' -Force } catch { }
-try { Set-Alias -Name 'bbAntiRegression' -Value 'Invoke-BusBuddyAntiRegression' -Description 'Run anti-regression checks' -Force } catch { }
+try { Set-Alias -Name 'bbXamlValidate' -Value 'Invoke-BusBuddyXamlValidation' -Description 'Validate XAML files' -Force } catch { Write-Error "Alias 'bbXamlValidate' could not be set: $($_.Exception.Message)" -ErrorAction SilentlyContinue }
+try { Set-Alias -Name 'bbCatchErrors' -Value 'Invoke-BusBuddyWithExceptionCapture' -Description 'Run with exception capture' -Force } catch { Write-Error "Alias 'bbCatchErrors' could not be set: $($_.Exception.Message)" -ErrorAction SilentlyContinue }
+try { Set-Alias -Name 'bbAntiRegression' -Value 'Invoke-BusBuddyAntiRegression' -Description 'Run anti-regression checks' -Force } catch { Write-Error "Alias 'bbAntiRegression' could not be set: $($_.Exception.Message)" -ErrorAction SilentlyContinue }
 
 # MVP and project management aliases
-try { Set-Alias -Name 'bbMvp' -Value 'Start-BusBuddyMVP' -Description 'MVP focus and scope management' -Force } catch { }
-try { Set-Alias -Name 'bbMvpCheck' -Value 'Test-BusBuddyMVPReadiness' -Description 'Check MVP readiness' -Force } catch { }
-try { Set-Alias -Name 'bbEnvCheck' -Value 'Test-BusBuddyEnvironment' -Description 'Comprehensive environment validation' -Force } catch { }
+try { Set-Alias -Name 'bbMvp' -Value 'Start-BusBuddyMVP' -Description 'MVP focus and scope management' -Force } catch { Write-Error "Alias 'bbMvp' could not be set: $($_.Exception.Message)" -ErrorAction SilentlyContinue }
+try { Set-Alias -Name 'bbMvpCheck' -Value 'Test-BusBuddyMVPReadiness' -Description 'Check MVP readiness' -Force } catch { Write-Error "Alias 'bbMvpCheck' could not be set: $($_.Exception.Message)" -ErrorAction SilentlyContinue }
+try { Set-Alias -Name 'bbEnvCheck' -Value 'Test-BusBuddyEnvironment' -Description 'Comprehensive environment validation' -Force } catch { Write-Error "Alias 'bbEnvCheck' could not be set: $($_.Exception.Message)" -ErrorAction SilentlyContinue }
 
 # Azure and cloud infrastructure aliases
-try { Set-Alias -Name 'bbAzureFirewall' -Value 'Update-BusBuddyAzureFirewall' -Description 'Update Azure SQL firewall rules' -Force } catch { }
-try { Set-Alias -Name 'bb-azure-firewall' -Value 'Update-BusBuddyAzureFirewall' -Description 'Update Azure SQL firewall rules (kebab-case)' -Force } catch { }
-try { Set-Alias -Name 'bbAzureTest' -Value 'Test-BusBuddyAzureConnection' -Description 'Test Azure SQL connection' -Force } catch { }
-try { Set-Alias -Name 'bb-azure-test' -Value 'Test-BusBuddyAzureConnection' -Description 'Test Azure SQL connection (kebab-case)' -Force } catch { }
-try { Set-Alias -Name 'bbAzureConfig' -Value 'Get-BusBuddyAzureConfig' -Description 'Show Azure configuration' -Force } catch { }
-try { Set-Alias -Name 'bb-azure-config' -Value 'Get-BusBuddyAzureConfig' -Description 'Show Azure configuration (kebab-case)' -Force } catch { }
+try { Set-Alias -Name 'bbAzureFirewall' -Value 'Update-BusBuddyAzureFirewall' -Description 'Update Azure SQL firewall rules' -Force } catch { Write-Error "Alias 'bbAzureFirewall' could not be set: $($_.Exception.Message)" -ErrorAction SilentlyContinue }
+try { Set-Alias -Name 'bb-azure-firewall' -Value 'Update-BusBuddyAzureFirewall' -Description 'Update Azure SQL firewall rules (kebab-case)' -Force } catch { Write-Error "Alias 'bb-azure-firewall' could not be set: $($_.Exception.Message)" -ErrorAction SilentlyContinue }
+try { Set-Alias -Name 'bbAzureTest' -Value 'Test-BusBuddyAzureConnection' -Description 'Test Azure SQL connection' -Force } catch { Write-Error "Alias 'bbAzureTest' could not be set: $($_.Exception.Message)" -ErrorAction SilentlyContinue }
+try { Set-Alias -Name 'bb-azure-test' -Value 'Test-BusBuddyAzureConnection' -Description 'Test Azure SQL connection (kebab-case)' -Force } catch { Write-Error "Alias 'bb-azure-test' could not be set: $($_.Exception.Message)" -ErrorAction SilentlyContinue }
+try { Set-Alias -Name 'bbAzureConfig' -Value 'Get-BusBuddyAzureConfig' -Description 'Show Azure configuration' -Force } catch { Write-Error "Alias 'bbAzureConfig' could not be set: $($_.Exception.Message)" -ErrorAction SilentlyContinue }
+try { Set-Alias -Name 'bb-azure-config' -Value 'Get-BusBuddyAzureConfig' -Description 'Show Azure configuration (kebab-case)' -Force } catch { Write-Error "Alias 'bb-azure-config' could not be set: $($_.Exception.Message)" -ErrorAction SilentlyContinue }
 
 # Route optimization aliases
-try { Set-Alias -Name 'bbRoutes' -Value 'Start-BusBuddyRouteOptimization' -Description 'Main route optimization system' -Force } catch { }
-try { Set-Alias -Name 'bbRouteOptimize' -Value 'Invoke-BusBuddyRouteOptimization' -Description 'xAI Grok route optimization with detailed analysis' -Force } catch { }
-try { Set-Alias -Name 'bbGenerateReport' -Value 'Invoke-BusBuddyReport' -Description 'Generate PDF reports (roster, route manifest, etc.)' -Force } catch { }
-try { Set-Alias -Name 'bbRouteDemo' -Value 'Show-RouteOptimizationDemo' -Description 'Demo route optimization with sample data' -Force } catch { }
-try { Set-Alias -Name 'bbRouteStatus' -Value 'Get-BusBuddyRouteStatus' -Description 'Check route optimization system status' -Force } catch { }
+try { Set-Alias -Name 'bbRoutes' -Value 'Start-BusBuddyRouteOptimization' -Description 'Main route optimization system' -Force } catch { Write-Error "Alias 'bbRoutes' could not be set: $($_.Exception.Message)" -ErrorAction SilentlyContinue }
+try { Set-Alias -Name 'bbRouteOptimize' -Value 'Invoke-BusBuddyRouteOptimization' -Description 'xAI Grok route optimization with detailed analysis' -Force } catch { Write-Error "Alias 'bbRouteOptimize' could not be set: $($_.Exception.Message)" -ErrorAction SilentlyContinue }
+try { Set-Alias -Name 'bbGenerateReport' -Value 'Invoke-BusBuddyReport' -Description 'Generate PDF reports (roster, route manifest, etc.)' -Force } catch { Write-Error "Alias 'bbGenerateReport' could not be set: $($_.Exception.Message)" -ErrorAction SilentlyContinue }
+try { Set-Alias -Name 'bbRouteDemo' -Value 'Show-RouteOptimizationDemo' -Description 'Demo route optimization with sample data' -Force } catch { Write-Error "Alias 'bbRouteDemo' could not be set: $($_.Exception.Message)" -ErrorAction SilentlyContinue }
+try { Set-Alias -Name 'bbRouteStatus' -Value 'Get-BusBuddyRouteStatus' -Description 'Check route optimization system status' -Force } catch { Write-Error "Alias 'bbRouteStatus' could not be set: $($_.Exception.Message)" -ErrorAction SilentlyContinue }
 
 # Documentation and diagnostics aliases
-try { Set-Alias -Name 'bbCopilotRef' -Value 'Open-BusBuddyCopilotReference' -Description 'Open Copilot reference for enhanced context' -Force } catch { }
-try { Set-Alias -Name 'bbCaptureRuntimeErrors' -Value 'Start-BusBuddyRuntimeErrorCapture' -Description 'Comprehensive runtime error capture and monitoring' -Force } catch { }
-try { Set-Alias -Name 'bbRunCapture' -Value 'Invoke-BusBuddyRunCapture' -Description 'Run application with runtime error capture' -Force } catch { }
-try { Set-Alias -Name 'bb-run-capture' -Value 'Invoke-BusBuddyRunCapture' -Description 'Run application with runtime error capture (kebab-case)' -Force } catch { }
-try { Set-Alias -Name 'bbDiagnostic' -Value 'Invoke-BusBuddyDiagnostic' -Description 'Run diagnostics and output environment, module, and MVP status' -Force } catch { }
-try { Set-Alias -Name 'bbWelcome' -Value 'Show-BusBuddyWelcome' -Description 'Show categorized command overview' -Force } catch { }
+try { Set-Alias -Name 'bbCopilotRef' -Value 'Open-BusBuddyCopilotReference' -Description 'Open Copilot reference for enhanced context' -Force } catch { Write-Error "Alias 'bbCopilotRef' could not be set: $($_.Exception.Message)" -ErrorAction SilentlyContinue }
+try { Set-Alias -Name 'bbCaptureRuntimeErrors' -Value 'Start-BusBuddyRuntimeErrorCapture' -Description 'Comprehensive runtime error capture and monitoring' -Force } catch { Write-Error "Alias 'bbCaptureRuntimeErrors' could not be set: $($_.Exception.Message)" -ErrorAction SilentlyContinue }
+try { Set-Alias -Name 'bbRunCapture' -Value 'Invoke-BusBuddyRunCapture' -Description 'Run application with runtime error capture' -Force } catch { Write-Error "Alias 'bbRunCapture' could not be set: $($_.Exception.Message)" -ErrorAction SilentlyContinue }
+try { Set-Alias -Name 'bb-run-capture' -Value 'Invoke-BusBuddyRunCapture' -Description 'Run application with runtime error capture (kebab-case)' -Force } catch { Write-Error "Alias 'bb-run-capture' could not be set: $($_.Exception.Message)" -ErrorAction SilentlyContinue }
+try { Set-Alias -Name 'bbDiagnostic' -Value 'Invoke-BusBuddyDiagnostic' -Description 'Run diagnostics and output environment, module, and MVP status' -Force } catch { Write-Error "Alias 'bbDiagnostic' could not be set: $($_.Exception.Message)" -ErrorAction SilentlyContinue }
+try { Set-Alias -Name 'bbWelcome' -Value 'Show-BusBuddyWelcome' -Description 'Show categorized command overview' -Force } catch { Write-Error "Failed to set alias 'bbWelcome': $($_.Exception.Message)" }
+
+#endregion
+
+#region Enhanced Test Output Functions
+
+function Get-BusBuddyTestOutput {
+    <#
+    .SYNOPSIS
+        Execute tests with complete output capture and no truncation
+    .DESCRIPTION
+        Captures full dotnet test output to both console and file, preventing truncation issues.
+        Supports all test scenarios: unit, integration, validation, etc.
+    .PARAMETER TestSuite
+        Type of tests to run (All, Unit, Integration, Validation, Core, WPF)
+    .PARAMETER ProjectPath
+        Path to solution or test project file
+    .PARAMETER SaveToFile
+        Save complete output to timestamped log file
+    .PARAMETER Filter
+        Custom test filter expression
+    .PARAMETER Verbosity
+        Test output verbosity level
+    .EXAMPLE
+        Get-BusBuddyTestOutput -TestSuite "Unit" -SaveToFile
+    .EXAMPLE
+        Get-BusBuddyTestOutput -Filter "Category=Core" -SaveToFile
+    #>
+    [CmdletBinding()]
+    [OutputType([hashtable])]
+    param(
+        [ValidateSet('All', 'Unit', 'Integration', 'Validation', 'Core', 'WPF')]
+        [string]$TestSuite = 'All',
+        [string]$ProjectPath = "BusBuddy.sln",
+        [switch]$SaveToFile,
+        [string]$Filter,
+        [ValidateSet('quiet', 'minimal', 'normal', 'detailed', 'diagnostic')]
+        [string]$Verbosity = 'normal'
+    )
+
+    $timestamp = Get-Date -Format "yyyyMMdd-HHmmss"
+    $outputFile = "logs\test-output-$TestSuite-$timestamp.log"
+
+    if (-not (Test-Path "logs")) {
+        New-Item -ItemType Directory -Path "logs" -Force | Out-Null
+    }
+
+    Write-Information "🧪 Running $TestSuite tests..." -InformationAction Continue
+    Write-Information "📝 Verbosity: $Verbosity" -InformationAction Continue
+    Write-Information "📁 Project: $ProjectPath" -InformationAction Continue
+
+    if ($SaveToFile) {
+        Write-Information "💾 Full output will be saved to: $outputFile" -InformationAction Continue
+    }
+
+    if (-not $Filter) {
+        $Filter = switch ($TestSuite) {
+            'Unit'        { 'Category=Unit|TestCategory=Unit' }
+            'Integration' { 'Category=Integration|TestCategory=Integration' }
+            'Validation'  { 'Category=Validation|TestCategory=Validation' }
+            'Core'        { 'FullyQualifiedName~BusBuddy.Tests.Core' }
+            'WPF'         { 'FullyQualifiedName~BusBuddy.UITests' }
+            'All'         { '' }
+            default       { '' }
+        }
+    }
+
+    $env:DOTNET_CLI_UI_LANGUAGE = "en-US"
+    $env:DOTNET_NOLOGO = "false"  # We want full output
+
+    try {
+        $startTime = Get-Date
+        Write-Information "🏗️ Building solution first..." -InformationAction Continue
+
+        $buildCmd = "dotnet build $ProjectPath --configuration Debug --verbosity $Verbosity"
+        $buildStdOutPath = "logs/build-stdout-$timestamp.log"
+        $buildOutput = & dotnet build $ProjectPath --configuration Debug --verbosity $Verbosity 2>&1 | Tee-Object -FilePath $buildStdOutPath
+
+        $buildStdout = Get-Content $buildStdOutPath -Raw -ErrorAction SilentlyContinue
+        $buildStderr = $buildOutput | Where-Object { $_ -match 'error' -or $_ -match 'FAILED' }
+        $buildExitCode = $LASTEXITCODE
+
+        if ($buildExitCode -ne 0) {
+            Write-Error "❌ Build failed! Cannot proceed with testing."
+            Write-Error "Build errors:"
+            $buildStderr | ForEach-Object { Write-Error $_ }
+            return @{
+                ExitCode = $buildExitCode
+                Status = "BuildFailed"
+                BuildOutput = $buildStdout + ($buildStderr -join "`n")
+            }
+        }
+
+        Write-Information "✅ Build successful, proceeding with tests..." -InformationAction Continue
+
+        $testCmd = @("test", $ProjectPath, "--configuration", "Debug", "--verbosity", $Verbosity, "--logger", "trx", "--results-directory", "TestResults", "--collect:XPlat Code Coverage", "--no-build")
+
+        if ($Filter) {
+            $testCmd += "--filter"
+            $testCmd += $Filter
+            Write-Information "🔍 Filter applied: $Filter" -InformationAction Continue
+        }
+
+        Write-Information "🧪 Executing tests..." -InformationAction Continue
+        $testStdOutPath = "logs/test-stdout-$timestamp.log"
+        $testOutput = & dotnet @testCmd 2>&1 | Tee-Object -FilePath $testStdOutPath
+
+        $testStdout = Get-Content $testStdOutPath -Raw -ErrorAction SilentlyContinue
+        $testStderr = $testOutput | Where-Object { $_ -match 'error' -or $_ -match 'FAILED' }
+        $testExitCode = $LASTEXITCODE
+
+        $endTime = Get-Date
+        $duration = $endTime - $startTime
+
+        $fullOutput = @"
+=== BUSBUDDY TEST LOG ===
+Timestamp: $(Get-Date -Format "yyyy-MM-dd HH:mm:ss")
+Test Suite: $TestSuite
+Project: $ProjectPath
+Filter: $Filter
+Duration: $($duration.TotalSeconds) seconds
+Build Exit Code: $buildExitCode
+Test Exit Code: $testExitCode
+
+=== BUILD OUTPUT ===
+$buildStdout
+
+=== BUILD ERRORS ===
+$($buildStderr -join "`n")
+
+=== TEST OUTPUT ===
+$testStdout
+
+=== TEST ERRORS ===
+$($testStderr -join "`n")
+
+=== TEST SUMMARY ===
+"@
+
+        if ($SaveToFile) {
+            $fullOutput | Out-File -FilePath $outputFile -Encoding UTF8 -Width 500
+            Write-Information "✅ Complete test log saved to: $outputFile" -InformationAction Continue
+        }
+
+        $passedTests = [regex]::Matches($testStdout, "Passed:\s+(\d+)") | ForEach-Object { [int]$_.Groups[1].Value } | Measure-Object -Sum | Select-Object -ExpandProperty Sum
+        $failedTests = [regex]::Matches($testStdout, "Failed:\s+(\d+)") | ForEach-Object { [int]$_.Groups[1].Value } | Measure-Object -Sum | Select-Object -ExpandProperty Sum
+        $skippedTests = [regex]::Matches($testStdout, "Skipped:\s+(\d+)") | ForEach-Object { [int]$_.Groups[1].Value } | Measure-Object -Sum | Select-Object -ExpandProperty Sum
+
+        $errorLines = ($testStdout + ($testStderr -join "`n")) -split "`n" | Where-Object { $_ -match "FAILED|ERROR|Exception|error CS\d+|error MSB\d+" }
+
+        if ($errorLines -or $failedTests -gt 0) {
+            Write-Error "`n❌ TEST ISSUES FOUND:"
+            Write-Information ("=" * 60) -InformationAction Continue
+            if ($failedTests -gt 0) {
+                Write-Error "Failed Tests: $failedTests"
+            }
+            $errorLines | ForEach-Object {
+                Write-Error $_
+            }
+            Write-Information ("=" * 60) -InformationAction Continue
+            if ($SaveToFile) {
+                Write-Information "🔍 Full details in: $outputFile" -InformationAction Continue
+            }
+        } else {
+            Write-Information "✅ All tests passed!" -InformationAction Continue
+        }
+
+        Write-Information "`n📊 TEST SUMMARY:" -InformationAction Continue
+        Write-Information "   Test Suite: $TestSuite" -InformationAction Continue
+        Write-Information "   Duration: $($duration.TotalSeconds) seconds" -InformationAction Continue
+        Write-Information "   Passed: $passedTests" -InformationAction Continue
+        Write-Information "   Failed: $failedTests" -InformationAction Continue
+        Write-Information "   Skipped: $skippedTests" -InformationAction Continue
+        Write-Information "   Build Status: $(if ($buildExitCode -eq 0) { 'SUCCESS ✅' } else { 'FAILED ❌' })" -InformationAction Continue
+        Write-Information "   Test Status: $(if ($testExitCode -eq 0) { 'SUCCESS ✅' } else { 'FAILED ❌' })" -InformationAction Continue
+
+        return @{
+            ExitCode = $testExitCode
+            Duration = $duration
+            PassedTests = $passedTests
+            FailedTests = $failedTests
+            SkippedTests = $skippedTests
+            ErrorLines = $errorLines
+            OutputFile = if ($SaveToFile) { $outputFile } else { $null }
+            FullOutput = $fullOutput
+            BuildExitCode = $buildExitCode
+            Status = if ($testExitCode -eq 0) { "Success" } else { "Failed" }
+        }
+    }
+    catch {
+        Write-Error "Failed to execute tests: $($_.Exception.Message)"
+        return @{
+            ExitCode = -1
+            Status = "Error"
+            ErrorMessage = $_.Exception.Message
+        }
+    }
+}
+
+function Invoke-BusBuddyTestFull {
+    <#
+    .SYNOPSIS
+        Enhanced bb-test with complete output capture
+    #>
+    [CmdletBinding()]
+    param(
+        [ValidateSet('All', 'Unit', 'Integration', 'Validation', 'Core', 'WPF')]
+        [string]$TestSuite = 'All'
+    )
+    Get-BusBuddyTestOutput -TestSuite $TestSuite -SaveToFile
+}
+
+function Get-BusBuddyTestError {
+    <#
+    .SYNOPSIS
+        Get only test errors without full output
+    #>
+    [CmdletBinding()]
+    param(
+        [ValidateSet('All', 'Unit', 'Integration', 'Validation', 'Core', 'WPF')]
+        [string]$TestSuite = 'All'
+    )
+    Get-BusBuddyTestOutput -TestSuite $TestSuite -Verbosity 'quiet'
+}
+
+function Get-BusBuddyTestLog {
+    <#
+    .SYNOPSIS
+        Show the most recent test log
+    #>
+    $latestLog = Get-ChildItem "logs\test-output-*.log" -ErrorAction SilentlyContinue | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+    if ($latestLog) {
+        Write-Information "📄 Most recent test log: $($latestLog.Name)" -InformationAction Continue
+        Write-Information "📅 Created: $($latestLog.LastWriteTime)" -InformationAction Continue
+        Write-Information "" -InformationAction Continue
+        Get-Content $latestLog.FullName
+    } else {
+        Write-Information "No test logs found. Run bbTestFull first." -InformationAction Continue
+    }
+}
+
+function Start-BusBuddyTestWatch {
+    <#
+    .SYNOPSIS
+        Continuous testing with file monitoring and full output capture
+    #>
+    [CmdletBinding()]
+    param(
+        [ValidateSet('All', 'Unit', 'Integration', 'Validation', 'Core', 'WPF')]
+        [string]$TestSuite = 'Unit'
+    )
+    Write-Information "🔄 Starting watch mode for $TestSuite tests..." -InformationAction Continue
+    Write-Information "Press Ctrl+C to stop watching" -InformationAction Continue
+
+    Get-BusBuddyTestOutput -TestSuite $TestSuite -SaveToFile
+
+    $watcher = New-Object System.IO.FileSystemWatcher
+    $watcher.Path = $PWD.Path
+    $watcher.Filter = "*.cs"
+    $watcher.IncludeSubdirectories = $true
+    $watcher.EnableRaisingEvents = $true
+
+    $action = {
+        $path = $Event.SourceEventArgs.FullPath
+        $changeType = $Event.SourceEventArgs.ChangeType
+        Write-Information "📝 File changed: $path" -InformationAction Continue
+        Start-Sleep -Seconds 1  # Debounce
+        Write-Information "🔄 Re-running tests..." -InformationAction Continue
+        Get-BusBuddyTestOutput -TestSuite $using:TestSuite -SaveToFile
+    }
+
+    Register-ObjectEvent -InputObject $watcher -EventName "Changed" -Action $action
+
+    try {
+        while ($true) {
+            Start-Sleep -Seconds 1
+        }
+    } finally {
+        $watcher.EnableRaisingEvents = $false
+        $watcher.Dispose()
+        Get-EventSubscriber | Unregister-Event
+    }
+}
+
+function Enable-BusBuddyEnhancedTestOutput {
+    <#
+    .SYNOPSIS
+        Enable enhanced test output functions in the current session
+    .DESCRIPTION
+        Loads the enhanced test output functions and creates aliases for easier access
+    #>
+    [CmdletBinding()]
+    param()
+
+    Write-BusBuddyStatus "✅ Enhanced test output functions are now available!" -Type Success
+    Write-Information "" -InformationAction Continue
+    Write-Information "📋 Available Enhanced Test Functions:" -InformationAction Continue
+    Write-Information "  • Get-BusBuddyTestOutput    - Full test execution with capture" -InformationAction Continue
+    Write-Information "  • Invoke-BusBuddyTestFull   - Enhanced bb-test (bbTestFull)" -InformationAction Continue
+    Write-Information "  • Get-BusBuddyTestError     - Error-only output (bbTestErrors)" -InformationAction Continue
+    Write-Information "  • Get-BusBuddyTestLog       - Show latest test log (bbTestLog)" -InformationAction Continue
+    Write-Information "  • Start-BusBuddyTestWatch   - Continuous test watch (bbTestWatch)" -InformationAction Continue
+    Write-Information "" -InformationAction Continue
+    Write-Information "🚀 Quick Start:" -InformationAction Continue
+    Write-Information "  bbTestFull          - Run tests with full output capture" -InformationAction Continue
+    Write-Information "  bbTestFull Unit     - Run unit tests with capture" -InformationAction Continue
+    Write-Information "  bbTestLog           - View latest test results" -InformationAction Continue
+    Write-Information "  bbTestWatch         - Start continuous testing" -InformationAction Continue
+}
 
 #endregion
 
@@ -3030,6 +3353,7 @@ Export-ModuleMember -Function @(
     'Invoke-BusBuddyRestore',
     'Start-BusBuddyDevSession',
     'Invoke-BusBuddyHealthCheck',
+    'Test-BusBuddyHealth',
     'Get-BusBuddyInfo',
     'Get-BusBuddyCommand',
     'Invoke-BusBuddyXamlValidation',
@@ -3051,10 +3375,10 @@ Export-ModuleMember -Function @(
     'Get-BusBuddyTestError',
     'Get-BusBuddyTestLog',
     'Start-BusBuddyTestWatch',
+    'Enable-BusBuddyEnhancedTestOutput',
     'Update-BusBuddyAzureFirewall',
     'Get-BusBuddyAzureConfig',
-    'Test-BusBuddyAzureConnection',
-    'Enable-BusBuddyEnhancedTestOutput'
+    'Test-BusBuddyAzureConnection'
 ) -Alias @(
     'bbBuild', 'bbRun', 'bbTest', 'bbClean', 'bbRestore', 'bbHealth',
     'bbDevSession', 'bbInfo', 'bbCommands', 'bbXamlValidate', 'bbCatchErrors',
@@ -3063,7 +3387,9 @@ Export-ModuleMember -Function @(
     'bbCaptureRuntimeErrors', 'bbRunCapture', 'bb-run-capture', 'bbDiagnostic', 'bbWelcome', 'bbTestFull', 'bbTestErrors',
     'bbTestLog', 'bbTestWatch',
     # Kebab-case aliases for consistency
-    'bb-build', 'bb-run', 'bb-test', 'bb-clean', 'bb-restore'
+    'bb-build', 'bb-run', 'bb-test', 'bb-clean', 'bb-restore',
+    # Azure aliases
+    'bbAzureFirewall', 'bb-azure-firewall', 'bbAzureTest', 'bb-azure-test', 'bbAzureConfig', 'bb-azure-config'
 )
 
 #endregion
@@ -3123,8 +3449,31 @@ function Show-BusBuddyWelcome {
         Write-Information "  • bbCommands — full list with functions" -InformationAction Continue
         Write-Information "  • bbHealth — verify env quickly" -InformationAction Continue
         Write-Information "  • Set 'BUSBUDDY_NO_WELCOME=1' to suppress on import" -InformationAction Continue
-    Write-Information "  • Set 'BUSBUDDY_NO_XAI_WARN=1' to silence optional XAI messages" -InformationAction Continue
     }
+}
+
+# Auto-run welcome unless suppressed
+if (-not $env:BUSBUDDY_NO_WELCOME) {
+    Show-BusBuddyWelcome -Quiet
+}
+
+#endregion
+
+# Import additional validation functions via module (no dot-sourcing)
+try {
+    $validationPath = Join-Path (Get-BusBuddyProjectRoot) "PowerShell\Validation"
+    if (Test-Path $validationPath) {
+        # Additional validation modules can be imported here
+    }
+} catch {
+    Write-Verbose "Optional validation modules not available"
+}
+
+# Ensure the welcome function is exported after its definition so external callers can invoke bb-welcome
+try {
+    Export-ModuleMember -Function 'Show-BusBuddyWelcome' -ErrorAction SilentlyContinue
+} catch {
+    Write-Information "(Non-fatal: Show-BusBuddyWelcome already exported or export failed)" -InformationAction Continue
 }
 
 # Auto-run welcome unless suppressed
@@ -3155,4 +3504,5 @@ try {
 } catch {
     Write-Information "Non-fatal error occurred during module export." -InformationAction Continue
 }
+#endregion
 

@@ -35,3 +35,6 @@ function Test-BusBuddyHealth {
     Write-Output "Running BusBuddy health check..."
     & $healthScript
 }
+
+# Export public functions as required by Microsoft PowerShell standards
+Export-ModuleMember -Function 'Invoke-BusBuddyWileySeed', 'Test-BusBuddyHealth'

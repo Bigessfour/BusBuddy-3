@@ -84,6 +84,9 @@ function Invoke-BbBuild {
     dotnet build $script:SlnPath -c $Configuration
 }
 
+# Create alias for build convenience
+Set-Alias -Name bb-build -Value Invoke-BbBuild
+
 
 
 
@@ -113,4 +116,10 @@ function Invoke-BbBuild {
      }
  }
 
-Export-ModuleMember -Function Get-BbCommands, Test-BbAntiRegression, Test-BbXaml, Get-BbWriteHost, Update-BbWriteHost, Show-BbWelcome -Alias *
+# Create discoverability alias for command listing
+# Ref: about_Aliases — https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_Aliases
+Set-Alias -Name bb-commands -Value Get-BbCommands
+
+# Export public functions and aliases
+# Ref: Export-ModuleMember — https://learn.microsoft.com/powershell/module/microsoft.powershell.core/export-modulemember
+Export-ModuleMember -Function Get-BbCommands, Test-BbAntiRegression, Test-BbXaml, Invoke-BbBuild, Get-BbWriteHost, Update-BbWriteHost, Show-BbWelcome -Alias *

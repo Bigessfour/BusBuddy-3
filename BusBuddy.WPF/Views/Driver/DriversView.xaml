@@ -75,8 +75,8 @@
                             Background="{StaticResource BusBuddy.Brush.Semantic.Info}" Foreground="White"
                             AutomationProperties.Name="View License Details"
                             AutomationProperties.HelpText="View license information and expiration details"/>
-                    <syncfusion:ButtonAdv Name="TrainingRecordsButton" Label="🎓 Training"
-                            Command="{Binding ViewTrainingCommand}"
+            <syncfusion:ButtonAdv Name="TrainingRecordsButton" Label="🎓 Training"
+                Command="{Binding TrainingRecordsCommand}"
                             IsEnabled="{Binding HasSelectedDriver}"
                             Background="{StaticResource BusBuddy.Brush.SafetyOrange}" Foreground="White"
                             AutomationProperties.Name="View Training Records"
@@ -89,51 +89,17 @@
                             Command="{Binding RefreshCommand}"
                             AutomationProperties.Name="Refresh Driver List"
                             AutomationProperties.HelpText="Reload driver data from the database"/>
-                    <syncfusion:ButtonAdv Name="ExportButton" Label="📤 Export"
-                            Command="{Binding ExportCommand}"
+            <syncfusion:ButtonAdv Name="ExportButton" Label="📤 Export"
+                Command="{Binding GenerateReportsCommand}"
                             AutomationProperties.Name="Export Drivers"
                             AutomationProperties.HelpText="Export driver data to CSV file"/>
 
                     <!-- Quick Filter -->
-                    <TextBox Name="QuickSearchBox" Width="150" Margin="10,0,0,0"
-                            Text="{Binding QuickSearchText, UpdateSourceTrigger=PropertyChanged}"
+            <syncfusion:SfTextBoxExt Name="QuickSearchBox" Width="150" Margin="10,0,0,0"
+                Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                            Watermark="🔍 Search drivers..."
                             AutomationProperties.Name="Quick Search Drivers"
-                            AutomationProperties.HelpText="Type to search drivers by name, license, or status">
-                        <TextBox.Style>
-                            <Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
-                                <Setter Property="Template">
-                                    <Setter.Value>
-                                        <ControlTemplate TargetType="TextBox">
-                                            <Border Background="{TemplateBinding Background}"
-                                                   BorderBrush="{TemplateBinding BorderBrush}"
-                                                   BorderThickness="{TemplateBinding BorderThickness}"
-                                                   CornerRadius="3">
-                                                <Grid>
-                                                    <ScrollViewer x:Name="PART_ContentHost" />
-                                                    <TextBlock Text="🔍 Search drivers..."
-                                                              Foreground="Gray"
-                                                              IsHitTestVisible="False"
-                                                              Margin="5,0,0,0"
-                                                              VerticalAlignment="Center">
-                                                        <TextBlock.Style>
-                                                            <Style TargetType="TextBlock">
-                                                                <Setter Property="Visibility" Value="Collapsed"/>
-                                                                <Style.Triggers>
-                                                                    <DataTrigger Binding="{Binding Text, RelativeSource={RelativeSource AncestorType=TextBox}}" Value="">
-                                                                        <Setter Property="Visibility" Value="Visible"/>
-                                                                    </DataTrigger>
-                                                                </Style.Triggers>
-                                                            </Style>
-                                                        </TextBlock.Style>
-                                                    </TextBlock>
-                                                </Grid>
-                                            </Border>
-                                        </ControlTemplate>
-                                    </Setter.Value>
-                                </Setter>
-                            </Style>
-                        </TextBox.Style>
-                    </TextBox>
+                            AutomationProperties.HelpText="Type to search drivers by name, license, or status"/>
                 </StackPanel>
             </Grid>
         </Border>
@@ -141,7 +107,7 @@
         <!-- Drivers Data Grid -->
         <syncfusion:SfDataGrid Grid.Row="2"
                                Name="DriversDataGrid"
-                               ItemsSource="{Binding Drivers}"
+                               ItemsSource="{Binding FilteredDrivers}"
                                SelectedItem="{Binding SelectedDriver, Mode=TwoWay}"
                                AutoGenerateColumns="False"
                                AllowEditing="False"
@@ -161,7 +127,7 @@
                 <syncfusion:GridTextColumn HeaderText="Driver Name" MappingName="DriverName" Width="200"/>
                 <syncfusion:GridTextColumn HeaderText="License Number" MappingName="LicenseNumber" Width="150"/>
                 <syncfusion:GridTextColumn HeaderText="License Class" MappingName="LicenseClass" Width="100"/>
-                <syncfusion:GridDateTimeColumn HeaderText="License Expiry" MappingName="LicenseExpiryDate" Width="120" DisplayBinding="{Binding LicenseExpiryDate, StringFormat=MM/dd/yyyy}"/>
+                <syncfusion:GridDateTimeColumn HeaderText="License Expiry" MappingName="LicenseExpiryDate" Width="120" Pattern="ShortDate"/>
                 <syncfusion:GridTextColumn HeaderText="Phone" MappingName="DriverPhone" Width="120"/>
                 <syncfusion:GridTextColumn HeaderText="Status" MappingName="Status" Width="100"/>
                 <syncfusion:GridCheckBoxColumn HeaderText="Training Complete" MappingName="TrainingComplete" Width="130"/>

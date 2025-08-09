@@ -49,14 +49,15 @@ using BusBuddy.Core.Data;
 using Syncfusion.SfSkinManager;
 using Serilog;
 using Syncfusion.Windows.Tools.Controls; // DockingManager API per Syncfusion docs
+using Syncfusion.Windows.Shared; // ChromelessWindow API per Syncfusion docs
 
 namespace BusBuddy.WPF.Views.Main
 {
     /// <summary>
-    /// BusBuddy MainWindow - MVP Implementation with Syncfusion DockingManager
-    /// Professional layout with validated Syncfusion patterns
+    /// BusBuddy MainWindow - MVP Implementation with Syncfusion ChromelessWindow and DockingManager
+    /// Professional layout with validated Syncfusion patterns using ChromelessWindow for modern UI
     /// </summary>
-    public partial class MainWindow : Window
+    public partial class MainWindow : ChromelessWindow
     {
         private static readonly ILogger Logger = Log.ForContext<MainWindow>();
         private MainWindowViewModel? _viewModel;
@@ -164,7 +165,7 @@ namespace BusBuddy.WPF.Views.Main
             try
             {
                 Logger.Debug("Configuring Syncfusion SfSkinManager global settings");
-                // Apply FluentDark theme with FluentLight fallback
+                // Apply FluentDark theme with FluentWhite fallback
                 // Based on SYNCFUSION_API_REFERENCE.md validated patterns
                 SfSkinManager.ApplyStylesOnApplication = true;
                 SfSkinManager.ApplyThemeAsDefaultStyle = true;
@@ -179,15 +180,15 @@ namespace BusBuddy.WPF.Views.Main
             }
             catch (Exception ex)
             {
-                Logger.Warning(ex, "Failed to apply FluentDark theme, trying FluentLight fallback");
+                Logger.Warning(ex, "Failed to apply FluentDark theme, trying FluentWhite fallback");
 
                 try
                 {
-                    Logger.Debug("Attempting FluentLight fallback theme");
-                    using var fluentLightTheme = new Theme("FluentLight");
-                    SfSkinManager.SetTheme(this, fluentLightTheme);
-                    Logger.Information("Applied FluentLight fallback theme successfully");
-                    Logger.Debug("ApplySyncfusionTheme completed with FluentLight fallback");
+                    Logger.Debug("Attempting FluentWhite fallback theme");
+                    using var fluentWhiteTheme = new Theme("FluentWhite");
+                    SfSkinManager.SetTheme(this, fluentWhiteTheme);
+                    Logger.Information("Applied FluentWhite fallback theme successfully");
+                    Logger.Debug("ApplySyncfusionTheme completed with FluentWhite fallback");
                 }
                 catch (Exception fallbackEx)
                 {

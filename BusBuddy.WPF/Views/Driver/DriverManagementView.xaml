@@ -14,43 +14,125 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <TextBlock Grid.Row="0"
-                   Text="Driver Management"
-                   FontSize="24"
-                   FontWeight="Bold"
-                   Margin="20,10"/>
+        <!-- Header Section -->
+        <Border Grid.Row="0"
+                Background="#007ACC"
+                Padding="20,15">
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Text="&#xE7C4;" FontFamily="Segoe MDL2 Assets"
+                          FontSize="20" Foreground="White" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                <TextBlock Text="Driver Management"
+                           FontSize="24"
+                           FontWeight="Bold"
+                           Foreground="White"/>
+            </StackPanel>
+        </Border>
 
-        <StackPanel Grid.Row="1"
-                    Orientation="Horizontal"
-                    Margin="20,10">
-            <syncfusion:ButtonAdv Label="Add Driver"
-                    Width="100"
-                    Height="35"
-                    Margin="0,0,10,0"/>
-            <syncfusion:ButtonAdv Label="Edit Driver"
-                    Width="100"
-                    Height="35"
-                    Margin="0,0,10,0"/>
-            <syncfusion:ButtonAdv Label="Delete Driver"
-                    Width="100"
-                    Height="35"/>
-        </StackPanel>
+        <!-- Action Buttons Section -->
+        <Border Grid.Row="1"
+                Background="#F5F5F5"
+                Padding="20,10">
+            <StackPanel Orientation="Horizontal">
+                <syncfusion:ButtonAdv Label="Add Driver"
+                                      Width="120"
+                                      Height="35"
+                                      Margin="0,0,10,0"
+                                      SizeMode="Normal"
+                                      SmallIcon="/Assets/Icons/add-user.png">
+                    <syncfusion:ButtonAdv.LargeIcon>
+                        <Image Source="/Assets/Icons/add-user.png" Width="16" Height="16"/>
+                    </syncfusion:ButtonAdv.LargeIcon>
+                </syncfusion:ButtonAdv>
 
-        <syncfusion:SfDataGrid Grid.Row="2"
-                               ItemsSource="{Binding Drivers}"
-                               SelectedItem="{Binding SelectedDriver}"
-                               AutoGenerateColumns="False"
-                               AllowEditing="False"
-                               AllowSorting="True"
-                               AllowFiltering="True"
-                               Margin="20">
-            <syncfusion:SfDataGrid.Columns>
-                <syncfusion:GridTextColumn HeaderText="Driver Name" MappingName="DriverName" Width="200"/>
-                <syncfusion:GridTextColumn HeaderText="License" MappingName="LicenseNumber" Width="150"/>
-                <syncfusion:GridTextColumn HeaderText="Phone" MappingName="Phone" Width="120"/>
-                <syncfusion:GridTextColumn HeaderText="Status" MappingName="Status" Width="100"/>
-            </syncfusion:SfDataGrid.Columns>
-        </syncfusion:SfDataGrid>
+                <syncfusion:ButtonAdv Label="Edit Driver"
+                                      Width="120"
+                                      Height="35"
+                                      Margin="0,0,10,0"
+                                      SizeMode="Normal"
+                                      SmallIcon="/Assets/Icons/edit-user.png">
+                    <syncfusion:ButtonAdv.LargeIcon>
+                        <Image Source="/Assets/Icons/edit-user.png" Width="16" Height="16"/>
+                    </syncfusion:ButtonAdv.LargeIcon>
+                </syncfusion:ButtonAdv>
+
+                <syncfusion:ButtonAdv Label="Delete Driver"
+                                      Width="120"
+                                      Height="35"
+                                      SizeMode="Normal"
+                                      SmallIcon="/Assets/Icons/delete-user.png">
+                    <syncfusion:ButtonAdv.LargeIcon>
+                        <Image Source="/Assets/Icons/delete-user.png" Width="16" Height="16"/>
+                    </syncfusion:ButtonAdv.LargeIcon>
+                </syncfusion:ButtonAdv>
+            </StackPanel>
+        </Border>
+
+        <!-- Data Grid Section -->
+        <Border Grid.Row="2"
+                Background="White"
+                Margin="10"
+                CornerRadius="5">
+            <syncfusion:SfDataGrid ItemsSource="{Binding Drivers}"
+                                   SelectedItem="{Binding SelectedDriver, Mode=TwoWay}"
+                                   AutoGenerateColumns="False"
+                                   AllowEditing="False"
+                                   AllowSorting="True"
+                                   AllowFiltering="True"
+                                   SelectionMode="Single"
+                                   GridLinesVisibility="Both"
+                                   HeaderLinesVisibility="All"
+                                   ShowRowHeader="True"
+                                   ColumnSizer="Star"
+                                   Margin="10">
+
+                <!-- Column Definitions following Syncfusion documentation -->
+                <syncfusion:SfDataGrid.Columns>
+                    <syncfusion:GridTextColumn HeaderText="Driver Name"
+                                               MappingName="DriverName"
+                                               Width="200"
+                                               MinimumWidth="150"/>
+
+                    <syncfusion:GridTextColumn HeaderText="License Number"
+                                               MappingName="LicenseNumber"
+                                               Width="150"
+                                               MinimumWidth="120"/>
+
+                    <syncfusion:GridTextColumn HeaderText="Phone Number"
+                                               MappingName="DriverPhone"
+                                               Width="140"
+                                               MinimumWidth="120"/>
+
+                    <syncfusion:GridTextColumn HeaderText="Email Address"
+                                               MappingName="DriverEmail"
+                                               Width="200"
+                                               MinimumWidth="150"/>
+
+                    <syncfusion:GridTextColumn HeaderText="Status"
+                                               MappingName="Status"
+                                               Width="100"
+                                               MinimumWidth="80"/>
+
+                    <syncfusion:GridDateTimeColumn HeaderText="Hire Date"
+                                                   MappingName="HireDate"
+                                                   Width="120"
+                                                   MinimumWidth="100"
+                                                   Pattern="ShortDate"/>
+
+                    <!-- Removed Route Assignment column for MVP; property not present on Driver model -->
+                </syncfusion:SfDataGrid.Columns>
+
+                <!-- Grid styling following Syncfusion best practices -->
+                <syncfusion:SfDataGrid.TableSummaryRows>
+                    <syncfusion:GridTableSummaryRow Title="Total Drivers: {TotalSummary}"
+                                                    ShowSummaryInRow="True">
+                        <syncfusion:GridTableSummaryRow.SummaryColumns>
+                            <syncfusion:GridSummaryColumn Name="TotalSummary"
+                                                          MappingName="DriverName"
+                                                          SummaryType="CountAggregate"/>
+                        </syncfusion:GridTableSummaryRow.SummaryColumns>
+                    </syncfusion:GridTableSummaryRow>
+                </syncfusion:SfDataGrid.TableSummaryRows>
+            </syncfusion:SfDataGrid>
+        </Border>
     </Grid>
 </UserControl>
-

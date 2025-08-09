@@ -159,6 +159,21 @@ function Show-CaptureResults {
 }
 
 # Main execution
+function Invoke-RuntimeCaptureMonitor {
+    <#
+    .SYNOPSIS
+        Execute the runtime capture monitoring process
+    .PARAMETER Duration
+        Duration in seconds to run the capture
+    .PARAMETER DetailedLogging
+        Enable detailed logging output
+    #>
+    [CmdletBinding()]
+    param(
+        [int]$Duration = 30,
+        [switch]$DetailedLogging
+    )
+
 try {
     Write-Host "🔧 BusBuddy Runtime Capture Monitor v1.0" -ForegroundColor Magenta
     Write-Host "=" * 60 -ForegroundColor Magenta
@@ -179,4 +194,10 @@ try {
 } finally {
     Write-Host ""
     Write-Host "🏁 Monitor session completed at $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')" -ForegroundColor Magenta
+}
+}
+
+# Only run automatically if script is invoked directly (not dot-sourced)
+if ($MyInvocation.InvocationName -ne '.') {
+    Invoke-RuntimeCaptureMonitor -Duration $Duration -DetailedLogging:$DetailedLogging
 }

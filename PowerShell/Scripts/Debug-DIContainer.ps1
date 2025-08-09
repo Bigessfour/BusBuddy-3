@@ -17,6 +17,21 @@ param(
     [switch]$ExportToFile
 )
 
+function Invoke-BusBuddyDIContainerDiagnostic {
+    <#
+    .SYNOPSIS
+        Run DI Container diagnostic analysis
+    .PARAMETER DetailedOutput
+        Show detailed output information
+    .PARAMETER ExportToFile
+        Export results to a timestamped file
+    #>
+    [CmdletBinding()]
+    param(
+        [switch]$DetailedOutput,
+        [switch]$ExportToFile
+    )
+
 Write-Host "🔍 BusBuddy DI Container Diagnostic Report" -ForegroundColor Cyan
 Write-Host "=" * 60 -ForegroundColor Gray
 
@@ -191,3 +206,9 @@ $(($recommendations | ForEach-Object { "  $_" }) -join "`n")
 
 Write-Host "`n✅ DI Container diagnostic completed!" -ForegroundColor Green
 Write-Host "🔧 Next steps: Address any issues found above, then test with bb-run" -ForegroundColor Cyan
+}
+
+# Only run automatically if script is invoked directly (not dot-sourced)
+if ($MyInvocation.InvocationName -ne '.') {
+    Invoke-BusBuddyDIContainerDiagnostic @PSBoundParameters
+}

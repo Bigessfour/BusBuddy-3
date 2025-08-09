@@ -19,7 +19,7 @@ namespace BusBuddy.WPF.Views.Student
         {
             InitializeComponent();
 
-            // Apply Syncfusion theme — FluentDark default, FluentLight fallback
+            // Apply Syncfusion theme — FluentDark default, FluentWhite fallback
             SfSkinManager.ApplyThemeAsDefaultStyle = true;
             try
             {
@@ -29,9 +29,9 @@ namespace BusBuddy.WPF.Views.Student
             }
             catch
             {
-                // Fallback to FluentLight if FluentDark is unavailable
-                using var light = new Theme("FluentLight");
-                SfSkinManager.SetTheme(this, light);
+                // Fallback to FluentWhite if FluentDark is unavailable
+                using var white = new Theme("FluentWhite");
+                SfSkinManager.SetTheme(this, white);
             }
 
             // Set the ViewModel for data binding

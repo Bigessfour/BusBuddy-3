@@ -2,8 +2,7 @@
 
 <#
 .SYNOPSIS
-    BusBuddy Testing Module — Microsoft PowerShell standards compliant
-
+    BusBuddy Testing Module — Microsoft PowerShell standards compliant.
 .DESCRIPTION
     Comprehensive testing infrastructure for BusBuddy with VS Code NUnit Test Runner integration.
     Provides category-based testing, watch mode, and detailed reporting capabilities.
@@ -24,7 +23,7 @@ $Script:ReportsDir = $null
 
 #region Private Functions
 
-function Initialize-BusBuddyPaths {
+function Initialize-BusBuddyPath {
     [CmdletBinding()]
     param()
 
@@ -66,6 +65,7 @@ function Initialize-BusBuddyPaths {
 
 function Invoke-BusBuddyBuild {
     [CmdletBinding()]
+    [OutputType([System.Boolean])]
     param()
 
     try {
@@ -111,10 +111,7 @@ function Invoke-BusBuddyBuild {
             }
 
         Write-Information "✅ Build completed successfully" -InformationAction Continue
-        Write-Information "\u2705 Build completed successfully" -InformationAction Continue
         return $true
-    }
-
     } catch {
         Write-Error "Build failed: $($_.Exception.Message)"
         return $false
@@ -123,6 +120,7 @@ function Invoke-BusBuddyBuild {
 
 function Get-TestFilterExpression {
     [CmdletBinding()]
+    [OutputType([System.String])]
     param(
         [Parameter(Mandatory = $true)]
         [ValidateSet('All', 'Unit', 'Integration', 'Validation', 'Core', 'WPF')]
@@ -142,6 +140,7 @@ function Get-TestFilterExpression {
 
 function Invoke-TestRunner {
     [CmdletBinding()]
+    [OutputType([System.Boolean])]
     param(
         [Parameter(Mandatory = $false)]
         [string]$Filter,
@@ -179,7 +178,7 @@ function Invoke-TestRunner {
             $commandLine = "dotnet " + ($testArgs -join ' ')
             Write-Information "Executing: $commandLine" -InformationAction Continue
 
-            Invoke-Expression $commandLine
+            & dotnet $testArgs
             $exitCode = $LASTEXITCODE ?? 0
         }
         catch {
@@ -188,7 +187,7 @@ function Invoke-TestRunner {
         }
 
         # Parse and display results
-        $testSummary = Get-LatestTestResults
+        $testSummary = Get-LatestTestResult
         if ($testSummary) {
             Write-Information "" -InformationAction Continue
             Write-Information "📈 Test Summary:" -InformationAction Continue
@@ -211,8 +210,9 @@ function Invoke-TestRunner {
     }
 }
 
-function Get-LatestTestResults {
+function Get-LatestTestResult {
     [CmdletBinding()]
+    [OutputType([System.Collections.Hashtable])]
     param()
 
     try {
@@ -275,6 +275,7 @@ function Start-BusBuddyTest {
     #>
 
     [CmdletBinding()]
+    [OutputType([System.Boolean])]
     param(
         [Parameter(Mandatory = $false)]
         [ValidateSet('All', 'Unit', 'Integration', 'Validation', 'Core', 'WPF')]
@@ -296,7 +297,7 @@ function Start-BusBuddyTest {
         }
 
         # Initialize environment
-        Initialize-BusBuddyPaths
+        Initialize-BusBuddyPath
 
         Write-Information "🚌 Starting BusBuddy Test Suite: $TestSuite" -InformationAction Continue
         Write-Information "📍 Workspace: $Script:WorkspaceRoot" -InformationAction Continue
@@ -349,6 +350,7 @@ function Start-BusBuddyTestWatch {
     #>
 
     [CmdletBinding()]
+    [OutputType([void])]
     param(
         [Parameter(Mandatory = $false)]
         [ValidateSet('All', 'Unit', 'Integration', 'Validation', 'Core', 'WPF')]
@@ -357,7 +359,7 @@ function Start-BusBuddyTestWatch {
 
     try {
         # Initialize environment
-        Initialize-BusBuddyPaths
+        Initialize-BusBuddyPath
 
         Write-Information "👀 Starting BusBuddy Test Watch Mode" -InformationAction Continue
         Write-Information "📍 Test Suite: $TestSuite" -InformationAction Continue
@@ -440,16 +442,17 @@ function New-BusBuddyTestReport {
     #>
 
     [CmdletBinding()]
+    [OutputType([string])]
     param()
 
     try {
         # Initialize environment
-        Initialize-BusBuddyPaths
+        Initialize-BusBuddyPath
 
         Write-Information "📝 Generating BusBuddy test report..." -InformationAction Continue
 
         # Get latest test results
-        $testSummary = Get-LatestTestResults
+        $testSummary = Get-LatestTestResult
         if (-not $testSummary) {
             Write-Warning "No test results found. Please run tests first."
             return
@@ -562,13 +565,14 @@ function Get-BusBuddyTestStatus {
     #>
 
     [CmdletBinding()]
+    [OutputType([System.Collections.Hashtable])]
     param()
 
     try {
         # Initialize environment
-        Initialize-BusBuddyPaths
+        Initialize-BusBuddyPath
 
-        $testSummary = Get-LatestTestResults
+        $testSummary = Get-LatestTestResult
         if (-not $testSummary) {
             Write-Information "❓ No test results found. Run tests first with Start-BusBuddyTest" -InformationAction Continue
             return
@@ -614,6 +618,7 @@ function Initialize-BusBuddyTestEnvironment {
     #>
 
     [CmdletBinding()]
+    [OutputType([System.Boolean])]
     param()
 
     try {
@@ -621,7 +626,7 @@ function Initialize-BusBuddyTestEnvironment {
         Write-Information "===========================================" -InformationAction Continue
 
         # Check workspace
-        Initialize-BusBuddyPaths
+        Initialize-BusBuddyPath
         Write-Information "✅ Workspace detected: $Script:WorkspaceRoot" -InformationAction Continue
 
         # Check .NET CLI
@@ -696,6 +701,7 @@ function Test-BusBuddyCompliance {
     #>
 
     [CmdletBinding()]
+    [OutputType([System.Boolean])]
     param()
 
     try {
@@ -728,7 +734,7 @@ function Test-BusBuddyCompliance {
         }
 
         # Check workspace
-        Initialize-BusBuddyPaths
+        Initialize-BusBuddyPath
         if ($Script:WorkspaceRoot) {
             $complianceResults += @{ Check = "Workspace Detection"; Status = "✅ Pass"; Details = "BusBuddy workspace found" }
         } else {

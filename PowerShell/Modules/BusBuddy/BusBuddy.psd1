@@ -49,6 +49,7 @@
 
         # Development functions
         'Invoke-BusBuddyHealthCheck',
+        'Test-BusBuddyHealth',
         'Start-BusBuddyDevSession',
     # 'Test-BusBuddyDatabase',
         'Get-BusBuddyCommand',

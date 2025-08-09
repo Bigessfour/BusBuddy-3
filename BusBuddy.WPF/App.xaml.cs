@@ -17,6 +17,9 @@ using System.Threading;
 using Serilog.Formatting.Json;
 using Serilog.Settings.Configuration;
 using System.Threading.Tasks;
+using Syncfusion.SfSkinManager;
+using Syncfusion.Themes.FluentDark.WPF;
+using Syncfusion.Themes.FluentLight.WPF;
 
 namespace BusBuddy.WPF
 {
@@ -189,6 +192,9 @@ namespace BusBuddy.WPF
                     return;
                 }
 
+                // Initialize SyncFusion themes according to v30.1.42 API
+                InitializeSyncfusionThemes();
+
                 // Create and show the main window for normal GUI operation
                 var mainWindow = CreateMainWindow();
                 mainWindow.Show();
@@ -264,6 +270,7 @@ namespace BusBuddy.WPF
                 // services.AddTransient<BusBuddy.WPF.Services.DialogService>();
                 // services.AddTransient<BusBuddy.WPF.Services.NavigationService>();
                 services.AddTransient<BusBuddy.WPF.Services.RouteExportService>();
+                services.AddSingleton<BusBuddy.WPF.Services.ISkinManagerService, BusBuddy.WPF.Services.SkinManagerService>();
 
                 // Register ViewModels for dependency injection
                 services.AddTransient<BusBuddy.WPF.ViewModels.MainWindowViewModel>();
@@ -869,6 +876,49 @@ Examples:
             {
                 logger.Warning("   Syncfusion Assembly Check: Error loading - {Error}", ex.Message);
                 logger.Information("   💡 This may indicate missing Syncfusion packages or incorrect installation");
+            }
+        }
+
+        /// <summary>
+        /// Initialize SyncFusion themes according to v30.1.42 API guidelines
+        /// Sets up FluentDark as primary theme with FluentLight fallback
+        /// </summary>
+        private void InitializeSyncfusionThemes()
+        {
+            try
+            {
+                Log.Information("🎨 Initializing SyncFusion themes for v30.1.42...");
+
+                // Enable theme application as default style (required for v30.1.42)
+                SfSkinManager.ApplyStylesOnApplication = true;
+
+                // Register FluentDark theme settings
+                SfSkinManager.RegisterThemeSettings("FluentDark", new FluentDarkThemeSettings());
+                Log.Debug("✅ FluentDark theme settings registered");
+
+                // Register FluentLight theme settings (fallback)
+                SfSkinManager.RegisterThemeSettings("FluentLight", new FluentLightThemeSettings());
+                Log.Debug("✅ FluentLight theme settings registered");
+
+                // Apply FluentDark as the application theme
+                SfSkinManager.ApplicationTheme = new Theme("FluentDark");
+                Log.Information("🎨 FluentDark theme applied as application default");
+
+                Log.Information("✅ SyncFusion theme initialization completed successfully");
+            }
+            catch (Exception ex)
+            {
+                Log.Warning(ex, "⚠️ Failed to initialize FluentDark theme, falling back to FluentLight");
+                try
+                {
+                    // Fallback to FluentLight
+                    SfSkinManager.ApplicationTheme = new Theme("FluentLight");
+                    Log.Information("🎨 FluentLight fallback theme applied");
+                }
+                catch (Exception fallbackEx)
+                {
+                    Log.Error(fallbackEx, "❌ Failed to apply any SyncFusion theme - using default styling");
+                }
             }
         }
     }

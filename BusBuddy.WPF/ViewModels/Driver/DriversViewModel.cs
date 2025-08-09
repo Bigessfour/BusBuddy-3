@@ -24,15 +24,28 @@ namespace BusBuddy.WPF.ViewModels.Driver
         private readonly IBusBuddyDbContextFactory _contextFactory;
         private readonly IDriverService? _driverService;
 
-        private Core.Models.Driver? _selectedDriver;
+    private Core.Models.Driver? _selectedDriver;
         private string _searchText = string.Empty;
+    private string _selectedStatusFilter = "All Status";
+    private DateTime _lastUpdated = DateTime.Now;
+        private readonly ObservableCollection<StatusCount> _driverStatusData = new();
 
         #region Properties
 
-        /// <summary>
-        /// Collection of all drivers for display in the data grid
-        /// </summary>
-        public ObservableCollection<Core.Models.Driver> Drivers { get; } = new();
+    /// <summary>
+    /// Collection of all drivers loaded from the database
+    /// </summary>
+    public ObservableCollection<Core.Models.Driver> Drivers { get; } = new();
+
+    /// <summary>
+    /// Filtered view of drivers for binding to the UI grid
+    /// </summary>
+    public ObservableCollection<Core.Models.Driver> FilteredDrivers { get; } = new();
+
+    /// <summary>
+    /// Chart source for driver status distribution (Status/Count)
+    /// </summary>
+    public ObservableCollection<StatusCount> DriverStatusData => _driverStatusData;
 
         /// <summary>
         /// Currently selected driver in the data grid
@@ -54,6 +67,14 @@ namespace BusBuddy.WPF.ViewModels.Driver
                     {
                         del.NotifyCanExecuteChanged();
                     }
+                    if (AssignRouteCommand is CommunityToolkit.Mvvm.Input.IRelayCommand assign)
+                    {
+                        assign.NotifyCanExecuteChanged();
+                    }
+                    if (EditDetailsCommand is CommunityToolkit.Mvvm.Input.IRelayCommand editDetails)
+                    {
+                        editDetails.NotifyCanExecuteChanged();
+                    }
                 }
             }
         }
@@ -73,7 +94,11 @@ namespace BusBuddy.WPF.ViewModels.Driver
             {
                 if (SetProperty(ref _searchText, value))
                 {
-                    ApplySearchFilter();
+                    ApplyFilters();
+                    if (ClearSearchCommand is CommunityToolkit.Mvvm.Input.IRelayCommand clear)
+                    {
+                        clear.NotifyCanExecuteChanged();
+                    }
                 }
             }
         }
@@ -88,6 +113,40 @@ namespace BusBuddy.WPF.ViewModels.Driver
         /// </summary>
         public int ActiveDrivers => Drivers.Count(d => d.Status == "Active");
 
+    /// <summary>
+    /// Number of drivers with training pending (not complete)
+    /// </summary>
+    public int TrainingPendingDrivers => Drivers.Count(d => !d.TrainingComplete);
+
+    /// <summary>
+    /// Number of drivers with licenses expiring within 30 days
+    /// </summary>
+    public int ExpiringLicensesCount => Drivers.Count(d => d.LicenseExpiryDate.HasValue && d.LicenseExpiryDate.Value.Date > DateTime.Today && d.LicenseExpiryDate.Value.Date <= DateTime.Today.AddDays(30));
+
+        /// <summary>
+        /// Selected status filter from the UI (e.g., All Status, Active, Inactive, Training, License Expiring)
+        /// </summary>
+        public string SelectedStatusFilter
+        {
+            get => _selectedStatusFilter;
+            set
+            {
+                if (SetProperty(ref _selectedStatusFilter, value))
+                {
+                    ApplyFilters();
+                }
+            }
+        }
+
+        /// <summary>
+        /// Last time the driver list was refreshed
+        /// </summary>
+        public DateTime LastUpdated
+        {
+            get => _lastUpdated;
+            private set => SetProperty(ref _lastUpdated, value);
+        }
+
         #endregion
 
         #region Commands
@@ -98,6 +157,13 @@ namespace BusBuddy.WPF.ViewModels.Driver
         public ICommand DeleteDriverCommand { get; }
         public ICommand RefreshCommand { get; }
         public ICommand ClearSearchCommand { get; }
+        public ICommand GenerateReportsCommand { get; }
+        public ICommand LicenseCheckCommand { get; }
+        public ICommand TrainingRecordsCommand { get; }
+        public ICommand AssignRouteCommand { get; }
+        public ICommand EditDetailsCommand { get; }
+        public ICommand ViewLicenseCommand { get; }
+        public ICommand TrainingHistoryCommand { get; }
 
         #endregion
 
@@ -117,6 +183,13 @@ namespace BusBuddy.WPF.ViewModels.Driver
             DeleteDriverCommand = new AsyncRelayCommand(ExecuteDeleteDriverAsync, () => HasSelectedDriver);
             RefreshCommand = new AsyncRelayCommand(LoadDriversAsync);
             ClearSearchCommand = new RelayCommand(ExecuteClearSearch, () => !string.IsNullOrEmpty(SearchText));
+            GenerateReportsCommand = new RelayCommand(ExecuteGenerateReports);
+            LicenseCheckCommand = new RelayCommand(ExecuteLicenseCheck);
+            TrainingRecordsCommand = new RelayCommand(ExecuteTrainingRecords);
+            AssignRouteCommand = new RelayCommand(ExecuteAssignRoute, () => HasSelectedDriver);
+            EditDetailsCommand = new RelayCommand(ExecuteEditDetails, () => HasSelectedDriver);
+            ViewLicenseCommand = new RelayCommand(ExecuteViewLicense, () => HasSelectedDriver);
+            TrainingHistoryCommand = new RelayCommand(ExecuteTrainingHistory, () => HasSelectedDriver);
 
             // Load initial data
             _ = LoadDriversAsync();
@@ -137,6 +210,13 @@ namespace BusBuddy.WPF.ViewModels.Driver
             DeleteDriverCommand = new AsyncRelayCommand(ExecuteDeleteDriverAsync, () => HasSelectedDriver);
             RefreshCommand = new AsyncRelayCommand(LoadDriversAsync);
             ClearSearchCommand = new RelayCommand(ExecuteClearSearch, () => !string.IsNullOrEmpty(SearchText));
+            GenerateReportsCommand = new RelayCommand(ExecuteGenerateReports);
+            LicenseCheckCommand = new RelayCommand(ExecuteLicenseCheck);
+            TrainingRecordsCommand = new RelayCommand(ExecuteTrainingRecords);
+            AssignRouteCommand = new RelayCommand(ExecuteAssignRoute, () => HasSelectedDriver);
+            EditDetailsCommand = new RelayCommand(ExecuteEditDetails, () => HasSelectedDriver);
+            ViewLicenseCommand = new RelayCommand(ExecuteViewLicense, () => HasSelectedDriver);
+            TrainingHistoryCommand = new RelayCommand(ExecuteTrainingHistory, () => HasSelectedDriver);
         }
 
         #endregion
@@ -167,11 +247,16 @@ namespace BusBuddy.WPF.ViewModels.Driver
                 Logger.Information("Loaded {DriverCount} drivers", Drivers.Count);
                 base.StatusMessage = $"Loaded {Drivers.Count} drivers";
 
+                LastUpdated = DateTime.Now;
+
                 // Update property notifications
                 OnPropertyChanged(nameof(TotalDrivers));
                 OnPropertyChanged(nameof(ActiveDrivers));
+                OnPropertyChanged(nameof(TrainingPendingDrivers));
+                OnPropertyChanged(nameof(ExpiringLicensesCount));
+                UpdateDriverStatusData();
 
-                ApplySearchFilter();
+                ApplyFilters();
             }
             catch (Exception ex)
             {
@@ -266,7 +351,70 @@ namespace BusBuddy.WPF.ViewModels.Driver
         private void ExecuteClearSearch()
         {
             SearchText = string.Empty;
+            ApplyFilters();
             base.StatusMessage = "Search cleared";
+        }
+
+        private void ExecuteGenerateReports()
+        {
+            Logger.Information("Generate reports command executed");
+            base.StatusMessage = "Generating driver reports (MVP placeholder)";
+        }
+
+        private void ExecuteLicenseCheck()
+        {
+            Logger.Information("License check command executed");
+            base.StatusMessage = "Checking license expirations (MVP placeholder)";
+        }
+
+        private void ExecuteTrainingRecords()
+        {
+            Logger.Information("Training records command executed");
+            base.StatusMessage = "Opening training records (MVP placeholder)";
+        }
+
+        private void ExecuteAssignRoute()
+        {
+            if (SelectedDriver is null)
+            {
+                return;
+            }
+
+            Logger.Information("Assign route command executed for driver {DriverId}", SelectedDriver.DriverId);
+            base.StatusMessage = $"Assign route to {SelectedDriver.DriverName} (MVP placeholder)";
+        }
+
+        private void ExecuteEditDetails()
+        {
+            if (SelectedDriver is null)
+            {
+                return;
+            }
+
+            Logger.Information("Edit details command executed for driver {DriverId}", SelectedDriver.DriverId);
+            ExecuteEditDriver();
+        }
+
+        private void ExecuteViewLicense()
+        {
+            if (SelectedDriver is null)
+            {
+                return;
+            }
+
+            Logger.Information("View license command executed for driver {DriverId}", SelectedDriver.DriverId);
+            base.StatusMessage = $"Viewing license for {SelectedDriver.DriverName} (MVP placeholder)";
+        }
+
+        private void ExecuteTrainingHistory()
+        {
+            if (SelectedDriver is null)
+            {
+                return;
+            }
+
+            Logger.Information("Training history command executed for driver {DriverId}", SelectedDriver.DriverId);
+            base.StatusMessage = $"Viewing training history for {SelectedDriver.DriverName} (MVP placeholder)";
         }
 
         #endregion
@@ -274,25 +422,47 @@ namespace BusBuddy.WPF.ViewModels.Driver
         #region Helper Methods
 
         /// <summary>
-        /// Apply search filter to the drivers collection
+        /// Apply search and status filters to the drivers collection and populate FilteredDrivers
         /// </summary>
-        private void ApplySearchFilter()
+        private void ApplyFilters()
         {
-            // In a more sophisticated implementation, you might use a CollectionView
-            // For now, we'll just update the status message
-            if (!string.IsNullOrEmpty(SearchText))
-            {
-                var filteredCount = Drivers.Count(d =>
-                    d.DriverName.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ||
-                    (d.DriverPhone?.Contains(SearchText) == true) ||
-                    (d.DriverEmail?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) == true));
+            var query = Drivers.AsEnumerable();
 
-                base.StatusMessage = $"Found {filteredCount} drivers matching '{SearchText}'";
-            }
-            else
+            // Status filter
+            if (!string.IsNullOrWhiteSpace(SelectedStatusFilter) && !SelectedStatusFilter.Equals("All Status", StringComparison.OrdinalIgnoreCase))
             {
-                base.StatusMessage = $"Showing {Drivers.Count} drivers";
+                query = query.Where(d => string.Equals(d.Status ?? string.Empty, SelectedStatusFilter, StringComparison.OrdinalIgnoreCase));
             }
+
+            // Search filter
+            if (!string.IsNullOrWhiteSpace(SearchText))
+            {
+                var term = SearchText.Trim();
+                query = query.Where(d =>
+                    (d.DriverName?.Contains(term, StringComparison.OrdinalIgnoreCase) == true) ||
+                    (d.DriverPhone?.Contains(term, StringComparison.OrdinalIgnoreCase) == true) ||
+                    (d.DriverEmail?.Contains(term, StringComparison.OrdinalIgnoreCase) == true) ||
+                    (d.LicenseNumber?.Contains(term, StringComparison.OrdinalIgnoreCase) == true));
+            }
+
+            // Update filtered collection efficiently
+            var results = query.ToList();
+            FilteredDrivers.Clear();
+            foreach (var driver in results)
+            {
+                FilteredDrivers.Add(driver);
+            }
+
+            base.StatusMessage = !string.IsNullOrWhiteSpace(SearchText)
+                ? $"Found {FilteredDrivers.Count} drivers matching '{SearchText}'"
+                : $"Showing {FilteredDrivers.Count} drivers";
+
+            // Update computed stats if needed
+            OnPropertyChanged(nameof(TotalDrivers));
+            OnPropertyChanged(nameof(ActiveDrivers));
+            OnPropertyChanged(nameof(TrainingPendingDrivers));
+            OnPropertyChanged(nameof(ExpiringLicensesCount));
+            UpdateDriverStatusData();
         }
 
         /// <summary>
@@ -317,6 +487,9 @@ namespace BusBuddy.WPF.ViewModels.Driver
                 // Update property notifications
                 OnPropertyChanged(nameof(TotalDrivers));
                 OnPropertyChanged(nameof(ActiveDrivers));
+                OnPropertyChanged(nameof(TrainingPendingDrivers));
+                OnPropertyChanged(nameof(ExpiringLicensesCount));
+                UpdateDriverStatusData();
             }
             catch (Exception ex)
             {
@@ -324,6 +497,25 @@ namespace BusBuddy.WPF.ViewModels.Driver
                 base.StatusMessage = $"Error deleting driver: {ex.Message}";
             }
         }
+
+        private void UpdateDriverStatusData()
+        {
+            // Rebuild status counts: group by Status across full Drivers collection
+            var groups = Drivers
+                .GroupBy(d => string.IsNullOrWhiteSpace(d.Status) ? "Unknown" : d.Status)
+                .Select(g => new StatusCount(g.Key, g.Count()))
+                .OrderByDescending(x => x.Count)
+                .ToList();
+
+            _driverStatusData.Clear();
+            foreach (var item in groups)
+            {
+                _driverStatusData.Add(item);
+            }
+            OnPropertyChanged(nameof(DriverStatusData));
+        }
+
+        public record StatusCount(string Status, int Count);
 
         #endregion
     }

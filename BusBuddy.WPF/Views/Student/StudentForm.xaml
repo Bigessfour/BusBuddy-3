@@ -79,7 +79,7 @@
             </Grid.RowDefinitions>
 
             <!-- Global Error Panel -->
-            <Border Grid.Row="0" Background="#E74C3C" CornerRadius="5" Padding="15" Margin="0,0,0,10"
+            <Border Grid.Row="0" Background="{StaticResource BusBuddy.Brush.Semantic.Error}" CornerRadius="5" Padding="15" Margin="0,0,0,10"
                     Visibility="{Binding HasGlobalError, Converter={StaticResource BooleanToVisibilityConverter}}">
                 <Grid>
                     <Grid.ColumnDefinitions>
@@ -88,15 +88,15 @@
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
 
-                    <TextBlock Grid.Column="0" Text="⚠️" FontSize="16" Foreground="White"
+                    <TextBlock Grid.Column="0" Text="⚠️" FontSize="16" Foreground="{StaticResource BusBuddy.Brush.Text.Primary}"
                               VerticalAlignment="Center" Margin="0,0,10,0"/>
                     <TextBlock Grid.Column="1" Text="{Binding GlobalErrorMessage}"
-                              Foreground="White" FontWeight="Bold" TextWrapping="Wrap"
+                              Foreground="{StaticResource BusBuddy.Brush.Text.Primary}" FontWeight="Bold" TextWrapping="Wrap"
                               VerticalAlignment="Center"/>
                     <syncfusion:ButtonAdv Grid.Column="2" Label="✖"
                                          Command="{Binding ClearGlobalErrorCommand}"
-                                         Background="Transparent" Foreground="White"
-                                         BorderThickness="1" BorderBrush="White"
+                                         Background="Transparent" Foreground="{StaticResource BusBuddy.Brush.Text.Primary}"
+                                         BorderThickness="1" BorderBrush="{StaticResource BusBuddy.Brush.Text.Primary}"
                                          Width="30" Height="30"
                                          ToolTip="Clear error message"/>
                 </Grid>
@@ -107,9 +107,9 @@
                     CornerRadius="5" Padding="15" Margin="0,0,0,20">
                 <StackPanel Orientation="Horizontal">
                     <TextBlock Text="&#xE716;" FontFamily="Segoe MDL2 Assets"
-                              FontSize="24" Foreground="White" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                              FontSize="24" Foreground="{StaticResource BusBuddy.Brush.Text.Primary}" VerticalAlignment="Center" Margin="0,0,10,0"/>
                     <TextBlock Text="{Binding FormTitle}" FontSize="18" FontWeight="Bold"
-                              Foreground="White" VerticalAlignment="Center"/>
+                              Foreground="{StaticResource BusBuddy.Brush.Text.Primary}" VerticalAlignment="Center"/>
                 </StackPanel>
             </Border>
 
@@ -172,9 +172,9 @@
 
                         <StackPanel Grid.Row="2" Grid.Column="0" Margin="0,0,10,0">
                             <Label Content="Date of Birth"/>
-                            <DatePicker Name="DateOfBirthPicker"
-                                       SelectedDate="{Binding Student.DateOfBirth, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                       Margin="0,0,0,0"/>
+                            <syncfusion:SfDatePicker Name="DateOfBirthPicker"
+                                       Value="{Binding Student.DateOfBirth, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                       Height="35"/>
                         </StackPanel>
 
                         <StackPanel Grid.Row="2" Grid.Column="1" Margin="10,0,0,0">
@@ -340,18 +340,18 @@
                 <syncfusion:ButtonAdv Name="SuggestRoutesButton"
                     Label="🤖 AI Suggest Routes"
                                     Command="{Binding SuggestRoutesCommand}"
-                                    Background="#E67E22" Foreground="White"
+                                    Background="{StaticResource BusBuddy.Brush.SafetyOrange}" Foreground="{StaticResource BusBuddy.Brush.Text.Primary}"
                                     ToolTip="Use xAI Grok to suggest optimal routes based on address"/>
                 <syncfusion:ButtonAdv Name="ViewOnMapButton"
                     Label="🗺️ View on Map"
                                     Command="{Binding ViewOnMapCommand}"
-                                    Background="#3498DB" Foreground="White"
+                                    Background="{StaticResource BusBuddy.Brush.Semantic.Info}" Foreground="{StaticResource BusBuddy.Brush.Text.Primary}"
                                     Margin="10,0,0,0"
                                     ToolTip="Show student location on Google Earth Engine map"/>
                 <syncfusion:ButtonAdv Name="ImportCsvButton"
                     Label="📥 Import CSV"
                                     Command="{Binding ImportCsvCommand}"
-                                    Background="#16A085" Foreground="White"
+                                    Background="{StaticResource BusBuddy.Brush.FleetGreen}" Foreground="{StaticResource BusBuddy.Brush.Text.Primary}"
                                     Margin="10,0,0,0"
                                     ToolTip="Import student data from CSV file"/>
                         </StackPanel>
@@ -459,23 +459,23 @@
                     <!-- Action Buttons -->
                     <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right">
             <syncfusion:ButtonAdv Name="ValidateButton"
-                Label="🔍 Validate Data"
-                                Command="{Binding ValidateDataCommand}"
-                                Background="#9B59B6" Foreground="White"
-                                Margin="0,0,10,0"
-                                ToolTip="Validate all student data and address"/>
+        Label="🔍 Validate Data"
+                Command="{Binding ValidateDataCommand}"
+                Background="{StaticResource BusBuddy.Brush.Semantic.Warning}" Foreground="{StaticResource BusBuddy.Brush.Text.Primary}"
+                Margin="0,0,10,0"
+                ToolTip="Validate all student data and address"/>
                         <syncfusion:ButtonAdv Name="SaveButton" Label="💾 Save Student"
                                 Command="{Binding SaveCommand}"
-                                Background="{StaticResource BusBuddy.Brush.Primary}" Foreground="White"
+                                Background="{StaticResource BusBuddy.Brush.Primary}" Foreground="{StaticResource BusBuddy.Brush.Text.Primary}"
                                 Margin="0,0,10,0"
                                 IsEnabled="{Binding CanSave}"
                                 IsDefault="True"
                                 ToolTip="Save student information to database"/>
-                        <syncfusion:ButtonAdv Name="CancelButton" Label="❌ Cancel"
-                                Command="{Binding CancelCommand}"
-                                Background="#E74C3C" Foreground="White"
-                                IsCancel="True"
-                                ToolTip="Cancel and return to students list"/>
+            <syncfusion:ButtonAdv Name="CancelButton" Label="❌ Cancel"
+                Command="{Binding CancelCommand}"
+                Background="{StaticResource BusBuddy.Brush.Semantic.Error}" Foreground="{StaticResource BusBuddy.Brush.Text.Primary}"
+                IsCancel="True"
+                ToolTip="Cancel and return to students list"/>
                     </StackPanel>
                 </Grid>
             </Border>

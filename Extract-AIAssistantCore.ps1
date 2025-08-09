@@ -696,7 +696,7 @@ if ($IncludeProjectAdapter) {
     $busBuddyConfig = @{
         ProjectName = "BusBuddy"
         ProjectType = "DotNetWPF"
-        Framework = "net8.0-windows"
+        Framework = "net9.0-windows"
         BuildCommand = "dotnet build BusBuddy.sln"
         RunCommand = "dotnet run --project BusBuddy.WPF/BusBuddy.WPF.csproj"
         TestCommand = "dotnet test BusBuddy.sln"

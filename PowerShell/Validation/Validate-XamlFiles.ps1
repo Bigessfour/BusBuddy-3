@@ -174,6 +174,37 @@ function Invoke-ComprehensiveXamlValidation {
             $resourceDictionaries = @()
             $syncfusionViolations = @()
 
+            # Determine a hardware-aware ThrottleLimit for parallelism
+            # Microsoft docs: ForEach-Object -Parallel supports -ThrottleLimit (PowerShell 7+)
+            # Ref: https://learn.microsoft.com/powershell/module/microsoft.powershell.core/foreach-object
+            try {
+                $logical = [int]([Environment]::ProcessorCount)
+                $cores = $null
+                try { $cores = (Get-CimInstance Win32_Processor | Select-Object -Expand NumberOfCores -First 1) } catch {}
+                $memGiB = $null
+                try { $memGiB = [math]::Round((Get-CimInstance Win32_ComputerSystem).TotalPhysicalMemory/1GB, 1) } catch {}
+
+                # Base throttle: 75% of logical processors, min 2, max 12 (conservative default)
+                $computed = if ($logical -gt 0) { [math]::Max([math]::Min([int][math]::Floor($logical * 0.75), 12), 2) } else { 4 }
+
+                # Optional memory guard: if memory < 8 GiB, cap at 4 to avoid contention
+                if ($memGiB -and $memGiB -lt 8 -and $computed -gt 4) { $computed = 4 }
+
+                # Allow env override (e.g., $env:BB_ThrottleLimit)
+                $throttleLimit = $computed
+                if ($env:BB_ThrottleLimit -and $env:BB_ThrottleLimit -match '^[0-9]+$') {
+                    $throttleLimit = [int]$env:BB_ThrottleLimit
+                }
+
+                Write-ValidationLog -Level "Information" -Message "Using ThrottleLimit {Value} (Logical={Logical}, Cores={Cores}, MemGiB={MemGiB})" -Properties @{
+                    Value = $throttleLimit; Logical = $logical; Cores = ($cores ?? 'n/a'); MemGiB = ($memGiB ?? 'n/a')
+                }
+            }
+            catch {
+                Write-ValidationLog -Level "Warning" -Message "Failed to compute hardware-aware ThrottleLimit. Falling back to 4." -Properties @{}
+                $throttleLimit = 4
+            }
+
             # Process each XAML file with enhanced Serilog logging
             $results = $xamlFiles | ForEach-Object -Parallel {
                 $file = $_
@@ -263,7 +294,7 @@ function Invoke-ComprehensiveXamlValidation {
                 }
 
                 return $result
-            } -ThrottleLimit 4
+            } -ThrottleLimit $throttleLimit
 
             # Process results and categorize files with enhanced logging
             foreach ($result in $results) {
