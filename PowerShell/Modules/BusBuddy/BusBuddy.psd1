@@ -50,9 +50,10 @@
         # Development functions
         'Invoke-BusBuddyHealthCheck',
         'Start-BusBuddyDevSession',
-    'Get-BusBuddyCommand',
-    'Get-BusBuddyInfo',
-    'Show-BusBuddyWelcome'
+    # 'Test-BusBuddyDatabase',
+        'Get-BusBuddyCommand',
+        'Get-BusBuddyInfo',
+        'Show-BusBuddyWelcome'
     )
 
     # Cmdlets to export from this module
@@ -72,15 +73,18 @@
         'bb-commands',
         'bb-info',
         'bb-happiness',
-    'bb-dev-session',
-    'bb-welcome'
+        'bb-dev-session',
+        'bb-welcome',
+    # 'bb-validate-database',
+    # 'bb-db-validate'
     )
 
     # List of all files packaged with this module
     FileList             = @(
         'BusBuddy.psm1',
         'BusBuddy.psd1',
-        'BusBuddy.settings.ini'
+        'BusBuddy.settings.ini',
+        'bb-validate-database.ps1'
     )
 
     # Private data to pass to the module

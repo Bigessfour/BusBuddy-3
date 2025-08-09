@@ -1,0 +1,31 @@
+<!-- RouteForm.xaml - Basic route form for BusBuddy MVP
+     Uses Syncfusion SfMaskedEdit for route details (Start, End, Stops)
+     Documentation: https://help.syncfusion.com/wpf/maskededit/getting-started -->
+<UserControl x:Class="BusBuddy.WPF.Views.Route.RouteForm"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:syncfusion="http://schemas.syncfusion.com/wpf"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d"
+             d:DesignHeight="300" d:DesignWidth="400">
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <TextBlock Text="Route Details" FontWeight="Bold" FontSize="18" Margin="0,0,0,16"/>
+        <StackPanel Grid.Row="1" Orientation="Vertical" Margin="0,0,0,8">
+            <TextBlock Text="Start Location"/>
+            <syncfusion:SfMaskedEdit x:Name="StartMaskedEdit" MaskType="None" Width="250" Margin="0,2,0,8"/>
+            <TextBlock Text="End Location"/>
+            <syncfusion:SfMaskedEdit x:Name="EndMaskedEdit" MaskType="None" Width="250" Margin="0,2,0,8"/>
+            <TextBlock Text="Stops (comma separated)"/>
+            <syncfusion:SfMaskedEdit x:Name="StopsMaskedEdit" MaskType="None" Width="250" Margin="0,2,0,8"/>
+        </StackPanel>
+        <Button Grid.Row="4" Content="Save" Width="100" Height="32" HorizontalAlignment="Right" Margin="0,12,0,0"/>
+    </Grid>
+</UserControl>

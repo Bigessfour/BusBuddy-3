@@ -54,11 +54,16 @@
                                           Click="BusesButton_Click" FontSize="14" FontWeight="SemiBold"
                                           ToolTip="Manage bus fleet and vehicle information"
                                           AutomationProperties.Name="Bus Management"/>
-                    <syncfusion:ButtonAdv Label="👨‍✈️ Drivers" Padding="15,8"
+                    <syncfusion:ButtonAdv Label="👨‍✈️ Drivers" Margin="0,0,10,0" Padding="15,8"
                                           Background="#107C10" Foreground="White" BorderThickness="0"
                                           Click="DriversButton_Click" FontSize="14" FontWeight="SemiBold"
                                           ToolTip="Manage driver information and schedules"
                                           AutomationProperties.Name="Driver Management"/>
+                    <syncfusion:ButtonAdv Label="📊 Reports" Padding="15,8"
+                                          Background="#FF8C00" Foreground="White" BorderThickness="0"
+                                          Click="ReportsButton_Click" FontSize="14" FontWeight="SemiBold"
+                                          ToolTip="Generate and view transportation reports"
+                                          AutomationProperties.Name="Reports and Print Routes"/>
                 </StackPanel>
             </Grid>
         </Border>
@@ -273,7 +278,7 @@
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
                 <TextBlock Grid.Column="0"
-                           Text="🎯 MVP Ready: Students ✅ | Routes ✅ | Buses ✅ | Drivers ✅ | PowerShell Demo: bb-route-demo"
+                           Text="🎯 MVP Ready: Students ✅ | Routes ✅ | Buses ✅ | Drivers ✅ | Reports ✅ | PowerShell Demo: bb-route-demo"
                            Foreground="White" VerticalAlignment="Center" FontSize="14"/>
                 <TextBlock Grid.Column="1" Text="✅ Monday Demo Ready"
                            Foreground="#10B981" VerticalAlignment="Center" FontSize="14" FontWeight="SemiBold"/>

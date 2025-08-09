@@ -65,6 +65,46 @@ namespace BusBuddy.WPF.ViewModels.Route
             Logger.Information("Enhanced RouteAssignmentViewModel initialized with route building capabilities");
         }
 
+        // MVP: Basic planning logic for assigning drivers and buses to routes
+        // Documentation: https://help.syncfusion.com/wpf/datagrid/row-selection
+
+        public void AssignDriverToRoute(BusBuddy.Core.Models.RouteTimeSlot slot = BusBuddy.Core.Models.RouteTimeSlot.AM)
+        {
+            // MVP stub: Assign selected driver to selected route for AM/PM
+            if (SelectedRoute != null && SelectedDriver != null)
+            {
+                if (slot == BusBuddy.Core.Models.RouteTimeSlot.AM)
+                {
+                    SelectedRoute.AMDriverId = SelectedDriver.DriverId;
+                }
+                else if (slot == BusBuddy.Core.Models.RouteTimeSlot.PM)
+                {
+                    SelectedRoute.PMDriverId = SelectedDriver.DriverId;
+                }
+                StatusMessage = $"Driver '{SelectedDriver.DriverName}' assigned to route '{SelectedRoute.RouteName}' ({slot}) (MVP stub)";
+            }
+        }
+
+        public void AssignBusToRoute(BusBuddy.Core.Models.RouteTimeSlot slot = BusBuddy.Core.Models.RouteTimeSlot.AM)
+        {
+            // MVP stub: Assign selected bus to selected route for AM/PM
+            if (SelectedRoute != null && SelectedBus != null)
+            {
+                if (slot == BusBuddy.Core.Models.RouteTimeSlot.AM)
+                {
+                    SelectedRoute.AMVehicleId = SelectedBus.VehicleId;
+                }
+                else if (slot == BusBuddy.Core.Models.RouteTimeSlot.PM)
+                {
+                    SelectedRoute.PMVehicleId = SelectedBus.VehicleId;
+                }
+                StatusMessage = $"Bus '{SelectedBus.BusNumber}' assigned to route '{SelectedRoute.RouteName}' ({slot}) (MVP stub)";
+            }
+        }
+
+        // Expose SaveRouteCommand for basic form integration
+        public ICommand GetSaveRouteCommand() => SaveRouteCommand;
+
         #region Properties
 
         // Existing Collections

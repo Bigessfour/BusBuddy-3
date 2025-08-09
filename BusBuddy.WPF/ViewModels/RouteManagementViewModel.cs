@@ -5,6 +5,7 @@ using BusBuddy.Core.Models;
 using BusBuddy.Core.Services;
 using Syncfusion.Windows.Shared;
 using System;
+using System.IO;
 using Microsoft.EntityFrameworkCore;
 using BusBuddy.Core.Data;
 
@@ -18,6 +19,7 @@ public class RouteManagementViewModel : NotificationObject
 
     public ICommand? GenerateScheduleCommand { get; }
     public ICommand? ViewMapCommand { get; }
+    public ICommand? PrintRoutesCommand { get; }
 
     public RouteManagementViewModel(RouteService routeService, IBusBuddyDbContextFactory contextFactory)
     {
@@ -25,6 +27,7 @@ public class RouteManagementViewModel : NotificationObject
         _contextFactory = contextFactory;
         GenerateScheduleCommand = new DelegateCommand(async _ => await GenerateScheduleAsync());
         ViewMapCommand = new DelegateCommand(_ => ViewMap());
+        PrintRoutesCommand = new DelegateCommand(async _ => await PrintRoutesAsync());
         _ = LoadRoutesAsync();
     }
 
@@ -67,6 +70,54 @@ public class RouteManagementViewModel : NotificationObject
     private void ViewMap()
     {
         // Placeholder for Google Earth integration
+    }
+
+    private async Task PrintRoutesAsync()
+    {
+        try
+        {
+            var fileName = $"routes_report_{DateTime.Now:yyyy-MM-dd_HH-mm-ss}.txt";
+            var filePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), fileName);
+
+            using var writer = new StreamWriter(filePath);
+            await writer.WriteLineAsync("BusBuddy Route Report");
+            await writer.WriteLineAsync($"Generated: {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
+            await writer.WriteLineAsync(new string('=', 50));
+            await writer.WriteLineAsync();
+
+            if (Routes.Count == 0)
+            {
+                await writer.WriteLineAsync("No routes found.");
+                return;
+            }
+
+            foreach (var route in Routes)
+            {
+                await writer.WriteLineAsync($"Route: {route.RouteName}");
+                await writer.WriteLineAsync($"Description: {route.RouteDescription}");
+                await writer.WriteLineAsync($"Path: {route.Path}");
+                await writer.WriteLineAsync($"Bus Number: {route.BusNumber}");
+                await writer.WriteLineAsync($"VIN Number: {route.VINNumber}");
+                await writer.WriteLineAsync($"Assigned Students: {route.AssignedStudents}");
+                await writer.WriteLineAsync(new string('-', 30));
+                await writer.WriteLineAsync();
+            }
+
+            await writer.WriteLineAsync($"Total Routes: {Routes.Count}");
+
+            // Open the file for viewing (optional)
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = filePath,
+                UseShellExecute = true
+            });
+        }
+        catch (Exception ex)
+        {
+            // Log error - for MVP we'll use simple error handling
+            System.Windows.MessageBox.Show($"Error generating route report: {ex.Message}",
+                "Export Error", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+        }
     }
 }
 

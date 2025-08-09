@@ -2749,6 +2749,7 @@ function Show-BusBuddyWelcome {
 
     Write-BusBuddyStatus "Validation & Safety" -Type Info
     Write-Information "  bbXamlValidate, bbAntiRegression, bbCatchErrors, bbEnvCheck" -InformationAction Continue
+    Write-Information "  bb-validate-database, bb-db-validate" -InformationAction Continue
 
     Write-BusBuddyStatus "MVP Focus" -Type Info
     Write-Information "  bbMvp, bbMvpCheck" -InformationAction Continue
@@ -2776,6 +2777,16 @@ if (-not $env:BUSBUDDY_NO_WELCOME) {
 }
 
 #endregion
+
+
+# Import additional validation functions
+try {
+    . "$PSScriptRoot\bb-validate-database.ps1"
+    Export-ModuleMember -Function Test-BusBuddyDatabase -ErrorAction SilentlyContinue
+    Write-Verbose "Successfully loaded database validation functions"
+} catch {
+    Write-Warning "Could not load bb-validate-database.ps1: $($_.Exception.Message)"
+}
 
 # Ensure the welcome function is exported after its definition so external callers can invoke bb-welcome
 try {

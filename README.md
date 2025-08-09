@@ -145,11 +145,41 @@ bbRouteStatus         # Check optimization status
 
 ### **Recommended Actions Before Production**
 1. **Database Audit**: Verify migration state and seeding integrity across all environments
-2. **UI Testing**: Comprehensive testing of all Syncfusion controls with real data
-3. **PowerShell Remediation**: Address Write-Host violations and improve module compliance
-4. **Security Review**: Conduct security assessment and implement recommended hardening
-5. **Performance Testing**: Test with production-scale data volumes
-6. **Documentation**: Complete deployment and operational procedures documentation
+2. **End-to-End Testing**: Run comprehensive CRUD validation with `.\Test-EndToEndCRUD.ps1`
+3. **UI Testing**: Comprehensive testing of all Syncfusion controls with real data
+4. **PowerShell Remediation**: Address Write-Host violations and improve module compliance
+5. **Security Review**: Conduct security assessment and implement recommended hardening
+6. **Performance Testing**: Test with production-scale data volumes
+
+### **🔧 Troubleshooting & Diagnostics**
+
+#### **Quick Issue Resolution**
+- **Migration Issues**: `dotnet ef database update --force` (see [Troubleshooting Log](TROUBLESHOOTING-LOG.md))
+- **EF Version Sync**: `dotnet tool update --global dotnet-ef --version 9.0.8`
+- **FK Constraint Errors**: Run `.\Test-EndToEndCRUD.ps1 -IncludeForeignKeyTests` for validation
+- **Seeding Problems**: Check table mapping in DbContext (Bus entity → Vehicles table)
+
+#### **Comprehensive Testing**
+```powershell
+# Run end-to-end CRUD validation
+.\Test-EndToEndCRUD.ps1 -IncludeForeignKeyTests -GenerateReport
+
+# Check system health
+bbHealth
+
+# Validate migration status
+dotnet ef migrations list --project BusBuddy.Core
+```
+
+#### **Common Fixes**
+| Issue | Quick Fix | Documentation |
+|-------|-----------|---------------|
+| **Migration History Out of Sync** | `dotnet ef database update --force` | [Troubleshooting Log](TROUBLESHOOTING-LOG.md#migration-history-out-of-sync) |
+| **EF Tools Version Mismatch** | `dotnet tool update --global dotnet-ef --version 9.0.8` | [Troubleshooting Log](TROUBLESHOOTING-LOG.md#ef-tools-version-mismatch) |
+| **Table Mapping Errors** | Update DbContext entity configuration | [Troubleshooting Log](TROUBLESHOOTING-LOG.md#table-mapping--entity-configuration-issues) |
+| **FK Constraint Violations** | Validate referential integrity with test script | [Troubleshooting Log](TROUBLESHOOTING-LOG.md#foreign-key-constraint-violations) |
+
+📋 **Complete Issue Tracking**: See [TROUBLESHOOTING-LOG.md](TROUBLESHOOTING-LOG.md) for detailed solutions and verification steps.
 
 ## 🏗️ **Architecture**
 
@@ -198,6 +228,13 @@ bbDevSession          # Complete development setup
 # Advanced commands
 bb-xaml-validate      # Validate XAML files
 bb-catch-errors       # Execute with exception capture
+bb-anti-regression    # Prevent legacy patterns
+bbDiagnostic          # Comprehensive system analysis
+
+# Testing and Validation
+./Test-EndToEndCRUD.ps1              # Comprehensive CRUD testing
+./Test-EndToEndCRUD.ps1 -IncludeForeignKeyTests -GenerateReport  # Full validation with report
+```
 bb-commands           # List all available commands
 ```
 

@@ -224,3 +224,15 @@
 [2025-08-08 15:14:59.131 -06:00 INF] 🔍 License Key Length: 96 characters
 [2025-08-08 15:14:59.137 -06:00 INF] 💡 If you see trial watermarks, verify your license key is valid and current
 [2025-08-08 15:14:59.187 -06:00 INF] ✅ Configuration loaded successfully
+[2025-08-08 19:24:47.712 -06:00 INF] 🔧 Bootstrap logger initialized for early startup error capture
+[2025-08-08 19:24:47.750 -06:00 INF] 🚌 BusBuddy bootstrap starting...
+[2025-08-08 19:24:47.752 -06:00 INF] ✅ Syncfusion license registered successfully for version 30.1.42
+[2025-08-08 19:24:47.752 -06:00 INF] 🔍 License Key Length: 96 characters
+[2025-08-08 19:24:47.756 -06:00 INF] 💡 If you see trial watermarks, verify your license key is valid and current
+[2025-08-08 19:24:47.777 -06:00 INF] ✅ Configuration loaded successfully
+[2025-08-08 19:26:42.785 -06:00 INF] 🔧 Bootstrap logger initialized for early startup error capture
+[2025-08-08 19:26:42.817 -06:00 INF] 🚌 BusBuddy bootstrap starting...
+[2025-08-08 19:26:42.820 -06:00 INF] ✅ Syncfusion license registered successfully for version 30.1.42
+[2025-08-08 19:26:42.821 -06:00 INF] 🔍 License Key Length: 96 characters
+[2025-08-08 19:26:42.824 -06:00 INF] 💡 If you see trial watermarks, verify your license key is valid and current
+[2025-08-08 19:26:42.875 -06:00 INF] ✅ Configuration loaded successfully
