@@ -34,7 +34,6 @@
 
     # Aliases to export
     AliasesToExport = @(
-        'bb-test'
         'bb-test-watch'
         'bb-test-report'
         'bb-test-status'

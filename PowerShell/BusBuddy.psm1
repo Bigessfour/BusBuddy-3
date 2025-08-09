@@ -1,6 +1,16 @@
 
-# Import bbAntiRegression for profile integration
-. "$PSScriptRoot\Modules\BusBuddy\bb-anti-regression.ps1"
+# Load bb-* commands from the BusBuddy.Commands module (no dot-sourcing)
+try {
+    $commandsManifest = Join-Path $PSScriptRoot 'Modules\BusBuddy.Commands\BusBuddy.Commands.psd1'
+    if (Test-Path $commandsManifest) {
+        Import-Module $commandsManifest -Force -ErrorAction Stop
+    } else {
+        # Fallback to module by name if manifest path changes
+        Import-Module 'BusBuddy.Commands' -ErrorAction SilentlyContinue
+    }
+} catch {
+    Write-Verbose "BusBuddy.Commands module not loaded: $($_.Exception.Message)"
+}
 
 function Invoke-BusBuddyWileySeed {
     [CmdletBinding()]

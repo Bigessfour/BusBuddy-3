@@ -1,4 +1,6 @@
-using System.Windows.Controls;
+using Syncfusion.Windows.Shared; // ChromelessWindow per Syncfusion docs
+using Syncfusion.SfSkinManager; // For Syncfusion theming
+// ...existing code...
 using BusBuddy.WPF.ViewModels.Student;
 
 namespace BusBuddy.WPF.Views.Student
@@ -8,11 +10,29 @@ namespace BusBuddy.WPF.Views.Student
     /// Student management view with Syncfusion SfDataGrid for listing and managing students
     /// Enhanced for route building with AI optimization and mapping integration
     /// </summary>
-    public partial class StudentsView : UserControl
+    /// <summary>
+    /// StudentsView — Student management view with Syncfusion theming (FluentDark/FluentLight fallback)
+    /// </summary>
+    public partial class StudentsView : ChromelessWindow
     {
         public StudentsView()
         {
             InitializeComponent();
+
+            // Apply Syncfusion theme — FluentDark default, FluentLight fallback
+            SfSkinManager.ApplyThemeAsDefaultStyle = true;
+            try
+            {
+                // Try FluentDark theme first
+                using var dark = new Theme("FluentDark");
+                SfSkinManager.SetTheme(this, dark);
+            }
+            catch
+            {
+                // Fallback to FluentLight if FluentDark is unavailable
+                using var light = new Theme("FluentLight");
+                SfSkinManager.SetTheme(this, light);
+            }
 
             // Set the ViewModel for data binding
             DataContext = new StudentsViewModel();

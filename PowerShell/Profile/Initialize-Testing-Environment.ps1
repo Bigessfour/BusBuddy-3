@@ -30,8 +30,15 @@ try {
     $ModuleList = @(
         Join-Path $ModulesRoot "BusBuddy.Testing" "BusBuddy.Testing.psd1"
         Join-Path $ModulesRoot "BusBuddy.BuildOutput" "BusBuddy.BuildOutput.psd1"
+        Join-Path $ModulesRoot "BusBuddy.TestOutput" "BusBuddy.TestOutput.psd1"
+        Join-Path $ModulesRoot "BusBuddy.Utilities" "BusBuddy.Utilities.psd1"
+        Join-Path $ModulesRoot "BusBuddy.ValidationHelpers" "BusBuddy.ValidationHelpers.psd1"
         Join-Path $ModulesRoot "BusBuddy.Rules.psd1"
         Join-Path $ModulesRoot "BusBuddy.ExceptionCapture.psd1"
+        Join-Path $ModulesRoot "BusBuddy.Commands" "BusBuddy.Commands.psd1"
+        Join-Path $ModulesRoot "BusBuddy.Validation" "BusBuddy.Validation.psd1"
+        Join-Path $ModulesRoot "BusBuddy" "BusBuddy.psd1"
+        Join-Path $ModulesRoot "BusBuddy.ProfileTools" "BusBuddy.ProfileTools.psd1"
         $MainModule
         $XamlValidationModule
     )
@@ -42,23 +49,7 @@ try {
     }
 
     # Dot-source all utility and script files for full function/alias availability
-    $DotSourceList = @(
-        Join-Path $FunctionsRoot "Utilities" "MinimalOutputCapture.ps1"
-        Join-Path $FunctionsRoot "Testing" "Enhanced-Test-Output.ps1"
-        Join-Path $FunctionsRoot "Build" "Enhanced-Build-Output.ps1"
-        Join-Path $ScriptsRoot "Capture-RuntimeErrors.ps1"
-        Join-Path $ScriptsRoot "Debug-DIContainer.ps1"
-        Join-Path $ScriptsRoot "Runtime-Capture-Monitor.ps1"
-        Join-Path $ScriptsRoot "Test-DatabaseConnections.ps1"
-        Join-Path $ScriptsRoot "WileySeed.ps1"
-        Join-Path $ValidationRoot "Environment-Validation.ps1"
-        Join-Path $ValidationRoot "Validate-XamlFiles.ps1"
-    )
-    foreach ($script in $DotSourceList) {
-        if (Test-Path $script) {
-            . $script
-        }
-    }
+    # All profile utility scripts are now loaded via BusBuddy.ProfileTools module
     Write-Verbose "All BusBuddy PowerShell tools loaded."
 
 }

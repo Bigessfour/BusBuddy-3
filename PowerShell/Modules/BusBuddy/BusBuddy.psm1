@@ -302,20 +302,19 @@ try {
     # Determine project root relative to this module: Modules/BusBuddy/ -> PowerShell/Modules/BusBuddy
     # Repo root is three levels up from this .psm1
     $projectRoot = (Split-Path $PSScriptRoot -Parent | Split-Path -Parent | Split-Path -Parent)
-    $enhancedBuildPath = Join-Path $projectRoot "PowerShell\Functions\Build\Enhanced-Build-Output.ps1"
-    $enhancedTestPath = Join-Path $projectRoot "PowerShell\Functions\Testing\Enhanced-Test-Output.ps1"
+    $enhancedBuildModule = Join-Path $projectRoot "PowerShell\Modules\BusBuddy.BuildOutput\BusBuddy.BuildOutput.psd1"
+    $enhancedTestModule = Join-Path $projectRoot "PowerShell\Modules\BusBuddy.TestOutput\BusBuddy.TestOutput.psd1"
 
-    if (Test-Path $enhancedBuildPath) {
-        . $enhancedBuildPath
-        Write-Verbose "✅ Enhanced build output functions loaded"
+    if (Test-Path $enhancedBuildModule) {
+        Import-Module $enhancedBuildModule -Force -ErrorAction SilentlyContinue
+        Write-Verbose "✅ Enhanced build output module loaded"
     }
 
-    if (Test-Path $enhancedTestPath) {
-    . $enhancedTestPath
-    Write-Verbose "✅ Enhanced test output functions loaded"
-    Export-ModuleMember -Function @('Get-BusBuddyTestOutput','Invoke-BusBuddyTestFull','Get-BusBuddyTestError','Get-BusBuddyTestLog','Start-BusBuddyTestWatch')
+    if (Test-Path $enhancedTestModule) {
+        Import-Module $enhancedTestModule -Force -ErrorAction SilentlyContinue
+        Write-Verbose "✅ Enhanced test output module loaded"
     } else {
-        Write-Warning "Enhanced-Test-Output.ps1 not found at $enhancedTestPath"
+        Write-Warning "BusBuddy.TestOutput module not found at $enhancedTestModule"
     }
 } catch {
     Write-Warning "Error loading enhanced output functions: $($_.Exception.Message)"
@@ -2963,6 +2962,13 @@ try { Set-Alias -Name 'bb-run' -Value 'Invoke-BusBuddyRun' -Description 'Run the
 try { Set-Alias -Name 'bb-test' -Value 'Invoke-BusBuddyTest' -Description 'Run Bus Buddy tests (kebab-case)' -Force } catch { }
 try { Set-Alias -Name 'bb-clean' -Value 'Invoke-BusBuddyClean' -Description 'Clean build artifacts (kebab-case)' -Force } catch { }
 try { Set-Alias -Name 'bb-restore' -Value 'Invoke-BusBuddyRestore' -Description 'Restore NuGet packages (kebab-case)' -Force } catch { }
+
+# Kebab-case for development/utilities (to match documentation and manifests)
+try { Set-Alias -Name 'bb-health' -Value 'Invoke-BusBuddyHealthCheck' -Description 'Check system health (kebab-case)' -Force } catch { }
+try { Set-Alias -Name 'bb-dev-session' -Value 'Start-BusBuddyDevSession' -Description 'Start development session (kebab-case)' -Force } catch { }
+try { Set-Alias -Name 'bb-info' -Value 'Get-BusBuddyInfo' -Description 'Show module information (kebab-case)' -Force } catch { }
+try { Set-Alias -Name 'bb-commands' -Value 'Get-BusBuddyCommand' -Description 'List all commands (kebab-case)' -Force } catch { }
+try { Set-Alias -Name 'bb-welcome' -Value 'Show-BusBuddyWelcome' -Description 'Show categorized command overview (kebab-case)' -Force } catch { }
 # Development and utility aliases
 try { Set-Alias -Name 'bbHealth' -Value 'Invoke-BusBuddyHealthCheck' -Description 'Check system health' -Force } catch { }
 try { Set-Alias -Name 'bbDevSession' -Value 'Start-BusBuddyDevSession' -Description 'Start development session' -Force } catch { }
@@ -3129,13 +3135,18 @@ if (-not $env:BUSBUDDY_NO_WELCOME) {
 #endregion
 
 
-# Import additional validation functions
+# Import additional validation functions via module (no dot-sourcing)
 try {
-    . "$PSScriptRoot\bb-validate-database.ps1"
-    Export-ModuleMember -Function Test-BusBuddyDatabase -ErrorAction SilentlyContinue
-    Write-Verbose "Successfully loaded database validation functions"
+    $modulesRoot = (Split-Path $PSScriptRoot -Parent)
+    $validationModule = Join-Path $modulesRoot 'BusBuddy.Validation/BusBuddy.Validation.psd1'
+    if (Test-Path $validationModule) {
+        Import-Module $validationModule -Force -ErrorAction Stop
+        Write-Verbose "Successfully loaded BusBuddy.Validation module"
+    } else {
+        Write-Warning "Validation module not found at $validationModule"
+    }
 } catch {
-    Write-Warning "Could not load bb-validate-database.ps1: $($_.Exception.Message)"
+    Write-Warning "Could not import BusBuddy.Validation: $($_.Exception.Message)"
 }
 
 # Ensure the welcome function is exported after its definition so external callers can invoke bb-welcome

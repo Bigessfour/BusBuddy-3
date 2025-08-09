@@ -1,0 +1,125 @@
+2025-08-09 06:46:20.588 -06:00 [INF] 🚌 🚌 Serilog initialized using configuration from appsettings.json
+2025-08-09 06:46:20.601 -06:00 [INF] 🚌 🚌 BusBuddy MVP starting...
+2025-08-09 06:46:20.760 -06:00 [INF] 🚌 🚌 BusBuddy starting on thread 2 with apartment state: "STA"
+2025-08-09 06:46:20.762 -06:00 [INF] 🚌 🚌 Command line args: c:\Users\biges\Desktop\BusBuddy\BusBuddy.WPF\bin\Debug\net9.0-windows\BusBuddy.WPF.dll
+2025-08-09 06:46:20.762 -06:00 [INF] 🚌 🚌 EF Migration mode: false
+2025-08-09 06:46:20.762 -06:00 [INF] 🚌 🚌 Design-time mode: false
+2025-08-09 06:46:20.762 -06:00 [INF] 🚌 🚌 Initializing BusBuddy MVP application
+2025-08-09 06:46:20.765 -06:00 [INF] 🚌 🔧 Setting up full DI container for UI application...
+2025-08-09 06:46:20.785 -06:00 [INF] 🚌 ✅ Full DI container configured successfully for UI application
+2025-08-09 06:46:20.802 -06:00 [INF] 🚌 Starting Wiley School District data seeding operation
+2025-08-09 06:46:20.804 -06:00 [INF] 🚌 Using configured JSON path: c:\Users\biges\Desktop\BusBuddy\BusBuddy.Core\Data\wiley-school-district-data.json
+2025-08-09 06:46:22.345 -06:00 [INF] 🚌 Wiley seeding skipped: 5 students already exist
+2025-08-09 06:46:22.348 -06:00 [INF] 🚌 🚌 Wiley seeding result: Success=True, RecordsSeeded=0, Error=Already seeded
+2025-08-09 06:46:22.352 -06:00 [INF] 🚌 🏗️ Creating MainWindow for full UI application
+2025-08-09 06:46:22.353 -06:00 [INF] 🚌 🎯 Creating MainWindow with dependency injection
+2025-08-09 06:46:22.354 -06:00 [INF] 🚌 MainWindowViewModel initialized with sample data
+2025-08-09 06:46:22.355 -06:00 [INF] 🚌 ✅ MainWindowViewModel created successfully via DI
+2025-08-09 06:46:22.430 -06:00 [DBG] 🚌 MainWindow constructor starting
+2025-08-09 06:46:22.431 -06:00 [DBG] 🚌 Calling InitializeComponent for MainWindow XAML
+2025-08-09 06:46:22.457 -06:00 [INF] 🚌 📊 Database already contains student data, skipping seed
+2025-08-09 06:46:23.050 -06:00 [INF] 🚌 Loaded 3 stops for route Route 1
+2025-08-09 06:46:23.050 -06:00 [INF] 🚌 Loaded mock data: 25 students, 5 routes, 10 buses, 8 drivers
+2025-08-09 06:46:23.050 -06:00 [INF] 🚌 Enhanced RouteAssignmentViewModel initialized with route building capabilities
+2025-08-09 06:46:23.050 -06:00 [INF] 🚌 RouteAssignmentView initialized successfully with MVP route building interface
+2025-08-09 06:46:23.110 -06:00 [DBG] 🚌 Applying Syncfusion theme
+2025-08-09 06:46:23.112 -06:00 [DBG] 🚌 ApplySyncfusionTheme method started
+2025-08-09 06:46:23.112 -06:00 [DBG] 🚌 Configuring Syncfusion SfSkinManager global settings
+2025-08-09 06:46:23.113 -06:00 [DBG] 🚌 Creating FluentDark theme instance
+2025-08-09 06:46:23.115 -06:00 [DBG] 🚌 Applying FluentDark theme to MainWindow
+2025-08-09 06:46:23.319 -06:00 [INF] 🚌 Applied FluentDark theme successfully
+2025-08-09 06:46:23.319 -06:00 [DBG] 🚌 ApplySyncfusionTheme completed with FluentDark
+2025-08-09 06:46:23.319 -06:00 [DBG] 🚌 Initializing MainWindow components and DataContext
+2025-08-09 06:46:23.319 -06:00 [DBG] 🚌 InitializeMainWindow method started
+2025-08-09 06:46:23.319 -06:00 [DBG] 🚌 Ensuring robust DataContext management
+2025-08-09 06:46:23.319 -06:00 [DBG] 🚌 Creating new MainWindowViewModel instance
+2025-08-09 06:46:23.320 -06:00 [INF] 🚌 MainWindow DataContext initialized with new ViewModel
+2025-08-09 06:46:23.320 -06:00 [DBG] 🚌 InitializeMainWindow method completed
+2025-08-09 06:46:23.320 -06:00 [DBG] 🚌 Attaching Syncfusion event hooks
+2025-08-09 06:46:23.320 -06:00 [INF] 🚌 Syncfusion event hooks ready (basic functionality enabled)
+2025-08-09 06:46:23.320 -06:00 [INF] 🚌 DockingManager activation events wired
+2025-08-09 06:46:23.320 -06:00 [INF] 🚌 MainWindow initialized successfully with Syncfusion DockingManager
+2025-08-09 06:46:23.320 -06:00 [DBG] 🚌 MainWindow constructor completed successfully
+2025-08-09 06:46:23.320 -06:00 [DBG] 🚌 DataContext changed detected
+2025-08-09 06:46:23.320 -06:00 [WRN] 🚌 DataContext set to unexpected type: MainWindowViewModel
+2025-08-09 06:46:24.552 -06:00 [INF] 🚌 🚌 BusBuddy MVP application started successfully
+2025-08-09 06:46:29.920 -06:00 [DBG] 🚌 AddStudent_Click event triggered
+2025-08-09 06:46:29.920 -06:00 [DBG] 🚌 Creating new StudentForm dialog
+2025-08-09 06:46:30.022 -06:00 [INF] 🚌 Loading form data
+2025-08-09 06:46:30.023 -06:00 [INF] 🚌 Loaded 4 routes and 15 bus stops
+2025-08-09 06:46:30.023 -06:00 [DBG] 🚌 Showing StudentForm modal dialog
+2025-08-09 06:51:23.676 -06:00 [DBG] 🚌 StudentForm dialog result: false
+2025-08-09 06:51:23.677 -06:00 [DBG] 🚌 Student form was cancelled or closed without saving
+2025-08-09 06:51:24.755 -06:00 [INF] 🚌 🚌 BusBuddy MVP application shutting down
+2025-08-09 07:11:03.669 -06:00 [INF] 🚌 🚌 Serilog initialized using configuration from appsettings.json
+2025-08-09 07:11:03.689 -06:00 [INF] 🚌 🚌 BusBuddy MVP starting...
+2025-08-09 07:11:03.701 -06:00 [INF] 🚌 🚌 BusBuddy starting on thread 2 with apartment state: "STA"
+2025-08-09 07:11:03.703 -06:00 [INF] 🚌 🚌 Command line args: C:\Users\biges\Desktop\BusBuddy\BusBuddy.WPF\bin\Debug\net9.0-windows\BusBuddy.WPF.dll
+2025-08-09 07:11:03.703 -06:00 [INF] 🚌 🚌 EF Migration mode: false
+2025-08-09 07:11:03.703 -06:00 [INF] 🚌 🚌 Design-time mode: false
+2025-08-09 07:11:03.703 -06:00 [INF] 🚌 🚌 Initializing BusBuddy MVP application
+2025-08-09 07:11:03.707 -06:00 [INF] 🚌 🔧 Setting up full DI container for UI application...
+2025-08-09 07:11:03.729 -06:00 [INF] 🚌 ✅ Full DI container configured successfully for UI application
+2025-08-09 07:11:03.750 -06:00 [INF] 🚌 Starting Wiley School District data seeding operation
+2025-08-09 07:11:03.751 -06:00 [INF] 🚌 Using configured JSON path: c:\Users\biges\Desktop\BusBuddy\BusBuddy.Core\Data\wiley-school-district-data.json
+2025-08-09 07:11:05.750 -06:00 [INF] 🚌 Wiley seeding skipped: 5 students already exist
+2025-08-09 07:11:05.756 -06:00 [INF] 🚌 🚌 Wiley seeding result: Success=True, RecordsSeeded=0, Error=Already seeded
+2025-08-09 07:11:05.757 -06:00 [INF] 🚌 🏗️ Creating MainWindow for full UI application
+2025-08-09 07:11:05.757 -06:00 [INF] 🚌 🎯 Creating MainWindow with dependency injection
+2025-08-09 07:11:05.758 -06:00 [INF] 🚌 MainWindowViewModel initialized with sample data
+2025-08-09 07:11:05.760 -06:00 [INF] 🚌 ✅ MainWindowViewModel created successfully via DI
+2025-08-09 07:11:05.796 -06:00 [DBG] 🚌 MainWindow constructor starting
+2025-08-09 07:11:05.796 -06:00 [DBG] 🚌 Calling InitializeComponent for MainWindow XAML
+2025-08-09 07:11:05.931 -06:00 [INF] 🚌 📊 Database already contains student data, skipping seed
+2025-08-09 07:11:06.489 -06:00 [INF] 🚌 Loaded 3 stops for route Route 1
+2025-08-09 07:11:06.490 -06:00 [INF] 🚌 Loaded mock data: 25 students, 5 routes, 10 buses, 8 drivers
+2025-08-09 07:11:06.490 -06:00 [INF] 🚌 Enhanced RouteAssignmentViewModel initialized with route building capabilities
+2025-08-09 07:11:06.491 -06:00 [INF] 🚌 RouteAssignmentView initialized successfully with MVP route building interface
+2025-08-09 07:11:06.612 -06:00 [DBG] 🚌 Applying Syncfusion theme
+2025-08-09 07:11:06.614 -06:00 [DBG] 🚌 ApplySyncfusionTheme method started
+2025-08-09 07:11:06.614 -06:00 [DBG] 🚌 Configuring Syncfusion SfSkinManager global settings
+2025-08-09 07:11:06.615 -06:00 [DBG] 🚌 Creating FluentDark theme instance
+2025-08-09 07:11:06.617 -06:00 [DBG] 🚌 Applying FluentDark theme to MainWindow
+2025-08-09 07:11:06.930 -06:00 [INF] 🚌 Applied FluentDark theme successfully
+2025-08-09 07:11:06.931 -06:00 [DBG] 🚌 ApplySyncfusionTheme completed with FluentDark
+2025-08-09 07:11:06.931 -06:00 [DBG] 🚌 Initializing MainWindow components and DataContext
+2025-08-09 07:11:06.931 -06:00 [DBG] 🚌 InitializeMainWindow method started
+2025-08-09 07:11:06.931 -06:00 [DBG] 🚌 Ensuring robust DataContext management
+2025-08-09 07:11:06.931 -06:00 [DBG] 🚌 Creating new MainWindowViewModel instance
+2025-08-09 07:11:06.931 -06:00 [INF] 🚌 MainWindow DataContext initialized with new ViewModel
+2025-08-09 07:11:06.932 -06:00 [DBG] 🚌 InitializeMainWindow method completed
+2025-08-09 07:11:06.932 -06:00 [DBG] 🚌 Attaching Syncfusion event hooks
+2025-08-09 07:11:06.932 -06:00 [INF] 🚌 Syncfusion event hooks ready (basic functionality enabled)
+2025-08-09 07:11:06.932 -06:00 [INF] 🚌 DockingManager activation events wired
+2025-08-09 07:11:06.932 -06:00 [INF] 🚌 MainWindow initialized successfully with Syncfusion DockingManager
+2025-08-09 07:11:06.932 -06:00 [DBG] 🚌 MainWindow constructor completed successfully
+2025-08-09 07:11:06.933 -06:00 [DBG] 🚌 DataContext changed detected
+2025-08-09 07:11:06.933 -06:00 [WRN] 🚌 DataContext set to unexpected type: MainWindowViewModel
+2025-08-09 07:11:07.983 -06:00 [INF] 🚌 🚌 BusBuddy MVP application started successfully
+2025-08-09 07:11:13.978 -06:00 [DBG] 🚌 StudentsButton_Click event triggered
+2025-08-09 07:11:13.978 -06:00 [INF] 🚌 Students navigation requested
+2025-08-09 07:11:14.008 -06:00 [INF] 🚌 Loading students from database
+2025-08-09 07:11:14.008 -06:00 [INF] 🚌 Creating design-time BusBuddyDbContext
+2025-08-09 07:11:14.008 -06:00 [INF] 🚌 Using Azure SQL credential fallback for design-time context
+2025-08-09 07:11:14.103 -06:00 [INF] 🚌 Creating design-time BusBuddyDbContext
+2025-08-09 07:11:14.103 -06:00 [INF] 🚌 Using Azure SQL credential fallback for design-time context
+2025-08-09 07:11:14.153 -06:00 [DBG] 🚌 Showing StudentsView in modal dialog
+2025-08-09 07:11:15.161 -06:00 [INF] 🚌 Loaded 5 students
+2025-08-09 07:11:15.754 -06:00 [INF] 🚌 Reference data loaded: 14 grades, 1 schools, 0 routes
+2025-08-09 07:11:18.018 -06:00 [INF] 🚌 Add student command executed
+2025-08-09 07:11:18.172 -06:00 [INF] 🚌 Loading form data
+2025-08-09 07:11:18.172 -06:00 [INF] 🚌 Loaded 4 routes and 15 bus stops
+2025-08-09 07:12:05.706 -06:00 [INF] 🚌 Loading students from database
+2025-08-09 07:12:05.706 -06:00 [INF] 🚌 Creating design-time BusBuddyDbContext
+2025-08-09 07:12:05.706 -06:00 [INF] 🚌 Using Azure SQL credential fallback for design-time context
+2025-08-09 07:12:05.779 -06:00 [INF] 🚌 Loaded 5 students
+2025-08-09 07:12:26.018 -06:00 [INF] 🚌 Import students command executed
+2025-08-09 07:12:27.721 -06:00 [INF] 🚌 Loading students from database
+2025-08-09 07:12:27.721 -06:00 [INF] 🚌 Creating design-time BusBuddyDbContext
+2025-08-09 07:12:27.721 -06:00 [INF] 🚌 Using Azure SQL credential fallback for design-time context
+2025-08-09 07:12:27.778 -06:00 [INF] 🚌 Loaded 5 students
+2025-08-09 07:12:28.502 -06:00 [INF] 🚌 Export command executed - 5 students
+2025-08-09 07:12:33.542 -06:00 [INF] 🚌 StudentsView dialog closed
+2025-08-09 07:12:33.544 -06:00 [DBG] 🚌 RefreshStudentsGrid method started
+2025-08-09 07:12:33.545 -06:00 [WRN] 🚌 DataContext is not MainWindowViewModel, cannot refresh students
+2025-08-09 07:12:41.257 -06:00 [INF] 🚌 🚌 BusBuddy MVP application shutting down

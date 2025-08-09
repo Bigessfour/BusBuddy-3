@@ -75,7 +75,8 @@
                                    Grid.Row="1">
 
             <!-- Students Panel -->
-            <ContentControl syncfusion:DockingManager.Header="📚 Students"
+            <ContentControl x:Name="StudentsPane"
+                            syncfusion:DockingManager.Header="📚 Students"
                             syncfusion:DockingManager.State="Dock"
                             syncfusion:DockingManager.SideInDockedMode="Left"
                             syncfusion:DockingManager.DesiredWidthInDockedMode="350">
@@ -120,7 +121,8 @@
             </ContentControl>
 
             <!-- Routes Panel -->
-            <ContentControl syncfusion:DockingManager.Header="🚌 Routes"
+            <ContentControl x:Name="RoutesPane"
+                            syncfusion:DockingManager.Header="🚌 Routes"
                             syncfusion:DockingManager.State="Dock"
                             syncfusion:DockingManager.SideInDockedMode="Right"
                             syncfusion:DockingManager.DesiredWidthInDockedMode="380">

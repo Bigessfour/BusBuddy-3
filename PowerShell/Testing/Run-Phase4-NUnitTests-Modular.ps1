@@ -114,10 +114,10 @@ function Invoke-TestExecution {
         # Build solution first with enhanced output capture
         Write-Information "🏗️ Building solution..." -InformationAction Continue
 
-        # Use enhanced build capture if available
-        $enhancedBuildPath = Join-Path (Split-Path $WORKSPACE_ROOT) "PowerShell\Functions\Build\Enhanced-Build-Output.ps1"
-        if (Test-Path $enhancedBuildPath) {
-            . $enhancedBuildPath
+        # Use enhanced build capture via module if available
+        $buildOutputModule = Join-Path (Split-Path $PSScriptRoot -Parent) "Modules\BusBuddy.BuildOutput\BusBuddy.BuildOutput.psd1"
+        if (Test-Path $buildOutputModule) {
+            Import-Module $buildOutputModule -Force -ErrorAction SilentlyContinue
             $buildResult = Get-BusBuddyBuildOutput -ProjectPath $SOLUTION_FILE -Configuration "Debug" -SaveToFile
 
             if ($buildResult.ExitCode -ne 0) {

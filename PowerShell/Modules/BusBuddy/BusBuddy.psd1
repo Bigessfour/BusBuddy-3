@@ -62,22 +62,8 @@
     # Variables to export from this module
     VariablesToExport    = @()
 
-    # Aliases to export from this module
-    AliasesToExport      = @(
-        'bb-build',
-        'bb-run',
-        'bb-test',
-        'bb-clean',
-        'bb-restore',
-        'bb-health',
-        'bb-commands',
-        'bb-info',
-        'bb-happiness',
-        'bb-dev-session',
-        'bb-welcome',
-    # 'bb-validate-database',
-    # 'bb-db-validate'
-    )
+    # Aliases to export from this module (defer to Set-Alias in psm1; keep empty to avoid duplication across modules)
+    AliasesToExport      = @()
 
     # List of all files packaged with this module
     FileList             = @(

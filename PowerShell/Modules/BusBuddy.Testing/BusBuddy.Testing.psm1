@@ -2,12 +2,10 @@
 
 <#
 .SYNOPSIS
-    BusBuddy Testing Module - Microsoft PowerShell Standards Compliant
+    BusBuddy Testing Module — Microsoft PowerShell standards compliant
 
 .DESCRIPTION
-    Comprehensive testing in            '--logger', 'console;verbosity=normal',
-            '--results-directory', $Script:TestResultsDir
-        )tructure for BusBuddy with VS Code NUnit Test Runner integration.
+    Comprehensive testing infrastructure for BusBuddy with VS Code NUnit Test Runner integration.
     Provides category-based testing, watch mode, and detailed reporting capabilities.
 
 .NOTES
@@ -73,13 +71,16 @@ function Invoke-BusBuddyBuild {
     try {
         Write-Information "🏗️ Building BusBuddy solution..." -InformationAction Continue
 
-        # Temporarily disable enhanced build output to isolate UseShellExecute error
-        $enhancedBuildPath = "DISABLED_FOR_DEBUG"  # Join-Path (Split-Path $Script:WorkspaceRoot) "PowerShell\Functions\Build\Enhanced-Build-Output.ps1"
-        if (Test-Path $enhancedBuildPath) {
-            . $enhancedBuildPath
-            $buildResult = Get-BusBuddyBuildOutput -ProjectPath $Script:SolutionFile -Configuration "Debug"
-            return ($buildResult.ExitCode -eq 0)
-        } else {
+            # Prefer module-based enhanced build output if available
+            $buildOutputModule = Join-Path (Split-Path $PSScriptRoot -Parent) "BusBuddy.BuildOutput" "BusBuddy.BuildOutput.psd1"
+            if (Test-Path $buildOutputModule) {
+                Import-Module $buildOutputModule -Force -ErrorAction SilentlyContinue
+                if (Get-Command -Name Get-BusBuddyBuildOutput -ErrorAction SilentlyContinue) {
+                    $buildResult = Get-BusBuddyBuildOutput -ProjectPath $Script:SolutionFile -Configuration "Debug"
+                    return ($buildResult.ExitCode -eq 0)
+                }
+            }
+
             # Fallback to original with output capture
             $buildArgs = @(
                 'build'
@@ -109,9 +110,10 @@ function Invoke-BusBuddyBuild {
                 throw "Build failed with exit code $LASTEXITCODE. See $buildLogFile for details."
             }
 
-            Write-Information "✅ Build completed successfully" -InformationAction Continue
-            return $true
-        }
+        Write-Information "✅ Build completed successfully" -InformationAction Continue
+        Write-Information "\u2705 Build completed successfully" -InformationAction Continue
+        return $true
+    }
 
     } catch {
         Write-Error "Build failed: $($_.Exception.Message)"
@@ -772,7 +774,7 @@ function Test-BusBuddyCompliance {
 
 #region Aliases
 
-New-Alias -Name 'bb-test' -Value 'Start-BusBuddyTest' -Description 'Quick alias for Start-BusBuddyTest'
+# Dedup policy: core BusBuddy module owns 'bb-test'. Keep secondary bb-test-* helpers here.
 New-Alias -Name 'bb-test-watch' -Value 'Start-BusBuddyTestWatch' -Description 'Quick alias for Start-BusBuddyTestWatch'
 New-Alias -Name 'bb-test-report' -Value 'New-BusBuddyTestReport' -Description 'Quick alias for New-BusBuddyTestReport'
 New-Alias -Name 'bb-test-status' -Value 'Get-BusBuddyTestStatus' -Description 'Quick alias for Get-BusBuddyTestStatus'
@@ -791,7 +793,6 @@ Export-ModuleMember -Function @(
     'Initialize-BusBuddyTestEnvironment'
     'Test-BusBuddyCompliance'
 ) -Alias @(
-    'bb-test'
     'bb-test-watch'
     'bb-test-report'
     'bb-test-status'

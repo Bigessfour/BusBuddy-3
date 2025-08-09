@@ -48,6 +48,7 @@ using BusBuddy.Core.Services;
 using BusBuddy.Core.Data;
 using Syncfusion.SfSkinManager;
 using Serilog;
+using Syncfusion.Windows.Tools.Controls; // DockingManager API per Syncfusion docs
 
 namespace BusBuddy.WPF.Views.Main
 {
@@ -77,6 +78,25 @@ namespace BusBuddy.WPF.Views.Main
                 // Attach Syncfusion SfDataGrid error hooks for runtime diagnostics
                 Logger.Debug("Attaching Syncfusion event hooks");
                 AttachSyncfusionEventHooks();
+
+                // Wire DockingManager activation events for dynamic sizing
+                try
+                {
+                    if (this.FindName("MainDockingManager") is DockingManager dm)
+                    {
+                        dm.WindowActivated += DockingManager_WindowActivated; // https://help.syncfusion.com/cr/wpf/Syncfusion.Windows.Tools.Controls.DockingManager.html#events
+                        dm.WindowDeactivated += DockingManager_WindowDeactivated;
+                        Logger.Information("DockingManager activation events wired");
+                    }
+                    else
+                    {
+                        Logger.Warning("MainDockingManager not found; activation-based resizing not wired");
+                    }
+                }
+                catch (Exception evtEx)
+                {
+                    Logger.Warning(evtEx, "Failed wiring DockingManager activation events");
+                }
 
                 Logger.Information("MainWindow initialized successfully with Syncfusion DockingManager");
                 Logger.Debug("MainWindow constructor completed successfully");
@@ -201,6 +221,65 @@ namespace BusBuddy.WPF.Views.Main
             this.DataContextChanged += MainWindow_DataContextChanged;
 
             Logger.Debug("InitializeMainWindow method completed");
+        }
+
+        // Store original widths to restore on deactivation
+        private double? _studentsOriginalWidth;
+        private double? _routesOriginalWidth;
+
+        // Based on Syncfusion DockingManager events and attached properties:
+        // - WindowActivated / WindowDeactivated events are documented in API reference.
+        // - DesiredWidthInDockedMode is an attached property used for docked panes.
+        // Docs: https://help.syncfusion.com/cr/wpf/Syncfusion.Windows.Tools.Controls.DockingManager.html
+        private void DockingManager_WindowActivated(object? sender, RoutedEventArgs e)
+        {
+            try
+            {
+                if (e.OriginalSource is FrameworkElement fe)
+                {
+                    if (ReferenceEquals(fe, FindName("StudentsPane")))
+                    {
+                        _studentsOriginalWidth ??= DockingManager.GetDesiredWidthInDockedMode(fe);
+                        // Expand while active (gentle bump)
+                        DockingManager.SetDesiredWidthInDockedMode(fe, Math.Max(_studentsOriginalWidth.Value, _studentsOriginalWidth.Value + 120));
+                        Logger.Debug("Expanded StudentsPane to {Width}", DockingManager.GetDesiredWidthInDockedMode(fe));
+                    }
+                    else if (ReferenceEquals(fe, FindName("RoutesPane")))
+                    {
+                        _routesOriginalWidth ??= DockingManager.GetDesiredWidthInDockedMode(fe);
+                        DockingManager.SetDesiredWidthInDockedMode(fe, Math.Max(_routesOriginalWidth.Value, _routesOriginalWidth.Value + 120));
+                        Logger.Debug("Expanded RoutesPane to {Width}", DockingManager.GetDesiredWidthInDockedMode(fe));
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Warning(ex, "DockingManager_WindowActivated handling failed");
+            }
+        }
+
+        private void DockingManager_WindowDeactivated(object? sender, RoutedEventArgs e)
+        {
+            try
+            {
+                if (e.OriginalSource is FrameworkElement fe)
+                {
+                    if (ReferenceEquals(fe, FindName("StudentsPane")) && _studentsOriginalWidth.HasValue)
+                    {
+                        DockingManager.SetDesiredWidthInDockedMode(fe, _studentsOriginalWidth.Value);
+                        Logger.Debug("Restored StudentsPane width to {Width}", _studentsOriginalWidth);
+                    }
+                    else if (ReferenceEquals(fe, FindName("RoutesPane")) && _routesOriginalWidth.HasValue)
+                    {
+                        DockingManager.SetDesiredWidthInDockedMode(fe, _routesOriginalWidth.Value);
+                        Logger.Debug("Restored RoutesPane width to {Width}", _routesOriginalWidth);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Warning(ex, "DockingManager_WindowDeactivated handling failed");
+            }
         }
 
         /// <summary>

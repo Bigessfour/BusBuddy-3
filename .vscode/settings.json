@@ -6,6 +6,7 @@
         "buildtransitive",
         "busbuddy",
         "centralus",
+        "Chromeless",
         "clrstack",
         "contentfiles",
         "costmanagement",
@@ -25,7 +26,22 @@
         "Sqlcmd",
         "Starlink",
         "sympath",
+        "syncfusionshared",
         "testhost",
         "Wintellect"
-    ]
+    ],
+
+    // Ensure BusBuddy PowerShell modules are on PSModulePath for integrated terminals
+    // This enables PowerShell module autoloading for bb-* commands without editing user profiles.
+    "terminal.integrated.env.windows": {
+        "PSModulePath": "${workspaceFolder}\\PowerShell\\Modules;${env:PSModulePath}"
+    },
+
+    // Force integrated terminal to use PowerShell 7.5.2
+    "terminal.integrated.profiles.windows": {
+        "PowerShell": {
+            "path": "C:\\Program Files\\PowerShell\\7\\pwsh.exe"
+        }
+    },
+    "terminal.integrated.defaultProfile.windows": "PowerShell"
 }

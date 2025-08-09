@@ -78,6 +78,7 @@
     <PackageReference Include="Syncfusion.SfChart.WPF" Version="$(SyncfusionVersion)" />
     <PackageReference Include="Syncfusion.SfInput.WPF" Version="$(SyncfusionVersion)" />
     <PackageReference Include="Syncfusion.SfTextInputLayout.WPF" Version="$(SyncfusionVersion)" />
+  <PackageReference Include="Syncfusion.SfSkinManager.WPF" Version="$(SyncfusionVersion)" />
     <PackageReference Include="Syncfusion.Shared.WPF" Version="$(SyncfusionVersion)" />
     <PackageReference Include="Syncfusion.Tools.WPF" Version="$(SyncfusionVersion)" />
     <PackageReference Include="Syncfusion.SfNavigationDrawer.WPF" Version="$(SyncfusionVersion)" />
@@ -91,6 +92,7 @@
     <PackageReference Include="Syncfusion.PdfViewer.WPF" Version="$(SyncfusionVersion)" />
     <PackageReference Include="Syncfusion.SfSpreadsheet.WPF" Version="$(SyncfusionVersion)" />
     <PackageReference Include="Syncfusion.Themes.FluentDark.WPF" Version="$(SyncfusionVersion)" />
+  <PackageReference Include="Syncfusion.Themes.FluentLight.WPF" Version="$(SyncfusionVersion)" />
     <!-- Added essential Syncfusion packages for MVP: SfGrid, SfChart, SfInput, Tools.WPF for DockingManager and CardView -->
   </ItemGroup>
 
