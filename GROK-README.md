@@ -65,47 +65,73 @@ Error: There is already an object named 'ActivityLogs' in the database.
 
 ---
 
-## 📁 **File Fetchability URLs for Grok-4 Review**
+## 📁 File fetchability (raw GitHub) with current status
 
-### **🔧 Core Database & Configuration Files**
-- **DbContext (UPDATED):** `c:\Users\biges\Desktop\BusBuddy\BusBuddy.Core\Data\BusBuddyDbContext.cs`
-- **Migration Script:** `c:\Users\biges\Desktop\BusBuddy\migration-script.sql`
-- **App Settings:** `c:\Users\biges\Desktop\BusBuddy\appsettings.json`
-- **Directory Props:** `c:\Users\biges\Desktop\BusBuddy\Directory.Build.props`
-- **Global Config:** `c:\Users\biges\Desktop\BusBuddy\global.json`
+Base repo: https://github.com/Bigessfour/BusBuddy-3 (branch: master)
 
-### **🚌 Entity Models & Services**
-- **Bus Entity:** `c:\Users\biges\Desktop\BusBuddy\BusBuddy.Core\Models\Bus.cs`
-- **Student Entity:** `c:\Users\biges\Desktop\BusBuddy\BusBuddy.Core\Models\Student.cs`
-- **Student Service:** `c:\Users\biges\Desktop\BusBuddy\BusBuddy.Core\Services\StudentService.cs`
-- **Seeding Interface:** `c:\Users\biges\Desktop\BusBuddy\BusBuddy.Core\Services\ISeedDataService.cs`
+### Core database & configuration
+- DbContext — current issue: migration history needs sync
+  https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.Core/Data/BusBuddyDbContext.cs
+- Migration script — up to date
+  https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/migration-script.sql
+- App settings — verify Azure credentials if using cloud DB
+  https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/appsettings.json
+- Directory.Build.props — central versions (EF Core, Syncfusion)
+  https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/Directory.Build.props
+- global.json — .NET SDK
+  https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/global.json
 
-### **🎨 WPF UI & Views**
-- **Main Application:** `c:\Users\biges\Desktop\BusBuddy\BusBuddy.WPF\App.xaml.cs`
-- **Main Window:** `c:\Users\biges\Desktop\BusBuddy\BusBuddy.WPF\MainWindow.xaml`
-- **Students View:** `c:\Users\biges\Desktop\BusBuddy\BusBuddy.WPF\Views\StudentsView.xaml`
-- **Students ViewModel:** `c:\Users\biges\Desktop\BusBuddy\BusBuddy.WPF\ViewModels\StudentsViewModel.cs`
+### Entities & services
+- Bus entity — mapping aligned to Vehicles
+  https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.Core/Models/Bus.cs
+- Student entity — OK
+  https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.Core/Models/Student.cs
+- Student service — seeding uses retry
+  https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.Core/Services/StudentService.cs
+- Seed interface — OK
+  https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.Core/Services/ISeedDataService.cs
 
-### **🔧 PowerShell Modules & Scripts**
-- **Main Module:** `c:\Users\biges\Desktop\BusBuddy\PowerShell\Modules\BusBuddy\BusBuddy.psm1`
-- **Profile Script:** `c:\Users\biges\Desktop\BusBuddy\PowerShell\Profiles\Microsoft.PowerShell_profile.ps1`
-- **Advanced Workflows:** `c:\Users\biges\Desktop\BusBuddy\BusBuddy-Advanced-Workflows.ps1`
+### WPF UI & views
+- App.xaml.cs — Syncfusion license registration
+  https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.WPF/App.xaml.cs
+- MainWindow.xaml — correct path under Views/Main
+  https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.WPF/Views/Main/MainWindow.xaml
+- StudentsView.xaml — labels fixed; SfDataGrid in use
+  https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.WPF/Views/Student/StudentsView.xaml
+- StudentsViewModel.cs — OK
+  https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.WPF/ViewModels/Student/StudentsViewModel.cs
 
-### **📊 Analysis & Logs**
-- **Runtime Errors:** `c:\Users\biges\Desktop\BusBuddy\runtime-errors-fixed.log`
-- **PowerShell Analysis:** `c:\Users\biges\Desktop\BusBuddy\PowerShell-Analysis-Results.md`
-- **Anti-Regression:** `c:\Users\biges\Desktop\BusBuddy\ANTI-REGRESSION-CHECKLIST.md`
+### PowerShell modules & scripts
+- Main module — Write-Host cleanup pending (post-MVP)
+  https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/PowerShell/Modules/BusBuddy/BusBuddy.psm1
+- PowerShell profile — OK
+  https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/PowerShell/Profiles/Microsoft.PowerShell_profile.ps1
+- Advanced workflows — OK
+  https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy-Advanced-Workflows.ps1
 
-### **🚀 Deployment & Testing**
-- **UAT Tests:** `c:\Users\biges\Desktop\BusBuddy\Run-UATTests.ps1`
-- **Deploy Script:** `c:\Users\biges\Desktop\BusBuddy\Deploy-BusBuddy.ps1`
-- **Setup Staging:** `c:\Users\biges\Desktop\BusBuddy\Setup-StagingDatabase.ps1`
+### Analysis & docs
+- runtime-errors-fixed.log — latest runtime fixes
+  https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/runtime-errors-fixed.log
+- Anti-regression checklist — keep updated
+  https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/ANTI-REGRESSION-CHECKLIST.md
 
-### **📚 Documentation**
-- **Development Guide:** `c:\Users\biges\Desktop\BusBuddy\DEVELOPMENT-GUIDE.md`
-- **Production Status:** `c:\Users\biges\Desktop\BusBuddy\PRODUCTION-READY-STATUS.md`
-- **Setup Guide:** `c:\Users\biges\Desktop\BusBuddy\SETUP-GUIDE.md`
-- **Contributing:** `c:\Users\biges\Desktop\BusBuddy\CONTRIBUTING.md`
+### Deployment & testing
+- UAT tests runner — re-run after Test SDK update
+  https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/Run-UATTests.ps1
+- Deploy script — ready when approved
+  https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/Deploy-BusBuddy.ps1
+- Setup staging — optional
+  https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/Setup-StagingDatabase.ps1
+
+### Documentation
+- Development guide
+  https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/DEVELOPMENT-GUIDE.md
+- Production readiness
+  https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/PRODUCTION-READY-STATUS.md
+- Setup guide
+  https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/SETUP-GUIDE.md
+- Contributing
+  https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/CONTRIBUTING.md
 
 ---
 
@@ -185,25 +211,25 @@ Based on XAML inspection and build validation:
 5. **Build Integrity:** No compilation errors affecting UI components
 ----
 
-## 🎉 **Production Deployment Completed - August 8, 2025**
+## 🚦 Deployment readiness note (updated August 8, 2025)
 
-### **🚀 DEPLOYMENT SEQUENCE SUCCESSFULLY EXECUTED**
-**Status:** BusBuddy is now LIVE in production with full monitoring and operational capabilities.
+### **🚀 Deployment sequence (planned/available)**
+**Status:** Deployment scripts and monitoring are prepared; run after test platform confirmation.
 
-### **✅ Completed Deployment Steps**
+### **✅ Steps to execute when ready**
 ```powershell
 # Successfully executed deployment sequence:
 ✅ bbRun                                    # Application launched (84.69s startup, Syncfusion licensed)
 ✅ .\Setup-ApplicationInsights.ps1         # Azure monitoring deployed to BusBuddy-RG
 ✅ .\Setup-StagingDatabase.ps1            # BusBuddyDB-Staging created with migrations  
-✅ .\Run-UATTests.ps1 -TestSuite All      # 22/22 UAT tests passed (100% success rate)
-✅ .\Deploy-BusBuddy.ps1 -Environment Production  # Production deployment completed
-✅ bbHealth                                # All system health checks passed
-✅ git commit & push                       # Changes committed (645b898) to origin/master
+▫️ .\Run-UATTests.ps1 -TestSuite All      # Re-run after Test SDK update; confirm pass rate
+▫️ .\Deploy-BusBuddy.ps1 -Environment Production  # Execute after sign-off
+✅ bbHealth                                # All system health checks
+✅ git commit & push                       # Changes committed to origin/master
 ```
 
-### **🎯 UI Status Confirmation - Button Text/Wiring Resolution**
-The UI errors mentioned in earlier reports (buttons missing text and not wired up) have been **CONFIRMED RESOLVED** through:
+### **🎯 UI Status Confirmation - Button Text/Wiring**
+Current state: Label/command wiring fixes applied; validate in running app:
 
 1. **XAML Code Review:**
    - ✅ `StudentsView.xaml`: Proper Syncfusion ButtonAdv with Content="➕ Add Student" and Command bindings
@@ -449,22 +475,21 @@ Testhost process exited with error: System.IO.FileNotFoundException:
 Could not load file or assembly 'Microsoft.TestPlatform.CoreUtilities, Version=15.0.0.0...
 ```
 
-**After (Clear Guidance):**
+**After (Resolution Path):**
 ```
 🚨 KNOWN .NET 9 COMPATIBILITY ISSUE DETECTED
 ❌ Microsoft.TestPlatform.CoreUtilities v15.0.0.0 not found
 🔍 This is a documented .NET 9 compatibility issue with test platform
 
-📋 WORKAROUND OPTIONS:
-  1. Install VS Code NUnit Test Runner extension for UI testing
-  2. Use Visual Studio Test Explorer instead of command line
-  3. Temporarily downgrade to .NET 8.0 for testing (not recommended)
+📋 Fix steps:
+  1. Update Microsoft.NET.Test.Sdk to 17.11.0 and MSTest.TestFramework/Adapter to 3.6.0
+  2. Run: dotnet restore --force --no-cache
+  3. Re-run: dotnet test or bbTest
 ```
 
 ### **Current Issues**
-- **.NET 9 Test Platform:** Known compatibility issue with Microsoft.TestPlatform.CoreUtilities v15.0.0.0
-- **Workarounds Available:** VS Code NUnit extension, Visual Studio Test Explorer
-- **Status:** Not blocking development - clear guidance provided to users
+- Test platform error previously referenced (CoreUtilities v15.0.0.0) — addressed by SDK/package updates
+- Status: Re-run tests and update this section with latest pass/fail summary
 
 ### **🔥 Key Files Modified This Session**
 - `PowerShell/Modules/BusBuddy/BusBuddy.psm1` - **Major Enhancement:** bbTest function refactored with .NET 9 compatibility detection (2600+ lines)
@@ -497,12 +522,11 @@ Based on comprehensive deep evaluation of all modules:
 **Impact**: Can't edit vehicle details despite having working commands
 **Fix Time**: 30 minutes - uncomment and wire up existing controls
 
-#### **2. Route Management UI - MISSING FORMS**
-**Files Needed**:
-- `c:\Users\biges\Desktop\BusBuddy\BusBuddy.WPF\Views\Route\RouteEditDialog.xaml` - **MISSING ENTIRELY**
-- `c:\Users\biges\Desktop\BusBuddy\BusBuddy.WPF\Views\Route\RouteForm.xaml` - **MISSING ENTIRELY**  
-**Impact**: Routes service is complete but no UI to create/edit routes
-**Fix Time**: 2 hours - create basic forms using existing patterns
+#### **2. Route Management UI**
+**Files Present**:
+- `c:\Users\biges\Desktop\BusBuddy\BusBuddy.WPF\Views\Route\RouteEditDialog.xaml` - Present
+- `c:\Users\biges\Desktop\BusBuddy\BusBuddy.WPF\Views\Route\RouteForm.xaml` - Present  
+**Action**: Verify bindings and basic create/edit flows; enhance as needed
 
 ### **🔧 MEDIUM PRIORITY - Enhance Usability Today**
 
@@ -853,8 +877,8 @@ All Azure SQL integration steps have been completed, tested, and validated:
 **BusBuddy maintains extensive logging across multiple systems for debugging, monitoring, and diagnostics:**
 
 #### **🔧 Primary Application Logs (Serilog)**
-**Configuration:** [`appsettings.json`](https://raw.githubusercontent.com/BIIGELOW/BusBuddy/master/appsettings.json) - Structured logging with multiple outputs
-- **📂 logs/build.log** - Build process logging with rolling files ([logs directory](https://github.com/BIIGELOW/BusBuddy/tree/master/logs))
+**Configuration:** [`appsettings.json`](https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/appsettings.json) - Structured logging with multiple outputs
+- **📂 logs/build.log** - Build process logging with rolling files ([logs directory](https://github.com/Bigessfour/BusBuddy-3/tree/master/logs))
 - **📂 logs/busbuddy-.log** - Main application logs (daily rolling)
 - **📂 logs/application.log** - Console and debug output
 - **📂 logs/bootstrap-{date}.txt** - Application startup logging
@@ -863,7 +887,7 @@ All Azure SQL integration steps have been completed, tested, and validated:
 - **📂 logs/ui-interactions-{date}.log** - UI interaction tracking
 
 #### **🧪 Test & Build Logs**
-**Location:** [`TestResults/`](https://github.com/BIIGELOW/BusBuddy/tree/master/TestResults) directory with timestamped files
+**Location:** [`TestResults/`](https://github.com/Bigessfour/BusBuddy-3/tree/master/TestResults) directory with timestamped files
 - **📊 phase4-build-log-{timestamp}.txt** - PowerShell build logging
 - **📊 phase4-test-log-{timestamp}.txt** - Test execution detailed logs
 - **📊 phase4-test-std{out|err}-{timestamp}.txt** - Test output streams
@@ -872,7 +896,7 @@ All Azure SQL integration steps have been completed, tested, and validated:
 - **📊 *.trx files** - Visual Studio test result XML files
 
 #### **⚡ PowerShell Module Logging**
-**Configuration:** [`BusBuddy.psm1`](https://raw.githubusercontent.com/BIIGELOW/BusBuddy/master/PowerShell/Modules/BusBuddy/BusBuddy.psm1) and [`exception capture modules`](https://raw.githubusercontent.com/BIIGELOW/BusBuddy/master/PowerShell/Modules/BusBuddy.ExceptionCapture.psm1)
+**Configuration:** [`BusBuddy.psm1`](https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/PowerShell/Modules/BusBuddy/BusBuddy.psm1) and [`exception capture modules`](https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/PowerShell/Modules/BusBuddy.ExceptionCapture.psm1)
 - **📜 logs/errors.log** - PowerShell exception tracking
 - **📜 logs/execution.log** - PowerShell execution monitoring
 - **📜 logs/startup-errors.log** - Application startup error capture
@@ -880,10 +904,10 @@ All Azure SQL integration steps have been completed, tested, and validated:
 
 #### **🛠️ Development & Diagnostic Logs**
 **Locations:** Root directory and specialized folders
-- **📋 [`runtime-errors-fixed.log`](https://raw.githubusercontent.com/BIIGELOW/BusBuddy/master/runtime-errors-fixed.log)** - Fixed runtime error tracking
-- **📋 [`run-output.log`](https://raw.githubusercontent.com/BIIGELOW/BusBuddy/master/run-output.log) & [`run-output-2.log`](https://raw.githubusercontent.com/BIIGELOW/BusBuddy/master/run-output-2.log)** - Application execution logs
-- **📋 [`Reset-PowerShell.log`](https://raw.githubusercontent.com/BIIGELOW/BusBuddy/master/Reset-PowerShell.log)** - PowerShell reset operation logs
-- **📋 [`profile_dump.txt`](https://raw.githubusercontent.com/BIIGELOW/BusBuddy/master/profile_dump.txt)** - PowerShell profile debugging
+- **📋 [`runtime-errors-fixed.log`](https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/runtime-errors-fixed.log)** - Fixed runtime error tracking
+- **📋 [`run-output.log`](https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/run-output.log) & [`run-output-2.log`](https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/run-output-2.log)** - Application execution logs
+- **📋 [`Reset-PowerShell.log`](https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/Reset-PowerShell.log)** - PowerShell reset operation logs
+- **📋 [`profile_dump.txt`](https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/profile_dump.txt)** - PowerShell profile debugging
 
 #### **🎯 Logging Configuration Highlights**
 ```json
@@ -898,16 +922,16 @@ All Azure SQL integration steps have been completed, tested, and validated:
   ]
 }
 ```
-**📖 Full Configuration:** [`appsettings.json`](https://raw.githubusercontent.com/BIIGELOW/BusBuddy/master/appsettings.json)
+**📖 Full Configuration:** [`appsettings.json`](https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/appsettings.json)
 
 #### **📈 PowerShell Exception Capture System**
-**Module:** [`BusBuddy.ExceptionCapture.psm1`](https://raw.githubusercontent.com/BIIGELOW/BusBuddy/master/PowerShell/Modules/BusBuddy.ExceptionCapture.psm1) - Enterprise-grade error monitoring
+**Module:** [`BusBuddy.ExceptionCapture.psm1`](https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/PowerShell/Modules/BusBuddy.ExceptionCapture.psm1) - Enterprise-grade error monitoring
 - **Real-time Monitoring:** `Start-BusBuddyErrorMonitoring -LogPath "logs\errors.log"`
 - **Exception Analysis:** `Get-BusBuddyExceptionSummary -LogPath "logs\errors.log"`
 - **Startup Capture:** `Start-BusBuddyWithCapture -LogPath "logs\startup-errors.log"`
 
 #### **🔍 Diagnostic Command Integration**
-**Script:** [`run-bb-diagnostics.ps1`](https://raw.githubusercontent.com/BIIGELOW/BusBuddy/master/run-bb-diagnostics.ps1) - Automated diagnostic logging
+**Script:** [`run-bb-diagnostics.ps1`](https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/run-bb-diagnostics.ps1) - Automated diagnostic logging
 - **Automatic Log Creation:** `logs\bb-run-diagnostic-{timestamp}.log`
 - **Comprehensive Output:** Application startup, build, and error analysis
 - **Integration:** Available via `bb-diagnostics` PowerShell command
@@ -1112,7 +1136,7 @@ https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/SETUP-GUIDE.md
 ```bash
 # Main WPF application
 https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.WPF/App.xaml.cs
-https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.WPF/MainWindow.xaml
+https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.WPF/Views/Main/MainWindow.xaml
 
 # Student management (Syncfusion SfDataGrid)
 https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.WPF/Views/Student/StudentsView.xaml
@@ -1167,8 +1191,8 @@ https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.WPF/View
 https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.WPF/Views/Route/RouteManagementView.xaml.cs
 
 # MISSING FILES (CREATE NEEDED - HIGH PRIORITY):
-# BusBuddy.WPF/Views/Route/RouteEditDialog.xaml        - MISSING ENTIRELY
-# BusBuddy.WPF/Views/Route/RouteForm.xaml             - MISSING ENTIRELY
+# BusBuddy.WPF/Views/Route/RouteEditDialog.xaml        - Present
+# BusBuddy.WPF/Views/Route/RouteForm.xaml              - Present
 ```
 
 #### **👥 Driver Management (100% Service, 0% UI - COMPLETE GAP)**
@@ -1178,8 +1202,8 @@ https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.Core/Ser
 https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.Core/Services/IDriverService.cs
 
 # MISSING FILES (CREATE NEEDED - MEDIUM PRIORITY):
-# BusBuddy.WPF/Views/Driver/DriverManagementView.xaml          - MISSING ENTIRELY
-# BusBuddy.WPF/ViewModels/Driver/DriverManagementViewModel.cs  - MISSING ENTIRELY
+# BusBuddy.WPF/Views/Driver/DriverManagementView.xaml          - Present
+# BusBuddy.WPF/ViewModels/Driver/DriverManagementViewModel.cs  - Present (Drivers/DriverForm/DriversView models exist)
 ```
 
 #### **💻 PowerShell Development Tools**
