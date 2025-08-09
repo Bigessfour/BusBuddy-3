@@ -45,9 +45,15 @@ namespace BusBuddy.WPF.ViewModels.Driver
                 if (SetProperty(ref _selectedDriver, value))
                 {
                     OnPropertyChanged(nameof(HasSelectedDriver));
-                    // Update command availability
-                    ((RelayCommand)EditDriverCommand).NotifyCanExecuteChanged();
-                    ((RelayCommand)DeleteDriverCommand).NotifyCanExecuteChanged();
+                    // Update command availability using MVVM Toolkit interfaces to support both RelayCommand and AsyncRelayCommand
+                    if (EditDriverCommand is CommunityToolkit.Mvvm.Input.IRelayCommand edit)
+                    {
+                        edit.NotifyCanExecuteChanged();
+                    }
+                    if (DeleteDriverCommand is CommunityToolkit.Mvvm.Input.IRelayCommand del)
+                    {
+                        del.NotifyCanExecuteChanged();
+                    }
                 }
             }
         }

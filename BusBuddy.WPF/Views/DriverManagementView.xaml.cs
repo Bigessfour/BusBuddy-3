@@ -1,4 +1,5 @@
 using System.Windows.Controls;
+using BusBuddy.WPF.Utilities;
 
 namespace BusBuddy.WPF.Views
 {
@@ -11,6 +12,7 @@ namespace BusBuddy.WPF.Views
         public DriverManagementView()
         {
             InitializeComponent();
+            SyncfusionThemeManager.ApplyTheme(this);
         }
     }
 }

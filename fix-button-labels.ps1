@@ -27,17 +27,39 @@ foreach ($file in $xamlFiles) {
     $content = Get-Content $file.FullName -Raw
     $originalContent = $content
 
-    # Replace ButtonAdv Content= with Label=
-    $content = $content -replace 'ButtonAdv(\s+)Content=', 'ButtonAdv$1Label='
+    # Replace ButtonAdv Content= with Label= even when other attributes appear before Content
+    # Example match: <syncfusion:ButtonAdv ... Content="...">
+    $pattern = '(<[^>]*?ButtonAdv[^>]*?)\sContent='
+    $content = [regex]::Replace($content, $pattern, '${1} Label=')
 
-    # Count replacements in this file
-    $replacements = ([regex]::Matches($originalContent, 'ButtonAdv\s+Content=')).Count
+    # Count replacements in this file (based on original content)
+    $replacements = ([regex]::Matches($originalContent, $pattern)).Count
+
+    # Add default Label to ButtonAdv tags missing both Label and Content (handles multiline)
+    $buttonPattern = '(?s)<\s*syncfusion:ButtonAdv\b([^>]*)>'
+    $addedLabels = 0
+    $content = [regex]::Replace($content, $buttonPattern, {
+        param($m)
+        $attrs = $m.Groups[1].Value
+        if ($attrs -match '\bLabel\s*=') {
+            return $m.Value
+        }
+        if ($attrs -match '\bContent\s*=') {
+            # Will already be replaced to Label= by previous step in most cases
+            return $m.Value
+        }
+        $addedLabels++
+        # Insert Label after tag name, before existing attributes
+        return "<syncfusion:ButtonAdv Label=\"Action\"$attrs>"
+    })
 
     if ($content -ne $originalContent) {
-        Set-Content -Path $file.FullName -Value $content -NoNewline
+        # Preserve a final newline per repo standards
+        Set-Content -Path $file.FullName -Value $content
         $filesChanged++
-        $totalReplacements += $replacements
-        Write-Host "  ✅ Fixed $replacements ButtonAdv controls in: $($file.Name)" -ForegroundColor Yellow
+        $totalReplacements += ($replacements + $addedLabels)
+        $msg = "  ✅ Fixed $replacements ButtonAdv Content=>Label conversions; added $addedLabels missing Labels in: $($file.Name)"
+        Write-Host $msg -ForegroundColor Yellow
     }
 }
 

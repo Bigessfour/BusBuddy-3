@@ -52,17 +52,17 @@
                 <!-- Main Actions -->
                 <StackPanel Grid.Column="0" Orientation="Horizontal">
                     <!-- Route Operations -->
-                    <syncfusion:ButtonAdv Name="AddRouteButton" Content="➕ Add Route"
+                    <syncfusion:ButtonAdv Name="AddRouteButton" Label="➕ Add Route"
                             Command="{Binding AddRouteCommand}"
                             Background="{StaticResource BusBuddy.Brush.Primary}" Foreground="White"
                             AutomationProperties.Name="Add Route"
                             AutomationProperties.HelpText="Create a new bus route"/>
-                    <syncfusion:ButtonAdv Name="EditRouteButton" Content="✏️ Edit Route"
+                    <syncfusion:ButtonAdv Name="EditRouteButton" Label="✏️ Edit Route"
                             Command="{Binding EditRouteCommand}"
                             IsEnabled="{Binding HasSelectedRoute}"
                             AutomationProperties.Name="Edit Route"
                             AutomationProperties.HelpText="Edit the selected route"/>
-                    <syncfusion:ButtonAdv Name="DeleteRouteButton" Content="🗑️ Delete Route"
+                    <syncfusion:ButtonAdv Name="DeleteRouteButton" Label="🗑️ Delete Route"
                             Command="{Binding DeleteRouteCommand}"
                             IsEnabled="{Binding HasSelectedRoute}"
                             AutomationProperties.Name="Delete Route"
@@ -70,12 +70,12 @@
                     <Separator Margin="10,0"/>
 
                     <!-- Planning Operations -->
-                    <syncfusion:ButtonAdv Name="GenerateScheduleButton" Content="📅 Generate Schedule"
+                    <syncfusion:ButtonAdv Name="GenerateScheduleButton" Label="📅 Generate Schedule"
                             Command="{Binding GenerateScheduleCommand}"
                             Background="{StaticResource BusBuddy.Brush.FleetGreen}" Foreground="White"
                             AutomationProperties.Name="Generate Schedule"
                             AutomationProperties.HelpText="Generate optimized route schedules"/>
-                    <syncfusion:ButtonAdv Name="ViewMapButton" Content="🗺️ View Map"
+                    <syncfusion:ButtonAdv Name="ViewMapButton" Label="🗺️ View Map"
                             Command="{Binding ViewMapCommand}"
                             Background="{StaticResource BusBuddy.Brush.Semantic.Info}" Foreground="White"
                             AutomationProperties.Name="View Map"
@@ -83,13 +83,13 @@
                     <Separator Margin="10,0"/>
 
                     <!-- Assignment Operations -->
-                    <syncfusion:ButtonAdv Name="AssignStudentsButton" Content="👥 Assign Students"
+                    <syncfusion:ButtonAdv Name="AssignStudentsButton" Label="👥 Assign Students"
                             Command="{Binding AssignStudentsCommand}"
                             IsEnabled="{Binding HasSelectedRoute}"
                             Background="{StaticResource BusBuddy.Brush.SafetyOrange}" Foreground="White"
                             AutomationProperties.Name="Assign Students to Route"
                             AutomationProperties.HelpText="Assign students to the selected route"/>
-                    <syncfusion:ButtonAdv Name="AssignVehicleButton" Content="🚌 Assign Vehicle"
+                    <syncfusion:ButtonAdv Name="AssignVehicleButton" Label="🚌 Assign Vehicle"
                             Command="{Binding AssignVehicleCommand}"
                             IsEnabled="{Binding HasSelectedRoute}"
                             Background="{StaticResource BusBuddy.Brush.Semantic.Warning}" Foreground="White"
@@ -100,24 +100,24 @@
                 <!-- Export and Print Actions -->
                 <StackPanel Grid.Column="1" Orientation="Horizontal">
                     <!-- Export Options -->
-                    <syncfusion:ButtonAdv Name="ExportCsvButton" Content="📊 Export CSV"
+                    <syncfusion:ButtonAdv Name="ExportCsvButton" Label="📊 Export CSV"
                             Command="{Binding ExportCsvCommand}"
                             Background="#28A745" Foreground="White"
                             AutomationProperties.Name="Export to CSV"
                             AutomationProperties.HelpText="Export route data to CSV file"/>
-                    <syncfusion:ButtonAdv Name="ExportReportButton" Content="📄 Export Report"
+                    <syncfusion:ButtonAdv Name="ExportReportButton" Label="📄 Export Report"
                             Command="{Binding ExportReportCommand}"
                             Background="#17A2B8" Foreground="White"
                             AutomationProperties.Name="Export Report"
                             AutomationProperties.HelpText="Export detailed route report"/>
 
                     <!-- Print Options -->
-                    <syncfusion:ButtonAdv Name="PrintScheduleButton" Content="🖨️ Print Schedule"
+                    <syncfusion:ButtonAdv Name="PrintScheduleButton" Label="🖨️ Print Schedule"
                             Command="{Binding PrintScheduleCommand}"
                             Background="#6F42C1" Foreground="White"
                             AutomationProperties.Name="Print Schedule"
                             AutomationProperties.HelpText="Print route schedules"/>
-                    <syncfusion:ButtonAdv Name="PrintRouteMapsButton" Content="🗺️ Print Maps"
+                    <syncfusion:ButtonAdv Name="PrintRouteMapsButton" Label="🗺️ Print Maps"
                             Command="{Binding PrintRouteMapsCommand}"
                             Background="#E83E8C" Foreground="White"
                             AutomationProperties.Name="Print Route Maps"
@@ -126,7 +126,7 @@
                     <Separator Margin="10,0"/>
 
                     <!-- Quick Actions -->
-                    <syncfusion:ButtonAdv Name="RefreshButton" Content="🔄 Refresh"
+                    <syncfusion:ButtonAdv Name="RefreshButton" Label="🔄 Refresh"
                             Command="{Binding RefreshCommand}"
                             AutomationProperties.Name="Refresh Routes"
                             AutomationProperties.HelpText="Reload route data from database"/>

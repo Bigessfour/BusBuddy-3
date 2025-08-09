@@ -1,29 +1,26 @@
 using System;
 using System.Collections.ObjectModel;
-using System.ComponentModel;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using BusBuddy.Core.Models;
 using BusBuddy.Core.Services;
-using BusBuddy.WPF.ViewModels;
 using CommunityToolkit.Mvvm.Input;
 using Serilog;
+using DriverModel = BusBuddy.Core.Models.Driver;
 
 namespace BusBuddy.WPF.ViewModels.Driver
 {
     /// <summary>
     /// ViewModel for the DriverForm - handles adding and editing drivers
-    /// Includes license validation and qualification tracking
     /// </summary>
     public class DriverFormViewModel : BaseViewModel
     {
         private readonly IDriverService _driverService;
         private static readonly new ILogger Logger = Log.ForContext<DriverFormViewModel>();
 
-        private BusBuddy.Core.Models.Driver _driver = new();
-        private BusBuddy.Core.Models.Driver? _selectedDriver;
+    private DriverModel _driver = new();
+    private DriverModel? _selectedDriver;
         private string _searchText = string.Empty;
         private string _formTitle = "Add New Driver";
         private bool _isEditMode;
@@ -31,103 +28,76 @@ namespace BusBuddy.WPF.ViewModels.Driver
         public DriverFormViewModel(IDriverService driverService)
         {
             _driverService = driverService ?? throw new ArgumentNullException(nameof(driverService));
-
             InitializeCommands();
             _ = LoadDriversAsync();
         }
 
-        #region Properties
-
-        /// <summary>
-        /// Current driver being edited or added
-        /// </summary>
-        public BusBuddy.Core.Models.Driver Driver
+        // Properties
+        public DriverModel Driver
         {
             get => _driver;
             set
             {
                 if (SetProperty(ref _driver, value))
                 {
-                    // Update command availability when Driver property changes
-                    ((RelayCommand)SaveDriverCommand)?.NotifyCanExecuteChanged();
+                    if (SaveDriverCommand is IRelayCommand save)
+                    {
+                        save.NotifyCanExecuteChanged();
+                    }
+                    if (DeleteDriverCommand is IRelayCommand del)
+                    {
+                        del.NotifyCanExecuteChanged();
+                    }
                     OnPropertyChanged(nameof(CanSaveDriver));
                 }
             }
         }
 
-        /// <summary>
-        /// Selected driver from the list
-        /// </summary>
-        public BusBuddy.Core.Models.Driver? SelectedDriver
+        public DriverModel? SelectedDriver
         {
             get => _selectedDriver;
             set
             {
-                if (SetProperty(ref _selectedDriver, value) && value != null)
+                if (SetProperty(ref _selectedDriver, value) && value is not null)
                 {
                     LoadDriverForEdit(value);
                 }
             }
         }
 
-        /// <summary>
-        /// Search text for filtering drivers
-        /// </summary>
         public string SearchText
         {
             get => _searchText;
             set => SetProperty(ref _searchText, value);
         }
 
-        /// <summary>
-        /// Form title (Add New Driver or Edit Driver)
-        /// </summary>
         public string FormTitle
         {
             get => _formTitle;
             set => SetProperty(ref _formTitle, value);
         }
 
-        /// <summary>
-        /// Whether form is in edit mode
-        /// </summary>
         public bool IsEditMode
         {
             get => _isEditMode;
             set => SetProperty(ref _isEditMode, value);
         }
 
-        /// <summary>
-        /// Collection of all drivers
-        /// </summary>
-        public ObservableCollection<BusBuddy.Core.Models.Driver> Drivers { get; } = new();
+    public ObservableCollection<DriverModel> Drivers { get; } = new();
 
-        /// <summary>
-        /// Can save driver (has required fields)
-        /// </summary>
         public bool CanSaveDriver => !string.IsNullOrWhiteSpace(Driver.DriverName) &&
-                                   !string.IsNullOrWhiteSpace(Driver.DriverPhone) &&
-                                   !string.IsNullOrWhiteSpace(Driver.LicenseNumber) &&
-                                   !string.IsNullOrWhiteSpace(Driver.LicenseClass);
+                                     !string.IsNullOrWhiteSpace(Driver.DriverPhone) &&
+                                     !string.IsNullOrWhiteSpace(Driver.LicenseNumber) &&
+                                     !string.IsNullOrWhiteSpace(Driver.LicenseClass);
 
-        /// <summary>
-        /// Can delete driver (driver selected and exists)
-        /// </summary>
-        public bool CanDeleteDriver => IsEditMode && SelectedDriver != null;
+        public bool CanDeleteDriver => IsEditMode && SelectedDriver is not null;
 
-        #endregion
-
-        #region Commands
-
+        // Commands
         public ICommand AddDriverCommand { get; private set; } = null!;
         public ICommand SaveDriverCommand { get; private set; } = null!;
         public ICommand DeleteDriverCommand { get; private set; } = null!;
         public ICommand CancelCommand { get; private set; } = null!;
         public ICommand RefreshCommand { get; private set; } = null!;
-
-        #endregion
-
-        #region Command Initialization
 
         private void InitializeCommands()
         {
@@ -138,16 +108,13 @@ namespace BusBuddy.WPF.ViewModels.Driver
             RefreshCommand = new AsyncRelayCommand(LoadDriversAsync);
         }
 
-        #endregion
-
-        #region Command Handlers
-
+        // Command Handlers
         private void ExecuteAddDriver()
         {
             try
             {
                 Logger.Information("Starting new driver entry");
-                Driver = new BusBuddy.Core.Models.Driver
+                Driver = new DriverModel
                 {
                     Status = "Active",
                     CreatedDate = DateTime.UtcNow
@@ -156,9 +123,14 @@ namespace BusBuddy.WPF.ViewModels.Driver
                 FormTitle = "Add New Driver";
                 SelectedDriver = null;
 
-                // Notify that save availability may have changed
-                ((RelayCommand)SaveDriverCommand).NotifyCanExecuteChanged();
-                ((RelayCommand)DeleteDriverCommand).NotifyCanExecuteChanged();
+                if (SaveDriverCommand is IRelayCommand save)
+                {
+                    save.NotifyCanExecuteChanged();
+                }
+                if (DeleteDriverCommand is IRelayCommand del)
+                {
+                    del.NotifyCanExecuteChanged();
+                }
             }
             catch (Exception ex)
             {
@@ -174,7 +146,6 @@ namespace BusBuddy.WPF.ViewModels.Driver
                 IsLoading = true;
                 Logger.Information("Saving driver: {DriverName}", Driver.DriverName);
 
-                // Validate required fields
                 var validationErrors = await _driverService.ValidateDriverAsync(Driver);
                 if (validationErrors.Count > 0)
                 {
@@ -182,7 +153,7 @@ namespace BusBuddy.WPF.ViewModels.Driver
                     return;
                 }
 
-                BusBuddy.Core.Models.Driver savedDriver;
+                DriverModel savedDriver;
                 if (IsEditMode)
                 {
                     var success = await _driverService.UpdateDriverAsync(Driver);
@@ -200,12 +171,8 @@ namespace BusBuddy.WPF.ViewModels.Driver
                     ShowSuccess("Driver added successfully");
                 }
 
-                // Update the collection
                 await LoadDriversAsync();
-
-                // Select the saved driver
                 SelectedDriver = Drivers.FirstOrDefault(d => d.DriverId == savedDriver.DriverId);
-
                 Logger.Information("Driver saved successfully: {DriverName} (ID: {DriverId})",
                     savedDriver.DriverName, savedDriver.DriverId);
             }
@@ -224,7 +191,10 @@ namespace BusBuddy.WPF.ViewModels.Driver
         {
             try
             {
-                if (SelectedDriver == null) return;
+                if (SelectedDriver is null)
+                {
+                    return;
+                }
 
                 var result = System.Windows.MessageBox.Show(
                     $"Are you sure you want to delete driver '{SelectedDriver.DriverName}'?",
@@ -246,7 +216,7 @@ namespace BusBuddy.WPF.ViewModels.Driver
                 {
                     ShowSuccess("Driver deleted successfully");
                     await LoadDriversAsync();
-                    ExecuteAddDriver(); // Reset to add mode
+                    ExecuteAddDriver();
                 }
                 else
                 {
@@ -269,7 +239,7 @@ namespace BusBuddy.WPF.ViewModels.Driver
             try
             {
                 Logger.Information("Cancel requested");
-                if (IsEditMode && SelectedDriver != null)
+                if (IsEditMode && SelectedDriver is not null)
                 {
                     LoadDriverForEdit(SelectedDriver);
                 }
@@ -284,13 +254,7 @@ namespace BusBuddy.WPF.ViewModels.Driver
             }
         }
 
-        #endregion
-
-        #region Helper Methods
-
-        /// <summary>
-        /// Show error message to user
-        /// </summary>
+        // Helpers
         private void ShowError(string message)
         {
             StatusMessage = message;
@@ -298,19 +262,13 @@ namespace BusBuddy.WPF.ViewModels.Driver
             System.Windows.MessageBox.Show(message, "Error", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
         }
 
-        /// <summary>
-        /// Show success message to user
-        /// </summary>
         private void ShowSuccess(string message)
         {
             StatusMessage = message;
             Logger.Information("User success: {Message}", message);
         }
 
-        /// <summary>
-        /// Load all drivers from the database
-        /// </summary>
-        private async Task LoadDriversAsync()
+    private async Task LoadDriversAsync()
         {
             try
             {
@@ -318,11 +276,10 @@ namespace BusBuddy.WPF.ViewModels.Driver
                 Logger.Information("Loading drivers from database");
 
                 var drivers = await _driverService.GetAllDriversAsync();
-
                 Drivers.Clear();
-                foreach (var driver in drivers.OrderBy(d => d.DriverName))
+                foreach (var d in drivers.OrderBy(d => d.DriverName))
                 {
-                    Drivers.Add(driver);
+                    Drivers.Add(d);
                 }
 
                 Logger.Information("Loaded {Count} drivers", Drivers.Count);
@@ -338,18 +295,14 @@ namespace BusBuddy.WPF.ViewModels.Driver
             }
         }
 
-        /// <summary>
-        /// Load a driver for editing
-        /// </summary>
-        private void LoadDriverForEdit(BusBuddy.Core.Models.Driver driver)
+    private void LoadDriverForEdit(DriverModel driver)
         {
             try
             {
                 Logger.Information("Loading driver for edit: {DriverName} (ID: {DriverId})",
                     driver.DriverName, driver.DriverId);
 
-                // Create a copy to avoid modifying the original
-                Driver = new BusBuddy.Core.Models.Driver
+        Driver = new DriverModel
                 {
                     DriverId = driver.DriverId,
                     DriverName = driver.DriverName,
@@ -378,9 +331,14 @@ namespace BusBuddy.WPF.ViewModels.Driver
                 IsEditMode = true;
                 FormTitle = $"Edit Driver - {driver.DriverName}";
 
-                // Notify that command availability may have changed
-                ((RelayCommand)SaveDriverCommand).NotifyCanExecuteChanged();
-                ((RelayCommand)DeleteDriverCommand).NotifyCanExecuteChanged();
+                if (SaveDriverCommand is IRelayCommand save)
+                {
+                    save.NotifyCanExecuteChanged();
+                }
+                if (DeleteDriverCommand is IRelayCommand del)
+                {
+                    del.NotifyCanExecuteChanged();
+                }
             }
             catch (Exception ex)
             {
@@ -388,7 +346,5 @@ namespace BusBuddy.WPF.ViewModels.Driver
                 ShowError($"Error loading driver: {ex.Message}");
             }
         }
-
-        #endregion
     }
 }

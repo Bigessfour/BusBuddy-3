@@ -51,17 +51,17 @@
 
                 <!-- Main Actions -->
                 <StackPanel Grid.Column="0" Orientation="Horizontal">
-                    <syncfusion:ButtonAdv Name="AddDriverButton" Content="➕ Add Driver"
+                    <syncfusion:ButtonAdv Name="AddDriverButton" Label="➕ Add Driver"
                             Command="{Binding AddDriverCommand}"
                             Background="{StaticResource BusBuddy.Brush.Primary}" Foreground="White"
                             AutomationProperties.Name="Add Driver"
                             AutomationProperties.HelpText="Opens form to add a new driver to the system"/>
-                    <syncfusion:ButtonAdv Name="EditDriverButton" Content="✏️ Edit Driver"
+                    <syncfusion:ButtonAdv Name="EditDriverButton" Label="✏️ Edit Driver"
                             Command="{Binding EditDriverCommand}"
                             IsEnabled="{Binding HasSelectedDriver}"
                             AutomationProperties.Name="Edit Driver"
                             AutomationProperties.HelpText="Opens form to edit the currently selected driver"/>
-                    <syncfusion:ButtonAdv Name="DeleteDriverButton" Content="🗑️ Delete Driver"
+                    <syncfusion:ButtonAdv Name="DeleteDriverButton" Label="🗑️ Delete Driver"
                             Command="{Binding DeleteDriverCommand}"
                             IsEnabled="{Binding HasSelectedDriver}"
                             AutomationProperties.Name="Delete Driver"
@@ -69,13 +69,13 @@
                     <Separator Margin="10,0"/>
 
                     <!-- Driver Specific Actions -->
-                    <syncfusion:ButtonAdv Name="ViewLicenseButton" Content="📄 View License"
+                    <syncfusion:ButtonAdv Name="ViewLicenseButton" Label="📄 View License"
                             Command="{Binding ViewLicenseCommand}"
                             IsEnabled="{Binding HasSelectedDriver}"
                             Background="{StaticResource BusBuddy.Brush.Semantic.Info}" Foreground="White"
                             AutomationProperties.Name="View License Details"
                             AutomationProperties.HelpText="View license information and expiration details"/>
-                    <syncfusion:ButtonAdv Name="TrainingRecordsButton" Content="🎓 Training"
+                    <syncfusion:ButtonAdv Name="TrainingRecordsButton" Label="🎓 Training"
                             Command="{Binding ViewTrainingCommand}"
                             IsEnabled="{Binding HasSelectedDriver}"
                             Background="{StaticResource BusBuddy.Brush.SafetyOrange}" Foreground="White"
@@ -85,11 +85,11 @@
 
                 <!-- Quick Actions -->
                 <StackPanel Grid.Column="1" Orientation="Horizontal">
-                    <syncfusion:ButtonAdv Name="RefreshButton" Content="🔄 Refresh"
+                    <syncfusion:ButtonAdv Name="RefreshButton" Label="🔄 Refresh"
                             Command="{Binding RefreshCommand}"
                             AutomationProperties.Name="Refresh Driver List"
                             AutomationProperties.HelpText="Reload driver data from the database"/>
-                    <syncfusion:ButtonAdv Name="ExportButton" Content="📤 Export"
+                    <syncfusion:ButtonAdv Name="ExportButton" Label="📤 Export"
                             Command="{Binding ExportCommand}"
                             AutomationProperties.Name="Export Drivers"
                             AutomationProperties.HelpText="Export driver data to CSV file"/>

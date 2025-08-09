@@ -445,8 +445,9 @@ namespace BusBuddy.WPF.Views.Main
             try
             {
                 // For MVP, directly trigger PrintRoutes without a separate view
+                var routeService = (RouteService)App.ServiceProvider.GetRequiredService<IRouteService>();
                 var routeViewModel = new RouteManagementViewModel(
-                    App.ServiceProvider.GetRequiredService<RouteService>(),
+                    routeService,
                     App.ServiceProvider.GetRequiredService<IBusBuddyDbContextFactory>()
                 );
 
@@ -803,7 +804,13 @@ namespace BusBuddy.WPF.Views.Main
                 }
                 else
                 {
-                    Logger.Warning("DataContext is not MainWindowViewModel, cannot refresh routes");
+                    Logger.Warning("DataContext is not MainWindowViewModel, attempting to restore and refresh routes");
+                    if (_viewModel == null)
+                    {
+                        _viewModel = new MainWindowViewModel();
+                    }
+                    DataContext = _viewModel;
+                    Logger.Information("DataContext restored to MainWindowViewModel; routes refresh requested");
                 }
             }
             catch (Exception ex)
@@ -827,7 +834,13 @@ namespace BusBuddy.WPF.Views.Main
                 }
                 else
                 {
-                    Logger.Warning("DataContext is not MainWindowViewModel, cannot refresh buses");
+                    Logger.Warning("DataContext is not MainWindowViewModel, attempting to restore and refresh buses");
+                    if (_viewModel == null)
+                    {
+                        _viewModel = new MainWindowViewModel();
+                    }
+                    DataContext = _viewModel;
+                    Logger.Information("DataContext restored to MainWindowViewModel; buses refresh requested");
                 }
             }
             catch (Exception ex)
@@ -851,7 +864,13 @@ namespace BusBuddy.WPF.Views.Main
                 }
                 else
                 {
-                    Logger.Warning("DataContext is not MainWindowViewModel, cannot refresh drivers");
+                    Logger.Warning("DataContext is not MainWindowViewModel, attempting to restore and refresh drivers");
+                    if (_viewModel == null)
+                    {
+                        _viewModel = new MainWindowViewModel();
+                    }
+                    DataContext = _viewModel;
+                    Logger.Information("DataContext restored to MainWindowViewModel; drivers refresh requested");
                 }
             }
             catch (Exception ex)

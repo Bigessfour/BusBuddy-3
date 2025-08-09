@@ -235,6 +235,65 @@ namespace BusBuddy.Tests.Core
             // Test passes if it completes within timeout
         }
 
+    #endregion
+
+        #region Additional Scenarios
+
+        [Test]
+        public async Task CreateNewRouteAsync_Valid_CreatesInactiveRoute()
+        {
+            var result = await _routeService.CreateNewRouteAsync("Route Z", DateTime.Today.AddDays(1), "desc");
+            Assert.That(result.IsSuccess, Is.True);
+            Assert.That(result.Value!.IsActive, Is.False);
+            Assert.That(result.Value.School, Is.Not.Null);
+        }
+
+        [Test]
+        public async Task CreateNewRouteAsync_DuplicateNameSameDate_Fails()
+        {
+            // Seed an existing route for tomorrow with same name
+            _dbContext.Routes.Add(new Route { RouteName = "DupRoute", Date = DateTime.Today.AddDays(1), IsActive = true, School = "T" });
+            _dbContext.SaveChanges();
+
+            var dup = await _routeService.CreateNewRouteAsync("DupRoute", DateTime.Today.AddDays(1));
+            Assert.That(dup.IsSuccess, Is.False);
+        }
+
+        [Test]
+        public async Task ActivateAndDeactivateRoute_TogglesFlags()
+        {
+            var r = new Route { RouteName = "Toggle", Date = DateTime.Today.AddDays(1), IsActive = false, School = "T" };
+            _dbContext.Routes.Add(r);
+            await _dbContext.SaveChangesAsync();
+
+            var valid = await _routeService.ValidateRouteForActivationAsync(r.RouteId);
+            Assert.That(valid.IsSuccess, Is.True);
+
+            var activated = await _routeService.ActivateRouteAsync(r.RouteId);
+            Assert.That(activated.IsSuccess, Is.True);
+            Assert.That((await _dbContext.Routes.FindAsync(r.RouteId))!.IsActive, Is.True);
+
+            var deactivated = await _routeService.DeactivateRouteAsync(r.RouteId);
+            Assert.That(deactivated.IsSuccess, Is.True);
+            Assert.That((await _dbContext.Routes.FindAsync(r.RouteId))!.IsActive, Is.False);
+        }
+
+        [Test]
+        public async Task IsRouteNumberUniqueAsync_RespectsExcludeId()
+        {
+            var r = new Route { RouteName = "UniqueX", Date = DateTime.Today, IsActive = true, School = "T" };
+            _dbContext.Routes.Add(r);
+            await _dbContext.SaveChangesAsync();
+
+            var notUnique = await _routeService.IsRouteNumberUniqueAsync("UniqueX");
+            Assert.That(notUnique.IsSuccess, Is.True);
+            Assert.That(notUnique.Value, Is.False);
+
+            var uniqueWhenExcluding = await _routeService.IsRouteNumberUniqueAsync("UniqueX", r.RouteId);
+            Assert.That(uniqueWhenExcluding.IsSuccess, Is.True);
+            Assert.That(uniqueWhenExcluding.Value, Is.True);
+        }
+
         #endregion
     }
 }

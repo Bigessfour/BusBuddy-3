@@ -49,15 +49,16 @@
                     HorizontalAlignment="Right"
                     Margin="0,20,0,0">
             <syncfusion:ButtonAdv x:Name="SaveButton"
-                    Content="Save"
+                    Label="Save"
                     Width="80"
                     Height="35"
                     Margin="0,0,10,0"/>
             <syncfusion:ButtonAdv x:Name="CancelButton"
-                    Content="Cancel"
+                    Label="Cancel"
                     Width="80"
                     Height="35"/>
         </StackPanel>
     </Grid>
 </Window>
+
 

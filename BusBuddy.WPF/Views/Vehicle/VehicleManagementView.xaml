@@ -25,7 +25,7 @@
             <Setter Property="MinWidth" Value="120"/>
         </Style>
 
-        <Style x:Key="ActionButtonStyle" TargetType="Button">
+    <Style x:Key="ActionButtonStyle" TargetType="syncfusion:ButtonAdv">
             <Setter Property="Padding" Value="15,8"/>
             <Setter Property="Margin" Value="5"/>
             <Setter Property="FontWeight" Value="Medium"/>
@@ -121,7 +121,7 @@
                      Margin="0,0,15,0"/>
 
             <syncfusion:ButtonAdv Grid.Column="2"
-                   Content="🔄 Refresh"
+                   Label="🔄 Refresh"
                    Command="{Binding RefreshCommand}"
                    Style="{StaticResource ActionButtonStyle}"
                    Background="#757575"/>

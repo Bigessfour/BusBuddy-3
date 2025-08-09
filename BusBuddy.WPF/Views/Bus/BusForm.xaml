@@ -6,8 +6,11 @@
         xmlns:syncfusion="http://schemas.syncfusion.com/wpf"
         mc:Ignorable="d"
         Title="Bus Information Form"
-        Height="450" Width="600">
+        Height="500" Width="650"
+        MinHeight="420" MinWidth="560"
+        WindowStartupLocation="CenterOwner">
 
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
     <Grid Margin="20">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -20,8 +23,8 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <!-- Title -->
-        <TextBlock Grid.Row="0"
+    <!-- Title -->
+    <TextBlock Grid.Row="0"
                    Text="Bus Information Form"
                    FontSize="18"
                    FontWeight="Bold"
@@ -30,48 +33,60 @@
         <!-- Bus Number -->
         <StackPanel Grid.Row="1" Margin="0,0,0,10">
             <TextBlock Text="Bus Number:" Margin="0,0,0,5"/>
-            <syncfusion:SfMaskedEdit x:Name="BusNumberTextBox" Height="30" Padding="5"/>
+            <syncfusion:SfMaskedEdit x:Name="BusNumberTextBox" Height="34" Padding="8"
+                                     AutomationProperties.Name="Bus Number Input"
+                                     Watermark="Enter bus number"/>
         </StackPanel>
 
         <!-- Make -->
         <StackPanel Grid.Row="2" Margin="0,0,0,10">
             <TextBlock Text="Make:" Margin="0,0,0,5"/>
-            <syncfusion:SfMaskedEdit x:Name="MakeTextBox" Height="30" Padding="5"/>
+            <syncfusion:SfMaskedEdit x:Name="MakeTextBox" Height="34" Padding="8"
+                                     AutomationProperties.Name="Make Input"
+                                     Watermark="Enter manufacturer"/>
         </StackPanel>
 
         <!-- Model -->
         <StackPanel Grid.Row="3" Margin="0,0,0,10">
             <TextBlock Text="Model:" Margin="0,0,0,5"/>
-            <syncfusion:SfMaskedEdit x:Name="ModelTextBox" Height="30" Padding="5"/>
+            <syncfusion:SfMaskedEdit x:Name="ModelTextBox" Height="34" Padding="8"
+                                     AutomationProperties.Name="Model Input"
+                                     Watermark="Enter model"/>
         </StackPanel>
 
         <!-- Year -->
         <StackPanel Grid.Row="4" Margin="0,0,0,10">
             <TextBlock Text="Year:" Margin="0,0,0,5"/>
-            <syncfusion:SfMaskedEdit x:Name="YearTextBox" Height="30" Padding="5"/>
+            <syncfusion:SfMaskedEdit x:Name="YearTextBox" Height="34" Padding="8"
+                                     AutomationProperties.Name="Year Input"
+                                     Mask="0000" PromptChar="_"
+                                     Watermark="YYYY"/>
         </StackPanel>
 
         <!-- Capacity -->
         <StackPanel Grid.Row="5" Margin="0,0,0,10">
             <TextBlock Text="Seating Capacity:" Margin="0,0,0,5"/>
-            <syncfusion:SfMaskedEdit x:Name="CapacityTextBox" Height="30" Padding="5"/>
+            <syncfusion:SfMaskedEdit x:Name="CapacityTextBox" Height="34" Padding="8"
+                                     AutomationProperties.Name="Seating Capacity Input"
+                                     Mask="000" PromptChar="_"
+                                     Watermark="Seats"/>
         </StackPanel>
 
         <!-- Action Buttons -->
-        <StackPanel Grid.Row="7"
+    <StackPanel Grid.Row="7"
                     Orientation="Horizontal"
                     HorizontalAlignment="Right"
                     Margin="0,20,0,0">
-            <syncfusion:ButtonAdv Label="Save"
+        <syncfusion:ButtonAdv Label="Save"
                     Width="80"
-                    Height="35"
-                    Margin="0,0,10,0"
+            Height="36"
+            Margin="0,0,10,0"
                     Click="SaveButton_Click"/>
-            <syncfusion:ButtonAdv Label="Cancel"
+        <syncfusion:ButtonAdv Label="Cancel"
                     Width="80"
-                    Height="35"
+            Height="36"
                     Click="CancelButton_Click"/>
         </StackPanel>
     </Grid>
+    </ScrollViewer>
 </Window>
-

@@ -18,7 +18,6 @@
 
     <!-- Test-specific lock prevention -->
     <VSTestUseMSBuildOutput>false</VSTestUseMSBuildOutput>
-    <TestProjectForVSTest>true</TestProjectForVSTest>
     <RunAnalyzersDuringBuild>false</RunAnalyzersDuringBuild>
 
     <!-- Prevent testhost from holding locks -->
@@ -34,12 +33,10 @@
 
   <ItemGroup>
     <!-- NUnit Testing Framework -->
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
-    <PackageReference Include="Microsoft.TestPlatform" Version="17.10.0" />
-    <PackageReference Include="Microsoft.TestPlatform.TestHost" Version="$(TestSdkVersion)" />
+  <PackageReference Include="Microsoft.NET.Test.Sdk" Version="$(TestSdkVersion)" />
     <PackageReference Include="Moq.EntityFrameworkCore" Version="6.0.0.6" />
     <PackageReference Include="NUnit" Version="$(NUnitVersion)" />
-    <PackageReference Include="NUnit3TestAdapter" Version="4.6.0" />
+  <PackageReference Include="NUnit3TestAdapter" Version="5.0.0" />
 
     <!-- FluentAssertions for readable test assertions -->
     <PackageReference Include="FluentAssertions" Version="$(FluentAssertionsVersion)" />

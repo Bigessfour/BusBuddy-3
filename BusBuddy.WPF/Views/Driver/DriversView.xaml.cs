@@ -1,5 +1,6 @@
 using System.Windows.Controls;
 using BusBuddy.WPF.ViewModels.Driver;
+using BusBuddy.WPF.Utilities;
 
 namespace BusBuddy.WPF.Views.Driver
 {
@@ -14,6 +15,9 @@ namespace BusBuddy.WPF.Views.Driver
 
             // Set the ViewModel for data binding
             DataContext = new DriversViewModel();
+
+            // Apply Syncfusion theme
+            SyncfusionThemeManager.ApplyTheme(this);
         }
     }
 }

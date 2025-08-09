@@ -16,6 +16,8 @@
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/SyncfusionV30_Validated_ResourceDictionary.xaml"/>
             </ResourceDictionary.MergedDictionaries>
+            <!-- Required converter for Visibility bindings -->
+            <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
             <Style TargetType="TextBlock" x:Key="FieldLabelStyle">
                 <Setter Property="Margin" Value="0,5,0,5"/>
                 <Setter Property="FontWeight" Value="Medium"/>
@@ -254,14 +256,16 @@
 
             <!-- Action Buttons -->
             <StackPanel Grid.Row="12" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
-                <syncfusion:ButtonAdv Label="💾 Save" Width="100" Height="36" Margin="0,0,10,0"
+        <syncfusion:ButtonAdv Label="💾 Save" Width="100" Height="36" Margin="0,0,10,0"
                         Command="{Binding SaveDriverCommand}"
                         Background="#28A745" Foreground="White"
+            ToolTip="Save driver"
                         AutomationProperties.Name="Save Driver"
                         AutomationProperties.HelpText="Save driver information to database"/>
-                <syncfusion:ButtonAdv Label="❌ Cancel" Width="100" Height="36"
+        <syncfusion:ButtonAdv Label="❌ Cancel" Width="100" Height="36"
                         Command="{Binding CancelCommand}"
                         Background="#6C757D" Foreground="White"
+            ToolTip="Cancel and close"
                         AutomationProperties.Name="Cancel"
                         AutomationProperties.HelpText="Cancel and close form without saving"/>
             </StackPanel>

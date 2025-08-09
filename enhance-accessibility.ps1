@@ -25,14 +25,16 @@ function Add-AccessibilityProperties {
 
     foreach ($pattern in $Improvements.Keys) {
         $replacement = $Improvements[$pattern]
-        if ($content -match $pattern) {
-            $content = $content -replace $pattern, $replacement
+        $newContent = [regex]::Replace($content, $pattern, $replacement)
+        if ($newContent -ne $content) {
+            $content = $newContent
             $changeCount++
         }
     }
 
     if ($content -ne $originalContent) {
-        Set-Content -Path $FilePath -Value $content -NoNewline
+        # Preserve trailing newline
+        Set-Content -Path $FilePath -Value $content
         return $changeCount
     }
 
@@ -41,19 +43,27 @@ function Add-AccessibilityProperties {
 
 # Common accessibility improvements for various controls
 $improvements = @{
-    # Add AutomationProperties.Name to unnamed SfMaskedEdit controls
-    '(<syncfusion:SfMaskedEdit[^>]*Text="\{Binding DriverName[^>]*)(>)' = '$1 AutomationProperties.Name="Driver Name Input"$2'
-    '(<syncfusion:SfMaskedEdit[^>]*Text="\{Binding LicenseNumber[^>]*)(>)' = '$1 AutomationProperties.Name="License Number Input"$2'
-    '(<syncfusion:SfMaskedEdit[^>]*Text="\{Binding DriverPhone[^>]*)(>)' = '$1 AutomationProperties.Name="Phone Number Input"$2'
+    # Add AutomationProperties.Name to unnamed SfMaskedEdit controls (only if missing)
+    '(<syncfusion:SfMaskedEdit(?:(?!AutomationProperties\.Name=)[^>])*Text="\{Binding\s+DriverName[^>]*?)(/?>)'
+        = '$1 AutomationProperties.Name="Driver Name Input"$2'
+    '(<syncfusion:SfMaskedEdit(?:(?!AutomationProperties\.Name=)[^>])*Text="\{Binding\s+LicenseNumber[^>]*?)(/?>)'
+        = '$1 AutomationProperties.Name="License Number Input"$2'
+    '(<syncfusion:SfMaskedEdit(?:(?!AutomationProperties\.Name=)[^>])*Text="\{Binding\s+DriverPhone[^>]*?)(/?>)'
+        = '$1 AutomationProperties.Name="Phone Number Input"$2'
 
-    # Add AutomationProperties.Name to ComboBox controls
-    '(<syncfusion:ComboBoxAdv[^>]*SelectedItem="\{Binding Status[^>]*)(>)' = '$1 AutomationProperties.Name="Status Selection"$2'
+    # Add AutomationProperties.Name to Status ComboBox (only if missing)
+    '(<syncfusion:ComboBoxAdv(?:(?!AutomationProperties\.Name=)[^>])*SelectedItem="\{Binding\s+Status[^>]*?)(/?>)'
+        = '$1 AutomationProperties.Name="Status Selection"$2'
 
-    # Add ToolTip to buttons without them
-    '(<syncfusion:ButtonAdv[^>]*Label="➕ Add Student"[^>]*)(/>)' = '$1 ToolTip="Add a new student to the system"$2'
-    '(<syncfusion:ButtonAdv[^>]*Label="📝 Edit Student"[^>]*)(/>)' = '$1 ToolTip="Edit selected student information"$2'
-    '(<syncfusion:ButtonAdv[^>]*Label="➕ Add Driver"[^>]*)(/>)' = '$1 ToolTip="Add a new driver to the system"$2'
-    '(<syncfusion:ButtonAdv[^>]*Label="➕ Add Bus"[^>]*)(/>)' = '$1 ToolTip="Add a new bus to the fleet"$2'
+    # Add ToolTip to specific buttons only if missing
+    '(<syncfusion:ButtonAdv(?:(?!ToolTip=)[^>])*Label="➕ Add Student"[^>]*?)(/?>)'
+        = '$1 ToolTip="Add a new student to the system"$2'
+    '(<syncfusion:ButtonAdv(?:(?!ToolTip=)[^>])*Label="📝 Edit Student"[^>]*?)(/?>)'
+        = '$1 ToolTip="Edit selected student information"$2'
+    '(<syncfusion:ButtonAdv(?:(?!ToolTip=)[^>])*Label="➕ Add Driver"[^>]*?)(/?>)'
+        = '$1 ToolTip="Add a new driver to the system"$2'
+    '(<syncfusion:ButtonAdv(?:(?!ToolTip=)[^>])*Label="➕ Add Bus"[^>]*?)(/?>)'
+        = '$1 ToolTip="Add a new bus to the fleet"$2'
 }
 
 $xamlFiles = Get-ChildItem -Path "." -Recurse -Filter "*.xaml" | Where-Object {
