@@ -180,15 +180,15 @@ namespace BusBuddy.WPF.Views.Main
             }
             catch (Exception ex)
             {
-                Logger.Warning(ex, "Failed to apply FluentDark theme, trying FluentWhite fallback");
+                Logger.Warning(ex, "Failed to apply FluentDark theme, trying FluentLight fallback");
 
                 try
                 {
-                    Logger.Debug("Attempting FluentWhite fallback theme");
-                    using var fluentWhiteTheme = new Theme("FluentWhite");
-                    SfSkinManager.SetTheme(this, fluentWhiteTheme);
-                    Logger.Information("Applied FluentWhite fallback theme successfully");
-                    Logger.Debug("ApplySyncfusionTheme completed with FluentWhite fallback");
+                    Logger.Debug("Attempting FluentLight fallback theme");
+                    using var fluentLightTheme = new Theme("FluentLight");
+                    SfSkinManager.SetTheme(this, fluentLightTheme);
+                    Logger.Information("Applied FluentLight fallback theme successfully");
+                    Logger.Debug("ApplySyncfusionTheme completed with FluentLight fallback");
                 }
                 catch (Exception fallbackEx)
                 {
