@@ -69,63 +69,100 @@ Error: There is already an object named 'ActivityLogs' in the database.
 
 Base repo: https://github.com/Bigessfour/BusBuddy-3 (branch: master)
 
-### Core database & configuration
+### Core database & configuration (all files fetchable via raw GitHub URL)
 - DbContext — current issue: migration history needs sync
   https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.Core/Data/BusBuddyDbContext.cs
 - Migration script — up to date
   https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/migration-script.sql
 - App settings — verify Azure credentials if using cloud DB
   https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/appsettings.json
+  https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/appsettings.azure.json
+  https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/appsettings.staging.json
 - Directory.Build.props — central versions (EF Core, Syncfusion)
   https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/Directory.Build.props
+  https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/Directory.Build.targets
 - global.json — .NET SDK
   https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/global.json
 
-### Entities & services
+### Entities & services (all files fetchable via raw GitHub URL)
 - Bus entity — mapping aligned to Vehicles
   https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.Core/Models/Bus.cs
+  https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.Core/Models/Student.cs
+  https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.Core/Models/Activity.cs
+  https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.Core/Models/ActivityLog.cs
 - Student entity — OK
   https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.Core/Models/Student.cs
 - Student service — seeding uses retry
   https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.Core/Services/StudentService.cs
+  https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.Core/Services/DriverService.cs
+  https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.Core/Services/IDriverService.cs
+  https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.Core/Services/ActivityService.cs
 - Seed interface — OK
   https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.Core/Services/ISeedDataService.cs
+  https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.Core/Utilities/DatabaseResilienceService.cs
 
-### WPF UI & views
+### WPF UI & views (all files fetchable via raw GitHub URL)
 - App.xaml.cs — Syncfusion license registration
   https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.WPF/App.xaml.cs
+  https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.WPF/Views/Main/MainWindow.xaml
+  https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.WPF/Views/Main/MainWindow.xaml.cs
+  https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.WPF/Views/Dashboard/DashboardView.xaml
+  https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.WPF/Views/Student/StudentForm.xaml
+  https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.WPF/Views/Student/StudentForm.xaml.cs
 - MainWindow.xaml — correct path under Views/Main
   https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.WPF/Views/Main/MainWindow.xaml
 - StudentsView.xaml — labels fixed; SfDataGrid in use
   https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.WPF/Views/Student/StudentsView.xaml
+  https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.WPF/Views/Student/StudentsView.xaml.cs
 - StudentsViewModel.cs — OK
   https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.WPF/ViewModels/Student/StudentsViewModel.cs
 
-### PowerShell modules & scripts
+### PowerShell modules & scripts (all files fetchable via raw GitHub URL)
 - Main module — Write-Host cleanup pending (post-MVP)
   https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/PowerShell/Modules/BusBuddy/BusBuddy.psm1
+  https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/PowerShell/Modules/BusBuddy/BusBuddy.psd1
+  https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/PowerShell/Modules/BusBuddy.Commands/BusBuddy.Commands.psm1
+  https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/PowerShell/Modules/BusBuddy.Commands/BusBuddy.Commands.psd1
+  https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/PowerShell/Modules/BusBuddy.ProfileTools/BusBuddy.ProfileTools.psm1
+  https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/PowerShell/Modules/BusBuddy.ProfileTools/BusBuddy.ProfileTools.psd1
+  https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/PowerShell/Modules/BusBuddy.TestOutput/BusBuddy.TestOutput.psm1
+  https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/PowerShell/Modules/BusBuddy.TestOutput/BusBuddy.TestOutput.psd1
+  https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/PowerShell/Modules/BusBuddy.Utilities/BusBuddy.Utilities.psm1
+  https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/PowerShell/Modules/BusBuddy.Utilities/BusBuddy.Utilities.psd1
+  https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/PowerShell/Modules/BusBuddy.Validation/BusBuddy.Validation.psm1
+  https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/PowerShell/Modules/BusBuddy.Validation/BusBuddy.Validation.psd1
+  https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/PowerShell/Modules/BusBuddy.ValidationHelpers/BusBuddy.ValidationHelpers.psm1
+  https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/PowerShell/Modules/BusBuddy.ValidationHelpers/BusBuddy.ValidationHelpers.psd1
+  https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/PowerShell/Import-BusBuddyCommands.ps1
+  https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/PowerShell/Setup/Enable-BusBuddyAutoload.ps1
 - PowerShell profile — OK
   https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/PowerShell/Profiles/Microsoft.PowerShell_profile.ps1
 - Advanced workflows — OK
   https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy-Advanced-Workflows.ps1
 
-### Analysis & docs
+### Analysis & docs (all files fetchable via raw GitHub URL)
 - runtime-errors-fixed.log — latest runtime fixes
   https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/runtime-errors-fixed.log
+  https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/ANTI-REGRESSION-CHECKLIST.md
+  https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/TROUBLESHOOTING-LOG.md
 - Anti-regression checklist — keep updated
   https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/ANTI-REGRESSION-CHECKLIST.md
 
 ### Deployment & testing
 - UAT tests runner — re-run after Test SDK update
   https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/Run-UATTests.ps1
+  https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/Test-EndToEndCRUD.ps1
 - Deploy script — ready when approved
   https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/Deploy-BusBuddy.ps1
 - Setup staging — optional
   https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/Setup-StagingDatabase.ps1
 
-### Documentation
+### Documentation (all files fetchable via raw GitHub URL)
 - Development guide
   https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/DEVELOPMENT-GUIDE.md
+  https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/PRODUCTION-READY-STATUS.md
+  https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/SETUP-GUIDE.md
+  https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/CONTRIBUTING.md
 - Production readiness
   https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/PRODUCTION-READY-STATUS.md
 - Setup guide
