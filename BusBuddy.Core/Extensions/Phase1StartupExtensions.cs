@@ -2,6 +2,8 @@ using BusBuddy.Core.Services;
 using BusBuddy.Core.Services.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
 using Serilog;
+using System;
+using System.IO;
 
 namespace BusBuddy.Core.Extensions;
 
@@ -33,6 +35,14 @@ public static class Phase1StartupExtensions
             var geeApiBaseUrl = "https://earthengine.googleapis.com";
             var geeAccessToken = Environment.GetEnvironmentVariable("GEE_ACCESS_TOKEN") ?? "placeholder_token";
             return new GeoDataService(geeApiBaseUrl, geeAccessToken);
+        });
+
+        // Register eligibility service with expected shapefile locations relative to WPF app output
+        services.AddSingleton<IEligibilityService>(_ =>
+        {
+            var district = Path.Combine(AppContext.BaseDirectory, "Assets", "Maps", "WileyDistrict", "WileyDistrict.shp");
+            var town = Path.Combine(AppContext.BaseDirectory, "Assets", "Maps", "WileyTown", "WileyTown.shp");
+            return new ShapefileEligibilityService(district, town);
         });
 
         return services;

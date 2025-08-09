@@ -11,16 +11,26 @@ using BusBuddy.Core.Data;
 
 namespace BusBuddy.WPF.ViewModels;
 
+/// <summary>
+/// Legacy/root Route Management ViewModel used by views that bind to a flattened grid model.
+/// Provides basic loading, printing, and schedule generation behaviors for MVP.
+/// </summary>
 public class RouteManagementViewModel : NotificationObject
 {
     private readonly RouteService _routeService;
     private readonly IBusBuddyDbContextFactory _contextFactory;
+    /// <summary>
+    /// Grid-friendly projection of routes including vehicle and student summary info.
+    /// </summary>
     public ObservableCollection<RouteGridItem> Routes { get; set; } = new();
 
     public ICommand? GenerateScheduleCommand { get; }
     public ICommand? ViewMapCommand { get; }
     public ICommand? PrintRoutesCommand { get; }
 
+    /// <summary>
+    /// DI constructor for the management ViewModel.
+    /// </summary>
     public RouteManagementViewModel(RouteService routeService, IBusBuddyDbContextFactory contextFactory)
     {
         _routeService = routeService;
@@ -31,6 +41,9 @@ public class RouteManagementViewModel : NotificationObject
         _ = LoadRoutesAsync();
     }
 
+    /// <summary>
+    /// Loads routes and projects them to <see cref="RouteGridItem"/> for display.
+    /// </summary>
     private async Task LoadRoutesAsync()
     {
         using var context = _contextFactory.CreateDbContext();
@@ -53,6 +66,9 @@ public class RouteManagementViewModel : NotificationObject
         }
     }
 
+    /// <summary>
+    /// Triggers schedule generation for Wiley (MVP) via <see cref="RouteService"/>.
+    /// </summary>
     private async Task GenerateScheduleAsync()
     {
         try
@@ -67,11 +83,17 @@ public class RouteManagementViewModel : NotificationObject
         }
     }
 
+    /// <summary>
+    /// Placeholder for future map view integration.
+    /// </summary>
     private void ViewMap()
     {
         // Placeholder for Google Earth integration
     }
 
+    /// <summary>
+    /// Exports the current route grid to a simple text report on the desktop.
+    /// </summary>
     private async Task PrintRoutesAsync()
     {
         try
@@ -121,12 +143,21 @@ public class RouteManagementViewModel : NotificationObject
     }
 }
 
+/// <summary>
+/// Flattened route data used by the root management grid.
+/// </summary>
 public class RouteGridItem
 {
+    /// <summary>Route display name.</summary>
     public string RouteName { get; set; } = "";
+    /// <summary>Route description.</summary>
     public string RouteDescription { get; set; } = "";
+    /// <summary>Route path or corridor reference.</summary>
     public string Path { get; set; } = "";
+    /// <summary>Assigned bus number if available.</summary>
     public string BusNumber { get; set; } = "";
+    /// <summary>Assigned vehicle VIN if available.</summary>
     public string VINNumber { get; set; } = "";
+    /// <summary>Comma-separated student names for quick glance.</summary>
     public string AssignedStudents { get; set; } = "";
 }

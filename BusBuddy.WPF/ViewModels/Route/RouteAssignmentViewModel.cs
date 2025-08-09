@@ -21,16 +21,24 @@ namespace BusBuddy.WPF.ViewModels.Route
         private static readonly ILogger Logger = Log.ForContext<RouteAssignmentViewModel>();
 
         // Services
+    /// <summary>
+    /// Route service used for CRUD and planning operations (optional during MVP).
+    /// </summary>
         private readonly IRouteService? _routeService;
         // private readonly IStudentService? _studentService;
         // private readonly IBusService? _busService;
         // private readonly IDriverService? _driverService;
 
-        // Collections
+    // Collections
+    /// <summary>Students not currently assigned to any route.</summary>
         private ObservableCollection<BusBuddy.Core.Models.Student> _unassignedStudents = new();
+    /// <summary>Available routes to assign students/buses/drivers.</summary>
         private ObservableCollection<BusBuddy.Core.Models.Route> _availableRoutes = new();
+    /// <summary>Available buses for assignment.</summary>
         private ObservableCollection<BusBuddy.Core.Models.Bus> _availableBuses = new();
+    /// <summary>Available drivers for assignment.</summary>
         private ObservableCollection<BusBuddy.Core.Models.Driver> _availableDrivers = new();
+    /// <summary>Ordered list of stops in the working route.</summary>
         private ObservableCollection<RouteStop> _routeStops = new();
 
         // Selected Items
@@ -41,14 +49,20 @@ namespace BusBuddy.WPF.ViewModels.Route
         private BusBuddy.Core.Models.Driver? _selectedDriver;
         private RouteStop? _selectedRouteStop;
 
-        // Route Building Properties
+    // Route Building Properties
+    /// <summary>New route name when creating a route.</summary>
         private string _newRouteName = string.Empty;
+    /// <summary>Date associated with the new route (AM/PM specific later).</summary>
         private DateTime _newRouteDate = DateTime.Today;
+    /// <summary>Description for the new route.</summary>
         private string _newRouteDescription = string.Empty;
+    /// <summary>Selected time slot (AM/PM) for route operations.</summary>
         private BusBuddy.Core.Models.RouteTimeSlot _selectedTimeSlot = BusBuddy.Core.Models.RouteTimeSlot.AM;
 
-        // Search and Status
+    // Search and Status
+    /// <summary>Text to filter student lists.</summary>
         private string _studentSearchText = string.Empty;
+    /// <summary>Current status message for the view.</summary>
         private string _statusMessage = "Ready to assign students to routes";
 
         // Add missing backing fields for boolean properties
@@ -56,7 +70,10 @@ namespace BusBuddy.WPF.ViewModels.Route
         private bool _isRouteActive;
         private bool _isLoading;
 
-        public RouteAssignmentViewModel(IRouteService? routeService = null)
+    /// <summary>
+    /// DI-friendly constructor; routeService is optional for MVP scenarios.
+    /// </summary>
+    public RouteAssignmentViewModel(IRouteService? routeService = null)
         {
             _routeService = routeService;
             InitializeCommands();
@@ -107,32 +124,37 @@ namespace BusBuddy.WPF.ViewModels.Route
 
         #region Properties
 
-        // Existing Collections
+    // Existing Collections
+    /// <summary>Students not currently assigned to any route.</summary>
         public ObservableCollection<BusBuddy.Core.Models.Student> UnassignedStudents
         {
             get => _unassignedStudents;
             set => SetProperty(ref _unassignedStudents, value);
         }
 
-        public ObservableCollection<BusBuddy.Core.Models.Route> AvailableRoutes
+    /// <summary>Available routes to assign to.</summary>
+    public ObservableCollection<BusBuddy.Core.Models.Route> AvailableRoutes
         {
             get => _availableRoutes;
             set => SetProperty(ref _availableRoutes, value);
         }
 
-        public ObservableCollection<BusBuddy.Core.Models.Bus> AvailableBuses
+    /// <summary>Available buses for assignment.</summary>
+    public ObservableCollection<BusBuddy.Core.Models.Bus> AvailableBuses
         {
             get => _availableBuses;
             set => SetProperty(ref _availableBuses, value);
         }
 
-        public ObservableCollection<BusBuddy.Core.Models.Driver> AvailableDrivers
+    /// <summary>Available drivers for assignment.</summary>
+    public ObservableCollection<BusBuddy.Core.Models.Driver> AvailableDrivers
         {
             get => _availableDrivers;
             set => SetProperty(ref _availableDrivers, value);
         }
 
-        public ObservableCollection<RouteStop> RouteStops
+    /// <summary>Stops belonging to the selected/working route.</summary>
+    public ObservableCollection<RouteStop> RouteStops
         {
             get => _routeStops;
             set => SetProperty(ref _routeStops, value);

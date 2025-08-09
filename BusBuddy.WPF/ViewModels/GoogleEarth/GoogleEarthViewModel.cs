@@ -18,7 +18,12 @@ namespace BusBuddy.WPF.ViewModels.GoogleEarth
     /// </summary>
     public class GoogleEarthViewModel : BaseViewModelMvp
     {
-        private readonly IGeoDataService _geoDataService;
+    private readonly IGeoDataService _geoDataService;
+    private readonly IEligibilityService? _eligibilityService;
+    /// <summary>
+    /// Optional geocoder for converting addresses to coordinates.
+    /// </summary>
+    private readonly IGeocodingService? _geocodingService;
         // Serilog logger with enrichments for this ViewModel
         private static readonly new Serilog.ILogger Logger = Serilog.Log.ForContext<GoogleEarthViewModel>();
 
@@ -27,16 +32,47 @@ namespace BusBuddy.WPF.ViewModels.GoogleEarth
         private string _selectedMapLayer = "Satellite";
         private bool _isMapLoading;
         private string _statusMessage = "Ready";
+    private bool _isLiveTrackingEnabled;
+    private ObservableCollection<BusBuddy.Core.Models.Bus> _activeBuses = new();
+    private BusBuddy.Core.Models.Bus? _selectedBus;
+    private bool _districtBoundaryVisible;
+    private bool _townBoundaryVisible;
 
-        public GoogleEarthViewModel(IGeoDataService geoDataService)
+        public GoogleEarthViewModel(IGeoDataService geoDataService, IEligibilityService? eligibilityService = null, IGeocodingService? geocodingService = null)
         {
             _geoDataService = geoDataService ?? throw new ArgumentNullException(nameof(geoDataService));
+            _eligibilityService = eligibilityService; // optional during MVP
+            _geocodingService = geocodingService; // optional until wired
 
             LoadRoutesCommand = new RelayCommand(async _ => await LoadRoutesAsync());
             RefreshMapCommand = new RelayCommand(async _ => await RefreshMapAsync());
             ExportRouteDataCommand = new RelayCommand(async _ => await ExportRouteDataAsync(), _ => SelectedRoute != null);
             ZoomInCommand = new RelayCommand(_ => ZoomIn());
             ZoomOutCommand = new RelayCommand(_ => ZoomOut());
+
+            // Commands referenced by XAML — MVP stubs with logging
+            CenterOnFleetCommand = new RelayCommand(_ => CenterOnFleet());
+            ShowAllBusesCommand = new RelayCommand(_ => ShowAllBuses());
+            ShowRoutesCommand = new RelayCommand(_ => ShowRoutes());
+            ShowSchoolsCommand = new RelayCommand(_ => ShowSchools());
+            TrackSelectedBusCommand = new RelayCommand(_ => TrackSelectedBus(), _ => SelectedBus != null);
+            ResetViewCommand = new RelayCommand(_ => ResetView());
+            CheckEligibilityCommand = new RelayCommand(async _ => await CheckEligibilityAsync(), _ => _eligibilityService != null);
+
+            // Reasonable defaults
+            DistrictBoundaryVisible = false;
+            TownBoundaryVisible = false;
+
+            // Seed a marker for Wiley School so the map has an anchor
+            MapMarkers = new ObservableCollection<MapMarker>
+            {
+                new MapMarker
+                {
+                    Label = "Wiley School RE-13JT",
+                    Latitude = 38.1527,
+                    Longitude = -102.7204
+                }
+            };
         }
 
         #region Properties
@@ -48,6 +84,15 @@ namespace BusBuddy.WPF.ViewModels.GoogleEarth
         {
             get => _isMapLoading;
             set => SetProperty(ref _isMapLoading, value);
+        }
+
+        /// <summary>
+        /// Live tracking toggle state (bound to ButtonAdv)
+        /// </summary>
+        public bool IsLiveTrackingEnabled
+        {
+            get => _isLiveTrackingEnabled;
+            set => SetProperty(ref _isLiveTrackingEnabled, value);
         }
 
         /// <summary>
@@ -83,6 +128,20 @@ namespace BusBuddy.WPF.ViewModels.GoogleEarth
             set => SetProperty(ref _routes, value);
         }
 
+    /// <summary>
+    /// Markers to display on the map (students, school, etc.).
+    /// </summary>
+    public ObservableCollection<MapMarker> MapMarkers { get; private set; } = new();
+
+        /// <summary>
+        /// Active buses list shown in SfDataGrid
+        /// </summary>
+        public ObservableCollection<BusBuddy.Core.Models.Bus> ActiveBuses
+        {
+            get => _activeBuses;
+            set => SetProperty(ref _activeBuses, value);
+        }
+
         /// <summary>
         /// Currently selected route for detailed view
         /// </summary>
@@ -100,6 +159,15 @@ namespace BusBuddy.WPF.ViewModels.GoogleEarth
         }
 
         /// <summary>
+        /// Currently selected bus in the grid
+        /// </summary>
+        public BusBuddy.Core.Models.Bus? SelectedBus
+        {
+            get => _selectedBus;
+            set => SetProperty(ref _selectedBus, value);
+        }
+
+        /// <summary>
         /// Available map layer options
         /// </summary>
         public ObservableCollection<string> MapLayers { get; } = new()
@@ -110,6 +178,36 @@ namespace BusBuddy.WPF.ViewModels.GoogleEarth
             "Hybrid"
         };
 
+        /// <summary>
+        /// Toggle to show or hide the school district boundary overlay layer
+        /// </summary>
+        public bool DistrictBoundaryVisible
+        {
+            get => _districtBoundaryVisible;
+            set
+            {
+                if (SetProperty(ref _districtBoundaryVisible, value))
+                {
+                    Logger.Information("District boundary overlay visibility changed: {Visible}", value);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Toggle to show or hide the town boundary overlay (Wiley town limits)
+        /// </summary>
+        public bool TownBoundaryVisible
+        {
+            get => _townBoundaryVisible;
+            set
+            {
+                if (SetProperty(ref _townBoundaryVisible, value))
+                {
+                    Logger.Information("Town boundary overlay visibility changed: {Visible}", value);
+                }
+            }
+        }
+
         #endregion
 
         #region Commands
@@ -119,6 +217,16 @@ namespace BusBuddy.WPF.ViewModels.GoogleEarth
         public ICommand ExportRouteDataCommand { get; private set; } = null!;
         public ICommand ZoomInCommand { get; private set; } = null!;
         public ICommand ZoomOutCommand { get; private set; } = null!;
+
+    // Additional commands referenced in XAML
+    public ICommand CenterOnFleetCommand { get; private set; } = null!;
+    public ICommand ShowAllBusesCommand { get; private set; } = null!;
+    public ICommand ShowRoutesCommand { get; private set; } = null!;
+    public ICommand ShowSchoolsCommand { get; private set; } = null!;
+    public ICommand TrackSelectedBusCommand { get; private set; } = null!;
+    public ICommand ResetViewCommand { get; private set; } = null!;
+    public ICommand CheckEligibilityCommand { get; private set; } = null!;
+    public ICommand AddMarkerCommand { get; private set; } = null!;
 
         #endregion
 
@@ -286,11 +394,86 @@ namespace BusBuddy.WPF.ViewModels.GoogleEarth
             // TODO: Implement zoom out functionality
         }
 
+        // MVP stub implementations for XAML-bound commands
+        private void CenterOnFleet()
+        {
+            StatusMessage = "Centering map on fleet...";
+            Logger.Information("Center on fleet requested");
+        }
+
+        private void ShowAllBuses()
+        {
+            StatusMessage = "Showing all buses...";
+            Logger.Information("Show all buses requested");
+        }
+
+        private void ShowRoutes()
+        {
+            StatusMessage = "Showing routes on map...";
+            Logger.Information("Show routes requested");
+        }
+
+        private void ShowSchools()
+        {
+            StatusMessage = "Showing schools on map...";
+            Logger.Information("Show schools requested");
+        }
+
+        private void TrackSelectedBus()
+        {
+            if (SelectedBus is null)
+            {
+                StatusMessage = "No bus selected to track";
+                return;
+            }
+            StatusMessage = $"Tracking bus {SelectedBus.BusNumber}...";
+            Logger.Information("Tracking selected bus {BusNumber}", SelectedBus.BusNumber);
+        }
+
+        private void ResetView()
+        {
+            StatusMessage = "Resetting map view...";
+            Logger.Information("Reset view requested");
+        }
+
+        private async Task CheckEligibilityAsync()
+        {
+            if (_eligibilityService is null)
+            {
+                StatusMessage = "Eligibility service not available";
+                return;
+            }
+            // Demo coordinates — replace with selected student location later
+            var lat = 38.1544; // Wiley, CO vicinity
+            var lon = -102.7177;
+            try
+            {
+                var eligible = await _eligibilityService.IsEligibleAsync(lat, lon);
+                StatusMessage = eligible ? "Eligible: In district and outside Wiley town" : "Not eligible";
+                Logger.Information("Eligibility check at ({Lat}, {Lon}): {Eligible}", lat, lon, eligible);
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Eligibility check failed");
+                StatusMessage = $"Eligibility check error: {ex.Message}";
+            }
+        }
+
         #endregion
 
         #region INotifyPropertyChanged Implementation
 
         #endregion
+
+        /// <summary>
+        /// Lightweight marker model compatible with Syncfusion markers binding.
+        /// </summary>
+        public sealed class MapMarker
+        {
+            public string? Label { get; set; }
+            public double Latitude { get; set; }
+            public double Longitude { get; set; }
+        }
     }
 
 }

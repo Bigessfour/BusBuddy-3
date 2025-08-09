@@ -236,13 +236,13 @@
                                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                                     <syncfusion:ButtonAdv Label="🗺️"
                                                           ToolTip="View on Map"
-                                                          Command="{Binding DataContext.ViewOnMapCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                          Command="{Binding DataContext.ViewOnMapCommand, RelativeSource={RelativeSource AncestorType=syncfusion:ChromelessWindow}}"
                                                           CommandParameter="{Binding}"
                                                           Width="28" Height="28" Margin="2"
                                                           AutomationProperties.Name="View Student On Map"/>
                                     <syncfusion:ButtonAdv Label="🎯"
                                                           ToolTip="AI Route Suggest"
-                                                          Command="{Binding DataContext.SuggestRouteCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                          Command="{Binding DataContext.SuggestRouteCommand, RelativeSource={RelativeSource AncestorType=syncfusion:ChromelessWindow}}"
                                                           CommandParameter="{Binding}"
                                                           Width="28" Height="28" Margin="2"
                                                           AutomationProperties.Name="Suggest Route For Student"/>

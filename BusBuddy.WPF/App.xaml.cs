@@ -10,7 +10,7 @@ using Microsoft.Extensions.Configuration;
 using BusBuddy.Core.Data;
 using BusBuddy.Core.Services;
 using BusBuddy.Core.Services.Interfaces;
-using BusBuddy.Core.Extensions;
+using BusBuddy.Core.Extensions; // AddPhase1Services extension for Geo services
 using BusBuddy.WPF.ViewModels;
 using Microsoft.EntityFrameworkCore;
 using System.Threading;
@@ -260,6 +260,9 @@ namespace BusBuddy.WPF
                 // Use the proper extension method that registers IBusBuddyDbContextFactory
                 services.AddDataServices(configuration);
 
+                // Phase 1 core services (GeoDataService, etc.)
+                services.AddPhase1Services();
+
                 // Register core business services for Students, Routes, Buses, Drivers
                 services.AddScoped<IStudentService, StudentService>();
                 services.AddScoped<IDriverService, DriverService>();
@@ -278,6 +281,11 @@ namespace BusBuddy.WPF
                 services.AddTransient<BusBuddy.WPF.ViewModels.Student.StudentsViewModel>();
                 services.AddTransient<BusBuddy.WPF.ViewModels.Route.RouteManagementViewModel>();
                 services.AddTransient<BusBuddy.WPF.ViewModels.Driver.DriverFormViewModel>();
+                // Google Earth ViewModel
+                services.AddTransient<BusBuddy.WPF.ViewModels.GoogleEarth.GoogleEarthViewModel>();
+
+                // Geocoding for plotting addresses (offline demo implementation)
+                services.AddSingleton<BusBuddy.Core.Services.Interfaces.IGeocodingService, BusBuddy.Core.Services.OfflineGeocodingService>();
 
                 ServiceProvider = services.BuildServiceProvider();
 

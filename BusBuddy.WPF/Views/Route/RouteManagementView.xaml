@@ -176,9 +176,9 @@
         </Border>
 
         <!-- Routes Data Grid -->
-        <syncfusion:SfDataGrid Grid.Row="2"
-                              Name="RoutesDataGrid"
-                              ItemsSource="{Binding Routes}"
+    <syncfusion:SfDataGrid Grid.Row="2"
+                  Name="RoutesDataGrid"
+                  ItemsSource="{Binding RoutesView}"
                               SelectedItem="{Binding SelectedRoute, Mode=TwoWay}"
                               AutoGenerateColumns="False"
                               AllowSorting="True"
@@ -195,16 +195,13 @@
                               AutomationProperties.Name="Routes Data Grid"
                               AutomationProperties.HelpText="Grid displaying all routes with their assignments and schedule information">
             <syncfusion:SfDataGrid.Columns>
-                <syncfusion:GridTextColumn MappingName="RouteName" HeaderText="Route Name" Width="150"/>
-                <syncfusion:GridTextColumn MappingName="RouteDescription" HeaderText="Description" Width="200"/>
+        <syncfusion:GridTextColumn MappingName="RouteName" HeaderText="Route Name" Width="150"/>
+        <syncfusion:GridTextColumn MappingName="Description" HeaderText="Description" Width="200"/>
                 <syncfusion:GridTextColumn MappingName="School" HeaderText="School" Width="150"/>
                 <syncfusion:GridTextColumn MappingName="Path" HeaderText="Path" Width="200"/>
                 <syncfusion:GridTextColumn MappingName="BusNumber" HeaderText="Bus Number" Width="100"/>
-                <syncfusion:GridTextColumn MappingName="VINNumber" HeaderText="VIN" Width="180"/>
-                <syncfusion:GridTextColumn MappingName="AssignedStudentsCount" HeaderText="Students Count" Width="120"/>
-                <syncfusion:GridTextColumn MappingName="AssignedStudents" HeaderText="Assigned Students" Width="250"/>
-                <syncfusion:GridDateTimeColumn MappingName="Date" HeaderText="Date" Width="100" DisplayBinding="{Binding Date, StringFormat=MM/dd/yyyy}"/>
-                <syncfusion:GridTextColumn MappingName="Status" HeaderText="Status" Width="100"/>
+        <syncfusion:GridDateTimeColumn MappingName="Date" HeaderText="Date" Width="120" DisplayBinding="{Binding Date, StringFormat=MM/dd/yyyy}"/>
+        <syncfusion:GridTextColumn MappingName="IsActive" HeaderText="Active" Width="80"/>
             </syncfusion:SfDataGrid.Columns>
         </syncfusion:SfDataGrid>
 

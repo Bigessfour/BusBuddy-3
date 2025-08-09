@@ -14,6 +14,9 @@ using Microsoft.EntityFrameworkCore;
 using BusBuddy.WPF;
 using Serilog;
 using CommunityToolkit.Mvvm.Input;
+using Microsoft.Extensions.DependencyInjection;
+using BusBuddy.Core.Services.Interfaces;
+using BusBuddy.WPF.ViewModels.GoogleEarth;
 
 namespace BusBuddy.WPF.ViewModels.Student
 {
@@ -345,6 +348,62 @@ namespace BusBuddy.WPF.ViewModels.Student
                 Logger.Error(ex, "Error executing validate address command");
             }
         }
+        private async void ExecuteViewOnMap(Core.Models.Student? student)
+        {
+            try
+            {
+                if (student == null)
+                {
+                    return;
+                }
+                // Resolve services from WPF App's DI container
+                var sp = App.ServiceProvider;
+                if (sp == null)
+                {
+                    StatusMessage = "Mapping not available";
+                    return;
+                }
+
+                var geocoder = sp.GetService<IGeocodingService>();
+                var mapVm = sp.GetService<GoogleEarthViewModel>();
+                if (mapVm == null)
+                {
+                    StatusMessage = "Map view unavailable";
+                    return;
+                }
+
+                double? lat = null, lon = null;
+                if (geocoder != null)
+                {
+                    var result = await geocoder.GeocodeAsync(student.HomeAddress, student.City, student.State, student.Zip);
+                    if (result != null)
+                    {
+                        lat = result.Value.latitude;
+                        lon = result.Value.longitude;
+                    }
+                }
+
+                if (lat == null || lon == null)
+                {
+                    StatusMessage = "Could not locate address";
+                    return;
+                }
+
+                mapVm.MapMarkers.Add(new GoogleEarthViewModel.MapMarker
+                {
+                    Label = student.StudentName,
+                    Latitude = lat.Value,
+                    Longitude = lon.Value
+                });
+
+                StatusMessage = $"Plotted {student.StudentName}";
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Error plotting student on map");
+                StatusMessage = "Error plotting on map";
+            }
+        }
 
         private bool CanExecuteValidateAddress() => HasSelectedStudent && !string.IsNullOrWhiteSpace(SelectedStudent?.HomeAddress);
 
@@ -512,9 +571,73 @@ namespace BusBuddy.WPF.ViewModels.Student
         {
             try
             {
-                Logger.Information("View map command executed");
-                StatusMessage = "Opening map view with all student locations";
-                // TODO: Integrate with Google Earth Engine mapping
+                Logger.Information("View map command executed (bulk plot)");
+                StatusMessage = "Plotting students on map...";
+
+                var sp = App.ServiceProvider;
+                if (sp == null)
+                {
+                    StatusMessage = "Mapping not available";
+                    return;
+                }
+
+                var geocoder = sp.GetService<IGeocodingService>();
+                var mapVm = sp.GetService<GoogleEarthViewModel>();
+                if (mapVm == null)
+                {
+                    StatusMessage = "Map view unavailable";
+                    return;
+                }
+
+                // Clear existing student markers; keep any seed markers (e.g., school) by filtering on label
+                for (int i = mapVm.MapMarkers.Count - 1; i >= 0; i--)
+                {
+                    var m = mapVm.MapMarkers[i];
+                    if (!string.Equals(m.Label, "Wiley School RE-13JT", StringComparison.OrdinalIgnoreCase))
+                    {
+                        mapVm.MapMarkers.RemoveAt(i);
+                    }
+                }
+
+                // Fire-and-forget each geocode to keep UI responsive
+                _ = Task.Run(async () =>
+                {
+                    foreach (var s in Students.ToList())
+                    {
+                        if (string.IsNullOrWhiteSpace(s.HomeAddress)) continue;
+                        try
+                        {
+                            double? lat = null, lon = null;
+                            if (geocoder != null)
+                            {
+                                var r = await geocoder.GeocodeAsync(s.HomeAddress, s.City, s.State, s.Zip);
+                                if (r != null)
+                                {
+                                    lat = r.Value.latitude;
+                                    lon = r.Value.longitude;
+                                }
+                            }
+                            if (lat == null || lon == null) continue;
+
+                            // Marshal to UI thread to update collection
+                            System.Windows.Application.Current.Dispatcher.Invoke(() =>
+                            {
+                                mapVm.MapMarkers.Add(new GoogleEarthViewModel.MapMarker
+                                {
+                                    Label = s.StudentName,
+                                    Latitude = lat.Value,
+                                    Longitude = lon.Value
+                                });
+                            });
+                        }
+                        catch (Exception ex)
+                        {
+                            Logger.Warning(ex, "Failed to geocode or plot student {Student}", s.StudentName);
+                        }
+                    }
+
+                    StatusMessage = "Student plotting complete";
+                });
             }
             catch (Exception ex)
             {
@@ -523,24 +646,7 @@ namespace BusBuddy.WPF.ViewModels.Student
             }
         }
 
-        private void ExecuteViewOnMap(Core.Models.Student? student)
-        {
-            try
-            {
-                if (student == null)
-                {
-                    return;
-                }
-                Logger.Information("View student {StudentId} on map", student.StudentId);
-                StatusMessage = $"Showing {student.StudentName} on map";
-                // TODO: Show specific student location on map
-            }
-            catch (Exception ex)
-            {
-                Logger.Error(ex, "Error showing student on map");
-                StatusMessage = "Error showing student location";
-            }
-        }
+
 
         private void ExecuteSuggestRoute(Core.Models.Student? student)
         {

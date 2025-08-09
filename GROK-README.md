@@ -1,11 +1,60 @@
 # 🚌 BusBuddy Project - Grok Development Status
 
-**Last Updated:** August 8, 2025 16:30 - DATABASE SCHEMA FIXES & EF CORE UPDATES ✅  
-**Current Status:** � SCHEMA ALIGNMENT IN PROGRESS - Critical table mapping resolved  
-**Repository Status:** Build Success - EF Core updated to 9.0.8, retry resilience enhanced  
-**Key Achievement:** Fixed Bus entity to Vehicles table mapping, resolved seeding failures
+**Last Updated:** August 9, 2025 11:00 — Geo/Eligibility, Student Plotting, and Fetchability Enhancements ✅  
+**Current Status:** Clean Build; Geo stack wired (SfMap + overlays + PIP eligibility + offline geocoding)  
+**Repository Status:** Build Success — EF Core aligned; WPF mapping features validated  
+**Key Achievement:** End-to-end student → geocode → map plotting; eligibility (in district AND not in town) operational
 
 ---
+
+## 🌍 Geo & Eligibility Progress — August 9, 2025
+
+### What’s implemented now
+- Syncfusion SfMap view with base-layer switching (Google tiles, OSM) and OSM attribution overlay
+- District and Town overlays via ShapeFileLayer with toggle persistence across base-layer switches
+- NetTopologySuite-based eligibility service (point-in-polygon): eligible when inside district AND outside town
+- Deterministic offline geocoding service (no external dependency) for Wiley, CO region
+- Student plotting: single-student and bulk “View Map” actions add markers to the current ImageryLayer
+- StudentsView command binding fixes (window-scoped), and ImageryLayer-safe marker binding in code-behind
+
+### Key files (direct raw URLs for fetchability)
+Base URL pattern (replace [path]):
+https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/[path]
+
+- Google Earth map view (XAML):
+  https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.WPF/Views/GoogleEarth/GoogleEarthView.xaml
+- Google Earth map code-behind (ImageryLayer markers, overlays, debounced switching):
+  https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.WPF/Views/GoogleEarth/GoogleEarthView.xaml.cs
+- Map ViewModel (markers, commands):
+  https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.WPF/ViewModels/GoogleEarth/GoogleEarthViewModel.cs
+- Eligibility service (NTS shapefiles, cached union geometries):
+  https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.Core/Services/ShapefileEligibilityService.cs
+- Eligibility contract:
+  https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.Core/Services/Interfaces/IEligibilityService.cs
+- Geocoding contract and offline implementation:
+  https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.Core/Services/Interfaces/IGeocodingService.cs
+  https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.Core/Services/OfflineGeocodingService.cs
+- Students view and VM (map actions, bulk plotting):
+  https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.WPF/Views/Student/StudentsView.xaml
+  https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.WPF/ViewModels/Student/StudentsViewModel.cs
+
+### Fetchability helpers (copy-paste ready)
+- PowerShell — download any file to local path:
+  iwr "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.WPF/Views/GoogleEarth/GoogleEarthView.xaml" -OutFile "BusBuddy.WPF/Views/GoogleEarth/GoogleEarthView.xaml"
+- cURL — quick inspect to console:
+  curl -L "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.WPF/ViewModels/GoogleEarth/GoogleEarthViewModel.cs"
+
+### Official documentation references (documentation-first compliance)
+- Syncfusion WPF (SfDataGrid, SfMap, themes): https://help.syncfusion.com/wpf/welcome-to-syncfusion-essential-wpf
+- Syncfusion API Reference (WPF): https://help.syncfusion.com/cr/wpf/Syncfusion.html
+- .NET Desktop WPF docs: https://learn.microsoft.com/dotnet/desktop/wpf/
+- EF Core docs: https://learn.microsoft.com/ef/core/
+- PowerShell 7 docs: https://learn.microsoft.com/powershell/
+
+### Next geo steps (tracked)
+- Persist Student.Latitude/Longitude to avoid re-geocoding; add migration and save during plot
+- Add map auto-zoom to marker extents; consider simple clustering when count is high
+- Route assignment UI flows using plotted students (SPED Wiley→La Junta, Truck Plaza → Ports to Plains, 14-passenger routes)
 
 ## � **Schema Alignment & Database Fixes - August 8, 2025**
 
