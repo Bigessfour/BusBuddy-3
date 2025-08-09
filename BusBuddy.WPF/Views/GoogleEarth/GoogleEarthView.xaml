@@ -25,15 +25,15 @@
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
     </UserControl.Resources>
 
-    <Grid Background="#F5F5F5">
+    <Grid Background="{DynamicResource PrimaryBackgroundBrush}">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
         <!-- Header -->
-        <Border Grid.Row="0"
-                Background="#2D3748"
+    <Border Grid.Row="0"
+        Background="{DynamicResource AccentBackgroundBrush}"
                 Padding="24,16">
             <Grid>
                 <Grid.ColumnDefinitions>
@@ -42,7 +42,7 @@
                 </Grid.ColumnDefinitions>
 
                 <StackPanel Grid.Column="0" Orientation="Horizontal">
-                    <Border Background="#FFD700"
+                    <Border Background="{DynamicResource AccentBackgroundBrush}"
                             Width="48" Height="48"
                             CornerRadius="24"
                             Margin="0,0,16,0">
@@ -56,28 +56,28 @@
                         <TextBlock Text="Google Earth Integration"
                                    FontSize="28"
                                    FontWeight="Bold"
-                                   Foreground="White"/>
+                                   Foreground="{DynamicResource AccentTextBrush}"/>
                         <TextBlock Text="Advanced Geospatial Mapping and Route Visualization"
                                    FontSize="14"
-                                   Foreground="#CCCCCC"
+                                   Foreground="{DynamicResource PrimaryTextBrush}"
                                    Margin="0,4,0,0"/>
                     </StackPanel>
                 </StackPanel>
 
                 <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                    <Border Background="#2ECC71"
+                                        <Border Background="{DynamicResource ButtonBackgroundBrush}"
                             CornerRadius="16"
                             Padding="12,6"
                             Margin="8,0">
                         <StackPanel Orientation="Horizontal">
                             <Ellipse Width="10" Height="10"
-                                     Fill="White"
+                                                                         Fill="{DynamicResource ButtonForegroundBrush}"
                                      VerticalAlignment="Center"
                                      Margin="0,0,8,0"/>
                             <TextBlock Text="GPS Active"
                                        FontSize="12"
                                        FontWeight="SemiBold"
-                                       Foreground="White"/>
+                                                                             Foreground="{DynamicResource ButtonForegroundBrush}"/>
                         </StackPanel>
                     </Border>
 
@@ -104,16 +104,16 @@
             </Grid.ColumnDefinitions>
 
             <!-- Control Panel -->
-            <Border Grid.Column="0"
-                    Background="White"
-                    BorderBrush="#E2E8F0"
+    <Border Grid.Column="0"
+            Background="{DynamicResource PrimaryBackgroundBrush}"
+            BorderBrush="{DynamicResource BorderBrush}"
                     BorderThickness="0,0,1,0">
                 <ScrollViewer VerticalScrollBarVisibility="Auto"
                               Padding="16">
                     <StackPanel>
                         <!-- Map Controls -->
-                        <Border Background="#F8F9FA"
-                                BorderBrush="#DEE2E6"
+            <Border Background="{DynamicResource PrimaryBackgroundBrush}"
+                BorderBrush="{DynamicResource BorderBrush}"
                                 BorderThickness="1"
                                 CornerRadius="8"
                                 Padding="16"
@@ -122,50 +122,46 @@
                                 <TextBlock Text="Map Controls"
                                            FontSize="16"
                                            FontWeight="SemiBold"
-                                           Foreground="#2D3748"
+                       Foreground="{DynamicResource PrimaryTextBrush}"
                                            Margin="0,0,0,12"/>
 
-                                <Button Content="📍 Center on Fleet"
-                                        Command="{Binding CenterOnFleetCommand}"
-                                        Background="#007ACC"
-                                        Foreground="White"
-                                        Padding="10,8"
-                                        Margin="0,4"
-                                        BorderThickness="0"
-                                        HorizontalAlignment="Stretch"/>
+                <syncfusion:ButtonAdv Content="📍 Center on Fleet"
+                              Command="{Binding CenterOnFleetCommand}"
+                              Background="{DynamicResource ButtonBackgroundBrush}"
+                              Foreground="{DynamicResource ButtonForegroundBrush}"
+                              Padding="10,8"
+                              Margin="0,4"
+                              HorizontalAlignment="Stretch"/>
 
-                                <Button Content="🚌 Show All Buses"
-                                        Command="{Binding ShowAllBusesCommand}"
-                                        Background="#6C757D"
-                                        Foreground="White"
-                                        Padding="10,8"
-                                        Margin="0,4"
-                                        BorderThickness="0"
-                                        HorizontalAlignment="Stretch"/>
+                <syncfusion:ButtonAdv Content="🚌 Show All Buses"
+                              Command="{Binding ShowAllBusesCommand}"
+                              Background="{DynamicResource ButtonBackgroundBrush}"
+                              Foreground="{DynamicResource ButtonForegroundBrush}"
+                              Padding="10,8"
+                              Margin="0,4"
+                              HorizontalAlignment="Stretch"/>
 
-                                <Button Content="🛣️ Show Routes"
-                                        Command="{Binding ShowRoutesCommand}"
-                                        Background="#6C757D"
-                                        Foreground="White"
-                                        Padding="10,8"
-                                        Margin="0,4"
-                                        BorderThickness="0"
-                                        HorizontalAlignment="Stretch"/>
+                <syncfusion:ButtonAdv Content="🛣️ Show Routes"
+                              Command="{Binding ShowRoutesCommand}"
+                              Background="{DynamicResource ButtonBackgroundBrush}"
+                              Foreground="{DynamicResource ButtonForegroundBrush}"
+                              Padding="10,8"
+                              Margin="0,4"
+                              HorizontalAlignment="Stretch"/>
 
-                                <Button Content="🏫 Show Schools"
-                                        Command="{Binding ShowSchoolsCommand}"
-                                        Background="#6C757D"
-                                        Foreground="White"
-                                        Padding="10,8"
-                                        Margin="0,4"
-                                        BorderThickness="0"
-                                        HorizontalAlignment="Stretch"/>
+                <syncfusion:ButtonAdv Content="🏫 Show Schools"
+                              Command="{Binding ShowSchoolsCommand}"
+                              Background="{DynamicResource ButtonBackgroundBrush}"
+                              Foreground="{DynamicResource ButtonForegroundBrush}"
+                              Padding="10,8"
+                              Margin="0,4"
+                              HorizontalAlignment="Stretch"/>
                             </StackPanel>
                         </Border>
 
                         <!-- Live Tracking -->
-                        <Border Background="#F8F9FA"
-                                BorderBrush="#DEE2E6"
+            <Border Background="{DynamicResource PrimaryBackgroundBrush}"
+                BorderBrush="{DynamicResource BorderBrush}"
                                 BorderThickness="1"
                                 CornerRadius="8"
                                 Padding="16"
@@ -174,7 +170,7 @@
                                 <TextBlock Text="Live Tracking"
                                            FontSize="16"
                                            FontWeight="SemiBold"
-                                           Foreground="#2D3748"
+                       Foreground="{DynamicResource PrimaryTextBrush}"
                                            Margin="0,0,0,12"/>
 
                                 <Grid>
@@ -186,19 +182,27 @@
                                     <TextBlock Grid.Column="0"
                                                Text="Real-time Updates"
                                                FontSize="14"
-                                               Foreground="#2D3748"
+                                               Foreground="{DynamicResource PrimaryTextBrush}"
                                                VerticalAlignment="Center"/>
 
-                                    <CheckBox Grid.Column="1"
-                                              IsChecked="{Binding IsLiveTrackingEnabled}"
-                                              VerticalAlignment="Center"/>
+                                    <!-- Use documented ButtonAdv toggle: https://help.syncfusion.com/wpf/button/toggle-state -->
+                                    <syncfusion:ButtonAdv Grid.Column="1"
+                                                          Width="80"
+                                                          Height="28"
+                                                          HorizontalAlignment="Right"
+                                                          Background="{DynamicResource ButtonBackgroundBrush}"
+                                                          Foreground="{DynamicResource ButtonForegroundBrush}"
+                                                          IsCheckable="True"
+                                                          IsChecked="{Binding IsLiveTrackingEnabled, Mode=TwoWay}"
+                                                          Label="Live"/>
                                 </Grid>
 
-                                <Separator Margin="0,8"/>
+                                <!-- Theme standard Separator via SfSkinManager key -->
+                                <Separator Margin="0,8" Style="{DynamicResource WPFSeparatorStyle}"/>
 
                                 <TextBlock Text="Update Frequency"
                                            FontSize="12"
-                                           Foreground="#2D3748"
+                                           Foreground="{DynamicResource PrimaryTextBrush}"
                                            Margin="0,0,0,4"/>
 
                                 <syncfusion:ComboBoxAdv SelectedIndex="1">
@@ -211,8 +215,8 @@
                         </Border>
 
                         <!-- Bus List -->
-                        <Border Background="#F8F9FA"
-                                BorderBrush="#DEE2E6"
+            <Border Background="{DynamicResource PrimaryBackgroundBrush}"
+                BorderBrush="{DynamicResource BorderBrush}"
                                 BorderThickness="1"
                                 CornerRadius="8"
                                 Padding="16">
@@ -220,7 +224,7 @@
                                 <TextBlock Text="Active Buses"
                                            FontSize="16"
                                            FontWeight="SemiBold"
-                                           Foreground="#2D3748"
+                       Foreground="{DynamicResource PrimaryTextBrush}"
                                            Margin="0,0,0,12"/>
 
                                 <syncfusion:SfDataGrid x:Name="BusListGrid"
@@ -247,14 +251,13 @@
                                     </syncfusion:SfDataGrid.Columns>
                                 </syncfusion:SfDataGrid>
 
-                                <Button Content="📍 Track Selected"
-                                        Command="{Binding TrackSelectedBusCommand}"
-                                        Background="#007ACC"
-                                        Foreground="White"
-                                        Padding="10,8"
-                                        Margin="0,8,0,0"
-                                        BorderThickness="0"
-                                        HorizontalAlignment="Stretch"/>
+                                <syncfusion:ButtonAdv Content="📍 Track Selected"
+                                                      Command="{Binding TrackSelectedBusCommand}"
+                                                      Background="{DynamicResource ButtonBackgroundBrush}"
+                                                      Foreground="{DynamicResource ButtonForegroundBrush}"
+                                                      Padding="10,8"
+                                                      Margin="0,8,0,0"
+                                                      HorizontalAlignment="Stretch"/>
                             </StackPanel>
                         </Border>
                     </StackPanel>
@@ -262,22 +265,22 @@
             </Border>
 
             <!-- Map Display Area -->
-            <Border Grid.Column="1"
-                    Background="White"
-                    BorderBrush="#E2E8F0"
+    <Border Grid.Column="1"
+            Background="{DynamicResource PrimaryBackgroundBrush}"
+            BorderBrush="{DynamicResource BorderBrush}"
                     BorderThickness="1"
                     Margin="0"
                     MinHeight="400">
                 <Grid>
                     <!-- Map Container -->
-                    <Border x:Name="MapContainer"
-                            Background="#1a1a1a"
+            <Border x:Name="MapContainer"
+                Background="{DynamicResource ContentBackgroundBrush}"
                             CornerRadius="8"
                             Margin="16"
                             MinHeight="400">
                         <Grid>
                             <!-- Placeholder for Google Earth integration -->
-                            <Border Background="#FF1a1a1a"
+                            <Border Background="{DynamicResource PrimaryBackgroundBrush}"
                                     CornerRadius="8">
                                 <StackPanel HorizontalAlignment="Center"
                                             VerticalAlignment="Center">
@@ -288,54 +291,45 @@
                                     <TextBlock Text="Google Earth Integration"
                                                FontSize="24"
                                                FontWeight="Bold"
-                                               Foreground="White"
+                                               Foreground="{DynamicResource PrimaryTextBrush}"
                                                HorizontalAlignment="Center"
                                                Margin="0,0,0,8"/>
                                     <TextBlock Text="Interactive mapping and route visualization"
                                                FontSize="14"
-                                               Foreground="#CCCCCC"
+                                               Foreground="{DynamicResource PrimaryTextBrush}"
                                                HorizontalAlignment="Center"
                                                Margin="0,0,0,24"/>
-                                    <Button Content="Initialize Google Earth"
-                                            Command="{Binding InitializeMapCommand}"
-                                            Background="#007ACC"
-                                            Foreground="White"
-                                            Padding="15,10"
-                                            BorderThickness="0"
-                                            Width="200"/>
+                                    <syncfusion:ButtonAdv Content="Initialize Google Earth"
+                                                          Command="{Binding InitializeMapCommand}"
+                                                          Background="{DynamicResource ButtonBackgroundBrush}"
+                                                          Foreground="{DynamicResource ButtonForegroundBrush}"
+                                                          Padding="15,10"
+                                                          Width="200"/>
                                 </StackPanel>
                             </Border>
 
-                            <!-- Map Loading Indicator -->
+                            <!-- Map Loading Indicator using Syncfusion SfBusyIndicator (docs: help.syncfusion.com/wpf/busy-indicator/getting-started) -->
                             <Border x:Name="MapLoadingIndicator"
-                                    Background="#80000000"
+                                    Background="{DynamicResource AccentBackgroundBrush}"
+                                    Opacity="0.95"
                                     Visibility="{Binding IsMapLoading, Converter={StaticResource BooleanToVisibilityConverter}}">
-                                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                                    <TextBlock Text="⚙️"
-                                               FontSize="50"
-                                               HorizontalAlignment="Center"
-                                               Foreground="White"
-                                               Margin="0,0,0,16">
-                                        <TextBlock.RenderTransform>
-                                            <RotateTransform x:Name="LoadingRotation" CenterX="25" CenterY="25"/>
-                                        </TextBlock.RenderTransform>
-                                        <TextBlock.Triggers>
-                                            <EventTrigger RoutedEvent="Loaded">
-                                                <BeginStoryboard>
-                                                    <Storyboard RepeatBehavior="Forever">
-                                                        <DoubleAnimation Storyboard.TargetName="LoadingRotation"
-                                                                         Storyboard.TargetProperty="Angle"
-                                                                         From="0" To="360" Duration="0:0:2"/>
-                                                    </Storyboard>
-                                                </BeginStoryboard>
-                                            </EventTrigger>
-                                        </TextBlock.Triggers>
-                                    </TextBlock>
-                                    <TextBlock Text="Loading Map..."
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+                                    <syncfusion:SfBusyIndicator Grid.Row="0"
+                                                               Width="80" Height="80"
+                                                               HorizontalAlignment="Center"
+                                                               VerticalAlignment="Center"
+                                                               AnimationType="Flight"/>
+                                    <TextBlock Grid.Row="1"
+                                               Text="Loading Map..."
+                                               Margin="0,12,0,0"
                                                FontSize="16"
-                                               Foreground="White"
+                                               Foreground="{DynamicResource AccentTextBrush}"
                                                HorizontalAlignment="Center"/>
-                                </StackPanel>
+                                </Grid>
                             </Border>
                         </Grid>
                     </Border>
@@ -345,31 +339,28 @@
                                 HorizontalAlignment="Right"
                                 VerticalAlignment="Top"
                                 Margin="32,32,32,0">
-                        <Button Content="+"
-                                Command="{Binding ZoomInCommand}"
-                                Background="#007ACC"
-                                Foreground="White"
-                                Width="40" Height="40"
-                                FontSize="20"
-                                FontWeight="Bold"
-                                BorderThickness="0"
-                                Margin="4,0"/>
-                        <Button Content="-"
-                                Command="{Binding ZoomOutCommand}"
-                                Background="#007ACC"
-                                Foreground="White"
-                                Width="40" Height="40"
-                                FontSize="20"
-                                FontWeight="Bold"
-                                BorderThickness="0"
-                                Margin="4,0"/>
-                        <Button Content="🏠"
-                                Command="{Binding ResetViewCommand}"
-                                Background="#007ACC"
-                                Foreground="White"
-                                Width="40" Height="40"
-                                BorderThickness="0"
-                                Margin="4,0"/>
+                        <syncfusion:ButtonAdv Content="+"
+                                              Command="{Binding ZoomInCommand}"
+                                              Background="{DynamicResource ButtonBackgroundBrush}"
+                                              Foreground="{DynamicResource ButtonForegroundBrush}"
+                                              Width="40" Height="40"
+                                              FontSize="20"
+                                              FontWeight="Bold"
+                                              Margin="4,0"/>
+                        <syncfusion:ButtonAdv Content="-"
+                                              Command="{Binding ZoomOutCommand}"
+                                              Background="{DynamicResource ButtonBackgroundBrush}"
+                                              Foreground="{DynamicResource ButtonForegroundBrush}"
+                                              Width="40" Height="40"
+                                              FontSize="20"
+                                              FontWeight="Bold"
+                                              Margin="4,0"/>
+                        <syncfusion:ButtonAdv Content="🏠"
+                                              Command="{Binding ResetViewCommand}"
+                                              Background="{DynamicResource ButtonBackgroundBrush}"
+                                              Foreground="{DynamicResource ButtonForegroundBrush}"
+                                              Width="40" Height="40"
+                                              Margin="4,0"/>
                     </StackPanel>
                 </Grid>
             </Border>

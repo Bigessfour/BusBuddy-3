@@ -81,6 +81,7 @@
   <PackageReference Include="Syncfusion.SfSkinManager.WPF" Version="$(SyncfusionVersion)" />
     <PackageReference Include="Syncfusion.Shared.WPF" Version="$(SyncfusionVersion)" />
     <PackageReference Include="Syncfusion.Tools.WPF" Version="$(SyncfusionVersion)" />
+  <PackageReference Include="Syncfusion.SfBusyIndicator.WPF" Version="$(SyncfusionVersion)" />
     <PackageReference Include="Syncfusion.SfNavigationDrawer.WPF" Version="$(SyncfusionVersion)" />
     <PackageReference Include="Syncfusion.SfTreeView.WPF" Version="$(SyncfusionVersion)" />
     <PackageReference Include="Syncfusion.SfChat.WPF" Version="$(SyncfusionVersion)" />
