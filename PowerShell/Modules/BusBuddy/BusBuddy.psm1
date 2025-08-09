@@ -1803,6 +1803,40 @@ function Start-BusBuddyRuntimeErrorCaptureBasic {
     }
 }
 
+# Lightweight wrapper to run the app and capture runtime errors using the basic capture script
+function Invoke-BusBuddyRunCapture {
+    <#
+    .SYNOPSIS
+        Run BusBuddy and capture runtime errors with logs and a summary report
+
+    .DESCRIPTION
+        Wraps the Capture-RuntimeErrors.ps1 script to launch the WPF app with stdio capture,
+        time-bound monitoring, and writes logs to logs\runtime-capture.
+
+    .PARAMETER Duration
+        Monitoring duration in seconds (default 60)
+
+    .PARAMETER DetailedLogging
+        Enables extra CLI arguments and verbose capture
+
+    .PARAMETER OpenLogsAfter
+        Opens the log directory in Explorer after capture completes
+
+    .EXAMPLE
+        bb-run-capture -Duration 90 -DetailedLogging -OpenLogsAfter
+    #>
+    [CmdletBinding()]
+    param(
+        [ValidateRange(10,3600)]
+        [int]$Duration = 60,
+        [switch]$DetailedLogging,
+        [switch]$OpenLogsAfter
+    )
+
+    # Delegate to the existing basic runtime capture implementation
+    Start-BusBuddyRuntimeErrorCaptureBasic -Duration $Duration -DetailedLogging:$DetailedLogging -OpenLogsAfter:$OpenLogsAfter | Out-Null
+}
+
 #endregion
 
 #region XAI Route Optimization (MVP + Smart Features)
@@ -2969,6 +3003,8 @@ try { Set-Alias -Name 'bbRouteStatus' -Value 'Get-BusBuddyRouteStatus' -Descript
 # Documentation and diagnostics aliases
 try { Set-Alias -Name 'bbCopilotRef' -Value 'Open-BusBuddyCopilotReference' -Description 'Open Copilot reference for enhanced context' -Force } catch { }
 try { Set-Alias -Name 'bbCaptureRuntimeErrors' -Value 'Start-BusBuddyRuntimeErrorCapture' -Description 'Comprehensive runtime error capture and monitoring' -Force } catch { }
+try { Set-Alias -Name 'bbRunCapture' -Value 'Invoke-BusBuddyRunCapture' -Description 'Run application with runtime error capture' -Force } catch { }
+try { Set-Alias -Name 'bb-run-capture' -Value 'Invoke-BusBuddyRunCapture' -Description 'Run application with runtime error capture (kebab-case)' -Force } catch { }
 try { Set-Alias -Name 'bbDiagnostic' -Value 'Invoke-BusBuddyDiagnostic' -Description 'Run diagnostics and output environment, module, and MVP status' -Force } catch { }
 try { Set-Alias -Name 'bbWelcome' -Value 'Show-BusBuddyWelcome' -Description 'Show categorized command overview' -Force } catch { }
 
@@ -3003,6 +3039,7 @@ Export-ModuleMember -Function @(
     'Invoke-BusBuddyRouteOptimization',
     'Invoke-BusBuddyReport',
     'Start-BusBuddyRuntimeErrorCapture',
+    'Invoke-BusBuddyRunCapture',
     'Get-BusBuddyTestOutput',
     'Invoke-BusBuddyTestFull',
     'Get-BusBuddyTestError',
@@ -3017,7 +3054,7 @@ Export-ModuleMember -Function @(
     'bbDevSession', 'bbInfo', 'bbCommands', 'bbXamlValidate', 'bbCatchErrors',
     'bbAntiRegression', 'bbMvp', 'bbMvpCheck', 'bbEnvCheck', 'bbRoutes',
     'bbRouteOptimize', 'bbGenerateReport', 'bbRouteDemo', 'bbRouteStatus', 'bbCopilotRef',
-    'bbCaptureRuntimeErrors', 'bbDiagnostic', 'bbWelcome', 'bbTestFull', 'bbTestErrors',
+    'bbCaptureRuntimeErrors', 'bbRunCapture', 'bb-run-capture', 'bbDiagnostic', 'bbWelcome', 'bbTestFull', 'bbTestErrors',
     'bbTestLog', 'bbTestWatch',
     # Kebab-case aliases for consistency
     'bb-build', 'bb-run', 'bb-test', 'bb-clean', 'bb-restore'
