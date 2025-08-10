@@ -17,6 +17,8 @@ using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.DependencyInjection;
 using BusBuddy.Core.Services.Interfaces;
 using BusBuddy.WPF.ViewModels.GoogleEarth;
+using CommunityToolkit.Mvvm.Messaging;
+using BusBuddy.WPF.Messages;
 
 namespace BusBuddy.WPF.ViewModels.Student
 {
@@ -48,6 +50,7 @@ namespace BusBuddy.WPF.ViewModels.Student
         /// </summary>
         public StudentsViewModel()
         {
+            // Fallback for XAML new StudentsViewModel(); prefer DI constructor below.
             _contextFactory = new BusBuddyDbContextFactory();
             _addressService = new AddressService();
             Students = new ObservableCollection<Core.Models.Student>();
@@ -55,7 +58,26 @@ namespace BusBuddy.WPF.ViewModels.Student
             StudentsView.Filter = StudentFilter;
 
             InitializeCommands();
+            SubscribeToSaveNotifications();
             Logger.Information("StudentsViewModel initialized — commands created and data load started");
+            _ = LoadStudentsAsync();
+            _ = LoadReferenceDataAsync();
+        }
+
+        /// <summary>
+        /// DI-friendly constructor — ensures we use the same DbContext factory as the rest of the app.
+        /// </summary>
+        public StudentsViewModel(IBusBuddyDbContextFactory contextFactory, AddressService? addressService = null)
+        {
+            _contextFactory = contextFactory;
+            _addressService = addressService ?? new AddressService();
+            Students = new ObservableCollection<Core.Models.Student>();
+            StudentsView = CollectionViewSource.GetDefaultView(Students);
+            StudentsView.Filter = StudentFilter;
+
+            InitializeCommands();
+            SubscribeToSaveNotifications();
+            Logger.Information("StudentsViewModel (DI) initialized — commands created and data load started");
             _ = LoadStudentsAsync();
             _ = LoadReferenceDataAsync();
         }
@@ -77,6 +99,24 @@ namespace BusBuddy.WPF.ViewModels.Student
 
             InitializeCommands();
             Logger.Debug("StudentsViewModel (test) initialized — commands created");
+        }
+
+        private void SubscribeToSaveNotifications()
+        {
+            // Refresh list and show success message immediately when a student is saved from the form
+            WeakReferenceMessenger.Default.Register<StudentSavedMessage>(this, async (_, msg) =>
+            {
+                try
+                {
+                    Logger.Information("StudentSavedMessage received — refreshing list");
+                    await LoadStudentsAsync();
+                    StatusMessage = "Successfully Saved";
+                }
+                catch (Exception ex)
+                {
+                    Logger.Error(ex, "Error refreshing after save");
+                }
+            });
         }
 
         // Minimal internal factory wrapper for tests
@@ -919,6 +959,7 @@ namespace BusBuddy.WPF.ViewModels.Student
             GC.SuppressFinalize(this);
             // No-op: context is now always local and disposed via using
             Logger.Debug("StudentsViewModel disposed");
+            try { WeakReferenceMessenger.Default.UnregisterAll(this); } catch { }
         }
             // No-op: context is now always local and disposed via using
         #endregion

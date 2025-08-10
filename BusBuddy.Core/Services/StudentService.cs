@@ -794,8 +794,8 @@ public class StudentService : IStudentService
     {
         // Simple example: match keywords (expand as needed)
         if (string.IsNullOrEmpty(address) || string.IsNullOrEmpty(boundaries)) { return false; }
-        address = address.ToLower();
-        boundaries = boundaries.ToLower();
+        address = address.ToLower(System.Globalization.CultureInfo.InvariantCulture);
+        boundaries = boundaries.ToLower(System.Globalization.CultureInfo.InvariantCulture);
         if (boundaries.Contains("east") && address.Contains("east")) { return true; }
         if (boundaries.Contains("west") && address.Contains("west")) { return true; }
         if (boundaries.Contains("south") && address.Contains("south")) { return true; }

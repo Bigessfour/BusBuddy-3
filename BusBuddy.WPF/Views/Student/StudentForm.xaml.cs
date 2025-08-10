@@ -2,6 +2,9 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Media;
+using System.Windows.Input;
+using System.Windows.Documents;
+using System.Windows.Media.TextFormatting;
 using System.Windows.Automation; // AutomationProperties for accessibility checks
 using Syncfusion.Windows.Shared; // ChromelessWindow per Syncfusion WPF docs
 using Syncfusion.SfSkinManager; // SfSkinManager per official docs
@@ -25,18 +28,26 @@ namespace BusBuddy.WPF.Views.Student
     /// </summary>
     public partial class StudentForm : ChromelessWindow
     {
-    private static readonly ILogger Logger = Log.ForContext<StudentForm>();
+        private static readonly ILogger Logger = Log.ForContext<StudentForm>();
         public StudentFormViewModel ViewModel { get; private set; }
 
-    /// <summary>
-    /// Default constructor: initializes theming, ViewModel, and event hooks.
-    /// </summary>
-    public StudentForm()
+        /// <summary>
+        /// Default constructor: initializes theming, ViewModel, and event hooks.
+        /// </summary>
+        public StudentForm()
         {
             InitializeComponent();
             // Apply Syncfusion theme via central manager (FluentDark with FluentLight fallback)
             SfSkinManager.ApplyThemeAsDefaultStyle = true;
             SyncfusionThemeManager.ApplyTheme(this);
+
+            // High DPI defaults for crisp rendering
+            UseLayoutRounding = true;
+            SnapsToDevicePixels = true;
+            RenderOptions.SetBitmapScalingMode(this, BitmapScalingMode.Fant);
+            TextOptions.SetTextFormattingMode(this, TextFormattingMode.Display);
+            TextOptions.SetTextRenderingMode(this, TextRenderingMode.ClearType);
+
             // Resolve IStudentService from DI if available
             try
             {
@@ -112,10 +123,10 @@ namespace BusBuddy.WPF.Views.Student
             Logger.Information("StudentForm initialized (Create mode)");
         }
 
-    /// <summary>
-    /// Overload: initializes with an existing student for editing.
-    /// </summary>
-    public StudentForm(Core.Models.Student student) : this()
+        /// <summary>
+        /// Overload: initializes with an existing student for editing.
+        /// </summary>
+        public StudentForm(Core.Models.Student student) : this()
         {
             try
             {
@@ -132,20 +143,20 @@ namespace BusBuddy.WPF.Views.Student
             Logger.Information("StudentForm initialized (Edit mode) for StudentId={StudentId}", student.StudentId);
         }
 
-    /// <summary>
-    /// Handles ViewModel RequestClose event to close dialog with result.
-    /// </summary>
-    private void OnRequestClose(object? sender, bool? dialogResult)
+        /// <summary>
+        /// Handles ViewModel RequestClose event to close dialog with result.
+        /// </summary>
+        private void OnRequestClose(object? sender, bool? dialogResult)
         {
             Logger.Information("StudentForm RequestClose received. DialogResult={DialogResult}", dialogResult);
             DialogResult = dialogResult;
             Close();
         }
 
-    /// <summary>
-    /// Cleanup: Unsubscribes events, disposes ViewModel, and releases SkinManager resources.
-    /// </summary>
-    protected override void OnClosed(System.EventArgs e)
+        /// <summary>
+        /// Cleanup: Unsubscribes events, disposes ViewModel, and releases SkinManager resources.
+        /// </summary>
+        protected override void OnClosed(System.EventArgs e)
         {
             Logger.Information("StudentForm closing, disposing resources");
             // Unsubscribe from events to prevent memory leaks
@@ -402,6 +413,25 @@ namespace BusBuddy.WPF.Views.Student
             catch (System.Exception ex)
             {
                 Logger.Warning(ex, "StudentForm: validation logging failed");
+            }
+        }
+
+        // Handle per-monitor DPI changes to keep layout and fonts crisp
+        protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
+        {
+            base.OnDpiChanged(oldDpi, newDpi);
+            try
+            {
+                var scale = newDpi.DpiScaleX; // assume uniform X/Y scaling
+                // Adjust window-level font size for controls inheriting FontSize
+                this.FontSize = 12.0 * scale;
+                // Prefer high-quality scaling for images at >100% DPI
+                RenderOptions.SetBitmapScalingMode(this, scale >= 1.0 ? BitmapScalingMode.HighQuality : BitmapScalingMode.Fant);
+                Logger.Information("StudentForm DPI changed: {OldX}->{NewX}", oldDpi.DpiScaleX, newDpi.DpiScaleX);
+            }
+            catch (System.Exception ex)
+            {
+                Logger.Warning(ex, "StudentForm: OnDpiChanged handling failed");
             }
         }
     }

@@ -31,7 +31,7 @@
         </Grid.RowDefinitions>
 
         <!-- Header -->
-    <Border Grid.Row="0" Background="{DynamicResource AccentBackgroundBrush}" Padding="20">
+    <Border Grid.Row="0" Background="{DynamicResource BusBuddy.Brush.Header.Background}" Padding="20">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
@@ -40,36 +40,36 @@
                 </Grid.RowDefinitions>
 
                 <TextBlock Grid.Row="0" Text="🚌 BusBuddy MVP - Transportation Management"
-                           FontSize="28" FontWeight="Bold" Foreground="{DynamicResource ButtonForegroundBrush}"
+                           FontSize="28" FontWeight="Bold" Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"
                            HorizontalAlignment="Center"/>
                 <TextBlock Grid.Row="1" Text="Students | Routes | Buses | Drivers - Monday Ready Demo"
-                           FontSize="16" Foreground="{DynamicResource ButtonForegroundBrush}" Opacity="0.9"
+                           FontSize="16" Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}" Opacity="0.9"
                            HorizontalAlignment="Center" Margin="0,8,0,0"/>
 
                 <!-- Navigation + Theme Selector -->
                 <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,15,0,0">
                     <syncfusion:ButtonAdv Label="📚 Students" Margin="0,0,10,0" Padding="15,8"
-                                          Background="{DynamicResource ButtonBackgroundBrush}" Foreground="{DynamicResource ButtonForegroundBrush}" BorderThickness="0"
+                                          Background="{DynamicResource BusBuddy.Brush.Primary}" Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}" BorderThickness="0"
                                           Click="StudentsButton_Click" FontSize="14" FontWeight="SemiBold"
                                           ToolTip="Manage student records and information"
                                           AutomationProperties.Name="Students Management"/>
                     <syncfusion:ButtonAdv Label="🚌 Routes" Margin="0,0,10,0" Padding="15,8"
-                                          Background="{DynamicResource ButtonBackgroundBrush}" Foreground="{DynamicResource ButtonForegroundBrush}" BorderThickness="0"
+                                          Background="{DynamicResource BusBuddy.Brush.Primary}" Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}" BorderThickness="0"
                                           Click="RouteManagementButton_Click" FontSize="14" FontWeight="SemiBold"
                                           ToolTip="Plan and manage transportation routes"
                                           AutomationProperties.Name="Route Management"/>
                     <syncfusion:ButtonAdv Label="🚐 Buses" Margin="0,0,10,0" Padding="15,8"
-                                          Background="{DynamicResource ButtonBackgroundBrush}" Foreground="{DynamicResource ButtonForegroundBrush}" BorderThickness="0"
+                                          Background="{DynamicResource BusBuddy.Brush.Primary}" Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}" BorderThickness="0"
                                           Click="BusesButton_Click" FontSize="14" FontWeight="SemiBold"
                                           ToolTip="Manage bus fleet and vehicle information"
                                           AutomationProperties.Name="Bus Management"/>
                     <syncfusion:ButtonAdv Label="👨‍✈️ Drivers" Margin="0,0,10,0" Padding="15,8"
-                                          Background="{DynamicResource ButtonBackgroundBrush}" Foreground="{DynamicResource ButtonForegroundBrush}" BorderThickness="0"
+                                          Background="{DynamicResource BusBuddy.Brush.Primary}" Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}" BorderThickness="0"
                                           Click="DriversButton_Click" FontSize="14" FontWeight="SemiBold"
                                           ToolTip="Manage driver information and schedules"
                                           AutomationProperties.Name="Driver Management"/>
                     <syncfusion:ButtonAdv Label="📊 Reports" Padding="15,8"
-                                          Background="{DynamicResource ButtonBackgroundBrush}" Foreground="{DynamicResource ButtonForegroundBrush}" BorderThickness="0"
+                                          Background="{DynamicResource BusBuddy.Brush.Primary}" Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}" BorderThickness="0"
                                           Click="ReportsButton_Click" FontSize="14" FontWeight="SemiBold"
                                           ToolTip="Generate and view transportation reports"
                                           AutomationProperties.Name="Reports and Print Routes"/>

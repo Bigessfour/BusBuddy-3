@@ -35,6 +35,12 @@ Quick-fetch key files
   https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.WPF/ViewModels/Student/StudentsViewModel.cs
 - Azure SQL helper (AZ CLI auth via sqlcmd):
   https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/Scripts/list-students.cmd
+ - Azure SQL (standardized .cmd scripts):
+   https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/Scripts/Query-Students-Azure.cmd
+   https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/Scripts/Run-App-With-Azure.cmd
+ - App settings (WPF/Core) — verify Azure-ready connection:
+   https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.WPF/appsettings.json
+   https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.Core/appsettings.json
 
 Tip — quick local fetch
 ```powershell
@@ -117,42 +123,49 @@ dotnet run --project "BusBuddy.WPF/BusBuddy.WPF.csproj"
 
 ## 🗄️ Azure SQL alignment and student save verification — August 10, 2025
 
+### AZ CLI + sqlcmd standardization (non-manual usage)
+- PowerShell-based Azure SQL query scripts are deprecated. We standardized on AZ CLI for auth + sqlcmd for queries.
+- New .cmd scripts exist for automation and CI tasks. They are not intended for manual use; developer tools and bb-* tasks can call them when needed.
+  - Scripts/Query-Students-Azure.cmd — Uses sqlcmd with Entra ID (AAD) interactive auth (-G) to list recent Students.
+  - Scripts/Run-App-With-Azure.cmd — Sets env overrides (ConnectionStrings__BusBuddyDb, DatabaseProvider=Azure) and runs the WPF app.
+- Existing PowerShell scripts now include a DEPRECATED banner and remain only for historical reference.
+
 What changed
 - Target database standardized to Azure SQL database BusBuddyDB on server busbuddy-server-sm2.database.windows.net. There is no database named "busbuddy-db" on this server.
 - Updated BusBuddy.WPF/appsettings.json so BusBuddyDb points to Initial Catalog=BusBuddyDB (Authentication=Active Directory Default). The DbContext still prefers BUSBUDDY_CONNECTION env var when present.
 - StudentFormViewModel now creates DbContext via DI factory when available, ensuring it uses the configured connection (BusBuddyDB) instead of a default-constructed context.
-- Added helper scripts to keep a single source of truth during MVP:
-  - Scripts/Query-Students-BusBuddyDB.ps1 — SQL auth query helper with -Search and -Top switches
-  - Scripts/Run-App-With-BusBuddyDB.ps1 — sets BUSBUDDY_CONNECTION to BusBuddyDB and runs the WPF app
-  - Scripts/Query-Students-busbuddy-db-AAD.ps1 — AAD examples kept for reference (database not present)
+- Scripts for automated usage (preferred path):
+  - Scripts/Query-Students-Azure.cmd — AAD sqlcmd query for Students (interactive if needed)
+  - Scripts/Run-App-With-Azure.cmd — Forces Azure DB via env vars then runs WPF app
+- Deprecated (kept for reference only):
+  - Scripts/Query-Students-BusBuddyDB.ps1 — DEPRECATED, use Query-Students-Azure.cmd
+  - Scripts/Query-Students-busbuddy-db-AAD.ps1 — DEPRECATED, use Query-Students-Azure.cmd
+  - Scripts/Run-App-With-BusBuddyDB.ps1 — Superseded by Run-App-With-Azure.cmd
 
 Raw links (fetchability)
-- Query-Students-BusBuddyDB.ps1
-  https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/Scripts/Query-Students-BusBuddyDB.ps1
-- Run-App-With-BusBuddyDB.ps1
-  https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/Scripts/Run-App-With-BusBuddyDB.ps1
-- Query-Students-busbuddy-db-AAD.ps1
-  https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/Scripts/Query-Students-busbuddy-db-AAD.ps1
+- Query-Students-Azure.cmd (preferred)
+  https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/Scripts/Query-Students-Azure.cmd
+- Run-App-With-Azure.cmd (preferred)
+  https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/Scripts/Run-App-With-Azure.cmd
+- Deprecated PowerShell scripts (for reference)
+  - Query-Students-BusBuddyDB.ps1
+    https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/Scripts/Query-Students-BusBuddyDB.ps1
+  - Query-Students-busbuddy-db-AAD.ps1
+    https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/Scripts/Query-Students-busbuddy-db-AAD.ps1
+  - Run-App-With-BusBuddyDB.ps1
+    https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/Scripts/Run-App-With-BusBuddyDB.ps1
 
-How to verify a student save (e.g., "Kellen Cain")
-1) Run the app with the BusBuddyDB override so EF uses the same DB as your CLI checks:
+How automated checks verify a student save (example)
+1) The app is launched with Azure overrides (internally uses Scripts/Run-App-With-Azure.cmd or equivalent task integration) so EF targets BusBuddyDB.
 
-```powershell
-./Scripts/Run-App-With-BusBuddyDB.ps1
-```
+2) In the app, Students → Add Student → Save (automation uses the same flow; no manual script invocation required).
 
-2) In the app, use Students → Add Student. Enter the student details and Save.
-
-3) Query Azure SQL to confirm the record:
-
-```powershell
-./Scripts/Query-Students-BusBuddyDB.ps1 -Search "Kellen" -Top 25
-```
+3) Verification query runs via sqlcmd (internally uses Scripts/Query-Students-Azure.cmd or equivalent) to confirm the record exists in BusBuddyDB.
 
 Notes
-- Azure context verified via Azure CLI: subscription id 57b297a5-44cf-4abc-9ac4-91a5ed147de1; tenant bigessfourgmail.onmicrosoft.com; server ad admin bigessfour_gmail.com#EXT#@bigessfourgmail.onmicrosoft.com.
-- DbContext resolution order: BUSBUDDY_CONNECTION env var → appsettings BusBuddyDb → DefaultConnection. The helper script enforces BUSBUDDY_CONNECTION for consistency.
-- For day-to-day operations, prefer the helper scripts or bb-* commands; keep both the app and verification queries pointed at BusBuddyDB.
+- Azure context verified via AZ CLI: subscription id 57b297a5-44cf-4abc-9ac4-91a5ed147de1; tenant bigessfourgmail.onmicrosoft.com; server AAD admin bigessfour_gmail.com#EXT#@bigessfourgmail.onmicrosoft.com.
+- DbContext resolution order: env var ConnectionStrings__BusBuddyDb → appsettings BusBuddyDb → DefaultConnection. Run-App-With-Azure.cmd ensures Azure settings are in effect during automation.
+- Day-to-day flows use automation/bb-* tasks that call these .cmd scripts as needed; manual invocation is not required.
 
 ---
 

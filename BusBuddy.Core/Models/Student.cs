@@ -26,8 +26,8 @@ public class Student : INotifyPropertyChanged
   [Display(Name = "Student Name")]
   public string StudentName { get; set; } = string.Empty;
 
-  [Required]
-  public int FamilyId { get; set; }
+  // Optional for MVP: family association can be added later during edit
+  public int? FamilyId { get; set; }
   public Family? Family { get; set; }
   [StringLength(20, ErrorMessage = "Student number cannot exceed 20 characters")]
   [Display(Name = "Student Number")]

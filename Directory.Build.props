@@ -83,8 +83,8 @@
     <EnableNETAnalyzers>true</EnableNETAnalyzers>
     <AnalysisLevel>latest</AnalysisLevel>
 
-    <!-- Suppress low-impact warnings project-wide -->
-    <NoWarn>$(NoWarn);CA1305;CA1860;CA1848;CA1851;CA1304</NoWarn>
+  <!-- Suppress low-impact warnings project-wide -->
+  <NoWarn>$(NoWarn);CA1305;CA1860;CA1848;CA1851;CA1304;CA1707;CS1591</NoWarn>
 
     <!-- Suppress nullable warnings for Phase 1 — MVP only -->
     <NoWarn>$(NoWarn);CS8600;CS8601;CS8602;CS8603;CS8604</NoWarn>

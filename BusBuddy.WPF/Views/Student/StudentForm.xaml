@@ -14,10 +14,12 @@
                              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
                              xmlns:syncfusion="http://schemas.syncfusion.com/wpf"
                              xmlns:syncfusionshared="clr-namespace:Syncfusion.Windows.Shared;assembly=Syncfusion.Shared.Wpf"
+                             xmlns:sys="clr-namespace:System;assembly=mscorlib"
                              mc:Ignorable="d"
                              Title="Student Form"
                              Height="600" Width="800"
-                             WindowStartupLocation="CenterOwner">
+                             WindowStartupLocation="CenterOwner"
+                             FontSize="14">
 
     <!--
         Resource section: Styles, converters, and merged dictionaries for consistent Syncfusion look and feel.
@@ -28,37 +30,100 @@
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/SyncfusionV30_Validated_ResourceDictionary.xaml"/>
             </ResourceDictionary.MergedDictionaries>
+            <!-- United States state abbreviations -->
+            <x:Array x:Key="USStates" Type="sys:String">
+                <sys:String>AL</sys:String><sys:String>AK</sys:String><sys:String>AZ</sys:String><sys:String>AR</sys:String>
+                <sys:String>CA</sys:String><sys:String>CO</sys:String><sys:String>CT</sys:String><sys:String>DE</sys:String>
+                <sys:String>FL</sys:String><sys:String>GA</sys:String><sys:String>HI</sys:String><sys:String>ID</sys:String>
+                <sys:String>IL</sys:String><sys:String>IN</sys:String><sys:String>IA</sys:String><sys:String>KS</sys:String>
+                <sys:String>KY</sys:String><sys:String>LA</sys:String><sys:String>ME</sys:String><sys:String>MD</sys:String>
+                <sys:String>MA</sys:String><sys:String>MI</sys:String><sys:String>MN</sys:String><sys:String>MS</sys:String>
+                <sys:String>MO</sys:String><sys:String>MT</sys:String><sys:String>NE</sys:String><sys:String>NV</sys:String>
+                <sys:String>NH</sys:String><sys:String>NJ</sys:String><sys:String>NM</sys:String><sys:String>NY</sys:String>
+                <sys:String>NC</sys:String><sys:String>ND</sys:String><sys:String>OH</sys:String><sys:String>OK</sys:String>
+                <sys:String>OR</sys:String><sys:String>PA</sys:String><sys:String>RI</sys:String><sys:String>SC</sys:String>
+                <sys:String>SD</sys:String><sys:String>TN</sys:String><sys:String>TX</sys:String><sys:String>UT</sys:String>
+                <sys:String>VT</sys:String><sys:String>VA</sys:String><sys:String>WA</sys:String><sys:String>WV</sys:String>
+                <sys:String>WI</sys:String><sys:String>WY</sys:String><sys:String>DC</sys:String>
+            </x:Array>
+            <!-- Simple string list for Grades -->
+            <x:Array x:Key="GradesList" Type="sys:String">
+                <sys:String>K</sys:String>
+                <sys:String>1</sys:String>
+                <sys:String>2</sys:String>
+                <sys:String>3</sys:String>
+                <sys:String>4</sys:String>
+                <sys:String>5</sys:String>
+                <sys:String>6</sys:String>
+                <sys:String>7</sys:String>
+                <sys:String>8</sys:String>
+                <sys:String>9</sys:String>
+                <sys:String>10</sys:String>
+                <sys:String>11</sys:String>
+                <sys:String>12</sys:String>
+            </x:Array>
             <!-- Required converter for Visibility bindings -->
             <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
             <!-- Ensure consistent sizing for Syncfusion inputs -->
             <Style TargetType="syncfusion:SfMaskedEdit" BasedOn="{StaticResource {x:Type syncfusion:SfMaskedEdit}}">
-                <Setter Property="Height" Value="35"/>
+                <Setter Property="Height" Value="40"/>
                 <Setter Property="Padding" Value="8"/>
                 <Setter Property="Margin" Value="0,0,0,10"/>
+                <Setter Property="Foreground" Value="{StaticResource BusBuddy.Brush.Text.Primary}"/>
+                <Setter Property="Background" Value="{StaticResource BusBuddy.Brush.Surface.Light}"/>
             </Style>
             <Style TargetType="DatePicker" BasedOn="{StaticResource {x:Type DatePicker}}">
-                <Setter Property="Height" Value="35"/>
+                <Setter Property="Height" Value="40"/>
                 <Setter Property="Padding" Value="8,0"/>
                 <Setter Property="Margin" Value="0,0,0,10"/>
+                <Setter Property="Foreground" Value="{StaticResource BusBuddy.Brush.Text.Primary}"/>
+                <Setter Property="Background" Value="{StaticResource BusBuddy.Brush.Surface.Light}"/>
             </Style>
             <Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
                 <Setter Property="Margin" Value="0,0,0,10"/>
                 <Setter Property="Padding" Value="8"/>
-                <Setter Property="Height" Value="35"/>
+                <Setter Property="Height" Value="40"/>
+                <Setter Property="Foreground" Value="{StaticResource BusBuddy.Brush.Text.Primary}"/>
+                <Setter Property="Background" Value="{StaticResource BusBuddy.Brush.Surface.Light}"/>
             </Style>
             <Style TargetType="ComboBox" BasedOn="{StaticResource {x:Type ComboBox}}">
                 <Setter Property="Margin" Value="0,0,0,10"/>
                 <Setter Property="Padding" Value="8"/>
-                <Setter Property="Height" Value="35"/>
+                <Setter Property="Height" Value="40"/>
+                <Setter Property="Foreground" Value="{StaticResource BusBuddy.Brush.Text.Primary}"/>
+                <Setter Property="Background" Value="{StaticResource BusBuddy.Brush.Surface.Light}"/>
+            </Style>
+            <!-- High-contrast styles for Syncfusion inputs used on this form -->
+            <Style TargetType="syncfusion:ComboBoxAdv" BasedOn="{StaticResource {x:Type syncfusion:ComboBoxAdv}}">
+                <Setter Property="Height" Value="40"/>
+                <Setter Property="Padding" Value="8"/>
+                <Setter Property="Margin" Value="0,0,0,10"/>
+                <Setter Property="Foreground" Value="{StaticResource BusBuddy.Brush.Text.Primary}"/>
+                <Setter Property="Background" Value="{StaticResource BusBuddy.Brush.Surface.Light}"/>
+            </Style>
+            <Style TargetType="syncfusion:SfDatePicker" BasedOn="{StaticResource {x:Type syncfusion:SfDatePicker}}">
+                <Setter Property="Height" Value="40"/>
+                <Setter Property="Margin" Value="0,0,0,10"/>
+                <Setter Property="Foreground" Value="{StaticResource BusBuddy.Brush.Text.Primary}"/>
+                <Setter Property="Background" Value="{StaticResource BusBuddy.Brush.Surface.Light}"/>
+            </Style>
+            <Style TargetType="syncfusion:SfTextBoxExt" BasedOn="{StaticResource {x:Type syncfusion:SfTextBoxExt}}">
+                <Setter Property="Foreground" Value="{StaticResource BusBuddy.Brush.Text.Primary}"/>
+                <Setter Property="Background" Value="{StaticResource BusBuddy.Brush.Surface.Light}"/>
+                <Setter Property="Height" Value="40"/>
+                <Setter Property="Padding" Value="8"/>
+                <Setter Property="Margin" Value="0,0,0,10"/>
             </Style>
             <Style TargetType="Label" BasedOn="{StaticResource {x:Type Label}}">
                 <Setter Property="Margin" Value="0,0,0,5"/>
                 <Setter Property="FontWeight" Value="SemiBold"/>
+                <Setter Property="Foreground" Value="{StaticResource BusBuddy.Brush.Text.Primary}"/>
             </Style>
             <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
                 <Setter Property="Margin" Value="5"/>
                 <Setter Property="Padding" Value="15,8"/>
                 <Setter Property="MinWidth" Value="100"/>
+                <Setter Property="Height" Value="40"/>
             </Style>
         </ResourceDictionary>
     </syncfusion:ChromelessWindow.Resources>
@@ -133,7 +198,7 @@
                             <Label Content="Student Name *"/>
                             <syncfusion:SfMaskedEdit Name="StudentNameTextBox"
                                      Value="{Binding Student.StudentName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True}"
-                                     Watermark="Enter student's full name"/>
+                                     Watermark="First Name, Last Name"/>
                         </StackPanel>
 
                         <StackPanel Grid.Row="0" Grid.Column="1" Margin="10,0,0,0">
@@ -146,34 +211,25 @@
                         <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,10,0">
                             <Label Content="Grade *"/>
                             <syncfusion:ComboBoxAdv Name="GradeComboBox"
-                                      Text="{Binding Student.Grade, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                      IsEditable="True">
-                                <ComboBoxItem Content="K"/>
-                                <ComboBoxItem Content="1"/>
-                                <ComboBoxItem Content="2"/>
-                                <ComboBoxItem Content="3"/>
-                                <ComboBoxItem Content="4"/>
-                                <ComboBoxItem Content="5"/>
-                                <ComboBoxItem Content="6"/>
-                                <ComboBoxItem Content="7"/>
-                                <ComboBoxItem Content="8"/>
-                                <ComboBoxItem Content="9"/>
-                                <ComboBoxItem Content="10"/>
-                                <ComboBoxItem Content="11"/>
-                                <ComboBoxItem Content="12"/>
-                            </syncfusion:ComboBoxAdv>
+                                      ItemsSource="{StaticResource GradesList}"
+                                      SelectedItem="{Binding Student.Grade, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                      IsEditable="False"
+                                      Width="100"/>
                         </StackPanel>
 
                         <StackPanel Grid.Row="1" Grid.Column="1" Margin="10,0,0,0">
                             <Label Content="School"/>
                             <syncfusion:SfMaskedEdit Name="SchoolTextBox"
-                                     Value="{Binding Student.School, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                     Value="{Binding Student.School, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                     Watermark="Optional"/>
                         </StackPanel>
 
                         <StackPanel Grid.Row="2" Grid.Column="0" Margin="0,0,10,0">
                             <Label Content="Date of Birth"/>
                             <syncfusion:SfDatePicker Name="DateOfBirthPicker"
                                        Value="{Binding Student.DateOfBirth, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                       AllowNull="True"
+                                       Watermark="Select birthdate (optional)"
                                        Height="35"/>
                         </StackPanel>
 
@@ -220,25 +276,23 @@
 
                         <StackPanel Grid.Row="1" Grid.Column="1" Margin="10,0,10,0">
                             <Label Content="State *"/>
+                            <!-- Use ComboBoxAdv bound to a canonical list of US states to avoid free text -->
                             <syncfusion:ComboBoxAdv Name="StateComboBox"
-                                      Text="{Binding Student.State, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                      IsEditable="True" Width="80">
-                                <ComboBoxItem Content="IL"/>
-                                <ComboBoxItem Content="IN"/>
-                                <ComboBoxItem Content="IA"/>
-                                <ComboBoxItem Content="WI"/>
-                                <ComboBoxItem Content="MO"/>
-                            </syncfusion:ComboBoxAdv>
+                                      ItemsSource="{StaticResource USStates}"
+                                      SelectedItem="{Binding Student.State, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                      IsEditable="False" Width="100"/>
                         </StackPanel>
 
                         <StackPanel Grid.Row="1" Grid.Column="2" Margin="10,0,0,0">
                             <Label Content="ZIP Code *"/>
-                            <syncfusion:SfMaskedEdit Name="ZipTextBox"
-                                     Value="{Binding Student.Zip, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True}"
-                                     Mask="#####(-####)?"
-                                     PromptChar="_"
-                                     Watermark="12345"
-                                     Width="100"/>
+                            <!-- Use SfMaskedEdit with regex to enforce 5 or 5+4 ZIP formats -->
+                            <syncfusion:SfMaskedEdit Name="ZipMaskedEdit"
+                                       Value="{Binding Student.Zip, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                       MaskType="RegEx"
+                                       Mask="\d{5}(-\d{4})?"
+                                       PromptChar="_"
+                                       Width="110"
+                                       Watermark="12345 or 12345-6789"/>
                         </StackPanel>
 
                         <StackPanel Grid.Row="2" Grid.ColumnSpan="3">
@@ -270,26 +324,28 @@
 
                         <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,0,10,0">
                             <Label Content="Home Phone"/>
-                            <syncfusion:SfMaskedEdit Name="HomePhoneTextBox"
-                                     Value="{Binding Student.HomePhone, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True}"
-                                     Mask="(###) ###-####"
-                                     PromptChar="_"
-                                     Watermark="(555) 123-4567"/>
+                            <!-- Use SfMaskedEdit for US phone number pattern -->
+                            <syncfusion:SfMaskedEdit Name="HomePhoneMaskedEdit"
+                                       Value="{Binding Student.HomePhone, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                       Mask="(###) ###-####"
+                                       PromptChar="_"
+                                       Watermark="(555) 123-4567 — Optional"/>
                         </StackPanel>
 
                         <StackPanel Grid.Row="0" Grid.Column="1" Margin="10,0,0,0">
                             <Label Content="Emergency Phone"/>
-                            <syncfusion:SfMaskedEdit Name="EmergencyPhoneTextBox"
-                                     Value="{Binding Student.EmergencyPhone, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True}"
-                                     Mask="(###) ###-####"
-                                     PromptChar="_"
-                                     Watermark="(555) 123-4567"/>
+                            <syncfusion:SfMaskedEdit Name="EmergencyPhoneMaskedEdit"
+                                       Value="{Binding Student.EmergencyPhone, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                       Mask="(###) ###-####"
+                                       PromptChar="_"
+                                       Watermark="(555) 123-4567 — Optional"/>
                         </StackPanel>
 
                         <StackPanel Grid.Row="1" Grid.ColumnSpan="2">
                             <Label Content="Parent/Guardian"/>
                             <syncfusion:SfMaskedEdit Name="ParentGuardianTextBox"
-                                     Value="{Binding Student.ParentGuardian, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                     Value="{Binding Student.ParentGuardian, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                     Watermark="Optional"/>
                         </StackPanel>
                     </Grid>
                 </GroupBox>
@@ -403,7 +459,7 @@
                                        TextWrapping="Wrap"
                                        Height="60"
                                        VerticalScrollBarVisibility="Auto"
-                                       Watermark="Enter any special transportation instructions..."/>
+                                       Watermark="Enter any special transportation instructions... — Optional"/>
                         </StackPanel>
 
                         <!-- Emergency Contact -->
@@ -417,7 +473,7 @@
                                 <Label Content="Emergency Contact Name"/>
                                 <syncfusion:SfTextBoxExt Name="EmergencyContactNameTextBox"
                                            Text="{Binding Student.EmergencyContactName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                           Watermark="Emergency contact full name"/>
+                                           Watermark="Emergency contact full name — Optional"/>
                             </StackPanel>
 
                             <StackPanel Grid.Column="1" Margin="10,0,0,0">
@@ -426,7 +482,7 @@
                                            Value="{Binding Student.EmergencyContactPhone, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                            Mask="(###) ###-####"
                                            PromptChar="_"
-                                           Watermark="(555) 123-4567"/>
+                                           Watermark="(555) 123-4567 — Optional"/>
                             </StackPanel>
                         </Grid>
                     </Grid>
@@ -456,19 +512,40 @@
                                  FontWeight="Bold"/>
                     </StackPanel>
 
+                    <!-- Detailed Validation Errors -->
+                    <Border Grid.Row="1" Background="{StaticResource BusBuddy.Brush.Surface.Dark}"
+                            CornerRadius="3" Padding="10" Margin="0,0,0,10"
+                            Visibility="{Binding HasValidationErrors, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <StackPanel>
+                            <TextBlock Text="Please fix the following:"
+                                       FontWeight="SemiBold"
+                                       Foreground="{StaticResource BusBuddy.Brush.Text.Primary}"
+                                       Margin="0,0,0,8"/>
+                            <ItemsControl ItemsSource="{Binding ValidationErrors}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding}"
+                                                   Foreground="{StaticResource BusBuddy.Brush.Semantic.Error}"
+                                                   Margin="0,2,0,0"/>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+                    </Border>
+
                     <!-- Action Buttons -->
-                    <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right">
+                    <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right">
             <syncfusion:ButtonAdv Name="ValidateButton"
         Label="🔍 Validate Data"
                 Command="{Binding ValidateDataCommand}"
                 Background="{StaticResource BusBuddy.Brush.Semantic.Warning}" Foreground="{StaticResource BusBuddy.Brush.Text.Primary}"
                 Margin="0,0,10,0"
                 ToolTip="Validate all student data and address"/>
-                        <syncfusion:ButtonAdv Name="SaveButton" Label="💾 Save Student"
-                                Command="{Binding SaveCommand}"
+            <syncfusion:ButtonAdv Name="SaveButton" Label="💾 Save Student"
+                Command="{Binding SaveCommand}"
+                IsEnabled="{Binding CanSave}"
                                 Background="{StaticResource BusBuddy.Brush.Primary}" Foreground="{StaticResource BusBuddy.Brush.Text.Primary}"
                                 Margin="0,0,10,0"
-                                IsEnabled="{Binding CanSave}"
                                 IsDefault="True"
                                 ToolTip="Save student information to database"/>
             <syncfusion:ButtonAdv Name="CancelButton" Label="❌ Cancel"

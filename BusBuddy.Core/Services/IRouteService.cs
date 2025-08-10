@@ -59,8 +59,8 @@ namespace BusBuddy.Core.Services
         // Route Building Methods
         Task<Result<Route>> CreateNewRouteAsync(string routeName, DateTime routeDate, string? description = null);
         Task<Result<bool>> AssignVehicleToRouteAsync(int routeId, int vehicleId, RouteTimeSlot timeSlot);
-        Task<Result<bool>> AssignDriverToRouteAsync(int routeId, int driverId, RouteTimeSlot timeSlot);
-        Task<Result<RouteStop>> AddStopToRouteAsync(int routeId, RouteStop stop);
+    Task<Result<bool>> AssignDriverToRouteAsync(int routeId, int driverId, RouteTimeSlot timeSlot);
+    Task<Result<RouteStop>> AddStopToRouteAsync(int routeId, RouteStop routeStop);
         Task<Result<bool>> RemoveStopFromRouteAsync(int routeId, int stopId);
         Task<Result<bool>> ReorderRouteStopsAsync(int routeId, List<int> orderedStopIds);
         Task<Result<RouteValidationResult>> ValidateRouteForActivationAsync(int routeId);

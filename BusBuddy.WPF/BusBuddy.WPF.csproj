@@ -7,6 +7,7 @@
     <StartupObject>BusBuddy.WPF.Program</StartupObject>
     <ProjectName>BusBuddy.WPF</ProjectName>
     <IntermediateOutputPath>$(MSBuildProjectDirectory)\obj\Debug\</IntermediateOutputPath>
+  <ApplicationManifest>app.manifest</ApplicationManifest>
 
     <!-- Force executable generation for WPF application -->
     <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
@@ -127,6 +128,9 @@
   <ItemGroup>
     <None Update="appsettings.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="app.manifest">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
 

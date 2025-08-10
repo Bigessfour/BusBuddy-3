@@ -41,6 +41,7 @@ Next Checks (deferred)
 - Drivers modules DataContext and commands wiring.
 - GoogleEarth and Fuel dialogs button command bindings.
 - Expand audit to remaining views under Views/*.
+- Student form: Implement ViewOnMapCommand integration (currently placeholder/TODO).
 
 Requirements coverage
 - Inventory and verify core buttons/forms: Done (core views). Further views deferred.

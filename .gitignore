@@ -1,3 +1,39 @@
+# BusBuddy dedupe & temp files
+*.wpftmp.csproj
+* (1).*
+* (2).*
+*.tmp
+*.temp
+*.bak
+*.backup
+*.old
+*.crdownload
+
+# Build and IDE artifacts
+/bin/
+/obj/
+/.vs/
+TestResults/
+BusBuddy.WPF/bin/
+BusBuddy.WPF/obj/
+BusBuddy.Core/bin/
+BusBuddy.Core/obj/
+BusBuddy.Tests/bin/
+BusBuddy.Tests/obj/
+
+# Logs
+logs/
+*.log
+
+# Local DB files
+*.db
+# Workspace/editor noise
+vscode-userdata/
+.tmp.driveupload/
+Analysis-Results/
+
+# Local reports/exports
+UAT-Test-Report-*.json
 # ===================================================
 # BUILD RESULTS AND ARTIFACTS
 # ===================================================

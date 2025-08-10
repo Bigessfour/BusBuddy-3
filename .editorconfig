@@ -61,6 +61,12 @@ dotnet_diagnostic.CA1822.severity = warning
 dotnet_diagnostic.CA1305.severity = suggestion
 dotnet_diagnostic.CA1860.severity = suggestion
 
+# MVP: Suppress noisy documentation/naming warnings
+# CS1591: Missing XML comment for publicly visible members
+dotnet_diagnostic.CS1591.severity = none
+# CA1707: Identifiers should not contain underscores
+dotnet_diagnostic.CA1707.severity = none
+
 # CS1061 Prevention: FluentAssertions and Missing Definitions
 dotnet_diagnostic.CS1061.severity = error  # Escalate missing definitions
 

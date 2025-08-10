@@ -594,7 +594,7 @@ namespace BusBuddy.Core.Services
             return Task.FromResult(Result.FailureResult<bool>("Not implemented yet"));
         }
 
-        public Task<Result<RouteStop>> AddStopToRouteAsync(int routeId, RouteStop stop)
+    public Task<Result<RouteStop>> AddStopToRouteAsync(int routeId, RouteStop routeStop)
         {
             return Task.FromResult(Result.FailureResult<RouteStop>("Not implemented yet"));
         }

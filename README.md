@@ -198,6 +198,25 @@ dotnet ef migrations list --project BusBuddy.Core
 ### **Project Structure**
 ```
 BusBuddy/
+
+## 🖥️ High DPI and font sizing (Syncfusion WPF v30.4.42)
+
+- App is PerMonitorV2 DPI-aware via application manifest (`BusBuddy.WPF/app.manifest`).
+- Windows-level: we use layout rounding and device pixel snapping on key windows.
+- Per-monitor handling: StudentForm and StudentsView override OnDpiChanged to adjust font size and bitmap scaling quality when monitors change.
+- Fonts: avoid hardcoded pixel sizes. Prefer inherited FontSize and theme/system resources. Where fixed sizes exist, they scale via window FontSize so they remain legible.
+- Bitmaps/icons: prefer vector (glyphs/Segoe MDL2). When bitmaps are used, BitmapScalingMode switches to HighQuality for scale > 1.0.
+- Syncfusion notes: ChromelessWindow TitleFontSize inherits window FontSize; no custom scaling needed. Use built-in theming (FluentDark/Light).
+
+Now implemented:
+- Manifest: PerMonitorV2 enabled and wired in `BusBuddy.WPF.csproj`.
+- Windows: StudentForm and StudentsView set TextOptions and BitmapScalingMode and handle OnDpiChanged.
+
+Rollout plan:
+1) Apply the same pattern to the remaining views as you touch them (override OnDpiChanged, set text/bitmap options). 2) Prefer vector assets and inherited FontSize. 3) Avoid hardcoded pixel fonts; bind to window FontSize or theme resources.
+
+Testing guidance:
+- Move the window between monitors with different scaling (100% ↔ 150%/200%) and watch text/controls stay crisp. Zoom-level changes should not blur bitmaps or clip text. Use ClearType rendering for text.
 ├── 🏢 BusBuddy.Core/           # Business logic, data access, services
 ├── 🎨 BusBuddy.WPF/            # WPF UI layer with Syncfusion controls
 ├── 🧪 BusBuddy.Tests/          # Unit and integration tests

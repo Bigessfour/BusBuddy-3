@@ -12,11 +12,14 @@ using BusBuddy.Core.Models;
 using BusBuddy.Core.Services;
 using BusBuddy.Core;
 using BusBuddy.Core.Data;
+using BusBuddy.Core.Data.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using BusBuddy.WPF;
 using BusBuddy.WPF.Commands;
 using CommunityToolkit.Mvvm.Input;
 using Serilog;
+using CommunityToolkit.Mvvm.Messaging;
+using BusBuddy.WPF.Messages;
 
 namespace BusBuddy.WPF.ViewModels.Student
 {
@@ -48,14 +51,17 @@ namespace BusBuddy.WPF.ViewModels.Student
         public StudentFormViewModel(IStudentService studentService, Core.Models.Student? student = null)
         {
             _studentService = studentService;
-            _context = new BusBuddyDbContext();
+            _context = TryCreateDbContextViaDi() ?? new BusBuddyDbContext();
             _addressService = new AddressService();
+            DisableAddressValidation = true; // MVP default — re-enable post-MVP
 
             _student = student ?? new Core.Models.Student
             {
                 Active = true,
                 EnrollmentDate = DateTime.Today,
-                CreatedDate = DateTime.Now
+                CreatedDate = DateTime.Now,
+                School = "Wiley Consolidated School RE-13JT",
+                State = "CO"
             };
 
             _isEditMode = student != null && student.StudentId > 0;
@@ -72,8 +78,9 @@ namespace BusBuddy.WPF.ViewModels.Student
         // Fallback constructor when DI is unavailable
         public StudentFormViewModel(Core.Models.Student? student = null)
         {
-            _context = new BusBuddyDbContext();
+            _context = TryCreateDbContextViaDi() ?? new BusBuddyDbContext();
             _addressService = new AddressService();
+            DisableAddressValidation = true; // MVP default — re-enable post-MVP
             // For MVP, we'll do simple validation directly in the ViewModel
             // TODO: Inject AddressValidationService when UnitOfWork is available
 
@@ -81,7 +88,9 @@ namespace BusBuddy.WPF.ViewModels.Student
             {
                 Active = true,
                 EnrollmentDate = DateTime.Today,
-                CreatedDate = DateTime.Now
+                CreatedDate = DateTime.Now,
+                School = "Wiley Consolidated School RE-13JT",
+                State = "CO"
             };
 
             _isEditMode = student != null && student.StudentId > 0;
@@ -175,9 +184,12 @@ namespace BusBuddy.WPF.ViewModels.Student
         private string _globalErrorMessage = string.Empty;
         private bool _isValidating;
         private string _validationStatus = "Ready";
-        private Brush _validationStatusBrush = Brushes.Gray;
-        private ObservableCollection<string> _filteredBusStops = new();
-        private bool _canSave = true;
+    private Brush _validationStatusBrush = Brushes.Gray;
+    private ObservableCollection<string> _filteredBusStops = new();
+    private bool _canSave = true;
+    private readonly ObservableCollection<string> _validationErrors = new();
+    private bool _hasValidationErrors;
+    private bool _disableAddressValidation; // MVP escape hatch
 
         /// <summary>
         /// Whether there's a global error to display
@@ -242,6 +254,29 @@ namespace BusBuddy.WPF.ViewModels.Student
             set => SetProperty(ref _canSave, value);
         }
 
+        /// <summary>
+        /// Detailed list of validation errors to show the user what to fix
+        /// </summary>
+        public ObservableCollection<string> ValidationErrors => _validationErrors;
+
+        /// <summary>
+        /// True when there are validation errors to display in the UI
+        /// </summary>
+        public bool HasValidationErrors
+        {
+            get => _hasValidationErrors;
+            set => SetProperty(ref _hasValidationErrors, value);
+        }
+
+        /// <summary>
+        /// When true, skips address validation steps (temporary MVP fallback)
+        /// </summary>
+        public bool DisableAddressValidation
+        {
+            get => _disableAddressValidation;
+            set => SetProperty(ref _disableAddressValidation, value);
+        }
+
         #endregion
 
         #region Commands
@@ -259,14 +294,31 @@ namespace BusBuddy.WPF.ViewModels.Student
 
         #endregion
 
+        private static BusBuddyDbContext? TryCreateDbContextViaDi()
+        {
+            try
+            {
+                // Use the app’s DI container so we get the configured connection (BusBuddyDB)
+                var sp = App.ServiceProvider;
+                if (sp is null) return null;
+                var factory = sp.GetService(typeof(IBusBuddyDbContextFactory)) as IBusBuddyDbContextFactory;
+                return factory?.CreateDbContext();
+            }
+            catch
+            {
+                return null; // Fallback to parameterless DbContext when DI not available
+            }
+        }
+
         #region Command Initialization
 
-        private CommunityToolkit.Mvvm.Input.AsyncRelayCommand? _saveRelay;
+    private CommunityToolkit.Mvvm.Input.AsyncRelayCommand? _saveRelay;
 
         private void InitializeCommands()
         {
             ValidateAddressCommand = new AsyncRelayCommand(ValidateAddressAsync);
-            _saveRelay = new AsyncRelayCommand(SaveStudentAsync, CanSaveStudent);
+            // Make Save always executable; we gate inside SaveStudentAsync with validation.
+            _saveRelay = new AsyncRelayCommand(SaveStudentAsync);
             SaveCommand = _saveRelay;
             CancelCommand = new CommunityToolkit.Mvvm.Input.RelayCommand(ExecuteCancel);
 
@@ -289,6 +341,12 @@ namespace BusBuddy.WPF.ViewModels.Student
         {
             try
             {
+                if (DisableAddressValidation)
+                {
+                    AddressValidationMessage = "Address validation disabled — TODO: re-enable post-MVP";
+                    AddressValidationColor = Brushes.Gray;
+                    await Task.CompletedTask; return;
+                }
                 Logger.Information("Validating address for student");
                 if (string.IsNullOrWhiteSpace(Student.HomeAddress))
                 {
@@ -297,18 +355,22 @@ namespace BusBuddy.WPF.ViewModels.Student
                     return;
                 }
 
-                // Use the AddressService for validation (components optional for tests)
-                var addressValidation = _addressService.ValidateAddress(Student.HomeAddress);
+                // Build a formatted address string and validate using documented patterns
+                var formatted = _addressService.FormatAddress(Student.HomeAddress, Student.City, Student.State, Student.Zip);
+                var addressValidation = _addressService.ValidateAddress(formatted);
 
-                // Also validate components if available
+                // Prefer components validation when any component is provided
+                var hasComponents = !string.IsNullOrWhiteSpace(Student.City) || !string.IsNullOrWhiteSpace(Student.State) || !string.IsNullOrWhiteSpace(Student.Zip);
                 var componentValidation = _addressService.ValidateAddressComponents(
-                    Student.HomeAddress, Student.City, Student.State, Student.Zip);
+                    Student.HomeAddress ?? string.Empty, Student.City ?? string.Empty, Student.State ?? string.Empty, Student.Zip ?? string.Empty);
 
-                bool isValid = addressValidation.IsValid &&
-                               (string.IsNullOrWhiteSpace(Student.City) && string.IsNullOrWhiteSpace(Student.State)
-                                   ? true
-                                   : componentValidation.IsValid);
-                string errorMessage = !addressValidation.IsValid ? addressValidation.Error : componentValidation.Error;
+                // If individual components are provided and valid, consider address valid even if the formatted full string check is strict.
+                bool isValid = hasComponents
+                    ? componentValidation.IsValid || addressValidation.IsValid
+                    : addressValidation.IsValid;
+                string errorMessage = hasComponents && !componentValidation.IsValid && !addressValidation.IsValid
+                    ? (string.IsNullOrWhiteSpace(componentValidation.Error) ? addressValidation.Error : componentValidation.Error)
+                    : addressValidation.Error;
 
                 if (isValid)
                 {
@@ -348,6 +410,11 @@ namespace BusBuddy.WPF.ViewModels.Student
                     SetGlobalError("Please correct validation errors before saving.");
                     return;
                 }
+
+                // Normalize loose inputs (format but don't block)
+                Student.HomePhone = NormalizePhone(Student.HomePhone);
+                Student.EmergencyPhone = NormalizePhone(Student.EmergencyPhone);
+                Student.Zip = NormalizeZip(Student.Zip);
 
                 // Set audit fields
                 if (IsEditMode)
@@ -394,6 +461,9 @@ namespace BusBuddy.WPF.ViewModels.Student
                 Logger.Information("Successfully saved student {StudentId} - {StudentName}",
                     Student.StudentId, Student.StudentName);
 
+                // Broadcast that a student has been saved so list views can refresh immediately
+                try { WeakReferenceMessenger.Default.Send(new StudentSavedMessage(Student)); } catch { }
+
                 // Close the form with success result
                 RequestClose?.Invoke(this, true);
             }
@@ -404,10 +474,34 @@ namespace BusBuddy.WPF.ViewModels.Student
             }
         }
 
+        private static string? NormalizePhone(string? input)
+        {
+            if (string.IsNullOrWhiteSpace(input)) return input;
+            var digits = new string(input.Where(char.IsDigit).ToArray());
+            if (digits.Length == 10)
+            {
+                return $"({digits.Substring(0,3)}) {digits.Substring(3,3)}-{digits.Substring(6,4)}";
+            }
+            return input; // leave as-is if not 10 digits
+        }
+
+        private static string? NormalizeZip(string? input)
+        {
+            if (string.IsNullOrWhiteSpace(input)) return input;
+            var digits = new string(input.Where(char.IsDigit).ToArray());
+            if (digits.Length >= 5) return digits.Substring(0,5);
+            return digits;
+        }
+
         private bool CanSaveStudent()
         {
-            return !string.IsNullOrWhiteSpace(Student?.StudentName) &&
-                   !string.IsNullOrWhiteSpace(Student?.Grade);
+            // Enable Save only when required fields are present
+            return !string.IsNullOrWhiteSpace(Student?.StudentName)
+                   && !string.IsNullOrWhiteSpace(Student?.Grade)
+                   && !string.IsNullOrWhiteSpace(Student?.HomeAddress)
+                   && !string.IsNullOrWhiteSpace(Student?.City)
+                   && !string.IsNullOrWhiteSpace(Student?.State)
+                   && !string.IsNullOrWhiteSpace(Student?.Zip);
         }
 
         private void OnStudentPropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -612,21 +706,41 @@ namespace BusBuddy.WPF.ViewModels.Student
                 if (string.IsNullOrWhiteSpace(Student.State))
                     validationErrors.Add("State is required");
 
+                // Populate error list for UI
+                _validationErrors.Clear();
+                foreach (var err in validationErrors)
+                {
+                    _validationErrors.Add("• " + err);
+                }
+                HasValidationErrors = _validationErrors.Count > 0;
+
                 if (validationErrors.Any())
                 {
                     ValidationStatus = $"❌ {validationErrors.Count} validation errors";
                     ValidationStatusBrush = Brushes.Red;
                     SetGlobalError($"Validation failed: {string.Join(", ", validationErrors)}");
                     CanSave = false;
+                    _saveRelay?.NotifyCanExecuteChanged();
                     return;
                 }
 
-                // Perform address validation (no artificial delay)
-                await ValidateAddressAsync();
+                // Perform address validation unless disabled
+                if (!DisableAddressValidation)
+                {
+                    await ValidateAddressAsync();
+                }
+                else
+                {
+                    AddressValidationMessage = "Address validation disabled — TODO: re-enable post-MVP";
+                    AddressValidationColor = Brushes.Gray;
+                }
 
                 ValidationStatus = "✓ All data validated successfully";
                 ValidationStatusBrush = Brushes.Green;
                 CanSave = true;
+                HasValidationErrors = false;
+                _validationErrors.Clear();
+                _saveRelay?.NotifyCanExecuteChanged();
 
                 Logger.Information("Comprehensive data validation completed successfully");
             }
@@ -637,6 +751,7 @@ namespace BusBuddy.WPF.ViewModels.Student
                 ValidationStatus = "❌ Validation failed";
                 ValidationStatusBrush = Brushes.Red;
                 CanSave = false;
+                HasValidationErrors = true;
             }
             finally
             {
@@ -757,37 +872,23 @@ namespace BusBuddy.WPF.ViewModels.Student
         }
 
         /// <summary>
-        /// Validate required student fields and address format
+        /// Minimal validation for Save — only ensure required fields are present.
+        /// Detailed address checks are available via the Validate actions and should not block Save in MVP.
         /// </summary>
         private bool IsValidStudent()
         {
-            if (string.IsNullOrWhiteSpace(Student.StudentName))
-            {
-                AddressValidationMessage = "✗ Student name is required.";
-                AddressValidationColor = Brushes.Red;
-                return false;
-            }
+            // Required basics
+            if (string.IsNullOrWhiteSpace(Student.StudentName)) return false;
+            if (string.IsNullOrWhiteSpace(Student.Grade)) return false;
 
-            if (string.IsNullOrWhiteSpace(Student.Grade))
-            {
-                AddressValidationMessage = "✗ Grade is required.";
-                AddressValidationColor = Brushes.Red;
-                return false;
-            }
+            // Required address fields (match UI asterisks)
+            if (string.IsNullOrWhiteSpace(Student.HomeAddress) ||
+                string.IsNullOrWhiteSpace(Student.City) ||
+                string.IsNullOrWhiteSpace(Student.State) ||
+                string.IsNullOrWhiteSpace(Student.Zip)) return false;
 
-            // Validate address if provided
-            if (!string.IsNullOrWhiteSpace(Student.HomeAddress))
-            {
-                var addressValidation = _addressService.ValidateAddress(Student.HomeAddress);
-                if (!addressValidation.IsValid)
-                {
-                    AddressValidationMessage = $"✗ Address validation failed: {addressValidation.Error}";
-                    AddressValidationColor = Brushes.Red;
-                    return false;
-                }
-            }
-
-            AddressValidationMessage = "✓ Student information is valid.";
+            // Do not enforce regex/format rules here — Save should work with minimal data.
+            AddressValidationMessage = "✓ Required fields present.";
             AddressValidationColor = Brushes.Green;
             return true;
         }

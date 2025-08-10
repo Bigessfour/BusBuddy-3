@@ -1,6 +1,0 @@
-[2025-08-09 20:30:57.348 -06:00 INF] 🔧 Bootstrap logger initialized for early startup error capture
-[2025-08-09 20:30:57.371 -06:00 INF] 🚌 BusBuddy bootstrap starting...
-[2025-08-09 20:30:57.799 -06:00 INF] ✅ Syncfusion license registered successfully for version 30.1.42
-[2025-08-09 20:30:57.800 -06:00 INF] 🔍 License Key Length: 96 characters
-[2025-08-09 20:30:57.807 -06:00 INF] 💡 If you see trial watermarks, verify your license key is valid and current
-[2025-08-09 20:30:57.895 -06:00 INF] ✅ Configuration loaded successfully
