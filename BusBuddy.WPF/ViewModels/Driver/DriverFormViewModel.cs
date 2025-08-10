@@ -25,6 +25,9 @@ namespace BusBuddy.WPF.ViewModels.Driver
         private string _formTitle = "Add New Driver";
         private bool _isEditMode;
 
+    // Close coordination for dialog usage — mirrors StudentForm pattern
+    public event EventHandler<bool?>? RequestClose;
+
         public DriverFormViewModel(IDriverService driverService)
         {
             _driverService = driverService ?? throw new ArgumentNullException(nameof(driverService));
@@ -175,6 +178,9 @@ namespace BusBuddy.WPF.ViewModels.Driver
                 SelectedDriver = Drivers.FirstOrDefault(d => d.DriverId == savedDriver.DriverId);
                 Logger.Information("Driver saved successfully: {DriverName} (ID: {DriverId})",
                     savedDriver.DriverName, savedDriver.DriverId);
+
+                // Signal dialog close with success
+                RequestClose?.Invoke(this, true);
             }
             catch (Exception ex)
             {
@@ -247,6 +253,9 @@ namespace BusBuddy.WPF.ViewModels.Driver
                 {
                     ExecuteAddDriver();
                 }
+
+                // Signal dialog close with cancel
+                RequestClose?.Invoke(this, false);
             }
             catch (Exception ex)
             {

@@ -280,6 +280,7 @@ namespace BusBuddy.WPF.ViewModels.Driver
                 Logger.Information("Add driver command executed");
 
                 var driverForm = new BusBuddy.WPF.Views.Driver.DriverForm();
+                driverForm.Owner = System.Windows.Application.Current?.Windows.OfType<System.Windows.Window>().FirstOrDefault(w => w.IsActive);
                 var result = driverForm.ShowDialog();
 
                 if (result == true)
@@ -305,7 +306,12 @@ namespace BusBuddy.WPF.ViewModels.Driver
                     Logger.Information("Edit driver command executed for driver {DriverId}", SelectedDriver.DriverId);
 
                     var driverForm = new BusBuddy.WPF.Views.Driver.DriverForm();
-                    // TODO: Pass driver data to form for editing
+                    driverForm.Owner = System.Windows.Application.Current?.Windows.OfType<System.Windows.Window>().FirstOrDefault(w => w.IsActive);
+                    // Pass driver data to form for editing via ViewModel
+                    if (driverForm.DataContext is BusBuddy.WPF.ViewModels.Driver.DriverFormViewModel vm)
+                    {
+                        vm.SelectedDriver = SelectedDriver; // VM will load into editable Driver
+                    }
                     var result = driverForm.ShowDialog();
 
                     if (result == true)
