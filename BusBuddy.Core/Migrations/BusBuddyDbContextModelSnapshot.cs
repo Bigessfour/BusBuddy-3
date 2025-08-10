@@ -1779,7 +1779,7 @@ namespace BusBuddy.Core.Migrations
                     b.Property<DateTime?>("EnrollmentDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<int>("FamilyId")
+                    b.Property<int?>("FamilyId")
                         .HasColumnType("int");
 
                     b.Property<bool>("FieldTripPermission")
@@ -2331,7 +2331,6 @@ namespace BusBuddy.Core.Migrations
                         .WithMany("Students")
                         .HasForeignKey("FamilyId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
                         .HasConstraintName("FK_Students_Family");
 
                     b.HasOne("BusBuddy.Core.Models.RouteAssignment", "RouteAssignment")

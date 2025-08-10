@@ -1416,11 +1416,15 @@ public class StudentService : IStudentService
             }).ToList();
             var result = await ResilientDbExecution.ExecuteWithResilienceAsync(async () => {
                 using var context = _contextFactory.CreateDbContext();
-                var existing = await context.Students.CountAsync();
-                if (existing >= 5)
+
+                // Only consider previously seeded Wiley records, not total students
+                var existingWileyCount = await context.Students
+                    .Where(s => s.StudentNumber != null && s.StudentNumber.StartsWith("WILEY"))
+                    .CountAsync();
+                if (existingWileyCount >= 5)
                 {
-                    Logger.Information("Wiley seeding skipped: {ExistingCount} students already exist", existing);
-                    return new SeedResult { Success = true, RecordsSeeded = 0, ErrorMessage = "Already seeded" };
+                    Logger.Information("Wiley seeding skipped: {ExistingCount} Wiley students already exist", existingWileyCount);
+                    return new SeedResult { Success = true, RecordsSeeded = 0, ErrorMessage = "Already seeded (WILEY)" };
                 }
 
                 // Check for duplicate StudentNumbers before adding
@@ -1434,8 +1438,8 @@ public class StudentService : IStudentService
 
                 if (!studentsToAdd.Any())
                 {
-                    Logger.Information("Wiley seeding skipped: All student numbers already exist");
-                    return new SeedResult { Success = true, RecordsSeeded = 0, ErrorMessage = "Duplicate student numbers" };
+                    Logger.Information("Wiley seeding skipped: All WILEY student numbers already exist");
+                    return new SeedResult { Success = true, RecordsSeeded = 0, ErrorMessage = "Duplicate WILEY student numbers" };
                 }
 
                 Logger.Information("Adding {Count} Wiley students to database", studentsToAdd.Count);

@@ -21,6 +21,8 @@ Primary docs
   https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/.github/copilot-instructions.md
 - VS Code prompt pointer (redirects here):
   https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/vscode-userdata/BusBuddy.instructions.md
+ - File fetchability guide (full reference):
+   https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/Documentation/FILE-FETCHABILITY-GUIDE.md
 
 Quick-fetch key files
 - Build config:
@@ -46,6 +48,32 @@ Tip — quick local fetch
 ```powershell
 iwr "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.WPF/App.xaml.cs" -OutFile "BusBuddy.WPF/App.xaml.cs"
 ```
+
+### Fetchability quick start (Windows PowerShell)
+
+Use the raw base URL and save to the matching local path. Encode spaces in paths as %20.
+
+```powershell
+# 1) Set raw base once
+$base = "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master"
+
+# 2) Ensure folder exists, then fetch a file
+$path = "BusBuddy.WPF/Views/Student/StudentsView.xaml"
+New-Item -ItemType Directory -Force -Path (Split-Path $path) | Out-Null
+iwr "$base/$path" -OutFile $path
+
+# 3) More examples
+iwr "$base/BusBuddy.Core/Data/BusBuddyDbContext.cs" -OutFile "BusBuddy.Core/Data/BusBuddyDbContext.cs"
+iwr "$base/GrokResources/GPT-5%20actions/ButtonFormValidationReport.md" -OutFile "GrokResources/GPT-5 actions/ButtonFormValidationReport.md"
+
+# Optional: cURL
+curl -L "$base/BusBuddy.WPF/ViewModels/Student/StudentsViewModel.cs" -o "BusBuddy.WPF/ViewModels/Student/StudentsViewModel.cs"
+```
+
+Notes
+- Raw base: https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master
+- For paths containing spaces (e.g., "GPT-5 actions"), percent-encode as %20 in the URL.
+- See the full guide for more patterns and tips: `Documentation/FILE-FETCHABILITY-GUIDE.md` (raw link above).
 
 
 ## 🧪 UI Buttons & Forms Validation — August 10, 2025

@@ -404,11 +404,33 @@ namespace BusBuddy.WPF.ViewModels.Student
             {
                 Logger.Information("Saving student {StudentName}", Student.StudentName);
 
+                // Optional MVP feature flag to bypass validation and allow saving immediately
+                // Enable by setting environment variable: BUSBUDDY_SKIP_STUDENT_VALIDATION=1
+                static bool ShouldSkipValidation()
+                    => string.Equals(Environment.GetEnvironmentVariable("BUSBUDDY_SKIP_STUDENT_VALIDATION"), "1", StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(Environment.GetEnvironmentVariable("BUSBUDDY_SKIP_STUDENT_VALIDATION"), "true", StringComparison.OrdinalIgnoreCase);
+
                 // Validate required fields
-                if (!IsValidStudent())
+                if (!ShouldSkipValidation() && !IsValidStudent())
                 {
+                    // Collect validation errors for diagnostics and UI
+                    var errors = GetValidationErrors();
+                    Logger.Information("Validation failed: {Errors}", errors);
+                    // Reflect in UI list
+                    _validationErrors.Clear();
+                    foreach (var err in errors)
+                        _validationErrors.Add("• " + err);
+                    HasValidationErrors = _validationErrors.Count > 0;
                     SetGlobalError("Please correct validation errors before saving.");
                     return;
+                }
+
+                if (ShouldSkipValidation())
+                {
+                    // Clear any prior UI validation state but continue to save
+                    _validationErrors.Clear();
+                    HasValidationErrors = false;
+                    Logger.Warning("Bypassing student validation due to BUSBUDDY_SKIP_STUDENT_VALIDATION flag");
                 }
 
                 // Normalize loose inputs (format but don't block)
@@ -428,8 +450,9 @@ namespace BusBuddy.WPF.ViewModels.Student
                     Student.CreatedBy = Environment.UserName;
                 }
 
-                // Prefer StudentService when available to ensure proper Azure SQL path/validation
-                if (_studentService != null)
+                // Prefer StudentService when available (normal flow). If skipping validation,
+                // avoid service-level validation and use direct EF save instead (MVP flag).
+                if (_studentService != null && !ShouldSkipValidation())
                 {
                     if (IsEditMode)
                     {
@@ -447,6 +470,7 @@ namespace BusBuddy.WPF.ViewModels.Student
                 else
                 {
                     // Fallback direct EF save if service not available
+                    // or when skipping validation for MVP save bypass
                     if (IsEditMode)
                     {
                         _context.Students.Update(Student);
@@ -875,7 +899,7 @@ namespace BusBuddy.WPF.ViewModels.Student
         /// Minimal validation for Save — only ensure required fields are present.
         /// Detailed address checks are available via the Validate actions and should not block Save in MVP.
         /// </summary>
-        private bool IsValidStudent()
+    private bool IsValidStudent()
         {
             // Required basics
             if (string.IsNullOrWhiteSpace(Student.StudentName)) return false;
@@ -891,6 +915,21 @@ namespace BusBuddy.WPF.ViewModels.Student
             AddressValidationMessage = "✓ Required fields present.";
             AddressValidationColor = Brushes.Green;
             return true;
+        }
+
+        /// <summary>
+        /// Build a list of validation errors for diagnostics when Save fails.
+        /// </summary>
+        private List<string> GetValidationErrors()
+        {
+            var errors = new List<string>();
+            if (string.IsNullOrWhiteSpace(Student.StudentName)) errors.Add("Student name is required");
+            if (string.IsNullOrWhiteSpace(Student.Grade)) errors.Add("Grade is required");
+            if (string.IsNullOrWhiteSpace(Student.HomeAddress)) errors.Add("Home address is required");
+            if (string.IsNullOrWhiteSpace(Student.City)) errors.Add("City is required");
+            if (string.IsNullOrWhiteSpace(Student.State)) errors.Add("State is required");
+            if (string.IsNullOrWhiteSpace(Student.Zip)) errors.Add("Zip is required");
+            return errors;
         }
 
         /// <summary>
