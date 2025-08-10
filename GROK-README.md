@@ -1,6 +1,6 @@
 # 🚌 BusBuddy Project - Grok Development Status
 
-**Last Updated:** August 10, 2025 — UI Buttons/Forms Validation, GoogleEarth theming/cleanup, Activity DataContext ✅  
+**Last Updated:** August 10, 2025 — UI Buttons/Forms Validation, GoogleEarth theming/cleanup, Activity DataContext, Unit Tests stabilization plan ✅  
 **Current Status:** Clean Build; Geo stack wired (SfMap + overlays + PIP eligibility + offline geocoding); UI buttons/forms validated across modules  
 **Repository Status:** Build Success — EF Core aligned; WPF mapping features validated  
 **Key Achievement:** End-to-end student → geocode → map plotting; eligibility (in district AND not in town) operational
@@ -148,6 +148,47 @@ dotnet run --project "BusBuddy.WPF/BusBuddy.WPF.csproj"
 - Logging uses Serilog; theming standardized via SfSkinManager.
 
 ---
+
+## 🧪 Unit tests stabilization plan — August 10, 2025
+
+Summary
+- Approximately 18 failing tests were analyzed and mapped to concrete, minimal fixes. These updates are code-only and do not regress Syncfusion UI or Azure alignment.
+
+Primary root causes and targeted fixes
+- DriverService context disposal
+  - Cause: Several methods still use "using var" contexts which dispose the shared in-memory DbContext used by tests.
+  - Fix: Switch to existing GetReadContext/GetWriteContext pattern and only dispose when appropriate (factory-created runtime contexts).
+- SeedDataService CSV seeding (async provider mismatch)
+  - Cause: `CountAsync()` on mocked DbSet without `IAsyncQueryProvider`.
+  - Fix: Wrap with try/catch and fallback to synchronous `Count()` when async provider is unavailable.
+- FamilyService transaction guards
+  - Cause: Direct `_context.Database` access without null checks in mock scenarios.
+  - Fix: Null-check Database; treat null or InMemory providers as "no transaction".
+- Wiley fixtures
+  - Cause: Tests expect “East Route” and Bus “17” not present in default seeds.
+  - Fix: Add test fixture seeding (test-only) or extend optional seed path to include these named items.
+- StudentFormViewModel validation
+  - Cause: Address validation intentionally disabled for MVP; tests expect validation messages/colors.
+  - Fix: Add constructor flag or toggle to enable validation in test context while keeping runtime default disabled.
+- Route duplicate keys in tests
+  - Cause: Explicit IDs combined with lingering data can conflict.
+  - Fix: Ensure clean DB per test and/or remove explicit IDs so InMemory assigns keys.
+
+Execution order (green-before-done)
+1) DriverService disposal adjustments.
+2) CSV seeding async fallback.
+3) FamilyService null-guards.
+4) Wiley test fixtures.
+5) StudentFormViewModel toggle for tests.
+6) Route test ID cleanup.
+
+Verification
+- Run: `bb-build`, `bb-test`, then `bb-mvp-check`.
+- Anti-regression: `bb-anti-regression` and `bb-xaml-validate` to enforce Serilog + Syncfusion-only UI.
+- If needed: `bb-health` for environment checks.
+
+Notes
+- All changes remain within MVP scope (students/routes). Complex services (XAI, GoogleEarthEngine) stay disabled per Greenfield Reset strategy.
 
 ## 🗄️ Azure SQL alignment and student save verification — August 10, 2025
 

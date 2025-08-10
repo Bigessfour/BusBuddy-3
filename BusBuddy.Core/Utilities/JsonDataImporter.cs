@@ -334,15 +334,8 @@ namespace BusBuddy.Core.Utilities
         {
             try
             {
-                // Check if we already have student data
-                var hasStudents = await context.Students.AnyAsync();
-                if (hasStudents)
-                {
-                    Logger.Information("📊 Database already contains student data, skipping seed");
-                    return;
-                }
-
-                Logger.Information("🌱 Database is empty, attempting to seed with JSON data");
+                // Count existing students
+                var existingCount = await context.Students.CountAsync();
 
                 // Look for JSON data file in multiple locations
                 var possiblePaths = new[]
@@ -364,24 +357,72 @@ namespace BusBuddy.Core.Utilities
                     }
                 }
 
-                if (jsonFilePath == null)
+                // If no JSON is available
+                if (jsonFilePath is null)
                 {
-                    Logger.Warning("⚠️ No JSON data file found for seeding, creating sample student");
-                    await CreateSampleStudentAsync(context);
+                    if (existingCount == 0)
+                    {
+                        Logger.Warning("⚠️ No JSON data file found for seeding and database is empty — creating sample student");
+                        await CreateSampleStudentAsync(context);
+                    }
+                    else
+                    {
+                        Logger.Information("📊 No JSON seed file found; database already has {Count} students — skipping top-up seeding", existingCount);
+                    }
                     return;
                 }
 
-                // Import the JSON data
-                var result = await ImportStudentDataAsync(context, jsonFilePath);
-                if (result.Success)
+                // Read JSON to determine potential dataset size for top-up decisions
+                int jsonStudentsCount = 0;
+                try
                 {
-                    Logger.Information("✅ Successfully seeded database with {Students} students from {Families} families",
-                        result.ImportedStudents, result.ImportedFamilies);
+                    using var jsonDoc = JsonDocument.Parse(await File.ReadAllTextAsync(jsonFilePath));
+                    if (jsonDoc.RootElement.TryGetProperty("students", out var studentsElem) && studentsElem.ValueKind == JsonValueKind.Array)
+                    {
+                        jsonStudentsCount = studentsElem.GetArrayLength();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Logger.Warning(ex, "Failed to read student count from JSON seed file: {Path}", jsonFilePath);
+                }
+
+                // Decide whether to import:
+                // - If DB is empty: perform full seed
+                // - If DB has fewer students than JSON: perform top-up seed (dedupe ensures no duplicates)
+                // - Otherwise: skip
+                if (existingCount == 0)
+                {
+                    Logger.Information("🌱 Database is empty, attempting to seed with JSON data from {Path}", jsonFilePath);
+                }
+                else if (jsonStudentsCount > 0 && existingCount < jsonStudentsCount)
+                {
+                    Logger.Information("🌱 Detected partial data: existing students = {Existing}, JSON dataset = {Json}. Attempting top-up seeding from {Path}", existingCount, jsonStudentsCount, jsonFilePath);
                 }
                 else
                 {
-                    Logger.Warning("⚠️ Failed to seed from JSON: {Error}, creating sample student", result.ErrorMessage);
-                    await CreateSampleStudentAsync(context);
+                    Logger.Information("📊 Database already contains {Existing} students; JSON dataset size = {Json}. Skipping seeding.", existingCount, jsonStudentsCount);
+                    return;
+                }
+
+                // Import the JSON data (dedupe logic inside handles existing records)
+                var result = await ImportStudentDataAsync(context, jsonFilePath);
+                if (result.Success)
+                {
+                    Logger.Information("✅ Seeded from JSON: {Students} students added, {Families} families added (existing: {Existing})",
+                        result.ImportedStudents, result.ImportedFamilies, existingCount);
+                }
+                else
+                {
+                    if (existingCount == 0)
+                    {
+                        Logger.Warning("⚠️ Failed to seed from JSON: {Error}, creating sample student", result.ErrorMessage);
+                        await CreateSampleStudentAsync(context);
+                    }
+                    else
+                    {
+                        Logger.Warning("⚠️ Top-up seeding failed: {Error}. Leaving existing data untouched.", result.ErrorMessage);
+                    }
                 }
             }
             catch (Exception ex)

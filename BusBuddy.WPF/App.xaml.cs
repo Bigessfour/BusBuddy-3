@@ -165,24 +165,7 @@ namespace BusBuddy.WPF
                 // Setup minimal DI for Students, Routes, Buses, Drivers (synchronous)
                 ConfigureServices();
 
-                // Seed Wiley School District data on startup (async, resilient)
-                try
-                {
-                    using var scope = ServiceProvider.CreateScope();
-                    var studentService = scope.ServiceProvider.GetRequiredService<IStudentService>();
-                    var seedResult = await BusBuddy.Core.Utilities.ResilientDbExecution.ExecuteWithResilienceAsync(
-                        () => studentService.SeedWileySchoolDistrictDataAsync(),
-                        "SeedWileySchoolDistrictData",
-                        maxRetries: 3
-                    );
-                    Log.Information($"🚌 Wiley seeding result: Success={seedResult.Success}, RecordsSeeded={seedResult.RecordsSeeded}, Error={seedResult.ErrorMessage}");
-                    File.AppendAllText("runtime-errors-fixed.log", $"Wiley seeding: Success={seedResult.Success}, RecordsSeeded={seedResult.RecordsSeeded}, Error={seedResult.ErrorMessage}\n");
-                }
-                catch (Exception ex)
-                {
-                    Log.Error(ex, "🚌 Error during Wiley School District seeding");
-                    File.AppendAllText("runtime-errors-fixed.log", $"Wiley seeding error: {ex.Message}\n");
-                }
+                // Removed redundant explicit Wiley seeding. Seeding now handled via EF Core 9 UseSeeding/UseAsyncSeeding
 
                 // Handle command line arguments for PowerShell integration
                 if (e.Args.Length > 0 && HandleCommandLineArgs(e.Args))

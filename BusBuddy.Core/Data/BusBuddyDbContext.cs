@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using Serilog;
 using Serilog.Context;
 using Microsoft.Extensions.Configuration; // Added for dynamic configuration
+using BusBuddy.Core.Utilities; // For JsonDataImporter in seeding
 
 namespace BusBuddy.Core.Data;
 /// <summary>
@@ -105,11 +106,35 @@ public class BusBuddyDbContext : DbContext
             if (!string.IsNullOrWhiteSpace(envOverride))
             {
                 logger.Information("Using BUSBUDDY_CONNECTION environment override");
-                optionsBuilder.UseSqlServer(envOverride, sql =>
-                {
-                    sql.CommandTimeout(60);
-                    sql.EnableRetryOnFailure();
-                });
+                optionsBuilder
+                    .UseSqlServer(envOverride, sql =>
+                    {
+                        sql.CommandTimeout(60);
+                        sql.EnableRetryOnFailure();
+                    })
+                    // EF Core 9 seeding: seed only when DB is empty
+                    .UseSeeding((ctx, _) =>
+                    {
+                        try
+                        {
+                            JsonDataImporter.SeedDatabaseIfEmptyAsync((BusBuddyDbContext)ctx).GetAwaiter().GetResult();
+                        }
+                        catch (Exception ex)
+                        {
+                            Log.ForContext<BusBuddyDbContext>().Warning(ex, "Seeding (UseSeeding) failed");
+                        }
+                    })
+                    .UseAsyncSeeding(async (ctx, _, token) =>
+                    {
+                        try
+                        {
+                            await JsonDataImporter.SeedDatabaseIfEmptyAsync((BusBuddyDbContext)ctx);
+                        }
+                        catch (Exception ex)
+                        {
+                            Log.ForContext<BusBuddyDbContext>().Warning(ex, "Async seeding (UseAsyncSeeding) failed");
+                        }
+                    });
                 ConfigureEfLogging(optionsBuilder);
                 return;
             }
@@ -131,11 +156,34 @@ public class BusBuddyDbContext : DbContext
                 {
                     logger.Information("Using connection string from appsettings: {ConnectionName}",
                         config.GetConnectionString("BusBuddyDb") != null ? "BusBuddyDb" : "DefaultConnection");
-                    optionsBuilder.UseSqlServer(connString, sqlOptions =>
-                    {
-                        sqlOptions.EnableRetryOnFailure(5, TimeSpan.FromSeconds(10), new[] { 40613, 40501, 40197, 10928, 10929, 10060, 10054, 10053 });
-                        sqlOptions.CommandTimeout(60);
-                    });
+                    optionsBuilder
+                        .UseSqlServer(connString, sqlOptions =>
+                        {
+                            sqlOptions.EnableRetryOnFailure(5, TimeSpan.FromSeconds(10), new[] { 40613, 40501, 40197, 10928, 10929, 10060, 10054, 10053 });
+                            sqlOptions.CommandTimeout(60);
+                        })
+                        .UseSeeding((ctx, _) =>
+                        {
+                            try
+                            {
+                                JsonDataImporter.SeedDatabaseIfEmptyAsync((BusBuddyDbContext)ctx).GetAwaiter().GetResult();
+                            }
+                            catch (Exception ex)
+                            {
+                                Log.ForContext<BusBuddyDbContext>().Warning(ex, "Seeding (UseSeeding) failed");
+                            }
+                        })
+                        .UseAsyncSeeding(async (ctx, _, token) =>
+                        {
+                            try
+                            {
+                                await JsonDataImporter.SeedDatabaseIfEmptyAsync((BusBuddyDbContext)ctx);
+                            }
+                            catch (Exception ex)
+                            {
+                                Log.ForContext<BusBuddyDbContext>().Warning(ex, "Async seeding (UseAsyncSeeding) failed");
+                            }
+                        });
                     ConfigureEfLogging(optionsBuilder);
                     return;
                 }
@@ -147,6 +195,30 @@ public class BusBuddyDbContext : DbContext
 
             // Fallback to LocalDB (EF Core config guidance)
             UseLocalDbFallback(optionsBuilder, logger);
+            // Attach seeding for LocalDB fallback as well
+            optionsBuilder
+                .UseSeeding((ctx, _) =>
+                {
+                    try
+                    {
+                        JsonDataImporter.SeedDatabaseIfEmptyAsync((BusBuddyDbContext)ctx).GetAwaiter().GetResult();
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.ForContext<BusBuddyDbContext>().Warning(ex, "Seeding (UseSeeding) failed");
+                    }
+                })
+                .UseAsyncSeeding(async (ctx, _, token) =>
+                {
+                    try
+                    {
+                        await JsonDataImporter.SeedDatabaseIfEmptyAsync((BusBuddyDbContext)ctx);
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.ForContext<BusBuddyDbContext>().Warning(ex, "Async seeding (UseAsyncSeeding) failed");
+                    }
+                });
             ConfigureEfLogging(optionsBuilder);
         }
     }
