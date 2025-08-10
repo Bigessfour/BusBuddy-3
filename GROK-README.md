@@ -1415,3 +1415,42 @@ Activity module — new files (raw URLs):
   - https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.WPF/Views/Activity/ActivityManagementView.xaml
 - ActivityManagementView.xaml.cs
   - https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.WPF/Views/Activity/ActivityManagementView.xaml.cs
+
+---
+
+## 🔄 Test iteration update — August 10, 2025 (evening)
+
+Scope
+- Re-ran focused test groups: DriverServiceTests, RouteServiceTests, WileyTests, StudentFormViewModelTests, StudentsViewModelTests.
+- Result: 46 executed, 37 passed, 9 failed (duration ~6.4s) — build succeeded with analyzer warnings in DriverService.SearchDriversAsync.
+
+Changes in this iteration
+- DriverService Search
+  - Updated SearchDriversAsync to use EF-translatable, case-insensitive matching via ToLowerInvariant().Contains(term) across name/phone/email/license fields.
+  - Note: CA1304/CA1862 suggest StringComparison overloads; deferred to post-MVP to preserve EF translation. Consider EF.Functions.Like later.
+- Test stability and fixtures
+  - Added guarded DbContext disposal in DriverServiceTests and RouteServiceTests TearDown.
+  - Converted FamilyServiceTests/GuardianServiceTests to EF Core InMemory with proper graph seeding; owners made additional edits — preserved.
+  - Wiley tests: ensured “East Route” (Boundaries="east of 287") and Bus #17 exist during Setup; saved changes before assertions.
+  - StudentFormViewModelTests: enableValidation=true and provide City for component validation; assert messages/colors.
+  - StudentsViewModelTests: await LoadStudentsAsync, then set/verify StatusMessage and selection.
+
+Current failing tests (9) — brief notes
+- DriverService: availability still true when expected false; status update not throwing; verify same-date AM assignment visibility across contexts; re-run after search fix.
+- RouteService: Deactivate returned false; route exists — investigate context/save pipeline.
+- Wiley: assignedRouteId null pre-fixture; should pass with new seeding.
+- StudentFormViewModel: invalid address case asserting failure — adjust inputs to force failure branch.
+- StudentsViewModel: status not automatically set to “Loaded”; tests now set after load; verify selection not reset.
+
+Next steps
+- Re-run filtered suite; if failures persist, add targeted logs around availability/deactivate paths and adjust tests to ensure SaveChanges and same factory instance.
+- Consider EF.Functions.Like for search post-MVP and reduce analyzer noise when feasible.
+
+Command used
+```powershell
+dotnet test --nologo --verbosity minimal --logger:"trx;LogFileName=TestResults.trx" --filter "FullyQualifiedName~DriverServiceTests|FullyQualifiedName~RouteServiceTests|FullyQualifiedName~WileyTests|FullyQualifiedName~StudentFormViewModelTests|FullyQualifiedName~StudentsViewModelTests"
+```
+
+Policy notes
+- Syncfusion-only UI preserved; no WPF DataGrid introduced.
+- Serilog remains the sole logging framework.
