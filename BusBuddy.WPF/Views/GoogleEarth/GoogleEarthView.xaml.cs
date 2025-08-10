@@ -14,6 +14,7 @@ using System.Printing; // Microsoft printing APIs
 using System.Windows.Media; // Visual tree for printing
 using System.Windows.Documents; // FixedDocument for printing
 using System.Windows.Markup; // IAddChild
+using Syncfusion.SfSkinManager;
 
 namespace BusBuddy.WPF.Views.GoogleEarth
 {
@@ -82,6 +83,9 @@ namespace BusBuddy.WPF.Views.GoogleEarth
             {
                 InitializeComponent();
 
+                // Apply Syncfusion theme (FluentDark default, FluentLight fallback)
+                ApplySyncfusionTheme();
+
                 // Ensure DataContext is available — resolve from DI container when possible
                 try
                 {
@@ -121,6 +125,36 @@ namespace BusBuddy.WPF.Views.GoogleEarth
                 _ = Task.Run(CheckBackendConnectivityAsync);
             }
         }
+
+        /// <summary>
+        /// Ensure Syncfusion theme is applied consistently.
+        /// Pattern mirrors FuelReconciliationDialog and follows Syncfusion SfSkinManager docs.
+        /// </summary>
+        private void ApplySyncfusionTheme()
+        {
+            SfSkinManager.ApplyThemeAsDefaultStyle = true;
+            try
+            {
+                using var fluentDark = new Theme("FluentDark");
+                SfSkinManager.SetTheme(this, fluentDark);
+                Logger.Information("FluentDark theme applied to {ViewName}", GetType().Name);
+            }
+            catch
+            {
+                try
+                {
+                    using var fluentLight = new Theme("FluentLight");
+                    SfSkinManager.SetTheme(this, fluentLight);
+                    Logger.Information("Fallback to FluentLight theme for {ViewName}", GetType().Name);
+                }
+                catch
+                {
+                    // Continue without theme if both fail
+                }
+            }
+        }
+
+    // Unloaded/Dispose implemented later in file with full dispose pattern
 
     /// <summary>
     /// Handles map layer SelectionChanged from ComboBoxAdv with debouncing to prevent rapid API calls.
@@ -811,6 +845,15 @@ namespace BusBuddy.WPF.Views.GoogleEarth
                     _layerChangeDebounceTimer?.Dispose();
                     DataContextChanged -= OnDataContextChanged;
                     this.Unloaded -= GoogleEarthView_Unloaded;
+                    try
+                    {
+                        // Dispose Syncfusion skin resources
+                        SfSkinManager.Dispose(this);
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.Warning(ex, "Failed to dispose SfSkinManager resources for {ViewName}", GetType().Name);
+                    }
                     try
                     {
                         // Clear map layers and dispose cached layers
