@@ -1,4 +1,6 @@
 using System.Windows.Controls;
+using BusBuddy.WPF.ViewModels.Activity;
+using Serilog;
 
 namespace BusBuddy.WPF.Views.Activity
 {
@@ -11,6 +13,12 @@ namespace BusBuddy.WPF.Views.Activity
         public ActivityManagementView()
         {
             InitializeComponent();
+            // Set DataContext to ensure bindings work even before full feature implementation
+            if (DataContext is null)
+            {
+                DataContext = new ActivityManagementViewModel();
+                Log.ForContext<ActivityManagementView>().Information("ActivityManagementView DataContext initialized");
+            }
         }
     }
 }

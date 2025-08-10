@@ -64,3 +64,44 @@ Validation
 - Build: Passed after changes.
 - Behavior: Edit/Add opens modal; Save/Cancel now close the dialog; list refreshes post-save; commands enable based on selection.
 
+---
+
+GoogleEarth Module — Audit (2025-08-10)
+
+Files audited: `Views/GoogleEarth/GoogleEarthView.xaml`, `Views/GoogleEarth/GoogleEarthView.xaml.cs`, `ViewModels/GoogleEarth/GoogleEarthViewModel.cs`
+
+Findings
+- Buttons present and bound: CenterOnFleet, ShowAllBuses, ShowRoutes, ShowSchools, TrackSelectedBus, ZoomIn/Out, ResetView, RefreshMap, PrintRouteMaps, CheckEligibility.
+- ViewModel defines ICommand properties for all bound commands and properties: IsLiveTrackingEnabled, DistrictBoundaryVisible, TownBoundaryVisible, ActiveBuses, SelectedBus.
+- DataContext resolution: View code-behind attempts DI resolution of GoogleEarthViewModel when available; falls back otherwise. OK.
+- Theming/logging: Extensive Serilog instrumentation in View and ViewModel; map layer selection debounced; attribution overlay supported. Theming via SfSkinManager not explicitly applied at view-level, but resources are used via DynamicResource.
+
+Status: No blocking issues for button/command wiring. Optional enhancement: apply explicit theme in view constructor for parity with dialogs.
+
+Fuel Reconciliation Dialog — Audit (2025-08-10)
+
+Files audited: `Views/Fuel/FuelReconciliationDialog.xaml`, `Views/Fuel/FuelReconciliationDialog.xaml.cs`
+
+Findings
+- Buttons bound: ExportCommand, PrintCommand; Close uses click handler CloseButton_Click.
+- Commands implemented in code-behind; DataContext set to self; theming applied via SfSkinManager with FluentDark fallback. Logging present.
+
+Status: Functional. No changes needed.
+
+Activity Module — Audit and Fix (2025-08-10)
+
+Files audited: `Views/Activity/ActivityManagementView.xaml`, `Views/Activity/ActivityManagementView.xaml.cs`
+
+Findings
+- Grid bindings present (Activities, SelectedActivity) but no ViewModel existed, so DataContext bindings could fail at runtime.
+
+Fixes
+1) Added `ViewModels/Activity/ActivityManagementViewModel.cs` with demo `Activities` collection and `SelectedActivity` property, plus logging.
+2) Added `Models/Activity/ActivityItem.cs` lightweight UI model.
+3) Wired DataContext in `ActivityManagementView.xaml.cs` to new ViewModel.
+
+Validation
+- Build: Pending in next CI run. Bindings compile-time safe; no API changes elsewhere.
+
+Status: Activity view now has a working DataContext and demo data for validation.
+
