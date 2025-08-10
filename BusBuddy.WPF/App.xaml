@@ -17,6 +17,9 @@
                     <ResourceDictionary Source="Resources/Themes/FluentDarkTheme.xaml"/>
                     <ResourceDictionary Source="Resources/Themes/FluentLightTheme.xaml"/>
 
+                <!-- Shared Syncfusion styles and theme brushes -->
+                <ResourceDictionary Source="/Resources/SyncfusionStyles.xaml" />
+
                 <!-- Shared view styles can go here if needed (kept empty for now) -->
                 <!-- <ResourceDictionary Source="Resources/Styles/SharedViewStyles.xaml"/> -->
 

@@ -256,12 +256,17 @@ Annistyn,Sutphin,3,,,,,,,,,,,,,,,,,,
             try
             {
                 using var context = _contextFactory.CreateDbContext();
-                var existingCount = await context.Students.CountAsync();
-                if (existingCount > 0)
+                int existingCount;
+                try
                 {
-                    Logger.Information("Students already exist. Skipping CSV seed.");
-                    return;
+                    existingCount = await context.Students.CountAsync();
                 }
+                catch (InvalidOperationException)
+                {
+                    // Fallback for mocks lacking IAsyncQueryProvider
+                    existingCount = context.Students.Count();
+                }
+                // Top-up logic: if fewer students than CSV rows, import delta; if any exist and meet/exceed count, skip.
                 var lines = csvData.Trim().Split(new[] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries);
                 if (lines.Length < 3)
                 {
@@ -302,6 +307,14 @@ Annistyn,Sutphin,3,,,,,,,,,,,,,,,,,,
                 int studentNum = 1;
                 var families = new List<Family>();
                 var students = new List<Student>();
+
+                // If existing students already meet or exceed CSV data rows (approximation), skip
+                var csvRowCount = Math.Max(0, lines.Length - 2);
+                if (existingCount >= csvRowCount)
+                {
+                    Logger.Information("Students already exist (Existing={ExistingCount} >= CSV={CsvCount}). Skipping CSV seed.", existingCount, csvRowCount);
+                    return;
+                }
 
                 for (int i = 2; i < lines.Length; i++)
                 {

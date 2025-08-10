@@ -71,15 +71,33 @@ namespace BusBuddy.Tests.Core
             var contextFactory = new TestDbContextFactory(_dbContext);
             _routeService = new RouteService(contextFactory);
 
-            // Seed test data quickly
+            // Ensure clean database and seed test data
+            _dbContext.Database.EnsureDeleted();
+            _dbContext.Database.EnsureCreated();
             SeedTestData();
         }
 
         [TearDown]
         public void TearDown()
         {
-            _dbContext.Database.EnsureDeleted();
-            _dbContext.Dispose();
+            try
+            {
+                try
+                {
+                    if (_dbContext != null)
+                    {
+                        _dbContext.Database.EnsureDeleted();
+                    }
+                }
+                catch
+                {
+                    // ignore teardown exceptions
+                }
+            }
+            finally
+            {
+                try { _dbContext?.Dispose(); } catch { /* ignore */ }
+            }
         }
 
         public void Dispose()
@@ -101,9 +119,9 @@ namespace BusBuddy.Tests.Core
         {
             return new List<Route>
             {
-                new Route { RouteId = 1, RouteName = "Route A", Date = DateTime.Today, IsActive = true, Description = "Morning Route", School = "Test School" },
-                new Route { RouteId = 2, RouteName = "Route B", Date = DateTime.Today, IsActive = true, Description = "Afternoon Route", School = "Test School" },
-                new Route { RouteId = 3, RouteName = "Route C", Date = DateTime.Today, IsActive = false, Description = "Inactive Route", School = "Test School" }
+                new Route { RouteName = "Route A", Date = DateTime.Today, IsActive = true, Description = "Morning Route", School = "Test School" },
+                new Route { RouteName = "Route B", Date = DateTime.Today, IsActive = true, Description = "Afternoon Route", School = "Test School" },
+                new Route { RouteName = "Route C", Date = DateTime.Today, IsActive = false, Description = "Inactive Route", School = "Test School" }
             };
         }
 

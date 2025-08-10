@@ -45,7 +45,7 @@ namespace BusBuddy.Tests.ViewModels.Student
                 Zip = "12345",
                 Active = true
             };
-            _viewModel = new StudentFormViewModel(testStudent);
+            _viewModel = new StudentFormViewModel(testStudent, enableValidation: true);
         }
 
         [TearDown]
@@ -59,7 +59,7 @@ namespace BusBuddy.Tests.ViewModels.Student
         public void Constructor_WithStudent_SetsEditMode()
         {
             var student = new BusBuddy.Core.Models.Student { StudentId = 1, StudentName = "Test" };
-            var viewModel = new StudentFormViewModel(student);
+            var viewModel = new StudentFormViewModel(student, enableValidation: true);
             viewModel.IsEditMode.Should().BeTrue();
             viewModel.FormTitle.Should().Be("Edit Student");
             viewModel.Dispose();
@@ -68,7 +68,7 @@ namespace BusBuddy.Tests.ViewModels.Student
         [Test]
         public void Constructor_WithoutStudent_SetsAddMode()
         {
-            var viewModel = new StudentFormViewModel();
+            var viewModel = new StudentFormViewModel(enableValidation: true);
             viewModel.IsEditMode.Should().BeFalse();
             viewModel.FormTitle.Should().Be("Add New Student");
             viewModel.Dispose();
@@ -78,6 +78,7 @@ namespace BusBuddy.Tests.ViewModels.Student
         public void ValidateAddress_WithValidAddress_SetsSuccessMessage()
         {
             _viewModel.Student.HomeAddress = "123 Main St";
+            _viewModel.Student.City = "TestCity";
             // Simulate address validation
             _viewModel.ValidateAddressCommand.Execute(null);
             _viewModel.AddressValidationMessage.Should().Contain("✓ Address format is valid");

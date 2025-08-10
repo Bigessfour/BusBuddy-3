@@ -13,18 +13,21 @@ namespace BusBuddy.Tests.Core
 {
     [TestFixture]
     [Category("Unit")]
-    public class GuardianServiceTests
+    public class GuardianServiceTests : IDisposable
     {
-        private Mock<BusBuddyDbContext> _mockDbContext = null!;
+        private BusBuddyDbContext _dbContext = null!;
         private Mock<ILogger> _mockLogger = null!;
         private GuardianService _service = null!;
 
         [SetUp]
         public void Setup()
         {
-            _mockDbContext = new Mock<BusBuddyDbContext>();
+            var options = new DbContextOptionsBuilder<BusBuddyDbContext>()
+                .UseInMemoryDatabase($"GuardianDb_{Guid.NewGuid()}")
+                .Options;
+            _dbContext = new BusBuddyDbContext(options);
             _mockLogger = new Mock<ILogger>();
-            _service = new GuardianService(_mockDbContext.Object, _mockLogger.Object);
+            _service = new GuardianService(_dbContext, _mockLogger.Object);
         }
 
         [Test]
@@ -37,11 +40,6 @@ namespace BusBuddy.Tests.Core
                 Phone = "555-5678",
                 FamilyId = 2
             };
-
-            var guardiansDbSet = new Mock<DbSet<Guardian>>();
-            _mockDbContext.Setup(c => c.Guardians).Returns(guardiansDbSet.Object);
-            guardiansDbSet.Setup(d => d.Add(It.IsAny<Guardian>()));
-            _mockDbContext.Setup(c => c.SaveChangesAsync(default)).ReturnsAsync(1);
 
             var result = await _service.AddGuardianAsync(guardian);
             Assert.That(result, Is.Not.Null);
@@ -61,21 +59,26 @@ namespace BusBuddy.Tests.Core
                 FamilyId = 2,
                 Notes = "Emergency contact"
             };
-            var guardians = new List<Guardian> { guardian };
-            var queryable = guardians.AsQueryable();
+            // Seed family and student to satisfy query include/any predicate
+            var family = new Family { FamilyId = 2, ParentGuardian = "Doe" };
+            var student = new BusBuddy.Core.Models.Student { StudentId = 100, Family = family, FamilyId = family.FamilyId, StudentName = "Test" };
+            family.Students = new List<BusBuddy.Core.Models.Student> { student };
+            _dbContext.Families.Add(family);
+            _dbContext.Students.Add(student);
+            guardian.Family = family;
+            _dbContext.Guardians.Add(guardian);
+            await _dbContext.SaveChangesAsync();
 
-            var guardiansDbSet = new Mock<DbSet<Guardian>>();
-            guardiansDbSet.As<IQueryable<Guardian>>().Setup(m => m.Provider).Returns(queryable.Provider);
-            guardiansDbSet.As<IQueryable<Guardian>>().Setup(m => m.Expression).Returns(queryable.Expression);
-            guardiansDbSet.As<IQueryable<Guardian>>().Setup(m => m.ElementType).Returns(queryable.ElementType);
-            guardiansDbSet.As<IQueryable<Guardian>>().Setup(m => m.GetEnumerator()).Returns(queryable.GetEnumerator());
-
-            _mockDbContext.Setup(c => c.Guardians).Returns(guardiansDbSet.Object);
-
-            var result = await _service.GetGuardiansForStudentAsync(0); // Use actual studentId if needed
+            var result = await _service.GetGuardiansForStudentAsync(100);
             Assert.That(result, Is.Not.Null);
             Assert.That(result.Count, Is.EqualTo(1));
             Assert.That(result[0].Notes, Is.EqualTo("Emergency contact"));
+        }
+
+        public void Dispose()
+        {
+            _dbContext?.Dispose();
+            GC.SuppressFinalize(this);
         }
     }
 }

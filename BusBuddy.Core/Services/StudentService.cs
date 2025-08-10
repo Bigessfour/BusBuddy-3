@@ -769,17 +769,21 @@ public class StudentService : IStudentService
                 continue;
             }
 
-            // Create assignment
+            // Create and persist assignment (ensure PK is generated)
             var assignment = new RouteAssignment
             {
                 RouteId = route.RouteId,
                 VehicleId = bus.VehicleId,
                 AssignmentDate = System.DateTime.Today
             };
+            await context.RouteAssignments.AddAsync(assignment);
+            await context.SaveChangesAsync();
             newAssignments.Add(assignment);
 
             student.RouteAssignmentId = assignment.RouteAssignmentId;
             student.BusStop = "Assigned by address";
+            context.Students.Update(student);
+            await context.SaveChangesAsync();
             updatedStudents.Add(student);
         }
 

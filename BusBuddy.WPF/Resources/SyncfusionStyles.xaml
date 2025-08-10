@@ -1,0 +1,23 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:syncfusion="http://schemas.syncfusion.com/wpf">
+    <!-- Syncfusion skin resources — see SfSkinManager docs: https://help.syncfusion.com/wpf/themes/sfskinmanager -->
+    <ResourceDictionary.MergedDictionaries>
+        <syncfusion:SkinManagerResourceDictionary SkinName="FluentDark" FallbackSkinName="FluentLight" />
+    </ResourceDictionary.MergedDictionaries>
+
+    <!-- Brushes -->
+    <SolidColorBrush x:Key="BusBuddy.Brush.Primary" Color="#3B82F6" />
+    <SolidColorBrush x:Key="BusBuddy.Brush.Text.Primary" Color="White" />
+    <SolidColorBrush x:Key="BusBuddy.Brush.Text.Secondary" Color="#D1D5DB" />
+
+    <!-- Default styles for Syncfusion inputs -->
+    <Style TargetType="syncfusion:SfTextBoxExt">
+        <Setter Property="WatermarkForeground" Value="{DynamicResource BusBuddy.Brush.Text.Secondary}" />
+        <Setter Property="MinHeight" Value="30" />
+    </Style>
+
+    <Style TargetType="syncfusion:SfMaskedEdit">
+        <Setter Property="MinHeight" Value="30" />
+    </Style>
+</ResourceDictionary>

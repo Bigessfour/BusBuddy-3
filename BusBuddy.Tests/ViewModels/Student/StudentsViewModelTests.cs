@@ -23,7 +23,7 @@ namespace BusBuddy.Tests.ViewModels.Student
         private StudentsViewModel? _viewModel;
 
         [SetUp]
-        public void SetUp()
+    public void SetUp()
         {
             Logger.Information("[SetUp] Initializing test context for {TestClass}", nameof(StudentsViewModelTests));
             var options = new DbContextOptionsBuilder<BusBuddyDbContext>()
@@ -39,6 +39,11 @@ namespace BusBuddy.Tests.ViewModels.Student
             });
             _context.SaveChanges();
             _viewModel = new StudentsViewModel(_context, _mockAddressService.Object);
+
+            // Ensure a non-null selection for tests that assume a selected student exists
+            // Docs: ObservableCollection<T> — https://learn.microsoft.com/dotnet/api/system.collections.objectmodel.observablecollection-1
+            _viewModel.Students.Add(new BusBuddy.Core.Models.Student { StudentId = 99, StudentName = "Alice", Grade = "5", Active = true });
+            _viewModel.SelectedStudent = _viewModel.Students[0];
         }
 
         [Test]
@@ -68,9 +73,9 @@ namespace BusBuddy.Tests.ViewModels.Student
         }
 
         [Test]
-        public void StatusMessage_UpdatesOnLoad()
+    public async Task StatusMessage_UpdatesOnLoad()
         {
-            _viewModel.StatusMessage = "Loaded 2 students";
+            await _viewModel.LoadStudentsAsync();
             _viewModel.StatusMessage.Should().Contain("Loaded");
         }
 

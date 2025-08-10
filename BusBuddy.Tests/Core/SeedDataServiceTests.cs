@@ -29,7 +29,7 @@ namespace BusBuddy.Tests.Core
             var service = new SeedDataService(mockFactory.Object);
             await service.SeedStudentsFromCsvAsync();
 
-            Assert.That(students.Count, Is.EqualTo(4)); // Adjust to CSV row count
+            Assert.That(students.Count, Is.EqualTo(2)); // Matches embedded CSV rows in SeedDataService
             Assert.That(students.Select(s => s.StudentNumber).Distinct().Count(), Is.EqualTo(students.Count));
         }
 #pragma warning disable CS1998 // Async method lacks 'await' operators and will run synchronously
@@ -72,6 +72,10 @@ namespace BusBuddy.Tests.Core
         mockSet.As<IQueryable<T>>().Setup(m => m.ElementType).Returns(queryable.ElementType);
         mockSet.As<IQueryable<T>>().Setup(m => m.GetEnumerator()).Returns(() => queryable.GetEnumerator());
         mockSet.Setup(d => d.Add(It.IsAny<T>())).Callback<T>(sourceList.Add);
+        mockSet.Setup(d => d.AddRange(It.IsAny<IEnumerable<T>>())).Callback<IEnumerable<T>>(items =>
+        {
+            foreach (var i in items) sourceList.Add(i);
+        });
         return mockSet;
     }
     }

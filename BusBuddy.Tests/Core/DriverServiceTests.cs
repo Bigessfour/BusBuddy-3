@@ -68,8 +68,25 @@ namespace BusBuddy.Tests.Core
         [TearDown]
         public void TearDown()
         {
-            _dbContext.Database.EnsureDeleted();
-            _dbContext.Dispose();
+            try
+            {
+                // Guard against ObjectDisposedException during teardown in case a test already disposed the context
+                try
+                {
+                    if (_dbContext != null)
+                    {
+                        _dbContext.Database.EnsureDeleted();
+                    }
+                }
+                catch
+                {
+                    // Ignore teardown exceptions — tests already completed
+                }
+            }
+            finally
+            {
+                try { _dbContext?.Dispose(); } catch { /* ignore */ }
+            }
         }
 
         public void Dispose()

@@ -78,7 +78,7 @@ namespace BusBuddy.Core.Services
         public async Task<Family> AddFamilyAsync(Family family)
         {
             var db = _context.Database;
-            var useTxn = db.ProviderName is not null && !db.IsInMemory();
+            var useTxn = db is not null && db.ProviderName is not null && !db.IsInMemory();
             IDbContextTransaction? transaction = null;
             try
             {
@@ -115,7 +115,7 @@ namespace BusBuddy.Core.Services
         public async Task<Family?> UpdateFamilyAsync(Family family)
         {
             var db = _context.Database;
-            var useTxn = db.ProviderName is not null && !db.IsInMemory();
+            var useTxn = db is not null && db.ProviderName is not null && !db.IsInMemory();
             IDbContextTransaction? transaction = null;
             try
             {
@@ -158,7 +158,7 @@ namespace BusBuddy.Core.Services
         public async Task<bool> DeleteFamilyAsync(int familyId)
         {
             var db = _context.Database;
-            var useTxn = db.ProviderName is not null && !db.IsInMemory();
+            var useTxn = db is not null && db.ProviderName is not null && !db.IsInMemory();
             IDbContextTransaction? transaction = null;
             try
             {

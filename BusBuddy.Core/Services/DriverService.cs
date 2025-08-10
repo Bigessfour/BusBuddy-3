@@ -484,19 +484,36 @@ namespace BusBuddy.Core.Services
                     return await GetAllDriversAsync();
                 }
 
-                var term = searchTerm.ToLowerInvariant();
+                var pattern = $"%{searchTerm}%";
                 var (context, dispose) = GetReadContext();
                 try
                 {
+                    // Ensure case-insensitive behavior reliably when using InMemory provider (used in tests)
+                    var isInMemory = context.Database.ProviderName != null &&
+                                     context.Database.ProviderName.Contains("InMemory", StringComparison.OrdinalIgnoreCase);
+
+                    if (isInMemory)
+                    {
+                        var list = await context.Drivers.AsNoTracking().ToListAsync();
+                        return list.Where(d =>
+                                (!string.IsNullOrEmpty(d.DriverName) && d.DriverName.Contains(searchTerm, StringComparison.OrdinalIgnoreCase)) ||
+                                (!string.IsNullOrEmpty(d.FirstName) && d.FirstName.Contains(searchTerm, StringComparison.OrdinalIgnoreCase)) ||
+                                (!string.IsNullOrEmpty(d.LastName) && d.LastName.Contains(searchTerm, StringComparison.OrdinalIgnoreCase)) ||
+                                (!string.IsNullOrEmpty(d.DriverPhone) && d.DriverPhone.Contains(searchTerm, StringComparison.OrdinalIgnoreCase)) ||
+                                (!string.IsNullOrEmpty(d.DriverEmail) && d.DriverEmail.Contains(searchTerm, StringComparison.OrdinalIgnoreCase)) ||
+                                (!string.IsNullOrEmpty(d.LicenseNumber) && d.LicenseNumber.Contains(searchTerm, StringComparison.OrdinalIgnoreCase)))
+                            .ToList();
+                    }
+
                     return await context.Drivers
                         .AsNoTracking()
                         .Where(d =>
-                        (!string.IsNullOrEmpty(d.DriverName) && d.DriverName.Contains(term, StringComparison.OrdinalIgnoreCase)) ||
-                        (!string.IsNullOrEmpty(d.FirstName) && d.FirstName.Contains(term, StringComparison.OrdinalIgnoreCase)) ||
-                        (!string.IsNullOrEmpty(d.LastName) && d.LastName.Contains(term, StringComparison.OrdinalIgnoreCase)) ||
-                        (!string.IsNullOrEmpty(d.DriverPhone) && d.DriverPhone.Contains(term, StringComparison.OrdinalIgnoreCase)) ||
-                        (!string.IsNullOrEmpty(d.DriverEmail) && d.DriverEmail.Contains(term, StringComparison.OrdinalIgnoreCase)) ||
-                        (!string.IsNullOrEmpty(d.LicenseNumber) && d.LicenseNumber.Contains(term, StringComparison.OrdinalIgnoreCase)))
+                            (!string.IsNullOrEmpty(d.DriverName) && EF.Functions.Like(d.DriverName, pattern)) ||
+                            (!string.IsNullOrEmpty(d.FirstName) && EF.Functions.Like(d.FirstName, pattern)) ||
+                            (!string.IsNullOrEmpty(d.LastName) && EF.Functions.Like(d.LastName, pattern)) ||
+                            (!string.IsNullOrEmpty(d.DriverPhone) && EF.Functions.Like(d.DriverPhone, pattern)) ||
+                            (!string.IsNullOrEmpty(d.DriverEmail) && EF.Functions.Like(d.DriverEmail, pattern)) ||
+                            (!string.IsNullOrEmpty(d.LicenseNumber) && EF.Functions.Like(d.LicenseNumber, pattern)))
                         .ToListAsync();
                 }
                 finally
@@ -565,13 +582,17 @@ namespace BusBuddy.Core.Services
                 Logger.Information("Assigning driver {DriverId} to route {RouteId}, AM: {IsAMRoute}",
                     driverId, routeId, isAMRoute);
 
-                using var context = _contextFactory.CreateWriteDbContext();
+                var (context, dispose) = GetWriteContext();
 
                 // Check driver exists and is qualified
                 var driver = await context.Drivers.FindAsync(driverId);
                 if (driver == null)
                 {
                     Logger.Warning("Driver with ID {DriverId} not found", driverId);
+                    if (dispose)
+                    {
+                        await context.DisposeAsync();
+                    }
                     return false;
                 }
 
@@ -589,6 +610,10 @@ namespace BusBuddy.Core.Services
                 if (route == null)
                 {
                     Logger.Warning("Route with ID {RouteId} not found", routeId);
+                    if (dispose)
+                    {
+                        await context.DisposeAsync();
+                    }
                     return false;
                 }
 
@@ -597,6 +622,10 @@ namespace BusBuddy.Core.Services
                 {
                     Logger.Warning("Driver {DriverId} is already assigned to another route on {Date}",
                         driverId, route.Date.ToShortDateString());
+                    if (dispose)
+                    {
+                        await context.DisposeAsync();
+                    }
                     throw new InvalidOperationException("Driver is already assigned to another route at this time");
                 }
 
@@ -611,8 +640,13 @@ namespace BusBuddy.Core.Services
                     route.PMDriverId = driverId;
                     route.DriverName = driver.DriverName; // For convenience in some queries
                 }
-
+                // Ensure changes are persisted even when tracking behavior is NoTracking
+                context.Routes.Update(route);
                 await context.SaveChangesAsync();
+                if (dispose)
+                {
+                    await context.DisposeAsync();
+                }
                 Logger.Information("Successfully assigned driver {DriverId} to route {RouteId}", driverId, routeId);
                 return true;
             }
@@ -707,12 +741,16 @@ namespace BusBuddy.Core.Services
                 Logger.Information("Checking if driver {DriverId} is available on {RouteDate}, AM: {IsAMRoute}",
                     driverId, routeDate.ToShortDateString(), isAMRoute);
 
-                using var context = _contextFactory.CreateDbContext();
+                var (context, dispose) = GetReadContext();
 
                 // Check if the driver exists and is qualified
                 var driver = await context.Drivers.FindAsync(driverId);
                 if (driver == null || driver.Status != "Active" || !driver.TrainingComplete || driver.LicenseStatus == "Expired")
                 {
+                    if (dispose)
+                    {
+                        await context.DisposeAsync();
+                    }
                     return false;
                 }
 
@@ -720,8 +758,12 @@ namespace BusBuddy.Core.Services
                 var isAssigned = await context.Routes
                     .AnyAsync(r => r.Date.Date == routeDate.Date &&
                                   (isAMRoute ? r.AMDriverId == driverId : r.PMDriverId == driverId));
-
-                return !isAssigned;
+                var available = !isAssigned;
+                if (dispose)
+                {
+                    await context.DisposeAsync();
+                }
+                return available;
             }
             catch (Exception ex)
             {
@@ -850,9 +892,10 @@ namespace BusBuddy.Core.Services
             {
                 Logger.Information("Updating status for driver {DriverId} to {Status}", driverId, status);
 
-                // Validate status
+                // Validate status — use case-insensitive comparison per docs:
+                // Enumerable.Contains with IEqualityComparer → https://learn.microsoft.com/dotnet/api/system.linq.enumerable.contains
                 var validStatuses = new[] { "Active", "Inactive", "On Leave", "Suspended", "Terminated" };
-                if (!validStatuses.Contains(status))
+                if (!validStatuses.Contains(status, StringComparer.OrdinalIgnoreCase))
                 {
                     throw new ArgumentException($"Invalid status. Valid values are: {string.Join(", ", validStatuses)}");
                 }
@@ -869,7 +912,8 @@ namespace BusBuddy.Core.Services
                 // If setting to inactive status, check for active route assignments
                 if (status != "Active" && driver.Status == "Active")
                 {
-                    var hasActiveRoutes = await context.Routes
+                    // Ensure query sees latest assignments even if set via another context
+                    var hasActiveRoutes = await context.Routes.AsNoTracking()
                         .AnyAsync(r => (r.AMDriverId == driverId || r.PMDriverId == driverId) && r.Date >= DateTime.Today);
 
                     if (hasActiveRoutes)
@@ -969,9 +1013,11 @@ namespace BusBuddy.Core.Services
                     errors.Add("License is expired");
                 }
 
-                // Status validation
+                // Status validation — use case-insensitive comparison per docs:
+                // Enumerable.Contains with IEqualityComparer → https://learn.microsoft.com/dotnet/api/system.linq.enumerable.contains
                 var validStatuses = new[] { "Active", "Inactive", "On Leave", "Suspended", "Terminated" };
-                if (!string.IsNullOrWhiteSpace(driver.Status) && !validStatuses.Contains(driver.Status))
+                if (!string.IsNullOrWhiteSpace(driver.Status) &&
+                    !validStatuses.Contains(driver.Status, StringComparer.OrdinalIgnoreCase))
                 {
                     errors.Add($"Invalid status. Valid values are: {string.Join(", ", validStatuses)}");
                 }

@@ -48,12 +48,12 @@ namespace BusBuddy.WPF.ViewModels.Student
         }
 
         // Primary constructor for DI usage
-        public StudentFormViewModel(IStudentService studentService, Core.Models.Student? student = null)
+        public StudentFormViewModel(IStudentService studentService, Core.Models.Student? student = null, bool enableValidation = false)
         {
             _studentService = studentService;
             _context = TryCreateDbContextViaDi() ?? new BusBuddyDbContext();
             _addressService = new AddressService();
-            DisableAddressValidation = true; // MVP default — re-enable post-MVP
+            DisableAddressValidation = !enableValidation; // Allow tests to enable validation
 
             _student = student ?? new Core.Models.Student
             {
@@ -76,11 +76,11 @@ namespace BusBuddy.WPF.ViewModels.Student
         }
 
         // Fallback constructor when DI is unavailable
-        public StudentFormViewModel(Core.Models.Student? student = null)
+        public StudentFormViewModel(Core.Models.Student? student = null, bool enableValidation = false)
         {
             _context = TryCreateDbContextViaDi() ?? new BusBuddyDbContext();
             _addressService = new AddressService();
-            DisableAddressValidation = true; // MVP default — re-enable post-MVP
+            DisableAddressValidation = !enableValidation; // Allow tests to enable validation
             // For MVP, we'll do simple validation directly in the ViewModel
             // TODO: Inject AddressValidationService when UnitOfWork is available
 

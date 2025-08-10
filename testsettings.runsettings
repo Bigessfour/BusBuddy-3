@@ -65,6 +65,12 @@
     <ForcedLegacyMode>false</ForcedLegacyMode>
   </MSTest>
 
+  <!-- NUnit configuration -->
+  <NUnit>
+    <!-- 0 means use environment default (typically number of logical CPUs) -->
+    <NumberOfTestWorkers>0</NumberOfTestWorkers>
+  </NUnit>
+
   <!-- Logger configuration -->
   <LoggerRunSettings>
     <Loggers>

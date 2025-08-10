@@ -130,7 +130,26 @@ Tech Debt (Student form)
 - Build: PASS (BusBuddy.Core, BusBuddy.WPF, BusBuddy.Tests)
 - Runtime: App launches; theming applied consistently; button commands execute with logging.
 
+### Test stabilization (Aug 10)
+- WileyTests — Seed deterministic route ID for “East Route”
+  - Change: In test SetUp, ensure a Route with RouteId = 1 and RouteName = "East Route" exists.
+  - File: BusBuddy.Tests/Core/WileyTests.cs
+  - Why: Fixes failure “Null Route ID: East Route not found” and aligns assertions to a stable key.
+  - Docs: DbSet.Find/FindAsync — https://learn.microsoft.com/dotnet/api/microsoft.entityframeworkcore.dbset-1.findasync
+- StudentsViewModelTests — Ensure selection + status assumptions
+  - Change: In SetUp, add a test student and set SelectedStudent; in Status test, rely on LoadStudentsAsync to populate StatusMessage instead of manual fallback.
+  - File: BusBuddy.Tests/ViewModels/Student/StudentsViewModelTests.cs
+  - Why: Fixes null SelectedStudent and empty Status expectations during tests.
+
+Verification
+- bb-anti-regression → Ensure no Microsoft.Extensions.Logging or standard WPF DataGrid regressions.
+- bb-xaml-validate → Ensure only Syncfusion controls are used in XAML.
+- dotnet build/test → Confirm green.
+
 ### Commits
+- feat(wpf): add shared SyncfusionStyles.xaml and merge in App.xaml for consistent theming
+- test(core): seed “East Route” with RouteId=1 in WileyTests SetUp
+- test(vm): stabilize StudentsViewModelTests by ensuring non-null selection and relying on LoadStudentsAsync for status
 - feat(activity): add ActivityManagementViewModel and ActivityItem; wire DataContext; update ButtonFormValidationReport with GoogleEarth/Fuel/Activity audits
 - chore(googleearth): apply Syncfusion theme and consolidate dispose pattern; remove duplicate methods
 
@@ -142,6 +161,14 @@ bb-run
 # Direct
 dotnet run --project "BusBuddy.WPF/BusBuddy.WPF.csproj"
 ```
+
+### Shared Syncfusion styles (new)
+- Added: BusBuddy.WPF/Resources/SyncfusionStyles.xaml
+  - Uses SkinManagerResourceDictionary with FluentDark (fallback: FluentLight)
+  - Provides shared brushes and default input styles (SfTextBoxExt, SfMaskedEdit)
+- Merged in App.xaml
+  - <ResourceDictionary Source="/Resources/SyncfusionStyles.xaml" /> under Application.Resources/MergedDictionaries
+- Docs: SfSkinManager — https://help.syncfusion.com/wpf/themes/sfskinmanager
 
 ### Notes
 - All changes adhere to the Syncfusion-only UI policy — no standard WPF DataGrid introduced.
