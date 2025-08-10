@@ -6,6 +6,9 @@ using System.Windows.Automation;
 using System.Windows.Media;
 using System.Windows.Threading;
 using Serilog;
+using Microsoft.Extensions.DependencyInjection;
+using BusBuddy.Core.Services.Interfaces;
+using BusBuddy.WPF.ViewModels.Vehicle;
 
 namespace BusBuddy.WPF.Views.Vehicle
 {
@@ -22,6 +25,17 @@ namespace BusBuddy.WPF.Views.Vehicle
             try
             {
                 InitializeComponent();
+                // Ensure DataContext is set so Command bindings work
+                try
+                {
+                    var busService = App.ServiceProvider.GetRequiredService<IBusService>();
+                    this.DataContext = new VehicleManagementViewModel(busService);
+                    Logger.Information("VehicleManagementView DataContext set to VehicleManagementViewModel");
+                }
+                catch (Exception ex)
+                {
+                    Logger.Error(ex, "Failed to resolve IBusService for VehicleManagementViewModel. Commands may be disabled.");
+                }
                 Loaded += OnLoaded;
                 Unloaded += OnUnloaded;
 

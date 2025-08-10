@@ -466,7 +466,7 @@ namespace BusBuddy.WPF.Views.Fuel
         }
 
         /// <summary>
-        /// Apply Syncfusion theme with FluentDark default and FluentWhite fallback
+        /// Apply Syncfusion theme with FluentDark default and FluentLight fallback
         /// </summary>
         private void ApplySyncfusionTheme()
         {
@@ -475,19 +475,35 @@ namespace BusBuddy.WPF.Views.Fuel
             {
                 using var fluentDarkTheme = new Theme("FluentDark");
                 SfSkinManager.SetTheme(this, fluentDarkTheme);
+                Logger.Information("FluentDark theme applied to {ViewName}", GetType().Name);
             }
             catch
             {
                 try
                 {
-                    using var fluentWhiteTheme = new Theme("FluentWhite");
-                    SfSkinManager.SetTheme(this, fluentWhiteTheme);
+                    using var fluentLightTheme = new Theme("FluentLight");
+                    SfSkinManager.SetTheme(this, fluentLightTheme);
+                    Logger.Information("Fallback to FluentLight theme for {ViewName}", GetType().Name);
                 }
                 catch
                 {
                     // Continue without theme if both fail
                 }
             }
+        }
+
+        protected override void OnClosed(EventArgs e)
+        {
+            try
+            {
+                SfSkinManager.Dispose(this);
+                Logger.Information("SfSkinManager resources disposed for {ViewName}", GetType().Name);
+            }
+            catch (Exception ex)
+            {
+                Logger.Error("Error disposing SfSkinManager for {ViewName}: {Error}", GetType().Name, ex.Message);
+            }
+            base.OnClosed(e);
         }
     }
 

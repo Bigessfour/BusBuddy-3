@@ -42,8 +42,8 @@
         <!-- ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════ -->
         <!-- HEADER WITH FLEET DASHBOARD -->
         <!-- ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════ -->
-        <Border Grid.Row="0"
-                Background="#2D2D30"
+    <Border Grid.Row="0"
+        Background="{DynamicResource BusBuddy.Brush.Surface.Light}"
                 Padding="20,15">
             <Grid>
                 <Grid.ColumnDefinitions>
@@ -53,10 +53,10 @@
 
                 <!-- Title and Search -->
                 <StackPanel Grid.Column="0" Orientation="Horizontal">
-                    <TextBlock Text="🚌 Vehicle Management"
+                    <TextBlock Text="Vehicle Management"
                                FontSize="24"
                                FontWeight="Bold"
-                               Foreground="White"
+                               Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"
                                VerticalAlignment="Center"/>
 
                     <!-- Step 3: Search input (Phase 1: TextBox → Phase 2: SfTextBox) -->
@@ -65,32 +65,32 @@
                              Margin="30,0,0,0"
                              Text="{Binding SearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                              VerticalAlignment="Center"
-                             Background="#3C3C3C"
-                             Foreground="White"
-                             BorderBrush="#555555"
+                             Background="{DynamicResource ContentBackgroundBrush}"
+                             Foreground="{DynamicResource PrimaryTextBrush}"
+                             BorderBrush="{DynamicResource TextBoxBorderBrush}"
                              Padding="10,5"/>
                 </StackPanel>
 
                 <!-- Step 3: Mini-dashboard with fleet statistics -->
-                <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="20,0,0,0">
-                    <Border Background="#323130" CornerRadius="8" Padding="15,10" Margin="0,0,10,0">
+        <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="20,0,0,0">
+            <Border Background="{DynamicResource BusBuddy.Brush.Surface.Border}" CornerRadius="8" Padding="15,10" Margin="0,0,10,0">
                         <StackPanel>
-                            <TextBlock Text="Total Buses" FontSize="10" Foreground="#CCCCCC"/>
-                            <TextBlock Text="{Binding TotalBuses}" FontSize="18" FontWeight="Bold" Foreground="White"/>
+                <TextBlock Text="Total Buses" FontSize="10" Foreground="{DynamicResource BusBuddy.Brush.Text.Secondary}"/>
+                <TextBlock Text="{Binding TotalBuses}" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"/>
                         </StackPanel>
                     </Border>
 
-                    <Border Background="#2ECC71" CornerRadius="8" Padding="15,10" Margin="0,0,10,0">
+            <Border Background="{DynamicResource BusBuddy.Brush.FleetGreen}" CornerRadius="8" Padding="15,10" Margin="0,0,10,0">
                         <StackPanel>
-                            <TextBlock Text="Active" FontSize="10" Foreground="White"/>
-                            <TextBlock Text="{Binding ActiveVehicles}" FontSize="18" FontWeight="Bold" Foreground="White"/>
+                <TextBlock Text="Active" FontSize="10" Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"/>
+                <TextBlock Text="{Binding ActiveVehicles}" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"/>
                         </StackPanel>
                     </Border>
 
-                    <Border Background="#FF8C00" CornerRadius="8" Padding="15,10">
+            <Border Background="{DynamicResource BusBuddy.Brush.SafetyOrange}" CornerRadius="8" Padding="15,10">
                         <StackPanel>
-                            <TextBlock Text="Maintenance" FontSize="10" Foreground="White"/>
-                            <TextBlock Text="{Binding VehiclesInMaintenance}" FontSize="18" FontWeight="Bold" Foreground="White"/>
+                <TextBlock Text="Maintenance" FontSize="10" Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"/>
+                <TextBlock Text="{Binding VehiclesInMaintenance}" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"/>
                         </StackPanel>
                     </Border>
                 </StackPanel>
@@ -110,8 +110,8 @@
             <!-- ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════ -->
             <!-- LEFT PANEL: VEHICLE LIST (Phase 1: DataGrid → Phase 2: SfDataGrid) -->
             <!-- ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════ -->
-            <Border Grid.Column="0"
-                    Background="#252526"
+        <Border Grid.Column="0"
+            Background="{DynamicResource BusBuddy.Brush.Panel.Content}"
                     CornerRadius="8"
                     Padding="15">
                 <Grid>
@@ -126,7 +126,7 @@
                                Text="Fleet Vehicles"
                                FontSize="16"
                                FontWeight="SemiBold"
-                               Foreground="White"
+                               Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"
                                Margin="0,0,0,15"/>
 
                     <!-- Step 3: Vehicle list with Core service integration -->
@@ -199,18 +199,18 @@
                     <StackPanel Grid.Row="2"
                                 Orientation="Horizontal"
                                 Margin="0,15,0,0">
-                        <syncfusion:ButtonAdv Label="➕ New Vehicle"
+            <syncfusion:ButtonAdv Label="➕ New Vehicle"
                                 Command="{Binding NewVehicleCommand}"
-                                Background="#0078D4"
-                                Foreground="White"
+                Background="{DynamicResource BusBuddy.Brush.Primary}"
+                Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"
                                 BorderThickness="0"
                                 Padding="15,8"
                                 Margin="0,0,10,0"
                                 Cursor="Hand"/>
-                        <syncfusion:ButtonAdv Label="🔄 Refresh"
+            <syncfusion:ButtonAdv Label="🔄 Refresh"
                                 Command="{Binding RefreshCommand}"
-                                Background="#5A5A5A"
-                                Foreground="White"
+                Background="{DynamicResource ButtonBackgroundBrush}"
+                Foreground="{DynamicResource ButtonForegroundBrush}"
                                 BorderThickness="0"
                                 Padding="15,8"
                                 Cursor="Hand"/>
@@ -221,15 +221,15 @@
             <!-- Column Splitter -->
             <GridSplitter Grid.Column="1"
                           Width="2"
-                          Background="#323130"
+                          Background="{DynamicResource BusBuddy.Brush.Surface.Border}"
                           VerticalAlignment="Stretch"
                           HorizontalAlignment="Center"/>
 
             <!-- ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════ -->
             <!-- RIGHT PANEL: VEHICLE DETAILS/EDIT FORM -->
             <!-- ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════ -->
-            <Border Grid.Column="2"
-                    Background="#252526"
+        <Border Grid.Column="2"
+            Background="{DynamicResource BusBuddy.Brush.Panel.Content}"
                     CornerRadius="8"
                     Padding="20">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
@@ -239,7 +239,7 @@
                         <TextBlock Text="Vehicle Details"
                                    FontSize="16"
                                    FontWeight="SemiBold"
-                                   Foreground="White"
+                                   Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"
                                    Margin="0,0,0,20"/>
 
                         <!-- Step 3: Form inputs with Core service integration -->
@@ -247,24 +247,24 @@
                         <!-- Bus Number -->
                         <TextBlock Text="Bus Number:"
                                    FontSize="12"
-                                   Foreground="#CCCCCC"
+                                   Foreground="{DynamicResource BusBuddy.Brush.Text.Secondary}"
                                    Margin="0,0,0,5"/>
                         <syncfusion:SfMaskedEdit Text="{Binding BusNumber, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                 Background="#3C3C3C"
-                                 Foreground="White"
-                                 BorderBrush="#555555"
+                                 Background="{DynamicResource ContentBackgroundBrush}"
+                                 Foreground="{DynamicResource PrimaryTextBrush}"
+                                 BorderBrush="{DynamicResource TextBoxBorderBrush}"
                                  Padding="8,5"
                                  Margin="0,0,0,15"/>
 
                         <!-- License Number -->
                         <TextBlock Text="License Number:"
                                    FontSize="12"
-                                   Foreground="#CCCCCC"
+                                   Foreground="{DynamicResource BusBuddy.Brush.Text.Secondary}"
                                    Margin="0,0,0,5"/>
                         <syncfusion:SfMaskedEdit Text="{Binding LicenseNumber, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                 Background="#3C3C3C"
-                                 Foreground="White"
-                                 BorderBrush="#555555"
+                                 Background="{DynamicResource ContentBackgroundBrush}"
+                                 Foreground="{DynamicResource PrimaryTextBrush}"
+                                 BorderBrush="{DynamicResource TextBoxBorderBrush}"
                                  Padding="8,5"
                                  Margin="0,0,0,15"
                                  AutomationProperties.Name="License Number Input"/>
@@ -272,24 +272,24 @@
                         <!-- Make -->
                         <TextBlock Text="Make:"
                                    FontSize="12"
-                                   Foreground="#CCCCCC"
+                                   Foreground="{DynamicResource BusBuddy.Brush.Text.Secondary}"
                                    Margin="0,0,0,5"/>
                         <syncfusion:SfMaskedEdit Text="{Binding Make, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                 Background="#3C3C3C"
-                                 Foreground="White"
-                                 BorderBrush="#555555"
+                                 Background="{DynamicResource ContentBackgroundBrush}"
+                                 Foreground="{DynamicResource PrimaryTextBrush}"
+                                 BorderBrush="{DynamicResource TextBoxBorderBrush}"
                                  Padding="8,5"
                                  Margin="0,0,0,15"/>
 
                         <!-- Model -->
                         <TextBlock Text="Model:"
                                    FontSize="12"
-                                   Foreground="#CCCCCC"
+                                   Foreground="{DynamicResource BusBuddy.Brush.Text.Secondary}"
                                    Margin="0,0,0,5"/>
                         <syncfusion:SfMaskedEdit Text="{Binding Model, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                 Background="#3C3C3C"
-                                 Foreground="White"
-                                 BorderBrush="#555555"
+                                 Background="{DynamicResource ContentBackgroundBrush}"
+                                 Foreground="{DynamicResource PrimaryTextBrush}"
+                                 BorderBrush="{DynamicResource TextBoxBorderBrush}"
                                  Padding="8,5"
                                  Margin="0,0,0,15"/>
 
@@ -305,12 +305,12 @@
                             <StackPanel Grid.Column="0">
                                 <TextBlock Text="Year:"
                                            FontSize="12"
-                                           Foreground="#CCCCCC"
+                                           Foreground="{DynamicResource BusBuddy.Brush.Text.Secondary}"
                                            Margin="0,0,0,5"/>
                                 <syncfusion:SfMaskedEdit Text="{Binding Year, Mode=TwoWay}"
-                                         Background="#3C3C3C"
-                                         Foreground="White"
-                                         BorderBrush="#555555"
+                                         Background="{DynamicResource ContentBackgroundBrush}"
+                                         Foreground="{DynamicResource PrimaryTextBrush}"
+                                         BorderBrush="{DynamicResource TextBoxBorderBrush}"
                                          Padding="8,5"/>
                             </StackPanel>
 
@@ -318,12 +318,12 @@
                             <StackPanel Grid.Column="2">
                                 <TextBlock Text="Capacity:"
                                            FontSize="12"
-                                           Foreground="#CCCCCC"
+                                           Foreground="{DynamicResource BusBuddy.Brush.Text.Secondary}"
                                            Margin="0,0,0,5"/>
                                 <syncfusion:SfMaskedEdit Text="{Binding Capacity, Mode=TwoWay}"
-                                         Background="#3C3C3C"
-                                         Foreground="White"
-                                         BorderBrush="#555555"
+                                         Background="{DynamicResource ContentBackgroundBrush}"
+                                         Foreground="{DynamicResource PrimaryTextBrush}"
+                                         BorderBrush="{DynamicResource TextBoxBorderBrush}"
                                          Padding="8,5"/>
                             </StackPanel>
                         </Grid>
@@ -331,12 +331,12 @@
                         <!-- Status -->
                         <TextBlock Text="Status:"
                                    FontSize="12"
-                                   Foreground="#CCCCCC"
+                                   Foreground="{DynamicResource BusBuddy.Brush.Text.Secondary}"
                                    Margin="0,0,0,5"/>
                         <syncfusion:ComboBoxAdv SelectedItem="{Binding Status, Mode=TwoWay}"
-                                  Background="#3C3C3C"
-                                  Foreground="White"
-                                  BorderBrush="#555555"
+                                  Background="{DynamicResource ContentBackgroundBrush}"
+                                  Foreground="{DynamicResource PrimaryTextBrush}"
+                                  BorderBrush="{DynamicResource TextBoxBorderBrush}"
                                   Padding="8,5"
                                   Margin="0,0,0,20" AutomationProperties.Name="Status Selection">
                             <ComboBoxItem Content="Active"/>
@@ -349,27 +349,27 @@
                         <StackPanel Orientation="Horizontal"
                                     HorizontalAlignment="Right"
                                     Margin="0,20,0,0">
-                            <syncfusion:ButtonAdv Label="💾 Save"
+                <syncfusion:ButtonAdv Label="💾 Save"
                                     Command="{Binding DataContext.SaveVehicleCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                     Style="{StaticResource InverseBooleanStyle}"
-                                    Background="#2ECC71"
-                                    Foreground="White"
+                    Background="{DynamicResource BusBuddy.Brush.FleetGreen}"
+                    Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"
                                     BorderThickness="0"
                                     Padding="15,8"
                                     Margin="0,0,10,0"
                                     Cursor="Hand"/>
-                            <syncfusion:ButtonAdv Label="🗑️ Delete"
+                <syncfusion:ButtonAdv Label="🗑️ Delete"
                                     Command="{Binding DataContext.DeleteVehicleCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                     Style="{StaticResource InverseBooleanStyle}"
-                                    Background="#E74C3C"
-                                    Foreground="White"
+                    Background="{DynamicResource BusBuddy.Brush.Semantic.Error}"
+                    Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"
                                     BorderThickness="0"
                                     Padding="15,8"
                                     Cursor="Hand"/>
                         </StackPanel>
 
                         <!-- Step 3: Fleet utilization display -->
-                        <Border Background="#1E1E1E"
+                        <Border Background="{DynamicResource BusBuddy.Brush.Panel.Background}"
                                 CornerRadius="8"
                                 Padding="15"
                                 Margin="0,30,0,0"
@@ -387,11 +387,11 @@
                                     <TextBlock Text="{Binding DataContext.FleetUtilization, RelativeSource={RelativeSource AncestorType=UserControl}, StringFormat={}{0:F1}%}"
                                                FontSize="36"
                                                FontWeight="Bold"
-                                               Foreground="#0078D4"
+                                               Foreground="{DynamicResource BusBuddy.Brush.Primary}"
                                                HorizontalAlignment="Center"/>
                                     <TextBlock Text="Fleet Active"
                                                FontSize="12"
-                                               Foreground="#CCCCCC"
+                                               Foreground="{DynamicResource BusBuddy.Brush.Text.Secondary}"
                                                HorizontalAlignment="Center"/>
                                 </StackPanel>
                             </Grid>
@@ -405,8 +405,8 @@
         <!-- ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════ -->
         <!-- STATUS BAR -->
         <!-- ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════ -->
-        <Border Grid.Row="2"
-                Background="#323130"
+    <Border Grid.Row="2"
+        Background="{DynamicResource BusBuddy.Brush.Surface.Border}"
                 Padding="15,8">
             <Grid>
                 <Grid.ColumnDefinitions>
@@ -417,7 +417,7 @@
                 <!-- Status Message -->
                 <TextBlock Grid.Column="0"
                            Text="{Binding StatusMessage}"
-                           Foreground="#CCCCCC"
+                           Foreground="{DynamicResource BusBuddy.Brush.Text.Secondary}"
                            FontSize="12"
                            VerticalAlignment="Center"/>
 
@@ -430,7 +430,7 @@
                                Margin="0,0,10,0"
                                VerticalAlignment="Center"/>
                     <TextBlock Text="Processing..."
-                               Foreground="#0078D4"
+                               Foreground="{DynamicResource BusBuddy.Brush.Primary}"
                                FontSize="12"
                                VerticalAlignment="Center"/>
                 </StackPanel>

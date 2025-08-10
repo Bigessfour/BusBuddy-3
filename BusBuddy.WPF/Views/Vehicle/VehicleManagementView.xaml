@@ -10,37 +10,36 @@
              Background="{DynamicResource ContentBackgroundBrush}">
 
     <UserControl.Resources>
-        <!-- Theme resources -->
+        <!-- Theme resources and custom styles contained within a single ResourceDictionary -->
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/SyncfusionV30_Validated_ResourceDictionary.xaml"/>
-                <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/Themes/FluentDarkTheme.xaml"/>
             </ResourceDictionary.MergedDictionaries>
+
+            <!-- Custom Styles for MVP -->
+            <Style x:Key="SectionHeaderStyle" TargetType="TextBlock">
+                <Setter Property="FontSize" Value="16"/>
+                <Setter Property="FontWeight" Value="SemiBold"/>
+                <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}"/>
+                <Setter Property="Margin" Value="0,10,0,5"/>
+            </Style>
+
+            <Style x:Key="FormLabelStyle" TargetType="TextBlock">
+                <Setter Property="FontWeight" Value="Medium"/>
+                <Setter Property="VerticalAlignment" Value="Center"/>
+                <Setter Property="Margin" Value="0,0,10,0"/>
+                <Setter Property="MinWidth" Value="120"/>
+            </Style>
+
+            <Style x:Key="ActionButtonStyle" TargetType="syncfusion:ButtonAdv">
+                <Setter Property="Padding" Value="15,8"/>
+                <Setter Property="Margin" Value="5"/>
+                <Setter Property="FontWeight" Value="Medium"/>
+                <Setter Property="Cursor" Value="Hand"/>
+                <Setter Property="BorderThickness" Value="0"/>
+                <Setter Property="Foreground" Value="{DynamicResource ButtonForegroundBrush}"/>
+            </Style>
         </ResourceDictionary>
-
-        <!-- Custom Styles for MVP -->
-        <Style x:Key="SectionHeaderStyle" TargetType="TextBlock">
-            <Setter Property="FontSize" Value="16"/>
-            <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="Foreground" Value="#1565C0"/>
-            <Setter Property="Margin" Value="0,10,0,5"/>
-        </Style>
-
-        <Style x:Key="FormLabelStyle" TargetType="TextBlock">
-            <Setter Property="FontWeight" Value="Medium"/>
-            <Setter Property="VerticalAlignment" Value="Center"/>
-            <Setter Property="Margin" Value="0,0,10,0"/>
-            <Setter Property="MinWidth" Value="120"/>
-        </Style>
-
-    <Style x:Key="ActionButtonStyle" TargetType="syncfusion:ButtonAdv">
-            <Setter Property="Padding" Value="15,8"/>
-            <Setter Property="Margin" Value="5"/>
-            <Setter Property="FontWeight" Value="Medium"/>
-            <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Foreground" Value="{DynamicResource ButtonForegroundBrush}"/>
-        </Style>
     </UserControl.Resources>
 
     <Grid Margin="20">
@@ -94,8 +93,8 @@
                         <Setter Property="Template">
                             <Setter.Value>
                                 <ControlTemplate TargetType="TextBox">
-                                    <Border Background="White"
-                                           BorderBrush="#CCCCCC"
+                     <Border Background="{DynamicResource ContentBackgroundBrush}"
+                         BorderBrush="{DynamicResource BorderBrush}"
                                            BorderThickness="1"
                                            CornerRadius="4">
                                         <ScrollViewer Margin="8,0,0,0" x:Name="PART_ContentHost"/>
@@ -128,11 +127,11 @@
                      Padding="10"
                      Margin="0,0,15,0"/>
 
-            <syncfusion:ButtonAdv Grid.Column="2"
-                   Label="🔄 Refresh"
-                   Command="{Binding RefreshCommand}"
-                   Style="{StaticResource ActionButtonStyle}"
-                   Background="#757575"/>
+         <syncfusion:ButtonAdv Grid.Column="2"
+             Label="🔄 Refresh"
+             Command="{Binding RefreshCommand}"
+             Style="{StaticResource ActionButtonStyle}"
+             Background="{DynamicResource ButtonBackgroundBrush}"/>
         </Grid>
 
         <!-- Main Content - Split between Grid and Form -->
@@ -283,14 +282,14 @@
                                    Orientation="Horizontal"
                                    HorizontalAlignment="Right"
                                    Margin="0,20,0,0">
-                            <syncfusion:ButtonAdv Label="💾 Save"
-                                   Command="{Binding SaveVehicleCommand}"
-                                   Style="{StaticResource ActionButtonStyle}"
-                                   Background="#2E7D32"/>
-                            <syncfusion:ButtonAdv Label="❌ Cancel"
-                                   Command="{Binding CancelEditCommand}"
-                                   Style="{StaticResource ActionButtonStyle}"
-                                   Background="#757575"/>
+                <syncfusion:ButtonAdv Label="💾 Save"
+                    Command="{Binding SaveVehicleCommand}"
+                    Style="{StaticResource ActionButtonStyle}"
+                    Background="{DynamicResource ButtonBackgroundBrush}"/>
+                <syncfusion:ButtonAdv Label="❌ Cancel"
+                    Command="{Binding CancelEditCommand}"
+                    Style="{StaticResource ActionButtonStyle}"
+                    Background="{DynamicResource ButtonBackgroundBrush}"/>
                         </StackPanel>
 
                         <!-- Loading Indicator -->

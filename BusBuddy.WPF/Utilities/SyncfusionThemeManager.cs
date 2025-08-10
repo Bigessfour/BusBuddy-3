@@ -36,6 +36,7 @@ namespace BusBuddy.WPF.Utilities
                 using (var theme = new Theme(PRIMARY_THEME))
                 {
                     SfSkinManager.SetTheme(view, theme);
+                    Logger.Information("Theme changed to {ThemeName} for {Component}", PRIMARY_THEME, view.GetType().Name);
                 }
             }
             catch (Exception ex)

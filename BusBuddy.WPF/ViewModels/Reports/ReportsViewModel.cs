@@ -390,10 +390,12 @@ namespace BusBuddy.WPF.ViewModels.Reports
 
         #region Helper Methods
 
-        private async Task ExecuteReportGeneration(string reportName, Func<Task<string>> reportAction)
+    private async Task ExecuteReportGeneration(string reportName, Func<Task<string>> reportAction)
         {
             try
             {
+        Logger.Debug("CanExecute for {Report} assumed true at execution time (AsyncRelayCommand)", reportName);
+        Logger.Information("Starting execution of report command: {Report}", reportName);
                 IsGeneratingReport = true;
                 StatusMessage = $"Generating {reportName}...";
 
@@ -411,6 +413,7 @@ namespace BusBuddy.WPF.ViewModels.Reports
             finally
             {
                 IsGeneratingReport = false;
+                Logger.Debug("Finished execution of report command: {Report}", reportName);
             }
         }
 

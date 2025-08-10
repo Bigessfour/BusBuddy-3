@@ -1,8 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net9.0-windows</TargetFramework>
-    <UseWPF>true</UseWPF>
+    <TargetFrameworks>net9.0-windows;net8.0-windows</TargetFrameworks>
+  <UseWPF>true</UseWPF>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
@@ -11,13 +11,12 @@
     <!-- Enhanced MSB3027/MSB3021 File Lock Prevention for Test Projects -->
     <UseSharedCompilation>false</UseSharedCompilation>
     <BuildInParallel>false</BuildInParallel>
-    <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
-    <ShadowCopyFiles>true</ShadowCopyFiles>
+  <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+  <ShadowCopyFiles>true</ShadowCopyFiles>
     <ProduceOnlyReferenceAssembly>false</ProduceOnlyReferenceAssembly>
-    <AutoGenerateBindingRedirects>false</AutoGenerateBindingRedirects>
+  <!-- Use solution defaults for binding redirects -->
 
-    <!-- Test-specific lock prevention -->
-    <VSTestUseMSBuildOutput>false</VSTestUseMSBuildOutput>
+  <!-- Test-specific lock prevention (use default MSBuild output behavior) -->
     <RunAnalyzersDuringBuild>false</RunAnalyzersDuringBuild>
 
     <!-- Prevent testhost from holding locks -->
@@ -64,8 +63,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\BusBuddy.Core\BusBuddy.Core.csproj" />
-    <ProjectReference Include="..\BusBuddy.WPF\BusBuddy.WPF.csproj" />
+    <!-- Match TargetFramework to avoid cross-TFM reference errors -->
+    <ProjectReference Include="..\BusBuddy.Core\BusBuddy.Core.csproj" Condition=" '$(TargetFramework)' == 'net9.0-windows' or '$(TargetFramework)' == 'net8.0-windows' " />
+    <ProjectReference Include="..\BusBuddy.WPF\BusBuddy.WPF.csproj" Condition=" '$(TargetFramework)' == 'net9.0-windows' or '$(TargetFramework)' == 'net8.0-windows' " />
   </ItemGroup>
 
   <ItemGroup>

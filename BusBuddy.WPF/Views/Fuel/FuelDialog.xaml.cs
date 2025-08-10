@@ -12,6 +12,7 @@ using Serilog.Context;
 using CoreModels = BusBuddy.Core.Models;
 using BusBuddy.WPF.ViewModels.Fuel;
 using Syncfusion.Windows.Shared;
+using Syncfusion.SfSkinManager;
 
 namespace BusBuddy.WPF.Views.Fuel
 {
@@ -97,6 +98,17 @@ namespace BusBuddy.WPF.Views.Fuel
             DialogTitle = fuel.FuelId == 0 ? "Add Fuel Record" : "Edit Fuel Record";
 
             InitializeComponent();
+            // Apply Syncfusion theme — FluentDark default, FluentLight fallback
+            try
+            {
+                SfSkinManager.ApplyThemeAsDefaultStyle = true;
+                using var dark = new Theme("FluentDark");
+                SfSkinManager.SetTheme(this, dark);
+            }
+            catch
+            {
+                try { using var light = new Theme("FluentLight"); SfSkinManager.SetTheme(this, light); } catch { }
+            }
             DataContext = this;
 
             // Ensure the model has default values if it's new
@@ -108,6 +120,20 @@ namespace BusBuddy.WPF.Views.Fuel
             }
 
             LoadBusesAsync();
+        }
+
+        protected override void OnClosed(EventArgs e)
+        {
+            try
+            {
+                SfSkinManager.Dispose(this);
+                Logger.Information("SfSkinManager resources disposed for {ViewName}", GetType().Name);
+            }
+            catch (Exception ex)
+            {
+                Logger.Error("Error disposing SfSkinManager for {ViewName}: {Error}", GetType().Name, ex.Message);
+            }
+            base.OnClosed(e);
         }
 
         private async void LoadBusesAsync()

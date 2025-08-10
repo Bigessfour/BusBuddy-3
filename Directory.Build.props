@@ -2,8 +2,8 @@
   <!-- 🚌 BusBuddy - Modern Foundation Configuration (.NET 9.0) -->
 
   <PropertyGroup>
-    <!-- Target Framework — Standardized for MVP stability -->
-    <TargetFramework>net9.0-windows</TargetFramework>
+  <!-- Target Framework default; projects may override with multi-targeting -->
+  <TargetFramework Condition="'$(TargetFrameworks)' == '' and '$(TargetFramework)' == ''">net9.0-windows</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
@@ -114,10 +114,10 @@
 
   <!-- Test Project Specific Settings — MVP stability -->
   <PropertyGroup Condition="'$(IsTestProject)' == 'true'">
-    <UseSharedCompilation>false</UseSharedCompilation>
-    <BuildInParallel>false</BuildInParallel>
-    <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
-    <ShadowCopyFiles>false</ShadowCopyFiles>
+  <UseSharedCompilation>false</UseSharedCompilation>
+  <BuildInParallel>false</BuildInParallel>
+  <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+  <ShadowCopyFiles>true</ShadowCopyFiles>
     <ProduceOnlyReferenceAssembly>false</ProduceOnlyReferenceAssembly>
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
   </PropertyGroup>

@@ -14,7 +14,6 @@
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/SyncfusionV30_Validated_ResourceDictionary.xaml"/>
-                <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/Themes/FluentDarkTheme.xaml"/>
             </ResourceDictionary.MergedDictionaries>
             <!-- Required converter for Visibility bindings -->
             <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
@@ -54,19 +53,22 @@
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
-                <!-- Main Actions -->
+        <!-- Main Actions — all Buttons must bind to ViewModel commands (verified below) -->
                 <StackPanel Grid.Column="0" Orientation="Horizontal">
-            <syncfusion:ButtonAdv Name="AddStudentButton" Label="➕ Add Student"
+        <!-- Add student — always enabled. Command: AddStudentCommand -->
+        <syncfusion:ButtonAdv Name="AddStudentButton" Label="➕ Add Student"
                             Command="{Binding AddStudentCommand}"
                 Background="{DynamicResource BusBuddy.Brush.Primary}" Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"
                             AutomationProperties.Name="Add Student"
                             AutomationProperties.HelpText="Opens form to add a new student to the system"/>
-                    <syncfusion:ButtonAdv Name="EditStudentButton" Label="✏️ Edit Student"
+            <!-- Edit selected student — enabled only when HasSelectedStudent is true. Command: EditStudentCommand -->
+            <syncfusion:ButtonAdv Name="EditStudentButton" Label="✏️ Edit Student"
                             Command="{Binding EditStudentCommand}"
                             IsEnabled="{Binding HasSelectedStudent}"
                             AutomationProperties.Name="Edit Student"
                             AutomationProperties.HelpText="Opens form to edit the currently selected student"/>
-                    <syncfusion:ButtonAdv Name="DeleteStudentButton" Label="🗑️ Delete Student"
+            <!-- Delete selected student — enabled only when HasSelectedStudent is true. Command: DeleteStudentCommand -->
+            <syncfusion:ButtonAdv Name="DeleteStudentButton" Label="🗑️ Delete Student"
                             Command="{Binding DeleteStudentCommand}"
                             IsEnabled="{Binding HasSelectedStudent}"
                             AutomationProperties.Name="Delete Student"
@@ -74,12 +76,14 @@
                     <Separator Margin="10,0"/>
 
                     <!-- Bulk Operations -->
-            <syncfusion:ButtonAdv Name="ImportStudentsButton" Label="📥 Import CSV"
+        <!-- Import students from CSV/Excel (placeholder) — Command: ImportStudentsCommand -->
+        <syncfusion:ButtonAdv Name="ImportStudentsButton" Label="📥 Import CSV"
                             Command="{Binding ImportStudentsCommand}"
                 Background="{DynamicResource BusBuddy.Brush.FleetGreen}" Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"
                             AutomationProperties.Name="Import Students from CSV"
                             AutomationProperties.HelpText="Import multiple students from a CSV file"/>
-            <syncfusion:ButtonAdv Name="BulkAssignRouteButton" Label="🚌 Bulk Assign Route"
+        <!-- Bulk assign route to selection — requires HasSelectedStudents. Command: BulkAssignRouteCommand -->
+        <syncfusion:ButtonAdv Name="BulkAssignRouteButton" Label="🚌 Bulk Assign Route"
                             Command="{Binding BulkAssignRouteCommand}"
                             IsEnabled="{Binding HasSelectedStudents}"
                 Background="{DynamicResource BusBuddy.Brush.SafetyOrange}" Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"
@@ -88,19 +92,21 @@
                     <Separator Margin="10,0"/>
 
                     <!-- AI & Mapping -->
-            <syncfusion:ButtonAdv Name="OptimizeRoutesButton" Label="🤖 AI Optimize"
+        <!-- Start AI optimization (placeholder). Command: OptimizeRoutesCommand -->
+        <syncfusion:ButtonAdv Name="OptimizeRoutesButton" Label="🤖 AI Optimize"
                             Command="{Binding OptimizeRoutesCommand}"
                 Background="{DynamicResource BusBuddy.Brush.Semantic.Warning}" Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"
                             AutomationProperties.Name="AI Optimize Routes"
                             AutomationProperties.HelpText="Use artificial intelligence to optimize route assignments"/>
-            <syncfusion:ButtonAdv Name="ViewMapButton" Label="🗺️ View Map"
+        <!-- Plot all students on the map. Command: ViewMapCommand -->
+        <syncfusion:ButtonAdv Name="ViewMapButton" Label="🗺️ View Map"
                             Command="{Binding ViewMapCommand}"
                 Background="{DynamicResource BusBuddy.Brush.Semantic.Info}" Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"
                             AutomationProperties.Name="View Map"
                             AutomationProperties.HelpText="Display student locations on interactive map"/>
                 </StackPanel>
 
-                <!-- Quick Actions -->
+                <!-- Quick Actions — utility commands (Refresh/Export) and quick search -->
                 <StackPanel Grid.Column="1" Orientation="Horizontal">
                     <syncfusion:ButtonAdv Name="RefreshButton" Label="🔄 Refresh"
                             Command="{Binding RefreshCommand}"
@@ -121,7 +127,7 @@
             </Grid>
         </Border>
 
-        <!-- Student Data Grid - Enhanced for Route Building -->
+    <!-- Student Data Grid — Enhanced for route building (Syncfusion SfDataGrid per official docs) -->
     <syncfusion:SfDataGrid Grid.Row="2"
                                Name="StudentsDataGrid"
                    ItemsSource="{Binding StudentsView}"
@@ -205,7 +211,7 @@
                                          MappingName="City"
                                          Width="120"
                                          AllowEditing="True"/>
-                <!-- Use GridMaskColumn for phone number per Syncfusion docs -->
+                <!-- Phone number uses GridMaskColumn per Syncfusion documentation -->
                 <syncfusion:GridMaskColumn HeaderText="Phone"
                                            MappingName="HomePhone"
                                            Width="120"

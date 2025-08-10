@@ -361,8 +361,8 @@
                                 <!-- Simple marker template (pin image could be added later) -->
                                 <DataTemplate x:Key="StudentMarkerTemplate">
                                     <StackPanel Orientation="Vertical" Margin="-8,-24,0,0">
-                                        <Ellipse Width="12" Height="12" Fill="Tomato" Stroke="White" StrokeThickness="1"/>
-                                        <TextBlock Text="{Binding Label}" FontSize="11" Foreground="White" Background="#AA2B2B2B" Padding="4,1" Margin="-12,2,0,0"/>
+                                        <Ellipse Width="12" Height="12" Fill="{DynamicResource BusBuddy.Brush.Semantic.Error}" Stroke="{DynamicResource BusBuddy.Brush.Text.Primary}" StrokeThickness="1"/>
+                                        <TextBlock Text="{Binding Label}" FontSize="11" Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}" Background="#AA2B2B2B" Padding="4,1" Margin="-12,2,0,0"/>
                                     </StackPanel>
                                 </DataTemplate>
                             </Grid.Resources>

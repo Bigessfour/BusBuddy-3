@@ -1,6 +1,7 @@
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Controls;
+using Syncfusion.SfSkinManager;
 
 namespace BusBuddy.WPF.Views.Bus
 {
@@ -17,11 +18,31 @@ namespace BusBuddy.WPF.Views.Bus
         public NotificationWindow()
         {
             InitializeComponent();
+            try
+            {
+                SfSkinManager.ApplyThemeAsDefaultStyle = true;
+                using var dark = new Theme("FluentDark");
+                SfSkinManager.SetTheme(this, dark);
+            }
+            catch
+            {
+                try { using var light = new Theme("FluentLight"); SfSkinManager.SetTheme(this, light); } catch { }
+            }
         }
 
         public NotificationWindow(string message, string title = "Notification", NotificationType type = NotificationType.Information)
         {
             InitializeComponent();
+            try
+            {
+                SfSkinManager.ApplyThemeAsDefaultStyle = true;
+                using var dark = new Theme("FluentDark");
+                SfSkinManager.SetTheme(this, dark);
+            }
+            catch
+            {
+                try { using var light = new Theme("FluentLight"); SfSkinManager.SetTheme(this, light); } catch { }
+            }
 
             // Find elements by name and set their properties
             if (FindName("TitleText") is TextBlock titleText)
@@ -78,6 +99,12 @@ namespace BusBuddy.WPF.Views.Bus
         private void OkButton_Click(object sender, RoutedEventArgs e)
         {
             Close();
+        }
+
+        protected override void OnClosed(System.EventArgs e)
+        {
+            try { SfSkinManager.Dispose(this); } catch { }
+            base.OnClosed(e);
         }
     }
 }

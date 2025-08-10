@@ -17,7 +17,6 @@
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/SyncfusionV30_Validated_ResourceDictionary.xaml"/>
-                <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/Themes/FluentDarkTheme.xaml"/>
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </syncfusion:ChromelessWindow.Resources>
@@ -47,7 +46,7 @@
                            FontSize="16" Foreground="{DynamicResource ButtonForegroundBrush}" Opacity="0.9"
                            HorizontalAlignment="Center" Margin="0,8,0,0"/>
 
-                <!-- Navigation Buttons -->
+                <!-- Navigation + Theme Selector -->
                 <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,15,0,0">
                     <syncfusion:ButtonAdv Label="📚 Students" Margin="0,0,10,0" Padding="15,8"
                                           Background="{DynamicResource ButtonBackgroundBrush}" Foreground="{DynamicResource ButtonForegroundBrush}" BorderThickness="0"
@@ -74,6 +73,15 @@
                                           Click="ReportsButton_Click" FontSize="14" FontWeight="SemiBold"
                                           ToolTip="Generate and view transportation reports"
                                           AutomationProperties.Name="Reports and Print Routes"/>
+
+                    <!-- Theme Selector -->
+                    <StackPanel Orientation="Horizontal" Margin="20,0,0,0" VerticalAlignment="Center">
+                        <TextBlock Text="Theme:" Foreground="{DynamicResource ButtonForegroundBrush}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                        <syncfusion:ComboBoxAdv x:Name="ThemeSelector" Width="160" SelectedIndex="0" SelectionChanged="ThemeSelector_SelectionChanged">
+                            <syncfusion:ComboBoxItemAdv Content="FluentDark"/>
+                            <syncfusion:ComboBoxItemAdv Content="FluentLight"/>
+                        </syncfusion:ComboBoxAdv>
+                    </StackPanel>
                 </StackPanel>
             </Grid>
         </Border>

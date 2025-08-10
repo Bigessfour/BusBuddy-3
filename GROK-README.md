@@ -1,9 +1,69 @@
 # 🚌 BusBuddy Project - Grok Development Status
 
-**Last Updated:** August 9, 2025 11:00 — Geo/Eligibility, Student Plotting, and Fetchability Enhancements ✅  
-**Current Status:** Clean Build; Geo stack wired (SfMap + overlays + PIP eligibility + offline geocoding)  
+**Last Updated:** August 10, 2025 — UI Buttons/Forms Validation, GoogleEarth theming/cleanup, Activity DataContext ✅  
+**Current Status:** Clean Build; Geo stack wired (SfMap + overlays + PIP eligibility + offline geocoding); UI buttons/forms validated across modules  
 **Repository Status:** Build Success — EF Core aligned; WPF mapping features validated  
 **Key Achievement:** End-to-end student → geocode → map plotting; eligibility (in district AND not in town) operational
+
+---
+
+## 🧪 UI Buttons & Forms Validation — August 10, 2025
+
+### What we validated and fixed
+- Verified button/command wiring, CanExecute gating, theming, and logging across key modules.
+- Introduced missing DataContexts and close workflows where needed; preserved Syncfusion-only UI policy (no WPF DataGrid regressions).
+
+### Modules audited
+- Core: Students, StudentForm, RouteManagement — previously validated; still good.
+- VehicleManagement — DataContext fix already in place; remains good.
+- Reports — DataContext fix already in place; remains good.
+- Drivers — Added robust dialog close pattern and edit handoff; commands enablement validated.
+- Fuel Reconciliation — Commands (Export/Print) and Close handler work; theming/logging confirmed.
+- GoogleEarth — Added explicit Syncfusion theme and consolidated disposal pattern; command bindings validated.
+- Activity — Added ViewModel + model; wired DataContext so grid bindings work.
+
+### Concrete changes (Aug 10)
+- Activity module
+  - Added ActivityManagementViewModel and ActivityItem model; set DataContext in view code-behind.
+  - Files:
+    - ViewModel: BusBuddy.WPF/ViewModels/Activity/ActivityManagementViewModel.cs
+    - Model: BusBuddy.WPF/Models/Activity/ActivityItem.cs
+    - View (code-behind): BusBuddy.WPF/Views/Activity/ActivityManagementView.xaml.cs
+- GoogleEarth module
+  - Applied explicit Syncfusion theme via SfSkinManager (FluentDark default, FluentLight fallback) and consolidated Unloaded/Dispose pattern to prevent leaks.
+  - File: BusBuddy.WPF/Views/GoogleEarth/GoogleEarthView.xaml.cs
+- Fuel module
+  - Verified ExportCommand, PrintCommand, and Close handler; no code changes required.
+- Drivers module (from prior step, documented in ButtonFormValidationReport)
+  - DriverFormViewModel raises RequestClose; DriverForm.xaml.cs subscribes/unsubscribes and sets DialogResult; edit path passes selected driver to form VM; owner set for modal behavior.
+
+### Documentation-first references (controls used)
+- Syncfusion WPF docs: https://help.syncfusion.com/wpf/welcome-to-syncfusion-essential-wpf
+- Syncfusion API Reference (WPF): https://help.syncfusion.com/cr/wpf/Syncfusion.html
+- SfDataGrid Getting Started: https://help.syncfusion.com/wpf/datagrid/getting-started
+- ButtonAdv (toggle/state): https://help.syncfusion.com/wpf/button/toggle-state
+- SfSkinManager (themes): https://help.syncfusion.com/wpf/themes/skin-manager
+
+### Build and verification
+- Build: PASS (BusBuddy.Core, BusBuddy.WPF, BusBuddy.Tests)
+- Runtime: App launches; theming applied consistently; button commands execute with logging.
+
+### Commits
+- feat(activity): add ActivityManagementViewModel and ActivityItem; wire DataContext; update ButtonFormValidationReport with GoogleEarth/Fuel/Activity audits
+- chore(googleearth): apply Syncfusion theme and consolidate dispose pattern; remove duplicate methods
+
+### How to run
+```powershell
+# Preferred
+bb-run
+
+# Direct
+dotnet run --project "BusBuddy.WPF/BusBuddy.WPF.csproj"
+```
+
+### Notes
+- All changes adhere to the Syncfusion-only UI policy — no standard WPF DataGrid introduced.
+- Logging uses Serilog; theming standardized via SfSkinManager.
 
 ---
 
@@ -670,6 +730,7 @@ _busService = busService ?? throw new ArgumentNullException(nameof(busService));
 ```
 c:\Users\biges\Desktop\BusBuddy\BusBuddy.WPF\Views\Vehicle\BusEditDialog.xaml.cs     # Uncomment UI controls
 c:\Users\biges\Desktop\BusBuddy\BusBuddy.WPF\Views\Route\RouteEditDialog.xaml       # CREATE NEW FILE  
+c:\Users\biges\Desktop\BusBuddy\BusBuddy.WPF\Views\Route\RouteForm.xaml              # CREATE NEW FILE
 c:\Users\biges\Desktop\BusBuddy\BusBuddy.WPF\ViewModels\Vehicle\VehicleManagementViewModel.cs  # Fix service integration
 c:\Users\biges\Desktop\BusBuddy\BusBuddy.Core\Services\RouteService.cs               # Implement missing methods
 ```
@@ -692,10 +753,8 @@ c:\Users\biges\Desktop\BusBuddy\BusBuddy.WPF\ViewModels\Driver\DriverManagementV
 - ✅ **Route Optimization:** Interactive demonstration with sample data, driver assignment, and schedule generation
 - ✅ **PowerShell Route Commands:** bbRoutes, bbRouteDemo, bbRouteStatus all functional and tested
 - ✅ **Database Infrastructure:** 🆕 **Azure SQL Database fully operational** (busbuddy-server-sm2, BusBuddyDB)
-- ✅ **Database Schema:** Comprehensive documentation complete
-- ✅ **Error Handling:** Enhanced error capture and monitoring
-- ✅ **Syncfusion Integration:** WPF controls properly configured
-- ✅ **PowerShell Tooling:** Advanced development and testing scripts
+- ✅ **Database Connectivity:** Confirmed with comprehensive firewall rules
+- ✅ **Development Tools and Scripts:** Operational and validated
 
 ### **Technology Stack Confirmed**
 - **Framework:** .NET 9.0-windows (WPF) - **Current Production Environment**
@@ -1160,326 +1219,28 @@ This session demonstrated excellent development velocity with significant progre
 
 ---
 
----
-
-## 📋 **Current Session Status - August 8, 2025**
-
-### **🎯 Session Objective: Enhanced Testing Infrastructure**
-**GOAL:** "Ensure bbTest uses Phase 4 NUnit script and deprecate the old, unreliable .NET 9 method"
-
-### **✅ Completed Enhancements**
-- **bbTest Function Refactored:** Complete overhaul with .NET 9 compatibility detection and professional error handling
-- **Phase 4 NUnit Integration:** Seamless integration with VS Code NUnit Test Runner extension (402-line script)
-- **Enhanced User Experience:** Clear, actionable guidance replacing cryptic .NET 9 compatibility errors
-- **Advanced Logging:** Timestamped test logs saved to TestResults directory with structured output
-- **Documentation Updated:** FILE-FETCHABILITY-GUIDE.md and GROK-README.md reflect testing improvements
-
-### **🚨 .NET 9 Compatibility Issue - RESOLVED WITH WORKAROUNDS**
-```
-✅ BEFORE: Cryptic "Microsoft.TestPlatform.CoreUtilities v15.0.0.0 not found" error
-✅ AFTER: Professional guidance with 3 clear workaround options and detailed logging
-```
-
-**Workaround Options Implemented:**
-1. **VS Code NUnit Test Runner Extension** (Primary recommendation)
-2. **Visual Studio Test Explorer** (Alternative)
-3. **Temporary .NET 8.0 downgrade** (Not recommended - documented for completeness only)
-
-### **🎯 Infrastructure Now Ready**
-- Enhanced bbTest command operational with professional error handling
-- Phase 4 NUnit Test Runner integrated and functional
-- Comprehensive test logging and structured error responses
-- Clear user guidance for .NET 9 compatibility issues
-- All changes committed and pushed to BusBuddy-3 repository
-
----
-
-## 🌐 **File Fetchability Reference**
-
-### **🎯 Complete File Access Guide**
-All files in the BusBuddy project are directly fetchable via GitHub raw URLs using the following pattern:
-
-**Base URL**: `https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/`
-**Repository**: https://github.com/Bigessfour/BusBuddy-3
-
-### **📁 Key File Categories with Direct URLs**
-
-#### **🏗️ Core Project Files**
-```bash
-# Main solution and configuration
-https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.sln
-https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/Directory.Build.props
-https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/global.json
-https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/NuGet.config
-
-# Documentation and guides
-https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/README.md
-https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/GROK-README.md
-https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/SETUP-GUIDE.md
-```
-
-#### **🎨 WPF & Syncfusion Implementation**
-```bash
-# Main WPF application
-https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.WPF/App.xaml.cs
-https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.WPF/Views/Main/MainWindow.xaml
-
-# Student management (Syncfusion SfDataGrid)
-https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.WPF/Views/Student/StudentsView.xaml
-https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.WPF/ViewModels/Student/StudentsViewModel.cs
-
-# Syncfusion resources
-https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.WPF/Resources/SyncfusionV30_Validated_ResourceDictionary.xaml
-```
-
-#### **🗄️ Database & Services**
-```bash
-# Core services
-https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.Core/Services/StudentService.cs
-https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.Core/Services/RouteService.cs
-https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.Core/Services/DriverService.cs
-https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.Core/Data/BusBuddyDbContext.cs
-
-# Domain models
-https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.Core/Models/Student.cs
-https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.Core/Models/Route.cs
-https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.Core/Models/Bus.cs
-https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.Core/Models/Driver.cs
-
-# Service interfaces
-https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.Core/Services/IStudentService.cs
-https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.Core/Services/IRouteService.cs
-https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.Core/Services/IDriverService.cs
-https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.Core/Services/IBusService.cs
-```
-
-#### **🚌 Vehicle Management (80% Functional - UI Gap)**
-```bash
-# ViewModels and Views (WORKING commands, UI forms incomplete)
-https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.WPF/ViewModels/Vehicle/VehicleManagementViewModel.cs
-https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.WPF/ViewModels/Vehicle/VehiclesViewModel.cs
-https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.WPF/Views/Vehicle/VehicleManagementView.xaml
-https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.WPF/Views/Vehicle/VehiclesView.xaml
-
-# CRITICAL GAP: UI Dialog with commented controls (HIGH PRIORITY FIX)
-https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.WPF/Views/Vehicle/BusEditDialog.xaml.cs
-```
-
-#### **🛣️ Route Management (60% Functional - UI Missing)**
-```bash
-# ViewModels (FUNCTIONAL with mock data)
-https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.WPF/ViewModels/Route/RouteAssignmentViewModel.cs
-https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.WPF/ViewModels/Route/RouteManagementViewModel.cs
-https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.WPF/Models/RouteViewModel.cs
-
-# Existing Views (LIMITED functionality)
-https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.WPF/Views/Route/RouteManagementView.xaml
-https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.WPF/Views/Route/RouteManagementView.xaml.cs
-
-# MISSING FILES (CREATE NEEDED - HIGH PRIORITY):
-# BusBuddy.WPF/Views/Route/RouteEditDialog.xaml        - Present
-# BusBuddy.WPF/Views/Route/RouteForm.xaml              - Present
-```
-
-#### **👥 Driver Management (100% Service, 0% UI - COMPLETE GAP)**
-```bash
-# Complete service layer (FULLY FUNCTIONAL)
-https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.Core/Services/DriverService.cs
-https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.Core/Services/IDriverService.cs
-
-# MISSING FILES (CREATE NEEDED - MEDIUM PRIORITY):
-# BusBuddy.WPF/Views/Driver/DriverManagementView.xaml          - Present
-# BusBuddy.WPF/ViewModels/Driver/DriverManagementViewModel.cs  - Present (Drivers/DriverForm/DriversView models exist)
-```
-
-#### **💻 PowerShell Development Tools**
-```bash
-# Main BusBuddy module (enhanced bbTest, 2600+ lines)
-https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/PowerShell/Modules/BusBuddy/BusBuddy.psm1
-
-# Testing infrastructure
-https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/PowerShell/Testing/Run-Phase4-NUnitTests-Modular.ps1
-https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/PowerShell/Functions/Testing/Enhanced-Test-Output.ps1
-
-# Anti-regression tools
-https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/PowerShell/Modules/BusBuddy/bb-anti-regression.ps1
-```
-
-### **🏗️ Quick Access by Category & Completion Status**
-| Category | Key Files | Status | Gap Analysis |
-|----------|-----------|--------|--------------|
-| **Students** | `StudentsView.xaml`, `StudentService.cs` | ✅ **100% Functional** | Complete CRUD with validation |
-| **Vehicles/Buses** | `VehicleManagementViewModel.cs`, `BusEditDialog.xaml.cs` | ⚠️ **80% Functional** | Commands work, UI forms incomplete |
-| **Routes** | `RouteService.cs`, `RouteAssignmentViewModel.cs` | ⚠️ **60% Functional** | Service robust, UI missing key forms |
-| **Drivers** | `DriverService.cs` (complete) | ⚠️ **50% Functional** | Complete service, zero UI implementation |
-| **Testing** | `BusBuddy.psm1`, `Run-Phase4-NUnitTests-Modular.ps1` | ✅ **Professional-grade** | Enhanced infrastructure operational |
-| **Azure SQL** | Connection strings, EF contexts | ✅ **Operational** | Production database ready |
-| **Documentation** | This file, README.md, guides | ✅ **Comprehensive** | Complete with gap analysis |
-
-### **🚨 Immediate Action Items from Gap Analysis**
-| Priority | File to Fix/Create | Effort | Impact |
-|----------|-------------------|--------|--------|
-| **🔥 HIGH** | `BusBuddy.WPF/Views/Vehicle/BusEditDialog.xaml.cs` | 30 min | Uncomment UI controls |
-| **🔥 HIGH** | `BusBuddy.WPF/Views/Route/RouteEditDialog.xaml` | 1 hour | CREATE MISSING FILE |
-| **🔥 HIGH** | `BusBuddy.WPF/Views/Route/RouteForm.xaml` | 1 hour | CREATE MISSING FILE |
-| **🔧 MED** | `BusBuddy.WPF/Views/Driver/DriverManagementView.xaml` | 2 hours | CREATE MISSING FILE |
-| **🔧 MED** | `BusBuddy.WPF/ViewModels/Driver/DriverManagementViewModel.cs` | 2 hours | CREATE MISSING FILE |
-| **⚡ QUICK** | Route service placeholder methods | 15 min each | 3 methods to implement |
-
-### **📊 Project Structure Quick Reference**
-```
-BusBuddy/
-├── 📄 GROK-README.md               # This file - Complete project status
-├── 📄 README.md                    # Project overview
-├── 📄 BusBuddy.sln                # Solution file
-├── 📁 BusBuddy.Core/              # Business logic & services
-├── 📁 BusBuddy.WPF/               # Syncfusion WPF UI
-├── 📁 BusBuddy.Tests/             # Test infrastructure
-├── 📁 PowerShell/                 # Development automation
-│   ├── 📁 Modules/BusBuddy/       # Main PowerShell module
-│   └── 📁 Testing/                # Enhanced testing scripts
-└── 📁 Documentation/              # Technical documentation
-```
-
-### **💡 URL Construction Helper**
-**Pattern**: `https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/[relative-file-path]`
-
-**Examples**:
-- PowerShell Module: `PowerShell/Modules/BusBuddy/BusBuddy.psm1`
-- XAML View: `BusBuddy.WPF/Views/Student/StudentsView.xaml`
-- Service Class: `BusBuddy.Core/Services/StudentService.cs`
-
-**Total Files**: 750+ files tracked and accessible via GitHub raw URLs
-
----
-
-## �🚀 **Conclusion**
-
-**Status:** BusBuddy project now features **clean build with complete production readiness infrastructure**. All package conflicts resolved, Application Insights integrated with modern API, and comprehensive deployment automation ready for execution. **Production deployment can begin immediately after Syncfusion license setup.**
-
----
-
-## 🔧 **August 8, 2025 - Enhanced Troubleshooting & Validation Framework**
-
-### **New Troubleshooting Infrastructure Added**
-
-#### **📋 Comprehensive Troubleshooting Log**
-- **New File**: `TROUBLESHOOTING-LOG.md` - Centralized issue tracking and verified solutions
-- **Coverage**: Database migrations, EF Tools sync, table mapping, FK constraints, data seeding
-- **Format**: Structured documentation with symptoms, root causes, and verified fixes
-- **Integration**: Links to specific diagnostic commands and validation scripts
-
-#### **🧪 End-to-End CRUD Testing**
-- **New Script**: `Test-EndToEndCRUD.ps1` - Comprehensive database validation
-- **Features**: 
-  - Student CRUD operations testing
-  - Foreign key constraint validation
-  - Migration status verification
-  - Data integrity checks
-  - Performance baseline measurements
-- **Reporting**: JSON export with detailed test results and timing
-- **Integration**: Works with existing `bb-*` command structure
-
-#### **⚡ Quick Database Validation**
-- **New Module**: `bb-validate-database.ps1` - Fast health checks
-- **Capabilities**:
-  - Database connectivity testing
-  - Critical table existence verification
-  - Migration status validation
-  - Basic data integrity checks
-  - EF Core version alignment verification
-- **Usage**: `bb-validate-database -IncludeCRUD -Detailed`
-
-### **🎯 Addressed Risk Mitigation**
-
-#### **EF Tools Version Sync (RESOLVED)**
-- **Issue**: Version mismatch between EF Tools (9.0.7) and EF Core (9.0.8)
-- **Solution**: Documented upgrade command and verification steps
-- **Prevention**: Added automated version checking in validation scripts
-
-#### **End-to-End CRUD Testing (NEW)**
-- **Capability**: Comprehensive validation of database operations
-- **Coverage**: Create, Read, Update, Delete operations with error detection
-- **FK Testing**: Optional foreign key constraint validation
-- **Regression Detection**: Identifies subtle issues before they reach production
-
-#### **Troubleshooting Documentation (ENHANCED)**
-- **Structure**: Organized by issue category with verified solutions
-- **Searchability**: Clear headings and cross-references
-- **Actionability**: Specific commands and code examples
-- **Maintenance**: Version-controlled with update tracking
-
-### **🚀 Production Readiness Improvements**
-
-#### **Diagnostic Commands Enhanced**
-```powershell
-# Quick validation
-bb-validate-database                    # Fast health check
-bb-validate-database -IncludeCRUD      # Include CRUD testing
-bb-validate-database -Detailed         # Verbose output
-
-# Comprehensive testing
-.\Test-EndToEndCRUD.ps1                              # Basic CRUD validation
-.\Test-EndToEndCRUD.ps1 -IncludeForeignKeyTests     # Include FK testing
-.\Test-EndToEndCRUD.ps1 -GenerateReport             # Export JSON report
-```
-
-#### **Issue Resolution Matrix**
-| Risk Level | Issue Type | Detection Method | Resolution Time |
-|-----------|------------|------------------|-----------------|
-| **Critical** | Migration sync | `bb-validate-database` | < 5 minutes |
-| **Critical** | FK violations | `Test-EndToEndCRUD.ps1 -IncludeForeignKeyTests` | < 10 minutes |
-| **High** | Table mapping | CRUD test failure | < 15 minutes |
-| **Medium** | Data integrity | Validation script | < 20 minutes |
-
-### **📊 Documentation Structure Optimization**
-
-#### **Truncation Reduction**
-- **Troubleshooting Log**: Focused, actionable content without verbose logs
-- **Test Scripts**: Structured output with optional detailed reporting
-- **README Updates**: Concise quick-reference sections with links to detailed docs
-
-#### **Cross-Reference Navigation**
-- **Main README**: Quick fixes table with direct links to solutions
-- **Troubleshooting Log**: Detailed solutions with prevention strategies  
-- **Test Scripts**: Automated validation with human-readable reports
-- **GROK README**: Development status with file locations
-
-**Status**: Enhanced troubleshooting framework ready for production validation and issue resolution.
-
----
-
-**🎯 Ready for advanced development session with enhanced testing capabilities, professional-grade error handling, and complete project accessibility.**
-
-*Generated by BusBuddy Development Session - August 8, 2025*
-
----
-
-## 🛠️ August 8, 2025 — UI, DataContext, and Azure SQL Manual Fixes
-
-### **Summary of Manual Fixes and Troubleshooting**
-- **UI DataContext Issue:**
-  - MainWindow DataContext handling updated to preserve DI-injected ViewModel and prevent context loss after dialog operations.
-  - `RefreshStudentsGrid` method now safely checks for `MainWindowViewModel` and logs warnings if not present.
-- **Azure SQL Data Seeding:**
-  - Manual review and update of `BusBuddyDbContextFactory` to ensure environment variables are resolved for seeding and design-time contexts.
-  - Confirmed that `${AZURE_SQL_USER}` and `${AZURE_SQL_PASSWORD}` are now properly injected, eliminating login failures during seeding.
-- **UI/UX Validation:**
-  - All Syncfusion controls verified for correct event hook attachment and runtime diagnostics.
-  - No remaining DataContext or navigation errors in logs after manual fixes.
-- **Production Readiness:**
-  - All changes committed and pushed to `origin/master`.
-  - Working tree is clean and repository is up to date.
-  - Application is fully functional with Azure SQL, Syncfusion UI, and all navigation modules.
-
-### **Manual Troubleshooting Steps Documented:**
-1. Verified and fixed DataContext assignment in MainWindow.xaml.cs
-2. Updated connection string resolution in data seeding logic
-3. Rebuilt and validated application startup and UI navigation
-4. Confirmed successful Azure SQL connection and Syncfusion UI rendering
-5. Committed and pushed all changes to remote repository
-
-**Status:**
-- ✅ UI and DataContext issues resolved
-- ✅ Azure SQL seeding and connection string issues fixed
-- ✅ All changes tracked in git and production ready
+## 📁 GrokResources/GPT-5 actions — raw URLs
+
+These artifacts were relocated to `GrokResources/GPT-5 actions` for easier fetchability by tooling. Raw links below point to the master branch for direct download:
+
+- ButtonFormValidationReport.md
+  - https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/GrokResources/GPT-5%20actions/ButtonFormValidationReport.md
+- HardCodedColorsReport.md
+  - https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/GrokResources/GPT-5%20actions/HardCodedColorsReport.md
+- LoggingEnhancementReport.md
+  - https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/GrokResources/GPT-5%20actions/LoggingEnhancementReport.md
+- Runtime-Analysis-Report.md
+  - https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/GrokResources/GPT-5%20actions/Runtime-Analysis-Report.md
+- SfSkinManagerReport.md
+  - https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/GrokResources/GPT-5%20actions/SfSkinManagerReport.md
+
+Activity module — new files (raw URLs):
+
+- ActivityManagementViewModel.cs
+  - https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.WPF/ViewModels/Activity/ActivityManagementViewModel.cs
+- ActivityItem.cs
+  - https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.WPF/Models/Activity/ActivityItem.cs
+- ActivityManagementView.xaml
+  - https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.WPF/Views/Activity/ActivityManagementView.xaml
+- ActivityManagementView.xaml.cs
+  - https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.WPF/Views/Activity/ActivityManagementView.xaml.cs

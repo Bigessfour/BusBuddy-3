@@ -1,6 +1,7 @@
 using System;
 using System.Windows;
 using BusBuddy.Core.Models;
+using Syncfusion.SfSkinManager;
 
 namespace BusBuddy.WPF.Views.Bus
 {
@@ -15,6 +16,22 @@ namespace BusBuddy.WPF.Views.Bus
         {
             InitializeComponent();
             Bus = bus != null ? bus : new BusBuddy.Core.Models.Bus();
+            // Apply Syncfusion theme — FluentDark default, FluentLight fallback
+            try
+            {
+                SfSkinManager.ApplyThemeAsDefaultStyle = true;
+                using var dark = new Theme("FluentDark");
+                SfSkinManager.SetTheme(this, dark);
+            }
+            catch
+            {
+                try
+                {
+                    using var light = new Theme("FluentLight");
+                    SfSkinManager.SetTheme(this, light);
+                }
+                catch { }
+            }
             // Commented out missing UI controls for MVP
             // LoadBusData();
 
@@ -30,6 +47,28 @@ namespace BusBuddy.WPF.Views.Bus
         {
             InitializeComponent();
             Bus = new BusBuddy.Core.Models.Bus(); // Initialize Bus property to fix CS8618
+            // Apply Syncfusion theme — FluentDark default, FluentLight fallback
+            try
+            {
+                SfSkinManager.ApplyThemeAsDefaultStyle = true;
+                using var dark = new Theme("FluentDark");
+                SfSkinManager.SetTheme(this, dark);
+            }
+            catch
+            {
+                try
+                {
+                    using var light = new Theme("FluentLight");
+                    SfSkinManager.SetTheme(this, light);
+                }
+                catch { }
+            }
+        }
+
+        protected override void OnClosed(EventArgs e)
+        {
+            try { SfSkinManager.Dispose(this); } catch { }
+            base.OnClosed(e);
         }
 
         // Commented out missing UI controls for MVP

@@ -100,14 +100,20 @@
                                                AutomationProperties.HelpText="Enter driver phone number"/>
                     </StackPanel>
 
-                    <StackPanel Grid.Row="1" Grid.Column="2">
-                        <TextBlock Text="Email:" Style="{StaticResource FieldLabelStyle}"/>
-                        <syncfusion:SfMaskedEdit Text="{Binding DriverEmail, Mode=TwoWay}"
-                                               Style="{StaticResource FieldInputStyle}"
-                                               MaskType="Email"
-                                               AutomationProperties.Name="Email Address"
-                                               AutomationProperties.HelpText="Enter driver's email address"/>
-                    </StackPanel>
+             <StackPanel Grid.Row="1" Grid.Column="2">
+                <TextBlock Text="Email:" Style="{StaticResource FieldLabelStyle}"/>
+                <!-- Syncfusion WPF — SfMaskedEdit RegEx mask for email (v30.1.42)
+                    Reference: https://help.syncfusion.com/wpf/maskededit/mask-types -->
+                <syncfusion:SfMaskedEdit x:Name="EmailMaskedEdit"
+                                     Text="{Binding DriverEmail, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                     Style="{StaticResource FieldInputStyle}"
+                                     MaskType="RegEx"
+                                     Mask="[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}"
+                                     PromptChar="_"
+                                     Watermark="Enter driver email"
+                                     AutomationProperties.Name="Email Address"
+                                     AutomationProperties.HelpText="Enter driver's email address"/>
+             </StackPanel>
 
                     <StackPanel Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="3">
                         <TextBlock Text="Status:" Style="{StaticResource FieldLabelStyle}"/>

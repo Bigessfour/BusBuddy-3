@@ -7,6 +7,7 @@ using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using Syncfusion.SfSkinManager;
 
 namespace BusBuddy.WPF.Views.Activity
 {
@@ -22,6 +23,18 @@ namespace BusBuddy.WPF.Views.Activity
         {
             InitializeComponent();
 
+            // Apply Syncfusion theme — FluentDark default, FluentLight fallback
+            try
+            {
+                SfSkinManager.ApplyThemeAsDefaultStyle = true;
+                using var dark = new Theme("FluentDark");
+                SfSkinManager.SetTheme(this, dark);
+            }
+            catch
+            {
+                try { using var light = new Theme("FluentLight"); SfSkinManager.SetTheme(this, light); } catch { }
+            }
+
             ViewModel = new ActivityScheduleEditDialogViewModel(activityToEdit);
             DataContext = ViewModel;
 
@@ -29,6 +42,12 @@ namespace BusBuddy.WPF.Views.Activity
             WindowStartupLocation = WindowStartupLocation.CenterOwner;
             ShowInTaskbar = false;
             ResizeMode = ResizeMode.NoResize;
+        }
+
+        protected override void OnClosed(System.EventArgs e)
+        {
+            try { SfSkinManager.Dispose(this); } catch { }
+            base.OnClosed(e);
         }
 
         private void SaveButton_Click(object sender, RoutedEventArgs e)

@@ -32,6 +32,8 @@ using System;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
+using System.Windows.Input;
 using Microsoft.Extensions.DependencyInjection;
 using Syncfusion.UI.Xaml.Grid;
 using BusBuddy.WPF.ViewModels;
@@ -91,6 +93,17 @@ namespace BusBuddy.WPF.Views.Main
 
                 Logger.Debug("Initializing MainWindow components and DataContext");
                 InitializeMainWindow();
+
+                // Global button click diagnostics: capture all button clicks in this window
+                try
+                {
+                    AddHandler(ButtonBase.ClickEvent, new RoutedEventHandler(OnAnyButtonClick), true);
+                    Logger.Information("Global button click diagnostics handler attached");
+                }
+                catch (Exception btnEx)
+                {
+                    Logger.Warning(btnEx, "Failed attaching global button click diagnostics");
+                }
 
                 // Attach Syncfusion SfDataGrid error hooks for runtime diagnostics
                 Logger.Debug("Attaching Syncfusion event hooks");
@@ -181,7 +194,7 @@ namespace BusBuddy.WPF.Views.Main
             try
             {
                 Logger.Debug("Configuring Syncfusion SfSkinManager global settings");
-                // Apply FluentDark theme with FluentWhite fallback
+                // Apply FluentDark theme with FluentLight fallback
                 // Based on SYNCFUSION_API_REFERENCE.md validated patterns
                 SfSkinManager.ApplyStylesOnApplication = true;
                 SfSkinManager.ApplyThemeAsDefaultStyle = true;
@@ -238,6 +251,48 @@ namespace BusBuddy.WPF.Views.Main
             this.DataContextChanged += MainWindow_DataContextChanged;
 
             Logger.Debug("InitializeMainWindow method completed");
+        }
+
+        // Global button click logger for MainWindow
+        private void OnAnyButtonClick(object? sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var src = e.OriginalSource as DependencyObject;
+                var fe = src as FrameworkElement;
+                string name = fe?.Name ?? "(unnamed)";
+                string type = src?.GetType().Name ?? "(unknown)";
+                string? label = null;
+
+                // Try to capture label/content across common button types
+                if (src is Syncfusion.Windows.Tools.Controls.ButtonAdv badv)
+                {
+                    label = badv.Label;
+                    bool? canExec = null;
+                    try { if (badv.Command != null) canExec = badv.Command.CanExecute(badv.CommandParameter); } catch { /* no-op */ }
+                    Logger.Information("Button click: {Type} Name={Name} Label={Label} CanExecute={CanExecute} DataContext={DC}",
+                        type, name, label ?? "(none)", canExec, this.DataContext?.GetType().Name ?? "(null)");
+                    return;
+                }
+
+                if (src is Button btn)
+                {
+                    label = btn.Content?.ToString();
+                    bool? canExec = null;
+                    try { if (btn.Command != null) canExec = btn.Command.CanExecute(btn.CommandParameter); } catch { /* no-op */ }
+                    Logger.Information("Button click: {Type} Name={Name} Content={Label} CanExecute={CanExecute} DataContext={DC}",
+                        type, name, label ?? "(none)", canExec, this.DataContext?.GetType().Name ?? "(null)");
+                    return;
+                }
+
+                // Fallback generic log
+                Logger.Information("Button click: {Type} Name={Name} DataContext={DC}",
+                    type, name, this.DataContext?.GetType().Name ?? "(null)");
+            }
+            catch (Exception ex)
+            {
+                Logger.Warning(ex, "Global button click logging failed");
+            }
         }
 
         // Store original widths to restore on deactivation
@@ -306,10 +361,16 @@ namespace BusBuddy.WPF.Views.Main
         {
             Logger.Debug("DataContext changed detected");
 
-            if (e.NewValue is MainWindowViewModel newViewModel)
+            // Accept DataContext if it is the expected ViewModel type or has the same runtime name (avoids cross-assembly type identity issues)
+            if (e.NewValue is MainWindowViewModel newViewModel ||
+                string.Equals(e.NewValue?.GetType()?.Name, nameof(MainWindowViewModel), StringComparison.OrdinalIgnoreCase))
             {
-                _viewModel = newViewModel;
-                Logger.Information("DataContext updated to valid MainWindowViewModel");
+                _viewModel = e.NewValue as MainWindowViewModel ?? _viewModel ?? new MainWindowViewModel();
+                if (this.DataContext is not MainWindowViewModel)
+                {
+                    this.DataContext = _viewModel;
+                }
+                Logger.Debug("DataContext updated to MainWindowViewModel (by type/name match)");
             }
             else if (e.NewValue == null)
             {
@@ -327,7 +388,8 @@ namespace BusBuddy.WPF.Views.Main
             }
             else
             {
-                Logger.Warning("DataContext set to unexpected type: {Type}", e.NewValue?.GetType()?.Name ?? "null");
+                // Demote to debug to avoid noisy warnings when transient design-time contexts flow through
+                Logger.Debug("DataContext changed to {Type}; retaining existing MainWindowViewModel", e.NewValue?.GetType()?.Name ?? "null");
             }
         }
 
@@ -364,6 +426,82 @@ namespace BusBuddy.WPF.Views.Main
             Logger.Debug("Dashboard navigation logic completed");
         }
 
+    private void ThemeSelector_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+        {
+            try
+            {
+                if (sender is ComboBoxAdv combo && combo.SelectedItem is ComboBoxItemAdv item && item.Content is string theme)
+                {
+                    Logger.Information("Theme selection changed to {Theme} by {Component}", theme, GetType().Name);
+                    // Apply to all open windows for consistency
+                    ApplyThemeGlobally(theme);
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Warning(ex, "Failed applying selected theme, attempting fallback");
+                try
+                {
+                    ApplyThemeGlobally("FluentDark");
+                }
+                catch (Exception inner)
+                {
+                    Logger.Error(inner, "Failed to apply fallback theme");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Applies the specified Syncfusion theme to all open windows.
+        /// Uses SfSkinManager.SetTheme as documented in Syncfusion WPF API (SfSkinManager, Theme).
+        /// Docs: https://help.syncfusion.com/cr/wpf/Syncfusion.SfSkinManager.SfSkinManager.html
+        ///       https://help.syncfusion.com/cr/wpf/Syncfusion.SfSkinManager.Theme.html
+        /// </summary>
+    private static void ApplyThemeGlobally(string themeName)
+        {
+            try
+            {
+                // Ensure global flags are set so styles flow to children
+                SfSkinManager.ApplyStylesOnApplication = true;
+                SfSkinManager.ApplyThemeAsDefaultStyle = true;
+                var theme = new Theme(themeName);
+
+                // Set application-level theme so newly created windows get it automatically
+                SfSkinManager.ApplicationTheme = theme;
+                Logger.Information("Theme changed to {ThemeName} at application scope", themeName);
+
+                // Apply to each open window so the entire UI updates at runtime
+                foreach (Window win in Application.Current.Windows)
+                {
+                    try
+                    {
+                        SfSkinManager.SetTheme(win, theme);
+                        Logger.Information("Theme changed to {ThemeName} for {Component}", themeName, win.GetType().Name);
+                    }
+                    catch
+                    {
+                        // Continue applying theme to other windows even if one fails
+                    }
+                }
+
+                // Also apply to MainWindow explicitly (in case created after others)
+                if (Application.Current.MainWindow is not null)
+                {
+                    try
+                    {
+                        SfSkinManager.SetTheme(Application.Current.MainWindow, theme);
+                        Logger.Information("Theme changed to {ThemeName} for {Component}", themeName, Application.Current.MainWindow.GetType().Name);
+                    }
+                    catch { /* no-op */ }
+                }
+            }
+            catch (Exception)
+            {
+                // Swallow at this level; caller logs details and manages fallback
+                throw;
+            }
+        }
+
         /// <summary>
         /// Navigate to Students management view
         /// </summary>
@@ -373,20 +511,16 @@ namespace BusBuddy.WPF.Views.Main
             Logger.Information("Students navigation requested");
             try
             {
-                // Create a window to host the StudentsView
-                var studentsWindow = new Window
+                // Open StudentsView as a top-level window (ChromelessWindow) — do not embed a Window as Content
+                var studentsView = new StudentsView
                 {
-                    Title = "📚 Students Management",
-                    Width = 1000,
-                    Height = 700,
-                    WindowStartupLocation = WindowStartupLocation.CenterOwner,
                     Owner = this,
-                    Content = new StudentsView()
+                    WindowStartupLocation = WindowStartupLocation.CenterOwner
                 };
 
-                Logger.Debug("Showing StudentsView in modal dialog");
-                studentsWindow.ShowDialog();
-                Logger.Information("StudentsView dialog closed");
+                Logger.Debug("Showing StudentsView modal window");
+                studentsView.ShowDialog();
+                Logger.Information("StudentsView window closed");
                 RefreshStudentsGrid();
             }
             catch (Exception ex)
@@ -564,7 +698,8 @@ namespace BusBuddy.WPF.Views.Main
             catch (Exception ex)
             {
                 Logger.Error(ex, "Failed to execute PrintRoutes");
-                ShowErrorMessage("Failed to generate route report", ex.Message);
+                // ShowErrorMessage expects (message, title)
+                ShowErrorMessage(ex.Message, "Failed to generate route report");
             }
         }
 
@@ -707,7 +842,7 @@ namespace BusBuddy.WPF.Views.Main
 
         private void AddDriver_Click(object sender, RoutedEventArgs e)
         {
-            Logger.Debug("AddDriver_Click event triggered");
+            Logger.Information("Attempting to open DriverForm");
             try
             {
                 Logger.Debug("Creating new DriverForm dialog");
@@ -717,7 +852,7 @@ namespace BusBuddy.WPF.Views.Main
                 Logger.Debug("DriverForm dialog result: {DialogResult}", result);
                 if (result == true)
                 {
-                    Logger.Information("Driver added successfully");
+                    Logger.Information("DriverForm opened successfully");
                     Logger.Debug("Driver form completed successfully, refreshing data");
                     RefreshDriversGrid();
                 }
@@ -728,7 +863,7 @@ namespace BusBuddy.WPF.Views.Main
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Error opening Driver form");
+                Logger.Error(ex, "Error opening DriverForm");
                 MessageBox.Show($"Error opening Driver form: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
@@ -860,24 +995,34 @@ namespace BusBuddy.WPF.Views.Main
 
         #region Data Refresh Methods
 
+        private bool EnsureMainWindowViewModel()
+        {
+            if (DataContext is MainWindowViewModel)
+            {
+                return true;
+            }
+
+            if (_viewModel == null)
+            {
+                _viewModel = new MainWindowViewModel();
+            }
+
+            DataContext = _viewModel;
+            Logger.Information("DataContext restored to MainWindowViewModel");
+            return true;
+        }
+
         // Data refresh methods
         private void RefreshStudentsGrid()
         {
             Logger.Debug("RefreshStudentsGrid method started");
             try
             {
+                EnsureMainWindowViewModel();
                 // Refresh through ViewModel instead of direct grid access
-                if (DataContext is MainWindowViewModel viewModel)
-                {
-                    Logger.Debug("Refreshing students data through ViewModel");
-                    // For now, just trigger property change notifications
-                    // Future enhancement: viewModel.RefreshStudents();
-                    Logger.Information("Students data refresh requested");
-                }
-                else
-                {
-                    Logger.Warning("DataContext is not MainWindowViewModel, cannot refresh students");
-                }
+                Logger.Debug("Refreshing students data through ViewModel");
+                // Future enhancement: ((MainWindowViewModel)DataContext).RefreshStudents();
+                Logger.Information("Students data refresh requested");
             }
             catch (Exception ex)
             {
@@ -890,24 +1035,10 @@ namespace BusBuddy.WPF.Views.Main
             Logger.Debug("RefreshRoutesGrid method started");
             try
             {
-                // Refresh through ViewModel instead of direct grid access
-                if (DataContext is MainWindowViewModel viewModel)
-                {
-                    Logger.Debug("Refreshing routes data through ViewModel");
-                    // For now, just trigger property change notifications
-                    // Future enhancement: viewModel.RefreshRoutes();
-                    Logger.Information("Routes data refresh requested");
-                }
-                else
-                {
-                    Logger.Warning("DataContext is not MainWindowViewModel, attempting to restore and refresh routes");
-                    if (_viewModel == null)
-                    {
-                        _viewModel = new MainWindowViewModel();
-                    }
-                    DataContext = _viewModel;
-                    Logger.Information("DataContext restored to MainWindowViewModel; routes refresh requested");
-                }
+                EnsureMainWindowViewModel();
+                Logger.Debug("Refreshing routes data through ViewModel");
+                // Future enhancement: ((MainWindowViewModel)DataContext).RefreshRoutes();
+                Logger.Information("Routes data refresh requested");
             }
             catch (Exception ex)
             {
@@ -920,24 +1051,10 @@ namespace BusBuddy.WPF.Views.Main
             Logger.Debug("RefreshBusesGrid method started");
             try
             {
-                // Refresh through ViewModel instead of direct grid access
-                if (DataContext is MainWindowViewModel viewModel)
-                {
-                    Logger.Debug("Refreshing buses data through ViewModel");
-                    // For now, just trigger property change notifications
-                    // Future enhancement: viewModel.RefreshBuses();
-                    Logger.Information("Buses data refresh requested");
-                }
-                else
-                {
-                    Logger.Warning("DataContext is not MainWindowViewModel, attempting to restore and refresh buses");
-                    if (_viewModel == null)
-                    {
-                        _viewModel = new MainWindowViewModel();
-                    }
-                    DataContext = _viewModel;
-                    Logger.Information("DataContext restored to MainWindowViewModel; buses refresh requested");
-                }
+                EnsureMainWindowViewModel();
+                Logger.Debug("Refreshing buses data through ViewModel");
+                // Future enhancement: ((MainWindowViewModel)DataContext).RefreshBuses();
+                Logger.Information("Buses data refresh requested");
             }
             catch (Exception ex)
             {
@@ -950,24 +1067,10 @@ namespace BusBuddy.WPF.Views.Main
             Logger.Debug("RefreshDriversGrid method started");
             try
             {
-                // Refresh through ViewModel instead of direct grid access
-                if (DataContext is MainWindowViewModel viewModel)
-                {
-                    Logger.Debug("Refreshing drivers data through ViewModel");
-                    // For now, just trigger property change notifications
-                    // Future enhancement: viewModel.RefreshDrivers();
-                    Logger.Information("Drivers data refresh requested");
-                }
-                else
-                {
-                    Logger.Warning("DataContext is not MainWindowViewModel, attempting to restore and refresh drivers");
-                    if (_viewModel == null)
-                    {
-                        _viewModel = new MainWindowViewModel();
-                    }
-                    DataContext = _viewModel;
-                    Logger.Information("DataContext restored to MainWindowViewModel; drivers refresh requested");
-                }
+                EnsureMainWindowViewModel();
+                Logger.Debug("Refreshing drivers data through ViewModel");
+                // Future enhancement: ((MainWindowViewModel)DataContext).RefreshDrivers();
+                Logger.Information("Drivers data refresh requested");
             }
             catch (Exception ex)
             {

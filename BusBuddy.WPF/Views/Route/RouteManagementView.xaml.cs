@@ -1,11 +1,11 @@
 using System;
 using System.Windows;
 using System.Windows.Controls;
+using Serilog;
 using System.Windows.Controls.Primitives;
 using System.Windows.Automation;
 using System.Windows.Media;
 using System.Windows.Threading;
-using Serilog;
 using BusBuddy.WPF.ViewModels.Route;
 
 namespace BusBuddy.WPF.Views.Route
@@ -16,6 +16,7 @@ namespace BusBuddy.WPF.Views.Route
     /// </summary>
     public partial class RouteManagementView : UserControl
     {
+    private static readonly ILogger Log = Serilog.Log.ForContext<RouteManagementView>();
         private static readonly ILogger Logger = Log.ForContext<RouteManagementView>();
 
         public RouteManagementView()
@@ -53,6 +54,7 @@ namespace BusBuddy.WPF.Views.Route
 
         private void OnLoaded(object? sender, RoutedEventArgs e)
         {
+            Log.Information("Loaded {ViewName} with theme resource {ResourceKey}", GetType().Name, "BusBuddy.Brush.Primary");
             Logger.Information("RouteManagementView Loaded — DataContext={DC}", DataContext?.GetType().Name ?? "(null)");
             // Run accessibility audit after layout is ready
             try { Dispatcher.BeginInvoke(new Action(AuditButtonsAccessibility), DispatcherPriority.Loaded); }
