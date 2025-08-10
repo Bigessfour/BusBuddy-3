@@ -28,6 +28,22 @@ namespace BusBuddy.Core.Services
             _contextFactory = contextFactory ?? throw new ArgumentNullException(nameof(contextFactory));
         }
 
+        // Context helpers: only dispose when using the concrete runtime factory
+        // This prevents disposing shared in-memory contexts used by tests.
+        private (BusBuddyDbContext Ctx, bool Dispose) GetReadContext()
+        {
+            var ctx = _contextFactory.CreateDbContext();
+            var shouldDispose = _contextFactory is BusBuddy.Core.Data.BusBuddyDbContextFactory;
+            return (ctx, shouldDispose);
+        }
+
+        private (BusBuddyDbContext Ctx, bool Dispose) GetWriteContext()
+        {
+            var ctx = _contextFactory.CreateWriteDbContext();
+            var shouldDispose = _contextFactory is BusBuddy.Core.Data.BusBuddyDbContextFactory;
+            return (ctx, shouldDispose);
+        }
+
         #region Basic CRUD Operations
 
         public async Task<Result<IEnumerable<Route>>> GetAllActiveRoutesAsync()
@@ -35,7 +51,7 @@ namespace BusBuddy.Core.Services
             try
             {
                 Logger.Information("Retrieving all active routes");
-                var context = _contextFactory.CreateDbContext();
+                var (context, dispose) = GetReadContext();
                 try
                 {
                     var routes = await context.Routes
@@ -49,8 +65,10 @@ namespace BusBuddy.Core.Services
                 }
                 finally
                 {
-                    // Properly dispose the context when done
-                    await context.DisposeAsync();
+                    if (dispose)
+                    {
+                        await context.DisposeAsync();
+                    }
                 }
             }
             catch (Exception ex)
@@ -65,7 +83,7 @@ namespace BusBuddy.Core.Services
             try
             {
                 Logger.Information("Retrieving all routes");
-                var context = _contextFactory.CreateDbContext();
+                var (context, dispose) = GetReadContext();
                 try
                 {
                     var routes = await context.Routes
@@ -77,8 +95,10 @@ namespace BusBuddy.Core.Services
                 }
                 finally
                 {
-                    // Properly dispose the context when done
-                    await context.DisposeAsync();
+                    if (dispose)
+                    {
+                        await context.DisposeAsync();
+                    }
                 }
             }
             catch (Exception ex)
@@ -92,7 +112,7 @@ namespace BusBuddy.Core.Services
         {
             try
             {
-                var context = _contextFactory.CreateDbContext();
+                var (context, dispose) = GetReadContext();
                 try
                 {
                     var route = await context.Routes.FindAsync(id);
@@ -105,8 +125,10 @@ namespace BusBuddy.Core.Services
                 }
                 finally
                 {
-                    // Properly dispose the context when done
-                    await context.DisposeAsync();
+                    if (dispose)
+                    {
+                        await context.DisposeAsync();
+                    }
                 }
             }
             catch (Exception ex)
@@ -121,7 +143,7 @@ namespace BusBuddy.Core.Services
             try
             {
                 Logger.Information("Creating new route: {RouteName}", route.RouteName);
-                var context = _contextFactory.CreateDbContext();
+                var (context, dispose) = GetWriteContext();
                 try
                 {
                     context.Routes.Add(route);
@@ -132,8 +154,10 @@ namespace BusBuddy.Core.Services
                 }
                 finally
                 {
-                    // Properly dispose the context when done
-                    await context.DisposeAsync();
+                    if (dispose)
+                    {
+                        await context.DisposeAsync();
+                    }
                 }
             }
             catch (Exception ex)
@@ -148,7 +172,7 @@ namespace BusBuddy.Core.Services
             try
             {
                 Logger.Information("Updating route {RouteId}: {RouteName}", route.RouteId, route.RouteName);
-                var context = _contextFactory.CreateDbContext();
+                var (context, dispose) = GetWriteContext();
                 try
                 {
                     context.Entry(route).State = EntityState.Modified;
@@ -158,8 +182,10 @@ namespace BusBuddy.Core.Services
                 }
                 finally
                 {
-                    // Properly dispose the context when done
-                    await context.DisposeAsync();
+                    if (dispose)
+                    {
+                        await context.DisposeAsync();
+                    }
                 }
             }
             catch (Exception ex)
@@ -173,7 +199,7 @@ namespace BusBuddy.Core.Services
         {
             try
             {
-                var context = _contextFactory.CreateDbContext();
+                var (context, dispose) = GetWriteContext();
                 try
                 {
                     var route = await context.Routes.FindAsync(id);
@@ -190,8 +216,10 @@ namespace BusBuddy.Core.Services
                 }
                 finally
                 {
-                    // Properly dispose the context when done
-                    await context.DisposeAsync();
+                    if (dispose)
+                    {
+                        await context.DisposeAsync();
+                    }
                 }
             }
             catch (Exception ex)
@@ -205,7 +233,7 @@ namespace BusBuddy.Core.Services
         {
             try
             {
-                var context = _contextFactory.CreateDbContext();
+                var (context, dispose) = GetReadContext();
                 try
                 {
                     var routes = await context.Routes
@@ -219,8 +247,10 @@ namespace BusBuddy.Core.Services
                 }
                 finally
                 {
-                    // Properly dispose the context when done
-                    await context.DisposeAsync();
+                    if (dispose)
+                    {
+                        await context.DisposeAsync();
+                    }
                 }
             }
             catch (Exception ex)
@@ -250,7 +280,7 @@ namespace BusBuddy.Core.Services
         {
             try
             {
-                var context = _contextFactory.CreateDbContext();
+                var (context, dispose) = GetReadContext();
                 try
                 {
                     var query = context.Routes.Where(r => r.RouteName == routeNumber);
@@ -265,8 +295,10 @@ namespace BusBuddy.Core.Services
                 }
                 finally
                 {
-                    // Properly dispose the context when done
-                    await context.DisposeAsync();
+                    if (dispose)
+                    {
+                        await context.DisposeAsync();
+                    }
                 }
             }
             catch (Exception ex)
@@ -298,7 +330,7 @@ namespace BusBuddy.Core.Services
                 }
 
                 // Check for duplicate route name on the same date
-                var context = _contextFactory.CreateDbContext();
+                var (context, dispose) = GetReadContext();
                 try
                 {
                     var existingRoute = await context.Routes
@@ -327,8 +359,10 @@ namespace BusBuddy.Core.Services
                 }
                 finally
                 {
-                    // Properly dispose the context when done
-                    await context.DisposeAsync();
+                    if (dispose)
+                    {
+                        await context.DisposeAsync();
+                    }
                 }
             }
             catch (Exception ex)
@@ -345,7 +379,7 @@ namespace BusBuddy.Core.Services
                 Logger.Information("Validating route {RouteId} for activation", routeId);
 
                 var validationResult = new RouteValidationResult { IsValid = true };
-                var context = _contextFactory.CreateDbContext();
+                var (context, dispose) = GetReadContext();
                 try
                 {
                     var route = await context.Routes.FindAsync(routeId);
@@ -379,8 +413,10 @@ namespace BusBuddy.Core.Services
                 }
                 finally
                 {
-                    // Properly dispose the context when done
-                    await context.DisposeAsync();
+                    if (dispose)
+                    {
+                        await context.DisposeAsync();
+                    }
                 }
             }
             catch (Exception ex)

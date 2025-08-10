@@ -25,6 +25,22 @@ public class StudentService : IStudentService
         _contextFactory = contextFactory;
     }
 
+    // Context helpers: only dispose when using the concrete runtime factory
+    // This prevents disposing shared in-memory contexts used by tests.
+    private (BusBuddyDbContext Ctx, bool Dispose) GetReadContext()
+    {
+        var ctx = _contextFactory.CreateDbContext();
+        var shouldDispose = _contextFactory is BusBuddy.Core.Data.BusBuddyDbContextFactory;
+        return (ctx, shouldDispose);
+    }
+
+    private (BusBuddyDbContext Ctx, bool Dispose) GetWriteContext()
+    {
+        var ctx = _contextFactory.CreateWriteDbContext();
+        var shouldDispose = _contextFactory is BusBuddy.Core.Data.BusBuddyDbContextFactory;
+        return (ctx, shouldDispose);
+    }
+
     #region Read Operations
 
     public async Task<List<Student>> GetAllStudentsAsync()
@@ -33,7 +49,7 @@ public class StudentService : IStudentService
         try
         {
             Logger.Information("Retrieving all students from database");
-            var context = _contextFactory.CreateDbContext();
+            var (context, dispose) = GetReadContext();
             try
             {
                 return await context.Students
@@ -43,8 +59,10 @@ public class StudentService : IStudentService
             }
             finally
             {
-                // Properly dispose the context when done
-                await context.DisposeAsync();
+                if (dispose)
+                {
+                    await context.DisposeAsync();
+                }
             }
         }
         catch (Exception ex)
@@ -63,7 +81,7 @@ public class StudentService : IStudentService
         try
         {
             Logger.Information("Retrieving student with ID: {StudentId}", studentId);
-            var context = _contextFactory.CreateDbContext();
+            var (context, dispose) = GetReadContext();
             try
             {
                 return await context.Students
@@ -72,8 +90,10 @@ public class StudentService : IStudentService
             }
             finally
             {
-                // Properly dispose the context when done
-                await context.DisposeAsync();
+                if (dispose)
+                {
+                    await context.DisposeAsync();
+                }
             }
         }
         catch (Exception ex)
@@ -88,7 +108,7 @@ public class StudentService : IStudentService
         try
         {
             Logger.Information("Retrieving students in grade: {Grade}", grade);
-            var context = _contextFactory.CreateDbContext();
+            var (context, dispose) = GetReadContext();
             try
             {
                 return await context.Students
@@ -99,8 +119,10 @@ public class StudentService : IStudentService
             }
             finally
             {
-                // Properly dispose the context when done
-                await context.DisposeAsync();
+                if (dispose)
+                {
+                    await context.DisposeAsync();
+                }
             }
         }
         catch (Exception ex)
@@ -172,14 +194,22 @@ public class StudentService : IStudentService
         try
         {
             Logger.Information("Searching students with term: {SearchTerm}", searchTerm);
-
-            // Don't dispose the context here as it might be needed after the method returns
-            var context = _contextFactory.CreateDbContext();
-            return await context.Students
-                .Where(s => s.StudentName.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
-                           (s.StudentNumber != null && s.StudentNumber.Contains(searchTerm, StringComparison.OrdinalIgnoreCase)))
-                .OrderBy(s => s.StudentName)
-                .ToListAsync();
+            var (context, dispose) = GetReadContext();
+            try
+            {
+                return await context.Students
+                    .Where(s => s.StudentName.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
+                               (s.StudentNumber != null && s.StudentNumber.Contains(searchTerm, StringComparison.OrdinalIgnoreCase)))
+                    .OrderBy(s => s.StudentName)
+                    .ToListAsync();
+            }
+            finally
+            {
+                if (dispose)
+                {
+                    await context.DisposeAsync();
+                }
+            }
         }
         catch (Exception ex)
         {
@@ -236,9 +266,19 @@ public class StudentService : IStudentService
                 student.EnrollmentDate = DateTime.Today;
             }
 
-            using var context = _contextFactory.CreateWriteDbContext();
-            context.Students.Add(student);
-            await context.SaveChangesAsync();
+            var (context, dispose) = GetWriteContext();
+            try
+            {
+                context.Students.Add(student);
+                await context.SaveChangesAsync();
+            }
+            finally
+            {
+                if (dispose)
+                {
+                    await context.DisposeAsync();
+                }
+            }
 
             Logger.Information("Successfully added student with ID: {StudentId}", student.StudentId);
             return student;
@@ -263,9 +303,20 @@ public class StudentService : IStudentService
                 throw new ArgumentException($"Student validation failed: {string.Join(", ", validationErrors)}");
             }
 
-            using var context = _contextFactory.CreateWriteDbContext();
-            context.Students.Update(student);
-            var result = await context.SaveChangesAsync();
+            var (context, dispose) = GetWriteContext();
+            int result;
+            try
+            {
+                context.Students.Update(student);
+                result = await context.SaveChangesAsync();
+            }
+            finally
+            {
+                if (dispose)
+                {
+                    await context.DisposeAsync();
+                }
+            }
 
             var success = result > 0;
             if (success)
@@ -291,21 +342,30 @@ public class StudentService : IStudentService
         try
         {
             Logger.Information("Deleting student with ID: {StudentId}", studentId);
-
-            using var context = _contextFactory.CreateWriteDbContext();
-            var student = await context.Students.FindAsync(studentId);
-            if (student != null)
+            var (context, dispose) = GetWriteContext();
+            try
             {
-                context.Students.Remove(student);
-                var result = await context.SaveChangesAsync();
-
-                var success = result > 0;
-                if (success)
+                var student = await context.Students.FindAsync(studentId);
+                if (student != null)
                 {
-                    Logger.Information("Successfully deleted student: {StudentName}", student.StudentName);
-                }
+                    context.Students.Remove(student);
+                    var result = await context.SaveChangesAsync();
 
-                return success;
+                    var success = result > 0;
+                    if (success)
+                    {
+                        Logger.Information("Successfully deleted student: {StudentName}", student.StudentName);
+                    }
+
+                    return success;
+                }
+            }
+            finally
+            {
+                if (dispose)
+                {
+                    await context.DisposeAsync();
+                }
             }
 
             Logger.Warning("Student with ID {StudentId} not found for deletion", studentId);
@@ -336,7 +396,9 @@ public class StudentService : IStudentService
 
             // Create a context that will be disposed at the end of this method,
             // since the validation results are returned as a new list (not dependent on the context)
-            using var context = _contextFactory.CreateDbContext();
+            var (context, dispose) = GetReadContext();
+            try
+            {
 
             // Student number uniqueness check (if provided)
             if (!string.IsNullOrWhiteSpace(student.StudentNumber))
@@ -433,6 +495,14 @@ public class StudentService : IStudentService
                     errors.Add($"PM Route '{student.PMRoute}' does not exist");
                 }
             }
+            }
+            finally
+            {
+                if (dispose)
+                {
+                    await context.DisposeAsync();
+                }
+            }
         }
         catch (Exception ex)
         {
@@ -453,7 +523,9 @@ public class StudentService : IStudentService
         {
             Logger.Information("Calculating student statistics");
 
-            using var context = _contextFactory.CreateDbContext();
+            var (context, dispose) = GetReadContext();
+            try
+            {
             var stats = new Dictionary<string, int>
             {
                 ["TotalStudents"] = await context.Students.CountAsync(),
@@ -476,6 +548,14 @@ public class StudentService : IStudentService
             }
 
             return stats;
+            }
+            finally
+            {
+                if (dispose)
+                {
+                    await context.DisposeAsync();
+                }
+            }
         }
         catch (Exception ex)
         {
@@ -490,14 +570,24 @@ public class StudentService : IStudentService
         {
             Logger.Information("Finding students with missing required information");
 
-            using var context = _contextFactory.CreateDbContext();
-            return await context.Students
-                .Where(s => string.IsNullOrEmpty(s.ParentGuardian) ||
-                           string.IsNullOrEmpty(s.EmergencyPhone) ||
-                           string.IsNullOrEmpty(s.HomeAddress) ||
-                           string.IsNullOrEmpty(s.Grade))
-                .OrderBy(s => s.StudentName)
-                .ToListAsync();
+            var (context, dispose) = GetReadContext();
+            try
+            {
+                return await context.Students
+                    .Where(s => string.IsNullOrEmpty(s.ParentGuardian) ||
+                               string.IsNullOrEmpty(s.EmergencyPhone) ||
+                               string.IsNullOrEmpty(s.HomeAddress) ||
+                               string.IsNullOrEmpty(s.Grade))
+                    .OrderBy(s => s.StudentName)
+                    .ToListAsync();
+            }
+            finally
+            {
+                if (dispose)
+                {
+                    await context.DisposeAsync();
+                }
+            }
         }
         catch (Exception ex)
         {
@@ -516,24 +606,38 @@ public class StudentService : IStudentService
         {
             Logger.Information("Assigning student {StudentId} to routes - AM: {AMRoute}, PM: {PMRoute}",
                 studentId, amRoute, pmRoute);
-
-            using var context = _contextFactory.CreateWriteDbContext();
-            var student = await context.Students.FindAsync(studentId);
-            if (student == null)
+            var (context, dispose) = GetWriteContext();
+            bool success;
+            string? studentName = null;
+            try
             {
-                Logger.Warning("Student with ID {StudentId} not found", studentId);
-                return false;
+                var student = await context.Students.FindAsync(studentId);
+                if (student == null)
+                {
+                    Logger.Warning("Student with ID {StudentId} not found", studentId);
+                    return false;
+                }
+
+                studentName = student.StudentName;
+                student.AMRoute = amRoute;
+                student.PMRoute = pmRoute;
+                // Explicitly mark as modified to ensure changes are persisted even if detection is off
+                context.Entry(student).State = EntityState.Modified;
+
+                var result = await context.SaveChangesAsync();
+                success = result > 0;
             }
-
-            student.AMRoute = amRoute;
-            student.PMRoute = pmRoute;
-
-            var result = await context.SaveChangesAsync();
-            var success = result > 0;
+            finally
+            {
+                if (dispose)
+                {
+                    await context.DisposeAsync();
+                }
+            }
 
             if (success)
             {
-                Logger.Information("Successfully assigned routes for student: {StudentName}", student.StudentName);
+                Logger.Information("Successfully assigned routes for student: {StudentName}", studentName ?? "(unknown)");
             }
 
             return success;
@@ -551,22 +655,35 @@ public class StudentService : IStudentService
         {
             Logger.Information("Assigning student {StudentId} to bus stop: {BusStop}", studentId, busStop);
 
-            using var context = _contextFactory.CreateWriteDbContext();
-            var student = await context.Students.FindAsync(studentId);
-            if (student == null)
+            var (context, dispose) = GetWriteContext();
+            bool success;
+            string? studentName = null;
+            try
             {
-                Logger.Warning("Student with ID {StudentId} not found", studentId);
-                return false;
+                var student = await context.Students.FindAsync(studentId);
+                if (student == null)
+                {
+                    Logger.Warning("Student with ID {StudentId} not found", studentId);
+                    return false;
+                }
+
+                studentName = student.StudentName;
+                student.BusStop = busStop;
+
+                var result = await context.SaveChangesAsync();
+                success = result > 0;
             }
-
-            student.BusStop = busStop;
-
-            var result = await context.SaveChangesAsync();
-            var success = result > 0;
+            finally
+            {
+                if (dispose)
+                {
+                    await context.DisposeAsync();
+                }
+            }
 
             if (success)
             {
-                Logger.Information("Successfully assigned bus stop for student: {StudentName}", student.StudentName);
+                Logger.Information("Successfully assigned bus stop for student: {StudentName}", studentName ?? "(unknown)");
             }
 
             return success;
@@ -584,21 +701,34 @@ public class StudentService : IStudentService
         {
             Logger.Information("Updating active status for student {StudentId} to {IsActive}", studentId, isActive);
 
-            using var context = _contextFactory.CreateWriteDbContext();
-            var student = await context.Students.FindAsync(studentId);
-            if (student == null)
+            var (context, dispose) = GetWriteContext();
+            bool success;
+            string? studentName = null;
+            try
             {
-                Logger.Warning("Student with ID {StudentId} not found", studentId);
-                return false;
-            }
+                var student = await context.Students.FindAsync(studentId);
+                if (student == null)
+                {
+                    Logger.Warning("Student with ID {StudentId} not found", studentId);
+                    return false;
+                }
 
-            student.Active = isActive;
-            var result = await context.SaveChangesAsync();
-            var success = result > 0;
+                studentName = student.StudentName;
+                student.Active = isActive;
+                var result = await context.SaveChangesAsync();
+                success = result > 0;
+            }
+            finally
+            {
+                if (dispose)
+                {
+                    await context.DisposeAsync();
+                }
+            }
 
             if (success)
             {
-                Logger.Information("Successfully updated active status for student: {StudentName}", student.StudentName);
+                Logger.Information("Successfully updated active status for student: {StudentName}", studentName ?? "(unknown)");
             }
 
             return success;
@@ -697,25 +827,38 @@ public class StudentService : IStudentService
                 throw new ArgumentException($"Address validation failed: {addressValidation.ErrorMessage}");
             }
 
-            using var context = _contextFactory.CreateWriteDbContext();
-            var student = await context.Students.FindAsync(studentId);
-            if (student == null)
+            var (context, dispose) = GetWriteContext();
+            bool success;
+            string? studentName = null;
+            try
             {
-                Logger.Warning("Student with ID {StudentId} not found", studentId);
-                return false;
+                var student = await context.Students.FindAsync(studentId);
+                if (student == null)
+                {
+                    Logger.Warning("Student with ID {StudentId} not found", studentId);
+                    return false;
+                }
+
+                studentName = student.StudentName;
+                student.HomeAddress = homeAddress;
+                student.City = city;
+                student.State = state;
+                student.Zip = zip;
+
+                var result = await context.SaveChangesAsync();
+                success = result > 0;
             }
-
-            student.HomeAddress = homeAddress;
-            student.City = city;
-            student.State = state;
-            student.Zip = zip;
-
-            var result = await context.SaveChangesAsync();
-            var success = result > 0;
+            finally
+            {
+                if (dispose)
+                {
+                    await context.DisposeAsync();
+                }
+            }
 
             if (success)
             {
-                Logger.Information("Successfully updated address for student: {StudentName}", student.StudentName);
+                Logger.Information("Successfully updated address for student: {StudentName}", studentName ?? "(unknown)");
             }
 
             return success;
@@ -745,24 +888,37 @@ public class StudentService : IStudentService
                 throw new ArgumentException("Invalid emergency phone number format");
             }
 
-            using var context = _contextFactory.CreateWriteDbContext();
-            var student = await context.Students.FindAsync(studentId);
-            if (student == null)
+            var (context, dispose) = GetWriteContext();
+            bool success;
+            string? studentName = null;
+            try
             {
-                Logger.Warning("Student with ID {StudentId} not found", studentId);
-                return false;
+                var student = await context.Students.FindAsync(studentId);
+                if (student == null)
+                {
+                    Logger.Warning("Student with ID {StudentId} not found", studentId);
+                    return false;
+                }
+
+                studentName = student.StudentName;
+                student.ParentGuardian = parentGuardian;
+                student.HomePhone = homePhone;
+                student.EmergencyPhone = emergencyPhone;
+
+                var result = await context.SaveChangesAsync();
+                success = result > 0;
             }
-
-            student.ParentGuardian = parentGuardian;
-            student.HomePhone = homePhone;
-            student.EmergencyPhone = emergencyPhone;
-
-            var result = await context.SaveChangesAsync();
-            var success = result > 0;
+            finally
+            {
+                if (dispose)
+                {
+                    await context.DisposeAsync();
+                }
+            }
 
             if (success)
             {
-                Logger.Information("Successfully updated contact information for student: {StudentName}", student.StudentName);
+                Logger.Information("Successfully updated contact information for student: {StudentName}", studentName ?? "(unknown)");
             }
 
             return success;
@@ -792,25 +948,38 @@ public class StudentService : IStudentService
                 throw new ArgumentException("Invalid doctor phone number format");
             }
 
-            using var context = _contextFactory.CreateWriteDbContext();
-            var student = await context.Students.FindAsync(studentId);
-            if (student == null)
+            var (context, dispose) = GetWriteContext();
+            bool success;
+            string? studentName = null;
+            try
             {
-                Logger.Warning("Student with ID {StudentId} not found", studentId);
-                return false;
+                var student = await context.Students.FindAsync(studentId);
+                if (student == null)
+                {
+                    Logger.Warning("Student with ID {StudentId} not found", studentId);
+                    return false;
+                }
+
+                studentName = student.StudentName;
+                student.AlternativeContact = alternativeContact;
+                student.AlternativePhone = alternativePhone;
+                student.DoctorName = doctorName;
+                student.DoctorPhone = doctorPhone;
+
+                var result = await context.SaveChangesAsync();
+                success = result > 0;
             }
-
-            student.AlternativeContact = alternativeContact;
-            student.AlternativePhone = alternativePhone;
-            student.DoctorName = doctorName;
-            student.DoctorPhone = doctorPhone;
-
-            var result = await context.SaveChangesAsync();
-            var success = result > 0;
+            finally
+            {
+                if (dispose)
+                {
+                    await context.DisposeAsync();
+                }
+            }
 
             if (success)
             {
-                Logger.Information("Successfully updated emergency contact information for student: {StudentName}", student.StudentName);
+                Logger.Information("Successfully updated emergency contact information for student: {StudentName}", studentName ?? "(unknown)");
             }
 
             return success;

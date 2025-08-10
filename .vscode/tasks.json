@@ -32,6 +32,16 @@
 				"$msCompile"
 			],
 			"group": "build"
+		},
+		{
+			"label": "build (process) dotnet",
+			"type": "shell",
+			"command": "dotnet",
+			"args": [
+				"build",
+				"BusBuddy.sln"
+			],
+			"group": "build"
 		}
 	]
 }

@@ -53,17 +53,28 @@ namespace BusBuddy.Core.Services
 
         public async Task<Guardian> AddGuardianAsync(Guardian guardian)
         {
-            using var transaction = await _context.Database.BeginTransactionAsync();
+            var useTxn = _context.Database?.ProviderName is not null && !_context.Database.IsInMemory();
+            Microsoft.EntityFrameworkCore.Storage.IDbContextTransaction? transaction = null;
             try
             {
+                if (useTxn)
+                {
+                    transaction = await _context.Database!.BeginTransactionAsync();
+                }
                 _context.Guardians.Add(guardian);
                 await _context.SaveChangesAsync();
-                await transaction.CommitAsync();
+                if (transaction is not null)
+                {
+                    await transaction.CommitAsync();
+                }
                 return guardian;
             }
             catch (Exception ex)
             {
-                await transaction.RollbackAsync();
+                if (transaction is not null)
+                {
+                    await transaction.RollbackAsync();
+                }
                 _logger.Error(ex, "Error adding guardian");
                 throw;
             }
@@ -71,9 +82,14 @@ namespace BusBuddy.Core.Services
 
         public async Task<Guardian?> UpdateGuardianAsync(Guardian guardian)
         {
-            using var transaction = await _context.Database.BeginTransactionAsync();
+            var useTxn = _context.Database?.ProviderName is not null && !_context.Database.IsInMemory();
+            Microsoft.EntityFrameworkCore.Storage.IDbContextTransaction? transaction = null;
             try
             {
+                if (useTxn)
+                {
+                    transaction = await _context.Database!.BeginTransactionAsync();
+                }
                 var existing = await _context.Guardians.FindAsync(guardian.GuardianId);
                 if (existing == null)
                 {
@@ -82,12 +98,18 @@ namespace BusBuddy.Core.Services
 
                 _context.Entry(existing).CurrentValues.SetValues(guardian);
                 await _context.SaveChangesAsync();
-                await transaction.CommitAsync();
+                if (transaction is not null)
+                {
+                    await transaction.CommitAsync();
+                }
                 return existing;
             }
             catch (Exception ex)
             {
-                await transaction.RollbackAsync();
+                if (transaction is not null)
+                {
+                    await transaction.RollbackAsync();
+                }
                 _logger.Error(ex, "Error updating guardian {GuardianId}", guardian.GuardianId);
                 return null;
             }
@@ -95,9 +117,14 @@ namespace BusBuddy.Core.Services
 
         public async Task<bool> DeleteGuardianAsync(int guardianId)
         {
-            using var transaction = await _context.Database.BeginTransactionAsync();
+            var useTxn = _context.Database?.ProviderName is not null && !_context.Database.IsInMemory();
+            Microsoft.EntityFrameworkCore.Storage.IDbContextTransaction? transaction = null;
             try
             {
+                if (useTxn)
+                {
+                    transaction = await _context.Database!.BeginTransactionAsync();
+                }
                 var guardian = await _context.Guardians.FindAsync(guardianId);
                 if (guardian == null)
                 {
@@ -106,12 +133,18 @@ namespace BusBuddy.Core.Services
 
                 _context.Guardians.Remove(guardian);
                 await _context.SaveChangesAsync();
-                await transaction.CommitAsync();
+                if (transaction is not null)
+                {
+                    await transaction.CommitAsync();
+                }
                 return true;
             }
             catch (Exception ex)
             {
-                await transaction.RollbackAsync();
+                if (transaction is not null)
+                {
+                    await transaction.RollbackAsync();
+                }
                 _logger.Error(ex, "Error deleting guardian {GuardianId}", guardianId);
                 return false;
             }

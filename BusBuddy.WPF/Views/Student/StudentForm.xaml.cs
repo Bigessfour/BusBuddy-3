@@ -8,6 +8,8 @@ using Syncfusion.SfSkinManager; // SfSkinManager per official docs
 using BusBuddy.WPF.ViewModels.Student;
 using BusBuddy.WPF.Utilities; // SyncfusionThemeManager
 using Serilog;
+using Microsoft.Extensions.DependencyInjection;
+using BusBuddy.Core.Services;
 
 namespace BusBuddy.WPF.Views.Student
 {
@@ -35,7 +37,17 @@ namespace BusBuddy.WPF.Views.Student
             // Apply Syncfusion theme via central manager (FluentDark with FluentLight fallback)
             SfSkinManager.ApplyThemeAsDefaultStyle = true;
             SyncfusionThemeManager.ApplyTheme(this);
-            ViewModel = new StudentFormViewModel();
+            // Resolve IStudentService from DI if available
+            try
+            {
+                var sp = App.ServiceProvider;
+                var svc = sp?.GetService<IStudentService>();
+                ViewModel = svc != null ? new StudentFormViewModel(svc) : new StudentFormViewModel();
+            }
+            catch
+            {
+                ViewModel = new StudentFormViewModel();
+            }
             DataContext = ViewModel;
 
             // Subscribe to ViewModel events for form closure
@@ -105,7 +117,16 @@ namespace BusBuddy.WPF.Views.Student
     /// </summary>
     public StudentForm(Core.Models.Student student) : this()
         {
-            ViewModel = new StudentFormViewModel(student);
+            try
+            {
+                var sp = App.ServiceProvider;
+                var svc = sp?.GetService<IStudentService>();
+                ViewModel = svc != null ? new StudentFormViewModel(svc, student) : new StudentFormViewModel(student);
+            }
+            catch
+            {
+                ViewModel = new StudentFormViewModel(student);
+            }
             DataContext = ViewModel;
             ViewModel.RequestClose += OnRequestClose;
             Logger.Information("StudentForm initialized (Edit mode) for StudentId={StudentId}", student.StudentId);

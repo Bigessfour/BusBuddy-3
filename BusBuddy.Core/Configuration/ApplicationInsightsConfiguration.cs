@@ -70,7 +70,9 @@ namespace BusBuddy.Core.Configuration
             var appInsightsSection = configuration.GetSection("ApplicationInsights");
 
             if (!appInsightsSection.Exists())
+            {
                 return false;
+            }
 
             var instrumentationKey = appInsightsSection["InstrumentationKey"];
             var connectionString = appInsightsSection["ConnectionString"];

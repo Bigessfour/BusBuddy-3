@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using BusBuddy.Core.Data;
 using BusBuddy.Core.Models;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 using Serilog;
 
 namespace BusBuddy.Core.Services
@@ -76,17 +77,31 @@ namespace BusBuddy.Core.Services
         /// <returns>Added Family</returns>
         public async Task<Family> AddFamilyAsync(Family family)
         {
-            using var transaction = await _context.Database.BeginTransactionAsync();
+            var db = _context.Database;
+            var useTxn = db.ProviderName is not null && !db.IsInMemory();
+            IDbContextTransaction? transaction = null;
             try
             {
+                if (useTxn)
+                {
+                    transaction = await _context.Database.BeginTransactionAsync();
+                }
+
                 _context.Families.Add(family);
                 await _context.SaveChangesAsync();
-                await transaction.CommitAsync();
+
+                if (transaction is not null)
+                {
+                    await transaction.CommitAsync();
+                }
                 return family;
             }
             catch (Exception ex)
             {
-                await transaction.RollbackAsync();
+                if (transaction is not null)
+                {
+                    await transaction.RollbackAsync();
+                }
                 _logger.Error(ex, "Error adding family");
                 throw;
             }
@@ -99,20 +114,37 @@ namespace BusBuddy.Core.Services
         /// <returns>Updated Family or null</returns>
         public async Task<Family?> UpdateFamilyAsync(Family family)
         {
-            using var transaction = await _context.Database.BeginTransactionAsync();
+            var db = _context.Database;
+            var useTxn = db.ProviderName is not null && !db.IsInMemory();
+            IDbContextTransaction? transaction = null;
             try
             {
+                if (useTxn)
+                {
+                    transaction = await _context.Database.BeginTransactionAsync();
+                }
+
                 var existing = await _context.Families.FindAsync(family.FamilyId);
-                if (existing == null) return null;
+                if (existing == null)
+                {
+                    return null;
+                }
 
                 _context.Entry(existing).CurrentValues.SetValues(family);
                 await _context.SaveChangesAsync();
-                await transaction.CommitAsync();
+
+                if (transaction is not null)
+                {
+                    await transaction.CommitAsync();
+                }
                 return existing;
             }
             catch (Exception ex)
             {
-                await transaction.RollbackAsync();
+                if (transaction is not null)
+                {
+                    await transaction.RollbackAsync();
+                }
                 _logger.Error(ex, "Error updating family {FamilyId}", family.FamilyId);
                 return null;
             }
@@ -125,20 +157,37 @@ namespace BusBuddy.Core.Services
         /// <returns>True if deleted, false if not found</returns>
         public async Task<bool> DeleteFamilyAsync(int familyId)
         {
-            using var transaction = await _context.Database.BeginTransactionAsync();
+            var db = _context.Database;
+            var useTxn = db.ProviderName is not null && !db.IsInMemory();
+            IDbContextTransaction? transaction = null;
             try
             {
+                if (useTxn)
+                {
+                    transaction = await _context.Database.BeginTransactionAsync();
+                }
+
                 var family = await _context.Families.FindAsync(familyId);
-                if (family == null) return false;
+                if (family == null)
+                {
+                    return false;
+                }
 
                 _context.Families.Remove(family);
                 await _context.SaveChangesAsync();
-                await transaction.CommitAsync();
+
+                if (transaction is not null)
+                {
+                    await transaction.CommitAsync();
+                }
                 return true;
             }
             catch (Exception ex)
             {
-                await transaction.RollbackAsync();
+                if (transaction is not null)
+                {
+                    await transaction.RollbackAsync();
+                }
                 _logger.Error(ex, "Error deleting family {FamilyId}", familyId);
                 return false;
             }

@@ -252,6 +252,8 @@ namespace BusBuddy.WPF
                 var configuration = new ConfigurationBuilder()
                     .SetBasePath(AppDomain.CurrentDomain.BaseDirectory)
                     .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
+                    .AddJsonFile("appsettings.azure.json", optional: true, reloadOnChange: true)
+                    .AddEnvironmentVariables()
                     .Build();
 
                 // Register configuration for DI

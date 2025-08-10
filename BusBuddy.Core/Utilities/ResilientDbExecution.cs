@@ -168,7 +168,11 @@ public static class ResilientDbExecution
     private static bool ShouldRetry(Exception exception, int currentAttempt, int maxRetries)
     {
         if (currentAttempt >= maxRetries)
+        {
+
             return false;
+        }
+
 
         return exception switch
         {

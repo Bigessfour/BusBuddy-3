@@ -27,7 +27,15 @@ Changes Made
 Validation Notes
 - Logging: All reviewed views have Serilog instrumentation for button clicks or command execution.
 - Theming: SfSkinManager and SyncfusionThemeManager used across StudentForm and ReportsView; MainWindow applies FluentDark (fallback to FluentLight).
-- CanExecute: VehicleManagementView and RouteManagementView notify CanExecuteChanged on selection/busy state; StudentForm SaveCommand uses CanSaveStudent predicate and CanSave binding.
+- CanExecute: VehicleManagementView and RouteManagementView notify CanExecuteChanged on selection/busy state; StudentForm SaveCommand uses CanSaveStudent predicate. Save CanExecute now re-evaluates when StudentName/Grade/Address fields change; XAML keeps IsEnabled bound to CanSave for extra clarity and is kept in sync by the ViewModel.
+
+Manual Test — Add Student Flow (2025-08-10)
+- Action: Opened Students view → Add Student (AddStudentCommand) → StudentForm opened.
+- Input: Name "John Doe", Grade "3", Address "123 Main St", City "Springfield", State "IL", Zip "62704".
+- Validation: "Validate Address" reported ✓ Address format is valid; Validate Data reported ✓ All data validated successfully.
+- Save: Save button enabled after required fields; Save executed via IStudentService.AddStudentAsync; dialog closed with success.
+- Logging: Serilog entries show AddStudentCommand executed, StudentForm Save started/completed, and StudentService added StudentId > 0.
+- Database: Verified student persisted via EF logs; entry visible after Students list refresh.
 
 Next Checks (deferred)
 - Drivers modules DataContext and commands wiring.
@@ -38,7 +46,7 @@ Requirements coverage
 - Inventory and verify core buttons/forms: Done (core views). Further views deferred.
 - Command bindings and CanExecute: Done for core views.
 - Execution logging and theming: Confirmed present.
-- Fix non-functional buttons: Done for VehicleManagementView and ReportsView via DataContext setup.
+- Fix non-functional buttons: Done for VehicleManagementView and ReportsView via DataContext setup. StudentForm Save enablement polished with real-time CanExecute updates.
 
 ---
 

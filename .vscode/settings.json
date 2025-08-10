@@ -1,9 +1,11 @@
 {
     "cSpell.words": [
+        "Annistyn",
         "ASPNETCORE",
         "BAANKCL",
         "badv",
         "bbtest",
+        "Blakelynn",
         "buildtransitive",
         "busbuddy",
         "centralus",
@@ -12,7 +14,9 @@
         "compli",
         "contentfiles",
         "costmanagement",
+        "Cphone",
         "Dedup",
+        "Econtact",
         "ecxr",
         "Fetchability",
         "fluentdark",
@@ -21,11 +25,14 @@
         "geospatial",
         "GETUTCDATE",
         "globalconfig",
+        "Hphone",
+        "Jparent",
         "LASTEXITCODE",
         "Licence",
         "localdb",
         "LTRIM",
         "lyrs",
+        "mckitrick",
         "Mgmt",
         "mscorlib",
         "MVVM",
@@ -33,6 +40,8 @@
         "nvarchar",
         "omnisharp",
         "openstreetmap",
+        "Parmely",
+        "Prowers",
         "pscustomobject",
         "RTRIM",
         "Segoe",
@@ -40,6 +49,7 @@
         "shapefiles",
         "Sqlcmd",
         "Starlink",
+        "Sutphin",
         "sympath",
         "syncfusionnavigation",
         "syncfusionshared",
@@ -49,7 +59,8 @@
         "testhost",
         "WCAG",
         "winget",
-        "Wintellect"
+        "Wintellect",
+        "xlsz"
     ],
 
     // Ensure BusBuddy PowerShell modules are on PSModulePath for integrated terminals

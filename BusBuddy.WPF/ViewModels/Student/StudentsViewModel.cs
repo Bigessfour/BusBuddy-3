@@ -68,7 +68,8 @@ namespace BusBuddy.WPF.ViewModels.Student
         /// </summary>
         public StudentsViewModel(BusBuddyDbContext context, AddressService addressService)
         {
-            _contextFactory = new BusBuddyDbContextFactory(); // For testing, can inject a mock factory
+            // Wrap provided context in a simple factory that returns the same instance without disposing in tests
+            _contextFactory = new TestContextFactory(context);
             _addressService = addressService;
             Students = new ObservableCollection<Core.Models.Student>();
             StudentsView = CollectionViewSource.GetDefaultView(Students);
@@ -76,6 +77,15 @@ namespace BusBuddy.WPF.ViewModels.Student
 
             InitializeCommands();
             Logger.Debug("StudentsViewModel (test) initialized — commands created");
+        }
+
+        // Minimal internal factory wrapper for tests
+        private sealed class TestContextFactory : IBusBuddyDbContextFactory
+        {
+            private readonly BusBuddyDbContext _ctx;
+            public TestContextFactory(BusBuddyDbContext ctx) => _ctx = ctx;
+            public BusBuddyDbContext CreateDbContext() => _ctx;
+            public BusBuddyDbContext CreateWriteDbContext() => _ctx;
         }
 
         #region Properties
@@ -509,7 +519,7 @@ namespace BusBuddy.WPF.ViewModels.Student
                 IsLoading = true;
                 Logger.Information("Loading students from database");
 
-                using var context = _contextFactory.CreateDbContext();
+                var context = _contextFactory.CreateDbContext();
                 var students = await context.Students
                     .OrderBy(s => s.StudentName)
                     .ToListAsync();

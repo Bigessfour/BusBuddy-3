@@ -28,6 +28,22 @@ namespace BusBuddy.Core.Services
             _cachingService = cachingService;
         }
 
+        // Context helpers: only dispose when using the concrete runtime factory
+        // This prevents disposing shared in-memory contexts used by tests.
+        private (BusBuddyDbContext Ctx, bool Dispose) GetReadContext()
+        {
+            var ctx = _contextFactory.CreateDbContext();
+            var shouldDispose = _contextFactory is BusBuddy.Core.Data.BusBuddyDbContextFactory;
+            return (ctx, shouldDispose);
+        }
+
+        private (BusBuddyDbContext Ctx, bool Dispose) GetWriteContext()
+        {
+            var ctx = _contextFactory.CreateWriteDbContext();
+            var shouldDispose = _contextFactory is BusBuddy.Core.Data.BusBuddyDbContextFactory;
+            return (ctx, shouldDispose);
+        }
+
         #region Basic CRUD Operations
 
         public async Task<List<Driver>> GetAllDriversAsync()
@@ -38,14 +54,24 @@ namespace BusBuddy.Core.Services
                 try
                 {
                     Logger.Information("Retrieving all drivers from database (cache miss)");
-                    using var context = _contextFactory.CreateDbContext();
+                    var (context, dispose) = GetReadContext();
 
                     // Fix any NULL values before attempting to read drivers
                     await FixNullDriverValuesIfNeeded(context);
 
-                    return await context.Drivers
-                        .AsNoTracking()
-                        .ToListAsync();
+                    try
+                    {
+                        return await context.Drivers
+                            .AsNoTracking()
+                            .ToListAsync();
+                    }
+                    finally
+                    {
+                        if (dispose)
+                        {
+                            await context.DisposeAsync();
+                        }
+                    }
                 }
                 catch (System.Data.SqlTypes.SqlNullValueException ex)
                 {
@@ -54,13 +80,33 @@ namespace BusBuddy.Core.Services
                     // Try to fix NULL values and retry once
                     try
                     {
-                        using var fixContext = _contextFactory.CreateWriteDbContext();
-                        await FixNullDriverValuesIfNeeded(fixContext);
+                        var (fixContext, disposeFix) = GetWriteContext();
+                        try
+                        {
+                            await FixNullDriverValuesIfNeeded(fixContext);
+                        }
+                        finally
+                        {
+                            if (disposeFix)
+                            {
+                                await fixContext.DisposeAsync();
+                            }
+                        }
 
-                        using var retryContext = _contextFactory.CreateDbContext();
-                        return await retryContext.Drivers
-                            .AsNoTracking()
-                            .ToListAsync();
+                        var (retryContext, disposeRetry) = GetReadContext();
+                        try
+                        {
+                            return await retryContext.Drivers
+                                .AsNoTracking()
+                                .ToListAsync();
+                        }
+                        finally
+                        {
+                            if (disposeRetry)
+                            {
+                                await retryContext.DisposeAsync();
+                            }
+                        }
                     }
                     catch (Exception retryEx)
                     {
@@ -85,12 +131,22 @@ namespace BusBuddy.Core.Services
             try
             {
                 Logger.Information("Retrieving driver with ID: {DriverId}", driverId);
-                using var context = _contextFactory.CreateDbContext();
-                return await context.Drivers
-                    .AsNoTracking()
-                    .Include(d => d.AMRoutes)
-                    .Include(d => d.PMRoutes)
-                    .FirstOrDefaultAsync(d => d.DriverId == driverId);
+                var (context, dispose) = GetReadContext();
+                try
+                {
+                    return await context.Drivers
+                        .AsNoTracking()
+                        .Include(d => d.AMRoutes)
+                        .Include(d => d.PMRoutes)
+                        .FirstOrDefaultAsync(d => d.DriverId == driverId);
+                }
+                finally
+                {
+                    if (dispose)
+                    {
+                        await context.DisposeAsync();
+                    }
+                }
             }
             catch (Exception ex)
             {
@@ -125,9 +181,19 @@ namespace BusBuddy.Core.Services
                     driver.Status = "Active";
                 }
 
-                using var context = _contextFactory.CreateWriteDbContext();
-                context.Drivers.Add(driver);
-                await context.SaveChangesAsync();
+                var (context, dispose) = GetWriteContext();
+                try
+                {
+                    context.Drivers.Add(driver);
+                    await context.SaveChangesAsync();
+                }
+                finally
+                {
+                    if (dispose)
+                    {
+                        await context.DisposeAsync();
+                    }
+                }
 
                 // Invalidate cache after adding driver
                 _cachingService.InvalidateCache("AllDrivers");
@@ -160,7 +226,7 @@ namespace BusBuddy.Core.Services
                 // Update modification timestamp
                 driver.UpdatedDate = DateTime.UtcNow;
 
-                using var context = _contextFactory.CreateWriteDbContext();
+                var (context, dispose) = GetWriteContext();
                 context.Entry(driver).State = EntityState.Modified;
 
                 // Don't modify relationships here - use specific methods for that
@@ -201,6 +267,13 @@ namespace BusBuddy.Core.Services
                         throw;
                     }
                 }
+                finally
+                {
+                    if (dispose)
+                    {
+                        await context.DisposeAsync();
+                    }
+                }
             }
             catch (Exception ex)
             {
@@ -216,9 +289,20 @@ namespace BusBuddy.Core.Services
                 Logger.Information("Deleting driver with ID: {DriverId}", driverId);
 
                 // First check if the driver is assigned to any routes
-                using var checkContext = _contextFactory.CreateDbContext();
-                var hasActiveRoutes = await checkContext.Routes
-                    .CountAsync(r => (r.AMDriverId == driverId || r.PMDriverId == driverId) && r.Date >= DateTime.Today) > 0;
+                var (checkContext, disposeCheck) = GetReadContext();
+                bool hasActiveRoutes;
+                try
+                {
+                    hasActiveRoutes = await checkContext.Routes
+                        .CountAsync(r => (r.AMDriverId == driverId || r.PMDriverId == driverId) && r.Date >= DateTime.Today) > 0;
+                }
+                finally
+                {
+                    if (disposeCheck)
+                    {
+                        await checkContext.DisposeAsync();
+                    }
+                }
 
                 if (hasActiveRoutes)
                 {
@@ -226,16 +310,25 @@ namespace BusBuddy.Core.Services
                     throw new InvalidOperationException("Cannot delete driver as they are assigned to active routes. Remove from routes first or mark as inactive.");
                 }
 
-                using var context = _contextFactory.CreateWriteDbContext();
+                var (context, dispose) = GetWriteContext();
                 var driver = await context.Drivers.FindAsync(driverId);
                 if (driver == null)
                 {
                     Logger.Warning("Driver with ID {DriverId} not found for deletion", driverId);
+                    if (dispose)
+                    {
+                        await context.DisposeAsync();
+                    }
                     return false;
                 }
 
                 context.Drivers.Remove(driver);
                 await context.SaveChangesAsync();
+
+                if (dispose)
+                {
+                    await context.DisposeAsync();
+                }
 
                 // Invalidate cache after deleting driver
                 _cachingService.InvalidateCache("AllDrivers");
@@ -264,15 +357,25 @@ namespace BusBuddy.Core.Services
             try
             {
                 Logger.Information("Retrieving active drivers");
-                using var context = _contextFactory.CreateDbContext();
+                var (context, dispose) = GetReadContext();
 
                 // Fix any NULL values before attempting to read drivers
                 await FixNullDriverValuesIfNeeded(context);
 
-                return await context.Drivers
-                    .AsNoTracking()
-                    .Where(d => d.Status == "Active")
-                    .ToListAsync();
+                try
+                {
+                    return await context.Drivers
+                        .AsNoTracking()
+                        .Where(d => d.Status == "Active")
+                        .ToListAsync();
+                }
+                finally
+                {
+                    if (dispose)
+                    {
+                        await context.DisposeAsync();
+                    }
+                }
             }
             catch (System.Data.SqlTypes.SqlNullValueException ex)
             {
@@ -280,14 +383,34 @@ namespace BusBuddy.Core.Services
 
                 try
                 {
-                    using var fixContext = _contextFactory.CreateWriteDbContext();
-                    await FixNullDriverValuesIfNeeded(fixContext);
+                    var (fixContext, disposeFix) = GetWriteContext();
+                    try
+                    {
+                        await FixNullDriverValuesIfNeeded(fixContext);
+                    }
+                    finally
+                    {
+                        if (disposeFix)
+                        {
+                            await fixContext.DisposeAsync();
+                        }
+                    }
 
-                    using var retryContext = _contextFactory.CreateDbContext();
-                    return await retryContext.Drivers
-                        .AsNoTracking()
-                        .Where(d => d.Status == "Active")
-                        .ToListAsync();
+                    var (retryContext, disposeRetry) = GetReadContext();
+                    try
+                    {
+                        return await retryContext.Drivers
+                            .AsNoTracking()
+                            .Where(d => d.Status == "Active")
+                            .ToListAsync();
+                    }
+                    finally
+                    {
+                        if (disposeRetry)
+                        {
+                            await retryContext.DisposeAsync();
+                        }
+                    }
                 }
                 catch (Exception retryEx)
                 {
@@ -362,17 +485,27 @@ namespace BusBuddy.Core.Services
                 }
 
                 var term = searchTerm.ToLowerInvariant();
-                using var context = _contextFactory.CreateDbContext();
-                return await context.Drivers
-                    .AsNoTracking()
-                    .Where(d =>
+                var (context, dispose) = GetReadContext();
+                try
+                {
+                    return await context.Drivers
+                        .AsNoTracking()
+                        .Where(d =>
                         (!string.IsNullOrEmpty(d.DriverName) && d.DriverName.Contains(term, StringComparison.OrdinalIgnoreCase)) ||
                         (!string.IsNullOrEmpty(d.FirstName) && d.FirstName.Contains(term, StringComparison.OrdinalIgnoreCase)) ||
                         (!string.IsNullOrEmpty(d.LastName) && d.LastName.Contains(term, StringComparison.OrdinalIgnoreCase)) ||
                         (!string.IsNullOrEmpty(d.DriverPhone) && d.DriverPhone.Contains(term, StringComparison.OrdinalIgnoreCase)) ||
                         (!string.IsNullOrEmpty(d.DriverEmail) && d.DriverEmail.Contains(term, StringComparison.OrdinalIgnoreCase)) ||
                         (!string.IsNullOrEmpty(d.LicenseNumber) && d.LicenseNumber.Contains(term, StringComparison.OrdinalIgnoreCase)))
-                    .ToListAsync();
+                        .ToListAsync();
+                }
+                finally
+                {
+                    if (dispose)
+                    {
+                        await context.DisposeAsync();
+                    }
+                }
             }
             catch (Exception ex)
             {

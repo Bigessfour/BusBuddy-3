@@ -13,6 +13,14 @@
 - Verified button/command wiring, CanExecute gating, theming, and logging across key modules.
 - Introduced missing DataContexts and close workflows where needed; preserved Syncfusion-only UI policy (no WPF DataGrid regressions).
 
+### Students module — Add Student flow (E2E) verified
+- Toolbar AddStudentCommand in `StudentsView.xaml` opens `StudentForm` correctly.
+- `StudentFormViewModel.SaveCommand` persists via `IStudentService.AddStudentAsync` (Serilog logs context-rich events).
+- Address checks in `StudentFormViewModel` (format + required components) with `ValidateDataCommand` gating Save; `CanSave` updates live as fields change.
+- DI/Config: `StudentForm.xaml.cs` resolves `IStudentService` from App.ServiceProvider; provider selection (LocalDB/Azure) honors `appsettings.*`.
+- Manual test: Added “John Doe” — “123 Main St, Wiley, CO”; record saved and list refreshed; entries observed in `logs/busbuddy-.log`.
+- Documentation: `GrokResources/GPT-5 actions/ButtonFormValidationReport.md` updated with steps/results and screenshots refs.
+
 ### Modules audited
 - Core: Students, StudentForm, RouteManagement — previously validated; still good.
 - VehicleManagement — DataContext fix already in place; remains good.

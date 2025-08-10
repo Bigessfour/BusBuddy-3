@@ -34,7 +34,16 @@ namespace BusBuddy.Core.Services
                 using var context = _contextFactory.CreateDbContext();
 
                 // Check if logs already exist
-                var existingCount = await context.ActivityLogs.CountAsync();
+                int existingCount;
+                try
+                {
+                    existingCount = await context.ActivityLogs.CountAsync();
+                }
+                catch (InvalidOperationException)
+                {
+                    // Fallback for mocked sets without async provider
+                    existingCount = context.ActivityLogs.Count();
+                }
                 if (existingCount >= count)
                 {
                     Logger.Information("ActivityLogs already contain {ExistingCount} records. Skipping seed.", existingCount);
@@ -81,7 +90,15 @@ namespace BusBuddy.Core.Services
                 using var context = _contextFactory.CreateDbContext();
 
                 // Check if drivers already exist
-                var existingCount = await context.Drivers.CountAsync();
+                int existingCount;
+                try
+                {
+                    existingCount = await context.Drivers.CountAsync();
+                }
+                catch (InvalidOperationException)
+                {
+                    existingCount = context.Drivers.Count();
+                }
                 if (existingCount >= count)
                 {
                     Logger.Information("Drivers already contain {ExistingCount} records. Skipping seed.", existingCount);
@@ -139,7 +156,15 @@ namespace BusBuddy.Core.Services
                 using var context = _contextFactory.CreateDbContext();
 
                 // Check if buses already exist
-                var existingCount = await context.Buses.CountAsync();
+                int existingCount;
+                try
+                {
+                    existingCount = await context.Buses.CountAsync();
+                }
+                catch (InvalidOperationException)
+                {
+                    existingCount = context.Buses.Count();
+                }
                 if (existingCount >= count)
                 {
                     Logger.Information("Buses already contain {ExistingCount} records. Skipping seed.", existingCount);
@@ -282,7 +307,10 @@ Annistyn,Sutphin,3,,,,,,,,,,,,,,,,,,
                 {
                     var row = lines[i].Trim();
                     if (string.IsNullOrWhiteSpace(row) || row.All(c => c == ','))
+                    {
                         continue;
+                    }
+
                     var cols = row.Split(',');
                     // Student fields
                     string fname = idxFname >= 0 && idxFname < cols.Length ? cols[idxFname].Trim() : string.Empty;
@@ -308,24 +336,66 @@ Annistyn,Sutphin,3,,,,,,,,,,,,,,,,,,
 
                     // Fill down family info if blank
                     if (!string.IsNullOrEmpty(parentFname) || !string.IsNullOrEmpty(parentLname))
+                    {
                         lastParent = $"{parentFname} {parentLname}".Trim();
+                    }
+
                     if (!string.IsNullOrEmpty(jointFname) || !string.IsNullOrEmpty(jointLname))
+                    {
                         lastJointParent = $"{jointFname} {jointLname}".Trim();
-                    if (!string.IsNullOrEmpty(address)) lastAddress = address;
-                    if (!string.IsNullOrEmpty(city)) lastCity = city;
-                    if (!string.IsNullOrEmpty(state)) lastState = state;
-                    if (!string.IsNullOrEmpty(county)) lastCounty = county;
-                    if (!string.IsNullOrEmpty(hphone)) lastHphone = hphone;
-                    if (!string.IsNullOrEmpty(cphone)) lastCphone = cphone;
-                    if (!string.IsNullOrEmpty(jointCphone)) lastJointCphone = jointCphone;
+                    }
+
+                    if (!string.IsNullOrEmpty(address))
+                    {
+                        lastAddress = address;
+                    }
+
+                    if (!string.IsNullOrEmpty(city))
+                    {
+                        lastCity = city;
+                    }
+
+                    if (!string.IsNullOrEmpty(state))
+                    {
+                        lastState = state;
+                    }
+
+                    if (!string.IsNullOrEmpty(county))
+                    {
+                        lastCounty = county;
+                    }
+
+                    if (!string.IsNullOrEmpty(hphone))
+                    {
+                        lastHphone = hphone;
+                    }
+
+                    if (!string.IsNullOrEmpty(cphone))
+                    {
+                        lastCphone = cphone;
+                    }
+
+                    if (!string.IsNullOrEmpty(jointCphone))
+                    {
+                        lastJointCphone = jointCphone;
+                    }
+
                     if (!string.IsNullOrEmpty(econtactFname) || !string.IsNullOrEmpty(econtactLname))
+                    {
                         lastEcontact = $"{econtactFname} {econtactLname}".Trim();
-                    if (!string.IsNullOrEmpty(econtactPhone)) lastEcontactPhone = econtactPhone;
+                    }
+
+                    if (!string.IsNullOrEmpty(econtactPhone))
+                    {
+                        lastEcontactPhone = econtactPhone;
+                    }
 
                     // Compose ParentGuardian field
                     string parentGuardian = lastParent;
                     if (!string.IsNullOrEmpty(lastJointParent))
+                    {
                         parentGuardian = $"{lastParent} & {lastJointParent}";
+                    }
 
                     // Compose HomeAddress
                     string homeAddress = $"{lastAddress}, {lastCity}, {lastState}, {lastCounty}".Replace("  ", " ").Trim(',').Trim();
