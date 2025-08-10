@@ -87,10 +87,11 @@
         </Border>
 
         <!-- Main Content Area with DockingManager -->
-        <syncfusion:DockingManager Name="MainDockingManager"
-                                   UseDocumentContainer="True"
-                                   PersistState="True"
-                                   Grid.Row="1">
+    <syncfusion:DockingManager Name="MainDockingManager"
+                   UseDocumentContainer="True"
+                   PersistState="True"
+                   UseNativeFloatWindow="True"
+                   Grid.Row="1">
 
             <!-- Students Panel -->
             <ContentControl x:Name="StudentsPane"

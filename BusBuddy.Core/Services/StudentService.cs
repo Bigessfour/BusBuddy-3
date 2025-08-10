@@ -52,10 +52,32 @@ public class StudentService : IStudentService
             var (context, dispose) = GetReadContext();
             try
             {
-                return await context.Students
+                var students = await context.Students
                     .AsNoTracking() // Use AsNoTracking for better performance in read operations
                     .OrderBy(s => s.StudentName)
                     .ToListAsync();
+
+                // Diagnostics: verify commonly used fields are materialized
+                try
+                {
+                    var total = students.Count;
+                    int nullAddress = students.Count(s => string.IsNullOrWhiteSpace(s.HomeAddress));
+                    int nullSchool = students.Count(s => string.IsNullOrWhiteSpace(s.School));
+                    int nullRoutes = students.Count(s => string.IsNullOrWhiteSpace(s.AMRoute) && string.IsNullOrWhiteSpace(s.PMRoute));
+                    int nullPhones = students.Count(s => string.IsNullOrWhiteSpace(s.HomePhone) && string.IsNullOrWhiteSpace(s.EmergencyPhone));
+
+                    var sample = students.FirstOrDefault();
+                    Logger.Information(
+                        "Students loaded: {Total}. Nulls — Address: {NullAddress}/{Total}, School: {NullSchool}/{Total}, Routes(AM+PM both null): {NullRoutes}/{Total}, Phones(Home+Emergency both null): {NullPhones}/{Total}. Sample: Id={Id}, Name={Name}, School={SampleSchool}, AM={AM}, PM={PM}",
+                        total, nullAddress, total, nullSchool, total, nullRoutes, total, nullPhones, total,
+                        sample?.StudentId, sample?.StudentName, sample?.School, sample?.AMRoute, sample?.PMRoute);
+                }
+                catch (Exception diagEx)
+                {
+                    Logger.Debug(diagEx, "Student field diagnostics logging failed");
+                }
+
+                return students;
             }
             finally
             {

@@ -1,3 +1,33 @@
+## Tech Debt — StringComparison consistency (case-insensitive search)
+
+Context: We’re standardizing on documented, allocation-free, case-insensitive string matching patterns. For MVP, fixes are limited to Student views and MainWindow. Remaining instances are tracked here as tech debt.
+
+- Verified compliant (no action now):
+  - BusBuddy.WPF/ViewModels/Student/StudentsViewModel.cs — uses IndexOf(..., StringComparison.OrdinalIgnoreCase)
+  - BusBuddy.WPF/Views/Main/MainWindow.xaml(.cs) — no ToLower/ToUpper Contains patterns detected
+
+- Tech debt to address post-MVP:
+  1) BusBuddy.Core/Services/DriverService.cs — replace lowercasing + Contains with StringComparison overload (or IndexOf) for case-insensitive search.
+     - Recommended pattern (C#/.NET documented API):
+       - Prefer: source.Contains(term, StringComparison.OrdinalIgnoreCase)
+       - Or: source?.IndexOf(term, StringComparison.OrdinalIgnoreCase) >= 0
+       - Avoid: source.ToLowerInvariant().Contains(term.ToLowerInvariant())
+
+  2) BusBuddy.WPF/ViewModels/Vehicle/VehicleManagementViewModel.cs (lines ~166–169) — uses ToLower().Contains(searchLower, StringComparison.OrdinalIgnoreCase). Refactor to:
+     - v.Make?.Contains(searchText, StringComparison.OrdinalIgnoreCase) == true
+     - v.Model?.Contains(searchText, StringComparison.OrdinalIgnoreCase) == true
+     - v.LicenseNumber?.Contains(searchText, StringComparison.OrdinalIgnoreCase) == true
+     - v.BusNumber?.Contains(searchText, StringComparison.OrdinalIgnoreCase) == true
+
+  3) Documentation examples:
+     - Documentation/Reference/Student-Entry-Examples.md (search examples)
+     - Documentation/Reference/Database-Schema.md (search examples)
+     Update examples to match the production pattern above to prevent copy-paste propagation.
+
+Notes:
+- This follows official .NET guidance to use StringComparison for culture/ordinal behavior instead of allocating ToLower/ToUpper strings. See: https://learn.microsoft.com/dotnet/standard/base-types/best-practices-strings#recommendations-for-string-operations
+- MVP scope rule: Only Student views/MainWindow were eligible for code changes now; all other occurrences are intentionally deferred and recorded here.
+
 # 🚌 BusBuddy Project - Grok Development Status
 
 **Last Updated:** August 10, 2025 — UI Buttons/Forms Validation, GoogleEarth theming/cleanup, Activity DataContext, Unit Tests stabilization plan ✅  
@@ -94,6 +124,14 @@ Tech Debt (Student form)
 - View on Map button: placeholder only. Backed by TODO in ViewModel; integration with Google Earth Engine pending. Track under mapping integration epic.
 - Get AI Suggested Routes: placeholder/TODO. Defer until post-MVP; integrate with Grok/xAI route optimizer later.
 - Address validation: consider online validation (e.g., USPS API) post-MVP. For MVP, validation only ensures sufficient data for routing (street, city, state, zip).
+
+### Tech Debt — MainWindow theming & docking (to track)
+- Consolidate theme application: ensure MainWindow.xaml.cs applies theme via SfSkinManager consistently and remove duplicate/legacy paths. Verify all other views use `SyncfusionThemeManager.ApplyTheme(this)` helper for consistency.
+- Dynamic resources audit: replace any hard-coded colors/brushes with `{DynamicResource BusBuddy.*}` in MainWindow header/buttons/status bar to match `Resources/SyncfusionV30_Validated_ResourceDictionary.xaml`.
+- Docking responsiveness: finalized `DockingManager` settings include `UseNativeFloatWindow=True` and `Theme="FluentDark"`. Post-MVP, add persisted layout profiles and per-pane minimum sizes per Syncfusion docs.
+- Documentation-first refs:
+  - SfSkinManager (themes): https://help.syncfusion.com/wpf/themes/skin-manager
+  - DockingManager API: https://help.syncfusion.com/cr/wpf/Syncfusion.Windows.Tools.Controls.DockingManager.html
 
 ### Modules audited
 - Core: Students, StudentForm, RouteManagement — previously validated; still good.
