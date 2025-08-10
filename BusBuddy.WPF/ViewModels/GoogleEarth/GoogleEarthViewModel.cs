@@ -9,6 +9,8 @@ using BusBuddy.Core.Services.Interfaces;
 using BusBuddy.Core.Models;
 using Serilog;
 using RouteModel = BusBuddy.Core.Models.Route;
+using System.Text.Json; // Microsoft .NET docs: System.Text.Json for JSON serialization/deserialization
+using System.Windows; // For System.Windows.Point used by Syncfusion MapPolyline
 
 namespace BusBuddy.WPF.ViewModels.GoogleEarth
 {
@@ -38,6 +40,21 @@ namespace BusBuddy.WPF.ViewModels.GoogleEarth
     private bool _districtBoundaryVisible;
     private bool _townBoundaryVisible;
 
+    /// <summary>
+    /// Points representing the currently selected route polyline — consumed by view to draw MapPolyline.
+    /// </summary>
+    public ObservableCollection<Point> RouteLinePoints { get; } = new();
+
+    /// <summary>
+    /// Raised when route line points are updated and the view should redraw the polyline layer.
+    /// </summary>
+    public event EventHandler<RouteLineEventArgs>? RouteLineUpdated;
+
+    /// <summary>
+    /// Raised when a print of the current route map has been requested.
+    /// </summary>
+    public event EventHandler? PrintRequested;
+
         public GoogleEarthViewModel(IGeoDataService geoDataService, IEligibilityService? eligibilityService = null, IGeocodingService? geocodingService = null)
         {
             _geoDataService = geoDataService ?? throw new ArgumentNullException(nameof(geoDataService));
@@ -58,6 +75,9 @@ namespace BusBuddy.WPF.ViewModels.GoogleEarth
             TrackSelectedBusCommand = new RelayCommand(_ => TrackSelectedBus(), _ => SelectedBus != null);
             ResetViewCommand = new RelayCommand(_ => ResetView());
             CheckEligibilityCommand = new RelayCommand(async _ => await CheckEligibilityAsync(), _ => _eligibilityService != null);
+
+            // Print current route map/directions
+            PrintRouteMapsCommand = new RelayCommand(_ => OnPrintRequested(), _ => true);
 
             // Reasonable defaults
             DistrictBoundaryVisible = false;
@@ -227,6 +247,7 @@ namespace BusBuddy.WPF.ViewModels.GoogleEarth
     public ICommand ResetViewCommand { get; private set; } = null!;
     public ICommand CheckEligibilityCommand { get; private set; } = null!;
     public ICommand AddMarkerCommand { get; private set; } = null!;
+    public ICommand PrintRouteMapsCommand { get; private set; } = null!;
 
         #endregion
 
@@ -333,24 +354,31 @@ namespace BusBuddy.WPF.ViewModels.GoogleEarth
                 School = "Sample School",
                 IsActive = true
             };
-
-            await UpdateMapForRouteAsync(sampleRoute.RouteName);
+            // Sample simple line across two points
+            var samplePoints = new[] { new Point(38.1527, -102.7204), new Point(38.20, -102.68) };
+            await UpdatePolylineAsync(samplePoints);
         }
 
         private async Task UpdateMapForRouteAsync(string routeName)
         {
-            // Create sample route data for demonstration
-            var sampleRoute = new RouteModel
+            try
             {
-                RouteId = 1,
-                RouteName = routeName,
-                Date = DateTime.Today,
-                School = "Sample School",
-                IsActive = true
-            };
+                await Task.Delay(100); // brief yield
 
-            await Task.Delay(500); // Simulate map update
-            Logger.Information("Map updated for route: {RouteName}", routeName);
+                // Deserialize WaypointsJson to list of Points if available
+                var points = Array.Empty<Point>();
+                if (SelectedRoute is not null && !string.IsNullOrWhiteSpace(SelectedRoute.WaypointsJson))
+                {
+                    points = ParseWaypointsToPoints(SelectedRoute.WaypointsJson);
+                }
+
+                await UpdatePolylineAsync(points);
+                Logger.Information("Map updated for route: {RouteName} with {Count} points", routeName, points.Length);
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Failed to update map for route {RouteName}", routeName);
+            }
         }
 
         private async Task ExportRouteDataAsync()
@@ -436,6 +464,84 @@ namespace BusBuddy.WPF.ViewModels.GoogleEarth
             Logger.Information("Reset view requested");
         }
 
+        private void OnPrintRequested()
+        {
+            try
+            {
+                Logger.Information("Print route maps requested");
+                PrintRequested?.Invoke(this, EventArgs.Empty);
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Failed to request printing");
+            }
+        }
+
+        /// <summary>
+        /// Convert WaypointsJson to a list of System.Windows.Point (Latitude, Longitude).
+        /// Supports JSON in the form of [{"Latitude":..,"Longitude":..}, ...] or [[lat,lon], ...].
+        /// </summary>
+        private static Point[] ParseWaypointsToPoints(string json)
+        {
+            if (string.IsNullOrWhiteSpace(json))
+            {
+                return Array.Empty<Point>();
+            }
+
+            try
+            {
+                using var doc = JsonDocument.Parse(json);
+                if (doc.RootElement.ValueKind != JsonValueKind.Array)
+                {
+                    return Array.Empty<Point>();
+                }
+
+                var list = new System.Collections.Generic.List<Point>();
+                foreach (var el in doc.RootElement.EnumerateArray())
+                {
+                    switch (el.ValueKind)
+                    {
+                        case JsonValueKind.Object:
+                            if (el.TryGetProperty("Latitude", out var latProp) && el.TryGetProperty("Longitude", out var lonProp))
+                            {
+                                if (latProp.TryGetDouble(out var lat) && lonProp.TryGetDouble(out var lon))
+                                {
+                                    list.Add(new Point(lat, lon));
+                                }
+                            }
+                            break;
+                        case JsonValueKind.Array:
+                            if (el.GetArrayLength() >= 2)
+                            {
+                                var lat = el[0].GetDouble();
+                                var lon = el[1].GetDouble();
+                                list.Add(new Point(lat, lon));
+                            }
+                            break;
+                    }
+                }
+                return list.ToArray();
+            }
+            catch
+            {
+                return Array.Empty<Point>();
+            }
+        }
+
+        /// <summary>
+        /// Update internal collection and raise event so the view can draw the polyline using Syncfusion MapPolyline.
+        /// </summary>
+        private async Task UpdatePolylineAsync(System.Collections.Generic.IEnumerable<Point> points)
+        {
+            await Task.Yield();
+            RouteLinePoints.Clear();
+            foreach (var p in points)
+            {
+                RouteLinePoints.Add(p);
+            }
+            RouteLineUpdated?.Invoke(this, new RouteLineEventArgs(RouteLinePoints));
+        }
+
         private async Task CheckEligibilityAsync()
         {
             if (_eligibilityService is null)
@@ -473,6 +579,18 @@ namespace BusBuddy.WPF.ViewModels.GoogleEarth
             public string? Label { get; set; }
             public double Latitude { get; set; }
             public double Longitude { get; set; }
+        }
+
+        /// <summary>
+        /// Event args carrying route polyline points.
+        /// </summary>
+        public sealed class RouteLineEventArgs : EventArgs
+        {
+            public System.Collections.Generic.IReadOnlyList<Point> Points { get; }
+            public RouteLineEventArgs(System.Collections.Generic.IEnumerable<Point> points)
+            {
+                Points = new System.Collections.ObjectModel.ReadOnlyCollection<Point>(new System.Collections.Generic.List<Point>(points));
+            }
         }
     }
 

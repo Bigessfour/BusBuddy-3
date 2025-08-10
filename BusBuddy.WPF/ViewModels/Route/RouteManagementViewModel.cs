@@ -8,6 +8,8 @@ using Microsoft.EntityFrameworkCore;
 using BusBuddy.Core.Services;
 using BusBuddy.Core.Models;
 using Serilog;
+using System.Windows.Input;
+using CommunityToolkit.Mvvm.Input;
 
 namespace BusBuddy.WPF.ViewModels.Route
 {
@@ -92,6 +94,20 @@ namespace BusBuddy.WPF.ViewModels.Route
     /// </summary>
         public int TotalAssignedStudents => Routes.Sum(r => r.StudentCount ?? 0);
 
+    // Commands used by RouteManagementView toolbar
+    public ICommand AddRouteCommand { get; }
+    public ICommand EditRouteCommand { get; }
+    public ICommand DeleteRouteCommand { get; }
+    public ICommand GenerateScheduleCommand { get; }
+    public ICommand ViewMapCommand { get; }
+    public ICommand AssignStudentsCommand { get; }
+    public ICommand AssignVehicleCommand { get; }
+    public ICommand ExportCsvCommand { get; }
+    public ICommand ExportReportCommand { get; }
+    public ICommand PrintScheduleCommand { get; }
+    public ICommand PrintRouteMapsCommand { get; }
+    public ICommand RefreshCommand { get; }
+
         public RouteManagementViewModel()
         {
             // Initialize EF context factory
@@ -99,6 +115,20 @@ namespace BusBuddy.WPF.ViewModels.Route
             RoutesView = CollectionViewSource.GetDefaultView(Routes);
             RoutesView.Filter = FilterRoutes;
             LoadRoutes();
+
+            // Wire commands
+            AddRouteCommand = new RelayCommand(AddRoute);
+            EditRouteCommand = new RelayCommand(EditSelectedRoute, () => IsRouteSelected);
+            DeleteRouteCommand = new RelayCommand(DeleteSelectedRoute, () => IsRouteSelected);
+            GenerateScheduleCommand = new RelayCommand(GenerateSchedule, () => IsRouteSelected);
+            ViewMapCommand = new RelayCommand(OpenMapView);
+            AssignStudentsCommand = new RelayCommand(AssignStudents, () => IsRouteSelected);
+            AssignVehicleCommand = new RelayCommand(AssignVehicle, () => IsRouteSelected);
+            ExportCsvCommand = new RelayCommand(ExportCsv);
+            ExportReportCommand = new RelayCommand(ExportReport);
+            PrintScheduleCommand = new RelayCommand(PrintSchedule);
+            PrintRouteMapsCommand = new RelayCommand(PrintMaps);
+            RefreshCommand = new RelayCommand(() => LoadRoutes());
         }
 
     /// <summary>
@@ -179,6 +209,18 @@ namespace BusBuddy.WPF.ViewModels.Route
                 LoadRoutes();
             }
         }
+
+    // Stubs to satisfy UI; can be implemented later
+    private void EditSelectedRoute() { /* TODO: open edit dialog */ }
+    private void DeleteSelectedRoute() { /* TODO: delete route */ }
+    private void GenerateSchedule() { StatusMessage = "Generated schedule (stub)"; }
+    private void OpenMapView() { StatusMessage = "Opening map (stub)"; }
+    private void AssignStudents() { StatusMessage = "Assign students (stub)"; }
+    private void AssignVehicle() { StatusMessage = "Assign vehicle (stub)"; }
+    private void ExportCsv() { StatusMessage = "Exported CSV (stub)"; }
+    private void ExportReport() { StatusMessage = "Exported report (stub)"; }
+    private void PrintSchedule() { StatusMessage = "Printed schedule (stub)"; }
+    private void PrintMaps() { StatusMessage = "Printed maps (stub)"; }
 
         public void Dispose()
         {

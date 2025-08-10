@@ -14,6 +14,7 @@
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/SyncfusionV30_Validated_ResourceDictionary.xaml"/>
+                <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/Themes/FluentDarkTheme.xaml"/>
             </ResourceDictionary.MergedDictionaries>
             <!-- Required converter for Visibility bindings -->
             <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
@@ -34,18 +35,18 @@
         </Grid.RowDefinitions>
 
     <!-- Header -->
-    <Border Grid.Row="0" Background="{StaticResource BusBuddy.Brush.Primary}"
+    <Border Grid.Row="0" Background="{DynamicResource BusBuddy.Brush.Primary}"
                 CornerRadius="5" Padding="15" Margin="0,0,0,10">
             <StackPanel Orientation="Horizontal">
                 <TextBlock Text="&#xE716;" FontFamily="Segoe MDL2 Assets"
-                          FontSize="24" Foreground="{StaticResource BusBuddy.Brush.Text.Primary}" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                          FontSize="24" Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}" VerticalAlignment="Center" Margin="0,0,10,0"/>
                 <TextBlock Text="Student Management" FontSize="20" FontWeight="Bold"
-                          Foreground="{StaticResource BusBuddy.Brush.Text.Primary}" VerticalAlignment="Center"/>
+                          Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}" VerticalAlignment="Center"/>
             </StackPanel>
         </Border>
 
     <!-- Enhanced Toolbar for Route Building -->
-    <Border Grid.Row="1" Background="{StaticResource BusBuddy.Brush.Surface.Light}"
+    <Border Grid.Row="1" Background="{DynamicResource BusBuddy.Brush.Surface.Light}"
                 CornerRadius="3" Padding="10" Margin="0,0,0,10">
             <Grid>
                 <Grid.ColumnDefinitions>
@@ -57,7 +58,7 @@
                 <StackPanel Grid.Column="0" Orientation="Horizontal">
             <syncfusion:ButtonAdv Name="AddStudentButton" Label="➕ Add Student"
                             Command="{Binding AddStudentCommand}"
-                Background="{StaticResource BusBuddy.Brush.Primary}" Foreground="{StaticResource BusBuddy.Brush.Text.Primary}"
+                Background="{DynamicResource BusBuddy.Brush.Primary}" Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"
                             AutomationProperties.Name="Add Student"
                             AutomationProperties.HelpText="Opens form to add a new student to the system"/>
                     <syncfusion:ButtonAdv Name="EditStudentButton" Label="✏️ Edit Student"
@@ -75,13 +76,13 @@
                     <!-- Bulk Operations -->
             <syncfusion:ButtonAdv Name="ImportStudentsButton" Label="📥 Import CSV"
                             Command="{Binding ImportStudentsCommand}"
-                Background="{StaticResource BusBuddy.Brush.FleetGreen}" Foreground="{StaticResource BusBuddy.Brush.Text.Primary}"
+                Background="{DynamicResource BusBuddy.Brush.FleetGreen}" Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"
                             AutomationProperties.Name="Import Students from CSV"
                             AutomationProperties.HelpText="Import multiple students from a CSV file"/>
             <syncfusion:ButtonAdv Name="BulkAssignRouteButton" Label="🚌 Bulk Assign Route"
                             Command="{Binding BulkAssignRouteCommand}"
                             IsEnabled="{Binding HasSelectedStudents}"
-                Background="{StaticResource BusBuddy.Brush.SafetyOrange}" Foreground="{StaticResource BusBuddy.Brush.Text.Primary}"
+                Background="{DynamicResource BusBuddy.Brush.SafetyOrange}" Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"
                             AutomationProperties.Name="Bulk Assign Route"
                             AutomationProperties.HelpText="Assign routes to multiple selected students at once"/>
                     <Separator Margin="10,0"/>
@@ -89,12 +90,12 @@
                     <!-- AI & Mapping -->
             <syncfusion:ButtonAdv Name="OptimizeRoutesButton" Label="🤖 AI Optimize"
                             Command="{Binding OptimizeRoutesCommand}"
-                Background="{StaticResource BusBuddy.Brush.Semantic.Warning}" Foreground="{StaticResource BusBuddy.Brush.Text.Primary}"
+                Background="{DynamicResource BusBuddy.Brush.Semantic.Warning}" Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"
                             AutomationProperties.Name="AI Optimize Routes"
                             AutomationProperties.HelpText="Use artificial intelligence to optimize route assignments"/>
             <syncfusion:ButtonAdv Name="ViewMapButton" Label="🗺️ View Map"
                             Command="{Binding ViewMapCommand}"
-                Background="{StaticResource BusBuddy.Brush.Semantic.Info}" Foreground="{StaticResource BusBuddy.Brush.Text.Primary}"
+                Background="{DynamicResource BusBuddy.Brush.Semantic.Info}" Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"
                             AutomationProperties.Name="View Map"
                             AutomationProperties.HelpText="Display student locations on interactive map"/>
                 </StackPanel>
@@ -254,7 +255,7 @@
         </syncfusion:SfDataGrid>
 
     <!-- Enhanced Status Bar with Route Analytics -->
-    <Border Grid.Row="3" Background="{StaticResource BusBuddy.Brush.Surface.Light}"
+    <Border Grid.Row="3" Background="{DynamicResource BusBuddy.Brush.Surface.Light}"
                 CornerRadius="3" Padding="10" Margin="0,10,0,0">
             <Grid>
                 <Grid.ColumnDefinitions>

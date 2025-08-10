@@ -1866,7 +1866,9 @@ if (Test-Path $xaiOptimizerPath) {
 } else {
     $script:XAIAvailable = $false
     if ([string]::IsNullOrWhiteSpace($env:BUSBUDDY_NO_XAI_WARN)) {
-        Write-BusBuddyStatus "⚠️ XAI Route Optimizer not found - some features unavailable" -Type Warning
+        if ($env:BUSBUDDY_NO_XAI_WARN -ne '1' -and $env:BUSBUDDY_SILENT -ne '1') {
+            Write-BusBuddyStatus "⚠️ XAI Route Optimizer not found - some features unavailable" -Type Warning
+        }
     }
 }
 
@@ -3341,61 +3343,24 @@ function Enable-BusBuddyEnhancedTestOutput {
 
 #region Exports
 
+
+# Restrict module exports to only the core build/run/clean/restore commands and their kebab-case aliases
 Export-ModuleMember -Function @(
-    'Get-BusBuddyProjectRoot',
-    'Write-BusBuddyStatus',
-    'Write-BusBuddyError',
-    'Show-BusBuddyWelcome',
     'Invoke-BusBuddyBuild',
     'Invoke-BusBuddyRun',
-    'Invoke-BusBuddyTest',
     'Invoke-BusBuddyClean',
-    'Invoke-BusBuddyRestore',
-    'Start-BusBuddyDevSession',
-    'Invoke-BusBuddyHealthCheck',
-    'Test-BusBuddyHealth',
-    'Get-BusBuddyInfo',
-    'Get-BusBuddyCommand',
-    'Invoke-BusBuddyXamlValidation',
-    'Invoke-BusBuddyWithExceptionCapture',
-    'Invoke-BusBuddyAntiRegression',
-    'Start-BusBuddyMVP',
-    'Test-BusBuddyMVPReadiness',
-    'Test-BusBuddyEnvironment',
-    'Start-BusBuddyRouteOptimization',
-    'Show-RouteOptimizationDemo',
-    'Get-BusBuddyRouteStatus',
-    'Open-BusBuddyCopilotReference',
-    'Invoke-BusBuddyRouteOptimization',
-    'Invoke-BusBuddyReport',
-    'Start-BusBuddyRuntimeErrorCapture',
-    'Invoke-BusBuddyRunCapture',
-    'Get-BusBuddyTestOutput',
-    'Invoke-BusBuddyTestFull',
-    'Get-BusBuddyTestError',
-    'Get-BusBuddyTestLog',
-    'Start-BusBuddyTestWatch',
-    'Enable-BusBuddyEnhancedTestOutput',
-    'Update-BusBuddyAzureFirewall',
-    'Get-BusBuddyAzureConfig',
-    'Test-BusBuddyAzureConnection'
+    'Invoke-BusBuddyRestore'
 ) -Alias @(
-    'bbBuild', 'bbRun', 'bbTest', 'bbClean', 'bbRestore', 'bbHealth',
-    'bbDevSession', 'bbInfo', 'bbCommands', 'bbXamlValidate', 'bbCatchErrors',
-    'bbAntiRegression', 'bbMvp', 'bbMvpCheck', 'bbEnvCheck', 'bbRoutes',
-    'bbRouteOptimize', 'bbGenerateReport', 'bbRouteDemo', 'bbRouteStatus', 'bbCopilotRef',
-    'bbCaptureRuntimeErrors', 'bbRunCapture', 'bb-run-capture', 'bbDiagnostic', 'bbWelcome', 'bbTestFull', 'bbTestErrors',
-    'bbTestLog', 'bbTestWatch',
-    # Kebab-case aliases for consistency
-    'bb-build', 'bb-run', 'bb-test', 'bb-clean', 'bb-restore',
-    # Azure aliases
-    'bbAzureFirewall', 'bb-azure-firewall', 'bbAzureTest', 'bb-azure-test', 'bbAzureConfig', 'bb-azure-config'
+    'bbBuild', 'bbRun', 'bbClean', 'bbRestore',
+    'bb-build', 'bb-run', 'bb-clean', 'bb-restore'
 )
 
 #endregion
 
-Write-Output "🚌 BusBuddy PowerShell Module v3.0.0 loaded successfully!"
-Write-Output "   🤖 NEW: XAI Route Optimization System - Ready for Monday!"
+if ($env:BUSBUDDY_SILENT -ne '1') {
+    Write-Output "🚌 BusBuddy PowerShell Module v3.0.0 loaded successfully!"
+    Write-Output "   🤖 NEW: XAI Route Optimization System - Ready for Monday!"
+}
 
 #region Welcome Screen
 
@@ -3417,33 +3382,47 @@ function Show-BusBuddyWelcome {
     $dotnet = try { & dotnet --version 2>$null } catch { "unknown" }
     $xai = if ($script:XAIAvailable) { "✅" } else { "⚠️" }
 
-    Write-Information "" -InformationAction Continue
-    Write-BusBuddyStatus "🚌 BusBuddy Dev Shell — Ready" -Type Info
-    Write-Information "PowerShell: $ps | .NET: $dotnet | XAI: $xai" -InformationAction Continue
-    Write-Information "Project: $(Get-BusBuddyProjectRoot)" -InformationAction Continue
-    Write-Information "" -InformationAction Continue
+    if ($env:BUSBUDDY_SILENT -ne '1') {
+        Write-Information "" -InformationAction Continue
+        Write-BusBuddyStatus "🚌 BusBuddy Dev Shell — Ready" -Type Info
+        Write-Information "PowerShell: $ps | .NET: $dotnet | XAI: $xai" -InformationAction Continue
+        Write-Information "Project: $(Get-BusBuddyProjectRoot)" -InformationAction Continue
+        Write-Information "" -InformationAction Continue
+    }
 
-    Write-BusBuddyStatus "Core" -Type Info
-    Write-Information "  bbBuild, bbRun, bbTest, bbClean, bbRestore, bbHealth" -InformationAction Continue
+    if ($env:BUSBUDDY_SILENT -ne '1') {
+        Write-BusBuddyStatus "Core" -Type Info
+        Write-Information "  bbBuild, bbRun, bbTest, bbClean, bbRestore, bbHealth" -InformationAction Continue
+    }
 
-    Write-BusBuddyStatus "Development" -Type Info
-    Write-Information "  bbDevSession, bbInfo, bbCommands" -InformationAction Continue
+    if ($env:BUSBUDDY_SILENT -ne '1') {
+        Write-BusBuddyStatus "Development" -Type Info
+        Write-Information "  bbDevSession, bbInfo, bbCommands" -InformationAction Continue
+    }
 
-    Write-BusBuddyStatus "Validation & Safety" -Type Info
-    Write-Information "  bbXamlValidate, bbAntiRegression, bbCatchErrors, bbEnvCheck" -InformationAction Continue
-    Write-Information "  bb-validate-database, bb-db-validate" -InformationAction Continue
+    if ($env:BUSBUDDY_SILENT -ne '1') {
+        Write-BusBuddyStatus "Validation & Safety" -Type Info
+        Write-Information "  bbXamlValidate, bbAntiRegression, bbCatchErrors, bbEnvCheck" -InformationAction Continue
+        Write-Information "  bb-validate-database, bb-db-validate" -InformationAction Continue
+    }
 
-    Write-BusBuddyStatus "MVP Focus" -Type Info
-    Write-Information "  bbMvp, bbMvpCheck" -InformationAction Continue
+    if ($env:BUSBUDDY_SILENT -ne '1') {
+        Write-BusBuddyStatus "MVP Focus" -Type Info
+        Write-Information "  bbMvp, bbMvpCheck" -InformationAction Continue
+    }
 
-    Write-BusBuddyStatus "Routes & Reports" -Type Info
-    Write-Information "  bbRoutes, bbRouteDemo, bbRouteStatus, bbRouteOptimize" -InformationAction Continue
-    Write-Information "  bbGenerateReport" -InformationAction Continue
+    if ($env:BUSBUDDY_SILENT -ne '1') {
+        Write-BusBuddyStatus "Routes & Reports" -Type Info
+        Write-Information "  bbRoutes, bbRouteDemo, bbRouteStatus, bbRouteOptimize" -InformationAction Continue
+        Write-Information "  bbGenerateReport" -InformationAction Continue
+    }
 
-    Write-BusBuddyStatus "Docs & Reference" -Type Info
-    Write-Information "  bbCopilotRef [Topic] (-ShowTopics)" -InformationAction Continue
+    if ($env:BUSBUDDY_SILENT -ne '1') {
+        Write-BusBuddyStatus "Docs & Reference" -Type Info
+        Write-Information "  bbCopilotRef [Topic] (-ShowTopics)" -InformationAction Continue
+    }
 
-    if (-not $Quiet) {
+    if (-not $Quiet -and $env:BUSBUDDY_SILENT -ne '1') {
         Write-Information "" -InformationAction Continue
         Write-Information "Tips:" -InformationAction Continue
         Write-Information "  • bbCommands — full list with functions" -InformationAction Continue
@@ -3453,7 +3432,7 @@ function Show-BusBuddyWelcome {
 }
 
 # Auto-run welcome unless suppressed
-if (-not $env:BUSBUDDY_NO_WELCOME) {
+if (-not $env:BUSBUDDY_NO_WELCOME -and $env:BUSBUDDY_SILENT -ne '1') {
     Show-BusBuddyWelcome -Quiet
 }
 
@@ -3477,7 +3456,7 @@ try {
 }
 
 # Auto-run welcome unless suppressed
-if (-not $env:BUSBUDDY_NO_WELCOME) {
+if (-not $env:BUSBUDDY_NO_WELCOME -and $env:BUSBUDDY_SILENT -ne '1') {
     try { Show-BusBuddyWelcome -ErrorAction SilentlyContinue } catch { Write-Information "(welcome suppressed due to error)" -InformationAction Continue }
 }
 

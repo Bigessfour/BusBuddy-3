@@ -212,6 +212,7 @@ namespace BusBuddy.WPF.ViewModels.Student
         public ICommand SuggestRouteCommand { get; private set; } = null!;
         public ICommand ShowSummaryCommand { get; private set; } = null!;
         public ICommand ShowQuickActionsCommand { get; private set; } = null!;
+    public ICommand PlotStudentsCommand { get; private set; } = null!;
 
         #endregion
 
@@ -236,6 +237,7 @@ namespace BusBuddy.WPF.ViewModels.Student
             SuggestRouteCommand = new RelayCommand<Core.Models.Student>(ExecuteSuggestRoute);
             ShowSummaryCommand = new RelayCommand(ExecuteShowSummary);
             ShowQuickActionsCommand = new RelayCommand(ExecuteShowQuickActions);
+            PlotStudentsCommand = new RelayCommand(ExecutePlotStudents);
         }
 
         #endregion
@@ -323,6 +325,10 @@ namespace BusBuddy.WPF.ViewModels.Student
                 Logger.Error(ex, "Error executing export command");
             }
         }
+
+
+
+        private void ExecutePlotStudents() => ExecuteViewMap();
 
         private void ExecuteValidateAddress()
         {
@@ -604,7 +610,10 @@ namespace BusBuddy.WPF.ViewModels.Student
                 {
                     foreach (var s in Students.ToList())
                     {
-                        if (string.IsNullOrWhiteSpace(s.HomeAddress)) continue;
+                        if (string.IsNullOrWhiteSpace(s.HomeAddress))
+                        {
+                            continue;
+                        }
                         try
                         {
                             double? lat = null, lon = null;
@@ -617,7 +626,10 @@ namespace BusBuddy.WPF.ViewModels.Student
                                     lon = r.Value.longitude;
                                 }
                             }
-                            if (lat == null || lon == null) continue;
+                            if (lat == null || lon == null)
+                            {
+                                continue;
+                            }
 
                             // Marshal to UI thread to update collection
                             System.Windows.Application.Current.Dispatcher.Invoke(() =>

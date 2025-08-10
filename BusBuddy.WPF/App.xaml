@@ -17,6 +17,9 @@
                     <ResourceDictionary Source="Resources/Themes/FluentDarkTheme.xaml"/>
                     <ResourceDictionary Source="Resources/Themes/FluentLightTheme.xaml"/>
 
+                <!-- Shared view styles can go here if needed (kept empty for now) -->
+                <!-- <ResourceDictionary Source="Resources/Styles/SharedViewStyles.xaml"/> -->
+
                 <!-- Phase 1: Basic styling without complex Syncfusion theme loading -->
                 <!-- Note: Syncfusion themes will be applied programmatically via SfSkinManager in App.xaml.cs -->
                 <ResourceDictionary>

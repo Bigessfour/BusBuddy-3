@@ -47,6 +47,15 @@ public class Student : INotifyPropertyChanged
   [Display(Name = "Home Address")]
   public string? HomeAddress { get; set; }
 
+  // Geo coordinates for mapping (WGS84). Use decimal for SQL precision.
+  [Column(TypeName = "decimal(10,8)")]
+  [Display(Name = "Latitude")]
+  public decimal? Latitude { get; set; }
+
+  [Column(TypeName = "decimal(11,8)")]
+  [Display(Name = "Longitude")]
+  public decimal? Longitude { get; set; }
+
   [StringLength(50, ErrorMessage = "City cannot exceed 50 characters")]
   [Display(Name = "City")]
   public string? City { get; set; }
@@ -158,6 +167,9 @@ public class Student : INotifyPropertyChanged
   public int? RouteAssignmentId { get; set; }
   [ForeignKey("RouteAssignmentId")]
   public RouteAssignment? RouteAssignment { get; set; }
+
+  [NotMapped]
+  public string FullAddress => string.Join(", ", new[] { HomeAddress, City, State, Zip }.Where(s => !string.IsNullOrWhiteSpace(s))!);
 
   // INotifyPropertyChanged implementation for Syncfusion data binding
   public event PropertyChangedEventHandler? PropertyChanged;

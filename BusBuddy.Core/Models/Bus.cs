@@ -29,6 +29,8 @@ public class Bus : INotifyPropertyChanged
     private decimal? _purchasePrice;
     private string? _insurancePolicyNumber;
     private DateTime? _insuranceExpiryDate;
+    private decimal? _currentLatitude;
+    private decimal? _currentLongitude;
 
     [Key]
     public int VehicleId { get; set; }
@@ -290,6 +292,37 @@ public class Bus : INotifyPropertyChanged
                 _insuranceExpiryDate = value;
                 OnPropertyChanged(nameof(InsuranceExpiryDate));
                 OnPropertyChanged(nameof(InsuranceStatus));
+            }
+        }
+    }
+
+    // Geo tracking for live map
+    [Column(TypeName = "decimal(10,8)")]
+    [Display(Name = "Current Latitude")]
+    public decimal? CurrentLatitude
+    {
+        get => _currentLatitude;
+        set
+        {
+            if (_currentLatitude != value)
+            {
+                _currentLatitude = value;
+                OnPropertyChanged(nameof(CurrentLatitude));
+            }
+        }
+    }
+
+    [Column(TypeName = "decimal(11,8)")]
+    [Display(Name = "Current Longitude")]
+    public decimal? CurrentLongitude
+    {
+        get => _currentLongitude;
+        set
+        {
+            if (_currentLongitude != value)
+            {
+                _currentLongitude = value;
+                OnPropertyChanged(nameof(CurrentLongitude));
             }
         }
     }

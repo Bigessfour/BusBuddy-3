@@ -383,6 +383,12 @@ namespace BusBuddy.Core.Migrations
                         .HasColumnType("datetime2")
                         .HasDefaultValueSql("GETUTCDATE()");
 
+                    b.Property<decimal?>("CurrentLatitude")
+                        .HasColumnType("decimal(10,8)");
+
+                    b.Property<decimal?>("CurrentLongitude")
+                        .HasColumnType("decimal(11,8)");
+
                     b.Property<int?>("CurrentOdometer")
                         .HasColumnType("int");
 
@@ -522,6 +528,9 @@ namespace BusBuddy.Core.Migrations
                     b.HasIndex("VINNumber")
                         .IsUnique()
                         .HasDatabaseName("IX_Vehicles_VINNumber");
+
+                    b.HasIndex("CurrentLatitude", "CurrentLongitude")
+                        .HasDatabaseName("IX_Vehicles_CurrentLocation");
 
                     b.HasIndex("Make", "Model", "Year")
                         .HasDatabaseName("IX_Vehicles_MakeModelYear");
@@ -743,6 +752,12 @@ namespace BusBuddy.Core.Migrations
                     b.Property<DateTime?>("HireDate")
                         .HasColumnType("datetime2");
 
+                    b.Property<decimal?>("HomeLatitude")
+                        .HasColumnType("decimal(10,8)");
+
+                    b.Property<decimal?>("HomeLongitude")
+                        .HasColumnType("decimal(11,8)");
+
                     b.Property<string>("LastName")
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
@@ -816,6 +831,9 @@ namespace BusBuddy.Core.Migrations
 
                     b.HasIndex("TrainingComplete")
                         .HasDatabaseName("IX_Drivers_TrainingComplete");
+
+                    b.HasIndex("HomeLatitude", "HomeLongitude")
+                        .HasDatabaseName("IX_Drivers_HomeLocation");
 
                     b.ToTable("Drivers", (string)null);
 
@@ -1222,6 +1240,10 @@ namespace BusBuddy.Core.Migrations
                     b.Property<decimal?>("Distance")
                         .HasColumnType("decimal(10,2)");
 
+                    b.Property<string>("DistrictBoundaryShapefilePath")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
                     b.Property<string>("DriverName")
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
@@ -1276,6 +1298,14 @@ namespace BusBuddy.Core.Migrations
 
                     b.Property<int?>("StudentCount")
                         .HasColumnType("int");
+
+                    b.Property<string>("TownBoundaryShapefilePath")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("WaypointsJson")
+                        .HasMaxLength(4000)
+                        .HasColumnType("nvarchar(4000)");
 
                     b.HasKey("RouteId");
 
@@ -1770,6 +1800,12 @@ namespace BusBuddy.Core.Migrations
                     b.Property<string>("HomePhone")
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
+
+                    b.Property<decimal?>("Latitude")
+                        .HasColumnType("decimal(10,8)");
+
+                    b.Property<decimal?>("Longitude")
+                        .HasColumnType("decimal(11,8)");
 
                     b.Property<string>("MedicalNotes")
                         .HasMaxLength(1000)

@@ -12,6 +12,16 @@
         WindowStartupLocation="CenterScreen"
         WindowState="Maximized">
 
+    <!-- Theme resources merged to enable DynamicResource-based theming -->
+    <syncfusion:ChromelessWindow.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/SyncfusionV30_Validated_ResourceDictionary.xaml"/>
+                <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/Themes/FluentDarkTheme.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </syncfusion:ChromelessWindow.Resources>
+
     <!-- MVP-Ready UI with DockingManager for professional layout -->
     <!-- Trigger language server refresh -->
     <Grid>
@@ -79,8 +89,9 @@
                             syncfusion:DockingManager.Header="📚 Students"
                             syncfusion:DockingManager.State="Dock"
                             syncfusion:DockingManager.SideInDockedMode="Left"
-                            syncfusion:DockingManager.DesiredWidthInDockedMode="350">
-                <Grid Margin="15">
+                            syncfusion:DockingManager.DesiredWidthInDockedMode="350"
+                            Background="{DynamicResource BusBuddy.Brush.Panel.Background}">
+                <Grid Margin="15" Background="{DynamicResource BusBuddy.Brush.Panel.Content}">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="*"/>
                         <RowDefinition Height="Auto"/>
@@ -95,6 +106,7 @@
                                           SelectionMode="Single"
                                           GridLinesVisibility="Both"
                                           HeaderLinesVisibility="Both"
+                                          Background="{DynamicResource BusBuddy.Brush.DataGrid.Background}"
                                           AutomationProperties.Name="Students Data Grid"
                                           ToolTip="List of all students with their information">
                         <syncfusion:SfDataGrid.Columns>
@@ -125,8 +137,9 @@
                             syncfusion:DockingManager.Header="🚌 Routes"
                             syncfusion:DockingManager.State="Dock"
                             syncfusion:DockingManager.SideInDockedMode="Right"
-                            syncfusion:DockingManager.DesiredWidthInDockedMode="380">
-                <Grid Margin="15">
+                            syncfusion:DockingManager.DesiredWidthInDockedMode="380"
+                            Background="{DynamicResource BusBuddy.Brush.Panel.Background}">
+                <Grid Margin="15" Background="{DynamicResource BusBuddy.Brush.Panel.Content}">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="*"/>
                         <RowDefinition Height="Auto"/>
@@ -141,6 +154,7 @@
                                           SelectionMode="Single"
                                           GridLinesVisibility="Both"
                                           HeaderLinesVisibility="Both"
+                                          Background="{DynamicResource BusBuddy.Brush.DataGrid.Background}"
                                           AutomationProperties.Name="Routes Data Grid"
                                           ToolTip="List of all transportation routes">
                         <syncfusion:SfDataGrid.Columns>
@@ -168,8 +182,9 @@
 
             <!-- Buses Panel -->
             <ContentControl syncfusion:DockingManager.Header="🚐 Buses"
-                            syncfusion:DockingManager.State="Document">
-                <Grid Margin="15">
+                            syncfusion:DockingManager.State="Document"
+                            Background="{DynamicResource BusBuddy.Brush.Panel.Background}">
+                <Grid Margin="15" Background="{DynamicResource BusBuddy.Brush.Panel.Content}">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="*"/>
                         <RowDefinition Height="Auto"/>
@@ -184,6 +199,7 @@
                                           SelectionMode="Single"
                                           GridLinesVisibility="Both"
                                           HeaderLinesVisibility="Both"
+                                          Background="{DynamicResource BusBuddy.Brush.DataGrid.Background}"
                                           AutomationProperties.Name="Buses Data Grid"
                                           ToolTip="List of all buses in the fleet">
                         <syncfusion:SfDataGrid.Columns>
@@ -218,8 +234,9 @@
 
             <!-- Drivers Panel -->
             <ContentControl syncfusion:DockingManager.Header="👨‍✈️ Drivers"
-                            syncfusion:DockingManager.State="Document">
-                <Grid Margin="15">
+                            syncfusion:DockingManager.State="Document"
+                            Background="{DynamicResource BusBuddy.Brush.Panel.Background}">
+                <Grid Margin="15" Background="{DynamicResource BusBuddy.Brush.Panel.Content}">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="*"/>
                         <RowDefinition Height="Auto"/>
@@ -234,6 +251,7 @@
                                           SelectionMode="Single"
                                           GridLinesVisibility="Both"
                                           HeaderLinesVisibility="Both"
+                                          Background="{DynamicResource BusBuddy.Brush.DataGrid.Background}"
                                           AutomationProperties.Name="Drivers Data Grid"
                                           ToolTip="List of all drivers and their information">
                         <syncfusion:SfDataGrid.Columns>
@@ -266,8 +284,11 @@
 
             <!-- Route Assignment Panel -->
             <ContentControl syncfusion:DockingManager.Header="🗺️ Route Assignments"
-                            syncfusion:DockingManager.State="Document">
-                <route:RouteAssignmentView/>
+                            syncfusion:DockingManager.State="Document"
+                            Background="{DynamicResource BusBuddy.Brush.Panel.Background}">
+                <Grid Background="{DynamicResource BusBuddy.Brush.Panel.Content}">
+                    <route:RouteAssignmentView/>
+                </Grid>
             </ContentControl>
 
         </syncfusion:DockingManager>

@@ -1,34 +1,45 @@
 <UserControl x:Class="BusBuddy.WPF.Views.Activity.ActivityManagementView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:syncfusion="http://schemas.syncfusion.com/wpf"
-             mc:Ignorable="d" 
+             mc:Ignorable="d"
              d:DesignHeight="450" d:DesignWidth="800">
-    
+
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/SyncfusionV30_Validated_ResourceDictionary.xaml"/>
+                <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/Themes/FluentDarkTheme.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </UserControl.Resources>
+
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
-        
+
         <!-- Header -->
-        <TextBlock Grid.Row="0" 
-                   Text="Activity Management" 
-                   FontSize="24" 
-                   FontWeight="Bold" 
-                   Margin="20,10"/>
-        
+    <TextBlock Grid.Row="0"
+                   Text="Activity Management"
+                   FontSize="24"
+           FontWeight="Bold"
+           Margin="20,10"
+           Foreground="{DynamicResource PrimaryTextBrush}"/>
+
         <!-- Content Area -->
-        <syncfusion:SfDataGrid Grid.Row="1"
+    <syncfusion:SfDataGrid Grid.Row="1"
                                ItemsSource="{Binding Activities}"
                                SelectedItem="{Binding SelectedActivity}"
                                AutoGenerateColumns="False"
                                AllowEditing="False"
                                AllowSorting="True"
                                AllowFiltering="True"
-                               Margin="20">
+                   Margin="20"
+                   Background="{DynamicResource BusBuddy.Brush.DataGrid.Background}">
             <syncfusion:SfDataGrid.Columns>
                 <syncfusion:GridTextColumn HeaderText="Activity Name" MappingName="ActivityName" Width="200"/>
                 <syncfusion:GridTextColumn HeaderText="Date" MappingName="ActivityDate" Width="120"/>

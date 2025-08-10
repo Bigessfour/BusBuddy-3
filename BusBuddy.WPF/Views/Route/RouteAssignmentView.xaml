@@ -8,6 +8,15 @@
              mc:Ignorable="d"
              d:DesignHeight="800" d:DesignWidth="1200">
 
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/SyncfusionV30_Validated_ResourceDictionary.xaml"/>
+                <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/Themes/FluentDarkTheme.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </UserControl.Resources>
+
     <Grid Margin="20">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -16,7 +25,7 @@
         </Grid.RowDefinitions>
 
         <!-- Header -->
-        <Border Grid.Row="0" Background="#007ACC" CornerRadius="5" Padding="15" Margin="0,0,0,20">
+    <Border Grid.Row="0" Background="{DynamicResource AccentBackgroundBrush}" CornerRadius="5" Padding="15" Margin="0,0,0,20">
             <StackPanel Orientation="Horizontal">
                 <TextBlock Text="🗺️" FontSize="24" Foreground="White" VerticalAlignment="Center" Margin="0,0,10,0"/>
                 <TextBlock Text="Route Assignment - MVP Route Builder" FontSize="18" FontWeight="Bold"
@@ -53,7 +62,7 @@
                                 <Setter Property="Template">
                                     <Setter.Value>
                                         <ControlTemplate TargetType="TextBox">
-                                            <Border Background="White" BorderBrush="#CCCCCC" BorderThickness="1" CornerRadius="3">
+                                            <Border Background="{DynamicResource ContentBackgroundBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="3">
                                                 <ScrollViewer x:Name="PART_ContentHost" Padding="8,5"/>
                                             </Border>
                                         </ControlTemplate>
@@ -72,7 +81,8 @@
                                           AllowSorting="True"
                                           AllowFiltering="True"
                                           SelectionMode="Single"
-                                          GridLinesVisibility="Both">
+                                          GridLinesVisibility="Both"
+                                          Background="{DynamicResource BusBuddy.Brush.DataGrid.Background}">
                         <syncfusion:SfDataGrid.Columns>
                             <syncfusion:GridTextColumn HeaderText="Name" MappingName="StudentName" Width="150"/>
                             <syncfusion:GridTextColumn HeaderText="Grade" MappingName="Grade" Width="60"/>
@@ -93,17 +103,17 @@
                 <syncfusion:ButtonAdv Label="➡️ Assign"
                                      Command="{Binding AssignStudentCommand}"
                                      Margin="0,0,0,10" Padding="15,8"
-                                     Background="#107C10" Foreground="White"
+                                     Background="{DynamicResource ButtonBackgroundBrush}" Foreground="{DynamicResource ButtonForegroundBrush}"
                                      IsEnabled="{Binding CanAssignStudent}"/>
                 <syncfusion:ButtonAdv Label="⬅️ Remove"
                                      Command="{Binding RemoveStudentCommand}"
                                      Margin="0,0,0,10" Padding="15,8"
-                                     Background="#D13438" Foreground="White"
+                                     Background="{DynamicResource ButtonBackgroundBrush}" Foreground="{DynamicResource ButtonForegroundBrush}"
                                      IsEnabled="{Binding CanRemoveStudent}"/>
                 <syncfusion:ButtonAdv Label="🔄 Auto Assign"
                                      Command="{Binding AutoAssignCommand}"
                                      Padding="15,8"
-                                     Background="#8B5CF6" Foreground="White"/>
+                                     Background="{DynamicResource ButtonBackgroundBrush}" Foreground="{DynamicResource ButtonForegroundBrush}"/>
             </StackPanel>
 
             <!-- Route Assignment -->
@@ -129,7 +139,7 @@
                     </StackPanel>
 
                     <!-- Route Info -->
-                    <Border Grid.Row="1" Background="#F0F0F0" Padding="10" Margin="10,0,10,15" CornerRadius="3">
+                    <Border Grid.Row="1" Background="{DynamicResource ContentBackgroundBrush}" Padding="10" Margin="10,0,10,15" CornerRadius="3">
                         <StackPanel>
                             <TextBlock Text="{Binding SelectedRoute.RouteName, StringFormat='Route: {0}'}"
                                       FontWeight="SemiBold" Margin="0,0,0,5"/>
@@ -151,7 +161,8 @@
                                           AutoGenerateColumns="False"
                                           AllowSorting="True"
                                           SelectionMode="Single"
-                                          GridLinesVisibility="Both">
+                                          GridLinesVisibility="Both"
+                                          Background="{DynamicResource BusBuddy.Brush.DataGrid.Background}">
                         <syncfusion:SfDataGrid.Columns>
                             <syncfusion:GridTextColumn HeaderText="Name" MappingName="StudentName" Width="120"/>
                             <syncfusion:GridTextColumn HeaderText="Grade" MappingName="Grade" Width="60"/>
@@ -188,21 +199,21 @@
                     <syncfusion:ButtonAdv Label="💾 Save Route"
                                          Command="{Binding SaveRouteCommand}"
                                          Margin="0,0,0,10" Padding="12,8"
-                                         Background="#107C10" Foreground="White"/>
+                                         Background="{DynamicResource ButtonBackgroundBrush}" Foreground="{DynamicResource ButtonForegroundBrush}"/>
                     <syncfusion:ButtonAdv Label="🗑️ Delete Route"
                                          Command="{Binding DeleteRouteCommand}"
                                          Margin="0,0,0,10" Padding="12,8"
-                                         Background="#D13438" Foreground="White"/>
+                                         Background="{DynamicResource ButtonBackgroundBrush}" Foreground="{DynamicResource ButtonForegroundBrush}"/>
                     <syncfusion:ButtonAdv Label="📋 View Schedule"
                                          Command="{Binding ViewScheduleCommand}"
                                          Padding="12,8"
-                                         Background="#8B5CF6" Foreground="White"/>
+                                         Background="{DynamicResource ButtonBackgroundBrush}" Foreground="{DynamicResource ButtonForegroundBrush}"/>
                 </StackPanel>
             </GroupBox>
         </Grid>
 
         <!-- Status Bar -->
-        <Border Grid.Row="2" Background="#F5F5F5" Padding="15,10" Margin="0,20,0,0" CornerRadius="3">
+    <Border Grid.Row="2" Background="{DynamicResource ContentBackgroundBrush}" Padding="15,10" Margin="0,20,0,0" CornerRadius="3">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
@@ -215,14 +226,13 @@
                     <syncfusion:ButtonAdv Label="🔄 Refresh Data"
                                          Command="{Binding RefreshDataCommand}"
                                          Margin="0,0,10,0" Padding="12,6"
-                                         Background="#5A5A5A" Foreground="White"/>
+                                         Background="{DynamicResource ButtonBackgroundBrush}" Foreground="{DynamicResource ButtonForegroundBrush}"/>
                     <syncfusion:ButtonAdv Label="📊 Generate Report"
                                          Command="{Binding GenerateReportCommand}"
                                          Padding="12,6"
-                                         Background="#FF8C00" Foreground="White"/>
+                                         Background="{DynamicResource ButtonBackgroundBrush}" Foreground="{DynamicResource ButtonForegroundBrush}"/>
                 </StackPanel>
             </Grid>
         </Border>
     </Grid>
 </UserControl>
-

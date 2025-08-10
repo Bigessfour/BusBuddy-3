@@ -226,6 +226,11 @@ public class BusBuddyDbContext : DbContext
             entity.HasIndex(e => e.InsuranceExpiryDate).HasDatabaseName("IX_Vehicles_InsuranceExpiryDate");
             entity.HasIndex(e => e.FleetType).HasDatabaseName("IX_Vehicles_FleetType");
             entity.HasIndex(e => new { e.Make, e.Model, e.Year }).HasDatabaseName("IX_Vehicles_MakeModelYear");
+
+            // Geo columns
+            entity.Property(e => e.CurrentLatitude).HasColumnType("decimal(10,8)");
+            entity.Property(e => e.CurrentLongitude).HasColumnType("decimal(11,8)");
+            entity.HasIndex(e => new { e.CurrentLatitude, e.CurrentLongitude }).HasDatabaseName("IX_Vehicles_CurrentLocation");
         });
 
         // Configure Driver entity with enhanced features
@@ -259,6 +264,11 @@ public class BusBuddyDbContext : DbContext
             entity.HasIndex(e => e.DriversLicenceType).HasDatabaseName("IX_Drivers_LicenseType");
             entity.HasIndex(e => e.LicenseExpiryDate).HasDatabaseName("IX_Drivers_LicenseExpiration");
             entity.HasIndex(e => e.TrainingComplete).HasDatabaseName("IX_Drivers_TrainingComplete");
+
+            // Geo columns
+            entity.Property(e => e.HomeLatitude).HasColumnType("decimal(10,8)");
+            entity.Property(e => e.HomeLongitude).HasColumnType("decimal(11,8)");
+            entity.HasIndex(e => new { e.HomeLatitude, e.HomeLongitude }).HasDatabaseName("IX_Drivers_HomeLocation");
         });
 
         // Configure Route entity with enhanced relationships and indexing
@@ -318,6 +328,11 @@ public class BusBuddyDbContext : DbContext
             entity.HasIndex(e => e.PMVehicleId).HasDatabaseName("IX_Routes_PMVehicleId");
             entity.HasIndex(e => e.AMDriverId).HasDatabaseName("IX_Routes_AMDriverId");
             entity.HasIndex(e => e.PMDriverId).HasDatabaseName("IX_Routes_PMDriverId");
+
+            // Geo metadata
+            entity.Property(e => e.WaypointsJson).HasMaxLength(4000);
+            entity.Property(e => e.DistrictBoundaryShapefilePath).HasMaxLength(500);
+            entity.Property(e => e.TownBoundaryShapefilePath).HasMaxLength(500);
         });
 
         // Configure Activity entity with comprehensive indexing

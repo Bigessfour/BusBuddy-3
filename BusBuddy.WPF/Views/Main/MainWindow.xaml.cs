@@ -62,6 +62,22 @@ namespace BusBuddy.WPF.Views.Main
         private static readonly ILogger Logger = Log.ForContext<MainWindow>();
         private MainWindowViewModel? _viewModel;
 
+        // DI-friendly constructor to ensure DataContext is set before initialization
+        public MainWindow(MainWindowViewModel viewModel) : this()
+        {
+            try
+            {
+                Logger.Debug("DI constructor: applying provided MainWindowViewModel");
+                _viewModel = viewModel;
+                this.DataContext = _viewModel;
+                Logger.Information("MainWindow DataContext set from DI constructor");
+            }
+            catch (Exception ex)
+            {
+                Logger.Warning(ex, "Failed to set DataContext from DI constructor");
+            }
+        }
+
         public MainWindow()
         {
             Logger.Debug("MainWindow constructor starting");

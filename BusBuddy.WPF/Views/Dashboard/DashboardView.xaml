@@ -11,7 +11,7 @@
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
     </UserControl.Resources>
 
-    <Grid Background="#2B2D30" Margin="20">
+    <Grid Background="{DynamicResource PrimaryBackgroundBrush}" Margin="20">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
@@ -20,7 +20,7 @@
         </Grid.RowDefinitions>
 
         <!-- Dashboard Header -->
-        <Border Grid.Row="0" Background="#1E1E1E" CornerRadius="8" Padding="20,15" Margin="0,0,0,20">
+    <Border Grid.Row="0" Background="{DynamicResource ContentBackgroundBrush}" CornerRadius="8" Padding="20,15" Margin="0,0,0,20">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
@@ -30,9 +30,9 @@
                 <StackPanel Grid.Column="0">
                     <TextBlock Text="🚌 BusBuddy Dashboard"
                                FontSize="28" FontWeight="Bold"
-                               Foreground="#FFFFFF" Margin="0,0,0,5"/>
+                               Foreground="{DynamicResource PrimaryTextBrush}" Margin="0,0,0,5"/>
                     <TextBlock Text="Transportation Management Overview"
-                               FontSize="14" Foreground="#B3B3B3"/>
+                               FontSize="14" Foreground="{DynamicResource SecondaryTextBrush}"/>
                 </StackPanel>
 
                 <StackPanel Grid.Column="1" Orientation="Horizontal">
@@ -40,15 +40,15 @@
                         <syncfusion:ButtonAdv Label="🔄 Refresh"
                                               Command="{Binding RefreshCommand}"
                                               Margin="0,0,10,0" Padding="15,8"
-                                              Background="#0078D4" Foreground="White"
-                                              BorderThickness="0"
+                                              Background="{DynamicResource ButtonBackgroundBrush}" Foreground="{DynamicResource ButtonForegroundBrush}"
+                                              BorderThickness="1"
                                               AutomationProperties.Name="Refresh Dashboard"
                                               AutomationProperties.HelpText="Reload dashboard metrics and lists"/>
                         <syncfusion:ButtonAdv Label="📊 Report"
                                               Command="{Binding GenerateReportCommand}"
                                               Padding="15,8"
-                                              Background="#107C10" Foreground="White"
-                                              BorderThickness="0"
+                                              Background="{DynamicResource ButtonBackgroundBrush}" Foreground="{DynamicResource ButtonForegroundBrush}"
+                                              BorderThickness="1"
                                               AutomationProperties.Name="Generate Dashboard Report"
                                               AutomationProperties.HelpText="Generate printable dashboard report"/>
                 </StackPanel>
@@ -65,8 +65,8 @@
             </Grid.ColumnDefinitions>
 
             <!-- Total Routes Card -->
-            <Border Grid.Column="0" Margin="0,0,10,0"
-                    Background="#1E1E1E" BorderBrush="#404040"
+        <Border Grid.Column="0" Margin="0,0,10,0"
+            Background="{DynamicResource ContentBackgroundBrush}" BorderBrush="{DynamicResource BorderBrush}"
                     BorderThickness="1" CornerRadius="8" Padding="20">
                 <Grid>
                     <Grid.RowDefinitions>
@@ -79,16 +79,16 @@
                                HorizontalAlignment="Center" Margin="0,0,0,10"/>
                     <TextBlock Grid.Row="1" Text="{Binding TotalRoutes}"
                                FontSize="36" FontWeight="Bold"
-                               Foreground="#0078D4" HorizontalAlignment="Center"/>
+                               Foreground="{DynamicResource AccentTextBrush}" HorizontalAlignment="Center"/>
                     <TextBlock Grid.Row="2" Text="Total Routes"
-                               FontSize="12" Foreground="#B3B3B3"
+                               FontSize="12" Foreground="{DynamicResource SecondaryTextBrush}"
                                HorizontalAlignment="Center" Margin="0,5,0,0"/>
                 </Grid>
             </Border>
 
             <!-- Active Buses Card -->
-            <Border Grid.Column="1" Margin="5,0"
-                    Background="#1E1E1E" BorderBrush="#404040"
+        <Border Grid.Column="1" Margin="5,0"
+            Background="{DynamicResource ContentBackgroundBrush}" BorderBrush="{DynamicResource BorderBrush}"
                     BorderThickness="1" CornerRadius="8" Padding="20">
                 <Grid>
                     <Grid.RowDefinitions>
@@ -101,16 +101,16 @@
                                HorizontalAlignment="Center" Margin="0,0,0,10"/>
                     <TextBlock Grid.Row="1" Text="{Binding ActiveBuses}"
                                FontSize="36" FontWeight="Bold"
-                               Foreground="#107C10" HorizontalAlignment="Center"/>
+                               Foreground="{DynamicResource PrimaryTextBrush}" HorizontalAlignment="Center"/>
                     <TextBlock Grid.Row="2" Text="Active Buses"
-                               FontSize="12" Foreground="#B3B3B3"
+                               FontSize="12" Foreground="{DynamicResource SecondaryTextBrush}"
                                HorizontalAlignment="Center" Margin="0,5,0,0"/>
                 </Grid>
             </Border>
 
             <!-- Available Drivers Card -->
-            <Border Grid.Column="2" Margin="5,0"
-                    Background="#1E1E1E" BorderBrush="#404040"
+        <Border Grid.Column="2" Margin="5,0"
+            Background="{DynamicResource ContentBackgroundBrush}" BorderBrush="{DynamicResource BorderBrush}"
                     BorderThickness="1" CornerRadius="8" Padding="20">
                 <Grid>
                     <Grid.RowDefinitions>
@@ -123,16 +123,16 @@
                                HorizontalAlignment="Center" Margin="0,0,0,10"/>
                     <TextBlock Grid.Row="1" Text="{Binding AvailableDrivers}"
                                FontSize="36" FontWeight="Bold"
-                               Foreground="#8B5CF6" HorizontalAlignment="Center"/>
+                               Foreground="{DynamicResource PrimaryTextBrush}" HorizontalAlignment="Center"/>
                     <TextBlock Grid.Row="2" Text="Available Drivers"
-                               FontSize="12" Foreground="#B3B3B3"
+                               FontSize="12" Foreground="{DynamicResource SecondaryTextBrush}"
                                HorizontalAlignment="Center" Margin="0,5,0,0"/>
                 </Grid>
             </Border>
 
             <!-- System Status Card -->
-            <Border Grid.Column="3" Margin="10,0,0,0"
-                    Background="#1E1E1E" BorderBrush="#404040"
+        <Border Grid.Column="3" Margin="10,0,0,0"
+            Background="{DynamicResource ContentBackgroundBrush}" BorderBrush="{DynamicResource BorderBrush}"
                     BorderThickness="1" CornerRadius="8" Padding="20">
                 <Grid>
                     <Grid.RowDefinitions>
@@ -144,9 +144,9 @@
                     <TextBlock Grid.Row="0" Text="📊" FontSize="24"
                                HorizontalAlignment="Center" Margin="0,0,0,10"/>
                     <Ellipse Grid.Row="1" Width="20" Height="20"
-                             Fill="#10B981" HorizontalAlignment="Center"/>
+                             Fill="{DynamicResource BusBuddy.Brush.Semantic.Success}" HorizontalAlignment="Center"/>
                     <TextBlock Grid.Row="2" Text="System Online"
-                               FontSize="12" Foreground="#10B981"
+                               FontSize="12" Foreground="{DynamicResource BusBuddy.Brush.Semantic.Success}"
                                HorizontalAlignment="Center" Margin="0,5,0,0"/>
                 </Grid>
             </Border>
@@ -163,7 +163,7 @@
                             syncfusion:DockingManager.State="Dock"
                             syncfusion:DockingManager.SideInDockedMode="Left"
                             syncfusion:DockingManager.DesiredWidthInDockedMode="450">
-                <Border Background="#1E1E1E" BorderBrush="#404040" BorderThickness="1" CornerRadius="8" Margin="0,0,10,0">
+                <Border Background="{DynamicResource ContentBackgroundBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="8" Margin="0,0,10,0">
                     <Grid Margin="20">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
@@ -172,15 +172,15 @@
 
                         <TextBlock Grid.Row="0" Text="📋 Recent Routes"
                                    FontSize="18" FontWeight="SemiBold"
-                                   Foreground="#FFFFFF" Margin="0,0,0,15"/>
+                                   Foreground="{DynamicResource PrimaryTextBrush}" Margin="0,0,0,15"/>
 
                         <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
                             <StackPanel>
                                 <TextBlock Text="📋 Route Data Loading..."
-                                           FontSize="14" Foreground="#B3B3B3"
+                                           FontSize="14" Foreground="{DynamicResource SecondaryTextBrush}"
                                            Margin="0,10" HorizontalAlignment="Center"/>
                                 <TextBlock Text="{Binding Routes.Count, StringFormat='Total Routes: {0}'}"
-                                           FontSize="12" Foreground="White"
+                                           FontSize="12" Foreground="{DynamicResource PrimaryTextBrush}"
                                            HorizontalAlignment="Center"/>
                             </StackPanel>
                         </ScrollViewer>
@@ -194,7 +194,7 @@
                             syncfusion:DockingManager.State="Dock"
                             syncfusion:DockingManager.SideInDockedMode="Right"
                             syncfusion:DockingManager.DesiredWidthInDockedMode="520">
-                <Border Background="#1E1E1E" BorderBrush="#404040" BorderThickness="1" CornerRadius="8" Margin="10,0,0,0">
+                <Border Background="{DynamicResource ContentBackgroundBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="8" Margin="10,0,0,0">
                     <Grid Margin="20">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
@@ -203,15 +203,15 @@
 
                         <TextBlock Grid.Row="0" Text="🚌 Fleet Status"
                                    FontSize="18" FontWeight="SemiBold"
-                                   Foreground="#FFFFFF" Margin="0,0,0,15"/>
+                                   Foreground="{DynamicResource PrimaryTextBrush}" Margin="0,0,0,15"/>
 
                         <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
                             <StackPanel>
                                 <TextBlock Text="🚌 Fleet Data Loading..."
-                                           FontSize="14" Foreground="#B3B3B3"
+                                           FontSize="14" Foreground="{DynamicResource SecondaryTextBrush}"
                                            Margin="0,10" HorizontalAlignment="Center"/>
                                 <TextBlock Text="{Binding Buses.Count, StringFormat='Total Buses: {0}'}"
-                                           FontSize="12" Foreground="White"
+                                           FontSize="12" Foreground="{DynamicResource PrimaryTextBrush}"
                                            HorizontalAlignment="Center"/>
                             </StackPanel>
                         </ScrollViewer>
@@ -225,14 +225,14 @@
                             syncfusion:DockingManager.State="Document">
                 <Grid Margin="20">
                     <TextBlock Text="Dashboard Overview"
-                               FontSize="18" Foreground="#B3B3B3"
+                               FontSize="18" Foreground="{DynamicResource SecondaryTextBrush}"
                                HorizontalAlignment="Center" VerticalAlignment="Center"/>
                 </Grid>
             </ContentControl>
         </syncfusion:DockingManager>
 
         <!-- Status Bar -->
-        <Border Grid.Row="3" Background="#1E1E1E" CornerRadius="8"
+    <Border Grid.Row="3" Background="{DynamicResource ContentBackgroundBrush}" CornerRadius="8"
                 Padding="20,12" Margin="0,20,0,0">
             <Grid>
                 <Grid.ColumnDefinitions>
@@ -241,26 +241,26 @@
                 </Grid.ColumnDefinitions>
 
                 <TextBlock Grid.Column="0" Text="{Binding SystemStatus}"
-                           Foreground="#B3B3B3" VerticalAlignment="Center" FontSize="14"/>
+                           Foreground="{DynamicResource SecondaryTextBrush}" VerticalAlignment="Center" FontSize="14"/>
 
                 <StackPanel Grid.Column="1" Orientation="Horizontal">
-                    <Ellipse Width="8" Height="8" Fill="#10B981" Margin="0,0,8,0"/>
+                    <Ellipse Width="8" Height="8" Fill="{DynamicResource BusBuddy.Brush.Semantic.Success}" Margin="0,0,8,0"/>
                     <TextBlock Text="Last Updated: Now"
-                               Foreground="#10B981" VerticalAlignment="Center" FontSize="12"/>
+                               Foreground="{DynamicResource BusBuddy.Brush.Semantic.Success}" VerticalAlignment="Center" FontSize="12"/>
                 </StackPanel>
             </Grid>
         </Border>
 
         <!-- Loading Overlay -->
-        <Border Grid.RowSpan="4" Background="#80000000"
+    <Border Grid.RowSpan="4" Background="#80000000"
                 Visibility="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}}"
                 CornerRadius="8">
             <Grid>
                 <TextBlock Text="⏳" FontSize="60"
                            HorizontalAlignment="Center" VerticalAlignment="Center"
-                           Foreground="#0078D4"/>
+               Foreground="{DynamicResource AccentTextBrush}"/>
                 <TextBlock Text="Loading dashboard data..."
-                           Foreground="White" FontSize="16"
+               Foreground="{DynamicResource PrimaryTextBrush}" FontSize="16"
                            HorizontalAlignment="Center" VerticalAlignment="Center"
                            Margin="0,100,0,0"/>
             </Grid>

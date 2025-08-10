@@ -424,6 +424,26 @@
                                               Foreground="{DynamicResource ButtonForegroundBrush}"
                                               Width="40" Height="40"
                                               Margin="4,0"/>
+                        <!-- Refresh map (re-renders layers/route polyline) -->
+                        <syncfusion:ButtonAdv Content="⟳"
+                                              ToolTip="Refresh Map"
+                                              Command="{Binding RefreshMapCommand}"
+                                              Background="{DynamicResource ButtonBackgroundBrush}"
+                                              Foreground="{DynamicResource ButtonForegroundBrush}"
+                                              Width="40" Height="40"
+                                              FontSize="16"
+                                              FontWeight="Bold"
+                                              Margin="8,0,0,0"/>
+                        <!-- Print current route map -->
+                        <syncfusion:ButtonAdv Content="🖨"
+                                              ToolTip="Print Route Map"
+                                              Command="{Binding PrintRouteMapsCommand}"
+                                              Background="{DynamicResource ButtonBackgroundBrush}"
+                                              Foreground="{DynamicResource ButtonForegroundBrush}"
+                                              Width="40" Height="40"
+                                              FontSize="16"
+                                              FontWeight="Bold"
+                                              Margin="8,0,0,0"/>
                     </StackPanel>
 
                     <!-- OSM Attribution — Visibility toggled from code-behind (ToggleOsmAttribution) when OpenStreetMap is active -->

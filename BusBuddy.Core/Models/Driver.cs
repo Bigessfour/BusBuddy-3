@@ -23,6 +23,8 @@ public class Driver : INotifyPropertyChanged
     private string _driversLicenceType = string.Empty;
     private bool _trainingComplete;
     private string _status = "Active";
+    private decimal? _homeLatitude;
+    private decimal? _homeLongitude;
 
     [Key]
     public int DriverId { get; set; }
@@ -185,6 +187,37 @@ public class Driver : INotifyPropertyChanged
                 OnPropertyChanged();
                 OnPropertyChanged(nameof(IsAvailable));
                 OnPropertyChanged(nameof(IsActive));
+            }
+        }
+    }
+
+    // Geo home location for route planning
+    [Column(TypeName = "decimal(10,8)")]
+    [Display(Name = "Home Latitude")]
+    public decimal? HomeLatitude
+    {
+        get => _homeLatitude;
+        set
+        {
+            if (_homeLatitude != value)
+            {
+                _homeLatitude = value;
+                OnPropertyChanged();
+            }
+        }
+    }
+
+    [Column(TypeName = "decimal(11,8)")]
+    [Display(Name = "Home Longitude")]
+    public decimal? HomeLongitude
+    {
+        get => _homeLongitude;
+        set
+        {
+            if (_homeLongitude != value)
+            {
+                _homeLongitude = value;
+                OnPropertyChanged();
             }
         }
     }

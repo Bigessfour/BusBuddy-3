@@ -2,8 +2,27 @@
 	"version": "2.0.0",
 	"tasks": [
 		{
-			"type": "shell",
+			"type": "process",
 			"label": "dotnet build BusBuddy.sln",
+			"command": "dotnet",
+			"args": [
+				"build",
+				"BusBuddy.sln"
+			],
+			"options": {
+				"env": {
+					"BUSBUDDY_NO_WELCOME": "1",
+					"BUSBUDDY_NO_XAI_WARN": "1",
+					"BUSBUDDY_SILENT": "1"
+				}
+			},
+			"problemMatcher": [
+				"$msCompile"
+			]
+		},
+		{
+			"label": "build (process) dotnet",
+			"type": "shell",
 			"command": "dotnet",
 			"args": [
 				"build",
@@ -11,7 +30,8 @@
 			],
 			"problemMatcher": [
 				"$msCompile"
-			]
+			],
+			"group": "build"
 		}
 	]
 }
