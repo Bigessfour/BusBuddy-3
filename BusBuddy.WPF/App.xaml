@@ -28,7 +28,6 @@
                     <SolidColorBrush x:Key="SecondaryBrush" Color="#FFF0F0F0"/>
                     <SolidColorBrush x:Key="AccentBrush" Color="#FF16A085"/>
                     <SolidColorBrush x:Key="TertiaryBrush" Color="#FFE8E8E8"/>
-                    <SolidColorBrush x:Key="ContentBackgroundBrush" Color="#F5F5F5"/>
 
                     <!-- Vehicle Form Styles -->
                     <Style x:Key="VehicleFormContainer" TargetType="Grid">
