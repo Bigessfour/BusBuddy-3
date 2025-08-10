@@ -7,6 +7,41 @@
 
 ---
 
+## 📌 Source of truth + Fetchability (quick links)
+
+Base repo: https://github.com/Bigessfour/BusBuddy-3 (branch: master)
+
+Raw content base (copy, then append path):
+https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/
+
+Primary docs
+- Source of truth (this file):
+  https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/GROK-README.md
+- Technical standards and anti-regression:
+  https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/.github/copilot-instructions.md
+- VS Code prompt pointer (redirects here):
+  https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/vscode-userdata/BusBuddy.instructions.md
+
+Quick-fetch key files
+- Build config:
+  https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/Directory.Build.props
+  https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/Directory.Build.targets
+  https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/global.json
+  https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/NuGet.config
+- App startup (Syncfusion licensing, DI):
+  https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.WPF/App.xaml.cs
+- Students UI (grid + VM):
+  https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.WPF/Views/Student/StudentsView.xaml
+  https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.WPF/ViewModels/Student/StudentsViewModel.cs
+- Azure SQL helper (AZ CLI auth via sqlcmd):
+  https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/Scripts/list-students.cmd
+
+Tip — quick local fetch
+```powershell
+iwr "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.WPF/App.xaml.cs" -OutFile "BusBuddy.WPF/App.xaml.cs"
+```
+
+
 ## 🧪 UI Buttons & Forms Validation — August 10, 2025
 
 ### What we validated and fixed
@@ -20,6 +55,11 @@
 - DI/Config: `StudentForm.xaml.cs` resolves `IStudentService` from App.ServiceProvider; provider selection (LocalDB/Azure) honors `appsettings.*`.
 - Manual test: Added “John Doe” — “123 Main St, Wiley, CO”; record saved and list refreshed; entries observed in `logs/busbuddy-.log`.
 - Documentation: `GrokResources/GPT-5 actions/ButtonFormValidationReport.md` updated with steps/results and screenshots refs.
+
+Tech Debt (Student form)
+- View on Map button: placeholder only. Backed by TODO in ViewModel; integration with Google Earth Engine pending. Track under mapping integration epic.
+- Get AI Suggested Routes: placeholder/TODO. Defer until post-MVP; integrate with Grok/xAI route optimizer later.
+- Address validation: consider online validation (e.g., USPS API) post-MVP. For MVP, validation only ensures sufficient data for routing (street, city, state, zip).
 
 ### Modules audited
 - Core: Students, StudentForm, RouteManagement — previously validated; still good.
@@ -72,6 +112,47 @@ dotnet run --project "BusBuddy.WPF/BusBuddy.WPF.csproj"
 ### Notes
 - All changes adhere to the Syncfusion-only UI policy — no standard WPF DataGrid introduced.
 - Logging uses Serilog; theming standardized via SfSkinManager.
+
+---
+
+## 🗄️ Azure SQL alignment and student save verification — August 10, 2025
+
+What changed
+- Target database standardized to Azure SQL database BusBuddyDB on server busbuddy-server-sm2.database.windows.net. There is no database named "busbuddy-db" on this server.
+- Updated BusBuddy.WPF/appsettings.json so BusBuddyDb points to Initial Catalog=BusBuddyDB (Authentication=Active Directory Default). The DbContext still prefers BUSBUDDY_CONNECTION env var when present.
+- StudentFormViewModel now creates DbContext via DI factory when available, ensuring it uses the configured connection (BusBuddyDB) instead of a default-constructed context.
+- Added helper scripts to keep a single source of truth during MVP:
+  - Scripts/Query-Students-BusBuddyDB.ps1 — SQL auth query helper with -Search and -Top switches
+  - Scripts/Run-App-With-BusBuddyDB.ps1 — sets BUSBUDDY_CONNECTION to BusBuddyDB and runs the WPF app
+  - Scripts/Query-Students-busbuddy-db-AAD.ps1 — AAD examples kept for reference (database not present)
+
+Raw links (fetchability)
+- Query-Students-BusBuddyDB.ps1
+  https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/Scripts/Query-Students-BusBuddyDB.ps1
+- Run-App-With-BusBuddyDB.ps1
+  https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/Scripts/Run-App-With-BusBuddyDB.ps1
+- Query-Students-busbuddy-db-AAD.ps1
+  https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/Scripts/Query-Students-busbuddy-db-AAD.ps1
+
+How to verify a student save (e.g., "Kellen Cain")
+1) Run the app with the BusBuddyDB override so EF uses the same DB as your CLI checks:
+
+```powershell
+./Scripts/Run-App-With-BusBuddyDB.ps1
+```
+
+2) In the app, use Students → Add Student. Enter the student details and Save.
+
+3) Query Azure SQL to confirm the record:
+
+```powershell
+./Scripts/Query-Students-BusBuddyDB.ps1 -Search "Kellen" -Top 25
+```
+
+Notes
+- Azure context verified via Azure CLI: subscription id 57b297a5-44cf-4abc-9ac4-91a5ed147de1; tenant bigessfourgmail.onmicrosoft.com; server ad admin bigessfour_gmail.com#EXT#@bigessfourgmail.onmicrosoft.com.
+- DbContext resolution order: BUSBUDDY_CONNECTION env var → appsettings BusBuddyDb → DefaultConnection. The helper script enforces BUSBUDDY_CONNECTION for consistency.
+- For day-to-day operations, prefer the helper scripts or bb-* commands; keep both the app and verification queries pointed at BusBuddyDB.
 
 ---
 
