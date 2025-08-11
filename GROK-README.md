@@ -87,6 +87,18 @@ Quick-fetch key files
    https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.WPF/appsettings.json
    https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.Core/appsettings.json
 
+Seeding — fetch links (Aug 11, 2025)
+- SeedDataService (JSON seeding via WileyJsonPath):
+  https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.Core/Services/SeedDataService.cs
+- WPF startup seeding hook (calls SeedDataService.SeedFromJsonAsync):
+  https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.WPF/App.xaml.cs
+- Root app settings (shared defaults):
+  https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/appsettings.json
+- Staging environment settings (includes WileyJsonPath):
+  https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/appsettings.staging.json
+- Core production settings (includes WileyJsonPath):
+  https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.Core/appsettings.Production.json
+
 Tip — quick local fetch
 ```powershell
 iwr "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.WPF/App.xaml.cs" -OutFile "BusBuddy.WPF/App.xaml.cs"
