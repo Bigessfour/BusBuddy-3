@@ -116,6 +116,12 @@ namespace BusBuddy.Core.Extensions
             // Register Database NULL Fix Service
             services.AddScoped<BusBuddy.Core.Services.DatabaseNullFixService>();
 
+            // Geospatial helpers (MVP-ready)
+            // OfflineGeocodingService provides deterministic lat/long without external keys.
+            // Documentation reference: Microsoft .NET DI patterns (HostBuilder/IServiceCollection)
+            // https://learn.microsoft.com/dotnet/core/extensions/dependency-injection
+            services.AddSingleton<IGeocodingService, OfflineGeocodingService>();
+
             // Register Phase 2 Data Seeding Service
             // services.AddScoped<IPhase2DataSeederService, Phase2DataSeederService>();
 

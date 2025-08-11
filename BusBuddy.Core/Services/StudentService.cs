@@ -7,6 +7,7 @@ using Microsoft.Extensions.Configuration;
 using Serilog;
 using System.Text;
 using System.Linq; // Added for FirstOrDefault in seeding path resolution
+using BusBuddy.Core.Services.Interfaces;
 
 namespace BusBuddy.Core.Services;
 
@@ -18,6 +19,7 @@ public class StudentService : IStudentService
 {
     private static readonly ILogger Logger = Log.ForContext<StudentService>();
     private readonly IBusBuddyDbContextFactory _contextFactory;
+    private readonly IGeocodingService? _geocodingService; // optional MVP geocoder
     private static readonly SemaphoreSlim _semaphore = new(1, 1);
 
     // Centralized, flexible US phone validation:
@@ -53,9 +55,10 @@ public class StudentService : IStudentService
         return !string.IsNullOrEmpty(mode) && mode.Equals("warn", StringComparison.OrdinalIgnoreCase);
     }
 
-    public StudentService(IBusBuddyDbContextFactory contextFactory)
+    public StudentService(IBusBuddyDbContextFactory contextFactory, IGeocodingService? geocodingService = null)
     {
         _contextFactory = contextFactory;
+        _geocodingService = geocodingService; // may be null in tests without DI
     }
 
     // Context helpers: only dispose when using the concrete runtime factory
@@ -321,6 +324,24 @@ public class StudentService : IStudentService
                 student.EnrollmentDate = DateTime.Today;
             }
 
+            // Geocode on add when coordinates are not provided and a geocoder is available
+            if (_geocodingService != null && (!student.Latitude.HasValue || !student.Longitude.HasValue))
+            {
+                try
+                {
+                    var geo = await _geocodingService.GeocodeAsync(student.HomeAddress, student.City, student.State, student.Zip);
+                    if (geo.HasValue)
+                    {
+                        student.Latitude = (decimal)geo.Value.latitude;
+                        student.Longitude = (decimal)geo.Value.longitude;
+                    }
+                }
+                catch (Exception geoEx)
+                {
+                    Logger.Debug(geoEx, "Geocoding failed for student {Name}; proceeding without coordinates", student.StudentName);
+                }
+            }
+
             var (context, dispose) = GetWriteContext();
             try
             {
@@ -356,6 +377,24 @@ public class StudentService : IStudentService
             if (validationErrors.Count > 0)
             {
                 throw new ArgumentException($"Student validation failed: {string.Join(", ", validationErrors)}");
+            }
+
+            // Geocode if coordinates missing and address present
+            if (_geocodingService != null && (!student.Latitude.HasValue || !student.Longitude.HasValue))
+            {
+                try
+                {
+                    var geo = await _geocodingService.GeocodeAsync(student.HomeAddress, student.City, student.State, student.Zip);
+                    if (geo.HasValue)
+                    {
+                        student.Latitude = (decimal)geo.Value.latitude;
+                        student.Longitude = (decimal)geo.Value.longitude;
+                    }
+                }
+                catch (Exception geoEx)
+                {
+                    Logger.Debug(geoEx, "Geocoding failed for student {Id}; proceeding without coordinates", student.StudentId);
+                }
             }
 
             var (context, dispose) = GetWriteContext();

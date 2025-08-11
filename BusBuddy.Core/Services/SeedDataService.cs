@@ -22,7 +22,8 @@ namespace BusBuddy.Core.Services
     private readonly IBusBuddyDbContextFactory _contextFactory;
     private readonly IConfiguration? _configuration;
         private static readonly ILogger Logger = Log.ForContext<SeedDataService>();
-        private static readonly JsonSerializerOptions JsonOpts = new()
+        // Cache JsonSerializerOptions to avoid repeated allocations (fixes CA1869)
+        private static readonly JsonSerializerOptions _jsonOptions = new JsonSerializerOptions
         {
             PropertyNameCaseInsensitive = true
         };
@@ -90,7 +91,7 @@ namespace BusBuddy.Core.Services
                 List<Student>? students = null;
                 try
                 {
-                    students = JsonSerializer.Deserialize<List<Student>>(json, JsonOpts);
+                    students = JsonSerializer.Deserialize<List<Student>>(json, _jsonOptions);
                 }
                 catch (Exception ex)
                 {
@@ -106,7 +107,7 @@ namespace BusBuddy.Core.Services
                         if (doc.RootElement.TryGetProperty("Students", out var studentsElement) &&
                             studentsElement.ValueKind == JsonValueKind.Array)
                         {
-                            students = JsonSerializer.Deserialize<List<Student>>(studentsElement.GetRawText(), JsonOpts);
+                            students = JsonSerializer.Deserialize<List<Student>>(studentsElement.GetRawText(), _jsonOptions);
                         }
                     }
                     catch (Exception ex)
