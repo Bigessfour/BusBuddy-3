@@ -1,0 +1,46 @@
+name: Seed Students to Azure SQL
+
+on:
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  run-seeding:
+    name: Run staging + merge scripts
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Create staging table (idempotent)
+        uses: azure/sql-action@v2
+        with:
+          connection-string: ${{ secrets.AZURE_SQL_CONNECTION_STRING }}
+          path: Database/Seeding/create_riders_staging.sql
+
+      - name: (Optional) Preview counts
+        uses: azure/sql-action@v2
+        with:
+          connection-string: ${{ secrets.AZURE_SQL_CONNECTION_STRING }}
+          inlineSql: |
+            PRINT 'Staging / Students counts before MERGE';
+            SELECT (SELECT COUNT(*) FROM dbo.Riders_Staging) AS StagingCount,
+                   (SELECT COUNT(*) FROM dbo.Students) AS StudentsCount;
+
+      - name: Merge riders to students
+        uses: azure/sql-action@v2
+        with:
+          connection-string: ${{ secrets.AZURE_SQL_CONNECTION_STRING }}
+          path: Database/Seeding/merge_riders_to_students.sql
+          path: Database/Seeding/merge_riders_to_students.sql
+
+      - name: Verify a few rows
+        uses: azure/sql-action@v2
+        with:
+          connection-string: ${{ secrets.AZURE_SQL_CONNECTION_STRING }}
+          inlineSql: |
+            SELECT TOP 10 StudentId, StudentName, School, AMRoute, PMRoute
+            FROM dbo.Students
+            ORDER BY StudentId DESC;

@@ -1,12 +1,22 @@
 #requires -Version 7.5
 Set-StrictMode -Version 3.0
 
-# Load MinimalOutputCapture.ps1 into module scope
+# Provide wrapper to execute MinimalOutputCapture on demand only
 $moduleRoot = Split-Path -Parent $PSScriptRoot
 $workspaceRoot = Split-Path -Parent (Split-Path -Parent $moduleRoot)
-$minimalOutputPath = Join-Path $workspaceRoot 'PowerShell\Functions\Utilities\MinimalOutputCapture.ps1'
-if (Test-Path $minimalOutputPath) {
-    . $minimalOutputPath
+$minimalOutputPath = Join-Path $workspaceRoot 'PowerShell\Scripts\MinimalOutputCapture.ps1'
+
+function Invoke-BusBuddyMinimalOutputCapture {
+    [CmdletBinding()]
+    param(
+        [Parameter(ValueFromRemainingArguments = $true)]
+        [object[]] $Args
+    )
+    if (-not (Test-Path -LiteralPath $minimalOutputPath)) {
+        Write-Error "MinimalOutputCapture.ps1 not found at: $minimalOutputPath"
+        return
+    }
+    & $minimalOutputPath @Args
 }
 
-Export-ModuleMember -Function * -Alias *
+Export-ModuleMember -Function Invoke-BusBuddyMinimalOutputCapture

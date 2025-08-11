@@ -118,6 +118,22 @@ Notes
 - For paths containing spaces (e.g., "GPT-5 actions"), percent-encode as %20 in the URL.
 - See the full guide for more patterns and tips: `Documentation/FILE-FETCHABILITY-GUIDE.md` (raw link above).
 
+### Seeding assets — RIGHT-first (staging + merge)
+
+Raw links (copy to browser or use iwr):
+- Create staging table (dbo.Riders_Staging)
+  https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/Database/Seeding/create_riders_staging.sql
+- Preview checks (duplicates, missing IDs, examples)
+  https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/Database/Seeding/preview_riders_merge.sql
+- Merge/upsert to Students
+  https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/Database/Seeding/merge_riders_to_students.sql
+
+Helper raw links (repo PowerShell profile)
+- Repo profile loader
+  https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/PowerShell/Import-BusBuddyMinimal.ps1
+- Repo profile script
+  https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/PowerShell/Profiles/Microsoft.PowerShell_profile.ps1
+
 
 ## 🧪 UI Buttons & Forms Validation — August 10, 2025
 
