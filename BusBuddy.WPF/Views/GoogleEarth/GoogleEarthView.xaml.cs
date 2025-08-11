@@ -15,6 +15,8 @@ using System.Windows.Media; // Visual tree for printing
 using System.Windows.Documents; // FixedDocument for printing
 using System.Windows.Markup; // IAddChild
 using Syncfusion.SfSkinManager;
+using System.Windows.Media.Imaging; // For RenderTargetBitmap
+using System.IO; // For MemoryStream / PNG encoder
 
 namespace BusBuddy.WPF.Views.GoogleEarth
 {
@@ -656,10 +658,54 @@ namespace BusBuddy.WPF.Views.GoogleEarth
                 doc.Pages.Add(pageContent);
 
                 printDlg.PrintDocument(doc.DocumentPaginator, "BusBuddy Route Map");
+
+                // After printing, also capture a PNG snapshot for embedding in PDF exports
+                TryCaptureMapSnapshot();
             }
             catch (Exception ex)
             {
                 Logger.Warning(ex, "Failed to print route map");
+            }
+        }
+
+        /// <summary>
+        /// Captures a PNG snapshot of the current map visual and stores it in the ViewModel's LatestMapSnapshotPng.
+        /// Uses RenderTargetBitmap (Microsoft WPF imaging docs) and PngBitmapEncoder (official .NET imaging API).
+        /// </summary>
+        private void TryCaptureMapSnapshot()
+        {
+            try
+            {
+                if (MapControl is not FrameworkElement mapElement)
+                {
+                    return;
+                }
+                if (DataContext is not GoogleEarthViewModel vm)
+                {
+                    return;
+                }
+
+                var width = (int)Math.Ceiling(mapElement.ActualWidth);
+                var height = (int)Math.Ceiling(mapElement.ActualHeight);
+                if (width <= 0 || height <= 0)
+                {
+                    return;
+                }
+
+                // Render at 96 DPI (standard) — can be increased later for higher resolution
+                var rtb = new RenderTargetBitmap(width, height, 96, 96, PixelFormats.Pbgra32);
+                rtb.Render(mapElement);
+
+                var encoder = new PngBitmapEncoder();
+                encoder.Frames.Add(BitmapFrame.Create(rtb));
+                using var ms = new MemoryStream();
+                encoder.Save(ms);
+                vm.LatestMapSnapshotPng = ms.ToArray();
+                Logger.Information("Captured map snapshot PNG ({Bytes} bytes) for PDF embedding", vm.LatestMapSnapshotPng.Length);
+            }
+            catch (Exception ex)
+            {
+                Logger.Warning(ex, "Map snapshot capture failed");
             }
         }
 

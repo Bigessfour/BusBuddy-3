@@ -39,6 +39,7 @@ namespace BusBuddy.WPF.ViewModels.GoogleEarth
     private BusBuddy.Core.Models.Bus? _selectedBus;
     private bool _districtBoundaryVisible;
     private bool _townBoundaryVisible;
+    private byte[]? _latestMapSnapshotPng; // Holds last captured map snapshot (PNG bytes) for PDF embedding
 
     /// <summary>
     /// Points representing the currently selected route polyline — consumed by view to draw MapPolyline.
@@ -54,6 +55,16 @@ namespace BusBuddy.WPF.ViewModels.GoogleEarth
     /// Raised when a print of the current route map has been requested.
     /// </summary>
     public event EventHandler? PrintRequested;
+
+        /// <summary>
+        /// Latest captured map snapshot in PNG format (used for embedding into route PDF exports).
+        /// A separate capturing routine in the View should set this after rendering a visual to a RenderTargetBitmap and encoding to PNG.
+        /// </summary>
+        public byte[]? LatestMapSnapshotPng
+        {
+            get => _latestMapSnapshotPng;
+            set => SetProperty(ref _latestMapSnapshotPng, value);
+        }
 
         public GoogleEarthViewModel(IGeoDataService geoDataService, IEligibilityService? eligibilityService = null, IGeocodingService? geocodingService = null)
         {

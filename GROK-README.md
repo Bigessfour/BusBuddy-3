@@ -333,6 +333,44 @@ curl -L "$base/BusBuddy.WPF/ViewModels/Student/StudentsViewModel.cs" -o "BusBudd
 Notes
 - Raw base: https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master
 - For paths containing spaces (e.g., "GPT-5 actions"), percent-encode as %20 in the URL.
+
+## Tech Debt — Duplicate RouteTimeSlot enums & validation result classes (Aug 11, 2025)
+
+Context:
+- Two separate `RouteTimeSlot` enum definitions exist:
+  1. `BusBuddy.Core.Models.RouteTimeSlot` (in `Models/Route.Extensions.cs` lines ~288–306)
+  2. `BusBuddy.Core.Services.RouteTimeSlot` (in `Services/IRouteService.cs` lines ~10–18)
+- This forces casting in `RouteAssignmentViewModel` (multiple occurrences where model enum is cast to service enum before calling service methods). Adds noise and risk of divergence if one definition changes (e.g., adding a new slot like MidDay) without updating the other.
+- Similarly, there are TWO route validation result classes:
+  1. `Models/Route.Extensions.cs` → `RouteValidationResult` with `IsValid`, `CanActivate`, `Issues`, `Summary`.
+  2. `Services/IRouteService.cs` → `RouteValidationResult` with `IsValid`, `Errors`, `Warnings`.
+- Names identical but shape differs — future ambiguity and potential incorrect using import.
+
+Why It Matters (Risks):
+- Enum divergence could silently break mapping logic or timing assumptions.
+- Duplicate class names encourage accidental namespace collisions and misuse (e.g., using service version when model version expected).
+- Extra casts reduce readability and increase cognitive load during maintenance.
+- Tooling / refactor safety reduced — renaming one does not update the other.
+
+Planned Resolution (Post-MVP unless quick win pulled forward):
+1. Choose canonical enum location: keep `Models.RouteTimeSlot` (domain-owned) and REMOVE the service definition.
+2. Update `IRouteService` method signatures to use `BusBuddy.Core.Models.RouteTimeSlot`.
+3. Eliminate all casts in `RouteAssignmentViewModel` (pass enum directly).
+4. Rename one of the `RouteValidationResult` classes to disambiguate OR consolidate:
+   - Option A: Merge into a single model class with superset fields (`Errors`, `Warnings`, `Issues`, `CanActivate`, `Summary`).
+   - Option B: Keep model version as `RouteValidationResult`, rename service version to `RouteValidationServiceResult` (lower effort interim).
+5. Add analyzer suppression removal once duplication eliminated (pending any existing suppressions tied to this pattern).
+6. Document migration in this README (delta section) and commit message referencing this tech debt ID: RTD-01.
+
+Fast-Track Justification:
+- Single-file edit + interface update + search/replace usages; low regression risk; improves clarity for subsequent timing / assignment enhancements.
+
+References (Documentation-First):
+- .NET Enums guidance (avoid duplication; single source of truth): https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/enum
+- Interface design best practices (avoid leaking duplicated domain concepts): https://learn.microsoft.com/dotnet/standard/design-guidelines/
+
+Tracked Identifier: RTD-01 (Duplicate RouteTimeSlot + RouteValidationResult consolidation)
+
 - See the full guide for more patterns and tips: `Documentation/FILE-FETCHABILITY-GUIDE.md` (raw link above).
 
 ### Seeding assets — RIGHT-first (staging + merge)
@@ -357,6 +395,30 @@ Helper raw links (repo PowerShell profile)
 ### What we validated and fixed
 - Verified button/command wiring, CanExecute gating, theming, and logging across key modules.
 - Introduced missing DataContexts and close workflows where needed; preserved Syncfusion-only UI policy (no WPF DataGrid regressions).
+
+### Delta — Aug 11, 2025 (Route PDF export logging, proactive map snapshot attempt, debounce disposal)
+- What changed
+  - Enhanced `RouteAssignmentViewModel.PrintMap()` to log start and completion of route PDF export with file path, map embedding flag, and byte size (Serilog structured logging).
+  - Implemented proactive map snapshot capture: reflection-based search for an existing `GoogleEarthView` in open windows invokes its internal `TryCaptureMapSnapshot` method if no snapshot bytes are present, reducing manual steps before export (MVP interim until a formal command is exposed).
+  - Added `TryProactiveMapSnapshotCapture()` helper with a lightweight visual tree walker (`FindDescendantByTypeName`) — isolated, recursive, and non-fatal on exceptions.
+  - Implemented `IDisposable` pattern for `RouteAssignmentViewModel` to dispose the debounce timer (`_retimeDebounceTimer`) and prevent timer callback after VM teardown; included finalizer for safety.
+  - Added additional defensive logging for failure paths (export exception logs route ID; proactive snapshot attempt logs debug-level failure).
+- Why
+  - Observed need for reliable map image embedding without requiring user to manually print the map first.
+  - Logging enhancements produce auditable evidence of export operations and simplify troubleshooting (e.g., empty file or missing map root cause analysis).
+  - Proper resource cleanup avoids silent background timer activity after navigation, reducing potential memory leaks.
+- Files
+  - `BusBuddy.WPF/ViewModels/Route/RouteAssignmentViewModel.cs` — updated `PrintMap()`, new snapshot capture + dispose region.
+  - `BusBuddy.WPF/Views/GoogleEarth/GoogleEarthView.xaml.cs` — existing `TryCaptureMapSnapshot()` leveraged via reflection (unchanged today).
+- Verification
+  - Build succeeded post-change; no new analyzers triggered.
+  - Manual reasoning: reflection guarded in try/catch; absence of map view leaves export path unchanged (graceful fallback).
+  - Debounce timer disposal confirmed via code inspection — single dispose call in `Dispose()` with idempotent guard.
+- Deferred / Follow-up
+  - Replace reflection with a formal `IMapSnapshotService` or routed command once mapping stack stabilizes.
+  - Unit test harness: inject a fake view or service to assert snapshot capture invocation pre-export.
+  - Consider multi-page PDF (stops/students overflow) once pagination requirement emerges.
+  - Add hash (e.g., SHA256 first 8 chars) of embedded map image to export log for traceability.
 
 ### Students module — Add Student flow (E2E) verified
 - Toolbar AddStudentCommand in `StudentsView.xaml` opens `StudentForm` correctly.

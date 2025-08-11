@@ -196,6 +196,162 @@ namespace BusBuddy.Core.Services
             }
         }
 
+        /// <summary>
+        /// Generates a concise PDF summary for a route (MVP route assignment export).
+        /// Includes: Header (route name/date/time slot), assignment summary, stop list, student roster.
+        /// Documentation references:
+        /// - Syncfusion PDF Getting Started / API (PdfDocument, PdfStandardFont, PdfBrushes)
+        /// - https://help.syncfusion.com/cr/wpf/Syncfusion.Pdf.html
+        /// </summary>
+        public byte[] GenerateRouteSummaryReport(
+            Route route,
+            IEnumerable<RouteStop> stops,
+            IEnumerable<Student> students,
+            Bus? assignedBus,
+            Driver? assignedDriver,
+            BusBuddy.Core.Models.RouteTimeSlot timeSlot)
+        {
+            // Delegate to core implementation without map image
+            return GenerateRouteSummaryReportInternal(route, stops, students, assignedBus, assignedDriver, timeSlot, null);
+        }
+
+        /// <summary>
+        /// Overload including optional map snapshot (PNG bytes) to embed into the PDF (upper-right corner below header).
+        /// Map image embedding uses documented Syncfusion PdfBitmap (API reference: https://help.syncfusion.com/cr/wpf/Syncfusion.Pdf.Graphics.PdfBitmap.html)
+        /// When mapImagePng is null, falls back to standard summary layout.
+        /// </summary>
+        public byte[] GenerateRouteSummaryReport(
+            Route route,
+            IEnumerable<RouteStop> stops,
+            IEnumerable<Student> students,
+            Bus? assignedBus,
+            Driver? assignedDriver,
+            BusBuddy.Core.Models.RouteTimeSlot timeSlot,
+            byte[]? mapImagePng)
+        {
+            return GenerateRouteSummaryReportInternal(route, stops, students, assignedBus, assignedDriver, timeSlot, mapImagePng);
+        }
+
+        private byte[] GenerateRouteSummaryReportInternal(
+            Route route,
+            IEnumerable<RouteStop> stops,
+            IEnumerable<Student> students,
+            Bus? assignedBus,
+            Driver? assignedDriver,
+            BusBuddy.Core.Models.RouteTimeSlot timeSlot,
+            byte[]? mapImagePng)
+        {
+            ArgumentNullException.ThrowIfNull(route);
+            stops ??= Array.Empty<RouteStop>();
+            students ??= Array.Empty<Student>();
+
+            try
+            {
+                Logger.Information("Generating route PDF summary for {Route} (Slot {Slot})", route.RouteName, timeSlot);
+
+                using var document = new PdfDocument();
+                var page = document.Pages.Add();
+                var g = page.Graphics;
+
+                // Fonts & colors
+                var titleFont = new PdfStandardFont(PdfFontFamily.Helvetica, 18, PdfFontStyle.Bold);
+                var sectionFont = new PdfStandardFont(PdfFontFamily.Helvetica, 13, PdfFontStyle.Bold);
+                var labelFont = new PdfStandardFont(PdfFontFamily.Helvetica, 10, PdfFontStyle.Bold);
+                var bodyFont = new PdfStandardFont(PdfFontFamily.Helvetica, 10);
+                var accent = new PdfColor(11, 126, 200);
+                var textBrush = PdfBrushes.Black;
+                var accentBrush = new PdfSolidBrush(accent);
+
+                var pageWidth = page.GetClientSize().Width;
+                g.DrawRectangle(accentBrush, new RectangleF(0, 0, pageWidth, 50));
+                g.DrawString("Bus Buddy — Route Summary", titleFont, PdfBrushes.White, new PointF(20, 15));
+
+                float y = 60f;
+                g.DrawString(route.RouteName ?? "(Unnamed Route)", sectionFont, textBrush, new PointF(20, y));
+                y += 22f;
+                g.DrawString($"Date: {route.Date:yyyy-MM-dd} | Slot: {timeSlot}", bodyFont, textBrush, new PointF(20, y));
+                y += 16f;
+                g.DrawString($"Bus: {assignedBus?.BusNumber ?? "(none)"} | Driver: {assignedDriver?.DriverName ?? "(none)"}", bodyFont, textBrush, new PointF(20, y));
+                y += 16f;
+                g.DrawString($"Stops: {stops.Count()} | Students: {students.Count()}", bodyFont, textBrush, new PointF(20, y));
+                y += 28f;
+
+                // Optional map image (embed to top-right area under header bar)
+                if (mapImagePng != null && mapImagePng.Length > 0)
+                {
+                    try
+                    {
+                        using var imgStream = new MemoryStream(mapImagePng);
+                        using (var pdfBitmap = new Syncfusion.Pdf.Graphics.PdfBitmap(imgStream))
+                        {
+                            // Reserve a rectangle (approx 220x160) — adjust height proportionally
+                            const float targetWidth = 220f;
+                            var imgHeight = pdfBitmap.Height > 0 ? (pdfBitmap.Height / (float)pdfBitmap.Width) * targetWidth : 160f;
+                            var imgRect = new RectangleF(pageWidth - targetWidth - 20f, 60f, targetWidth, imgHeight);
+                            g.DrawRectangle(new PdfSolidBrush(new PdfColor(240, 240, 240)), imgRect); // light backdrop
+                            g.DrawImage(pdfBitmap, imgRect);
+                        }
+                        // Leave y unchanged (text occupies left column); map sits independently
+                    }
+                    catch (Exception imgEx)
+                    {
+                        Logger.Warning(imgEx, "Failed embedding map image into route PDF");
+                    }
+                }
+
+                // Stops Section
+                g.DrawString("Stops", sectionFont, textBrush, new PointF(20, y));
+                y += 20f;
+                if (!stops.Any())
+                {
+                    g.DrawString("(No stops added)", bodyFont, textBrush, new PointF(30, y));
+                    y += 18f;
+                }
+                else
+                {
+                    foreach (var stop in stops.OrderBy(s => s.StopOrder).Take(25)) // limit to keep single page MVP
+                    {
+                        var eta = stop.EstimatedArrivalTime == default ? "--:--" : stop.EstimatedArrivalTime.ToString("HH:mm");
+                        g.DrawString($"{stop.StopOrder,2}. {stop.StopName ?? "(Stop)"}  @ {eta}", bodyFont, textBrush, new PointF(30, y));
+                        y += 14f;
+                        if (y > page.GetClientSize().Height - 120f) break; // simple overflow guard MVP
+                    }
+                    y += 10f;
+                }
+
+                // Students Section
+                g.DrawString("Students", sectionFont, textBrush, new PointF(20, y));
+                y += 20f;
+                if (!students.Any())
+                {
+                    g.DrawString("(No students assigned)", bodyFont, textBrush, new PointF(30, y));
+                    y += 18f;
+                }
+                else
+                {
+                    foreach (var stu in students.OrderBy(s => s.StudentName).Take(40))
+                    {
+                        g.DrawString($"• {stu.StudentName ?? "(Student)"}", bodyFont, textBrush, new PointF(30, y));
+                        y += 14f;
+                        if (y > page.GetClientSize().Height - 60f) break;
+                    }
+                }
+
+                // Footer
+                var footerY = page.GetClientSize().Height - 30f;
+                g.DrawString($"Generated: {DateTime.Now:yyyy-MM-dd HH:mm}", bodyFont, textBrush, new PointF(20, footerY));
+
+                using var ms = new MemoryStream();
+                document.Save(ms);
+                return ms.ToArray();
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Error generating route PDF summary for {RouteId}", route.RouteId);
+                return Array.Empty<byte>();
+            }
+        }
+
         #region Fallback Text Generation (Used when PDF generation fails)
 
         private byte[] GenerateTextReport(List<Activity> activities, DateTime startDate, DateTime endDate, string reportType)

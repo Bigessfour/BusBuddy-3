@@ -12,6 +12,8 @@ using Microsoft.Extensions.DependencyInjection; // For resolving GoogleEarthView
 using BusBuddy.WPF.ViewModels.GoogleEarth; // Map markers
 using BusBuddy.Core.Services.Interfaces; // IGeocodingService
 using System.Globalization;
+using System.IO; // For PDF export file writing
+using System.Threading; // For debounce timer
 
 
 namespace BusBuddy.WPF.ViewModels.Route
@@ -21,7 +23,7 @@ namespace BusBuddy.WPF.ViewModels.Route
     /// Implements comprehensive route building workflow with MVVM compliance
     /// Supports Syncfusion SfDataGrid integration and Result pattern error handling
     /// </summary>
-    public class RouteAssignmentViewModel : INotifyPropertyChanged
+    public class RouteAssignmentViewModel : INotifyPropertyChanged, IDisposable
     {
         // Backing fields for all properties (restored for CS0103 fix)
         private ObservableCollection<BusBuddy.Core.Models.Route> _availableRoutes = new();
@@ -49,6 +51,8 @@ namespace BusBuddy.WPF.ViewModels.Route
         private string _startTimeString = "07:30";
         private readonly IRouteService? _routeService;
         private static readonly ILogger Logger = Log.ForContext<RouteAssignmentViewModel>();
+    private Timer? _retimeDebounceTimer; // Debounce timer for auto-retiming after structural stop changes
+    private const int RetimeDebounceMs = 600; // Delay before auto timing after modifications
 
         // Constructors added (MVP restoration)
         // 1) Parameterless for XAML designer / fallback
@@ -88,6 +92,24 @@ namespace BusBuddy.WPF.ViewModels.Route
             InitializeCommands();
             // Kick off data load async (fire & forget)
             _ = LoadDataFromServiceAsync();
+            _retimeDebounceTimer = new Timer(_ =>
+            {
+                try
+                {
+                    System.Windows.Application.Current.Dispatcher.Invoke(() =>
+                    {
+                        if (SelectedRoute != null && RouteStops.Any())
+                        {
+                            Logger.Debug("Auto-retiming route stops (debounced)");
+                            TimeRouteStops();
+                        }
+                    });
+                }
+                catch (Exception ex)
+                {
+                    Logger.Warning(ex, "Auto-retime debounce execution failed");
+                }
+            }, null, Timeout.Infinite, Timeout.Infinite);
         }
 
         /// <summary>Unassigned students for assignment.</summary>
@@ -430,9 +452,153 @@ namespace BusBuddy.WPF.ViewModels.Route
         {
             if (SelectedRoute == null)
                 return;
-            StatusMessage = $"Print Map for {SelectedRoute.RouteName} (MVP stub)";
-            // TODO: Implement actual print/export logic if needed
+
+            try
+            {
+                Logger.Information("Starting route PDF export for {RouteName} (Slot {Slot})", SelectedRoute.RouteName, SelectedTimeSlot);
+                // Resolve PDF service (core) from DI or instantiate if lightweight
+                var pdfService = App.ServiceProvider?.GetService<BusBuddy.Core.Services.PdfReportService>()
+                                   ?? new BusBuddy.Core.Services.PdfReportService();
+
+                // Try to obtain a recent map snapshot from GoogleEarthViewModel (optional)
+                byte[]? mapPng = null;
+                try
+                {
+                    var mapVm = App.ServiceProvider?.GetService<GoogleEarthViewModel>();
+                    if (mapVm != null)
+                    {
+                        // If no snapshot yet, try to proactively request one via an event/command pattern (future) or fallback to current value
+                        if (mapVm.LatestMapSnapshotPng == null || mapVm.LatestMapSnapshotPng.Length == 0)
+                        {
+                            Logger.Debug("No existing map snapshot; attempting proactive capture (reflection invoke TryCaptureMapSnapshot on GoogleEarthView if available)");
+                            TryProactiveMapSnapshotCapture();
+                            // Re-check after attempt
+                            if (mapVm.LatestMapSnapshotPng == null || mapVm.LatestMapSnapshotPng.Length == 0)
+                            {
+                                Logger.Debug("Map snapshot still unavailable after proactive attempt");
+                            }
+                        }
+                        mapPng = mapVm.LatestMapSnapshotPng; // may still be null; PDF service handles absence gracefully
+                    }
+                }
+                catch { /* Non-fatal if map VM unavailable */ }
+
+                // Determine assigned bus/driver for current time slot
+                BusBuddy.Core.Models.Bus? bus = null;
+                BusBuddy.Core.Models.Driver? driver = null;
+                if (SelectedRoute != null)
+                {
+                    if (SelectedTimeSlot == BusBuddy.Core.Models.RouteTimeSlot.AM && SelectedRoute.AMVehicleId.HasValue)
+                        bus = AvailableBuses.FirstOrDefault(b => b.VehicleId == SelectedRoute.AMVehicleId.Value);
+                    if (SelectedTimeSlot == BusBuddy.Core.Models.RouteTimeSlot.PM && SelectedRoute.PMVehicleId.HasValue)
+                        bus = AvailableBuses.FirstOrDefault(b => b.VehicleId == SelectedRoute.PMVehicleId.Value);
+                    if (SelectedTimeSlot == BusBuddy.Core.Models.RouteTimeSlot.AM && SelectedRoute.AMDriverId.HasValue)
+                        driver = AvailableDrivers.FirstOrDefault(d => d.DriverId == SelectedRoute.AMDriverId.Value);
+                    if (SelectedTimeSlot == BusBuddy.Core.Models.RouteTimeSlot.PM && SelectedRoute.PMDriverId.HasValue)
+                        driver = AvailableDrivers.FirstOrDefault(d => d.DriverId == SelectedRoute.PMDriverId.Value);
+                }
+
+                var pdfBytes = pdfService.GenerateRouteSummaryReport(
+                    SelectedRoute,
+                    RouteStops.ToList(),
+                    AssignedStudentsForSelectedRoute.ToList(),
+                    bus,
+                    driver,
+                    (BusBuddy.Core.Models.RouteTimeSlot)SelectedTimeSlot,
+                    mapPng);
+
+                if (pdfBytes.Length == 0)
+                {
+                    StatusMessage = $"Failed to generate PDF for {SelectedRoute.RouteName}";
+                    return;
+                }
+
+                var safeName = string.Join("_", (SelectedRoute.RouteName ?? "Route").Split(Path.GetInvalidFileNameChars()));
+                var fileName = $"Route_{safeName}_{SelectedTimeSlot}_{DateTime.Now:yyyyMMdd_HHmmss}.pdf";
+                var exportDir = Path.Combine(AppContext.BaseDirectory, "Exports");
+                Directory.CreateDirectory(exportDir);
+                var fullPath = Path.Combine(exportDir, fileName);
+                File.WriteAllBytes(fullPath, pdfBytes);
+                StatusMessage = $"Route PDF exported: {fileName}" + (mapPng != null ? " (with map)" : "");
+                Logger.Information("Route PDF export complete: {File} (MapEmbedded={HasMap}) Size={SizeBytes} bytes", fullPath, mapPng != null, pdfBytes.Length);
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"PDF export error: {ex.Message}";
+                Logger.Error(ex, "Route PDF export failed for {RouteId}", SelectedRoute?.RouteId);
+            }
         }
+
+        /// <summary>
+        /// Attempts to proactively capture a map snapshot by locating an existing GoogleEarthView instance in visual trees.
+        /// MVP lightweight approach: scans Application.Current.Windows for a GoogleEarthView and invokes its internal snapshot via reflection.
+        /// If none found, logs and returns silently. Avoids tight coupling until a formal capture command is exposed.
+        /// </summary>
+        private void TryProactiveMapSnapshotCapture()
+        {
+            try
+            {
+                var app = System.Windows.Application.Current;
+                if (app == null) return;
+                foreach (Window w in app.Windows)
+                {
+                    // Depth-first search visual tree for GoogleEarthView type
+                    var target = FindDescendantByTypeName(w, "GoogleEarthView");
+                    if (target != null)
+                    {
+                        var m = target.GetType().GetMethod("TryCaptureMapSnapshot", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+                        if (m != null)
+                        {
+                            m.Invoke(target, null);
+                            Logger.Debug("Invoked TryCaptureMapSnapshot via reflection on GoogleEarthView");
+                        }
+                        break;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Debug(ex, "Proactive map snapshot capture attempt failed (non-fatal)");
+            }
+        }
+
+        // Simple visual tree walker (recursive) — MVP helper
+        private static System.Windows.DependencyObject? FindDescendantByTypeName(System.Windows.DependencyObject root, string typeName)
+        {
+            if (root == null) return null;
+            if (root.GetType().Name == typeName) return root;
+            var count = System.Windows.Media.VisualTreeHelper.GetChildrenCount(root);
+            for (int i = 0; i < count; i++)
+            {
+                var child = System.Windows.Media.VisualTreeHelper.GetChild(root, i);
+                var match = FindDescendantByTypeName(child, typeName);
+                if (match != null) return match;
+            }
+            return null;
+        }
+
+        #region IDisposable
+        private bool _disposed;
+        public void Dispose()
+        {
+            if (_disposed) return;
+            _disposed = true;
+            try
+            {
+                _retimeDebounceTimer?.Dispose();
+                Logger.Debug("Disposed RouteAssignmentViewModel resources (debounce timer)");
+            }
+            catch (Exception ex)
+            {
+                Logger.Debug(ex, "Dispose encountered a non-fatal exception");
+            }
+            GC.SuppressFinalize(this);
+        }
+        ~RouteAssignmentViewModel()
+        {
+            Dispose();
+        }
+        #endregion
 
         #endregion
 
@@ -727,9 +893,7 @@ namespace BusBuddy.WPF.ViewModels.Route
 
                 if (_routeService != null)
                 {
-                    // Cast RouteTimeSlot to BusBuddy.Core.Services.RouteTimeSlot if needed
-                    var timeSlot = (BusBuddy.Core.Services.RouteTimeSlot)(int)SelectedTimeSlot;
-                    var result = await _routeService.AssignVehicleToRouteAsync(SelectedRoute.RouteId, SelectedBus.VehicleId, timeSlot);
+                    var result = await _routeService.AssignVehicleToRouteAsync(SelectedRoute.RouteId, SelectedBus.VehicleId, SelectedTimeSlot);
                     if (!result.IsSuccess)
                     {
                         StatusMessage = $"Failed to assign vehicle: {result.Error}";
@@ -786,8 +950,7 @@ namespace BusBuddy.WPF.ViewModels.Route
 
                 if (_routeService != null)
                 {
-                    var timeSlot = (BusBuddy.Core.Services.RouteTimeSlot)(int)SelectedTimeSlot;
-                    var result = await _routeService.AssignDriverToRouteAsync(SelectedRoute.RouteId, SelectedDriver.DriverId, timeSlot);
+                    var result = await _routeService.AssignDriverToRouteAsync(SelectedRoute.RouteId, SelectedDriver.DriverId, SelectedTimeSlot);
                     if (!result.IsSuccess)
                     {
                         StatusMessage = $"Failed to assign driver: {result.Error}";
@@ -868,6 +1031,8 @@ namespace BusBuddy.WPF.ViewModels.Route
                 OnPropertyChanged(nameof(RouteStopCount));
                 StatusMessage = $"Successfully added stop '{stopName}' to {SelectedRoute.RouteName}";
                 Logger.Information("Added stop {StopName} to route {RouteName}", stopName, SelectedRoute.RouteName);
+                // Schedule auto-retime
+                _retimeDebounceTimer?.Change(RetimeDebounceMs, Timeout.Infinite);
             }
             catch (Exception ex)
             {
@@ -910,6 +1075,8 @@ namespace BusBuddy.WPF.ViewModels.Route
                 Logger.Information("Removed stop {StopName} from route {RouteName}", SelectedRouteStop.StopName, SelectedRoute!.RouteName);
 
                 SelectedRouteStop = null;
+                // Schedule auto-retime
+                _retimeDebounceTimer?.Change(RetimeDebounceMs, Timeout.Infinite);
             }
             catch (Exception ex)
             {
@@ -960,6 +1127,7 @@ namespace BusBuddy.WPF.ViewModels.Route
                 RouteStops.Move(currentIndex, currentIndex - 1);
                 StatusMessage = $"Successfully moved stop '{SelectedRouteStop.StopName}' up";
                 Logger.Information("Moved stop {StopName} up in route {RouteName}", SelectedRouteStop.StopName, SelectedRoute!.RouteName);
+                _retimeDebounceTimer?.Change(RetimeDebounceMs, Timeout.Infinite);
             }
             catch (Exception ex)
             {
@@ -1010,6 +1178,7 @@ namespace BusBuddy.WPF.ViewModels.Route
                 RouteStops.Move(currentIndex, currentIndex + 1);
                 StatusMessage = $"Successfully moved stop '{SelectedRouteStop.StopName}' down";
                 Logger.Information("Moved stop {StopName} down in route {RouteName}", SelectedRouteStop.StopName, SelectedRoute!.RouteName);
+                _retimeDebounceTimer?.Change(RetimeDebounceMs, Timeout.Infinite);
             }
             catch (Exception ex)
             {
@@ -1118,9 +1287,10 @@ namespace BusBuddy.WPF.ViewModels.Route
                     if (result.IsSuccess)
                     {
                         var validation = result.Value!;
+                        // Using model RouteValidationResult (Issues + Summary) after RTD-01 consolidation
                         var message = validation.IsValid
                             ? "Route validation passed! Ready for activation."
-                            : $"Route validation failed:\n\nErrors:\n{string.Join("\n", validation.Errors)}\n\nWarnings:\n{string.Join("\n", validation.Warnings)}";
+                            : $"Route validation failed:\n\nIssues:\n{string.Join("\n", validation.Issues)}";
 
                         StatusMessage = validation.IsValid ? "Route validation passed" : "Route validation failed";
                         MessageBox.Show(message, "Route Validation", MessageBoxButton.OK,
@@ -1966,6 +2136,14 @@ namespace BusBuddy.WPF.ViewModels.Route
             return true;
         }
 
+        #endregion
+
+        #region IDisposable
+        public void Dispose()
+        {
+            try { _retimeDebounceTimer?.Dispose(); } catch { }
+            GC.SuppressFinalize(this);
+        }
         #endregion
     }
 }

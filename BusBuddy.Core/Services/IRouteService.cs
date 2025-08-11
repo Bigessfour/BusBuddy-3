@@ -3,24 +3,9 @@ using BusBuddy.Core.Utilities;
 
 namespace BusBuddy.Core.Services
 {
-    /// <summary>
-    /// Enhanced Route Service interface with comprehensive route assignment capabilities
-    /// Implements Result pattern for robust error handling and logging
-    /// Supports student-to-route assignments, capacity validation, and utilization analytics
-    /// </summary>
-    public enum RouteTimeSlot
-    {
-        AM,
-        PM,
-        Both
-    }
-
-    public class RouteValidationResult
-    {
-        public bool IsValid { get; set; }
-        public List<string> Errors { get; set; } = new();
-        public List<string> Warnings { get; set; } = new();
-    }
+    // NOTE (RTD-01): Duplicate RouteTimeSlot enum & RouteValidationResult class removed.
+    // Canonical definitions live in Models/Route.Extensions.cs (RouteTimeSlot and RouteValidationResult).
+    // Service now consumes BusBuddy.Core.Models.RouteTimeSlot directly to eliminate casts.
 
     public interface IRouteService
     {
@@ -58,8 +43,8 @@ namespace BusBuddy.Core.Services
 
         // Route Building Methods
         Task<Result<Route>> CreateNewRouteAsync(string routeName, DateTime routeDate, string? description = null);
-        Task<Result<bool>> AssignVehicleToRouteAsync(int routeId, int vehicleId, RouteTimeSlot timeSlot);
-    Task<Result<bool>> AssignDriverToRouteAsync(int routeId, int driverId, RouteTimeSlot timeSlot);
+        Task<Result<bool>> AssignVehicleToRouteAsync(int routeId, int vehicleId, BusBuddy.Core.Models.RouteTimeSlot timeSlot);
+    Task<Result<bool>> AssignDriverToRouteAsync(int routeId, int driverId, BusBuddy.Core.Models.RouteTimeSlot timeSlot);
     Task<Result<RouteStop>> AddStopToRouteAsync(int routeId, RouteStop routeStop);
         Task<Result<bool>> RemoveStopFromRouteAsync(int routeId, int stopId);
         Task<Result<bool>> ReorderRouteStopsAsync(int routeId, List<int> orderedStopIds);

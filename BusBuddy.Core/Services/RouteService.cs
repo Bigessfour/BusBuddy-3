@@ -386,28 +386,28 @@ namespace BusBuddy.Core.Services
                     if (route == null)
                     {
                         validationResult.IsValid = false;
-                        validationResult.Errors.Add($"Route {routeId} not found");
+                        validationResult.Issues.Add($"Route {routeId} not found");
                         return Result.SuccessResult(validationResult);
                     }
 
                     // Basic validation - route exists and has a name
                     if (string.IsNullOrWhiteSpace(route.RouteName))
                     {
-                        validationResult.Errors.Add("Route name is required");
+                        validationResult.Issues.Add("Route name is required");
                     }
 
                     if (route.Date < DateTime.Today)
                     {
-                        validationResult.Errors.Add("Route date cannot be in the past");
+                        validationResult.Issues.Add("Route date cannot be in the past");
                     }
 
                     // TODO: Add more comprehensive validation (bus, driver, stops, students)
                     // For MVP, basic validation is sufficient
 
-                    validationResult.IsValid = validationResult.Errors.Count == 0;
+                    validationResult.IsValid = validationResult.Issues.Count == 0;
 
-                    Logger.Information("Route validation completed. Valid: {IsValid}, Errors: {ErrorCount}",
-                        validationResult.IsValid, validationResult.Errors.Count);
+                    Logger.Information("Route validation completed. Valid: {IsValid}, Issues: {IssueCount}",
+                        validationResult.IsValid, validationResult.Issues.Count);
 
                     return Result.SuccessResult(validationResult);
                 }
@@ -441,8 +441,8 @@ namespace BusBuddy.Core.Services
 
                 if (!validationResult.Value!.IsValid)
                 {
-                    var errors = string.Join("; ", validationResult.Value.Errors);
-                    return Result.FailureResult<bool>($"Route validation failed: {errors}");
+                    var issues = string.Join("; ", validationResult.Value.Issues);
+                    return Result.FailureResult<bool>($"Route validation failed: {issues}");
                 }
 
                 // Activate the route
@@ -509,9 +509,38 @@ namespace BusBuddy.Core.Services
         // These methods return placeholder implementations to satisfy the interface
         // TODO: Implement these methods as needed for full functionality
 
-        public Task<Result<IEnumerable<RouteStop>>> GetRouteStopsAsync(int routeId)
+        public async Task<Result<IEnumerable<RouteStop>>> GetRouteStopsAsync(int routeId)
         {
-            return Task.FromResult(Result.SuccessResult((IEnumerable<RouteStop>)new List<RouteStop>()));
+            try
+            {
+                if (routeId <= 0)
+                {
+                    return Result.FailureResult<IEnumerable<RouteStop>>("Invalid routeId");
+                }
+
+                var (context, dispose) = GetReadContext();
+                try
+                {
+                    var stops = await context.RouteStops
+                        .Where(rs => rs.RouteId == routeId)
+                        .OrderBy(rs => rs.StopOrder)
+                        .AsNoTracking()
+                        .ToListAsync();
+                    return Result.SuccessResult(stops.AsEnumerable());
+                }
+                finally
+                {
+                    if (dispose)
+                    {
+                        await context.DisposeAsync();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Error retrieving stops for route {RouteId}", routeId);
+                return Result.FailureResult<IEnumerable<RouteStop>>($"Error retrieving route stops: {ex.Message}");
+            }
         }
 
         public Task<Result<RouteStop>> AddRouteStopAsync(RouteStop routeStop)
@@ -537,6 +566,54 @@ namespace BusBuddy.Core.Services
         public Task<Result<TimeSpan>> GetRouteEstimatedTimeAsync(int routeId)
         {
             return Task.FromResult(Result.SuccessResult(TimeSpan.Zero));
+        }
+
+        public async Task<Result<bool>> ReorderRouteStopsAsync(int routeId, List<int> orderedStopIds)
+        {
+            try
+            {
+                if (routeId <= 0 || orderedStopIds == null || orderedStopIds.Count == 0)
+                {
+                    return Result.FailureResult<bool>("Invalid input for reordering stops");
+                }
+
+                var (context, dispose) = GetWriteContext();
+                try
+                {
+                    var stops = await context.RouteStops
+                        .Where(rs => rs.RouteId == routeId && orderedStopIds.Contains(rs.RouteStopId))
+                        .ToListAsync();
+
+                    // Simple order update; assumes orderedStopIds is the full set of existing stops
+                    var orderMap = orderedStopIds
+                        .Select((id, index) => new { id, order = index + 1 })
+                        .ToDictionary(x => x.id, x => x.order);
+
+                    foreach (var stop in stops)
+                    {
+                        if (orderMap.TryGetValue(stop.RouteStopId, out var newOrder))
+                        {
+                            stop.StopOrder = newOrder;
+                        }
+                    }
+
+                    await context.SaveChangesAsync();
+                    Logger.Information("Reordered {Count} stops for route {RouteId}", stops.Count, routeId);
+                    return Result.SuccessResult(true);
+                }
+                finally
+                {
+                    if (dispose)
+                    {
+                        await context.DisposeAsync();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Error reordering stops for route {RouteId}", routeId);
+                return Result.FailureResult<bool>($"Error reordering route stops: {ex.Message}");
+            }
         }
 
         public async Task<Result<List<Bus>>> GetAvailableBusesAsync()
@@ -1067,9 +1144,64 @@ namespace BusBuddy.Core.Services
             }
         }
 
-        public Task<Result<bool>> AssignDriverToRouteAsync(int routeId, int driverId, RouteTimeSlot timeSlot)
+        public async Task<Result<bool>> AssignDriverToRouteAsync(int routeId, int driverId, RouteTimeSlot timeSlot)
         {
-            return Task.FromResult(Result.FailureResult<bool>("Not implemented yet"));
+            try
+            {
+                if (routeId <= 0 || driverId <= 0)
+                {
+                    return Result.FailureResult<bool>("Invalid routeId or driverId");
+                }
+
+                var (context, dispose) = GetWriteContext();
+                try
+                {
+                    var route = await context.Routes.FindAsync(routeId);
+                    if (route == null)
+                    {
+                        return Result.FailureResult<bool>($"Route with ID {routeId} not found");
+                    }
+
+                    // Basic verification driver exists
+                    var driver = await context.Drivers.FindAsync(driverId);
+                    if (driver == null)
+                    {
+                        return Result.FailureResult<bool>($"Driver with ID {driverId} not found");
+                    }
+
+                    switch (timeSlot)
+                    {
+                        case RouteTimeSlot.AM:
+                            route.AMDriverId = driverId;
+                            break;
+                        case RouteTimeSlot.PM:
+                            route.PMDriverId = driverId;
+                            break;
+                        case RouteTimeSlot.Both:
+                            route.AMDriverId = driverId;
+                            route.PMDriverId = driverId;
+                            break;
+                        default:
+                            return Result.FailureResult<bool>("Unsupported time slot");
+                    }
+
+                    await context.SaveChangesAsync();
+                    Logger.Information("Assigned driver {DriverId} to route {RouteId} for {TimeSlot}", driverId, routeId, timeSlot);
+                    return Result.SuccessResult(true);
+                }
+                finally
+                {
+                    if (dispose)
+                    {
+                        await context.DisposeAsync();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Error assigning driver {DriverId} to route {RouteId}", driverId, routeId);
+                return Result.FailureResult<bool>($"Error assigning driver to route: {ex.Message}");
+            }
         }
 
     public async Task<Result<RouteStop>> AddStopToRouteAsync(int routeId, RouteStop routeStop)
@@ -1191,10 +1323,7 @@ namespace BusBuddy.Core.Services
             }
         }
 
-        public Task<Result<bool>> ReorderRouteStopsAsync(int routeId, List<int> orderedStopIds)
-        {
-            return Task.FromResult(Result.FailureResult<bool>("Not implemented yet"));
-        }
+    // ReorderRouteStopsAsync implemented earlier (single implementation retained)
 
         public Task<Result<Route>> CloneRouteAsync(int sourceRouteId, DateTime newDate, string? newRouteName = null)
         {
