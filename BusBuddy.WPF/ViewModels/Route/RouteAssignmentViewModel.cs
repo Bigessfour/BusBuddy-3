@@ -2137,13 +2137,6 @@ namespace BusBuddy.WPF.ViewModels.Route
         }
 
         #endregion
-
-        #region IDisposable
-        public void Dispose()
-        {
-            try { _retimeDebounceTimer?.Dispose(); } catch { }
-            GC.SuppressFinalize(this);
-        }
-        #endregion
+    // Duplicate IDisposable region removed (primary implementation with logging retained earlier in file)
     }
 }
