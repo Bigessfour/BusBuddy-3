@@ -51,6 +51,66 @@ Notes:
 - Reference
   - Analyzer rule CA1869 — Use cached JsonSerializerOptions instances: https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1869
 
+### Delta — Aug 11, 2025 (MVP data seeding: Routes=5, Vehicles=10, Drivers=8)
+- What changed
+  - Added robust Azure SQL top-up seeding for Routes, Vehicles, and Drivers to hit MVP targets: Routes=5, Vehicles=10, Drivers=8 (Students already ≈54).
+  - New PowerShell scripts provide idempotent inserts with schema detection and a safe preview (-WhatIf). Vehicle inserts explicitly set GPSTracking=0 to satisfy non-null constraint.
+  - Verification script reports post-run counts; confirmed targets achieved against Azure DB.
+- Files (repo paths + raw links)
+  - PowerShell/Scripts/Seed-Mock-Routes.ps1 — main seeding script (WhatIf supported)
+    https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/PowerShell/Scripts/Seed-Mock-Routes.ps1
+  - PowerShell/Scripts/Verify-MVP-Data.ps1 — quick count report (Students/Routes/Vehicles/Drivers)
+    https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/PowerShell/Scripts/Verify-MVP-Data.ps1
+  - PowerShell/Scripts/Query-Students-Azure.ps1 — helper query for Students (AAD sqlcmd)
+    https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/PowerShell/Scripts/Query-Students-Azure.ps1
+  - Query-Students-Azure.ps1 (root convenience entrypoint)
+    https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/Query-Students-Azure.ps1
+- How it works
+  - Counts current rows, computes “needed” to reach targets, and inserts only the delta.
+  - Vehicles: Uses COL_LENGTH checks to support VIN vs VINNumber schemas; always includes GPSTracking=0; IF NOT EXISTS guard on BusNumber.
+  - Drivers: Handles DriversLicenceType vs DriversLicenseType naming; seeds basic contact/status fields.
+  - Routes: Inserts RouteName/Date with IF NOT EXISTS guard; sets IsActive=1.
+  - All INSERTs are wrapped to be re-runnable without duplication.
+- Azure target
+  - Server: busbuddy-server-sm2.database.windows.net (AAD auth)
+  - Database: BusBuddyDB
+- Usage (PowerShell 7)
+  - Preview only (no changes):
+    ```powershell
+    pwsh -File .\PowerShell\Scripts\Seed-Mock-Routes.ps1 -WhatIf
+    ```
+  - Apply changes, then verify:
+    ```powershell
+    pwsh -File .\PowerShell\Scripts\Seed-Mock-Routes.ps1
+    pwsh -File .\PowerShell\Scripts\Verify-MVP-Data.ps1
+    ```
+- Expected verification (post-run)
+  - Students=54, Routes=5, Vehicles=10, Drivers=8.
+- Key script internals (for maintainers)
+  - Invoke-ScalarInt: runs scalar SELECT queries via sqlcmd and robustly parses integer results (handles headers/extra whitespace).
+  - Invoke-Sql: executes T-SQL blocks or prints them when -WhatIf is used (no side effects).
+  - New-VehiclesSql/New-DriversSql/New-RoutesSql: generate guarded INSERT statements using COL_LENGTH/IF NOT EXISTS checks. Vehicles always include GPSTracking=0 and choose VIN or VINNumber depending on schema.
+- Sample output
+  - WhatIf preview trims to essentials and shows no changes applied.
+  - Real run example:
+    ```text
+    Current -> Target (need): Vehicles=3 -> 10 (+7), Drivers=2 -> 8 (+6), Routes=1 -> 5 (+4)
+    Seeding complete. Verifying…
+    VehiclesBefore: 3, DriversBefore: 2, RoutesBefore: 1
+    VehiclesAfter: 10, DriversAfter: 8, RoutesAfter: 5
+    ```
+- Last run results (Aug 11, 2025)
+  - Verified via Verify-MVP-Data.ps1:
+    - Students 54, Routes 5, Vehicles 10, Drivers 8.
+- Notes and guarantees
+  - Idempotent by design; re-running won’t duplicate seeded items.
+  - Uses sqlcmd with Azure AD (-G) as documented by Microsoft; ensure your account has access to BusBuddyDB.
+  - Documentation-first references:
+    - PowerShell scripting: https://learn.microsoft.com/powershell/
+    - Azure SQL and sqlcmd: https://learn.microsoft.com/sql/tools/sqlcmd-utility
+    - EF Core (schema context): https://learn.microsoft.com/ef/core/
+
+
 ### Delta — Aug 10, 2025 (Tests + EF behavior + VM fixes)
 ### Delta — Aug 11, 2025 (MVP: Disable XAI and GEE by config)
 - What changed

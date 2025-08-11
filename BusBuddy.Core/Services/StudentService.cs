@@ -51,8 +51,11 @@ public class StudentService : IStudentService
 
     private static bool PhoneValidationWarnOnly()
     {
+        // Default to 'warn' for MVP so phone format issues do not block saves.
+        // Supported modes via BUSBUDDY_PHONE_VALIDATION_MODE: off | warn (default) | strict
         var mode = Environment.GetEnvironmentVariable("BUSBUDDY_PHONE_VALIDATION_MODE");
-        return !string.IsNullOrEmpty(mode) && mode.Equals("warn", StringComparison.OrdinalIgnoreCase);
+        if (string.IsNullOrEmpty(mode)) return true; // default: warn-only
+        return mode.Equals("warn", StringComparison.OrdinalIgnoreCase);
     }
 
     public StudentService(IBusBuddyDbContextFactory contextFactory, IGeocodingService? geocodingService = null)
