@@ -23,6 +23,15 @@ namespace BusBuddy.WPF.Commands
         }
 
         /// <summary>
+        /// Creates a new parameterless command that can always execute.
+        /// </summary>
+        /// <param name="execute">The execution logic.</param>
+        public RelayCommand(Action execute)
+            : this(_ => execute(), (Predicate<object?>?)null)
+        {
+        }
+
+        /// <summary>
         /// Creates a new command.
         /// </summary>
         /// <param name="execute">The execution logic.</param>
@@ -31,6 +40,16 @@ namespace BusBuddy.WPF.Commands
         {
             _execute = execute ?? throw new ArgumentNullException(nameof(execute));
             _canExecute = canExecute;
+        }
+
+        /// <summary>
+        /// Creates a new parameterless command with optional canExecute (no parameter version).
+        /// </summary>
+        /// <param name="execute">The execution logic.</param>
+        /// <param name="canExecute">Predicate returning whether command can execute.</param>
+        public RelayCommand(Action execute, Func<bool>? canExecute)
+            : this(_ => execute(), canExecute != null ? new Predicate<object?>(_ => canExecute()) : null)
+        {
         }
 
         /// <summary>
@@ -60,5 +79,10 @@ namespace BusBuddy.WPF.Commands
         {
             _execute(parameter);
         }
+
+    /// <summary>
+    /// Manually force WPF to requery CanExecute (used by some ViewModels for dynamic button state)
+    /// </summary>
+    public void RaiseCanExecuteChanged() => CommandManager.InvalidateRequerySuggested();
     }
 }

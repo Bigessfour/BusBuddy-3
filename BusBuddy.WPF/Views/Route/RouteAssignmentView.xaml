@@ -21,6 +21,7 @@
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
         <!-- Header -->
@@ -223,12 +224,63 @@
                                          Command="{Binding ViewScheduleCommand}"
                                          Padding="12,8"
                                          Background="{DynamicResource ButtonBackgroundBrush}" Foreground="{DynamicResource ButtonForegroundBrush}"/>
+                    <syncfusion:ButtonAdv Label="🗺️ Plot Route Students"
+                                         Command="{Binding PlotRouteOnMapCommand}"
+                                         Margin="0,10,0,0" Padding="12,8"
+                                         Background="{DynamicResource ButtonBackgroundBrush}" Foreground="{DynamicResource ButtonForegroundBrush}"/>
+                    <syncfusion:ButtonAdv Label="🖨️ Print Map"
+                                         Command="{Binding PrintMapCommand}"
+                                         Margin="0,10,0,10" Padding="12,8"
+                                         Background="{DynamicResource ButtonBackgroundBrush}" Foreground="{DynamicResource ButtonForegroundBrush}"/>
+                    <syncfusion:ButtonAdv Label="⏱️ Time Stops"
+                                         Command="{Binding TimeRouteCommand}"
+                                         Padding="12,8"
+                                         Background="{DynamicResource ButtonBackgroundBrush}" Foreground="{DynamicResource ButtonForegroundBrush}"/>
                 </StackPanel>
             </GroupBox>
         </Grid>
 
+        <!-- Route Stops Timing Section -->
+        <GroupBox Grid.Row="2" Header="🛑 Route Stops (Timing)" Margin="0,20,0,0">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+                <StackPanel Orientation="Horizontal" Margin="10,10,10,5">
+                    <Label Content="Start Time (HH:mm):" VerticalAlignment="Center"/>
+                    <syncfusion:SfMaskedEdit Width="90" Margin="8,0,0,0"
+                                             Text="{Binding StartTimeString, Mode=TwoWay}"/>
+                    <TextBlock Text="Default 07:30" Margin="10,0,0,0" VerticalAlignment="Center" FontStyle="Italic"/>
+                </StackPanel>
+                <syncfusion:SfDataGrid Grid.Row="1"
+                                      ItemsSource="{Binding RouteStops}"
+                                      AutoGenerateColumns="False"
+                                      AllowSorting="True"
+                                      SelectionMode="Single"
+                                      GridLinesVisibility="Both"
+                                      Background="{DynamicResource BusBuddy.Brush.DataGrid.Background}">
+                    <syncfusion:SfDataGrid.Columns>
+                        <syncfusion:GridNumericColumn HeaderText="#" MappingName="StopOrder" Width="60"/>
+                        <syncfusion:GridTextColumn HeaderText="Stop" MappingName="StopName" Width="180"/>
+                        <!-- Using GridDateTimeColumn per Syncfusion documentation: https://help.syncfusion.com/wpf/datagrid/column-types -->
+                        <!-- Time display using DisplayBinding with StringFormat (Syncfusion GridDateTimeColumn supports formatting via DisplayBinding) -->
+                        <syncfusion:GridDateTimeColumn HeaderText="Arrival"
+                                                       MappingName="EstimatedArrivalTime"
+                                                       Width="120"
+                                                       DisplayBinding="{Binding EstimatedArrivalTime, StringFormat=HH:mm}" />
+                        <syncfusion:GridDateTimeColumn HeaderText="Departure"
+                                                       MappingName="EstimatedDepartureTime"
+                                                       Width="120"
+                                                       DisplayBinding="{Binding EstimatedDepartureTime, StringFormat=HH:mm}" />
+                        <syncfusion:GridNumericColumn HeaderText="Dwell (min)" MappingName="StopDuration" Width="110"/>
+                    </syncfusion:SfDataGrid.Columns>
+                </syncfusion:SfDataGrid>
+            </Grid>
+        </GroupBox>
+
         <!-- Status Bar -->
-    <Border Grid.Row="2" Background="{DynamicResource ContentBackgroundBrush}" Padding="15,10" Margin="0,20,0,0" CornerRadius="3">
+    <Border Grid.Row="3" Background="{DynamicResource ContentBackgroundBrush}" Padding="15,10" Margin="0,20,0,0" CornerRadius="3">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>

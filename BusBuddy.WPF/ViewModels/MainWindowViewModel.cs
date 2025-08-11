@@ -200,5 +200,77 @@ namespace BusBuddy.WPF.ViewModels
                 DriversLicenceType = "CDL"
             });
         }
+
+        // Simple refresh methods used by MainWindow after dialog operations
+        public async Task RefreshStudentsAsync()
+        {
+            if (_studentService != null)
+            {
+                try
+                {
+                    var students = await _studentService.GetAllStudentsAsync();
+                    Students.Clear();
+                    foreach (var s in students) Students.Add(s);
+                }
+                catch (Exception ex)
+                {
+                    Logger.Warning(ex, "RefreshStudentsAsync failed; retaining existing collection");
+                }
+            }
+        }
+
+        public async Task RefreshRoutesAsync()
+        {
+            if (_routeService != null)
+            {
+                try
+                {
+                    var routesResult = await _routeService.GetAllRoutesAsync();
+                    if (routesResult.IsSuccess && routesResult.Value != null)
+                    {
+                        Routes.Clear();
+                        foreach (var r in routesResult.Value) Routes.Add(r);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Logger.Warning(ex, "RefreshRoutesAsync failed; retaining existing collection");
+                }
+            }
+        }
+
+        public async Task RefreshBusesAsync()
+        {
+            if (_busService != null)
+            {
+                try
+                {
+                    var buses = await _busService.GetAllBusesAsync();
+                    Buses.Clear();
+                    foreach (var b in buses) Buses.Add(b);
+                }
+                catch (Exception ex)
+                {
+                    Logger.Warning(ex, "RefreshBusesAsync failed; retaining existing collection");
+                }
+            }
+        }
+
+        public async Task RefreshDriversAsync()
+        {
+            if (_driverService != null)
+            {
+                try
+                {
+                    var drivers = await _driverService.GetAllDriversAsync();
+                    Drivers.Clear();
+                    foreach (var d in drivers) Drivers.Add(d);
+                }
+                catch (Exception ex)
+                {
+                    Logger.Warning(ex, "RefreshDriversAsync failed; retaining existing collection");
+                }
+            }
+        }
     }
 }

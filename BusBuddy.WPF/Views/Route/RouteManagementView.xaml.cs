@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using Serilog;
@@ -8,6 +9,7 @@ using System.Windows.Media;
 using System.Windows.Threading;
 using Syncfusion.SfSkinManager; // Syncfusion WPF Theming — see official docs: https://help.syncfusion.com/wpf/themes/overview
 using BusBuddy.WPF.ViewModels.Route;
+using CommunityToolkit.Mvvm.Input; // IAsyncRelayCommand
 
 namespace BusBuddy.WPF.Views.Route
 {
@@ -17,89 +19,110 @@ namespace BusBuddy.WPF.Views.Route
     /// </summary>
     public partial class RouteManagementView : UserControl
     {
-    private static readonly ILogger Log = Serilog.Log.ForContext<RouteManagementView>();
-        private static readonly ILogger Logger = Log.ForContext<RouteManagementView>();
+    // Ensure Serilog per standards — https://learn.microsoft.com/dotnet/core/diagnostics/serilog-logging
+    private static readonly ILogger Logger = Log.ForContext<RouteManagementView>();
+    private bool _isDataReady;
+    private DateTime _loadStartedUtc;
+    private bool _auditRun;
 
         public RouteManagementView()
         {
             Logger.Debug("RouteManagementView ctor start");
+        try
+        {
+            InitializeComponent();
+
+            // Add async lifecycle handlers after InitializeComponent
+            Loaded += OnLoadedAsync;
+            // Only run audit once, not on Unloaded
+
+            // Attach bubbling interaction diagnostics
             try
             {
-                InitializeComponent();
-                DataContext = new RouteManagementViewModel();
-
-                Loaded += OnLoaded;
-                Unloaded += OnUnloaded;
-
-                // Attach bubbling interaction diagnostics
-                try
-                {
-                    AddHandler(ButtonBase.ClickEvent, new RoutedEventHandler(OnAnyButtonClick), true);
-                    AddHandler(Selector.SelectionChangedEvent, new SelectionChangedEventHandler(OnAnySelectionChanged), true);
-                    AddHandler(TextBoxBase.TextChangedEvent, new TextChangedEventHandler(OnAnyTextChanged), true);
-                    AddHandler(System.Windows.Controls.Validation.ErrorEvent, new EventHandler<ValidationErrorEventArgs>(OnValidationError), true);
-                }
-                catch (Exception ex)
-                {
-                    Logger.Warning(ex, "RouteManagementView: failed to attach global handlers");
-                }
-
-                Logger.Information("RouteManagementView initialized");
+                AddHandler(ButtonBase.ClickEvent, new RoutedEventHandler(OnAnyButtonClick), true);
+                AddHandler(Selector.SelectionChangedEvent, new SelectionChangedEventHandler(OnAnySelectionChanged), true);
+                AddHandler(TextBoxBase.TextChangedEvent, new TextChangedEventHandler(OnAnyTextChanged), true);
+                AddHandler(System.Windows.Controls.Validation.ErrorEvent, new EventHandler<ValidationErrorEventArgs>(OnValidationError), true);
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "RouteManagementView initialization failed");
-                throw;
+                Logger.Warning(ex, "RouteManagementView: failed to attach global handlers");
             }
+
+            Logger.Information("RouteManagementView initialized");
+        }
+        catch (Exception ex)
+        {
+            Logger.Error(ex, "RouteManagementView initialization failed");
+            throw;
+        }
         }
 
-        private void OnLoaded(object? sender, RoutedEventArgs e)
+        // Microsoft docs — FrameworkElement.Loaded/Unloaded events:
+        // https://learn.microsoft.com/dotnet/api/system.windows.frameworkelement.loaded
+        // https://learn.microsoft.com/dotnet/api/system.windows.frameworkelement.unloaded
+        // Syncfusion modal best practice — host UserControl inside ChromelessWindow and call ShowDialog:
+        // https://help.syncfusion.com/wpf/chromeless-window/getting-started
+
+        private async void OnLoadedAsync(object sender, RoutedEventArgs e)
         {
-            // Apply Syncfusion theme: prefer FluentDark with FluentLight fallback
+            if (!_auditRun)
+            {
+                AuditButtonsAccessibility();
+                _auditRun = true;
+            }
+            _loadStartedUtc = DateTime.UtcNow;
+            var vm = DataContext;
+
             try
             {
-                var window = Window.GetWindow(this);
-                if (window != null)
+                // Preferred: await a documented async command exposed by the ViewModel
+                if (vm is not null &&
+                    vm.GetType().GetProperty("RefreshCommand")?.GetValue(vm) is IAsyncRelayCommand asyncCmd)
                 {
-                    SfSkinManager.ApplyThemeAsDefaultStyle = true; // documented pattern per Syncfusion SfSkinManager
-                    try
+                    await asyncCmd.ExecuteAsync(null);
+                }
+                else
+                {
+                    // Fallback: reflectively await LoadRoutesAsync if present (public or non-public)
+                    var mi = vm?.GetType().GetMethod(
+                        "LoadRoutesAsync",
+                        System.Reflection.BindingFlags.Instance |
+                        System.Reflection.BindingFlags.Public |
+                        System.Reflection.BindingFlags.NonPublic);
+
+                    if (mi != null && typeof(Task).IsAssignableFrom(mi.ReturnType))
                     {
-                        using var dark = new Theme("FluentDark");
-                        SfSkinManager.SetTheme(window, dark);
-                    }
-                    catch
-                    {
-                        try
-                        {
-                            using var light = new Theme("FluentLight");
-                            SfSkinManager.SetTheme(window, light);
-                        }
-                        catch { /* best-effort theming */ }
+                        var task = (Task)mi.Invoke(vm, null)!;
+                        await task.ConfigureAwait(true);
                     }
                 }
-            }
-            catch { /* non-fatal theming issue */ }
 
-            Log.Information("Loaded {ViewName} with theme resource {ResourceKey}", GetType().Name, "BusBuddy.Brush.Primary");
-            Logger.Information("RouteManagementView Loaded — DataContext={DC}", DataContext?.GetType().Name ?? "(null)");
-            // Run accessibility audit after layout is ready
-            try { Dispatcher.BeginInvoke(new Action(AuditButtonsAccessibility), DispatcherPriority.Loaded); }
-            catch (Exception ex) { Logger.Warning(ex, "RouteManagementView: audit scheduling failed"); }
+                _isDataReady = true;
+
+                var elapsedMs = (DateTime.UtcNow - _loadStartedUtc).TotalMilliseconds;
+                Logger.Information("RouteManagementView data ready — time-to-modal-ready {ElapsedMs} ms", elapsedMs);
+
+                // Safe point to show a modal dialog that hosts this view or a child UserControl.
+                // Syncfusion guidance: host UserControls in a ChromelessWindow and call ShowDialog after data readiness.
+                // Example (leave modal creation where it belongs):
+                // var win = new Syncfusion.Windows.Tools.Controls.ChromelessWindow { Content = new RouteDialogContent() };
+                // win.ShowDialog();
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Failed during RouteManagementView data preload");
+            }
         }
 
-        private void OnUnloaded(object? sender, RoutedEventArgs e)
+        private void OnUnloadedGuard(object? sender, RoutedEventArgs e)
         {
-            Logger.Information("RouteManagementView Unloaded — cleaning up");
-            try
+            if (!_isDataReady)
             {
-                Loaded -= OnLoaded;
-                Unloaded -= OnUnloaded;
-                RemoveHandler(ButtonBase.ClickEvent, new RoutedEventHandler(OnAnyButtonClick));
-                RemoveHandler(Selector.SelectionChangedEvent, new SelectionChangedEventHandler(OnAnySelectionChanged));
-                RemoveHandler(TextBoxBase.TextChangedEvent, new TextChangedEventHandler(OnAnyTextChanged));
-                RemoveHandler(System.Windows.Controls.Validation.ErrorEvent, new EventHandler<ValidationErrorEventArgs>(OnValidationError));
+                // Prevent premature unload while data is not ready (per request)
+                e.Handled = true;
+                Logger.Warning("Prevented premature unload of RouteManagementView — data not ready");
             }
-            catch { }
         }
 
         private void OnAnyButtonClick(object? sender, RoutedEventArgs e)
@@ -188,8 +211,17 @@ namespace BusBuddy.WPF.Views.Route
         private void AuditButtonsAccessibility()
         {
             int total = 0, adv = 0, missingLabel = 0, missingAuto = 0, noCmd = 0;
-            foreach (var d in Traverse(this))
+            var queue = new System.Collections.Generic.Queue<DependencyObject>();
+            queue.Enqueue(this);
+            while (queue.Count > 0)
             {
+                var d = queue.Dequeue();
+                int count = VisualTreeHelper.GetChildrenCount(d);
+                for (int i = 0; i < count; i++)
+                {
+                    var child = VisualTreeHelper.GetChild(d, i);
+                    if (child != null) queue.Enqueue(child);
+                }
                 if (d is Syncfusion.Windows.Tools.Controls.ButtonAdv badv)
                 {
                     total++; adv++;
@@ -197,8 +229,10 @@ namespace BusBuddy.WPF.Views.Route
                     bool hasCmd = badv.Command != null; if (!hasCmd) noCmd++;
                     if (string.IsNullOrWhiteSpace(label)) missingLabel++;
                     if (string.IsNullOrWhiteSpace(autoName)) missingAuto++;
+#if DEBUG
                     if (string.IsNullOrWhiteSpace(label) && string.IsNullOrWhiteSpace(autoName))
                         Logger.Warning("RouteMgmt Audit — ButtonAdv missing label and AutomationProperties.Name: {Name}", (badv as FrameworkElement)?.Name ?? "(unnamed)");
+#endif
                 }
                 else if (d is Button btn)
                 {
@@ -207,24 +241,15 @@ namespace BusBuddy.WPF.Views.Route
                     bool hasCmd = btn.Command != null; if (!hasCmd) noCmd++;
                     if (string.IsNullOrWhiteSpace(content)) missingLabel++;
                     if (string.IsNullOrWhiteSpace(autoName)) missingAuto++;
+#if DEBUG
                     if (string.IsNullOrWhiteSpace(content) && string.IsNullOrWhiteSpace(autoName))
                         Logger.Warning("RouteMgmt Audit — Button missing Content and AutomationProperties.Name: {Name}", btn.Name ?? "(unnamed)");
+#endif
                 }
             }
             Logger.Information("RouteMgmt Audit Summary — Buttons={Total}, ButtonAdv={Adv}, MissingLabel/Content={MissingLabel}, MissingAutomationName={MissingAuto}, NoCommand={NoCmd}", total, adv, missingLabel, missingAuto, noCmd);
         }
 
-        private static System.Collections.Generic.IEnumerable<DependencyObject> Traverse(DependencyObject root)
-        {
-            if (root == null) yield break;
-            var count = VisualTreeHelper.GetChildrenCount(root);
-            for (int i = 0; i < count; i++)
-            {
-                var child = VisualTreeHelper.GetChild(root, i);
-                if (child == null) continue;
-                yield return child;
-                foreach (var g in Traverse(child)) yield return g;
-            }
-        }
+    // Traverse method removed; replaced with queue-based traversal in AuditButtonsAccessibility
     }
 }

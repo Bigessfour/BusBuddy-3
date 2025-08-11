@@ -881,6 +881,51 @@ namespace BusBuddy.Core.Services
             }
         }
 
+        /// <summary>
+        /// Persist updated arrival/departure timing for a set of route stops.
+        /// </summary>
+        public async Task<Result<bool>> UpdateRouteStopsTimingAsync(int routeId, IEnumerable<RouteStop> stops)
+        {
+            try
+            {
+                var (context, dispose) = GetWriteContext();
+                try
+                {
+                    var stopIds = stops.Select(s => s.RouteStopId).ToList();
+                    var dbStops = await context.RouteStops
+                        .Where(rs => rs.RouteId == routeId && stopIds.Contains(rs.RouteStopId))
+                        .ToListAsync();
+
+                    foreach (var updated in stops)
+                    {
+                        var match = dbStops.FirstOrDefault(s => s.RouteStopId == updated.RouteStopId);
+                        if (match != null)
+                        {
+                            match.EstimatedArrivalTime = updated.EstimatedArrivalTime;
+                            match.EstimatedDepartureTime = updated.EstimatedDepartureTime;
+                            match.UpdatedDate = DateTime.UtcNow;
+                        }
+                    }
+
+                    await context.SaveChangesAsync();
+                    Logger.Information("Updated timing for {Count} stops on RouteId={RouteId}", dbStops.Count, routeId);
+                    return Result.SuccessResult(true);
+                }
+                finally
+                {
+                    if (dispose)
+                    {
+                        await context.DisposeAsync();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Error updating route stop timing for RouteId={RouteId}", routeId);
+                return Result.FailureResult<bool>($"Error updating stop timing: {ex.Message}");
+            }
+        }
+
         public async Task<Result<bool>> CanAssignStudentToRouteAsync(int studentId, int routeId)
         {
             try

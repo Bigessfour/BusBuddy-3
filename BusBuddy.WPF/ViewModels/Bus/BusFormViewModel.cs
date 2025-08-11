@@ -3,6 +3,7 @@ using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Input;
+using BusBuddy.WPF.Commands;
 using BusBuddy.Core.Models;
 using BusBuddy.Core.Services;
 
@@ -275,28 +276,7 @@ namespace BusBuddy.WPF.ViewModels.Bus
 
     #region Helper Classes
 
-    /// <summary>
-    /// Simple RelayCommand implementation for MVP
-    /// </summary>
-    public class RelayCommand : ICommand
-    {
-        private readonly Action _execute;
-        private readonly Func<bool>? _canExecute;
-
-        public RelayCommand(Action execute, Func<bool>? canExecute = null)
-        {
-            _execute = execute ?? throw new ArgumentNullException(nameof(execute));
-            _canExecute = canExecute;
-        }
-
-        public event EventHandler? CanExecuteChanged;
-
-        public bool CanExecute(object? parameter) => _canExecute?.Invoke() ?? true;
-
-        public void Execute(object? parameter) => _execute();
-
-        public void RaiseCanExecuteChanged() => CanExecuteChanged?.Invoke(this, EventArgs.Empty);
-    }
+    // RelayCommand consolidated centrally in BusBuddy.WPF.Commands
 
     /// <summary>
     /// Placeholder bus service interface for MVP

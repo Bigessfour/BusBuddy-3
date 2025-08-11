@@ -10,6 +10,7 @@ using BusBuddy.Core.Models;
 using Serilog;
 using System.Windows.Input;
 using CommunityToolkit.Mvvm.Input;
+using System.Threading.Tasks;
 
 namespace BusBuddy.WPF.ViewModels.Route
 {
@@ -19,15 +20,15 @@ namespace BusBuddy.WPF.ViewModels.Route
     /// </summary>
     public class RouteManagementViewModel : INotifyPropertyChanged, IDisposable
     {
-    private static readonly ILogger Logger = Log.ForContext<RouteManagementViewModel>();
-    /// <summary>
-    /// Backing collection of routes displayed in the grid. Bound to <see cref="RoutesView"/> for filtering.
-    /// </summary>
+        private static readonly ILogger Logger = Log.ForContext<RouteManagementViewModel>();
+        /// <summary>
+        /// Backing collection of routes displayed in the grid. Bound to <see cref="RoutesView"/> for filtering.
+        /// </summary>
         public ObservableCollection<BusBuddy.Core.Models.Route> Routes { get; set; } = new();
 
-    /// <summary>
-    /// CollectionView wrapper that provides filtering and view operations for <see cref="Routes"/>.
-    /// </summary>
+        /// <summary>
+        /// CollectionView wrapper that provides filtering and view operations for <see cref="Routes"/>.
+        /// </summary>
         public ICollectionView RoutesView { get; private set; }
 
         // Entity Framework context for data access
@@ -117,7 +118,9 @@ namespace BusBuddy.WPF.ViewModels.Route
             _contextFactory = new BusBuddyDbContextFactory();
             RoutesView = CollectionViewSource.GetDefaultView(Routes);
             RoutesView.Filter = FilterRoutes;
-            LoadRoutes();
+
+            // Kick off async load
+            _ = LoadRoutesAsync();
 
             // Wire commands
             AddRouteCommand = new RelayCommand(AddRoute);
@@ -131,23 +134,26 @@ namespace BusBuddy.WPF.ViewModels.Route
             ExportReportCommand = new RelayCommand(ExportReport);
             PrintScheduleCommand = new RelayCommand(PrintSchedule);
             PrintRouteMapsCommand = new RelayCommand(PrintMaps);
-            RefreshCommand = new RelayCommand(() => LoadRoutes());
+            RefreshCommand = new AsyncRelayCommand(LoadRoutesAsync);
+
+            // Ensure initial command states reflect current selection
+            RefreshSelectionDependentCommands();
         }
 
-    /// <summary>
-    /// Loads routes from the database into the <see cref="Routes"/> collection and refreshes the view.
-    /// </summary>
-    private void LoadRoutes()
+        /// <summary>
+        /// Loads routes from the database into the Routes collection and refreshes the view.
+        /// </summary>
+        private async Task LoadRoutesAsync()
         {
-            // Quick win: load routes directly via EF Core using the factory (read-only context)
             try
             {
                 using var context = _contextFactory.CreateDbContext();
 
-                // Basic ordered load; context is already NoTracking for reads
-                var routes = context.Routes
+                // Async ordered load; DbContext configured for NoTracking when reading (if applicable)
+                var routes = await context.Routes
                     .OrderBy(r => r.RouteName)
-                    .ToList();
+                    .ToListAsync()
+                    .ConfigureAwait(true); // resume on UI thread
 
                 Routes.Clear();
                 foreach (var r in routes)
@@ -160,6 +166,9 @@ namespace BusBuddy.WPF.ViewModels.Route
                 OnPropertyChanged(nameof(TotalRoutes));
                 OnPropertyChanged(nameof(ActiveRoutes));
                 OnPropertyChanged(nameof(TotalAssignedStudents));
+
+                // Update command states after data refresh
+                RefreshSelectionDependentCommands();
             }
             catch (Exception ex)
             {
@@ -169,10 +178,10 @@ namespace BusBuddy.WPF.ViewModels.Route
             }
         }
 
-    /// <summary>
-    /// Predicate used by <see cref="RoutesView"/> to filter the collection based on <see cref="QuickSearchText"/>.
-    /// </summary>
-    private bool FilterRoutes(object obj)
+        /// <summary>
+        /// Predicate used by RoutesView to filter the collection based on QuickSearchText.
+        /// </summary>
+        private bool FilterRoutes(object obj)
         {
             if (obj is not BusBuddy.Core.Models.Route r)
             {
@@ -227,11 +236,13 @@ namespace BusBuddy.WPF.ViewModels.Route
                     School = SelectedRoute.School
                 };
                 // TODO: Add to service in Phase 2
-                LoadRoutes();
+                _ = LoadRoutesAsync();
             }
         }
 
-    // Stubs to satisfy UI; can be implemented later
+    /// <summary>
+    /// Stubs to satisfy UI; can be implemented later
+    /// </summary>
         private void EditSelectedRoute()
         {
             if (SelectedRoute is null) return;
@@ -280,7 +291,7 @@ namespace BusBuddy.WPF.ViewModels.Route
 
                 // Update UI collection
                 Routes.Remove(SelectedRoute);
-                SelectedRoute = null;
+                SelectedRoute = null; // triggers CanExecute updates
                 RoutesView.Refresh();
                 OnPropertyChanged(nameof(TotalRoutes));
                 OnPropertyChanged(nameof(ActiveRoutes));
@@ -294,7 +305,38 @@ namespace BusBuddy.WPF.ViewModels.Route
         }
     private void GenerateSchedule() { StatusMessage = "Generated schedule (stub)"; }
     private void OpenMapView() { StatusMessage = "Opening map (stub)"; }
-    private void AssignStudents() { StatusMessage = "Assign students (stub)"; }
+    private void AssignStudents()
+    {
+        if (SelectedRoute == null)
+        {
+            StatusMessage = "Select a route first";
+            return;
+        }
+        try
+        {
+            StatusMessage = $"Opening assignment for '{SelectedRoute.RouteName}'...";
+            // Lazy load to avoid direct dependency if view not used elsewhere
+            var assignmentView = new BusBuddy.WPF.Views.Route.RouteAssignmentView(SelectedRoute);
+            var window = new System.Windows.Window
+            {
+                Title = $"Assign Students - {SelectedRoute.RouteName}",
+                Content = assignmentView,
+                Owner = System.Windows.Application.Current?.MainWindow,
+                Width = 1200,
+                Height = 800,
+                WindowStartupLocation = System.Windows.WindowStartupLocation.CenterOwner
+            };
+            window.ShowDialog();
+            // After dialog closes refresh counts
+            _ = LoadRoutesAsync();
+            StatusMessage = $"Closed assignment for '{SelectedRoute.RouteName}'";
+        }
+        catch (Exception ex)
+        {
+            Logger.Error(ex, "Failed opening student assignment view");
+            StatusMessage = $"Error opening assignment: {ex.Message}";
+        }
+    }
     private void AssignVehicle() { StatusMessage = "Assign vehicle (stub)"; }
     private void ExportCsv() { StatusMessage = "Exported CSV (stub)"; }
     private void ExportReport() { StatusMessage = "Exported report (stub)"; }
@@ -312,6 +354,18 @@ namespace BusBuddy.WPF.ViewModels.Route
         protected void OnPropertyChanged([CallerMemberName] string? propertyName = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+            // If selection state changed, refresh commands depending on it
+            if (propertyName == nameof(IsRouteSelected))
+            {
+                RefreshSelectionDependentCommands();
+            }
+        }
+
+        private void RefreshSelectionDependentCommands()
+        {
+            // Our lightweight RelayCommand implementation wires CanExecuteChanged to CommandManager.RequerySuggested
+            // so forcing a global requery is sufficient.
+            CommandManager.InvalidateRequerySuggested();
         }
     }
 }

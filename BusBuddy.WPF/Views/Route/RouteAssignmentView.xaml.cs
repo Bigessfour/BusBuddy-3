@@ -17,9 +17,8 @@ namespace BusBuddy.WPF.Views.Route
     public partial class RouteAssignmentView : UserControl
     {
         private static readonly ILogger Logger = Log.ForContext<RouteAssignmentView>();
-    private static readonly ILogger LogTheme = Log.ForContext<RouteAssignmentView>();
 
-        public RouteAssignmentView()
+    public RouteAssignmentView()
         {
             Logger.Debug("RouteAssignmentView constructor starting");
             try
@@ -60,6 +59,29 @@ namespace BusBuddy.WPF.Views.Route
             }
         }
 
+        /// <summary>
+        /// Overload allowing caller to provide a pre-selected route (used when invoked from RouteManagementView)
+        /// </summary>
+        /// <param name="preselectedRoute">Route to preselect in assignment UI</param>
+        public RouteAssignmentView(BusBuddy.Core.Models.Route preselectedRoute) : this()
+        {
+            try
+            {
+                if (DataContext is RouteAssignmentViewModel vm)
+                {
+                    // Replace DataContext with one that has preselected route so initial load can pick it
+                    var sp = App.ServiceProvider;
+                    IRouteService? routeService = null;
+                    try { routeService = sp?.GetService<IRouteService>(); } catch { }
+                    DataContext = new RouteAssignmentViewModel(routeService, preselectedRoute);
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Failed to apply preselected route in RouteAssignmentView");
+            }
+        }
+
         private void OnLoaded(object sender, System.Windows.RoutedEventArgs e)
         {
             try
@@ -70,26 +92,39 @@ namespace BusBuddy.WPF.Views.Route
                     var window = Window.GetWindow(this);
                     if (window != null)
                     {
-                        SfSkinManager.ApplyThemeAsDefaultStyle = true;
-                        using var dark = new Theme("FluentDark");
-                        SfSkinManager.SetTheme(window, dark);
+                        // Prefer centralized Syncfusion theme application to ensure consistency for modal dialogs
+                        BusBuddy.WPF.Utilities.SyncfusionThemeManager.ApplyTheme(window);
                     }
                 }
                 catch
                 {
+                    // Fallback to direct theme application if utility path fails
                     try
                     {
                         var window = Window.GetWindow(this);
                         if (window != null)
                         {
-                            using var light = new Theme("FluentLight");
-                            SfSkinManager.SetTheme(window, light);
+                            SfSkinManager.ApplyThemeAsDefaultStyle = true;
+                            using var dark = new Theme("FluentDark");
+                            SfSkinManager.SetTheme(window, dark);
                         }
                     }
-                    catch { }
+                    catch
+                    {
+                        try
+                        {
+                            var window = Window.GetWindow(this);
+                            if (window != null)
+                            {
+                                using var light = new Theme("FluentLight");
+                                SfSkinManager.SetTheme(window, light);
+                            }
+                        }
+                        catch { }
+                    }
                 }
 
-                LogTheme.Information("Loaded {ViewName} with theme resource {ResourceKey}", GetType().Name, "BusBuddy.Brush.Primary");
+                Logger.Information("Loaded {ViewName} with theme resource {ResourceKey}", GetType().Name, "BusBuddy.Brush.Primary");
             }
             catch { }
         }

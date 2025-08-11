@@ -12,8 +12,12 @@ on:
         description: "Enable debug mode for troubleshooting"
         default: false
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
-  DOTNET_VERSION: "8.0.x"
+  DOTNET_VERSION: "9.0.x"
   SOLUTION_FILE: "BusBuddy.sln"
   BUILD_CONFIGURATION: "Release"
 

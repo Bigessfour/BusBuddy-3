@@ -28,12 +28,73 @@ Notes:
 - This follows official .NET guidance to use StringComparison for culture/ordinal behavior instead of allocating ToLower/ToUpper strings. See: https://learn.microsoft.com/dotnet/standard/base-types/best-practices-strings#recommendations-for-string-operations
 - MVP scope rule: Only Student views/MainWindow were eligible for code changes now; all other occurrences are intentionally deferred and recorded here.
 
+### Tech Debt — Route Planning & Assignment (Aug 11, 2025)
+Scope: Deferred polish items now that minimal route planning (create route, add basic stops, assign/remove students, assign bus/driver) is functional.
+
+| ID | Item | Current State | Impact if Deferred | Rationale for Deferral |
+|----|------|---------------|--------------------|------------------------|
+| RP-01 | Batch / multi-select student assignment | Not implemented (single student at a time) | More clicks for large cohorts | MVP demonstrates concept; volume optimization later |
+| RP-02 | Auto-assign (proximity / capacity heuristic) | Stub (AutoAssignStudentsAsync placeholder) | Manual effort to distribute students | Algorithm + geo data dependency; postpone complexity |
+| RP-03 | Live capacity enforcement in mock mode | Service path enforces; mock ignores | Possible over-assignment in mock | Mock path is demo-only; production path already guarded |
+| RP-04 | Persistent StudentCount sync (DB update without reload) | Incremented in-memory only | Counts may drift if external changes occur | Full recalculation/batch query can wait |
+| RP-05 | Route stop edit dialog (name/address geo-coded) | Add stop uses placeholder values | Less informative stops | Geo integration + validation later |
+| RP-06 | Distance & duration calculation | Fields present; no computation | Lacks analytics insight | Requires map/geo service integration |
+| RP-07 | Map visualization & printable maps | Stub (View Map) | No spatial verification | Mapping stack (Syncfusion Maps / GIS) post-MVP |
+| RP-08 | Route validation rules (capacity, stop order, duplicates) | Minimal (name + one stop) | Potential bad data slips through | Advanced ruleset after core usage feedback |
+| RP-09 | Driver/bus availability conflict checking | Assign overwrites silently | Possible logical conflicts | Need scheduling matrix first |
+| RP-10 | Bulk unassignment / route re-balance tool | Manual one-by-one | Slower reconfiguration | Depends on batch UI (RP-01) |
+| RP-11 | Utilization & capacity dashboard | Service method partially present | Limited oversight | Requires aggregation + UI charts |
+| RP-12 | Drag & drop reorder for students / stops | Stops have manual move buttons only | Slightly less intuitive UX | Usability enhancement, not correctness |
+| RP-13 | Undo / revert last assignment | Not available | Irreversible single misclick | Requires lightweight command stack |
+| RP-14 | Background refresh after external assignments | Manual refresh only | Stale data risk in multi-user | Needs eventing / polling infra |
+
+Planned Order (post-MVP): RP-01 → RP-02 → RP-07 → RP-06 → RP-11 (builds on earlier data fidelity and geo foundations).
+
+Acceptance (MVP) Criteria Met:
+- Create/select route, add placeholder stops, assign/remove students, assign bus/driver, simple validation & activation.
+- StudentCount increments in-memory on assignment/removal (visual feedback) — full persistence recalculation deferred (RP-04).
+
+
 # 🚌 BusBuddy Project - Grok Development Status
 
-**Last Updated:** August 11, 2025 — CA1869 fix (cached JsonSerializerOptions) + clean build; prior: UI Buttons/Forms Validation, GoogleEarth theming/cleanup, Activity DataContext, Unit Tests stabilization plan; StudentsViewModel + EF change detection fixes; new tests ✅  
+**Last Updated:** August 11, 2025 — RouteAssignmentViewModel corruption repair & constructor overloads added; CA1869 fix (cached JsonSerializerOptions); prior: UI Buttons/Forms Validation, GoogleEarth theming/cleanup, Activity DataContext, Unit Tests stabilization plan; StudentsViewModel + EF change detection fixes; new tests ✅  
 **Current Status:** Clean Build; Geo stack wired (SfMap + overlays + PIP eligibility + offline geocoding); UI buttons/forms validated across modules  
 **Repository Status:** Build Success — EF Core aligned; WPF mapping features validated  
 **Key Achievement:** End-to-end student → geocode → map plotting; eligibility (in district AND not in town) operational
+
+### Delta — Aug 11, 2025 (Route Assignment VM corruption repair + constructor overloads)
+- What changed
+  - Reconstructed `RouteAssignmentViewModel` after severe structural corruption (hundreds of CS0103 missing identifier errors, duplicated trailing code, malformed conditional) discovered during build.
+  - Added three documented overload constructors to satisfy view usages:
+    1. `RouteAssignmentViewModel()` — parameterless (designer / fallback) attempts DI resolve of `IRouteService`.
+    2. `RouteAssignmentViewModel(IRouteService? routeService)` — primary injection path from `RouteAssignmentView`.
+    3. `RouteAssignmentViewModel(IRouteService? routeService, Route preselectedRoute)` — supports pre-selection scenario in `RouteAssignmentView` overload.
+  - Centralized startup logic in private `Initialize()` method (calls `InitializeCommands()` then fires `_ = LoadDataFromServiceAsync()` for async population without blocking UI thread).
+  - Restored full backing field set (routes, buses, drivers, students, stops, selection, flags, status, timing) and removed duplicated plotting + INotifyPropertyChanged region that existed after class closing brace.
+  - Fixed malformed conditional in mock data loader (`if (match != null)` replacement for `if match != null)` syntax error).
+  - Ensured `PlotRouteOnMapCommand`, `TimeRouteCommand`, `PrintMapCommand` re-evaluate CanExecute after initialization.
+  - Updated view model to set `_preselectedRouteId` when constructed with a preselected route and apply `SelectedRoute` once lists load (immediate assignment if object instance passed).
+- Files (raw links)
+  - ViewModel (patched): https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.WPF/ViewModels/Route/RouteAssignmentViewModel.cs
+  - View (constructor usages): https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.WPF/Views/Route/RouteAssignmentView.xaml.cs
+- Build / Verification
+  - Pre-fix: Build failed with `CS1729` (“does not contain a constructor that takes 1/2 arguments”) from `RouteAssignmentView.xaml.cs` lines 37 & 76.
+  - Post-fix: Added overloads; build now succeeds (no CS1729; zero new analyzer warnings introduced beyond existing tech debt warnings).
+  - Manual smoke: Instantiating `RouteAssignmentView` now resolves DI service when available or defaults to parameterless constructor without exception.
+- Documentation-first references
+  - WPF Commanding (RelayCommand CanExecute patterns): https://learn.microsoft.com/dotnet/desktop/wpf/advanced/commanding-overview
+  - `INotifyPropertyChanged` interface usage: https://learn.microsoft.com/dotnet/api/system.componentmodel.inotifypropertychanged
+  - Serilog (context logger pattern with `ForContext<T>`): https://github.com/serilog/serilog
+- Remaining TODOs / Tech Debt (Route Assignment scope)
+  - Auto-assign heuristic (`AutoAssignStudentsAsync`) — currently placeholder with delay; implement capacity + proximity algorithm (needs geo distance service integration).
+  - Filtering logic (`FilterStudents()`) — refine to support multi-field search (Name, StudentNumber, Grade) with allocation-free, case-insensitive comparisons (see StringComparison guidance below).
+  - Map printing/export (`PrintMapCommand`) — stub; integrate with selected mapping/export control (post decision: Syncfusion map vs. embedded WebView strategy).
+  - Route stop advanced timing — current `TimeRouteStops()` applies simple incremental minutes; replace with distance-based ETA once geo routing service available.
+  - Capacity enforcement in mock mode — production path validated via service; mock still permits overflows (track under RP-03).
+  - Conflict detection for driver/bus reuse — implement scheduling matrix (ties into RP-09 in Route Planning Tech Debt table).
+  - Drag & drop reordering for stops and assigned students — replace Up/Down commands (RP-12) after ensuring Syncfusion drag template compatibility.
+  - Report generation (`GenerateReport()`) and schedule view (`ViewSchedule()`) — placeholders pending reporting module foundation.
+  - Cleanup: Evaluate if `_preselectedRouteId` field is still necessary once immediate `SelectedRoute` assignment confirmed; currently benign (warning previously noted now suppressed by actual assignment path on constructor overload with route instance).
 
 ### Delta — Aug 11, 2025 (Route Management theming + CRUD; StudentForm route binding)
 - What changed

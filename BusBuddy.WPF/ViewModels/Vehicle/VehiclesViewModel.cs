@@ -5,6 +5,7 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows;
+using BusBuddy.WPF.Commands;
 using System.Windows.Input;
 
 namespace BusBuddy.WPF.ViewModels.Vehicle
@@ -180,27 +181,5 @@ namespace BusBuddy.WPF.ViewModels.Vehicle
         #endregion
     }
 
-    #region Command Classes - Phase 1
-    public class RelayCommand : ICommand
-    {
-        private readonly Action _execute;
-        private readonly Func<bool>? _canExecute;
-
-        public RelayCommand(Action execute, Func<bool>? canExecute = null)
-        {
-            _execute = execute ?? throw new ArgumentNullException(nameof(execute));
-            _canExecute = canExecute;
-        }
-
-        public event EventHandler? CanExecuteChanged
-        {
-            add { CommandManager.RequerySuggested += value; }
-            remove { CommandManager.RequerySuggested -= value; }
-        }
-
-        public bool CanExecute(object? parameter) => _canExecute?.Invoke() ?? true;
-
-        public void Execute(object? parameter) => _execute();
-    }
-    #endregion
+    // RelayCommand implementation consolidated in BusBuddy.WPF.Commands.RelayCommand
 }

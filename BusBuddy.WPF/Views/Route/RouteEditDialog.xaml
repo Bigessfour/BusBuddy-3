@@ -20,13 +20,29 @@
         <TextBlock Text="Edit Route" FontWeight="Bold" FontSize="18" Margin="0,0,0,16"/>
         <StackPanel Grid.Row="1" Orientation="Vertical" Margin="0,0,0,8">
             <TextBlock Text="Start Location"/>
-            <syncfusion:SfMaskedEdit x:Name="StartMaskedEdit" MaskType="None" Width="250" Margin="0,2,0,8"/>
+            <syncfusion:SfMaskedEdit x:Name="StartMaskedEdit"
+                                    MaskType="Text"
+                                    Text="{Binding StartLocation, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                    Width="250" Margin="0,2,0,8"/>
             <TextBlock Text="End Location"/>
-            <syncfusion:SfMaskedEdit x:Name="EndMaskedEdit" MaskType="None" Width="250" Margin="0,2,0,8"/>
+            <syncfusion:SfMaskedEdit x:Name="EndMaskedEdit"
+                                    MaskType="Text"
+                                    Text="{Binding EndLocation, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                    Width="250" Margin="0,2,0,8"/>
             <TextBlock Text="Stops (comma separated)"/>
-            <syncfusion:SfMaskedEdit x:Name="StopsMaskedEdit" MaskType="None" Width="250" Margin="0,2,0,8"/>
+            <syncfusion:SfMaskedEdit x:Name="StopsMaskedEdit"
+                                    MaskType="Text"
+                                    Text="{Binding Stops, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                    Width="250" Margin="0,2,0,8"/>
         </StackPanel>
-    <syncfusion:ButtonAdv Grid.Row="4" Label="Save" Width="110" Height="36" HorizontalAlignment="Right" Margin="0,12,0,0"
-                   AutomationProperties.Name="Save Route Changes"/>
+    <syncfusion:ButtonAdv Grid.Row="4"
+                         Label="Save"
+                         Width="110"
+                         Height="36"
+                         HorizontalAlignment="Right"
+                         Margin="0,12,0,0"
+                         AutomationProperties.Name="Save Route Changes"
+                         Command="{Binding SaveCommand}"
+                         CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=UserControl}}"/>
     </Grid>
 </UserControl>

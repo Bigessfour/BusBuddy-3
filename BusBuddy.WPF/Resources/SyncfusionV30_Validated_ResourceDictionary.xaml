@@ -185,6 +185,19 @@
                    Color="{StaticResource BusBuddy.DataGrid.Border}"/>
 
   <!--  ===============================================================================  -->
+  <!--  SECTION 2.3: WARNING PANEL AND MUTED BRUSHES — USED BY FORMS (e.g., DriverForm)  -->
+  <!--  These keys are referenced directly via StaticResource in views and must be brushes -->
+  <!--  to avoid XAML parse errors.                                                        -->
+
+  <!--  Warning panel brushes (dark-theme friendly)  -->
+  <SolidColorBrush x:Key="BusBuddy.Warning.Background" Color="#2D2A00"/>
+  <SolidColorBrush x:Key="BusBuddy.Warning.Border"     Color="{StaticResource BusBuddy.Semantic.Warning}"/>
+  <SolidColorBrush x:Key="BusBuddy.Warning.Text"       Color="{StaticResource BusBuddy.Text.Warning}"/>
+
+  <!--  Muted brush used for secondary/cancel actions  -->
+  <SolidColorBrush x:Key="BusBuddy.Text.Muted" Color="#4D4D4D"/>
+
+  <!--  ===============================================================================  -->
   <!--  SECTION 3: SYNCFUSION CONTROL DOCUMENTATION  -->
   <!--  ===============================================================================  -->
   <!--  CONTROLS IDENTIFIED IN BUSBUDDY WORKSPACE:  -->

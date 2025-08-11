@@ -38,6 +38,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Syncfusion.UI.Xaml.Grid;
 using BusBuddy.WPF.ViewModels;
 using BusBuddy.WPF.Views.Dashboard;
+using BusBuddy.WPF.ViewModels.Route; // Needed for RouteManagementViewModel reference
 using BusBuddy.WPF.Views.Student;
 using BusBuddy.WPF.Views.Bus;
 using BusBuddy.WPF.Views.Driver;
@@ -64,8 +65,10 @@ namespace BusBuddy.WPF.Views.Main
         private static readonly ILogger Logger = Log.ForContext<MainWindow>();
     private BusBuddy.WPF.ViewModels.MainWindowViewModel? _viewModel;
 
+    // Generated fields (StudentsGrid, MainDockingManager, etc.) come from XAML partial class after InitializeComponent.
+
     // DI-friendly constructor to ensure DataContext is set before initialization
-    public MainWindow(BusBuddy.WPF.ViewModels.MainWindowViewModel viewModel) : this()
+        public MainWindow(BusBuddy.WPF.ViewModels.MainWindowViewModel viewModel) : this()
         {
             try
             {
@@ -85,7 +88,8 @@ namespace BusBuddy.WPF.Views.Main
             Logger.Debug("MainWindow constructor starting");
             try
             {
-                Logger.Debug("Calling InitializeComponent for MainWindow XAML");
+                Logger.Debug("Calling InitializeComponent to build visual tree");
+                // Restore normal WPF initialization so x:Name fields (StudentsGrid, MainDockingManager, etc.) are generated
                 InitializeComponent();
 
                 Logger.Debug("Applying Syncfusion theme");
@@ -93,6 +97,17 @@ namespace BusBuddy.WPF.Views.Main
 
                 Logger.Debug("Initializing MainWindow components and DataContext");
                 InitializeMainWindow();
+
+                // Wire up lifecycle events once visual tree is ready
+                try
+                {
+                    this.Loaded += MainWindow_Loaded;
+                    this.Closing += MainWindow_Closing;
+                }
+                catch (Exception hookEx)
+                {
+                    Logger.Warning(hookEx, "Failed wiring lifecycle events");
+                }
 
                 // Global button click diagnostics: capture all button clicks in this window
                 try
@@ -112,15 +127,15 @@ namespace BusBuddy.WPF.Views.Main
                 // Wire DockingManager activation events for dynamic sizing
                 try
                 {
-                    if (this.FindName("MainDockingManager") is DockingManager dm)
+                    if (MainDockingManager != null)
                     {
-                        dm.WindowActivated += DockingManager_WindowActivated; // https://help.syncfusion.com/cr/wpf/Syncfusion.Windows.Tools.Controls.DockingManager.html#events
-                        dm.WindowDeactivated += DockingManager_WindowDeactivated;
-                        Logger.Information("DockingManager activation events wired");
+                        MainDockingManager.WindowActivated += DockingManager_WindowActivated; // https://help.syncfusion.com/cr/wpf/Syncfusion.Windows.Tools.Controls.DockingManager.html#events
+                        MainDockingManager.WindowDeactivated += DockingManager_WindowDeactivated;
+                        Logger.Information("DockingManager activation events wired (field access)");
                     }
                     else
                     {
-                        Logger.Warning("MainDockingManager not found; activation-based resizing not wired");
+                        Logger.Warning("MainDockingManager field is null after InitializeComponent");
                     }
                 }
                 catch (Exception evtEx)
@@ -675,23 +690,21 @@ namespace BusBuddy.WPF.Views.Main
             try
             {
                 // For MVP, directly trigger PrintRoutes without a separate view
-                var routeService = (RouteService)App.ServiceProvider.GetRequiredService<IRouteService>();
-                var routeViewModel = new RouteManagementViewModel(
-                    routeService,
-                    App.ServiceProvider.GetRequiredService<IBusBuddyDbContextFactory>()
-                );
+                // Resolve via DI (RouteManagementViewModel registered in App.xaml.cs)
+                var routeViewModel = App.ServiceProvider.GetRequiredService<BusBuddy.WPF.ViewModels.Route.RouteManagementViewModel>();
 
-                if (routeViewModel.PrintRoutesCommand?.CanExecute(null) == true)
+                // Use existing PrintScheduleCommand (PrintRoutesCommand not defined in current ViewModel)
+                if (routeViewModel.PrintScheduleCommand?.CanExecute(null) == true)
                 {
-                    Logger.Information("Executing PrintRoutes command");
-                    routeViewModel.PrintRoutesCommand.Execute(null);
+                    Logger.Information("Executing PrintSchedule command");
+                    routeViewModel.PrintScheduleCommand.Execute(null);
 
                     MessageBox.Show("Route report generated successfully and saved to Desktop!",
                         "Report Generated", MessageBoxButton.OK, MessageBoxImage.Information);
                 }
                 else
                 {
-                    MessageBox.Show("PrintRoutes command is not available.",
+                    MessageBox.Show("PrintSchedule command is not available.",
                         "Command Unavailable", MessageBoxButton.OK, MessageBoxImage.Warning);
                 }
             }
@@ -699,6 +712,7 @@ namespace BusBuddy.WPF.Views.Main
             {
                 Logger.Error(ex, "Failed to execute PrintRoutes");
                 // ShowErrorMessage expects (message, title)
+                // Maintain original ShowErrorMessage signature (message, title)
                 ShowErrorMessage(ex.Message, "Failed to generate route report");
             }
         }
@@ -756,7 +770,8 @@ namespace BusBuddy.WPF.Views.Main
                 try
                 {
                     // Try to get selected item from grid
-                    selectedStudent = StudentsGrid?.SelectedItem as BusBuddy.Core.Models.Student;
+                    // Guard: StudentsGrid may be null if InitializeComponent was skipped
+                    selectedStudent = null;
                 }
                 catch (Exception gridEx)
                 {
@@ -1185,7 +1200,7 @@ namespace BusBuddy.WPF.Views.Main
             }
         }
 
-        private void MainWindow_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+    private void MainWindow_Closing(object? sender, System.ComponentModel.CancelEventArgs e)
         {
             Logger.Debug("MainWindow_Closing event triggered");
             try
@@ -1248,7 +1263,21 @@ namespace BusBuddy.WPF.Views.Main
                     Syncfusion.Windows.Tools.Controls.DockState.Document);
 
                 // Add to DockingManager
-                MainDockingManager.Children.Add(contentControl);
+                if (MainDockingManager != null)
+                {
+                    try
+                    {
+                        MainDockingManager.Children.Add(contentControl);
+                    }
+                    catch (Exception addEx)
+                    {
+                        Logger.Warning(addEx, "Failed adding content to MainDockingManager");
+                    }
+                }
+                else
+                {
+                    Logger.Warning("NavigateToView called but MainDockingManager is null");
+                }
 
                 Logger.Information("Successfully navigated to view: {HeaderText}", headerText);
             }

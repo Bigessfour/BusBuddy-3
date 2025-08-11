@@ -8,6 +8,11 @@ using BusBuddy.Core.Services;
 using BusBuddy.Core.Utilities;
 using BusBuddy.WPF.Commands;
 using Serilog;
+using Microsoft.Extensions.DependencyInjection; // For resolving GoogleEarthViewModel / services
+using BusBuddy.WPF.ViewModels.GoogleEarth; // Map markers
+using BusBuddy.Core.Services.Interfaces; // IGeocodingService
+using System.Globalization;
+
 
 namespace BusBuddy.WPF.ViewModels.Route
 {
@@ -18,154 +23,115 @@ namespace BusBuddy.WPF.ViewModels.Route
     /// </summary>
     public class RouteAssignmentViewModel : INotifyPropertyChanged
     {
-        private static readonly ILogger Logger = Log.ForContext<RouteAssignmentViewModel>();
-
-        // Services
-    /// <summary>
-    /// Route service used for CRUD and planning operations (optional during MVP).
-    /// </summary>
-        private readonly IRouteService? _routeService;
-        // private readonly IStudentService? _studentService;
-        // private readonly IBusService? _busService;
-        // private readonly IDriverService? _driverService;
-
-    // Collections
-    /// <summary>Students not currently assigned to any route.</summary>
-        private ObservableCollection<BusBuddy.Core.Models.Student> _unassignedStudents = new();
-    /// <summary>Available routes to assign students/buses/drivers.</summary>
+        // Backing fields for all properties (restored for CS0103 fix)
         private ObservableCollection<BusBuddy.Core.Models.Route> _availableRoutes = new();
-    /// <summary>Available buses for assignment.</summary>
         private ObservableCollection<BusBuddy.Core.Models.Bus> _availableBuses = new();
-    /// <summary>Available drivers for assignment.</summary>
         private ObservableCollection<BusBuddy.Core.Models.Driver> _availableDrivers = new();
-    /// <summary>Ordered list of stops in the working route.</summary>
         private ObservableCollection<RouteStop> _routeStops = new();
-    private ObservableCollection<BusBuddy.Core.Models.Student> _assignedStudentsForSelectedRoute = new();
-
-        // Selected Items
+        private ObservableCollection<BusBuddy.Core.Models.Student> _assignedStudentsForSelectedRoute = new();
+        private ObservableCollection<BusBuddy.Core.Models.Student> _unassignedStudents = new();
         private BusBuddy.Core.Models.Student? _selectedStudent;
         private BusBuddy.Core.Models.Student? _selectedAssignedStudent;
         private BusBuddy.Core.Models.Route? _selectedRoute;
         private BusBuddy.Core.Models.Bus? _selectedBus;
         private BusBuddy.Core.Models.Driver? _selectedDriver;
         private RouteStop? _selectedRouteStop;
-
-    // Route Building Properties
-    /// <summary>New route name when creating a route.</summary>
         private string _newRouteName = string.Empty;
-    /// <summary>Date associated with the new route (AM/PM specific later).</summary>
         private DateTime _newRouteDate = DateTime.Today;
-    /// <summary>Description for the new route.</summary>
         private string _newRouteDescription = string.Empty;
-    /// <summary>Selected time slot (AM/PM) for route operations.</summary>
         private BusBuddy.Core.Models.RouteTimeSlot _selectedTimeSlot = BusBuddy.Core.Models.RouteTimeSlot.AM;
-
-    // Search and Status
-    /// <summary>Text to filter student lists.</summary>
-        private string _studentSearchText = string.Empty;
-    /// <summary>Current status message for the view.</summary>
-        private string _statusMessage = "Ready to assign students to routes";
-
-        // Add missing backing fields for boolean properties
         private bool _isRouteBeingBuilt;
         private bool _isRouteActive;
         private bool _isLoading;
+        private string _studentSearchText = string.Empty;
+        private string _statusMessage = string.Empty;
+        private int? _preselectedRouteId;
+        private string _startTimeString = "07:30";
+        private readonly IRouteService? _routeService;
+        private static readonly ILogger Logger = Log.ForContext<RouteAssignmentViewModel>();
 
-    /// <summary>
-    /// DI-friendly constructor; routeService is optional for MVP scenarios.
-    /// </summary>
-    public RouteAssignmentViewModel(IRouteService? routeService = null)
+        // Constructors added (MVP restoration)
+        // 1) Parameterless for XAML designer / fallback
+        // 2) routeService injection (primary)
+        // 3) routeService + preselected route (used by RouteAssignmentView overload)
+        public RouteAssignmentViewModel()
+        {
+            try
+            {
+                // Try resolve IRouteService from DI if available
+                _routeService = App.ServiceProvider?.GetService<IRouteService>();
+            }
+            catch { }
+            Initialize();
+        }
+
+        public RouteAssignmentViewModel(IRouteService? routeService)
         {
             _routeService = routeService;
+            Initialize();
+        }
+
+        public RouteAssignmentViewModel(IRouteService? routeService, BusBuddy.Core.Models.Route preselectedRoute)
+        {
+            _routeService = routeService;
+            _preselectedRouteId = preselectedRoute?.RouteId;
+            Initialize();
+            // If the route collection already loaded synchronously (mock), select it
+            if (preselectedRoute != null)
+            {
+                SelectedRoute = preselectedRoute;
+            }
+        }
+
+        private void Initialize()
+        {
             InitializeCommands();
-            if (_routeService != null)
-            {
-                _ = LoadDataFromServiceAsync();
-            }
-            else
-            {
-                LoadMockData(); // fallback for MVP
-            }
-
-            Logger.Information("Enhanced RouteAssignmentViewModel initialized with route building capabilities");
+            // Kick off data load async (fire & forget)
+            _ = LoadDataFromServiceAsync();
         }
 
-        // MVP: Basic planning logic for assigning drivers and buses to routes
-        // Documentation: https://help.syncfusion.com/wpf/datagrid/row-selection
-
-        public void AssignDriverToRoute(BusBuddy.Core.Models.RouteTimeSlot slot = BusBuddy.Core.Models.RouteTimeSlot.AM)
-        {
-            // MVP stub: Assign selected driver to selected route for AM/PM
-            if (SelectedRoute != null && SelectedDriver != null)
-            {
-                if (slot == BusBuddy.Core.Models.RouteTimeSlot.AM)
-                {
-                    SelectedRoute.AMDriverId = SelectedDriver.DriverId;
-                }
-                else if (slot == BusBuddy.Core.Models.RouteTimeSlot.PM)
-                {
-                    SelectedRoute.PMDriverId = SelectedDriver.DriverId;
-                }
-                StatusMessage = $"Driver '{SelectedDriver.DriverName}' assigned to route '{SelectedRoute.RouteName}' ({slot}) (MVP stub)";
-            }
-        }
-
-        public void AssignBusToRoute(BusBuddy.Core.Models.RouteTimeSlot slot = BusBuddy.Core.Models.RouteTimeSlot.AM)
-        {
-            // MVP stub: Assign selected bus to selected route for AM/PM
-            if (SelectedRoute != null && SelectedBus != null)
-            {
-                if (slot == BusBuddy.Core.Models.RouteTimeSlot.AM)
-                {
-                    SelectedRoute.AMVehicleId = SelectedBus.VehicleId;
-                }
-                else if (slot == BusBuddy.Core.Models.RouteTimeSlot.PM)
-                {
-                    SelectedRoute.PMVehicleId = SelectedBus.VehicleId;
-                }
-                StatusMessage = $"Bus '{SelectedBus.BusNumber}' assigned to route '{SelectedRoute.RouteName}' ({slot}) (MVP stub)";
-            }
-        }
-
-        // Expose SaveRouteCommand for basic form integration
-        public ICommand GetSaveRouteCommand() => SaveRouteCommand;
-
-        #region Properties
-
-    // Existing Collections
-    /// <summary>Students not currently assigned to any route.</summary>
+        /// <summary>Unassigned students for assignment.</summary>
         public ObservableCollection<BusBuddy.Core.Models.Student> UnassignedStudents
         {
             get => _unassignedStudents;
             set => SetProperty(ref _unassignedStudents, value);
         }
 
-    /// <summary>Available routes to assign to.</summary>
-    public ObservableCollection<BusBuddy.Core.Models.Route> AvailableRoutes
+        /// <summary>Available routes to assign to.</summary>
+        public ObservableCollection<BusBuddy.Core.Models.Route> AvailableRoutes
         {
             get => _availableRoutes;
             set => SetProperty(ref _availableRoutes, value);
         }
 
-    /// <summary>Available buses for assignment.</summary>
-    public ObservableCollection<BusBuddy.Core.Models.Bus> AvailableBuses
+        /// <summary>Available buses for assignment.</summary>
+        public ObservableCollection<BusBuddy.Core.Models.Bus> AvailableBuses
         {
             get => _availableBuses;
             set => SetProperty(ref _availableBuses, value);
         }
 
-    /// <summary>Available drivers for assignment.</summary>
-    public ObservableCollection<BusBuddy.Core.Models.Driver> AvailableDrivers
+        /// <summary>Available drivers for assignment.</summary>
+        public ObservableCollection<BusBuddy.Core.Models.Driver> AvailableDrivers
         {
             get => _availableDrivers;
             set => SetProperty(ref _availableDrivers, value);
         }
 
-    /// <summary>Stops belonging to the selected/working route.</summary>
-    public ObservableCollection<RouteStop> RouteStops
+        /// <summary>Stops belonging to the selected/working route.</summary>
+        public ObservableCollection<RouteStop> RouteStops
         {
             get => _routeStops;
             set => SetProperty(ref _routeStops, value);
+        }
+
+        /// <summary>
+        /// User-entered base start time for timing route stops (HH:mm). Defaults to 07:30.
+        /// </summary>
+        public string StartTimeString
+        {
+            get => _startTimeString;
+            set => SetProperty(ref _startTimeString, value);
         }
 
         // Students currently assigned to the SelectedRoute (MVP-local collection)
@@ -392,7 +358,7 @@ namespace BusBuddy.WPF.ViewModels.Route
         // Available TimeSlots for ComboBox binding
         public Array TimeSlots => Enum.GetValues<BusBuddy.Core.Models.RouteTimeSlot>();
 
-        #endregion
+
 
         #region Commands
 
@@ -420,6 +386,11 @@ namespace BusBuddy.WPF.ViewModels.Route
         public ICommand ActivateRouteCommand { get; private set; } = null!;
         public ICommand DeactivateRouteCommand { get; private set; } = null!;
         public ICommand CloneRouteCommand { get; private set; } = null!;
+    // Basic mapping (MVP) — plot currently assigned students for selected route
+
+    public ICommand PlotRouteOnMapCommand { get; private set; } = null!;
+    public ICommand TimeRouteCommand { get; private set; } = null!; // Basic stop timing
+    public ICommand PrintMapCommand { get; private set; } = null!;
 
         private void InitializeCommands()
         {
@@ -447,6 +418,20 @@ namespace BusBuddy.WPF.ViewModels.Route
             ActivateRouteCommand = new RelayCommand(async () => await ActivateRouteAsync(), () => CanActivateRoute);
             DeactivateRouteCommand = new RelayCommand(async () => await DeactivateRouteAsync(), () => CanDeactivateRoute);
             CloneRouteCommand = new RelayCommand(async () => await CloneRouteAsync());
+            PlotRouteOnMapCommand = new RelayCommand(async () => await PlotRouteOnMapAsync(), () => SelectedRoute != null);
+            TimeRouteCommand = new RelayCommand(() => TimeRouteStops(), () => SelectedRoute != null && RouteStops.Any());
+        PrintMapCommand = new RelayCommand(PrintMap, () => SelectedRoute != null);
+                    // Re-evaluate map/ timing commands
+                    (PlotRouteOnMapCommand as RelayCommand)?.RaiseCanExecuteChanged();
+                    (TimeRouteCommand as RelayCommand)?.RaiseCanExecuteChanged();
+            (PrintMapCommand as RelayCommand)?.RaiseCanExecuteChanged();
+        }
+        private void PrintMap()
+        {
+            if (SelectedRoute == null)
+                return;
+            StatusMessage = $"Print Map for {SelectedRoute.RouteName} (MVP stub)";
+            // TODO: Implement actual print/export logic if needed
         }
 
         #endregion
@@ -464,11 +449,23 @@ namespace BusBuddy.WPF.ViewModels.Route
             try
             {
                 IsLoading = true;
-                StatusMessage = $"Assigning {SelectedStudent.StudentName} to {SelectedRoute.RouteName}...";
+                // Capture references defensively to avoid null after awaits
+                var student = SelectedStudent;
+                var route = SelectedRoute;
+                var studentName = student?.StudentName ?? "(unknown)";
+                var routeName = route?.RouteName ?? "(no route)";
+                StatusMessage = $"Assigning {studentName} to {routeName}...";
 
-                if (_routeService != null)
+                // Prevent duplicate assignment in memory (MVP guard)
+                if (student != null && AssignedStudentsForSelectedRoute.Any(s => s.StudentId == student.StudentId))
                 {
-                    var result = await _routeService.AssignStudentToRouteAsync(SelectedStudent.StudentId, SelectedRoute.RouteId);
+                    StatusMessage = $"{student.StudentName} is already on {routeName}";
+                    return;
+                }
+
+                if (_routeService != null && student != null && route != null)
+                {
+                    var result = await _routeService.AssignStudentToRouteAsync(student.StudentId, route.RouteId);
                     if (!result.IsSuccess)
                     {
                         StatusMessage = $"Failed to assign student: {result.Error}";
@@ -478,16 +475,25 @@ namespace BusBuddy.WPF.ViewModels.Route
                 }
 
                 // Update collections
-                UnassignedStudents.Remove(SelectedStudent);
-                AssignedStudentsForSelectedRoute.Add(SelectedStudent);
+                if (student != null)
+                {
+                    UnassignedStudents.Remove(student);
+                    AssignedStudentsForSelectedRoute.Add(student);
+                }
+                // Update route student count live (MVP)
+                if (route != null)
+                {
+                    IncrementRouteStudentCount(route, +1);
+                }
                 OnPropertyChanged(nameof(UnassignedStudentCount));
                 OnPropertyChanged(nameof(AssignedStudentCount));
-                StatusMessage = $"Successfully assigned {SelectedStudent.StudentName} to {SelectedRoute.RouteName}";
+                StatusMessage = $"Successfully assigned {studentName} to {routeName}";
 
-                Logger.Information("Student {StudentName} assigned to route {RouteName}",
-                    SelectedStudent.StudentName, SelectedRoute.RouteName);
+                Logger.Information("Student {StudentName} assigned to route {RouteName}", studentName, routeName);
 
-                SelectedStudent = null;
+                SelectedStudent = null; // clear selection so command disables
+                (AssignStudentCommand as RelayCommand)?.RaiseCanExecuteChanged();
+                (RemoveStudentCommand as RelayCommand)?.RaiseCanExecuteChanged();
             }
             catch (Exception ex)
             {
@@ -528,6 +534,7 @@ namespace BusBuddy.WPF.ViewModels.Route
                 // Update collections
                 UnassignedStudents.Add(SelectedAssignedStudent);
                 AssignedStudentsForSelectedRoute.Remove(SelectedAssignedStudent);
+                IncrementRouteStudentCount(SelectedRoute, -1);
                 OnPropertyChanged(nameof(UnassignedStudentCount));
                 OnPropertyChanged(nameof(AssignedStudentCount));
                 StatusMessage = $"Successfully removed {SelectedAssignedStudent.StudentName} from {SelectedRoute.RouteName}";
@@ -548,6 +555,22 @@ namespace BusBuddy.WPF.ViewModels.Route
             {
                 IsLoading = false;
             }
+        }
+
+        /// <summary>
+        /// Lightweight helper to keep SelectedRoute.StudentCount in sync during MVP without full reload.
+        /// </summary>
+        private void IncrementRouteStudentCount(BusBuddy.Core.Models.Route route, int delta)
+        {
+            try
+            {
+                var current = route.StudentCount ?? 0;
+                var updated = current + delta;
+                if (updated < 0) updated = 0;
+                route.StudentCount = updated;
+                OnPropertyChanged(nameof(AssignedStudentCount));
+            }
+            catch { }
         }
 
         private async Task AutoAssignStudentsAsync()
@@ -997,6 +1020,82 @@ namespace BusBuddy.WPF.ViewModels.Route
             finally
             {
                 IsLoading = false;
+            }
+        }
+
+        /// <summary>
+        /// Basic sequential timing of route stops based on a user-provided StartTimeString.
+        /// For MVP each stop gets arrival = current time cursor, departure = arrival + StopDuration minutes (default 2 if 0).
+        /// Persisted via IRouteService.UpdateRouteStopsTimingAsync when available.
+        /// </summary>
+        private async void TimeRouteStops()
+        {
+            if (SelectedRoute == null || !RouteStops.Any())
+            {
+                return;
+            }
+
+            try
+            {
+                IsLoading = true;
+                StatusMessage = "Calculating stop times...";
+
+                // Parse start time; fallback to 07:30 if invalid
+                var baseDate = DateTime.Today;
+                var startParseOk = DateTime.TryParseExact(_startTimeString.Trim(), new[] { "HH:mm", "H:mm" }, CultureInfo.InvariantCulture, DateTimeStyles.None, out var parsedTime);
+                if (!startParseOk)
+                {
+                    parsedTime = DateTime.Today.AddHours(7).AddMinutes(30); // 07:30 fallback
+                    _startTimeString = "07:30"; // normalize
+                    OnPropertyChanged(nameof(StartTimeString));
+                }
+                var current = new DateTime(baseDate.Year, baseDate.Month, baseDate.Day, parsedTime.Hour, parsedTime.Minute, 0, DateTimeKind.Local);
+
+                // Order stops by StopOrder to ensure consistency
+                foreach (var stop in RouteStops.OrderBy(s => s.StopOrder))
+                {
+                    stop.EstimatedArrivalTime = current;
+                    var dwellMinutes = stop.StopDuration > 0 ? stop.StopDuration : 2; // MVP default dwell
+                    stop.EstimatedDepartureTime = current.AddMinutes(dwellMinutes);
+                    stop.UpdatedDate = DateTime.Now;
+                    current = stop.EstimatedDepartureTime; // advance cursor
+                }
+
+                // Persist if service available
+                if (_routeService != null)
+                {
+                    var persistResult = await _routeService.UpdateRouteStopsTimingAsync(SelectedRoute.RouteId, RouteStops);
+                    if (!persistResult.IsSuccess)
+                    {
+                        StatusMessage = $"Timing calculated but failed to persist: {persistResult.Error}";
+                        MessageBox.Show(persistResult.Error ?? "Failed to persist timing", "Timing Persistence", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    }
+                    else
+                    {
+                        StatusMessage = $"Timing updated for {RouteStops.Count} stops (Start {StartTimeString})";
+                    }
+                }
+                else
+                {
+                    StatusMessage = $"Timing (in-memory) updated for {RouteStops.Count} stops (Start {StartTimeString})";
+                }
+
+                // Notify grid
+                foreach (var prop in new[] { nameof(RouteStops) })
+                {
+                    OnPropertyChanged(prop);
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Failed to time route stops");
+                StatusMessage = $"Error timing stops: {ex.Message}";
+                MessageBox.Show($"Failed to time stops: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            finally
+            {
+                IsLoading = false;
+                (TimeRouteCommand as RelayCommand)?.RaiseCanExecuteChanged();
             }
         }
 
@@ -1555,7 +1654,22 @@ namespace BusBuddy.WPF.ViewModels.Route
 
                 if (AvailableRoutes.Any())
                 {
-                    SelectedRoute = AvailableRoutes.First();
+                    if (_preselectedRouteId.HasValue)
+                    {
+                        var match = AvailableRoutes.FirstOrDefault(r => r.RouteId == _preselectedRouteId.Value);
+                        if (match != null)
+                        {
+                            SelectedRoute = match;
+                        }
+                        else
+                        {
+                            SelectedRoute = AvailableRoutes.First();
+                        }
+                    }
+                    else
+                    {
+                        SelectedRoute = AvailableRoutes.First();
+                    }
                 }
 
                 OnPropertyChanged(nameof(UnassignedStudentCount));
@@ -1632,10 +1746,25 @@ namespace BusBuddy.WPF.ViewModels.Route
                     });
                 }
 
-                // Select first route
+                // Select first route or preselected
                 if (AvailableRoutes.Any())
                 {
-                    SelectedRoute = AvailableRoutes.First();
+                    if (_preselectedRouteId.HasValue)
+                    {
+                        var match = AvailableRoutes.FirstOrDefault(r => r.RouteId == _preselectedRouteId.Value);
+                        if (match != null)
+                        {
+                            SelectedRoute = match;
+                        }
+                        else
+                        {
+                            SelectedRoute = AvailableRoutes.First();
+                        }
+                    }
+                    else
+                    {
+                        SelectedRoute = AvailableRoutes.First();
+                    }
                 }
 
                 OnPropertyChanged(nameof(UnassignedStudentCount));
@@ -1655,9 +1784,32 @@ namespace BusBuddy.WPF.ViewModels.Route
         {
             try
             {
-                // For MVP, skip service calls and use mock data only
-                // Remove all references to _studentService, _routeService, _busService, _driverService
-                // Data is loaded via LoadMockData()
+                if (_routeService != null)
+                {
+                    var result = await _routeService.GetAllRoutesAsync();
+                    if (result.IsSuccess && result.Value != null)
+                    {
+                        _availableRoutes.Clear();
+                        foreach (var route in result.Value)
+                        {
+                            _availableRoutes.Add(route);
+                        }
+                        // TODO: Add similar logic for students, buses, drivers if services are available
+                        OnPropertyChanged(nameof(AvailableRoutes));
+                        UpdateStatusMessage();
+                        Logger.Information("Loaded Azure SQL data: {RouteCount} routes", _availableRoutes.Count);
+                        return;
+                    }
+                    else
+                    {
+                        Logger.Warning("RouteService.GetAllRoutesAsync failed or returned no data, falling back to mocks. Error: {Error}", result.Error);
+                    }
+                }
+                else
+                {
+                    Logger.Warning("_routeService is null, falling back to mock data.");
+                }
+                // Fallback to mock data if service is unavailable or fails
                 LoadMockData();
             }
             catch (Exception ex)
@@ -1689,6 +1841,109 @@ namespace BusBuddy.WPF.ViewModels.Route
             }
         }
 
+        /// <summary>
+        /// Basic plotting of the selected route's currently assigned students onto the shared map (GoogleEarthViewModel).
+        /// Reuses existing GoogleEarthViewModel marker infrastructure; only plots students with coordinates or successfully geocoded addresses.
+        /// </summary>
+        private async Task PlotRouteOnMapAsync()
+        {
+            if (SelectedRoute == null)
+            {
+                return;
+            }
+            try
+            {
+                StatusMessage = $"Plotting {AssignedStudentCount} students for {SelectedRoute.RouteName}...";
+                Logger.Information("PlotRouteOnMap invoked for RouteId={RouteId} Name={RouteName}", SelectedRoute.RouteId, SelectedRoute.RouteName);
+
+                var sp = App.ServiceProvider;
+                if (sp == null)
+                {
+                    StatusMessage = "Mapping unavailable (no service provider)";
+                    return;
+                }
+
+                var mapVm = sp.GetService<GoogleEarthViewModel>();
+                if (mapVm == null)
+                {
+                    StatusMessage = "Map VM not registered";
+                    return;
+                }
+
+                var geocoder = sp.GetService<IGeocodingService>();
+
+                // Remove previous dynamic student markers (keep seeded school anchor)
+                for (int i = mapVm.MapMarkers.Count - 1; i >= 0; i--)
+                {
+                    var m = mapVm.MapMarkers[i];
+                    if (!string.Equals(m.Label, "Wiley School RE-13JT", StringComparison.OrdinalIgnoreCase))
+                    {
+                        mapVm.MapMarkers.RemoveAt(i);
+                    }
+                }
+
+                var students = AssignedStudentsForSelectedRoute.ToList();
+                if (students.Count == 0)
+                {
+                    StatusMessage = "No students assigned to plot";
+                    return;
+                }
+
+                // Fire-and-forget background geocode/plot to keep UI responsive
+                _ = Task.Run(async () =>
+                {
+                    foreach (var s in students)
+                    {
+                        try
+                        {
+                            double? lat = null, lon = null;
+
+                            // Prefer existing stored coordinates
+                            if (s.Latitude.HasValue && s.Longitude.HasValue)
+                            {
+                                lat = (double)s.Latitude.Value;
+                                lon = (double)s.Longitude.Value;
+                            }
+                            else if (geocoder != null && !string.IsNullOrWhiteSpace(s.HomeAddress))
+                            {
+                                var r = await geocoder.GeocodeAsync(s.HomeAddress, s.City, s.State, s.Zip);
+                                if (r != null)
+                                {
+                                    lat = r.Value.latitude;
+                                    lon = r.Value.longitude;
+                                }
+                            }
+
+                            if (lat == null || lon == null)
+                            {
+                                continue; // skip if no coordinates
+                            }
+
+                            System.Windows.Application.Current.Dispatcher.Invoke(() =>
+                            {
+                                mapVm.MapMarkers.Add(new GoogleEarthViewModel.MapMarker
+                                {
+                                    Label = s.StudentName,
+                                    Latitude = lat.Value,
+                                    Longitude = lon.Value
+                                });
+                            });
+                        }
+                        catch (Exception ex)
+                        {
+                            Logger.Warning(ex, "Failed to plot student {StudentId} {StudentName}", s.StudentId, s.StudentName);
+                        }
+                    }
+                    StatusMessage = $"Plotted {SelectedRoute.RouteName} students";
+                });
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Error plotting route students on map");
+                StatusMessage = "Error plotting students";
+            }
+        }
+
         #endregion
 
         #region INotifyPropertyChanged
@@ -1712,30 +1967,5 @@ namespace BusBuddy.WPF.ViewModels.Route
         }
 
         #endregion
-    }
-
-    /// <summary>
-    /// Simplified RelayCommand for MVP implementation
-    /// </summary>
-    public class RelayCommand : ICommand
-    {
-        private readonly Action _execute;
-        private readonly Func<bool>? _canExecute;
-
-        public RelayCommand(Action execute, Func<bool>? canExecute = null)
-        {
-            _execute = execute ?? throw new ArgumentNullException(nameof(execute));
-            _canExecute = canExecute;
-        }
-
-        public bool CanExecute(object? parameter) => _canExecute?.Invoke() ?? true;
-
-        public void Execute(object? parameter) => _execute();
-
-        public event EventHandler? CanExecuteChanged
-        {
-            add => CommandManager.RequerySuggested += value;
-            remove => CommandManager.RequerySuggested -= value;
-        }
     }
 }
