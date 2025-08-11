@@ -61,6 +61,7 @@ namespace BusBuddy.WPF.Views.Student
                 ViewModel = new StudentFormViewModel();
             }
             DataContext = ViewModel;
+            TryAttachGlobalErrorListener();
 
             // Subscribe to ViewModel events for form closure
             // (Allows ViewModel to close dialog on save/cancel)
@@ -145,8 +146,45 @@ namespace BusBuddy.WPF.Views.Student
                 ViewModel = new StudentFormViewModel(student, enableValidation: false);
             }
             DataContext = ViewModel;
+            TryAttachGlobalErrorListener();
             ViewModel.RequestClose += OnRequestClose;
             Logger.Information("StudentForm initialized (Edit mode) for StudentId={StudentId}", student.StudentId);
+        }
+
+        private void TryAttachGlobalErrorListener()
+        {
+            try
+            {
+                if (ViewModel == null) return;
+                ViewModel.PropertyChanged += (s, e) =>
+                {
+                    try
+                    {
+                        if (e.PropertyName == nameof(ViewModel.HasGlobalError) && ViewModel.HasGlobalError)
+                        {
+                            var msg = ViewModel.GlobalErrorMessage ?? "An error occurred.";
+                            if (ViewModel.HasValidationErrors && ViewModel.ValidationErrors.Count > 0)
+                            {
+                                var first = ViewModel.ValidationErrors.Take(3).ToArray();
+                                msg += "\n\nDetails:" + "\n" + string.Join("\n", first);
+                                if (ViewModel.ValidationErrors.Count > 3)
+                                {
+                                    msg += $"\n(+{ViewModel.ValidationErrors.Count - 3} more)";
+                                }
+                            }
+                            MessageBox.Show(this, msg, "Validation error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                        }
+                    }
+                    catch (System.Exception ex)
+                    {
+                        Logger.Warning(ex, "StudentForm: error listener failed");
+                    }
+                };
+            }
+            catch (System.Exception ex)
+            {
+                Logger.Warning(ex, "StudentForm: failed to attach global error listener");
+            }
         }
 
         /// <summary>
@@ -309,6 +347,32 @@ namespace BusBuddy.WPF.Views.Student
             catch (System.Exception ex)
             {
                 Logger.Warning(ex, "StudentForm: button click logging failed");
+            }
+
+            // After any button click, if the ViewModel has surfaced a global error, show it immediately.
+            try
+            {
+                if (ViewModel?.HasGlobalError == true && !string.IsNullOrWhiteSpace(ViewModel.GlobalErrorMessage))
+                {
+                    // If there are detailed validation errors, include a compact hint
+                    string message = ViewModel.GlobalErrorMessage;
+                    if (ViewModel.HasValidationErrors && ViewModel.ValidationErrors.Count > 0)
+                    {
+                        // Show only first 3 to keep dialog concise
+                        var first = ViewModel.ValidationErrors.Take(3).ToArray();
+                        message += "\n\nDetails:" + "\n" + string.Join("\n", first);
+                        if (ViewModel.ValidationErrors.Count > 3)
+                        {
+                            message += $"\n(+{ViewModel.ValidationErrors.Count - 3} more)";
+                        }
+                    }
+
+                    MessageBox.Show(this, message, "Action blocked", MessageBoxButton.OK, MessageBoxImage.Warning);
+                }
+            }
+            catch (System.Exception ex)
+            {
+                Logger.Warning(ex, "StudentForm: failed to display global error message");
             }
         }
 

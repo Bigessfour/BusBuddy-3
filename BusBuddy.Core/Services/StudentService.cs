@@ -20,6 +20,39 @@ public class StudentService : IStudentService
     private readonly IBusBuddyDbContextFactory _contextFactory;
     private static readonly SemaphoreSlim _semaphore = new(1, 1);
 
+    // Centralized, flexible US phone validation:
+    // Accepts optional +1 country code, spaces/dots/dashes, optional parentheses around area code, and optional extensions.
+    // Examples: 1234567890, 123-456-7890, (123) 456-7890, +1 (123) 456-7890 ext. 123
+    private static readonly System.Text.RegularExpressions.Regex PhoneRegex =
+        new System.Text.RegularExpressions.Regex(
+            @"^(?:\+?1\s*(?:[.\-\s]*)?)?(?:\(\s*([2-9]\d{2})\s*\)|([2-9]\d{2}))\s*(?:[.\-\s]*)?([2-9]\d{2})\s*(?:[.\-\s]*)?(\d{4})(?:\s*(?:#|x\.?|ext\.?|extension)\s*\d+)?$",
+            System.Text.RegularExpressions.RegexOptions.Compiled | System.Text.RegularExpressions.RegexOptions.CultureInvariant);
+
+    private static bool IsValidPhone(string phone)
+    {
+        if (string.IsNullOrWhiteSpace(phone)) return true;
+        // Allow (XXX) XXX-XXXX or variations for seeding compatibility
+        var regex = new System.Text.RegularExpressions.Regex(@"^\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}$");
+        return regex.IsMatch(phone);
+    }
+
+    // MVP toggle — allow relaxing phone validation to reduce perceived "button not working" issues when saves are blocked.
+    // Controls: BUSBUDDY_SKIP_PHONE_VALIDATION=1|true (skip), BUSBUDDY_PHONE_VALIDATION_MODE=warn|off|strict
+    private static bool PhoneValidationOff()
+    {
+        var val = Environment.GetEnvironmentVariable("BUSBUDDY_SKIP_PHONE_VALIDATION");
+        if (!string.IsNullOrEmpty(val) && (val.Equals("1", StringComparison.OrdinalIgnoreCase) || val.Equals("true", StringComparison.OrdinalIgnoreCase)))
+            return true;
+        var mode = Environment.GetEnvironmentVariable("BUSBUDDY_PHONE_VALIDATION_MODE");
+        return !string.IsNullOrEmpty(mode) && mode.Equals("off", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool PhoneValidationWarnOnly()
+    {
+        var mode = Environment.GetEnvironmentVariable("BUSBUDDY_PHONE_VALIDATION_MODE");
+        return !string.IsNullOrEmpty(mode) && mode.Equals("warn", StringComparison.OrdinalIgnoreCase);
+    }
+
     public StudentService(IBusBuddyDbContextFactory contextFactory)
     {
         _contextFactory = contextFactory;
@@ -445,20 +478,26 @@ public class StudentService : IStudentService
                 }
             }
 
-            // Phone number format validation
-            if (!string.IsNullOrWhiteSpace(student.HomePhone))
+            // Phone number format validation — configurable for MVP
+            if (!string.IsNullOrWhiteSpace(student.HomePhone) && !IsValidPhone(student.HomePhone))
             {
-                var phonePattern = @"^\(?([0-9]{3})\)?[-. ]?([0-9]{3})[-. ]?([0-9]{4})$";
-                if (!System.Text.RegularExpressions.Regex.IsMatch(student.HomePhone, phonePattern))
+                if (PhoneValidationOff() || PhoneValidationWarnOnly())
+                {
+                    Logger.Warning("Home phone did not match validation but proceeding due to mode — Phone={Phone}", student.HomePhone);
+                }
+                else
                 {
                     errors.Add("Invalid home phone number format");
                 }
             }
 
-            if (!string.IsNullOrWhiteSpace(student.EmergencyPhone))
+            if (!string.IsNullOrWhiteSpace(student.EmergencyPhone) && !IsValidPhone(student.EmergencyPhone))
             {
-                var phonePattern = @"^\(?([0-9]{3})\)?[-. ]?([0-9]{3})[-. ]?([0-9]{4})$";
-                if (!System.Text.RegularExpressions.Regex.IsMatch(student.EmergencyPhone, phonePattern))
+                if (PhoneValidationOff() || PhoneValidationWarnOnly())
+                {
+                    Logger.Warning("Emergency phone did not match validation but proceeding due to mode — Phone={Phone}", student.EmergencyPhone);
+                }
+                else
                 {
                     errors.Add("Invalid emergency phone number format");
                 }
@@ -902,16 +941,21 @@ public class StudentService : IStudentService
         {
             Logger.Information("Updating contact information for student {StudentId}", studentId);
 
-            // Validate phone number formats
-            var phonePattern = @"^\(?([0-9]{3})\)?[-. ]?([0-9]{3})[-. ]?([0-9]{4})$";
-            if (!string.IsNullOrWhiteSpace(homePhone) && !System.Text.RegularExpressions.Regex.IsMatch(homePhone, phonePattern))
+            // Validate phone number formats — configurable for MVP
+            if (!string.IsNullOrWhiteSpace(homePhone) && !IsValidPhone(homePhone))
             {
-                throw new ArgumentException("Invalid home phone number format");
+                if (PhoneValidationOff() || PhoneValidationWarnOnly())
+                    Logger.Warning("Home phone failed validation but proceeding (mode)");
+                else
+                    throw new ArgumentException("Invalid home phone number format");
             }
 
-            if (!string.IsNullOrWhiteSpace(emergencyPhone) && !System.Text.RegularExpressions.Regex.IsMatch(emergencyPhone, phonePattern))
+            if (!string.IsNullOrWhiteSpace(emergencyPhone) && !IsValidPhone(emergencyPhone))
             {
-                throw new ArgumentException("Invalid emergency phone number format");
+                if (PhoneValidationOff() || PhoneValidationWarnOnly())
+                    Logger.Warning("Emergency phone failed validation but proceeding (mode)");
+                else
+                    throw new ArgumentException("Invalid emergency phone number format");
             }
 
             var (context, dispose) = GetWriteContext();
@@ -962,16 +1006,21 @@ public class StudentService : IStudentService
         {
             Logger.Information("Updating emergency contact information for student {StudentId}", studentId);
 
-            // Validate phone number formats
-            var phonePattern = @"^\(?([0-9]{3})\)?[-. ]?([0-9]{3})[-. ]?([0-9]{4})$";
-            if (!string.IsNullOrWhiteSpace(alternativePhone) && !System.Text.RegularExpressions.Regex.IsMatch(alternativePhone, phonePattern))
+            // Validate phone number formats — configurable for MVP
+            if (!string.IsNullOrWhiteSpace(alternativePhone) && !IsValidPhone(alternativePhone))
             {
-                throw new ArgumentException("Invalid alternative contact phone number format");
+                if (PhoneValidationOff() || PhoneValidationWarnOnly())
+                    Logger.Warning("Alternative contact phone failed validation but proceeding (mode)");
+                else
+                    throw new ArgumentException("Invalid alternative contact phone number format");
             }
 
-            if (!string.IsNullOrWhiteSpace(doctorPhone) && !System.Text.RegularExpressions.Regex.IsMatch(doctorPhone, phonePattern))
+            if (!string.IsNullOrWhiteSpace(doctorPhone) && !IsValidPhone(doctorPhone))
             {
-                throw new ArgumentException("Invalid doctor phone number format");
+                if (PhoneValidationOff() || PhoneValidationWarnOnly())
+                    Logger.Warning("Doctor phone failed validation but proceeding (mode)");
+                else
+                    throw new ArgumentException("Invalid doctor phone number format");
             }
 
             var (context, dispose) = GetWriteContext();

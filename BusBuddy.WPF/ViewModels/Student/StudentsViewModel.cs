@@ -645,7 +645,7 @@ namespace BusBuddy.WPF.ViewModels.Student
             catch (Exception ex)
             {
                 Logger.Error(ex, "Error loading students");
-                // TODO: Show error message to user
+                StatusMessage = "Error loading students. Check connection, migrations, and logs.";
             }
             finally
             {

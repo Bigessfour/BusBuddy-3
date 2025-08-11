@@ -1,6 +1,7 @@
 using System;
 using Microsoft.Extensions.Configuration;
 using System.Text.RegularExpressions;
+using Serilog;
 
 namespace BusBuddy.Core.Utilities
 {
@@ -9,6 +10,7 @@ namespace BusBuddy.Core.Utilities
     /// </summary>
     public static class EnvironmentHelper
     {
+    private static readonly ILogger? Logger = Log.Logger;
         /// <summary>
         /// Checks if the application is running in development mode
         /// </summary>
@@ -133,7 +135,25 @@ namespace BusBuddy.Core.Utilities
                       "Data Source=BusBuddy.db";
             }
 
-            return ExpandEnvironmentPlaceholders(raw);
+            // Expand any ${ENV_VAR} placeholders
+            var expanded = ExpandEnvironmentPlaceholders(raw);
+
+            // If placeholders remain unresolved (common when AZURE_* env vars are not set),
+            // fall back to a reliable LocalDB connection for local/dev usage.
+            if (!string.IsNullOrWhiteSpace(expanded) && expanded.Contains("${"))
+            {
+                try
+                {
+                    Logger?.Warning("Connection string contains unresolved placeholders. Falling back to LocalDB for reliability.");
+                }
+                catch { /* logging is best-effort here */ }
+
+                var localDbFallback = configuration.GetConnectionString("LocalConnection")
+                    ?? "Data Source=(localdb)\\MSSQLLocalDB;Initial Catalog=BusBuddy;Integrated Security=True;MultipleActiveResultSets=True";
+                return localDbFallback;
+            }
+
+            return expanded;
         }
 
         /// <summary>

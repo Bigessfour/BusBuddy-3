@@ -105,63 +105,142 @@ namespace BusBuddy.Core.Utilities
                 // Handle Wiley JSON structure: top-level object with families and students arrays
                 using var doc = JsonDocument.Parse(jsonContent);
                 var root = doc.RootElement;
-                var familiesElement = root.GetProperty("families");
-                var studentsElement = root.GetProperty("students");
 
                 var families = new List<FamilyImportDto>();
-                var students = new List<StudentImportDto>();
 
-                // Deserialize families
-                foreach (var fam in familiesElement.EnumerateArray())
+                if (root.TryGetProperty("families", out var familiesElement) && familiesElement.ValueKind == JsonValueKind.Array
+                    && root.TryGetProperty("students", out var studentsElement) && studentsElement.ValueKind == JsonValueKind.Array)
                 {
-                    var family = new FamilyImportDto
+                    // Classic format: families[] + students[] with familyId mapping
+            foreach (var fam in familiesElement.EnumerateArray())
                     {
-                        ParentGuardian = fam.GetProperty("parentGuardian").GetString() ?? string.Empty,
-                        Address = fam.GetProperty("address").GetString() ?? string.Empty,
-                        City = fam.GetProperty("city").GetString() ?? string.Empty,
-                        County = fam.GetProperty("county").GetString() ?? string.Empty,
-                        HomePhone = fam.TryGetProperty("homePhone", out var hp) ? hp.GetString() : null,
-                        CellPhone = fam.TryGetProperty("cellPhone", out var cp) ? cp.GetString() : null,
-                        EmergencyContact = fam.TryGetProperty("emergencyContact", out var ec) ? ec.GetString() : null,
-                        JointParent = fam.TryGetProperty("jointParent", out var jp) ? jp.GetString() : null,
-                        Students = new List<StudentImportDto>()
-                    };
-                    // Add a temp id for mapping
-                    family.GetType().GetProperty("Id")?.SetValue(family, fam.TryGetProperty("id", out var id) ? id.GetInt32() : 0);
-                    families.Add(family);
-                }
+                        var family = new FamilyImportDto
+                        {
+                Id = fam.TryGetProperty("id", out var famId) ? famId.GetInt32() : (int?)null,
+                            ParentGuardian = fam.GetProperty("parentGuardian").GetString() ?? string.Empty,
+                            Address = fam.GetProperty("address").GetString() ?? string.Empty,
+                            City = fam.GetProperty("city").GetString() ?? string.Empty,
+                            County = fam.GetProperty("county").GetString() ?? string.Empty,
+                            HomePhone = fam.TryGetProperty("homePhone", out var hp) ? hp.GetString() : null,
+                            CellPhone = fam.TryGetProperty("cellPhone", out var cp) ? cp.GetString() : null,
+                            EmergencyContact = fam.TryGetProperty("emergencyContact", out var ec) ? ec.GetString() : null,
+                            JointParent = fam.TryGetProperty("jointParent", out var jp) ? jp.GetString() : null,
+                            Students = new List<StudentImportDto>()
+                        };
+                        families.Add(family);
+                    }
 
-                // Deserialize students and group by familyId
-                try
-                {
-                    foreach (var stu in studentsElement.EnumerateArray())
+                    // Deserialize students and group by familyId
+                    try
                     {
-                        StudentImportDto student = null!;
-#pragma warning disable CS8600 // Converting null literal or possible null value to non-nullable type
-                        try
+                        foreach (var stu in studentsElement.EnumerateArray())
                         {
-                            // Use cached SerializerOptions (see CA1869)
-                            student = JsonSerializer.Deserialize<StudentImportDto>(stu.GetRawText(), SerializerOptions);
-                        }
-#pragma warning restore CS8600
-                        catch (JsonException ex)
-                        {
-                            Logger.Error(ex, "JSON deserialization error (student): {Message}", ex.Message);
-                            result.ErrorMessages.Add($"JSON deserialization error (student): {ex.Message}");
-                            continue;
-                        }
-                        int familyId = stu.TryGetProperty("familyId", out var fid) ? fid.GetInt32() : 0;
-                        var family = families.FirstOrDefault(f => (int?)f.GetType().GetProperty("Id")?.GetValue(f) == familyId);
-                        if (family != null && student != null)
-                        {
-                            family.Students.Add(student);
+                            StudentImportDto student = null!;
+                            try
+                            {
+                                student = JsonSerializer.Deserialize<StudentImportDto>(stu.GetRawText(), SerializerOptions)!;
+                            }
+                            catch (JsonException ex)
+                            {
+                                Logger.Error(ex, "JSON deserialization error (student): {Message}", ex.Message);
+                                result.ErrorMessages.Add($"JSON deserialization error (student): {ex.Message}");
+                                continue;
+                            }
+                            // Primary: map via familyId when available
+                            int? familyId = stu.TryGetProperty("familyId", out var fid) ? fid.GetInt32() : (int?)null;
+                            var family = families.FirstOrDefault(f => f.Id.HasValue && familyId.HasValue && f.Id.Value == familyId.Value);
+
+                            // Fallback: map by ParentGuardian + Address when familyId is missing or unmatched
+                            if (family == null)
+                            {
+                                // Try to read potential parent/address fields directly from the student node
+                                string? parentFromStudent = null;
+                                string? addressFromStudent = null;
+                                try
+                                {
+                                    // Common keys seen in extracted forms
+                                    if (stu.TryGetProperty("ParentGuardian", out var pg)) parentFromStudent = pg.GetString();
+                                    if (string.IsNullOrWhiteSpace(parentFromStudent) && stu.TryGetProperty("parentGuardian", out var pg2)) parentFromStudent = pg2.GetString();
+                                    if (stu.TryGetProperty("HomeAddress", out var ha)) addressFromStudent = ha.GetString();
+                                    if (string.IsNullOrWhiteSpace(addressFromStudent) && stu.TryGetProperty("address", out var ha2)) addressFromStudent = ha2.GetString();
+                                }
+                                catch { /* ignore */ }
+
+                                // Note: ParentGuardian and HomeAddress are family-level properties, not student properties
+                                // They are handled at the family level during import processing
+
+                                if (!string.IsNullOrWhiteSpace(parentFromStudent) && !string.IsNullOrWhiteSpace(addressFromStudent))
+                                {
+                                    family = families.FirstOrDefault(f => string.Equals(f.ParentGuardian, parentFromStudent, StringComparison.OrdinalIgnoreCase)
+                                                                        && string.Equals(f.Address, addressFromStudent, StringComparison.OrdinalIgnoreCase));
+                                }
+                            }
+
+                            if (family != null)
+                            {
+                                family.Students.Add(student);
+                            }
+                            else
+                            {
+                                Logger.Warning("Unassigned student during import (no familyId and no match by ParentGuardian/Address): {First} {Last}", student.FirstName, student.LastName);
+                            }
                         }
                     }
+                    catch (Exception ex)
+                    {
+                        Logger.Error(ex, "Unexpected error during student deserialization: {Message}", ex.Message);
+                        result.ErrorMessages.Add($"Unexpected error during student deserialization: {ex.Message}");
+                    }
                 }
-                catch (Exception ex)
+                else if (root.ValueKind == JsonValueKind.Array)
                 {
-                    Logger.Error(ex, "Unexpected error during student deserialization: {Message}", ex.Message);
-                    result.ErrorMessages.Add($"Unexpected error during student deserialization: {ex.Message}");
+                    // New simplified format: array of student entries with nested Guardian
+                    foreach (var stu in root.EnumerateArray())
+                    {
+                        // Build a synthetic family from Guardian
+                        var guardian = stu.GetProperty("Guardian");
+                        var parentName = $"{guardian.GetProperty("FirstName").GetString()} {guardian.GetProperty("LastName").GetString()}".Trim();
+                        var address = guardian.GetProperty("Address").GetString() ?? string.Empty;
+                        var city = guardian.GetProperty("City").GetString() ?? string.Empty;
+                        var county = guardian.TryGetProperty("County", out var gcounty) ? gcounty.GetString() ?? string.Empty : string.Empty;
+                        var state = guardian.TryGetProperty("State", out var gstate) ? gstate.GetString() : null;
+                        var homePhone = guardian.TryGetProperty("HomePhone", out var ghp) ? ghp.GetString() : null;
+                        var cellPhone = guardian.TryGetProperty("CellPhone", out var gcp) ? gcp.GetString() : null;
+
+                        var famDto = families.FirstOrDefault(f => f.ParentGuardian == parentName && f.Address == address);
+                        if (famDto == null)
+                        {
+                            famDto = new FamilyImportDto
+                            {
+                                ParentGuardian = parentName,
+                                Address = address,
+                                City = city,
+                                State = state,
+                                County = county,
+                                HomePhone = homePhone,
+                                CellPhone = cellPhone,
+                                Students = new List<StudentImportDto>()
+                            };
+                            families.Add(famDto);
+                        }
+
+                        var studentDto = new StudentImportDto
+                        {
+                            FirstName = stu.GetProperty("FirstName").GetString() ?? string.Empty,
+                            LastName = stu.GetProperty("LastName").GetString() ?? string.Empty,
+                            Grade = stu.TryGetProperty("Grade", out var grd) ? grd.GetString() ?? string.Empty : string.Empty,
+                            TransportationNotes = stu.TryGetProperty("School", out var sc) ? sc.GetString() : null
+                        };
+                        famDto.Students.Add(studentDto);
+                    }
+                }
+                else
+                {
+                    var errorMessage = "Unsupported JSON structure for import";
+                    Logger.Error(errorMessage);
+                    result.ErrorMessages.Add(errorMessage);
+                    result.Success = false;
+                    return result;
                 }
 
                 foreach (var family in families)
@@ -260,12 +339,13 @@ namespace BusBuddy.Core.Utilities
                 Grade = studentDto.Grade,
                 HomeAddress = familyDto.Address,
                 City = familyDto.City,
-                State = "PA", // Default state from your requirements
+                State = string.IsNullOrWhiteSpace(familyDto.State) ? "CO" : familyDto.State,
                 Zip = ExtractZipFromAddress(familyDto.Address),
                 HomePhone = familyDto.HomePhone,
                 ParentGuardian = familyDto.ParentGuardian,
                 EmergencyPhone = familyDto.CellPhone ?? familyDto.HomePhone,
                 DateOfBirth = studentDto.DateOfBirth,
+                // Map special needs text directly
                 SpecialNeeds = studentDto.SpecialNeeds ?? string.Empty,
                 MedicalNotes = studentDto.MedicalNotes,
                 Allergies = studentDto.Allergies,
@@ -499,9 +579,11 @@ namespace BusBuddy.Core.Utilities
     /// </summary>
     public class FamilyImportDto
     {
+    public int? Id { get; set; }
         public string ParentGuardian { get; set; } = string.Empty;
         public string Address { get; set; } = string.Empty;
         public string City { get; set; } = string.Empty;
+    public string? State { get; set; }
         public string County { get; set; } = string.Empty;
         public string? HomePhone { get; set; }
         public string? CellPhone { get; set; }

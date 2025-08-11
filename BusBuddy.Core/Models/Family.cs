@@ -120,6 +120,9 @@ public class FamilyImportDto
     // Removed JsonPropertyName
     public string City { get; set; } = string.Empty;
 
+    // Optional state (needed when building students from Guardian info)
+    public string? State { get; set; }
+
     // Removed JsonPropertyName
     public string County { get; set; } = string.Empty;
 

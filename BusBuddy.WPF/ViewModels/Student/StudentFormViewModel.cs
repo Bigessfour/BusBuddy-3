@@ -950,13 +950,11 @@ namespace BusBuddy.WPF.ViewModels.Student
         /// </summary>
         private List<string> GetValidationErrors()
         {
+            // MVP: Only enforce the minimal required fields for Save so buttons “work” visibly.
+            // Address fields are optional during MVP and validated via dedicated actions.
             var errors = new List<string>();
             if (string.IsNullOrWhiteSpace(Student.StudentName)) errors.Add("Student name is required");
             if (string.IsNullOrWhiteSpace(Student.Grade)) errors.Add("Grade is required");
-            if (string.IsNullOrWhiteSpace(Student.HomeAddress)) errors.Add("Home address is required");
-            if (string.IsNullOrWhiteSpace(Student.City)) errors.Add("City is required");
-            if (string.IsNullOrWhiteSpace(Student.State)) errors.Add("State is required");
-            if (string.IsNullOrWhiteSpace(Student.Zip)) errors.Add("Zip is required");
             return errors;
         }
 

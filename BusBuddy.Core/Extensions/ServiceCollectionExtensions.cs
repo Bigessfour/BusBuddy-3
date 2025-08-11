@@ -28,6 +28,14 @@ namespace BusBuddy.Core.Extensions
             {
                 var optionsBuilder = new DbContextOptionsBuilder<BusBuddyDbContext>();
 
+                // Highest precedence: environment override for quick diagnostics
+                var envOverride = Environment.GetEnvironmentVariable("BUSBUDDY_CONNECTION");
+                if (!string.IsNullOrWhiteSpace(envOverride))
+                {
+                    optionsBuilder.UseSqlServer(envOverride);
+                    return new BusBuddyDbContext(optionsBuilder.Options);
+                }
+
                 // Get connection string based on configuration
                 var connectionString = BusBuddy.Core.Utilities.EnvironmentHelper.GetConnectionString(configuration);
                 var databaseProvider = configuration["DatabaseProvider"] ?? "LocalDB";
@@ -54,8 +62,8 @@ namespace BusBuddy.Core.Extensions
                 return new BusBuddyDbContext(optionsBuilder.Options);
             });
 
-            // Register DbContext Factory for thread-safe context creation
-            services.AddSingleton<IBusBuddyDbContextFactory, BusBuddyDbContextFactory>();
+            // Register DbContext Factory for thread-safe context creation with access to IConfiguration via IServiceProvider
+            services.AddSingleton<IBusBuddyDbContextFactory>(sp => new BusBuddyDbContextFactory(sp));
 
             // Register repositories - use fully qualified names to avoid ambiguity
             services.AddScoped<IVehicleRepository, BusBuddy.Core.Data.Repositories.VehicleRepository>();

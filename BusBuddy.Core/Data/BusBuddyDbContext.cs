@@ -7,6 +7,7 @@ using Serilog;
 using Serilog.Context;
 using Microsoft.Extensions.Configuration; // Added for dynamic configuration
 using BusBuddy.Core.Utilities; // For JsonDataImporter in seeding
+using System.Text.RegularExpressions;
 
 namespace BusBuddy.Core.Data;
 /// <summary>
@@ -149,12 +150,33 @@ public class BusBuddyDbContext : DbContext
 
                 // Try BusBuddyDb first, then DefaultConnection
                 var connString = config.GetConnectionString("BusBuddyDb") ?? config.GetConnectionString("DefaultConnection");
+                // Expand placeholders like ${VAR} and %VAR%
+                string ExpandPlaceholders(string? cs)
+                {
+                    if (string.IsNullOrWhiteSpace(cs)) return string.Empty;
+                    // First expand %VAR% style
+                    var expanded = Environment.ExpandEnvironmentVariables(cs);
+                    // Then expand ${VAR} style
+                    expanded = Regex.Replace(expanded, @"\$\{(?<name>[A-Za-z0-9_]+)\}", match =>
+                    {
+                        var name = match.Groups["name"].Value;
+                        var value = Environment.GetEnvironmentVariable(name);
+                        return value ?? match.Value; // leave placeholder if not found
+                    });
+                    return expanded;
+                }
+
+                var expandedConn = ExpandPlaceholders(connString);
                 if (!string.IsNullOrWhiteSpace(connString))
                 {
                     logger.Information("Using connection string from appsettings: {ConnectionName}",
                         config.GetConnectionString("BusBuddyDb") != null ? "BusBuddyDb" : "DefaultConnection");
+                    if (!string.Equals(connString, expandedConn, StringComparison.Ordinal))
+                    {
+                        logger.Information("Expanded environment variables in connection string");
+                    }
                     optionsBuilder
-                        .UseSqlServer(connString, sqlOptions =>
+                        .UseSqlServer(expandedConn, sqlOptions =>
                         {
                             sqlOptions.EnableRetryOnFailure(5, TimeSpan.FromSeconds(10), new[] { 40613, 40501, 40197, 10928, 10929, 10060, 10054, 10053 });
                             sqlOptions.CommandTimeout(60);

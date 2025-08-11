@@ -5,6 +5,9 @@ using System.Threading.Tasks;
 using BusBuddy.Core.Data;
 using BusBuddy.Core.Utilities;
 using Serilog;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using System.Text.RegularExpressions;
 
 namespace BusBuddy.TestDataSeeding
 {
@@ -24,18 +27,29 @@ namespace BusBuddy.TestDataSeeding
                 Console.WriteLine();
 
                 // Test JSON data loading
-                var dataPath = Path.Combine("..", "..", "..", "BusBuddy.Core", "Data", "wiley-school-district-data.json");
 
-                if (!File.Exists(dataPath))
+                // Try both the original relative path and the solution-root-relative path
+                var dataPath = Path.Combine("..", "..", "..", "BusBuddy.Core", "Data", "wiley-school-district-data.json");
+                var altDataPath = Path.Combine("BusBuddy.Core", "Data", "wiley-school-district-data.json");
+                string usedPath = null;
+                if (File.Exists(dataPath))
                 {
-                    Console.WriteLine($"❌ Data file not found: {dataPath}");
+                    usedPath = dataPath;
+                }
+                else if (File.Exists(altDataPath))
+                {
+                    usedPath = altDataPath;
+                }
+                else
+                {
+                    Console.WriteLine($"❌ Data file not found: {dataPath} or {altDataPath}");
                     return 1;
                 }
 
-                Console.WriteLine($"✅ Found data file: {dataPath}");
+                Console.WriteLine($"✅ Found data file: {usedPath}");
 
                 // Try to load and parse the JSON
-                var jsonContent = await File.ReadAllTextAsync(dataPath);
+                var jsonContent = await File.ReadAllTextAsync(usedPath);
                 var wileyData = JsonSerializer.Deserialize<WileySchoolDistrictData>(jsonContent, new JsonSerializerOptions
                 {
                     PropertyNameCaseInsensitive = true
@@ -76,9 +90,108 @@ namespace BusBuddy.TestDataSeeding
 
                 Console.WriteLine();
                 Console.WriteLine("✅ JSON data structure validation successful!");
-                Console.WriteLine("📝 Ready for database seeding when build issues are resolved.");
 
-                return 0;
+                // Now perform actual DB seeding using BusBuddyDbContext and JsonDataImporter
+                Console.WriteLine("🌱 Seeding database using JsonDataImporter...");
+
+                // Build configuration (reads appsettings and environment variables)
+                var environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production";
+                var config = new ConfigurationBuilder()
+                    .SetBasePath(Directory.GetCurrentDirectory())
+                    .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
+                    .AddJsonFile($"appsettings.{environment}.json", optional: true)
+                    .AddJsonFile("appsettings.azure.json", optional: true)
+                    .AddEnvironmentVariables()
+                    .Build();
+
+                var connString =
+                    Environment.GetEnvironmentVariable("BUSBUDDY_CONNECTION")
+                    ?? config.GetConnectionString("BusBuddyDb")
+                    ?? config.GetConnectionString("DefaultConnection");
+
+                if (string.IsNullOrWhiteSpace(connString))
+                {
+                    Console.WriteLine("❌ No connection string found (BUSBUDDY_CONNECTION or appsettings). Aborting seeding.");
+                    return 1;
+                }
+
+                // Expand placeholders like ${AZURE_SQL_USER} and %AZURE_SQL_USER%
+                static string ExpandPlaceholders(string input)
+                {
+                    if (string.IsNullOrEmpty(input)) return input;
+                    // Expand %VAR% style
+                    var expanded = Environment.ExpandEnvironmentVariables(input);
+                    // Expand ${VAR} style
+                    expanded = Regex.Replace(expanded, @"\$\{(?<name>[A-Za-z0-9_]+)\}", m =>
+                    {
+                        var name = m.Groups["name"].Value;
+                        var value = Environment.GetEnvironmentVariable(name);
+                        return value ?? m.Value;
+                    });
+                    return expanded;
+                }
+
+                var effectiveConnString = ExpandPlaceholders(connString);
+
+                var options = new DbContextOptionsBuilder<BusBuddyDbContext>()
+                    .UseSqlServer(effectiveConnString, sql =>
+                    {
+                        sql.CommandTimeout(60);
+                        sql.EnableRetryOnFailure();
+                    })
+                    .Options;
+
+                using (var ctx = new BusBuddyDbContext(options))
+                {
+                    // Optional clean step (delete existing Students then Families) to avoid dedupe preventing inserts
+                    // Trigger with either --clean arg or BUSBUDDY_CLEAN_BEFORE_SEED=true/1
+                    var cleanRequested =
+                        (args != null && Array.Exists(args, a => string.Equals(a, "--clean", StringComparison.OrdinalIgnoreCase))) ||
+                        string.Equals(Environment.GetEnvironmentVariable("BUSBUDDY_CLEAN_BEFORE_SEED"), "true", StringComparison.OrdinalIgnoreCase) ||
+                        string.Equals(Environment.GetEnvironmentVariable("BUSBUDDY_CLEAN_BEFORE_SEED"), "1", StringComparison.OrdinalIgnoreCase);
+
+                    if (cleanRequested)
+                    {
+                        Console.WriteLine("🧹 Cleaning existing data (Students -> Families) before seeding...");
+                        try
+                        {
+                            // Delete children first to satisfy FK constraints
+                            await ctx.Database.ExecuteSqlRawAsync("DELETE FROM Students");
+                            await ctx.Database.ExecuteSqlRawAsync("DELETE FROM Families");
+                            Console.WriteLine("✅ Clean complete.");
+                        }
+                        catch (Exception cleanEx)
+                        {
+                            Console.WriteLine($"⚠️ Clean step failed: {cleanEx.Message}");
+                        }
+                    }
+
+                    var importResult = await JsonDataImporter.ImportStudentDataAsync(ctx, usedPath);
+                    if (importResult.Success)
+                    {
+                        Console.WriteLine($"✅ Seeding complete. Added {importResult.ImportedStudents} students and {importResult.ImportedFamilies} families. Skipped {importResult.SkippedStudents} students, {importResult.SkippedFamilies} families.");
+                        try
+                        {
+                            var sCount = await ctx.Students.CountAsync();
+                            var fCount = await ctx.Families.CountAsync();
+                            Console.WriteLine($"📈 Totals now: {sCount} students, {fCount} families.");
+                        }
+                        catch (Exception countEx)
+                        {
+                            Console.WriteLine($"⚠️ Unable to retrieve totals: {countEx.Message}");
+                        }
+                        return 0;
+                    }
+                    else
+                    {
+                        Console.WriteLine("❌ Seeding failed:");
+                        foreach (var msg in importResult.ErrorMessages)
+                        {
+                            Console.WriteLine("  - " + msg);
+                        }
+                        return 1;
+                    }
+                }
             }
             catch (Exception ex)
             {

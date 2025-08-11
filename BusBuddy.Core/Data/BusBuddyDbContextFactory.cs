@@ -37,6 +37,17 @@ namespace BusBuddy.Core.Data
         /// </summary>
         public BusBuddyDbContext CreateDbContext()
         {
+            // Highest precedence: environment override
+            var envOverride = Environment.GetEnvironmentVariable("BUSBUDDY_CONNECTION");
+            if (!string.IsNullOrWhiteSpace(envOverride))
+            {
+                var optionsBuilder = new DbContextOptionsBuilder<BusBuddyDbContext>();
+                optionsBuilder.UseSqlServer(envOverride);
+                var ctx = new BusBuddyDbContext(optionsBuilder.Options);
+                ctx.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
+                return ctx;
+            }
+
             if (_serviceProvider == null || _configuration == null)
             {
                 // Design-time fallback
@@ -46,12 +57,12 @@ namespace BusBuddy.Core.Data
             var connectionString = BusBuddy.Core.Utilities.EnvironmentHelper.GetConnectionString(_configuration);
             var provider = _configuration["DatabaseProvider"] ?? "LocalDB";
 
-            var optionsBuilder = new DbContextOptionsBuilder<BusBuddyDbContext>();
-            ConfigureProvider(optionsBuilder, provider, connectionString);
+            var configuredOptionsBuilder = new DbContextOptionsBuilder<BusBuddyDbContext>();
+            ConfigureProvider(configuredOptionsBuilder, provider, connectionString);
 
-            var ctx = new BusBuddyDbContext(optionsBuilder.Options);
-            ctx.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
-            return ctx;
+            var configuredCtx = new BusBuddyDbContext(configuredOptionsBuilder.Options);
+            configuredCtx.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
+            return configuredCtx;
         }
 
         /// <summary>
@@ -59,6 +70,19 @@ namespace BusBuddy.Core.Data
         /// </summary>
         public BusBuddyDbContext CreateWriteDbContext()
         {
+            // Highest precedence: environment override
+            var envOverride = Environment.GetEnvironmentVariable("BUSBUDDY_CONNECTION");
+            if (!string.IsNullOrWhiteSpace(envOverride))
+            {
+                var optionsBuilder = new DbContextOptionsBuilder<BusBuddyDbContext>();
+                optionsBuilder.UseSqlServer(envOverride);
+                var writeCtxOverride = new BusBuddyDbContext(optionsBuilder.Options)
+                {
+                    ChangeTracker = { QueryTrackingBehavior = QueryTrackingBehavior.TrackAll }
+                };
+                return writeCtxOverride;
+            }
+
             if (_serviceProvider == null || _configuration == null)
             {
                 var ctx = CreateDbContext(Array.Empty<string>());
@@ -69,10 +93,10 @@ namespace BusBuddy.Core.Data
             var connectionString = BusBuddy.Core.Utilities.EnvironmentHelper.GetConnectionString(_configuration);
             var provider = _configuration["DatabaseProvider"] ?? "LocalDB";
 
-            var optionsBuilder = new DbContextOptionsBuilder<BusBuddyDbContext>();
-            ConfigureProvider(optionsBuilder, provider, connectionString);
+            var optionsBuilderConfigured = new DbContextOptionsBuilder<BusBuddyDbContext>();
+            ConfigureProvider(optionsBuilderConfigured, provider, connectionString);
 
-            var writeCtx = new BusBuddyDbContext(optionsBuilder.Options);
+            var writeCtx = new BusBuddyDbContext(optionsBuilderConfigured.Options);
             writeCtx.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.TrackAll;
             return writeCtx;
         }

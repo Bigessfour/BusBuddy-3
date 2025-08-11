@@ -75,6 +75,36 @@
 				"BusBuddy.sln"
 			],
 			"group": "build"
+		},
+		{
+			"label": "bb-build (dotnet build BusBuddy.sln)",
+			"type": "shell",
+			"command": "dotnet",
+			"args": [
+				"build",
+				"BusBuddy.sln",
+				"-v",
+				"m"
+			],
+			"problemMatcher": [
+				"$msCompile"
+			],
+			"group": "build"
+		},
+		{
+			"label": "build seeder only",
+			"type": "shell",
+			"command": "dotnet",
+			"args": [
+				"build",
+				"c:\\Users\\biges\\Desktop\\BusBuddy\\TestDataSeeding\\TestDataSeeding.csproj",
+				"-v",
+				"m"
+			],
+			"problemMatcher": [
+				"$msCompile"
+			],
+			"group": "build"
 		}
 	]
 }
