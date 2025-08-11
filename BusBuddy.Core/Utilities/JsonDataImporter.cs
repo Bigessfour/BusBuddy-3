@@ -573,9 +573,16 @@ namespace BusBuddy.Core.Utilities
                 try
                 {
                     using var jsonDoc = JsonDocument.Parse(await File.ReadAllTextAsync(jsonFilePath));
+                    // Primary documented structure: { "students": [ ... ] }
                     if (jsonDoc.RootElement.TryGetProperty("students", out var studentsElem) && studentsElem.ValueKind == JsonValueKind.Array)
                     {
                         jsonStudentsCount = studentsElem.GetArrayLength();
+                    }
+                    else if (jsonDoc.RootElement.ValueKind == JsonValueKind.Array)
+                    {
+                        // Fallback: root itself is an array (legacy/simple export). Treat as students collection.
+                        jsonStudentsCount = jsonDoc.RootElement.GetArrayLength();
+                        Logger.Information("Detected root-array JSON student dataset (no 'students' wrapper) with {Count} entries: {Path}", jsonStudentsCount, jsonFilePath);
                     }
                 }
                 catch (Exception ex)

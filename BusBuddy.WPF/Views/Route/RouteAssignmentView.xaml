@@ -13,6 +13,10 @@
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/SyncfusionV30_Validated_ResourceDictionary.xaml"/>
             </ResourceDictionary.MergedDictionaries>
+          <!-- Local converter needed because this view references BooleanToVisibilityConverter directly.
+              Although App.xaml defines a global one, XAML parse errors indicate it was not resolved at load time.
+              Adding explicit local resource guarantees resolution. -->
+          <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
         </ResourceDictionary>
     </UserControl.Resources>
 
@@ -34,7 +38,7 @@
         </Border>
 
         <!-- Main Content -->
-        <Grid Grid.Row="1">
+    <Grid Grid.Row="1" x:Name="RouteLayoutRoot">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="2*"/>
                 <ColumnDefinition Width="Auto"/>
@@ -80,9 +84,14 @@
                                           AutoGenerateColumns="False"
                                           AllowSorting="True"
                                           AllowFiltering="True"
+                                          AllowGrouping="True"
+                                          ShowGroupDropArea="True"
                                           SelectionMode="Single"
                                           GridLinesVisibility="Both"
-                                          Background="{DynamicResource BusBuddy.Brush.DataGrid.Background}">
+                                          ColumnSizer="Star"
+                                          Background="{DynamicResource BusBuddy.Brush.DataGrid.Background}"
+                                          AutomationProperties.Name="Unassigned Students Grid"
+                                          AutomationProperties.HelpText="Students not yet assigned to the selected route">
                         <syncfusion:SfDataGrid.Columns>
                             <syncfusion:GridTextColumn HeaderText="Name" MappingName="StudentName" Width="150"/>
                             <syncfusion:GridTextColumn HeaderText="Grade" MappingName="Grade" Width="60"/>
@@ -127,15 +136,20 @@
                     </Grid.RowDefinitions>
 
                     <!-- Route Selection -->
-                    <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="10,10,10,15">
-                        <Label Content="Select Route:" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                    <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="10,10,10,15" VerticalAlignment="Center">
+                        <Label Content="Route:" VerticalAlignment="Center" Margin="0,0,6,0"/>
                         <syncfusion:ComboBoxAdv ItemsSource="{Binding AvailableRoutes}"
                                               SelectedItem="{Binding SelectedRoute, Mode=TwoWay}"
                                               DisplayMemberPath="RouteName"
-                                              Width="200" Margin="0,0,10,0"/>
-                        <syncfusion:ButtonAdv Label="➕ New Route"
+                                              Width="180" Margin="0,0,12,0"/>
+                        <Label Content="Name:" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                        <TextBox Width="140" Margin="0,0,8,0" Text="{Binding NewRouteName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                        <Label Content="Date:" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                        <DatePicker Width="130" Margin="0,0,8,0" SelectedDate="{Binding NewRouteDate, Mode=TwoWay}"/>
+                        <syncfusion:ButtonAdv Label="➕ Create"
                                              Command="{Binding CreateRouteCommand}"
-                                             Padding="12,6" Background="{DynamicResource ButtonBackgroundBrush}" Foreground="{DynamicResource ButtonForegroundBrush}"/>
+                                             Padding="10,6" Width="90"
+                                             Background="{DynamicResource ButtonBackgroundBrush}" Foreground="{DynamicResource ButtonForegroundBrush}"/>
                     </StackPanel>
 
                     <!-- Route Info -->
@@ -160,9 +174,15 @@
                                           SelectedItem="{Binding SelectedAssignedStudent, Mode=TwoWay}"
                                           AutoGenerateColumns="False"
                                           AllowSorting="True"
+                                          AllowFiltering="True"
+                                          AllowGrouping="True"
+                                          ShowGroupDropArea="True"
                                           SelectionMode="Single"
                                           GridLinesVisibility="Both"
-                                          Background="{DynamicResource BusBuddy.Brush.DataGrid.Background}">
+                                          ColumnSizer="Star"
+                                          Background="{DynamicResource BusBuddy.Brush.DataGrid.Background}"
+                                          AutomationProperties.Name="Assigned Students Grid"
+                                          AutomationProperties.HelpText="Students currently assigned to this route">
                         <syncfusion:SfDataGrid.Columns>
                             <syncfusion:GridTextColumn HeaderText="Name" MappingName="StudentName" Width="120"/>
                             <syncfusion:GridTextColumn HeaderText="Grade" MappingName="Grade" Width="60"/>
@@ -179,8 +199,15 @@
             </GroupBox>
 
             <!-- Route Configuration -->
-            <GroupBox Grid.Column="4" Header="⚙️ Route Config" Margin="10,0,0,0">
-                <StackPanel Margin="10">
+            <GroupBox Grid.Column="4" Header="⚙️ Route Config" Margin="10,0,0,0" Padding="4">
+                <StackPanel Margin="10" Orientation="Vertical">
+                    <!-- Activation State -->
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,12" VerticalAlignment="Center">
+                        <TextBlock Text="Status:" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                        <TextBlock Text="{Binding SelectedRoute.IsActive, Converter={StaticResource BooleanToVisibilityConverter}, StringFormat=Active}" Margin="6,0,0,0"/>
+                        <syncfusion:ButtonAdv Label="Activate" Margin="10,0,0,0" Padding="8,4" Command="{Binding ActivateRouteCommand}" Background="{DynamicResource ButtonBackgroundBrush}" Foreground="{DynamicResource ButtonForegroundBrush}"/>
+                        <syncfusion:ButtonAdv Label="Deactivate" Margin="6,0,0,0" Padding="8,4" Command="{Binding DeactivateRouteCommand}" Background="{DynamicResource ButtonBackgroundBrush}" Foreground="{DynamicResource ButtonForegroundBrush}"/>
+                    </StackPanel>
                     <!-- Bus Assignment -->
                     <Label Content="Assign Bus:"/>
                     <StackPanel Orientation="Horizontal" Margin="0,0,0,15">
@@ -236,6 +263,15 @@
                                          Command="{Binding TimeRouteCommand}"
                                          Padding="12,8"
                                          Background="{DynamicResource ButtonBackgroundBrush}" Foreground="{DynamicResource ButtonForegroundBrush}"/>
+                    <Separator Margin="0,12,0,12"/>
+                    <syncfusion:ButtonAdv Label="🔄 Refresh"
+                                          Command="{Binding RefreshDataCommand}"
+                                          Padding="10,6" Margin="0,0,0,4"
+                                          Background="{DynamicResource ButtonBackgroundBrush}" Foreground="{DynamicResource ButtonForegroundBrush}"/>
+                    <syncfusion:ButtonAdv Label="📑 Validate"
+                                          Command="{Binding ValidateRouteCommand}"
+                                          Padding="10,6"
+                                          Background="{DynamicResource ButtonBackgroundBrush}" Foreground="{DynamicResource ButtonForegroundBrush}"/>
                 </StackPanel>
             </GroupBox>
         </Grid>

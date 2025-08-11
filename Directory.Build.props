@@ -8,20 +8,10 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
 
-    <!-- Syncfusion Version — Standardized for MVP stability -->
-    <SyncfusionVersion>30.1.42</SyncfusionVersion>
-    <!-- Entity Framework Version — Updated to 9.0.8 for consistency -->
-    <EntityFrameworkVersion>9.0.8</EntityFrameworkVersion>
-    <!-- Serilog Version — Pure Serilog, no Microsoft.Extensions -->
-    <SerilogVersion>4.3.0</SerilogVersion>
-
-    <!-- 🚌 BusBuddy Core Package Versions (Centralized for Solution) -->
-    <!-- Syncfusion Version — Standardized for MVP stability -->
-    <SyncfusionVersion>30.1.42</SyncfusionVersion>
-    <!-- Entity Framework Version — Updated to 9.0.8 for consistency -->
-    <EntityFrameworkVersion>9.0.8</EntityFrameworkVersion>
-    <!-- Serilog Version — Pure Serilog, no Microsoft.Extensions -->
-    <SerilogVersion>4.3.0</SerilogVersion>
+  <!-- Syncfusion / EF / Serilog Versions (single definitions) -->
+  <SyncfusionVersion>30.1.42</SyncfusionVersion>
+  <EntityFrameworkVersion>9.0.8</EntityFrameworkVersion>
+  <SerilogVersion>4.3.0</SerilogVersion>
     <SerilogSinksFileVersion>7.0.0</SerilogSinksFileVersion>
     <SerilogSinksConsoleVersion>6.0.0</SerilogSinksConsoleVersion>
     <SerilogSinksDebugVersion>3.0.0</SerilogSinksDebugVersion>
@@ -79,15 +69,11 @@
     <SatelliteResourceLanguages>en-US</SatelliteResourceLanguages>
 
     <!-- Code analysis configuration -->
-    <CodeAnalysisRuleSet>$(MSBuildThisFileDirectory)BusBuddy-Practical.ruleset</CodeAnalysisRuleSet>
-    <EnableNETAnalyzers>true</EnableNETAnalyzers>
-    <AnalysisLevel>latest</AnalysisLevel>
-
-  <!-- Suppress low-impact warnings project-wide -->
-  <NoWarn>$(NoWarn);CA1305;CA1860;CA1848;CA1851;CA1304;CA1707;CS1591</NoWarn>
-
-    <!-- Suppress nullable warnings for Phase 1 — MVP only -->
-    <NoWarn>$(NoWarn);CS8600;CS8601;CS8602;CS8603;CS8604</NoWarn>
+  <CodeAnalysisRuleSet>$(MSBuildThisFileDirectory)BusBuddy-Practical.ruleset</CodeAnalysisRuleSet>
+  <EnableNETAnalyzers>true</EnableNETAnalyzers>
+  <AnalysisLevel>latest</AnalysisLevel>
+  <!-- Consolidated NoWarn list (low-impact + nullable MVP suppressions) -->
+  <NoWarn>$(NoWarn);CA1305;CA1860;CA1848;CA1851;CA1304;CA1707;CS1591;CS8600;CS8601;CS8602;CS8603;CS8604</NoWarn>
   </PropertyGroup>
 
 

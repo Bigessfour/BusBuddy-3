@@ -54,13 +54,76 @@ Acceptance (MVP) Criteria Met:
 - Create/select route, add placeholder stops, assign/remove students, assign bus/driver, simple validation & activation.
 - StudentCount increments in-memory on assignment/removal (visual feedback) — full persistence recalculation deferred (RP-04).
 
+### Tech Debt — Route Stop Reordering Persistence (Aug 11, 2025)
+Context: `ReorderRouteStopsAsync` updates `StopOrder` in-memory but test verification shows unchanged ordering (in-memory provider still returns 1:1,2:2,3:3 after attempted reorder). Root cause under investigation — likely EF in-memory provider behavior or missing flush sequence rather than business logic mapping.
+
+Current Observations:
+- Method loads all stops, assigns sequential new StopOrder based on provided ordered IDs, then `SaveChangesAsync()`.
+- No exceptions; logs indicate success; verification context reads pre-change ordering.
+- Entity model for `RouteStop` confirms `StopOrder` is a mapped, required int.
+
+Impact:
+- UI drag/drop or move-up/down features relying on server persistence could show stale order after reload.
+- Re-sequencing dependent logic (timing recalculation) may compute from stale ordering if re-queried.
+
+Interim Mitigation:
+- Client-side collections already re-ordered for immediate UX feedback.
+- Timing logic can proceed off in-memory order while persistence fix deferred.
+
+Next Steps (Post-MVP):
+1. Add integration test using real SQLite in-memory (shared connection) instead of EF InMemory to validate persistence semantics.
+2. Inspect EF change tracker entries (debug logging) to confirm property state modifications.
+3. If needed, issue explicit `context.RouteStops.Update(stop)` inside loop or raw SQL fallback.
+4. Consider adding a rowversion or UpdatedDate update to force EF detection (if concurrency watchers involved).
+
+Tracking ID: RS-REORDER-PERSIST
+
+
 
 # 🚌 BusBuddy Project - Grok Development Status
 
-**Last Updated:** August 11, 2025 — RouteAssignmentViewModel corruption repair & constructor overloads added; CA1869 fix (cached JsonSerializerOptions); prior: UI Buttons/Forms Validation, GoogleEarth theming/cleanup, Activity DataContext, Unit Tests stabilization plan; StudentsViewModel + EF change detection fixes; new tests ✅  
+**Last Updated:** August 11, 2025 — RouteAssignmentView XAML converter parse fix, JSON root-array seeding fallback, build props duplicate cleanup; prior: RouteAssignmentViewModel corruption repair & constructor overloads added; CA1869 fix (cached JsonSerializerOptions); UI Buttons/Forms Validation, GoogleEarth theming/cleanup, Activity DataContext, Unit Tests stabilization plan; StudentsViewModel + EF change detection fixes; new tests ✅  
 **Current Status:** Clean Build; Geo stack wired (SfMap + overlays + PIP eligibility + offline geocoding); UI buttons/forms validated across modules  
 **Repository Status:** Build Success — EF Core aligned; WPF mapping features validated  
 **Key Achievement:** End-to-end student → geocode → map plotting; eligibility (in district AND not in town) operational
+
+### Delta — Aug 11, 2025 (XAML converter fix + JSON root-array fallback + build props cleanup)
+Summary of three stability / resilience improvements applied after recent route form enhancements.
+
+1. RouteAssignmentView XAMLParseException Fix
+  - Issue: `XamlParseException` at load (line 203, position 36) — missing resource `BooleanToVisibilityConverter` during view initialization, causing cascading MainWindow initialization failure.
+  - Root Cause: Converter was expected from application-level resources, but lookup failed at parse time (likely resource resolution timing while view constructed early in docking layout).
+  - Fix: Added explicit local `<BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />` to `RouteAssignmentView.xaml` resources.
+  - Result: RouteAssignmentView and MainWindow now initialize without exception; error log no longer records critical MVP component failure.
+  - Follow‑up (Post-MVP): Centralize converter definitions (avoid duplicate declarations across multiple views) — candidate: single instance in `App.xaml` plus ensure no early view loads occur before merged dictionaries applied. (Tracking ID: XAML-CONVERTER-CENTRALIZE)
+
+2. JSON Data Seeding — Root Array Fallback
+  - Issue: Seeding logged warning `Failed to read student count from JSON seed file` when JSON file used a root array (`[...]`) instead of wrapped `{ "students": [...] }` object; student count defaulted to 0.
+  - Fix: Updated `JsonDataImporter` to detect `JsonValueKind.Array` at root and treat it as the students collection (logging informational message with detected count).
+  - Reference (Documentation-first): System.Text.Json usage per Microsoft docs — enumeration of `JsonElement` kinds and safe parsing.
+  - Benefit: Accurate dataset size detection enables appropriate top-up vs. skip logic; eliminates misleading warning noise.
+  - Follow‑up: Add lightweight unit test covering both wrapped and root-array formats. (Tracking ID: SEED-ROOT-ARRAY-TEST)
+
+3. Directory.Build.props Duplicate Property Consolidation
+  - Issue: Duplicate definitions for `SyncfusionVersion`, `EntityFrameworkVersion`, `SerilogVersion`, and fragmented `NoWarn` lists increased maintenance risk.
+  - Fix: Removed duplicate property entries; consolidated warning suppressions into a single `NoWarn` property preserving prior values.
+  - Benefit: Single source of truth reduces risk of accidental version drift; improves readability for future automated dependency update tooling.
+  - Follow‑up: Evaluate pruning unused Syncfusion packages (identify actual control usage vs. referenced assemblies) to reduce application footprint. (Tracking ID: SYNCFUSION-PACKAGE-TRIM)
+
+Verification
+  - Build: PASS after each change (no new analyzer warnings introduced).
+  - Runtime: Application launches; previous XAML parse errors absent; seeding logs now informative instead of warning for root-array JSON.
+
+Next Candidate Hardening Tasks (Deferred)
+  - Consolidate converters & minor resources (XAML-CONVERTER-CENTRALIZE)
+  - Add seeding format tests (SEED-ROOT-ARRAY-TEST)
+  - Syncfusion package usage audit & trim (SYNCFUSION-PACKAGE-TRIM)
+  - Introduce guard to prevent accidental multiple local converter declarations (Roslyn analyzer or lint script)
+
+Documentation-First References
+  - WPF Resource Lookup Order: https://learn.microsoft.com/dotnet/desktop/wpf/advanced/xaml-resources
+  - System.Text.Json Parsing: https://learn.microsoft.com/dotnet/standard/serialization/system-text-json-use-dom
+  - MSBuild Property Evaluation: https://learn.microsoft.com/visualstudio/msbuild/msbuild-properties
 
 ### Delta — Aug 11, 2025 (Route Assignment VM corruption repair + constructor overloads)
 - What changed
