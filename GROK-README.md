@@ -30,10 +30,23 @@ Notes:
 
 # 🚌 BusBuddy Project - Grok Development Status
 
-**Last Updated:** August 10, 2025 — UI Buttons/Forms Validation, GoogleEarth theming/cleanup, Activity DataContext, Unit Tests stabilization plan ✅  
+**Last Updated:** August 10, 2025 — UI Buttons/Forms Validation, GoogleEarth theming/cleanup, Activity DataContext, Unit Tests stabilization plan; StudentsViewModel + EF change detection fixes; new tests ✅  
 **Current Status:** Clean Build; Geo stack wired (SfMap + overlays + PIP eligibility + offline geocoding); UI buttons/forms validated across modules  
 **Repository Status:** Build Success — EF Core aligned; WPF mapping features validated  
 **Key Achievement:** End-to-end student → geocode → map plotting; eligibility (in district AND not in town) operational
+
+### Delta — Aug 10, 2025 (Tests + EF behavior + VM fixes)
+- StudentsViewModel
+  - Fixed SetProperty<T> to assign backing field before OnPropertyChanged (selection now updates reliably in tests and UI).
+  - After LoadStudentsAsync completes, StatusMessage is set to "Loaded {count} students" for clearer diagnostics.
+- EF Core change detection
+  - Kept ChangeTracker.AutoDetectChangesEnabled = true in BusBuddyDbContext to ensure consistent behavior with the InMemory provider used in tests (prevents missed relationship updates).
+- New tests added (BusBuddy.Tests/Core)
+  - ConfigurationTests — verifies EnvironmentHelper ${ENV_VAR} placeholder expansion and fallback behavior.
+  - FactoryAndViewModelIntegrationTests — validates StudentsViewModel loads via an in-memory context created from a simple factory.
+  - RouteDriverBusTests — basic CRUD for Drivers/Buses and Route AM/PM assignments; includes a NoOp IEnhancedCachingService stub for service dependencies.
+- Results
+  - Targeted suites pass locally; full suite run is next. If non-MVP services cause CS0246, apply Greenfield Reset (rename to .disabled) and re-run bb-anti-regression and bb-xaml-validate.
 
 ---
 
