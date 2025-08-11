@@ -30,10 +30,26 @@ Notes:
 
 # 🚌 BusBuddy Project - Grok Development Status
 
-**Last Updated:** August 10, 2025 — UI Buttons/Forms Validation, GoogleEarth theming/cleanup, Activity DataContext, Unit Tests stabilization plan; StudentsViewModel + EF change detection fixes; new tests ✅  
+**Last Updated:** August 11, 2025 — CA1869 fix (cached JsonSerializerOptions) + clean build; prior: UI Buttons/Forms Validation, GoogleEarth theming/cleanup, Activity DataContext, Unit Tests stabilization plan; StudentsViewModel + EF change detection fixes; new tests ✅  
 **Current Status:** Clean Build; Geo stack wired (SfMap + overlays + PIP eligibility + offline geocoding); UI buttons/forms validated across modules  
 **Repository Status:** Build Success — EF Core aligned; WPF mapping features validated  
 **Key Achievement:** End-to-end student → geocode → map plotting; eligibility (in district AND not in town) operational
+
+### Delta — Aug 11, 2025 (CA1869: cache JsonSerializerOptions)
+- What changed
+  - Resolved CA1869 warnings by caching System.Text.Json JsonSerializerOptions as a static readonly field and reusing it for Deserialize calls in SeedDataService.
+  - Verified solution builds clean; no seeding was triggered as part of this change.
+- Files (raw/fetchable)
+  - SeedDataService.cs (uses cached _jsonOptions):
+    https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.Core/Services/SeedDataService.cs
+  - App.xaml.cs (startup wiring; contains seeding hook reference):
+    https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.WPF/App.xaml.cs
+  - appsettings.staging.json (WileyJsonPath, staging config):
+    https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/appsettings.staging.json
+  - appsettings.json (root defaults):
+    https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/appsettings.json
+- Reference
+  - Analyzer rule CA1869 — Use cached JsonSerializerOptions instances: https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1869
 
 ### Delta — Aug 10, 2025 (Tests + EF behavior + VM fixes)
 - StudentsViewModel
