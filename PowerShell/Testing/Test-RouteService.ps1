@@ -26,7 +26,7 @@ try {
             Write-Host "🧪 Running Unit Tests for RouteService..." -ForegroundColor Green
 
             # Run RouteService unit tests
-            $results = dotnet test "BusBuddy.Tests\Core\RouteServiceTests.cs" --verbosity normal --logger "console;verbosity=detailed"
+            dotnet test "BusBuddy.Tests\Core\RouteServiceTests.cs" --verbosity normal --logger "console;verbosity=detailed"
 
             if ($LASTEXITCODE -eq 0) {
                 Write-Host "✅ Unit tests passed!" -ForegroundColor Green
@@ -41,7 +41,8 @@ try {
 
             # Test database connectivity
             Write-Host "📊 Testing database integration..." -ForegroundColor Yellow
-            $dbTest = dotnet test "BusBuddy.Tests\Core\DataLayerTests.cs" --filter "Category=Integration"
+            # Integration tests are filtered by category to avoid running unrelated tests
+            dotnet test "BusBuddy.Tests\Core\DataLayerTests.cs" --filter "Category=Integration"
 
             if ($LASTEXITCODE -eq 0) {
                 Write-Host "✅ Integration tests passed!" -ForegroundColor Green
@@ -56,7 +57,7 @@ try {
 
             # Test RouteAssignmentView
             Write-Host "🖥️ Testing RouteAssignmentView..." -ForegroundColor Yellow
-            $uiTest = dotnet test "BusBuddy.Tests\UI" --filter "Category=UI"
+            dotnet test "BusBuddy.Tests\UI" --filter "Category=UI"
 
             if ($LASTEXITCODE -eq 0) {
                 Write-Host "✅ UI tests passed!" -ForegroundColor Green
@@ -70,7 +71,7 @@ try {
             Write-Host "🚀 Running Complete Test Suite..." -ForegroundColor Green
 
             # Run all tests
-            $allTests = dotnet test "BusBuddy.sln" --verbosity normal
+            dotnet test "BusBuddy.sln" --verbosity normal
 
             if ($LASTEXITCODE -eq 0) {
                 Write-Host "✅ All tests passed!" -ForegroundColor Green

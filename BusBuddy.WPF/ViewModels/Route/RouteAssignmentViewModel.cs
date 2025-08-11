@@ -40,6 +40,7 @@ namespace BusBuddy.WPF.ViewModels.Route
         private ObservableCollection<BusBuddy.Core.Models.Driver> _availableDrivers = new();
     /// <summary>Ordered list of stops in the working route.</summary>
         private ObservableCollection<RouteStop> _routeStops = new();
+    private ObservableCollection<BusBuddy.Core.Models.Student> _assignedStudentsForSelectedRoute = new();
 
         // Selected Items
         private BusBuddy.Core.Models.Student? _selectedStudent;
@@ -167,6 +168,13 @@ namespace BusBuddy.WPF.ViewModels.Route
             set => SetProperty(ref _routeStops, value);
         }
 
+        // Students currently assigned to the SelectedRoute (MVP-local collection)
+        public ObservableCollection<BusBuddy.Core.Models.Student> AssignedStudentsForSelectedRoute
+        {
+            get => _assignedStudentsForSelectedRoute;
+            set => SetProperty(ref _assignedStudentsForSelectedRoute, value);
+        }
+
         // Selection Properties
         public BusBuddy.Core.Models.Student? SelectedStudent
         {
@@ -202,6 +210,8 @@ namespace BusBuddy.WPF.ViewModels.Route
                     OnPropertyChanged(nameof(CanAssignStudent));
                     OnPropertyChanged(nameof(CanRemoveStudent));
                     OnPropertyChanged(nameof(AssignedStudentCount));
+                    OnPropertyChanged(nameof(SelectedRouteBusDisplay));
+                    OnPropertyChanged(nameof(SelectedRouteDriverDisplay));
                     OnPropertyChanged(nameof(CanActivateRoute));
                     OnPropertyChanged(nameof(CanDeactivateRoute));
                     OnPropertyChanged(nameof(IsRouteSelected));
@@ -219,6 +229,7 @@ namespace BusBuddy.WPF.ViewModels.Route
                 if (SetProperty(ref _selectedBus, value))
                 {
                     OnPropertyChanged(nameof(CanAssignVehicle));
+                    OnPropertyChanged(nameof(SelectedRouteBusDisplay));
                 }
             }
         }
@@ -231,6 +242,7 @@ namespace BusBuddy.WPF.ViewModels.Route
                 if (SetProperty(ref _selectedDriver, value))
                 {
                     OnPropertyChanged(nameof(CanAssignDriver));
+                    OnPropertyChanged(nameof(SelectedRouteDriverDisplay));
                 }
             }
         }
@@ -330,9 +342,34 @@ namespace BusBuddy.WPF.ViewModels.Route
             set => SetProperty(ref _statusMessage, value);
         }
 
+        // Display helpers for selected route assignments
+        public string SelectedRouteBusDisplay
+        {
+            get
+            {
+                if (SelectedRoute == null)
+                    return string.Empty;
+                var id = SelectedTimeSlot == BusBuddy.Core.Models.RouteTimeSlot.PM ? SelectedRoute.PMVehicleId : SelectedRoute.AMVehicleId;
+                var bus = id.HasValue ? AvailableBuses.FirstOrDefault(b => b.VehicleId == id.Value) : null;
+                return bus?.BusNumber ?? "(none)";
+            }
+        }
+
+        public string SelectedRouteDriverDisplay
+        {
+            get
+            {
+                if (SelectedRoute == null)
+                    return string.Empty;
+                var id = SelectedTimeSlot == BusBuddy.Core.Models.RouteTimeSlot.PM ? SelectedRoute.PMDriverId : SelectedRoute.AMDriverId;
+                var d = id.HasValue ? AvailableDrivers.FirstOrDefault(x => x.DriverId == id.Value) : null;
+                return d?.DriverName ?? "(none)";
+            }
+        }
+
         // Computed Properties
-        public int UnassignedStudentCount => UnassignedStudents?.Count ?? 0;
-        public int AssignedStudentCount => 0; // TODO: Implement with route extensions
+    public int UnassignedStudentCount => UnassignedStudents?.Count ?? 0;
+    public int AssignedStudentCount => AssignedStudentsForSelectedRoute?.Count ?? 0;
         public int RouteStopCount => RouteStops?.Count ?? 0;
         public bool IsRouteSelected => SelectedRoute != null;
 
@@ -442,6 +479,7 @@ namespace BusBuddy.WPF.ViewModels.Route
 
                 // Update collections
                 UnassignedStudents.Remove(SelectedStudent);
+                AssignedStudentsForSelectedRoute.Add(SelectedStudent);
                 OnPropertyChanged(nameof(UnassignedStudentCount));
                 OnPropertyChanged(nameof(AssignedStudentCount));
                 StatusMessage = $"Successfully assigned {SelectedStudent.StudentName} to {SelectedRoute.RouteName}";
@@ -489,6 +527,7 @@ namespace BusBuddy.WPF.ViewModels.Route
 
                 // Update collections
                 UnassignedStudents.Add(SelectedAssignedStudent);
+                AssignedStudentsForSelectedRoute.Remove(SelectedAssignedStudent);
                 OnPropertyChanged(nameof(UnassignedStudentCount));
                 OnPropertyChanged(nameof(AssignedStudentCount));
                 StatusMessage = $"Successfully removed {SelectedAssignedStudent.StudentName} from {SelectedRoute.RouteName}";
@@ -696,6 +735,7 @@ namespace BusBuddy.WPF.ViewModels.Route
                     SelectedBus.BusNumber, SelectedRoute.RouteName, SelectedTimeSlot);
 
                 SelectedBus = null;
+                OnPropertyChanged(nameof(SelectedRouteBusDisplay));
             }
             catch (Exception ex)
             {
@@ -753,6 +793,7 @@ namespace BusBuddy.WPF.ViewModels.Route
                     SelectedDriver.DriverName, SelectedRoute.RouteName, SelectedTimeSlot);
 
                 SelectedDriver = null;
+                OnPropertyChanged(nameof(SelectedRouteDriverDisplay));
             }
             catch (Exception ex)
             {
@@ -1289,6 +1330,7 @@ namespace BusBuddy.WPF.ViewModels.Route
             try
             {
                 RouteStops.Clear();
+                AssignedStudentsForSelectedRoute.Clear();
 
                 if (_routeService != null)
                 {
@@ -1315,9 +1357,18 @@ namespace BusBuddy.WPF.ViewModels.Route
                             StopAddress = $"{i * 100} Mock Street"
                         });
                     }
+
+                    // MVP: Seed some assigned students visually for the grid
+                    var seedCount = Math.Min(10, UnassignedStudents.Count);
+                    foreach (var s in UnassignedStudents.Take(seedCount).ToList())
+                    {
+                        AssignedStudentsForSelectedRoute.Add(s);
+                        UnassignedStudents.Remove(s);
+                    }
                 }
 
                 OnPropertyChanged(nameof(RouteStopCount));
+                OnPropertyChanged(nameof(AssignedStudentCount));
                 Logger.Information("Loaded {StopCount} stops for route {RouteName}", RouteStops.Count, SelectedRoute.RouteName);
             }
             catch (Exception ex)

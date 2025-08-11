@@ -143,11 +143,11 @@
                             <TextBlock Text="{Binding SelectedRoute.RouteName, StringFormat='Route: {0}'}"
                                       FontWeight="SemiBold" Margin="0,0,0,5"/>
                             <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="{Binding SelectedRoute.AssignedStudents.Count, StringFormat='Students: {0}'}"
+                                <TextBlock Text="{Binding AssignedStudentCount, StringFormat='Students: {0}'}"
                                           Margin="0,0,15,0"/>
-                                <TextBlock Text="{Binding SelectedRoute.AssignedBus, StringFormat='Bus: {0}'}"
+                                <TextBlock Text="{Binding SelectedRouteBusDisplay, StringFormat='Bus: {0}'}"
                                           Margin="0,0,15,0"/>
-                                <TextBlock Text="{Binding SelectedRoute.AssignedDriver, StringFormat='Driver: {0}'}"/>
+                                <TextBlock Text="{Binding SelectedRouteDriverDisplay, StringFormat='Driver: {0}'}"/>
                             </StackPanel>
                         </StackPanel>
                     </Border>
@@ -155,7 +155,7 @@
                     <!-- Assigned Students Grid -->
                     <syncfusion:SfDataGrid Grid.Row="2"
                                           x:Name="AssignedStudentsGrid"
-                                          ItemsSource="{Binding SelectedRoute.AssignedStudents}"
+                                          ItemsSource="{Binding AssignedStudentsForSelectedRoute}"
                                           SelectedItem="{Binding SelectedAssignedStudent, Mode=TwoWay}"
                                           AutoGenerateColumns="False"
                                           AllowSorting="True"
@@ -182,17 +182,33 @@
                 <StackPanel Margin="10">
                     <!-- Bus Assignment -->
                     <Label Content="Assign Bus:"/>
-                    <syncfusion:ComboBoxAdv ItemsSource="{Binding AvailableBuses}"
-                                          SelectedItem="{Binding SelectedRoute.AssignedBus, Mode=TwoWay}"
-                                          DisplayMemberPath="BusNumber"
-                                          Margin="0,0,0,15"/>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,15">
+                        <syncfusion:ComboBoxAdv Width="160"
+                                                ItemsSource="{Binding AvailableBuses}"
+                                                SelectedItem="{Binding SelectedBus, Mode=TwoWay}"
+                                                DisplayMemberPath="BusNumber"/>
+                        <syncfusion:ButtonAdv Label="Assign"
+                                              Command="{Binding AssignVehicleCommand}"
+                                              Margin="10,0,0,0"
+                                              Padding="10,6"
+                                              Background="{DynamicResource ButtonBackgroundBrush}"
+                                              Foreground="{DynamicResource ButtonForegroundBrush}"/>
+                    </StackPanel>
 
                     <!-- Driver Assignment -->
                     <Label Content="Assign Driver:"/>
-                    <syncfusion:ComboBoxAdv ItemsSource="{Binding AvailableDrivers}"
-                                          SelectedItem="{Binding SelectedRoute.AssignedDriver, Mode=TwoWay}"
-                                          DisplayMemberPath="DriverName"
-                                          Margin="0,0,0,15"/>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,15">
+                        <syncfusion:ComboBoxAdv Width="160"
+                                                ItemsSource="{Binding AvailableDrivers}"
+                                                SelectedItem="{Binding SelectedDriver, Mode=TwoWay}"
+                                                DisplayMemberPath="DriverName"/>
+                        <syncfusion:ButtonAdv Label="Assign"
+                                              Command="{Binding AssignDriverCommand}"
+                                              Margin="10,0,0,0"
+                                              Padding="10,6"
+                                              Background="{DynamicResource ButtonBackgroundBrush}"
+                                              Foreground="{DynamicResource ButtonForegroundBrush}"/>
+                    </StackPanel>
 
                     <!-- Route Actions -->
                     <syncfusion:ButtonAdv Label="💾 Save Route"
