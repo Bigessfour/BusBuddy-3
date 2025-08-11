@@ -14,6 +14,7 @@
                              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
                              xmlns:syncfusion="http://schemas.syncfusion.com/wpf"
                              xmlns:syncfusionshared="clr-namespace:Syncfusion.Windows.Shared;assembly=Syncfusion.Shared.Wpf"
+                             xmlns:validation="clr-namespace:BusBuddy.WPF.Validation"
                              xmlns:sys="clr-namespace:System;assembly=mscorlib"
                              mc:Ignorable="d"
                              Title="Student Form"
@@ -30,6 +31,64 @@
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/SyncfusionV30_Validated_ResourceDictionary.xaml"/>
             </ResourceDictionary.MergedDictionaries>
+            <!-- Validation: Error template and invalid visual states -->
+            <ControlTemplate x:Key="ValidationErrorTemplate">
+                <DockPanel LastChildFill="True">
+                    <TextBlock Foreground="{StaticResource BusBuddy.Brush.Semantic.Error}"
+                               Margin="0,0,0,4"
+                               DockPanel.Dock="Bottom"
+                               Text="{Binding [0].ErrorContent}"/>
+                    <Border BorderBrush="{StaticResource BusBuddy.Brush.Semantic.Error}"
+                            BorderThickness="2"
+                            CornerRadius="3">
+                        <AdornedElementPlaceholder/>
+                    </Border>
+                </DockPanel>
+            </ControlTemplate>
+
+            <!-- Show red border when has validation error (WPF validation pattern) -->
+            <Style x:Key="ValidatedTextBoxStyle" TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
+                <Style.Triggers>
+                    <Trigger Property="Validation.HasError" Value="True">
+                        <Setter Property="BorderBrush" Value="{StaticResource BusBuddy.Brush.Semantic.Error}"/>
+                        <Setter Property="BorderThickness" Value="2"/>
+                        <Setter Property="ToolTip" Value="{Binding (Validation.Errors)[0].ErrorContent, RelativeSource={RelativeSource Self}}"/>
+                    </Trigger>
+                </Style.Triggers>
+            </Style>
+            <Style x:Key="ValidatedSfTextBoxStyle" TargetType="syncfusion:SfTextBoxExt" BasedOn="{StaticResource {x:Type syncfusion:SfTextBoxExt}}">
+                <Style.Triggers>
+                    <Trigger Property="Validation.HasError" Value="True">
+                        <Setter Property="BorderBrush" Value="{StaticResource BusBuddy.Brush.Semantic.Error}"/>
+                        <Setter Property="BorderThickness" Value="2"/>
+                        <Setter Property="ToolTip" Value="{Binding (Validation.Errors)[0].ErrorContent, RelativeSource={RelativeSource Self}}"/>
+                    </Trigger>
+                </Style.Triggers>
+            </Style>
+            <Style x:Key="ValidatedComboBoxAdvStyle" TargetType="syncfusion:ComboBoxAdv" BasedOn="{StaticResource {x:Type syncfusion:ComboBoxAdv}}">
+                <Style.Triggers>
+                    <Trigger Property="Validation.HasError" Value="True">
+                        <Setter Property="BorderBrush" Value="{StaticResource BusBuddy.Brush.Semantic.Error}"/>
+                        <Setter Property="BorderThickness" Value="2"/>
+                        <Setter Property="ToolTip" Value="{Binding (Validation.Errors)[0].ErrorContent, RelativeSource={RelativeSource Self}}"/>
+                    </Trigger>
+                    <!-- Default to first item when no selection and items exist -->
+                    <Trigger Property="SelectedItem" Value="{x:Null}">
+                        <Setter Property="SelectedIndex" Value="0"/>
+                    </Trigger>
+                </Style.Triggers>
+            </Style>
+            <Style x:Key="ValidatedMaskedEditStyle" TargetType="syncfusion:SfMaskedEdit" BasedOn="{StaticResource {x:Type syncfusion:SfMaskedEdit}}">
+                <Style.Triggers>
+                    <Trigger Property="Validation.HasError" Value="True">
+                        <Setter Property="BorderBrush" Value="{StaticResource BusBuddy.Brush.Semantic.Error}"/>
+                        <Setter Property="BorderThickness" Value="2"/>
+                        <Setter Property="ToolTip" Value="{Binding (Validation.Errors)[0].ErrorContent, RelativeSource={RelativeSource Self}}"/>
+                    </Trigger>
+                </Style.Triggers>
+            </Style>
+
+
             <!-- United States state abbreviations -->
             <x:Array x:Key="USStates" Type="sys:String">
                 <sys:String>AL</sys:String><sys:String>AK</sys:String><sys:String>AZ</sys:String><sys:String>AR</sys:String>
@@ -163,7 +222,8 @@
                                          Background="Transparent" Foreground="{StaticResource BusBuddy.Brush.Text.Primary}"
                                          BorderThickness="1" BorderBrush="{StaticResource BusBuddy.Brush.Text.Primary}"
                                          Width="30" Height="30"
-                                         ToolTip="Clear error message"/>
+                                             ToolTip="Clear error message"
+                                             AutomationProperties.Name="Clear Error"/>
                 </Grid>
             </Border>
 
@@ -196,32 +256,59 @@
 
                         <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,0,10,0">
                             <Label Content="Student Name *"/>
-                            <syncfusion:SfMaskedEdit Name="StudentNameTextBox"
-                                     Value="{Binding Student.StudentName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True}"
-                                     Watermark="First Name, Last Name"/>
+                            <!-- Plain text input — prefer SfTextBoxExt. Docs: https://help.syncfusion.com/wpf/autocomplete/getting-started -->
+                            <syncfusion:SfTextBoxExt Name="StudentNameTextBox" Style="{StaticResource ValidatedSfTextBoxStyle}"
+                                     Validation.ErrorTemplate="{StaticResource ValidationErrorTemplate}"
+                                     Watermark="First Name, Last Name"
+                                     AutomationProperties.Name="Student Name">
+                                <syncfusion:SfTextBoxExt.Text>
+                                    <Binding Path="Student.StudentName" Mode="TwoWay" UpdateSourceTrigger="PropertyChanged" ValidatesOnDataErrors="True">
+                                        <Binding.ValidationRules>
+                                            <validation:StringNotEmptyValidationRule FieldName="Student Name"/>
+                                        </Binding.ValidationRules>
+                                    </Binding>
+                                </syncfusion:SfTextBoxExt.Text>
+                            </syncfusion:SfTextBoxExt>
                         </StackPanel>
 
                         <StackPanel Grid.Row="0" Grid.Column="1" Margin="10,0,0,0">
                             <Label Content="Student Number"/>
-                            <syncfusion:SfMaskedEdit Name="StudentNumberTextBox"
-                                     Value="{Binding Student.StudentNumber, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                     Watermark="Auto-generated if empty"/>
+                            <!-- Plain text/identifier — use SfTextBoxExt unless a specific mask is required -->
+                            <syncfusion:SfTextBoxExt Name="StudentNumberTextBox"
+                                     Text="{Binding Student.StudentNumber, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                     Watermark="Auto-generated if empty"
+                                     AutomationProperties.Name="Student Number"/>
                         </StackPanel>
 
                         <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,10,0">
                             <Label Content="Grade *"/>
-                            <syncfusion:ComboBoxAdv Name="GradeComboBox"
-                                      ItemsSource="{StaticResource GradesList}"
-                                      SelectedItem="{Binding Student.Grade, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                            <syncfusion:ComboBoxAdv Name="GradeComboBox" Style="{StaticResource ValidatedComboBoxAdvStyle}"
+                                      Validation.ErrorTemplate="{StaticResource ValidationErrorTemplate}"
                                       IsEditable="False"
-                                      Width="100"/>
+                                      Width="100"
+                                      AutomationProperties.Name="Grade">
+                                <syncfusion:ComboBoxAdv.ItemsSource>
+                                    <PriorityBinding>
+                                        <Binding Path="AvailableGrades"/>
+                                        <Binding Source="{StaticResource GradesList}"/>
+                                    </PriorityBinding>
+                                </syncfusion:ComboBoxAdv.ItemsSource>
+                                <syncfusion:ComboBoxAdv.SelectedItem>
+                                    <Binding Path="Student.Grade" Mode="TwoWay" UpdateSourceTrigger="PropertyChanged">
+                                        <Binding.ValidationRules>
+                                            <validation:StringNotEmptyValidationRule FieldName="Grade"/>
+                                        </Binding.ValidationRules>
+                                    </Binding>
+                                </syncfusion:ComboBoxAdv.SelectedItem>
+                            </syncfusion:ComboBoxAdv>
                         </StackPanel>
 
                         <StackPanel Grid.Row="1" Grid.Column="1" Margin="10,0,0,0">
                             <Label Content="School"/>
-                            <syncfusion:SfMaskedEdit Name="SchoolTextBox"
-                                     Value="{Binding Student.School, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                     Watermark="Optional"/>
+                            <syncfusion:SfTextBoxExt Name="SchoolTextBox"
+                                     Text="{Binding Student.School, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                     Watermark="Optional"
+                                     AutomationProperties.Name="School"/>
                         </StackPanel>
 
                         <StackPanel Grid.Row="2" Grid.Column="0" Margin="0,0,10,0">
@@ -230,7 +317,8 @@
                                        Value="{Binding Student.DateOfBirth, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                        AllowNull="True"
                                        Watermark="Select birthdate (optional)"
-                                       Height="35"/>
+                                       Height="35"
+                                       AutomationProperties.Name="Date of Birth"/>
                         </StackPanel>
 
                         <StackPanel Grid.Row="2" Grid.Column="1" Margin="10,0,0,0">
@@ -241,7 +329,8 @@
                             <CheckBox Name="ActiveCheckBox"
                                       Content="Active Student"
                                       IsChecked="{Binding Student.Active, Mode=TwoWay}"
-                                      Margin="0,10,0,0"/>
+                                      Margin="0,10,0,0"
+                                      AutomationProperties.Name="Active Student"/>
                         </StackPanel>
                     </Grid>
                 </GroupBox>
@@ -262,37 +351,79 @@
 
                         <StackPanel Grid.Row="0" Grid.ColumnSpan="3">
                             <Label Content="Home Address *"/>
-                            <syncfusion:SfMaskedEdit Name="HomeAddressTextBox"
-                                     Value="{Binding Student.HomeAddress, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True}"
-                                     Watermark="123 Main Street"/>
+                            <!-- Free-form address — use SfTextBoxExt -->
+                            <syncfusion:SfTextBoxExt Name="HomeAddressTextBox" Style="{StaticResource ValidatedSfTextBoxStyle}"
+                                     Validation.ErrorTemplate="{StaticResource ValidationErrorTemplate}"
+                                     Watermark="123 Main Street"
+                                     AutomationProperties.Name="Home Address">
+                                <syncfusion:SfTextBoxExt.Text>
+                                    <Binding Path="Student.HomeAddress" Mode="TwoWay" UpdateSourceTrigger="PropertyChanged" ValidatesOnDataErrors="True">
+                                        <Binding.ValidationRules>
+                                            <validation:StringNotEmptyValidationRule FieldName="Home Address"/>
+                                        </Binding.ValidationRules>
+                                    </Binding>
+                                </syncfusion:SfTextBoxExt.Text>
+                            </syncfusion:SfTextBoxExt>
                         </StackPanel>
 
                         <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,10,0">
                             <Label Content="City *"/>
-                            <syncfusion:SfMaskedEdit Name="CityTextBox"
-                                     Value="{Binding Student.City, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True}"
-                                     Watermark="City name"/>
+                            <syncfusion:SfTextBoxExt Name="CityTextBox" Style="{StaticResource ValidatedSfTextBoxStyle}"
+                                     Validation.ErrorTemplate="{StaticResource ValidationErrorTemplate}"
+                                     Watermark="City name"
+                                     AutomationProperties.Name="City">
+                                <syncfusion:SfTextBoxExt.Text>
+                                    <Binding Path="Student.City" Mode="TwoWay" UpdateSourceTrigger="PropertyChanged" ValidatesOnDataErrors="True">
+                                        <Binding.ValidationRules>
+                                            <validation:StringNotEmptyValidationRule FieldName="City"/>
+                                        </Binding.ValidationRules>
+                                    </Binding>
+                                </syncfusion:SfTextBoxExt.Text>
+                            </syncfusion:SfTextBoxExt>
                         </StackPanel>
 
                         <StackPanel Grid.Row="1" Grid.Column="1" Margin="10,0,10,0">
                             <Label Content="State *"/>
                             <!-- Use ComboBoxAdv bound to a canonical list of US states to avoid free text -->
-                            <syncfusion:ComboBoxAdv Name="StateComboBox"
-                                      ItemsSource="{StaticResource USStates}"
-                                      SelectedItem="{Binding Student.State, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                      IsEditable="False" Width="100"/>
+                            <syncfusion:ComboBoxAdv Name="StateComboBox" Style="{StaticResource ValidatedComboBoxAdvStyle}"
+                                      Validation.ErrorTemplate="{StaticResource ValidationErrorTemplate}"
+                                      IsEditable="False" Width="100"
+                                      AutomationProperties.Name="State">
+                                <syncfusion:ComboBoxAdv.ItemsSource>
+                                    <PriorityBinding>
+                                        <Binding Path="AvailableStates"/>
+                                        <Binding Source="{StaticResource USStates}"/>
+                                    </PriorityBinding>
+                                </syncfusion:ComboBoxAdv.ItemsSource>
+                                <syncfusion:ComboBoxAdv.SelectedItem>
+                                    <Binding Path="Student.State" Mode="TwoWay" UpdateSourceTrigger="PropertyChanged">
+                                        <Binding.ValidationRules>
+                                            <validation:StringNotEmptyValidationRule FieldName="State"/>
+                                        </Binding.ValidationRules>
+                                    </Binding>
+                                </syncfusion:ComboBoxAdv.SelectedItem>
+                            </syncfusion:ComboBoxAdv>
                         </StackPanel>
 
                         <StackPanel Grid.Row="1" Grid.Column="2" Margin="10,0,0,0">
                             <Label Content="ZIP Code *"/>
                             <!-- Use SfMaskedEdit with regex to enforce 5 or 5+4 ZIP formats -->
-                            <syncfusion:SfMaskedEdit Name="ZipMaskedEdit"
-                                       Value="{Binding Student.Zip, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                            <syncfusion:SfMaskedEdit Name="ZipMaskedEdit" Style="{StaticResource ValidatedMaskedEditStyle}"
+                                       Validation.ErrorTemplate="{StaticResource ValidationErrorTemplate}"
                                        MaskType="RegEx"
                                        Mask="\d{5}(-\d{4})?"
                                        PromptChar="_"
                                        Width="110"
-                                       Watermark="12345 or 12345-6789"/>
+                                       Watermark="12345 or 12345-6789"
+                                       AutomationProperties.Name="ZIP Code">
+                                <syncfusion:SfMaskedEdit.Value>
+                                    <Binding Path="Student.Zip" Mode="TwoWay" UpdateSourceTrigger="PropertyChanged">
+                                        <Binding.ValidationRules>
+                                            <validation:StringNotEmptyValidationRule FieldName="ZIP Code"/>
+                                        </Binding.ValidationRules>
+                                    </Binding>
+                                </syncfusion:SfMaskedEdit.Value>
+                            </syncfusion:SfMaskedEdit>
                         </StackPanel>
 
                         <StackPanel Grid.Row="2" Grid.ColumnSpan="3">
@@ -300,7 +431,8 @@
                     Label="Validate Address"
                                     Command="{Binding ValidateAddressCommand}"
                                     HorizontalAlignment="Left"
-                                    Margin="0,10,0,0"/>
+                                    Margin="0,10,0,0"
+                                    AutomationProperties.Name="Validate Address"/>
                             <TextBlock Name="AddressValidationMessage"
                                        Text="{Binding AddressValidationMessage}"
                                        Foreground="{Binding AddressValidationColor}"
@@ -329,7 +461,8 @@
                                        Value="{Binding Student.HomePhone, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                        Mask="(###) ###-####"
                                        PromptChar="_"
-                                       Watermark="(555) 123-4567 — Optional"/>
+                                       Watermark="(555) 123-4567 — Optional"
+                                       AutomationProperties.Name="Home Phone"/>
                         </StackPanel>
 
                         <StackPanel Grid.Row="0" Grid.Column="1" Margin="10,0,0,0">
@@ -338,14 +471,16 @@
                                        Value="{Binding Student.EmergencyPhone, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                        Mask="(###) ###-####"
                                        PromptChar="_"
-                                       Watermark="(555) 123-4567 — Optional"/>
+                                       Watermark="(555) 123-4567 — Optional"
+                                       AutomationProperties.Name="Emergency Phone"/>
                         </StackPanel>
 
                         <StackPanel Grid.Row="1" Grid.ColumnSpan="2">
                             <Label Content="Parent/Guardian"/>
-                            <syncfusion:SfMaskedEdit Name="ParentGuardianTextBox"
-                                     Value="{Binding Student.ParentGuardian, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                     Watermark="Optional"/>
+                            <syncfusion:SfTextBoxExt Name="ParentGuardianTextBox"
+                                     Text="{Binding Student.ParentGuardian, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                     Watermark="Optional"
+                                     AutomationProperties.Name="Parent or Guardian"/>
                         </StackPanel>
                     </Grid>
                 </GroupBox>
@@ -371,7 +506,8 @@
                                 <syncfusion:ComboBoxAdv Name="AMRouteComboBox"
                                           Text="{Binding Student.AMRoute, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                           ItemsSource="{Binding AvailableRoutes}"
-                                          IsEditable="True"/>
+                                          IsEditable="True"
+                                          AutomationProperties.Name="AM Route"/>
                             </StackPanel>
 
                             <StackPanel Grid.Column="1" Margin="10,0,10,0">
@@ -379,7 +515,8 @@
                                 <syncfusion:ComboBoxAdv Name="PMRouteComboBox"
                                           Text="{Binding Student.PMRoute, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                           ItemsSource="{Binding AvailableRoutes}"
-                                          IsEditable="True"/>
+                                          IsEditable="True"
+                                          AutomationProperties.Name="PM Route"/>
                             </StackPanel>
 
                             <StackPanel Grid.Column="2" Margin="10,0,0,0">
@@ -387,7 +524,8 @@
                                 <syncfusion:ComboBoxAdv Name="BusStopComboBox"
                                           Text="{Binding Student.BusStop, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                           ItemsSource="{Binding FilteredBusStops}"
-                                          IsEditable="True"/>
+                                          IsEditable="True"
+                                          AutomationProperties.Name="Bus Stop"/>
                             </StackPanel>
                         </Grid>
 
@@ -397,19 +535,22 @@
                     Label="🤖 AI Suggest Routes"
                                     Command="{Binding SuggestRoutesCommand}"
                                     Background="{StaticResource BusBuddy.Brush.SafetyOrange}" Foreground="{StaticResource BusBuddy.Brush.Text.Primary}"
-                                    ToolTip="Use xAI Grok to suggest optimal routes based on address"/>
+                                    ToolTip="Use xAI Grok to suggest optimal routes based on address"
+                                    AutomationProperties.Name="AI Suggest Routes"/>
                 <syncfusion:ButtonAdv Name="ViewOnMapButton"
                     Label="🗺️ View on Map"
                                     Command="{Binding ViewOnMapCommand}"
                                     Background="{StaticResource BusBuddy.Brush.Semantic.Info}" Foreground="{StaticResource BusBuddy.Brush.Text.Primary}"
                                     Margin="10,0,0,0"
-                                    ToolTip="Show student location on Google Earth Engine map"/>
+                                    ToolTip="Show student location on Google Earth Engine map"
+                                    AutomationProperties.Name="View on Map"/>
                 <syncfusion:ButtonAdv Name="ImportCsvButton"
                     Label="📥 Import CSV"
                                     Command="{Binding ImportCsvCommand}"
                                     Background="{StaticResource BusBuddy.Brush.FleetGreen}" Foreground="{StaticResource BusBuddy.Brush.Text.Primary}"
                                     Margin="10,0,0,0"
-                                    ToolTip="Import student data from CSV file"/>
+                                    ToolTip="Import student data from CSV file"
+                                    AutomationProperties.Name="Import CSV"/>
                         </StackPanel>
                     </Grid>
                 </GroupBox>
@@ -540,19 +681,22 @@
                 Command="{Binding ValidateDataCommand}"
                 Background="{StaticResource BusBuddy.Brush.Semantic.Warning}" Foreground="{StaticResource BusBuddy.Brush.Text.Primary}"
                 Margin="0,0,10,0"
-                ToolTip="Validate all student data and address"/>
+                ToolTip="Validate all student data and address"
+                AutomationProperties.Name="Validate Data"/>
             <syncfusion:ButtonAdv Name="SaveButton" Label="💾 Save Student"
                 Command="{Binding SaveCommand}"
                 IsEnabled="{Binding CanSave}"
                                 Background="{StaticResource BusBuddy.Brush.Primary}" Foreground="{StaticResource BusBuddy.Brush.Text.Primary}"
                                 Margin="0,0,10,0"
                                 IsDefault="True"
-                                ToolTip="Save student information to database"/>
+                                ToolTip="Save student information to database"
+                                AutomationProperties.Name="Save Student"/>
             <syncfusion:ButtonAdv Name="CancelButton" Label="❌ Cancel"
                 Command="{Binding CancelCommand}"
                 Background="{StaticResource BusBuddy.Brush.Semantic.Error}" Foreground="{StaticResource BusBuddy.Brush.Text.Primary}"
                 IsCancel="True"
-                ToolTip="Cancel and return to students list"/>
+                ToolTip="Cancel and return to students list"
+                AutomationProperties.Name="Cancel"/>
                     </StackPanel>
                 </Grid>
             </Border>

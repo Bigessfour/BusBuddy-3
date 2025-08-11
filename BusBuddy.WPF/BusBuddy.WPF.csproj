@@ -55,6 +55,16 @@
     <ProjectReference Include="..\BusBuddy.Core\BusBuddy.Core.csproj" />
   </ItemGroup>
 
+  <!-- Exclude legacy/duplicate root-level views; keep the organized Driver/ and Vehicle/ versions -->
+  <ItemGroup>
+    <Page Remove="Views\DriversView.xaml" />
+    <Compile Remove="Views\DriversView.xaml.cs" />
+    <Page Remove="Views\DriverManagementView.xaml" />
+    <Compile Remove="Views\DriverManagementView.xaml.cs" />
+    <Page Remove="Views\VehiclesView.xaml" />
+    <Compile Remove="Views\VehiclesView.xaml.cs" />
+  </ItemGroup>
+
   <!-- CleanBeforeBuild target removed - may interfere with executable generation -->
 
   <!-- WPF-Specific Syncfusion Packages (not included in Directory.Build.props) -->

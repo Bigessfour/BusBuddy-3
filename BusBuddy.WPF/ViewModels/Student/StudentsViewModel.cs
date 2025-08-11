@@ -155,6 +155,7 @@ namespace BusBuddy.WPF.ViewModels.Student
                 {
             Logger.Debug("SelectedStudent changed to {@Student}", _selectedStudent == null ? null : new { _selectedStudent.StudentId, _selectedStudent.StudentName });
                     OnPropertyChanged(nameof(HasSelectedStudent));
+                    OnPropertyChanged(nameof(HasSelectedStudents));
                     // Ensure selection-dependent commands update their CanExecute state
                     _editStudentRelay?.NotifyCanExecuteChanged();
                     _deleteStudentRelay?.NotifyCanExecuteChanged();
@@ -252,7 +253,17 @@ namespace BusBuddy.WPF.ViewModels.Student
         public bool IsLoading
         {
             get => _isLoading;
-            set => SetProperty(ref _isLoading, value);
+            set
+            {
+                if (SetProperty(ref _isLoading, value))
+                {
+                    // Disable actions while busy
+                    _editStudentRelay?.NotifyCanExecuteChanged();
+                    _deleteStudentRelay?.NotifyCanExecuteChanged();
+                    _validateAddressRelay?.NotifyCanExecuteChanged();
+                    _bulkAssignRouteRelay?.NotifyCanExecuteChanged();
+                }
+            }
         }
 
         /// <summary>
@@ -341,6 +352,18 @@ namespace BusBuddy.WPF.ViewModels.Student
                 Logger.Information("Add student command executed");
 
                 var studentForm = new BusBuddy.WPF.Views.Student.StudentForm();
+                try
+                {
+                    var owner = System.Windows.Application.Current?.Windows
+                        .OfType<System.Windows.Window>()
+                        .FirstOrDefault(w => w.IsActive)
+                        ?? System.Windows.Application.Current?.MainWindow;
+                    if (owner != null)
+                    {
+                        studentForm.Owner = owner;
+                    }
+                }
+                catch { /* non-fatal: owner is optional */ }
                 var result = studentForm.ShowDialog();
 
                 if (result == true)
@@ -369,6 +392,18 @@ namespace BusBuddy.WPF.ViewModels.Student
                     Logger.Information("Edit student command executed for student {StudentId}", SelectedStudent.StudentId);
 
                     var studentForm = new BusBuddy.WPF.Views.Student.StudentForm(SelectedStudent);
+                    try
+                    {
+                        var owner = System.Windows.Application.Current?.Windows
+                            .OfType<System.Windows.Window>()
+                            .FirstOrDefault(w => w.IsActive)
+                            ?? System.Windows.Application.Current?.MainWindow;
+                        if (owner != null)
+                        {
+                            studentForm.Owner = owner;
+                        }
+                    }
+                    catch { /* non-fatal: owner is optional */ }
                     var result = studentForm.ShowDialog();
 
                     if (result == true)
@@ -391,7 +426,7 @@ namespace BusBuddy.WPF.ViewModels.Student
     /// </summary>
     private bool CanExecuteEditStudent()
         {
-            var can = HasSelectedStudent;
+            var can = HasSelectedStudent && !IsLoading;
             Logger.Debug("CanExecuteEditStudent evaluated — HasSelectedStudent={Can}", can);
             return can;
         }
@@ -421,7 +456,7 @@ namespace BusBuddy.WPF.ViewModels.Student
     /// </summary>
     private bool CanExecuteDeleteStudent()
         {
-            var can = HasSelectedStudent;
+            var can = HasSelectedStudent && !IsLoading;
             Logger.Debug("CanExecuteDeleteStudent evaluated — HasSelectedStudent={Can}", can);
             return can;
         }
@@ -538,7 +573,7 @@ namespace BusBuddy.WPF.ViewModels.Student
 
         private bool CanExecuteValidateAddress()
         {
-            var can = HasSelectedStudent && !string.IsNullOrWhiteSpace(SelectedStudent?.HomeAddress);
+            var can = HasSelectedStudent && !IsLoading && !string.IsNullOrWhiteSpace(SelectedStudent?.HomeAddress);
             Logger.Debug("CanExecuteValidateAddress evaluated — HasSelectedStudent={Has}, HasAddress={HasAddress}, Result={Result}",
                 HasSelectedStudent, !string.IsNullOrWhiteSpace(SelectedStudent?.HomeAddress), can);
             return can;
@@ -558,8 +593,33 @@ namespace BusBuddy.WPF.ViewModels.Student
             {
                 IsLoading = true;
                 Logger.Information("Loading students from database");
-
                 var context = _contextFactory.CreateDbContext();
+                try
+                {
+                    // Diagnostics: provider and connection string (mask password) to detect env/connection mismatches
+                    var provider = context.Database.ProviderName;
+                    var rawConn = context.Database.GetConnectionString();
+                    string masked = rawConn ?? "(null)";
+                    if (!string.IsNullOrEmpty(masked))
+                    {
+                        // Very basic masking of password and SAS-style secrets
+                        masked = System.Text.RegularExpressions.Regex.Replace(masked, "(?i)(Password|Pwd)=([^;]+)", "$1=***");
+                    }
+                    Logger.Debug("EF Provider: {Provider}; Connection: {Connection}", provider, masked);
+
+                    // Warn if unresolved placeholders exist (common cause: missing env vars for Azure)
+                    if (!string.IsNullOrEmpty(rawConn) && rawConn.Contains("${"))
+                    {
+                        Logger.Warning("Connection string contains unresolved placeholders (e.g., ${AZURE_SQL_USER}). Check appsettings and environment variables.");
+                    }
+                }
+                catch { /* non-fatal diagnostics */ }
+                try
+                {
+                    var cs = context.Database.GetConnectionString();
+                    Logger.Information("StudentsViewModel using connection: {ConnectionString}", cs ?? "(null)");
+                }
+                catch { /* ignore diagnostics failures */ }
                 var students = await context.Students
                     .OrderBy(s => s.StudentName)
                     .ToListAsync();
@@ -571,8 +631,16 @@ namespace BusBuddy.WPF.ViewModels.Student
                 }
 
                 Logger.Information("Loaded {StudentCount} students", Students.Count);
+                StatusMessage = $"Loaded {Students.Count} students";
                 OnPropertyChanged(nameof(TotalStudents));
                 OnPropertyChanged(nameof(ActiveStudents));
+                StatusMessage = $"Loaded {Students.Count} students";
+
+                // Initialize selection to first row to enable edit-related commands by default
+                if (SelectedStudent == null && Students.Count > 0)
+                {
+                    SelectedStudent = Students[0];
+                }
             }
             catch (Exception ex)
             {
@@ -691,7 +759,7 @@ namespace BusBuddy.WPF.ViewModels.Student
 
         private bool CanExecuteBulkAssignRoute()
         {
-            var can = HasSelectedStudent;
+            var can = HasSelectedStudent && !IsLoading;
             Logger.Debug("CanExecuteBulkAssignRoute evaluated — HasSelectedStudent={Can}", can);
             return can;
         }
@@ -942,7 +1010,7 @@ namespace BusBuddy.WPF.ViewModels.Student
             {
                 return false;
             }
-
+            field = value;
             // ...existing code...
             OnPropertyChanged(propertyName);
             Logger.Verbose("PropertyChanged: {Property}", propertyName);

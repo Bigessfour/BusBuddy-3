@@ -10,6 +10,8 @@ using BusBuddy.WPF.Utilities; // SyncfusionThemeManager
 using Serilog; // Logging per project standards
 using Microsoft.Extensions.DependencyInjection;
 using System.Diagnostics; // Conditional/DEBUG — https://learn.microsoft.com/dotnet/api/system.diagnostics.conditionalattribute
+using BusBuddy.Core.Data; // For IBusBuddyDbContextFactory
+using BusBuddy.Core.Services; // For AddressService fallback when DI unavailable
 
 namespace BusBuddy.WPF.Views.Student
 {
@@ -38,7 +40,21 @@ namespace BusBuddy.WPF.Views.Student
             {
                 var sp = App.ServiceProvider;
                 var vm = sp?.GetService<StudentsViewModel>();
-                DataContext = vm ?? new StudentsViewModel();
+                // Prefer DI-provided VM. If unavailable, still attempt to use DI factory to ensure
+                // connection strings align with appsettings; lastly fall back to default ctor.
+                if (vm != null)
+                {
+                    DataContext = vm;
+                }
+                else if (sp != null)
+                {
+                    var factory = sp.GetService<IBusBuddyDbContextFactory>() ?? new BusBuddyDbContextFactory();
+                    DataContext = new StudentsViewModel(factory, sp.GetService<AddressService>() ?? new AddressService());
+                }
+                else
+                {
+                    DataContext = new StudentsViewModel();
+                }
             }
             catch (System.Exception ex)
             {
@@ -62,6 +78,61 @@ namespace BusBuddy.WPF.Views.Student
             TextOptions.SetTextRenderingMode(this, TextRenderingMode.ClearType);
 
             Logger.Information("StudentsView initialized");
+
+            // Inspect DataContext and command readiness on load
+            this.Loaded += OnLoaded;
+        }
+
+        private void OnLoaded(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var vm = DataContext as BusBuddy.WPF.ViewModels.Student.StudentsViewModel;
+                Logger.Information("StudentsView Loaded. DataContext={VM}", vm?.GetType().FullName ?? "(null)");
+                if (vm != null)
+                {
+                    var addReady = vm.AddStudentCommand != null;
+                    var editReady = vm.EditStudentCommand != null;
+                    var delReady = vm.DeleteStudentCommand != null;
+                    Logger.Information("Command readiness — Add:{Add} Edit:{Edit} Delete:{Del}", addReady, editReady, delReady);
+
+                    // If no selection yet, select first row to enable edit/delete
+                    if (vm.SelectedStudent == null && vm.Students.Count > 0)
+                    {
+                        // Defer to dispatcher to ensure grid is loaded
+                        Dispatcher.BeginInvoke(new Action(() =>
+                        {
+                            try
+                            {
+                                StudentsDataGrid.SelectedIndex = 0;
+                            }
+                            catch { }
+                        }), System.Windows.Threading.DispatcherPriority.Background);
+                    }
+
+                    // One-time delayed refresh to pick up background seeding that may complete shortly after startup.
+                    _ = Dispatcher.BeginInvoke(new Action(async () =>
+                    {
+                        try
+                        {
+                            await System.Threading.Tasks.Task.Delay(1500);
+                            if (vm.RefreshCommand?.CanExecute(null) == true)
+                            {
+                                vm.RefreshCommand.Execute(null);
+                                Logger.Information("StudentsView: Performed delayed refresh after load");
+                            }
+                        }
+                        catch (System.Exception ex2)
+                        {
+                            Logger.Warning(ex2, "StudentsView: delayed refresh failed");
+                        }
+                    }), System.Windows.Threading.DispatcherPriority.Background);
+                }
+            }
+            catch (System.Exception ex)
+            {
+                Logger.Warning(ex, "StudentsView: OnLoaded diagnostics failed");
+            }
         }
 
         protected override void OnClosed(System.EventArgs e)

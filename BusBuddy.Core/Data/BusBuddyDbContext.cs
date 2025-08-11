@@ -42,11 +42,8 @@ public class BusBuddyDbContext : DbContext
         this.ChangeTracker.LazyLoadingEnabled = false;
         this.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
 
-        // Disable automatic relationship discovery in production for better performance
-        if (!System.Diagnostics.Debugger.IsAttached)
-        {
-            this.ChangeTracker.AutoDetectChangesEnabled = false;
-        }
+    // Keep automatic change detection enabled to ensure reliability across providers and tests
+    // (Perf tuning can reintroduce targeted optimizations post-MVP.)
     }
 
     /// <summary>

@@ -73,6 +73,11 @@ namespace BusBuddy.WPF.ViewModels.Student
             try { _student.PropertyChanged += OnStudentPropertyChanged; } catch { }
             InitializeCommands();
             _ = LoadDataAsync();
+            if (DisableAddressValidation)
+            {
+                AddressValidationMessage = "Address validation disabled — MVP mode";
+                AddressValidationColor = Brushes.Gray;
+            }
         }
 
         // Fallback constructor when DI is unavailable
@@ -102,6 +107,11 @@ namespace BusBuddy.WPF.ViewModels.Student
             try { _student.PropertyChanged += OnStudentPropertyChanged; } catch { }
             InitializeCommands();
             _ = LoadDataAsync();
+            if (DisableAddressValidation)
+            {
+                AddressValidationMessage = "Address validation disabled — MVP mode";
+                AddressValidationColor = Brushes.Gray;
+            }
         }
 
         #region Properties
@@ -519,13 +529,10 @@ namespace BusBuddy.WPF.ViewModels.Student
 
         private bool CanSaveStudent()
         {
-            // Enable Save only when required fields are present
-            return !string.IsNullOrWhiteSpace(Student?.StudentName)
-                   && !string.IsNullOrWhiteSpace(Student?.Grade)
-                   && !string.IsNullOrWhiteSpace(Student?.HomeAddress)
-                   && !string.IsNullOrWhiteSpace(Student?.City)
-                   && !string.IsNullOrWhiteSpace(Student?.State)
-                   && !string.IsNullOrWhiteSpace(Student?.Zip);
+         // MVP: allow Save with minimal required fields only (name + grade).
+         // Address fields are optional for Save to unblock CRUD flows.
+         return !string.IsNullOrWhiteSpace(Student?.StudentName)
+             && !string.IsNullOrWhiteSpace(Student?.Grade);
         }
 
         private void OnStudentPropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -721,14 +728,8 @@ namespace BusBuddy.WPF.ViewModels.Student
                 if (string.IsNullOrWhiteSpace(Student.Grade))
                     validationErrors.Add("Grade is required");
 
-                if (string.IsNullOrWhiteSpace(Student.HomeAddress))
-                    validationErrors.Add("Home address is required");
-
-                if (string.IsNullOrWhiteSpace(Student.City))
-                    validationErrors.Add("City is required");
-
-                if (string.IsNullOrWhiteSpace(Student.State))
-                    validationErrors.Add("State is required");
+                // MVP: Address fields are optional for Save. Do not flag as blocking errors.
+                // You can still validate address via the dedicated Validate Address action.
 
                 // Populate error list for UI
                 _validationErrors.Clear();
@@ -740,12 +741,14 @@ namespace BusBuddy.WPF.ViewModels.Student
 
                 if (validationErrors.Any())
                 {
-                    ValidationStatus = $"❌ {validationErrors.Count} validation errors";
-                    ValidationStatusBrush = Brushes.Red;
-                    SetGlobalError($"Validation failed: {string.Join(", ", validationErrors)}");
-                    CanSave = false;
+                    // Inform the user but do not block Save for MVP minimal data flow
+                    ValidationStatus = $"⚠️ {validationErrors.Count} validation warnings";
+                    ValidationStatusBrush = Brushes.Orange;
+                    SetGlobalError($"Please review: {string.Join(", ", validationErrors)}");
+                    // Keep CanSave governed by CanSaveStudent()
+                    CanSave = CanSaveStudent();
                     _saveRelay?.NotifyCanExecuteChanged();
-                    return;
+                    // Continue without returning so address validation can run if enabled
                 }
 
                 // Perform address validation unless disabled
@@ -863,12 +866,38 @@ namespace BusBuddy.WPF.ViewModels.Student
             {
                 Logger.Information("Loading form data");
 
-                // Load available routes (from seed data or existing routes)
-                var routes = new[] { "Route A", "Route B", "Route C", "Route D" };
+                // Load available routes from database (active + distinct), union with safe defaults for MVP/tests
+                var defaultRoutes = new[] { "Route A", "Route B", "Route C", "Route D" };
+                List<string> dbRouteNames = new();
+                try
+                {
+                    dbRouteNames = await _context.Routes
+                        .Where(r => r.IsActive)
+                        .Select(r => r.RouteName)
+                        .Distinct()
+                        .OrderBy(n => n)
+                        .ToListAsync();
+                }
+                catch (Exception ex)
+                {
+                    Logger.Warning(ex, "Failed to load routes from DB — falling back to defaults");
+                }
+
+                var routeNameSet = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                foreach (var n in dbRouteNames)
+                {
+                    var name = string.IsNullOrWhiteSpace(n) ? null : n.Trim();
+                    if (!string.IsNullOrEmpty(name)) routeNameSet.Add(name);
+                }
+                foreach (var n in defaultRoutes)
+                {
+                    routeNameSet.Add(n);
+                }
+
                 AvailableRoutes.Clear();
-        foreach (var route in routes)
-        {
-            AvailableRoutes.Add(route);
+                foreach (var n in routeNameSet.OrderBy(x => x))
+                {
+                    AvailableRoutes.Add(n);
                 }
 
                 // Load available bus stops
@@ -901,18 +930,17 @@ namespace BusBuddy.WPF.ViewModels.Student
         /// </summary>
     private bool IsValidStudent()
         {
-            // Required basics
+            try
+            {
+                Logger.Debug("Validating: Name={Name}, Grade={Grade}, Address={Address}, City={City}, State={State}, Zip={Zip}",
+                    Student?.StudentName, Student?.Grade, Student?.HomeAddress, Student?.City, Student?.State, Student?.Zip);
+            }
+            catch { /* logging best-effort */ }
+            // MVP: Only enforce Name and Grade for Save; address fields are optional.
             if (string.IsNullOrWhiteSpace(Student.StudentName)) return false;
             if (string.IsNullOrWhiteSpace(Student.Grade)) return false;
 
-            // Required address fields (match UI asterisks)
-            if (string.IsNullOrWhiteSpace(Student.HomeAddress) ||
-                string.IsNullOrWhiteSpace(Student.City) ||
-                string.IsNullOrWhiteSpace(Student.State) ||
-                string.IsNullOrWhiteSpace(Student.Zip)) return false;
-
-            // Do not enforce regex/format rules here — Save should work with minimal data.
-            AddressValidationMessage = "✓ Required fields present.";
+            AddressValidationMessage = "✓ Minimal required fields present.";
             AddressValidationColor = Brushes.Green;
             return true;
         }

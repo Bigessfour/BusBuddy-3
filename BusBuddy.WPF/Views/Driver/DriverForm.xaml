@@ -52,12 +52,12 @@
             </Grid.RowDefinitions>
 
             <!-- Header -->
-            <Border Grid.Row="0" Background="{StaticResource BusBuddy.Brush.Primary}" CornerRadius="5" Padding="15" Margin="0,0,0,20">
+            <Border Grid.Row="0" Background="{DynamicResource BusBuddy.Brush.Primary}" CornerRadius="5" Padding="15" Margin="0,0,0,20">
                 <StackPanel Orientation="Horizontal">
                     <TextBlock Text="&#xE7C4;" FontFamily="Segoe MDL2 Assets"
-                              FontSize="20" Foreground="White" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                              FontSize="20" Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}" VerticalAlignment="Center" Margin="0,0,10,0"/>
                     <TextBlock Text="{Binding FormTitle}" FontSize="18" FontWeight="Bold"
-                              Foreground="White" VerticalAlignment="Center"/>
+                              Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}" VerticalAlignment="Center"/>
                 </StackPanel>
             </Border>
 

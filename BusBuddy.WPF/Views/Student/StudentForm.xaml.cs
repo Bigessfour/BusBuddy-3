@@ -30,6 +30,7 @@ namespace BusBuddy.WPF.Views.Student
     {
         private static readonly ILogger Logger = Log.ForContext<StudentForm>();
         public StudentFormViewModel ViewModel { get; private set; }
+    private bool _isDirty;
 
         /// <summary>
         /// Default constructor: initializes theming, ViewModel, and event hooks.
@@ -70,6 +71,7 @@ namespace BusBuddy.WPF.Views.Student
             {
                 Loaded += OnLoaded;
                 ContentRendered += OnContentRendered;
+                Closing += OnClosingPromptSave;
             }
             catch (System.Exception ex)
             {
@@ -103,6 +105,8 @@ namespace BusBuddy.WPF.Views.Student
             {
                 AddHandler(TextBoxBase.TextChangedEvent, new TextChangedEventHandler(OnAnyTextChanged), true);
                 Logger.Information("StudentForm: global text change diagnostics attached");
+                // Mark form dirty on any text change
+                AddHandler(TextBoxBase.TextChangedEvent, new TextChangedEventHandler((s, e) => _isDirty = true), true);
             }
             catch (System.Exception ex)
             {
@@ -112,8 +116,10 @@ namespace BusBuddy.WPF.Views.Student
             // Validation diagnostics — logs when errors are added/removed
             try
             {
-                AddHandler(Validation.ErrorEvent, new EventHandler<ValidationErrorEventArgs>(OnValidationError), true);
+                AddHandler(System.Windows.Controls.Validation.ErrorEvent, new EventHandler<ValidationErrorEventArgs>(OnValidationError), true);
                 Logger.Information("StudentForm: validation diagnostics attached");
+                // Also consider any validation error as a change indicator
+                AddHandler(System.Windows.Controls.Validation.ErrorEvent, new EventHandler<ValidationErrorEventArgs>((s, e) => _isDirty = true), true);
             }
             catch (System.Exception ex)
             {
@@ -132,11 +138,11 @@ namespace BusBuddy.WPF.Views.Student
             {
                 var sp = App.ServiceProvider;
                 var svc = sp?.GetService<IStudentService>();
-                ViewModel = svc != null ? new StudentFormViewModel(svc, student) : new StudentFormViewModel(student);
+                ViewModel = svc != null ? new StudentFormViewModel(svc, student, enableValidation: false) : new StudentFormViewModel(student, enableValidation: false);
             }
             catch
             {
-                ViewModel = new StudentFormViewModel(student);
+                ViewModel = new StudentFormViewModel(student, enableValidation: false);
             }
             DataContext = ViewModel;
             ViewModel.RequestClose += OnRequestClose;
@@ -151,6 +157,60 @@ namespace BusBuddy.WPF.Views.Student
             Logger.Information("StudentForm RequestClose received. DialogResult={DialogResult}", dialogResult);
             DialogResult = dialogResult;
             Close();
+        }
+
+        // Prompt to save if there are unsaved changes
+        private void OnClosingPromptSave(object? sender, System.ComponentModel.CancelEventArgs e)
+        {
+            try
+            {
+                if (!_isDirty) return; // nothing to do
+                // If already saved in this session, skip prompt
+                if (DialogResult == true) return;
+
+                var result = MessageBox.Show(
+                    this,
+                    "You have unsaved changes. Do you want to save before closing?",
+                    "Save Changes",
+                    MessageBoxButton.YesNoCancel,
+                    MessageBoxImage.Question);
+
+                if (result == MessageBoxResult.Cancel)
+                {
+                    e.Cancel = true;
+                    return;
+                }
+                if (result == MessageBoxResult.Yes)
+                {
+                    try
+                    {
+                        // Trigger ViewModel save and cancel the close until it completes
+                        e.Cancel = true;
+                        _ = ViewModel?.GetType(); // null-guard
+                        if (ViewModel?.SaveCommand?.CanExecute(null) == true)
+                        {
+                            ViewModel.SaveCommand.Execute(null);
+                            // ViewModel should close window on success via RequestClose(true)
+                        }
+                        else
+                        {
+                            // If cannot save, keep the window open
+                            MessageBox.Show(this, "Cannot save — please fix validation errors first.", "Save Failed", MessageBoxButton.OK, MessageBoxImage.Warning);
+                        }
+                    }
+                    catch (System.Exception ex)
+                    {
+                        Logger.Error(ex, "Save during closing failed");
+                        MessageBox.Show(this, $"Error while saving: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                        e.Cancel = true;
+                    }
+                }
+                // No -> allow closing and discard changes
+            }
+            catch (System.Exception ex)
+            {
+                Logger.Warning(ex, "StudentForm: closing prompt encountered an error");
+            }
         }
 
         /// <summary>
@@ -173,7 +233,7 @@ namespace BusBuddy.WPF.Views.Student
                 RemoveHandler(ButtonBase.ClickEvent, new RoutedEventHandler(OnAnyButtonClick));
                 RemoveHandler(Selector.SelectionChangedEvent, new SelectionChangedEventHandler(OnAnySelectionChanged));
                 RemoveHandler(TextBoxBase.TextChangedEvent, new TextChangedEventHandler(OnAnyTextChanged));
-                RemoveHandler(Validation.ErrorEvent, new EventHandler<ValidationErrorEventArgs>(OnValidationError));
+                RemoveHandler(System.Windows.Controls.Validation.ErrorEvent, new EventHandler<ValidationErrorEventArgs>(OnValidationError));
             }
             catch { /* Best-effort cleanup */ }
             // Clear SkinManager instances for this window per docs

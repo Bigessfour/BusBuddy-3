@@ -584,9 +584,78 @@ namespace BusBuddy.Core.Services
             return Task.FromResult(Result.SuccessResult<bool>(true));
         }
 
-        public Task<Result<bool>> AssignVehicleToRouteAsync(int routeId, int vehicleId, RouteTimeSlot timeSlot)
+        public async Task<Result<bool>> AssignVehicleToRouteAsync(int routeId, int vehicleId, RouteTimeSlot timeSlot)
         {
-            return Task.FromResult(Result.FailureResult<bool>("Not implemented yet"));
+            try
+            {
+                if (routeId <= 0 || vehicleId <= 0)
+                {
+                    return Result.FailureResult<bool>("Invalid routeId or vehicleId");
+                }
+
+                var (context, dispose) = GetWriteContext();
+                try
+                {
+                    await using var transaction = await context.Database.BeginTransactionAsync();
+
+                    var route = await context.Routes.FindAsync(routeId);
+                    if (route == null)
+                    {
+                        Logger.Error("AssignVehicle failed — route {RouteId} not found", routeId);
+                        return Result.FailureResult<bool>($"Route with ID {routeId} not found");
+                    }
+
+                    var bus = await context.Buses.FindAsync(vehicleId);
+                    if (bus == null)
+                    {
+                        Logger.Error("AssignVehicle failed — vehicle {VehicleId} not found", vehicleId);
+                        return Result.FailureResult<bool>($"Vehicle with ID {vehicleId} not found");
+                    }
+
+                    // Availability check (Active status)
+                    if (!string.Equals(bus.Status, "Active", StringComparison.OrdinalIgnoreCase))
+                    {
+                        Logger.Error("AssignVehicle failed — vehicle {VehicleId} not available (Status: {Status})", vehicleId, bus.Status);
+                        return Result.FailureResult<bool>($"Vehicle {vehicleId} is not available");
+                    }
+
+                    // Apply assignment based on time slot
+                    switch (timeSlot)
+                    {
+                        case RouteTimeSlot.AM:
+                            route.AMVehicleId = vehicleId;
+                            break;
+                        case RouteTimeSlot.PM:
+                            route.PMVehicleId = vehicleId;
+                            break;
+                        case RouteTimeSlot.Both:
+                            route.AMVehicleId = vehicleId;
+                            route.PMVehicleId = vehicleId;
+                            break;
+                        default:
+                            Logger.Error("AssignVehicle failed — unsupported time slot {TimeSlot}", timeSlot);
+                            return Result.FailureResult<bool>("Unsupported time slot");
+                    }
+
+                    await context.SaveChangesAsync();
+                    await transaction.CommitAsync();
+
+                    Logger.Information("Assigned vehicle {VehicleId} to route {RouteId} for {TimeSlot}", vehicleId, routeId, timeSlot);
+                    return Result.SuccessResult(true);
+                }
+                finally
+                {
+                    if (dispose)
+                    {
+                        await context.DisposeAsync();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Error assigning vehicle {VehicleId} to route {RouteId}", vehicleId, routeId);
+                return Result.FailureResult<bool>($"Error assigning vehicle to route: {ex.Message}");
+            }
         }
 
         public Task<Result<bool>> AssignDriverToRouteAsync(int routeId, int driverId, RouteTimeSlot timeSlot)
@@ -594,14 +663,123 @@ namespace BusBuddy.Core.Services
             return Task.FromResult(Result.FailureResult<bool>("Not implemented yet"));
         }
 
-    public Task<Result<RouteStop>> AddStopToRouteAsync(int routeId, RouteStop routeStop)
+    public async Task<Result<RouteStop>> AddStopToRouteAsync(int routeId, RouteStop routeStop)
         {
-            return Task.FromResult(Result.FailureResult<RouteStop>("Not implemented yet"));
+            try
+            {
+                if (routeStop is null)
+                {
+                    return Result.FailureResult<RouteStop>("RouteStop cannot be null");
+                }
+
+                if (routeId <= 0)
+                {
+                    return Result.FailureResult<RouteStop>("Invalid routeId");
+                }
+
+                var (context, dispose) = GetWriteContext();
+                try
+                {
+                    // Ensure route exists
+                    var route = await context.Routes.FirstOrDefaultAsync(r => r.RouteId == routeId);
+                    if (route == null)
+                    {
+                        return Result.FailureResult<RouteStop>($"Route with ID {routeId} not found");
+                    }
+
+                    // Normalize and prepare the RouteStop entity
+                    routeStop.RouteId = routeId; // enforce association
+                    if (routeStop.StopOrder <= 0)
+                    {
+                        // Determine next StopOrder
+                        var maxOrder = await context.RouteStops
+                            .Where(rs => rs.RouteId == routeId)
+                            .Select(rs => (int?)rs.StopOrder)
+                            .MaxAsync() ?? 0;
+                        routeStop.StopOrder = maxOrder + 1;
+                    }
+
+                    // CreatedDate is required by the model — set explicitly
+                    if (routeStop.CreatedDate == default)
+                    {
+                        routeStop.CreatedDate = DateTime.UtcNow;
+                    }
+
+                    // Add and save changes asynchronously (EF Core best practice)
+                    await context.RouteStops.AddAsync(routeStop);
+                    await context.SaveChangesAsync();
+
+                    Logger.Information("Added stop {StopName} (ID: {RouteStopId}) to route {RouteId}",
+                        routeStop.StopName, routeStop.RouteStopId, routeId);
+
+                    return Result.SuccessResult(routeStop);
+                }
+                finally
+                {
+                    if (dispose)
+                    {
+                        await context.DisposeAsync();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Error adding stop to route {RouteId}", routeId);
+                return Result.FailureResult<RouteStop>($"Error adding stop to route: {ex.Message}");
+            }
         }
 
-        public Task<Result<bool>> RemoveStopFromRouteAsync(int routeId, int stopId)
+        public async Task<Result<bool>> RemoveStopFromRouteAsync(int routeId, int stopId)
         {
-            return Task.FromResult(Result.FailureResult<bool>("Not implemented yet"));
+            try
+            {
+                if (routeId <= 0 || stopId <= 0)
+                {
+                    return Result.FailureResult<bool>("Invalid routeId or stopId");
+                }
+
+                var (context, dispose) = GetWriteContext();
+                try
+                {
+                    // Ensure route exists
+                    var route = await context.Routes.FindAsync(routeId);
+                    if (route == null)
+                    {
+                        Logger.Error("RemoveStop failed — route {RouteId} not found", routeId);
+                        return Result.FailureResult<bool>($"Route with ID {routeId} not found");
+                    }
+
+                    // Find the stop scoped to this route
+                    var stop = await context.RouteStops
+                        .FirstOrDefaultAsync(rs => rs.RouteStopId == stopId && rs.RouteId == routeId);
+
+                    if (stop == null)
+                    {
+                        Logger.Error("RemoveStop failed — stop {StopId} not found for route {RouteId}", stopId, routeId);
+                        return Result.FailureResult<bool>($"Stop with ID {stopId} not found for route {routeId}");
+                    }
+
+                    context.RouteStops.Remove(stop);
+
+                    // Persist changes asynchronously
+                    await context.SaveChangesAsync();
+
+                    Logger.Information("Removed stop {StopId} from route {RouteId}", stopId, routeId);
+                    return Result.SuccessResult(true);
+                }
+                finally
+                {
+                    if (dispose)
+                    {
+                        await context.DisposeAsync();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Error removing stop {StopId} from route {RouteId}", stopId, routeId);
+                return Result.FailureResult<bool>($"Error removing stop from route: {ex.Message}");
+            }
         }
 
         public Task<Result<bool>> ReorderRouteStopsAsync(int routeId, List<int> orderedStopIds)

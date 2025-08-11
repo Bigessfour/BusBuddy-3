@@ -40,11 +40,11 @@
         </Grid.RowDefinitions>
 
         <!-- ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════ -->
-        <!-- HEADER WITH FLEET DASHBOARD -->
+    <!-- HEADER WITH FLEET DASHBOARD -->
         <!-- ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════ -->
     <Border Grid.Row="0"
-        Background="{DynamicResource BusBuddy.Brush.Surface.Light}"
-                Padding="20,15">
+        Background="{DynamicResource BusBuddy.Brush.Primary}"
+                Padding="20,15" CornerRadius="5">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
@@ -53,9 +53,10 @@
 
                 <!-- Title and Search -->
                 <StackPanel Grid.Column="0" Orientation="Horizontal">
-                    <TextBlock Text="Vehicle Management"
-                               FontSize="24"
-                               FontWeight="Bold"
+                    <TextBlock Text="🚐" FontSize="22" Margin="0,0,8,0"
+                               Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}" VerticalAlignment="Center"/>
+                    <TextBlock Text="{Binding Title, RelativeSource={RelativeSource AncestorType=syncfusion:ChromelessWindow}}"
+                               FontSize="24" FontWeight="Bold"
                                Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"
                                VerticalAlignment="Center"/>
 
@@ -65,9 +66,9 @@
                              Margin="30,0,0,0"
                              Text="{Binding SearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                              VerticalAlignment="Center"
-                             Background="{DynamicResource ContentBackgroundBrush}"
-                             Foreground="{DynamicResource PrimaryTextBrush}"
-                             BorderBrush="{DynamicResource TextBoxBorderBrush}"
+                             Background="{DynamicResource BusBuddy.Brush.Surface.Light}"
+                             Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"
+                             BorderBrush="{DynamicResource BusBuddy.Brush.Surface.Border}"
                              Padding="10,5"/>
                 </StackPanel>
 

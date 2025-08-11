@@ -141,6 +141,7 @@
                                ShowGroupDropArea="True"
                                ShowRowHeader="True"
                                SelectionMode="Single"
+                               SelectionUnit="Row"
                                GridLinesVisibility="Both"
                                HeaderLinesVisibility="Both"
                                ColumnSizer="Star"
@@ -285,6 +286,9 @@
 
                 <!-- Quick Actions & Filter Status -->
                 <StackPanel Grid.Column="1" Orientation="Horizontal">
+                    <TextBlock Text="| " Margin="0,0,6,0"/>
+                    <TextBlock Text="Status: " FontStyle="Italic"/>
+                    <TextBlock Text="{Binding StatusMessage}" Margin="4,0,10,0"/>
                     <TextBlock Text="{Binding FilterStatusText}" FontStyle="Italic" Margin="0,0,10,0"/>
                     <syncfusion:ButtonAdv Label="📋 Summary" Width="80" Height="25"
                             Command="{Binding ShowSummaryCommand}"

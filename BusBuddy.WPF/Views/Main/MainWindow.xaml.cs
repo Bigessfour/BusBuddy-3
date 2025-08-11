@@ -62,10 +62,10 @@ namespace BusBuddy.WPF.Views.Main
     public partial class MainWindow : ChromelessWindow
     {
         private static readonly ILogger Logger = Log.ForContext<MainWindow>();
-        private MainWindowViewModel? _viewModel;
+    private BusBuddy.WPF.ViewModels.MainWindowViewModel? _viewModel;
 
-        // DI-friendly constructor to ensure DataContext is set before initialization
-        public MainWindow(MainWindowViewModel viewModel) : this()
+    // DI-friendly constructor to ensure DataContext is set before initialization
+    public MainWindow(BusBuddy.WPF.ViewModels.MainWindowViewModel viewModel) : this()
         {
             try
             {
@@ -233,17 +233,17 @@ namespace BusBuddy.WPF.Views.Main
 
             Logger.Debug("Ensuring robust DataContext management");
             // Create and set ViewModel if not already present
-            if (this.DataContext == null || this.DataContext is not MainWindowViewModel)
+            if (this.DataContext == null || this.DataContext is not BusBuddy.WPF.ViewModels.MainWindowViewModel)
             {
                 Logger.Debug("Creating new MainWindowViewModel instance");
-                _viewModel = new MainWindowViewModel();
+                _viewModel = new BusBuddy.WPF.ViewModels.MainWindowViewModel();
                 this.DataContext = _viewModel;
                 Logger.Information("MainWindow DataContext initialized with new ViewModel");
             }
             else
             {
                 Logger.Debug("Existing MainWindowViewModel found, preserving it");
-                _viewModel = (MainWindowViewModel)this.DataContext;
+                _viewModel = (BusBuddy.WPF.ViewModels.MainWindowViewModel)this.DataContext;
                 Logger.Information("MainWindow DataContext preserved from DI");
             }
 
@@ -362,11 +362,11 @@ namespace BusBuddy.WPF.Views.Main
             Logger.Debug("DataContext changed detected");
 
             // Accept DataContext if it is the expected ViewModel type or has the same runtime name (avoids cross-assembly type identity issues)
-            if (e.NewValue is MainWindowViewModel newViewModel ||
-                string.Equals(e.NewValue?.GetType()?.Name, nameof(MainWindowViewModel), StringComparison.OrdinalIgnoreCase))
+            if (e.NewValue is BusBuddy.WPF.ViewModels.MainWindowViewModel newViewModel ||
+                string.Equals(e.NewValue?.GetType()?.Name, nameof(BusBuddy.WPF.ViewModels.MainWindowViewModel), StringComparison.OrdinalIgnoreCase))
             {
-                _viewModel = e.NewValue as MainWindowViewModel ?? _viewModel ?? new MainWindowViewModel();
-                if (this.DataContext is not MainWindowViewModel)
+                _viewModel = e.NewValue as BusBuddy.WPF.ViewModels.MainWindowViewModel ?? _viewModel ?? new BusBuddy.WPF.ViewModels.MainWindowViewModel();
+                if (this.DataContext is not BusBuddy.WPF.ViewModels.MainWindowViewModel)
                 {
                     this.DataContext = _viewModel;
                 }
@@ -382,7 +382,7 @@ namespace BusBuddy.WPF.Views.Main
                 else
                 {
                     Logger.Warning("No previous ViewModel available, creating new one");
-                    _viewModel = new MainWindowViewModel();
+                    _viewModel = new BusBuddy.WPF.ViewModels.MainWindowViewModel();
                     this.DataContext = _viewModel;
                 }
             }
@@ -997,14 +997,14 @@ namespace BusBuddy.WPF.Views.Main
 
         private bool EnsureMainWindowViewModel()
         {
-            if (DataContext is MainWindowViewModel)
+            if (DataContext is BusBuddy.WPF.ViewModels.MainWindowViewModel)
             {
                 return true;
             }
 
             if (_viewModel == null)
             {
-                _viewModel = new MainWindowViewModel();
+                _viewModel = new BusBuddy.WPF.ViewModels.MainWindowViewModel();
             }
 
             DataContext = _viewModel;
@@ -1260,39 +1260,6 @@ namespace BusBuddy.WPF.Views.Main
         }
 
         #endregion
-    }
-
-    /// <summary>
-    /// Enhanced ViewModel for MainWindow with proper DataContext flow
-    /// Includes RouteManagement for Reports functionality
-    /// </summary>
-    public class MainWindowViewModel
-    {
-        public string Title { get; set; } = "BusBuddy MVP - Transportation Management";
-        public string StatusMessage { get; set; } = "MVP Ready: Students ✅ | Routes ✅ | Buses ✅ | Drivers ✅ | Reports ✅";
-
-        // RouteManagement ViewModel for Reports functionality
-        public RouteManagementViewModel? RouteManagement { get; set; }
-
-        public MainWindowViewModel()
-        {
-            try
-            {
-                // Initialize RouteManagement ViewModel for Reports functionality
-                InitializeViewModels();
-            }
-            catch (Exception)
-            {
-                // For MVP stability, continue with null ViewModels if DI fails
-                // Individual views will handle their own ViewModels
-            }
-        }
-
-        private void InitializeViewModels()
-        {
-            // Note: ViewModels will be properly initialized when views are opened
-            // This ensures loose coupling and prevents initialization issues
-        }
     }
 }
 
