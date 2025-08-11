@@ -50,9 +50,11 @@ namespace BusBuddy.WPF
             IConfiguration configuration;
             try
             {
+                var env = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production";
                 configuration = new ConfigurationBuilder()
                     .SetBasePath(AppDomain.CurrentDomain.BaseDirectory) // Use app directory for config file
                     .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+                    .AddJsonFile($"appsettings.{env}.json", optional: true, reloadOnChange: true)
                     .AddJsonFile("appsettings.azure.json", optional: true, reloadOnChange: true)
                     .AddEnvironmentVariables()
                     .Build();
@@ -202,9 +204,11 @@ namespace BusBuddy.WPF
                 var services = new ServiceCollection();
 
                 // Add configuration to resolve appsettings.json
+                var env = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production";
                 var configuration = new ConfigurationBuilder()
                     .SetBasePath(AppDomain.CurrentDomain.BaseDirectory)
                     .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
+                    .AddJsonFile($"appsettings.{env}.json", optional: true, reloadOnChange: true)
                     .AddJsonFile("appsettings.azure.json", optional: true, reloadOnChange: true)
                     .AddEnvironmentVariables()
                     .Build();
@@ -232,9 +236,11 @@ namespace BusBuddy.WPF
                 var services = new ServiceCollection();
 
                 // Add configuration to resolve appsettings.json
+                var env2 = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production";
                 var configuration = new ConfigurationBuilder()
                     .SetBasePath(AppDomain.CurrentDomain.BaseDirectory)
                     .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
+                    .AddJsonFile($"appsettings.{env2}.json", optional: true, reloadOnChange: true)
                     .AddJsonFile("appsettings.azure.json", optional: true, reloadOnChange: true)
                     .AddEnvironmentVariables()
                     .Build();
@@ -281,6 +287,8 @@ namespace BusBuddy.WPF
                     {
                         using var scope = ServiceProvider.CreateScope();
                         var contextFactory = scope.ServiceProvider.GetRequiredService<IBusBuddyDbContextFactory>();
+                        var cfg = scope.ServiceProvider.GetRequiredService<IConfiguration>();
+                        var seedSvc = new SeedDataService(contextFactory, cfg);
                         using var context = contextFactory.CreateDbContext();
 
                         // Ensure database is created and up to date with retry strategy
@@ -292,6 +300,9 @@ namespace BusBuddy.WPF
 
                         // Import JSON data if database is empty with retry strategy
                         await BusBuddy.Core.Utilities.JsonDataImporter.SeedDatabaseIfEmptyAsync(context);
+
+                        // Also support plain array JSON via SeedDataService (uses WileyJsonPath)
+                        await seedSvc.SeedFromJsonAsync();
                     }
                     catch (Exception seedEx)
                     {

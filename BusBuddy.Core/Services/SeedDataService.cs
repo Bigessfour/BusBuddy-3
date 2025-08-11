@@ -2,11 +2,14 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.IO;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
 using BusBuddy.Core.Data;
 using BusBuddy.Core.Models;
+using Microsoft.Extensions.Configuration;
 
 namespace BusBuddy.Core.Services
 {
@@ -16,12 +19,117 @@ namespace BusBuddy.Core.Services
     /// </summary>
     public class SeedDataService : ISeedDataService
     {
-        private readonly IBusBuddyDbContextFactory _contextFactory;
+    private readonly IBusBuddyDbContextFactory _contextFactory;
+    private readonly IConfiguration? _configuration;
         private static readonly ILogger Logger = Log.ForContext<SeedDataService>();
+        private static readonly JsonSerializerOptions JsonOpts = new()
+        {
+            PropertyNameCaseInsensitive = true
+        };
 
         public SeedDataService(IBusBuddyDbContextFactory contextFactory)
         {
             _contextFactory = contextFactory;
+        }
+
+        public SeedDataService(IBusBuddyDbContextFactory contextFactory, IConfiguration configuration)
+        {
+            _contextFactory = contextFactory;
+            _configuration = configuration;
+        }
+
+        /// <summary>
+        /// Seed students from a JSON file specified by configuration key "WileyJsonPath".
+        /// If Students table already contains any records, this method exits without changes.
+        /// </summary>
+        public async Task SeedFromJsonAsync()
+        {
+            try
+            {
+                using var context = _contextFactory.CreateDbContext();
+
+                // Skip if any students already exist
+                int existingCount;
+                try { existingCount = await context.Students.CountAsync(); }
+                catch (InvalidOperationException) { existingCount = context.Students.Count(); }
+                if (existingCount > 0)
+                {
+                    Logger.Information("Students table already has {Count} records. Skipping JSON seed.", existingCount);
+                    return;
+                }
+
+                // Resolve JSON path
+                string? jsonPath = _configuration?["WileyJsonPath"];
+                if (string.IsNullOrWhiteSpace(jsonPath))
+                {
+                    // Fallback: try local appsettings.json next to the running app
+                    try
+                    {
+                        var config = new ConfigurationBuilder()
+                            .SetBasePath(AppDomain.CurrentDomain.BaseDirectory)
+                            .AddJsonFile("appsettings.json", optional: true)
+                            .AddEnvironmentVariables()
+                            .Build();
+                        jsonPath = config["WileyJsonPath"];
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.Warning(ex, "Failed to load configuration for WileyJsonPath fallback");
+                    }
+                }
+
+                if (string.IsNullOrWhiteSpace(jsonPath) || !File.Exists(jsonPath))
+                {
+                    Logger.Warning("WileyJsonPath not found or file missing: {Path}", jsonPath);
+                    return;
+                }
+
+                var json = await File.ReadAllTextAsync(jsonPath);
+
+                // Try to deserialize as a plain array of Student first
+                List<Student>? students = null;
+                try
+                {
+                    students = JsonSerializer.Deserialize<List<Student>>(json, JsonOpts);
+                }
+                catch (Exception ex)
+                {
+                    Logger.Debug(ex, "Direct List<Student> deserialization failed; will try wrapper");
+                }
+
+                // If null, try wrapper object with a Students property
+                if (students == null)
+                {
+                    try
+                    {
+                        using var doc = JsonDocument.Parse(json);
+                        if (doc.RootElement.TryGetProperty("Students", out var studentsElement) &&
+                            studentsElement.ValueKind == JsonValueKind.Array)
+                        {
+                            students = JsonSerializer.Deserialize<List<Student>>(studentsElement.GetRawText(), JsonOpts);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.Warning(ex, "Failed to parse Students array from JSON wrapper");
+                    }
+                }
+
+                if (students == null || students.Count == 0)
+                {
+                    Logger.Warning("No student records found in JSON at {Path}", jsonPath);
+                    return;
+                }
+
+                context.Students.AddRange(students);
+                await context.SaveChangesAsync();
+                Logger.Information("Seeded {Count} students from JSON: {Path}", students.Count, jsonPath);
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Error during JSON seeding in SeedFromJsonAsync");
+                throw;
+            }
         }
 
         /// <summary>
