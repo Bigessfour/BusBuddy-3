@@ -52,6 +52,51 @@ Notes:
   - Analyzer rule CA1869 — Use cached JsonSerializerOptions instances: https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1869
 
 ### Delta — Aug 10, 2025 (Tests + EF behavior + VM fixes)
+### Delta — Aug 11, 2025 (MVP: Disable XAI and GEE by config)
+- What changed
+  - Introduced WPF-specific `appsettings.Staging.json` to explicitly disable non-MVP services (XAI, Google Earth Engine).
+  - Flipped enable flags to false in root/WPF/azure appsettings to suppress warnings and avoid accidental network calls during MVP.
+- Files
+  - BusBuddy.WPF/appsettings.Staging.json (new; copied to output)
+  - BusBuddy.WPF/appsettings.json (XAI/GEE enable flags set to false)
+  - appsettings.json (root; flags set to false)
+  - appsettings.azure.json (flags set to false)
+- Notes
+  - `App.xaml.cs` loads `appsettings.{env}.json` and `appsettings.azure.json` in that order, so environment overrides are honored.
+  - This aligns with the Greenfield Reset: disable non-MVP services to keep builds clean and UI focused on Students/Routes.
+
+### Delta — Aug 11, 2025 (RouteService + RouteAssignment wiring, seeding robustness, Azure verification)
+- What changed
+  - Seeding/import resilience: `JsonDataImporter` warns (non-blocking) when root JSON is an array; ensured Wiley import works. Confirmed DB seeding of students/families.
+  - Route services implemented: added capacity/availability, assignment, unassignment, stats, and validation methods in `RouteService`.
+  - UI wiring: `RouteAssignmentView` now resolves `IRouteService` from DI; `RouteAssignmentViewModel` loads data from the service (with mock fallback if DI absent).
+  - Environment hygiene: suppressed Grok/XAI warnings by disabling features in staging and defaults; cleaned build output.
+- Files
+  - Core
+    - BusBuddy.Core/Utilities/JsonDataImporter.cs — add array-root warning, robust seed flow.
+    - BusBuddy.Core/Services/RouteService.cs — implement:
+      - GetAvailableBusesAsync, GetAvailableDriversAsync
+      - AssignStudentToRouteAsync, RemoveStudentFromRouteAsync
+      - GetUnassignedStudentsAsync, GetRoutesWithCapacityAsync
+      - ValidateRouteCapacityAsync, GetRouteUtilizationStatsAsync
+      - CanAssignStudentToRouteAsync (+ helper GetRouteCapacityAsync)
+  - WPF
+    - BusBuddy.WPF/Views/Route/RouteAssignmentView.xaml.cs — resolve service via DI.
+    - BusBuddy.WPF/ViewModels/Route/RouteAssignmentViewModel.cs — load from service; refresh uses service when available.
+  - Config
+    - BusBuddy.WPF/appsettings.json — XAI/GEE flags set to false for MVP.
+    - BusBuddy.WPF/appsettings.Staging.json — new, disables XAI/GEE for staging; copied to output.
+    - appsettings.json, appsettings.azure.json — XAI/GEE flags disabled to prevent warnings/network calls.
+- Verification
+  - Build: PASS across Core, WPF, Tests.
+  - Azure SQL (BusBuddyDB): verified presence of data for route building — Students ≈ 54, Routes = 1, Vehicles = 3, Drivers = 2.
+  - Tests: 104 passed, 7 failed (remaining gaps below).
+- Known gaps / next steps
+  - Route stops CRUD: implement add/edit/remove/query in `RouteService` to fully enable UI stop management.
+  - Align assignment model: some tests expect `RouteAssignment` linkage; current logic uses `Student.AMRoute/PMRoute`. Decide on canonical approach and update tests/service accordingly.
+  - Activation toggle test: investigate `DeactivateRoute` flow and ensure flags persist and validations align.
+  - ViewModel validations: tighten `StudentFormViewModel` test-mode validation messages and available routes/bus stops expectations as tests require.
+
 - StudentsViewModel
   - Fixed SetProperty<T> to assign backing field before OnPropertyChanged (selection now updates reliably in tests and UI).
   - After LoadStudentsAsync completes, StatusMessage is set to "Loaded {count} students" for clearer diagnostics.

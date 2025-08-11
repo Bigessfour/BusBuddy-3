@@ -48,28 +48,50 @@ namespace BusBuddy.TestDataSeeding
 
                 Console.WriteLine($"✅ Found data file: {usedPath}");
 
-                // Try to load and parse the JSON
+                // Try to load and parse the JSON (supports root object or root array)
                 var jsonContent = await File.ReadAllTextAsync(usedPath);
-                var wileyData = JsonSerializer.Deserialize<WileySchoolDistrictData>(jsonContent, new JsonSerializerOptions
-                {
-                    PropertyNameCaseInsensitive = true
-                });
+                var jsonOptions = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
 
-                if (wileyData?.Students == null)
+                WileyStudent[] students;
+                int familiesCount = 0;
+
+                using (var jsonDoc = JsonDocument.Parse(jsonContent))
+                {
+                    var root = jsonDoc.RootElement;
+                    if (root.ValueKind == JsonValueKind.Array)
+                    {
+                        // Root array of student-like objects — deserialize directly
+                        students = JsonSerializer.Deserialize<WileyStudent[]>(jsonContent, jsonOptions) ?? Array.Empty<WileyStudent>();
+                    }
+                    else if (root.ValueKind == JsonValueKind.Object)
+                    {
+                        // Root object — attempt WileySchoolDistrictData shape
+                        var wileyData = JsonSerializer.Deserialize<WileySchoolDistrictData>(jsonContent, jsonOptions);
+                        students = wileyData?.Students ?? Array.Empty<WileyStudent>();
+                        familiesCount = wileyData?.Families?.Length ?? 0;
+                    }
+                    else
+                    {
+                        Console.WriteLine("❌ Unsupported JSON root type");
+                        return 1;
+                    }
+                }
+
+                if (students.Length == 0)
                 {
                     Console.WriteLine("❌ No student data found in file");
                     return 1;
                 }
 
-                Console.WriteLine($"✅ Loaded {wileyData.Students.Length} students from {wileyData.Families?.Length ?? 0} families");
+                Console.WriteLine($"✅ Loaded {students.Length} students from {familiesCount} families");
 
                 // Show data quality summary
                 var goodCount = 0;
                 var poorCount = 0;
 
-                foreach (var student in wileyData.Students)
+                foreach (var student in students)
                 {
-                    if (student.DataQuality == "poor")
+                    if (string.Equals(student.DataQuality, "poor", StringComparison.OrdinalIgnoreCase))
                         poorCount++;
                     else
                         goodCount++;
@@ -81,10 +103,10 @@ namespace BusBuddy.TestDataSeeding
                 // Show sample students
                 Console.WriteLine("👥 Sample Students:");
                 var count = 0;
-                foreach (var student in wileyData.Students)
+                foreach (var student in students)
                 {
                     if (count >= 3) break;
-                    Console.WriteLine($"  • {student.StudentName} - {student.City}, {student.State} (Quality: {student.DataQuality})");
+                    Console.WriteLine($"  • {student.StudentName} - {student.City}, {student.State} (Quality: {student.DataQuality ?? "unknown"})");
                     count++;
                 }
 

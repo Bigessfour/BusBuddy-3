@@ -102,29 +102,40 @@ namespace BusBuddy.Core.Utilities
                     result.Success = false;
                     return result;
                 }
-                // Handle Wiley JSON structure: top-level object with families and students arrays
+                // Handle Wiley JSON structure with robust shape handling
                 using var doc = JsonDocument.Parse(jsonContent);
                 var root = doc.RootElement;
 
+                // If the root is an array, import will proceed, but log a gentle warning to encourage the preferred wrapped format
+                // Preferred shape: { "Students": [ ... ] } — this improves future schema evolution and validation
+                if (root.ValueKind == JsonValueKind.Array)
+                {
+                    Logger.Warning("JSON root is an array; preferred format is an object with a 'Students' array for better validation and stability");
+                }
+
                 var families = new List<FamilyImportDto>();
 
-                if (root.TryGetProperty("families", out var familiesElement) && familiesElement.ValueKind == JsonValueKind.Array
-                    && root.TryGetProperty("students", out var studentsElement) && studentsElement.ValueKind == JsonValueKind.Array)
+                // Case 1: Top-level object with families[] and students[]
+                if (root.ValueKind == JsonValueKind.Object &&
+                    TryGetPropertyCaseInsensitive(root, "families", out var familiesElement) && familiesElement.ValueKind == JsonValueKind.Array &&
+                    TryGetPropertyCaseInsensitive(root, "students", out var studentsElement) && studentsElement.ValueKind == JsonValueKind.Array)
                 {
-                    // Classic format: families[] + students[] with familyId mapping
-            foreach (var fam in familiesElement.EnumerateArray())
+                    foreach (var fam in familiesElement.EnumerateArray())
                     {
+                        if (fam.ValueKind != JsonValueKind.Object)
+                            continue;
+
                         var family = new FamilyImportDto
                         {
-                Id = fam.TryGetProperty("id", out var famId) ? famId.GetInt32() : (int?)null,
-                            ParentGuardian = fam.GetProperty("parentGuardian").GetString() ?? string.Empty,
-                            Address = fam.GetProperty("address").GetString() ?? string.Empty,
-                            City = fam.GetProperty("city").GetString() ?? string.Empty,
-                            County = fam.GetProperty("county").GetString() ?? string.Empty,
-                            HomePhone = fam.TryGetProperty("homePhone", out var hp) ? hp.GetString() : null,
-                            CellPhone = fam.TryGetProperty("cellPhone", out var cp) ? cp.GetString() : null,
-                            EmergencyContact = fam.TryGetProperty("emergencyContact", out var ec) ? ec.GetString() : null,
-                            JointParent = fam.TryGetProperty("jointParent", out var jp) ? jp.GetString() : null,
+                            Id = TryGetPropertyCaseInsensitive(fam, "id", out var famIdElem) && famIdElem.ValueKind == JsonValueKind.Number ? famIdElem.GetInt32() : (int?)null,
+                            ParentGuardian = GetStringCaseInsensitive(fam, "parentGuardian", "ParentGuardian") ?? string.Empty,
+                            Address = GetStringCaseInsensitive(fam, "address", "Address", "HomeAddress") ?? string.Empty,
+                            City = GetStringCaseInsensitive(fam, "city", "City") ?? string.Empty,
+                            County = GetStringCaseInsensitive(fam, "county", "County") ?? string.Empty,
+                            HomePhone = GetStringCaseInsensitive(fam, "homePhone", "HomePhone"),
+                            CellPhone = GetStringCaseInsensitive(fam, "cellPhone", "CellPhone"),
+                            EmergencyContact = GetStringCaseInsensitive(fam, "emergencyContact", "EmergencyContact"),
+                            JointParent = GetStringCaseInsensitive(fam, "jointParent", "JointParent"),
                             Students = new List<StudentImportDto>()
                         };
                         families.Add(family);
@@ -135,7 +146,10 @@ namespace BusBuddy.Core.Utilities
                     {
                         foreach (var stu in studentsElement.EnumerateArray())
                         {
-                            StudentImportDto student = null!;
+                            if (stu.ValueKind != JsonValueKind.Object)
+                                continue;
+
+                            StudentImportDto student;
                             try
                             {
                                 student = JsonSerializer.Deserialize<StudentImportDto>(stu.GetRawText(), SerializerOptions)!;
@@ -147,27 +161,14 @@ namespace BusBuddy.Core.Utilities
                                 continue;
                             }
                             // Primary: map via familyId when available
-                            int? familyId = stu.TryGetProperty("familyId", out var fid) ? fid.GetInt32() : (int?)null;
+                            int? familyId = TryGetPropertyCaseInsensitive(stu, "familyId", out var fidElem) && fidElem.ValueKind == JsonValueKind.Number ? fidElem.GetInt32() : (int?)null;
                             var family = families.FirstOrDefault(f => f.Id.HasValue && familyId.HasValue && f.Id.Value == familyId.Value);
 
                             // Fallback: map by ParentGuardian + Address when familyId is missing or unmatched
                             if (family == null)
                             {
-                                // Try to read potential parent/address fields directly from the student node
-                                string? parentFromStudent = null;
-                                string? addressFromStudent = null;
-                                try
-                                {
-                                    // Common keys seen in extracted forms
-                                    if (stu.TryGetProperty("ParentGuardian", out var pg)) parentFromStudent = pg.GetString();
-                                    if (string.IsNullOrWhiteSpace(parentFromStudent) && stu.TryGetProperty("parentGuardian", out var pg2)) parentFromStudent = pg2.GetString();
-                                    if (stu.TryGetProperty("HomeAddress", out var ha)) addressFromStudent = ha.GetString();
-                                    if (string.IsNullOrWhiteSpace(addressFromStudent) && stu.TryGetProperty("address", out var ha2)) addressFromStudent = ha2.GetString();
-                                }
-                                catch { /* ignore */ }
-
-                                // Note: ParentGuardian and HomeAddress are family-level properties, not student properties
-                                // They are handled at the family level during import processing
+                                var parentFromStudent = GetStringCaseInsensitive(stu, "ParentGuardian", "parentGuardian");
+                                var addressFromStudent = GetStringCaseInsensitive(stu, "HomeAddress", "address", "Address");
 
                                 if (!string.IsNullOrWhiteSpace(parentFromStudent) && !string.IsNullOrWhiteSpace(addressFromStudent))
                                 {
@@ -192,46 +193,21 @@ namespace BusBuddy.Core.Utilities
                         result.ErrorMessages.Add($"Unexpected error during student deserialization: {ex.Message}");
                     }
                 }
+                // Case 2: Top-level object with Students[]
+                else if (root.ValueKind == JsonValueKind.Object &&
+                         TryGetPropertyCaseInsensitive(root, "Students", out var studentsArrayObj) && studentsArrayObj.ValueKind == JsonValueKind.Array)
+                {
+                    foreach (var stu in studentsArrayObj.EnumerateArray())
+                    {
+                        ProcessStudentJsonElement(stu, families);
+                    }
+                }
+                // Case 3: Top-level array of student entries (nested Guardian or flat)
                 else if (root.ValueKind == JsonValueKind.Array)
                 {
-                    // New simplified format: array of student entries with nested Guardian
                     foreach (var stu in root.EnumerateArray())
                     {
-                        // Build a synthetic family from Guardian
-                        var guardian = stu.GetProperty("Guardian");
-                        var parentName = $"{guardian.GetProperty("FirstName").GetString()} {guardian.GetProperty("LastName").GetString()}".Trim();
-                        var address = guardian.GetProperty("Address").GetString() ?? string.Empty;
-                        var city = guardian.GetProperty("City").GetString() ?? string.Empty;
-                        var county = guardian.TryGetProperty("County", out var gcounty) ? gcounty.GetString() ?? string.Empty : string.Empty;
-                        var state = guardian.TryGetProperty("State", out var gstate) ? gstate.GetString() : null;
-                        var homePhone = guardian.TryGetProperty("HomePhone", out var ghp) ? ghp.GetString() : null;
-                        var cellPhone = guardian.TryGetProperty("CellPhone", out var gcp) ? gcp.GetString() : null;
-
-                        var famDto = families.FirstOrDefault(f => f.ParentGuardian == parentName && f.Address == address);
-                        if (famDto == null)
-                        {
-                            famDto = new FamilyImportDto
-                            {
-                                ParentGuardian = parentName,
-                                Address = address,
-                                City = city,
-                                State = state,
-                                County = county,
-                                HomePhone = homePhone,
-                                CellPhone = cellPhone,
-                                Students = new List<StudentImportDto>()
-                            };
-                            families.Add(famDto);
-                        }
-
-                        var studentDto = new StudentImportDto
-                        {
-                            FirstName = stu.GetProperty("FirstName").GetString() ?? string.Empty,
-                            LastName = stu.GetProperty("LastName").GetString() ?? string.Empty,
-                            Grade = stu.TryGetProperty("Grade", out var grd) ? grd.GetString() ?? string.Empty : string.Empty,
-                            TransportationNotes = stu.TryGetProperty("School", out var sc) ? sc.GetString() : null
-                        };
-                        famDto.Students.Add(studentDto);
+                        ProcessStudentJsonElement(stu, families);
                     }
                 }
                 else
@@ -266,6 +242,146 @@ namespace BusBuddy.Core.Utilities
                 result.Success = false;
             }
             return result;
+        }
+
+        // Helpers for robust JSON parsing (case-insensitive)
+        private static bool TryGetPropertyCaseInsensitive(JsonElement element, string name, out JsonElement value)
+        {
+            value = default;
+            if (element.ValueKind != JsonValueKind.Object)
+                return false;
+            foreach (var prop in element.EnumerateObject())
+            {
+                if (string.Equals(prop.Name, name, StringComparison.OrdinalIgnoreCase))
+                {
+                    value = prop.Value;
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        private static string? GetStringCaseInsensitive(JsonElement element, params string[] names)
+        {
+            foreach (var n in names)
+            {
+                if (TryGetPropertyCaseInsensitive(element, n, out var v) && v.ValueKind == JsonValueKind.String)
+                    return v.GetString();
+            }
+            return null;
+        }
+
+        private static void ProcessStudentJsonElement(JsonElement stu, List<FamilyImportDto> families)
+        {
+            if (stu.ValueKind != JsonValueKind.Object)
+            {
+                Logger.Warning("Skipping non-object student entry in JSON array");
+                return;
+            }
+
+            // Try nested Guardian first
+            if (TryGetPropertyCaseInsensitive(stu, "Guardian", out var guardian) && guardian.ValueKind == JsonValueKind.Object)
+            {
+                var parentName = $"{GetStringCaseInsensitive(guardian, "FirstName")} {GetStringCaseInsensitive(guardian, "LastName")}".Trim();
+                var address = GetStringCaseInsensitive(guardian, "Address") ?? string.Empty;
+                var city = GetStringCaseInsensitive(guardian, "City") ?? string.Empty;
+                var county = GetStringCaseInsensitive(guardian, "County") ?? string.Empty;
+                var state = GetStringCaseInsensitive(guardian, "State");
+                var homePhone = GetStringCaseInsensitive(guardian, "HomePhone");
+                var cellPhone = GetStringCaseInsensitive(guardian, "CellPhone");
+
+                var famDto = families.FirstOrDefault(f => f.ParentGuardian == parentName && f.Address == address);
+                if (famDto == null)
+                {
+                    famDto = new FamilyImportDto
+                    {
+                        ParentGuardian = parentName,
+                        Address = address,
+                        City = city,
+                        State = state,
+                        County = county,
+                        HomePhone = homePhone,
+                        CellPhone = cellPhone,
+                        Students = new List<StudentImportDto>()
+                    };
+                    families.Add(famDto);
+                }
+
+                var studentDto = new StudentImportDto
+                {
+                    FirstName = GetStringCaseInsensitive(stu, "FirstName") ?? string.Empty,
+                    LastName = GetStringCaseInsensitive(stu, "LastName") ?? string.Empty,
+                    Grade = GetStringCaseInsensitive(stu, "Grade") ?? string.Empty,
+                    TransportationNotes = GetStringCaseInsensitive(stu, "School", "TransportationNotes")
+                };
+                famDto.Students.Add(studentDto);
+                return;
+            }
+
+            // Fallback: flat student object containing guardian/address fields at top level
+            var parent = GetStringCaseInsensitive(stu, "ParentGuardian", "parentGuardian", "GuardianName") ?? string.Empty;
+            var addr = GetStringCaseInsensitive(stu, "HomeAddress", "address", "Address") ?? string.Empty;
+            var city2 = GetStringCaseInsensitive(stu, "City") ?? string.Empty;
+            var county2 = GetStringCaseInsensitive(stu, "County") ?? string.Empty;
+            var state2 = GetStringCaseInsensitive(stu, "State");
+            var homePhone2 = GetStringCaseInsensitive(stu, "HomePhone");
+            var cellPhone2 = GetStringCaseInsensitive(stu, "CellPhone");
+
+            var famDtoFlat = families.FirstOrDefault(f => f.ParentGuardian == parent && f.Address == addr);
+            if (famDtoFlat == null)
+            {
+                famDtoFlat = new FamilyImportDto
+                {
+                    ParentGuardian = parent,
+                    Address = addr,
+                    City = city2,
+                    State = state2,
+                    County = county2,
+                    HomePhone = homePhone2,
+                    CellPhone = cellPhone2,
+                    Students = new List<StudentImportDto>()
+                };
+                families.Add(famDtoFlat);
+            }
+            else
+            {
+                // Backfill common fields if missing
+                if (string.IsNullOrWhiteSpace(famDtoFlat.City) && !string.IsNullOrWhiteSpace(city2)) famDtoFlat.City = city2;
+                if (string.IsNullOrWhiteSpace(famDtoFlat.State) && !string.IsNullOrWhiteSpace(state2)) famDtoFlat.State = state2;
+                if (string.IsNullOrWhiteSpace(famDtoFlat.County) && !string.IsNullOrWhiteSpace(county2)) famDtoFlat.County = county2;
+                if (string.IsNullOrWhiteSpace(famDtoFlat.HomePhone) && !string.IsNullOrWhiteSpace(homePhone2)) famDtoFlat.HomePhone = homePhone2;
+                if (string.IsNullOrWhiteSpace(famDtoFlat.CellPhone) && !string.IsNullOrWhiteSpace(cellPhone2)) famDtoFlat.CellPhone = cellPhone2;
+            }
+
+            var studentDtoFlat = new StudentImportDto
+            {
+                FirstName = GetStringCaseInsensitive(stu, "FirstName", "firstName") ?? string.Empty,
+                LastName = GetStringCaseInsensitive(stu, "LastName", "lastName") ?? string.Empty,
+                Grade = GetStringCaseInsensitive(stu, "Grade") ?? string.Empty,
+                TransportationNotes = GetStringCaseInsensitive(stu, "TransportationNotes", "School")
+            };
+
+            // If FirstName/LastName are missing but a combined StudentName exists, split it
+            if (string.IsNullOrWhiteSpace(studentDtoFlat.FirstName) && string.IsNullOrWhiteSpace(studentDtoFlat.LastName))
+            {
+                var combined = GetStringCaseInsensitive(stu, "StudentName", "studentName");
+                if (!string.IsNullOrWhiteSpace(combined))
+                {
+                    // Basic split: first token as FirstName, remainder as LastName
+                    var parts = combined.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                    if (parts.Length == 1)
+                    {
+                        studentDtoFlat.FirstName = parts[0];
+                        studentDtoFlat.LastName = string.Empty;
+                    }
+                    else if (parts.Length > 1)
+                    {
+                        studentDtoFlat.FirstName = parts[0];
+                        studentDtoFlat.LastName = string.Join(' ', parts.Skip(1));
+                    }
+                }
+            }
+            famDtoFlat.Students.Add(studentDtoFlat);
         }
 
         /// <summary>

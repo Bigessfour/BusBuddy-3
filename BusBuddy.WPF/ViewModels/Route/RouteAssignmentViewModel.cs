@@ -77,7 +77,14 @@ namespace BusBuddy.WPF.ViewModels.Route
         {
             _routeService = routeService;
             InitializeCommands();
-            LoadMockData(); // Using mock data for MVP - replace with actual service calls
+            if (_routeService != null)
+            {
+                _ = LoadDataFromServiceAsync();
+            }
+            else
+            {
+                LoadMockData(); // fallback for MVP
+            }
 
             Logger.Information("Enhanced RouteAssignmentViewModel initialized with route building capabilities");
         }
@@ -1246,10 +1253,16 @@ namespace BusBuddy.WPF.ViewModels.Route
                 IsLoading = true;
                 StatusMessage = "Refreshing data...";
 
-                // TODO: Replace with actual service calls
-                await Task.Delay(500); // Simulate loading
-
-                LoadMockData(); // For MVP
+                if (_routeService != null)
+                {
+                    await LoadDataFromServiceAsync();
+                }
+                else
+                {
+                    // TODO: Replace with actual service calls
+                    await Task.Delay(500); // Simulate loading
+                    LoadMockData(); // For MVP
+                }
                 StatusMessage = "Data refreshed successfully";
                 Logger.Information("Data refreshed successfully");
             }
@@ -1432,6 +1445,81 @@ namespace BusBuddy.WPF.ViewModels.Route
         #endregion
 
         #region Data Loading
+
+        private async Task LoadDataFromServiceAsync()
+        {
+            try
+            {
+                if (_routeService == null)
+                {
+                    LoadMockData();
+                    return;
+                }
+
+                UnassignedStudents.Clear();
+                AvailableRoutes.Clear();
+                AvailableBuses.Clear();
+                AvailableDrivers.Clear();
+
+                IsLoading = true;
+
+                var studentsTask = _routeService.GetUnassignedStudentsAsync();
+                var routesTask = _routeService.GetRoutesWithCapacityAsync();
+                var busesTask = _routeService.GetAvailableBusesAsync();
+                var driversTask = _routeService.GetAvailableDriversAsync();
+
+                await Task.WhenAll(studentsTask, routesTask, busesTask, driversTask);
+
+                if (studentsTask.Result.IsSuccess && studentsTask.Result.Value != null)
+                {
+                    foreach (var s in studentsTask.Result.Value)
+                    {
+                        UnassignedStudents.Add(s);
+                    }
+                }
+
+                if (routesTask.Result.IsSuccess && routesTask.Result.Value != null)
+                {
+                    foreach (var r in routesTask.Result.Value)
+                    {
+                        AvailableRoutes.Add(r);
+                    }
+                }
+
+                if (busesTask.Result.IsSuccess && busesTask.Result.Value != null)
+                {
+                    foreach (var b in busesTask.Result.Value)
+                    {
+                        AvailableBuses.Add(b);
+                    }
+                }
+
+                if (driversTask.Result.IsSuccess && driversTask.Result.Value != null)
+                {
+                    foreach (var d in driversTask.Result.Value)
+                    {
+                        AvailableDrivers.Add(d);
+                    }
+                }
+
+                if (AvailableRoutes.Any())
+                {
+                    SelectedRoute = AvailableRoutes.First();
+                }
+
+                OnPropertyChanged(nameof(UnassignedStudentCount));
+                UpdateStatusMessage();
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Failed loading data from service; falling back to mock data");
+                LoadMockData();
+            }
+            finally
+            {
+                IsLoading = false;
+            }
+        }
 
         private void LoadMockData()
         {

@@ -86,6 +86,13 @@
 				"-v",
 				"m"
 			],
+			"options": {
+				"env": {
+					"BUSBUDDY_NO_WELCOME": "1",
+					"BUSBUDDY_NO_XAI_WARN": "1",
+					"BUSBUDDY_SILENT": "1"
+				}
+			},
 			"problemMatcher": [
 				"$msCompile"
 			],
@@ -101,6 +108,13 @@
 				"-v",
 				"m"
 			],
+			"options": {
+				"env": {
+					"BUSBUDDY_NO_WELCOME": "1",
+					"BUSBUDDY_NO_XAI_WARN": "1",
+					"BUSBUDDY_SILENT": "1"
+				}
+			},
 			"problemMatcher": [
 				"$msCompile"
 			],

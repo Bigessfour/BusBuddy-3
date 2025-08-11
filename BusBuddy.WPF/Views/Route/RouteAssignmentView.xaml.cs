@@ -4,6 +4,8 @@ using BusBuddy.WPF.ViewModels.Route;
 using Serilog;
 using Syncfusion.SfSkinManager;
 using System.Windows;
+using Microsoft.Extensions.DependencyInjection;
+using BusBuddy.Core.Services;
 
 namespace BusBuddy.WPF.Views.Route
 {
@@ -26,7 +28,25 @@ namespace BusBuddy.WPF.Views.Route
                 InitializeComponent();
 
                 Logger.Debug("Setting DataContext to RouteAssignmentViewModel");
-                DataContext = new RouteAssignmentViewModel();
+                RouteAssignmentViewModel viewModel;
+                try
+                {
+                    var sp = App.ServiceProvider;
+                    if (sp != null)
+                    {
+                        var routeService = sp.GetService<IRouteService>();
+                        viewModel = new RouteAssignmentViewModel(routeService);
+                    }
+                    else
+                    {
+                        viewModel = new RouteAssignmentViewModel();
+                    }
+                }
+                catch
+                {
+                    viewModel = new RouteAssignmentViewModel();
+                }
+                DataContext = viewModel;
 
                 Logger.Information("RouteAssignmentView initialized successfully with MVP route building interface");
                 Loaded += OnLoaded;

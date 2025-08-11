@@ -539,49 +539,413 @@ namespace BusBuddy.Core.Services
             return Task.FromResult(Result.SuccessResult(TimeSpan.Zero));
         }
 
-        public Task<Result<List<Bus>>> GetAvailableBusesAsync()
+        public async Task<Result<List<Bus>>> GetAvailableBusesAsync()
         {
-            return Task.FromResult(Result.SuccessResult(new List<Bus>()));
+            try
+            {
+                var (context, dispose) = GetReadContext();
+                try
+                {
+                    var buses = await context.Buses
+                        .Where(b => b.Status == "Active")
+                        .OrderBy(b => b.BusNumber)
+                        .ToListAsync();
+                    return Result.SuccessResult(buses);
+                }
+                finally
+                {
+                    if (dispose)
+                    {
+                        await context.DisposeAsync();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Error retrieving available buses");
+                return Result.FailureResult<List<Bus>>($"Error retrieving buses: {ex.Message}");
+            }
         }
 
-        public Task<Result<List<Driver>>> GetAvailableDriversAsync()
+        public async Task<Result<List<Driver>>> GetAvailableDriversAsync()
         {
-            return Task.FromResult(Result.SuccessResult(new List<Driver>()));
+            try
+            {
+                var (context, dispose) = GetReadContext();
+                try
+                {
+                    var drivers = await context.Drivers
+                        .Where(d => d.Status == "Active")
+                        .OrderBy(d => d.DriverName)
+                        .ToListAsync();
+                    return Result.SuccessResult(drivers);
+                }
+                finally
+                {
+                    if (dispose)
+                    {
+                        await context.DisposeAsync();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Error retrieving available drivers");
+                return Result.FailureResult<List<Driver>>($"Error retrieving drivers: {ex.Message}");
+            }
         }
 
-        public Task<Result<bool>> AssignStudentToRouteAsync(int studentId, int routeId)
+        public async Task<Result<bool>> AssignStudentToRouteAsync(int studentId, int routeId)
         {
-            return Task.FromResult(Result.FailureResult<bool>("Not implemented yet"));
+            try
+            {
+                if (studentId <= 0 || routeId <= 0)
+                {
+                    return Result.FailureResult<bool>("Invalid studentId or routeId");
+                }
+
+                var (context, dispose) = GetWriteContext();
+                try
+                {
+                    var student = await context.Students.FirstOrDefaultAsync(s => s.StudentId == studentId);
+                    if (student is null)
+                    {
+                        return Result.FailureResult<bool>($"Student with ID {studentId} not found");
+                    }
+
+                    var route = await context.Routes.FirstOrDefaultAsync(r => r.RouteId == routeId);
+                    if (route is null)
+                    {
+                        return Result.FailureResult<bool>($"Route with ID {routeId} not found");
+                    }
+
+                    // Capacity check
+                    var capacity = await GetRouteCapacityAsync(context, route);
+                    var assignedCount = await context.Students.CountAsync(s => s.AMRoute == route.RouteName || s.PMRoute == route.RouteName);
+                    if (capacity > 0 && assignedCount >= capacity)
+                    {
+                        return Result.FailureResult<bool>($"Route '{route.RouteName}' is at capacity");
+                    }
+
+                    // Assign to AM if free; else PM if free; else fail
+                    if (string.IsNullOrWhiteSpace(student.AMRoute))
+                    {
+                        student.AMRoute = route.RouteName;
+                    }
+                    else if (string.IsNullOrWhiteSpace(student.PMRoute))
+                    {
+                        student.PMRoute = route.RouteName;
+                    }
+                    else
+                    {
+                        return Result.FailureResult<bool>("Student already has both AM and PM routes assigned");
+                    }
+
+                    context.Entry(student).State = EntityState.Modified;
+                    await context.SaveChangesAsync();
+                    Logger.Information("Assigned student {StudentId} to route {RouteName}", studentId, route.RouteName);
+                    return Result.SuccessResult(true);
+                }
+                finally
+                {
+                    if (dispose)
+                    {
+                        await context.DisposeAsync();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Error assigning student {StudentId} to route {RouteId}", studentId, routeId);
+                return Result.FailureResult<bool>($"Error assigning student to route: {ex.Message}");
+            }
         }
 
-        public Task<Result<bool>> RemoveStudentFromRouteAsync(int studentId, int routeId)
+        public async Task<Result<bool>> RemoveStudentFromRouteAsync(int studentId, int routeId)
         {
-            return Task.FromResult(Result.FailureResult<bool>("Not implemented yet"));
+            try
+            {
+                if (studentId <= 0 || routeId <= 0)
+                {
+                    return Result.FailureResult<bool>("Invalid studentId or routeId");
+                }
+
+                var (context, dispose) = GetWriteContext();
+                try
+                {
+                    var student = await context.Students.FirstOrDefaultAsync(s => s.StudentId == studentId);
+                    if (student is null)
+                    {
+                        return Result.FailureResult<bool>($"Student with ID {studentId} not found");
+                    }
+
+                    var route = await context.Routes.FirstOrDefaultAsync(r => r.RouteId == routeId);
+                    if (route is null)
+                    {
+                        return Result.FailureResult<bool>($"Route with ID {routeId} not found");
+                    }
+
+                    var changed = false;
+                    if (string.Equals(student.AMRoute, route.RouteName, StringComparison.OrdinalIgnoreCase))
+                    {
+                        student.AMRoute = null;
+                        changed = true;
+                    }
+                    if (string.Equals(student.PMRoute, route.RouteName, StringComparison.OrdinalIgnoreCase))
+                    {
+                        student.PMRoute = null;
+                        changed = true;
+                    }
+
+                    if (!changed)
+                    {
+                        return Result.FailureResult<bool>("Student is not assigned to the specified route");
+                    }
+
+                    context.Entry(student).State = EntityState.Modified;
+                    await context.SaveChangesAsync();
+                    Logger.Information("Removed student {StudentId} from route {RouteName}", studentId, route.RouteName);
+                    return Result.SuccessResult(true);
+                }
+                finally
+                {
+                    if (dispose)
+                    {
+                        await context.DisposeAsync();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Error removing student {StudentId} from route {RouteId}", studentId, routeId);
+                return Result.FailureResult<bool>($"Error removing student from route: {ex.Message}");
+            }
         }
 
-        public Task<Result<List<Student>>> GetUnassignedStudentsAsync()
+        public async Task<Result<List<Student>>> GetUnassignedStudentsAsync()
         {
-            return Task.FromResult(Result.SuccessResult(new List<Student>()));
+            try
+            {
+                var (context, dispose) = GetReadContext();
+                try
+                {
+                    var students = await context.Students
+                        .Where(s => (s.AMRoute == null || s.AMRoute == "") && (s.PMRoute == null || s.PMRoute == "") && s.Active)
+                        .OrderBy(s => s.StudentName)
+                        .ToListAsync();
+                    return Result.SuccessResult(students);
+                }
+                finally
+                {
+                    if (dispose)
+                    {
+                        await context.DisposeAsync();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Error retrieving unassigned students");
+                return Result.FailureResult<List<Student>>($"Error retrieving students: {ex.Message}");
+            }
         }
 
-        public Task<Result<List<Route>>> GetRoutesWithCapacityAsync()
+        public async Task<Result<List<Route>>> GetRoutesWithCapacityAsync()
         {
-            return Task.FromResult(Result.SuccessResult(new List<Route>()));
+            try
+            {
+                var (context, dispose) = GetReadContext();
+                try
+                {
+                    var routes = await context.Routes.Where(r => r.IsActive).ToListAsync();
+                    var result = new List<Route>();
+                    foreach (var route in routes)
+                    {
+                        var capacity = await GetRouteCapacityAsync(context, route);
+                        if (capacity <= 0) capacity = 30; // default MVP capacity
+                        var assigned = await context.Students.CountAsync(s => s.AMRoute == route.RouteName || s.PMRoute == route.RouteName);
+                        if (assigned < capacity)
+                        {
+                            route.StudentCount = assigned;
+                            result.Add(route);
+                        }
+                    }
+                    return Result.SuccessResult(result);
+                }
+                finally
+                {
+                    if (dispose)
+                    {
+                        await context.DisposeAsync();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Error retrieving routes with capacity");
+                return Result.FailureResult<List<Route>>($"Error retrieving routes: {ex.Message}");
+            }
         }
 
-        public Task<Result<bool>> ValidateRouteCapacityAsync(int routeId)
+        public async Task<Result<bool>> ValidateRouteCapacityAsync(int routeId)
         {
-            return Task.FromResult(Result.SuccessResult(true));
+            try
+            {
+                var (context, dispose) = GetReadContext();
+                try
+                {
+                    var route = await context.Routes.FirstOrDefaultAsync(r => r.RouteId == routeId);
+                    if (route is null)
+                    {
+                        return Result.FailureResult<bool>($"Route with ID {routeId} not found");
+                    }
+
+                    var capacity = await GetRouteCapacityAsync(context, route);
+                    if (capacity <= 0) capacity = 30;
+                    var assigned = await context.Students.CountAsync(s => s.AMRoute == route.RouteName || s.PMRoute == route.RouteName);
+                    return Result.SuccessResult(assigned <= capacity);
+                }
+                finally
+                {
+                    if (dispose)
+                    {
+                        await context.DisposeAsync();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Error validating capacity for route {RouteId}", routeId);
+                return Result.FailureResult<bool>($"Error validating route capacity: {ex.Message}");
+            }
         }
 
-        public Task<Result<RouteUtilizationStats>> GetRouteUtilizationStatsAsync()
+        public async Task<Result<RouteUtilizationStats>> GetRouteUtilizationStatsAsync()
         {
-            return Task.FromResult(Result.FailureResult<RouteUtilizationStats>("Not implemented yet"));
+            try
+            {
+                var (context, dispose) = GetReadContext();
+                try
+                {
+                    var routes = await context.Routes.ToListAsync();
+                    var totalRoutes = routes.Count;
+                    var allStudents = await context.Students.ToListAsync();
+                    var totalAssigned = allStudents.Count(s => !string.IsNullOrWhiteSpace(s.AMRoute) || !string.IsNullOrWhiteSpace(s.PMRoute));
+                    var totalUnassigned = allStudents.Count - totalAssigned;
+
+                    int totalCapacity = 0;
+                    double utilizationSum = 0;
+                    int routesAtCapacity = 0;
+                    int underutilized = 0;
+
+                    foreach (var route in routes)
+                    {
+                        var capacity = await GetRouteCapacityAsync(context, route);
+                        if (capacity <= 0) capacity = 30;
+                        var assigned = allStudents.Count(s => string.Equals(s.AMRoute, route.RouteName, StringComparison.OrdinalIgnoreCase) ||
+                                                              string.Equals(s.PMRoute, route.RouteName, StringComparison.OrdinalIgnoreCase));
+                        totalCapacity += capacity;
+                        var utilization = capacity > 0 ? (double)assigned / capacity : 0.0;
+                        utilizationSum += utilization;
+                        if (assigned >= capacity) routesAtCapacity++;
+                        if (utilization < 0.5) underutilized++;
+                    }
+
+                    var stats = new RouteUtilizationStats
+                    {
+                        TotalRoutes = totalRoutes,
+                        TotalAssignedStudents = totalAssigned,
+                        TotalUnassignedStudents = totalUnassigned,
+                        TotalCapacity = totalCapacity,
+                        AverageUtilizationRate = totalRoutes > 0 ? utilizationSum / totalRoutes : 0.0,
+                        RoutesAtCapacity = routesAtCapacity,
+                        UnderutilizedRoutes = underutilized,
+                        TotalEstimatedDistance = routes.Sum(r => (double)(r.Distance ?? 0)),
+                        TotalEstimatedTime = TimeSpan.FromMinutes(routes.Sum(r => (double)(r.EstimatedDuration ?? 0)))
+                    };
+
+                    return Result.SuccessResult(stats);
+                }
+                finally
+                {
+                    if (dispose)
+                    {
+                        await context.DisposeAsync();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Error calculating route utilization stats");
+                return Result.FailureResult<RouteUtilizationStats>($"Error calculating route stats: {ex.Message}");
+            }
         }
 
-        public Task<Result<bool>> CanAssignStudentToRouteAsync(int studentId, int routeId)
+        public async Task<Result<bool>> CanAssignStudentToRouteAsync(int studentId, int routeId)
         {
-            return Task.FromResult(Result.SuccessResult<bool>(true));
+            try
+            {
+                var (context, dispose) = GetReadContext();
+                try
+                {
+                    var student = await context.Students.FirstOrDefaultAsync(s => s.StudentId == studentId);
+                    if (student is null)
+                    {
+                        return Result.FailureResult<bool>($"Student with ID {studentId} not found");
+                    }
+
+                    var route = await context.Routes.FirstOrDefaultAsync(r => r.RouteId == routeId);
+                    if (route is null)
+                    {
+                        return Result.FailureResult<bool>($"Route with ID {routeId} not found");
+                    }
+
+                    if (!string.IsNullOrWhiteSpace(student.AMRoute) && !string.IsNullOrWhiteSpace(student.PMRoute))
+                    {
+                        return Result.FailureResult<bool>("Student already has AM and PM routes");
+                    }
+
+                    var capacity = await GetRouteCapacityAsync(context, route);
+                    if (capacity <= 0) capacity = 30;
+                    var assigned = await context.Students.CountAsync(s => s.AMRoute == route.RouteName || s.PMRoute == route.RouteName);
+                    if (assigned >= capacity)
+                    {
+                        return Result.FailureResult<bool>($"Route '{route.RouteName}' is at capacity");
+                    }
+
+                    return Result.SuccessResult(true);
+                }
+                finally
+                {
+                    if (dispose)
+                    {
+                        await context.DisposeAsync();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Error validating assignment of student {StudentId} to route {RouteId}", studentId, routeId);
+                return Result.FailureResult<bool>($"Error validating assignment: {ex.Message}");
+            }
+        }
+
+        // Helper to compute route capacity from assigned buses
+        private static async Task<int> GetRouteCapacityAsync(BusBuddyDbContext context, Route route)
+        {
+            var amCap = 0;
+            var pmCap = 0;
+            if (route.AMVehicleId.HasValue)
+            {
+                var am = await context.Buses.FirstOrDefaultAsync(b => b.VehicleId == route.AMVehicleId.Value);
+                if (am != null) amCap = am.SeatingCapacity;
+            }
+            if (route.PMVehicleId.HasValue)
+            {
+                var pm = await context.Buses.FirstOrDefaultAsync(b => b.VehicleId == route.PMVehicleId.Value);
+                if (pm != null) pmCap = pm.SeatingCapacity;
+            }
+            return Math.Max(amCap, pmCap);
         }
 
         public async Task<Result<bool>> AssignVehicleToRouteAsync(int routeId, int vehicleId, RouteTimeSlot timeSlot)
