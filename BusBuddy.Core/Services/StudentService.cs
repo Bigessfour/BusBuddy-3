@@ -30,12 +30,25 @@ public class StudentService : IStudentService
             @"^(?:\+?1\s*(?:[.\-\s]*)?)?(?:\(\s*([2-9]\d{2})\s*\)|([2-9]\d{2}))\s*(?:[.\-\s]*)?([2-9]\d{2})\s*(?:[.\-\s]*)?(\d{4})(?:\s*(?:#|x\.?|ext\.?|extension)\s*\d+)?$",
             System.Text.RegularExpressions.RegexOptions.Compiled | System.Text.RegularExpressions.RegexOptions.CultureInvariant);
 
-    private static bool IsValidPhone(string phone)
+    private static bool IsValidPhone(string? phone)
     {
+        // Treat null/empty as "not provided" — valid for optional fields
         if (string.IsNullOrWhiteSpace(phone)) return true;
-        // Allow (XXX) XXX-XXXX or variations for seeding compatibility
-        var regex = new System.Text.RegularExpressions.Regex(@"^\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}$");
-        return regex.IsMatch(phone);
+
+        // Normalize to digits-only to tolerate masks like (123) 456-7890, 123-456-7890, 123.456.7890, etc.
+        // Accept 10 digits, or 11 digits when prefixed with country code '1'.
+        var digits = new string(phone.Where(char.IsDigit).ToArray());
+        if (digits.Length == 10)
+        {
+            return true;
+        }
+        if (digits.Length == 11 && digits[0] == '1')
+        {
+            return true;
+        }
+
+        // Fallback to permissive documented pattern (kept for backward compatibility)
+        return PhoneRegex.IsMatch(phone);
     }
 
     // MVP toggle — allow relaxing phone validation to reduce perceived "button not working" issues when saves are blocked.

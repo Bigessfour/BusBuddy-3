@@ -109,6 +109,39 @@ namespace BusBuddy.Tests.Core
         }
 
         [Test]
+        public async Task ValidateStudentAsync_CommonPhoneFormats_ShouldPass()
+        {
+            var samples = new[]
+            {
+                "5555555555",
+                "555-555-5555",
+                "(555) 555-5555",
+                "+1 (555) 555-5555",
+                "555.555.5555",
+            };
+
+            foreach (var phone in samples)
+            {
+                var s = new Student
+                {
+                    StudentName = "Valid Phones",
+                    Grade = "3",
+                    School = "Test",
+                    ParentGuardian = "P",
+                    EmergencyPhone = phone,
+                    HomePhone = phone,
+                    HomeAddress = "1 A St",
+                    City = "City",
+                    State = "CO",
+                    Zip = "12345"
+                };
+
+                var errors = await _studentService.ValidateStudentAsync(s);
+                errors.Should().NotContain(e => e.Contains("phone", StringComparison.OrdinalIgnoreCase), $"'{phone}' should be accepted");
+            }
+        }
+
+        [Test]
         public async Task GetStudentsByRouteAsync_ReturnsStudentsOnAMorPM()
         {
             _dbContext.Students.AddRange(new[]

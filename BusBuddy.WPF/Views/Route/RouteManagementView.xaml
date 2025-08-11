@@ -57,14 +57,14 @@
                             Background="{StaticResource BusBuddy.Brush.Primary}" Foreground="White"
                             AutomationProperties.Name="Add Route"
                             AutomationProperties.HelpText="Create a new bus route"/>
-                    <syncfusion:ButtonAdv Name="EditRouteButton" Label="✏️ Edit Route"
-                            Command="{Binding EditRouteCommand}"
-                            IsEnabled="{Binding HasSelectedRoute}"
+            <syncfusion:ButtonAdv Name="EditRouteButton" Label="✏️ Edit Route"
+                Command="{Binding EditRouteCommand}"
+                IsEnabled="{Binding IsRouteSelected}"
                             AutomationProperties.Name="Edit Route"
                             AutomationProperties.HelpText="Edit the selected route"/>
-                    <syncfusion:ButtonAdv Name="DeleteRouteButton" Label="🗑️ Delete Route"
-                            Command="{Binding DeleteRouteCommand}"
-                            IsEnabled="{Binding HasSelectedRoute}"
+            <syncfusion:ButtonAdv Name="DeleteRouteButton" Label="🗑️ Delete Route"
+                Command="{Binding DeleteRouteCommand}"
+                IsEnabled="{Binding IsRouteSelected}"
                             AutomationProperties.Name="Delete Route"
                             AutomationProperties.HelpText="Delete the selected route"/>
                     <Separator Margin="10,0"/>
@@ -83,15 +83,15 @@
                     <Separator Margin="10,0"/>
 
                     <!-- Assignment Operations -->
-                    <syncfusion:ButtonAdv Name="AssignStudentsButton" Label="👥 Assign Students"
-                            Command="{Binding AssignStudentsCommand}"
-                            IsEnabled="{Binding HasSelectedRoute}"
+            <syncfusion:ButtonAdv Name="AssignStudentsButton" Label="👥 Assign Students"
+                Command="{Binding AssignStudentsCommand}"
+                IsEnabled="{Binding IsRouteSelected}"
                             Background="{StaticResource BusBuddy.Brush.SafetyOrange}" Foreground="White"
                             AutomationProperties.Name="Assign Students to Route"
                             AutomationProperties.HelpText="Assign students to the selected route"/>
-                    <syncfusion:ButtonAdv Name="AssignVehicleButton" Label="🚌 Assign Vehicle"
-                            Command="{Binding AssignVehicleCommand}"
-                            IsEnabled="{Binding HasSelectedRoute}"
+            <syncfusion:ButtonAdv Name="AssignVehicleButton" Label="🚌 Assign Vehicle"
+                Command="{Binding AssignVehicleCommand}"
+                IsEnabled="{Binding IsRouteSelected}"
                             Background="{StaticResource BusBuddy.Brush.Semantic.Warning}" Foreground="White"
                             AutomationProperties.Name="Assign Vehicle to Route"
                             AutomationProperties.HelpText="Assign vehicle to the selected route"/>

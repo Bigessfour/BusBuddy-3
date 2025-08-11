@@ -45,6 +45,9 @@ namespace BusBuddy.WPF.ViewModels.Route
                 _selectedRoute = value;
                 OnPropertyChanged();
                 OnPropertyChanged(nameof(IsRouteSelected));
+                // Ensure command CanExecute reflects the current selection state
+                // Using WPF's CommandManager to prompt a requery for CanExecute
+                CommandManager.InvalidateRequerySuggested();
             }
         }
 
@@ -187,13 +190,31 @@ namespace BusBuddy.WPF.ViewModels.Route
 
         private void AddRoute()
         {
-            var newRoute = new BusBuddy.Core.Models.Route
+            try
             {
-                RouteName = "New Route",
-                School = SelectedRoute?.School ?? "Default School"
-            };
-            // TODO: Add to service in Phase 2
-            LoadRoutes();
+                using var context = _contextFactory.CreateDbContext();
+                var newRoute = new BusBuddy.Core.Models.Route
+                {
+                    RouteName = $"Route {DateTime.Now:HHmmss}",
+                    School = SelectedRoute?.School ?? "Wiley School District",
+                    Date = DateTime.Today,
+                    IsActive = true
+                };
+                context.Routes.Add(newRoute);
+                context.SaveChanges();
+
+                // Reflect in UI without full reload
+                Routes.Add(newRoute);
+                RoutesView.Refresh();
+                OnPropertyChanged(nameof(TotalRoutes));
+                OnPropertyChanged(nameof(ActiveRoutes));
+                StatusMessage = $"Added route '{newRoute.RouteName}'";
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Failed to add route");
+                StatusMessage = $"Error adding route: {ex.Message}";
+            }
         }
 
         private void CopyRoute()
@@ -211,8 +232,66 @@ namespace BusBuddy.WPF.ViewModels.Route
         }
 
     // Stubs to satisfy UI; can be implemented later
-    private void EditSelectedRoute() { /* TODO: open edit dialog */ }
-    private void DeleteSelectedRoute() { /* TODO: delete route */ }
+        private void EditSelectedRoute()
+        {
+            if (SelectedRoute is null) return;
+            try
+            {
+                using var context = _contextFactory.CreateDbContext();
+                var route = context.Routes.FirstOrDefault(r => r.RouteId == SelectedRoute.RouteId);
+                if (route is null)
+                {
+                    StatusMessage = "Selected route not found";
+                    return;
+                }
+                // Minimal edit: ensure name trimmed and active by default
+                route.RouteName = string.IsNullOrWhiteSpace(SelectedRoute.RouteName)
+                    ? $"Route-{route.RouteId}"
+                    : SelectedRoute.RouteName.Trim();
+                route.Description = SelectedRoute.Description;
+                route.School = SelectedRoute.School;
+                route.Date = SelectedRoute.Date;
+                route.IsActive = SelectedRoute.IsActive;
+                context.SaveChanges();
+                StatusMessage = $"Saved changes for '{route.RouteName}'";
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Failed to save route");
+                StatusMessage = $"Error saving route: {ex.Message}";
+            }
+        }
+
+        private void DeleteSelectedRoute()
+        {
+            if (SelectedRoute is null) return;
+            try
+            {
+                using var context = _contextFactory.CreateDbContext();
+                var route = context.Routes.FirstOrDefault(r => r.RouteId == SelectedRoute.RouteId);
+                if (route is null)
+                {
+                    StatusMessage = "Selected route not found";
+                    return;
+                }
+                var name = route.RouteName;
+                context.Routes.Remove(route);
+                context.SaveChanges();
+
+                // Update UI collection
+                Routes.Remove(SelectedRoute);
+                SelectedRoute = null;
+                RoutesView.Refresh();
+                OnPropertyChanged(nameof(TotalRoutes));
+                OnPropertyChanged(nameof(ActiveRoutes));
+                StatusMessage = $"Deleted route '{name}'";
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Failed to delete route");
+                StatusMessage = $"Error deleting route: {ex.Message}";
+            }
+        }
     private void GenerateSchedule() { StatusMessage = "Generated schedule (stub)"; }
     private void OpenMapView() { StatusMessage = "Opening map (stub)"; }
     private void AssignStudents() { StatusMessage = "Assign students (stub)"; }

@@ -504,8 +504,10 @@
                             <StackPanel Grid.Column="0" Margin="0,0,10,0">
                                 <Label Content="AM Route"/>
                                 <syncfusion:ComboBoxAdv Name="AMRouteComboBox"
-                                          Text="{Binding Student.AMRoute, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                           ItemsSource="{Binding AvailableRoutes}"
+                                          DisplayMemberPath="RouteName"
+                                          SelectedValuePath="RouteName"
+                                          SelectedValue="{Binding Student.AMRoute, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                           IsEditable="True"
                                           AutomationProperties.Name="AM Route"/>
                             </StackPanel>
@@ -513,8 +515,10 @@
                             <StackPanel Grid.Column="1" Margin="10,0,10,0">
                                 <Label Content="PM Route"/>
                                 <syncfusion:ComboBoxAdv Name="PMRouteComboBox"
-                                          Text="{Binding Student.PMRoute, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                           ItemsSource="{Binding AvailableRoutes}"
+                                          DisplayMemberPath="RouteName"
+                                          SelectedValuePath="RouteName"
+                                          SelectedValue="{Binding Student.PMRoute, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                           IsEditable="True"
                                           AutomationProperties.Name="PM Route"/>
                             </StackPanel>

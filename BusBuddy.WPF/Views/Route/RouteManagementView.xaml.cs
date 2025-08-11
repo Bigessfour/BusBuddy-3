@@ -6,6 +6,7 @@ using System.Windows.Controls.Primitives;
 using System.Windows.Automation;
 using System.Windows.Media;
 using System.Windows.Threading;
+using Syncfusion.SfSkinManager; // Syncfusion WPF Theming — see official docs: https://help.syncfusion.com/wpf/themes/overview
 using BusBuddy.WPF.ViewModels.Route;
 
 namespace BusBuddy.WPF.Views.Route
@@ -54,6 +55,31 @@ namespace BusBuddy.WPF.Views.Route
 
         private void OnLoaded(object? sender, RoutedEventArgs e)
         {
+            // Apply Syncfusion theme: prefer FluentDark with FluentLight fallback
+            try
+            {
+                var window = Window.GetWindow(this);
+                if (window != null)
+                {
+                    SfSkinManager.ApplyThemeAsDefaultStyle = true; // documented pattern per Syncfusion SfSkinManager
+                    try
+                    {
+                        using var dark = new Theme("FluentDark");
+                        SfSkinManager.SetTheme(window, dark);
+                    }
+                    catch
+                    {
+                        try
+                        {
+                            using var light = new Theme("FluentLight");
+                            SfSkinManager.SetTheme(window, light);
+                        }
+                        catch { /* best-effort theming */ }
+                    }
+                }
+            }
+            catch { /* non-fatal theming issue */ }
+
             Log.Information("Loaded {ViewName} with theme resource {ResourceKey}", GetType().Name, "BusBuddy.Brush.Primary");
             Logger.Information("RouteManagementView Loaded — DataContext={DC}", DataContext?.GetType().Name ?? "(null)");
             // Run accessibility audit after layout is ready
