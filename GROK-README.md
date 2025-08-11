@@ -35,6 +35,29 @@ Notes:
 **Repository Status:** Build Success — EF Core aligned; WPF mapping features validated  
 **Key Achievement:** End-to-end student → geocode → map plotting; eligibility (in district AND not in town) operational
 
+### Delta — Aug 11, 2025 (Route Management theming + CRUD; StudentForm route binding)
+- What changed
+  - Route Management view now consistently themed via Syncfusion SfSkinManager (FluentDark default with FluentLight fallback) and toolbar enablement bound to IsRouteSelected.
+  - Implemented functional Add, Edit, and Delete operations for routes in RouteManagementViewModel using EF Core; command CanExecute refresh via CommandManager.InvalidateRequerySuggested.
+  - StudentForm AM/PM Route selectors corrected: ComboBoxAdv now uses SelectedValue with DisplayMemberPath/SelectedValuePath = RouteName so the persisted value is the route name, aligning with StudentService validation.
+- Files (repo paths + raw links)
+  - BusBuddy.WPF/Views/Route/RouteManagementView.xaml — enablement bound to IsRouteSelected
+    https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.WPF/Views/Route/RouteManagementView.xaml
+  - BusBuddy.WPF/Views/Route/RouteManagementView.xaml.cs — SfSkinManager theme application (FluentDark → FluentLight fallback)
+    https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.WPF/Views/Route/RouteManagementView.xaml.cs
+  - BusBuddy.WPF/ViewModels/Route/RouteManagementViewModel.cs — Add/Edit/Delete routes with EF Core; requery CanExecute on selection change
+    https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.WPF/ViewModels/Route/RouteManagementViewModel.cs
+  - BusBuddy.WPF/Views/Student/StudentForm.xaml — AM/PM route ComboBoxAdv uses SelectedValue bound to Student.AMRoute/PMRoute with SelectedValuePath=RouteName
+    https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.WPF/Views/Student/StudentForm.xaml
+- Verification
+  - Build: PASS across Core, WPF, Tests (clean build).
+  - Run: App launches; Route Management shows FluentDark theme; Add/Edit/Delete work and update the grid and status.
+  - Student save: Eliminates "Route 'BusBuddy.Core.Models.Route' does not exist" by persisting the route name via SelectedValue.
+- Documentation-first references (Syncfusion/.NET)
+  - SfSkinManager (themes): https://help.syncfusion.com/wpf/themes/skin-manager
+  - SfDataGrid (patterns used across views): https://help.syncfusion.com/wpf/datagrid/getting-started
+  - WPF commands CanExecute refresh: https://learn.microsoft.com/dotnet/desktop/wpf/advanced/commanding-overview
+
 ### Delta — Aug 11, 2025 (CA1869: cache JsonSerializerOptions)
 - What changed
   - Resolved CA1869 warnings by caching System.Text.Json JsonSerializerOptions as a static readonly field and reusing it for Deserialize calls in SeedDataService.
