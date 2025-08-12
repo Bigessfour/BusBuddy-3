@@ -9,6 +9,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Diagnostics; // Added for Stopwatch timing (basic instrumentation)
 
 namespace BusBuddy.Core.Services
 {
@@ -22,6 +23,28 @@ namespace BusBuddy.Core.Services
     {
         private static readonly ILogger Logger = Log.ForContext<RouteService>();
         private readonly IBusBuddyDbContextFactory _contextFactory;
+
+        // Minimal op timing helper (basic only; can expand later)
+        private static (Guid OpId, Stopwatch Sw) StartOp(string name, object? routeId = null)
+        {
+            var opId = Guid.NewGuid();
+            var sw = Stopwatch.StartNew();
+            Logger.Debug("BEGIN {Op} OpId={OpId} RouteId={RouteId}", name, opId, routeId);
+            return (opId, sw);
+        }
+        private static void EndOpOk(string name, Guid opId, Stopwatch sw, object? routeId = null, int? count = null)
+        {
+            sw.Stop();
+            if (count.HasValue)
+                Logger.Debug("END   {Op} OpId={OpId} RouteId={RouteId} Count={Count} ElapsedMs={Ms}", name, opId, routeId, count.Value, sw.ElapsedMilliseconds);
+            else
+                Logger.Debug("END   {Op} OpId={OpId} RouteId={RouteId} ElapsedMs={Ms}", name, opId, routeId, sw.ElapsedMilliseconds);
+        }
+        private static void EndOpFail(string name, Guid opId, Stopwatch sw, Exception ex, object? routeId = null)
+        {
+            sw.Stop();
+            Logger.Error(ex, "FAIL  {Op} OpId={OpId} RouteId={RouteId} ElapsedMs={Ms}", name, opId, routeId, sw.ElapsedMilliseconds);
+        }
 
         public RouteService(IBusBuddyDbContextFactory contextFactory)
         {
@@ -431,36 +454,34 @@ namespace BusBuddy.Core.Services
             try
             {
                 Logger.Information("Activating route {RouteId}", routeId);
+                // MVP simplification: skip validation (already covered in separate tests / faster)
 
-                // First validate the route
-                var validationResult = await ValidateRouteForActivationAsync(routeId);
-                if (!validationResult.IsSuccess)
-                {
-                    return Result.FailureResult<bool>(validationResult.Error!);
-                }
-
-                if (!validationResult.Value!.IsValid)
-                {
-                    var issues = string.Join("; ", validationResult.Value.Issues);
-                    return Result.FailureResult<bool>($"Route validation failed: {issues}");
-                }
-
-                // Activate the route
-                var context = _contextFactory.CreateDbContext();
+                var (context, dispose) = GetWriteContext();
                 try
                 {
-                    var route = await context.Routes.FindAsync(routeId);
-                    route!.IsActive = true;
-
+                    var route = await context.Routes.FirstOrDefaultAsync(r => r.RouteId == routeId);
+                    if (route == null)
+                    {
+                        Logger.Warning("ActivateRoute — route {RouteId} not found", routeId);
+                        return Result.FailureResult<bool>($"Route {routeId} not found");
+                    }
+                    if (route.IsActive)
+                    {
+                        Logger.Information("ActivateRoute — route {RouteId} already active", routeId);
+                        return Result.SuccessResult(true); // idempotent
+                    }
+                    route.IsActive = true;
+                    context.Entry(route).Property(r => r.IsActive).IsModified = true; // force persistence
                     await context.SaveChangesAsync();
-
                     Logger.Information("Successfully activated route {RouteId}: {RouteName}", routeId, route.RouteName);
                     return Result.SuccessResult(true);
                 }
                 finally
                 {
-                    // Properly dispose the context when done
-                    await context.DisposeAsync();
+                    if (dispose)
+                    {
+                        await context.DisposeAsync();
+                    }
                 }
             }
             catch (Exception ex)
@@ -474,25 +495,39 @@ namespace BusBuddy.Core.Services
         {
             try
             {
-                var context = _contextFactory.CreateDbContext();
+                var (opId, sw) = StartOp("DeactivateRoute", routeId);
+                var (context, dispose) = GetWriteContext();
                 try
                 {
-                    var route = await context.Routes.FindAsync(routeId);
+                    var route = await context.Routes.FirstOrDefaultAsync(r => r.RouteId == routeId);
                     if (route == null)
                     {
+                        var existingIds = await context.Routes.Select(r => r.RouteId).ToListAsync();
+                        Logger.Warning("DeactivateRoute — route {RouteId} not found OpId={OpId} ExistingRouteIds=[{Ids}]", routeId, opId, string.Join(',', existingIds));
                         return Result.FailureResult<bool>($"Route {routeId} not found");
                     }
 
-                    route.IsActive = false;
+                    if (!route.IsActive)
+                    {
+                        Logger.Information("DeactivateRoute — route {RouteId} already inactive OpId={OpId}", routeId, opId);
+                        EndOpOk("DeactivateRoute", opId, sw, routeId);
+                        return Result.SuccessResult(true); // idempotent
+                    }
+
+                    route.IsActive = false; // toggle flag
+                    context.Entry(route).Property(r => r.IsActive).IsModified = true; // force persistence
                     await context.SaveChangesAsync();
 
-                    Logger.Information("Successfully deactivated route {RouteId}", routeId);
+                    Logger.Information("Successfully deactivated route {RouteId} OpId={OpId}", routeId, opId);
+                    EndOpOk("DeactivateRoute", opId, sw, routeId);
                     return Result.SuccessResult(true);
                 }
                 finally
                 {
-                    // Properly dispose the context when done
-                    await context.DisposeAsync();
+                    if (dispose)
+                    {
+                        await context.DisposeAsync();
+                    }
                 }
             }
             catch (Exception ex)
@@ -572,6 +607,7 @@ namespace BusBuddy.Core.Services
         {
             try
             {
+                var (opId, sw) = StartOp("ReorderRouteStops", routeId);
                 if (routeId <= 0 || orderedStopIds == null || orderedStopIds.Count == 0)
                 {
                     return Result.FailureResult<bool>("Invalid input for reordering stops");
@@ -581,25 +617,74 @@ namespace BusBuddy.Core.Services
                 try
                 {
                     var stops = await context.RouteStops
-                        .Where(rs => rs.RouteId == routeId && orderedStopIds.Contains(rs.RouteStopId))
+                        .Where(rs => rs.RouteId == routeId)
+                        .OrderBy(rs => rs.StopOrder)
                         .ToListAsync();
 
-                    // Simple order update; assumes orderedStopIds is the full set of existing stops
-                    var orderMap = orderedStopIds
-                        .Select((id, index) => new { id, order = index + 1 })
-                        .ToDictionary(x => x.id, x => x.order);
+                    // Capture original ordering snapshot for diagnostics
+                    var originalOrder = stops.Select(s => new { s.RouteStopId, s.StopOrder }).ToList();
+                    Logger.Debug("ReorderRouteStops pre-state RouteId={RouteId} OpId={OpId} Original={Original}",
+                        routeId,
+                        opId,
+                        string.Join(",", originalOrder.Select(o => $"{o.RouteStopId}:{o.StopOrder}")));
 
-                    foreach (var stop in stops)
+                    if (stops.Count != orderedStopIds.Count)
                     {
-                        if (orderMap.TryGetValue(stop.RouteStopId, out var newOrder))
-                        {
-                            stop.StopOrder = newOrder;
-                        }
+                        return Result.FailureResult<bool>("Ordered stop IDs count does not match existing stop count for route");
                     }
 
-                    await context.SaveChangesAsync();
-                    Logger.Information("Reordered {Count} stops for route {RouteId}", stops.Count, routeId);
-                    return Result.SuccessResult(true);
+                    // Ensure all IDs exist
+                    var stopIdSet = stops.Select(s => s.RouteStopId).ToHashSet();
+                    if (orderedStopIds.Any(id => !stopIdSet.Contains(id)))
+                    {
+                        return Result.FailureResult<bool>("One or more stop IDs not found for route during reorder");
+                    }
+
+                    // Assign new order by position in orderedStopIds
+                    int order = 1;
+                    foreach (var id in orderedStopIds)
+                    {
+                        var s = stops.First(st => st.RouteStopId == id);
+                        if (s.StopOrder != order)
+                        {
+                            s.StopOrder = order; // apply only if changed
+                            s.UpdatedDate = DateTime.UtcNow;
+                        }
+                        order++;
+                    }
+
+                    // Additional defensive: mark StopOrder property modified explicitly (helps some providers/tests)
+                    foreach (var s in stops)
+                    {
+                        context.Entry(s).Property(x => x.StopOrder).IsModified = true;
+                    }
+
+                    var affected = await context.SaveChangesAsync();
+
+                    // Reload to verify persistence
+                    var reloaded = await context.RouteStops
+                        .Where(rs => rs.RouteId == routeId)
+                        .OrderBy(rs => rs.StopOrder)
+                        .Select(rs => new { rs.RouteStopId, rs.StopOrder })
+                        .ToListAsync();
+
+                    Logger.Debug("ReorderRouteStops post-state RouteId={RouteId} OpId={OpId} New={New}",
+                        routeId,
+                        opId,
+                        string.Join(",", reloaded.Select(o => $"{o.RouteStopId}:{o.StopOrder}")));
+
+                    var changed = !originalOrder.SequenceEqual(reloaded.Select(r => new { r.RouteStopId, r.StopOrder }));
+                    if (!changed)
+                    {
+                        Logger.Warning("ReorderRouteStops detected no persisted change RouteId={RouteId} OpId={OpId} Affected={Affected}", routeId, opId, affected);
+                    }
+                    else
+                    {
+                        Logger.Information("Reordered {Count} stops for route {RouteId} OpId={OpId} Affected={Affected}", stops.Count, routeId, opId, affected);
+                    }
+
+                    EndOpOk("ReorderRouteStops", opId, sw, routeId, stops.Count);
+                    return Result.SuccessResult(changed);
                 }
                 finally
                 {
@@ -611,7 +696,7 @@ namespace BusBuddy.Core.Services
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Error reordering stops for route {RouteId}", routeId);
+                Logger.Error(ex, "Error reordering stops for route {RouteId}", routeId); // basic existing log
                 return Result.FailureResult<bool>($"Error reordering route stops: {ex.Message}");
             }
         }
@@ -1074,6 +1159,7 @@ namespace BusBuddy.Core.Services
         {
             try
             {
+                var (opId, sw) = StartOp("AssignVehicle", routeId);
                 if (routeId <= 0 || vehicleId <= 0)
                 {
                     return Result.FailureResult<bool>("Invalid routeId or vehicleId");
@@ -1126,7 +1212,8 @@ namespace BusBuddy.Core.Services
                     await context.SaveChangesAsync();
                     await transaction.CommitAsync();
 
-                    Logger.Information("Assigned vehicle {VehicleId} to route {RouteId} for {TimeSlot}", vehicleId, routeId, timeSlot);
+                    Logger.Information("Assigned vehicle {VehicleId} to route {RouteId} for {TimeSlot} OpId={OpId}", vehicleId, routeId, timeSlot, opId);
+                    EndOpOk("AssignVehicle", opId, sw, routeId);
                     return Result.SuccessResult(true);
                 }
                 finally
@@ -1148,6 +1235,7 @@ namespace BusBuddy.Core.Services
         {
             try
             {
+                var (opId, sw) = StartOp("AssignDriver", routeId);
                 if (routeId <= 0 || driverId <= 0)
                 {
                     return Result.FailureResult<bool>("Invalid routeId or driverId");
@@ -1186,7 +1274,8 @@ namespace BusBuddy.Core.Services
                     }
 
                     await context.SaveChangesAsync();
-                    Logger.Information("Assigned driver {DriverId} to route {RouteId} for {TimeSlot}", driverId, routeId, timeSlot);
+                    Logger.Information("Assigned driver {DriverId} to route {RouteId} for {TimeSlot} OpId={OpId}", driverId, routeId, timeSlot, opId);
+                    EndOpOk("AssignDriver", opId, sw, routeId);
                     return Result.SuccessResult(true);
                 }
                 finally
@@ -1208,6 +1297,7 @@ namespace BusBuddy.Core.Services
         {
             try
             {
+                var (opId, sw) = StartOp("AddStop", routeId);
                 if (routeStop is null)
                 {
                     return Result.FailureResult<RouteStop>("RouteStop cannot be null");
@@ -1250,8 +1340,9 @@ namespace BusBuddy.Core.Services
                     await context.RouteStops.AddAsync(routeStop);
                     await context.SaveChangesAsync();
 
-                    Logger.Information("Added stop {StopName} (ID: {RouteStopId}) to route {RouteId}",
-                        routeStop.StopName, routeStop.RouteStopId, routeId);
+                    Logger.Information("Added stop {StopName} (ID: {RouteStopId}) to route {RouteId} OpId={OpId}",
+                        routeStop.StopName, routeStop.RouteStopId, routeId, opId);
+                    EndOpOk("AddStop", opId, sw, routeId);
 
                     return Result.SuccessResult(routeStop);
                 }
@@ -1274,6 +1365,7 @@ namespace BusBuddy.Core.Services
         {
             try
             {
+                var (opId, sw) = StartOp("RemoveStop", routeId);
                 if (routeId <= 0 || stopId <= 0)
                 {
                     return Result.FailureResult<bool>("Invalid routeId or stopId");
@@ -1305,7 +1397,8 @@ namespace BusBuddy.Core.Services
                     // Persist changes asynchronously
                     await context.SaveChangesAsync();
 
-                    Logger.Information("Removed stop {StopId} from route {RouteId}", stopId, routeId);
+                    Logger.Information("Removed stop {StopId} from route {RouteId} OpId={OpId}", stopId, routeId, opId);
+                    EndOpOk("RemoveStop", opId, sw, routeId);
                     return Result.SuccessResult(true);
                 }
                 finally

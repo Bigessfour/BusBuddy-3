@@ -265,16 +265,40 @@ namespace BusBuddy.Core.Services
                 var pageWidth = page.GetClientSize().Width;
                 g.DrawRectangle(accentBrush, new RectangleF(0, 0, pageWidth, 50));
                 g.DrawString("Bus Buddy — Route Summary", titleFont, PdfBrushes.White, new PointF(20, 15));
-
+                // Header details block
                 float y = 60f;
-                g.DrawString(route.RouteName ?? "(Unnamed Route)", sectionFont, textBrush, new PointF(20, y));
-                y += 22f;
-                g.DrawString($"Date: {route.Date:yyyy-MM-dd} | Slot: {timeSlot}", bodyFont, textBrush, new PointF(20, y));
-                y += 16f;
-                g.DrawString($"Bus: {assignedBus?.BusNumber ?? "(none)"} | Driver: {assignedDriver?.DriverName ?? "(none)"}", bodyFont, textBrush, new PointF(20, y));
-                y += 16f;
-                g.DrawString($"Stops: {stops.Count()} | Students: {students.Count()}", bodyFont, textBrush, new PointF(20, y));
-                y += 28f;
+                var detailsRect = new RectangleF(12, y, pageWidth - 24, 76f);
+                g.DrawRectangle(new PdfSolidBrush(new PdfColor(245, 247, 249)), detailsRect);
+                g.DrawRectangle(new PdfPen(accent, 0.6f), detailsRect);
+
+                // Compute route timing summary
+                string fmt(DateTime dt) => dt.ToString("HH:mm");
+                var validArrivals = stops.Where(s => s.EstimatedArrivalTime != default).Select(s => s.EstimatedArrivalTime).ToList();
+                var validDepartures = stops.Where(s => s.EstimatedDepartureTime != default).Select(s => s.EstimatedDepartureTime).ToList();
+                var depText = validArrivals.Any() ? fmt(validArrivals.Min()) : "--:--";
+                var arrText = validDepartures.Any() ? fmt(validDepartures.Max()) : "--:--";
+
+                // Left column
+                float leftX = detailsRect.X + 12f;
+                float lineY = detailsRect.Y + 10f;
+                g.DrawString($"Route: {route.RouteName ?? "(Unnamed Route)"}", sectionFont, textBrush, new PointF(leftX, lineY));
+                lineY += 20f;
+                g.DrawString($"Stops: {stops.Count()}    Students: {students.Count()}", bodyFont, textBrush, new PointF(leftX, lineY));
+                lineY += 16f;
+                g.DrawString($"Departure: {depText}    Arrival: {arrText}", bodyFont, textBrush, new PointF(leftX, lineY));
+
+                // Right column
+                float rightX = detailsRect.Right - 260f; // approx right column start
+                float rY = detailsRect.Y + 12f;
+                g.DrawString($"Date: {route.Date:yyyy-MM-dd}", bodyFont, textBrush, new PointF(rightX, rY));
+                rY += 16f;
+                g.DrawString($"Slot: {timeSlot}", bodyFont, textBrush, new PointF(rightX, rY));
+                rY += 16f;
+                g.DrawString($"Driver: {assignedDriver?.DriverName ?? "(none)"}", bodyFont, textBrush, new PointF(rightX, rY));
+                rY += 16f;
+                g.DrawString($"Vehicle: {assignedBus?.BusNumber ?? "(none)"}", bodyFont, textBrush, new PointF(rightX, rY));
+
+                y = detailsRect.Bottom + 20f;
 
                 // Optional map image (embed to top-right area under header bar)
                 if (mapImagePng != null && mapImagePng.Length > 0)

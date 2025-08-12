@@ -32,6 +32,20 @@ namespace BusBuddy.WPF.Views.Route
         {
             InitializeComponent();
 
+            // Ensure DataContext is set so bindings/commands are active
+            try
+            {
+                if (this.DataContext is null)
+                {
+                    this.DataContext = new RouteManagementViewModel();
+                    Logger.Information("RouteManagementView DataContext set to RouteManagementViewModel");
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Failed to set DataContext for RouteManagementView");
+            }
+
             // Add async lifecycle handlers after InitializeComponent
             Loaded += OnLoadedAsync;
             // Only run audit once, not on Unloaded
@@ -40,7 +54,7 @@ namespace BusBuddy.WPF.Views.Route
             try
             {
                 AddHandler(ButtonBase.ClickEvent, new RoutedEventHandler(OnAnyButtonClick), true);
-                AddHandler(Selector.SelectionChangedEvent, new SelectionChangedEventHandler(OnAnySelectionChanged), true);
+                AddHandler(Selector.SelectionChangedEvent, new System.Windows.Controls.SelectionChangedEventHandler(OnAnySelectionChanged), true);
                 AddHandler(TextBoxBase.TextChangedEvent, new TextChangedEventHandler(OnAnyTextChanged), true);
                 AddHandler(System.Windows.Controls.Validation.ErrorEvent, new EventHandler<ValidationErrorEventArgs>(OnValidationError), true);
             }
@@ -115,6 +129,23 @@ namespace BusBuddy.WPF.Views.Route
             }
         }
 
+        // Based on Syncfusion WPF SfDataGrid row interaction pattern — using MouseDoubleClick to trigger Manage Route
+        // API ref: https://help.syncfusion.com/cr/wpf/Syncfusion.UI.Xaml.Grid.SfDataGrid.html
+        private void RoutesDataGrid_MouseDoubleClick(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            try
+            {
+                if (DataContext is RouteManagementViewModel vm && vm.AssignStudentsCommand.CanExecute(null))
+                {
+                    vm.AssignStudentsCommand.Execute(null);
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Double-click manage route failed");
+            }
+        }
+
         private void OnUnloadedGuard(object? sender, RoutedEventArgs e)
         {
             if (!_isDataReady)
@@ -159,14 +190,14 @@ namespace BusBuddy.WPF.Views.Route
             }
         }
 
-        private void OnAnySelectionChanged(object? sender, SelectionChangedEventArgs e)
+    private void OnAnySelectionChanged(object? sender, System.Windows.Controls.SelectionChangedEventArgs e)
         {
             try
             {
                 var src = e.OriginalSource as DependencyObject;
                 var fe = src as FrameworkElement;
                 var name = fe?.Name ?? "(unnamed)";
-                var type = src?.GetType().Name ?? (sender?.GetType().Name ?? "(unknown)");
+        var type = src?.GetType().Name ?? (sender?.GetType().Name ?? "(unknown)");
                 Logger.Information("RouteMgmt SelectionChanged: Type={Type} Name={Name} Added={Added} Removed={Removed}", type, name, e.AddedItems?.Count ?? 0, e.RemovedItems?.Count ?? 0);
             }
             catch (Exception ex)

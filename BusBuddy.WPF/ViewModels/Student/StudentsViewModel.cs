@@ -13,7 +13,9 @@ using BusBuddy.Core.Data;
 using Microsoft.EntityFrameworkCore;
 using BusBuddy.WPF;
 using Serilog;
+using Serilog.Context;
 using CommunityToolkit.Mvvm.Input;
+using System.IO;
 using Microsoft.Extensions.DependencyInjection;
 using BusBuddy.Core.Services.Interfaces;
 using BusBuddy.WPF.ViewModels.GoogleEarth;
@@ -302,6 +304,7 @@ namespace BusBuddy.WPF.ViewModels.Student
         public ICommand ShowSummaryCommand { get; private set; } = null!;
         public ICommand ShowQuickActionsCommand { get; private set; } = null!;
     public ICommand PlotStudentsCommand { get; private set; } = null!;
+    public ICommand SaveGridEditsCommand { get; private set; } = null!; // Inline save for grid edits
 
         #endregion
 
@@ -334,6 +337,7 @@ namespace BusBuddy.WPF.ViewModels.Student
             ShowSummaryCommand = new RelayCommand(ExecuteShowSummary);
             ShowQuickActionsCommand = new RelayCommand(ExecuteShowQuickActions);
             PlotStudentsCommand = new RelayCommand(ExecutePlotStudents);
+            SaveGridEditsCommand = new AsyncRelayCommand(SaveInlineGridEditsAsync);
 
             Logger.Debug("Commands initialized: Add/Edit/Delete/Import/BulkAssign/Optimize/ViewMap/ViewOnMap/Suggest/Validate/Refresh/Export/ShowSummary/ShowQuickActions/Plot");
         }
@@ -468,12 +472,45 @@ namespace BusBuddy.WPF.ViewModels.Student
         {
             try
             {
-                // TODO: Implement CSV export functionality
-                Logger.Information("Export command executed - {StudentCount} students", Students.Count);
+                using (LogContext.PushProperty("Operation", "ExportStudents"))
+                using (LogContext.PushProperty("Filtered", !string.IsNullOrWhiteSpace(QuickSearchText)))
+                {
+                    var exportDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "BusBuddy", "Exports");
+                    Directory.CreateDirectory(exportDir);
+                    var fileName = $"students-{DateTime.UtcNow:yyyyMMdd-HHmmss}.csv";
+                    var fullPath = Path.Combine(exportDir, fileName);
+
+                    // Export only currently visible (filtered) items
+                    var rows = StudentsView.Cast<Core.Models.Student>().ToList();
+                    using var sw = new StreamWriter(fullPath, false, System.Text.Encoding.UTF8);
+                    sw.WriteLine("StudentId,StudentName,StudentNumber,Grade,AMRoute,PMRoute,School,Active");
+                    foreach (var s in rows)
+                    {
+                        string Csv(string? v)
+                        {
+                            if (string.IsNullOrEmpty(v)) return string.Empty;
+                            var escaped = v.Replace("\"", "\"\"", StringComparison.Ordinal);
+                            return "\"" + escaped + "\"";
+                        }
+                        sw.WriteLine(string.Join(',',
+                            s.StudentId,
+                            Csv(s.StudentName),
+                            Csv(s.StudentNumber),
+                            Csv(s.Grade),
+                            Csv(s.AMRoute),
+                            Csv(s.PMRoute),
+                            Csv(s.School),
+                            s.Active));
+                    }
+                    sw.Flush();
+                    Logger.Information("Exported {Count} students to {File}", rows.Count, fullPath);
+                    StatusMessage = $"Exported {rows.Count} students";
+                }
             }
             catch (Exception ex)
             {
                 Logger.Error(ex, "Error executing export command");
+                StatusMessage = "Error exporting students";
             }
         }
 
@@ -584,6 +621,52 @@ namespace BusBuddy.WPF.ViewModels.Student
         #region Data Operations
 
         /// <summary>
+        /// Persists any modified student entities currently tracked in the collection. This supports inline grid editing.
+        /// </summary>
+        private async Task SaveInlineGridEditsAsync()
+        {
+            try
+            {
+                IsLoading = true; // Re‑use flag to disable edit buttons during save
+                Logger.Information("Saving inline grid edits for students");
+                using var context = _contextFactory.CreateWriteDbContext();
+                foreach (var s in Students)
+                {
+                    // Normalize phone format before save (digits only -> (###) ###-#### )
+                    s.HomePhone = NormalizePhone(s.HomePhone);
+                    s.EmergencyPhone = NormalizePhone(s.EmergencyPhone);
+                    context.Students.Update(s);
+                }
+                await context.SaveChangesAsync();
+                StatusMessage = "Inline changes saved";
+                Logger.Information("Inline grid edits saved successfully");
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Error saving inline grid edits");
+                StatusMessage = "Error saving changes";
+            }
+            finally
+            {
+                IsLoading = false;
+            }
+        }
+
+        /// <summary>
+        /// Normalizes a phone string to (###) ###-#### if it has 10 digits; otherwise returns original.
+        /// </summary>
+        private static string? NormalizePhone(string? phone)
+        {
+            if (string.IsNullOrWhiteSpace(phone)) return phone;
+            var digits = new string(phone.Where(char.IsDigit).ToArray());
+            if (digits.Length == 10)
+            {
+                return $"({digits.Substring(0,3)}) {digits.Substring(3,3)}-{digits.Substring(6,4)}";
+            }
+            return phone; // leave as-is if not 10 digits
+        }
+
+        /// <summary>
         /// Load all students from the database
         /// </summary>
     /// <inheritdoc />
@@ -624,10 +707,39 @@ namespace BusBuddy.WPF.ViewModels.Student
                     .OrderBy(s => s.StudentName)
                     .ToListAsync();
 
-                Students.Clear();
-                foreach (var student in students)
+                // Bulk replace strategy to avoid reentrancy issues (ObservableCollection mutation during CollectionChanged processing)
+                // We create a new collection and swap the reference so the grid sees a single Reset.
+                // Reentrancy-safe refresh: suppress view refresh while we batch update the existing collection
+                var previousSelectionId = SelectedStudent?.StudentId;
+                if (StudentsView != null)
                 {
-                    Students.Add(student);
+                    var view = StudentsView; // local
+                    var currentFilter = view.Filter;
+                    view.Filter = null; // temporarily detach filter to reduce per-item evaluations
+                    try
+                    {
+                        // Strategy: copy into temp list then replace contents of existing ObservableCollection
+                        Students.Clear();
+                        for (int idx = 0; idx < students.Count; idx++)
+                        {
+                            Students.Add(students[idx]);
+                        }
+                    }
+                    finally
+                    {
+                        view.Filter = currentFilter ?? StudentFilter;
+                    }
+                }
+                else
+                {
+                    Students.Clear();
+                    foreach (var s in students) Students.Add(s);
+                }
+
+                if (previousSelectionId.HasValue)
+                {
+                    var restored = Students.FirstOrDefault(s => s.StudentId == previousSelectionId.Value);
+                    if (restored != null) SelectedStudent = restored;
                 }
 
                 Logger.Information("Loaded {StudentCount} students", Students.Count);
@@ -746,9 +858,113 @@ namespace BusBuddy.WPF.ViewModels.Student
         {
             try
             {
-                Logger.Information("Bulk assign route command executed");
-                StatusMessage = "Bulk route assignment feature coming soon";
-                // TODO: Implement bulk route assignment
+                using (LogContext.PushProperty("Operation", "BulkAssignRoute"))
+                {
+                    if (AvailableRoutes.Count == 0)
+                    {
+                        StatusMessage = "No routes available";
+                        return;
+                    }
+
+                    // Determine target route (first active preferred)
+                    var targetRoute = AvailableRoutes.FirstOrDefault(r => r.IsActive) ?? AvailableRoutes[0];
+
+                    // Gather target students:
+                    // If a student is selected, treat that as a single-target bulk (user intent is explicit)
+                    // Otherwise assign all currently filtered students that lack BOTH AM & PM routes.
+                    var visibleStudents = StudentsView.Cast<Core.Models.Student>().ToList();
+                    var candidates = SelectedStudent != null
+                        ? new List<Core.Models.Student> { SelectedStudent }
+                        : visibleStudents.Where(s => string.IsNullOrWhiteSpace(s.AMRoute) || string.IsNullOrWhiteSpace(s.PMRoute)).ToList();
+
+                    if (candidates.Count == 0)
+                    {
+                        StatusMessage = "No eligible students (all have AM & PM routes)";
+                        return;
+                    }
+
+                    // Cap very large operations for MVP safety
+                    const int MaxBatch = 500;
+                    if (candidates.Count > MaxBatch)
+                    {
+                        candidates = candidates.Take(MaxBatch).ToList();
+                        Logger.Warning("Bulk assignment candidate list truncated to {MaxBatch}", MaxBatch);
+                    }
+
+                    var affected = 0;
+                    var context = _contextFactory.CreateWriteDbContext();
+                    try
+                    {
+                        var ids = candidates.Select(c => c.StudentId).ToHashSet();
+                        var dbStudents = context.Students.Where(s => ids.Contains(s.StudentId)).ToList();
+                        foreach (var db in dbStudents)
+                        {
+                            // Mirror heuristic: fill AM then PM; if both present skip unless explicit single selection (overwrite AM)
+                            if (SelectedStudent != null && db.StudentId == SelectedStudent.StudentId && !string.IsNullOrWhiteSpace(db.AMRoute) && !string.IsNullOrWhiteSpace(db.PMRoute))
+                            {
+                                db.AMRoute = targetRoute.RouteName; // explicit overwrite
+                            }
+                            else if (string.IsNullOrWhiteSpace(db.AMRoute))
+                            {
+                                db.AMRoute = targetRoute.RouteName;
+                            }
+                            else if (string.IsNullOrWhiteSpace(db.PMRoute))
+                            {
+                                db.PMRoute = targetRoute.RouteName;
+                            }
+                            else
+                            {
+                                continue; // both set & not single explicit selection
+                            }
+                            affected++;
+                            // Reflect in-memory model
+                            var inMem = candidates.FirstOrDefault(c => c.StudentId == db.StudentId);
+                            if (inMem != null)
+                            {
+                                inMem.AMRoute = db.AMRoute;
+                                inMem.PMRoute = db.PMRoute;
+                            }
+                        }
+                        if (affected > 0)
+                        {
+                            context.SaveChanges();
+                            try
+                            {
+                                // Recompute and persist Route.StudentCount after bulk assignment (MVP requirement)
+                                // Count unique students whose AMRoute or PMRoute matches the target route name
+                                var routeEntity = context.Routes.FirstOrDefault(r => r.RouteId == targetRoute.RouteId);
+                                if (routeEntity != null)
+                                {
+                                    var routeName = routeEntity.RouteName; // ensure any DB-normalized value
+                                    var newCount = context.Students.Count(s => s.AMRoute == routeName || s.PMRoute == routeName);
+                                    routeEntity.StudentCount = newCount;
+                                    context.SaveChanges();
+                                    Logger.Information("Route.StudentCount recomputed and saved — RouteId={RouteId}, RouteName={RouteName}, StudentCount={StudentCount}", routeEntity.RouteId, routeEntity.RouteName, newCount);
+                                }
+                                else
+                                {
+                                    Logger.Warning("Target route not found during StudentCount recompute — RouteId={RouteId}", targetRoute.RouteId);
+                                }
+                            }
+                            catch (Exception exCount)
+                            {
+                                Logger.Error(exCount, "Failed recomputing Route.StudentCount after bulk assignment — proceeding without blocking UI");
+                            }
+                        }
+                    }
+                    finally
+                    {
+                        context.Dispose();
+                    }
+
+                    Logger.Information("Bulk route assignment completed: Route {RouteId}:{RouteName} applied to {Count} students (SelectedMode={SelectedMode})",
+                        targetRoute.RouteId, targetRoute.RouteName, affected, SelectedStudent != null);
+                    StatusMessage = affected == 0
+                        ? "No students updated"
+                        : $"Assigned {targetRoute.RouteName} to {affected} student(s)";
+                    OnPropertyChanged(nameof(StudentsWithRoutes));
+                    OnPropertyChanged(nameof(UnassignedStudents));
+                }
             }
             catch (Exception ex)
             {
@@ -931,8 +1147,14 @@ namespace BusBuddy.WPF.ViewModels.Student
             try
             {
                 Logger.Information("Show quick actions command executed");
-                StatusMessage = "Quick actions menu coming soon";
-                // TODO: Show context menu with quick actions
+                StatusMessage = "Opening quick actions";
+                // Display simple dialog for quick actions
+                var dialog = new Views.Student.QuickActionsDialog();
+                if (System.Windows.Application.Current?.MainWindow != null)
+                {
+                    dialog.Owner = System.Windows.Application.Current.MainWindow;
+                }
+                dialog.ShowDialog();
             }
             catch (Exception ex)
             {

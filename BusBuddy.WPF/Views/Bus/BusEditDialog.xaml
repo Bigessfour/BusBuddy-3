@@ -9,10 +9,12 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:syncfusion="http://schemas.syncfusion.com/wpf"
         Title="Edit Bus"
-        Height="400"
-        Width="500"
-        WindowStartupLocation="CenterOwner"
-        ResizeMode="NoResize">
+    Height="560"
+    Width="700"
+    MinHeight="520"
+    MinWidth="680"
+    WindowStartupLocation="CenterOwner"
+    ResizeMode="CanResizeWithGrip">
     <Grid Margin="20">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -82,25 +84,25 @@
         </StackPanel>
 
         <!-- Buttons -->
-        <StackPanel Grid.Row="8"
-                    Orientation="Horizontal"
-                    HorizontalAlignment="Right"
-                    Margin="0,20,0,0">
-            <syncfusion:ButtonAdv x:Name="SaveButton"
-                    Label="Save"
-                    Width="80"
-                    Height="35"
-                    Margin="0,0,10,0"
-                    />
-            <syncfusion:ButtonAdv x:Name="CancelButton"
-                    Label="Cancel"
-                    Width="80"
-                    Height="35"
-                    />
-        </StackPanel>
+    <StackPanel Grid.Row="8"
+            Orientation="Horizontal"
+            HorizontalAlignment="Right"
+            Margin="0,25,0,0">
+        <syncfusion:ButtonAdv x:Name="SaveButton"
+                   Label="💾 Save"
+                   Width="100"
+                   Height="38"
+                   Margin="0,0,12,0"
+                   AutomationProperties.Name="Save Bus"
+                   AutomationProperties.HelpText="Validate and save bus details"/>
+        <syncfusion:ButtonAdv x:Name="CancelButton"
+                   Label="✖ Cancel"
+                   Width="100"
+                   Height="38"
+                   AutomationProperties.Name="Cancel Edit"
+                   AutomationProperties.HelpText="Close without saving changes"/>
+    </StackPanel>
     </Grid>
 </Window>
 
-<!-- For MVP: Removed Click event handlers from XAML, wiring is done in code-behind. -->
-
-
+<!-- Save / Cancel click handlers are wired in code-behind (BusEditDialog.xaml.cs) -->

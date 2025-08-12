@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using Serilog;
 using Serilog.Context;
 using Microsoft.Extensions.Configuration; // Added for dynamic configuration
-using BusBuddy.Core.Utilities; // For JsonDataImporter in seeding
+using BusBuddy.Core.Utilities; // For JsonDataImporter in seeding (deprecated for MVP)
 using System.Text.RegularExpressions;
 
 namespace BusBuddy.Core.Data;
@@ -115,7 +115,8 @@ public class BusBuddyDbContext : DbContext
                     {
                         try
                         {
-                            JsonDataImporter.SeedDatabaseIfEmptyAsync((BusBuddyDbContext)ctx).GetAwaiter().GetResult();
+                            // Deprecated (MVP): Disable JSON seeding path
+                            // JsonDataImporter.SeedDatabaseIfEmptyAsync((BusBuddyDbContext)ctx).GetAwaiter().GetResult();
                         }
                         catch (Exception ex)
                         {
@@ -124,9 +125,12 @@ public class BusBuddyDbContext : DbContext
                     })
                     .UseAsyncSeeding(async (ctx, _, token) =>
                     {
+                        // JSON seeding disabled for MVP; avoid warning for empty async lambda
+                        await Task.CompletedTask;
                         try
                         {
-                            await JsonDataImporter.SeedDatabaseIfEmptyAsync((BusBuddyDbContext)ctx);
+                            // Deprecated (MVP): Disable JSON seeding path
+                            // await JsonDataImporter.SeedDatabaseIfEmptyAsync((BusBuddyDbContext)ctx);
                         }
                         catch (Exception ex)
                         {
@@ -185,7 +189,8 @@ public class BusBuddyDbContext : DbContext
                         {
                             try
                             {
-                                JsonDataImporter.SeedDatabaseIfEmptyAsync((BusBuddyDbContext)ctx).GetAwaiter().GetResult();
+                                // Deprecated (MVP): Disable JSON seeding path
+                                // JsonDataImporter.SeedDatabaseIfEmptyAsync((BusBuddyDbContext)ctx).GetAwaiter().GetResult();
                             }
                             catch (Exception ex)
                             {
@@ -194,9 +199,11 @@ public class BusBuddyDbContext : DbContext
                         })
                         .UseAsyncSeeding(async (ctx, _, token) =>
                         {
+                            await Task.CompletedTask; // MVP: disabled JSON seeding
                             try
                             {
-                                await JsonDataImporter.SeedDatabaseIfEmptyAsync((BusBuddyDbContext)ctx);
+                                // Deprecated (MVP): Disable JSON seeding path
+                                // await JsonDataImporter.SeedDatabaseIfEmptyAsync((BusBuddyDbContext)ctx);
                             }
                             catch (Exception ex)
                             {
@@ -220,7 +227,8 @@ public class BusBuddyDbContext : DbContext
                 {
                     try
                     {
-                        JsonDataImporter.SeedDatabaseIfEmptyAsync((BusBuddyDbContext)ctx).GetAwaiter().GetResult();
+                        // Deprecated (MVP): Disable JSON seeding path
+                        // JsonDataImporter.SeedDatabaseIfEmptyAsync((BusBuddyDbContext)ctx).GetAwaiter().GetResult();
                     }
                     catch (Exception ex)
                     {
@@ -229,9 +237,11 @@ public class BusBuddyDbContext : DbContext
                 })
                 .UseAsyncSeeding(async (ctx, _, token) =>
                 {
+                    await Task.CompletedTask; // MVP: disabled JSON seeding
                     try
                     {
-                        await JsonDataImporter.SeedDatabaseIfEmptyAsync((BusBuddyDbContext)ctx);
+                        // Deprecated (MVP): Disable JSON seeding path
+                        // await JsonDataImporter.SeedDatabaseIfEmptyAsync((BusBuddyDbContext)ctx);
                     }
                     catch (Exception ex)
                     {

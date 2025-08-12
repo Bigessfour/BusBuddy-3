@@ -1,33 +1,4 @@
-/*
-===   BusBuddy Syncfusion Designer & Event Hook Troubleshooting   ===
-================================================================================
-1. Ensure all Syncfusion controls in MainWindow.xaml have x:Name attributes:
-   <syncfusion:SfDataGrid x:Name="StudentsGrid" ... />
-   <syncfusion:SfDataGrid x:Name="RoutesGrid" ... />
-   <syncfusion:SfDataGrid x:Name="BusesGrid" ... />
-   <syncfusion:SfDataGrid x:Name="DriversGrid" ... />
-
-2. The code-behind (MainWindow.xaml.cs) must be a partial class for MainWindow
-   and reside in the same namespace as the XAML.
-
-3. If you see errors like 'The name StudentsGrid does not exist in the current context':
-   - Clean and rebuild the solution (bb-clean, bb-build).
-   - Open MainWindow.xaml in Visual Studio/VS Code and save to trigger designer regeneration.
-   - Ensure Syncfusion.SfGrid.WPF NuGet package is installed and referenced.
-
-4. Event hooks for QueryCellInfo must be attached after InitializeComponent():
-   if (StudentsGrid != null) StudentsGrid.QueryCellInfo += SfDataGrid_QueryCellInfo;
-   (Repeat for other grids.)
-
-5. If GridQueryCellInfoEventArgs is missing, add:
-   using Syncfusion.UI.Xaml.Grid;
-
-6. For runtime diagnostics, the event handler should log errors:
-   private void SfDataGrid_QueryCellInfo(object sender, GridQueryCellInfoEventArgs e) { ... }
-
-7. If designer/build issues persist, check .g.cs auto-generated files in obj/Debug.
-================================================================================
-*/
+// MainWindow code-behind trimmed for MVP; extensive troubleshooting notes moved to GROK-README.md.
 using System;
 using System.Threading.Tasks;
 using System.Windows;
@@ -63,7 +34,9 @@ namespace BusBuddy.WPF.Views.Main
     public partial class MainWindow : ChromelessWindow
     {
         private static readonly ILogger Logger = Log.ForContext<MainWindow>();
-    private BusBuddy.WPF.ViewModels.MainWindowViewModel? _viewModel;
+        private static readonly int DockActivatedWidthBump = 120; // consolidated width bump constant
+        private readonly Guid _windowInstanceId = Guid.NewGuid(); // correlation id for structured logs
+        private BusBuddy.WPF.ViewModels.MainWindowViewModel? _viewModel;
 
     // Generated fields (StudentsGrid, MainDockingManager, etc.) come from XAML partial class after InitializeComponent.
 
@@ -112,7 +85,10 @@ namespace BusBuddy.WPF.Views.Main
                 // Global button click diagnostics: capture all button clicks in this window
                 try
                 {
-                    AddHandler(ButtonBase.ClickEvent, new RoutedEventHandler(OnAnyButtonClick), true);
+                    AddHandler(ButtonBase.ClickEvent, new System.Windows.RoutedEventHandler(OnAnyButtonClick), true);
+                    AddHandler(Selector.SelectionChangedEvent, new System.Windows.Controls.SelectionChangedEventHandler(OnAnySelectionChanged), true);
+                    AddHandler(TextBoxBase.TextChangedEvent, new System.Windows.Controls.TextChangedEventHandler(OnAnyTextChanged), true);
+                    AddHandler(System.Windows.Controls.Validation.ErrorEvent, new System.EventHandler<System.Windows.Controls.ValidationErrorEventArgs>(OnValidationError), true);
                     Logger.Information("Global button click diagnostics handler attached");
                 }
                 catch (Exception btnEx)
@@ -155,6 +131,34 @@ namespace BusBuddy.WPF.Views.Main
             }
         }
 
+        private void MainWindow_Loaded(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                // Delay audit slightly to ensure visual tree fully ready
+                Dispatcher.BeginInvoke(new Action(() =>
+                {
+                    try { AuditButtonsAccessibility(); } catch (Exception ex2) { Logger.Warning(ex2, "MainWindow: post-load audit failed"); }
+                }), System.Windows.Threading.DispatcherPriority.Background);
+            }
+            catch (Exception ex)
+            {
+                Logger.Warning(ex, "MainWindow_Loaded diagnostics failed");
+            }
+        }
+
+        private void MainWindow_Closing(object? sender, System.ComponentModel.CancelEventArgs e)
+        {
+            try
+            {
+                RemoveHandler(ButtonBase.ClickEvent, new System.Windows.RoutedEventHandler(OnAnyButtonClick));
+                RemoveHandler(Selector.SelectionChangedEvent, new System.Windows.Controls.SelectionChangedEventHandler(OnAnySelectionChanged));
+                RemoveHandler(TextBoxBase.TextChangedEvent, new System.Windows.Controls.TextChangedEventHandler(OnAnyTextChanged));
+                RemoveHandler(System.Windows.Controls.Validation.ErrorEvent, new System.EventHandler<System.Windows.Controls.ValidationErrorEventArgs>(OnValidationError));
+            }
+            catch { }
+        }
+
         /// <summary>
         /// Attach event hooks to Syncfusion controls for runtime error capture
         /// </summary>
@@ -192,14 +196,8 @@ namespace BusBuddy.WPF.Views.Main
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "SfDataGrid cell error in {GridName}", (sender as FrameworkElement)?.Name ?? "UnknownGrid");
-
-                // Enhanced error logging for UI interactions
-                var errorEntry = $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] SfDataGrid Error: {ex.Message}\n" +
-                               $"Grid: {(sender as FrameworkElement)?.Name ?? "Unknown"}\n" +
-                               $"Stack Trace: {ex.StackTrace}\n" +
-                               $"---\n";
-                System.IO.File.AppendAllText("runtime-errors.log", errorEntry);
+                var gridName = (sender as FrameworkElement)?.Name ?? "UnknownGrid";
+                Logger.Error(ex, "SfDataGrid cell error Grid={Grid} WindowId={WindowId}", gridName, _windowInstanceId);
             }
         }
 
@@ -310,6 +308,104 @@ namespace BusBuddy.WPF.Views.Main
             }
         }
 
+        // Global selection change diagnostics (mirrors pattern used in other views)
+    private void OnAnySelectionChanged(object? sender, System.Windows.Controls.SelectionChangedEventArgs e)
+        {
+            try
+            {
+                var src = e.OriginalSource as DependencyObject;
+                var fe = src as FrameworkElement;
+                var name = fe?.Name ?? "(unnamed)";
+                var type = src?.GetType().Name ?? (sender?.GetType().Name ?? "(unknown)");
+                Logger.Information("MainWindow SelectionChanged: Type={Type} Name={Name} Added={Added} Removed={Removed}", type, name, e.AddedItems?.Count ?? 0, e.RemovedItems?.Count ?? 0);
+            }
+            catch (Exception ex)
+            {
+                Logger.Warning(ex, "MainWindow: selection change logging failed");
+            }
+        }
+
+        // Global text change diagnostics
+        private void OnAnyTextChanged(object? sender, TextChangedEventArgs e)
+        {
+            try
+            {
+                if (e.OriginalSource is not DependencyObject src) return;
+                var fe = src as FrameworkElement;
+                var name = fe?.Name ?? "(unnamed)";
+                var type = src.GetType().Name;
+                int? len = src is TextBox tb ? tb.Text?.Length : null;
+                Logger.Information("MainWindow TextChanged: Type={Type} Name={Name} Length={Length}", type, name, len);
+            }
+            catch (Exception ex)
+            {
+                Logger.Warning(ex, "MainWindow: text change logging failed");
+            }
+        }
+
+        // Global validation diagnostics
+        private void OnValidationError(object? sender, ValidationErrorEventArgs e)
+        {
+            try
+            {
+                var src = e.OriginalSource as DependencyObject;
+                var fe = src as FrameworkElement;
+                var name = fe?.Name ?? "(unnamed)";
+                var type = src?.GetType().Name ?? (sender?.GetType().Name ?? "(unknown)");
+                Logger.Warning("MainWindow Validation{Action}: Type={Type} Name={Name} Error={Error}", e.Action, type, name, e.Error?.ErrorContent);
+            }
+            catch (Exception ex)
+            {
+                Logger.Warning(ex, "MainWindow: validation logging failed");
+            }
+        }
+
+        // Accessibility / command readiness audit for Buttons & ButtonAdv controls
+        private void AuditButtonsAccessibility()
+        {
+            try
+            {
+                int total = 0, adv = 0, missingLabel = 0, missingAuto = 0, noCmd = 0;
+                foreach (var d in Traverse(this))
+                {
+                    if (d is Syncfusion.Windows.Tools.Controls.ButtonAdv badv)
+                    {
+                        total++; adv++;
+                        var label = badv.Label; var autoName = System.Windows.Automation.AutomationProperties.GetName(badv);
+                        bool hasCmd = badv.Command != null; if (!hasCmd) noCmd++;
+                        if (string.IsNullOrWhiteSpace(label)) missingLabel++;
+                        if (string.IsNullOrWhiteSpace(autoName)) missingAuto++;
+                    }
+                    else if (d is Button btn)
+                    {
+                        total++;
+                        var content = btn.Content?.ToString(); var autoName = System.Windows.Automation.AutomationProperties.GetName(btn);
+                        bool hasCmd = btn.Command != null; if (!hasCmd) noCmd++;
+                        if (string.IsNullOrWhiteSpace(content)) missingLabel++;
+                        if (string.IsNullOrWhiteSpace(autoName)) missingAuto++;
+                    }
+                }
+                Logger.Information("MainWindow Audit Summary — Buttons={Total}, ButtonAdv={Adv}, MissingLabel/Content={MissingLabel}, MissingAutomationName={MissingAuto}, NoCommand={NoCmd}", total, adv, missingLabel, missingAuto, noCmd);
+            }
+            catch (Exception ex)
+            {
+                Logger.Warning(ex, "MainWindow: accessibility audit failed");
+            }
+        }
+
+        private static System.Collections.Generic.IEnumerable<DependencyObject> Traverse(DependencyObject root)
+        {
+            if (root == null) yield break;
+            var count = System.Windows.Media.VisualTreeHelper.GetChildrenCount(root);
+            for (int i = 0; i < count; i++)
+            {
+                var child = System.Windows.Media.VisualTreeHelper.GetChild(root, i);
+                if (child == null) continue;
+                yield return child;
+                foreach (var g in Traverse(child)) yield return g;
+            }
+        }
+
         // Store original widths to restore on deactivation
         private double? _studentsOriginalWidth;
         private double? _routesOriginalWidth;
@@ -328,13 +424,13 @@ namespace BusBuddy.WPF.Views.Main
                     {
                         _studentsOriginalWidth ??= DockingManager.GetDesiredWidthInDockedMode(fe);
                         // Expand while active (gentle bump)
-                        DockingManager.SetDesiredWidthInDockedMode(fe, Math.Max(_studentsOriginalWidth.Value, _studentsOriginalWidth.Value + 120));
+                        DockingManager.SetDesiredWidthInDockedMode(fe, Math.Max(_studentsOriginalWidth.Value, _studentsOriginalWidth.Value + DockActivatedWidthBump));
                         Logger.Debug("Expanded StudentsPane to {Width}", DockingManager.GetDesiredWidthInDockedMode(fe));
                     }
                     else if (ReferenceEquals(fe, FindName("RoutesPane")))
                     {
                         _routesOriginalWidth ??= DockingManager.GetDesiredWidthInDockedMode(fe);
-                        DockingManager.SetDesiredWidthInDockedMode(fe, Math.Max(_routesOriginalWidth.Value, _routesOriginalWidth.Value + 120));
+                        DockingManager.SetDesiredWidthInDockedMode(fe, Math.Max(_routesOriginalWidth.Value, _routesOriginalWidth.Value + DockActivatedWidthBump));
                         Logger.Debug("Expanded RoutesPane to {Width}", DockingManager.GetDesiredWidthInDockedMode(fe));
                     }
                 }
@@ -463,6 +559,43 @@ namespace BusBuddy.WPF.Views.Main
                 {
                     Logger.Error(inner, "Failed to apply fallback theme");
                 }
+            }
+        }
+
+        // Quick theme toggle buttons (🌙 / ☀️)
+        private void DarkThemeButton_Click(object sender, RoutedEventArgs e)
+        {
+            Logger.Information("DarkThemeButton_Click invoked - applying FluentDark theme");
+            ApplyThemeGlobally("FluentDark");
+            TrySyncThemeSelector("FluentDark");
+        }
+
+        private void LightThemeButton_Click(object sender, RoutedEventArgs e)
+        {
+            Logger.Information("LightThemeButton_Click invoked - applying FluentLight theme");
+            ApplyThemeGlobally("FluentLight");
+            TrySyncThemeSelector("FluentLight");
+        }
+
+        private void TrySyncThemeSelector(string themeName)
+        {
+            try
+            {
+                if (ThemeSelector != null)
+                {
+                    for (int i = 0; i < ThemeSelector.Items.Count; i++)
+                    {
+                        if (ThemeSelector.Items[i] is ComboBoxItemAdv item && string.Equals(item.Content?.ToString(), themeName, StringComparison.OrdinalIgnoreCase))
+                        {
+                            ThemeSelector.SelectedIndex = i;
+                            break;
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Warning(ex, "Failed to synchronize ThemeSelector selection");
             }
         }
 
@@ -1180,42 +1313,7 @@ namespace BusBuddy.WPF.Views.Main
             }
         }
 
-        #endregion
-
-        #region Window Lifecycle Methods
-
-        // Window lifecycle methods
-        private void MainWindow_Loaded(object sender, RoutedEventArgs e)
-        {
-            Logger.Debug("MainWindow_Loaded event triggered");
-            try
-            {
-                Logger.Information("MainWindow loaded, starting initial data load");
-                LoadInitialData();
-                Logger.Debug("MainWindow_Loaded completed");
-            }
-            catch (Exception ex)
-            {
-                Logger.Error(ex, "Error in MainWindow_Loaded");
-            }
-        }
-
-    private void MainWindow_Closing(object? sender, System.ComponentModel.CancelEventArgs e)
-        {
-            Logger.Debug("MainWindow_Closing event triggered");
-            try
-            {
-                Logger.Information("MainWindow closing, performing cleanup");
-                // TODO: Implement cleanup logic
-                Logger.Debug("MainWindow cleanup completed");
-            }
-            catch (Exception ex)
-            {
-                Logger.Error(ex, "Error during MainWindow closing");
-            }
-        }
-
-        #endregion
+    #endregion
 
         #region Helper Methods
 

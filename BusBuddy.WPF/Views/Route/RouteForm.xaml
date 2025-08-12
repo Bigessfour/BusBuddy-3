@@ -1,35 +1,56 @@
-<!-- RouteForm.xaml - Basic route form for BusBuddy MVP
-     Uses Syncfusion SfMaskedEdit for route details (Start, End, Stops)
-     Documentation: https://help.syncfusion.com/wpf/maskededit/getting-started -->
+<!-- RouteForm.xaml - Enhanced route creation / editing form (MVP)
+     Syncfusion controls only (SfMaskedEdit, ButtonAdv, SfDataGrid, ComboBoxAdv)
+     References:
+       SfMaskedEdit Getting Started: https://help.syncfusion.com/wpf/maskededit/getting-started
+       SfDataGrid Getting Started: https://help.syncfusion.com/wpf/datagrid/getting-started
+       Column Types: https://help.syncfusion.com/wpf/datagrid/column-types -->
 <UserControl x:Class="BusBuddy.WPF.Views.Route.RouteForm"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:syncfusion="http://schemas.syncfusion.com/wpf"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:local="clr-namespace:BusBuddy.WPF.Views.Route"
              mc:Ignorable="d"
              d:DesignHeight="300" d:DesignWidth="400">
     <Grid Margin="20">
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
-        <TextBlock Text="Route Details" FontWeight="Bold" FontSize="18" Margin="0,0,0,16"/>
-        <StackPanel Grid.Row="1" Orientation="Vertical" Margin="0,0,0,8">
-            <TextBlock Text="Start Location"/>
-            <syncfusion:SfMaskedEdit x:Name="StartMaskedEdit" MaskType="None" Width="320" Height="34" Padding="8"
-                                     AutomationProperties.Name="Start Location"/>
-            <TextBlock Text="End Location"/>
-            <syncfusion:SfMaskedEdit x:Name="EndMaskedEdit" MaskType="None" Width="320" Height="34" Padding="8"
-                                     AutomationProperties.Name="End Location"/>
-            <TextBlock Text="Stops (comma separated)"/>
-            <syncfusion:SfMaskedEdit x:Name="StopsMaskedEdit" MaskType="None" Width="320" Height="34" Padding="8"
-                                     AutomationProperties.Name="Stops"/>
+        <TextBlock Text="Route Builder" FontWeight="Bold" FontSize="18" Margin="0,0,0,16" />
+        <StackPanel Grid.Row="1" Orientation="Vertical" Margin="0,0,0,12">
+            <TextBlock Text="Route Name" />
+            <syncfusion:SfMaskedEdit MaskType="Text" Width="320" Height="32" Padding="8" Text="{Binding NewRouteName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+            <TextBlock Text="Description" Margin="0,8,0,0" />
+            <syncfusion:SfMaskedEdit MaskType="Text" Width="320" Height="32" Padding="8" Text="{Binding NewRouteDescription, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+            <StackPanel Orientation="Horizontal" Margin="0,10,0,0" VerticalAlignment="Center">
+                <TextBlock Text="Date:" VerticalAlignment="Center" />
+                <!-- Use standard WPF DatePicker for reliability -->
+                <DatePicker Width="140" Margin="6,0,12,0" SelectedDate="{Binding NewRouteDate, Mode=TwoWay}" />
+                <TextBlock Text="Time Slot:" VerticalAlignment="Center" />
+                <syncfusion:ComboBoxAdv Width="120" Margin="6,0,0,0" ItemsSource="{Binding TimeSlots}" SelectedItem="{Binding SelectedTimeSlot, Mode=TwoWay}" />
+            </StackPanel>
         </StackPanel>
-        <syncfusion:ButtonAdv Grid.Row="4" Label="Save" Width="110" Height="36" HorizontalAlignment="Right" Margin="0,12,0,0"
-                               AutomationProperties.Name="Save Route"/>
+        <Border Grid.Row="2" BorderThickness="1" Padding="10" CornerRadius="4" BorderBrush="{DynamicResource BorderBrush}" Background="{DynamicResource ContentBackgroundBrush}" Margin="0,0,0,12">
+            <StackPanel>
+                <TextBlock Text="Assignments" FontWeight="SemiBold" Margin="0,0,0,8" />
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                    <TextBlock Text="Bus:" VerticalAlignment="Center" />
+                    <syncfusion:ComboBoxAdv Width="140" Margin="6,0,20,0" ItemsSource="{Binding AvailableBuses}" SelectedItem="{Binding SelectedBus, Mode=TwoWay}" DisplayMemberPath="BusNumber" />
+                    <TextBlock Text="Driver:" VerticalAlignment="Center" />
+                    <syncfusion:ComboBoxAdv Width="160" Margin="6,0,0,0" ItemsSource="{Binding AvailableDrivers}" SelectedItem="{Binding SelectedDriver, Mode=TwoWay}" DisplayMemberPath="DriverName" />
+                </StackPanel>
+            </StackPanel>
+        </Border>
+        <local:RouteStopsEditor Grid.Row="3" />
+        <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,14,0,0">
+            <syncfusion:ButtonAdv Label="Create Route" Command="{Binding CreateRouteCommand}" Padding="14,8" Margin="0,0,8,0" />
+            <syncfusion:ButtonAdv Label="Save Changes" Command="{Binding SaveRouteCommand}" Padding="14,8" Margin="0,0,8,0" />
+            <syncfusion:ButtonAdv Label="Cancel" Command="{Binding CancelRouteBuildingCommand}" Padding="14,8" />
+        </StackPanel>
     </Grid>
 </UserControl>

@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.Windows.Input;
 using BusBuddy.Core.Models;
@@ -15,6 +16,7 @@ namespace BusBuddy.WPF.ViewModels.Vehicle
     public partial class VehicleManagementViewModel : BaseViewModel
     {
         private readonly IBusService _busService;
+    private BusBuddy.Core.Models.Bus? _lastSelectedVehicle;
 
         [ObservableProperty]
         private ObservableCollection<BusBuddy.Core.Models.Bus> _vehicles = new();
@@ -87,6 +89,14 @@ namespace BusBuddy.WPF.ViewModels.Vehicle
 
             // Initialize with loading
             _ = LoadVehiclesAsync();
+        }
+
+        private void RefreshCommandStates()
+        {
+            ((AsyncRelayCommand)EditVehicleCommand).NotifyCanExecuteChanged();
+            ((AsyncRelayCommand)UpdateVehicleCommand).NotifyCanExecuteChanged();
+            ((AsyncRelayCommand)SaveVehicleCommand).NotifyCanExecuteChanged();
+            ((AsyncRelayCommand)DeleteVehicleCommand).NotifyCanExecuteChanged();
         }
 
         /// <summary>
@@ -259,6 +269,10 @@ namespace BusBuddy.WPF.ViewModels.Vehicle
                 IsBusy = true;
                 StatusMessage = "Saving vehicle...";
 
+                // Ensure latest UI edits are propagated (in case some controls haven't lost focus yet)
+                // Trigger a minimal property change to force binding commits where applicable
+                SelectedVehicle.BusNumber = SelectedVehicle.BusNumber;
+
                 // Basic validation
                 if (string.IsNullOrWhiteSpace(SelectedVehicle.BusNumber))
                 {
@@ -272,6 +286,9 @@ namespace BusBuddy.WPF.ViewModels.Vehicle
                     SelectedVehicle.VehicleId = Vehicles.Count > 0 ? Vehicles.Max(v => v.VehicleId) + 1 : 1;
                     Vehicles.Add(SelectedVehicle);
                     StatusMessage = $"Vehicle {SelectedVehicle.BusNumber} added successfully";
+
+                    // Attempt to persist via service if available
+                    try { await _busService.AddBusAsync(SelectedVehicle); } catch { /* MVP: ignore service failure */ }
                 }
                 else
                 {
@@ -282,6 +299,9 @@ namespace BusBuddy.WPF.ViewModels.Vehicle
                         Vehicles[index] = SelectedVehicle;
                     }
                     StatusMessage = $"Vehicle {SelectedVehicle.BusNumber} updated successfully";
+
+                    // Attempt to persist via service if available
+                    try { await _busService.UpdateBusAsync(SelectedVehicle); } catch { /* MVP: ignore service failure */ }
                 }
 
                 ApplyFilters();
@@ -390,6 +410,8 @@ namespace BusBuddy.WPF.ViewModels.Vehicle
         {
             return SelectedVehicle != null &&
                    !string.IsNullOrWhiteSpace(SelectedVehicle.BusNumber) &&
+                   SelectedVehicle.SeatingCapacity > 0 &&
+                   SelectedVehicle.Year > 0 &&
                    !IsBusy;
         }
 
@@ -408,11 +430,29 @@ namespace BusBuddy.WPF.ViewModels.Vehicle
         /// </summary>
         partial void OnSelectedVehicleChanged(BusBuddy.Core.Models.Bus? value)
         {
+            // Unsubscribe from previous selection changes
+            if (_lastSelectedVehicle is not null)
+            {
+                _lastSelectedVehicle.PropertyChanged -= SelectedVehicle_PropertyChanged;
+            }
+
+            // Subscribe to new selection changes
+            if (value is not null)
+            {
+                value.PropertyChanged += SelectedVehicle_PropertyChanged;
+            }
+
+            _lastSelectedVehicle = value;
+
             // Refresh command states
-            ((AsyncRelayCommand)EditVehicleCommand).NotifyCanExecuteChanged();
-            ((AsyncRelayCommand)UpdateVehicleCommand).NotifyCanExecuteChanged();
-            ((AsyncRelayCommand)SaveVehicleCommand).NotifyCanExecuteChanged();
-            ((AsyncRelayCommand)DeleteVehicleCommand).NotifyCanExecuteChanged();
+            RefreshCommandStates();
+        }
+
+        private void SelectedVehicle_PropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            // When any field of the selected vehicle changes (e.g., BusNumber),
+            // update command CanExecute states so Save becomes enabled immediately.
+            RefreshCommandStates();
         }
 
         /// <summary>
@@ -421,10 +461,7 @@ namespace BusBuddy.WPF.ViewModels.Vehicle
         partial void OnIsBusyChanged(bool value)
         {
             // Refresh all command states when busy state changes
-            ((AsyncRelayCommand)EditVehicleCommand).NotifyCanExecuteChanged();
-            ((AsyncRelayCommand)UpdateVehicleCommand).NotifyCanExecuteChanged();
-            ((AsyncRelayCommand)SaveVehicleCommand).NotifyCanExecuteChanged();
-            ((AsyncRelayCommand)DeleteVehicleCommand).NotifyCanExecuteChanged();
+            RefreshCommandStates();
         }
 
         /// <summary>

@@ -7,7 +7,7 @@
              mc:Ignorable="d"
              d:DesignHeight="450" d:DesignWidth="800"
              Title="Student Management"
-             Height="600" Width="900"
+             Height="720" Width="1100"
              WindowStartupLocation="CenterOwner">
 
     <syncfusion:ChromelessWindow.Resources>
@@ -77,11 +77,11 @@
 
                     <!-- Bulk Operations -->
         <!-- Import students from CSV/Excel (placeholder) — Command: ImportStudentsCommand -->
-        <syncfusion:ButtonAdv Name="ImportStudentsButton" Label="📥 Import CSV"
+    <syncfusion:ButtonAdv Name="ImportStudentsButton" Label="📥 Import CSV (Stub)"
                             Command="{Binding ImportStudentsCommand}"
                 Background="{DynamicResource BusBuddy.Brush.FleetGreen}" Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"
                             AutomationProperties.Name="Import Students from CSV"
-                            AutomationProperties.HelpText="Import multiple students from a CSV file"/>
+                AutomationProperties.HelpText="Placeholder — CSV/Excel bulk import coming soon"/>
         <!-- Bulk assign route to selection — requires HasSelectedStudents. Command: BulkAssignRouteCommand -->
         <syncfusion:ButtonAdv Name="BulkAssignRouteButton" Label="🚌 Bulk Assign Route"
                             Command="{Binding BulkAssignRouteCommand}"
@@ -93,11 +93,11 @@
 
                     <!-- AI & Mapping -->
         <!-- Start AI optimization (placeholder). Command: OptimizeRoutesCommand -->
-        <syncfusion:ButtonAdv Name="OptimizeRoutesButton" Label="🤖 AI Optimize"
+    <syncfusion:ButtonAdv Name="OptimizeRoutesButton" Label="🤖 AI Optimize (Stub)"
                             Command="{Binding OptimizeRoutesCommand}"
                 Background="{DynamicResource BusBuddy.Brush.Semantic.Warning}" Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"
                             AutomationProperties.Name="AI Optimize Routes"
-                            AutomationProperties.HelpText="Use artificial intelligence to optimize route assignments"/>
+                AutomationProperties.HelpText="Placeholder — AI optimization disabled for MVP"/>
         <!-- Plot all students on the map. Command: ViewMapCommand -->
         <syncfusion:ButtonAdv Name="ViewMapButton" Label="🗺️ View Map"
                             Command="{Binding ViewMapCommand}"
@@ -285,17 +285,20 @@
                 </StackPanel>
 
                 <!-- Quick Actions & Filter Status -->
-                <StackPanel Grid.Column="1" Orientation="Horizontal">
+        <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
                     <TextBlock Text="| " Margin="0,0,6,0"/>
                     <TextBlock Text="Status: " FontStyle="Italic"/>
                     <TextBlock Text="{Binding StatusMessage}" Margin="4,0,10,0"/>
                     <TextBlock Text="{Binding FilterStatusText}" FontStyle="Italic" Margin="0,0,10,0"/>
-                    <syncfusion:ButtonAdv Label="📋 Summary" Width="80" Height="25"
+            <syncfusion:ButtonAdv Label="💾 Save" Width="80" Height="30" Margin="0,0,6,0"
+                            Command="{Binding SaveGridEditsCommand}"
+                            ToolTip="Save inline edits (including phone/route changes)"/>
+            <syncfusion:ButtonAdv Label="📋 Summary" Width="100" Height="30"
                             Command="{Binding ShowSummaryCommand}"
-                            ToolTip="Show route assignment summary"/>
-                    <syncfusion:ButtonAdv Label="⚡ Quick Actions" Width="100" Height="25" Margin="5,0,0,0"
+                ToolTip="Show route assignment summary"/>
+            <syncfusion:ButtonAdv Label="⚡ Quick Actions" Width="130" Height="30" Margin="8,0,0,0"
                             Command="{Binding ShowQuickActionsCommand}"
-                            ToolTip="Show quick action menu"/>
+                ToolTip="Open quick actions menu (assign route, filter active, clear filters)"/>
                 </StackPanel>
             </Grid>
         </Border>

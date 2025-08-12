@@ -1,0 +1,71 @@
+<!-- RouteStopsEditor.xaml - Reusable route stops editor for BusBuddy MVP
+     Syncfusion WPF 30.1.42 implementation (SfDataGrid, ButtonAdv, SfMaskedEdit)
+     Documentation References:
+       SfDataGrid Getting Started: https://help.syncfusion.com/wpf/datagrid/getting-started
+       Column Types: https://help.syncfusion.com/wpf/datagrid/column-types -->
+<UserControl x:Class="BusBuddy.WPF.Views.Route.RouteStopsEditor"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:syncfusion="http://schemas.syncfusion.com/wpf"
+             mc:Ignorable="d"
+             d:DesignHeight="400" d:DesignWidth="600">
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/SyncfusionV30_Validated_ResourceDictionary.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </UserControl.Resources>
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,6">
+            <syncfusion:ButtonAdv Label="➕ Add Stop" Command="{Binding AddStopCommand}" Padding="10,5" Margin="0,0,6,0"
+                                   AutomationProperties.Name="Add Stop" ToolTip="Add a new stop" />
+            <syncfusion:ButtonAdv Label="🗑️ Remove" Command="{Binding RemoveStopCommand}" Padding="10,5" Margin="0,0,6,0"
+                                   AutomationProperties.Name="Remove Stop" ToolTip="Remove selected stop" />
+            <syncfusion:ButtonAdv Label="⬆️ Up" Command="{Binding MoveStopUpCommand}" Padding="10,5" Margin="0,0,6,0"
+                                   AutomationProperties.Name="Move Stop Up" ToolTip="Move selected stop up" />
+            <syncfusion:ButtonAdv Label="⬇️ Down" Command="{Binding MoveStopDownCommand}" Padding="10,5" Margin="0,0,12,0"
+                                   AutomationProperties.Name="Move Stop Down" ToolTip="Move selected stop down" />
+            <TextBlock Text="Start Time:" VerticalAlignment="Center" Margin="0,0,4,0" />
+            <syncfusion:SfMaskedEdit Width="80" Text="{Binding StartTimeString, Mode=TwoWay}" Margin="0,0,10,0"
+                                     AutomationProperties.Name="Route Start Time" />
+            <syncfusion:ButtonAdv Label="⏱️ Time Route" Command="{Binding TimeRouteCommand}" Padding="10,5"
+                                   AutomationProperties.Name="Time Route Stops" ToolTip="Recalculate arrival and departure times" />
+        </StackPanel>
+    <syncfusion:SfDataGrid Grid.Row="1"
+                   ItemsSource="{Binding RouteStops}"
+                   SelectedItem="{Binding SelectedRouteStop, Mode=TwoWay}"
+                   AutoGenerateColumns="False"
+                   AllowSorting="True"
+                   AllowFiltering="True"
+                   AllowGrouping="True"
+                   ShowGroupDropArea="True"
+                   SelectionMode="Single"
+                   GridLinesVisibility="Both"
+                   ColumnSizer="Star"
+                   Background="{DynamicResource BusBuddy.Brush.DataGrid.Background}"
+                   AutomationProperties.Name="Route Stops Grid"
+                   AutomationProperties.HelpText="Grid listing route stops with timing information">
+            <syncfusion:SfDataGrid.Columns>
+                <syncfusion:GridNumericColumn HeaderText="#" MappingName="StopOrder" Width="60" />
+                <syncfusion:GridTextColumn HeaderText="Stop Name" MappingName="StopName" Width="180" />
+                <syncfusion:GridDateTimeColumn HeaderText="Arrival" MappingName="EstimatedArrivalTime" Width="110" DisplayBinding="{Binding EstimatedArrivalTime, StringFormat=HH:mm}" />
+                <syncfusion:GridDateTimeColumn HeaderText="Departure" MappingName="EstimatedDepartureTime" Width="110" DisplayBinding="{Binding EstimatedDepartureTime, StringFormat=HH:mm}" />
+                <syncfusion:GridNumericColumn HeaderText="Dwell (min)" MappingName="StopDuration" Width="100" />
+            </syncfusion:SfDataGrid.Columns>
+        </syncfusion:SfDataGrid>
+        <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,6,0,0">
+            <TextBlock Text="Stops:" FontWeight="SemiBold" />
+            <TextBlock Text="{Binding RouteStopCount}" Margin="4,0,12,0" />
+            <TextBlock Text="Selected:" FontWeight="SemiBold" />
+            <TextBlock Text="{Binding SelectedRouteStop.StopName}" Margin="4,0,0,0" />
+        </StackPanel>
+    </Grid>
+</UserControl>

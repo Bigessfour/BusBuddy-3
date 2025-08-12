@@ -24,7 +24,7 @@
     <!-- MVP-Ready UI with DockingManager for professional layout -->
     <!-- Trigger language server refresh -->
     <Grid>
-        <Grid.RowDefinitions>
+    <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
@@ -74,13 +74,15 @@
                                           ToolTip="Generate and view transportation reports"
                                           AutomationProperties.Name="Reports and Print Routes"/>
 
-                    <!-- Theme Selector -->
+                    <!-- Theme Selector & Quick Toggle -->
                     <StackPanel Orientation="Horizontal" Margin="20,0,0,0" VerticalAlignment="Center">
                         <TextBlock Text="Theme:" Foreground="{DynamicResource ButtonForegroundBrush}" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                        <syncfusion:ComboBoxAdv x:Name="ThemeSelector" Width="160" SelectedIndex="0" SelectionChanged="ThemeSelector_SelectionChanged">
+                        <syncfusion:ComboBoxAdv x:Name="ThemeSelector" Width="150" SelectedIndex="0" SelectionChanged="ThemeSelector_SelectionChanged" ToolTip="Select application theme (Syncfusion Fluent themes)">
                             <syncfusion:ComboBoxItemAdv Content="FluentDark"/>
                             <syncfusion:ComboBoxItemAdv Content="FluentLight"/>
                         </syncfusion:ComboBoxAdv>
+                        <syncfusion:ButtonAdv Label="🌙" Width="38" Margin="8,0,0,0" Padding="4" ToolTip="Switch to FluentDark" Click="DarkThemeButton_Click" Background="{DynamicResource ButtonBackgroundBrush}" Foreground="{DynamicResource ButtonForegroundBrush}"/>
+                        <syncfusion:ButtonAdv Label="☀️" Width="38" Margin="4,0,0,0" Padding="4" ToolTip="Switch to FluentLight" Click="LightThemeButton_Click" Background="{DynamicResource ButtonBackgroundBrush}" Foreground="{DynamicResource ButtonForegroundBrush}"/>
                     </StackPanel>
                 </StackPanel>
             </Grid>
@@ -302,8 +304,28 @@
 
         </syncfusion:DockingManager>
 
-        <!-- Status Bar -->
-    <Border Grid.Row="2" Background="{DynamicResource PrimaryBackgroundBrush}" Padding="15,12">
+        <!-- Status Bar (High Contrast) -->
+        <Border Grid.Row="2" Padding="15,12">
+            <Border.Resources>
+                <!-- High-contrast brushes (dark theme defaults). If Fluent Light is applied these fallback to readable dark text. -->
+                <SolidColorBrush x:Key="StatusBarBackgroundBrush" Color="#12161C" />
+                <SolidColorBrush x:Key="StatusBarBackgroundBrushLight" Color="#F3F4F6" />
+                <SolidColorBrush x:Key="StatusBarPrimaryTextBrush" Color="#FFFFFF" />
+                <SolidColorBrush x:Key="StatusBarPrimaryTextBrushLight" Color="#111827" />
+                <SolidColorBrush x:Key="StatusBarAccentTextBrush" Color="#FACC15" />
+                <SolidColorBrush x:Key="StatusBarAccentTextBrushLight" Color="#065F46" />
+            </Border.Resources>
+            <Border.Style>
+                <Style TargetType="Border">
+                    <Setter Property="Background" Value="{StaticResource StatusBarBackgroundBrush}" />
+                    <Style.Triggers>
+                        <!-- Simple theme fallback: if application background is light (approx), switch palette -->
+                        <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=Background.(SolidColorBrush.Color)}" Value="#FFFFFFFF">
+                            <Setter Property="Background" Value="{StaticResource StatusBarBackgroundBrushLight}" />
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </Border.Style>
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
@@ -311,9 +333,9 @@
                 </Grid.ColumnDefinitions>
                 <TextBlock Grid.Column="0"
                            Text="🎯 MVP Ready: Students ✅ | Routes ✅ | Buses ✅ | Drivers ✅ | Reports ✅ | PowerShell Demo: bb-route-demo"
-                           Foreground="{DynamicResource PrimaryTextBrush}" VerticalAlignment="Center" FontSize="14"/>
+                           Foreground="{StaticResource StatusBarPrimaryTextBrush}" VerticalAlignment="Center" FontSize="14" TextTrimming="CharacterEllipsis"/>
                 <TextBlock Grid.Column="1" Text="✅ Monday Demo Ready"
-                           Foreground="#10B981" VerticalAlignment="Center" FontSize="14" FontWeight="SemiBold"/>
+                           Foreground="{StaticResource StatusBarAccentTextBrush}" VerticalAlignment="Center" FontSize="14" FontWeight="SemiBold"/>
             </Grid>
         </Border>
     </Grid>

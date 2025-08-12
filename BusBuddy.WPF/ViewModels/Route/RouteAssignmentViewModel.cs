@@ -14,6 +14,7 @@ using BusBuddy.Core.Services.Interfaces; // IGeocodingService
 using System.Globalization;
 using System.IO; // For PDF export file writing
 using System.Threading; // For debounce timer
+using System.Text.RegularExpressions; // Start time validation
 
 
 namespace BusBuddy.WPF.ViewModels.Route
@@ -53,6 +54,7 @@ namespace BusBuddy.WPF.ViewModels.Route
         private static readonly ILogger Logger = Log.ForContext<RouteAssignmentViewModel>();
     private Timer? _retimeDebounceTimer; // Debounce timer for auto-retiming after structural stop changes
     private const int RetimeDebounceMs = 600; // Delay before auto timing after modifications
+    private static readonly Regex StartTimeRegex = new(@"^\s*(?:[01]?\d|2[0-3]):[0-5]\d\s*$", RegexOptions.Compiled); // HH:mm 24h
 
         // Constructors added (MVP restoration)
         // 1) Parameterless for XAML designer / fallback
@@ -67,6 +69,21 @@ namespace BusBuddy.WPF.ViewModels.Route
             }
             catch { }
             Initialize();
+        }
+
+        // Compact helpers for robust display names in logs/status
+        private static string GetStudentDisplayName(BusBuddy.Core.Models.Student? s)
+        {
+            if (s is null) return "(unknown student)";
+            if (!string.IsNullOrWhiteSpace(s.StudentName)) return s.StudentName!;
+            if (!string.IsNullOrWhiteSpace(s.StudentNumber)) return $"Student #{s.StudentNumber}";
+            return $"StudentId {s.StudentId}";
+        }
+
+        private static string GetRouteDisplayName(BusBuddy.Core.Models.Route? r)
+        {
+            if (r is null) return "(route)";
+            return string.IsNullOrWhiteSpace(r.RouteName) ? $"RouteId {r.RouteId}" : r.RouteName!;
         }
 
         public RouteAssignmentViewModel(IRouteService? routeService)
@@ -153,8 +170,22 @@ namespace BusBuddy.WPF.ViewModels.Route
         public string StartTimeString
         {
             get => _startTimeString;
-            set => SetProperty(ref _startTimeString, value);
+            set
+            {
+                if (SetProperty(ref _startTimeString, value))
+                {
+                    OnPropertyChanged(nameof(IsStartTimeValid));
+                    // Provide immediate feedback if user entered an invalid value
+                    if (!IsStartTimeValid)
+                    {
+                        StatusMessage = "Invalid start time (use HH:mm 24-hour, e.g. 07:30)";
+                    }
+                    (TimeRouteCommand as RelayCommand)?.RaiseCanExecuteChanged();
+                }
+            }
         }
+
+        public bool IsStartTimeValid => StartTimeRegex.IsMatch(_startTimeString);
 
         // Students currently assigned to the SelectedRoute (MVP-local collection)
         public ObservableCollection<BusBuddy.Core.Models.Student> AssignedStudentsForSelectedRoute
@@ -172,6 +203,7 @@ namespace BusBuddy.WPF.ViewModels.Route
                 if (SetProperty(ref _selectedStudent, value))
                 {
                     OnPropertyChanged(nameof(CanAssignStudent));
+                    RefreshCommandStates();
                 }
             }
         }
@@ -184,6 +216,7 @@ namespace BusBuddy.WPF.ViewModels.Route
                 if (SetProperty(ref _selectedAssignedStudent, value))
                 {
                     OnPropertyChanged(nameof(CanRemoveStudent));
+                    RefreshCommandStates();
                 }
             }
         }
@@ -205,6 +238,7 @@ namespace BusBuddy.WPF.ViewModels.Route
                     OnPropertyChanged(nameof(IsRouteSelected));
                     _ = LoadRouteStopsAsync(); // Load stops asynchronously
                     UpdateStatusMessage();
+                    RefreshCommandStates();
                 }
             }
         }
@@ -218,6 +252,7 @@ namespace BusBuddy.WPF.ViewModels.Route
                 {
                     OnPropertyChanged(nameof(CanAssignVehicle));
                     OnPropertyChanged(nameof(SelectedRouteBusDisplay));
+                    RefreshCommandStates();
                 }
             }
         }
@@ -231,6 +266,7 @@ namespace BusBuddy.WPF.ViewModels.Route
                 {
                     OnPropertyChanged(nameof(CanAssignDriver));
                     OnPropertyChanged(nameof(SelectedRouteDriverDisplay));
+                    RefreshCommandStates();
                 }
             }
         }
@@ -441,11 +477,35 @@ namespace BusBuddy.WPF.ViewModels.Route
             DeactivateRouteCommand = new RelayCommand(async () => await DeactivateRouteAsync(), () => CanDeactivateRoute);
             CloneRouteCommand = new RelayCommand(async () => await CloneRouteAsync());
             PlotRouteOnMapCommand = new RelayCommand(async () => await PlotRouteOnMapAsync(), () => SelectedRoute != null);
-            TimeRouteCommand = new RelayCommand(() => TimeRouteStops(), () => SelectedRoute != null && RouteStops.Any());
+            TimeRouteCommand = new RelayCommand(() => TimeRouteStops(), () => SelectedRoute != null && RouteStops.Any() && IsStartTimeValid);
         PrintMapCommand = new RelayCommand(PrintMap, () => SelectedRoute != null);
                     // Re-evaluate map/ timing commands
                     (PlotRouteOnMapCommand as RelayCommand)?.RaiseCanExecuteChanged();
                     (TimeRouteCommand as RelayCommand)?.RaiseCanExecuteChanged();
+            (PrintMapCommand as RelayCommand)?.RaiseCanExecuteChanged();
+        }
+
+        /// <summary>
+        /// Central helper to re-evaluate all command CanExecute states after CRUD/state changes.
+        /// </summary>
+        private void RefreshCommandStates()
+        {
+            (AssignStudentCommand as RelayCommand)?.RaiseCanExecuteChanged();
+            (RemoveStudentCommand as RelayCommand)?.RaiseCanExecuteChanged();
+            (CreateRouteCommand as RelayCommand)?.RaiseCanExecuteChanged();
+            (SaveRouteCommand as RelayCommand)?.RaiseCanExecuteChanged();
+            (DeleteRouteCommand as RelayCommand)?.RaiseCanExecuteChanged();
+            (AssignVehicleCommand as RelayCommand)?.RaiseCanExecuteChanged();
+            (AssignDriverCommand as RelayCommand)?.RaiseCanExecuteChanged();
+            (AddStopCommand as RelayCommand)?.RaiseCanExecuteChanged();
+            (RemoveStopCommand as RelayCommand)?.RaiseCanExecuteChanged();
+            (MoveStopUpCommand as RelayCommand)?.RaiseCanExecuteChanged();
+            (MoveStopDownCommand as RelayCommand)?.RaiseCanExecuteChanged();
+            (ValidateRouteCommand as RelayCommand)?.RaiseCanExecuteChanged();
+            (ActivateRouteCommand as RelayCommand)?.RaiseCanExecuteChanged();
+            (DeactivateRouteCommand as RelayCommand)?.RaiseCanExecuteChanged();
+            (PlotRouteOnMapCommand as RelayCommand)?.RaiseCanExecuteChanged();
+            (TimeRouteCommand as RelayCommand)?.RaiseCanExecuteChanged();
             (PrintMapCommand as RelayCommand)?.RaiseCanExecuteChanged();
         }
         private void PrintMap()
@@ -618,9 +678,9 @@ namespace BusBuddy.WPF.ViewModels.Route
                 // Capture references defensively to avoid null after awaits
                 var student = SelectedStudent;
                 var route = SelectedRoute;
-                var studentName = student?.StudentName ?? "(unknown)";
-                var routeName = route?.RouteName ?? "(no route)";
-                StatusMessage = $"Assigning {studentName} to {routeName}...";
+                var studentName = GetStudentDisplayName(student);
+                var routeName = GetRouteDisplayName(route);
+                RefreshCommandStates();
 
                 // Prevent duplicate assignment in memory (MVP guard)
                 if (student != null && AssignedStudentsForSelectedRoute.Any(s => s.StudentId == student.StudentId))
@@ -684,7 +744,9 @@ namespace BusBuddy.WPF.ViewModels.Route
             try
             {
                 IsLoading = true;
-                StatusMessage = $"Removing {SelectedAssignedStudent.StudentName} from {SelectedRoute.RouteName}...";
+                var studentName = GetStudentDisplayName(SelectedAssignedStudent);
+                var routeName = GetRouteDisplayName(SelectedRoute);
+                StatusMessage = $"Removing {studentName} from {routeName}...";
 
                 if (_routeService != null)
                 {
@@ -703,6 +765,8 @@ namespace BusBuddy.WPF.ViewModels.Route
                 IncrementRouteStudentCount(SelectedRoute, -1);
                 OnPropertyChanged(nameof(UnassignedStudentCount));
                 OnPropertyChanged(nameof(AssignedStudentCount));
+                StatusMessage = $"Removed {studentName} from {routeName}";
+                Logger.Information("Student {StudentName} removed from route {RouteName}", studentName, routeName);
                 StatusMessage = $"Successfully removed {SelectedAssignedStudent.StudentName} from {SelectedRoute.RouteName}";
 
                 Logger.Information("Student {StudentName} removed from route {RouteName}",
@@ -923,6 +987,7 @@ namespace BusBuddy.WPF.ViewModels.Route
 
                 SelectedBus = null;
                 OnPropertyChanged(nameof(SelectedRouteBusDisplay));
+                RefreshCommandStates();
             }
             catch (Exception ex)
             {
@@ -1087,6 +1152,7 @@ namespace BusBuddy.WPF.ViewModels.Route
             finally
             {
                 IsLoading = false;
+                                RefreshCommandStates();
             }
         }
 
@@ -1138,6 +1204,7 @@ namespace BusBuddy.WPF.ViewModels.Route
             finally
             {
                 IsLoading = false;
+                RefreshCommandStates();
             }
         }
 
@@ -1201,6 +1268,12 @@ namespace BusBuddy.WPF.ViewModels.Route
         {
             if (SelectedRoute == null || !RouteStops.Any())
             {
+                return;
+            }
+
+            if (!IsStartTimeValid)
+            {
+                StatusMessage = "Cannot time stops — invalid Start Time (HH:mm)";
                 return;
             }
 
@@ -1330,6 +1403,22 @@ namespace BusBuddy.WPF.ViewModels.Route
                 return;
             }
 
+            // MVP activation guard – ensure minimal required components
+            var missing = new List<string>();
+            if (!AssignedStudentsForSelectedRoute.Any()) missing.Add("at least one student");
+            if (!RouteStops.Any()) missing.Add("at least one stop");
+            var hasVehicle = SelectedRoute.AMVehicleId.HasValue || SelectedRoute.PMVehicleId.HasValue;
+            if (!hasVehicle) missing.Add("vehicle");
+            var hasDriver = SelectedRoute.AMDriverId.HasValue || SelectedRoute.PMDriverId.HasValue;
+            if (!hasDriver) missing.Add("driver");
+            if (missing.Any())
+            {
+                var msg = "Cannot activate route – missing: " + string.Join(", ", missing);
+                StatusMessage = msg;
+                MessageBox.Show(msg, "Activation Blocked", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
             try
             {
                 IsLoading = true;
@@ -1337,6 +1426,22 @@ namespace BusBuddy.WPF.ViewModels.Route
 
                 if (_routeService != null)
                 {
+                    // Perform full service validation first; surface issues and abort if invalid
+                    var validation = await _routeService.ValidateRouteForActivationAsync(SelectedRoute.RouteId);
+                    if (!validation.IsSuccess)
+                    {
+                        StatusMessage = $"Validation error: {validation.Error}";
+                        MessageBox.Show(validation.Error ?? "Unknown validation error", "Activation Blocked", MessageBoxButton.OK, MessageBoxImage.Warning);
+                        return;
+                    }
+                    else if (validation.Value != null && !validation.Value.IsValid)
+                    {
+                        var issues = string.Join("\n", validation.Value.Issues);
+                        var msg = $"Route failed validation:\n{issues}";
+                        StatusMessage = "Activation blocked by validation";
+                        MessageBox.Show(msg, "Activation Blocked", MessageBoxButton.OK, MessageBoxImage.Warning);
+                        return;
+                    }
                     var result = await _routeService.ActivateRouteAsync(SelectedRoute.RouteId);
                     if (!result.IsSuccess)
                     {
@@ -1488,10 +1593,19 @@ namespace BusBuddy.WPF.ViewModels.Route
                         MessageBox.Show(result.Error!, "Save Failed", MessageBoxButton.OK, MessageBoxImage.Warning);
                         return;
                     }
+                    if (RouteStops.Any())
+                    {
+                        var timingResult = await _routeService.UpdateRouteStopsTimingAsync(SelectedRoute.RouteId, RouteStops);
+                        if (!timingResult.IsSuccess)
+                        {
+                            Logger.Warning("Route stop timing persistence failed: {Error}", timingResult.Error);
+                        }
+                    }
                 }
 
                 StatusMessage = $"Successfully saved route '{SelectedRoute.RouteName}'";
                 Logger.Information("Saved route {RouteName}", SelectedRoute.RouteName);
+                RefreshCommandStates();
             }
             catch (Exception ex)
             {
@@ -1639,6 +1753,10 @@ namespace BusBuddy.WPF.ViewModels.Route
                 OnPropertyChanged(nameof(RouteStopCount));
                 OnPropertyChanged(nameof(AssignedStudentCount));
                 Logger.Information("Loaded {StopCount} stops for route {RouteName}", RouteStops.Count, SelectedRoute.RouteName);
+                if (RouteStops.Count == 0)
+                {
+                    StatusMessage = $"No stops found for {GetRouteDisplayName(SelectedRoute)} — add stops to begin routing.";
+                }
             }
             catch (Exception ex)
             {

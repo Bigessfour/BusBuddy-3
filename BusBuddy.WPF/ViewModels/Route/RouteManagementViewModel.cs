@@ -11,6 +11,8 @@ using Serilog;
 using System.Windows.Input;
 using CommunityToolkit.Mvvm.Input;
 using System.Threading.Tasks;
+using System.IO;
+using Serilog.Context;
 
 namespace BusBuddy.WPF.ViewModels.Route
 {
@@ -162,7 +164,9 @@ namespace BusBuddy.WPF.ViewModels.Route
                 }
 
                 RoutesView.Refresh();
-                StatusMessage = $"Loaded {Routes.Count} routes";
+                StatusMessage = Routes.Count == 0
+                    ? "No routes found — click 'Add Route' to create your first route"
+                    : $"Loaded {Routes.Count} routes";
                 OnPropertyChanged(nameof(TotalRoutes));
                 OnPropertyChanged(nameof(ActiveRoutes));
                 OnPropertyChanged(nameof(TotalAssignedStudents));
@@ -201,23 +205,29 @@ namespace BusBuddy.WPF.ViewModels.Route
         {
             try
             {
-                using var context = _contextFactory.CreateDbContext();
-                var newRoute = new BusBuddy.Core.Models.Route
+                using (LogContext.PushProperty("Operation", "AddRoute"))
                 {
-                    RouteName = $"Route {DateTime.Now:HHmmss}",
-                    School = SelectedRoute?.School ?? "Wiley School District",
-                    Date = DateTime.Today,
-                    IsActive = true
-                };
-                context.Routes.Add(newRoute);
-                context.SaveChanges();
+                    using var context = _contextFactory.CreateWriteDbContext();
+                    var baseName = $"Route {DateTime.Now:HHmmss}";
+                    var newRoute = new BusBuddy.Core.Models.Route
+                    {
+                        RouteName = baseName,
+                        School = SelectedRoute?.School ?? "Wiley School District",
+                        Date = DateTime.Today,
+                        IsActive = true
+                    };
+                    context.Routes.Add(newRoute);
+                    context.SaveChanges();
 
-                // Reflect in UI without full reload
-                Routes.Add(newRoute);
-                RoutesView.Refresh();
-                OnPropertyChanged(nameof(TotalRoutes));
-                OnPropertyChanged(nameof(ActiveRoutes));
-                StatusMessage = $"Added route '{newRoute.RouteName}'";
+                    // Reflect in UI without full reload
+                    Routes.Add(newRoute);
+                    SelectedRoute = newRoute; // immediate selection for faster workflow
+                    RoutesView.Refresh();
+                    OnPropertyChanged(nameof(TotalRoutes));
+                    OnPropertyChanged(nameof(ActiveRoutes));
+                    StatusMessage = $"Added route '{newRoute.RouteName}'";
+                    Logger.Information("Added route {RouteId}:{RouteName}", newRoute.RouteId, newRoute.RouteName);
+                }
             }
             catch (Exception ex)
             {
@@ -248,7 +258,7 @@ namespace BusBuddy.WPF.ViewModels.Route
             if (SelectedRoute is null) return;
             try
             {
-                using var context = _contextFactory.CreateDbContext();
+                using var context = _contextFactory.CreateWriteDbContext();
                 var route = context.Routes.FirstOrDefault(r => r.RouteId == SelectedRoute.RouteId);
                 if (route is null)
                 {
@@ -278,7 +288,19 @@ namespace BusBuddy.WPF.ViewModels.Route
             if (SelectedRoute is null) return;
             try
             {
-                using var context = _contextFactory.CreateDbContext();
+                // Ask for confirmation before delete — simple WPF MessageBox per Microsoft docs
+                var confirm = System.Windows.MessageBox.Show(
+                    $"Delete route '{SelectedRoute.RouteName}'? This cannot be undone.",
+                    "Confirm Delete",
+                    System.Windows.MessageBoxButton.YesNo,
+                    System.Windows.MessageBoxImage.Warning);
+                if (confirm != System.Windows.MessageBoxResult.Yes)
+                {
+                    StatusMessage = "Delete cancelled";
+                    return;
+                }
+
+                using var context = _contextFactory.CreateWriteDbContext();
                 var route = context.Routes.FirstOrDefault(r => r.RouteId == SelectedRoute.RouteId);
                 if (route is null)
                 {
@@ -338,9 +360,98 @@ namespace BusBuddy.WPF.ViewModels.Route
         }
     }
     private void AssignVehicle() { StatusMessage = "Assign vehicle (stub)"; }
-    private void ExportCsv() { StatusMessage = "Exported CSV (stub)"; }
-    private void ExportReport() { StatusMessage = "Exported report (stub)"; }
-    private void PrintSchedule() { StatusMessage = "Printed schedule (stub)"; }
+    private void ExportCsv()
+    {
+        try
+        {
+            using (LogContext.PushProperty("Operation", "ExportRoutesCsv"))
+            {
+                var exportDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "BusBuddy", "Exports");
+                Directory.CreateDirectory(exportDir);
+                var fileName = $"routes-{DateTime.UtcNow:yyyyMMdd-HHmmss}.csv";
+                var fullPath = Path.Combine(exportDir, fileName);
+                using var sw = new StreamWriter(fullPath, false, System.Text.Encoding.UTF8);
+                sw.WriteLine("RouteId,RouteName,Date,Active,StudentCount,StopCount,School");
+                foreach (var r in Routes)
+                {
+                    string Csv(string? v)
+                    {
+                        if (string.IsNullOrEmpty(v)) return string.Empty;
+                        var esc = v.Replace("\"", "\"\"", StringComparison.Ordinal);
+                        return "\"" + esc + "\"";
+                    }
+                    sw.WriteLine(string.Join(',', r.RouteId, Csv(r.RouteName), r.Date.ToString("yyyy-MM-dd"), r.IsActive, r.StudentCount ?? 0, r.StopCount ?? 0, Csv(r.School)));
+                }
+                sw.Flush();
+                StatusMessage = $"Exported {Routes.Count} routes";
+                Logger.Information("Exported {Count} routes to {File}", Routes.Count, fullPath);
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.Error(ex, "Failed exporting routes CSV");
+            StatusMessage = "Error exporting routes";
+        }
+    }
+    private void ExportReport()
+    {
+        try
+        {
+            using (LogContext.PushProperty("Operation", "ExportRouteSummary"))
+            {
+                var exportDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "BusBuddy", "Exports");
+                Directory.CreateDirectory(exportDir);
+                var fileName = $"route-summary-{DateTime.UtcNow:yyyyMMdd-HHmmss}.txt";
+                var fullPath = Path.Combine(exportDir, fileName);
+                using var sw = new StreamWriter(fullPath, false, System.Text.Encoding.UTF8);
+                sw.WriteLine($"Route Summary Export {DateTime.UtcNow:O}");
+                sw.WriteLine("====================================");
+                foreach (var r in Routes)
+                {
+                    sw.WriteLine($"[{r.RouteId}] {r.RouteName} | Date:{r.Date:yyyy-MM-dd} | Active:{r.IsActive} | Students:{r.StudentCount ?? 0} | Stops:{r.StopCount ?? 0}");
+                }
+                sw.Flush();
+                StatusMessage = "Exported route summary";
+                Logger.Information("Exported route summary with {Count} routes to {File}", Routes.Count, fullPath);
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.Error(ex, "Failed exporting route summary");
+            StatusMessage = "Error exporting report";
+        }
+    }
+    private void PrintSchedule()
+    {
+        try
+        {
+            if (SelectedRoute == null)
+            {
+                StatusMessage = "Select a route first";
+                return;
+            }
+            using (LogContext.PushProperty("Operation", "PrintSchedule"))
+            using (LogContext.PushProperty("RouteId", SelectedRoute.RouteId))
+            {
+                var exportDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "BusBuddy", "Printouts");
+                Directory.CreateDirectory(exportDir);
+                var fileName = $"route-{SelectedRoute.RouteId}-schedule-{DateTime.UtcNow:yyyyMMdd-HHmmss}.txt";
+                var fullPath = Path.Combine(exportDir, fileName);
+                using var sw = new StreamWriter(fullPath, false, System.Text.Encoding.UTF8);
+                sw.WriteLine($"Schedule for {SelectedRoute.RouteName} ({SelectedRoute.Date:yyyy-MM-dd})");
+                sw.WriteLine($"Active: {SelectedRoute.IsActive}  Students: {SelectedRoute.StudentCount ?? 0}  Stops: {SelectedRoute.StopCount ?? 0}");
+                sw.WriteLine("(Detailed stop listing TBD in MVP)");
+                sw.Flush();
+                StatusMessage = "Printed schedule (text)";
+                Logger.Information("Printed schedule for route {RouteId} to {File}", SelectedRoute.RouteId, fullPath);
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.Error(ex, "Failed printing schedule");
+            StatusMessage = "Error printing schedule";
+        }
+    }
     private void PrintMaps() { StatusMessage = "Printed maps (stub)"; }
 
         public void Dispose()

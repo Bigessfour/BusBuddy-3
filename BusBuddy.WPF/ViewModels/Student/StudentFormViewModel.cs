@@ -414,6 +414,14 @@ namespace BusBuddy.WPF.ViewModels.Student
             {
                 Logger.Information("Saving student {StudentName}", Student.StudentName);
 
+                // Hard guard: prevent saving with blank name (even if validation bypass flag is set)
+                if (string.IsNullOrWhiteSpace(Student.StudentName))
+                {
+                    Logger.Warning("Blocked save — StudentName blank");
+                    SetGlobalError("Student name is required.");
+                    return;
+                }
+
                 // Optional MVP feature flag to bypass validation and allow saving immediately
                 // Enable by setting environment variable: BUSBUDDY_SKIP_STUDENT_VALIDATION=1
                 static bool ShouldSkipValidation()

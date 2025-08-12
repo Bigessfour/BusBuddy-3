@@ -2,6 +2,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Media;
+using System.Windows.Automation;
 using System.Windows.Media.TextFormatting;
 using Syncfusion.Windows.Shared; // ChromelessWindow per Syncfusion docs
 using Syncfusion.SfSkinManager; // For Syncfusion theming
@@ -63,12 +64,12 @@ namespace BusBuddy.WPF.Views.Student
                 DataContext = new StudentsViewModel();
             }
 
-#if DEBUG
-            // Debug-only global button click diagnostics — attach handler in DEBUG builds only
-            // Docs: UIElement.AddHandler — https://learn.microsoft.com/dotnet/api/system.windows.uielement.addhandler
-            AddHandler(ButtonBase.ClickEvent, new RoutedEventHandler(OnAnyButtonClick), true);
-            Logger.Information("StudentsView: global button click diagnostics attached (DEBUG only)");
-#endif
+            // Global interaction diagnostics (button, selection, text, validation) for observability
+            try { AddHandler(ButtonBase.ClickEvent, new RoutedEventHandler(OnAnyButtonClick), true); } catch { }
+            try { AddHandler(Selector.SelectionChangedEvent, new SelectionChangedEventHandler(OnAnySelectionChanged), true); } catch { }
+            try { AddHandler(TextBoxBase.TextChangedEvent, new TextChangedEventHandler(OnAnyTextChanged), true); } catch { }
+            try { AddHandler(System.Windows.Controls.Validation.ErrorEvent, new EventHandler<ValidationErrorEventArgs>(OnValidationError), true); } catch { }
+            Logger.Information("StudentsView: interaction diagnostics attached");
 
             // Ensure crisp images/text on high DPI
             // Docs: RenderOptions/TextOptions — https://learn.microsoft.com/dotnet/api/system.windows.media.renderoptions
@@ -81,6 +82,7 @@ namespace BusBuddy.WPF.Views.Student
 
             // Inspect DataContext and command readiness on load
             this.Loaded += OnLoaded;
+
         }
 
         private void OnLoaded(object sender, RoutedEventArgs e)
@@ -99,14 +101,9 @@ namespace BusBuddy.WPF.Views.Student
                     // If no selection yet, select first row to enable edit/delete
                     if (vm.SelectedStudent == null && vm.Students.Count > 0)
                     {
-                        // Defer to dispatcher to ensure grid is loaded
                         Dispatcher.BeginInvoke(new Action(() =>
                         {
-                            try
-                            {
-                                StudentsDataGrid.SelectedIndex = 0;
-                            }
-                            catch { }
+                            try { StudentsDataGrid.SelectedIndex = 0; } catch { }
                         }), System.Windows.Threading.DispatcherPriority.Background);
                     }
 
@@ -133,17 +130,19 @@ namespace BusBuddy.WPF.Views.Student
             {
                 Logger.Warning(ex, "StudentsView: OnLoaded diagnostics failed");
             }
+
+            // Schedule an accessibility audit once visual tree is fully realized
+            try
+            {
+                Dispatcher.BeginInvoke(new Action(() =>
+                {
+                    try { AuditButtonsAccessibility(); } catch (System.Exception ex2) { Logger.Warning(ex2, "StudentsView: accessibility audit failed"); }
+                }), System.Windows.Threading.DispatcherPriority.Background);
+            }
+            catch { }
         }
 
-        protected override void OnClosed(System.EventArgs e)
-        {
-            // Dispose skin manager resources for this window
-            try { SfSkinManager.Dispose(this); } catch { /* no-op */ }
-            base.OnClosed(e);
-        }
-
-#if DEBUG
-        private void OnAnyButtonClick(object? sender, RoutedEventArgs e)
+    private void OnAnyButtonClick(object? sender, RoutedEventArgs e)
         {
             try
             {
@@ -154,19 +153,19 @@ namespace BusBuddy.WPF.Views.Student
 
                 if (src is Syncfusion.Windows.Tools.Controls.ButtonAdv badv)
                 {
-                    bool? canExec = null;
-                    try { if (badv.Command != null) canExec = badv.Command.CanExecute(badv.CommandParameter); } catch { }
-                    Logger.Information("StudentsView Button: {Type} Name={Name} Label={Label} CanExecute={CanExecute}", type, name, badv.Label, canExec);
+                    bool? canExec = null; try { if (badv.Command != null) canExec = badv.Command.CanExecute(badv.CommandParameter); } catch { }
+                    var autoName = AutomationProperties.GetName(badv);
+                    Logger.Information("StudentsView ButtonAdv: Type={Type} Name={Name} Label={Label} AutoName={AutoName} HasCommand={HasCommand} CanExecute={CanExecute}", type, name, badv.Label, autoName, badv.Command != null, canExec);
                 }
                 else if (src is Button btn)
                 {
-                    bool? canExec = null;
-                    try { if (btn.Command != null) canExec = btn.Command.CanExecute(btn.CommandParameter); } catch { }
-                    Logger.Information("StudentsView Button: {Type} Name={Name} Content={Content} CanExecute={CanExecute}", type, name, btn.Content, canExec);
+                    bool? canExec = null; try { if (btn.Command != null) canExec = btn.Command.CanExecute(btn.CommandParameter); } catch { }
+                    var autoName = AutomationProperties.GetName(btn);
+                    Logger.Information("StudentsView Button: Type={Type} Name={Name} Content={Content} AutoName={AutoName} HasCommand={HasCommand} CanExecute={CanExecute}", type, name, btn.Content?.ToString(), autoName, btn.Command != null, canExec);
                 }
                 else
                 {
-                    Logger.Information("StudentsView Button: {Type} Name={Name}", type, name);
+                    Logger.Information("StudentsView Click: Type={Type} Name={Name}", type, name);
                 }
             }
             catch (System.Exception ex)
@@ -174,7 +173,93 @@ namespace BusBuddy.WPF.Views.Student
                 Logger.Warning(ex, "StudentsView: button click logging failed");
             }
         }
-#endif
+
+    private void OnAnySelectionChanged(object? sender, SelectionChangedEventArgs e)
+        {
+            try
+            {
+                var src = e.OriginalSource as DependencyObject;
+                var fe = src as FrameworkElement;
+                var name = fe?.Name ?? "(unnamed)";
+                var type = src?.GetType().Name ?? (sender?.GetType().Name ?? "(unknown)");
+                Logger.Information("StudentsView SelectionChanged: Type={Type} Name={Name} Added={Added} Removed={Removed}", type, name, e.AddedItems?.Count ?? 0, e.RemovedItems?.Count ?? 0);
+            }
+            catch (System.Exception ex)
+            {
+                Logger.Warning(ex, "StudentsView: selection change logging failed");
+            }
+        }
+
+    private void OnAnyTextChanged(object? sender, TextChangedEventArgs e)
+        {
+            try
+            {
+                if (e.OriginalSource is not DependencyObject src) return;
+                var fe = src as FrameworkElement;
+                var name = fe?.Name ?? "(unnamed)";
+                var type = src.GetType().Name;
+                int? len = src is TextBox tb ? tb.Text?.Length : null;
+                Logger.Information("StudentsView TextChanged: Type={Type} Name={Name} Length={Length}", type, name, len);
+            }
+            catch (System.Exception ex)
+            {
+                Logger.Warning(ex, "StudentsView: text change logging failed");
+            }
+        }
+
+    private void OnValidationError(object? sender, ValidationErrorEventArgs e)
+        {
+            try
+            {
+                var src = e.OriginalSource as DependencyObject;
+                var fe = src as FrameworkElement;
+                var name = fe?.Name ?? "(unnamed)";
+                var type = src?.GetType().Name ?? (sender?.GetType().Name ?? "(unknown)");
+                Logger.Warning("StudentsView Validation{Action}: Type={Type} Name={Name} Error={Error}", e.Action, type, name, e.Error?.ErrorContent);
+            }
+            catch (System.Exception ex)
+            {
+                Logger.Warning(ex, "StudentsView: validation logging failed");
+            }
+        }
+
+        private void AuditButtonsAccessibility()
+        {
+            int total = 0, adv = 0, missingLabel = 0, missingAuto = 0, noCmd = 0;
+            foreach (var d in Traverse(this))
+            {
+                if (d is Syncfusion.Windows.Tools.Controls.ButtonAdv badv)
+                {
+                    total++; adv++;
+                    var label = badv.Label; var autoName = AutomationProperties.GetName(badv);
+                    bool hasCmd = badv.Command != null; if (!hasCmd) noCmd++;
+                    if (string.IsNullOrWhiteSpace(label)) missingLabel++;
+                    if (string.IsNullOrWhiteSpace(autoName)) missingAuto++;
+                }
+                else if (d is Button btn)
+                {
+                    total++;
+                    var content = btn.Content?.ToString(); var autoName = AutomationProperties.GetName(btn);
+                    bool hasCmd = btn.Command != null; if (!hasCmd) noCmd++;
+                    if (string.IsNullOrWhiteSpace(content)) missingLabel++;
+                    if (string.IsNullOrWhiteSpace(autoName)) missingAuto++;
+                }
+            }
+            Logger.Information("StudentsView Audit Summary — Buttons={Total}, ButtonAdv={Adv}, MissingLabel/Content={MissingLabel}, MissingAutomationName={MissingAuto}, NoCommand={NoCmd}", total, adv, missingLabel, missingAuto, noCmd);
+        }
+
+        private static System.Collections.Generic.IEnumerable<DependencyObject> Traverse(DependencyObject root)
+        {
+            if (root == null) yield break;
+            var count = VisualTreeHelper.GetChildrenCount(root);
+            for (int i = 0; i < count; i++)
+            {
+                var child = VisualTreeHelper.GetChild(root, i);
+                if (child == null) continue;
+                yield return child;
+                foreach (var g in Traverse(child)) yield return g;
+            }
+        }
 
         // Handle per-monitor DPI changes to keep layout crisp
         protected override void OnDpiChanged(System.Windows.DpiScale oldDpi, System.Windows.DpiScale newDpi)
@@ -191,6 +276,19 @@ namespace BusBuddy.WPF.Views.Student
             {
                 Logger.Warning(ex, "StudentsView: OnDpiChanged handling failed");
             }
+        }
+
+        protected override void OnClosed(System.EventArgs e)
+        {
+            try
+            {
+                RemoveHandler(ButtonBase.ClickEvent, new RoutedEventHandler(OnAnyButtonClick));
+                RemoveHandler(Selector.SelectionChangedEvent, new SelectionChangedEventHandler(OnAnySelectionChanged));
+                RemoveHandler(TextBoxBase.TextChangedEvent, new TextChangedEventHandler(OnAnyTextChanged));
+                RemoveHandler(System.Windows.Controls.Validation.ErrorEvent, new EventHandler<ValidationErrorEventArgs>(OnValidationError));
+            }
+            catch { }
+            base.OnClosed(e);
         }
     }
 }

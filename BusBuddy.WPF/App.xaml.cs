@@ -299,7 +299,8 @@ namespace BusBuddy.WPF
                         );
 
                         // Import JSON data if database is empty with retry strategy
-                        await BusBuddy.Core.Utilities.JsonDataImporter.SeedDatabaseIfEmptyAsync(context);
+                        // Deprecated (MVP): JSON seeding disabled. Use CSV import path post-MVP.
+                        // await BusBuddy.Core.Utilities.JsonDataImporter.SeedDatabaseIfEmptyAsync(context);
 
                         // Also support plain array JSON via SeedDataService (uses WileyJsonPath)
                         await seedSvc.SeedFromJsonAsync();

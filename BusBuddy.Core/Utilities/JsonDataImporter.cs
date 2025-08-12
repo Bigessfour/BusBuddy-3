@@ -16,6 +16,11 @@ namespace BusBuddy.Core.Utilities
     /// Handles family and student data from extracted form data
     /// Follows BusBuddy coding standards with comprehensive error handling and logging
     /// </summary>
+    /// <summary>
+    /// JSON-based student data importer.
+    /// DEPRECATED for MVP: Will be replaced by CSV-based import leveraging Syncfusion CSV pipeline.
+    /// </summary>
+    [Obsolete("JsonDataImporter is deprecated for MVP. Use forthcoming CsvDataImporter.")]
     public class JsonDataImporter
     {
         private readonly BusBuddy.Core.Data.BusBuddyDbContext _context;
@@ -572,17 +577,48 @@ namespace BusBuddy.Core.Utilities
                 int jsonStudentsCount = 0;
                 try
                 {
-                    using var jsonDoc = JsonDocument.Parse(await File.ReadAllTextAsync(jsonFilePath));
-                    // Primary documented structure: { "students": [ ... ] }
-                    if (jsonDoc.RootElement.TryGetProperty("students", out var studentsElem) && studentsElem.ValueKind == JsonValueKind.Array)
+                    // Fast pre-check (requested optimization): examine first non-whitespace character.
+                    // If it is '[', assume a root array and skip probing for an object property named 'students'.
+                    // This avoids unnecessary property enumeration on very large array-only files.
+                    // Ref: Optional enhancement note (2025-08-11).
+                    string rawJson = await File.ReadAllTextAsync(jsonFilePath);
+                    // NOTE: Avoid ReadOnlySpan<char> (ref struct) inside async method (would trigger CS9202 with current LangVersion).
+                    int i = 0;
+                    while (i < rawJson.Length && char.IsWhiteSpace(rawJson[i])) i++;
+                    bool rootLikelyArray = i < rawJson.Length && rawJson[i] == '[';
+
+                    using var jsonDoc = JsonDocument.Parse(rawJson);
+                    var rootElement = jsonDoc.RootElement;
+
+                    if (rootLikelyArray)
                     {
-                        jsonStudentsCount = studentsElem.GetArrayLength();
+                        if (rootElement.ValueKind == JsonValueKind.Array)
+                        {
+                            jsonStudentsCount = rootElement.GetArrayLength();
+                            Logger.Information("Detected root-array JSON student dataset (fast path) with {Count} entries: {Path}", jsonStudentsCount, jsonFilePath);
+                        }
+                        else
+                        {
+                            // Fallback: the heuristic said array but actual kind differs — proceed with normal probing.
+                            if (rootElement.TryGetProperty("students", out var studentsElemFast) && studentsElemFast.ValueKind == JsonValueKind.Array)
+                            {
+                                jsonStudentsCount = studentsElemFast.GetArrayLength();
+                            }
+                        }
                     }
-                    else if (jsonDoc.RootElement.ValueKind == JsonValueKind.Array)
+                    else
                     {
-                        // Fallback: root itself is an array (legacy/simple export). Treat as students collection.
-                        jsonStudentsCount = jsonDoc.RootElement.GetArrayLength();
-                        Logger.Information("Detected root-array JSON student dataset (no 'students' wrapper) with {Count} entries: {Path}", jsonStudentsCount, jsonFilePath);
+                        // Normal path: expect an object wrapper first.
+                        if (rootElement.TryGetProperty("students", out var studentsElem) && studentsElem.ValueKind == JsonValueKind.Array)
+                        {
+                            jsonStudentsCount = studentsElem.GetArrayLength();
+                        }
+                        else if (rootElement.ValueKind == JsonValueKind.Array)
+                        {
+                            // Unexpected but still support legacy root array.
+                            jsonStudentsCount = rootElement.GetArrayLength();
+                            Logger.Information("Detected root-array JSON student dataset (no 'students' wrapper) with {Count} entries: {Path}", jsonStudentsCount, jsonFilePath);
+                        }
                     }
                 }
                 catch (Exception ex)

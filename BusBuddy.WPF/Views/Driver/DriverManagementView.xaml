@@ -47,7 +47,10 @@
                                       Height="35"
                                       Margin="0,0,10,0"
                                       SizeMode="Normal"
-                                      SmallIcon="/Assets/Icons/add-user.png">
+                                      SmallIcon="/Assets/Icons/add-user.png"
+                                      Command="{Binding AddDriverCommand}"
+                                      AutomationProperties.Name="Add Driver"
+                                      AutomationProperties.HelpText="Add a new driver">
                     <syncfusion:ButtonAdv.LargeIcon>
                         <Image Source="/Assets/Icons/add-user.png" Width="16" Height="16"/>
                     </syncfusion:ButtonAdv.LargeIcon>
@@ -58,7 +61,11 @@
                                       Height="35"
                                       Margin="0,0,10,0"
                                       SizeMode="Normal"
-                                      SmallIcon="/Assets/Icons/edit-user.png">
+                                      SmallIcon="/Assets/Icons/edit-user.png"
+                                      Command="{Binding EditDriverCommand}"
+                                      IsEnabled="{Binding HasSelectedDriver}"
+                                      AutomationProperties.Name="Edit Driver"
+                                      AutomationProperties.HelpText="Edit the selected driver">
                     <syncfusion:ButtonAdv.LargeIcon>
                         <Image Source="/Assets/Icons/edit-user.png" Width="16" Height="16"/>
                     </syncfusion:ButtonAdv.LargeIcon>
@@ -68,7 +75,11 @@
                                       Width="120"
                                       Height="35"
                                       SizeMode="Normal"
-                                      SmallIcon="/Assets/Icons/delete-user.png">
+                                      SmallIcon="/Assets/Icons/delete-user.png"
+                                      Command="{Binding DeleteDriverCommand}"
+                                      IsEnabled="{Binding HasSelectedDriver}"
+                                      AutomationProperties.Name="Delete Driver"
+                                      AutomationProperties.HelpText="Delete the selected driver">
                     <syncfusion:ButtonAdv.LargeIcon>
                         <Image Source="/Assets/Icons/delete-user.png" Width="16" Height="16"/>
                     </syncfusion:ButtonAdv.LargeIcon>
