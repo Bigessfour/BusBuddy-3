@@ -89,6 +89,8 @@ namespace BusBuddy.Tests.Core
         [Test]
         public async Task ValidateStudentAsync_InvalidPhoneAndZip_ReturnsErrors()
         {
+            // Force strict validation mode for this test so phone/ZIPS are enforced even if environment defaults changed.
+            Environment.SetEnvironmentVariable("BUSBUDDY_PHONE_VALIDATION_MODE", "strict");
             var s = new Student
             {
                 StudentName = "Bob",
@@ -106,6 +108,7 @@ namespace BusBuddy.Tests.Core
             var errors = await _studentService.ValidateStudentAsync(s);
             errors.Should().Contain(e => e.Contains("phone", StringComparison.OrdinalIgnoreCase));
             errors.Should().Contain(e => e.Contains("ZIP", StringComparison.OrdinalIgnoreCase));
+            Environment.SetEnvironmentVariable("BUSBUDDY_PHONE_VALIDATION_MODE", null);
         }
 
         [Test]

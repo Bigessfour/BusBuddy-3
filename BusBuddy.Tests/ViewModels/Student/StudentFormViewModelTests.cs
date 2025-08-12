@@ -81,7 +81,7 @@ namespace BusBuddy.Tests.ViewModels.Student
             _viewModel.Student.City = "TestCity";
             // Simulate address validation
             _viewModel.ValidateAddressCommand.Execute(null);
-            _viewModel.AddressValidationMessage.Should().Contain("✓ Address format is valid");
+            _viewModel.AddressValidationMessage.Should().Contain("Address format is valid");
             _viewModel.AddressValidationColor.Should().Be(Brushes.Green);
         }
 
@@ -90,7 +90,7 @@ namespace BusBuddy.Tests.ViewModels.Student
         {
             _viewModel.Student.HomeAddress = "Invalid Address";
             _viewModel.ValidateAddressCommand.Execute(null);
-            _viewModel.AddressValidationMessage.Should().Contain("✗ Address validation failed");
+            _viewModel.AddressValidationMessage.Should().Contain("Address validation failed");
             _viewModel.AddressValidationColor.Should().Be(Brushes.Red);
         }
 
@@ -102,7 +102,7 @@ namespace BusBuddy.Tests.ViewModels.Student
             _viewModel.SuggestRoutesCommand.Execute(null);
             _viewModel.Student.AMRoute.Should().NotBeNull();
             _viewModel.Student.AMRoute.Should().Contain("Route N");
-            _viewModel.ValidationStatus.Should().Contain("✓ AI suggested");
+            _viewModel.ValidationStatus.Should().Contain("AI suggested");
             _viewModel.ValidationStatusBrush.Should().Be(Brushes.Green);
         }
 
@@ -131,7 +131,7 @@ namespace BusBuddy.Tests.ViewModels.Student
             _viewModel.Student.StudentName = "";
             _viewModel.Student.Grade = "";
             _viewModel.ValidateDataCommand.Execute(null);
-            _viewModel.ValidationStatus.Should().Contain("❌");
+            _viewModel.ValidationStatus.Should().Contain("validation errors");
             _viewModel.ValidationStatusBrush.Should().Be(Brushes.Red);
             _viewModel.HasGlobalError.Should().BeTrue();
             _viewModel.CanSave.Should().BeFalse();
@@ -146,7 +146,7 @@ namespace BusBuddy.Tests.ViewModels.Student
             _viewModel.Student.City = "TestCity";
             _viewModel.Student.State = "IL";
             _viewModel.ValidateDataCommand.Execute(null);
-            _viewModel.ValidationStatus.Should().Contain("✓ All data validated successfully");
+            _viewModel.ValidationStatus.Should().Contain("All data validated successfully");
             _viewModel.ValidationStatusBrush.Should().Be(Brushes.Green);
             _viewModel.CanSave.Should().BeTrue();
         }

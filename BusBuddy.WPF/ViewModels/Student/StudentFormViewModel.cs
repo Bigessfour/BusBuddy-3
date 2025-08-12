@@ -749,14 +749,12 @@ namespace BusBuddy.WPF.ViewModels.Student
 
                 if (validationErrors.Any())
                 {
-                    // Inform the user but do not block Save for MVP minimal data flow
-                    ValidationStatus = $"⚠️ {validationErrors.Count} validation warnings";
-                    ValidationStatusBrush = Brushes.Orange;
-                    SetGlobalError($"Please review: {string.Join(", ", validationErrors)}");
-                    // Keep CanSave governed by CanSaveStudent()
-                    CanSave = CanSaveStudent();
+                    // Treat as blocking errors now (post-MVP tightening)
+                    ValidationStatus = $"❌ {validationErrors.Count} validation errors";
+                    ValidationStatusBrush = Brushes.Red;
+                    SetGlobalError($"Please fix: {string.Join(", ", validationErrors)}");
+                    CanSave = false;
                     _saveRelay?.NotifyCanExecuteChanged();
-                    // Continue without returning so address validation can run if enabled
                 }
 
                 // Perform address validation unless disabled
@@ -770,12 +768,15 @@ namespace BusBuddy.WPF.ViewModels.Student
                     AddressValidationColor = Brushes.Gray;
                 }
 
-                ValidationStatus = "✓ All data validated successfully";
-                ValidationStatusBrush = Brushes.Green;
-                CanSave = true;
-                HasValidationErrors = false;
-                _validationErrors.Clear();
-                _saveRelay?.NotifyCanExecuteChanged();
+                if (!validationErrors.Any())
+                {
+                    ValidationStatus = "All data validated successfully";
+                    ValidationStatusBrush = Brushes.Green;
+                    CanSave = true;
+                    HasValidationErrors = false;
+                    _validationErrors.Clear();
+                    _saveRelay?.NotifyCanExecuteChanged();
+                }
 
                 Logger.Information("Comprehensive data validation completed successfully");
             }

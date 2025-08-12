@@ -22,17 +22,21 @@ public class WileyTests : IDisposable
     [SetUp]
     public void Setup()
     {
-        var contextFactory = new BusBuddyDbContextFactory();
-        _context = contextFactory.CreateDbContext();
-        _studentService = new StudentService(contextFactory);
+        // Use in-memory database so tests don't depend on localdb / external SQL
+        var options = new DbContextOptionsBuilder<BusBuddyDbContext>()
+            .UseInMemoryDatabase($"WileyTests_{Guid.NewGuid()}")
+            .Options;
+        _context = new BusBuddyDbContext(options);
+        var testFactory = new TestFactory(_context);
+        _studentService = new StudentService(testFactory);
     _memoryCache = new MemoryCache(new MemoryCacheOptions());
     _busCachingService = new BusCachingService(_memoryCache);
-    _busService = new BusService(contextFactory, _busCachingService);
+    _busService = new BusService(testFactory, _busCachingService);
 
         // Ensure baseline data required by tests
         // Guarantee that "East Route" exists with RouteId = 1 for deterministic assertions
         // Docs: DbSet.Find (sync) — https://learn.microsoft.com/dotnet/api/microsoft.entityframeworkcore.dbset-1.find
-        var eastById = _context.Routes.Find(1);
+    var eastById = _context.Routes.Find(1);
         if (eastById is null)
         {
             _context.Routes.Add(new Route
@@ -105,4 +109,14 @@ public class WileyTests : IDisposable
         _context?.Dispose();
         GC.SuppressFinalize(this);
     }
+}
+
+// Simple factory for in-memory context reuse
+internal sealed class TestFactory : IBusBuddyDbContextFactory, IDisposable
+{
+    private readonly BusBuddyDbContext _ctx;
+    public TestFactory(BusBuddyDbContext ctx) => _ctx = ctx;
+    public BusBuddyDbContext CreateDbContext() => _ctx;
+    public BusBuddyDbContext CreateWriteDbContext() => _ctx;
+    public void Dispose() { }
 }

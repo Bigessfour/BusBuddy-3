@@ -67,9 +67,11 @@ namespace BusBuddy.Tests.Core
                 // Act
                 var conn = EnvironmentHelper.GetConnectionString(config);
 
-                // Assert
-                conn.Should().Contain("${AZURE_SQL_USER}");
-                conn.Should().Contain("${AZURE_SQL_PASSWORD}");
+                // Behavior update: unresolved placeholders now trigger fallback to LocalDB for reliability.
+                // Assert new behavior instead of expecting placeholders to remain.
+                conn.Should().Contain("(localdb)\\MSSQLLocalDB");
+                conn.Should().NotContain("${AZURE_SQL_USER}");
+                conn.Should().NotContain("${AZURE_SQL_PASSWORD}");
             }
             finally
             {
