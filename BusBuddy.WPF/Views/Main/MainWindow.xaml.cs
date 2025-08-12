@@ -24,6 +24,7 @@ using Syncfusion.SfSkinManager;
 using Serilog;
 using Syncfusion.Windows.Tools.Controls; // DockingManager API per Syncfusion docs
 using Syncfusion.Windows.Shared; // ChromelessWindow API per Syncfusion docs
+using BusBuddy.WPF.Services.Navigation; // navigation service for DockingManager documents
 
 namespace BusBuddy.WPF.Views.Main
 {
@@ -40,6 +41,7 @@ namespace BusBuddy.WPF.Views.Main
         private static readonly int DockActivatedWidthBump = 120; // consolidated width bump constant
         private readonly Guid _windowInstanceId = Guid.NewGuid(); // correlation id for structured logs
         private BusBuddy.WPF.ViewModels.MainWindowViewModel? _viewModel;
+        private INavigationService? _navigationService; // injected or initialized after DockingManager ready
 
     // Generated fields (StudentsGrid, MainDockingManager, etc.) come from XAML partial class after InitializeComponent.
 
@@ -125,6 +127,20 @@ namespace BusBuddy.WPF.Views.Main
 
                 Logger.Information("MainWindow initialized successfully with Syncfusion DockingManager");
                 Logger.Debug("MainWindow constructor completed successfully");
+
+                // Initialize navigation service (Step 1 of refactor plan) after DockingManager is available
+                try
+                {
+                    if (MainDockingManager != null)
+                    {
+                        _navigationService = new NavigationService(MainDockingManager);
+                        // Registration of core document panes will be added in subsequent steps
+                    }
+                }
+                catch (Exception navEx)
+                {
+                    Logger.Warning(navEx, "Failed initializing NavigationService (non-fatal)");
+                }
             }
             catch (Exception ex)
             {
@@ -724,15 +740,10 @@ namespace BusBuddy.WPF.Views.Main
             try
             {
                 // Open StudentsView as a top-level window (ChromelessWindow) — do not embed a Window as Content
-                var studentsView = new StudentsView
-                {
-                    Owner = this,
-                    WindowStartupLocation = WindowStartupLocation.CenterOwner
-                };
-
-                Logger.Debug("Showing StudentsView modal window");
+                // TODO Step 2: Replace with navigationService.Navigate("students")
+                // Temporary: keep existing behavior until all panes registered
+                var studentsView = new StudentsView { Owner = this, WindowStartupLocation = WindowStartupLocation.CenterOwner };
                 studentsView.ShowDialog();
-                Logger.Information("StudentsView window closed");
                 RefreshStudentsGrid();
             }
             catch (Exception ex)
@@ -752,19 +763,9 @@ namespace BusBuddy.WPF.Views.Main
             try
             {
                 // Create a window to host the RouteManagementView
-                var routeWindow = new Window
-                {
-                    Title = "🗺️ Route Management",
-                    Width = 1200,
-                    Height = 800,
-                    WindowStartupLocation = WindowStartupLocation.CenterOwner,
-                    Owner = this,
-                    Content = new RouteManagementView()
-                };
-
-                Logger.Debug("Showing RouteManagementView in modal dialog");
+                // TODO Step 2: navigationService.Navigate("routes")
+                var routeWindow = new Window { Title = "🗺️ Route Management", Width = 1200, Height = 800, WindowStartupLocation = WindowStartupLocation.CenterOwner, Owner = this, Content = new RouteManagementView() };
                 routeWindow.ShowDialog();
-                Logger.Information("RouteManagementView dialog closed");
                 RefreshRoutesGrid();
             }
             catch (Exception ex)
@@ -784,19 +785,9 @@ namespace BusBuddy.WPF.Views.Main
             try
             {
                 // Create a window to host the DriversView
-                var driversWindow = new Window
-                {
-                    Title = "👨‍✈️ Driver Management",
-                    Width = 1000,
-                    Height = 700,
-                    WindowStartupLocation = WindowStartupLocation.CenterOwner,
-                    Owner = this,
-                    Content = new DriversView()
-                };
-
-                Logger.Debug("Showing DriversView in modal dialog");
+                // TODO Step 2: navigationService.Navigate("drivers")
+                var driversWindow = new Window { Title = "👨‍✈️ Driver Management", Width = 1000, Height = 700, WindowStartupLocation = WindowStartupLocation.CenterOwner, Owner = this, Content = new DriversView() };
                 driversWindow.ShowDialog();
-                Logger.Information("DriversView dialog closed");
                 RefreshDriversGrid();
             }
             catch (Exception ex)
@@ -846,19 +837,9 @@ namespace BusBuddy.WPF.Views.Main
             try
             {
                 // Create a window to host the VehicleManagementView
-                var busesWindow = new Window
-                {
-                    Title = "🚐 Bus Management",
-                    Width = 1200,
-                    Height = 800,
-                    WindowStartupLocation = WindowStartupLocation.CenterOwner,
-                    Owner = this,
-                    Content = new VehicleManagementView()
-                };
-
-                Logger.Debug("Showing VehicleManagementView in modal dialog");
+                // TODO Step 2: navigationService.Navigate("buses")
+                var busesWindow = new Window { Title = "🚐 Bus Management", Width = 1200, Height = 800, WindowStartupLocation = WindowStartupLocation.CenterOwner, Owner = this, Content = new VehicleManagementView() };
                 busesWindow.ShowDialog();
-                Logger.Information("VehicleManagementView dialog closed");
                 RefreshBusesGrid();
             }
             catch (Exception ex)
