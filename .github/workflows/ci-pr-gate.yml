@@ -1,0 +1,159 @@
+name: CI PR Gate
+
+on:
+  push:
+    branches-ignore:
+      - master
+      - main
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-test-guard:
+    runs-on: windows-latest
+    timeout-minutes: 25
+    env:
+      DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 1
+      DOTNET_NOLOGO: 1
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 9.0.x
+
+      - name: Cache NuGet
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('**/*.csproj','**/global.json','**/NuGet.config') }}
+          restore-keys: |
+            nuget-${{ runner.os }}-
+
+      - name: Restore
+        run: dotnet restore BusBuddy.sln --nologo
+
+      - name: Build
+        run: dotnet build BusBuddy.sln --configuration Release --no-restore --nologo
+
+      - name: Test
+        id: tests
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Continue'
+          dotnet test BusBuddy.sln --configuration Release --no-build --logger "trx;LogFileName=test-results.trx" --verbosity minimal
+          $exit = $LASTEXITCODE
+          echo "testExitCode=$exit" >> $env:GITHUB_OUTPUT
+
+      - name: Run Phase Naming Guard
+        id: phaseguard
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Continue'
+          pwsh -File PowerShell/Validation/PhaseNamingGuard.ps1 | Tee-Object -FilePath guard-output.log
+          if ($LASTEXITCODE -ne 0) { echo "guardStatus=CHECK" >> $env:GITHUB_OUTPUT } else { echo "guardStatus=PASS" >> $env:GITHUB_OUTPUT }
+
+      - name: Syncfusion Regression Guard
+        id: syncfusionguard
+        shell: pwsh
+        run: |
+          $standard = Get-ChildItem -Recurse -Filter *.xaml | Select-String -Pattern "<DataGrid" -SimpleMatch | Select-Object -First 1
+          if ($standard) {
+            Write-Error "Standard WPF <DataGrid> usage detected: $($standard.Path):$($standard.LineNumber)"; echo "sfStatus=FAIL" >> $env:GITHUB_OUTPUT; exit 1
+          } else { echo "sfStatus=PASS" >> $env:GITHUB_OUTPUT }
+
+      - name: Collect Summary
+        id: summary
+        shell: pwsh
+        run: |
+          $buildStatus = 'PASS'
+          $testExit = '${{ steps.tests.outputs.testExitCode }}'
+          $guardStatus = '${{ steps.phaseguard.outputs.guardStatus }}'
+          $sfStatus = '${{ steps.syncfusionguard.outputs.sfStatus }}'
+          $testTrx = Get-ChildItem -Recurse -Filter test-results.trx | Select-Object -First 1
+          $testSummary = 'Not found'
+          $failed = 0
+          if ($testTrx) {
+            [xml]$trx = Get-Content $testTrx.FullName
+            $tot = [int]$trx.TestRun.ResultSummary.Counters.total
+            $failed = [int]$trx.TestRun.ResultSummary.Counters.failed
+            $passed = [int]$trx.TestRun.ResultSummary.Counters.passed
+            $testSummary = "Total=$tot Passed=$passed Failed=$failed"
+          }
+          echo "failedTests=$failed" >> $env:GITHUB_OUTPUT
+          echo "guard=$guardStatus" >> $env:GITHUB_OUTPUT
+          echo "sf=$sfStatus" >> $env:GITHUB_OUTPUT
+          $body = @()
+          $body += "### CI Summary"
+          $body += "* Branch: `${{ github.ref_name }}`"
+          $body += "* Build: $buildStatus"
+          $body += "* Tests: $testSummary (ExitCode=$testExit)"
+          $body += "* Naming Guard: $guardStatus"
+          $body += "* Syncfusion Guard: $sfStatus"
+          if ($guardStatus -ne 'PASS') {
+            $violations = Get-Content guard-output.log | Out-String
+            $body += "\n<details><summary>Naming Guard Output</summary>\n\n$violations\n</details>"
+          }
+          Set-Content -Path ci-summary.md -Value ($body -join "`n")
+          Add-Content -Path $env:GITHUB_ENV -Value "CI_SUMMARY<<EOF"
+          Get-Content ci-summary.md | Add-Content -Path $env:GITHUB_ENV
+          Add-Content -Path $env:GITHUB_ENV -Value "EOF"
+      - name: Quality Gate
+        id: gate
+        shell: pwsh
+        run: |
+          $failed = [int]'${{ steps.summary.outputs.failedTests }}'
+          $guard = '${{ steps.summary.outputs.guard }}'
+          $sf = '${{ steps.summary.outputs.sf }}'
+          if ($failed -gt 0 -or $guard -ne 'PASS' -or $sf -ne 'PASS') {
+            Write-Error "Quality gate failed: failedTests=$failed guard=$guard sf=$sf"; exit 1
+          } else { Write-Host "Quality gate passed." }
+
+      - name: Upload Summary Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-summary
+          path: ci-summary.md
+
+      - name: Create / Update PR
+        if: ${{ github.ref_type == 'branch' }}
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const core = require('@actions/core');
+            const {owner, repo} = context.repo;
+            const branch = context.ref.replace('refs/heads/','');
+            if (branch === 'master' || branch === 'main') {
+              core.info('Skipping PR creation for default branch');
+              return;
+            }
+            const prs = await github.rest.pulls.list({owner, repo, head: `${owner}:${branch}`, state: 'open'});
+            const body = process.env.CI_SUMMARY || 'CI summary unavailable';
+            const labels = [];
+            if (branch.startsWith('chore/')) labels.push('chore');
+            else if (branch.startsWith('feature/')) labels.push('feature');
+            else if (branch.startsWith('fix/')) labels.push('bug');
+            if (process.env.CI_SUMMARY && process.env.CI_SUMMARY.includes('Quality gate failed')) labels.push('ci-fail');
+            if (prs.data.length === 0) {
+              const pr = await github.rest.pulls.create({owner, repo, head: branch, base: 'master', title: `Merge ${branch}`, body, draft: false});
+              if (labels.length) await github.rest.issues.addLabels({owner, repo, issue_number: pr.data.number, labels});
+              core.notice(`PR created for ${branch}`);
+            } else {
+              const pr = prs.data[0];
+              await github.rest.pulls.update({owner, repo, pull_number: pr.number, body});
+              if (labels.length) await github.rest.issues.addLabels({owner, repo, issue_number: pr.number, labels});
+              core.notice(`PR updated (#${pr.number})`);
+            }
