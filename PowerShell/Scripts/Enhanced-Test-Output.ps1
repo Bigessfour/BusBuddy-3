@@ -1,40 +1,7 @@
-# Enhanced Test Output Capture for BusBuddy
-# Applies full output capture to all test execution scenarios
-
-#region Enhanced Test Output Functions
-
-function Get-BusBuddyTestOutput {
-    <#
-    .SYNOPSIS
-        Execute tests with complete output capture and no truncation
-
-    .DESCRIPTION
-        PowerShell 7.5.2 best practices: Only use documented output streams, error handling, and external command invocation.
-
-    .PARAMETER TestSuite
-        Type of tests to run (All, Unit, Integration, Validation, Core, WPF)
-
-    .PARAMETER ProjectPath
-        Path to solution or test project file
-
-    .PARAMETER SaveToFile
-        Save complete output to timestamped log file
-
-    .PARAMETER WatchMode
-        Enable continuous testing with file monitoring
-
-    .PARAMETER Filter
-        Custom test filter expression
-
-    .EXAMPLE
-        # Deprecated: Use bbTest or bbTestFull instead
-        bbTest -TestSuite "Unit"
-        bbTestFull -TestSuite "Core"
-    #>
-    [CmdletBinding()]
-    param(
-        [ValidateSet('All', 'Unit', 'Integration', 'Validation', 'Core', 'WPF')]
-        [string]$TestSuite = 'All',
+<# Hard Archived 2025-08-12: Enhanced-Test-Output.ps1 replaced by bbTest / module functions.
+Archive: Documentation/Archive/LegacyScripts/Enhanced-Test-Output.ps1
+#>
+throw "Archived: Use bbTest"
 
         [string]$ProjectPath = "BusBuddy.sln",
 

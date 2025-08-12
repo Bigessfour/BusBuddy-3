@@ -63,6 +63,11 @@ namespace BusBuddy.WPF.ViewModels.GoogleEarth
     /// </summary>
     public event EventHandler? PrintRequested;
 
+    // Map interaction events (view listens and applies actual SfMap changes)
+    public event EventHandler? ZoomInRequested;
+    public event EventHandler? ZoomOutRequested;
+    public event EventHandler? CenterRequested;
+
         /// <summary>
         /// Latest captured map snapshot in PNG format (used for embedding into route PDF exports).
         /// A separate capturing routine in the View should set this after rendering a visual to a RenderTargetBitmap and encoding to PNG.
@@ -294,6 +299,7 @@ namespace BusBuddy.WPF.ViewModels.GoogleEarth
     public ICommand AddMarkerCommand { get; private set; } = null!;
     public ICommand PrintRouteMapsCommand { get; private set; } = null!;
     public ICommand GenerateEligibilityRoutePdfCommand { get; private set; } = null!; // New command to trigger eligibility PDF generation
+    public ICommand BulkPlotEligibleStudentsCommand { get; private set; } = null!; // New: auto geocode + plot eligible rural students
 
         #endregion
 
@@ -391,18 +397,126 @@ namespace BusBuddy.WPF.ViewModels.GoogleEarth
 
         private async Task LoadAllRoutesOnMapAsync()
         {
-            // Create sample route data for demonstration
-            var sampleRoute = new RouteModel
+            try
             {
-                RouteId = 1,
-                RouteName = "Sample Route 1",
-                Date = DateTime.Today,
-                School = "Sample School",
-                IsActive = true
-            };
-            // Sample simple line across two points
-            var samplePoints = new[] { new Point(38.1527, -102.7204), new Point(38.20, -102.68) };
-            await UpdatePolylineAsync(samplePoints);
+                // Sample route + line (placeholder until real multi-route overlay logic implemented)
+                var sampleRoute = new RouteModel
+                {
+                    RouteId = 1,
+                    RouteName = "Sample Route 1",
+                    Date = DateTime.Today,
+                    School = "Sample School",
+                    IsActive = true
+                };
+                var samplePoints = new[] { new Point(38.1527, -102.7204), new Point(38.20, -102.68) };
+                await UpdatePolylineAsync(samplePoints);
+            }
+            catch (Exception ex)
+            {
+                Logger.Warning(ex, "LoadAllRoutesOnMapAsync sample overlay failed");
+            }
+        }
+
+        /// <summary>
+        /// Automatically loads all students, filters out Lamar and in-town Wiley addresses, geocodes missing coordinates, eligibility-checks, and plots markers.
+        /// Pattern leverages existing IStudentService + IGeocodingService + IEligibilityService interfaces. All operations are sequential for MVP reliability.
+        /// </summary>
+        private async Task BulkPlotEligibleStudentsAsync()
+        {
+            if (_studentService is null)
+            {
+                StatusMessage = "Student service unavailable";
+                return;
+            }
+            StatusMessage = "Loading students...";
+            List<BusBuddy.Core.Models.Student> students;
+            try
+            {
+                students = await _studentService.GetAllStudentsAsync();
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Bulk plot: failed loading students");
+                StatusMessage = "Load students failed";
+                return;
+            }
+
+            if (students.Count == 0)
+            {
+                StatusMessage = "No students";
+                return;
+            }
+
+            // Filter: exclude Lamar anywhere in address, and exclude obvious in-town Wiley addresses (simple contains heuristic on HomeAddress / City == Wiley)
+            var filtered = students.Where(s =>
+                (string.IsNullOrWhiteSpace(s.HomeAddress) || !s.HomeAddress.Contains("Lamar", StringComparison.OrdinalIgnoreCase)) &&
+                (string.IsNullOrWhiteSpace(s.City) || !s.City.Equals("Wiley", StringComparison.OrdinalIgnoreCase))
+            ).ToList();
+
+            int geocoded = 0, eligibleCount = 0, plotted = 0;
+            StatusMessage = $"Filtering {filtered.Count} students...";
+
+            foreach (var stu in filtered)
+            {
+                double? lat = (double?)stu.Latitude; // Student entity uses decimal?; cast carefully
+                double? lon = (double?)stu.Longitude;
+                if ((!lat.HasValue || !lon.HasValue) && _geocodingService != null)
+                {
+                    try
+                    {
+                        var geo = await _geocodingService.GeocodeAsync(stu.HomeAddress, stu.City, stu.State, stu.Zip);
+                        if (geo.HasValue)
+                        {
+                            lat = geo.Value.latitude;
+                            lon = geo.Value.longitude;
+                            geocoded++;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.Warning(ex, "Geocode failed for student {Id}", stu.StudentId);
+                        continue; // skip
+                    }
+                }
+
+                if (!lat.HasValue || !lon.HasValue)
+                {
+                    continue; // cannot plot
+                }
+
+                bool eligible = true; // Default to true if no service
+                if (_eligibilityService != null)
+                {
+                    try
+                    {
+                        eligible = await _eligibilityService.IsEligibleAsync(lat.Value, lon.Value);
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.Warning(ex, "Eligibility check failed for student {Id}", stu.StudentId);
+                        eligible = false;
+                    }
+                }
+                if (!eligible)
+                {
+                    continue;
+                }
+                eligibleCount++;
+
+                // Plot marker; label with name (or ID) — clustering handled in PlotStop
+                try
+                {
+                    PlotStop(lat.Value, lon.Value, new[] { stu.StudentName ?? stu.StudentNumber ?? "Student" }, stu.StudentName);
+                    plotted++;
+                }
+                catch (Exception ex)
+                {
+                    Logger.Warning(ex, "Plot failed for student {Id}", stu.StudentId);
+                }
+            }
+
+            StatusMessage = $"Plotted {plotted} markers (Eligible {eligibleCount}, Geocoded {geocoded})";
+            Logger.Information("Bulk plot complete Eligible={Eligible} Geocoded={Geocoded} Plotted={Plotted} From={Filtered} Total={Total}", eligibleCount, geocoded, plotted, filtered.Count, students.Count);
         }
 
         private async Task UpdateMapForRouteAsync(string routeName)
@@ -458,14 +572,14 @@ namespace BusBuddy.WPF.ViewModels.GoogleEarth
         {
             StatusMessage = "Zooming in...";
             Logger.Information("Map zoom in requested");
-            // TODO: Implement zoom in functionality
+            try { ZoomInRequested?.Invoke(this, EventArgs.Empty); } catch (Exception ex) { Logger.Warning(ex, "ZoomIn event dispatch failed"); }
         }
 
         private void ZoomOut()
         {
             StatusMessage = "Zooming out...";
             Logger.Information("Map zoom out requested");
-            // TODO: Implement zoom out functionality
+            try { ZoomOutRequested?.Invoke(this, EventArgs.Empty); } catch (Exception ex) { Logger.Warning(ex, "ZoomOut event dispatch failed"); }
         }
 
         // MVP stub implementations for XAML-bound commands
@@ -473,24 +587,61 @@ namespace BusBuddy.WPF.ViewModels.GoogleEarth
         {
             StatusMessage = "Centering map on fleet...";
             Logger.Information("Center on fleet requested");
+            try { CenterRequested?.Invoke(this, EventArgs.Empty); } catch (Exception ex) { Logger.Warning(ex, "Center event dispatch failed"); }
         }
 
         private void ShowAllBuses()
         {
             StatusMessage = "Showing all buses...";
             Logger.Information("Show all buses requested");
+            try
+            {
+                // If ActiveBuses have coordinates (future), plot; placeholder logs only for MVP.
+            }
+            catch (Exception ex)
+            {
+                Logger.Warning(ex, "ShowAllBuses failed");
+            }
         }
 
         private void ShowRoutes()
         {
             StatusMessage = "Showing routes on map...";
             Logger.Information("Show routes requested");
+            try
+            {
+                if (Routes.Count == 0)
+                {
+                    StatusMessage = "No routes loaded";
+                    return;
+                }
+                var first = Routes[0];
+                // Demo polyline: use existing Wiley anchor + small offset
+                var pts = new [] { new System.Windows.Point(38.1527, -102.7204), new System.Windows.Point(38.1600, -102.7000) };
+                _ = UpdatePolylineAsync(pts);
+            }
+            catch (Exception ex)
+            {
+                Logger.Warning(ex, "ShowRoutes failed");
+            }
         }
 
         private void ShowSchools()
         {
             StatusMessage = "Showing schools on map...";
             Logger.Information("Show schools requested");
+            try
+            {
+                // Ensure school anchor marker exists; if not, add again.
+                if (!MapMarkers.Any(m => m.Label != null && m.Label.Contains("School", StringComparison.OrdinalIgnoreCase)))
+                {
+                    PlotStop(38.1527, -102.7204, null, "Wiley School RE-13JT");
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Warning(ex, "ShowSchools failed");
+            }
         }
 
         private void TrackSelectedBus()
@@ -508,6 +659,16 @@ namespace BusBuddy.WPF.ViewModels.GoogleEarth
         {
             StatusMessage = "Resetting map view...";
             Logger.Information("Reset view requested");
+            try
+            {
+                RouteLinePoints.Clear();
+                RouteLineUpdated?.Invoke(this, new RouteLineEventArgs(RouteLinePoints));
+                StatusMessage = "Map reset";
+            }
+            catch (Exception ex)
+            {
+                Logger.Warning(ex, "ResetView failed");
+            }
         }
 
         private void OnPrintRequested()
@@ -877,7 +1038,7 @@ namespace BusBuddy.WPF.ViewModels.GoogleEarth
                     try
                     {
                         // Defer to UI thread to open preview window hosting Syncfusion PdfViewerControl
-                        System.Windows.Application.Current.Dispatcher.BeginInvoke(new Action(() =>
+                        _ = System.Windows.Application.Current.Dispatcher.BeginInvoke(new Action(() => // fire-and-forget UI preview (intentional)
                         {
                             try
                             {

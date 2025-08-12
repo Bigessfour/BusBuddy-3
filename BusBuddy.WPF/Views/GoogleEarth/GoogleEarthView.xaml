@@ -148,6 +148,7 @@
                               Margin="0,4"
                               HorizontalAlignment="Stretch"/>
 
+                <TextBlock Text="Map Layers &amp; Overlays" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryTextBrush}" Margin="0,0,0,4"/>
                 <syncfusion:ButtonAdv Content="🛣️ Show Routes"
                               Command="{Binding ShowRoutesCommand}"
                               Background="{DynamicResource ButtonBackgroundBrush}"
@@ -165,6 +166,7 @@
                               HorizontalAlignment="Stretch"/>
 
                 <!-- MVP demo: Add a stop marker (plots coordinates near Wiley). Uses AddMarkerCommand with "lat,lon,label" string parameter -->
+                <TextBlock Text="Markers" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryTextBrush}" Margin="0,12,0,4"/>
                 <syncfusion:ButtonAdv Content="➕ Add Stop (Demo)"
                               Command="{Binding AddMarkerCommand}"
                               CommandParameter="38.1530,-102.7200,Demo Stop"
@@ -174,6 +176,7 @@
                               Margin="0,4"
                               HorizontalAlignment="Stretch"/>
 
+                <TextBlock Text="Eligibility" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryTextBrush}" Margin="0,12,0,4"/>
                 <syncfusion:ButtonAdv Content="✅ Check Eligibility (Demo)"
                               Command="{Binding CheckEligibilityCommand}"
                               Background="{DynamicResource ButtonBackgroundBrush}"
@@ -181,6 +184,16 @@
                               Padding="10,8"
                               Margin="0,8,0,0"
                               HorizontalAlignment="Stretch"/>
+
+                    <!-- Bulk plot rural eligible students (auto geocode + eligibility filter) -->
+                    <syncfusion:ButtonAdv Content="🗺️ Bulk Plot Eligible Students"
+                                          ToolTip="Auto-geocode + plot all rural (non-Lamar, out-of-town) eligible students"
+                                          Command="{Binding BulkPlotEligibleStudentsCommand}"
+                                          Background="{DynamicResource ButtonBackgroundBrush}"
+                                          Foreground="{DynamicResource ButtonForegroundBrush}"
+                                          Padding="10,8"
+                                          Margin="0,4,0,0"
+                                          HorizontalAlignment="Stretch"/>
 
                 <!-- Generate Eligibility Route PDF (auto-build pseudo route) -->
                 <syncfusion:ButtonAdv Content="🧾 Generate Eligibility PDF"
@@ -334,7 +347,7 @@
                                                        AllowFiltering="False"
                                                        SelectionMode="Single"
                                                        GridLinesVisibility="Both"
-                                                       HeaderLinesVisibility="All">
+                                                          HeaderLinesVisibility="Both">
                                     <syncfusion:SfDataGrid.Columns>
                                         <syncfusion:GridTextColumn HeaderText="Bus #"
                                                                    MappingName="BusNumber"

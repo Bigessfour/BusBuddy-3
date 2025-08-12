@@ -1,12 +1,11 @@
-#!/usr/bin/env pwsh
-<#
-.SYNOPSIS
-    Wrapper for runtime error capture with proper waiting and output monitoring
-.DESCRIPTION
-    This script properly waits for the runtime error capture to complete and monitors output
-.EXAMPLE
-    .\Runtime-Capture-Monitor.ps1 -Duration 60
+<# Hard Archived 2025-08-12: Runtime-Capture-Monitor.ps1 superseded by structured logging / telemetry.
+Archive: Documentation/Archive/LegacyScripts/Runtime-Capture-Monitor.ps1
 #>
+throw "Archived: Use Serilog + telemetry pipeline"
+
+# original header retained for context below (unreachable)
+# #!/usr/bin/env pwsh
+# .SYNOPSIS wrapper...
 
 param(
     [int]$Duration = 30,

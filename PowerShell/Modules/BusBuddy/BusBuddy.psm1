@@ -58,12 +58,13 @@ function Get-BusBuddyTestOutput {
     try {
         $startTime = Get-Date
         Write-Information "🏗️ Building solution first..." -InformationAction Continue
-        $buildCmd = "dotnet build $ProjectPath --configuration Debug --verbosity $Verbosity"
-        $buildStdOutPath = "logs/build-stdout-$timestamp.log"
-        $buildStdErrPath = "logs/build-stderr-$timestamp.log"
-        $buildOutput = & $buildCmd 2>&1 | Tee-Object -FilePath $buildStdOutPath
+    $buildCmd = "dotnet build $ProjectPath --configuration Debug --verbosity $Verbosity" # used in invocation below
+    $buildStdOutPath = "logs/build-stdout-$timestamp.log"
+    $buildStdErrPath = "logs/build-stderr-$timestamp.log" # now used to persist stderr lines
+    $buildOutput = & $buildCmd 2>&1 | Tee-Object -FilePath $buildStdOutPath
         $buildStdout = Get-Content $buildStdOutPath -Raw
-        $buildStderr = $buildOutput | Where-Object { $_ -match 'error' -or $_ -match 'FAILED' }
+    $buildStderr = $buildOutput | Where-Object { $_ -match 'error' -or $_ -match 'FAILED' }
+    if ($buildStderr) { $buildStderr | Out-File -FilePath $buildStdErrPath -Encoding utf8 }
         $buildExitCode = $LASTEXITCODE
         if ($buildExitCode -ne 0) {
             Write-Error "❌ Build failed! Cannot proceed with testing."
@@ -229,11 +230,11 @@ function Start-BusBuddyTestWatch {
     $watcher.EnableRaisingEvents = $true
     $action = {
         $path = $Event.SourceEventArgs.FullPath
-        $changeType = $Event.SourceEventArgs.ChangeType
-        Write-Information "📝 File changed: $path" -InformationAction Continue
+        $ct = $Event.SourceEventArgs.ChangeType
+        Write-Information ("📝 File {0}: {1}" -f $ct, $path) -InformationAction Continue
         Start-Sleep -Seconds 1  # Debounce
         Write-Information "🔄 Re-running tests..." -InformationAction Continue
-    Get-BusBuddyTestOutput -TestSuite $using:TestSuite -SaveToFile
+        Get-BusBuddyTestOutput -TestSuite $using:TestSuite -SaveToFile
     }
     Register-ObjectEvent -InputObject $watcher -EventName "Changed" -Action $action
     try {
@@ -563,6 +564,50 @@ function Write-BusBuddyError {
             Write-Error "Critical error in Write-BusBuddyError: $($_.Exception.Message)"
         }
     }
+}
+
+#endregion
+
+#region Mantra ID (Context Correlation)
+<#
+.SYNOPSIS
+  Manage a session-scoped "Mantra" ID used to correlate BusBuddy operations.
+.DESCRIPTION
+  Loads from environment variable BUSBUDDY_MANTRA_ID, then optional .mantra file at project root,
+  else generates a short GUID fragment. Exposed via Get-BusBuddyMantraId. Reset-BusBuddyMantraId
+  can rotate it. Pattern aligns with Microsoft docs on environment variables and advanced functions
+  (about_Environment_Variables, about_Functions_Advanced, about_Prompts).
+#>
+try {
+    if (-not $script:MantraId) {
+        $script:MantraId = $env:BUSBUDDY_MANTRA_ID
+        if (-not $script:MantraId) {
+            $rootForMantra = try { Get-BusBuddyProjectRoot } catch { $null }
+            if ($rootForMantra) {
+                $mantraFile = Join-Path $rootForMantra '.mantra'
+                if (Test-Path $mantraFile) {
+                    $script:MantraId = (Get-Content $mantraFile -Raw).Trim()
+                }
+            }
+        }
+        if (-not $script:MantraId) {
+            $script:MantraId = ([guid]::NewGuid().ToString('N').Substring(0,8))
+            Write-Information "Generated transient Mantra ID: $script:MantraId" -InformationAction Continue
+        }
+    }
+} catch {
+    Write-Information "(Non-fatal) Mantra initialization issue: $($_.Exception.Message)" -InformationAction Continue
+}
+
+function Get-BusBuddyMantraId {
+    [CmdletBinding()] [OutputType([string])] param() return $script:MantraId
+}
+
+function Reset-BusBuddyMantraId {
+    [CmdletBinding()] param()
+    $script:MantraId = ([guid]::NewGuid().ToString('N').Substring(0,8))
+    Write-Information "New Mantra ID: $script:MantraId" -InformationAction Continue
+    return $script:MantraId
 }
 
 #endregion
@@ -3031,6 +3076,10 @@ try { Set-Alias -Name 'bb-run-capture' -Value 'Invoke-BusBuddyRunCapture' -Descr
 try { Set-Alias -Name 'bbDiagnostic' -Value 'Invoke-BusBuddyDiagnostic' -Description 'Run diagnostics and output environment, module, and MVP status' -Force } catch { Write-Error "Alias 'bbDiagnostic' could not be set: $($_.Exception.Message)" -ErrorAction SilentlyContinue }
 try { Set-Alias -Name 'bbWelcome' -Value 'Show-BusBuddyWelcome' -Description 'Show categorized command overview' -Force } catch { Write-Error "Failed to set alias 'bbWelcome': $($_.Exception.Message)" }
 
+# Mantra / context aliases
+try { Set-Alias -Name 'bbMantra' -Value 'Get-BusBuddyMantraId' -Description 'Show current Mantra (context) ID' -Force } catch { Write-Error "Alias 'bbMantra' could not be set: $($_.Exception.Message)" -ErrorAction SilentlyContinue }
+try { Set-Alias -Name 'bbMantraReset' -Value 'Reset-BusBuddyMantraId' -Description 'Generate a new transient Mantra ID' -Force } catch { Write-Error "Alias 'bbMantraReset' could not be set: $($_.Exception.Message)" -ErrorAction SilentlyContinue }
+
 #endregion
 
 #region Enhanced Test Output Functions
@@ -3103,9 +3152,9 @@ function Get-BusBuddyTestOutput {
         $startTime = Get-Date
         Write-Information "🏗️ Building solution first..." -InformationAction Continue
 
-        $buildCmd = "dotnet build $ProjectPath --configuration Debug --verbosity $Verbosity"
-        $buildStdOutPath = "logs/build-stdout-$timestamp.log"
-        $buildOutput = & dotnet build $ProjectPath --configuration Debug --verbosity $Verbosity 2>&1 | Tee-Object -FilePath $buildStdOutPath
+    # Direct invocation; removed unused buildCmd variable to satisfy analyzer
+    $buildStdOutPath = "logs/build-stdout-$timestamp.log"
+    $buildOutput = & dotnet build $ProjectPath --configuration Debug --verbosity $Verbosity 2>&1 | Tee-Object -FilePath $buildStdOutPath
 
         $buildStdout = Get-Content $buildStdOutPath -Raw -ErrorAction SilentlyContinue
         $buildStderr = $buildOutput | Where-Object { $_ -match 'error' -or $_ -match 'FAILED' }
@@ -3293,8 +3342,8 @@ function Start-BusBuddyTestWatch {
 
     $action = {
         $path = $Event.SourceEventArgs.FullPath
-        $changeType = $Event.SourceEventArgs.ChangeType
-        Write-Information "📝 File changed: $path" -InformationAction Continue
+        $ct = $Event.SourceEventArgs.ChangeType
+        Write-Information ("📝 File {0}: {1}" -f $ct, $path) -InformationAction Continue
         Start-Sleep -Seconds 1  # Debounce
         Write-Information "🔄 Re-running tests..." -InformationAction Continue
         Get-BusBuddyTestOutput -TestSuite $using:TestSuite -SaveToFile
@@ -3344,15 +3393,19 @@ function Enable-BusBuddyEnhancedTestOutput {
 #region Exports
 
 
-# Restrict module exports to only the core build/run/clean/restore commands and their kebab-case aliases
+# Export core commands plus health & test (needed for advertised aliases)
 Export-ModuleMember -Function @(
     'Invoke-BusBuddyBuild',
     'Invoke-BusBuddyRun',
     'Invoke-BusBuddyClean',
-    'Invoke-BusBuddyRestore'
+    'Invoke-BusBuddyRestore',
+    'Invoke-BusBuddyTest',        # ensure bbTest works
+    'Invoke-BusBuddyHealthCheck', # ensure bbHealth works
+    'Get-BusBuddyMantraId',       # Mantra accessor
+    'Reset-BusBuddyMantraId'      # Mantra reset
 ) -Alias @(
-    'bbBuild', 'bbRun', 'bbClean', 'bbRestore',
-    'bb-build', 'bb-run', 'bb-clean', 'bb-restore'
+    'bbBuild', 'bbRun', 'bbClean', 'bbRestore', 'bbTest', 'bbHealth', 'bbMantra', 'bbMantraReset',
+    'bb-build', 'bb-run', 'bb-clean', 'bb-restore', 'bb-test', 'bb-health'
 )
 
 #endregion

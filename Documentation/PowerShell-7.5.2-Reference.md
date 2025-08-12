@@ -238,7 +238,7 @@ $isDellSystem = (Get-CimInstance Win32_ComputerSystem).Manufacturer -like "*Dell
 
 - **Source PDF**: `PowerShell\powershell-scripting-powershell-7.5.pdf`
 - **Microsoft Docs**: [PowerShell 7.5 Release Notes](https://docs.microsoft.com/powershell)
-- **BusBuddy Implementation**: `PowerShell-Profile\Modules\BusBuddy-Phase2.psm1`
+- **BusBuddy Implementation**: (legacy milestone-specific module removed)
 - **GitHub Issues**: Track PowerShell-related issues in repository
 
 ---

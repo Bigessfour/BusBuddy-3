@@ -1,57 +1,7 @@
-#Requires -Version 7.5
-<#
-.SYNOPSIS
-    Debug BusBuddy DI Container Registration using Wintellect Tools
-
-.DESCRIPTION
-    Comprehensive debugging script to trace DI container setup and identify
-    missing registrations using both BusBuddy utilities and Wintellect debugging tools.
-
-.NOTES
-    Requires WintellectPowerShell module and VS Code C# debugging capabilities
+<# Hard Archived 2025-08-12: Debug-DIContainer.ps1 superseded by bbHealth future DI diagnostics.
+Original stored under Documentation/Archive/LegacyScripts/Debug-DIContainer.ps1
 #>
-
-[CmdletBinding()]
-param(
-    [switch]$DetailedOutput,
-    [switch]$ExportToFile
-)
-
-function Invoke-BusBuddyDIContainerDiagnostic {
-    <#
-    .SYNOPSIS
-        Run DI Container diagnostic analysis
-    .PARAMETER DetailedOutput
-        Show detailed output information
-    .PARAMETER ExportToFile
-        Export results to a timestamped file
-    #>
-    [CmdletBinding()]
-    param(
-        [switch]$DetailedOutput,
-        [switch]$ExportToFile
-    )
-
-Write-Host "🔍 BusBuddy DI Container Diagnostic Report" -ForegroundColor Cyan
-Write-Host "=" * 60 -ForegroundColor Gray
-
-#region System Environment Check
-Write-Host "`n📋 System Environment:" -ForegroundColor Yellow
-$envInfo = @{
-    "PowerShell Version" = $PSVersionTable.PSVersion
-    ".NET Version" = (dotnet --version)
-    "Current Directory" = $PWD.Path
-    "BusBuddy Module" = (Get-Module BusBuddy -ErrorAction SilentlyContinue)?.Version ?? "Not Loaded"
-    "Wintellect Module" = (Get-Module WintellectPowerShell -ErrorAction SilentlyContinue)?.Version ?? "Not Loaded"
-}
-
-$envInfo.GetEnumerator() | ForEach-Object {
-    Write-Host "  ✓ $($_.Key): $($_.Value)" -ForegroundColor Green
-}
-#endregion
-
-#region BusBuddy Health Check
-Write-Host "`n🏥 BusBuddy Health Check:" -ForegroundColor Yellow
+throw "Archived: Use bbHealth (future DI section)"
 try {
     $healthResult = Test-BusBuddyHealth
     Write-Host "  ✅ Health check completed successfully" -ForegroundColor Green

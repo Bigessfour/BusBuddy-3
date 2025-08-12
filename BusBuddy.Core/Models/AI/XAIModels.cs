@@ -117,30 +117,6 @@ namespace BusBuddy.Core.Models
         public string SpecialRequirements { get; set; } = string.Empty;
     }
 
-    public class Phase1ProgressRequest
-    {
-        public string ProjectName { get; set; } = string.Empty;
-        public string CurrentPhase { get; set; } = string.Empty;
-        public int DaysInDevelopment { get; set; }
-        public int TeamSize { get; set; }
-        public DateTime TargetCompletion { get; set; }
-        public string BuildStatus { get; set; } = string.Empty;
-        public int TestsPassingCount { get; set; }
-        public int TotalTestsCount { get; set; }
-        public double CodeCoverage { get; set; }
-        public int CriticalIssuesCount { get; set; }
-        public int CompletedComponents { get; set; }
-        public int TotalComponents { get; set; }
-        public int LinesOfCode { get; set; }
-        public int CommitsThisWeek { get; set; }
-        public int OpenPullRequests { get; set; }
-        public int MergedPullRequests { get; set; }
-        public double AverageBuildTime { get; set; }
-        public int ActiveDevelopers { get; set; }
-        public int IssuesClosedThisWeek { get; set; }
-        public int DocumentationPages { get; set; }
-        public List<string> CurrentFocusAreas { get; set; } = new();
-    }
 
     public class DevelopmentStateRequest
     {
@@ -282,17 +258,6 @@ namespace BusBuddy.Core.Models
         public double CapacityOptimization { get; set; }
     }
 
-    public class PhaseAnalysisResult
-    {
-        public string OverallHealth { get; set; } = string.Empty;
-        public int HealthScore { get; set; }
-        public string RiskLevel { get; set; } = string.Empty;
-        public string[] Recommendations { get; set; } = Array.Empty<string>();
-        public DateTime PredictedCompletionDate { get; set; }
-        public string[] NextMilestones { get; set; } = Array.Empty<string>();
-        public string TechnicalDebt { get; set; } = string.Empty;
-        public string TeamProductivity { get; set; } = string.Empty;
-    }
 
     public class DevelopmentInsights
     {

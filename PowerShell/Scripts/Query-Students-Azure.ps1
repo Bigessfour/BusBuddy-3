@@ -1,63 +1,7 @@
-#requires -Version 7.0
-<#
-    Query-Students-Azure.ps1 — Queries Students from Azure SQL using Entra ID (-G) auth
-
-    References:
-    - Microsoft sqlcmd docs (Windows): https://learn.microsoft.com/sql/tools/sqlcmd/sqlcmd-utility
-    - PowerShell output streams best practices: https://learn.microsoft.com/powershell/scripting/learn/deep-dives/everything-about-output-streams
-
-    Usage:
-      .\PowerShell\Scripts\Query-Students-Azure.ps1 -Server "busbuddy-server-sm2.database.windows.net" -Database "BusBuddyDB" -Top 10
-
-    Notes:
-    - Requires Azure login with an account that has access (use: az login)
-    - Requires sqlcmd on PATH
+<# Hard Archived 2025-08-12: Duplicate of root Query-Students-Azure.ps1 kept canonical.
+Original preserved in git history. Use root script at repository root.
 #>
-param(
-    [Parameter(Mandatory=$false)]
-    [string]$Server = "busbuddy-server-sm2.database.windows.net",
-
-    [Parameter(Mandatory=$false)]
-    [string]$Database = "BusBuddyDB",
-
-    [Parameter(Mandatory=$false)]
-    [int]$Top = 10
-)
-
-Set-StrictMode -Version Latest
-$ErrorActionPreference = 'Stop'
-
-# Define $base for any downstream downloads in this session (avoid undefined variable errors)
-$script:base = "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master"
-
-function Test-Tool([string]$Name, [string]$Check) {
-    if (-not (Get-Command $Check -ErrorAction SilentlyContinue)) {
-        throw "Required tool '$Name' not found. Please install and ensure it is on PATH."
-    }
-}
-
-try {
-    Test-Tool -Name 'sqlcmd' -Check 'sqlcmd'
-
-    $query = @"
-SELECT TOP ($Top)
-    StudentId,
-    StudentName,
-    HomeAddress,
-    Grade,
-    City
-FROM Students
-ORDER BY StudentId DESC;
-"@
-
-    Write-Information "Querying Azure SQL [$Database@$Server] for TOP $Top students..." -InformationAction Continue
-
-    # -G uses Azure AD/Entra ID authentication (docs: sqlcmd -G)
-    $sqlCmdParams = @('-S', $Server, '-d', $Database, '-G', '-Q', $query)
-    $output = & sqlcmd @sqlCmdParams 2>&1
-    $sqlcmdExitCode = $LASTEXITCODE
-
-    if ($sqlcmdExitCode -ne 0) {
+throw "Archived duplicate. Use root ./Query-Students-Azure.ps1"
         Write-Error ("sqlcmd failed (exit {0}): {1}" -f $sqlcmdExitCode, ($output -join ' '))
         exit $sqlcmdExitCode
     }

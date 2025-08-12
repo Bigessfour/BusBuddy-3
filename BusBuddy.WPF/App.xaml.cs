@@ -10,7 +10,8 @@ using Microsoft.Extensions.Configuration;
 using BusBuddy.Core.Data;
 using BusBuddy.Core.Services;
 using BusBuddy.Core.Services.Interfaces;
-using BusBuddy.Core.Extensions; // AddPhase1Services extension for Geo services
+// Phase-based extension removed; direct registrations used instead
+using BusBuddy.Core.Extensions; // Needed for AddDataServices extension
 using BusBuddy.WPF.ViewModels;
 using Microsoft.EntityFrameworkCore;
 using System.Threading;
@@ -251,8 +252,19 @@ namespace BusBuddy.WPF
                 // Use the proper extension method that registers IBusBuddyDbContextFactory
                 services.AddDataServices(configuration);
 
-                // Phase 1 core services (GeoDataService, etc.)
-                services.AddPhase1Services();
+                // Core geo/eligibility services (previously in phase extension)
+                services.AddScoped<IGeoDataService>(sp =>
+                {
+                    var geeApiBaseUrl = "https://earthengine.googleapis.com";
+                    var geeAccessToken = Environment.GetEnvironmentVariable("GEE_ACCESS_TOKEN") ?? "placeholder_token";
+                    return new GeoDataService(geeApiBaseUrl, geeAccessToken);
+                });
+                services.AddSingleton<IEligibilityService>(_ =>
+                {
+                    var district = Path.Combine(AppContext.BaseDirectory, "Assets", "Maps", "WileyDistrict", "WileyDistrict.shp");
+                    var town = Path.Combine(AppContext.BaseDirectory, "Assets", "Maps", "WileyTown", "WileyTown.shp");
+                    return new ShapefileEligibilityService(district, town);
+                });
 
                 // Register core business services for Students, Routes, Buses, Drivers
                 services.AddScoped<IStudentService, StudentService>();

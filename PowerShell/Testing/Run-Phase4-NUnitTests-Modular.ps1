@@ -1,205 +1,22 @@
-#requires -Version 7.5
-<#
-.SYNOPSIS
-    Phase 4 Modular NUnit Test Runner - VS Code NUnit Test Runner Integration
-
-.DESCRIPTION
-    Microsoft PowerShell standards-compliant testing script that integrates with
-    VS Code NUnit Test Runner extension for comprehensive test automation.
-
-.PARAMETER TestSuite
-    Specifies which test suite to run. Valid options: All, Unit, Integration, Validation, Core, WPF
-
-.PARAMETER GenerateReport
-    Generates a detailed markdown report with test results and compliance status
-
-.PARAMETER WatchMode
-    Enables continuous testing with file system monitoring
-
-.PARAMETER Detailed
-    Provides verbose output with detailed test information
-
-.EXAMPLE
-    .\Run-Phase4-NUnitTests-Modular.ps1 -TestSuite All -GenerateReport
-    Runs all tests and generates a comprehensive report
-
-.EXAMPLE
-    .\Run-Phase4-NUnitTests-Modular.ps1 -TestSuite Unit -WatchMode
-    Runs unit tests in continuous watch mode
-
-.NOTES
-    Version: 1.0.0
-    Author: BusBuddy Development Team
-    Requires: PowerShell 7.5.2+, .NET 8.0, NUnit Test Runner Extension
-#>
-
-[CmdletBinding()]
+<#!
+Thin wrapper maintained for backward compatibility.
+Prefer: Start-BusBuddyPhase4TestAdvanced (module function).
+Parameters mirror advanced function subset.
+!#>
 param(
-    [Parameter(Mandatory = $false)]
-    [ValidateSet('All', 'Unit', 'Integration', 'Validation', 'Core', 'WPF')]
-    [string]$TestSuite = 'All',
-
-    [Parameter(Mandatory = $false)]
-    [switch]$GenerateReport,
-
-    [Parameter(Mandatory = $false)]
-    [switch]$WatchMode,
-
-    [Parameter(Mandatory = $false)]
-    [switch]$Detailed
+    [ValidateSet('All','Unit','Integration','Validation','Core','WPF')][string]$TestSuite='All',
+    [switch]$Detailed,
+    [switch]$CollectCoverage,
+    [switch]$SaveFullOutput
 )
 
-Set-StrictMode -Version 3.0
-$ErrorActionPreference = 'Stop'
+Import-Module (Join-Path (Join-Path $PSScriptRoot '..') 'Modules/BusBuddy.Testing/BusBuddy.Testing.psd1') -Force
+return Start-BusBuddyPhase4TestAdvanced -TestSuite $TestSuite -Detailed:$Detailed -CollectCoverage:$CollectCoverage -SaveFullOutput:$SaveFullOutput
+<# Archived (2025-08-12): Modular NUnit bridge replaced by bbTest. See Documentation/Archive/LegacyScripts/Run-Phase4-NUnitTests-Modular.ps1 #>
+throw "Run-Phase4-NUnitTests-Modular.ps1 archived. Use bbTest"
 
-# Constants
-$WORKSPACE_ROOT = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
-$SOLUTION_FILE = Join-Path $WORKSPACE_ROOT "BusBuddy.sln"
-$TEST_RESULTS_DIR = Join-Path $WORKSPACE_ROOT "TestResults"
-$REPORTS_DIR = Join-Path $WORKSPACE_ROOT "Documentation\Reports"
-
-# Ensure directories exist
-if (-not (Test-Path $TEST_RESULTS_DIR)) {
-    New-Item -ItemType Directory -Path $TEST_RESULTS_DIR -Force | Out-Null
-}
-if (-not (Test-Path $REPORTS_DIR)) {
-    New-Item -ItemType Directory -Path $REPORTS_DIR -Force | Out-Null
-}
-
-function Write-BusBuddyHeader {
-    [CmdletBinding()]
-    param()
-
-    $header = @"
-🚌 BusBuddy Phase 4 Modular Testing System
-=============================================
-Date: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')
-Test Suite: $TestSuite
-Watch Mode: $($WatchMode.IsPresent)
-Report Generation: $($GenerateReport.IsPresent)
-"@
-
-    Write-Information $header -InformationAction Continue
-    Write-Information "" -InformationAction Continue
-}
-
-function Get-TestFilter {
-    [CmdletBinding()]
-    param(
-        [Parameter(Mandatory = $true)]
-        [string]$Suite
-    )
-
-    switch ($Suite) {
-        'All' { return $null }
-        'Unit' { return 'Category=Unit' }
-        'Integration' { return 'Category=Integration' }
-        'Validation' { return 'Category=Validation' }
-        'Core' { return 'TestName~Core' }
-        'WPF' { return 'TestName~WPF' }
-        default { return $null }
-    }
-}
-
-function Invoke-TestExecution {
-    [CmdletBinding()]
-    param(
-        [Parameter(Mandatory = $false)]
-        [string]$Filter
-    )
-
-    try {
-        Write-Information "🔍 Discovering tests..." -InformationAction Continue
-
-        # Build solution first with enhanced output capture
-        Write-Information "🏗️ Building solution..." -InformationAction Continue
-
-        # Use enhanced build capture via module if available
-        $buildOutputModule = Join-Path (Split-Path $PSScriptRoot -Parent) "Modules\BusBuddy.BuildOutput\BusBuddy.BuildOutput.psd1"
-        if (Test-Path $buildOutputModule) {
-            Import-Module $buildOutputModule -Force -ErrorAction SilentlyContinue
-            $buildResult = Get-BusBuddyBuildOutput -ProjectPath $SOLUTION_FILE -Configuration "Debug" -SaveToFile
-
-            if ($buildResult.ExitCode -ne 0) {
-                Write-Error "Build failed. Cannot proceed with testing. Check $($buildResult.OutputFile) for details."
-                return $false
-            }
-        } else {
-            # Fallback with output capture
-            $buildOutput = & dotnet build $SOLUTION_FILE --configuration Debug --verbosity detailed 2>&1
-
-            # Save build output
-            $buildLogFile = Join-Path $TEST_RESULTS_DIR "phase4-build-log-$(Get-Date -Format 'yyyyMMdd-HHmmss').txt"
-            $buildOutput | Out-File -FilePath $buildLogFile -Encoding UTF8 -Width 500
-            Write-Information "Build output saved to: $buildLogFile" -InformationAction Continue
-
-            if ($LASTEXITCODE -ne 0) {
-                Write-Error "Build failed. Cannot proceed with testing. Check $buildLogFile for details."
-                return $false
-            }
-        }
-
-        # Prepare test command with enhanced output capture
-        $testArgs = @(
-            'test'
-            $SOLUTION_FILE
-            '--configuration', 'Debug'
-            '--logger', 'trx'
-            '--results-directory', $TEST_RESULTS_DIR
-            '--collect:"XPlat Code Coverage"'
-            '--verbosity', 'detailed'  # Always use detailed for Phase 4
-            '--no-build'  # Already built above
-        )
-
-        if ($Filter) {
-            $testArgs += '--filter', $Filter
-            Write-Information "📋 Filter applied: $Filter" -InformationAction Continue
-        }
-
-        Write-Information "🧪 Executing tests with enhanced output capture..." -InformationAction Continue
-
-        # Execute tests with full output capture
-        $testStartTime = Get-Date
-
-        # Prepare output file paths
-        $testStdOutPath = Join-Path $TEST_RESULTS_DIR "phase4-test-stdout-$(Get-Date -Format 'yyyyMMdd-HHmmss').txt"
-        $testStdErrPath = Join-Path $TEST_RESULTS_DIR "phase4-test-stderr-$(Get-Date -Format 'yyyyMMdd-HHmmss').txt"
-
-        # Use Start-Process for complete output capture
-        $testProcess = Start-Process -FilePath "dotnet" -ArgumentList $testArgs -RedirectStandardOutput $testStdOutPath -RedirectStandardError $testStdErrPath -NoNewWindow -PassThru
-        $testProcess.WaitForExit()
-        $testExitCode = $testProcess.ExitCode
-
-        $testEndTime = Get-Date
-        $testDuration = $testEndTime - $testStartTime
-
-        # Read output from files
-        $testStdout = if (Test-Path $testStdOutPath) { Get-Content $testStdOutPath -Raw } else { "" }
-        $testStderr = if (Test-Path $testStdErrPath) { Get-Content $testStdErrPath -Raw } else { "" }
-
-        # Save complete test output
-        $testLogFile = Join-Path $TEST_RESULTS_DIR "phase4-test-log-$(Get-Date -Format 'yyyyMMdd-HHmmss').txt"
-        $completeTestOutput = @"
-=== PHASE 4 NUNIT TEST LOG ===
-Timestamp: $(Get-Date -Format "yyyy-MM-dd HH:mm:ss")
-Filter: $Filter
-Duration: $($testDuration.TotalSeconds) seconds
-Exit Code: $testExitCode
-
-=== TEST STDOUT ===
-$testStdout
-
-=== TEST STDERR ===
-$testStderr
-
-=== TEST SUMMARY ===
-"@
-
-        $completeTestOutput | Out-File -FilePath $testLogFile -Encoding UTF8 -Width 500
-        Write-Information "Complete test output saved to: $testLogFile" -InformationAction Continue
-
-        # Display output to console (with some formatting)
-        Write-Host "`n=== TEST OUTPUT ===" -ForegroundColor Cyan
+# legacy snippet (unreachable)
+# Write-Host "`n=== TEST OUTPUT ===" -ForegroundColor Cyan
         $testStdout -split "`n" | ForEach-Object {
             if ($_ -match "Passed|✓") {
                 Write-Host $_ -ForegroundColor Green

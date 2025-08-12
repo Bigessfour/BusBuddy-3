@@ -33,6 +33,9 @@ namespace BusBuddy.WPF.Views.Main
     /// </summary>
     public partial class MainWindow : ChromelessWindow
     {
+    // Explicit reference placeholder to satisfy analyzer if generated partial field not yet recognized
+    // At runtime, the XAML-generated field MainDockingManager will be used.
+    private DockingManager? _designTimeDockingManagerAccessor => this.FindName("MainDockingManager") as DockingManager;
         private static readonly ILogger Logger = Log.ForContext<MainWindow>();
         private static readonly int DockActivatedWidthBump = 120; // consolidated width bump constant
         private readonly Guid _windowInstanceId = Guid.NewGuid(); // correlation id for structured logs
@@ -63,7 +66,8 @@ namespace BusBuddy.WPF.Views.Main
             {
                 Logger.Debug("Calling InitializeComponent to build visual tree");
                 // Restore normal WPF initialization so x:Name fields (StudentsGrid, MainDockingManager, etc.) are generated
-                InitializeComponent();
+                // Explicit 'this.' to help certain analyzers/linkers detect generated partial method
+                this.InitializeComponent();
 
                 Logger.Debug("Applying Syncfusion theme");
                 ApplySyncfusionTheme();
@@ -799,6 +803,36 @@ namespace BusBuddy.WPF.Views.Main
             {
                 Logger.Error(ex, "Error opening Drivers view");
                 MessageBox.Show($"Error opening Drivers view: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        /// <summary>
+        /// Show / activate the Map (Google Earth) pane inside the DockingManager.
+        /// </summary>
+        private void MapButton_Click(object sender, RoutedEventArgs e)
+        {
+            Logger.Debug("MapButton_Click event triggered");
+            try
+            {
+                if (MainDockingManager != null)
+                {
+                    try
+                    {
+                        // Activate by header text (Syncfusion ActivateWindow expects string header in current version build context)
+                        MainDockingManager.ActivateWindow("🌍 Map");
+                        Logger.Information("Map pane activation attempted via header lookup");
+                    }
+                    catch (Exception inner)
+                    {
+                        Logger.Warning(inner, "Primary ActivateWindow by header failed; attempting manual focus");
+                        var mapPane = this.FindName("MapPane") as ContentControl;
+                        mapPane?.Focus();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Error activating Map pane");
             }
         }
 

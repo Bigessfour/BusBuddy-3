@@ -100,7 +100,7 @@
                                    AllowFiltering="True"
                                    SelectionMode="Single"
                                    GridLinesVisibility="Both"
-                                   HeaderLinesVisibility="All"
+                                   HeaderLinesVisibility="Both"
                                    ShowRowHeader="True"
                                    ColumnSizer="Star"
                                    Margin="10">

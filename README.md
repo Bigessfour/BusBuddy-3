@@ -183,6 +183,8 @@ dotnet ef migrations list --project BusBuddy.Core
 
 ## 🏗️ **Architecture**
 
+> August 2025 Streamlining: Service interfaces are being migrated into `BusBuddy.Core/Services/Contracts`, experimental XAI placeholders collapsed into archive (`experiments/xai/XAI-ARCHIVE.md`), and centralized PowerShell alias registration introduced (`Register-BusBuddyAliases`).
+
 ### **Technology Stack**
 | Component | Technology | Version |
 |-----------|------------|---------|
@@ -374,8 +376,9 @@ bb-test-status             # Check current test status
 ```
 
 ### **Test Structure**
+Legacy Phase 3/4 harness scripts have been archived (see `Documentation/Archive/LegacyScripts/INDEX.md`). Current active tests:
 - **Unit Tests**: `BusBuddy.Tests/Core/` - Core business logic validation
-- **Integration Tests**: `BusBuddy.Tests/Phase3Tests/` - Database and service interactions
+- **Integration Tests**: `BusBuddy.Tests/Phase3Tests/` - Database and service interactions (rename planned post-MVP)
 - **Validation Tests**: `BusBuddy.Tests/ValidationTests/` - Input validation and error handling
 
 ### **Test Categories**
@@ -389,9 +392,9 @@ bb-test-status             # Check current test status
 | **WPF** | `TestName~WPF` | UI and presentation layer |
 
 ### **VS Code Integration**
+Legacy Phase 4 tasks removed; use standard NUnit Test Explorer or `bbTest` commands.
 - **NUnit Test Runner Extension**: Automatic test discovery and execution
-- **Task Explorer**: Run "🧪 BB: Phase 4 Modular Tests" for comprehensive testing
-- **Watch Mode**: Use "🔄 BB: Phase 4 Test Watch" for continuous testing
+- **PowerShell**: `bbTest` (all) / future `bbTest -Watch` (planned)
 
 ### **Advanced Features**
 - **Watch Mode**: Monitors `*.cs` and `*.xaml` files for changes, auto-runs tests
@@ -439,7 +442,7 @@ Test coverage reports are generated in `TestResults/` directory with detailed TR
 
 ## 📈 **Project Status**
 
-### **Current Phase**: MVP Development (Phase 4 Complete)
+### **Current Phase**: MVP Development (Historic Phase 4 artifacts archived)
 - ✅ **Foundation**: Complete (.NET 9, Syncfusion, EF Core)
 - ✅ **Testing Infrastructure**: Operational (NUnit, coverage reporting)
 - ✅ **PowerShell Automation**: Core functionality stable (compliance improvements needed)

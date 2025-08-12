@@ -5,6 +5,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:syncfusion="http://schemas.syncfusion.com/wpf"
         xmlns:route="clr-namespace:BusBuddy.WPF.Views.Route"
+    xmlns:viewsGE="clr-namespace:BusBuddy.WPF.Views.GoogleEarth"
         mc:Ignorable="d"
         Title="🚌 BusBuddy MVP - Student Route Management"
         Height="900"
@@ -58,6 +59,11 @@
                                           Click="PrintEligibilityPdfButton_Click" FontSize="14" FontWeight="SemiBold"
                                           ToolTip="Print the last generated eligibility PDF (opens system print dialog)"
                                           AutomationProperties.Name="Print Eligibility PDF"/>
+                    <syncfusion:ButtonAdv Label="🌍 Map" Margin="0,0,18,0" Padding="15,8"
+                                          Background="{DynamicResource BusBuddy.Brush.Primary}" Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}" BorderThickness="0"
+                                          Click="MapButton_Click" FontSize="14" FontWeight="SemiBold"
+                                          ToolTip="Show Google Earth / Geospatial Map"
+                                          AutomationProperties.Name="Map View Navigation"/>
                         <syncfusion:ButtonAdv Label="Students" Margin="0,0,10,0" Padding="15,8"
                                           Background="{DynamicResource BusBuddy.Brush.Primary}" Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}" BorderThickness="0"
                                           Click="StudentsButton_Click" FontSize="14" FontWeight="SemiBold"
@@ -300,6 +306,16 @@
                                               ToolTip="Manage driver schedules and assignments"
                                               AutomationProperties.Name="Driver Schedule Management"/>
                     </StackPanel>
+                </Grid>
+            </ContentControl>
+
+            <!-- Map Panel (Google Earth Integration) -->
+            <ContentControl x:Name="MapPane"
+                            syncfusion:DockingManager.Header="🌍 Map"
+                            syncfusion:DockingManager.State="Document"
+                            Background="{DynamicResource BusBuddy.Brush.Panel.Background}">
+                <Grid Background="{DynamicResource BusBuddy.Brush.Panel.Content}">
+                    <viewsGE:GoogleEarthView />
                 </Grid>
             </ContentControl>
 

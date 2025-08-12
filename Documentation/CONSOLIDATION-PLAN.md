@@ -8,7 +8,7 @@
 ### **🚨 Critical Issues Identified**
 - **230+ markdown files** across the project (excessive)
 - **Numerous duplicates** (files with "(1)", "(2)" suffixes)
-- **Legacy reports** from various development phases (Phase2, Phase3, Phase4)
+- **Legacy reports tied to earlier internal milestone labels**
 - **Outdated references** to old command names and obsolete features
 - **Fragmented information** spread across multiple similar files
 - **Maintenance burden** - impossible to keep 230+ files current
@@ -28,7 +28,7 @@
 4. **API-REFERENCE.md** (new) - Technical APIs and integrations
 
 #### **Tier 3: Archive/Legacy (MOVE TO ARCHIVE OR DELETE)**
-1. **Phase reports** (Phase2, Phase3, Phase4) - Archive
+1. **Internal milestone reports** - Archive
 2. **Duplicate files** with "(1)", "(2)" suffixes - Delete
 3. **Obsolete analysis reports** - Archive  
 4. **Legacy implementation guides** - Archive
@@ -60,7 +60,7 @@ BusBuddy/
 ```
 
 ### **Step 3: Files to DELETE (Legacy/Obsolete)**
-- All Phase-specific reports (20+ files)
+- All milestone-specific legacy reports (20+ files)
 - Duplicate files with numbered suffixes (30+ files)
 - Obsolete analysis reports (15+ files)
 - Legacy workflow guides (10+ files)

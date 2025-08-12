@@ -510,7 +510,9 @@ namespace BusBuddy.WPF.Views.GoogleEarth
                     if (e.NewValue is GoogleEarthViewModel newViewModel)
                     {
                         Logger.Information("Google Earth view model connected successfully");
-
+                        newViewModel.ZoomInRequested += (_, _) => Dispatcher.Invoke(() => ApplyZoom(+1));
+                        newViewModel.ZoomOutRequested += (_, _) => Dispatcher.Invoke(() => ApplyZoom(-1));
+                        newViewModel.CenterRequested += (_, _) => Dispatcher.Invoke(CenterOnCurrentMarkers);
                         // Wire up any additional ViewModel events or initialize background operations
                         Task.Run(async () =>
                         {
@@ -926,6 +928,50 @@ namespace BusBuddy.WPF.Views.GoogleEarth
                 {
                     _disposed = true;
                 }
+            }
+        }
+
+        private void ApplyZoom(int delta)
+        {
+            try
+            {
+                if (MapControl is null) return;
+                var current = MapControl.ZoomLevel; // documented property on SfMap
+                var target = current + delta;
+                if (target < 1) target = 1;
+                if (target > 18) target = 18; // practical upper bound for tile providers
+                MapControl.ZoomLevel = target;
+                Logger.Debug("Map zoom changed from {Old} to {New}", current, target);
+            }
+            catch (Exception ex)
+            {
+                Logger.Warning(ex, "ApplyZoom failed");
+            }
+        }
+
+        private void CenterOnCurrentMarkers()
+        {
+            try
+            {
+                if (MapControl is null) return;
+                if (DataContext is not GoogleEarthViewModel vm) return;
+                if (vm.MapMarkers.Count == 0) return;
+                double minLat = double.MaxValue, maxLat = double.MinValue, minLon = double.MaxValue, maxLon = double.MinValue;
+                foreach (var mk in vm.MapMarkers)
+                {
+                    if (mk.Latitude < minLat) minLat = mk.Latitude;
+                    if (mk.Latitude > maxLat) maxLat = mk.Latitude;
+                    if (mk.Longitude < minLon) minLon = mk.Longitude;
+                    if (mk.Longitude > maxLon) maxLon = mk.Longitude;
+                }
+                var centerLat = (minLat + maxLat) / 2d;
+                var centerLon = (minLon + maxLon) / 2d;
+                // TODO: Implement centering logic using supported SfMap API (e.g., setting GeoCoordinate/Viewport once verified in docs)
+                Logger.Debug("Computed centroid for potential centering {Lat},{Lon} (API pending)", centerLat, centerLon);
+            }
+            catch (Exception ex)
+            {
+                Logger.Warning(ex, "CenterOnCurrentMarkers failed");
             }
         }
     }

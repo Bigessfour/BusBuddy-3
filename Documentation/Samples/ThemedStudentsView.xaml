@@ -1,0 +1,50 @@
+<!-- Migrated sample from former /docs/samples during documentation unification (August 2025) -->
+<UserControl x:Class="BusBuddy.WPF.Views.Samples.ThemedStudentsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:syncfusion="http://schemas.syncfusion.com/wpf"
+             mc:Ignorable="d"
+             syncfusion:SfSkinManager.ApplyStylesOnApplication="True">
+
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="pack://application:,,,/BusBuddy.WPF;component/Resources/SyncfusionV30_Validated_ResourceDictionary.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/BusBuddy.WPF;component/Resources/FluentDarkTheme.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/BusBuddy.WPF;component/Resources/FluentLightTheme.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </UserControl.Resources>
+
+    <Grid Background="{DynamicResource BusBuddy.Brush.Surface}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <syncfusion:ButtonAdv Grid.Row="0"
+                              Margin="0,0,0,12"
+                              Content="Add Student"
+                              Background="{DynamicResource ButtonBackgroundBrush}"
+                              Foreground="{DynamicResource ButtonForegroundBrush}"
+                              BorderBrush="{DynamicResource ButtonBorderBrush}" />
+
+        <syncfusion:SfDataGrid Grid.Row="1"
+                               ItemsSource="{Binding Students}"
+                               SelectedItem="{Binding SelectedStudent, Mode=TwoWay}"
+                               AutoGenerateColumns="False"
+                               AllowSorting="True"
+                               AllowFiltering="True"
+                               SelectionMode="Single"
+                               GridLinesVisibility="Both"
+                               HeaderLinesVisibility="All"
+                               Background="{DynamicResource BusBuddy.Brush.Surface}">
+            <syncfusion:SfDataGrid.Columns>
+                <syncfusion:GridTextColumn MappingName="StudentNumber" HeaderText="Student ID" />
+                <syncfusion:GridTextColumn MappingName="StudentName" HeaderText="Name" />
+            </syncfusion:SfDataGrid.Columns>
+        </syncfusion:SfDataGrid>
+    </Grid>
+</UserControl>

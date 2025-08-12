@@ -17,8 +17,14 @@ $ErrorActionPreference = "Stop"
 # Import BusBuddy testing module
 Import-Module "$PSScriptRoot\..\PowerShell\BusBuddy.Testing.psm1" -Force
 
-Write-Host "🚌 BusBuddy Route Testing Suite" -ForegroundColor Cyan
-Write-Host "Test Suite: $TestSuite" -ForegroundColor Yellow
+<# Hard Archived 2025-08-12: Test-RouteService.ps1 superseded by bbTest filters.
+Archive: Documentation/Archive/LegacyScripts/Test-RouteService.ps1
+#>
+throw "Archived: Use bbTest"
+
+# unreachable legacy code below
+# Write-Host "🚌 BusBuddy Route Testing Suite" -ForegroundColor Cyan
+# Write-Host "Test Suite: $TestSuite" -ForegroundColor Yellow
 
 try {
     switch ($TestSuite) {

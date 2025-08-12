@@ -1,30 +1,7 @@
-# Minimal Output Capture Fix for BusBuddy MVP
-# Uses built-in PowerShell features only - no external dependencies
-
-function Invoke-CommandWithFullOutput {
-    <#
-    .SYNOPSIS
-        Minimal function to capture full command output without truncation
-    .PARAMETER Command
-        The command to execute
-    .PARAMETER Arguments
-        Arguments for the command
-    #>
-    param(
-        [string]$Command,
-        [string[]]$Arguments = @()
-    )
-
-    # Simple output capture using built-in Start-Process
-    $psi = New-Object System.Diagnostics.ProcessStartInfo
-    $psi.FileName = $Command
-    $psi.Arguments = $Arguments -join " "
-    $psi.RedirectStandardOutput = $true
-    $psi.RedirectStandardError = $true
-    $psi.UseShellExecute = $false
-    $psi.CreateNoWindow = $true
-
-    $process = [System.Diagnostics.Process]::Start($psi)
+<# Hard Archived 2025-08-12: MinimalOutputCapture.ps1 merged into module utilities.
+Archive: Documentation/Archive/LegacyScripts/MinimalOutputCapture.ps1
+#>
+throw "Archived: Use module utility version"
     $output = $process.StandardOutput.ReadToEnd()
     $stderrOutput = $process.StandardError.ReadToEnd()
     $process.WaitForExit()

@@ -164,7 +164,6 @@ profile_dump.txt
 !cleanup-legacy-files.ps1
 !debug-app-startup.ps1
 !fix-analyzer-warnings.ps1
-!phase1-completion-verification.ps1
 !run-comprehensive-pipeline.ps1
 !run-with-logging.ps1
 !Intel-Hybrid-Performance-Optimizer.ps1

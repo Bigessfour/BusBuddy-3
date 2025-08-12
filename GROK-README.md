@@ -1,114 +1,152 @@
-# Delta — Aug 11, 2025 (RouteAssignmentView City column fix + green run confirmation)
+<!--
+  Grok-Readme.md
+  Purpose: Concise, machine-readable snapshot for AI agents (Grok-4) to orient and selectively fetch code.
+  Policy: No legacy milestone labels; only essential paths enumerated. JSON block below is stable for parsers.
+-->
 
-Summary
-- Fixed incomplete <City> GridTextColumn in `RouteAssignmentView.xaml` (missing MappingName/Width and closing tag) that risked XAML parse errors.
-- Rebuilt solution: success (Core/WPF/Tests all PASS).
-- Executed explicit run: application launches; only expected non-MVP XAI warnings (feature intentionally disabled) observed.
-- No Syncfusion regression: retained `SfDataGrid` usage; no fallback to standard `DataGrid` introduced.
+# 🚌 BusBuddy – AI Fetch Reference
 
-Details
-- File: `BusBuddy.WPF/Views/Route/RouteAssignmentView.xaml`
-- Change: Completed `<syncfusion:GridTextColumn HeaderText="City" MappingName="City" Width="120" />` inside AssignedStudentsGrid columns collection.
-- Rationale: Prevent latent `XamlParseException` and ensure assigned students grid retains City column parity with unassigned grid.
-- Verification: Post-edit build green; run started via `dotnet run --project BusBuddy.WPF/BusBuddy.WPF.csproj` with no runtime XAML errors logged.
-
-Warnings Context
-- Repeated "XAI Route Optimizer not found" warnings are expected under Greenfield Reset (XAI disabled for MVP). No action required now; suppression to be tracked under existing non-MVP service re‑enable plan.
-
-Follow‑Up (Deferred)
-- Centralize common converters (BooleanToVisibilityConverter) to reduce duplicate resource declarations.
-- Add lightweight UI smoke test to assert both Unassigned and Assigned `SfDataGrid` column schemas include City.
+**Date:** 2025-08-12  
+**Build:** Passing (`dotnet build BusBuddy.sln`)  
+**Focus:** Students, Routes, basic Vehicle listing  
+**Deferred:** Advanced AI optimization, external map integrations, rich analytics dashboards  
+**UI:** Syncfusion WPF (SfDataGrid everywhere)  
+**Data:** EF Core 9 with local dev DB (file-based)  
+**Guard:** `PowerShell/Validation/PhaseNamingGuard.ps1` (ensures legacy milestone labels absent)  
 
 ---
+## 🔧 Quick Commands
+```
+dotnet build BusBuddy.sln
+dotnet run --project BusBuddy.WPF/BusBuddy.WPF.csproj
+dotnet test BusBuddy.Tests/BusBuddy.Tests.csproj
+```
 
-## Tech Debt — StringComparison consistency (case-insensitive search)
+---
+## 🤖 Fetchability Spec (Machine Readable)
+```json
+{
+  "specVersion": "1.0",
+  "generatedUtc": "2025-08-12T00:00:00Z",
+  "repository": "Bigessfour/BusBuddy-3",
+  "solution": "BusBuddy.sln",
+  "projects": {
+    "core": "BusBuddy.Core/BusBuddy.Core.csproj",
+    "wpf": "BusBuddy.WPF/BusBuddy.WPF.csproj",
+    "tests": "BusBuddy.Tests/BusBuddy.Tests.csproj"
+  },
+  "entrypoints": {
+    "startupXaml": "BusBuddy.WPF/App.xaml",
+    "startupCode": "BusBuddy.WPF/App.xaml.cs",
+    "programMain": "BusBuddy.WPF/Program.cs",
+    "dbContexts": "BusBuddy.Core/Data/*Context.cs",
+    "guard": "PowerShell/Validation/PhaseNamingGuard.ps1"
+  },
+  "essentialDirectories": [
+    "BusBuddy.Core/Models",
+    "BusBuddy.Core/Services",
+    "BusBuddy.Core/Data",
+    "BusBuddy.WPF/ViewModels",
+    "BusBuddy.WPF/Views",
+    "BusBuddy.WPF/Resources",
+    "BusBuddy.WPF/Utilities",
+    "BusBuddy.Tests"
+  ],
+  "notableFiles": [
+    "Directory.Build.props",
+    "global.json",
+    "NuGet.config",
+    "Grok-Readme.md",
+    "GROK-README.md",
+    "README.md",
+    "BusBuddy-Practical.ruleset"
+  ],
+  "commands": {
+    "build": "dotnet build BusBuddy.sln",
+    "run": "dotnet run --project BusBuddy.WPF/BusBuddy.WPF.csproj",
+    "test": "dotnet test BusBuddy.Tests/BusBuddy.Tests.csproj"
+  },
+  "testing": {
+    "framework": "NUnit + FluentAssertions",
+    "sample": "BusBuddy.Tests/StudentsViewModelTests.cs"
+  },
+  "conventions": {
+    "services": "Interfaces prefixed with I; implementation named *Service",
+    "viewModels": "*ViewModel.cs implements INotifyPropertyChanged",
+    "uiGrid": "Use Syncfusion SfDataGrid – never standard DataGrid",
+    "logging": "Move toward Serilog; avoid introducing other logging abstractions"
+  },
+  "excludeGlobs": [
+    "bin/**",
+    "obj/**",
+    "logs/**",
+    "Documentation/Archive/**",
+    "TestResults/**",
+    "**/*.disabled"
+  ],
+  "integrityGuards": [
+    "PowerShell/Validation/PhaseNamingGuard.ps1"
+  ],
+  "fetchStrategy": {
+    "priorityOrder": [
+      "solution",
+      "projects",
+      "entrypoints",
+      "essentialDirectories",
+      "notableFiles"
+    ],
+    "notes": "Shallow clone prioritized paths; skip excluded globs to reduce token usage"
+  },
+  "doc": "Unlisted paths are either generated, legacy, or non-essential for reasoning."
+}
+```
 
-Context: We’re standardizing on documented, allocation-free, case-insensitive string matching patterns. For MVP, fixes are limited to Student views and MainWindow. Remaining instances are tracked here as tech debt.
+---
+## 📂 Orientation Table
+| Area | Path / Glob | Purpose |
+|------|-------------|---------|
+| Solution | `BusBuddy.sln` | Aggregates projects |
+| Core Models | `BusBuddy.Core/Models/*.cs` | Domain entities |
+| Data Layer | `BusBuddy.Core/Data/*Context.cs` | EF Core contexts/config |
+| Services | `BusBuddy.Core/Services/*.cs` | Business logic |
+| Startup Code | `BusBuddy.WPF/App.xaml.cs` | DI + app lifecycle |
+| Views | `BusBuddy.WPF/Views/**/*.xaml` | UI definitions (Syncfusion) |
+| ViewModels | `BusBuddy.WPF/ViewModels/**/*.cs` | Presentation logic |
+| Resources | `BusBuddy.WPF/Resources/**/*.xaml` | Themes & styles |
+| Tests | `BusBuddy.Tests/**/*.cs` | Test suites |
+| Guard | `PowerShell/Validation/PhaseNamingGuard.ps1` | Naming enforcement |
 
-- Verified compliant (no action now):
-  - BusBuddy.WPF/ViewModels/Student/StudentsViewModel.cs — uses IndexOf(..., StringComparison.OrdinalIgnoreCase)
-  - BusBuddy.WPF/Views/Main/MainWindow.xaml(.cs) — no ToLower/ToUpper Contains patterns detected
+---
+## 🧪 Testing Snapshot
+- Framework: NUnit + FluentAssertions
+- Categories in use: Unit / Integration / UI / Performance
+- Sample focus file: `StudentsViewModelTests.cs`
 
-- Tech debt to address post-MVP:
-  1) BusBuddy.Core/Services/DriverService.cs — replace lowercasing + Contains with StringComparison overload (or IndexOf) for case-insensitive search.
-     - Recommended pattern (C#/.NET documented API):
-       - Prefer: source.Contains(term, StringComparison.OrdinalIgnoreCase)
-       - Or: source?.IndexOf(term, StringComparison.OrdinalIgnoreCase) >= 0
-       - Avoid: source.ToLowerInvariant().Contains(term.ToLowerInvariant())
+---
+## 🚧 Deferred Feature Notes (High-Level)
+| Domain | Deferred Item | Reason |
+|--------|---------------|--------|
+| Routes | Auto-assign heuristic | Requires geo distance service |
+| Mapping | Full map visualization/export | External integration pending |
+| Analytics | Multi-dashboard KPIs | Needs stabilized data model |
+| Reporting | Printable route summaries | Awaiting reporting module selection |
 
-  2) BusBuddy.WPF/ViewModels/Vehicle/VehicleManagementViewModel.cs (lines ~166–169) — uses ToLower().Contains(searchLower, StringComparison.OrdinalIgnoreCase). Refactor to:
-     - v.Make?.Contains(searchText, StringComparison.OrdinalIgnoreCase) == true
-     - v.Model?.Contains(searchText, StringComparison.OrdinalIgnoreCase) == true
-     - v.LicenseNumber?.Contains(searchText, StringComparison.OrdinalIgnoreCase) == true
-     - v.BusNumber?.Contains(searchText, StringComparison.OrdinalIgnoreCase) == true
+---
+## ♻️ Maintenance Rules
+1. Update only when entrypoints / structure meaningfully change.
+2. JSON block: append fields (avoid renames) to keep consumers stable.
+3. Keep excluded globs accurate to prevent unnecessary large fetches.
 
-  3) Documentation examples:
-     - Documentation/Reference/Student-Entry-Examples.md (search examples)
-     - Documentation/Reference/Database-Schema.md (search examples)
-     Update examples to match the production pattern above to prevent copy-paste propagation.
+---
+## � Retrieval Recipe (Agent-Friendly)
+1. Parse JSON block.
+2. Fetch solution + project files.
+3. Pull startup + DbContext files.
+4. Traverse essential directories (breadth-first, skip exclusions).
+5. Sample tests for usage patterns.
 
-Notes:
-- This follows official .NET guidance to use StringComparison for culture/ordinal behavior instead of allocating ToLower/ToUpper strings. See: https://learn.microsoft.com/dotnet/standard/base-types/best-practices-strings#recommendations-for-string-operations
-- MVP scope rule: Only Student views/MainWindow were eligible for code changes now; all other occurrences are intentionally deferred and recorded here.
-
-### Tech Debt — Route Planning & Assignment (Aug 11, 2025)
-Scope: Deferred polish items now that minimal route planning (create route, add basic stops, assign/remove students, assign bus/driver) is functional.
-
-| ID | Item | Current State | Impact if Deferred | Rationale for Deferral |
-|----|------|---------------|--------------------|------------------------|
-| RP-01 | Batch / multi-select student assignment | Not implemented (single student at a time) | More clicks for large cohorts | MVP demonstrates concept; volume optimization later |
-| RP-02 | Auto-assign (proximity / capacity heuristic) | Stub (AutoAssignStudentsAsync placeholder) | Manual effort to distribute students | Algorithm + geo data dependency; postpone complexity |
-| RP-03 | Live capacity enforcement in mock mode | Service path enforces; mock ignores | Possible over-assignment in mock | Mock path is demo-only; production path already guarded |
-| RP-04 | Persistent StudentCount sync (DB update without reload) | Incremented in-memory only | Counts may drift if external changes occur | Full recalculation/batch query can wait |
-| RP-05 | Route stop edit dialog (name/address geo-coded) | Add stop uses placeholder values | Less informative stops | Geo integration + validation later |
-| RP-06 | Distance & duration calculation | Fields present; no computation | Lacks analytics insight | Requires map/geo service integration |
-| RP-07 | Map visualization & printable maps | Stub (View Map) | No spatial verification | Mapping stack (Syncfusion Maps / GIS) post-MVP |
-| RP-08 | Route validation rules (capacity, stop order, duplicates) | Minimal (name + one stop) | Potential bad data slips through | Advanced ruleset after core usage feedback |
-| RP-09 | Driver/bus availability conflict checking | Assign overwrites silently | Possible logical conflicts | Need scheduling matrix first |
-| RP-10 | Bulk unassignment / route re-balance tool | Manual one-by-one | Slower reconfiguration | Depends on batch UI (RP-01) |
-| RP-11 | Utilization & capacity dashboard | Service method partially present | Limited oversight | Requires aggregation + UI charts |
-| RP-12 | Drag & drop reorder for students / stops | Stops have manual move buttons only | Slightly less intuitive UX | Usability enhancement, not correctness |
-| RP-13 | Undo / revert last assignment | Not available | Irreversible single misclick | Requires lightweight command stack |
-| RP-14 | Background refresh after external assignments | Manual refresh only | Stale data risk in multi-user | Needs eventing / polling infra |
-
-Planned Order (post-MVP): RP-01 → RP-02 → RP-07 → RP-06 → RP-11 (builds on earlier data fidelity and geo foundations).
-
-Acceptance (MVP) Criteria Met:
-- Create/select route, add placeholder stops, assign/remove students, assign bus/driver, simple validation & activation.
-- StudentCount increments in-memory on assignment/removal (visual feedback) — full persistence recalculation deferred (RP-04).
-
-### Tech Debt — Route Stop Reordering Persistence (Aug 11, 2025)
-Context: `ReorderRouteStopsAsync` updates `StopOrder` in-memory but test verification shows unchanged ordering (in-memory provider still returns 1:1,2:2,3:3 after attempted reorder). Root cause under investigation — likely EF in-memory provider behavior or missing flush sequence rather than business logic mapping.
-
-Current Observations:
-- Method loads all stops, assigns sequential new StopOrder based on provided ordered IDs, then `SaveChangesAsync()`.
-- No exceptions; logs indicate success; verification context reads pre-change ordering.
-- Entity model for `RouteStop` confirms `StopOrder` is a mapped, required int.
-
-Impact:
-- UI drag/drop or move-up/down features relying on server persistence could show stale order after reload.
-- Re-sequencing dependent logic (timing recalculation) may compute from stale ordering if re-queried.
-
-Interim Mitigation:
-- Client-side collections already re-ordered for immediate UX feedback.
-- Timing logic can proceed off in-memory order while persistence fix deferred.
-
-Next Steps (Post-MVP):
-1. Add integration test using real SQLite in-memory (shared connection) instead of EF InMemory to validate persistence semantics.
-2. Inspect EF change tracker entries (debug logging) to confirm property state modifications.
-3. If needed, issue explicit `context.RouteStops.Update(stop)` inside loop or raw SQL fallback.
-4. Consider adding a rowversion or UpdatedDate update to force EF detection (if concurrency watchers involved).
-
-Tracking ID: RS-REORDER-PERSIST
-
-
-
-# 🚌 BusBuddy Project - Grok Development Status
-
-**Last Updated:** August 11, 2025 — RouteAssignmentView XAML converter parse fix, JSON root-array seeding fallback, build props duplicate cleanup; prior: RouteAssignmentViewModel corruption repair & constructor overloads added; CA1869 fix (cached JsonSerializerOptions); UI Buttons/Forms Validation, GoogleEarth theming/cleanup, Activity DataContext, Unit Tests stabilization plan; StudentsViewModel + EF change detection fixes; new tests ✅  
-**Current Status:** Clean Build; Geo stack wired (SfMap + overlays + PIP eligibility + offline geocoding); UI buttons/forms validated across modules  
-**Repository Status:** Build Success — EF Core aligned; WPF mapping features validated  
-**Key Achievement:** End-to-end student → geocode → map plotting; eligibility (in district AND not in town) operational
+---
+Generated for AI-assisted repository introspection. Human editors: keep lean; AI agents: rely on JSON for deterministic bootstrap.
 
 ### Delta — Aug 11, 2025 (XAML converter fix + JSON root-array fallback + build props cleanup)
 Summary of three stability / resilience improvements applied after recent route form enhancements.

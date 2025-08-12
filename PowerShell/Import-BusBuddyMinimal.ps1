@@ -11,7 +11,7 @@ param(
     [switch]$Quiet
 )
 
-Set-StrictMode -Version Latest
+Set-StrictMode -Version 3.0  # Downgraded from Latest to reduce friction during initial module import
 $ErrorActionPreference = 'Stop'
 
 try {
@@ -24,12 +24,13 @@ try {
     $psm1 = Join-Path $moduleDir 'BusBuddy.psm1'
     $moduleToLoad = if (Test-Path $psd1) { $psd1 } elseif (Test-Path $psm1) { $psm1 } else { $null }
 
-    if (-not $moduleToLoad) {
-        throw "BusBuddy module not found. Expected at: $moduleDir"
-    }
+    if (-not $moduleToLoad) { throw "BusBuddy module not found. Expected at: $moduleDir" }
 
-    if (-not $Quiet) { Write-Information "Loading BusBuddy module: $moduleToLoad" -InformationAction Continue }
+    if (-not $Quiet) { Write-Information "[Loader] Loading BusBuddy module: $moduleToLoad" -InformationAction Continue }
+    $sw = [System.Diagnostics.Stopwatch]::StartNew()
     Import-Module $moduleToLoad -Force -ErrorAction Stop
+    $sw.Stop()
+    if (-not $Quiet) { Write-Information "[Loader] Module imported in $([int]$sw.ElapsedMilliseconds) ms" -InformationAction Continue }
 
     # Light verification — commands should now be available
     $cmd = Get-Command bb-health -ErrorAction SilentlyContinue
@@ -37,8 +38,21 @@ try {
         if (-not $Quiet) { Write-Information "Module loaded, but 'bb-health' alias not yet visible. Exported functions will still be available." -InformationAction Continue }
     }
 
-    if (-not $Quiet) { Write-Information "BusBuddy module loaded successfully." -InformationAction Continue }
+    if (-not $Quiet) { Write-Information "[Loader] BusBuddy module loaded successfully." -InformationAction Continue }
 }
 catch {
-    Write-Error "Failed to import BusBuddy module: $($_.Exception.Message)"
+    $err = $_
+    $inv = $err.InvocationInfo
+    $lines = @(
+        'Failed to import BusBuddy module:'
+        " Message : $($err.Exception.Message)"
+        " Type    : $($err.Exception.GetType().FullName)"
+        " Category: $($err.CategoryInfo.Category)"
+        " FQID    : $($err.FullyQualifiedErrorId)"
+        ' Stack   :'
+        $err.ScriptStackTrace
+    )
+    if ($inv) { $lines += " Script  : $($inv.ScriptName)" }
+    if ($inv) { $lines += " Line    : $($inv.ScriptLineNumber) Col $($inv.OffsetInLine)" }
+    Write-Error ($lines -join [Environment]::NewLine)
 }

@@ -1,5 +1,7 @@
 # 🚌 BusBuddy Project — Major Refactor Update (August 2025)
 
+> Documentation Unification (August 2025): Former top-level `docs/` directory has been merged into this `Documentation/` hub. Theming checklist now at `Documentation/Theming/Theming-Audit-Checklist.md` and sample XAML moved to `Documentation/Samples/`. Remove any outdated references to `docs/` in external materials.
+
 ## 🚀 August 2025 Refactor: Canonicalization, Cleanup, and Data Modernization
 
 **Summary of Accomplishments:**

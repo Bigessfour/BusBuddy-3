@@ -780,6 +780,113 @@ function Test-BusBuddyCompliance {
 
 #region Aliases
 
+function Start-BusBuddyPhase4TestAdvanced {
+    <#
+    .SYNOPSIS
+        Advanced BusBuddy test runner (Phase 4 legacy features) integrated into module.
+    .DESCRIPTION
+        Provides extended output capture (stdout/stderr logs), optional code coverage collection, and
+        detailed logging while adhering to PowerShell 7.5.2 standards (no Write-Host, structured output streams).
+    .PARAMETER TestSuite
+        All | Unit | Integration | Validation | Core | WPF
+    .PARAMETER Detailed
+        Enables detailed (verbosity=detailed) test output.
+    .PARAMETER CollectCoverage
+        Uses '--collect:"XPlat Code Coverage"' to gather coverage data.
+    .PARAMETER SaveFullOutput
+        Persists full stdout/stderr plus a synthesized summary log under TestResults.
+    .OUTPUTS
+        [bool] True on success, False on failure.
+    .EXAMPLE
+        Start-BusBuddyPhase4TestAdvanced -TestSuite Unit -Detailed -CollectCoverage -SaveFullOutput
+    .NOTES
+        Replaces removed Run-Phase4-NUnitTests-Modular.ps1 script.
+    #>
+    [CmdletBinding()] [OutputType([bool])]
+    param(
+        [Parameter()][ValidateSet('All','Unit','Integration','Validation','Core','WPF')][string]$TestSuite='All',
+        [Parameter()][switch]$Detailed,
+        [Parameter()][switch]$CollectCoverage,
+        [Parameter()][switch]$SaveFullOutput
+    )
+
+    try {
+        Initialize-BusBuddyPath
+
+        Write-Information "🚌 Advanced Test Runner: Suite=$TestSuite Detailed=$($Detailed.IsPresent) Coverage=$($CollectCoverage.IsPresent) SaveOutput=$($SaveFullOutput.IsPresent)" -InformationAction Continue
+
+        # Build first
+        if (-not (Invoke-BusBuddyBuild)) { Write-Error "Build failed – aborting tests"; return $false }
+
+        $filter = Get-TestFilterExpression -TestSuite $TestSuite
+        if ($filter) { Write-Information "📋 Applying filter: $filter" -InformationAction Continue }
+
+        $verbosity = $Detailed.IsPresent ? 'detailed' : 'normal'
+        $timestamp = Get-Date -Format 'yyyyMMdd-HHmmss'
+        $stdoutFile = Join-Path $Script:TestResultsDir "adv-test-stdout-$timestamp.txt"
+        $stderrFile = Join-Path $Script:TestResultsDir "adv-test-stderr-$timestamp.txt"
+        $summaryFile = Join-Path $Script:TestResultsDir "adv-test-summary-$timestamp.txt"
+
+        $testArgs = @('test', "`"$($Script:SolutionFile)`"", '--configuration','Debug', '--logger','trx', '--logger',"console;verbosity=$verbosity", '--results-directory', "`"$($Script:TestResultsDir)`"", '--no-build')
+        if ($filter) { $testArgs += '--filter'; $testArgs += $filter }
+        if ($CollectCoverage) { $testArgs += '--collect:"XPlat Code Coverage"' }
+
+        Write-Information "Executing: dotnet $($testArgs -join ' ')" -InformationAction Continue
+        $start = Get-Date
+
+        if ($SaveFullOutput) {
+            $proc = Start-Process -FilePath 'dotnet' -ArgumentList $testArgs -RedirectStandardOutput $stdoutFile -RedirectStandardError $stderrFile -NoNewWindow -PassThru
+            $proc.WaitForExit()
+            $exit = $proc.ExitCode
+        } else {
+            & dotnet $testArgs
+            $exit = $LASTEXITCODE
+        }
+
+        $duration = (Get-Date) - $start
+
+        $summary = Get-LatestTestResult
+        if ($summary) {
+            Write-Information "📈 Total: $($summary.Total) Passed: $($summary.Passed) Failed: $($summary.Failed)" -InformationAction Continue
+        } else {
+            Write-Warning "No parsed test summary available"
+        }
+
+        if ($SaveFullOutput) {
+            $stdout = (Test-Path $stdoutFile) ? (Get-Content $stdoutFile -Raw) : ''
+            $stderr = (Test-Path $stderrFile) ? (Get-Content $stderrFile -Raw) : ''
+            @"
+=== ADVANCED TEST RUN SUMMARY ===
+Timestamp: $(Get-Date -Format 'u')
+Suite: $TestSuite
+Filter: $filter
+ExitCode: $exit
+DurationSeconds: $([math]::Round($duration.TotalSeconds,2))
+Total: $($summary?.Total)
+Passed: $($summary?.Passed)
+Failed: $($summary?.Failed)
+
+-- STDOUT --
+$stdout
+-- STDERR --
+$stderr
+"@ | Out-File -FilePath $summaryFile -Encoding UTF8 -Width 500
+            Write-Information "📝 Summary written: $summaryFile" -InformationAction Continue
+        }
+
+        if ($exit -eq 0 -and $summary -and $summary.Failed -eq 0) {
+            Write-Information '✅ Tests succeeded' -InformationAction Continue
+            return $true
+        }
+        if ($exit -ne 0) { Write-Warning "Test process exit code: $exit" }
+        if ($summary -and $summary.Failed -gt 0) { Write-Warning "❌ $($summary.Failed) failing test(s)" }
+        return $false
+    } catch {
+        Write-Error "Advanced test run failed: $($_.Exception.Message)"
+        return $false
+    }
+}
+
 # Dedup policy: core BusBuddy module owns 'bb-test'. Keep secondary bb-test-* helpers here.
 New-Alias -Name 'bb-test-watch' -Value 'Start-BusBuddyTestWatch' -Description 'Quick alias for Start-BusBuddyTestWatch'
 New-Alias -Name 'bb-test-report' -Value 'New-BusBuddyTestReport' -Description 'Quick alias for New-BusBuddyTestReport'
@@ -798,12 +905,14 @@ Export-ModuleMember -Function @(
     'Get-BusBuddyTestStatus'
     'Initialize-BusBuddyTestEnvironment'
     'Test-BusBuddyCompliance'
+    'Start-BusBuddyPhase4TestAdvanced'
 ) -Alias @(
     'bb-test-watch'
     'bb-test-report'
     'bb-test-status'
     'bb-test-init'
     'bb-test-compliance'
+    'bb-test-adv'
 )
 
 #endregion
