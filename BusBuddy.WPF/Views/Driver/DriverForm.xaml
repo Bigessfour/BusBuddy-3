@@ -1,280 +1,344 @@
 <syncfusion:ChromelessWindow x:Class="BusBuddy.WPF.Views.Driver.DriverForm"
-        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-        xmlns:syncfusion="http://schemas.syncfusion.com/wpf"
-        xmlns:syncfusionshared="clr-namespace:Syncfusion.Windows.Shared;assembly=Syncfusion.Shared.Wpf"
-        mc:Ignorable="d"
-        Title="{Binding FormTitle}"
-        Height="600" Width="650"
-        WindowStartupLocation="CenterOwner"
-        ResizeMode="CanResize">
-
+                             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+                             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+                             xmlns:syncfusion="http://schemas.syncfusion.com/wpf"
+                             xmlns:syncfusionshared="clr-namespace:Syncfusion.Windows.Shared;assembly=Syncfusion.Shared.Wpf"
+                             mc:Ignorable="d"
+                             Title="{Binding FormTitle}"
+                             Height="600"
+                             Width="650"
+                             WindowStartupLocation="CenterOwner"
+                             ResizeMode="CanResize">
     <syncfusion:ChromelessWindow.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
-                <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/SyncfusionV30_Validated_ResourceDictionary.xaml"/>
+                <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/SyncfusionV30_Validated_ResourceDictionary.xaml" />
             </ResourceDictionary.MergedDictionaries>
             <!-- Required converter for Visibility bindings -->
-            <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
-            <Style TargetType="TextBlock" x:Key="FieldLabelStyle">
-                <Setter Property="Margin" Value="0,5,0,5"/>
-                <Setter Property="FontWeight" Value="Medium"/>
-                <Setter Property="Foreground" Value="#333"/>
+            <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
+            <Style TargetType="TextBlock"
+                   x:Key="FieldLabelStyle">
+                <Setter Property="Margin"
+                        Value="0,5,0,5" />
+                <Setter Property="FontWeight"
+                        Value="Medium" />
+                <Setter Property="Foreground"
+                        Value="{DynamicResource FormLabelForegroundBrush}" />
             </Style>
-            <Style TargetType="syncfusion:SfMaskedEdit" x:Key="FieldInputStyle">
-                <Setter Property="Height" Value="32"/>
-                <Setter Property="Padding" Value="8,5"/>
-                <Setter Property="Margin" Value="0,0,0,10"/>
-                <Setter Property="BorderBrush" Value="#CCC"/>
-                <Setter Property="BorderThickness" Value="1"/>
+            <Style TargetType="syncfusion:SfMaskedEdit"
+                   x:Key="FieldInputStyle">
+                <Setter Property="Height"
+                        Value="32" />
+                <Setter Property="Padding"
+                        Value="8,5" />
+                <Setter Property="Margin"
+                        Value="0,0,0,10" />
+                <Setter Property="Foreground"
+                        Value="{DynamicResource FormInputForegroundBrush}" />
+                <Setter Property="Background"
+                        Value="{DynamicResource FormInputBackgroundBrush}" />
+                <Setter Property="BorderBrush"
+                        Value="{DynamicResource FormInputBorderBrush}" />
+                <Setter Property="BorderThickness"
+                        Value="1" />
             </Style>
         </ResourceDictionary>
     </syncfusion:ChromelessWindow.Resources>
-
-    <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="20">
+    <ScrollViewer VerticalScrollBarVisibility="Auto"
+                  Padding="20">
         <Grid>
             <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="*"/>
-                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
-
             <!-- Header -->
-            <Border Grid.Row="0" Background="{DynamicResource BusBuddy.Brush.Primary}" CornerRadius="5" Padding="15" Margin="0,0,0,20">
+            <Border Grid.Row="0"
+                    Background="{DynamicResource BusBuddy.Brush.Primary}"
+                    CornerRadius="5"
+                    Padding="15"
+                    Margin="0,0,0,20">
                 <StackPanel Orientation="Horizontal">
-                    <TextBlock Text="&#xE7C4;" FontFamily="Segoe MDL2 Assets"
-                              FontSize="20" Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}" VerticalAlignment="Center" Margin="0,0,10,0"/>
-                    <TextBlock Text="{Binding FormTitle}" FontSize="18" FontWeight="Bold"
-                              Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}" VerticalAlignment="Center"/>
+                    <TextBlock Text="?"
+                               FontFamily="Segoe MDL2 Assets"
+                               FontSize="20"
+                               Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"
+                               VerticalAlignment="Center"
+                               Margin="0,0,10,0" />
+                    <TextBlock Text="{Binding FormTitle}"
+                               FontSize="18"
+                               FontWeight="Bold"
+                               Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"
+                               VerticalAlignment="Center" />
                 </StackPanel>
             </Border>
-
             <!-- Personal Information Section -->
-            <GroupBox Grid.Row="1" Header="Personal Information" Margin="0,0,0,15" Padding="15">
+            <GroupBox Grid.Row="1"
+                      Header="Personal Information"
+                      Margin="0,0,0,15"
+                      Padding="15">
                 <Grid>
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="10"/>
-                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="10" />
+                        <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
-
-                    <StackPanel Grid.Row="0" Grid.Column="0">
-                        <TextBlock Text="First Name:" Style="{StaticResource FieldLabelStyle}"/>
-                        <syncfusion:SfMaskedEdit Text="{Binding FirstName, Mode=TwoWay}"
-                                               Style="{StaticResource FieldInputStyle}"
-                                               AutomationProperties.Name="First Name"
-                                               AutomationProperties.HelpText="Enter driver's first name"/>
+                    <StackPanel Grid.Row="0"
+                                Grid.Column="0">
+                        <TextBlock Text="First Name:"
+                                   Style="{StaticResource FieldLabelStyle}" />
+                        <syncfusion:SfMaskedEdit Text="{Binding Driver.FirstName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                 Style="{StaticResource FieldInputStyle}"
+                                                 AutomationProperties.Name="First Name"
+                                                 AutomationProperties.HelpText="Enter driver's first name" />
                     </StackPanel>
-
-                    <StackPanel Grid.Row="0" Grid.Column="2">
-                        <TextBlock Text="Last Name:" Style="{StaticResource FieldLabelStyle}"/>
-                        <syncfusion:SfMaskedEdit Text="{Binding LastName, Mode=TwoWay}"
-                                               Style="{StaticResource FieldInputStyle}"
-                                               AutomationProperties.Name="Last Name"
-                                               AutomationProperties.HelpText="Enter driver's last name"/>
+                    <StackPanel Grid.Row="0"
+                                Grid.Column="2">
+                        <TextBlock Text="Last Name:"
+                                   Style="{StaticResource FieldLabelStyle}" />
+                        <syncfusion:SfMaskedEdit Text="{Binding Driver.LastName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                 Style="{StaticResource FieldInputStyle}"
+                                                 AutomationProperties.Name="Last Name"
+                                                 AutomationProperties.HelpText="Enter driver's last name" />
                     </StackPanel>
-
-                    <StackPanel Grid.Row="1" Grid.Column="0">
-                        <TextBlock Text="Phone Number:" Style="{StaticResource FieldLabelStyle}"/>
-                        <syncfusion:SfMaskedEdit Text="{Binding DriverPhone, Mode=TwoWay}"
-                                               Style="{StaticResource FieldInputStyle}"
-                                               Mask="(999) 999-9999"
-                                               AutomationProperties.Name="Phone Number Input"
-                                               AutomationProperties.HelpText="Enter driver phone number"/>
+                    <StackPanel Grid.Row="1"
+                                Grid.Column="0">
+                        <TextBlock Text="Phone Number:"
+                                   Style="{StaticResource FieldLabelStyle}" />
+                        <syncfusion:SfMaskedEdit Text="{Binding Driver.DriverPhone, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                 Style="{StaticResource FieldInputStyle}"
+                                                 Mask="(999) 999-9999"
+                                                 AutomationProperties.Name="Phone Number Input"
+                                                 AutomationProperties.HelpText="Enter driver phone number" />
                     </StackPanel>
-
-             <StackPanel Grid.Row="1" Grid.Column="2">
-                <TextBlock Text="Email:" Style="{StaticResource FieldLabelStyle}"/>
-                <!-- Syncfusion WPF — SfMaskedEdit RegEx mask for email (v30.1.42)
+                    <StackPanel Grid.Row="1"
+                                Grid.Column="2">
+                        <TextBlock Text="Email:"
+                                   Style="{StaticResource FieldLabelStyle}" />
+                        <!-- Syncfusion WPF — SfMaskedEdit RegEx mask for email (v30.1.42)
                     Reference: https://help.syncfusion.com/wpf/maskededit/mask-types -->
-                <syncfusion:SfMaskedEdit x:Name="EmailMaskedEdit"
-                                     Text="{Binding DriverEmail, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                     Style="{StaticResource FieldInputStyle}"
-                                     MaskType="RegEx"
-                                     Mask="[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}"
-                                     PromptChar="_"
-                                     Watermark="Enter driver email"
-                                     AutomationProperties.Name="Email Address"
-                                     AutomationProperties.HelpText="Enter driver's email address"/>
-             </StackPanel>
-
-                    <StackPanel Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="3">
-                        <TextBlock Text="Status:" Style="{StaticResource FieldLabelStyle}"/>
+                        <syncfusion:SfMaskedEdit x:Name="EmailMaskedEdit"
+                                                 Text="{Binding Driver.DriverEmail, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                 Style="{StaticResource FieldInputStyle}"
+                                                 MaskType="RegEx"
+                                                 Mask="[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}"
+                                                 PromptChar="_"
+                                                 Watermark="Enter driver email"
+                                                 AutomationProperties.Name="Email Address"
+                                                 AutomationProperties.HelpText="Enter driver's email address" />
+                    </StackPanel>
+                    <StackPanel Grid.Row="2"
+                                Grid.Column="0"
+                                Grid.ColumnSpan="3">
+                        <TextBlock Text="Status:"
+                                   Style="{StaticResource FieldLabelStyle}" />
                         <syncfusion:ComboBoxAdv Height="32"
-                                              SelectedItem="{Binding Status, Mode=TwoWay}"
-                                              Margin="0,0,0,10"
-                                              AutomationProperties.Name="Driver Status Selection"
-                                              AutomationProperties.HelpText="Select driver's current status">
-                            <ComboBoxItem Content="Active"/>
-                            <ComboBoxItem Content="Inactive"/>
-                            <ComboBoxItem Content="On Leave"/>
-                            <ComboBoxItem Content="Training"/>
-                            <ComboBoxItem Content="Terminated"/>
+                                                SelectedItem="{Binding Driver.Status, Mode=TwoWay}"
+                                                Margin="0,0,0,10"
+                                                AutomationProperties.Name="Driver Status Selection"
+                                                AutomationProperties.HelpText="Select driver's current status">
+                            <ComboBoxItem Content="Active" />
+                            <ComboBoxItem Content="Inactive" />
+                            <ComboBoxItem Content="On Leave" />
+                            <ComboBoxItem Content="Training" />
+                            <ComboBoxItem Content="Terminated" />
                         </syncfusion:ComboBoxAdv>
                     </StackPanel>
                 </Grid>
             </GroupBox>
-
             <!-- License Information Section -->
-            <GroupBox Grid.Row="2" Header="License Information" Margin="0,0,0,15" Padding="15">
+            <GroupBox Grid.Row="2"
+                      Header="License Information"
+                      Margin="0,0,0,15"
+                      Padding="15">
                 <Grid>
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="10"/>
-                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="10" />
+                        <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
-
-                    <StackPanel Grid.Row="0" Grid.Column="0">
-                        <TextBlock Text="License Number:" Style="{StaticResource FieldLabelStyle}"/>
-                        <syncfusion:SfMaskedEdit Text="{Binding LicenseNumber, Mode=TwoWay}"
-                                               Style="{StaticResource FieldInputStyle}"
-                                               AutomationProperties.Name="License Number Input"
-                                               AutomationProperties.HelpText="Enter CDL license number"/>
+                    <StackPanel Grid.Row="0"
+                                Grid.Column="0">
+                        <TextBlock Text="License Number:"
+                                   Style="{StaticResource FieldLabelStyle}" />
+                        <syncfusion:SfMaskedEdit Text="{Binding Driver.LicenseNumber, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                 Style="{StaticResource FieldInputStyle}"
+                                                 AutomationProperties.Name="License Number Input"
+                                                 AutomationProperties.HelpText="Enter CDL license number" />
                     </StackPanel>
-
-                    <StackPanel Grid.Row="0" Grid.Column="2">
-                        <TextBlock Text="License Class:" Style="{StaticResource FieldLabelStyle}"/>
+                    <StackPanel Grid.Row="0"
+                                Grid.Column="2">
+                        <TextBlock Text="License Class:"
+                                   Style="{StaticResource FieldLabelStyle}" />
                         <syncfusion:ComboBoxAdv Height="32"
-                                              SelectedItem="{Binding LicenseClass, Mode=TwoWay}"
-                                              Margin="0,0,0,10"
-                                              AutomationProperties.Name="License Class"
-                                              AutomationProperties.HelpText="Select CDL license class">
-                            <ComboBoxItem Content="Class A CDL"/>
-                            <ComboBoxItem Content="Class B CDL"/>
-                            <ComboBoxItem Content="Class C CDL"/>
-                            <ComboBoxItem Content="Regular"/>
+                                                SelectedItem="{Binding Driver.LicenseClass, Mode=TwoWay}"
+                                                Margin="0,0,0,10"
+                                                AutomationProperties.Name="License Class"
+                                                AutomationProperties.HelpText="Select CDL license class">
+                            <ComboBoxItem Content="Class A CDL" />
+                            <ComboBoxItem Content="Class B CDL" />
+                            <ComboBoxItem Content="Class C CDL" />
+                            <ComboBoxItem Content="Regular" />
                         </syncfusion:ComboBoxAdv>
                     </StackPanel>
-
-                    <StackPanel Grid.Row="1" Grid.Column="0">
-                        <TextBlock Text="License Expiry Date:" Style="{StaticResource FieldLabelStyle}"/>
-                        <syncfusion:SfDatePicker Value="{Binding LicenseExpiryDate, Mode=TwoWay}"
-                                               Height="32" Margin="0,0,0,10"
-                                               AutomationProperties.Name="License Expiry Date"
-                                               AutomationProperties.HelpText="Select license expiration date"/>
+                    <StackPanel Grid.Row="1"
+                                Grid.Column="0">
+                        <TextBlock Text="License Expiry Date:"
+                                   Style="{StaticResource FieldLabelStyle}" />
+                        <syncfusion:SfDatePicker Value="{Binding Driver.LicenseExpiryDate, Mode=TwoWay}"
+                                                 Height="32"
+                                                 Margin="0,0,0,10"
+                                                 AutomationProperties.Name="License Expiry Date"
+                                                 AutomationProperties.HelpText="Select license expiration date" />
                     </StackPanel>
-
-                    <StackPanel Grid.Row="1" Grid.Column="2">
-                        <TextBlock Text="Endorsements:" Style="{StaticResource FieldLabelStyle}"/>
-                        <syncfusion:SfMaskedEdit Text="{Binding Endorsements, Mode=TwoWay}"
-                                               Style="{StaticResource FieldInputStyle}"
-                                               AutomationProperties.Name="License Endorsements"
-                                               AutomationProperties.HelpText="Enter license endorsements (P, S, N, etc.)"/>
+                    <StackPanel Grid.Row="1"
+                                Grid.Column="2">
+                        <TextBlock Text="Endorsements:"
+                                   Style="{StaticResource FieldLabelStyle}" />
+                        <syncfusion:SfMaskedEdit Text="{Binding Driver.Endorsements, Mode=TwoWay}"
+                                                 Style="{StaticResource FieldInputStyle}"
+                                                 AutomationProperties.Name="License Endorsements"
+                                                 AutomationProperties.HelpText="Enter license endorsements (P, S, N, etc.)" />
                     </StackPanel>
                 </Grid>
             </GroupBox>
-
             <!-- Training and Compliance Section -->
-            <GroupBox Grid.Row="3" Header="Training and Compliance" Margin="0,0,0,15" Padding="15">
+            <GroupBox Grid.Row="3"
+                      Header="Training and Compliance"
+                      Margin="0,0,0,15"
+                      Padding="15">
                 <Grid>
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="10"/>
-                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="10" />
+                        <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
-
-                    <StackPanel Grid.Row="0" Grid.Column="0">
+                    <StackPanel Grid.Row="0"
+                                Grid.Column="0">
                         <CheckBox Content="Training Complete"
-                                IsChecked="{Binding TrainingComplete, Mode=TwoWay}"
-                                Margin="0,5,0,10"
-                                AutomationProperties.Name="Training Complete"
-                                AutomationProperties.HelpText="Check if driver has completed required training"/>
+                                  IsChecked="{Binding Driver.TrainingComplete, Mode=TwoWay}"
+                                  Margin="0,5,0,10"
+                                  AutomationProperties.Name="Training Complete"
+                                  AutomationProperties.HelpText="Check if driver has completed required training" />
                     </StackPanel>
-
-                    <StackPanel Grid.Row="0" Grid.Column="2">
-                        <TextBlock Text="Background Check Date:" Style="{StaticResource FieldLabelStyle}"/>
-                        <syncfusion:SfDatePicker Value="{Binding BackgroundCheckDate, Mode=TwoWay}"
-                                               Height="32" Margin="0,0,0,10"
-                                               AutomationProperties.Name="Background Check Date"
-                                               AutomationProperties.HelpText="Select background check completion date"/>
+                    <StackPanel Grid.Row="0"
+                                Grid.Column="2">
+                        <TextBlock Text="Background Check Date:"
+                                   Style="{StaticResource FieldLabelStyle}" />
+                        <syncfusion:SfDatePicker Value="{Binding Driver.BackgroundCheckDate, Mode=TwoWay}"
+                                                 Height="32"
+                                                 Margin="0,0,0,10"
+                                                 AutomationProperties.Name="Background Check Date"
+                                                 AutomationProperties.HelpText="Select background check completion date" />
                     </StackPanel>
-
-                    <StackPanel Grid.Row="1" Grid.Column="0">
-                        <TextBlock Text="Drug Test Date:" Style="{StaticResource FieldLabelStyle}"/>
-                        <syncfusion:SfDatePicker Value="{Binding DrugTestDate, Mode=TwoWay}"
-                                               Height="32" Margin="0,0,0,10"
-                                               AutomationProperties.Name="Drug Test Date"
-                                               AutomationProperties.HelpText="Select last drug test date"/>
+                    <StackPanel Grid.Row="1"
+                                Grid.Column="0">
+                        <TextBlock Text="Drug Test Date:"
+                                   Style="{StaticResource FieldLabelStyle}" />
+                        <syncfusion:SfDatePicker Value="{Binding Driver.DrugTestDate, Mode=TwoWay}"
+                                                 Height="32"
+                                                 Margin="0,0,0,10"
+                                                 AutomationProperties.Name="Drug Test Date"
+                                                 AutomationProperties.HelpText="Select last drug test date" />
                     </StackPanel>
                 </Grid>
             </GroupBox>
-
             <!-- Emergency Contact Section -->
-            <GroupBox Grid.Row="4" Header="Emergency Contact" Margin="0,0,0,15" Padding="15">
+            <GroupBox Grid.Row="4"
+                      Header="Emergency Contact"
+                      Margin="0,0,0,15"
+                      Padding="15">
                 <Grid>
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="10"/>
-                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="10" />
+                        <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
-
                     <StackPanel Grid.Column="0">
-                        <TextBlock Text="Emergency Contact Name:" Style="{StaticResource FieldLabelStyle}"/>
-                        <syncfusion:SfMaskedEdit Text="{Binding EmergencyContactName, Mode=TwoWay}"
-                                               Style="{StaticResource FieldInputStyle}"
-                                               AutomationProperties.Name="Emergency Contact Name"
-                                               AutomationProperties.HelpText="Enter emergency contact person name"/>
+                        <TextBlock Text="Emergency Contact Name:"
+                                   Style="{StaticResource FieldLabelStyle}" />
+                        <syncfusion:SfMaskedEdit Text="{Binding Driver.EmergencyContactName, Mode=TwoWay}"
+                                                 Style="{StaticResource FieldInputStyle}"
+                                                 AutomationProperties.Name="Emergency Contact Name"
+                                                 AutomationProperties.HelpText="Enter emergency contact person name" />
                     </StackPanel>
-
                     <StackPanel Grid.Column="2">
-                        <TextBlock Text="Emergency Contact Phone:" Style="{StaticResource FieldLabelStyle}"/>
-                        <syncfusion:SfMaskedEdit Text="{Binding EmergencyContactPhone, Mode=TwoWay}"
-                                               Style="{StaticResource FieldInputStyle}"
-                                               Mask="(999) 999-9999"
-                                               AutomationProperties.Name="Emergency Contact Phone"
-                                               AutomationProperties.HelpText="Enter emergency contact phone number"/>
+                        <TextBlock Text="Emergency Contact Phone:"
+                                   Style="{StaticResource FieldLabelStyle}" />
+                        <syncfusion:SfMaskedEdit Text="{Binding Driver.EmergencyContactPhone, Mode=TwoWay}"
+                                                 Style="{StaticResource FieldInputStyle}"
+                                                 Mask="(999) 999-9999"
+                                                 AutomationProperties.Name="Emergency Contact Phone"
+                                                 AutomationProperties.HelpText="Enter emergency contact phone number" />
                     </StackPanel>
                 </Grid>
             </GroupBox>
-
             <!-- Error/Status Display -->
-            <Border Grid.Row="11" Background="{StaticResource BusBuddy.Warning.Background}" BorderBrush="{StaticResource BusBuddy.Warning.Border}" BorderThickness="1"
-                    CornerRadius="3" Padding="10" Margin="0,10,0,10"
+            <Border Grid.Row="11"
+                    Background="{StaticResource BusBuddy.Warning.Background}"
+                    BorderBrush="{StaticResource BusBuddy.Warning.Border}"
+                    BorderThickness="1"
+                    CornerRadius="3"
+                    Padding="10"
+                    Margin="0,10,0,10"
                     Visibility="{Binding HasErrors, Converter={StaticResource BooleanToVisibilityConverter}}">
-                <TextBlock Text="{Binding ErrorMessage}" Foreground="{StaticResource BusBuddy.Warning.Text}" TextWrapping="Wrap"/>
+                <TextBlock Text="{Binding ErrorMessage}"
+                           Foreground="{StaticResource BusBuddy.Warning.Text}"
+                           TextWrapping="Wrap" />
             </Border>
-
             <!-- Action Buttons -->
-            <StackPanel Grid.Row="12" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
-    <syncfusion:ButtonAdv Label="💾 Save" Width="100" Height="36" Margin="0,0,10,0"
-                        Command="{Binding SaveDriverCommand}"
-            Background="{StaticResource BusBuddy.Brush.Semantic.Success}" Foreground="White"
-            ToolTip="Save driver"
-                        AutomationProperties.Name="Save Driver"
-                        AutomationProperties.HelpText="Save driver information to database"/>
-    <syncfusion:ButtonAdv Label="❌ Cancel" Width="100" Height="36"
-                        Command="{Binding CancelCommand}"
-            Background="{StaticResource BusBuddy.Text.Muted}" Foreground="White"
-            ToolTip="Cancel and close"
-                        AutomationProperties.Name="Cancel"
-                        AutomationProperties.HelpText="Cancel and close form without saving"/>
+            <StackPanel Grid.Row="12"
+                        Orientation="Horizontal"
+                        HorizontalAlignment="Right"
+                        Margin="0,20,0,0">
+                <syncfusion:ButtonAdv x:Name="SaveButton"
+                                      Label="💾 Save"
+                                      Width="100"
+                                      Height="36"
+                                      Margin="0,0,10,0"
+                                      Command="{Binding SaveDriverCommand}"
+                                      Background="{StaticResource BusBuddy.Brush.Semantic.Success}"
+                                      Foreground="White"
+                                      ToolTip="Save driver"
+                                      AutomationProperties.Name="Save Driver"
+                                      AutomationProperties.HelpText="Save driver information to database" />
+                <syncfusion:ButtonAdv x:Name="CancelButton"
+                                      Label="❌ Cancel"
+                                      Width="100"
+                                      Height="36"
+                                      Command="{Binding CancelCommand}"
+                                      Background="{StaticResource BusBuddy.Text.Muted}"
+                                      Foreground="White"
+                                      ToolTip="Cancel and close"
+                                      AutomationProperties.Name="Cancel"
+                                      AutomationProperties.HelpText="Cancel and close form without saving" />
             </StackPanel>
         </Grid>
     </ScrollViewer>

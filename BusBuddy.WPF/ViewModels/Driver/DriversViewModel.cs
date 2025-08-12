@@ -57,6 +57,7 @@ namespace BusBuddy.WPF.ViewModels.Driver
             {
                 if (SetProperty(ref _selectedDriver, value))
                 {
+                    Logger.Debug("SelectedDriver changed -> Id={DriverId} Name={DriverName}", value?.DriverId, value?.DriverName);
                     OnPropertyChanged(nameof(HasSelectedDriver));
                     // Update command availability using MVVM Toolkit interfaces to support both RelayCommand and AsyncRelayCommand
                     if (EditDriverCommand is CommunityToolkit.Mvvm.Input.IRelayCommand edit)
@@ -75,6 +76,7 @@ namespace BusBuddy.WPF.ViewModels.Driver
                     {
                         editDetails.NotifyCanExecuteChanged();
                     }
+                    LogState("SelectionChanged");
                 }
             }
         }
@@ -94,11 +96,13 @@ namespace BusBuddy.WPF.ViewModels.Driver
             {
                 if (SetProperty(ref _searchText, value))
                 {
+                    Logger.Debug("SearchText updated -> '{SearchText}'", _searchText);
                     ApplyFilters();
                     if (ClearSearchCommand is CommunityToolkit.Mvvm.Input.IRelayCommand clear)
                     {
                         clear.NotifyCanExecuteChanged();
                     }
+                    LogState("SearchTextChanged");
                 }
             }
         }
@@ -133,7 +137,9 @@ namespace BusBuddy.WPF.ViewModels.Driver
             {
                 if (SetProperty(ref _selectedStatusFilter, value))
                 {
+                    Logger.Debug("StatusFilter changed -> {StatusFilter}", _selectedStatusFilter);
                     ApplyFilters();
+                    LogState("StatusFilterChanged");
                 }
             }
         }
@@ -257,6 +263,7 @@ namespace BusBuddy.WPF.ViewModels.Driver
                 UpdateDriverStatusData();
 
                 ApplyFilters();
+                LogState("LoadDriversAsync:AfterLoad");
             }
             catch (Exception ex)
             {
@@ -288,6 +295,7 @@ namespace BusBuddy.WPF.ViewModels.Driver
                     // Refresh the driver list after successful add
                     _ = LoadDriversAsync();
                     base.StatusMessage = "Driver added successfully";
+                    LogState("AddDriver:DialogResultTrue");
                 }
             }
             catch (Exception ex)
@@ -458,6 +466,7 @@ namespace BusBuddy.WPF.ViewModels.Driver
             {
                 FilteredDrivers.Add(driver);
             }
+            Logger.Debug("Filters applied -> Search='{Search}' Status='{Status}' ResultCount={Count}", SearchText, SelectedStatusFilter, FilteredDrivers.Count);
 
             base.StatusMessage = !string.IsNullOrWhiteSpace(SearchText)
                 ? $"Found {FilteredDrivers.Count} drivers matching '{SearchText}'"
@@ -469,6 +478,7 @@ namespace BusBuddy.WPF.ViewModels.Driver
             OnPropertyChanged(nameof(TrainingPendingDrivers));
             OnPropertyChanged(nameof(ExpiringLicensesCount));
             UpdateDriverStatusData();
+            LogState("ApplyFilters:After");
         }
 
         /// <summary>
@@ -519,7 +529,19 @@ namespace BusBuddy.WPF.ViewModels.Driver
                 _driverStatusData.Add(item);
             }
             OnPropertyChanged(nameof(DriverStatusData));
+            Logger.Debug("StatusData rebuilt -> {Items}", string.Join(", ", _driverStatusData.Select(s => $"{s.Status}:{s.Count}")));
         }
+
+        #region Debug Helpers
+        private void LogState(string context)
+        {
+            try
+            {
+                Logger.Debug("State[{Context}] Total={Total} Filtered={Filtered} SelectedId={SelectedId} Search='{Search}' Status='{Status}'", context, Drivers.Count, FilteredDrivers.Count, SelectedDriver?.DriverId, SearchText, SelectedStatusFilter);
+            }
+            catch { /* swallow logging issues */ }
+        }
+        #endregion
 
         public record StatusCount(string Status, int Count);
 

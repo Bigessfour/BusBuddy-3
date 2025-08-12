@@ -1,5 +1,6 @@
 using System.Windows;
 using Syncfusion.Windows.Shared;
+using Microsoft.Extensions.DependencyInjection;
 using Syncfusion.SfSkinManager;
 using BusBuddy.WPF.ViewModels.Bus;
 
@@ -15,14 +16,52 @@ namespace BusBuddy.WPF.Views.Bus
         {
             InitializeComponent();
             ApplySyncfusionTheme();
-            DataContext = new BusFormViewModel();
+                // Resolve from DI if available, fallback to parameterless
+                if (App.ServiceProvider != null)
+                {
+                    var vm = App.ServiceProvider.GetService<BusFormViewModel>() ?? new BusFormViewModel();
+                    DataContext = vm;
+                    vm.RequestClose += (_, result) =>
+                    {
+                        DialogResult = result;
+                        Close();
+                    };
+                }
+                else
+                {
+                    DataContext = new BusFormViewModel();
+                }
         }
 
         public BusForm(BusBuddy.Core.Models.Bus bus)
         {
             InitializeComponent();
             ApplySyncfusionTheme();
-            DataContext = new BusFormViewModel(bus);
+            if (App.ServiceProvider != null)
+            {
+                var vm = App.ServiceProvider.GetService<BusBuddy.WPF.ViewModels.Bus.BusFormViewModel>();
+                if (vm != null)
+                {
+                    // Replace backing bus through reflection-free assignment
+                    // Simpler: create new instance with service + bus
+                    var busService = App.ServiceProvider.GetService<BusBuddy.Core.Services.Interfaces.IBusService>();
+                    vm = new BusBuddy.WPF.ViewModels.Bus.BusFormViewModel(busService, bus);
+                    DataContext = vm;
+                    vm.RequestClose += (_, result) =>
+                    {
+                        DialogResult = result;
+                        Close();
+                    };
+                }
+                else
+                {
+                    DataContext = new BusBuddy.WPF.ViewModels.Bus.BusFormViewModel(null, bus);
+                }
+            }
+            else
+            {
+                DataContext = new BusBuddy.WPF.ViewModels.Bus.BusFormViewModel(null, bus);
+            }
         }
 
         /// <summary>
@@ -64,17 +103,6 @@ namespace BusBuddy.WPF.Views.Bus
                 Serilog.Log.Error("Error disposing SfSkinManager for {ViewName}: {Error}", GetType().Name, ex.Message);
             }
             base.OnClosed(e);
-        }
-        private void SaveButton_Click(object sender, RoutedEventArgs e)
-        {
-            DialogResult = true;
-            Close();
-        }
-
-        private void CancelButton_Click(object sender, RoutedEventArgs e)
-        {
-            DialogResult = false;
-            Close();
         }
     }
 }

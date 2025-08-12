@@ -35,6 +35,32 @@ namespace BusBuddy.WPF.ViewModels.Route
 
         // Entity Framework context for data access
         private readonly IBusBuddyDbContextFactory _contextFactory;
+        private readonly RouteService _routeService; // lightweight direct use for assignment (Phase 1)
+
+        /// <summary>
+        /// Buses available for assignment (Active only) — loaded lazily when first needed.
+        /// </summary>
+    public ObservableCollection<BusBuddy.Core.Models.Bus> AvailableBuses { get; } = new();
+
+    private BusBuddy.Core.Models.Bus? _selectedBus;
+        /// <summary>
+        /// Currently selected bus to assign to the selected route.
+        /// </summary>
+    public BusBuddy.Core.Models.Bus? SelectedBus
+        {
+            get => _selectedBus;
+            set { _selectedBus = value; OnPropertyChanged(); CommandManager.InvalidateRequerySuggested(); }
+        }
+
+        private RouteTimeSlot _selectedTimeSlot = RouteTimeSlot.Both;
+        /// <summary>
+        /// Selected time slot (AM/PM/Both) for vehicle assignment.
+        /// </summary>
+        public RouteTimeSlot SelectedTimeSlot
+        {
+            get => _selectedTimeSlot;
+            set { _selectedTimeSlot = value; OnPropertyChanged(); }
+        }
 
         private BusBuddy.Core.Models.Route? _selectedRoute;
     /// <summary>
@@ -118,6 +144,9 @@ namespace BusBuddy.WPF.ViewModels.Route
         {
             // Initialize EF context factory
             _contextFactory = new BusBuddyDbContextFactory();
+            // Direct instantiation (Phase 1) — in later phase migrate to DI container.
+            // RouteService expects an IBusBuddyDbContextFactory, not a delegate
+            _routeService = new RouteService(_contextFactory);
             RoutesView = CollectionViewSource.GetDefaultView(Routes);
             RoutesView.Filter = FilterRoutes;
 
@@ -131,7 +160,7 @@ namespace BusBuddy.WPF.ViewModels.Route
             GenerateScheduleCommand = new RelayCommand(GenerateSchedule, () => IsRouteSelected);
             ViewMapCommand = new RelayCommand(OpenMapView);
             AssignStudentsCommand = new RelayCommand(AssignStudents, () => IsRouteSelected);
-            AssignVehicleCommand = new RelayCommand(AssignVehicle, () => IsRouteSelected);
+            AssignVehicleCommand = new RelayCommand(AssignVehicle, () => IsRouteSelected && SelectedBus != null);
             ExportCsvCommand = new RelayCommand(ExportCsv);
             ExportReportCommand = new RelayCommand(ExportReport);
             PrintScheduleCommand = new RelayCommand(PrintSchedule);
@@ -359,7 +388,87 @@ namespace BusBuddy.WPF.ViewModels.Route
             StatusMessage = $"Error opening assignment: {ex.Message}";
         }
     }
-    private void AssignVehicle() { StatusMessage = "Assign vehicle (stub)"; }
+    private async void AssignVehicle()
+    {
+        if (SelectedRoute is null)
+        {
+            StatusMessage = "Select a route first";
+            return;
+        }
+        if (SelectedBus is null)
+        {
+            StatusMessage = "Select a bus to assign";
+            return;
+        }
+        try
+        {
+            StatusMessage = $"Assigning bus {SelectedBus.BusNumber} to route '{SelectedRoute.RouteName}'...";
+            var result = await _routeService.AssignVehicleToRouteAsync(SelectedRoute.RouteId, SelectedBus.VehicleId, SelectedTimeSlot);
+            if (!result.IsSuccess)
+            {
+                StatusMessage = string.IsNullOrWhiteSpace(result.Error) ? "Assignment failed" : result.Error;
+                Logger.Warning("Vehicle assignment failed: {Message}", result.Error);
+                return;
+            }
+            Logger.Information("Assigned vehicle {VehicleId} to route {RouteId} for {Slot}", SelectedBus.VehicleId, SelectedRoute.RouteId, SelectedTimeSlot);
+            // Refresh selected route record to show updated vehicle references
+            await LoadSingleRouteAsync(SelectedRoute.RouteId);
+            StatusMessage = $"Assigned bus {SelectedBus.BusNumber} ({SelectedTimeSlot})";
+        }
+        catch (Exception ex)
+        {
+            Logger.Error(ex, "Error assigning vehicle to route");
+            StatusMessage = $"Error assigning vehicle: {ex.Message}";
+        }
+    }
+
+    /// <summary>
+    /// Loads Active buses the first time assignment UI is used.
+    /// </summary>
+    public async Task EnsureBusesLoadedAsync()
+    {
+        if (AvailableBuses.Count > 0) return;
+        try
+        {
+            using var context = _contextFactory.CreateDbContext();
+            var buses = await context.Buses
+                .Where(b => b.Status == "Active")
+                .OrderBy(b => b.BusNumber)
+                .ToListAsync();
+            foreach (var b in buses)
+            {
+                AvailableBuses.Add(b);
+            }
+            Logger.Debug("Loaded {Count} active buses for assignment", AvailableBuses.Count);
+        }
+        catch (Exception ex)
+        {
+            Logger.Error(ex, "Failed loading active buses");
+        }
+    }
+
+    private async Task LoadSingleRouteAsync(int routeId)
+    {
+        try
+        {
+            using var context = _contextFactory.CreateDbContext();
+            var updated = await context.Routes.FirstOrDefaultAsync(r => r.RouteId == routeId);
+            if (updated != null)
+            {
+                var existing = Routes.FirstOrDefault(r => r.RouteId == routeId);
+                if (existing != null)
+                {
+                    // Copy over mutable fields we care about displaying
+                    existing.AMVehicleId = updated.AMVehicleId;
+                    existing.PMVehicleId = updated.PMVehicleId;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.Error(ex, "Failed refreshing route after assignment");
+        }
+    }
     private void ExportCsv()
     {
         try

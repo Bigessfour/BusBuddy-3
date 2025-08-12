@@ -1,102 +1,157 @@
 <syncfusion:ChromelessWindow x:Class="BusBuddy.WPF.Views.Bus.BusForm"
-        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-        xmlns:syncfusion="http://schemas.syncfusion.com/wpf"
-        mc:Ignorable="d"
-        Title="Bus Information Form"
-        Height="500" Width="650"
-        MinHeight="420" MinWidth="560"
-        WindowStartupLocation="CenterOwner">
-
+                             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+                             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+                             xmlns:syncfusion="http://schemas.syncfusion.com/wpf"
+                             mc:Ignorable="d"
+                             Title="Bus Information Form"
+                             Height="500"
+                             Width="650"
+                             MinHeight="420"
+                             MinWidth="560"
+                             WindowStartupLocation="CenterOwner">
     <ScrollViewer VerticalScrollBarVisibility="Auto">
-    <Grid Margin="20">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>
-        </Grid.RowDefinitions>
-
-    <!-- Header -->
-    <Border Grid.Row="0"
-            Background="{DynamicResource BusBuddy.Brush.Primary}"
-            CornerRadius="5"
-            Padding="15"
-            Margin="0,0,0,20">
-        <StackPanel Orientation="Horizontal">
-            <TextBlock Text="🚌" FontSize="20"
-                       Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"
-                       VerticalAlignment="Center" Margin="0,0,10,0"/>
-            <TextBlock FontSize="18" FontWeight="Bold"
-                       Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"
-                       VerticalAlignment="Center"
-                       Text="{Binding Title, RelativeSource={RelativeSource AncestorType=syncfusion:ChromelessWindow}}"/>
-        </StackPanel>
-    </Border>
-
-        <!-- Bus Number -->
-        <StackPanel Grid.Row="1" Margin="0,0,0,10">
-            <TextBlock Text="Bus Number:" Margin="0,0,0,5"/>
-            <syncfusion:SfMaskedEdit x:Name="BusNumberTextBox" Height="34" Padding="8"
-                                     AutomationProperties.Name="Bus Number Input"
-                                     Watermark="Enter bus number"/>
-        </StackPanel>
-
-        <!-- Make -->
-        <StackPanel Grid.Row="2" Margin="0,0,0,10">
-            <TextBlock Text="Make:" Margin="0,0,0,5"/>
-            <syncfusion:SfMaskedEdit x:Name="MakeTextBox" Height="34" Padding="8"
-                                     AutomationProperties.Name="Make Input"
-                                     Watermark="Enter manufacturer"/>
-        </StackPanel>
-
-        <!-- Model -->
-        <StackPanel Grid.Row="3" Margin="0,0,0,10">
-            <TextBlock Text="Model:" Margin="0,0,0,5"/>
-            <syncfusion:SfMaskedEdit x:Name="ModelTextBox" Height="34" Padding="8"
-                                     AutomationProperties.Name="Model Input"
-                                     Watermark="Enter model"/>
-        </StackPanel>
-
-        <!-- Year -->
-        <StackPanel Grid.Row="4" Margin="0,0,0,10">
-            <TextBlock Text="Year:" Margin="0,0,0,5"/>
-            <syncfusion:SfMaskedEdit x:Name="YearTextBox" Height="34" Padding="8"
-                                     AutomationProperties.Name="Year Input"
-                                     Mask="0000" PromptChar="_"
-                                     Watermark="YYYY"/>
-        </StackPanel>
-
-        <!-- Capacity -->
-        <StackPanel Grid.Row="5" Margin="0,0,0,10">
-            <TextBlock Text="Seating Capacity:" Margin="0,0,0,5"/>
-            <syncfusion:SfMaskedEdit x:Name="CapacityTextBox" Height="34" Padding="8"
-                                     AutomationProperties.Name="Seating Capacity Input"
-                                     Mask="000" PromptChar="_"
-                                     Watermark="Seats"/>
-        </StackPanel>
-
-        <!-- Action Buttons -->
-    <StackPanel Grid.Row="7"
-                    Orientation="Horizontal"
-                    HorizontalAlignment="Right"
-                    Margin="0,20,0,0">
-        <syncfusion:ButtonAdv Label="Save"
-                    Width="80"
-            Height="36"
-            Margin="0,0,10,0"
-                    Click="SaveButton_Click"/>
-        <syncfusion:ButtonAdv Label="Cancel"
-                    Width="80"
-            Height="36"
-                    Click="CancelButton_Click"/>
-        </StackPanel>
-    </Grid>
+        <Grid Margin="20">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <!-- 0 Header -->
+                <RowDefinition Height="Auto" />
+                <!-- 1 Bus Number -->
+                <RowDefinition Height="Auto" />
+                <!-- 2 Make -->
+                <RowDefinition Height="Auto" />
+                <!-- 3 Model -->
+                <RowDefinition Height="Auto" />
+                <!-- 4 Year -->
+                <RowDefinition Height="Auto" />
+                <!-- 5 Capacity -->
+                <RowDefinition Height="Auto" />
+                <!-- 6 License Number -->
+                <RowDefinition Height="*" />
+                <!-- 7 Spacer/Filler -->
+                <RowDefinition Height="Auto" />
+                <!-- 8 Action Buttons -->
+            </Grid.RowDefinitions>
+            <!-- Header -->
+            <Border Grid.Row="0"
+                    Background="{DynamicResource BusBuddy.Brush.Primary}"
+                    CornerRadius="5"
+                    Padding="15"
+                    Margin="0,0,0,20">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="🚌"
+                               FontSize="20"
+                               Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"
+                               VerticalAlignment="Center"
+                               Margin="0,0,10,0" />
+                    <TextBlock FontSize="18"
+                               FontWeight="Bold"
+                               Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"
+                               VerticalAlignment="Center"
+                               Text="{Binding Title, RelativeSource={RelativeSource AncestorType=syncfusion:ChromelessWindow}}" />
+                </StackPanel>
+            </Border>
+            <!-- Bus Number -->
+            <StackPanel Grid.Row="1"
+                        Margin="0,0,0,10">
+                <TextBlock Text="Bus Number:"
+                           Margin="0,0,0,5" />
+                <syncfusion:SfMaskedEdit Height="34"
+                                         Padding="8"
+                                         Text="{Binding BusNumber, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                         AutomationProperties.Name="Bus Number Input"
+                                         Watermark="Enter bus number" />
+            </StackPanel>
+            <!-- Make -->
+            <StackPanel Grid.Row="2"
+                        Margin="0,0,0,10">
+                <TextBlock Text="Make:"
+                           Margin="0,0,0,5" />
+                <syncfusion:SfMaskedEdit Height="34"
+                                         Padding="8"
+                                         Text="{Binding Make, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                         AutomationProperties.Name="Make Input"
+                                         Watermark="Enter manufacturer" />
+            </StackPanel>
+            <!-- Model -->
+            <StackPanel Grid.Row="3"
+                        Margin="0,0,0,10">
+                <TextBlock Text="Model:"
+                           Margin="0,0,0,5" />
+                <syncfusion:SfMaskedEdit Height="34"
+                                         Padding="8"
+                                         Text="{Binding Model, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                         AutomationProperties.Name="Model Input"
+                                         Watermark="Enter model" />
+            </StackPanel>
+            <!-- Year -->
+            <StackPanel Grid.Row="4"
+                        Margin="0,0,0,10">
+                <TextBlock Text="Year:"
+                           Margin="0,0,0,5" />
+                <syncfusion:SfMaskedEdit Height="34"
+                                         Padding="8"
+                                         Text="{Binding Year, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                         AutomationProperties.Name="Year Input"
+                                         Mask="0000"
+                                         PromptChar="_"
+                                         Watermark="YYYY" />
+            </StackPanel>
+            <!-- Capacity -->
+            <StackPanel Grid.Row="5"
+                        Margin="0,0,0,10">
+                <TextBlock Text="Seating Capacity:"
+                           Margin="0,0,0,5" />
+                <syncfusion:SfMaskedEdit Height="34"
+                                         Padding="8"
+                                         Text="{Binding SeatingCapacity, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                         AutomationProperties.Name="Seating Capacity Input"
+                                         Mask="000"
+                                         PromptChar="_"
+                                         Watermark="Seats" />
+            </StackPanel>
+            <!-- License Number -->
+            <StackPanel Grid.Row="6"
+                        Margin="0,0,0,10">
+                <TextBlock Text="License Number:"
+                           Margin="0,0,0,5" />
+                <syncfusion:SfMaskedEdit Height="34"
+                                         Padding="8"
+                                         Text="{Binding LicenseNumber, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                         AutomationProperties.Name="License Number Input"
+                                         Watermark="Enter license number" />
+            </StackPanel>
+            <!-- VIN Number (optional) -->
+            <StackPanel Grid.Row="7" Margin="0,0,0,10">
+                <TextBlock Text="VIN Number:" Margin="0,0,0,5" />
+                <syncfusion:SfMaskedEdit Height="34" Padding="8"
+                                         Text="{Binding VinNumber, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                         AutomationProperties.Name="VIN Number Input"
+                                         Watermark="Enter VIN (optional)" />
+            </StackPanel>
+            <!-- Status selector -->
+            <StackPanel Grid.Row="8" Margin="0,0,0,10">
+                <TextBlock Text="Status:" Margin="0,0,0,5" />
+                <ComboBox Height="34" Padding="4" ItemsSource="{Binding AvailableStatuses}" SelectedItem="{Binding Status, Mode=TwoWay}" />
+            </StackPanel>
+            <!-- Action Buttons -->
+            <StackPanel Grid.Row="9"
+                        Orientation="Horizontal"
+                        HorizontalAlignment="Right"
+                        Margin="0,20,0,0">
+                <syncfusion:ButtonAdv x:Name="SaveBusButton"
+                                      Label="💾 Save"
+                                      Width="90"
+                                      Height="36"
+                                      Margin="0,0,10,0"
+                                      Command="{Binding SaveCommand}" />
+                <syncfusion:ButtonAdv x:Name="CancelBusButton"
+                                      Label="❌ Cancel"
+                                      Width="90"
+                                      Height="36"
+                                      Command="{Binding CancelCommand}" />
+            </StackPanel>
+        </Grid>
     </ScrollViewer>
 </syncfusion:ChromelessWindow>

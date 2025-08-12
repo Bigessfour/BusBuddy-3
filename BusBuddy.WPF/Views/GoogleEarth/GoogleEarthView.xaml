@@ -164,12 +164,31 @@
                               Margin="0,4"
                               HorizontalAlignment="Stretch"/>
 
+                <!-- MVP demo: Add a stop marker (plots coordinates near Wiley). Uses AddMarkerCommand with "lat,lon,label" string parameter -->
+                <syncfusion:ButtonAdv Content="➕ Add Stop (Demo)"
+                              Command="{Binding AddMarkerCommand}"
+                              CommandParameter="38.1530,-102.7200,Demo Stop"
+                              Background="{DynamicResource ButtonBackgroundBrush}"
+                              Foreground="{DynamicResource ButtonForegroundBrush}"
+                              Padding="10,8"
+                              Margin="0,4"
+                              HorizontalAlignment="Stretch"/>
+
                 <syncfusion:ButtonAdv Content="✅ Check Eligibility (Demo)"
                               Command="{Binding CheckEligibilityCommand}"
                               Background="{DynamicResource ButtonBackgroundBrush}"
                               Foreground="{DynamicResource ButtonForegroundBrush}"
                               Padding="10,8"
                               Margin="0,8,0,0"
+                              HorizontalAlignment="Stretch"/>
+
+                <!-- Generate Eligibility Route PDF (auto-build pseudo route) -->
+                <syncfusion:ButtonAdv Content="🧾 Generate Eligibility PDF"
+                              Command="{Binding GenerateEligibilityRoutePdfCommand}"
+                              Background="{DynamicResource ButtonBackgroundBrush}"
+                              Foreground="{DynamicResource ButtonForegroundBrush}"
+                              Padding="10,8"
+                              Margin="0,4,0,0"
                               HorizontalAlignment="Stretch"/>
                             </StackPanel>
                         </Border>

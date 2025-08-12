@@ -23,6 +23,9 @@
                 <!-- Shared view styles can go here if needed (kept empty for now) -->
                 <!-- <ResourceDictionary Source="Resources/Styles/SharedViewStyles.xaml"/> -->
 
+                <!-- Custom brush overrides for form label/input contrast -->
+                <ResourceDictionary Source="Resources/Themes/CustomBrushes.xaml"/>
+
                 <!-- Phase 1: Basic styling without complex Syncfusion theme loading -->
                 <!-- Note: Syncfusion themes will be applied programmatically via SfSkinManager in App.xaml.cs -->
                 <ResourceDictionary>

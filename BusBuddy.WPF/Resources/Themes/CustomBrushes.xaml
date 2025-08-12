@@ -1,0 +1,15 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <!-- Custom contrasting brushes for FluentDark visibility (Syncfusion WPF themes) -->
+    <!-- Reference: Syncfusion WPF Theme Docs https://help.syncfusion.com/wpf/themes/getting-started -->
+    <SolidColorBrush x:Key="FormLabelForegroundBrush"
+                     Color="#FFFFFFFF" />
+    <SolidColorBrush x:Key="FormInputForegroundBrush"
+                     Color="#FFFFFFFF" />
+    <SolidColorBrush x:Key="FormInputBackgroundBrush"
+                     Color="#2B2B2B" />
+    <SolidColorBrush x:Key="FormInputBorderBrush"
+                     Color="#555555" />
+    <SolidColorBrush x:Key="FormSectionHeaderBrush"
+                     Color="#333333" />
+</ResourceDictionary>

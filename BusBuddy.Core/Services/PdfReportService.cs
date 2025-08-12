@@ -323,9 +323,9 @@ namespace BusBuddy.Core.Services
                     }
                 }
 
-                // Stops Section
-                g.DrawString("Stops", sectionFont, textBrush, new PointF(20, y));
-                y += 20f;
+                // Stops Section (Detailed Schedule Table)
+                g.DrawString("Stops (Schedule)", sectionFont, textBrush, new PointF(20, y));
+                y += 18f;
                 if (!stops.Any())
                 {
                     g.DrawString("(No stops added)", bodyFont, textBrush, new PointF(30, y));
@@ -333,14 +333,50 @@ namespace BusBuddy.Core.Services
                 }
                 else
                 {
-                    foreach (var stop in stops.OrderBy(s => s.StopOrder).Take(25)) // limit to keep single page MVP
+                    // Table headers
+                    float x0 = 30f; float x1 = x0 + 28f; float x2 = x1 + 140f; float x3 = x2 + 70f; float x4 = x3 + 70f; float x5 = x4 + 60f;
+                    g.DrawString("#", labelFont, textBrush, new PointF(x0, y));
+                    g.DrawString("Stop", labelFont, textBrush, new PointF(x1, y));
+                    g.DrawString("Arr", labelFont, textBrush, new PointF(x2, y));
+                    g.DrawString("Dep", labelFont, textBrush, new PointF(x3, y));
+                    g.DrawString("Miles", labelFont, textBrush, new PointF(x4, y));
+                    g.DrawString("Cum", labelFont, textBrush, new PointF(x5, y));
+                    y += 12f;
+                    double cumulativeMiles = 0.0;
+                    DateTime? firstArr = null; DateTime? lastDep = null;
+                    var orderedStops = stops.OrderBy(s => s.StopOrder).Take(32).ToList();
+                    for (int i = 0; i < orderedStops.Count; i++)
                     {
-                        var eta = stop.EstimatedArrivalTime == default ? "--:--" : stop.EstimatedArrivalTime.ToString("HH:mm");
-                        g.DrawString($"{stop.StopOrder,2}. {stop.StopName ?? "(Stop)"}  @ {eta}", bodyFont, textBrush, new PointF(30, y));
-                        y += 14f;
-                        if (y > page.GetClientSize().Height - 120f) break; // simple overflow guard MVP
+                        var stop = orderedStops[i];
+                        var arr = stop.EstimatedArrivalTime == default ? "--:--" : stop.EstimatedArrivalTime.ToString("HH:mm");
+                        var dep = stop.EstimatedDepartureTime == default ? "--:--" : stop.EstimatedDepartureTime.ToString("HH:mm");
+                        // Approximate leg miles if coordinates present with previous
+                        double legMiles = 0.0;
+                        if (i == 0)
+                        {
+                            legMiles = 0.0; // from origin (school) not yet tracked here
+                        }
+                        else
+                        {
+                            var prev = orderedStops[i - 1];
+                            if (prev.Latitude.HasValue && prev.Longitude.HasValue && stop.Latitude.HasValue && stop.Longitude.HasValue)
+                            {
+                                legMiles = Haversine((double)prev.Latitude.Value, (double)prev.Longitude.Value, (double)stop.Latitude.Value, (double)stop.Longitude.Value);
+                            }
+                        }
+                        cumulativeMiles += legMiles;
+                        if (firstArr == null && stop.EstimatedArrivalTime != default) firstArr = stop.EstimatedArrivalTime;
+                        if (stop.EstimatedDepartureTime != default) lastDep = stop.EstimatedDepartureTime;
+                        g.DrawString(stop.StopOrder.ToString(), bodyFont, textBrush, new PointF(x0, y));
+                        g.DrawString(Trim(stop.StopName, 18), bodyFont, textBrush, new PointF(x1, y));
+                        g.DrawString(arr, bodyFont, textBrush, new PointF(x2, y));
+                        g.DrawString(dep, bodyFont, textBrush, new PointF(x3, y));
+                        g.DrawString(legMiles.ToString("0.0"), bodyFont, textBrush, new PointF(x4, y));
+                        g.DrawString(cumulativeMiles.ToString("0.0"), bodyFont, textBrush, new PointF(x5, y));
+                        y += 12f;
+                        if (y > page.GetClientSize().Height - 150f) break;
                     }
-                    y += 10f;
+                    y += 6f;
                 }
 
                 // Students Section
@@ -374,6 +410,23 @@ namespace BusBuddy.Core.Services
                 Logger.Error(ex, "Error generating route PDF summary for {RouteId}", route.RouteId);
                 return Array.Empty<byte>();
             }
+        }
+
+        // Lightweight Haversine for PDF schedule (duplicate kept local to avoid coupling to VM)
+        private static double Haversine(double lat1, double lon1, double lat2, double lon2)
+        {
+            const double R = 3958.8; // miles
+            double dLat = (lat2 - lat1) * Math.PI / 180.0;
+            double dLon = (lon2 - lon1) * Math.PI / 180.0;
+            double a = Math.Pow(Math.Sin(dLat / 2), 2) + Math.Cos(lat1 * Math.PI / 180.0) * Math.Cos(lat2 * Math.PI / 180.0) * Math.Pow(Math.Sin(dLon / 2), 2);
+            double c = 2 * Math.Asin(Math.Sqrt(a));
+            return R * c;
+        }
+
+        private static string Trim(string? value, int max)
+        {
+            if (string.IsNullOrEmpty(value)) return "";
+            return value.Length <= max ? value : value.Substring(0, max - 1) + "…";
         }
 
         #region Fallback Text Generation (Used when PDF generation fails)

@@ -43,6 +43,8 @@ namespace BusBuddy.WPF.ViewModels.Driver
             {
                 if (SetProperty(ref _driver, value))
                 {
+                    // Keep composite name aligned
+                    TryUpdateDriverName();
                     if (SaveDriverCommand is IRelayCommand save)
                     {
                         save.NotifyCanExecuteChanged();
@@ -52,6 +54,7 @@ namespace BusBuddy.WPF.ViewModels.Driver
                         del.NotifyCanExecuteChanged();
                     }
                     OnPropertyChanged(nameof(CanSaveDriver));
+                    Logger.Debug("Driver object replaced -> Id={Id} Name={Name}", _driver?.DriverId, _driver?.DriverName);
                 }
             }
         }
@@ -122,6 +125,7 @@ namespace BusBuddy.WPF.ViewModels.Driver
                     Status = "Active",
                     CreatedDate = DateTime.UtcNow
                 };
+                TryUpdateDriverName();
                 IsEditMode = false;
                 FormTitle = "Add New Driver";
                 SelectedDriver = null;
@@ -148,6 +152,7 @@ namespace BusBuddy.WPF.ViewModels.Driver
             {
                 IsLoading = true;
                 Logger.Information("Saving driver: {DriverName}", Driver.DriverName);
+                Logger.Debug("Driver pre-save snapshot -> Id={Id} Name={Name} Phone={Phone} License={Lic} Class={Class}", Driver.DriverId, Driver.DriverName, Driver.DriverPhone, Driver.LicenseNumber, Driver.LicenseClass);
 
                 var validationErrors = await _driverService.ValidateDriverAsync(Driver);
                 if (validationErrors.Count > 0)
@@ -163,6 +168,7 @@ namespace BusBuddy.WPF.ViewModels.Driver
                     if (!success)
                     {
                         ShowError("Failed to update driver");
+                        Logger.Debug("Update operation returned false for Id={Id}", Driver.DriverId);
                         return;
                     }
                     savedDriver = Driver;
@@ -170,7 +176,9 @@ namespace BusBuddy.WPF.ViewModels.Driver
                 }
                 else
                 {
+                    TryUpdateDriverName();
                     savedDriver = await _driverService.AddDriverAsync(Driver);
+                    Logger.Debug("Add operation returned Id={Id}", savedDriver.DriverId);
                     ShowSuccess("Driver added successfully");
                 }
 
@@ -178,6 +186,7 @@ namespace BusBuddy.WPF.ViewModels.Driver
                 SelectedDriver = Drivers.FirstOrDefault(d => d.DriverId == savedDriver.DriverId);
                 Logger.Information("Driver saved successfully: {DriverName} (ID: {DriverId})",
                     savedDriver.DriverName, savedDriver.DriverId);
+                Logger.Debug("Driver post-save snapshot -> Id={Id} UpdatedDate={Updated} CreatedDate={Created}", savedDriver.DriverId, savedDriver.UpdatedDate, savedDriver.CreatedDate);
 
                 // Signal dialog close with success
                 RequestClose?.Invoke(this, true);
@@ -216,6 +225,7 @@ namespace BusBuddy.WPF.ViewModels.Driver
                 IsLoading = true;
                 Logger.Information("Deleting driver: {DriverName} (ID: {DriverId})",
                     SelectedDriver.DriverName, SelectedDriver.DriverId);
+                Logger.Debug("Driver delete snapshot -> Id={Id} Name={Name}", SelectedDriver.DriverId, SelectedDriver.DriverName);
 
                 var success = await _driverService.DeleteDriverAsync(SelectedDriver.DriverId);
                 if (success)
@@ -339,6 +349,7 @@ namespace BusBuddy.WPF.ViewModels.Driver
 
                 IsEditMode = true;
                 FormTitle = $"Edit Driver - {driver.DriverName}";
+                TryUpdateDriverName();
 
                 if (SaveDriverCommand is IRelayCommand save)
                 {
@@ -353,6 +364,32 @@ namespace BusBuddy.WPF.ViewModels.Driver
             {
                 Logger.Error(ex, "Error loading driver for edit");
                 ShowError($"Error loading driver: {ex.Message}");
+            }
+        }
+
+        private void TryUpdateDriverName()
+        {
+            try
+            {
+                if (!string.IsNullOrWhiteSpace(Driver.FirstName) || !string.IsNullOrWhiteSpace(Driver.LastName))
+                {
+                    var full = ($"{Driver.FirstName} {Driver.LastName}").Trim();
+                    if (!string.IsNullOrWhiteSpace(full))
+                    {
+                        Driver.DriverName = full;
+                        OnPropertyChanged(nameof(Driver));
+                        if (SaveDriverCommand is IRelayCommand save)
+                        {
+                            save.NotifyCanExecuteChanged();
+                        }
+                        OnPropertyChanged(nameof(CanSaveDriver));
+                        Logger.Debug("Computed DriverName -> {Name} (First={First} Last={Last})", full, Driver.FirstName, Driver.LastName);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Warning(ex, "Failed to auto-update DriverName from First/Last");
             }
         }
     }

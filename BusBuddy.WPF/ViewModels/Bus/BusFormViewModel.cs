@@ -5,7 +5,8 @@ using System.Windows;
 using System.Windows.Input;
 using BusBuddy.WPF.Commands;
 using BusBuddy.Core.Models;
-using BusBuddy.Core.Services;
+using BusBuddy.Core.Services.Interfaces; // Use core IBusService
+using Serilog;
 
 namespace BusBuddy.WPF.ViewModels.Bus
 {
@@ -17,27 +18,30 @@ namespace BusBuddy.WPF.ViewModels.Bus
     {
         private BusBuddy.Core.Models.Bus _bus;
         private bool _isEditMode;
+        private readonly IBusService? _busService; // optional during MVP if DI not configured
+        private static readonly ILogger Logger = Log.ForContext<BusFormViewModel>();
 
-        public BusFormViewModel() : this(new BusBuddy.Core.Models.Bus())
-        {
-        }
+        public event EventHandler<bool?>? RequestClose; // mimic DriverForm pattern
 
-        public BusFormViewModel(BusBuddy.Core.Models.Bus bus)
+        public BusFormViewModel() : this(null, new BusBuddy.Core.Models.Bus()) {}
+
+        public BusFormViewModel(IBusService? busService) : this(busService, new BusBuddy.Core.Models.Bus()) {}
+
+        public BusFormViewModel(IBusService? busService, BusBuddy.Core.Models.Bus bus)
         {
+            _busService = busService;
             _bus = bus ?? new BusBuddy.Core.Models.Bus();
             _isEditMode = bus?.VehicleId > 0;
 
-            // Initialize commands
-            SaveCommand = new RelayCommand(SaveBus, CanSave);
+            SaveCommand = new RelayCommand(async () => await SaveBusAsync(), CanSave);
             CancelCommand = new RelayCommand(Cancel);
 
-            // Initialize collections
             InitializeDropdownData();
         }
 
         #region Properties
 
-        public string FormTitle => _isEditMode ? $"Edit Bus: {BusNumber}" : "Add New Bus";
+    public string Title => _isEditMode ? $"Edit Bus: {BusNumber}" : "Add New Bus"; // exposed as Title for binding
 
         public string BusNumber
         {
@@ -48,7 +52,8 @@ namespace BusBuddy.WPF.ViewModels.Bus
                 {
                     _bus.BusNumber = value ?? string.Empty;
                     OnPropertyChanged();
-                    OnPropertyChanged(nameof(FormTitle));
+                    OnPropertyChanged(nameof(Title));
+                    Logger.Debug("BusNumber changed -> {BusNumber}", _bus.BusNumber);
                     ((RelayCommand)SaveCommand).RaiseCanExecuteChanged();
                 }
             }
@@ -64,6 +69,7 @@ namespace BusBuddy.WPF.ViewModels.Bus
                     _bus.LicenseNumber = value ?? string.Empty;
                     OnPropertyChanged();
                     ((RelayCommand)SaveCommand).RaiseCanExecuteChanged();
+                    Logger.Debug("LicenseNumber changed -> {License}", _bus.LicenseNumber);
                 }
             }
         }
@@ -77,6 +83,7 @@ namespace BusBuddy.WPF.ViewModels.Bus
                 {
                     _bus.VINNumber = value ?? string.Empty;
                     OnPropertyChanged();
+                    Logger.Debug("VIN changed -> {VIN}", _bus.VINNumber);
                 }
             }
         }
@@ -91,6 +98,7 @@ namespace BusBuddy.WPF.ViewModels.Bus
                     _bus.Year = value;
                     OnPropertyChanged();
                     ((RelayCommand)SaveCommand).RaiseCanExecuteChanged();
+                    Logger.Debug("Year changed -> {Year}", _bus.Year);
                 }
             }
         }
@@ -105,6 +113,7 @@ namespace BusBuddy.WPF.ViewModels.Bus
                     _bus.Make = value ?? string.Empty;
                     OnPropertyChanged();
                     ((RelayCommand)SaveCommand).RaiseCanExecuteChanged();
+                    Logger.Debug("Make changed -> {Make}", _bus.Make);
                 }
             }
         }
@@ -119,6 +128,7 @@ namespace BusBuddy.WPF.ViewModels.Bus
                     _bus.Model = value ?? string.Empty;
                     OnPropertyChanged();
                     ((RelayCommand)SaveCommand).RaiseCanExecuteChanged();
+                    Logger.Debug("Model changed -> {Model}", _bus.Model);
                 }
             }
         }
@@ -133,6 +143,7 @@ namespace BusBuddy.WPF.ViewModels.Bus
                     _bus.SeatingCapacity = value;
                     OnPropertyChanged();
                     ((RelayCommand)SaveCommand).RaiseCanExecuteChanged();
+                    Logger.Debug("SeatingCapacity changed -> {Cap}", _bus.SeatingCapacity);
                 }
             }
         }
@@ -189,44 +200,69 @@ namespace BusBuddy.WPF.ViewModels.Bus
 
         private bool CanSave()
         {
-            return !string.IsNullOrWhiteSpace(BusNumber) &&
-                   !string.IsNullOrWhiteSpace(LicenseNumber) &&
-                   Year >= 1990 && Year <= DateTime.Now.Year + 1 &&
-                   !string.IsNullOrWhiteSpace(Make) &&
-                   !string.IsNullOrWhiteSpace(Model) &&
-                   SeatingCapacity > 0;
+            var can = !string.IsNullOrWhiteSpace(BusNumber) &&
+                      !string.IsNullOrWhiteSpace(LicenseNumber) &&
+                      Year >= 1990 && Year <= DateTime.Now.Year + 1 &&
+                      !string.IsNullOrWhiteSpace(Make) &&
+                      !string.IsNullOrWhiteSpace(Model) &&
+                      SeatingCapacity > 0;
+            return can;
         }
 
-        private async void SaveBus()
+        private async Task SaveBusAsync()
         {
             try
             {
-                // For MVP - simplified save logic
-                // TODO: Implement actual service call
-                var result = MessageBox.Show(
+                Logger.Information("Attempting to save bus {BusNumber} (EditMode={EditMode})", BusNumber, _isEditMode);
+                var confirm = MessageBox.Show(
                     $"Save bus: {BusNumber} ({Year} {Make} {Model})?",
                     "Confirm Save",
                     MessageBoxButton.YesNo,
                     MessageBoxImage.Question);
-
-                if (result == MessageBoxResult.Yes)
+                if (confirm != MessageBoxResult.Yes)
                 {
-                    // Close the form
-                    if (Application.Current.Windows.OfType<Views.Bus.BusForm>().FirstOrDefault() is var window)
+                    Logger.Information("Save cancelled by user for bus {BusNumber}", BusNumber);
+                    return;
+                }
+
+                if (_busService != null)
+                {
+                    if (_isEditMode)
                     {
-                        window.DialogResult = true;
-                        window.Close();
+                        var updated = await _busService.UpdateBusAsync(_bus);
+                        Logger.Information("Bus update result for {BusNumber}: {Result}", BusNumber, updated);
                     }
+                    else
+                    {
+                        var added = await _busService.AddBusAsync(_bus);
+                        _bus.VehicleId = added.VehicleId;
+                        _isEditMode = true;
+                        OnPropertyChanged(nameof(Title));
+                        Logger.Information("Bus added with ID {BusId}", added.VehicleId);
+                    }
+                }
+                else
+                {
+                    Logger.Warning("_busService not available — skipping persistence (MVP fallback)");
+                }
+
+                RequestClose?.Invoke(this, true);
+                if (Application.Current.Windows.OfType<Views.Bus.BusForm>().FirstOrDefault() is var window)
+                {
+                    window.DialogResult = true;
+                    window.Close();
                 }
             }
             catch (Exception ex)
             {
+                Logger.Error(ex, "Error saving bus {BusNumber}", BusNumber);
                 MessageBox.Show($"Error saving bus: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
         private void Cancel()
         {
+            RequestClose?.Invoke(this, false);
             if (Application.Current.Windows.OfType<Views.Bus.BusForm>().FirstOrDefault() is var window)
             {
                 window.DialogResult = false;
@@ -271,21 +307,10 @@ namespace BusBuddy.WPF.ViewModels.Bus
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
 
+    public void ForceRequery() => ((RelayCommand)SaveCommand).RaiseCanExecuteChanged();
+
         #endregion
     }
 
-    #region Helper Classes
-
-    // RelayCommand consolidated centrally in BusBuddy.WPF.Commands
-
-    /// <summary>
-    /// Placeholder bus service interface for MVP
-    /// </summary>
-    public interface IBusService
-    {
-        Task<BusBuddy.Core.Models.Bus> SaveBusAsync(BusBuddy.Core.Models.Bus bus);
-        Task<List<BusBuddy.Core.Models.Bus>> GetAllBusesAsync();
-    }
-
-    #endregion
+    // Placeholder interface removed; core IBusService in BusBuddy.Core.Services.Interfaces is used.
 }

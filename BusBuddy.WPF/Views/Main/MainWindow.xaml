@@ -48,7 +48,17 @@
 
                 <!-- Navigation + Theme Selector -->
                 <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,15,0,0">
-                    <syncfusion:ButtonAdv Label="📚 Students" Margin="0,0,10,0" Padding="15,8"
+                    <syncfusion:ButtonAdv Label="🧾 Eligibility PDF" Margin="0,0,18,0" Padding="15,8"
+                                          Background="{DynamicResource BusBuddy.Brush.Primary}" Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}" BorderThickness="0"
+                                          Click="EligibilityPdfButton_Click" FontSize="14" FontWeight="SemiBold"
+                                          ToolTip="Generate eligibility route PDF (district outside town, excludes Lamar)"
+                                          AutomationProperties.Name="Generate Eligibility PDF"/>
+                    <syncfusion:ButtonAdv Label="Print Last PDF" Margin="0,0,25,0" Padding="15,8"
+                                          Background="{DynamicResource BusBuddy.Brush.Primary}" Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}" BorderThickness="0"
+                                          Click="PrintEligibilityPdfButton_Click" FontSize="14" FontWeight="SemiBold"
+                                          ToolTip="Print the last generated eligibility PDF (opens system print dialog)"
+                                          AutomationProperties.Name="Print Eligibility PDF"/>
+                        <syncfusion:ButtonAdv Label="Students" Margin="0,0,10,0" Padding="15,8"
                                           Background="{DynamicResource BusBuddy.Brush.Primary}" Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}" BorderThickness="0"
                                           Click="StudentsButton_Click" FontSize="14" FontWeight="SemiBold"
                                           ToolTip="Manage student records and information"

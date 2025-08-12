@@ -244,6 +244,8 @@ public class Driver : INotifyPropertyChanged
     [StringLength(50)]
     [Display(Name = "First Name")]
     public string? FirstName { get; set; }
+    // NOTE: For MVP Save button enablement we need PropertyChanged when First/Last names change.
+    // Rather than refactor auto-property widely, provide explicit backing fields in future.
 
     [StringLength(50)]
     [Display(Name = "Last Name")]

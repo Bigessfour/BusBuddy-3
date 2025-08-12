@@ -266,6 +266,66 @@ namespace BusBuddy.WPF.Views.Main
             Logger.Debug("InitializeMainWindow method completed");
         }
 
+        // Generate eligibility route PDF directly from MainWindow without needing GoogleEarthView visible.
+        private async void EligibilityPdfButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                using (Serilog.Context.LogContext.PushProperty("UIAction", "EligibilityPdf"))
+                {
+                    Logger.Information("Eligibility PDF button clicked (MainWindow)");
+                    var sp = App.ServiceProvider;
+                    var vm = sp?.GetService<BusBuddy.WPF.ViewModels.GoogleEarth.GoogleEarthViewModel>();
+                    if (vm == null)
+                    {
+                        Logger.Warning("GoogleEarthViewModel not resolved for eligibility PDF generation");
+                        System.Windows.MessageBox.Show("Map ViewModel not available (GoogleEarthViewModel)", "Eligibility PDF", MessageBoxButton.OK, MessageBoxImage.Warning);
+                        return;
+                    }
+                    await vm.GenerateEligibilityRoutePdfAndSaveAsync();
+                    System.Windows.MessageBox.Show("Eligibility PDF generated. Check PdfReports folder.", "Eligibility PDF", MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Eligibility PDF generation failed from MainWindow");
+                System.Windows.MessageBox.Show($"Eligibility PDF error: {ex.Message}", "Eligibility PDF", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        // Print the last generated eligibility PDF via shell print verb.
+        private void PrintEligibilityPdfButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var sp = App.ServiceProvider;
+                var vm = sp?.GetService<BusBuddy.WPF.ViewModels.GoogleEarth.GoogleEarthViewModel>();
+                var path = vm?.LastGeneratedEligibilityPdfPath;
+                if (string.IsNullOrWhiteSpace(path) || !System.IO.File.Exists(path))
+                {
+                    System.Windows.MessageBox.Show("No previously generated eligibility PDF found.", "Print Eligibility PDF", MessageBoxButton.OK, MessageBoxImage.Information);
+                    return;
+                }
+                using (Serilog.Context.LogContext.PushProperty("UIAction", "PrintEligibilityPdf"))
+                {
+                    Logger.Information("Printing eligibility PDF {Path}", path);
+                }
+                var psi = new System.Diagnostics.ProcessStartInfo
+                {
+                    FileName = path,
+                    Verb = "print",
+                    UseShellExecute = true,
+                    CreateNoWindow = true
+                };
+                System.Diagnostics.Process.Start(psi);
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Failed to print eligibility PDF");
+                System.Windows.MessageBox.Show($"Print failed: {ex.Message}", "Print Eligibility PDF", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
         // Global button click logger for MainWindow
         private void OnAnyButtonClick(object? sender, RoutedEventArgs e)
         {

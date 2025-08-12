@@ -611,13 +611,11 @@ namespace BusBuddy.WPF.Views.GoogleEarth
                     return;
                 }
 
-                // Capture the map visual
                 if (MapControl is not System.Windows.FrameworkElement mapElement)
                 {
                     return;
                 }
 
-                // Create a FixedDocument with a single page containing the map snapshot
                 var printDlg = new System.Windows.Controls.PrintDialog();
                 if (printDlg.ShowDialog() != true)
                 {
@@ -634,7 +632,6 @@ namespace BusBuddy.WPF.Views.GoogleEarth
                     Height = printDlg.PrintableAreaHeight
                 };
 
-                // Clone a visual for printing (simple approach: use a VisualBrush snapshot)
                 var rect = new System.Windows.Shapes.Rectangle
                 {
                     Width = fixedPage.Width,
@@ -645,7 +642,6 @@ namespace BusBuddy.WPF.Views.GoogleEarth
                 FixedPage.SetTop(rect, 0);
                 fixedPage.Children.Add(rect);
 
-                // Optional caption/directions text (placeholder)
                 var caption = new System.Windows.Controls.TextBlock
                 {
                     Text = "Route map printout",
@@ -659,8 +655,11 @@ namespace BusBuddy.WPF.Views.GoogleEarth
 
                 printDlg.PrintDocument(doc.DocumentPaginator, "BusBuddy Route Map");
 
-                // After printing, also capture a PNG snapshot for embedding in PDF exports
-                TryCaptureMapSnapshot();
+                // New: Use ViewModel snapshot helper for consistency
+                if (DataContext is GoogleEarthViewModel vm)
+                {
+                    vm.CaptureMapSnapshot(mapElement);
+                }
             }
             catch (Exception ex)
             {

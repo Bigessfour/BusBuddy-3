@@ -275,11 +275,16 @@ namespace BusBuddy.WPF
                 // Google Earth ViewModel
                 services.AddTransient<BusBuddy.WPF.ViewModels.GoogleEarth.GoogleEarthViewModel>();
 
-                // Geocoding for plotting addresses (offline demo implementation)
-                services.AddSingleton<BusBuddy.Core.Services.Interfaces.IGeocodingService, BusBuddy.Core.Services.OfflineGeocodingService>();
-
                 ServiceProvider = services.BuildServiceProvider();
 
+                            // Register ViewModels for dependency injection
+                            services.AddTransient<BusBuddy.WPF.ViewModels.MainWindowViewModel>();
+                            services.AddTransient<BusBuddy.WPF.ViewModels.DashboardViewModel>();
+                            services.AddTransient<BusBuddy.WPF.ViewModels.Student.StudentsViewModel>();
+                            services.AddTransient<BusBuddy.WPF.ViewModels.Route.RouteManagementViewModel>();
+                            services.AddTransient<BusBuddy.WPF.ViewModels.Driver.DriverFormViewModel>();
+                            services.AddTransient<ViewModels.Bus.BusFormViewModel>();
+                            services.AddTransient<Views.Bus.BusForm>();
                 // Seed database with JSON data if empty
                 Task.Run(async () =>
                 {
