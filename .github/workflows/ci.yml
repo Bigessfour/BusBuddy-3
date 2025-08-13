@@ -22,10 +22,47 @@ env:
   BUILD_CONFIGURATION: "Release"
 
 jobs:
+  scheduler-tests:
+    name: 🗓️ Scheduler Smoke Tests
+    runs-on: windows-latest
+    timeout-minutes: 10
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 🏗️ Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: 🔧 Restore
+        run: dotnet restore ${{ env.SOLUTION_FILE }} --verbosity minimal
+
+      - name: 🏗️ Build (Release)
+        run: dotnet build ${{ env.SOLUTION_FILE }} --no-restore --configuration ${{ env.BUILD_CONFIGURATION }} --verbosity minimal
+
+      - name: 🧪 Run Scheduler tests only
+        shell: pwsh
+        run: |
+          echo "🧪 Running Scheduler category tests..."
+          dotnet test "BusBuddy.Tests/BusBuddy.Tests.csproj" --no-build --configuration ${{ env.BUILD_CONFIGURATION }} --verbosity normal --filter "TestCategory=Scheduler" --logger "trx;LogFileName=SchedulerTests.trx"
+
+      - name: 📊 Publish scheduler test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: scheduler-tests-results-${{ github.run_number }}
+          path: |
+            **/SchedulerTests.trx
+          retention-days: 7
+
   build-and-test:
     name: 🏗️ Build & Test
     runs-on: windows-latest
     timeout-minutes: 30
+    needs: [scheduler-tests]
     strategy:
       matrix:
         platform: [x64, x86]
