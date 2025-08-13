@@ -1,7 +1,9 @@
-using NUnit.Framework;
-using Microsoft.Extensions.Caching.Memory;
+using System; // Needed for Guid, IDisposable
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Caching.Memory;
+using Microsoft.EntityFrameworkCore; // DbContextOptionsBuilder & InMemory provider (EF Core docs: https://learn.microsoft.com/ef/core/testing/in-memory)
+using NUnit.Framework;
 using BusBuddy.Core.Models;
 using BusBuddy.Core.Services;
 using BusBuddy.Core.Data;

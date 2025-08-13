@@ -38,7 +38,7 @@
     <!-- Enhanced Toolbar for Route Building -->
     <Border Grid.Row="1" Background="{DynamicResource BusBuddy.Brush.Surface.Light}"
                 CornerRadius="3" Padding="10" Margin="0,0,0,10">
-            <Grid>
+            <Grid Background="{DynamicResource ContentBackgroundBrush}">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>

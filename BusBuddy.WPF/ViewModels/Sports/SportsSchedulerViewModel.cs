@@ -26,6 +26,7 @@ namespace BusBuddy.WPF.ViewModels.Sports
     /// Manages sports activities with vehicle and driver dependencies
     /// Features: Real-time scheduling, conflict detection, resource optimization
     /// </summary>
+    [Obsolete("Use UnifiedSchedulerViewModel (Sports + Activities)")]
     public class SportsSchedulerViewModel : BaseViewModel, IDisposable
     {
         private static new readonly ILogger Logger = Log.ForContext<SportsSchedulerViewModel>();

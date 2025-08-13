@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "generatedOn": "2025-08-13T00:00:00Z",
+  "identicalRemoved": [
+    {
+      "removed": "BusBuddy.WPF/BusBuddy.db",
+      "kept": "(root)/BusBuddy.db",
+      "reason": "IdenticalContent-DBRootCanonical"
+    }
+  ],
+  "differingDecisions": [],
+  "pending": []
+}

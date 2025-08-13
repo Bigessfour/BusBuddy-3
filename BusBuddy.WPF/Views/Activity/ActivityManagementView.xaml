@@ -11,11 +11,13 @@
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/SyncfusionV30_Validated_ResourceDictionary.xaml"/>
+                <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/Themes/FluentDarkTheme.xaml"/>
+                <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/Themes/FluentLightTheme.xaml"/>
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </UserControl.Resources>
 
-    <Grid>
+    <Grid Background="{DynamicResource ContentBackgroundBrush}">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
@@ -37,8 +39,11 @@
                                AllowEditing="False"
                                AllowSorting="True"
                                AllowFiltering="True"
-                   Margin="20"
-                   Background="{DynamicResource BusBuddy.Brush.DataGrid.Background}">
+           Margin="20"
+                   GridLinesVisibility="Both"
+                   HeaderLinesVisibility="Both"
+           ColumnSizer="Star"
+           Background="{DynamicResource BusBuddy.Brush.DataGrid.Background}">
             <syncfusion:SfDataGrid.Columns>
                 <syncfusion:GridTextColumn HeaderText="Activity Name" MappingName="ActivityName" Width="200"/>
                 <syncfusion:GridTextColumn HeaderText="Date" MappingName="ActivityDate" Width="120"/>

@@ -10,15 +10,53 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:syncfusion="http://schemas.syncfusion.com/wpf"
-             xmlns:syncfusionshared="clr-namespace:Syncfusion.Windows.Shared;assembly=Syncfusion.Shared.Wpf"
              mc:Ignorable="d"
              d:DesignHeight="600"
              d:DesignWidth="800">
-    <Grid>
-        <TextBlock Text="Vehicle Management View - Phase 1"
-                   FontSize="24"
-                   HorizontalAlignment="Center"
-                   VerticalAlignment="Center"/>
+
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/SyncfusionV30_Validated_ResourceDictionary.xaml"/>
+                <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/Themes/FluentDarkTheme.xaml"/>
+                <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/Themes/FluentLightTheme.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </UserControl.Resources>
+
+    <Grid Margin="20" Background="{DynamicResource ContentBackgroundBrush}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,10">
+            <TextBlock Text="🚌" FontSize="22" VerticalAlignment="Center" Margin="0,0,8,0"/>
+            <TextBlock Text="Vehicles" FontSize="20" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryTextBrush}"/>
+        </StackPanel>
+
+        <syncfusion:SfDataGrid Grid.Row="1"
+                               ItemsSource="{Binding Vehicles}"
+                               SelectedItem="{Binding SelectedVehicle, Mode=TwoWay}"
+                               AutoGenerateColumns="False"
+                               AllowEditing="False"
+                               AllowSorting="True"
+                               AllowFiltering="True"
+                               SelectionMode="Single"
+                               GridLinesVisibility="Both"
+                               HeaderLinesVisibility="Both"
+                               ColumnSizer="Star"
+                               Background="{DynamicResource BusBuddy.Brush.DataGrid.Background}">
+            <syncfusion:SfDataGrid.Columns>
+                <syncfusion:GridTextColumn MappingName="VehicleId" HeaderText="ID" Width="60"/>
+                <syncfusion:GridTextColumn MappingName="BusNumber" HeaderText="Bus Number" Width="120"/>
+                <syncfusion:GridTextColumn MappingName="LicenseNumber" HeaderText="License" Width="120"/>
+                <syncfusion:GridTextColumn MappingName="Make" HeaderText="Make" Width="120"/>
+                <syncfusion:GridTextColumn MappingName="Model" HeaderText="Model" Width="120"/>
+                <syncfusion:GridTextColumn MappingName="Year" HeaderText="Year" Width="80"/>
+                <syncfusion:GridTextColumn MappingName="SeatingCapacity" HeaderText="Capacity" Width="90"/>
+                <syncfusion:GridTextColumn MappingName="Status" HeaderText="Status" Width="100"/>
+            </syncfusion:SfDataGrid.Columns>
+        </syncfusion:SfDataGrid>
     </Grid>
 </UserControl>
-

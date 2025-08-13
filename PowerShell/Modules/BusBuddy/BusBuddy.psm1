@@ -3031,10 +3031,12 @@ Export-ModuleMember -Function @(
     'Invoke-BusBuddyTest',        # ensure bbTest works
     'Invoke-BusBuddyHealthCheck', # ensure bbHealth works
     'Get-BusBuddyMantraId',       # Mantra accessor
-    'Reset-BusBuddyMantraId'      # Mantra reset
+    'Reset-BusBuddyMantraId',     # Mantra reset
+    'Invoke-BusBuddyDuplicateScan' # Duplicate scan (Validation module)
 ) -Alias @(
     'bbBuild', 'bbRun', 'bbClean', 'bbRestore', 'bbTest', 'bbHealth', 'bbMantra', 'bbMantraReset',
-    'bb-build', 'bb-run', 'bb-clean', 'bb-restore', 'bb-test', 'bb-health'
+    'bb-build', 'bb-run', 'bb-clean', 'bb-restore', 'bb-test', 'bb-health',
+    'bb-dup-scan'
 )
 
 #endregion

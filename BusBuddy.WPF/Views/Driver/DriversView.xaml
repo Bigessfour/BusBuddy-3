@@ -5,105 +5,140 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:syncfusion="http://schemas.syncfusion.com/wpf"
              mc:Ignorable="d"
-             d:DesignHeight="450" d:DesignWidth="800">
-
+             d:DesignHeight="450"
+             d:DesignWidth="800">
     <UserControl.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
-                <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/SyncfusionV30_Validated_ResourceDictionary.xaml"/>
+                <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/SyncfusionV30_Validated_ResourceDictionary.xaml" />
+                <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/Themes/FluentDarkTheme.xaml" />
+                <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/Themes/FluentLightTheme.xaml" />
             </ResourceDictionary.MergedDictionaries>
-            <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
-            <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
-                <Setter Property="Margin" Value="5"/>
-                <Setter Property="Padding" Value="10,5"/>
-                <Setter Property="MinWidth" Value="80"/>
+            <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
+            <!-- Ensure default WPF Button spacing if used anywhere -->
+            <Style TargetType="Button"
+                   BasedOn="{StaticResource {x:Type Button}}">
+                <Setter Property="Margin"
+                        Value="5" />
+                <Setter Property="Padding"
+                        Value="10,5" />
+                <Setter Property="MinWidth"
+                        Value="80" />
             </Style>
         </ResourceDictionary>
     </UserControl.Resources>
-
-    <Grid Margin="10">
+    <Grid Margin="10"
+          Background="{DynamicResource ContentBackgroundBrush}">
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
-
         <!-- Header -->
-    <Border Grid.Row="0" Background="{DynamicResource BusBuddy.Brush.Primary}"
-                CornerRadius="5" Padding="15" Margin="0,0,0,10">
+        <Border Grid.Row="0"
+                Background="{DynamicResource BusBuddy.Brush.Primary}"
+                CornerRadius="5"
+                Padding="15"
+                Margin="0,0,0,10">
             <StackPanel Orientation="Horizontal">
-                <TextBlock Text="&#xE7C4;" FontFamily="Segoe MDL2 Assets"
-                          FontSize="24" Foreground="White" VerticalAlignment="Center" Margin="0,0,10,0"/>
-                <TextBlock Text="Driver Management" FontSize="20" FontWeight="Bold"
-                          Foreground="White" VerticalAlignment="Center"/>
+                <TextBlock Text="?"
+                           FontFamily="Segoe MDL2 Assets"
+                           FontSize="24"
+                           Foreground="White"
+                           VerticalAlignment="Center"
+                           Margin="0,0,10,0" />
+                <TextBlock Text="Driver Management"
+                           FontSize="20"
+                           FontWeight="Bold"
+                           Foreground="White"
+                           VerticalAlignment="Center" />
             </StackPanel>
         </Border>
-
         <!-- Toolbar -->
-    <Border Grid.Row="1" Background="{DynamicResource BusBuddy.Brush.Panel.Light}"
-                CornerRadius="3" Padding="10" Margin="0,0,0,10">
+        <Border Grid.Row="1"
+                Background="{DynamicResource BusBuddy.Brush.Panel.Light}"
+                CornerRadius="3"
+                Padding="10"
+                Margin="0,0,0,10">
             <Grid>
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
-
                 <!-- Main Actions -->
-                <StackPanel Grid.Column="0" Orientation="Horizontal">
-                    <syncfusion:ButtonAdv Name="AddDriverButton" Label="➕ Add Driver"
-                            Command="{Binding AddDriverCommand}"
-                            Background="{StaticResource BusBuddy.Brush.Primary}" Foreground="White"
-                            AutomationProperties.Name="Add Driver"
-                            AutomationProperties.HelpText="Opens form to add a new driver to the system"/>
-                    <syncfusion:ButtonAdv Name="EditDriverButton" Label="✏️ Edit Driver"
-                            Command="{Binding EditDriverCommand}"
-                            IsEnabled="{Binding HasSelectedDriver}"
-                            AutomationProperties.Name="Edit Driver"
-                            AutomationProperties.HelpText="Opens form to edit the currently selected driver"/>
-                    <syncfusion:ButtonAdv Name="DeleteDriverButton" Label="🗑️ Delete Driver"
-                            Command="{Binding DeleteDriverCommand}"
-                            IsEnabled="{Binding HasSelectedDriver}"
-                            AutomationProperties.Name="Delete Driver"
-                            AutomationProperties.HelpText="Removes the currently selected driver from the system"/>
-                    <Separator Margin="10,0"/>
-
+                <StackPanel Grid.Column="0"
+                            Orientation="Horizontal">
+                    <syncfusion:ButtonAdv Name="AddDriverButton"
+                                          Label="➕ Add Driver"
+                                          Command="{Binding AddDriverCommand}"
+                                          Background="{DynamicResource ButtonBackgroundBrush}"
+                                          Foreground="{DynamicResource ButtonForegroundBrush}"
+                                          AutomationProperties.Name="Add Driver"
+                                          AutomationProperties.HelpText="Opens form to add a new driver to the system" />
+                    <syncfusion:ButtonAdv Name="EditDriverButton"
+                                          Label="✏️ Edit Driver"
+                                          Command="{Binding EditDriverCommand}"
+                                          IsEnabled="{Binding HasSelectedDriver}"
+                                          Background="{DynamicResource ButtonBackgroundBrush}"
+                                          Foreground="{DynamicResource ButtonForegroundBrush}"
+                                          AutomationProperties.Name="Edit Driver"
+                                          AutomationProperties.HelpText="Opens form to edit the currently selected driver" />
+                    <syncfusion:ButtonAdv Name="DeleteDriverButton"
+                                          Label="🗑️ Delete Driver"
+                                          Command="{Binding DeleteDriverCommand}"
+                                          IsEnabled="{Binding HasSelectedDriver}"
+                                          Background="{DynamicResource ButtonBackgroundBrush}"
+                                          Foreground="{DynamicResource ButtonForegroundBrush}"
+                                          AutomationProperties.Name="Delete Driver"
+                                          AutomationProperties.HelpText="Removes the currently selected driver from the system" />
+                    <Separator Margin="10,0" />
                     <!-- Driver Specific Actions -->
-                    <syncfusion:ButtonAdv Name="ViewLicenseButton" Label="📄 View License"
-                            Command="{Binding ViewLicenseCommand}"
-                            IsEnabled="{Binding HasSelectedDriver}"
-                            Background="{StaticResource BusBuddy.Brush.Semantic.Info}" Foreground="White"
-                            AutomationProperties.Name="View License Details"
-                            AutomationProperties.HelpText="View license information and expiration details"/>
-            <syncfusion:ButtonAdv Name="TrainingRecordsButton" Label="🎓 Training"
-                Command="{Binding TrainingRecordsCommand}"
-                            IsEnabled="{Binding HasSelectedDriver}"
-                            Background="{StaticResource BusBuddy.Brush.SafetyOrange}" Foreground="White"
-                            AutomationProperties.Name="View Training Records"
-                            AutomationProperties.HelpText="View and manage driver training records"/>
+                    <syncfusion:ButtonAdv Name="ViewLicenseButton"
+                                          Label="📄 View License"
+                                          Command="{Binding ViewLicenseCommand}"
+                                          IsEnabled="{Binding HasSelectedDriver}"
+                                          Background="{StaticResource BusBuddy.Brush.Semantic.Info}"
+                                          Foreground="White"
+                                          AutomationProperties.Name="View License Details"
+                                          AutomationProperties.HelpText="View license information and expiration details" />
+                    <syncfusion:ButtonAdv Name="TrainingRecordsButton"
+                                          Label="🎓 Training"
+                                          Command="{Binding TrainingRecordsCommand}"
+                                          IsEnabled="{Binding HasSelectedDriver}"
+                                          Background="{StaticResource BusBuddy.Brush.SafetyOrange}"
+                                          Foreground="White"
+                                          AutomationProperties.Name="View Training Records"
+                                          AutomationProperties.HelpText="View and manage driver training records" />
                 </StackPanel>
-
                 <!-- Quick Actions -->
-                <StackPanel Grid.Column="1" Orientation="Horizontal">
-                    <syncfusion:ButtonAdv Name="RefreshButton" Label="🔄 Refresh"
-                            Command="{Binding RefreshCommand}"
-                            AutomationProperties.Name="Refresh Driver List"
-                            AutomationProperties.HelpText="Reload driver data from the database"/>
-            <syncfusion:ButtonAdv Name="ExportButton" Label="📤 Export"
-                Command="{Binding GenerateReportsCommand}"
-                            AutomationProperties.Name="Export Drivers"
-                            AutomationProperties.HelpText="Export driver data to CSV file"/>
-
+                <StackPanel Grid.Column="1"
+                            Orientation="Horizontal">
+                    <syncfusion:ButtonAdv Name="RefreshButton"
+                                          Label="🔄 Refresh"
+                                          Command="{Binding RefreshCommand}"
+                                          Background="{DynamicResource ButtonBackgroundBrush}"
+                                          Foreground="{DynamicResource ButtonForegroundBrush}"
+                                          AutomationProperties.Name="Refresh Driver List"
+                                          AutomationProperties.HelpText="Reload driver data from the database" />
+                    <syncfusion:ButtonAdv Name="ExportButton"
+                                          Label="📤 Export"
+                                          Command="{Binding GenerateReportsCommand}"
+                                          Background="{DynamicResource ButtonBackgroundBrush}"
+                                          Foreground="{DynamicResource ButtonForegroundBrush}"
+                                          AutomationProperties.Name="Export Drivers"
+                                          AutomationProperties.HelpText="Export driver data to CSV file" />
                     <!-- Quick Filter -->
-            <syncfusion:SfTextBoxExt Name="QuickSearchBox" Width="150" Margin="10,0,0,0"
-                Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
-                            Watermark="🔍 Search drivers..."
-                            AutomationProperties.Name="Quick Search Drivers"
-                            AutomationProperties.HelpText="Type to search drivers by name, license, or status"/>
+                    <syncfusion:SfTextBoxExt Name="QuickSearchBox"
+                                             Width="150"
+                                             Margin="10,0,0,0"
+                                             Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                                             Watermark="🔍 Search drivers..."
+                                             AutomationProperties.Name="Quick Search Drivers"
+                                             AutomationProperties.HelpText="Type to search drivers by name, license, or status" />
                 </StackPanel>
             </Grid>
         </Border>
-
         <!-- Drivers Data Grid -->
         <syncfusion:SfDataGrid Grid.Row="2"
                                Name="DriversDataGrid"
@@ -120,39 +155,75 @@
                                GridLinesVisibility="Both"
                                HeaderLinesVisibility="Both"
                                ColumnSizer="Star"
+                               Background="{DynamicResource BusBuddy.Brush.DataGrid.Background}"
                                AutomationProperties.Name="Drivers Data Grid"
                                AutomationProperties.HelpText="Grid displaying all drivers with their license and qualification information">
             <syncfusion:SfDataGrid.Columns>
-                <syncfusion:GridTextColumn HeaderText="Driver ID" MappingName="DriverId" Width="100"/>
-                <syncfusion:GridTextColumn HeaderText="Driver Name" MappingName="DriverName" Width="200"/>
-                <syncfusion:GridTextColumn HeaderText="License Number" MappingName="LicenseNumber" Width="150"/>
-                <syncfusion:GridTextColumn HeaderText="License Class" MappingName="LicenseClass" Width="100"/>
-                <syncfusion:GridDateTimeColumn HeaderText="License Expiry" MappingName="LicenseExpiryDate" Width="120" Pattern="ShortDate"/>
-                <syncfusion:GridTextColumn HeaderText="Phone" MappingName="DriverPhone" Width="120"/>
-                <syncfusion:GridTextColumn HeaderText="Status" MappingName="Status" Width="100"/>
-                <syncfusion:GridCheckBoxColumn HeaderText="Training Complete" MappingName="TrainingComplete" Width="130"/>
-                <syncfusion:GridTextColumn HeaderText="Endorsements" MappingName="Endorsements" Width="150"/>
+                <syncfusion:GridTextColumn HeaderText="Driver ID"
+                                           MappingName="DriverId"
+                                           Width="100" />
+                <syncfusion:GridTextColumn HeaderText="Driver Name"
+                                           MappingName="DriverName"
+                                           Width="200" />
+                <syncfusion:GridTextColumn HeaderText="License Number"
+                                           MappingName="LicenseNumber"
+                                           Width="150" />
+                <syncfusion:GridTextColumn HeaderText="License Class"
+                                           MappingName="LicenseClass"
+                                           Width="100" />
+                <syncfusion:GridDateTimeColumn HeaderText="License Expiry"
+                                               MappingName="LicenseExpiryDate"
+                                               Width="120"
+                                               Pattern="ShortDate" />
+                <syncfusion:GridTextColumn HeaderText="Phone"
+                                           MappingName="DriverPhone"
+                                           Width="120" />
+                <syncfusion:GridTextColumn HeaderText="Status"
+                                           MappingName="Status"
+                                           Width="100" />
+                <syncfusion:GridCheckBoxColumn HeaderText="Training Complete"
+                                               MappingName="TrainingComplete"
+                                               Width="130" />
+                <syncfusion:GridTextColumn HeaderText="Endorsements"
+                                           MappingName="Endorsements"
+                                           Width="150" />
             </syncfusion:SfDataGrid.Columns>
         </syncfusion:SfDataGrid>
-
         <!-- Status Bar -->
-    <Border Grid.Row="3" Background="{DynamicResource BusBuddy.Brush.Panel.StatusBar}" CornerRadius="3" Padding="10" Margin="0,10,0,0">
+        <Border Grid.Row="3"
+                Background="{DynamicResource BusBuddy.Brush.Panel.StatusBar}"
+                CornerRadius="3"
+                Padding="10"
+                Margin="0,10,0,0">
             <Grid>
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
-
-                <TextBlock Grid.Column="0" Text="{Binding StatusMessage}"
-                          VerticalAlignment="Center" Foreground="{DynamicResource BusBuddy.Brush.Text.MutedAlt}"/>
-
-                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                    <TextBlock Text="Total Drivers: " Foreground="{DynamicResource BusBuddy.Brush.Text.MutedAlt}"/>
-                    <TextBlock Text="{Binding TotalDrivers}" FontWeight="Bold" Foreground="{DynamicResource BusBuddy.Brush.Primary}" Margin="0,0,15,0"/>
-                    <TextBlock Text="Active: " Foreground="{DynamicResource BusBuddy.Brush.Text.MutedAlt}"/>
-                    <TextBlock Text="{Binding ActiveDrivers}" FontWeight="Bold" Foreground="{DynamicResource BusBuddy.Brush.Semantic.Success}" Margin="0,0,15,0"/>
-                    <TextBlock Text="Training Pending: " Foreground="{DynamicResource BusBuddy.Brush.Text.MutedAlt}"/>
-                    <TextBlock Text="{Binding TrainingPendingDrivers}" FontWeight="Bold" Foreground="{DynamicResource BusBuddy.Brush.Semantic.Warning}"/>
+                <TextBlock Grid.Column="0"
+                           Text="{Binding StatusMessage}"
+                           VerticalAlignment="Center"
+                           Foreground="{DynamicResource BusBuddy.Brush.Text.MutedAlt}" />
+                <StackPanel Grid.Column="1"
+                            Orientation="Horizontal"
+                            VerticalAlignment="Center">
+                    <TextBlock Text="Total Drivers: "
+                               Foreground="{DynamicResource BusBuddy.Brush.Text.MutedAlt}" />
+                    <TextBlock Text="{Binding TotalDrivers}"
+                               FontWeight="Bold"
+                               Foreground="{DynamicResource BusBuddy.Brush.Primary}"
+                               Margin="0,0,15,0" />
+                    <TextBlock Text="Active: "
+                               Foreground="{DynamicResource BusBuddy.Brush.Text.MutedAlt}" />
+                    <TextBlock Text="{Binding ActiveDrivers}"
+                               FontWeight="Bold"
+                               Foreground="{DynamicResource BusBuddy.Brush.Semantic.Success}"
+                               Margin="0,0,15,0" />
+                    <TextBlock Text="Training Pending: "
+                               Foreground="{DynamicResource BusBuddy.Brush.Text.MutedAlt}" />
+                    <TextBlock Text="{Binding TrainingPendingDrivers}"
+                               FontWeight="Bold"
+                               Foreground="{DynamicResource BusBuddy.Brush.Semantic.Warning}" />
                 </StackPanel>
             </Grid>
         </Border>

@@ -7,33 +7,27 @@
 
 ## **YAML Usage in BusBuddy**
 
-### **CI/CD Configuration**
-- `.github/workflows/build-and-test.yml` - GitHub Actions workflow
-- `.github/workflows/*.yml` - Additional workflow files
+#### **1. CodeCov Configuration (Deprecated)**
+Codecov usage has been deprecated in this project. External uploads have been removed from CI.
 
-### **Configuration Files**
-- `codecov.yml` - Code coverage configuration
-- `docker-compose.yml` - Docker orchestration (if used)
+Recommended approach now:
+- Generate coverage with `dotnet test --collect:"XPlat Code Coverage"`.
+- Consume Cobertura reports from `TestResults/**/coverage.cobertura.xml`.
+- Rely on CI summary and uploaded artifacts instead of third‑party dashboards.
 
-## **YAML Standards Enforcement**
-
-### ✅ **Required YAML Standards**
-
-#### **1. Basic Syntax (YAML 1.2)**
+Example CI snippet (already implemented in `.github/workflows/ci.yml`):
 ```yaml
-# Comments start with hash symbol
----  # Document start marker (optional but recommended)
-
-# Scalars (strings, numbers, booleans)
-string_value: "Hello World"
-number_value: 42
-boolean_value: true
-null_value: null
-
-# Arrays/Lists
-simple_list:
-  - item1
-  - item2
+- name: 📊 Generate coverage report
+  run: |
+    $coverageFiles = Get-ChildItem -Path "./TestResults" -Filter "coverage.cobertura.xml" -Recurse
+    if ($coverageFiles.Count -gt 0) {
+      [xml]$coverage = Get-Content $coverageFiles[0].FullName
+      $lineRate = [double]$coverage.coverage.'line-rate'
+      $coveragePercent = [math]::Round($lineRate * 100, 2)
+      echo "✅ Coverage: $coveragePercent%"
+    } else {
+      echo "⚠️ No coverage files found"
+    }
   - item3
 
 # Objects/Mappings
@@ -434,7 +428,7 @@ env:
 ## **References**
 - **YAML 1.2.2**: [Official YAML Specification](https://yaml.org/spec/1.2.2/)
 - **GitHub Actions**: [Workflow Syntax](https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions)
-- **CodeCov YAML**: [CodeCov Configuration](https://docs.codecov.com/docs/codecov-yaml)
+- ~~CodeCov YAML~~ (Deprecated): [CodeCov Configuration](https://docs.codecov.com/docs/codecov-yaml)
 - **YAML Security**: [YAML Security Best Practices](https://blog.gitguardian.com/security-yaml-files/)
 
 ---

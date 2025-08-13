@@ -9,7 +9,7 @@
 - ✅ `.editorconfig` - Code formatting standards
 - ✅ `Directory.Build.props` - MSBuild properties
 - ✅ `global.json` - .NET SDK version pinning
-- ✅ `codecov.yml` - Code coverage configuration
+- ~~`codecov.yml`~~ (Deprecated) - External coverage upload removed; use internal Cobertura artifacts
 
 ### **Logging & Monitoring**
 - ✅ **Serilog with enrichments** - Environment, Process, Thread enrichers ✨

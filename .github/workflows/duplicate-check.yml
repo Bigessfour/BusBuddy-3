@@ -1,0 +1,56 @@
+name: Duplicate File Guard
+
+on:
+  pull_request:
+    branches: [ main, master, develop ]
+  push:
+    branches: [ develop ]
+
+jobs:
+  dup-scan:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Run duplicate scan
+        shell: pwsh
+        run: |
+          Write-Output 'Starting duplicate scan'
+          $script = Join-Path $PWD 'PowerShell' 'Validation' 'Find-DuplicateFiles.ps1'
+          if (-not (Test-Path $script)) { throw "Duplicate scan script not found at $script" }
+          $result = & $script -PassThru -RootPath $PWD -OutputDirectory $PWD
+          if (-not $result) { throw 'Duplicate scan returned no object (PassThru failed).' }
+          $identical = @($result.Identical).Count
+          $different = @($result.Different).Count
+          Write-Output "Identical=$identical Different=$different"
+          $baselinePath = 'tooling/duplicate-baseline.json'
+          if (-not (Test-Path $baselinePath)) {
+            Write-Output 'Baseline missing -> creating (first run)'
+            $null = New-Item -ItemType Directory -Path (Split-Path $baselinePath -Parent) -Force
+            @{ identical=$identical; different=$different; created=(Get-Date) } | ConvertTo-Json | Out-File $baselinePath -Encoding UTF8
+          }
+          $baseline = Get-Content $baselinePath -Raw | ConvertFrom-Json
+          if ($identical -gt 0) {
+            throw "Identical duplicates detected ($identical) — must be 0."
+          }
+          if ($different -gt ($baseline.different + 2)) {
+            throw "Differing duplicates increased beyond allowed drift. Current=$different Baseline=$($baseline.different)"
+          }
+
+      - name: Upload duplicate reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: duplicate-reports
+          path: |
+            duplicate_identical_list.txt
+            duplicate_different_list.txt
+            phase_files_list.txt

@@ -131,18 +131,20 @@ jobs:
             echo "⚠️ No coverage files found"
           }
 
-      - name: ☁️ Upload coverage reports to Codecov
-        uses: codecov/codecov-action@v4
-        if: always() && !cancelled()
-        with:
-          files: "**/coverage.cobertura.xml"
-          fail_ci_if_error: false
-          verbose: true
-          token: ${{ secrets.CODECOV_TOKEN }}
-          flags: unittests
-          name: codecov-umbrella
-          directory: ./TestResults
-        continue-on-error: true
+  # Deprecated: External coverage upload to Codecov is disabled.
+  # If re-enabling in future, restore the step below and ensure secrets are configured.
+  # - name: ☁️ Upload coverage reports to Codecov (DEPRECATED)
+  #   uses: codecov/codecov-action@v4
+  #   if: always() && !cancelled()
+  #   with:
+  #     files: "**/coverage.cobertura.xml"
+  #     fail_ci_if_error: false
+  #     verbose: true
+  #     token: ${{ secrets.CODECOV_TOKEN }}
+  #     flags: unittests
+  #     name: codecov-umbrella
+  #     directory: ./TestResults
+  #   continue-on-error: true
 
       - name: 📊 Publish test results
         uses: dorny/test-reporter@v1
@@ -235,15 +237,15 @@ jobs:
 
           # Check XML/JSON file validity
           $xmlFiles = Get-ChildItem -Recurse -Filter "*.xml" | Where-Object {
-            $_.FullName -notlike "*bin*" -and
-            $_.FullName -notlike "*obj*" -and
-            $_.FullName -notlike "*packages*"
+            -not ($_.FullName -like "*bin*") -and
+            -not ($_.FullName -like "*obj*") -and
+            -not ($_.FullName -like "*packages*")
           }
 
           $jsonFiles = Get-ChildItem -Recurse -Filter "*.json" | Where-Object {
-            $_.FullName -notlike "*node_modules*" -and
-            $_.FullName -notlike "*bin*" -and
-            $_.FullName -notlike "*obj*"
+            -not ($_.FullName -like "*node_modules*") -and
+            -not ($_.FullName -like "*bin*") -and
+            -not ($_.FullName -like "*obj*")
           }
 
           $xmlInvalid = 0
@@ -354,8 +356,8 @@ jobs:
 
           $secretIssues = @()
           $files = Get-ChildItem -Recurse -Include "*.cs","*.json","*.xml","*.config" | Where-Object {
-            $_.FullName -notlike "*bin*" -and
-            $_.FullName -notlike "*obj*"
+            -not ($_.FullName -like "*bin*") -and
+            -not ($_.FullName -like "*obj*")
           }
 
           foreach ($file in $files) {

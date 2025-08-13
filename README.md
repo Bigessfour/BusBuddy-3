@@ -295,7 +295,34 @@ BusBuddy uses Syncfusion Essential Studio for WPF to provide a modern, professio
 - **FluentLight**: Clean light theme
 - **Custom**: BusBuddy-specific styling
 
-## 📊 **Features**
+## �️ Unified Scheduler Plan (Sports + Activities) — Update Aug 13, 2025
+
+Decision:
+- Deprecate the separate Route Scheduler concept. No dedicated Route Scheduler view will be built.
+- Merge Sports and Activity scheduling into a single scheduler surface using Syncfusion SfScheduler.
+
+Scope and implementation outline:
+- Single view: `BusBuddy.WPF/Views/Schedule/UnifiedSchedulerView.xaml` hosting `<syncfusion:SfScheduler .../>`.
+- Single ViewModel: `UnifiedSchedulerViewModel` (merges current Activity and Sports scheduler logic). `SportsSchedulerViewModel` will be marked obsolete and removed after migration.
+- Data source: Compose a single ItemsSource from `IScheduleRepository` (Schedules) and `IActivityScheduleRepository` (ActivitySchedules), projecting to Scheduler appointments (e.g., types deriving from `Syncfusion.UI.Xaml.Scheduler.ScheduleAppointment`). Existing `ActivityTimelineEvent` can be reused/adapted.
+- UX: Category filters (Sports, Activity), optional team/opponent filter, date range, and `SchedulerViewType` toggles (Day/Week/Timeline). Color-coding via theme brushes and an Appointment style selector. Keep theming consistent with existing resource dictionaries.
+- Navigation: Redirect existing entry points (e.g., QuickActions ScheduleRoute_Click) to open UnifiedScheduler pre-filtered when needed. Remove/deprecate any references to a Route Scheduler view.
+
+Documentation-first references (Syncfusion WPF):
+- Getting started: https://help.syncfusion.com/wpf/scheduler/getting-started
+- API reference: https://help.syncfusion.com/cr/wpf/Syncfusion.UI.Xaml.Scheduler.SfScheduler.html
+
+Migration steps (safe, incremental):
+1) Add UnifiedSchedulerView.xaml and UnifiedSchedulerViewModel with read-only listing of combined appointments.
+2) Unify/extend `BusBuddyScheduleDataProvider` to produce a single ItemsSource with category metadata and theme-aware styles.
+3) Wire navigation (replace route-scheduler hooks; optionally pass initial filters via navigation parameters).
+4) Mark `SportsSchedulerViewModel` as `[Obsolete]` and remove legacy scheduler view artifacts once usage is fully migrated.
+5) Validate: `bb-xaml-validate`, `bb-build`, and `bb-mvp-check` before commit. Add minimal tests for ViewModel filtering.
+
+Current status check:
+- No dedicated Route Scheduler view exists in the repo; a sports-focused ViewModel and activity timeline components are present. This plan consolidates both onto one Scheduler and removes the separate route scheduler path.
+
+## �📊 **Features**
 
 ### **Core Modules**
 

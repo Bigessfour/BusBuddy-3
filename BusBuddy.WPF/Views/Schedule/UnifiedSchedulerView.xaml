@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Unified Scheduler View — Sports + Activities in a single SfScheduler
+  Docs (Syncfusion WPF Scheduler):
+  - Getting Started: https://help.syncfusion.com/wpf/scheduler/getting-started
+  - API Reference: https://help.syncfusion.com/cr/wpf/Syncfusion.UI.Xaml.Scheduler.SfScheduler.html
+-->
+<UserControl x:Class="BusBuddy.WPF.Views.Schedule.UnifiedSchedulerView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:syncfusion="http://schemas.syncfusion.com/wpf"
+             mc:Ignorable="d"
+             d:DesignHeight="600" d:DesignWidth="1000">
+
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/SyncfusionV30_Validated_ResourceDictionary.xaml"/>
+                <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/Themes/FluentDarkTheme.xaml"/>
+                <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/Themes/FluentLightTheme.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </UserControl.Resources>
+
+    <Grid Background="{DynamicResource ContentBackgroundBrush}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <TextBlock Grid.Row="0"
+                   Text="Unified Scheduler"
+                   FontSize="24"
+                   FontWeight="Bold"
+                   Margin="20,10"/>
+
+        <!-- Scheduler -->
+        <syncfusion:SfScheduler Grid.Row="1"
+                                x:Name="Scheduler"
+                                ItemsSource="{Binding Appointments}"
+                                ViewType="{Binding SelectedViewType}"
+                                SelectedDate="{Binding SelectedDate}"
+                                Background="{DynamicResource BusBuddy.Brush.DataGrid.Background}"
+                                Margin="20">
+        </syncfusion:SfScheduler>
+    </Grid>
+</UserControl>

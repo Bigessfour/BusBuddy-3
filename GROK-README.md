@@ -138,6 +138,28 @@ dotnet test BusBuddy.Tests/BusBuddy.Tests.csproj
 3. Keep excluded globs accurate to prevent unnecessary large fetches.
 
 ---
+## 🗂️ Duplicate File Resolution (Added 2025-08-13)
+Documentation-first duplicate scanning introduced:
+* Module wrapper: `PowerShell/Modules/Validation/DuplicateFiles.psm1` (alias `bb-dup-scan`).
+* Canonical manifest: `tooling/duplicate-resolution-manifest.json` — records removals & decisions.
+* Identical duplicate removed: `BusBuddy.WPF/BusBuddy.db` (root `BusBuddy.db` retained).
+* CI guard: `.github/workflows/duplicate-check.yml` (enforces 0 identical; differing drift <= +2).
+
+Usage examples:
+```
+bb-dup-scan -PassThru | Out-GridView
+bb-dup-scan -GenerateSuggestions -PassThru | Select -First 15
+```
+Policy:
+* Every deletion accompanied by manifest entry (reason + kept path).
+* Baseline (`tooling/duplicate-baseline.json`) updated only when differing count decreases legitimately.
+* Suggestions leverage reference count / recency / size heuristic (score ≥ 0.65 default threshold).
+
+Next targets (manual review): duplicate service/interface definitions, archived PowerShell legacy script variants once bb-* parity confirmed.
+
+---
+
+---
 ## � Retrieval Recipe (Agent-Friendly)
 1. Parse JSON block.
 2. Fetch solution + project files.
