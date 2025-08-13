@@ -52,6 +52,12 @@ namespace BusBuddy.WPF.ViewModels
             _ = LoadAppointmentsAsync();
         }
 
+    // Testable constructor for injecting a configured DbContext (e.g., InMemory) in unit/integration tests
+    public UnifiedSchedulerViewModel(BusBuddyDbContext context)
+        {
+            _context = context ?? throw new ArgumentNullException(nameof(context));
+        }
+
         public async Task LoadAppointmentsAsync()
         {
             try

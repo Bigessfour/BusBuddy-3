@@ -163,6 +163,19 @@ bbTest
 # Visual Studio Test Explorer
 ```
 
+#### Unified Scheduler Tests
+To run only the Unified Scheduler tests (for the merged Sports + Activities scheduler):
+
+```powershell
+# If your bbTest supports filters
+bb-test -Filter "TestCategory=Scheduler"
+
+# Or use the .NET CLI filter directly
+dotnet test "BusBuddy.Tests/BusBuddy.Tests.csproj" -v m --filter TestCategory=Scheduler
+```
+
+Tests are located under `BusBuddy.Tests/SchedulerTests/` and are self-contained (use EF Core InMemory/mocks).
+
 ### **Test Categories**
 - **Unit Tests**: Core business logic validation
 - **Integration Tests**: Database and service integration

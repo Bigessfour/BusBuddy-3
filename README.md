@@ -432,6 +432,28 @@ Legacy Phase 4 tasks removed; use standard NUnit Test Explorer or `bbTest` comma
 ### **Coverage**
 Test coverage reports are generated in `TestResults/` directory with detailed TRX files and comprehensive markdown reports in `Documentation/Reports/`.
 
+### **Unified Scheduler Tests** — NEW
+
+The Unified Scheduler (merged Sports + Activities) now has dedicated tests to validate data composition and ViewModel behavior.
+
+- Test locations:
+  - `BusBuddy.Tests/SchedulerTests/UnifiedSchedulerViewModelTests.cs`
+  - `BusBuddy.Tests/SchedulerTests/ScheduleDataProviderTests.cs`
+
+- How to run just these tests:
+  - PowerShell (recommended):
+    - If your bb-test supports filters: bb-test -Filter "TestCategory=Scheduler"
+    - Otherwise, use .NET CLI filter:
+      dotnet test "BusBuddy.Tests/BusBuddy.Tests.csproj" -v m --filter TestCategory=Scheduler
+  - From VS Code: use the Test Explorer and filter by Category=Scheduler
+
+- What they cover (high level):
+  - Merging ActivitySchedule and Schedule items into a single appointment source
+  - Mapping of times/location to Syncfusion SfScheduler appointments
+  - Data provider range queries and dirty-state tracking for adds/removes
+
+Note: These tests are self-contained and use EF Core InMemory and/or mocked services. They won’t touch your real database.
+
 ## 📚 **Documentation**
 
 ### **For Developers**
@@ -535,4 +557,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 **Built with ❤️ for school transportation professionals**
 
-*Last Updated: August 8, 2025*
+*Last Updated: August 13, 2025*
