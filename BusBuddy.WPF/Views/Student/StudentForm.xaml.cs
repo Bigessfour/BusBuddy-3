@@ -6,7 +6,7 @@ using System.Windows.Input;
 using System.Windows.Documents;
 using System.Windows.Media.TextFormatting;
 using System.Windows.Automation; // AutomationProperties for accessibility checks
-using Syncfusion.Windows.Shared; // ChromelessWindow per Syncfusion WPF docs
+// Removed ChromelessWindow inheritance; now a UserControl hosted by parent window/dialog.
 using Syncfusion.SfSkinManager; // SfSkinManager per official docs
 using BusBuddy.WPF.ViewModels.Student;
 using BusBuddy.WPF.Utilities; // SyncfusionThemeManager
@@ -26,11 +26,12 @@ namespace BusBuddy.WPF.Views.Student
     /// ViewModel handles all data and validation logic.
     /// Diagnostics: logs key UI interactions (button clicks, selection/text changes, and validation errors).
     /// </summary>
-    public partial class StudentForm : ChromelessWindow
+    public partial class StudentForm : UserControl, BusBuddy.WPF.Views.Common.IDialogHostable
     {
         private static readonly ILogger Logger = Log.ForContext<StudentForm>();
         public StudentFormViewModel ViewModel { get; private set; }
     private bool _isDirty;
+        public bool? DialogResult { get; private set; }
 
         /// <summary>
         /// Default constructor: initializes theming, ViewModel, and event hooks.
@@ -67,16 +68,19 @@ namespace BusBuddy.WPF.Views.Student
             // (Allows ViewModel to close dialog on save/cancel)
             ViewModel.RequestClose += OnRequestClose;
 
-            // Window lifecycle diagnostics — useful to trace load/render timing
+            // Control lifecycle diagnostics — Loaded + (defer ContentRendered equivalent via dispatcher)
             try
             {
                 Loaded += OnLoaded;
-                ContentRendered += OnContentRendered;
-                Closing += OnClosingPromptSave;
+                // Simulate ContentRendered after first layout pass
+                Dispatcher.BeginInvoke(new Action(() =>
+                {
+                    try { OnContentRendered(this, System.EventArgs.Empty); } catch { }
+                }), System.Windows.Threading.DispatcherPriority.Loaded);
             }
             catch (System.Exception ex)
             {
-                Logger.Warning(ex, "StudentForm: failed to attach window lifecycle diagnostics");
+                Logger.Warning(ex, "StudentForm: failed to attach lifecycle diagnostics");
             }
 
             // Global button click diagnostics for this dialog (bubbling handler)
@@ -127,7 +131,7 @@ namespace BusBuddy.WPF.Views.Student
                 Logger.Warning(ex, "StudentForm: failed to attach validation diagnostics");
             }
 
-            Logger.Information("StudentForm initialized (Create mode)");
+            Logger.Information("StudentForm (UserControl) initialized (Create mode)");
         }
 
         /// <summary>
@@ -148,7 +152,7 @@ namespace BusBuddy.WPF.Views.Student
             DataContext = ViewModel;
             TryAttachGlobalErrorListener();
             ViewModel.RequestClose += OnRequestClose;
-            Logger.Information("StudentForm initialized (Edit mode) for StudentId={StudentId}", student.StudentId);
+            Logger.Information("StudentForm (UserControl) initialized (Edit mode) for StudentId={StudentId}", student.StudentId);
         }
 
         private void TryAttachGlobalErrorListener()
@@ -172,7 +176,7 @@ namespace BusBuddy.WPF.Views.Student
                                     msg += $"\n(+{ViewModel.ValidationErrors.Count - 3} more)";
                                 }
                             }
-                            MessageBox.Show(this, msg, "Validation error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                            MessageBox.Show(msg, "Validation error", MessageBoxButton.OK, MessageBoxImage.Warning);
                         }
                     }
                     catch (System.Exception ex)
@@ -194,89 +198,34 @@ namespace BusBuddy.WPF.Views.Student
         {
             Logger.Information("StudentForm RequestClose received. DialogResult={DialogResult}", dialogResult);
             DialogResult = dialogResult;
-            Close();
+            RequestCloseByHost?.Invoke(this, EventArgs.Empty);
         }
+        public event EventHandler? RequestCloseByHost;
 
         // Prompt to save if there are unsaved changes
-        private void OnClosingPromptSave(object? sender, System.ComponentModel.CancelEventArgs e)
-        {
-            try
-            {
-                if (!_isDirty) return; // nothing to do
-                // If already saved in this session, skip prompt
-                if (DialogResult == true) return;
-
-                var result = MessageBox.Show(
-                    this,
-                    "You have unsaved changes. Do you want to save before closing?",
-                    "Save Changes",
-                    MessageBoxButton.YesNoCancel,
-                    MessageBoxImage.Question);
-
-                if (result == MessageBoxResult.Cancel)
-                {
-                    e.Cancel = true;
-                    return;
-                }
-                if (result == MessageBoxResult.Yes)
-                {
-                    try
-                    {
-                        // Trigger ViewModel save and cancel the close until it completes
-                        e.Cancel = true;
-                        _ = ViewModel?.GetType(); // null-guard
-                        if (ViewModel?.SaveCommand?.CanExecute(null) == true)
-                        {
-                            ViewModel.SaveCommand.Execute(null);
-                            // ViewModel should close window on success via RequestClose(true)
-                        }
-                        else
-                        {
-                            // If cannot save, keep the window open
-                            MessageBox.Show(this, "Cannot save — please fix validation errors first.", "Save Failed", MessageBoxButton.OK, MessageBoxImage.Warning);
-                        }
-                    }
-                    catch (System.Exception ex)
-                    {
-                        Logger.Error(ex, "Save during closing failed");
-                        MessageBox.Show(this, $"Error while saving: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                        e.Cancel = true;
-                    }
-                }
-                // No -> allow closing and discard changes
-            }
-            catch (System.Exception ex)
-            {
-                Logger.Warning(ex, "StudentForm: closing prompt encountered an error");
-            }
-        }
+    // Removed OnClosingPromptSave; hosting window should handle unsaved prompt before closing.
 
         /// <summary>
         /// Cleanup: Unsubscribes events, disposes ViewModel, and releases SkinManager resources.
         /// </summary>
-        protected override void OnClosed(System.EventArgs e)
+        public void DisposeResources()
         {
-            Logger.Information("StudentForm closing, disposing resources");
-            // Unsubscribe from events to prevent memory leaks
+            Logger.Information("StudentForm disposing resources");
             if (ViewModel != null)
             {
                 ViewModel.RequestClose -= OnRequestClose;
                 ViewModel.Dispose();
             }
-            // Remove global handlers where applicable
             try
             {
                 Loaded -= OnLoaded;
-                ContentRendered -= OnContentRendered;
                 RemoveHandler(ButtonBase.ClickEvent, new RoutedEventHandler(OnAnyButtonClick));
                 RemoveHandler(Selector.SelectionChangedEvent, new SelectionChangedEventHandler(OnAnySelectionChanged));
                 RemoveHandler(TextBoxBase.TextChangedEvent, new TextChangedEventHandler(OnAnyTextChanged));
                 RemoveHandler(System.Windows.Controls.Validation.ErrorEvent, new EventHandler<ValidationErrorEventArgs>(OnValidationError));
             }
-            catch { /* Best-effort cleanup */ }
-            // Clear SkinManager instances for this window per docs
+            catch { }
             try { SfSkinManager.Dispose(this); } catch { }
-            base.OnClosed(e);
         }
 
         /// <summary>
@@ -284,7 +233,7 @@ namespace BusBuddy.WPF.Views.Student
         /// </summary>
         private void OnLoaded(object? sender, RoutedEventArgs e)
         {
-            Logger.Information("StudentForm Loaded — DataContextType={DataContextType}", DataContext?.GetType().Name ?? "(null)");
+            Logger.Information("StudentForm Loaded (UserControl) — DataContextType={DataContextType}", DataContext?.GetType().Name ?? "(null)");
         }
 
         /// <summary>
@@ -292,7 +241,7 @@ namespace BusBuddy.WPF.Views.Student
         /// </summary>
         private void OnContentRendered(object? sender, System.EventArgs e)
         {
-            Logger.Information("StudentForm ContentRendered — Ready for user interaction");
+            Logger.Information("StudentForm ContentReady — Ready for user interaction");
             // One-time UI audit after visual tree is ready
             try { AuditButtonsAccessibility(); }
             catch (System.Exception ex) { Logger.Warning(ex, "StudentForm: UI audit failed"); }
@@ -367,7 +316,7 @@ namespace BusBuddy.WPF.Views.Student
                         }
                     }
 
-                    MessageBox.Show(this, message, "Action blocked", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    MessageBox.Show(message, "Action blocked", MessageBoxButton.OK, MessageBoxImage.Warning);
                 }
             }
             catch (System.Exception ex)
@@ -541,22 +490,6 @@ namespace BusBuddy.WPF.Views.Student
         }
 
         // Handle per-monitor DPI changes to keep layout and fonts crisp
-        protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
-        {
-            base.OnDpiChanged(oldDpi, newDpi);
-            try
-            {
-                var scale = newDpi.DpiScaleX; // assume uniform X/Y scaling
-                // Adjust window-level font size for controls inheriting FontSize
-                this.FontSize = 12.0 * scale;
-                // Prefer high-quality scaling for images at >100% DPI
-                RenderOptions.SetBitmapScalingMode(this, scale >= 1.0 ? BitmapScalingMode.HighQuality : BitmapScalingMode.Fant);
-                Logger.Information("StudentForm DPI changed: {OldX}->{NewX}", oldDpi.DpiScaleX, newDpi.DpiScaleX);
-            }
-            catch (System.Exception ex)
-            {
-                Logger.Warning(ex, "StudentForm: OnDpiChanged handling failed");
-            }
-        }
+    // Removed OnDpiChanged override (specific to Window). Host window should manage DPI adjustments.
     }
 }

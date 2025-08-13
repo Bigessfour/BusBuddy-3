@@ -7,26 +7,24 @@
     See code-behind for theme logic and event handling.
     https://help.syncfusion.com/wpf/chromelesswindow/overview
 -->
-<syncfusion:ChromelessWindow x:Class="BusBuddy.WPF.Views.Student.StudentForm"
-                             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-                             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-                             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-                             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-                             xmlns:syncfusion="http://schemas.syncfusion.com/wpf"
-                             xmlns:syncfusionshared="clr-namespace:Syncfusion.Windows.Shared;assembly=Syncfusion.Shared.Wpf"
-                             xmlns:validation="clr-namespace:BusBuddy.WPF.Validation"
-                             xmlns:sys="clr-namespace:System;assembly=mscorlib"
-                             mc:Ignorable="d"
-                             Title="Student Form"
-                             Height="600" Width="800"
-                             WindowStartupLocation="CenterOwner"
-                             FontSize="14">
+<!-- Converted from ChromelessWindow to UserControl for standardized hosting inside DockingManager/dialog host. -->
+<UserControl x:Class="BusBuddy.WPF.Views.Student.StudentForm"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:syncfusion="http://schemas.syncfusion.com/wpf"
+             xmlns:syncfusionshared="clr-namespace:Syncfusion.Windows.Shared;assembly=Syncfusion.Shared.Wpf"
+             xmlns:validation="clr-namespace:BusBuddy.WPF.Validation"
+             xmlns:sys="clr-namespace:System;assembly=mscorlib"
+             mc:Ignorable="d"
+             FontSize="14">
 
     <!--
         Resource section: Styles, converters, and merged dictionaries for consistent Syncfusion look and feel.
         Styles ensure all input controls are sized and padded for usability.
     -->
-    <syncfusion:ChromelessWindow.Resources>
+    <UserControl.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/SyncfusionV30_Validated_ResourceDictionary.xaml"/>
@@ -185,7 +183,7 @@
                 <Setter Property="Height" Value="40"/>
             </Style>
         </ResourceDictionary>
-    </syncfusion:ChromelessWindow.Resources>
+    </UserControl.Resources>
 
     <!--
         Main content: ScrollViewer for vertical scrolling, Grid for layout.
@@ -706,4 +704,4 @@
             </Border>
         </Grid>
     </ScrollViewer>
-</syncfusion:ChromelessWindow>
+</UserControl>

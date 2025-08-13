@@ -104,7 +104,7 @@
             </ListView>
 
             <!-- Legend -->
-            <Border Grid.Row="3" BorderBrush="#DDD" BorderThickness="0,1,0,0" Padding="0,8,0,0" Margin="0,10,0,0">
+            <Border Grid.Row="3" BorderBrush="{DynamicResource BusBuddy.Brush.Border.Light}" BorderThickness="0,1,0,0" Padding="0,8,0,0" Margin="0,10,0,0">
                 <ItemsControl ItemsSource="{Binding EventLegendItems}">
                     <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate>
@@ -123,7 +123,7 @@
             </Border>
 
             <!-- Loading Indicator -->
-            <Border Grid.Row="0" Grid.RowSpan="4" Background="#80FFFFFF"
+            <Border Grid.Row="0" Grid.RowSpan="4" Background="{DynamicResource BusBuddy.Brush.Overlay.White50}"
                     Visibility="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}}">
                 <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
                     <TextBlock Text="Loading timeline data..." FontSize="16" HorizontalAlignment="Center"/>
@@ -139,13 +139,11 @@
                     Visibility="{Binding HasNoData, Converter={StaticResource BooleanToVisibilityConverter}}">
                 <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
                     <TextBlock Text="No activity data found for the selected time period"
-                              FontSize="16" HorizontalAlignment="Center" Foreground="#555"/>
+                              FontSize="16" HorizontalAlignment="Center" Foreground="{DynamicResource BusBuddy.Brush.Text.Subtle}"/>
                     <TextBlock Text="Try adjusting your filters or selecting a different date range"
-                              FontSize="14" HorizontalAlignment="Center" Foreground="#777" Margin="0,5,0,0"/>
+                              FontSize="14" HorizontalAlignment="Center" Foreground="{DynamicResource BusBuddy.Brush.Text.Subtler}" Margin="0,5,0,0"/>
                 </StackPanel>
             </Border>
         </Grid>
     </Grid>
 </UserControl>
-
-

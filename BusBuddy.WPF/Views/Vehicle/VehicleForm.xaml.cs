@@ -1,7 +1,8 @@
 using System.Windows;
+using System.Windows.Controls;
 using Serilog;
-using Syncfusion.Windows.Shared;
 using Syncfusion.SfSkinManager;
+using BusBuddy.WPF.Utilities;
 
 namespace BusBuddy.WPF.Views.Vehicle
 {
@@ -9,55 +10,28 @@ namespace BusBuddy.WPF.Views.Vehicle
     /// Interaction logic for VehicleForm.xaml
     /// Step 3: Vehicle form with Syncfusion ChromelessWindow, SkinManager theming, and Core service integration
     /// </summary>
-    public partial class VehicleForm : ChromelessWindow
+    public partial class VehicleForm : UserControl
     {
         private static readonly ILogger Log = Serilog.Log.ForContext<VehicleForm>();
         public VehicleForm()
         {
             InitializeComponent();
-            ApplySyncfusionTheme();
+            ApplyTheme();
             Loaded += OnLoaded;
         }
 
         /// <summary>
         /// Apply Syncfusion theme with FluentDark default and FluentLight fallback
         /// </summary>
-        private void ApplySyncfusionTheme()
+        private void ApplyTheme()
         {
             SfSkinManager.ApplyThemeAsDefaultStyle = true;
-            try
-            {
-                using var fluentDarkTheme = new Theme("FluentDark");
-                SfSkinManager.SetTheme(this, fluentDarkTheme);
-                Log.Information("FluentDark theme applied to {ViewName}", GetType().Name);
-            }
-            catch
-            {
-                try
-                {
-                    using var fluentLightTheme = new Theme("FluentLight");
-                    SfSkinManager.SetTheme(this, fluentLightTheme);
-                    Log.Information("Fallback to FluentLight theme for {ViewName}", GetType().Name);
-                }
-                catch
-                {
-                    // Continue without theme if both fail
-                }
-            }
+            SyncfusionThemeManager.ApplyTheme(this);
         }
 
-        protected override void OnClosed(System.EventArgs e)
+        public void DisposeResources()
         {
-            try
-            {
-                SfSkinManager.Dispose(this);
-                Log.Information("SfSkinManager resources disposed for {ViewName}", GetType().Name);
-            }
-            catch (System.Exception ex)
-            {
-                Log.Error("Error disposing SfSkinManager for {ViewName}: {Error}", GetType().Name, ex.Message);
-            }
-            base.OnClosed(e);
+            try { SfSkinManager.Dispose(this); } catch { }
         }
 
         private void OnLoaded(object sender, RoutedEventArgs e)

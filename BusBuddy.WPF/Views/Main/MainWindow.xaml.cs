@@ -127,26 +127,11 @@ namespace BusBuddy.WPF.Views.Main
 
                 Logger.Information("MainWindow initialized successfully with Syncfusion DockingManager");
                 Logger.Debug("MainWindow constructor completed successfully");
-
-                // Initialize navigation service (Step 1 of refactor plan) after DockingManager is available
-                try
-                {
-                    if (MainDockingManager != null)
-                    {
-                        _navigationService = new NavigationService(MainDockingManager);
-                        // Registration of core document panes will be added in subsequent steps
-                    }
-                }
-                catch (Exception navEx)
-                {
-                    Logger.Warning(navEx, "Failed initializing NavigationService (non-fatal)");
-                }
             }
             catch (Exception ex)
             {
                 Logger.Error(ex, "Failed to initialize MainWindow");
                 Logger.Debug("Creating fallback layout due to initialization failure");
-                // Fallback to simple layout if XAML fails
                 CreateFallbackLayout();
             }
         }
@@ -155,6 +140,8 @@ namespace BusBuddy.WPF.Views.Main
         {
             try
             {
+                InitializeProgrammaticDockLayout(); // step 2
+                RegisterNavigationPanes(); // step 5
                 // Delay audit slightly to ensure visual tree fully ready
                 Dispatcher.BeginInvoke(new Action(() =>
                 {
@@ -171,6 +158,7 @@ namespace BusBuddy.WPF.Views.Main
         {
             try
             {
+                PersistDockLayout();
                 RemoveHandler(ButtonBase.ClickEvent, new System.Windows.RoutedEventHandler(OnAnyButtonClick));
                 RemoveHandler(Selector.SelectionChangedEvent, new System.Windows.Controls.SelectionChangedEventHandler(OnAnySelectionChanged));
                 RemoveHandler(TextBoxBase.TextChangedEvent, new System.Windows.Controls.TextChangedEventHandler(OnAnyTextChanged));
@@ -351,75 +339,26 @@ namespace BusBuddy.WPF.Views.Main
         {
             try
             {
-                var src = e.OriginalSource as DependencyObject;
-                var fe = src as FrameworkElement;
-                string name = fe?.Name ?? "(unnamed)";
-                string type = src?.GetType().Name ?? "(unknown)";
-                string? label = null;
-
-                // Try to capture label/content across common button types
-                if (src is Syncfusion.Windows.Tools.Controls.ButtonAdv badv)
+                if (e.OriginalSource is DependencyObject src)
                 {
-                    label = badv.Label;
-                    bool? canExec = null;
-                    try { if (badv.Command != null) canExec = badv.Command.CanExecute(badv.CommandParameter); } catch { /* no-op */ }
-                    Logger.Information("Button click: {Type} Name={Name} Label={Label} CanExecute={CanExecute} DataContext={DC}",
-                        type, name, label ?? "(none)", canExec, this.DataContext?.GetType().Name ?? "(null)");
-                    return;
+                    var fe = src as FrameworkElement;
+                    string name = fe?.Name ?? "(unnamed)";
+                    string type = src.GetType().Name;
+                    string? label = null;
+                    if (src is Syncfusion.Windows.Tools.Controls.ButtonAdv badv)
+                    {
+                        label = badv.Content?.ToString();
+                    }
+                    else if (src is Button b)
+                    {
+                        label = b.Content?.ToString();
+                    }
+                    Logger.Information("MainWindow ButtonClick: Type={Type} Name={Name} Label={Label}", type, name, label);
                 }
-
-                if (src is Button btn)
-                {
-                    label = btn.Content?.ToString();
-                    bool? canExec = null;
-                    try { if (btn.Command != null) canExec = btn.Command.CanExecute(btn.CommandParameter); } catch { /* no-op */ }
-                    Logger.Information("Button click: {Type} Name={Name} Content={Label} CanExecute={CanExecute} DataContext={DC}",
-                        type, name, label ?? "(none)", canExec, this.DataContext?.GetType().Name ?? "(null)");
-                    return;
-                }
-
-                // Fallback generic log
-                Logger.Information("Button click: {Type} Name={Name} DataContext={DC}",
-                    type, name, this.DataContext?.GetType().Name ?? "(null)");
             }
             catch (Exception ex)
             {
-                Logger.Warning(ex, "Global button click logging failed");
-            }
-        }
-
-        // Global selection change diagnostics (mirrors pattern used in other views)
-    private void OnAnySelectionChanged(object? sender, System.Windows.Controls.SelectionChangedEventArgs e)
-        {
-            try
-            {
-                var src = e.OriginalSource as DependencyObject;
-                var fe = src as FrameworkElement;
-                var name = fe?.Name ?? "(unnamed)";
-                var type = src?.GetType().Name ?? (sender?.GetType().Name ?? "(unknown)");
-                Logger.Information("MainWindow SelectionChanged: Type={Type} Name={Name} Added={Added} Removed={Removed}", type, name, e.AddedItems?.Count ?? 0, e.RemovedItems?.Count ?? 0);
-            }
-            catch (Exception ex)
-            {
-                Logger.Warning(ex, "MainWindow: selection change logging failed");
-            }
-        }
-
-        // Global text change diagnostics
-        private void OnAnyTextChanged(object? sender, TextChangedEventArgs e)
-        {
-            try
-            {
-                if (e.OriginalSource is not DependencyObject src) return;
-                var fe = src as FrameworkElement;
-                var name = fe?.Name ?? "(unnamed)";
-                var type = src.GetType().Name;
-                int? len = src is TextBox tb ? tb.Text?.Length : null;
-                Logger.Information("MainWindow TextChanged: Type={Type} Name={Name} Length={Length}", type, name, len);
-            }
-            catch (Exception ex)
-            {
-                Logger.Warning(ex, "MainWindow: text change logging failed");
+                Logger.Warning(ex, "MainWindow: OnAnyButtonClick logging failed");
             }
         }
 
@@ -437,6 +376,74 @@ namespace BusBuddy.WPF.Views.Main
             catch (Exception ex)
             {
                 Logger.Warning(ex, "MainWindow: validation logging failed");
+            }
+        }
+
+        // Global selection change diagnostics (mirrors pattern used in other views)
+        private void OnAnySelectionChanged(object? sender, System.Windows.Controls.SelectionChangedEventArgs e)
+        {
+            try
+            {
+                if (e.OriginalSource is DependencyObject src)
+                {
+                    var fe = src as FrameworkElement;
+                    string name = fe?.Name ?? "(unnamed)";
+                    string type = src.GetType().Name;
+                    Logger.Information("MainWindow SelectionChanged: Type={Type} Name={Name} Added={Added} Removed={Removed}", type, name, e.AddedItems?.Count ?? 0, e.RemovedItems?.Count ?? 0);
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Warning(ex, "MainWindow: selection change logging failed");
+            }
+        }
+
+        // Global text change diagnostics
+        private void OnAnyTextChanged(object? sender, System.Windows.Controls.TextChangedEventArgs e)
+        {
+            try
+            {
+                if (e.OriginalSource is DependencyObject src)
+                {
+                    var fe = src as FrameworkElement;
+                    string name = fe?.Name ?? "(unnamed)";
+                    string type = src.GetType().Name;
+                    Logger.Information("MainWindow TextChanged: Type={Type} Name={Name}", type, name);
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Warning(ex, "MainWindow: text change logging failed");
+            }
+        }
+
+        // Centralized theme application across open windows using SyncfusionThemeManager helper
+        private void ApplyThemeGlobally(string themeName)
+        {
+            try
+            {
+                void ApplyTo(DependencyObject d)
+                {
+                    try
+                    {
+                        using var theme = new Syncfusion.SfSkinManager.Theme(themeName);
+                        SfSkinManager.SetTheme(d, theme);
+                    }
+                    catch { }
+                }
+                ApplyTo(this);
+                if (Application.Current != null)
+                {
+                    foreach (Window w in Application.Current.Windows)
+                    {
+                        ApplyTo(w);
+                    }
+                }
+                Logger.Information("Applied theme {Theme} globally", themeName);
+            }
+            catch (Exception ex)
+            {
+                Logger.Warning(ex, "Failed applying theme {Theme} globally", themeName);
             }
         }
 
@@ -487,61 +494,72 @@ namespace BusBuddy.WPF.Views.Main
         }
 
         // Store original widths to restore on deactivation
-        private double? _studentsOriginalWidth;
-        private double? _routesOriginalWidth;
+        // Removed dynamic width bump logic (Step 2 refactor) — static widths defined in XAML
+        private const string LayoutPersistenceFile = "DockLayout.xml"; // serialization filename
 
         // Based on Syncfusion DockingManager events and attached properties:
         // - WindowActivated / WindowDeactivated events are documented in API reference.
         // - DesiredWidthInDockedMode is an attached property used for docked panes.
         // Docs: https://help.syncfusion.com/cr/wpf/Syncfusion.Windows.Tools.Controls.DockingManager.html
-        private void DockingManager_WindowActivated(object? sender, RoutedEventArgs e)
+        private void DockingManager_WindowActivated(object? sender, RoutedEventArgs e) { /* width bump removed */ }
+        private void DockingManager_WindowDeactivated(object? sender, RoutedEventArgs e) { /* width bump removed */ }
+
+        private void InitializeProgrammaticDockLayout()
         {
+            if (MainDockingManager == null) return;
             try
             {
-                if (e.OriginalSource is FrameworkElement fe)
+                // Attempt layout load first
+                if (System.IO.File.Exists(LayoutPersistenceFile))
                 {
-                    if (ReferenceEquals(fe, FindName("StudentsPane")))
-                    {
-                        _studentsOriginalWidth ??= DockingManager.GetDesiredWidthInDockedMode(fe);
-                        // Expand while active (gentle bump)
-                        DockingManager.SetDesiredWidthInDockedMode(fe, Math.Max(_studentsOriginalWidth.Value, _studentsOriginalWidth.Value + DockActivatedWidthBump));
-                        Logger.Debug("Expanded StudentsPane to {Width}", DockingManager.GetDesiredWidthInDockedMode(fe));
-                    }
-                    else if (ReferenceEquals(fe, FindName("RoutesPane")))
-                    {
-                        _routesOriginalWidth ??= DockingManager.GetDesiredWidthInDockedMode(fe);
-                        DockingManager.SetDesiredWidthInDockedMode(fe, Math.Max(_routesOriginalWidth.Value, _routesOriginalWidth.Value + DockActivatedWidthBump));
-                        Logger.Debug("Expanded RoutesPane to {Width}", DockingManager.GetDesiredWidthInDockedMode(fe));
-                    }
+                    using var reader = new System.IO.StreamReader(LayoutPersistenceFile);
+                    MainDockingManager.LoadDockState(reader);
+                    Logger.Information("Restored dock layout from {File}", LayoutPersistenceFile);
+                    return;
                 }
+
+                // Default layout is already declared in XAML (StudentsPane left, RoutesPane right, documents center)
+                Logger.Information("Using default XAML dock layout (no persisted layout found)");
             }
             catch (Exception ex)
             {
-                Logger.Warning(ex, "DockingManager_WindowActivated handling failed");
+                Logger.Warning(ex, "Failed to initialize programmatic dock layout (fallback to XAML state)");
             }
         }
 
-        private void DockingManager_WindowDeactivated(object? sender, RoutedEventArgs e)
+        private void PersistDockLayout()
         {
+            if (MainDockingManager == null) return;
             try
             {
-                if (e.OriginalSource is FrameworkElement fe)
-                {
-                    if (ReferenceEquals(fe, FindName("StudentsPane")) && _studentsOriginalWidth.HasValue)
-                    {
-                        DockingManager.SetDesiredWidthInDockedMode(fe, _studentsOriginalWidth.Value);
-                        Logger.Debug("Restored StudentsPane width to {Width}", _studentsOriginalWidth);
-                    }
-                    else if (ReferenceEquals(fe, FindName("RoutesPane")) && _routesOriginalWidth.HasValue)
-                    {
-                        DockingManager.SetDesiredWidthInDockedMode(fe, _routesOriginalWidth.Value);
-                        Logger.Debug("Restored RoutesPane width to {Width}", _routesOriginalWidth);
-                    }
-                }
+                var settings = new System.Xml.XmlWriterSettings { Indent = true, OmitXmlDeclaration = false };
+                using var writer = System.Xml.XmlWriter.Create(LayoutPersistenceFile, settings);
+                MainDockingManager.SaveDockState(writer);
+                Logger.Information("Persisted dock layout to {File}", LayoutPersistenceFile);
             }
             catch (Exception ex)
             {
-                Logger.Warning(ex, "DockingManager_WindowDeactivated handling failed");
+                Logger.Warning(ex, "Failed persisting dock layout");
+            }
+        }
+
+    // Duplicate MainWindow_Loaded and MainWindow_Closing removed (original definitions kept earlier in file)
+
+        private void RegisterNavigationPanes()
+        {
+            if (_navigationService == null) return;
+            try
+            {
+                _navigationService.Register(new PaneDescriptor { Key = "dashboard", Header = "📊 Dashboard", Factory = () => new BusBuddy.WPF.Views.Dashboard.DashboardView() });
+                _navigationService.Register(new PaneDescriptor { Key = "students", Header = "📚 Students", Factory = () => new BusBuddy.WPF.Views.Student.StudentsView() });
+                _navigationService.Register(new PaneDescriptor { Key = "buses", Header = "🚐 Buses", Factory = () => new VehicleManagementView() });
+                _navigationService.Register(new PaneDescriptor { Key = "drivers", Header = "👨‍✈️ Drivers", Factory = () => new DriversView() });
+                _navigationService.Register(new PaneDescriptor { Key = "routes", Header = "🚌 Routes", Factory = () => new RouteManagementView() });
+                _navigationService.Register(new PaneDescriptor { Key = "map", Header = "🌍 Map", Factory = () => new BusBuddy.WPF.Views.GoogleEarth.GoogleEarthView() });
+            }
+            catch (Exception ex)
+            {
+                Logger.Warning(ex, "Failed registering navigation panes");
             }
         }
 
@@ -679,56 +697,7 @@ namespace BusBuddy.WPF.Views.Main
             }
         }
 
-        /// <summary>
-        /// Applies the specified Syncfusion theme to all open windows.
-        /// Uses SfSkinManager.SetTheme as documented in Syncfusion WPF API (SfSkinManager, Theme).
-        /// Docs: https://help.syncfusion.com/cr/wpf/Syncfusion.SfSkinManager.SfSkinManager.html
-        ///       https://help.syncfusion.com/cr/wpf/Syncfusion.SfSkinManager.Theme.html
-        /// </summary>
-    private static void ApplyThemeGlobally(string themeName)
-        {
-            try
-            {
-                // Ensure global flags are set so styles flow to children
-                SfSkinManager.ApplyStylesOnApplication = true;
-                SfSkinManager.ApplyThemeAsDefaultStyle = true;
-                var theme = new Theme(themeName);
-
-                // Set application-level theme so newly created windows get it automatically
-                SfSkinManager.ApplicationTheme = theme;
-                Logger.Information("Theme changed to {ThemeName} at application scope", themeName);
-
-                // Apply to each open window so the entire UI updates at runtime
-                foreach (Window win in Application.Current.Windows)
-                {
-                    try
-                    {
-                        SfSkinManager.SetTheme(win, theme);
-                        Logger.Information("Theme changed to {ThemeName} for {Component}", themeName, win.GetType().Name);
-                    }
-                    catch
-                    {
-                        // Continue applying theme to other windows even if one fails
-                    }
-                }
-
-                // Also apply to MainWindow explicitly (in case created after others)
-                if (Application.Current.MainWindow is not null)
-                {
-                    try
-                    {
-                        SfSkinManager.SetTheme(Application.Current.MainWindow, theme);
-                        Logger.Information("Theme changed to {ThemeName} for {Component}", themeName, Application.Current.MainWindow.GetType().Name);
-                    }
-                    catch { /* no-op */ }
-                }
-            }
-            catch (Exception)
-            {
-                // Swallow at this level; caller logs details and manages fallback
-                throw;
-            }
-        }
+    // Removed malformed duplicate ApplyThemeGlobally block (corruption cleanup).
 
         /// <summary>
         /// Navigate to Students management view
@@ -739,12 +708,7 @@ namespace BusBuddy.WPF.Views.Main
             Logger.Information("Students navigation requested");
             try
             {
-                // Open StudentsView as a top-level window (ChromelessWindow) — do not embed a Window as Content
-                // TODO Step 2: Replace with navigationService.Navigate("students")
-                // Temporary: keep existing behavior until all panes registered
-                var studentsView = new StudentsView { Owner = this, WindowStartupLocation = WindowStartupLocation.CenterOwner };
-                studentsView.ShowDialog();
-                RefreshStudentsGrid();
+                _navigationService?.Navigate("students");
             }
             catch (Exception ex)
             {
@@ -762,11 +726,7 @@ namespace BusBuddy.WPF.Views.Main
             Logger.Information("Route management navigation requested");
             try
             {
-                // Create a window to host the RouteManagementView
-                // TODO Step 2: navigationService.Navigate("routes")
-                var routeWindow = new Window { Title = "🗺️ Route Management", Width = 1200, Height = 800, WindowStartupLocation = WindowStartupLocation.CenterOwner, Owner = this, Content = new RouteManagementView() };
-                routeWindow.ShowDialog();
-                RefreshRoutesGrid();
+                _navigationService?.Navigate("routes");
             }
             catch (Exception ex)
             {
@@ -784,46 +744,12 @@ namespace BusBuddy.WPF.Views.Main
             Logger.Information("Drivers navigation requested");
             try
             {
-                // Create a window to host the DriversView
-                // TODO Step 2: navigationService.Navigate("drivers")
-                var driversWindow = new Window { Title = "👨‍✈️ Driver Management", Width = 1000, Height = 700, WindowStartupLocation = WindowStartupLocation.CenterOwner, Owner = this, Content = new DriversView() };
-                driversWindow.ShowDialog();
-                RefreshDriversGrid();
+                _navigationService?.Navigate("drivers");
             }
             catch (Exception ex)
             {
                 Logger.Error(ex, "Error opening Drivers view");
                 MessageBox.Show($"Error opening Drivers view: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-        }
-
-        /// <summary>
-        /// Show / activate the Map (Google Earth) pane inside the DockingManager.
-        /// </summary>
-        private void MapButton_Click(object sender, RoutedEventArgs e)
-        {
-            Logger.Debug("MapButton_Click event triggered");
-            try
-            {
-                if (MainDockingManager != null)
-                {
-                    try
-                    {
-                        // Activate by header text (Syncfusion ActivateWindow expects string header in current version build context)
-                        MainDockingManager.ActivateWindow("🌍 Map");
-                        Logger.Information("Map pane activation attempted via header lookup");
-                    }
-                    catch (Exception inner)
-                    {
-                        Logger.Warning(inner, "Primary ActivateWindow by header failed; attempting manual focus");
-                        var mapPane = this.FindName("MapPane") as ContentControl;
-                        mapPane?.Focus();
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger.Error(ex, "Error activating Map pane");
             }
         }
 
@@ -836,11 +762,7 @@ namespace BusBuddy.WPF.Views.Main
             Logger.Information("Buses navigation requested");
             try
             {
-                // Create a window to host the VehicleManagementView
-                // TODO Step 2: navigationService.Navigate("buses")
-                var busesWindow = new Window { Title = "🚐 Bus Management", Width = 1200, Height = 800, WindowStartupLocation = WindowStartupLocation.CenterOwner, Owner = this, Content = new VehicleManagementView() };
-                busesWindow.ShowDialog();
-                RefreshBusesGrid();
+                _navigationService?.Navigate("buses");
             }
             catch (Exception ex)
             {
@@ -849,44 +771,20 @@ namespace BusBuddy.WPF.Views.Main
             }
         }
 
-        private void AnalyticsButton_Click(object sender, RoutedEventArgs e)
+        /// <summary>
+        /// Show / activate the Map (Google Earth) pane inside the DockingManager.
+        /// </summary>
+        private void MapButton_Click(object sender, RoutedEventArgs e)
         {
-            Logger.Debug("AnalyticsButton_Click event triggered");
-            Logger.Information("Analytics navigation requested");
-            // Future: Navigate to analytics view
-            Logger.Debug("Analytics navigation logic completed");
-        }
-
-        private void VehiclesButton_Click(object sender, RoutedEventArgs e)
-        {
-            Logger.Debug("VehiclesButton_Click event triggered");
-            Logger.Information("Vehicles navigation requested");
-            // Future: Navigate to vehicles view
-            Logger.Debug("Vehicles navigation logic completed");
-        }
-
-        private void ActivitiesButton_Click(object sender, RoutedEventArgs e)
-        {
-            Logger.Debug("ActivitiesButton_Click event triggered");
-            Logger.Information("Activities navigation requested");
-            // Future: Navigate to activities view
-            Logger.Debug("Activities navigation logic completed");
-        }
-
-        private void FuelManagementButton_Click(object sender, RoutedEventArgs e)
-        {
-            Logger.Debug("FuelManagementButton_Click event triggered");
-            Logger.Information("Fuel management navigation requested");
-            // Future: Navigate to fuel management view
-            Logger.Debug("Fuel management navigation logic completed");
-        }
-
-        private void SettingsButton_Click(object sender, RoutedEventArgs e)
-        {
-            Logger.Debug("SettingsButton_Click event triggered");
-            Logger.Information("Settings navigation requested");
-            // Future: Navigate to settings view
-            Logger.Debug("Settings navigation logic completed");
+            Logger.Debug("MapButton_Click event triggered");
+            try
+            {
+                _navigationService?.Navigate("map");
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Error activating Map pane");
+            }
         }
 
         /// <summary>
@@ -937,8 +835,8 @@ namespace BusBuddy.WPF.Views.Main
             {
                 Logger.Debug("Creating new StudentForm dialog");
                 var studentForm = new StudentForm();
-                Logger.Debug("Showing StudentForm modal dialog");
-                var result = studentForm.ShowDialog();
+                Logger.Debug("Showing StudentForm hosted in transient window");
+                var result = ShowUserControlDialog(studentForm, "Add Student");
                 Logger.Debug("StudentForm dialog result: {DialogResult}", result);
                 if (result == true)
                 {
@@ -1027,7 +925,7 @@ namespace BusBuddy.WPF.Views.Main
                 var studentViewModel = new BusBuddy.WPF.ViewModels.Student.StudentFormViewModel(selectedStudent);
                 studentForm.DataContext = studentViewModel;
 
-                var result = studentForm.ShowDialog();
+                var result = ShowUserControlDialog(studentForm, "Edit Student");
                 if (result == true)
                 {
                     Logger.Information("Student edited successfully");
@@ -1049,7 +947,7 @@ namespace BusBuddy.WPF.Views.Main
             try
             {
                 var busForm = new BusForm();
-                var result = busForm.ShowDialog();
+                var result = ShowUserControlDialog(busForm, "Add Bus");
                 if (result == true)
                 {
                     Logger.Information("Bus added successfully");
@@ -1070,9 +968,9 @@ namespace BusBuddy.WPF.Views.Main
             {
                 Logger.Debug("Creating new DriverForm dialog");
                 var driverForm = new DriverForm();
-                Logger.Debug("Showing DriverForm modal dialog");
-                var result = driverForm.ShowDialog();
-                Logger.Debug("DriverForm dialog result: {DialogResult}", result);
+                Logger.Debug("Showing DriverForm hosted modal dialog");
+                var result = ShowUserControlDialog(driverForm, "Add Driver");
+                Logger.Debug("DriverForm hosted dialog result: {DialogResult}", result);
                 if (result == true)
                 {
                     Logger.Information("DriverForm opened successfully");
@@ -1220,268 +1118,172 @@ namespace BusBuddy.WPF.Views.Main
 
         private bool EnsureMainWindowViewModel()
         {
-            if (DataContext is BusBuddy.WPF.ViewModels.MainWindowViewModel)
+            try
             {
+                if (DataContext is MainWindowViewModel vm)
+                {
+                    _viewModel = vm;
+                    return true;
+                }
+
+                // Defensive: type identity issues across reloads — match by name
+                if (DataContext != null && string.Equals(DataContext.GetType().Name, nameof(MainWindowViewModel), StringComparison.OrdinalIgnoreCase))
+                {
+                    _viewModel ??= new MainWindowViewModel();
+                    DataContext = _viewModel; // normalize instance
+                    Logger.Debug("Normalized DataContext to MainWindowViewModel by name match");
+                    return true;
+                }
+
+                if (_viewModel == null)
+                {
+                    _viewModel = new MainWindowViewModel();
+                    DataContext = _viewModel;
+                    Logger.Information("Created new MainWindowViewModel in EnsureMainWindowViewModel");
+                }
+                else if (DataContext == null)
+                {
+                    DataContext = _viewModel;
+                    Logger.Debug("Restored DataContext to existing MainWindowViewModel instance");
+                }
                 return true;
             }
-
-            if (_viewModel == null)
+            catch (Exception ex)
             {
-                _viewModel = new BusBuddy.WPF.ViewModels.MainWindowViewModel();
+                Logger.Warning(ex, "EnsureMainWindowViewModel failed");
+                return false;
             }
+    }
 
-            DataContext = _viewModel;
-            Logger.Information("DataContext restored to MainWindowViewModel");
-            return true;
-        }
-
-        // Data refresh methods
         private void RefreshStudentsGrid()
         {
-            Logger.Debug("RefreshStudentsGrid method started");
             try
             {
-                EnsureMainWindowViewModel();
-                // Refresh through ViewModel instead of direct grid access
-                Logger.Debug("Refreshing students data through ViewModel");
-                // Future enhancement: ((MainWindowViewModel)DataContext).RefreshStudents();
-                Logger.Information("Students data refresh requested");
-            }
-            catch (Exception ex)
-            {
-                Logger.Error(ex, "Error refreshing students grid");
-            }
-        }
+                if (!EnsureMainWindowViewModel()) return;
+                // Use reflection to avoid tight coupling if property shape changes
+                var prop = _viewModel?.GetType().GetProperty("LoadStudentsCommand") ?? _viewModel?.GetType().GetProperty("RefreshStudentsCommand");
+                if (prop?.GetValue(_viewModel) is ICommand cmd && cmd.CanExecute(null))
+                {
+                    cmd.Execute(null);
+                    Logger.Information("Triggered students refresh via command");
+                    return;
+                }
 
-        private void RefreshRoutesGrid()
-        {
-            Logger.Debug("RefreshRoutesGrid method started");
-            try
-            {
-                EnsureMainWindowViewModel();
-                Logger.Debug("Refreshing routes data through ViewModel");
-                // Future enhancement: ((MainWindowViewModel)DataContext).RefreshRoutes();
-                Logger.Information("Routes data refresh requested");
+                // Fallback: look for async method LoadStudentsAsync
+                var loadMethod = _viewModel?.GetType().GetMethod("LoadStudentsAsync");
+                if (loadMethod != null)
+                {
+                    var taskObj = loadMethod.Invoke(_viewModel, null) as Task;
+                    taskObj?.ContinueWith(t =>
+                    {
+                        if (t.Exception != null)
+                            Logger.Warning(t.Exception, "Students refresh task faulted");
+                    });
+                    Logger.Information("Triggered students refresh via LoadStudentsAsync");
+                }
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Error refreshing routes grid");
-            }
-        }
-
-        private void RefreshBusesGrid()
-        {
-            Logger.Debug("RefreshBusesGrid method started");
-            try
-            {
-                EnsureMainWindowViewModel();
-                Logger.Debug("Refreshing buses data through ViewModel");
-                // Future enhancement: ((MainWindowViewModel)DataContext).RefreshBuses();
-                Logger.Information("Buses data refresh requested");
-            }
-            catch (Exception ex)
-            {
-                Logger.Error(ex, "Error refreshing buses grid");
+                Logger.Warning(ex, "RefreshStudentsGrid failed");
             }
         }
 
         private void RefreshDriversGrid()
         {
-            Logger.Debug("RefreshDriversGrid method started");
             try
             {
-                EnsureMainWindowViewModel();
-                Logger.Debug("Refreshing drivers data through ViewModel");
-                // Future enhancement: ((MainWindowViewModel)DataContext).RefreshDrivers();
-                Logger.Information("Drivers data refresh requested");
+                if (!EnsureMainWindowViewModel()) return;
+                var prop = _viewModel?.GetType().GetProperty("LoadDriversCommand") ?? _viewModel?.GetType().GetProperty("RefreshDriversCommand");
+                if (prop?.GetValue(_viewModel) is ICommand cmd && cmd.CanExecute(null))
+                {
+                    cmd.Execute(null);
+                    Logger.Information("Triggered drivers refresh via command");
+                    return;
+                }
+
+                var loadMethod = _viewModel?.GetType().GetMethod("LoadDriversAsync");
+                if (loadMethod != null)
+                {
+                    var taskObj = loadMethod.Invoke(_viewModel, null) as Task;
+                    taskObj?.ContinueWith(t =>
+                    {
+                        if (t.Exception != null)
+                            Logger.Warning(t.Exception, "Drivers refresh task faulted");
+                    });
+                    Logger.Information("Triggered drivers refresh via LoadDriversAsync");
+                }
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Error refreshing drivers grid");
+                Logger.Warning(ex, "RefreshDriversGrid failed");
             }
         }
 
         #endregion
 
-        #region Data Loading Methods
-
-        // Data loading methods
-        private async void LoadInitialData()
-        {
-            Logger.Debug("LoadInitialData method started");
-            try
-            {
-                Logger.Information("Loading initial dashboard data");
-                await LoadStudentsDataAsync();
-                await LoadRoutesDataAsync();
-                await LoadBusesDataAsync();
-                await LoadDriversDataAsync();
-                Logger.Information("Initial data loading completed successfully");
-            }
-            catch (Exception ex)
-            {
-                Logger.Error(ex, "Error loading initial data");
-            }
-        }
-
-        private async Task LoadStudentsDataAsync()
-        {
-            Logger.Debug("LoadStudentsDataAsync method started");
-            try
-            {
-                // TODO: Implement actual data loading from service
-                Logger.Debug("Simulating students data load");
-                await Task.Delay(100); // Simulate async operation
-                Logger.Information("Students data loaded successfully");
-            }
-            catch (Exception ex)
-            {
-                Logger.Error(ex, "Error loading students data");
-            }
-        }
-
-        private async Task LoadRoutesDataAsync()
-        {
-            Logger.Debug("LoadRoutesDataAsync method started");
-            try
-            {
-                // TODO: Implement actual data loading from service
-                Logger.Debug("Simulating routes data load");
-                await Task.Delay(100); // Simulate async operation
-                Logger.Information("Routes data loaded successfully");
-            }
-            catch (Exception ex)
-            {
-                Logger.Error(ex, "Error loading routes data");
-            }
-        }
-
-        private async Task LoadBusesDataAsync()
-        {
-            Logger.Debug("LoadBusesDataAsync method started");
-            try
-            {
-                // TODO: Implement actual data loading from service
-                Logger.Debug("Simulating buses data load");
-                await Task.Delay(100); // Simulate async operation
-                Logger.Information("Buses data loaded successfully");
-            }
-            catch (Exception ex)
-            {
-                Logger.Error(ex, "Error loading buses data");
-            }
-        }
-
-        private async Task LoadDriversDataAsync()
-        {
-            Logger.Debug("LoadDriversDataAsync method started");
-            try
-            {
-                // TODO: Implement actual data loading from service
-                Logger.Debug("Simulating drivers data load");
-                await Task.Delay(100); // Simulate async operation
-                Logger.Information("Drivers data loaded successfully");
-            }
-            catch (Exception ex)
-            {
-                Logger.Error(ex, "Error loading drivers data");
-            }
-        }
-
-    #endregion
-
-        #region Helper Methods
-
-        // Utility methods
-        private void ShowErrorMessage(string message, string title = "Error")
-        {
-            Logger.Debug("ShowErrorMessage called with: {Message}", message);
-            MessageBox.Show(message, title, MessageBoxButton.OK, MessageBoxImage.Error);
-        }
-
-        private void ShowSuccessMessage(string message, string title = "Success")
-        {
-            Logger.Debug("ShowSuccessMessage called with: {Message}", message);
-            MessageBox.Show(message, title, MessageBoxButton.OK, MessageBoxImage.Information);
-        }
-
-        private void ShowWarningMessage(string message, string title = "Warning")
-        {
-            Logger.Debug("ShowWarningMessage called with: {Message}", message);
-            MessageBox.Show(message, title, MessageBoxButton.OK, MessageBoxImage.Warning);
-        }
-
-        private void UpdateNavigationSelection(Button selectedButton)
-        {
-            // Future: Update visual selection state
-            Logger.Debug("Navigation selection updated");
-        }
-
-        /// <summary>
-        /// Navigate to a specific view within the DockingManager
-        /// </summary>
-        private void NavigateToView(UserControl view, string headerText)
+        #region Messaging Helpers
+        private void ShowErrorMessage(string message, string title)
         {
             try
             {
-                // Create a new docked panel for the view
-                var contentControl = new ContentControl
+                Logger.Error("UI Error: {Title} - {Message}", title, message);
+                MessageBox.Show(message, title, MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            catch { /* swallow */ }
+        }
+
+        private void ShowInfoMessage(string message, string title)
+        {
+            try
+            {
+                Logger.Information("UI Info: {Title} - {Message}", title, message);
+                MessageBox.Show(message, title, MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch { }
+        }
+
+        private void ShowWarningMessage(string message, string title)
+        {
+            try
+            {
+                Logger.Warning("UI Warning: {Title} - {Message}", title, message);
+                MessageBox.Show(message, title, MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+            catch { }
+        }
+        #endregion
+
+        #region Dialog Hosting Helpers
+        private bool? ShowUserControlDialog(UserControl control, string title)
+        {
+            try
+            {
+                var host = new Window
                 {
-                    Content = view
+                    Title = title,
+                    Content = control,
+                    Owner = this,
+                    WindowStartupLocation = WindowStartupLocation.CenterOwner,
+                    SizeToContent = SizeToContent.WidthAndHeight,
+                    MinWidth = 820,
+                    MinHeight = 640
                 };
 
-                // Set DockingManager properties
-                Syncfusion.Windows.Tools.Controls.DockingManager.SetHeader(contentControl, headerText);
-                Syncfusion.Windows.Tools.Controls.DockingManager.SetState(contentControl,
-                    Syncfusion.Windows.Tools.Controls.DockState.Document);
-
-                // Add to DockingManager
-                if (MainDockingManager != null)
+                if (control is BusBuddy.WPF.Views.Student.StudentForm sf)
                 {
-                    try
-                    {
-                        MainDockingManager.Children.Add(contentControl);
-                    }
-                    catch (Exception addEx)
-                    {
-                        Logger.Warning(addEx, "Failed adding content to MainDockingManager");
-                    }
-                }
-                else
-                {
-                    Logger.Warning("NavigateToView called but MainDockingManager is null");
+                    sf.RequestCloseByHost += (s, _) => { host.DialogResult = sf.DialogResult; host.Close(); };
                 }
 
-                Logger.Information("Successfully navigated to view: {HeaderText}", headerText);
+                return host.ShowDialog();
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Failed to navigate to view: {HeaderText}", headerText);
-                throw;
+                Logger.Error(ex, "Failed to host control in dialog: {Title}", title);
+                MessageBox.Show($"Failed to open dialog: {ex.Message}", title, MessageBoxButton.OK, MessageBoxImage.Error);
+                return false;
             }
         }
-
         #endregion
+
     }
 }
-
-/*
-BUG FIX EXPLANATION:
---------------------
-The original code had a bug in the ShowErrorMessage method signature and usage.
-In ReportsButton_Click, the call was:
-    ShowErrorMessage("Failed to generate route report", ex.Message);
-But the method signature was:
-    private void ShowErrorMessage(string message, string title = "Error")
-So the title and message were swapped.
-
-FIX:
-- Change the ShowErrorMessage method signature to:
-    private void ShowErrorMessage(string title, string message)
-- Update all usages to match the new signature.
-
-Alternatively, if you want to keep the original signature, update the call in ReportsButton_Click to:
-    ShowErrorMessage(ex.Message, "Failed to generate route report");
-
-This rewrite uses the first approach for clarity and consistency.
-*/

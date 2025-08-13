@@ -37,7 +37,7 @@
                            Margin="0,0,0,5"/>
                 <TextBlock Text="Please confirm that you want to proceed with this action."
                            FontSize="12"
-                           Foreground="#666666"/>
+                           Foreground="{DynamicResource BusBuddy.Brush.Text.Medium}"/>
             </StackPanel>
         </StackPanel>
 
@@ -76,5 +76,3 @@
         </StackPanel>
     </Grid>
 </Window>
-
-

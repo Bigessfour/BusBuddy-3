@@ -7,7 +7,6 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Media;
 using Syncfusion.Windows.Shared;
-using Syncfusion.SfSkinManager;
 using BusBuddy.Core.Models;
 using BusBuddy.Core.Services;
 using BusBuddy.Core.Services.Interfaces;
@@ -18,7 +17,7 @@ using CommunityToolkit.Mvvm.Input;
 
 namespace BusBuddy.WPF.Views.Fuel
 {
-    public partial class FuelReconciliationDialog : ChromelessWindow, INotifyPropertyChanged
+    public partial class FuelReconciliationDialog : System.Windows.Controls.UserControl, INotifyPropertyChanged, BusBuddy.WPF.Views.Common.IDialogHostable
     {
         private static readonly ILogger Logger = Log.ForContext<FuelReconciliationDialog>();
 
@@ -180,18 +179,23 @@ namespace BusBuddy.WPF.Views.Fuel
         public CommunityToolkit.Mvvm.Input.RelayCommand ExportCommand { get; }
         public CommunityToolkit.Mvvm.Input.RelayCommand PrintCommand { get; }
 
+        public event EventHandler? RequestCloseByHost;
+
+        public CommunityToolkit.Mvvm.Input.RelayCommand CloseCommand { get; }
+
         public FuelReconciliationDialog(IFuelService fuelService, IBusService busService)
         {
             _fuelService = fuelService ?? throw new ArgumentNullException(nameof(fuelService));
             _busService = busService ?? throw new ArgumentNullException(nameof(busService));
 
             InitializeComponent();
-            ApplySyncfusionTheme();
-            DataContext = this;
-
-            // Initialize commands
+            // Initialize commands BEFORE setting DataContext so bindings resolve immediately (Syncfusion/WPF binding best practice)
             ExportCommand = new CommunityToolkit.Mvvm.Input.RelayCommand(ExportReconciliationReport);
             PrintCommand = new CommunityToolkit.Mvvm.Input.RelayCommand(PrintReconciliationReport);
+            CloseCommand = new CommunityToolkit.Mvvm.Input.RelayCommand(() => RequestCloseByHost?.Invoke(this, EventArgs.Empty));
+            // Apply centralized theme (Syncfusion WPF 30.1.42 documented pattern via SfSkinManager through helper)
+            BusBuddy.WPF.Utilities.SyncfusionThemeManager.ApplyTheme(this);
+            DataContext = this;
 
             // Load initial data
             _ = LoadReconciliationDataAsync();
@@ -451,11 +455,7 @@ namespace BusBuddy.WPF.Views.Fuel
                 "Coming Soon", MessageBoxButton.OK, MessageBoxImage.Information);
         }
 
-        private void CloseButton_Click(object sender, RoutedEventArgs e)
-        {
-            DialogResult = false;
-            Close();
-        }
+    // Close handled via CloseCommand invoking RequestCloseByHost for host window to close.
 
         // INotifyPropertyChanged implementation
         public event PropertyChangedEventHandler? PropertyChanged;
@@ -465,45 +465,17 @@ namespace BusBuddy.WPF.Views.Fuel
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
 
-        /// <summary>
-        /// Apply Syncfusion theme with FluentDark default and FluentLight fallback
-        /// </summary>
-        private void ApplySyncfusionTheme()
-        {
-            SfSkinManager.ApplyThemeAsDefaultStyle = true;
-            try
-            {
-                using var fluentDarkTheme = new Theme("FluentDark");
-                SfSkinManager.SetTheme(this, fluentDarkTheme);
-                Logger.Information("FluentDark theme applied to {ViewName}", GetType().Name);
-            }
-            catch
-            {
-                try
-                {
-                    using var fluentLightTheme = new Theme("FluentLight");
-                    SfSkinManager.SetTheme(this, fluentLightTheme);
-                    Logger.Information("Fallback to FluentLight theme for {ViewName}", GetType().Name);
-                }
-                catch
-                {
-                    // Continue without theme if both fail
-                }
-            }
-        }
-
-        protected override void OnClosed(EventArgs e)
+        // Disposal hook for host window to call if needed
+        public void DisposeResources()
         {
             try
             {
-                SfSkinManager.Dispose(this);
-                Logger.Information("SfSkinManager resources disposed for {ViewName}", GetType().Name);
+                Logger.Information("Disposing resources for {ViewName}", GetType().Name);
             }
             catch (Exception ex)
             {
-                Logger.Error("Error disposing SfSkinManager for {ViewName}: {Error}", GetType().Name, ex.Message);
+                Logger.Warning(ex, "Error during DisposeResources for {ViewName}", GetType().Name);
             }
-            base.OnClosed(e);
         }
     }
 

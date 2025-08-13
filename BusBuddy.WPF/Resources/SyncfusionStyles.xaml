@@ -24,4 +24,24 @@
     <Style TargetType="{x:Type PasswordBox}">
         <Setter Property="MinHeight" Value="30" />
     </Style>
+
+    <!-- Centralized ButtonAdv base style (consolidated from scattered definitions) -->
+    <Style x:Key="BusBuddy.ButtonAdv.Base" TargetType="syncfusion:ButtonAdv">
+        <Setter Property="Padding" Value="12,6" />
+        <Setter Property="Margin" Value="4" />
+        <Setter Property="MinWidth" Value="72" />
+        <Setter Property="Height" Value="34" />
+    </Style>
+
+    <!-- Semantic variants leveraging project brushes -->
+    <Style x:Key="BusBuddy.ButtonAdv.Primary" TargetType="syncfusion:ButtonAdv" BasedOn="{StaticResource BusBuddy.ButtonAdv.Base}">
+        <Setter Property="Background" Value="{StaticResource BusBuddy.Brush.Primary}" />
+        <Setter Property="Foreground" Value="{StaticResource BusBuddy.Brush.Text.Primary}" />
+    </Style>
+
+    <Style x:Key="BusBuddy.ComboBoxAdv.Base" TargetType="syncfusion:ComboBoxAdv">
+        <Setter Property="Height" Value="34" />
+        <Setter Property="Padding" Value="6,2" />
+        <Setter Property="MinWidth" Value="120" />
+    </Style>
 </ResourceDictionary>

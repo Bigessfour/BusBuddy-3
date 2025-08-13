@@ -1,8 +1,8 @@
-<Window x:Class="BusBuddy.WPF.Views.Student.QuickActionsDialog"
-        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Quick Actions" Height="260" Width="360" WindowStartupLocation="CenterOwner"
-        ResizeMode="NoResize" WindowStyle="ToolWindow">
+<UserControl x:Class="BusBuddy.WPF.Views.Student.QuickActionsDialog"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:syncfusion="http://schemas.syncfusion.com/wpf"
+             MinHeight="220" MinWidth="340">
     <Grid Margin="10">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -11,12 +11,13 @@
         </Grid.RowDefinitions>
         <TextBlock Text="Quick Actions" FontSize="18" FontWeight="Bold" Margin="0,0,0,8"/>
         <StackPanel Grid.Row="1" Margin="0,5,0,5">
-            <Button Name="AssignRouteButton" Content="Assign Default Route to Selected" Margin="0,0,0,6" Padding="8"/>
-            <Button Name="FilterActiveButton" Content="Filter Active Students" Margin="0,0,0,6" Padding="8"/>
-            <Button Name="ClearFiltersButton" Content="Clear Filters" Margin="0,0,0,6" Padding="8"/>
+            <!-- Converted to ButtonAdv per Syncfusion docs (ButtonAdv.Label) -->
+            <syncfusion:ButtonAdv x:Name="AssignRouteButton" Label="Assign Default Route to Selected" Margin="0,0,0,6" Height="34" />
+            <syncfusion:ButtonAdv x:Name="FilterActiveButton" Label="Filter Active Students" Margin="0,0,0,6" Height="34" />
+            <syncfusion:ButtonAdv x:Name="ClearFiltersButton" Label="Clear Filters" Margin="0,0,0,6" Height="34" />
         </StackPanel>
         <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right">
-            <Button Name="CloseButton" Content="Close" Width="80" Margin="6,0,0,0" IsDefault="True"/>
+            <syncfusion:ButtonAdv x:Name="CloseButton" Label="Close" Width="90" Height="34" />
         </StackPanel>
     </Grid>
-</Window>
+</UserControl>

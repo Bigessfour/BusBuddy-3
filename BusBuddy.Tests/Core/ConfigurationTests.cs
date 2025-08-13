@@ -46,9 +46,9 @@ namespace BusBuddy.Tests.Core
         }
 
         [Test]
-        public void GetConnectionString_KeepsPlaceholders_WhenEnvUnset()
+        public void GetConnectionString_FallsBackToLocalDb_WhenEnvUnset()
         {
-            // Arrange: ensure variables are not set for this test
+            // Updated expectation: unresolved placeholders trigger LocalDB fallback per EnvironmentHelper logic
             var prevUser = Environment.GetEnvironmentVariable("AZURE_SQL_USER");
             var prevPwd = Environment.GetEnvironmentVariable("AZURE_SQL_PASSWORD");
             try
@@ -62,20 +62,21 @@ namespace BusBuddy.Tests.Core
                         new("DatabaseProvider", "Azure"),
                         new("ConnectionStrings:AzureConnection", "Server=tcp:server;User ID=${AZURE_SQL_USER};Password=${AZURE_SQL_PASSWORD};")
                     })
+                    .AddInMemoryCollection(new KeyValuePair<string, string?>[]
+                    {
+                        // Provide explicit LocalConnection to verify it is chosen
+                        new("ConnectionStrings:LocalConnection", "Data Source=(localdb)\\MSSQLLocalDB;Initial Catalog=BusBuddy;Integrated Security=True;MultipleActiveResultSets=True")
+                    })
                     .Build();
 
-                // Act
                 var conn = EnvironmentHelper.GetConnectionString(config);
 
-                // Behavior update: unresolved placeholders now trigger fallback to LocalDB for reliability.
-                // Assert new behavior instead of expecting placeholders to remain.
                 conn.Should().Contain("(localdb)\\MSSQLLocalDB");
                 conn.Should().NotContain("${AZURE_SQL_USER}");
                 conn.Should().NotContain("${AZURE_SQL_PASSWORD}");
             }
             finally
             {
-                // Restore env
                 Environment.SetEnvironmentVariable("AZURE_SQL_USER", prevUser);
                 Environment.SetEnvironmentVariable("AZURE_SQL_PASSWORD", prevPwd);
             }

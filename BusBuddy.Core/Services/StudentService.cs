@@ -22,33 +22,21 @@ public class StudentService : IStudentService
     private readonly IGeocodingService? _geocodingService; // optional MVP geocoder
     private static readonly SemaphoreSlim _semaphore = new(1, 1);
 
-    // Centralized, flexible US phone validation:
-    // Accepts optional +1 country code, spaces/dots/dashes, optional parentheses around area code, and optional extensions.
-    // Examples: 1234567890, 123-456-7890, (123) 456-7890, +1 (123) 456-7890 ext. 123
+    // Stricter US phone validation (documentation references):
+    // Microsoft .NET Regex: https://learn.microsoft.com/dotnet/standard/base-types/regular-expression-language-quick-reference
+    // Enforces: Optional +1, required 10 digits, allows separators ' ', '.', '-' and parentheses around area code, no extensions (tightened for MVP deterministic validation)
+    // Accepted examples: 5555555555, 555-555-5555, (555) 555-5555, +1 (555) 555-5555, 555.555.5555
+    // Rejected examples: 15555555555 (without separator after country code), 555-5555 (too short), 555-555-55555 (too long), 555-abc-5555 (letters), numbers with extensions
     private static readonly System.Text.RegularExpressions.Regex PhoneRegex =
         new System.Text.RegularExpressions.Regex(
-            @"^(?:\+?1\s*(?:[.\-\s]*)?)?(?:\(\s*([2-9]\d{2})\s*\)|([2-9]\d{2}))\s*(?:[.\-\s]*)?([2-9]\d{2})\s*(?:[.\-\s]*)?(\d{4})(?:\s*(?:#|x\.?|ext\.?|extension)\s*\d+)?$",
+            @"^(?:\+?1[ .-]?)?(?:\(\d{3}\)|\d{3})[ .-]?\d{3}[ .-]?\d{4}$",
             System.Text.RegularExpressions.RegexOptions.Compiled | System.Text.RegularExpressions.RegexOptions.CultureInvariant);
 
     private static bool IsValidPhone(string? phone)
     {
-        // Treat null/empty as "not provided" — valid for optional fields
+        // Null/empty treated as not provided (optional fields) — validated per strict regex when present
         if (string.IsNullOrWhiteSpace(phone)) return true;
-
-        // Normalize to digits-only to tolerate masks like (123) 456-7890, 123-456-7890, 123.456.7890, etc.
-        // Accept 10 digits, or 11 digits when prefixed with country code '1'.
-        var digits = new string(phone.Where(char.IsDigit).ToArray());
-        if (digits.Length == 10)
-        {
-            return true;
-        }
-        if (digits.Length == 11 && digits[0] == '1')
-        {
-            return true;
-        }
-
-        // Fallback to permissive documented pattern (kept for backward compatibility)
-        return PhoneRegex.IsMatch(phone);
+        return PhoneRegex.IsMatch(phone.Trim());
     }
 
     // MVP toggle — allow relaxing phone validation to reduce perceived "button not working" issues when saves are blocked.

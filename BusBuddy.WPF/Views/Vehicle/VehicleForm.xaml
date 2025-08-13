@@ -5,18 +5,17 @@
 ╚══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
 -->
 
-<syncfusion:ChromelessWindow x:Class="BusBuddy.WPF.Views.Vehicle.VehicleForm"
+<UserControl x:Class="BusBuddy.WPF.Views.Vehicle.VehicleForm"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:syncfusion="http://schemas.syncfusion.com/wpf"
         mc:Ignorable="d"
-        Title="Vehicle Form"
-        Height="400"
-        Width="600">
+        d:DesignHeight="400"
+        d:DesignWidth="600">
 
-    <Window.Resources>
+    <UserControl.Resources>
         <!-- Value Converters for Phase 1 -->
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
 
@@ -31,7 +30,7 @@
                 </DataTrigger>
             </Style.Triggers>
         </Style>
-    </Window.Resources>
+    </UserControl.Resources>
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -55,7 +54,7 @@
                 <StackPanel Grid.Column="0" Orientation="Horizontal">
                     <TextBlock Text="🚐" FontSize="22" Margin="0,0,8,0"
                                Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}" VerticalAlignment="Center"/>
-                    <TextBlock Text="{Binding Title, RelativeSource={RelativeSource AncestorType=syncfusion:ChromelessWindow}}"
+                    <TextBlock Text="{Binding Title}"
                                FontSize="24" FontWeight="Bold"
                                Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"
                                VerticalAlignment="Center"/>
@@ -174,13 +173,13 @@
                                                 <Style TargetType="Border">
                                                     <Style.Triggers>
                                                         <DataTrigger Binding="{Binding Status}" Value="Active">
-                                                            <Setter Property="Background" Value="#2ECC71"/>
+                                                            <Setter Property="Background" Value="{DynamicResource BusBuddy.Brush.Semantic.Success}"/>
                                                         </DataTrigger>
                                                         <DataTrigger Binding="{Binding Status}" Value="Maintenance">
-                                                            <Setter Property="Background" Value="#FF8C00"/>
+                                                            <Setter Property="Background" Value="{DynamicResource BusBuddy.Brush.SafetyOrange}"/>
                                                         </DataTrigger>
                                                         <DataTrigger Binding="{Binding Status}" Value="OutOfService">
-                                                            <Setter Property="Background" Value="#E74C3C"/>
+                                                            <Setter Property="Background" Value="{DynamicResource BusBuddy.Brush.Semantic.Danger}"/>
                                                         </DataTrigger>
                                                     </Style.Triggers>
                                                 </Style>
@@ -438,4 +437,4 @@
             </Grid>
         </Border>
     </Grid>
-</syncfusion:ChromelessWindow>
+</UserControl>

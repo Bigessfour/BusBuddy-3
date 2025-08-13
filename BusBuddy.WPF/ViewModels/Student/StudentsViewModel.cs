@@ -354,21 +354,8 @@ namespace BusBuddy.WPF.ViewModels.Student
             try
             {
                 Logger.Information("Add student command executed");
-
                 var studentForm = new BusBuddy.WPF.Views.Student.StudentForm();
-                try
-                {
-                    var owner = System.Windows.Application.Current?.Windows
-                        .OfType<System.Windows.Window>()
-                        .FirstOrDefault(w => w.IsActive)
-                        ?? System.Windows.Application.Current?.MainWindow;
-                    if (owner != null)
-                    {
-                        studentForm.Owner = owner;
-                    }
-                }
-                catch { /* non-fatal: owner is optional */ }
-                var result = studentForm.ShowDialog();
+                var result = ShowInHostDialog(studentForm, "Add Student");
 
                 if (result == true)
                 {
@@ -394,21 +381,8 @@ namespace BusBuddy.WPF.ViewModels.Student
                 if (SelectedStudent != null)
                 {
                     Logger.Information("Edit student command executed for student {StudentId}", SelectedStudent.StudentId);
-
                     var studentForm = new BusBuddy.WPF.Views.Student.StudentForm(SelectedStudent);
-                    try
-                    {
-                        var owner = System.Windows.Application.Current?.Windows
-                            .OfType<System.Windows.Window>()
-                            .FirstOrDefault(w => w.IsActive)
-                            ?? System.Windows.Application.Current?.MainWindow;
-                        if (owner != null)
-                        {
-                            studentForm.Owner = owner;
-                        }
-                    }
-                    catch { /* non-fatal: owner is optional */ }
-                    var result = studentForm.ShowDialog();
+                    var result = ShowInHostDialog(studentForm, "Edit Student");
 
                     if (result == true)
                     {
@@ -422,6 +396,37 @@ namespace BusBuddy.WPF.ViewModels.Student
             {
                 Logger.Error(ex, "Error executing edit student command");
                 StatusMessage = $"Error editing student: {ex.Message}";
+            }
+        }
+
+        /// <summary>
+        /// Hosts a StudentForm (UserControl) inside a transient Window for modal interaction.
+        /// </summary>
+        private bool? ShowInHostDialog(BusBuddy.WPF.Views.Student.StudentForm form, string title)
+        {
+            try
+            {
+                var host = new System.Windows.Window
+                {
+                    Title = title,
+                    Content = form,
+                    SizeToContent = System.Windows.SizeToContent.WidthAndHeight,
+                    WindowStartupLocation = System.Windows.WindowStartupLocation.CenterOwner,
+                    Owner = System.Windows.Application.Current?.Windows.OfType<System.Windows.Window>().FirstOrDefault(w => w.IsActive) ?? System.Windows.Application.Current?.MainWindow,
+                    MinWidth = 820,
+                    MinHeight = 640
+                };
+
+                bool? dialogResult = null;
+                form.RequestCloseByHost += (s, _) => { var f = (BusBuddy.WPF.Views.Student.StudentForm)s!; dialogResult = f.DialogResult; host.DialogResult = f.DialogResult; host.Close(); };
+                var result = host.ShowDialog();
+                return dialogResult ?? result;
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Failed to host StudentForm in dialog");
+                System.Windows.MessageBox.Show($"Failed to open form: {ex.Message}", "Error", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+                return false;
             }
         }
 
@@ -1148,13 +1153,17 @@ namespace BusBuddy.WPF.ViewModels.Student
             {
                 Logger.Information("Show quick actions command executed");
                 StatusMessage = "Opening quick actions";
-                // Display simple dialog for quick actions
-                var dialog = new Views.Student.QuickActionsDialog();
-                if (System.Windows.Application.Current?.MainWindow != null)
+                var qc = new Views.Student.QuickActionsDialog();
+                var host = new System.Windows.Window
                 {
-                    dialog.Owner = System.Windows.Application.Current.MainWindow;
-                }
-                dialog.ShowDialog();
+                    Title = "Quick Actions",
+                    Content = qc,
+                    SizeToContent = System.Windows.SizeToContent.WidthAndHeight,
+                    WindowStartupLocation = System.Windows.WindowStartupLocation.CenterOwner,
+                    Owner = System.Windows.Application.Current?.Windows.OfType<System.Windows.Window>().FirstOrDefault(w => w.IsActive) ?? System.Windows.Application.Current?.MainWindow
+                };
+                qc.RequestCloseByHost += (s, _) => host.Close();
+                host.ShowDialog();
             }
             catch (Exception ex)
             {

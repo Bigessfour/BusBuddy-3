@@ -1,17 +1,14 @@
-<syncfusion:ChromelessWindow x:Class="BusBuddy.WPF.Views.Driver.DriverForm"
-                             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-                             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-                             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-                             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-                             xmlns:syncfusion="http://schemas.syncfusion.com/wpf"
-                             xmlns:syncfusionshared="clr-namespace:Syncfusion.Windows.Shared;assembly=Syncfusion.Shared.Wpf"
-                             mc:Ignorable="d"
-                             Title="{Binding FormTitle}"
-                             Height="600"
-                             Width="650"
-                             WindowStartupLocation="CenterOwner"
-                             ResizeMode="CanResize">
-    <syncfusion:ChromelessWindow.Resources>
+<UserControl x:Class="BusBuddy.WPF.Views.Driver.DriverForm"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:syncfusion="http://schemas.syncfusion.com/wpf"
+             xmlns:syncfusionshared="clr-namespace:Syncfusion.Windows.Shared;assembly=Syncfusion.Shared.Wpf"
+             mc:Ignorable="d"
+             d:DesignHeight="600"
+             d:DesignWidth="650">
+    <UserControl.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/SyncfusionV30_Validated_ResourceDictionary.xaml" />
@@ -45,7 +42,7 @@
                         Value="1" />
             </Style>
         </ResourceDictionary>
-    </syncfusion:ChromelessWindow.Resources>
+    </UserControl.Resources>
     <ScrollViewer VerticalScrollBarVisibility="Auto"
                   Padding="20">
         <Grid>
@@ -342,4 +339,4 @@
             </StackPanel>
         </Grid>
     </ScrollViewer>
-</syncfusion:ChromelessWindow>
+</UserControl>

@@ -75,6 +75,29 @@ jobs:
             Write-Error "Standard WPF <DataGrid> usage detected: $($standard.Path):$($standard.LineNumber)"; echo "sfStatus=FAIL" >> $env:GITHUB_OUTPUT; exit 1
           } else { echo "sfStatus=PASS" >> $env:GITHUB_OUTPUT }
 
+      - name: PowerShell Lint (PSScriptAnalyzer)
+        id: pssa
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Continue'
+          Write-Host 'Installing PSScriptAnalyzer...'
+          Install-Module PSScriptAnalyzer -Scope CurrentUser -Force -ErrorAction Stop
+          $settings = 'PowerShell/Config/PSScriptAnalyzerSettings.psd1'
+          if (-not (Test-Path $settings)) { Write-Warning "Settings file not found: $settings (using default rules)" }
+          $results = Invoke-ScriptAnalyzer -Path PowerShell -Recurse -Settings $settings -Severity @('Error','Warning')
+          $json = $results | Select-Object RuleName,Severity,ScriptName,Line,Message | ConvertTo-Json -Depth 4
+          Set-Content -Path pssa-results.json -Value $json -Encoding UTF8
+          $errorCount = ($results | Where-Object Severity -eq 'Error').Count
+          if ($errorCount -gt 0) { echo "pssaStatus=FAIL" >> $env:GITHUB_OUTPUT } else { echo "pssaStatus=PASS" >> $env:GITHUB_OUTPUT }
+          Write-Host "PSScriptAnalyzer errors: $errorCount"
+
+      - name: Upload PSScriptAnalyzer Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pssa-results
+          path: pssa-results.json
+
       - name: Collect Summary
         id: summary
         shell: pwsh
@@ -83,6 +106,7 @@ jobs:
           $testExit = '${{ steps.tests.outputs.testExitCode }}'
           $guardStatus = '${{ steps.phaseguard.outputs.guardStatus }}'
           $sfStatus = '${{ steps.syncfusionguard.outputs.sfStatus }}'
+          $pssaStatus = '${{ steps.pssa.outputs.pssaStatus }}'
           $testTrx = Get-ChildItem -Recurse -Filter test-results.trx | Select-Object -First 1
           $testSummary = 'Not found'
           $failed = 0
@@ -96,6 +120,7 @@ jobs:
           echo "failedTests=$failed" >> $env:GITHUB_OUTPUT
           echo "guard=$guardStatus" >> $env:GITHUB_OUTPUT
           echo "sf=$sfStatus" >> $env:GITHUB_OUTPUT
+          echo "pssa=$pssaStatus" >> $env:GITHUB_OUTPUT
           $body = @()
           $body += "### CI Summary"
           $body += "* Branch: `${{ github.ref_name }}`"
@@ -103,6 +128,7 @@ jobs:
           $body += "* Tests: $testSummary (ExitCode=$testExit)"
           $body += "* Naming Guard: $guardStatus"
           $body += "* Syncfusion Guard: $sfStatus"
+          $body += "* PowerShell Lint: $pssaStatus"
           if ($guardStatus -ne 'PASS') {
             $violations = Get-Content guard-output.log | Out-String
             $body += "\n<details><summary>Naming Guard Output</summary>\n\n$violations\n</details>"
@@ -118,8 +144,9 @@ jobs:
           $failed = [int]'${{ steps.summary.outputs.failedTests }}'
           $guard = '${{ steps.summary.outputs.guard }}'
           $sf = '${{ steps.summary.outputs.sf }}'
-          if ($failed -gt 0 -or $guard -ne 'PASS' -or $sf -ne 'PASS') {
-            Write-Error "Quality gate failed: failedTests=$failed guard=$guard sf=$sf"; exit 1
+          $pssa = '${{ steps.summary.outputs.pssa }}'
+          if ($failed -gt 0 -or $guard -ne 'PASS' -or $sf -ne 'PASS' -or $pssa -ne 'PASS') {
+            Write-Error "Quality gate failed: failedTests=$failed guard=$guard sf=$sf pssa=$pssa"; exit 1
           } else { Write-Host "Quality gate passed." }
 
       - name: Upload Summary Artifact

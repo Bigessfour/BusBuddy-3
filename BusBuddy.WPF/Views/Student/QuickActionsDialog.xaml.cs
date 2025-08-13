@@ -1,26 +1,31 @@
+using System;
 using System.Windows;
+using System.Windows.Controls;
+using BusBuddy.WPF.Views.Common;
 
 namespace BusBuddy.WPF.Views.Student
 {
-    public partial class QuickActionsDialog : Window
+    public partial class QuickActionsDialog : UserControl, IDialogHostable
     {
+        public event EventHandler? RequestCloseByHost;
+
         public QuickActionsDialog()
         {
             InitializeComponent();
-            Loaded += QuickActionsDialog_Loaded;
-            CloseButton.Click += (_, __) => Close();
+            Loaded += OnLoaded;
         }
 
-        private void QuickActionsDialog_Loaded(object sender, RoutedEventArgs e)
+        private void OnLoaded(object? sender, RoutedEventArgs e)
         {
             AssignRouteButton.Click += AssignRouteButton_Click;
             FilterActiveButton.Click += FilterActiveButton_Click;
             ClearFiltersButton.Click += ClearFiltersButton_Click;
+            CloseButton.Click += (_, __) => RequestCloseByHost?.Invoke(this, EventArgs.Empty);
         }
 
         private void AssignRouteButton_Click(object sender, RoutedEventArgs e)
         {
-            if (Owner?.DataContext is ViewModels.Student.StudentsViewModel vm && vm.SelectedStudent != null)
+            if (FindStudentsViewModel() is { } vm && vm.SelectedStudent != null)
             {
                 // Placeholder: assign first available route
                 if (vm.AvailableRoutes.Count > 0 && string.IsNullOrWhiteSpace(vm.SelectedStudent.AMRoute))
@@ -34,7 +39,7 @@ namespace BusBuddy.WPF.Views.Student
 
         private void FilterActiveButton_Click(object sender, RoutedEventArgs e)
         {
-            if (Owner?.DataContext is ViewModels.Student.StudentsViewModel vm)
+            if (FindStudentsViewModel() is { } vm)
             {
                 vm.QuickSearchText = string.Empty;
                 vm.StatusMessage = "Showing active students (quick action)";
@@ -43,11 +48,32 @@ namespace BusBuddy.WPF.Views.Student
 
         private void ClearFiltersButton_Click(object sender, RoutedEventArgs e)
         {
-            if (Owner?.DataContext is ViewModels.Student.StudentsViewModel vm)
+            if (FindStudentsViewModel() is { } vm)
             {
                 vm.QuickSearchText = string.Empty;
                 vm.StatusMessage = "Cleared filters";
             }
+        }
+
+        private BusBuddy.WPF.ViewModels.Student.StudentsViewModel? FindStudentsViewModel()
+        {
+            DependencyObject? current = this;
+            while (current != null)
+            {
+                if (current is FrameworkElement fe && fe.DataContext is BusBuddy.WPF.ViewModels.Student.StudentsViewModel vm)
+                {
+                    return vm;
+                }
+                current = System.Windows.Media.VisualTreeHelper.GetParent(current);
+            }
+            return null;
+        }
+
+        public void DisposeResources()
+        {
+            AssignRouteButton.Click -= AssignRouteButton_Click;
+            FilterActiveButton.Click -= FilterActiveButton_Click;
+            ClearFiltersButton.Click -= ClearFiltersButton_Click;
         }
     }
 }

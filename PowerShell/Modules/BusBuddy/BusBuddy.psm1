@@ -1,253 +1,112 @@
-#region Enhanced Test Output Functions
+##region Enhanced Test Output Functions
 function Get-BusBuddyTestOutput {
-    <#
-    .SYNOPSIS
-        Execute tests with complete output capture and no truncation
-    .DESCRIPTION
-        Captures full dotnet test output to both console and file, preventing truncation issues.
-        Supports all test scenarios: unit, integration, validation, etc.
-    .PARAMETER TestSuite
-        Type of tests to run (All, Unit, Integration, Validation, Core, WPF)
-    .PARAMETER ProjectPath
-        Path to solution or test project file
-    .PARAMETER SaveToFile
-        Save complete output to timestamped log file
-    # Output type: Hashtable — documented for analyzer compliance
-    .PARAMETER Filter
-        Custom test filter expression
-    .EXAMPLE
-        Get-BusBuddyTestOutput -TestSuite "Unit" -SaveToFile
-    .EXAMPLE
-        Get-BusBuddyTestOutput -Filter "Category=Core" -SaveToFile
-    #>
+<#
+.SYNOPSIS
+    Run solution/tests with full build + test output capture.
+.OUTPUTS
+    Hashtable with ExitCode, Duration, counts, etc.
+#>
     [CmdletBinding()]
     [OutputType([hashtable])]
     param(
-        [ValidateSet('All', 'Unit', 'Integration', 'Validation', 'Core', 'WPF')]
-        [string]$TestSuite = 'All',
-        [string]$ProjectPath = "BusBuddy.sln",
+        [ValidateSet('All','Unit','Integration','Validation','Core','WPF')][string]$TestSuite='All',
+        [string]$ProjectPath='BusBuddy.sln',
         [switch]$SaveToFile,
         [string]$Filter,
-        [ValidateSet('quiet', 'minimal', 'normal', 'detailed', 'diagnostic')]
-        [string]$Verbosity = 'normal'
+        [ValidateSet('quiet','minimal','normal','detailed','diagnostic')][string]$Verbosity='normal'
     )
-    $timestamp = Get-Date -Format "yyyyMMdd-HHmmss"
-    $outputFile = "logs\test-output-$TestSuite-$timestamp.log"
-    if (-not (Test-Path "logs")) {
-        New-Item -ItemType Directory -Path "logs" -Force | Out-Null
-    }
-    Write-Information "🧪 Running $TestSuite tests..." -InformationAction Continue
-    Write-Information "📝 Verbosity: $Verbosity" -InformationAction Continue
-    Write-Information "📁 Project: $ProjectPath" -InformationAction Continue
-    if ($SaveToFile) {
-        Write-Information "💾 Full output will be saved to: $outputFile" -InformationAction Continue
-    }
-    if (-not $Filter) {
-        $Filter = switch ($TestSuite) {
-            'Unit'        { 'Category=Unit|TestCategory=Unit' }
-            'Integration' { 'Category=Integration|TestCategory=Integration' }
-            'Validation'  { 'Category=Validation|TestCategory=Validation' }
-            'Core'        { 'FullyQualifiedName~BusBuddy.Tests.Core' }
-            'WPF'         { 'FullyQualifiedName~BusBuddy.UITests' }
-            'All'         { '' }
-            default       { '' }
+    $ts = Get-Date -Format 'yyyyMMdd-HHmmss'
+    $logDir = 'logs'; if(-not (Test-Path $logDir)){New-Item -ItemType Directory -Path $logDir|Out-Null}
+    $file = Join-Path $logDir "test-output-$TestSuite-$ts.log"
+    if(-not $Filter){
+        $Filter = switch($TestSuite){
+            'Unit' {'Category=Unit|TestCategory=Unit'}
+            'Integration' {'Category=Integration|TestCategory=Integration'}
+            'Validation' {'Category=Validation|TestCategory=Validation'}
+            'Core' {'FullyQualifiedName~BusBuddy.Tests.Core'}
+            'WPF' {'FullyQualifiedName~BusBuddy.UITests'}
+            default {''}
         }
     }
-    $env:DOTNET_CLI_UI_LANGUAGE = "en-US"
-    $env:DOTNET_NOLOGO = "false"  # We want full output
     try {
-        $startTime = Get-Date
-        Write-Information "🏗️ Building solution first..." -InformationAction Continue
-    $buildCmd = "dotnet build $ProjectPath --configuration Debug --verbosity $Verbosity" # used in invocation below
-    $buildStdOutPath = "logs/build-stdout-$timestamp.log"
-    $buildStdErrPath = "logs/build-stderr-$timestamp.log" # now used to persist stderr lines
-    $buildOutput = & $buildCmd 2>&1 | Tee-Object -FilePath $buildStdOutPath
-        $buildStdout = Get-Content $buildStdOutPath -Raw
-    $buildStderr = $buildOutput | Where-Object { $_ -match 'error' -or $_ -match 'FAILED' }
-    if ($buildStderr) { $buildStderr | Out-File -FilePath $buildStdErrPath -Encoding utf8 }
-        $buildExitCode = $LASTEXITCODE
-        if ($buildExitCode -ne 0) {
-            Write-Error "❌ Build failed! Cannot proceed with testing."
-            Write-Error "Build errors:"
-            Write-Error $1
-            return @{
-                ExitCode = $buildExitCode
-                Status = "BuildFailed"
-                BuildOutput = $buildStdout + $buildStderr
-            }
+        $start = Get-Date
+        Write-Information "🏗️ Building..." -InformationAction Continue
+        $buildOutPath = Join-Path $logDir "build-$ts.log"
+    & dotnet build $ProjectPath --configuration Debug --verbosity $Verbosity 2>&1 | Tee-Object -FilePath $buildOutPath | Out-Null
+        $buildExit = $LASTEXITCODE
+        if($buildExit -ne 0){
+            Write-Error 'Build failed'
+            return @{ ExitCode=$buildExit; Status='BuildFailed'; BuildOutput= (Get-Content $buildOutPath -Raw) }
         }
-        Write-Output "✅ Build successful, proceeding with tests..."
-        $testCmd = "dotnet test $ProjectPath --configuration Debug --verbosity $Verbosity --logger trx --results-directory TestResults --collect:XPlat\ Code\ Coverage --no-build"
-        if ($Filter) {
-            $testCmd += " --filter '$Filter'"
-            Write-Information "🔍 Filter applied: $Filter" -InformationAction Continue
-        }
-        Write-Information "🧪 Executing tests..." -InformationAction Continue
-        $testStdOutPath = "logs/test-stdout-$timestamp.log"
-        $testOutput = & $testCmd 2>&1 | Tee-Object -FilePath $testStdOutPath
-        $testStdout = Get-Content $testStdOutPath -Raw
-        $testStderr = $testOutput | Where-Object { $_ -match 'error' -or $_ -match 'FAILED' }
-        $testExitCode = $LASTEXITCODE
-        $endTime = Get-Date
-        $duration = $endTime - $startTime
-        $fullOutput = @"
-=== BUSBUDDY TEST LOG ===
-Timestamp: $(Get-Date -Format "yyyy-MM-dd HH:mm:ss")
-Test Suite: $TestSuite
-Project: $ProjectPath
-Filter: $Filter
-Duration: $($duration.TotalSeconds) seconds
-Build Exit Code: $buildExitCode
-Test Exit Code: $testExitCode
-
-=== BUILD OUTPUT ===
-$buildStdout
-
-=== BUILD ERRORS ===
-$buildStderr
-
-=== TEST OUTPUT ===
-$testStdout
-
-=== TEST ERRORS ===
-$testStderr
-
-=== TEST SUMMARY ===
-"@
-        if ($SaveToFile) {
-            $fullOutput | Out-File -FilePath $outputFile -Encoding UTF8 -Width 500
-            Write-Output "✅ Complete test log saved to: $outputFile"
-        }
-        $passedTests = [regex]::Matches($testStdout, "Passed:\s+(\d+)") | ForEach-Object { [int]$_.Groups[1].Value } | Measure-Object -Sum | Select-Object -ExpandProperty Sum
-        $failedTests = [regex]::Matches($testStdout, "Failed:\s+(\d+)") | ForEach-Object { [int]$_.Groups[1].Value } | Measure-Object -Sum | Select-Object -ExpandProperty Sum
-        $skippedTests = [regex]::Matches($testStdout, "Skipped:\s+(\d+)") | ForEach-Object { [int]$_.Groups[1].Value } | Measure-Object -Sum | Select-Object -ExpandProperty Sum
-        $errorLines = ($testStdout + $testStderr) -split "`n" | Where-Object { $_ -match "FAILED|ERROR|Exception|error CS\d+|error MSB\d+" }
-        if ($errorLines -or $failedTests -gt 0) {
-            Write-Error "`n❌ TEST ISSUES FOUND:"
-            Write-Information "=" -InformationAction Continue * 60 -ForegroundColor Red
-            if ($failedTests -gt 0) {
-                Write-Error "Failed Tests: $failedTests"
-            }
-            $errorLines | ForEach-Object {
-                Write-Error $1
-            }
-            Write-Information "=" -InformationAction Continue * 60 -ForegroundColor Red
-            if ($SaveToFile) {
-                Write-Information "🔍 Full details in: $outputFile" -InformationAction Continue
-            }
-        } else {
-            Write-Output "✅ All tests passed!"
-        }
-        Write-Information "`n📊 TEST SUMMARY:" -InformationAction Continue
-        Write-Information "   Test Suite: $TestSuite" -InformationAction Continue
-        Write-Information "   Duration: $($duration.TotalSeconds) seconds" -InformationAction Continue
-        Write-Output "   Passed: $passedTests"
-        Write-Information "   Failed: $failedTests" -InformationAction Continue -ForegroundColor $(if ($failedTests -gt 0) { "Red" } else { "Gray" })
-        Write-Information "   Skipped: $skippedTests" -InformationAction Continue
-        Write-Information "   Build Status: $(if ($buildExitCode -eq 0) { " -InformationAction ContinueSUCCESS ✅" } else { "FAILED ❌" })" -ForegroundColor $(if ($buildExitCode -eq 0) { "Green" } else { "Red" })
-        Write-Information "   Test Status: $(if ($testExitCode -eq 0) { " -InformationAction ContinueSUCCESS ✅" } else { "FAILED ❌" })" -ForegroundColor $(if ($testExitCode -eq 0) { "Green" } else { "Red" })
-        return @{
-            ExitCode = $testExitCode
-            Duration = $duration
-            PassedTests = $passedTests
-            FailedTests = $failedTests
-            SkippedTests = $skippedTests
-            ErrorLines = $errorLines
-            OutputFile = if ($SaveToFile) { $outputFile } else { $null }
-            FullOutput = $fullOutput
-            BuildExitCode = $buildExitCode
-            Status = if ($testExitCode -eq 0) { "Success" } else { "Failed" }
-        }
+        Write-Information '🧪 Testing...' -InformationAction Continue
+        $testArgs = @('test',$ProjectPath,'--configuration','Debug','--verbosity',$Verbosity,'--logger','trx','--results-directory','TestResults','--collect:XPlat Code Coverage','--no-build')
+        if($Filter){$testArgs += @('--filter',$Filter)}
+        $testOutPath = Join-Path $logDir "test-$ts.log"
+    & dotnet @testArgs 2>&1 | Tee-Object -FilePath $testOutPath | Out-Null
+        $exit = $LASTEXITCODE
+        $end = Get-Date; $dur = $end - $start
+        $testStd = Get-Content $testOutPath -Raw
+        $passed = [regex]::Matches($testStd,'Passed:\s+(\d+)')|ForEach-Object{[int]$_.Groups[1].Value}|Measure-Object -Sum|Select-Object -ExpandProperty Sum
+        $failed = [regex]::Matches($testStd,'Failed:\s+(\d+)')|ForEach-Object{[int]$_.Groups[1].Value}|Measure-Object -Sum|Select-Object -ExpandProperty Sum
+        $skipped = [regex]::Matches($testStd,'Skipped:\s+(\d+)')|ForEach-Object{[int]$_.Groups[1].Value}|Measure-Object -Sum|Select-Object -ExpandProperty Sum
+        $summary = "TestSuite=$TestSuite Duration=$([int]$dur.TotalSeconds)s Passed=$passed Failed=$failed Skipped=$skipped ExitCode=$exit"
+        if($SaveToFile){ $summary | Out-File -FilePath $file -Encoding utf8; Write-Information "Saved: $file" -InformationAction Continue }
+        if($failed -gt 0){ Write-Error "Failures detected ($failed)" }
+        return @{ ExitCode=$exit; Duration=$dur; PassedTests=$passed; FailedTests=$failed; SkippedTests=$skipped; OutputFile= (if($SaveToFile){$file}); Status= (if($exit -eq 0){'Success'} else {'Failed'}) }
     } catch {
-        Write-Error "Failed to execute tests: $($_.Exception.Message)"
-        return @{
-            ExitCode = -1
-            Status = "Error"
-            ErrorMessage = $_.Exception.Message
-        }
+        Write-Error $_.Exception.Message
+        return @{ ExitCode=-1; Status='Error'; ErrorMessage=$_.Exception.Message }
     }
 }
 
 function Invoke-BusBuddyTestFull {
-    <#
-    .SYNOPSIS
-        Enhanced bb-test with complete output capture
-    #>
     [CmdletBinding()]
     param(
-        [ValidateSet('All', 'Unit', 'Integration', 'Validation', 'Core', 'WPF')]
-        [string]$TestSuite = 'All'
+        [ValidateSet('All','Unit','Integration','Validation','Core','WPF')]
+        [string]$TestSuite='All'
     )
     Get-BusBuddyTestOutput -TestSuite $TestSuite -SaveToFile
 }
 
 function Get-BusBuddyTestError {
-    <#
-    .SYNOPSIS
-        Get only test errors without full output
-    #>
     [CmdletBinding()]
     param(
-        [ValidateSet('All', 'Unit', 'Integration', 'Validation', 'Core', 'WPF')]
-        [string]$TestSuite = 'All'
+        [ValidateSet('All','Unit','Integration','Validation','Core','WPF')]
+        [string]$TestSuite='All'
     )
-    Get-BusBuddyTestOutput -TestSuite $TestSuite -Verbosity 'quiet'
+    Get-BusBuddyTestOutput -TestSuite $TestSuite -Verbosity quiet
 }
 
 function Get-BusBuddyTestLog {
-    <#
-    .SYNOPSIS
-        Show the most recent test log
-    #>
-    $latestLog = Get-ChildItem "logs\test-output-*.log" | Sort-Object LastWriteTime -Descending | Select-Object -First 1
-    if ($latestLog) {
-        Write-Information "📄 Most recent test log: $($latestLog.Name)" -InformationAction Continue
-        Write-Information "📅 Created: $($latestLog.LastWriteTime)" -InformationAction Continue
-        Write-Information "" -InformationAction Continue
-        Get-Content $latestLog.FullName
+    [CmdletBinding()]
+    param()
+    $l = Get-ChildItem 'logs/test-output-*.log' -ErrorAction SilentlyContinue | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+    if($l){
+        Write-Information "📄 $($l.Name)" -InformationAction Continue
+        Get-Content $l.FullName
     } else {
-    Write-Information "No test logs found. Run bbTestFull first." -InformationAction Continue
+        Write-Information 'No test logs found. Run bbTestFull first.' -InformationAction Continue
     }
 }
 
 function Start-BusBuddyTestWatch {
-    <#
-    .SYNOPSIS
-        Continuous testing with file monitoring and full output capture
-    #>
     [CmdletBinding()]
     param(
-        [ValidateSet('All', 'Unit', 'Integration', 'Validation', 'Core', 'WPF')]
-        [string]$TestSuite = 'Unit'
+        [ValidateSet('All','Unit','Integration','Validation','Core','WPF')]
+        [string]$TestSuite='Unit'
     )
-    Write-Information "🔄 Starting watch mode for $TestSuite tests..." -InformationAction Continue
-    Write-Information "Press Ctrl+C to stop watching" -InformationAction Continue
+    Write-Information "🔄 Watch $TestSuite" -InformationAction Continue
     Get-BusBuddyTestOutput -TestSuite $TestSuite -SaveToFile
-    $watcher = New-Object System.IO.FileSystemWatcher
-    $watcher.Path = $PWD.Path
-    $watcher.Filter = "*.cs"
-    $watcher.IncludeSubdirectories = $true
-    $watcher.EnableRaisingEvents = $true
+    $w = New-Object IO.FileSystemWatcher (Get-Location), '*.cs', $true
+    $w.IncludeSubdirectories = $true
     $action = {
-        $path = $Event.SourceEventArgs.FullPath
-        $ct = $Event.SourceEventArgs.ChangeType
-        Write-Information ("📝 File {0}: {1}" -f $ct, $path) -InformationAction Continue
-        Start-Sleep -Seconds 1  # Debounce
-        Write-Information "🔄 Re-running tests..." -InformationAction Continue
+        Start-Sleep 1
+        Write-Information '🔄 Change detected – re-running tests' -InformationAction Continue
         Get-BusBuddyTestOutput -TestSuite $using:TestSuite -SaveToFile
     }
-    Register-ObjectEvent -InputObject $watcher -EventName "Changed" -Action $action
-    try {
-        while ($true) {
-            Start-Sleep -Seconds 1
-        }
-    } finally {
-        $watcher.EnableRaisingEvents = $false
-        $watcher.Dispose()
-        Get-EventSubscriber | Unregister-Event
-    }
+    Register-ObjectEvent $w Changed -Action $action | Out-Null
 }
-#endregion
+##endregion
 #requires -Version 5.1
 <#
 .SYNOPSIS
@@ -321,6 +180,146 @@ try {
     Write-Warning "Error loading enhanced output functions: $($_.Exception.Message)"
 }
 #endregion
+
+#region Quick-Win Module Auto Import (ThemeValidation, AzureSqlHealth, TestWatcher, Cleanup)
+try {
+    $quickWinModules = @(
+        'BusBuddy.ThemeValidation/BusBuddy.ThemeValidation.psm1',
+        'BusBuddy.AzureSqlHealth/BusBuddy.AzureSqlHealth.psm1',
+        'BusBuddy.TestWatcher/BusBuddy.TestWatcher.psm1',
+        'BusBuddy.Cleanup/BusBuddy.Cleanup.psm1'
+    )
+    $telemetryDir = Join-Path $projectRoot 'logs'
+    if (-not (Test-Path $telemetryDir)) { New-Item -ItemType Directory -Path $telemetryDir -Force | Out-Null }
+    $telemetryFile = Join-Path $telemetryDir 'module-telemetry.json'
+
+    foreach ($rel in $quickWinModules) {
+        $candidate = Join-Path $projectRoot "PowerShell/Modules/$rel"
+        if (-not (Test-Path $candidate)) { continue }
+        try { Import-Module $candidate -Force -ErrorAction Stop; Write-Verbose "✅ Loaded quick-win module: $rel" }
+        catch { Write-Warning "Failed to load quick-win module $rel -> $($_.Exception.Message)"; continue }
+
+        # Lightweight telemetry append with rotation
+        try {
+            if (Test-Path $telemetryFile -and (Get-Item $telemetryFile).Length -gt 1MB) {
+                $stamp = Get-Date -Format 'yyyyMMdd-HHmmss'
+                Move-Item $telemetryFile (Join-Path $telemetryDir "module-telemetry-$stamp.json") -Force
+            }
+            ([ordered]@{ Timestamp = (Get-Date).ToString('o'); Module = $rel; Status = 'Loaded' } | ConvertTo-Json -Compress) | Add-Content -Path $telemetryFile
+        } catch { Write-Verbose 'Telemetry logging failed' }
+    }
+} catch { Write-Warning "Quick-win module import pass failed: $($_.Exception.Message)" }
+#endregion
+
+#region Telemetry Utilities (module import & future operational events)
+function Get-BusBuddyTelemetrySummary {
+    <#
+    .SYNOPSIS
+        Summarise module telemetry JSON line files.
+    .DESCRIPTION
+        Reads module-telemetry*.json (JSON Lines format) from the logs directory, aggregates counts per module
+        and optionally returns the last N entries. Designed to be light‑weight and safe if files are missing.
+    .PARAMETER Last
+        Return only the last N entries (in chronological order). 0 means return all (default).
+    .PARAMETER LogsPath
+        Override path to logs directory (defaults to project root / logs).
+    .EXAMPLE
+        Get-BusBuddyTelemetrySummary -Last 5
+    .OUTPUTS
+        PSCustomObject with properties: Total, Modules, Entries (optional)
+    #>
+    [CmdletBinding()]
+    param(
+        [int]$Last = 0,
+        [string]$LogsPath
+    )
+    try {
+        if (-not $LogsPath) { $LogsPath = Join-Path (Get-BusBuddyProjectRoot) 'logs' }
+        if (-not (Test-Path $LogsPath)) { Write-Warning 'Logs directory not found.'; return }
+        $files = Get-ChildItem $LogsPath -Filter 'module-telemetry*.json' -File -ErrorAction SilentlyContinue | Sort-Object LastWriteTime
+        if (-not $files) { Write-Warning 'No telemetry files present.'; return }
+        $entries = foreach ($f in $files) {
+            Get-Content $f -ErrorAction SilentlyContinue | ForEach-Object {
+                if ($_ -match '^\s*{') { try { $_ | ConvertFrom-Json -ErrorAction Stop } catch { } }
+            }
+        }
+        if (-not $entries) { Write-Warning 'Telemetry empty.'; return }
+        $ordered = $entries | Sort-Object { $_.Timestamp }
+        if ($Last -gt 0) { $tail = $ordered | Select-Object -Last $Last } else { $tail = $null }
+        $byModule = $ordered | Group-Object Module | ForEach-Object { [pscustomobject]@{ Module = $_.Name; Count = $_.Count } }
+        [pscustomobject]@{
+            Total   = $ordered.Count
+            Modules = $byModule
+            Entries = $tail
+        }
+    } catch {
+        Write-Warning "Failed to read telemetry: $($_.Exception.Message)"
+    }
+}
+
+function Invoke-BusBuddyTelemetryPurge {
+    <#
+    .SYNOPSIS
+        Purge old rotated telemetry archives.
+    .DESCRIPTION
+        Deletes module-telemetry-*.json files older than a retention window (default 14 days). The active
+        module-telemetry.json (current writer) is never deleted.
+    .PARAMETER RetentionDays
+        Number of days to retain archived telemetry files.
+    #>
+    [CmdletBinding(SupportsShouldProcess=$true)]
+    param(
+        [int]$RetentionDays = 14,
+        [string]$LogsPath
+    )
+    if (-not $LogsPath) { $LogsPath = Join-Path (Get-BusBuddyProjectRoot) 'logs' }
+    if (-not (Test-Path $LogsPath)) { Write-Warning 'Logs directory not found.'; return }
+    $cutoff = (Get-Date).AddDays(-$RetentionDays)
+    $archives = Get-ChildItem $LogsPath -Filter 'module-telemetry-*.json' -File -ErrorAction SilentlyContinue | Where-Object { $_.LastWriteTime -lt $cutoff }
+    foreach ($a in $archives) {
+        if ($PSCmdlet.ShouldProcess($a.FullName,'Remove old telemetry')) {
+            try { Remove-Item $a.FullName -Force } catch { Write-Warning "Failed to remove $($a.Name): $($_.Exception.Message)" }
+        }
+    }
+}
+
+Set-Alias -Name bbTelemetry -Value Get-BusBuddyTelemetrySummary -Scope Global -ErrorAction SilentlyContinue
+Set-Alias -Name bbTelemetryPurge -Value Invoke-BusBuddyTelemetryPurge -Scope Global -ErrorAction SilentlyContinue
+#endregion Telemetry Utilities
+
+#region Pester Helper
+function Invoke-BusBuddyPester {
+    <#
+    .SYNOPSIS
+        Run Pester tests for BusBuddy PowerShell modules.
+    .DESCRIPTION
+        Executes all *.Tests.ps1 under PowerShell/Tests. Returns the Pester result object so CI can act on failures.
+        Requires Pester module to be installed (Install-Module Pester -Scope CurrentUser) if not already present.
+    .PARAMETER Path
+        Optional override path for tests root.
+    .PARAMETER PassThru
+        Return raw Pester result object (default on).
+    #>
+    [CmdletBinding()] param(
+        [string]$Path,
+        [switch]$PassThru
+    )
+    if (-not (Get-Module -ListAvailable -Name Pester)) { Write-Warning 'Pester module not found. Install with: Install-Module Pester -Scope CurrentUser'; return }
+    if (-not $Path) { $Path = Join-Path (Get-BusBuddyProjectRoot) 'PowerShell/Tests' }
+    if (-not (Test-Path $Path)) { Write-Warning "Tests path not found: $Path"; return }
+    Write-Information "🧪 Running Pester tests in $Path" -InformationAction Continue
+    try {
+        $config = New-PesterConfiguration
+        $config.Run.Path = $Path
+        $config.Run.PassThru = $true
+        $config.TestResult.Enabled = $true
+        $config.Output.Verbosity = 'Normal'
+        $result = Invoke-Pester -Configuration $config
+        if ($PassThru) { return $result } else { return $result.Result }
+    } catch { Write-Error "Pester execution failed: $($_.Exception.Message)" }
+}
+Set-Alias -Name bbPester -Value Invoke-BusBuddyPester -Scope Global -ErrorAction SilentlyContinue
+#endregion Pester Helper
 
 #endregion
 
@@ -625,6 +624,12 @@ function Invoke-BusBuddyBuild {
     )
 
     $projectRoot = Get-BusBuddyProjectRoot
+    if (Get-Command Test-BusBuddyAzureSql -ErrorAction SilentlyContinue) {
+        try {
+            $sqlOk = Test-BusBuddyAzureSql
+            if ($sqlOk) { Write-BusBuddyStatus "Azure SQL connectivity: OK" -Type Success } else { $issues += 'Azure SQL connectivity failed'; Write-BusBuddyStatus "Azure SQL connectivity: FAILED" -Type Warning }
+        } catch { $issues += 'Azure SQL connectivity check error'; Write-BusBuddyStatus 'Azure SQL connectivity check error' -Type Warning }
+    }
     Push-Location $projectRoot
 
     try {
@@ -3009,386 +3014,10 @@ function Test-BusBuddyAzureConnection {
 
 #endregion
 
-#region Aliases - Safe Alias Creation with Conflict Resolution
+﻿#region Aliases - Safe Alias Creation with Conflict Resolution
 
 # Core aliases with safe creation
 try { Set-Alias -Name 'bbBuild' -Value 'Invoke-BusBuddyBuild' -Description 'Build the Bus Buddy solution' -Force } catch { Write-Error "Alias 'bbBuild' could not be set: $($_.Exception.Message)" -ErrorAction SilentlyContinue }
-try { Set-Alias -Name 'bbRun' -Value 'Invoke-BusBuddyRun' -Description 'Run the Bus Buddy application' -Force } catch { Write-Error "Alias 'bbRun' could not be set: $($_.Exception.Message)" -ErrorAction SilentlyContinue }
-try { Set-Alias -Name 'bbTest' -Value 'Invoke-BusBuddyTest' -Description 'Run Bus Buddy tests' -Force } catch { Write-Error "Alias 'bbTest' could not be set: $($_.Exception.Message)" -ErrorAction SilentlyContinue }
-try { Set-Alias -Name 'bbClean' -Value 'Invoke-BusBuddyClean' -Description 'Clean build artifacts' -Force } catch { Write-Error "Alias 'bbClean' could not be set: $($_.Exception.Message)" -ErrorAction SilentlyContinue }
-try { Set-Alias -Name 'bbRestore' -Value 'Invoke-BusBuddyRestore' -Description 'Restore NuGet packages' -Force } catch { Write-Error "Alias 'bbRestore' could not be set: $($_.Exception.Message)" -ErrorAction SilentlyContinue }
-
-# Kebab-case aliases for consistency (with conflict resolution)
-try { Set-Alias -Name 'bb-build' -Value 'Invoke-BusBuddyBuild' -Description 'Build the Bus Buddy solution (kebab-case)' -Force } catch { Write-Error "Alias 'bb-build' could not be set: $($_.Exception.Message)" -ErrorAction SilentlyContinue }
-try { Set-Alias -Name 'bb-run' -Value 'Invoke-BusBuddyRun' -Description 'Run the Bus Buddy application (kebab-case)' -Force } catch { Write-Error "Alias 'bb-run' could not be set: $($_.Exception.Message)" -ErrorAction SilentlyContinue }
-try { Set-Alias -Name 'bb-test' -Value 'Invoke-BusBuddyTest' -Description 'Run Bus Buddy tests (kebab-case)' -Force } catch { Write-Error "Alias 'bb-test' could not be set: $($_.Exception.Message)" -ErrorAction SilentlyContinue }
-try { Set-Alias -Name 'bb-clean' -Value 'Invoke-BusBuddyClean' -Description 'Clean build artifacts (kebab-case)' -Force } catch { Write-Error "Alias 'bb-clean' could not be set: $($_.Exception.Message)" -ErrorAction SilentlyContinue }
-try { Set-Alias -Name 'bb-restore' -Value 'Invoke-BusBuddyRestore' -Description 'Restore NuGet packages (kebab-case)' -Force } catch { Write-Error "Alias 'bb-restore' could not be set: $($_.Exception.Message)" -ErrorAction SilentlyContinue }
-
-# Kebab-case for development/utilities (to match documentation and manifests)
-try { Set-Alias -Name 'bb-health' -Value 'Invoke-BusBuddyHealthCheck' -Description 'Check system health (kebab-case)' -Force } catch { Write-Error "Alias 'bb-health' could not be set: $($_.Exception.Message)" -ErrorAction SilentlyContinue }
-try { Set-Alias -Name 'bb-dev-session' -Value 'Start-BusBuddyDevSession' -Description 'Start development session (kebab-case)' -Force } catch { Write-Error "Alias 'bb-dev-session' could not be set: $($_.Exception.Message)" -ErrorAction SilentlyContinue }
-try { Set-Alias -Name 'bb-info' -Value 'Get-BusBuddyInfo' -Description 'Show module information (kebab-case)' -Force } catch { Write-Error "Alias 'bb-info' could not be set: $($_.Exception.Message)" -ErrorAction SilentlyContinue }
-try { Set-Alias -Name 'bb-commands' -Value 'Get-BusBuddyCommand' -Description 'List all commands (kebab-case)' -Force } catch { Write-Error "Alias 'bb-commands' could not be set: $($_.Exception.Message)" -ErrorAction SilentlyContinue }
-try { Set-Alias -Name 'bb-welcome' -Value 'Show-BusBuddyWelcome' -Description 'Show categorized command overview (kebab-case)' -Force } catch { Write-Error "Alias 'bb-welcome' could not be set: $($_.Exception.Message)" -ErrorAction SilentlyContinue }
-# Development and utility aliases
-try { Set-Alias -Name 'bbHealth' -Value 'Invoke-BusBuddyHealthCheck' -Description 'Check system health' -Force } catch { Write-Error "Alias 'bbHealth' could not be set: $($_.Exception.Message)" -ErrorAction SilentlyContinue }
-try { Set-Alias -Name 'bbDevSession' -Value 'Start-BusBuddyDevSession' -Description 'Start development session' -Force } catch { Write-Error "Alias 'bbDevSession' could not be set: $($_.Exception.Message)" -ErrorAction SilentlyContinue }
-try { Set-Alias -Name 'bbInfo' -Value 'Get-BusBuddyInfo' -Description 'Show module information' -Force } catch { Write-Error "Alias 'bbInfo' could not be set: $($_.Exception.Message)" -ErrorAction SilentlyContinue }
-try { Set-Alias -Name 'bbCommands' -Value 'Get-BusBuddyCommand' -Description 'List all commands' -Force } catch { Write-Error "Alias 'bbCommands' could not be set: $($_.Exception.Message)" -ErrorAction SilentlyContinue }
-
-# Testing aliases
-try { Set-Alias -Name 'bbTestFull' -Value 'Invoke-BusBuddyTestFull' -Description 'Enhanced test with full capture' -Force } catch { Write-Error "Alias 'bbTestFull' could not be set: $($_.Exception.Message)" -ErrorAction SilentlyContinue }
-try { Set-Alias -Name 'bbTestErrors' -Value 'Get-BusBuddyTestErrors' -Description 'Show test errors only' -Force } catch { Write-Error "Alias 'bbTestErrors' could not be set: $($_.Exception.Message)" -ErrorAction SilentlyContinue }
-try { Set-Alias -Name 'bbTestLog' -Value 'Get-BusBuddyTestLog' -Description 'Show latest test log' -Force } catch { Write-Error "Alias 'bbTestLog' could not be set: $($_.Exception.Message)" -ErrorAction SilentlyContinue }
-try { Set-Alias -Name 'bbTestWatch' -Value 'Start-BusBuddyTestWatch' -Description 'Continuous test watch' -Force } catch { Write-Error "Alias 'bbTestWatch' could not be set: $($_.Exception.Message)" -ErrorAction SilentlyContinue }
-
-# Validation and quality aliases
-try { Set-Alias -Name 'bbXamlValidate' -Value 'Invoke-BusBuddyXamlValidation' -Description 'Validate XAML files' -Force } catch { Write-Error "Alias 'bbXamlValidate' could not be set: $($_.Exception.Message)" -ErrorAction SilentlyContinue }
-try { Set-Alias -Name 'bbCatchErrors' -Value 'Invoke-BusBuddyWithExceptionCapture' -Description 'Run with exception capture' -Force } catch { Write-Error "Alias 'bbCatchErrors' could not be set: $($_.Exception.Message)" -ErrorAction SilentlyContinue }
-try { Set-Alias -Name 'bbAntiRegression' -Value 'Invoke-BusBuddyAntiRegression' -Description 'Run anti-regression checks' -Force } catch { Write-Error "Alias 'bbAntiRegression' could not be set: $($_.Exception.Message)" -ErrorAction SilentlyContinue }
-
-# MVP and project management aliases
-try { Set-Alias -Name 'bbMvp' -Value 'Start-BusBuddyMVP' -Description 'MVP focus and scope management' -Force } catch { Write-Error "Alias 'bbMvp' could not be set: $($_.Exception.Message)" -ErrorAction SilentlyContinue }
-try { Set-Alias -Name 'bbMvpCheck' -Value 'Test-BusBuddyMVPReadiness' -Description 'Check MVP readiness' -Force } catch { Write-Error "Alias 'bbMvpCheck' could not be set: $($_.Exception.Message)" -ErrorAction SilentlyContinue }
-try { Set-Alias -Name 'bbEnvCheck' -Value 'Test-BusBuddyEnvironment' -Description 'Comprehensive environment validation' -Force } catch { Write-Error "Alias 'bbEnvCheck' could not be set: $($_.Exception.Message)" -ErrorAction SilentlyContinue }
-
-# Azure and cloud infrastructure aliases
-try { Set-Alias -Name 'bbAzureFirewall' -Value 'Update-BusBuddyAzureFirewall' -Description 'Update Azure SQL firewall rules' -Force } catch { Write-Error "Alias 'bbAzureFirewall' could not be set: $($_.Exception.Message)" -ErrorAction SilentlyContinue }
-try { Set-Alias -Name 'bb-azure-firewall' -Value 'Update-BusBuddyAzureFirewall' -Description 'Update Azure SQL firewall rules (kebab-case)' -Force } catch { Write-Error "Alias 'bb-azure-firewall' could not be set: $($_.Exception.Message)" -ErrorAction SilentlyContinue }
-try { Set-Alias -Name 'bbAzureTest' -Value 'Test-BusBuddyAzureConnection' -Description 'Test Azure SQL connection' -Force } catch { Write-Error "Alias 'bbAzureTest' could not be set: $($_.Exception.Message)" -ErrorAction SilentlyContinue }
-try { Set-Alias -Name 'bb-azure-test' -Value 'Test-BusBuddyAzureConnection' -Description 'Test Azure SQL connection (kebab-case)' -Force } catch { Write-Error "Alias 'bb-azure-test' could not be set: $($_.Exception.Message)" -ErrorAction SilentlyContinue }
-try { Set-Alias -Name 'bbAzureConfig' -Value 'Get-BusBuddyAzureConfig' -Description 'Show Azure configuration' -Force } catch { Write-Error "Alias 'bbAzureConfig' could not be set: $($_.Exception.Message)" -ErrorAction SilentlyContinue }
-try { Set-Alias -Name 'bb-azure-config' -Value 'Get-BusBuddyAzureConfig' -Description 'Show Azure configuration (kebab-case)' -Force } catch { Write-Error "Alias 'bb-azure-config' could not be set: $($_.Exception.Message)" -ErrorAction SilentlyContinue }
-
-# Route optimization aliases
-try { Set-Alias -Name 'bbRoutes' -Value 'Start-BusBuddyRouteOptimization' -Description 'Main route optimization system' -Force } catch { Write-Error "Alias 'bbRoutes' could not be set: $($_.Exception.Message)" -ErrorAction SilentlyContinue }
-try { Set-Alias -Name 'bbRouteOptimize' -Value 'Invoke-BusBuddyRouteOptimization' -Description 'xAI Grok route optimization with detailed analysis' -Force } catch { Write-Error "Alias 'bbRouteOptimize' could not be set: $($_.Exception.Message)" -ErrorAction SilentlyContinue }
-try { Set-Alias -Name 'bbGenerateReport' -Value 'Invoke-BusBuddyReport' -Description 'Generate PDF reports (roster, route manifest, etc.)' -Force } catch { Write-Error "Alias 'bbGenerateReport' could not be set: $($_.Exception.Message)" -ErrorAction SilentlyContinue }
-try { Set-Alias -Name 'bbRouteDemo' -Value 'Show-RouteOptimizationDemo' -Description 'Demo route optimization with sample data' -Force } catch { Write-Error "Alias 'bbRouteDemo' could not be set: $($_.Exception.Message)" -ErrorAction SilentlyContinue }
-try { Set-Alias -Name 'bbRouteStatus' -Value 'Get-BusBuddyRouteStatus' -Description 'Check route optimization system status' -Force } catch { Write-Error "Alias 'bbRouteStatus' could not be set: $($_.Exception.Message)" -ErrorAction SilentlyContinue }
-
-# Documentation and diagnostics aliases
-try { Set-Alias -Name 'bbCopilotRef' -Value 'Open-BusBuddyCopilotReference' -Description 'Open Copilot reference for enhanced context' -Force } catch { Write-Error "Alias 'bbCopilotRef' could not be set: $($_.Exception.Message)" -ErrorAction SilentlyContinue }
-try { Set-Alias -Name 'bbCaptureRuntimeErrors' -Value 'Start-BusBuddyRuntimeErrorCapture' -Description 'Comprehensive runtime error capture and monitoring' -Force } catch { Write-Error "Alias 'bbCaptureRuntimeErrors' could not be set: $($_.Exception.Message)" -ErrorAction SilentlyContinue }
-try { Set-Alias -Name 'bbRunCapture' -Value 'Invoke-BusBuddyRunCapture' -Description 'Run application with runtime error capture' -Force } catch { Write-Error "Alias 'bbRunCapture' could not be set: $($_.Exception.Message)" -ErrorAction SilentlyContinue }
-try { Set-Alias -Name 'bb-run-capture' -Value 'Invoke-BusBuddyRunCapture' -Description 'Run application with runtime error capture (kebab-case)' -Force } catch { Write-Error "Alias 'bb-run-capture' could not be set: $($_.Exception.Message)" -ErrorAction SilentlyContinue }
-try { Set-Alias -Name 'bbDiagnostic' -Value 'Invoke-BusBuddyDiagnostic' -Description 'Run diagnostics and output environment, module, and MVP status' -Force } catch { Write-Error "Alias 'bbDiagnostic' could not be set: $($_.Exception.Message)" -ErrorAction SilentlyContinue }
-try { Set-Alias -Name 'bbWelcome' -Value 'Show-BusBuddyWelcome' -Description 'Show categorized command overview' -Force } catch { Write-Error "Failed to set alias 'bbWelcome': $($_.Exception.Message)" }
-
-# Mantra / context aliases
-try { Set-Alias -Name 'bbMantra' -Value 'Get-BusBuddyMantraId' -Description 'Show current Mantra (context) ID' -Force } catch { Write-Error "Alias 'bbMantra' could not be set: $($_.Exception.Message)" -ErrorAction SilentlyContinue }
-try { Set-Alias -Name 'bbMantraReset' -Value 'Reset-BusBuddyMantraId' -Description 'Generate a new transient Mantra ID' -Force } catch { Write-Error "Alias 'bbMantraReset' could not be set: $($_.Exception.Message)" -ErrorAction SilentlyContinue }
-
-#endregion
-
-#region Enhanced Test Output Functions
-
-function Get-BusBuddyTestOutput {
-    <#
-    .SYNOPSIS
-        Execute tests with complete output capture and no truncation
-    .DESCRIPTION
-        Captures full dotnet test output to both console and file, preventing truncation issues.
-        Supports all test scenarios: unit, integration, validation, etc.
-    .PARAMETER TestSuite
-        Type of tests to run (All, Unit, Integration, Validation, Core, WPF)
-    .PARAMETER ProjectPath
-        Path to solution or test project file
-    .PARAMETER SaveToFile
-        Save complete output to timestamped log file
-    .PARAMETER Filter
-        Custom test filter expression
-    .PARAMETER Verbosity
-        Test output verbosity level
-    .EXAMPLE
-        Get-BusBuddyTestOutput -TestSuite "Unit" -SaveToFile
-    .EXAMPLE
-        Get-BusBuddyTestOutput -Filter "Category=Core" -SaveToFile
-    #>
-    [CmdletBinding()]
-    [OutputType([hashtable])]
-    param(
-        [ValidateSet('All', 'Unit', 'Integration', 'Validation', 'Core', 'WPF')]
-        [string]$TestSuite = 'All',
-        [string]$ProjectPath = "BusBuddy.sln",
-        [switch]$SaveToFile,
-        [string]$Filter,
-        [ValidateSet('quiet', 'minimal', 'normal', 'detailed', 'diagnostic')]
-        [string]$Verbosity = 'normal'
-    )
-
-    $timestamp = Get-Date -Format "yyyyMMdd-HHmmss"
-    $outputFile = "logs\test-output-$TestSuite-$timestamp.log"
-
-    if (-not (Test-Path "logs")) {
-        New-Item -ItemType Directory -Path "logs" -Force | Out-Null
-    }
-
-    Write-Information "🧪 Running $TestSuite tests..." -InformationAction Continue
-    Write-Information "📝 Verbosity: $Verbosity" -InformationAction Continue
-    Write-Information "📁 Project: $ProjectPath" -InformationAction Continue
-
-    if ($SaveToFile) {
-        Write-Information "💾 Full output will be saved to: $outputFile" -InformationAction Continue
-    }
-
-    if (-not $Filter) {
-        $Filter = switch ($TestSuite) {
-            'Unit'        { 'Category=Unit|TestCategory=Unit' }
-            'Integration' { 'Category=Integration|TestCategory=Integration' }
-            'Validation'  { 'Category=Validation|TestCategory=Validation' }
-            'Core'        { 'FullyQualifiedName~BusBuddy.Tests.Core' }
-            'WPF'         { 'FullyQualifiedName~BusBuddy.UITests' }
-            'All'         { '' }
-            default       { '' }
-        }
-    }
-
-    $env:DOTNET_CLI_UI_LANGUAGE = "en-US"
-    $env:DOTNET_NOLOGO = "false"  # We want full output
-
-    try {
-        $startTime = Get-Date
-        Write-Information "🏗️ Building solution first..." -InformationAction Continue
-
-    # Direct invocation; removed unused buildCmd variable to satisfy analyzer
-    $buildStdOutPath = "logs/build-stdout-$timestamp.log"
-    $buildOutput = & dotnet build $ProjectPath --configuration Debug --verbosity $Verbosity 2>&1 | Tee-Object -FilePath $buildStdOutPath
-
-        $buildStdout = Get-Content $buildStdOutPath -Raw -ErrorAction SilentlyContinue
-        $buildStderr = $buildOutput | Where-Object { $_ -match 'error' -or $_ -match 'FAILED' }
-        $buildExitCode = $LASTEXITCODE
-
-        if ($buildExitCode -ne 0) {
-            Write-Error "❌ Build failed! Cannot proceed with testing."
-            Write-Error "Build errors:"
-            $buildStderr | ForEach-Object { Write-Error $_ }
-            return @{
-                ExitCode = $buildExitCode
-                Status = "BuildFailed"
-                BuildOutput = $buildStdout + ($buildStderr -join "`n")
-            }
-        }
-
-        Write-Information "✅ Build successful, proceeding with tests..." -InformationAction Continue
-
-        $testCmd = @("test", $ProjectPath, "--configuration", "Debug", "--verbosity", $Verbosity, "--logger", "trx", "--results-directory", "TestResults", "--collect:XPlat Code Coverage", "--no-build")
-
-        if ($Filter) {
-            $testCmd += "--filter"
-            $testCmd += $Filter
-            Write-Information "🔍 Filter applied: $Filter" -InformationAction Continue
-        }
-
-        Write-Information "🧪 Executing tests..." -InformationAction Continue
-        $testStdOutPath = "logs/test-stdout-$timestamp.log"
-        $testOutput = & dotnet @testCmd 2>&1 | Tee-Object -FilePath $testStdOutPath
-
-        $testStdout = Get-Content $testStdOutPath -Raw -ErrorAction SilentlyContinue
-        $testStderr = $testOutput | Where-Object { $_ -match 'error' -or $_ -match 'FAILED' }
-        $testExitCode = $LASTEXITCODE
-
-        $endTime = Get-Date
-        $duration = $endTime - $startTime
-
-        $fullOutput = @"
-=== BUSBUDDY TEST LOG ===
-Timestamp: $(Get-Date -Format "yyyy-MM-dd HH:mm:ss")
-Test Suite: $TestSuite
-Project: $ProjectPath
-Filter: $Filter
-Duration: $($duration.TotalSeconds) seconds
-Build Exit Code: $buildExitCode
-Test Exit Code: $testExitCode
-
-=== BUILD OUTPUT ===
-$buildStdout
-
-=== BUILD ERRORS ===
-$($buildStderr -join "`n")
-
-=== TEST OUTPUT ===
-$testStdout
-
-=== TEST ERRORS ===
-$($testStderr -join "`n")
-
-=== TEST SUMMARY ===
-"@
-
-        if ($SaveToFile) {
-            $fullOutput | Out-File -FilePath $outputFile -Encoding UTF8 -Width 500
-            Write-Information "✅ Complete test log saved to: $outputFile" -InformationAction Continue
-        }
-
-        $passedTests = [regex]::Matches($testStdout, "Passed:\s+(\d+)") | ForEach-Object { [int]$_.Groups[1].Value } | Measure-Object -Sum | Select-Object -ExpandProperty Sum
-        $failedTests = [regex]::Matches($testStdout, "Failed:\s+(\d+)") | ForEach-Object { [int]$_.Groups[1].Value } | Measure-Object -Sum | Select-Object -ExpandProperty Sum
-        $skippedTests = [regex]::Matches($testStdout, "Skipped:\s+(\d+)") | ForEach-Object { [int]$_.Groups[1].Value } | Measure-Object -Sum | Select-Object -ExpandProperty Sum
-
-        $errorLines = ($testStdout + ($testStderr -join "`n")) -split "`n" | Where-Object { $_ -match "FAILED|ERROR|Exception|error CS\d+|error MSB\d+" }
-
-        if ($errorLines -or $failedTests -gt 0) {
-            Write-Error "`n❌ TEST ISSUES FOUND:"
-            Write-Information ("=" * 60) -InformationAction Continue
-            if ($failedTests -gt 0) {
-                Write-Error "Failed Tests: $failedTests"
-            }
-            $errorLines | ForEach-Object {
-                Write-Error $_
-            }
-            Write-Information ("=" * 60) -InformationAction Continue
-            if ($SaveToFile) {
-                Write-Information "🔍 Full details in: $outputFile" -InformationAction Continue
-            }
-        } else {
-            Write-Information "✅ All tests passed!" -InformationAction Continue
-        }
-
-        Write-Information "`n📊 TEST SUMMARY:" -InformationAction Continue
-        Write-Information "   Test Suite: $TestSuite" -InformationAction Continue
-        Write-Information "   Duration: $($duration.TotalSeconds) seconds" -InformationAction Continue
-        Write-Information "   Passed: $passedTests" -InformationAction Continue
-        Write-Information "   Failed: $failedTests" -InformationAction Continue
-        Write-Information "   Skipped: $skippedTests" -InformationAction Continue
-        Write-Information "   Build Status: $(if ($buildExitCode -eq 0) { 'SUCCESS ✅' } else { 'FAILED ❌' })" -InformationAction Continue
-        Write-Information "   Test Status: $(if ($testExitCode -eq 0) { 'SUCCESS ✅' } else { 'FAILED ❌' })" -InformationAction Continue
-
-        return @{
-            ExitCode = $testExitCode
-            Duration = $duration
-            PassedTests = $passedTests
-            FailedTests = $failedTests
-            SkippedTests = $skippedTests
-            ErrorLines = $errorLines
-            OutputFile = if ($SaveToFile) { $outputFile } else { $null }
-            FullOutput = $fullOutput
-            BuildExitCode = $buildExitCode
-            Status = if ($testExitCode -eq 0) { "Success" } else { "Failed" }
-        }
-    }
-    catch {
-        Write-Error "Failed to execute tests: $($_.Exception.Message)"
-        return @{
-            ExitCode = -1
-            Status = "Error"
-            ErrorMessage = $_.Exception.Message
-        }
-    }
-}
-
-function Invoke-BusBuddyTestFull {
-    <#
-    .SYNOPSIS
-        Enhanced bb-test with complete output capture
-    #>
-    [CmdletBinding()]
-    param(
-        [ValidateSet('All', 'Unit', 'Integration', 'Validation', 'Core', 'WPF')]
-        [string]$TestSuite = 'All'
-    )
-    Get-BusBuddyTestOutput -TestSuite $TestSuite -SaveToFile
-}
-
-function Get-BusBuddyTestError {
-    <#
-    .SYNOPSIS
-        Get only test errors without full output
-    #>
-    [CmdletBinding()]
-    param(
-        [ValidateSet('All', 'Unit', 'Integration', 'Validation', 'Core', 'WPF')]
-        [string]$TestSuite = 'All'
-    )
-    Get-BusBuddyTestOutput -TestSuite $TestSuite -Verbosity 'quiet'
-}
-
-function Get-BusBuddyTestLog {
-    <#
-    .SYNOPSIS
-        Show the most recent test log
-    #>
-    $latestLog = Get-ChildItem "logs\test-output-*.log" -ErrorAction SilentlyContinue | Sort-Object LastWriteTime -Descending | Select-Object -First 1
-    if ($latestLog) {
-        Write-Information "📄 Most recent test log: $($latestLog.Name)" -InformationAction Continue
-        Write-Information "📅 Created: $($latestLog.LastWriteTime)" -InformationAction Continue
-        Write-Information "" -InformationAction Continue
-        Get-Content $latestLog.FullName
-    } else {
-        Write-Information "No test logs found. Run bbTestFull first." -InformationAction Continue
-    }
-}
-
-function Start-BusBuddyTestWatch {
-    <#
-    .SYNOPSIS
-        Continuous testing with file monitoring and full output capture
-    #>
-    [CmdletBinding()]
-    param(
-        [ValidateSet('All', 'Unit', 'Integration', 'Validation', 'Core', 'WPF')]
-        [string]$TestSuite = 'Unit'
-    )
-    Write-Information "🔄 Starting watch mode for $TestSuite tests..." -InformationAction Continue
-    Write-Information "Press Ctrl+C to stop watching" -InformationAction Continue
-
-    Get-BusBuddyTestOutput -TestSuite $TestSuite -SaveToFile
-
-    $watcher = New-Object System.IO.FileSystemWatcher
-    $watcher.Path = $PWD.Path
-    $watcher.Filter = "*.cs"
-    $watcher.IncludeSubdirectories = $true
-    $watcher.EnableRaisingEvents = $true
-
-    $action = {
-        $path = $Event.SourceEventArgs.FullPath
-        $ct = $Event.SourceEventArgs.ChangeType
-        Write-Information ("📝 File {0}: {1}" -f $ct, $path) -InformationAction Continue
-        Start-Sleep -Seconds 1  # Debounce
-        Write-Information "🔄 Re-running tests..." -InformationAction Continue
-        Get-BusBuddyTestOutput -TestSuite $using:TestSuite -SaveToFile
-    }
-
-    Register-ObjectEvent -InputObject $watcher -EventName "Changed" -Action $action
-
-    try {
-        while ($true) {
-            Start-Sleep -Seconds 1
-        }
-    } finally {
-        $watcher.EnableRaisingEvents = $false
-        $watcher.Dispose()
-        Get-EventSubscriber | Unregister-Event
-    }
-}
-
-function Enable-BusBuddyEnhancedTestOutput {
-    <#
-    .SYNOPSIS
-        Enable enhanced test output functions in the current session
-    .DESCRIPTION
-        Loads the enhanced test output functions and creates aliases for easier access
-    #>
-    [CmdletBinding()]
-    param()
-
-    Write-BusBuddyStatus "✅ Enhanced test output functions are now available!" -Type Success
-    Write-Information "" -InformationAction Continue
-    Write-Information "📋 Available Enhanced Test Functions:" -InformationAction Continue
-    Write-Information "  • Get-BusBuddyTestOutput    - Full test execution with capture" -InformationAction Continue
-    Write-Information "  • Invoke-BusBuddyTestFull   - Enhanced bb-test (bbTestFull)" -InformationAction Continue
-    Write-Information "  • Get-BusBuddyTestError     - Error-only output (bbTestErrors)" -InformationAction Continue
-    Write-Information "  • Get-BusBuddyTestLog       - Show latest test log (bbTestLog)" -InformationAction Continue
-    Write-Information "  • Start-BusBuddyTestWatch   - Continuous test watch (bbTestWatch)" -InformationAction Continue
-    Write-Information "" -InformationAction Continue
-    Write-Information "🚀 Quick Start:" -InformationAction Continue
-    Write-Information "  bbTestFull          - Run tests with full output capture" -InformationAction Continue
-    Write-Information "  bbTestFull Unit     - Run unit tests with capture" -InformationAction Continue
-    Write-Information "  bbTestLog           - View latest test results" -InformationAction Continue
-    Write-Information "  bbTestWatch         - Start continuous testing" -InformationAction Continue
-}
-
-#endregion
 
 #region Exports
 
@@ -3501,40 +3130,19 @@ try {
     Write-Verbose "Optional validation modules not available"
 }
 
-# Ensure the welcome function is exported after its definition so external callers can invoke bb-welcome
-try {
-    Export-ModuleMember -Function 'Show-BusBuddyWelcome' -ErrorAction SilentlyContinue
-} catch {
-    Write-Information "(Non-fatal: Show-BusBuddyWelcome already exported or export failed)" -InformationAction Continue
-}
-
-# Auto-run welcome unless suppressed
+# Consolidated welcome export logic
+try { Export-ModuleMember -Function 'Show-BusBuddyWelcome' -ErrorAction SilentlyContinue } catch { Write-Verbose 'Welcome already exported' }
 if (-not $env:BUSBUDDY_NO_WELCOME -and $env:BUSBUDDY_SILENT -ne '1') {
-    try { Show-BusBuddyWelcome -ErrorAction SilentlyContinue } catch { Write-Information "(welcome suppressed due to error)" -InformationAction Continue }
+    try { Show-BusBuddyWelcome -ErrorAction SilentlyContinue } catch { Write-Verbose 'Welcome suppressed due to error' }
 }
 
-#endregion
-
-
-# Import additional validation functions via module (no dot-sourcing)
-try {
-    $modulesRoot = (Split-Path $PSScriptRoot -Parent)
-    $validationModule = Join-Path $modulesRoot 'BusBuddy.Validation/BusBuddy.Validation.psd1'
-    if (Test-Path $validationModule) {
-        Import-Module $validationModule -Force -ErrorAction Stop
-        Write-Verbose "Successfully loaded BusBuddy.Validation module"
-    } else {
-        Write-Warning "Validation module not found at $validationModule"
-    }
-} catch {
-    Write-Warning "Could not import BusBuddy.Validation: $($_.Exception.Message)"
+# Stub dynamic import functions (manifest consistency)
+if (-not (Get-Command Import-BusBuddyFunction -ErrorAction SilentlyContinue)) {
+    function Import-BusBuddyFunction { [CmdletBinding()] param([Parameter(Mandatory)][string]$Name) Write-Verbose "Dynamic function loading not yet implemented for $Name" }
+}
+if (-not (Get-Command Import-BusBuddyFunctionCategory -ErrorAction SilentlyContinue)) {
+    function Import-BusBuddyFunctionCategory { [CmdletBinding()] param([Parameter(Mandatory)][string]$Category) Write-Verbose "Dynamic category loading not yet implemented for $Category" }
 }
 
-# Ensure the welcome function is exported after its definition so external callers can invoke bb-welcome
-try {
-    Export-ModuleMember -Function 'Show-BusBuddyWelcome' -ErrorAction SilentlyContinue
-} catch {
-    Write-Information "Non-fatal error occurred during module export." -InformationAction Continue
-}
 #endregion
 

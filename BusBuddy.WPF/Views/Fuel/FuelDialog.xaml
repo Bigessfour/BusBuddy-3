@@ -52,9 +52,10 @@
             </Grid.RowDefinitions>
 
             <TextBlock Grid.Row="0" Grid.Column="0" Text="Fuel Date:" Margin="0,5,10,5" VerticalAlignment="Center"/>
-            <DatePicker Grid.Row="0" Grid.Column="1"
-                        SelectedDate="{Binding Fuel.FuelDate}"
-                        Margin="0,5,0,5"/>
+            <!-- Upgraded to Syncfusion SfDatePicker -->
+            <syncfusion:SfDatePicker Grid.Row="0" Grid.Column="1"
+                                     Value="{Binding Fuel.FuelDate}"
+                                     Margin="0,5,0,5" />
 
             <TextBlock Grid.Row="1" Grid.Column="0" Text="Fuel Location:" Margin="0,5,10,5" VerticalAlignment="Center"/>
             <syncfusion:ComboBoxAdv Grid.Row="1" Grid.Column="1"
@@ -137,8 +138,3 @@
         </StackPanel>
     </Grid>
 </Window>
-
-
-
-
-

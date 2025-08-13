@@ -21,19 +21,27 @@ namespace BusBuddy.WPF.Controls
             Logger.Information("Add vehicle action requested");
             try
             {
-                var busForm = new BusBuddy.WPF.Views.Bus.BusForm();
-                var result = busForm.ShowDialog();
-                if (result == true)
+                var form = new BusBuddy.WPF.Views.Bus.BusForm();
+                bool? dialogResult = null;
+                var host = new Window
                 {
-                    MessageBox.Show("Vehicle added successfully!", "Success",
-                        MessageBoxButton.OK, MessageBoxImage.Information);
+                    Title = "Add Bus",
+                    Content = form,
+                    Owner = Application.Current?.Windows.OfType<Window>().FirstOrDefault(w => w.IsActive),
+                    WindowStartupLocation = WindowStartupLocation.CenterOwner,
+                    SizeToContent = SizeToContent.WidthAndHeight
+                };
+                form.RequestCloseByHost += (s, _) => { var f = (BusBuddy.WPF.Views.Bus.BusForm)s!; dialogResult = f.DialogResult; host.DialogResult = f.DialogResult; host.Close(); };
+                host.ShowDialog();
+                if (dialogResult == true)
+                {
+                    MessageBox.Show("Vehicle added successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
                 }
             }
             catch (Exception ex)
             {
                 Logger.Error(ex, "Error opening Bus form");
-                MessageBox.Show($"Error opening Bus form: {ex.Message}", "Error",
-                    MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show($"Error opening Bus form: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -42,12 +50,21 @@ namespace BusBuddy.WPF.Controls
             Logger.Information("Add driver action requested");
             try
             {
-                var driverForm = new BusBuddy.WPF.Views.Driver.DriverForm();
-                var result = driverForm.ShowDialog();
-                if (result == true)
+                var form = new BusBuddy.WPF.Views.Driver.DriverForm();
+                bool? dialogResult = null;
+                var host = new Window
                 {
-                    MessageBox.Show("Driver added successfully!", "Success",
-                        MessageBoxButton.OK, MessageBoxImage.Information);
+                    Title = "Add Driver",
+                    Content = form,
+                    Owner = Application.Current?.Windows.OfType<Window>().FirstOrDefault(w => w.IsActive),
+                    WindowStartupLocation = WindowStartupLocation.CenterOwner,
+                    SizeToContent = SizeToContent.WidthAndHeight
+                };
+                form.RequestCloseByHost += (s, _) => { var f = (BusBuddy.WPF.Views.Driver.DriverForm)s!; dialogResult = f.DialogResult; host.DialogResult = f.DialogResult; host.Close(); };
+                host.ShowDialog();
+                if (dialogResult == true)
+                {
+                    MessageBox.Show("Driver added successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
                 }
             }
             catch (Exception ex)

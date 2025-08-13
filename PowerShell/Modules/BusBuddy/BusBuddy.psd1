@@ -54,7 +54,17 @@
     # 'Test-BusBuddyDatabase',
         'Get-BusBuddyCommand',
         'Get-BusBuddyInfo',
-        'Show-BusBuddyWelcome'
+    'Show-BusBuddyWelcome',
+    # Quick-win thematic modules
+    'Test-BusBuddyThemeConsistency',
+    'Invoke-BusBuddyThemeRemediation',
+    'Test-BusBuddyAzureSql',
+    'Get-BusBuddySqlStatus',
+    'Start-BusBuddyTestWatchAdvanced',
+    'Stop-BusBuddyTestWatchAdvanced',
+    'Invoke-BusBuddyCleanup',
+    'Get-BusBuddyUnusedFiles',
+    'Remove-BusBuddyUnusedFiles'
     )
 
     # Cmdlets to export from this module
@@ -71,7 +81,12 @@
         'BusBuddy.psm1',
         'BusBuddy.psd1',
         'BusBuddy.settings.ini',
-        'bb-validate-database.ps1'
+        'bb-validate-database.ps1',
+        # Added quick-win module files
+        'BusBuddy.ThemeValidation/BusBuddy.ThemeValidation.psm1',
+        'BusBuddy.AzureSqlHealth/BusBuddy.AzureSqlHealth.psm1',
+        'BusBuddy.TestWatcher/BusBuddy.TestWatcher.psm1',
+        'BusBuddy.Cleanup/BusBuddy.Cleanup.psm1'
     )
 
     # Private data to pass to the module

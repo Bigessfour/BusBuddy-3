@@ -30,7 +30,7 @@
         </Grid.RowDefinitions>
 
         <!-- Header -->
-        <Border Grid.Row="0" Background="#007ACC"
+    <Border Grid.Row="0" Background="{DynamicResource BusBuddy.Brush.Primary}"
                 CornerRadius="5" Padding="15" Margin="0,0,0,10">
             <StackPanel Orientation="Horizontal">
                 <TextBlock Text="&#xE7C4;" FontFamily="Segoe MDL2 Assets"
@@ -41,7 +41,7 @@
         </Border>
 
         <!-- Toolbar -->
-        <Border Grid.Row="1" Background="#F5F5F5"
+    <Border Grid.Row="1" Background="{DynamicResource BusBuddy.Brush.Panel.Light}"
                 CornerRadius="3" Padding="10" Margin="0,0,0,10">
             <Grid>
                 <Grid.ColumnDefinitions>
@@ -136,7 +136,7 @@
         </syncfusion:SfDataGrid>
 
         <!-- Status Bar -->
-        <Border Grid.Row="3" Background="#E9ECEF" CornerRadius="3" Padding="10" Margin="0,10,0,0">
+    <Border Grid.Row="3" Background="{DynamicResource BusBuddy.Brush.Panel.StatusBar}" CornerRadius="3" Padding="10" Margin="0,10,0,0">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
@@ -144,15 +144,15 @@
                 </Grid.ColumnDefinitions>
 
                 <TextBlock Grid.Column="0" Text="{Binding StatusMessage}"
-                          VerticalAlignment="Center" Foreground="#6C757D"/>
+                          VerticalAlignment="Center" Foreground="{DynamicResource BusBuddy.Brush.Text.MutedAlt}"/>
 
                 <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                    <TextBlock Text="Total Drivers: " Foreground="#6C757D"/>
-                    <TextBlock Text="{Binding TotalDrivers}" FontWeight="Bold" Foreground="#007ACC" Margin="0,0,15,0"/>
-                    <TextBlock Text="Active: " Foreground="#6C757D"/>
-                    <TextBlock Text="{Binding ActiveDrivers}" FontWeight="Bold" Foreground="#28A745" Margin="0,0,15,0"/>
-                    <TextBlock Text="Training Pending: " Foreground="#6C757D"/>
-                    <TextBlock Text="{Binding TrainingPendingDrivers}" FontWeight="Bold" Foreground="#FFC107"/>
+                    <TextBlock Text="Total Drivers: " Foreground="{DynamicResource BusBuddy.Brush.Text.MutedAlt}"/>
+                    <TextBlock Text="{Binding TotalDrivers}" FontWeight="Bold" Foreground="{DynamicResource BusBuddy.Brush.Primary}" Margin="0,0,15,0"/>
+                    <TextBlock Text="Active: " Foreground="{DynamicResource BusBuddy.Brush.Text.MutedAlt}"/>
+                    <TextBlock Text="{Binding ActiveDrivers}" FontWeight="Bold" Foreground="{DynamicResource BusBuddy.Brush.Semantic.Success}" Margin="0,0,15,0"/>
+                    <TextBlock Text="Training Pending: " Foreground="{DynamicResource BusBuddy.Brush.Text.MutedAlt}"/>
+                    <TextBlock Text="{Binding TrainingPendingDrivers}" FontWeight="Bold" Foreground="{DynamicResource BusBuddy.Brush.Semantic.Warning}"/>
                 </StackPanel>
             </Grid>
         </Border>

@@ -1043,7 +1043,23 @@ namespace BusBuddy.WPF.ViewModels.GoogleEarth
                             try
                             {
                                 var preview = new BusBuddy.WPF.Views.Reports.PdfPreviewWindow(path);
-                                preview.Show();
+                                var host = new Window
+                                {
+                                    Title = "Eligibility PDF Preview",
+                                    Content = preview,
+                                    Width = 1000,
+                                    Height = 800,
+                                    WindowStartupLocation = WindowStartupLocation.CenterOwner,
+                                    Owner = Application.Current?.MainWindow,
+                                    ResizeMode = ResizeMode.CanResize
+                                };
+                                void CloseHandler(object? s2, EventArgs a2)
+                                {
+                                    preview.RequestCloseByHost -= CloseHandler;
+                                    host.Close();
+                                }
+                                preview.RequestCloseByHost += CloseHandler;
+                                host.Show();
                             }
                             catch (Exception exWin)
                             {

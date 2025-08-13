@@ -198,6 +198,54 @@
   <SolidColorBrush x:Key="BusBuddy.Text.Muted" Color="#4D4D4D"/>
 
   <!--  ===============================================================================  -->
+  <!--  SECTION 2.4: ADDITIONAL SEMANTIC / PANEL / OVERLAY / INFO BRUSHES               -->
+  <!--  ===============================================================================  -->
+  <!--  Added to eliminate remaining hardcoded hex color usage across views            -->
+  <!--  Vehicle status, driver panels, reconciliation summaries, overlays, timelines   -->
+
+  <!--  Extended Semantic Colors  -->
+  <Color x:Key="BusBuddy.Semantic.Danger">#E74C3C</Color>
+
+  <!--  Panel / Light Surface Colors (used in light panels within dark theme) -->
+  <Color x:Key="BusBuddy.Panel.Light">#F5F5F5</Color>
+  <Color x:Key="BusBuddy.Panel.StatusBar">#E9ECEF</Color>
+
+  <!--  Informational / Warning Summary Panels -->
+  <Color x:Key="BusBuddy.Info.Panel.Background">#E6F7FF</Color>
+  <Color x:Key="BusBuddy.Info.Panel.Border">#A6D8FF</Color>
+  <Color x:Key="BusBuddy.Warning.Panel.Background">#FFF9E6</Color>
+  <Color x:Key="BusBuddy.Warning.Panel.Border">#FFE0A6</Color>
+
+  <!--  Overlay / Translucent Colors -->
+  <Color x:Key="BusBuddy.Overlay.Black50">#80000000</Color>
+  <Color x:Key="BusBuddy.Overlay.White50">#80FFFFFF</Color>
+  <Color x:Key="BusBuddy.Overlay.DarkPanel">#AA2B2B2B</Color>
+
+  <!--  Timeline / Neutral Text Shades -->
+  <Color x:Key="BusBuddy.Text.Medium">#666666</Color>
+  <Color x:Key="BusBuddy.Text.MutedAlt">#6C757D</Color>
+  <Color x:Key="BusBuddy.Text.Subtle">#555555</Color>
+  <Color x:Key="BusBuddy.Text.Subtler">#777777</Color>
+  <Color x:Key="BusBuddy.Border.Light">#DDDDDD</Color>
+
+  <!--  Brushes for the above colors -->
+  <SolidColorBrush x:Key="BusBuddy.Brush.Semantic.Danger" Color="{StaticResource BusBuddy.Semantic.Danger}"/>
+  <SolidColorBrush x:Key="BusBuddy.Brush.Panel.Light" Color="{StaticResource BusBuddy.Panel.Light}"/>
+  <SolidColorBrush x:Key="BusBuddy.Brush.Panel.StatusBar" Color="{StaticResource BusBuddy.Panel.StatusBar}"/>
+  <SolidColorBrush x:Key="BusBuddy.Brush.Info.Panel.Background" Color="{StaticResource BusBuddy.Info.Panel.Background}"/>
+  <SolidColorBrush x:Key="BusBuddy.Brush.Info.Panel.Border" Color="{StaticResource BusBuddy.Info.Panel.Border}"/>
+  <SolidColorBrush x:Key="BusBuddy.Brush.Warning.Panel.Background" Color="{StaticResource BusBuddy.Warning.Panel.Background}"/>
+  <SolidColorBrush x:Key="BusBuddy.Brush.Warning.Panel.Border" Color="{StaticResource BusBuddy.Warning.Panel.Border}"/>
+  <SolidColorBrush x:Key="BusBuddy.Brush.Overlay.Black50" Color="{StaticResource BusBuddy.Overlay.Black50}"/>
+  <SolidColorBrush x:Key="BusBuddy.Brush.Overlay.White50" Color="{StaticResource BusBuddy.Overlay.White50}"/>
+  <SolidColorBrush x:Key="BusBuddy.Brush.Overlay.DarkPanel" Color="{StaticResource BusBuddy.Overlay.DarkPanel}"/>
+  <SolidColorBrush x:Key="BusBuddy.Brush.Text.Medium" Color="{StaticResource BusBuddy.Text.Medium}"/>
+  <SolidColorBrush x:Key="BusBuddy.Brush.Text.MutedAlt" Color="{StaticResource BusBuddy.Text.MutedAlt}"/>
+  <SolidColorBrush x:Key="BusBuddy.Brush.Text.Subtle" Color="{StaticResource BusBuddy.Text.Subtle}"/>
+  <SolidColorBrush x:Key="BusBuddy.Brush.Text.Subtler" Color="{StaticResource BusBuddy.Text.Subtler}"/>
+  <SolidColorBrush x:Key="BusBuddy.Brush.Border.Light" Color="{StaticResource BusBuddy.Border.Light}"/>
+
+  <!--  ===============================================================================  -->
   <!--  SECTION 3: SYNCFUSION CONTROL DOCUMENTATION  -->
   <!--  ===============================================================================  -->
   <!--  CONTROLS IDENTIFIED IN BUSBUDDY WORKSPACE:  -->

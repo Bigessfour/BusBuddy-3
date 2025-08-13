@@ -247,11 +247,6 @@ namespace BusBuddy.WPF.ViewModels.Bus
                 }
 
                 RequestClose?.Invoke(this, true);
-                if (Application.Current.Windows.OfType<Views.Bus.BusForm>().FirstOrDefault() is var window)
-                {
-                    window.DialogResult = true;
-                    window.Close();
-                }
             }
             catch (Exception ex)
             {
@@ -263,11 +258,6 @@ namespace BusBuddy.WPF.ViewModels.Bus
         private void Cancel()
         {
             RequestClose?.Invoke(this, false);
-            if (Application.Current.Windows.OfType<Views.Bus.BusForm>().FirstOrDefault() is var window)
-            {
-                window.DialogResult = false;
-                window.Close();
-            }
         }
 
         #endregion

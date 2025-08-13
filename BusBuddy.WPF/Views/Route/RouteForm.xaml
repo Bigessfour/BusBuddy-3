@@ -29,8 +29,8 @@
             <syncfusion:SfMaskedEdit MaskType="Text" Width="320" Height="32" Padding="8" Text="{Binding NewRouteDescription, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
             <StackPanel Orientation="Horizontal" Margin="0,10,0,0" VerticalAlignment="Center">
                 <TextBlock Text="Date:" VerticalAlignment="Center" />
-                <!-- Use standard WPF DatePicker for reliability -->
-                <DatePicker Width="140" Margin="6,0,12,0" SelectedDate="{Binding NewRouteDate, Mode=TwoWay}" />
+                <!-- Upgraded to Syncfusion SfDatePicker for consistency -->
+                <syncfusion:SfDatePicker Width="160" Margin="6,0,12,0" Value="{Binding NewRouteDate, Mode=TwoWay}" />
                 <TextBlock Text="Time Slot:" VerticalAlignment="Center" />
                 <syncfusion:ComboBoxAdv Width="120" Margin="6,0,0,0" ItemsSource="{Binding TimeSlots}" SelectedItem="{Binding SelectedTimeSlot, Mode=TwoWay}" />
             </StackPanel>

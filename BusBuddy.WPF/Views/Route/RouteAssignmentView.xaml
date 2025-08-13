@@ -13,11 +13,9 @@
     <UserControl.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
-                <!-- Centralized Syncfusion theme/resources validated for this project -->
                 <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/SyncfusionV30_Validated_ResourceDictionary.xaml" />
             </ResourceDictionary.MergedDictionaries>
             <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
-            <!-- Enum provider for RouteTimeSlot (use as ItemsSource via StaticResource) -->
             <ObjectDataProvider x:Key="RouteTimeSlotValues"
                                 MethodName="GetValues"
                                 ObjectType="{x:Type sys:Enum}">
@@ -25,44 +23,6 @@
                     <x:Type TypeName="models:RouteTimeSlot" />
                 </ObjectDataProvider.MethodParameters>
             </ObjectDataProvider>
-            <!-- Themed button styles for readability -->
-            <Style x:Key="PrimaryButtonAdv"
-                   TargetType="syncfusion:ButtonAdv">
-                <Setter Property="Padding"
-                        Value="14,8" />
-                <Setter Property="Margin"
-                        Value="6,0,0,0" />
-                <Setter Property="Background"
-                        Value="{DynamicResource BusBuddy.Brush.Primary}" />
-                <Setter Property="Foreground"
-                        Value="{DynamicResource BusBuddy.Brush.Text.OnPrimary}" />
-            </Style>
-            <Style x:Key="SuccessButtonAdv"
-                   TargetType="syncfusion:ButtonAdv"
-                   BasedOn="{StaticResource PrimaryButtonAdv}">
-                <Setter Property="Background"
-                        Value="{DynamicResource BusBuddy.Brush.Semantic.Success}" />
-            </Style>
-            <Style x:Key="WarningButtonAdv"
-                   TargetType="syncfusion:ButtonAdv"
-                   BasedOn="{StaticResource PrimaryButtonAdv}">
-                <Setter Property="Background"
-                        Value="{DynamicResource BusBuddy.Brush.Semantic.Warning}" />
-            </Style>
-            <Style x:Key="DangerButtonAdv"
-                   TargetType="syncfusion:ButtonAdv"
-                   BasedOn="{StaticResource PrimaryButtonAdv}">
-                <Setter Property="Background"
-                        Value="{DynamicResource BusBuddy.Brush.Semantic.Danger}" />
-            </Style>
-            <Style x:Key="InfoButtonAdv"
-                   TargetType="syncfusion:ButtonAdv"
-                   BasedOn="{StaticResource PrimaryButtonAdv}">
-                <Setter Property="Background"
-                        Value="{DynamicResource BusBuddy.Brush.Semantic.Info}" />
-                <Setter Property="Foreground"
-                        Value="{DynamicResource BusBuddy.Brush.Text.Primary}" />
-            </Style>
             <!-- Watermark TextBox template (for search inputs) -->
             <Style x:Key="WatermarkTextBox"
                    TargetType="TextBox"
@@ -165,9 +125,10 @@
                             Margin="0,0,10,0">
                     <TextBlock Text="Date"
                                FontWeight="SemiBold" />
-                    <DatePicker x:Name="RouteDatePicker"
-                                SelectedDate="{Binding SelectedRoute.Date, Mode=TwoWay}"
-                                AutomationProperties.Name="Route Date" />
+                    <!-- Upgraded to Syncfusion SfDatePicker -->
+                    <syncfusion:SfDatePicker x:Name="RouteDatePicker"
+                                             Value="{Binding SelectedRoute.Date, Mode=TwoWay}"
+                                             AutomationProperties.Name="Route Date" />
                 </StackPanel>
                 <!-- Time Slot -->
                 <StackPanel Grid.Column="2"
@@ -175,10 +136,12 @@
                             Margin="0,0,10,0">
                     <TextBlock Text="Time Slot"
                                FontWeight="SemiBold" />
-                    <ComboBox x:Name="TimeSlotCombo"
-                              SelectedItem="{Binding SelectedTimeSlot, Mode=TwoWay}"
-                              ItemsSource="{Binding Source={StaticResource RouteTimeSlotValues}}"
-                              AutomationProperties.Name="Route Time Slot" />
+                    <!-- Upgraded to Syncfusion ComboBoxAdv -->
+                    <syncfusion:ComboBoxAdv x:Name="TimeSlotCombo"
+                                             SelectedItem="{Binding SelectedTimeSlot, Mode=TwoWay}"
+                                             ItemsSource="{Binding Source={StaticResource RouteTimeSlotValues}}"
+                                             AutomationProperties.Name="Route Time Slot"
+                                             MaxDropDownHeight="240" />
                 </StackPanel>
                 <!-- Bus -->
                 <StackPanel Grid.Column="3"
@@ -222,44 +185,44 @@
                     <syncfusion:ButtonAdv x:Name="TimeButton"
                                           Label="⏱️ Time"
                                           Command="{Binding TimeRouteCommand}"
-                                          Style="{StaticResource InfoButtonAdv}"
+                                          Style="{StaticResource BusBuddyButtonAdv.Info}"
                                           AutomationProperties.Name="Time Route"
                                           ToolTip="Calculate timing for all stops" />
                     <syncfusion:ButtonAdv x:Name="SaveButton"
                                           Label="💾 Save"
                                           Command="{Binding SaveRouteCommand}"
-                                          Style="{StaticResource PrimaryButtonAdv}"
+                                          Style="{StaticResource BusBuddyButtonAdv.Primary}"
                                           AutomationProperties.Name="Save Route"
                                           ToolTip="Save route and assignments" />
                     <syncfusion:ButtonAdv x:Name="ActivateButton"
                                           Label="✅ Activate"
                                           Command="{Binding ActivateRouteCommand}"
-                                          Style="{StaticResource SuccessButtonAdv}"
+                                          Style="{StaticResource BusBuddyButtonAdv.Success}"
                                           AutomationProperties.Name="Activate Route" />
                     <syncfusion:ButtonAdv x:Name="DeactivateButton"
                                           Label="🛑 Deactivate"
                                           Command="{Binding DeactivateRouteCommand}"
-                                          Style="{StaticResource WarningButtonAdv}"
+                                          Style="{StaticResource BusBuddyButtonAdv.Warning}"
                                           AutomationProperties.Name="Deactivate Route" />
                     <syncfusion:ButtonAdv x:Name="DeleteButton"
                                           Label="🗑️ Delete"
                                           Command="{Binding DeleteRouteCommand}"
-                                          Style="{StaticResource DangerButtonAdv}"
+                                          Style="{StaticResource BusBuddyButtonAdv.Danger}"
                                           AutomationProperties.Name="Delete Route" />
                     <syncfusion:ButtonAdv x:Name="ScheduleButton"
                                           Label="🗓️ Schedule"
                                           Command="{Binding ViewScheduleCommand}"
-                                          Style="{StaticResource InfoButtonAdv}"
+                                          Style="{StaticResource BusBuddyButtonAdv.Info}"
                                           AutomationProperties.Name="View Schedule" />
                     <syncfusion:ButtonAdv x:Name="PlotButton"
                                           Label="🗺️ Plot"
                                           Command="{Binding PlotRouteOnMapCommand}"
-                                          Style="{StaticResource InfoButtonAdv}"
+                                          Style="{StaticResource BusBuddyButtonAdv.Info}"
                                           AutomationProperties.Name="Plot Route on Map" />
                     <syncfusion:ButtonAdv x:Name="PrintMapButton"
                                           Label="🖨️ Print Map"
                                           Command="{Binding PrintMapCommand}"
-                                          Style="{StaticResource PrimaryButtonAdv}"
+                                          Style="{StaticResource BusBuddyButtonAdv.Primary}"
                                           AutomationProperties.Name="Print Route Map" />
                 </StackPanel>
             </Grid>
@@ -327,6 +290,7 @@
                 <syncfusion:ButtonAdv x:Name="AssignButton"
                                       Label="➡️ Assign"
                                       Command="{Binding AssignStudentCommand}"
+                                      Style="{StaticResource BusBuddyButtonAdv.Primary}"
                                       Margin="0,0,0,10"
                                       Padding="16,8"
                                       AutomationProperties.Name="Assign Student"
@@ -334,6 +298,7 @@
                 <syncfusion:ButtonAdv x:Name="RemoveButton"
                                       Label="⬅️ Remove"
                                       Command="{Binding RemoveStudentCommand}"
+                                      Style="{StaticResource BusBuddyButtonAdv.Warning}"
                                       Padding="16,8"
                                       AutomationProperties.Name="Remove Student"
                                       ToolTip="Remove selected student from route" />

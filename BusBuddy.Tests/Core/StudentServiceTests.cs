@@ -116,6 +116,7 @@ namespace BusBuddy.Tests.Core
         {
             var samples = new[]
             {
+                // Accepted strict patterns (no extensions) — digits only or with standard separators
                 "5555555555",
                 "555-555-5555",
                 "(555) 555-5555",
@@ -142,6 +143,39 @@ namespace BusBuddy.Tests.Core
                 var errors = await _studentService.ValidateStudentAsync(s);
                 errors.Should().NotContain(e => e.Contains("phone", StringComparison.OrdinalIgnoreCase), $"'{phone}' should be accepted");
             }
+        }
+
+        [Test]
+        public async Task ValidateStudentAsync_InvalidStrictPhoneFormats_ShouldFail()
+        {
+            Environment.SetEnvironmentVariable("BUSBUDDY_PHONE_VALIDATION_MODE", "strict");
+            var invalid = new[]
+            {
+                "15555555555", // 11 digits without separator after country code not allowed in strict pattern
+                "555-5555",    // Too short
+                "555-555-55555", // Too long
+                "555-abc-5555" // Letters
+            };
+
+            foreach (var phone in invalid)
+            {
+                var s = new Student
+                {
+                    StudentName = "InvalidPhone",
+                    Grade = "3",
+                    School = "Test",
+                    ParentGuardian = "P",
+                    EmergencyPhone = phone,
+                    HomePhone = phone,
+                    HomeAddress = "1 A St",
+                    City = "City",
+                    State = "CO",
+                    Zip = "12345"
+                };
+                var errors = await _studentService.ValidateStudentAsync(s);
+                errors.Should().Contain(e => e.Contains("phone", StringComparison.OrdinalIgnoreCase), $"'{phone}' should be rejected");
+            }
+            Environment.SetEnvironmentVariable("BUSBUDDY_PHONE_VALIDATION_MODE", null);
         }
 
         [Test]

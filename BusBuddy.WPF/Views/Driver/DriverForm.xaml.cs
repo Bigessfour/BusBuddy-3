@@ -1,12 +1,12 @@
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
-using Syncfusion.Windows.Shared;
 using Syncfusion.SfSkinManager;
 using BusBuddy.WPF.ViewModels.Driver;
 using Microsoft.Extensions.DependencyInjection;
 using Serilog;
 using Syncfusion.Windows.Tools.Controls;
+using BusBuddy.WPF.Utilities;
 
 namespace BusBuddy.WPF.Views.Driver
 {
@@ -14,44 +14,64 @@ namespace BusBuddy.WPF.Views.Driver
     /// Interaction logic for DriverForm.xaml
     /// MVP-ready driver entry form with ChromelessWindow and SkinManager theming
     /// </summary>
-    public partial class DriverForm : ChromelessWindow
+    public partial class DriverForm : UserControl, BusBuddy.WPF.Views.Common.IDialogHostable
     {
         private static readonly ILogger Log = Serilog.Log.ForContext<DriverForm>();
-        private DriverFormViewModel? ViewModel => DataContext as DriverFormViewModel;
+        public event EventHandler? RequestCloseByHost; // IDialogHostable contract (EventHandler)
+        public bool? DialogResult { get; private set; }
+        public DriverFormViewModel? ViewModel { get; private set; }
+
         public DriverForm()
         {
             Log.Information("Initializing {ViewName}", nameof(DriverForm));
             InitializeComponent();
+            ApplyTheme();
+            InitializeViewModel();
+            AttachDiagnostics();
+            Log.Information("{ViewName} initialized successfully (Create mode)", nameof(DriverForm));
+        }
 
-            // Apply Syncfusion theme — FluentDark default, FluentLight fallback
-            SfSkinManager.ApplyThemeAsDefaultStyle = true;
+        private void InitializeViewModel()
+        {
             try
             {
-                using var dark = new Theme("FluentDark");
-                SfSkinManager.SetTheme(this, dark);
-                Log.Information("FluentDark theme applied to DriverForm");
+                if (App.ServiceProvider != null)
+                {
+                    ViewModel = App.ServiceProvider.GetRequiredService<DriverFormViewModel>();
+                }
+                else
+                {
+                    // Fallback — driver service required, throw if null in ctor
+                    Log.Warning("ServiceProvider unavailable; DriverFormViewModel resolution skipped");
+                }
             }
             catch (System.Exception ex)
             {
-                Log.Error("Failed to apply FluentDark theme to DriverForm: {Error}", ex.Message);
-                using var white = new Theme("FluentWhite");
-                SfSkinManager.SetTheme(this, white);
-                Log.Information("Fallback to FluentLight theme for DriverForm");
+                Log.Error(ex, "Failed to resolve DriverFormViewModel");
             }
-
-            // Set DataContext to DriverFormViewModel using DI
-            if (App.ServiceProvider != null)
-            {
-                DataContext = App.ServiceProvider.GetRequiredService<DriverFormViewModel>();
-            }
-
-            // Hook RequestClose to close dialog with result
+            DataContext = ViewModel;
             if (ViewModel != null)
             {
-                ViewModel.RequestClose += OnRequestClose;
+                ViewModel.RequestClose -= OnVmRequestClose;
+                ViewModel.RequestClose += OnVmRequestClose;
             }
+        }
 
-            // Global button click diagnostics (WPF Button and Syncfusion ButtonAdv)
+        private void ApplyTheme()
+        {
+            SfSkinManager.ApplyThemeAsDefaultStyle = true;
+            SyncfusionThemeManager.ApplyTheme(this);
+        }
+
+        private void OnVmRequestClose(object? sender, bool? e)
+        {
+            Log.Information("DriverForm ViewModel requested close. Result={Result}", e);
+            DialogResult = e;
+            RequestCloseByHost?.Invoke(this, EventArgs.Empty);
+        }
+
+        private void AttachDiagnostics()
+        {
             try
             {
                 AddHandler(ButtonBase.ClickEvent, new RoutedEventHandler(OnAnyButtonClick), true);
@@ -61,43 +81,12 @@ namespace BusBuddy.WPF.Views.Driver
             {
                 Log.Warning(ex, "{ViewName}: failed to attach button diagnostics", nameof(DriverForm));
             }
-
-            Log.Information("{ViewName} initialized successfully", nameof(DriverForm));
         }
 
-        protected override void OnClosed(System.EventArgs e)
+        public void DisposeResources()
         {
-            try
-            {
-                SfSkinManager.Dispose(this);
-                Log.Information("SfSkinManager resources disposed for DriverForm");
-            }
-            catch (System.Exception ex)
-            {
-                Log.Error("Error disposing SfSkinManager for DriverForm: {Error}", ex.Message);
-            }
-
-            if (ViewModel != null)
-            {
-                ViewModel.RequestClose -= OnRequestClose;
-            }
-            base.OnClosed(e);
-        }
-
-        // Handles ViewModel RequestClose event to close dialog with result.
-        private void OnRequestClose(object? sender, bool? dialogResult)
-        {
-            try
-            {
-                Log.Information("DriverForm RequestClose received. DialogResult={DialogResult}", dialogResult);
-                DialogResult = dialogResult;
-                Close();
-            }
-            catch (System.Exception ex)
-            {
-                Log.Error(ex, "DriverForm: error handling RequestClose");
-                Close();
-            }
+            try { if (ViewModel != null) ViewModel.RequestClose -= OnVmRequestClose; } catch { }
+            try { SfSkinManager.Dispose(this); } catch { }
         }
 
         private void OnAnyButtonClick(object? sender, RoutedEventArgs e)

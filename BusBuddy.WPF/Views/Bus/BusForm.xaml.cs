@@ -1,8 +1,10 @@
 using System.Windows;
-using Syncfusion.Windows.Shared;
+using System.Windows.Controls;
 using Microsoft.Extensions.DependencyInjection;
 using Syncfusion.SfSkinManager;
 using BusBuddy.WPF.ViewModels.Bus;
+using BusBuddy.WPF.Utilities;
+using Serilog;
 
 namespace BusBuddy.WPF.Views.Bus
 {
@@ -10,99 +12,79 @@ namespace BusBuddy.WPF.Views.Bus
     /// Interaction logic for BusForm.xaml
     /// MVP-ready bus entry form with Syncfusion ChromelessWindow and SkinManager theming
     /// </summary>
-    public partial class BusForm : ChromelessWindow
+    public partial class BusForm : UserControl, BusBuddy.WPF.Views.Common.IDialogHostable
     {
+        private static readonly ILogger Logger = Log.ForContext<BusForm>();
+        public event EventHandler? RequestCloseByHost;
+        public bool? DialogResult { get; private set; }
+        public BusFormViewModel? ViewModel { get; private set; }
+
         public BusForm()
         {
             InitializeComponent();
-            ApplySyncfusionTheme();
-                // Resolve from DI if available, fallback to parameterless
-                if (App.ServiceProvider != null)
-                {
-                    var vm = App.ServiceProvider.GetService<BusFormViewModel>() ?? new BusFormViewModel();
-                    DataContext = vm;
-                    vm.RequestClose += (_, result) =>
-                    {
-                        DialogResult = result;
-                        Close();
-                    };
-                }
-                else
-                {
-                    DataContext = new BusFormViewModel();
-                }
+            InitializeViewModel();
+            ApplyTheme();
+            Logger.Information("BusForm (UserControl) initialized (Create mode)");
         }
 
-        public BusForm(BusBuddy.Core.Models.Bus bus)
+        public BusForm(BusBuddy.Core.Models.Bus bus) : this()
         {
-            InitializeComponent();
-            ApplySyncfusionTheme();
-            if (App.ServiceProvider != null)
-            {
-                var vm = App.ServiceProvider.GetService<BusBuddy.WPF.ViewModels.Bus.BusFormViewModel>();
-                if (vm != null)
-                {
-                    // Replace backing bus through reflection-free assignment
-                    // Simpler: create new instance with service + bus
-                    var busService = App.ServiceProvider.GetService<BusBuddy.Core.Services.Interfaces.IBusService>();
-                    vm = new BusBuddy.WPF.ViewModels.Bus.BusFormViewModel(busService, bus);
-                    DataContext = vm;
-                    vm.RequestClose += (_, result) =>
-                    {
-                        DialogResult = result;
-                        Close();
-                    };
-                }
-                else
-                {
-                    DataContext = new BusBuddy.WPF.ViewModels.Bus.BusFormViewModel(null, bus);
-                }
-            }
-            else
-            {
-                DataContext = new BusBuddy.WPF.ViewModels.Bus.BusFormViewModel(null, bus);
-            }
-        }
-
-        /// <summary>
-        /// Apply Syncfusion theme with FluentDark default and FluentLight fallback
-        /// </summary>
-        private void ApplySyncfusionTheme()
-        {
-            SfSkinManager.ApplyThemeAsDefaultStyle = true;
+            // Reinitialize for edit mode with provided bus
             try
             {
-                using var fluentDarkTheme = new Theme("FluentDark");
-                SfSkinManager.SetTheme(this, fluentDarkTheme);
-                Serilog.Log.Information("FluentDark theme applied to {ViewName}", GetType().Name);
+                var sp = App.ServiceProvider;
+                var svc = sp?.GetService<BusBuddy.Core.Services.Interfaces.IBusService>();
+                ViewModel = new BusFormViewModel(svc, bus);
             }
             catch
             {
-                try
-                {
-                    using var fluentLightTheme = new Theme("FluentLight");
-                    SfSkinManager.SetTheme(this, fluentLightTheme);
-                    Serilog.Log.Information("Fallback to FluentLight theme for {ViewName}", GetType().Name);
-                }
-                catch
-                {
-                    // Continue without theme if both fail
-                }
+                ViewModel = new BusFormViewModel(null, bus);
             }
+            DataContext = ViewModel;
+            HookVm();
+            Logger.Information("BusForm (UserControl) initialized (Edit mode) for BusNumber={BusNumber}", ViewModel?.BusNumber);
         }
 
-        protected override void OnClosed(System.EventArgs e)
+        private void InitializeViewModel()
         {
             try
             {
-                SfSkinManager.Dispose(this);
-                Serilog.Log.Information("SfSkinManager resources disposed for {ViewName}", GetType().Name);
+                var sp = App.ServiceProvider;
+                var vm = sp?.GetService<BusFormViewModel>() ?? new BusFormViewModel();
+                ViewModel = vm;
             }
-            catch (System.Exception ex)
+            catch
             {
-                Serilog.Log.Error("Error disposing SfSkinManager for {ViewName}: {Error}", GetType().Name, ex.Message);
+                ViewModel = new BusFormViewModel();
             }
-            base.OnClosed(e);
+            DataContext = ViewModel;
+            HookVm();
+        }
+
+        private void HookVm()
+        {
+            if (ViewModel == null) return;
+            ViewModel.RequestClose -= OnVmRequestClose;
+            ViewModel.RequestClose += OnVmRequestClose;
+        }
+
+        private void OnVmRequestClose(object? sender, bool? e)
+        {
+            Logger.Information("BusForm ViewModel requested close. Result={Result}", e);
+            DialogResult = e;
+            RequestCloseByHost?.Invoke(this, EventArgs.Empty);
+        }
+
+        private void ApplyTheme()
+        {
+            SfSkinManager.ApplyThemeAsDefaultStyle = true;
+            SyncfusionThemeManager.ApplyTheme(this);
+        }
+
+        public void DisposeResources()
+        {
+            try { if (ViewModel != null) ViewModel.RequestClose -= OnVmRequestClose; } catch { }
+            try { SfSkinManager.Dispose(this); } catch { }
         }
     }
 }

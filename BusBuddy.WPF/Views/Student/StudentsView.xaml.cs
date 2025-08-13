@@ -24,17 +24,25 @@ namespace BusBuddy.WPF.Views.Student
     /// - WPF RenderOptions/TextOptions: https://learn.microsoft.com/dotnet/api/system.windows.media.renderoptions
     /// - WPF DPI handling (OnDpiChanged): https://learn.microsoft.com/dotnet/api/system.windows.window.ondpichanged
     /// </summary>
-    public partial class StudentsView : ChromelessWindow
+    // Converted from ChromelessWindow to UserControl for docking document hosting (Syncfusion DockingManager expects UserControl documents)
+    public partial class StudentsView : UserControl
     {
         private static readonly ILogger Logger = Log.ForContext<StudentsView>();
         public StudentsView()
         {
             InitializeComponent();
 
-            // Apply Syncfusion theme via central manager (FluentDark with FluentLight fallback)
+            // Apply Syncfusion theme (UserControl variant)
             // Docs: SfSkinManager — https://help.syncfusion.com/wpf/themes/sfskinmanager
-            SfSkinManager.ApplyThemeAsDefaultStyle = true;
-            SyncfusionThemeManager.ApplyTheme(this);
+            try
+            {
+                SfSkinManager.ApplyThemeAsDefaultStyle = true;
+                SyncfusionThemeManager.ApplyTheme(this);
+            }
+            catch (System.Exception ex)
+            {
+                Logger.Warning(ex, "StudentsView: theme application failed (non-fatal)");
+            }
 
             // Set the ViewModel for data binding (prefer DI so DbContext/connection align with saves)
             try
@@ -261,34 +269,6 @@ namespace BusBuddy.WPF.Views.Student
             }
         }
 
-        // Handle per-monitor DPI changes to keep layout crisp
-        protected override void OnDpiChanged(System.Windows.DpiScale oldDpi, System.Windows.DpiScale newDpi)
-        {
-            base.OnDpiChanged(oldDpi, newDpi);
-            try
-            {
-                var scale = newDpi.DpiScaleX; // assume uniform scaling
-                Resources["Dynamic.Font.Size.Base"] = 12.0 * scale; // if bound in XAML, this adjusts
-                RenderOptions.SetBitmapScalingMode(this, scale >= 1.0 ? BitmapScalingMode.HighQuality : BitmapScalingMode.Fant);
-                Logger.Information("StudentsView DPI changed: {OldX}→{NewX}", oldDpi.DpiScaleX, newDpi.DpiScaleX);
-            }
-            catch (System.Exception ex)
-            {
-                Logger.Warning(ex, "StudentsView: OnDpiChanged handling failed");
-            }
-        }
-
-        protected override void OnClosed(System.EventArgs e)
-        {
-            try
-            {
-                RemoveHandler(ButtonBase.ClickEvent, new RoutedEventHandler(OnAnyButtonClick));
-                RemoveHandler(Selector.SelectionChangedEvent, new SelectionChangedEventHandler(OnAnySelectionChanged));
-                RemoveHandler(TextBoxBase.TextChangedEvent, new TextChangedEventHandler(OnAnyTextChanged));
-                RemoveHandler(System.Windows.Controls.Validation.ErrorEvent, new EventHandler<ValidationErrorEventArgs>(OnValidationError));
-            }
-            catch { }
-            base.OnClosed(e);
-        }
+    // Window-specific overrides (OnDpiChanged, OnClosed) removed after conversion to UserControl.
     }
 }

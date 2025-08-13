@@ -366,7 +366,24 @@ namespace BusBuddy.WPF.ViewModels.Fuel
                     Logger.Information("Opening fuel reconciliation dialog");
 
                     var dialog = new FuelReconciliationDialog(_fuelService, _busService);
-                    _ = dialog.ShowDialog();
+                    var host = new Window
+                    {
+                        Title = "Fuel Reconciliation",
+                        Content = dialog,
+                        Width = 900,
+                        Height = 700,
+                        WindowStartupLocation = WindowStartupLocation.CenterOwner,
+                        Owner = Application.Current?.MainWindow,
+                        ResizeMode = ResizeMode.CanResize
+                    };
+                    void Handler(object? s, EventArgs args)
+                    {
+                        dialog.RequestCloseByHost -= Handler;
+                        dialog.DisposeResources();
+                        host.Close();
+                    }
+                    dialog.RequestCloseByHost += Handler;
+                    host.ShowDialog();
 
                     // No need to refresh data as reconciliation doesn't modify records
                     Logger.Information("Opened fuel reconciliation dialog");
