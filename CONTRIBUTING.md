@@ -54,6 +54,23 @@ Thank you for your interest in contributing to BusBuddy! This document provides 
 4. **Commit**: Use clear, descriptive commit messages
 5. **Pull Request**: Submit a PR with a clear description of changes
 
+### Preferred CI Workflow
+- This repository uses a simplified GitHub Actions workflow in `.github/workflows/ci.yml` as the authoritative CI.
+- On PRs, CI will: restore → build → test (upload TRX) → optionally generate/apply EF migrations → publish WPF artifacts.
+- Timeout is 15 minutes to catch issues quickly.
+- Ensure repository secrets exist if your change relies on DB steps:
+	- `SYNCFUSION_LICENSE_KEY`, `BUSBUDDY_CONNECTION`, `AZURE_SQL_SERVER`, `AZURE_SQL_USER`, `AZURE_SQL_PASSWORD`.
+
+CLI fallback (when browser is unavailable):
+```powershell
+# Create PR targeting default branch
+gh pr create --fill --base master --head <your-branch>
+
+# Watch CI runs
+gh run list --limit 5
+gh run view <RUN_ID> --log
+```
+
 ### Commit Message Format
 ```
 Type: Brief description

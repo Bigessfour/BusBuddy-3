@@ -222,10 +222,20 @@ bbDevSession
    bbMvpCheck           # Must show "MVP READY!"
    ```
 
+### **Preferred CI Workflow (GitHub Actions)**
+- CI config: `.github/workflows/ci.yml` (streamlined). On PRs and main pushes it will:
+    - Restore → Build → Test (TRX uploaded) → Optional EF migration script/apply → Publish WPF artifacts
+    - Enforce a 15-minute timeout, mask secrets, and attach artifacts
+- Required secrets for optional steps: `SYNCFUSION_LICENSE_KEY`, `BUSBUDDY_CONNECTION`, `AZURE_SQL_SERVER`, `AZURE_SQL_USER`, `AZURE_SQL_PASSWORD`
+
+When the browser is unavailable, use the GitHub CLI:
+```powershell
+
 ### **Commit Standards**
 ```bash
 # Commit message format
 git commit -m "feat: add student search functionality
+```
 
 - Implement search filter in StudentsViewModel
 - Add search TextBox to StudentsView
