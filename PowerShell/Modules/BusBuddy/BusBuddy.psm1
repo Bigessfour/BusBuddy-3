@@ -32,7 +32,7 @@ function Get-BusBuddyTestOutput {
         $start = Get-Date
         Write-Information "🏗️ Building..." -InformationAction Continue
         $buildOutPath = Join-Path $logDir "build-$ts.log"
-    & dotnet build $ProjectPath --configuration Debug --verbosity $Verbosity 2>&1 | Tee-Object -FilePath $buildOutPath | Out-Null
+    & dotnet build $ProjectPath --configuration Debug --verbosity $Verbosity 2>&1 | Tee-Object -FilePath $buildOutPath
         $buildExit = $LASTEXITCODE
         if($buildExit -ne 0){
             Write-Error 'Build failed'
