@@ -214,7 +214,14 @@ namespace BusBuddy.Core.Services
                     return;
                 }
 
-                Logger.Information("Seeding {Count} sample drivers...", count);
+                var toAdd = Math.Max(0, count - existingCount);
+                if (toAdd == 0)
+                {
+                    Logger.Information("Drivers already at target: {ExistingCount}", existingCount);
+                    return;
+                }
+
+                Logger.Information("Seeding {ToAdd} sample drivers (current={Existing}, target={Target})...", toAdd, existingCount, count);
 
                 var random = new Random();
                 var firstNames = new[] { "John", "Jane", "Mike", "Sarah", "David", "Lisa", "Tom", "Anna", "Chris", "Emma" };
@@ -222,7 +229,7 @@ namespace BusBuddy.Core.Services
                 var licenseTypes = new[] { "CDL", "Standard", "Commercial" };
 
                 var drivers = new List<Driver>();
-                for (int i = 0; i < count; i++)
+                for (int i = 0; i < toAdd; i++)
                 {
                     var firstName = firstNames[random.Next(firstNames.Length)];
                     var lastName = lastNames[random.Next(lastNames.Length)];
@@ -246,7 +253,12 @@ namespace BusBuddy.Core.Services
                 context.Drivers.AddRange(drivers);
                 await context.SaveChangesAsync();
 
-                Logger.Information("Successfully seeded {Count} drivers", count);
+                // Log after/added
+                int finalCount;
+                try { finalCount = await context.Drivers.CountAsync(); }
+                catch (InvalidOperationException) { finalCount = context.Drivers.Count(); }
+                var added = finalCount - existingCount;
+                Logger.Information("Successfully seeded {Added} drivers (total now {Total})", added, finalCount);
             }
             catch (Exception ex)
             {
@@ -280,14 +292,21 @@ namespace BusBuddy.Core.Services
                     return;
                 }
 
-                Logger.Information("Seeding {Count} sample buses...", count);
+                var toAdd = Math.Max(0, count - existingCount);
+                if (toAdd == 0)
+                {
+                    Logger.Information("Buses already at target: {ExistingCount}", existingCount);
+                    return;
+                }
+
+                Logger.Information("Seeding {ToAdd} sample buses (current={Existing}, target={Target})...", toAdd, existingCount, count);
 
                 var random = new Random();
                 var makes = new[] { "Blue Bird", "Thomas Built", "IC Bus", "Collins", "Starcraft" };
                 var models = new[] { "Vision", "Conventional", "RE Series", "Type A", "Type C", "Quest" };
 
-                var buses = new List<Bus>();
-                for (int i = 0; i < count; i++)
+        var buses = new List<Bus>();
+        for (int i = 0; i < toAdd; i++)
                 {
                     var make = makes[random.Next(makes.Length)];
                     var model = models[random.Next(models.Length)];
@@ -295,13 +314,14 @@ namespace BusBuddy.Core.Services
 
                     buses.Add(new Bus
                     {
-                        BusNumber = $"BUS-{(i + 1):000}",
+            // Ensure uniqueness and continuity of numbering
+            BusNumber = $"BUS-{(existingCount + i + 1):000}",
                         Year = year,
                         Make = make,
                         Model = model,
                         SeatingCapacity = random.Next(20, 72),
-                        VINNumber = $"1{make.Substring(0, 2).ToUpper(CultureInfo.InvariantCulture)}{year}{random.Next(100000, 999999)}",
-                        LicenseNumber = $"SCH{random.Next(1000, 9999)}",
+            VINNumber = $"{DateTime.UtcNow:yyyy}{year}{random.Next(100000, 999999)}{i}",
+            LicenseNumber = $"SCH{existingCount + i + 1:0000}",
                         Status = random.Next(0, 10) < 8 ? "Active" : "Maintenance",
                         CurrentOdometer = random.Next(5000, 150000),
                         DateLastInspection = DateTime.UtcNow.AddDays(-random.Next(1, 180)),
@@ -313,9 +333,14 @@ namespace BusBuddy.Core.Services
                 }
 
                 context.Buses.AddRange(buses);
-                await context.SaveChangesAsync();
+        await context.SaveChangesAsync();
 
-                Logger.Information("Successfully seeded {Count} buses", count);
+        // Log after/added
+        int finalCount;
+        try { finalCount = await context.Buses.CountAsync(); }
+        catch (InvalidOperationException) { finalCount = context.Buses.Count(); }
+        var added = finalCount - existingCount;
+        Logger.Information("Successfully seeded {Added} buses (total now {Total})", added, finalCount);
             }
             catch (Exception ex)
             {

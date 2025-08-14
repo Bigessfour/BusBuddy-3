@@ -63,6 +63,7 @@ jobs:
     runs-on: windows-latest
     timeout-minutes: 30
     needs: [scheduler-tests]
+  # Azure secrets are referenced directly from the secrets context in steps
     strategy:
       matrix:
         platform: [x64, x86]
@@ -72,7 +73,7 @@ jobs:
       build-success: ${{ steps.build-step.outcome == 'success' }}
       test-success: ${{ steps.test-step.outcome == 'success' }}
       coverage-percentage: ${{ steps.coverage-step.outputs.coverage || '0' }}
-      build-time: ${{ steps.timing.outputs.build-time || '0' }}
+      build-time: ${{ steps.calc-time.outputs.build-time || '0' }}
 
     steps:
       - name: 📥 Checkout code
@@ -91,7 +92,16 @@ jobs:
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
-      - name: 📦 Cache NuGet packages
+      - name: 🔐 Azure login (for SQL firewall)
+        if: ${{ secrets.AZURE_CLIENT_ID != '' && secrets.AZURE_TENANT_ID != '' && secrets.AZURE_SUBSCRIPTION_ID != '' }}
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      enable-AzPSSession: true
+
+    - name: 📦 Cache NuGet packages
         uses: actions/cache@v4
         with:
           path: |
@@ -107,6 +117,19 @@ jobs:
           echo "🔄 Restoring NuGet packages..."
           dotnet restore ${{ env.SOLUTION_FILE }} --verbosity normal
           echo "✅ Package restoration completed"
+
+      - name: 🔓 Allow runner IP on Azure SQL
+        if: ${{ secrets.AZURE_SUBSCRIPTION_ID != '' }}
+        shell: pwsh
+        run: |
+          $rule = "bb-${{ github.run_id }}-${{ github.job }}"
+          echo "Creating temporary SQL firewall rule: $rule"
+          pwsh -File .\PowerShell\Networking\Enable-AzureSqlAccess.ps1 `
+            -SubscriptionId "${{ secrets.AZURE_SUBSCRIPTION_ID }}" `
+            -ResourceGroupName "BusBuddy-RG" `
+            -SqlServerName "busbuddy-server-sm2" `
+            -RuleName $rule
+          echo "RULE_NAME=$rule" >> $env:GITHUB_ENV
 
       - name: 🏗️ Build solution
         id: build-step
@@ -212,6 +235,7 @@ jobs:
           retention-days: 7
 
       - name: ⏱️ Calculate build time
+        id: calc-time
         if: always()
         run: |
           $startTime = "${{ steps.timing.outputs.start-time || '0' }}"
@@ -224,7 +248,7 @@ jobs:
           echo "build-time=$buildTime" >> $env:GITHUB_OUTPUT
           echo "🕐 Total build time: ${buildTime} seconds"
 
-      - name: 📝 Create build summary
+    - name: 📝 Create build summary
         if: always()
         run: |
           echo "## 🚌 BusBuddy CI Pipeline Report" >> $GITHUB_STEP_SUMMARY
@@ -235,10 +259,24 @@ jobs:
           echo "| Build Status | ${{ steps.build-step.outcome == 'success' && '✅ Success' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Test Status | ${{ steps.test-step.outcome == 'success' && '✅ Success' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Code Coverage | ${{ steps.coverage-step.outputs.coverage || '0' }}% |" >> $GITHUB_STEP_SUMMARY
-          echo "| Build Time | ${{ steps.timing.outputs.build-time || '0' }}s |" >> $GITHUB_STEP_SUMMARY
+      echo "| Build Time | ${{ steps.calc-time.outputs.build-time || '0' }}s |" >> $GITHUB_STEP_SUMMARY
           echo "| Configuration | ${{ env.BUILD_CONFIGURATION }} |" >> $GITHUB_STEP_SUMMARY
           echo "| .NET Version | ${{ env.DOTNET_VERSION }} |" >> $GITHUB_STEP_SUMMARY
 
+      - name: 🔐 Remove runner IP rule (cleanup)
+        if: ${{ always() && secrets.AZURE_SUBSCRIPTION_ID != '' }}
+        shell: pwsh
+        run: |
+          if ($env:RULE_NAME) {
+            echo "Cleaning up SQL firewall rule: $env:RULE_NAME"
+            pwsh -File .\PowerShell\Networking\Disable-AzureSqlAccess.ps1 `
+              -SubscriptionId "${{ secrets.AZURE_SUBSCRIPTION_ID }}" `
+              -ResourceGroupName "BusBuddy-RG" `
+              -SqlServerName "busbuddy-server-sm2" `
+              -RuleName $env:RULE_NAME
+          } else {
+            echo "No RULE_NAME found; skipping firewall cleanup"
+          }
   quality-analysis:
     name: 🔍 Quality Analysis
     runs-on: windows-latest
