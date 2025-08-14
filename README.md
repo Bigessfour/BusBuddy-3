@@ -273,6 +273,69 @@ Validation tips:
 - **FK Constraint Errors**: Run `.\Test-EndToEndCRUD.ps1 -IncludeForeignKeyTests` for validation
 - **Seeding Problems**: Check table mapping in DbContext (Bus entity → Vehicles table)
 
+### ✅ Migration Fix (Design-time and Out-of-Sync)
+When EF migrations appear out of sync across LocalDB/Azure SQL or EF tooling prompts for a startup project, use the exact commands below.
+
+1) Ensure EF tools are current:
+
+```powershell
+dotnet tool update --global dotnet-ef --version 9.0.8
+```
+
+2) Target the Core project for migrations and the WPF app as the startup (design-time services):
+
+```powershell
+# List migrations
+dotnet ef migrations list --project .\BusBuddy.Core --startup-project .\BusBuddy.WPF
+
+# Apply migrations to the configured database
+dotnet ef database update --project .\BusBuddy.Core --startup-project .\BusBuddy.WPF -- --no-build
+```
+
+3) If updating Azure SQL from CI or a changing IP, first allow the runner/local IP (see Dynamic Azure SQL Firewall above), then run the same commands.
+
+4) Out-of-sync history diagnosis (optional):
+
+```powershell
+# Inspect applied migrations table
+dotnet ef migrations list --project .\BusBuddy.Core --startup-project .\BusBuddy.WPF -v
+```
+
+Notes:
+- Bus entity maps to `Vehicles` table; ensure generated migrations include the correct table mappings.
+- Use `BUSBUDDY_CONNECTION` env var to override connection at runtime without editing appsettings.
+
+### 🌱 Seed Data Fix (Idempotent Top‑Up + JSON Import)
+Seeding now uses an idempotent top‑up strategy to avoid “Already seeded — 0 records” confusion and to prevent unique index violations.
+
+What changed:
+- `SeedDataService` tops up Drivers/Buses to target counts instead of bailing when any rows exist.
+- Unique Bus fields (BusNumber, VIN, LicenseNumber) are generated deterministically to avoid duplicates.
+- Logs show before/after counts and the actual number added.
+
+How to run seeding (Development mode):
+
+```powershell
+# Option A: From the WPF app (Development mode)
+# The Development menu calls SeedAllAsync() when enabled.
+
+# Option B: Use the console seeder against your DB
+dotnet build .\TestDataSeeding\TestDataSeeding.csproj -c Release
+
+# Provide a connection string via environment variable; supports %VAR% and ${VAR} placeholders
+$env:BUSBUDDY_CONNECTION = "Data Source=(localdb)\\MSSQLLocalDB;Initial Catalog=BusBuddy;Integrated Security=True;MultipleActiveResultSets=True"
+
+# Optional: clean Students/Families before seeding (use when dedupe prevents expected inserts)
+$env:BUSBUDDY_CLEAN_BEFORE_SEED = "1"
+
+dotnet run --project .\TestDataSeeding\TestDataSeeding.csproj --configuration Release
+```
+
+Tips:
+- For Azure SQL, expand credentials with environment variables (e.g., ${AZURE_SQL_USER}) and allow your IP first.
+- Global HasData seeding can be skipped via `SkipGlobalSeedData` if configured; the top‑up service handles development data.
+- After seeding, verify FK integrity with `Test-EndToEndCRUD.ps1 -IncludeForeignKeyTests`.
+
 #### **Comprehensive Testing**
 ```powershell
 # Run end-to-end CRUD validation
