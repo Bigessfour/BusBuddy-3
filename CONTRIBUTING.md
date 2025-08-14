@@ -48,28 +48,40 @@ Thank you for your interest in contributing to BusBuddy! This document provides 
 
 ## Pull Request Process
 
-1. **Fork and Branch**: Create a feature branch from `main`
+1. **Fork and Branch**: Create a feature branch from `master`
 2. **Develop**: Make your changes following the guidelines above
 3. **Test**: Ensure all tests pass and add new tests for your changes
 4. **Commit**: Use clear, descriptive commit messages
 5. **Pull Request**: Submit a PR with a clear description of changes
 
 ### Preferred CI Workflow
-- This repository uses a simplified GitHub Actions workflow in `.github/workflows/ci.yml` as the authoritative CI.
-- On PRs, CI will: restore → build → test (upload TRX) → optionally generate/apply EF migrations → publish WPF artifacts.
-- Timeout is 15 minutes to catch issues quickly.
-- Ensure repository secrets exist if your change relies on DB steps:
-	- `SYNCFUSION_LICENSE_KEY`, `BUSBUDDY_CONNECTION`, `AZURE_SQL_SERVER`, `AZURE_SQL_USER`, `AZURE_SQL_PASSWORD`.
+This repository uses the simplified GitHub Actions workflow in `.github/workflows/ci.yml` as the authoritative CI.
+
+On PRs and pushes, CI will:
+- Restore → Build → Test (TRX upload) → Optional EF migration script/apply → Publish WPF artifacts
+- Enforce a 15-minute timeout, mask secrets, and attach artifacts
+
+Required secrets for optional steps:
+- `SYNCFUSION_LICENSE_KEY`, `BUSBUDDY_CONNECTION`, `AZURE_SQL_SERVER`, `AZURE_SQL_USER`, `AZURE_SQL_PASSWORD`
 
 CLI fallback (when browser is unavailable):
 ```powershell
-# Create PR targeting default branch
+# Create PR targeting default branch (master)
 gh pr create --fill --base master --head <your-branch>
 
 # Watch CI runs
 gh run list --limit 5
 gh run view <RUN_ID> --log
+
+# Add required secrets (replace placeholders)
+gh secret set SYNCFUSION_LICENSE_KEY --app actions --body "<syncfusion-key>"
+gh secret set BUSBUDDY_CONNECTION    --app actions --body "Server=tcp:...;Initial Catalog=BusBuddyDb;User ID=...;Password=...;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;"
+gh secret set AZURE_SQL_SERVER       --app actions --body "<server>.database.windows.net"
+gh secret set AZURE_SQL_USER         --app actions --body "<sql-user>"
+gh secret set AZURE_SQL_PASSWORD     --app actions --body "<sql-password>"
 ```
+
+See `.github/SECRETS.md` for details.
 
 ### Commit Message Format
 ```

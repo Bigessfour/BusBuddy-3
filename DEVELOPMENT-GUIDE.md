@@ -230,6 +230,22 @@ bbDevSession
 
 When the browser is unavailable, use the GitHub CLI:
 ```powershell
+# Create PR targeting default branch (master)
+gh pr create --fill --base master --head <your-branch> 
+
+# Watch workflow runs and stream logs
+gh run list --limit 5
+gh run view <RUN_ID> --log
+
+# Add required secrets (replace placeholders) to enable optional EF steps
+gh secret set SYNCFUSION_LICENSE_KEY --app actions --body "<syncfusion-key>"
+gh secret set BUSBUDDY_CONNECTION    --app actions --body "Server=tcp:...;Initial Catalog=BusBuddyDb;User ID=...;Password=...;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;"
+gh secret set AZURE_SQL_SERVER       --app actions --body "<server>.database.windows.net"
+gh secret set AZURE_SQL_USER         --app actions --body "<sql-user>"
+gh secret set AZURE_SQL_PASSWORD     --app actions --body "<sql-password>"
+```
+
+See `.github/SECRETS.md` for details.
 
 ### **Commit Standards**
 ```bash
