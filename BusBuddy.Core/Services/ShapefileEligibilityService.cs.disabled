@@ -1,0 +1,23 @@
+// Disabled: Shapefile eligibility is deprecated and removed for MVP.
+// Preserved for history per Greenfield Reset strategy — do not compile.
+// Original path: BusBuddy.Core/Services/ShapefileEligibilityService.cs
+
+using System;
+using System.Threading.Tasks;
+using BusBuddy.Core.Services.Interfaces;
+
+namespace BusBuddy.Core.Services
+{
+    [Obsolete("Shapefile eligibility is deprecated.")]
+    internal sealed class ShapefileEligibilityService : IEligibilityService, IDisposable
+    {
+        public ShapefileEligibilityService(string districtShpPath, string townShpPath)
+        {
+        }
+
+        public Task<bool> IsEligibleAsync(double latitude, double longitude)
+            => Task.FromResult(false);
+
+        public void Dispose() { }
+    }
+}
