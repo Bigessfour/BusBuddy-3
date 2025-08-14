@@ -1,661 +1,152 @@
-name: 🚌 BusBuddy CI Pipeline
+# Reference: https://docs.github.com/actions/using-workflows/workflow-syntax-for-github-actions
+name: 🚌 BusBuddy CI
+
+env:
+  DOTNET_VERSION: 9.0.303
+  BUILD_CONFIGURATION: Release
+  SOLUTION_FILE: BusBuddy.sln
 
 on:
   push:
-    branches: [master, main, develop]
+    branches: [main]
   pull_request:
-    branches: [master, main]
+    branches: [main]
   workflow_dispatch:
-    inputs:
-      debug_enabled:
-        type: boolean
-        description: "Enable debug mode for troubleshooting"
-        default: false
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
-
-env:
-  DOTNET_VERSION: "9.0.x"
-  SOLUTION_FILE: "BusBuddy.sln"
-  BUILD_CONFIGURATION: "Release"
 
 jobs:
-  scheduler-tests:
-    name: 🗓️ Scheduler Smoke Tests
-    runs-on: windows-latest
-    timeout-minutes: 10
-    steps:
-      - name: 📥 Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: 🏗️ Setup .NET
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: ${{ env.DOTNET_VERSION }}
-
-      - name: 🔧 Restore
-        run: dotnet restore ${{ env.SOLUTION_FILE }} --verbosity minimal
-
-      - name: 🏗️ Build (Release)
-        run: dotnet build ${{ env.SOLUTION_FILE }} --no-restore --configuration ${{ env.BUILD_CONFIGURATION }} --verbosity minimal
-
-      - name: 🧪 Run Scheduler tests only
-        shell: pwsh
-        run: |
-          echo "🧪 Running Scheduler category tests..."
-          dotnet test "BusBuddy.Tests/BusBuddy.Tests.csproj" --no-build --configuration ${{ env.BUILD_CONFIGURATION }} --verbosity normal --filter "TestCategory=Scheduler" --logger "trx;LogFileName=SchedulerTests.trx"
-
-      - name: 📊 Publish scheduler test results
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: scheduler-tests-results-${{ github.run_number }}
-          path: |
-            **/SchedulerTests.trx
-          retention-days: 7
-
   build-and-test:
     name: 🏗️ Build & Test
     runs-on: windows-latest
-    timeout-minutes: 30
-    needs: [scheduler-tests]
-  # Azure secrets are referenced directly from the secrets context in steps
-    strategy:
-      matrix:
-        platform: [x64, x86]
-      fail-fast: false
-
-    outputs:
-      build-success: ${{ steps.build-step.outcome == 'success' }}
-      test-success: ${{ steps.test-step.outcome == 'success' }}
-      coverage-percentage: ${{ steps.coverage-step.outputs.coverage || '0' }}
-      build-time: ${{ steps.calc-time.outputs.build-time || '0' }}
-
+    timeout-minutes: 15
     steps:
       - name: 📥 Checkout code
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0 # Enable GitVersion and better diff analysis
 
-      - name: ⏱️ Start timing
-        id: timing
+      - name: ⚙️ Set CI defaults
+        shell: pwsh
         run: |
-          echo "start-time=$(Get-Date -UFormat %s)" >> $env:GITHUB_OUTPUT
-          echo "🕐 Workflow started at $(Get-Date)"
+          if (-not $env:SOLUTION_FILE) {
+            $sln = Get-ChildItem -Path . -Filter *.sln -Recurse | Select-Object -First 1
+            if ($sln) { "SOLUTION_FILE=$($sln.FullName)" >> $env:GITHUB_ENV }
+          }
 
       - name: 🏗️ Setup .NET
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
-      - name: 🔐 Azure login (for SQL firewall)
-        if: ${{ secrets.AZURE_CLIENT_ID != '' && secrets.AZURE_TENANT_ID != '' && secrets.AZURE_SUBSCRIPTION_ID != '' }}
-        uses: azure/login@v2
-        with:
-          client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-      enable-AzPSSession: true
-
-    - name: 📦 Cache NuGet packages
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.nuget/packages
-            ${{ github.workspace }}/**/obj/project.assets.json
-            ${{ github.workspace }}/**/obj/*.csproj.nuget.*
-          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj', '**/packages.lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-nuget-
-
-      - name: 🔧 Restore dependencies
-        run: |
-          echo "🔄 Restoring NuGet packages..."
-          dotnet restore ${{ env.SOLUTION_FILE }} --verbosity normal
-          echo "✅ Package restoration completed"
-
-      - name: 🔓 Allow runner IP on Azure SQL
-        if: ${{ secrets.AZURE_SUBSCRIPTION_ID != '' }}
+      - name: 🔐 Export secrets to env
         shell: pwsh
         run: |
-          $rule = "bb-${{ github.run_id }}-${{ github.job }}"
-          echo "Creating temporary SQL firewall rule: $rule"
-          pwsh -File .\PowerShell\Networking\Enable-AzureSqlAccess.ps1 `
-            -SubscriptionId "${{ secrets.AZURE_SUBSCRIPTION_ID }}" `
-            -ResourceGroupName "BusBuddy-RG" `
-            -SqlServerName "busbuddy-server-sm2" `
-            -RuleName $rule
-          echo "RULE_NAME=$rule" >> $env:GITHUB_ENV
+          $secrets = @{
+            SYNCFUSION_LICENSE_KEY = '${{ secrets.SYNCFUSION_LICENSE_KEY }}'
+            BUSBUDDY_CONNECTION    = '${{ secrets.BUSBUDDY_CONNECTION }}'
+            AZURE_SQL_SERVER       = '${{ secrets.AZURE_SQL_SERVER }}'
+            AZURE_SQL_USER         = '${{ secrets.AZURE_SQL_USER }}'
+            AZURE_SQL_PASSWORD     = '${{ secrets.AZURE_SQL_PASSWORD }}'
+          }
+          foreach ($k in $secrets.Keys) {
+            $v = $secrets[$k]
+            if ($null -ne $v -and $v -ne '') {
+              Write-Output "::add-mask::$v"
+              Add-Content -Path $env:GITHUB_ENV -Value "$k=$v"
+            }
+          }
+
+      - name: Configure Syncfusion license
+        run: |
+          if (-not $env:SYNCFUSION_LICENSE_KEY) {
+            echo "::notice::SYNCFUSION_LICENSE_KEY not set; build may show license warnings."
+          } else {
+            Write-Information "Syncfusion license key present." -InformationAction Continue
+          }
+
+      - name: 🔧 Restore dependencies
+        run: dotnet restore ${{ env.SOLUTION_FILE }} --verbosity minimal
 
       - name: 🏗️ Build solution
-        id: build-step
-        run: |
-          echo "🔨 Building Bus Buddy solution for ${{ matrix.platform }}..."
-          dotnet build ${{ env.SOLUTION_FILE }} --no-restore --configuration ${{ env.BUILD_CONFIGURATION }} --verbosity normal
-          echo "✅ Build completed successfully"
+        run: dotnet build ${{ env.SOLUTION_FILE }} --no-restore --configuration ${{ env.BUILD_CONFIGURATION }} --verbosity minimal
 
-      - name: 🧪 Run tests with coverage
-        id: test-step
-        run: |
-          echo "🧪 Running tests with coverage..."
-
-          # Create TestResults directory if it doesn't exist
-          mkdir -Force ./TestResults 2>$null
-
-          # Check if test projects exist
-          $testProjects = Get-ChildItem -Path . -Recurse -Include "*.Tests.csproj", "*Test*.csproj" -ErrorAction SilentlyContinue
-
-          if ($testProjects.Count -gt 0) {
-            echo "📋 Found $($testProjects.Count) test projects:"
-            foreach ($project in $testProjects) {
-              echo "   - $($project.Name)"
-            }
-
-            echo "🚀 Running all tests with coverage collection..."
-            dotnet test ${{ env.SOLUTION_FILE }} --no-build --configuration ${{ env.BUILD_CONFIGURATION }} --verbosity normal --collect:"XPlat Code Coverage" --results-directory ./TestResults --logger trx
-
-            echo "✅ Tests completed with coverage data"
-          } else {
-            echo "📝 No test projects found yet - creating minimal test result for workflow"
-            echo "This is normal for early development phase"
-
-            # Create a minimal valid TRX file
-            echo '<?xml version="1.0" encoding="UTF-8"?><TestRun xmlns="http://microsoft.com/schemas/VisualStudio/TeamTest/2010"><ResultSummary outcome="Completed"><Counters total="0" executed="0" passed="0" failed="0" /></ResultSummary></TestRun>' > ./TestResults/placeholder-results.trx
-
-            echo "📋 Created placeholder test results for workflow compatibility"
-          }
-
-      - name: 📊 Generate coverage report
-        id: coverage-step
-        run: |
-          echo "📊 Generating coverage reports..."
-
-          # Find coverage files
-          $coverageFiles = Get-ChildItem -Path "./TestResults" -Filter "coverage.cobertura.xml" -Recurse
-
-          if ($coverageFiles.Count -gt 0) {
-            # Extract coverage percentage
-            $coverageFile = $coverageFiles[0].FullName
-            [xml]$coverage = Get-Content $coverageFile
-            $lineRate = [double]$coverage.coverage.'line-rate'
-            $coveragePercent = [math]::Round($lineRate * 100, 2)
-
-            echo "coverage=$coveragePercent" >> $env:GITHUB_OUTPUT
-            echo "✅ Coverage: $coveragePercent%"
-          } else {
-            echo "coverage=0" >> $env:GITHUB_OUTPUT
-            echo "⚠️ No coverage files found"
-          }
-
-  # Deprecated: External coverage upload to Codecov is disabled.
-  # If re-enabling in future, restore the step below and ensure secrets are configured.
-  # - name: ☁️ Upload coverage reports to Codecov (DEPRECATED)
-  #   uses: codecov/codecov-action@v4
-  #   if: always() && !cancelled()
-  #   with:
-  #     files: "**/coverage.cobertura.xml"
-  #     fail_ci_if_error: false
-  #     verbose: true
-  #     token: ${{ secrets.CODECOV_TOKEN }}
-  #     flags: unittests
-  #     name: codecov-umbrella
-  #     directory: ./TestResults
-  #   continue-on-error: true
+      - name: 🧪 Run tests
+        run: dotnet test ${{ env.SOLUTION_FILE }} --no-build --configuration ${{ env.BUILD_CONFIGURATION }} --verbosity normal --logger "trx;LogFileName=Tests.trx"
 
       - name: 📊 Publish test results
-        uses: dorny/test-reporter@v1
+        uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: "BusBuddy Test Results (${{ matrix.platform }})"
-          path: "**/TestResults/*.trx"
-          reporter: "dotnet-trx"
-          fail-on-error: false
-          only-summary: false
+          name: test-results-${{ github.run_number }}
+          path: "**/Tests.trx"
+          retention-days: 7
+
+      - name: 🛠️ Ensure sqlcmd is available
+        id: ensure-sqlcmd
+        if: ${{ env.BUSBUDDY_CONNECTION != '' && env.AZURE_SQL_SERVER != '' && env.AZURE_SQL_USER != '' && env.AZURE_SQL_PASSWORD != '' }}
+        shell: pwsh
+        run: |
+          $found = $false
+          if (-not (Get-Command sqlcmd -ErrorAction SilentlyContinue)) {
+            echo "sqlcmd not found — attempting install via Chocolatey..."
+            try {
+              choco install sqlserver-cmdline-utils -y --no-progress | Out-Null
+            } catch {
+              echo "::warning::Failed to install sqlcmd via Chocolatey"
+            }
+          }
+          if (Get-Command sqlcmd -ErrorAction SilentlyContinue) {
+            $found = $true
+            echo "sqlcmd available."
+          } else {
+            echo "::notice::sqlcmd not available; migration application will be skipped"
+          }
+          echo "found=$found" >> $env:GITHUB_OUTPUT
+
+      - name: 📜 Generate EF migration script
+        if: ${{ env.BUSBUDDY_CONNECTION != '' }}
+        shell: pwsh
+        run: |
+          echo "Generating idempotent EF migration script..."
+          dotnet tool install --global dotnet-ef --version 9.* 2>$null | Out-Null
+          $env:PATH += ";$env:USERPROFILE\.dotnet\tools"
+          dotnet ef migrations script --idempotent --output migration-script.sql --project BusBuddy.Core/BusBuddy.Core.csproj --startup-project BusBuddy.WPF/BusBuddy.WPF.csproj
+
+      - name: 🧩 Apply EF migrations to Azure SQL
+        if: ${{ env.BUSBUDDY_CONNECTION != '' && env.AZURE_SQL_SERVER != '' && env.AZURE_SQL_USER != '' && env.AZURE_SQL_PASSWORD != '' && steps.ensure-sqlcmd.outputs.found == 'True' }}
+        shell: pwsh
+        run: |
+          echo "Applying migrations to database..."
+          sqlcmd -S "${{ env.AZURE_SQL_SERVER }}" -d "BusBuddyDb" -U "${{ env.AZURE_SQL_USER }}" -P "${{ env.AZURE_SQL_PASSWORD }}" -i migration-script.sql
+
+      - name: 📤 Upload migration script
+        if: ${{ env.BUSBUDDY_CONNECTION != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: migration-script-${{ github.run_number }}
+          path: migration-script.sql
+          retention-days: 7
 
       - name: 📦 Publish WPF application
-        if: success() && github.event_name != 'pull_request'
+        if: success() && github.event_name == 'push'
         run: |
-          echo "📦 Publishing WPF application for ${{ matrix.platform }}..."
-          dotnet publish BusBuddy.WPF/BusBuddy.WPF.csproj --configuration ${{ env.BUILD_CONFIGURATION }} --no-build --output ./publish-${{ matrix.platform }} --runtime win-${{ matrix.platform }}
+          echo "Publishing WPF application..."
+          dotnet publish BusBuddy.WPF/BusBuddy.WPF.csproj --configuration ${{ env.BUILD_CONFIGURATION }} --no-build --output ./publish --runtime win-x64
 
       - name: 📦 Archive build artifacts
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: build-artifacts-${{ matrix.platform }}-${{ github.run_number }}
+          name: build-artifacts-${{ github.run_number }}
           path: |
             **/bin/Release/
-            **/TestResults/
-            publish-${{ matrix.platform }}/
-            **/*.log
+            publish/
           retention-days: 7
 
-      - name: ⏱️ Calculate build time
-        id: calc-time
-        if: always()
-        run: |
-          $startTime = "${{ steps.timing.outputs.start-time || '0' }}"
-          $endTime = [int][double]::Parse((Get-Date -UFormat %s))
-          if ($startTime -ne "0") {
-            $buildTime = $endTime - [int]$startTime
-          } else {
-            $buildTime = 0
-          }
-          echo "build-time=$buildTime" >> $env:GITHUB_OUTPUT
-          echo "🕐 Total build time: ${buildTime} seconds"
-
-    - name: 📝 Create build summary
-        if: always()
-        run: |
-          echo "## 🚌 BusBuddy CI Pipeline Report" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "| Metric | Value |" >> $GITHUB_STEP_SUMMARY
-          echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
-          echo "| Platform | ${{ matrix.platform }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Build Status | ${{ steps.build-step.outcome == 'success' && '✅ Success' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Test Status | ${{ steps.test-step.outcome == 'success' && '✅ Success' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Code Coverage | ${{ steps.coverage-step.outputs.coverage || '0' }}% |" >> $GITHUB_STEP_SUMMARY
-      echo "| Build Time | ${{ steps.calc-time.outputs.build-time || '0' }}s |" >> $GITHUB_STEP_SUMMARY
-          echo "| Configuration | ${{ env.BUILD_CONFIGURATION }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| .NET Version | ${{ env.DOTNET_VERSION }} |" >> $GITHUB_STEP_SUMMARY
-
-      - name: 🔐 Remove runner IP rule (cleanup)
-        if: ${{ always() && secrets.AZURE_SUBSCRIPTION_ID != '' }}
-        shell: pwsh
-        run: |
-          if ($env:RULE_NAME) {
-            echo "Cleaning up SQL firewall rule: $env:RULE_NAME"
-            pwsh -File .\PowerShell\Networking\Disable-AzureSqlAccess.ps1 `
-              -SubscriptionId "${{ secrets.AZURE_SUBSCRIPTION_ID }}" `
-              -ResourceGroupName "BusBuddy-RG" `
-              -SqlServerName "busbuddy-server-sm2" `
-              -RuleName $env:RULE_NAME
-          } else {
-            echo "No RULE_NAME found; skipping firewall cleanup"
-          }
-  quality-analysis:
-    name: 🔍 Quality Analysis
-    runs-on: windows-latest
-    timeout-minutes: 20
-    needs: build-and-test
-
-    steps:
-      - name: 📥 Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: 🏗️ Setup .NET
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: ${{ env.DOTNET_VERSION }}
-
-      - name: 📊 Quality metrics analysis
-        id: quality-metrics
-        shell: pwsh
-        run: |
-          echo "📊 Analyzing code quality metrics..."
-
-          # Count files and lines
-          $csFiles = (Get-ChildItem -Path . -Recurse -Include "*.cs" -Exclude "bin","obj","Migrations","*.g.cs","*.designer.cs" | Measure-Object).Count
-          $xamlFiles = (Get-ChildItem -Path . -Recurse -Include "*.xaml" -Exclude "bin","obj" | Measure-Object).Count
-          $testFiles = (Get-ChildItem -Path . -Recurse -Include "*Test*.cs","*Tests.cs" -Exclude "bin","obj" | Measure-Object).Count
-          $viewModelFiles = (Get-ChildItem -Path . -Recurse -Include "*ViewModel.cs" -Exclude "bin","obj" | Measure-Object).Count
-          $serviceFiles = (Get-ChildItem -Path . -Recurse -Include "*Service.cs" -Exclude "bin","obj" | Measure-Object).Count
-
-          # Calculate code metrics
-          $testCoverage = if ($csFiles -gt 0) { [math]::Round(($testFiles / $csFiles) * 100, 1) } else { 0 }
-
-          # Check XML/JSON file validity
-          $xmlFiles = Get-ChildItem -Recurse -Filter "*.xml" | Where-Object {
-            -not ($_.FullName -like "*bin*") -and
-            -not ($_.FullName -like "*obj*") -and
-            -not ($_.FullName -like "*packages*")
-          }
-
-          $jsonFiles = Get-ChildItem -Recurse -Filter "*.json" | Where-Object {
-            -not ($_.FullName -like "*node_modules*") -and
-            -not ($_.FullName -like "*bin*") -and
-            -not ($_.FullName -like "*obj*")
-          }
-
-          $xmlInvalid = 0
-          $jsonInvalid = 0
-
-          foreach ($file in $xmlFiles) {
-            try {
-              [xml](Get-Content $file.FullName) | Out-Null
-            } catch {
-              $xmlInvalid++
-            }
-          }
-
-          foreach ($file in $jsonFiles) {
-            try {
-              Get-Content $file.FullName -Raw | ConvertFrom-Json | Out-Null
-            } catch {
-              $jsonInvalid++
-            }
-          }
-
-          # Output metrics
-          echo "cs-files=$csFiles" >> $env:GITHUB_OUTPUT
-          echo "xaml-files=$xamlFiles" >> $env:GITHUB_OUTPUT
-          echo "test-files=$testFiles" >> $env:GITHUB_OUTPUT
-          echo "test-coverage=$testCoverage" >> $env:GITHUB_OUTPUT
-          echo "viewmodel-files=$viewModelFiles" >> $env:GITHUB_OUTPUT
-          echo "service-files=$serviceFiles" >> $env:GITHUB_OUTPUT
-          echo "xml-invalid=$xmlInvalid" >> $env:GITHUB_OUTPUT
-          echo "json-invalid=$jsonInvalid" >> $env:GITHUB_OUTPUT
-
-          echo "📋 Quality Metrics:"
-          echo "   📄 C# files: $csFiles"
-          echo "   📄 XAML files: $xamlFiles"
-          echo "   🧪 Test files: $testFiles"
-          echo "   📊 Test ratio: $testCoverage%"
-          echo "   🏗️ ViewModels: $viewModelFiles"
-          echo "   ⚙️ Services: $serviceFiles"
-          echo "   📝 Invalid XML files: $xmlInvalid"
-          echo "   📝 Invalid JSON files: $jsonInvalid"
-
-      - name: ✅ Quality gate evaluation
-        id: quality-gate
-        shell: pwsh
-        run: |
-          echo "✅ Evaluating quality gate criteria..."
-
-          $csFiles = [int]"${{ steps.quality-metrics.outputs.cs-files }}"
-          $testFiles = [int]"${{ steps.quality-metrics.outputs.test-files }}"
-          $testCoverage = [float]"${{ steps.quality-metrics.outputs.test-coverage }}"
-          $xmlInvalid = [int]"${{ steps.quality-metrics.outputs.xml-invalid }}"
-          $jsonInvalid = [int]"${{ steps.quality-metrics.outputs.json-invalid }}"
-
-          $passed = $true
-          $issues = @()
-
-          # Quality gate rules
-          if ($xmlInvalid -gt 0) {
-            $issues += "❌ Found $xmlInvalid invalid XML files"
-            $passed = $false
-          }
-
-          if ($jsonInvalid -gt 0) {
-            $issues += "❌ Found $jsonInvalid invalid JSON files"
-            $passed = $false
-          }
-
-          if ($csFiles -gt 50 -and $testCoverage -lt 20) {
-            $issues += "⚠️ Test coverage ratio below 20% for mature codebase"
-            # Only warn, don't fail
-          }
-
-          if ($csFiles -gt 100 -and $testFiles -eq 0) {
-            $issues += "⚠️ No test files found for large codebase"
-            # Only warn, don't fail
-          }
-
-          echo "quality-gate-passed=$passed" >> $env:GITHUB_OUTPUT
-          echo "issues-found=$($issues.Count)" >> $env:GITHUB_OUTPUT
-
-          if ($passed) {
-            echo "✅ Quality gate PASSED"
-          } else {
-            echo "❌ Quality gate FAILED with the following issues:"
-            foreach ($issue in $issues) {
-              echo "   $issue"
-            }
-          }
-
-      - name: 🔒 Security scan
-        id: security-scan
-        shell: pwsh
-        run: |
-          echo "🔒 Running security scan..."
-
-          # Scan for vulnerable dependencies
-          dotnet list package --vulnerable --include-transitive > vulnerability-report.txt 2>&1
-          $vulnerableCount = (Select-String -Path vulnerability-report.txt -Pattern "has the following vulnerable packages" | Measure-Object).Count
-
-          # Scan for potential secrets
-          $patterns = @(
-            'password\s*=\s*"[^"]*"',
-            'api[_-]?key\s*=\s*"[^"]*"',
-            'secret\s*=\s*"[^"]*"',
-            'token\s*=\s*"[^"]*"',
-            'connection[_-]?string\s*=\s*"[^"]*"'
-          )
-
-          $secretIssues = @()
-          $files = Get-ChildItem -Recurse -Include "*.cs","*.json","*.xml","*.config" | Where-Object {
-            -not ($_.FullName -like "*bin*") -and
-            -not ($_.FullName -like "*obj*")
-          }
-
-          foreach ($file in $files) {
-            $content = Get-Content $file.FullName -Raw
-            foreach ($pattern in $patterns) {
-              if ($content -match $pattern) {
-                $secretIssues += "⚠️ Potential secret in $($file.Name)"
-              }
-            }
-          }
-
-          echo "vulnerable-packages=$vulnerableCount" >> $env:GITHUB_OUTPUT
-          echo "potential-secrets=$($secretIssues.Count)" >> $env:GITHUB_OUTPUT
-
-          echo "🔒 Security Scan Results:"
-          echo "   ⚠️ Vulnerable packages: $vulnerableCount"
-          echo "   ⚠️ Potential secrets: $($secretIssues.Count)"
-
-          if ($secretIssues.Count -gt 0) {
-            echo "⚠️ Potential security issues found:"
-            $secretIssues | ForEach-Object { echo "   $_" }
-          }
-
-      - name: 📊 Repository size analysis
-        id: repo-size
-        shell: pwsh
-        run: |
-          echo "📊 Analyzing repository size..."
-
-          $totalSize = (Get-ChildItem -Recurse | Measure-Object -Property Length -Sum).Sum
-          $sizeMB = [math]::Round($totalSize / 1MB, 2)
-
-          # Find large files
-          $largeFiles = Get-ChildItem -Recurse | Where-Object {
-            $_.Length -gt 10MB -and -not $_.PSIsContainer
-          } | Sort-Object Length -Descending | Select-Object -First 5
-
-          $largeFilesCount = $largeFiles.Count
-
-          echo "repo-size-mb=$sizeMB" >> $env:GITHUB_OUTPUT
-          echo "large-files-count=$largeFilesCount" >> $env:GITHUB_OUTPUT
-
-          echo "📊 Repository Size: $sizeMB MB"
-
-          if ($largeFilesCount -gt 0) {
-            echo "⚠️ Found $largeFilesCount large files (>10MB):"
-            foreach ($file in $largeFiles) {
-              $fileSizeMB = [math]::Round($file.Length / 1MB, 2)
-              echo "   📁 $($file.FullName.Replace($PWD, '.')) - $fileSizeMB MB"
-            }
-          }
-
-      - name: 📋 Generate comprehensive quality report
-        if: always()
-        shell: pwsh
-        run: |
-          echo "## 🎯 Comprehensive Quality Gate Report" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### 📊 Code Metrics" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "| Metric | Value | Status |" >> $GITHUB_STEP_SUMMARY
-          echo "|--------|-------|--------|" >> $GITHUB_STEP_SUMMARY
-          echo "| C# Files | ${{ steps.quality-metrics.outputs.cs-files }} | ✅ |" >> $GITHUB_STEP_SUMMARY
-          echo "| XAML Files | ${{ steps.quality-metrics.outputs.xaml-files }} | ✅ |" >> $GITHUB_STEP_SUMMARY
-          echo "| Test Files | ${{ steps.quality-metrics.outputs.test-files }} | 📊 |" >> $GITHUB_STEP_SUMMARY
-          echo "| Test Ratio | ${{ steps.quality-metrics.outputs.test-coverage }}% | 📈 |" >> $GITHUB_STEP_SUMMARY
-          echo "| ViewModels | ${{ steps.quality-metrics.outputs.viewmodel-files }} | 🏗️ |" >> $GITHUB_STEP_SUMMARY
-          echo "| Services | ${{ steps.quality-metrics.outputs.service-files }} | ⚙️ |" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-
-          echo "### 🔒 Security Analysis" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "| Metric | Value | Status |" >> $GITHUB_STEP_SUMMARY
-          echo "|--------|-------|--------|" >> $GITHUB_STEP_SUMMARY
-          echo "| Vulnerable Packages | ${{ steps.security-scan.outputs.vulnerable-packages }} | ${{ steps.security-scan.outputs.vulnerable-packages == '0' && '✅' || '⚠️' }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Potential Secrets | ${{ steps.security-scan.outputs.potential-secrets }} | ${{ steps.security-scan.outputs.potential-secrets == '0' && '✅' || '⚠️' }} |" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-
-          echo "### 📁 Repository Analysis" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "| Metric | Value | Status |" >> $GITHUB_STEP_SUMMARY
-          echo "|--------|-------|--------|" >> $GITHUB_STEP_SUMMARY
-          echo "| Repository Size | ${{ steps.repo-size.outputs.repo-size-mb }} MB | ${{ steps.repo-size.outputs.repo-size-mb < 300 && '✅' || '⚠️' }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Large Files (>10MB) | ${{ steps.repo-size.outputs.large-files-count }} | ${{ steps.repo-size.outputs.large-files-count == '0' && '✅' || '⚠️' }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Invalid XML Files | ${{ steps.quality-metrics.outputs.xml-invalid }} | ${{ steps.quality-metrics.outputs.xml-invalid == '0' && '✅' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Invalid JSON Files | ${{ steps.quality-metrics.outputs.json-invalid }} | ${{ steps.quality-metrics.outputs.json-invalid == '0' && '✅' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-
-          echo "### ✅ Quality Gate Result" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "| Quality Gate | Status | Issues |" >> $GITHUB_STEP_SUMMARY
-          echo "|-------------|--------|--------|" >> $GITHUB_STEP_SUMMARY
-          echo "| Overall Result | ${{ steps.quality-gate.outputs.quality-gate-passed == 'true' && '✅ PASSED' || '❌ FAILED' }} | ${{ steps.quality-gate.outputs.issues-found }} |" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**💡 Recommendation:** Focus on test coverage for critical business logic and ViewModels" >> $GITHUB_STEP_SUMMARY
-
-          if (${{ steps.quality-gate.outputs.quality-gate-passed != 'true' }}) {
-            echo "**❌ Action Required:** Fix quality gate issues before merging" >> $GITHUB_STEP_SUMMARY
-          }
-
-  security-scan:
-    name: 🔒 Security Scan
-    runs-on: windows-latest
-    needs: build-and-test
-    if: github.event_name == 'push'
-
-    steps:
-      - name: 📥 Checkout code
-        uses: actions/checkout@v4
-
-      - name: 🏗️ Setup .NET
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: ${{ env.DOTNET_VERSION }}
-
-      - name: 🔍 Run CodeQL Analysis
-        uses: github/codeql-action/init@v3
-        with:
-          languages: csharp
-
-      - name: 🔧 Restore and build for analysis
-        run: |
-          dotnet restore ${{ env.SOLUTION_FILE }}
-          dotnet build ${{ env.SOLUTION_FILE }} --no-restore --configuration Release
-
-      - name: 🔍 Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v3
-
-      - name: 📊 Create security summary
-        if: always()
-        run: |
-          echo "## 🔒 Security Scan Summary" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "| Scan Type | Status |" >> $GITHUB_STEP_SUMMARY
-          echo "|-----------|--------|" >> $GITHUB_STEP_SUMMARY
-          echo "| CodeQL Analysis | ✅ Completed |" >> $GITHUB_STEP_SUMMARY
-          echo "| Dependency Scan | ✅ Completed in Quality Analysis |" >> $GITHUB_STEP_SUMMARY
-
-  repository-health:
-    name: 🏥 Repository Health
-    runs-on: windows-latest
-    needs: build-and-test
-
-    steps:
-      - name: 📥 Checkout Code
-        uses: actions/checkout@v4
-
-      - name: 📊 Repository Size Analysis
-        shell: pwsh
-        run: |
-          Write-Host "🔍 Analyzing repository size..." -ForegroundColor Cyan
-
-          $totalSize = (Get-ChildItem -Recurse | Measure-Object -Property Length -Sum).Sum
-          $sizeMB = [math]::Round($totalSize / 1MB, 2)
-
-          Write-Host "📊 Repository Size: $sizeMB MB" -ForegroundColor Cyan
-
-          # Check for large files
-          $largeFiles = Get-ChildItem -Recurse | Where-Object {
-            $_.Length -gt 10MB -and -not $_.PSIsContainer
-          } | Sort-Object Length -Descending | Select-Object -First 10
-
-          if ($largeFiles) {
-            Write-Host "⚠️ Large files found (>10MB):" -ForegroundColor Yellow
-            $largeFiles | ForEach-Object {
-              $fileSizeMB = [math]::Round($_.Length / 1MB, 2)
-              Write-Host "  📁 $($_.FullName.Replace($PWD, '.')) - $fileSizeMB MB" -ForegroundColor Yellow
-            }
-          }
-
-          # Size warnings
-          if ($sizeMB -gt 500) {
-            Write-Host "⚠️ Repository size exceeds 500MB - optimization recommended" -ForegroundColor Yellow
-          } elseif ($sizeMB -gt 300) {
-            Write-Host "⚠️ Repository size exceeds 300MB - monitoring recommended" -ForegroundColor Yellow
-          } else {
-            Write-Host "✅ Repository size is within acceptable limits" -ForegroundColor Green
-          }
-
-          echo "## 📊 Repository Health Check" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "| Metric | Value | Status |" >> $GITHUB_STEP_SUMMARY
-          echo "|--------|-------|--------|" >> $GITHUB_STEP_SUMMARY
-          echo "| Repository Size | $sizeMB MB | $($sizeMB -lt 300 ? '✅' : '⚠️') |" >> $GITHUB_STEP_SUMMARY
-          echo "| Large Files (>10MB) | $($largeFiles.Count) | $($largeFiles.Count -eq 0 ? '✅' : '⚠️') |" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-
-          if ($largeFiles.Count -gt 0) {
-            echo "### ⚠️ Large Files" >> $GITHUB_STEP_SUMMARY
-            echo "" >> $GITHUB_STEP_SUMMARY
-            echo "| File | Size |" >> $GITHUB_STEP_SUMMARY
-            echo "|------|------|" >> $GITHUB_STEP_SUMMARY
-            $largeFiles | ForEach-Object {
-              $fileSizeMB = [math]::Round($_.Length / 1MB, 2)
-              echo "| $($_.FullName.Replace($PWD, '.')) | $fileSizeMB MB |" >> $GITHUB_STEP_SUMMARY
-            }
-          }
-
-  notify-completion:
-    name: 📢 Workflow Summary
-    runs-on: ubuntu-latest
-    needs: [build-and-test, quality-analysis, security-scan, repository-health]
-    if: always()
-
-    steps:
       - name: 📊 Generate workflow summary
-        shell: bash
+        if: always()
+        shell: pwsh
         run: |
-          echo "## 🚌 BusBuddy CI Workflow Summary" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "| Job | Status |" >> $GITHUB_STEP_SUMMARY
-          echo "|-----|--------|" >> $GITHUB_STEP_SUMMARY
-          echo "| 🏗️ Build & Test | ${{ needs.build-and-test.result }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| 🔍 Quality Analysis | ${{ needs.quality-analysis.result }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| 🔒 Security Scan | ${{ needs.security-scan.result }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| 🏥 Repository Health | ${{ needs.repository-health.result }} |" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-
-          # Overall status
-          if [[ "${{ needs.build-and-test.result }}" == "success" && "${{ needs.quality-analysis.result }}" != "failure" && "${{ needs.security-scan.result }}" != "failure" && "${{ needs.repository-health.result }}" != "failure" ]]; then
-            echo "### ✅ Overall Status: PASSED" >> $GITHUB_STEP_SUMMARY
-          else
-            echo "### ❌ Overall Status: FAILED" >> $GITHUB_STEP_SUMMARY
-            echo "" >> $GITHUB_STEP_SUMMARY
-            echo "Please check the job logs for more details on failures." >> $GITHUB_STEP_SUMMARY
-          fi
+          echo "## 🚌 BusBuddy CI Summary" >> $env:GITHUB_STEP_SUMMARY
+          echo "| Job | Status |" >> $env:GITHUB_STEP_SUMMARY
+          echo "|-----|--------|" >> $env:GITHUB_STEP_SUMMARY
+          echo "| Build & Test | ${{ job.status }} |" >> $env:GITHUB_STEP_SUMMARY
+          echo "" >> $env:GITHUB_STEP_SUMMARY
+          echo "${{ job.status == 'success' && '✅ Workflow PASSED' || '❌ Workflow FAILED - Check logs for details' }}" >> $env:GITHUB_STEP_SUMMARY
