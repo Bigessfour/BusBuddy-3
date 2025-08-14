@@ -39,7 +39,13 @@ jobs:
         run: |
           dotnet test ${{ env.SOLUTION_FILE }} --no-build --configuration Release --collect:"XPlat Code Coverage" --results-directory ./TestResults --logger trx || echo "Tests completed with issues"
 
-      - name: 📊 Quality metrics analysis
+      - name: � Scan vulnerable dependencies
+        shell: pwsh
+        run: |
+          echo "🔒 Scanning for vulnerable NuGet packages..."
+          dotnet list ${{ env.SOLUTION_FILE }} package --vulnerable --include-transitive | Tee-Object -FilePath vulnerability-report.txt
+
+      - name: �📊 Quality metrics analysis
         id: quality-metrics
         run: |
           echo "📊 Analyzing code quality metrics..."

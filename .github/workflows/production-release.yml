@@ -40,6 +40,13 @@ jobs:
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
+      # Syncfusion licensing — set env var for build (official docs: https://help.syncfusion.com/wpf/wpf-license-registration)
+      - name: Set Syncfusion License
+        if: ${{ secrets.SYNCFUSION_LICENSE_KEY != '' }}
+        shell: pwsh
+        run: |
+          echo "SYNCFUSION_LICENSE_KEY=${{ secrets.SYNCFUSION_LICENSE_KEY }}" >> $env:GITHUB_ENV
+
       - name: 📦 Cache NuGet packages
         uses: actions/cache@v4
         with:
@@ -131,6 +138,22 @@ jobs:
           echo "| Windows x86 | ✅ Built |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**✅ All platform builds completed successfully!**" >> $GITHUB_STEP_SUMMARY
+
+  db-apply-and-seed:
+    name: 🗄️ DB Migrations & Seeding (reusable)
+    needs: production-build
+    if: ${{ github.event_name != 'pull_request' }}
+    uses: ./.github/workflows/db-migrations-seed.yml
+    with:
+      seed: true
+    secrets:
+      AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+      AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+      AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      BUSBUDDY_CONNECTION: ${{ secrets.BUSBUDDY_CONNECTION }}
+      AZURE_SQL_SERVER: ${{ secrets.AZURE_SQL_SERVER }}
+      AZURE_SQL_USER: ${{ secrets.AZURE_SQL_USER }}
+      AZURE_SQL_PASSWORD: ${{ secrets.AZURE_SQL_PASSWORD }}
 
 
 

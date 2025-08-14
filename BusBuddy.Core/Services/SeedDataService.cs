@@ -358,14 +358,59 @@ namespace BusBuddy.Core.Services
             {
                 using var context = _contextFactory.CreateDbContext();
 
-                // Check if activities already exist
-                var existingCount = await context.Activities.CountAsync();
+                // Idempotency: only top-up ActivitySchedule rows created by SeedDataService
+                var existingSeeded = await context.ActivitySchedules
+                    .CountAsync(a => a.CreatedBy == "SeedDataService");
 
-                // TODO: Add logic for seeding activities (currently not implemented)
-                // This method previously contained a mix of bus seeding and activity logic, which was invalid.
-                // Implement proper activity seeding here as needed.
+                var toAdd = Math.Max(0, count - existingSeeded);
+                if (toAdd == 0)
+                {
+                    Logger.Information("ActivitySchedule already seeded to target (existing={Existing}). Skipping.", existingSeeded);
+                    return;
+                }
 
-                Logger.Information("Successfully seeded {Count} activities", count);
+                // Ensure we have drivers and buses to reference
+                var drivers = await context.Drivers.ToListAsync();
+                var buses = await context.Buses.ToListAsync();
+                if (drivers.Count == 0 || buses.Count == 0)
+                {
+                    Logger.Warning("Cannot seed ActivitySchedule: requires drivers and buses. drivers={Drivers}, buses={Buses}", drivers.Count, buses.Count);
+                    return;
+                }
+
+                var random = new Random();
+                var destinations = new[] { "Science Museum", "City Library", "State Park", "Aquarium", "Art Gallery" };
+
+                var items = new List<ActivitySchedule>();
+                for (int i = 0; i < toAdd; i++)
+                {
+                    var date = DateTime.Today.AddDays(random.Next(0, 21));
+                    var leaveHour = random.Next(8, 16); // 08:00–15:00
+                    var leaveTime = new TimeSpan(leaveHour, random.Next(0, 2) == 0 ? 0 : 30, 0);
+                    var eventTime = leaveTime.Add(TimeSpan.FromHours(2));
+
+                    var bus = buses[(existingSeeded + i) % buses.Count];
+                    var driver = drivers[(existingSeeded + i) % drivers.Count];
+
+                    items.Add(new ActivitySchedule
+                    {
+                        ScheduledDate = date.Date,
+                        TripType = "Activity Trip",
+                        ScheduledVehicleId = bus.VehicleId,
+                        ScheduledDestination = destinations[random.Next(destinations.Length)],
+                        ScheduledLeaveTime = leaveTime,
+                        ScheduledEventTime = eventTime,
+                        ScheduledDriverId = driver.DriverId,
+                        RequestedBy = "Seed",
+                        Status = "Scheduled",
+                        CreatedDate = DateTime.UtcNow,
+                        CreatedBy = "SeedDataService"
+                    });
+                }
+
+                await context.ActivitySchedules.AddRangeAsync(items);
+                await context.SaveChangesAsync();
+                Logger.Information("Seeded {Added} ActivitySchedule items (total seeded now {TotalSeeded})", toAdd, existingSeeded + toAdd);
             }
             catch (Exception ex)
             {
@@ -390,6 +435,21 @@ Annistyn,Sutphin,3,,,,,,,,,,,,,,,,,,
             try
             {
                 using var context = _contextFactory.CreateDbContext();
+                // Idempotency: if we've already seeded any students via SeedDataService, skip
+                int seededCount;
+                try
+                {
+                    seededCount = await context.Students.CountAsync(s => s.CreatedBy == "SeedDataService");
+                }
+                catch (InvalidOperationException)
+                {
+                    seededCount = context.Students.Count(s => s.CreatedBy == "SeedDataService");
+                }
+                if (seededCount > 0)
+                {
+                    Logger.Information("Students already seeded by SeedDataService (count={Count}). Skipping CSV seed.", seededCount);
+                    return;
+                }
                 int existingCount;
                 try
                 {
@@ -564,8 +624,13 @@ Annistyn,Sutphin,3,,,,,,,,,,,,,,,,,,
                     // Compose StudentNumber
                     string studentNumber = $"WSD{studentNum++.ToString("D4", CultureInfo.InvariantCulture)}";
 
-                    // Create or find family (by parentGuardian and homePhone)
+                    // Create or find family (by parentGuardian and homePhone) — check in-memory new list first, then DB
                     var family = families.LastOrDefault(f => f.ParentGuardian == parentGuardian && f.HomePhone == homePhone);
+                    if (family == null)
+                    {
+                        family = await context.Families
+                            .FirstOrDefaultAsync(f => f.ParentGuardian == parentGuardian && f.HomePhone == homePhone);
+                    }
                     if (family == null)
                     {
                         family = new Family

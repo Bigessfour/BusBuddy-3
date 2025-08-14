@@ -27,7 +27,7 @@ https://git-scm.com/docs/git-symbolic-ref
 https://git-scm.com/docs/git-rev-parse
 #>
 
-[CmdletBinding()] 
+[CmdletBinding()]
 param(
     [Parameter(Position=0)]
     [ValidateNotNullOrEmpty()]

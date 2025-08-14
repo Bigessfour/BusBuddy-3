@@ -426,32 +426,83 @@ Testing guidance:
 
 ### **PowerShell Automation**
 BusBuddy includes a comprehensive PowerShell module for development tasks:
-
-```powershell
-# Essential commands (Updated August 8, 2025)
-bbBuild               # Build the solution
-bbRun                 # Run the application
 bbTest                # Execute all tests
 bbHealth              # System diagnostics
-bbDevSession          # Complete development setup
-
-# Advanced commands
-bb-xaml-validate      # Validate XAML files
-bb-catch-errors       # Execute with exception capture
 bb-anti-regression    # Prevent legacy patterns
 bbDiagnostic          # Comprehensive system analysis
-
-# Testing and Validation
-./Test-EndToEndCRUD.ps1              # Comprehensive CRUD testing
-./Test-EndToEndCRUD.ps1 -IncludeForeignKeyTests -GenerateReport  # Full validation with report
-```
 bb-commands           # List all available commands
 ```
 
-### **Building**
-```bash
-# Standard .NET CLI
-dotnet restore
+---
+
+## ⚙️ Build/Run (WPF quickref)
+
+Prefer tasks or explicit project targeting:
+
+```powershell
+# Build solution
+bbBuild
+# Or
+(dotnet build .\BusBuddy.sln)
+
+# Run WPF app
+bbRun
+# Or
+(dotnet run --project .\BusBuddy.WPF\BusBuddy.WPF.csproj)
+```
+
+If the app exits immediately, check `logs/bootstrap-YYYYMMDD.txt` for bootstrap diagnostics.
+
+## 🔑 Syncfusion licensing (WPF 30.1.42)
+
+Set before running:
+
+```powershell
+$env:SYNCFUSION_LICENSE_KEY = "<your-key>"
+```
+
+Registration occurs in `App.xaml.cs` before any controls initialize.
+
+## 🧹 Log lifecycle & CI cleanup
+
+What’s included:
+- Streaming scans for legacy error logs (capped lines for I/O efficiency)
+- Consolidated retention: 7 days (or delete if >10MB and older than 3 days)
+- JSON export for dashboards/CI artifacts
+
+Local usage:
+
+```powershell
+pwsh -File .\PowerShell\bbCleanup.ps1 -LogsDir .\logs -SummaryOut .\logs\log-summary.json
+```
+
+CI example:
+
+```yaml
+- name: 🧹 Log cleanup & summary
+  shell: pwsh
+  run: |
+    pwsh -File .\PowerShell\bbCleanup.ps1 -LogsDir .\logs -SummaryOut .\logs\log-summary.json
+  continue-on-error: true
+- name: 📎 Upload log summary
+  if: always()
+  uses: actions/upload-artifact@v4
+  with:
+    name: log-summary
+    path: logs/log-summary.json
+```
+
+## 🧪 Tests quickref
+
+```powershell
+# Build once
+Invoke-BbBuild
+
+# Run unit tests
+(dotnet test .\BusBuddy.sln --no-build)
+```
+
+New tests: `BusBuddy.Tests/Logging/LogLifecycleManagerTests.cs` cover empty summaries and age-based cleanup.
 dotnet build BusBuddy.sln
 dotnet run --project BusBuddy.WPF/BusBuddy.WPF.csproj
 

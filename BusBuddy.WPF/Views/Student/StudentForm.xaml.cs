@@ -216,6 +216,8 @@ namespace BusBuddy.WPF.Views.Student
                 ViewModel.RequestClose -= OnRequestClose;
                 ViewModel.Dispose();
             }
+            // Touch the dirty flag to avoid unused-field warnings in minimal MVP while keeping behavior unchanged
+            try { _ = _isDirty; } catch { }
             try
             {
                 Loaded -= OnLoaded;

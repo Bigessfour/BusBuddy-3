@@ -128,8 +128,10 @@ namespace BusBuddy.TestDataSeeding
 
                 var connString =
                     Environment.GetEnvironmentVariable("BUSBUDDY_CONNECTION")
-                    ?? config.GetConnectionString("BusBuddyDb")
-                    ?? config.GetConnectionString("DefaultConnection");
+                    ?? config.GetConnectionString("DefaultConnection")
+                    ?? config.GetConnectionString("AzureConnection")
+                    ?? config.GetConnectionString("LocalConnection")
+                    ?? config.GetConnectionString("BusBuddyDb");
 
                 if (string.IsNullOrWhiteSpace(connString))
                 {
@@ -165,6 +167,26 @@ namespace BusBuddy.TestDataSeeding
 
                 using (var ctx = new BusBuddyDbContext(options))
                 {
+                    // If database already has data, skip unless explicitly forced
+                    var forceSeed =
+                        (args != null && Array.Exists(args, a => string.Equals(a, "--force", StringComparison.OrdinalIgnoreCase))) ||
+                        string.Equals(Environment.GetEnvironmentVariable("BUSBUDDY_FORCE_SEED"), "true", StringComparison.OrdinalIgnoreCase) ||
+                        string.Equals(Environment.GetEnvironmentVariable("BUSBUDDY_FORCE_SEED"), "1", StringComparison.OrdinalIgnoreCase);
+
+                    try
+                    {
+                        var existingStudents = await ctx.Students.CountAsync();
+                        if (existingStudents > 0 && !forceSeed)
+                        {
+                            Console.WriteLine($"ℹ️ Seeding skipped: database already has {existingStudents} students. Use --force or BUSBUDDY_FORCE_SEED=1 to reseed.");
+                            return 0;
+                        }
+                    }
+                    catch (Exception preCheckEx)
+                    {
+                        Console.WriteLine($"⚠️ Unable to check existing data: {preCheckEx.Message}. Continuing with seeding attempt...");
+                    }
+
                     // Optional clean step (delete existing Students then Families) to avoid dedupe preventing inserts
                     // Trigger with either --clean arg or BUSBUDDY_CLEAN_BEFORE_SEED=true/1
                     var cleanRequested =

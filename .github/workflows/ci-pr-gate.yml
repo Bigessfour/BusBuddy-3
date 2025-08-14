@@ -80,7 +80,7 @@ jobs:
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Continue'
-          Write-Host 'Installing PSScriptAnalyzer...'
+          Write-Output 'Installing PSScriptAnalyzer...'
           Install-Module PSScriptAnalyzer -Scope CurrentUser -Force -ErrorAction Stop
           $settings = 'PowerShell/Config/PSScriptAnalyzerSettings.psd1'
           if (-not (Test-Path $settings)) { Write-Warning "Settings file not found: $settings (using default rules)" }
@@ -89,7 +89,7 @@ jobs:
           Set-Content -Path pssa-results.json -Value $json -Encoding UTF8
           $errorCount = ($results | Where-Object Severity -eq 'Error').Count
           if ($errorCount -gt 0) { echo "pssaStatus=FAIL" >> $env:GITHUB_OUTPUT } else { echo "pssaStatus=PASS" >> $env:GITHUB_OUTPUT }
-          Write-Host "PSScriptAnalyzer errors: $errorCount"
+          Write-Output "PSScriptAnalyzer errors: $errorCount"
 
       - name: Upload PSScriptAnalyzer Results
         if: always()

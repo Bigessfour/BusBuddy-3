@@ -1240,10 +1240,6 @@ namespace BusBuddy.Core.Migrations
                     b.Property<decimal?>("Distance")
                         .HasColumnType("decimal(10,2)");
 
-                    b.Property<string>("DistrictBoundaryShapefilePath")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
                     b.Property<string>("DriverName")
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
@@ -1298,10 +1294,6 @@ namespace BusBuddy.Core.Migrations
 
                     b.Property<int?>("StudentCount")
                         .HasColumnType("int");
-
-                    b.Property<string>("TownBoundaryShapefilePath")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
 
                     b.Property<string>("WaypointsJson")
                         .HasMaxLength(4000)

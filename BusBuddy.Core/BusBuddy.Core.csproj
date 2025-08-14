@@ -65,11 +65,9 @@
     <!-- Application Insights for Production Monitoring -->
     <PackageReference Include="Microsoft.ApplicationInsights.AspNetCore" Version="2.23.0" />
 
-    <!-- 📄 Syncfusion PDF Generation for Core Services -->
-    <PackageReference Include="Syncfusion.Pdf.NET" Version="$(SyncfusionVersion)" />
-  <!-- Geospatial: NetTopologySuite for point-in-polygon and shapefile IO -->
-  <PackageReference Include="NetTopologySuite" Version="2.5.0" />
-  <PackageReference Include="NetTopologySuite.IO.ShapeFile" Version="2.1.0" />
+  <!-- 📄 Syncfusion PDF Generation for Core Services -->
+  <PackageReference Include="Syncfusion.Pdf.NET" Version="$(SyncfusionVersion)" />
+  <!-- Geospatial shapefile approach removed for MVP; NetTopologySuite packages removed -->
   </ItemGroup>
 
   <ItemGroup>

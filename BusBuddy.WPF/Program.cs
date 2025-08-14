@@ -17,9 +17,6 @@ namespace BusBuddy.WPF
         [STAThread]
         public static void Main(string[] args)
         {
-            // Ensure STA apartment state is set
-            Thread.CurrentThread.SetApartmentState(ApartmentState.STA);
-
             var app = new App();
             app.Run();
         }

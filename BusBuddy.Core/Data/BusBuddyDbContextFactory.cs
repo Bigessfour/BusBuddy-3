@@ -1,3 +1,4 @@
+using System.IO;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 using Microsoft.Extensions.Configuration;
@@ -102,10 +103,12 @@ namespace BusBuddy.Core.Data
         }
 
         /// <summary>
-        /// Design-time creation (migrations / scaffolding). Fallback order:
-        /// 1) BUSBUDDY_CONNECTION env override
-        /// 2) AZURE_SQL_USER / AZURE_SQL_PASSWORD
-        /// 3) LocalDB default
+        /// Design-time creation (migrations / scaffolding).
+        /// Precedence order:
+        /// 1) BUSBUDDY_CONNECTION environment variable
+        /// 2) appsettings.json ConnectionStrings (DefaultConnection, AzureConnection, LocalConnection)
+        /// 3) LocalDB default fallback
+        /// Docs: https://learn.microsoft.com/ef/core/cli/dbcontext-creation
         /// </summary>
         public BusBuddyDbContext CreateDbContext(string[] args)
         {
@@ -113,28 +116,41 @@ namespace BusBuddy.Core.Data
 
             var optionsBuilder = new DbContextOptionsBuilder<BusBuddyDbContext>();
 
-            // 1. Explicit override
+            // 1) Env var override (recommended for CI/local overrides)
             var envOverride = Environment.GetEnvironmentVariable("BUSBUDDY_CONNECTION");
             if (!string.IsNullOrWhiteSpace(envOverride))
             {
-                Logger.Information("Using BUSBUDDY_CONNECTION environment override");
+                Logger.Information("Using BUSBUDDY_CONNECTION environment override for design-time context");
                 optionsBuilder.UseSqlServer(envOverride, sql => sql.EnableRetryOnFailure());
                 return new BusBuddyDbContext(optionsBuilder.Options);
             }
 
-            // 2. Azure user/password fallback
-            var azureUser = Environment.GetEnvironmentVariable("AZURE_SQL_USER");
-            var azurePassword = Environment.GetEnvironmentVariable("AZURE_SQL_PASSWORD");
-            if (!string.IsNullOrEmpty(azureUser) && !string.IsNullOrEmpty(azurePassword))
+            // 2) appsettings.json in current directory (design-time convention)
+            try
             {
-                var azureConnectionString =
-                    $"Server=tcp:busbuddy-server-sm2.database.windows.net,1433;Initial Catalog=BusBuddyDB;Persist Security Info=False;User ID={azureUser};Password={azurePassword};MultipleActiveResultSets=True;Encrypt=True;TrustServerCertificate=False;Connection Timeout=60;";
-                Logger.Information("Using Azure SQL credential fallback for design-time context");
-                optionsBuilder.UseSqlServer(azureConnectionString, sql => sql.EnableRetryOnFailure());
-                return new BusBuddyDbContext(optionsBuilder.Options);
+                var configuration = new ConfigurationBuilder()
+                    .SetBasePath(System.IO.Directory.GetCurrentDirectory())
+                    .AddJsonFile("appsettings.json", optional: true, reloadOnChange: false)
+                    .AddEnvironmentVariables()
+                    .Build();
+
+                var cs = configuration.GetConnectionString("DefaultConnection")
+                         ?? configuration.GetConnectionString("AzureConnection")
+                         ?? configuration.GetConnectionString("LocalConnection");
+
+                if (!string.IsNullOrWhiteSpace(cs))
+                {
+                    Logger.Information("Using connection string from appsettings.json for design-time context");
+                    optionsBuilder.UseSqlServer(cs, sql => sql.EnableRetryOnFailure());
+                    return new BusBuddyDbContext(optionsBuilder.Options);
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Warning(ex, "Unable to load appsettings.json for design-time context; falling back to LocalDB");
             }
 
-            // 3. LocalDB final fallback
+            // 3) LocalDB fallback
             Logger.Information("Using LocalDB default fallback for design-time context");
             optionsBuilder.UseSqlServer(DefaultConnectionString, sql => sql.EnableRetryOnFailure());
             return new BusBuddyDbContext(optionsBuilder.Options);

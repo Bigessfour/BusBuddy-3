@@ -104,5 +104,81 @@ namespace BusBuddy.Tests.SchedulerTests
             var activity = vm.Appointments.First(a => a.Subject.Contains("Activity Trip"));
             activity.Location.Should().Contain("Science Museum");
         }
+
+        [Test]
+        public async Task LoadAppointmentsAsync_WithNoData_ProducesEmptyAppointments()
+        {
+            using var ctx = new BusBuddyDbContext(_options);
+
+            var vm = new UnifiedSchedulerViewModel(ctx);
+            await vm.LoadAppointmentsAsync();
+
+            vm.Appointments.Should().BeEmpty();
+        }
+
+        [Test]
+        public async Task LoadAppointmentsAsync_WithOverlappingAppointments_RendersBoth()
+        {
+            using var ctx = new BusBuddyDbContext(_options);
+
+            // Minimal entities
+            var bus = new Bus { VehicleId = 10, BusNumber = "B10", VINNumber = "VIN00000000000010", LicenseNumber = "LIC10", Make = "Ford", Model = "E350", Year = 2019 };
+            var driver = new Driver { DriverId = 10, DriverName = "John Driver" };
+            var route = new Route { RouteId = 10, RouteName = "R10" };
+            ctx.Buses.Add(bus);
+            ctx.Drivers.Add(driver);
+            ctx.Routes.Add(route);
+
+            // Overlapping ActivitySchedule: 10:00 - 12:00
+            ctx.ActivitySchedules.Add(new ActivitySchedule
+            {
+                ActivityScheduleId = 100,
+                ScheduledDate = new DateTime(2025, 8, 12),
+                TripType = "Activity Trip",
+                ScheduledVehicleId = bus.VehicleId,
+                ScheduledDestination = "Museum",
+                ScheduledLeaveTime = new TimeSpan(10, 0, 0),
+                ScheduledEventTime = new TimeSpan(12, 0, 0),
+                ScheduledDriverId = driver.DriverId,
+                RequestedBy = "Coach A",
+                Status = "Scheduled",
+                CreatedDate = DateTime.UtcNow
+            });
+
+            // Overlapping Sports schedule: 11:30 - 13:00
+            ctx.Schedules.Add(new Schedule
+            {
+                ScheduleId = 200,
+                BusId = bus.VehicleId,
+                RouteId = route.RouteId,
+                DriverId = driver.DriverId,
+                DepartureTime = new DateTime(2025, 8, 12, 11, 30, 0),
+                ArrivalTime = new DateTime(2025, 8, 12, 13, 0, 0),
+                ScheduleDate = new DateTime(2025, 8, 12),
+                SportsCategory = "Basketball",
+                Opponent = "Tigers",
+                Location = "Away - Tigers High",
+                DestinationTown = "Tigers Town"
+            });
+
+            ctx.SaveChanges();
+
+            var vm = new UnifiedSchedulerViewModel(ctx);
+            await vm.LoadAppointmentsAsync();
+
+            vm.Appointments.Should().HaveCount(2);
+
+            var first = vm.Appointments.First(a => a.Subject.Contains("Activity Trip"));
+            var second = vm.Appointments.First(a => a.Subject.Contains("Basketball"));
+
+            first.StartTime.Should().Be(new DateTime(2025, 8, 12, 10, 0, 0));
+            first.EndTime.Should().Be(new DateTime(2025, 8, 12, 12, 0, 0));
+            second.StartTime.Should().Be(new DateTime(2025, 8, 12, 11, 30, 0));
+            second.EndTime.Should().Be(new DateTime(2025, 8, 12, 13, 0, 0));
+
+            // Ensure logical overlap exists
+            first.StartTime.Should().BeBefore(second.EndTime);
+            second.StartTime.Should().BeBefore(first.EndTime);
+        }
     }
 }

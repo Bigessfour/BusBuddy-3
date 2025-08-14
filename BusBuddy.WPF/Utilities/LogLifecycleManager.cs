@@ -125,7 +125,8 @@ public class LogLifecycleManager
 
     /// <summary>
     /// Old error logs from previous versions are cleaned up more aggressively
-    /// but we check if they contain resolved issues (ButtonAdv conflicts)
+    /// but we check if they contain resolved issues (ButtonAdv conflicts).
+    /// Streams up to a capped number of lines to avoid high I/O on large files.
     /// </summary>
     private static bool ShouldDeleteOldErrorLogs(FileInfo fileInfo)
     {
@@ -135,16 +136,28 @@ public class LogLifecycleManager
             return true;
         }
 
-        // Check if file contains mostly resolved ButtonAdv errors
+        // Check if file contains mostly resolved ButtonAdv errors using streaming read
         try
         {
-            var content = File.ReadAllText(fileInfo.FullName);
-            var totalLines = content.Split('\n').Length;
-            var buttonAdvErrorLines = content.Split('\n').Count(line =>
-                line.Contains("ButtonAdv") && line.Contains("TargetType does not match"));
+            const int maxLinesToScan = 1000; // cap to reduce I/O
+            int total = 0;
+            int buttonAdvMatches = 0;
 
-            // If more than 80% of errors are ButtonAdv style conflicts, delete the file
-            if (totalLines > 10 && (double)buttonAdvErrorLines / totalLines > 0.8)
+            foreach (var line in File.ReadLines(fileInfo.FullName))
+            {
+                total++;
+                if (line.Contains("ButtonAdv") && line.Contains("TargetType does not match"))
+                {
+                    buttonAdvMatches++;
+                }
+                if (total >= maxLinesToScan)
+                {
+                    break;
+                }
+            }
+
+            // If more than 80% of scanned lines indicate ButtonAdv style conflicts, delete the file
+            if (total > 10 && (double)buttonAdvMatches / total > 0.8)
             {
                 return true;
             }
@@ -158,11 +171,18 @@ public class LogLifecycleManager
     }
 
     /// <summary>
-    /// Consolidated logs are kept for moderate period (14 days)
+    /// Consolidated logs are kept for moderate period (7 days). If disk pressure is a concern,
+    /// delete when the file is large (>10MB) and older than 3 days.
     /// </summary>
     private static bool ShouldDeleteConsolidatedLogs(FileInfo fileInfo)
     {
-        return fileInfo.LastWriteTime < DateTime.Now.AddDays(-14);
+        const long tenMb = 10L * 1024 * 1024;
+        if (fileInfo.Length > tenMb && fileInfo.LastWriteTime < DateTime.Now.AddDays(-3))
+        {
+            return true;
+        }
+
+        return fileInfo.LastWriteTime < DateTime.Now.AddDays(-7);
     }
 
     /// <summary>
@@ -209,6 +229,36 @@ public class LogLifecycleManager
         {
             Logger.Error(ex, "❌ Failed to get log summary: {ErrorMessage}", ex.Message);
             return new LogSummary { TotalFiles = 0, TotalSize = 0, Categories = new() };
+        }
+    }
+
+    /// <summary>
+    /// Exports the current log summary to a JSON file for CI artifacts or dashboards.
+    /// </summary>
+    public bool ExportLogSummary(string outputPath)
+    {
+        try
+        {
+            var summary = GetLogSummary();
+            var json = System.Text.Json.JsonSerializer.Serialize(summary, new System.Text.Json.JsonSerializerOptions
+            {
+                WriteIndented = true
+            });
+
+            var dir = Path.GetDirectoryName(outputPath);
+            if (!string.IsNullOrWhiteSpace(dir) && !Directory.Exists(dir))
+            {
+                Directory.CreateDirectory(dir);
+            }
+
+            File.WriteAllText(outputPath, json);
+            Logger.Information("🧾 Log summary exported to {Path}", outputPath);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Logger.Warning(ex, "⚠️ Failed to export log summary to {Path}", outputPath);
+            return false;
         }
     }
 

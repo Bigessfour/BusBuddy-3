@@ -1,12 +1,16 @@
+#requires -Version 7.5
+# NOTE: Module updated to require PowerShell 7.5+ per project standards.
+# References:
+# - Microsoft PowerShell Module Guidelines: https://learn.microsoft.com/powershell/scripting/developer/module/writing-a-windows-powershell-module
+# - Streams and Error Handling: https://learn.microsoft.com/powershell/scripting/learn/deep-dives/everything-about-output-streams
+
 ##region Enhanced Test Output Functions
 function Get-BusBuddyTestOutput {
 <#
 .SYNOPSIS
     Run solution/tests with full build + test output capture.
-.OUTPUTS
-    Hashtable with ExitCode, Duration, counts, etc.
 #>
-    [CmdletBinding()]
+    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'Medium')]
     [OutputType([hashtable])]
     param(
         [ValidateSet('All','Unit','Integration','Validation','Core','WPF')][string]$TestSuite='All',
@@ -32,7 +36,10 @@ function Get-BusBuddyTestOutput {
         $start = Get-Date
         Write-Information "🏗️ Building..." -InformationAction Continue
         $buildOutPath = Join-Path $logDir "build-$ts.log"
-    & dotnet build $ProjectPath --configuration Debug --verbosity $Verbosity 2>&1 | Tee-Object -FilePath $buildOutPath
+        if ($PSCmdlet.ShouldProcess($ProjectPath, "dotnet build ($Verbosity)")) {
+            & dotnet build $ProjectPath --configuration Debug --verbosity $Verbosity 2>&1 |
+                Tee-Object -FilePath $buildOutPath
+        }
         $buildExit = $LASTEXITCODE
         if($buildExit -ne 0){
             Write-Error 'Build failed'
@@ -42,7 +49,9 @@ function Get-BusBuddyTestOutput {
         $testArgs = @('test',$ProjectPath,'--configuration','Debug','--verbosity',$Verbosity,'--logger','trx','--results-directory','TestResults','--collect:XPlat Code Coverage','--no-build')
         if($Filter){$testArgs += @('--filter',$Filter)}
         $testOutPath = Join-Path $logDir "test-$ts.log"
-    & dotnet @testArgs 2>&1 | Tee-Object -FilePath $testOutPath | Out-Null
+        if ($PSCmdlet.ShouldProcess($ProjectPath, "dotnet $($testArgs -join ' ')")) {
+            & dotnet @testArgs 2>&1 | Tee-Object -FilePath $testOutPath
+        }
         $exit = $LASTEXITCODE
         $end = Get-Date; $dur = $end - $start
         $testStd = Get-Content $testOutPath -Raw
@@ -91,23 +100,36 @@ function Get-BusBuddyTestLog {
 
 function Start-BusBuddyTestWatch {
     [CmdletBinding()]
+    [OutputType([System.Management.Automation.Job[]])]
     param(
         [ValidateSet('All','Unit','Integration','Validation','Core','WPF')]
         [string]$TestSuite='Unit'
     )
     Write-Information "🔄 Watch $TestSuite" -InformationAction Continue
     Get-BusBuddyTestOutput -TestSuite $TestSuite -SaveToFile
-    $w = New-Object IO.FileSystemWatcher (Get-Location), '*.cs', $true
+
+    # FIX: Correct FileSystemWatcher usage
+    # Docs: https://learn.microsoft.com/dotnet/api/system.io.filesystemwatcher
+    $path = (Get-Location).Path
+    $w = New-Object System.IO.FileSystemWatcher -ArgumentList $path, '*.cs'
     $w.IncludeSubdirectories = $true
+    $w.EnableRaisingEvents   = $true
+
     $action = {
         Start-Sleep 1
-        Write-Information '🔄 Change detected – re-running tests' -InformationAction Continue
+        Write-Information '🔄 Change detected — re-running tests' -InformationAction Continue
         Get-BusBuddyTestOutput -TestSuite $using:TestSuite -SaveToFile
     }
-    Register-ObjectEvent $w Changed -Action $action | Out-Null
+
+    $subs = @()
+    $subs += Register-ObjectEvent -InputObject $w -EventName Changed -Action $action
+    $subs += Register-ObjectEvent -InputObject $w -EventName Created -Action $action
+    $subs += Register-ObjectEvent -InputObject $w -EventName Renamed -Action $action
+
+    # Return event subscriptions so the caller can Unregister-Event / Remove-Job when done
+    return $subs
 }
 ##endregion
-#requires -Version 5.1
 <#
 .SYNOPSIS
     BusBuddy PowerShell Module - Complete Working Module
@@ -120,7 +142,7 @@ function Start-BusBuddyTestWatch {
 .NOTES
     File Name      : BusBuddy.psm1
     Author         : Bus Buddy Development Team
-    Prerequisite   : PowerShell 5.1+ (PowerShell 7.5.2 recommended)
+    Prerequisite   : PowerShell 7.5.2+   # FIX: align with #requires -Version 7.5
     Copyright      : (c) 2025 Bus Buddy Project
 #>
 
@@ -163,7 +185,7 @@ try {
     # Repo root is three levels up from this .psm1
     $projectRoot = (Split-Path $PSScriptRoot -Parent | Split-Path -Parent | Split-Path -Parent)
     $enhancedBuildModule = Join-Path $projectRoot "PowerShell\Modules\BusBuddy.BuildOutput\BusBuddy.BuildOutput.psd1"
-    $enhancedTestModule = Join-Path $projectRoot "PowerShell\Modules\BusBuddy.TestOutput\BusBuddy.TestOutput.psd1"
+    $enhancedTestModule  = Join-Path $projectRoot "PowerShell\Modules\BusBuddy.TestOutput\BusBuddy.TestOutput.psd1"
 
     if (Test-Path $enhancedBuildModule) {
         Import-Module $enhancedBuildModule -Force -ErrorAction SilentlyContinue
@@ -189,6 +211,9 @@ try {
         'BusBuddy.TestWatcher/BusBuddy.TestWatcher.psm1',
         'BusBuddy.Cleanup/BusBuddy.Cleanup.psm1'
     )
+    # FIX: ensure $projectRoot is set even if previous block failed
+    if (-not $projectRoot) { $projectRoot = Get-BusBuddyProjectRoot }
+
     $telemetryDir = Join-Path $projectRoot 'logs'
     if (-not (Test-Path $telemetryDir)) { New-Item -ItemType Directory -Path $telemetryDir -Force | Out-Null }
     $telemetryFile = Join-Path $telemetryDir 'module-telemetry.json'
@@ -201,9 +226,12 @@ try {
 
         # Lightweight telemetry append with rotation
         try {
-            if (Test-Path $telemetryFile -and (Get-Item $telemetryFile).Length -gt 1MB) {
+            if (Test-Path $telemetryFile) {
+                $item = Get-Item -Path $telemetryFile -ErrorAction SilentlyContinue
+                if ($item -and $item.Length -gt 1MB) {
                 $stamp = Get-Date -Format 'yyyyMMdd-HHmmss'
-                Move-Item $telemetryFile (Join-Path $telemetryDir "module-telemetry-$stamp.json") -Force
+                    Move-Item $telemetryFile (Join-Path $telemetryDir "module-telemetry-$stamp.json") -Force
+                }
             }
             ([ordered]@{ Timestamp = (Get-Date).ToString('o'); Module = $rel; Status = 'Loaded' } | ConvertTo-Json -Compress) | Add-Content -Path $telemetryFile
         } catch { Write-Verbose 'Telemetry logging failed' }
@@ -283,22 +311,128 @@ function Invoke-BusBuddyTelemetryPurge {
     }
 }
 
-Set-Alias -Name bbTelemetry -Value Get-BusBuddyTelemetrySummary -Scope Global -ErrorAction SilentlyContinue
-Set-Alias -Name bbTelemetryPurge -Value Invoke-BusBuddyTelemetryPurge -Scope Global -ErrorAction SilentlyContinue
+Set-Alias -Name bbTelemetry -Value Get-BusBuddyTelemetrySummary -ErrorAction SilentlyContinue
+Set-Alias -Name bbTelemetryPurge -Value Invoke-BusBuddyTelemetryPurge -ErrorAction SilentlyContinue
 #endregion Telemetry Utilities
+
+#region Compliance Review (PowerShell 7.5.2)
+function Get-BusBuddyPS75Compliance {
+    <#
+    .SYNOPSIS
+        Review the PowerShell environment and flag 7.5.2 compliance issues.
+    .DESCRIPTION
+        Scans PowerShell/* for *.psm1, *.psd1, *.ps1 and reports:
+        - Missing '#requires -Version 7.5' header
+        - Write-Host usage (use Write-Information/Write-Output per Microsoft guidance)
+        - Global alias pollution (-Scope Global)
+        - Potential missing Export-ModuleMember in .psm1
+        Optionally disables only obvious temp/backup artifacts by renaming to .disabled.
+    .PARAMETER Root
+        Root path to scan. Defaults to project root / PowerShell.
+    .PARAMETER DisableObviousArtifacts
+        If set, renames temp/backup artifacts (*.bak|*.old|*.tmp|*.backup*) to *.disabled (no deletion).
+    .OUTPUTS
+        PSCustomObject[] with Path, Kind, Lines, Issues, Recommendation
+    .LINK
+        https://learn.microsoft.com/powershell/scripting/developer/module/writing-a-windows-powershell-module
+        https://learn.microsoft.com/powershell/scripting/learn/deep-dives/everything-about-output-streams
+        https://learn.microsoft.com/powershell/scripting/developer/cmdlet/cmdlet-overview#confirming-impactful-operations
+    #>
+    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'Low')]
+    [OutputType([pscustomobject[]])]
+    param(
+        [string]$Root = (Join-Path (Get-BusBuddyProjectRoot) 'PowerShell'),
+        [switch]$DisableObviousArtifacts
+    )
+
+    if (-not (Test-Path $Root)) {
+        Write-Warning "Root not found: $Root"
+        return @()
+    }
+
+    $files = Get-ChildItem -Path $Root -Recurse -File -Include *.psm1, *.psd1, *.ps1 -ErrorAction SilentlyContinue
+    $results = [System.Collections.Generic.List[object]]::new()
+
+    foreach ($f in $files) {
+        $kind = $f.Extension.ToLowerInvariant()
+        $text = try { Get-Content $f.FullName -Raw -ErrorAction Stop } catch { '' }
+        $lines = if ($text) { ($text -split "`r?`n").Length } else { 0 }
+
+        $issues = [System.Collections.Generic.List[string]]::new()
+        $recommend = [System.Collections.Generic.List[string]]::new()
+
+        # Check '#requires -Version 7.5' presence near the top
+        $top512 = ($text -split "`r?`n") | Select-Object -First 25
+        if ($top512 -and ($top512 -notmatch '^\s*#requires\s+-Version\s+7\.5')) {
+            $issues.Add("Missing '#requires -Version 7.5' header")
+            $recommend.Add("Add: #requires -Version 7.5")
+        }
+
+        # Detect Write-Host (discouraged per Microsoft output guidance)
+        $writeHostCount = if ($text) { ([regex]::Matches($text, '(?im)^\s*Write-Host\b')).Count } else { 0 }
+        if ($writeHostCount -gt 0) {
+            $issues.Add("Uses Write-Host ($writeHostCount)")
+            $recommend.Add("Replace with Write-Information/Write-Output/Write-Verbose as appropriate")
+        }
+
+        # Detect Set-Alias with -Scope Global (pollutes session)
+        $globalAliases = if ($text) { ([regex]::Matches($text, '(?im)Set-Alias\s+.*-Scope\s+Global')).Count } else { 0 }
+        if ($globalAliases -gt 0) {
+            $issues.Add("Defines $globalAliases global alias(es)")
+            $recommend.Add("Remove -Scope Global; export aliases via module manifest/Export-ModuleMember")
+        }
+
+        # .psm1: check for Export-ModuleMember presence
+        if ($kind -eq '.psm1') {
+            if ($text -notmatch '(?im)^\s*Export-ModuleMember\b') {
+                $issues.Add("No Export-ModuleMember found")
+                $recommend.Add("Export public functions explicitly")
+            }
+        }
+
+        # Flag obvious temp/backup artifacts
+        $isArtifact = $false
+        if ($f.Name -match '(?i)\.(bak|backup|old|tmp)$' -or $f.Name -match '(?i)_backup|_temp|_tmp') {
+            $isArtifact = $true
+            $issues.Add("Temporary/backup artifact")
+            $recommend.Add("Rename to .disabled or remove from repo")
+            if ($DisableObviousArtifacts) {
+                $newName = "$($f.FullName).disabled"
+                if ($PSCmdlet.ShouldProcess($f.FullName, "Rename to $newName")) {
+                    try { Rename-Item -Path $f.FullName -NewName ($f.Name + '.disabled') -Force } catch { Write-Warning "Rename failed: $($_.Exception.Message)" }
+                }
+            }
+        }
+
+        # Summarize
+        $results.Add([pscustomobject]@{
+            Path          = $f.FullName
+            Kind          = $kind.TrimStart('.').ToUpper()
+            Lines         = $lines
+            Issues        = [string[]]$issues
+            Recommendation= [string[]]$recommend
+            IsArtifact    = $isArtifact
+        })
+    }
+
+    # Sort by severity (artifacts and write-host first), then missing requires
+    $ordered = $results | Sort-Object {
+        $score = 0
+        if ($_.IsArtifact) { $score -= 100 }
+        if ($_.Issues -match 'Write-Host') { $score -= 50 }
+        if ($_.Issues -match 'Missing .*#requires') { $score -= 25 }
+        $score
+    }
+    return $ordered
+}
+Set-Alias -Name bb-ps-review -Value Get-BusBuddyPS75Compliance -ErrorAction SilentlyContinue
+#endregion Compliance Review (PowerShell 7.5.2)
 
 #region Pester Helper
 function Invoke-BusBuddyPester {
     <#
     .SYNOPSIS
         Run Pester tests for BusBuddy PowerShell modules.
-    .DESCRIPTION
-        Executes all *.Tests.ps1 under PowerShell/Tests. Returns the Pester result object so CI can act on failures.
-        Requires Pester module to be installed (Install-Module Pester -Scope CurrentUser) if not already present.
-    .PARAMETER Path
-        Optional override path for tests root.
-    .PARAMETER PassThru
-        Return raw Pester result object (default on).
     #>
     [CmdletBinding()] param(
         [string]$Path,
@@ -318,7 +452,8 @@ function Invoke-BusBuddyPester {
         if ($PassThru) { return $result } else { return $result.Result }
     } catch { Write-Error "Pester execution failed: $($_.Exception.Message)" }
 }
-Set-Alias -Name bbPester -Value Invoke-BusBuddyPester -Scope Global -ErrorAction SilentlyContinue
+# Scope aliases to the module to avoid polluting global session
+Set-Alias -Name bbPester -Value Invoke-BusBuddyPester -ErrorAction SilentlyContinue
 #endregion Pester Helper
 
 #endregion
@@ -540,7 +675,8 @@ function Write-BusBuddyError {
                 $innerEx = $Exception.InnerException
                 $level = 1
                 while ($innerEx -and $level -le 3) {
-                    Write-Information "� Inner Exception ($level): $($innerEx.Message)" -InformationAction Continue
+                    # FIX: Replace corrupted glyph with a valid label
+                    Write-Information "↪️ Inner Exception ($level): $($innerEx.Message)" -InformationAction Continue
                     $innerEx = $innerEx.InnerException
                     $level++
                 }
@@ -618,12 +754,14 @@ function Invoke-BusBuddyBuild {
     .SYNOPSIS
         Build the BusBuddy solution
     #>
-    [CmdletBinding()]
+    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'Medium')]
     param(
         [switch]$Clean
     )
 
     $projectRoot = Get-BusBuddyProjectRoot
+    $issues = @()
+
     if (Get-Command Test-BusBuddyAzureSql -ErrorAction SilentlyContinue) {
         try {
             $sqlOk = Test-BusBuddyAzureSql
@@ -631,39 +769,33 @@ function Invoke-BusBuddyBuild {
         } catch { $issues += 'Azure SQL connectivity check error'; Write-BusBuddyStatus 'Azure SQL connectivity check error' -Type Warning }
     }
     Push-Location $projectRoot
-
     try {
         if ($Clean) {
             Write-BusBuddyStatus "Cleaning solution..." -Type Info
-            dotnet clean BusBuddy.sln
+            if ($PSCmdlet.ShouldProcess("BusBuddy.sln", "dotnet clean")) {
+                dotnet clean BusBuddy.sln
+            }
         }
 
         Write-BusBuddyStatus "Building BusBuddy solution..." -Type Info
+        if ($PSCmdlet.ShouldProcess("BusBuddy.sln", "dotnet build")) {
+            # Removed dependency on missing Invoke-BusBuddyWithExceptionCapture
+            $buildResult = & dotnet build BusBuddy.sln --verbosity minimal 2>&1
 
-        # Use the enhanced exception capture for better output
-        $buildResult = Invoke-BusBuddyWithExceptionCapture -Command "dotnet" -Arguments @("build", "BusBuddy.sln", "--verbosity", "minimal") -Context "Solution Build"
-
-        if ($buildResult) {
-            # Extract only the essential information
             $buildLines = $buildResult | Where-Object {
                 $_ -match "-> |succeeded|failed|error|warning|Error|Warning|Time Elapsed" -and
                 $_ -notmatch "CompilerServer|analyzer|reference:|X.509 certificate|Assets file|NuGet Config|Feeds used"
             }
-
             if ($buildLines) {
                 Write-Information "📊 Build Output:" -InformationAction Continue
-                $buildLines | ForEach-Object {
-                    Write-Information "   $_" -InformationAction Continue
-                }
+                $buildLines | ForEach-Object { Write-Information "   $_" -InformationAction Continue }
             }
-        }
 
-        # $LASTEXITCODE is already set by the exception capture function
-
-        if ($LASTEXITCODE -eq 0) {
-            Write-BusBuddyStatus "Build completed successfully" -Type Success
-        } else {
-            Write-BusBuddyError "Build failed with exit code $LASTEXITCODE"
+            if ($LASTEXITCODE -eq 0) {
+                Write-BusBuddyStatus "Build completed successfully" -Type Success
+            } else {
+                Write-BusBuddyError "Build failed with exit code $LASTEXITCODE"
+            }
         }
     }
     catch {
@@ -679,7 +811,7 @@ function Invoke-BusBuddyRun {
     .SYNOPSIS
         Run the BusBuddy application with automatic error capture
     #>
-    [CmdletBinding()]
+    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'Low')]
     param(
         [switch]$NoErrorCapture
     )
@@ -689,12 +821,7 @@ function Invoke-BusBuddyRun {
 
     try {
         Write-BusBuddyStatus "Starting BusBuddy application..." -Type Info
-
-        # Use automatic error capture unless disabled
-        if (-not $NoErrorCapture -and (Get-Command Invoke-BusBuddyWithExceptionCapture -ErrorAction SilentlyContinue)) {
-            Invoke-BusBuddyWithExceptionCapture -Command "dotnet" -Arguments @("run", "--project", "BusBuddy.WPF/BusBuddy.WPF.csproj") -Context "Application Startup"
-        } else {
-            # Fallback to direct execution
+        if ($PSCmdlet.ShouldProcess("BusBuddy.WPF/BusBuddy.WPF.csproj", "dotnet run")) {
             dotnet run --project BusBuddy.WPF/BusBuddy.WPF.csproj
         }
     }
@@ -710,16 +837,8 @@ function Invoke-BusBuddyTest {
     <#
     .SYNOPSIS
         Run BusBuddy tests using Phase 4 NUnit Test Runner (deprecated .NET 9 dotnet test method)
-
-    .DESCRIPTION
-        Uses the reliable PowerShell\Testing\Run-Phase4-NUnitTests-Modular.ps1 script instead
-        of the unreliable .NET 9 dotnet test command that has Microsoft.TestPlatform compatibility issues.
-
-    .NOTES
-        DEPRECATED METHOD: dotnet test command with .NET 9 compatibility issues
-        NEW METHOD: Phase 4 NUnit Test Runner with VS Code integration
     #>
-    [CmdletBinding()]
+    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'Low')]
     [OutputType([hashtable])]
     param(
         [ValidateSet('All', 'Unit', 'Integration', 'Validation', 'Core', 'WPF')]
@@ -771,23 +890,30 @@ function Invoke-BusBuddyTest {
         try {
             # Capture both stdout and stderr to detect .NET 9 compatibility issues
             $testOutputFile = Join-Path $projectRoot "TestResults" "bbtest-output-$(Get-Date -Format 'yyyyMMdd-HHmmss').log"
-            $testErrorFile = Join-Path $projectRoot "TestResults" "bbtest-errors-$(Get-Date -Format 'yyyyMMdd-HHmmss').log"
+            $testErrorFile  = Join-Path $projectRoot "TestResults" "bbtest-errors-$(Get-Date -Format 'yyyyMMdd-HHmmss').log"
 
-            # Ensure TestResults directory exists
+            # Ensure TestResults directory exists (gate with ShouldProcess for WhatIf support)
             $testResultsDir = Join-Path $projectRoot "TestResults"
             if (-not (Test-Path $testResultsDir)) {
-                New-Item -ItemType Directory -Path $testResultsDir -Force | Out-Null
+                if ($PSCmdlet.ShouldProcess($testResultsDir, 'Create directory')) {
+                    New-Item -ItemType Directory -Path $testResultsDir -Force | Out-Null
+                }
             }
 
-            # Run with output capture to detect .NET 9 compatibility issues
+            # Run with output capture (guard with ShouldProcess for WhatIf/Confirm)
             $allArgs = @("-File", $phase4ScriptPath) + $scriptArgs
-            $process = Start-Process -FilePath "pwsh.exe" -ArgumentList $allArgs -RedirectStandardOutput $testOutputFile -RedirectStandardError $testErrorFile -NoNewWindow -PassThru
-            $process.WaitForExit()
-            $testExitCode = $process.ExitCode
+            $testExitCode = 0
+            if ($PSCmdlet.ShouldProcess("pwsh.exe", "Start-Process $($allArgs -join ' ')")) {
+                $process = Start-Process -FilePath "pwsh.exe" -ArgumentList $allArgs `
+                    -RedirectStandardOutput $testOutputFile -RedirectStandardError $testErrorFile `
+                    -NoNewWindow -PassThru
+                $process.WaitForExit()
+                $testExitCode = $process.ExitCode
+            }
 
             # Read captured output
             $testOutput = if (Test-Path $testOutputFile) { Get-Content $testOutputFile -Raw } else { "" }
-            $testErrors = if (Test-Path $testErrorFile) { Get-Content $testErrorFile -Raw } else { "" }
+            $testErrors = if (Test-Path $testErrorFile)  { Get-Content $testErrorFile  -Raw } else { "" }
 
             # Check for specific .NET 9 compatibility issue
             $hasNet9Issue = $testErrors -match "Microsoft\.TestPlatform\.CoreUtilities.*Version=15\.0\.0\.0" -or
@@ -906,11 +1032,16 @@ function Invoke-BusBuddyClean {
     .SYNOPSIS
         Clean BusBuddy build artifacts
     #>
+    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'Medium')]
+    param()
+
+    $projectRoot = Get-BusBuddyProjectRoot
     Push-Location $projectRoot
-        Write-Information "(Non-fatal: Show-BusBuddyWelcome already exported or export failed)" -InformationAction Continue
     try {
         Write-BusBuddyStatus "Cleaning BusBuddy artifacts..." -Type Info
-        dotnet clean BusBuddy.sln
+        if ($PSCmdlet.ShouldProcess("BusBuddy.sln", "dotnet clean")) {
+            dotnet clean BusBuddy.sln
+        }
 
         if ($LASTEXITCODE -eq 0) {
             Write-BusBuddyStatus "Clean completed successfully" -Type Success
@@ -931,21 +1062,21 @@ function Invoke-BusBuddyRestore {
     .SYNOPSIS
         Restore BusBuddy NuGet packages
     #>
-    [CmdletBinding()]
+    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'Low')]
     param(
         [switch]$Force
     )
 
     $projectRoot = Get-BusBuddyProjectRoot
     Push-Location $projectRoot
-
     try {
         Write-BusBuddyStatus "Restoring NuGet packages..." -Type Info
-
-        if ($Force) {
-            dotnet restore BusBuddy.sln --force
-        } else {
-            dotnet restore BusBuddy.sln
+        if ($PSCmdlet.ShouldProcess("BusBuddy.sln", ("dotnet restore" + ($Force ? " --force" : "")))) {
+            if ($Force) {
+                dotnet restore BusBuddy.sln --force
+            } else {
+                dotnet restore BusBuddy.sln
+            }
         }
 
         if ($LASTEXITCODE -eq 0) {
@@ -1091,34 +1222,22 @@ function Get-BusBuddyCommand {
     Write-Information "  bbDevSession - Start development session" -InformationAction Continue
     Write-Information "  bbInfo       - Show module information" -InformationAction Continue
     Write-Information "  bbCommands   - List all commands (this command)" -InformationAction Continue
+    Write-Information "  bbMantra     - Show session Mantra ID" -InformationAction Continue
+    Write-Information "  bbMantraReset- Rotate session Mantra ID" -InformationAction Continue
+    Write-Information "  bbTestFull   - Build + test with full logs" -InformationAction Continue
 
     Write-Information "" -InformationAction Continue
-    Write-Information "XAML & Validation:" -InformationAction Continue
-    Write-Information "  bbXamlValidate - Validate all XAML files" -InformationAction Continue
-    Write-Information "  bbCatchErrors  - Run with exception capture" -InformationAction Continue
-    Write-Information "  bbAntiRegression - Run anti-regression checks" -InformationAction Continue
-    Write-Information "  bbCaptureRuntimeErrors - Comprehensive runtime error monitoring" -InformationAction Continue
-
-    Write-Information "" -InformationAction Continue
-    Write-Information "MVP Focus:" -InformationAction Continue
-    Write-Information "  bbMvp           - Evaluate features & scope management" -InformationAction Continue
-    Write-Information "  bbMvpCheck     - Check MVP readiness" -InformationAction Continue
-
-    Write-Information "" -InformationAction Continue
-    Write-Information "🤖 XAI Route Optimization:" -InformationAction Continue
-    Write-Information "  bbRoutes        - Main route optimization system" -InformationAction Continue
-    Write-Information "  bbRouteDemo    - Demo with sample data (READY NOW!)" -InformationAction Continue
-    Write-Information "  bbRouteStatus  - Check system status" -InformationAction Continue
+    Write-Information "Deprecated:" -InformationAction Continue
+    Write-Information "  MVP tooling and XAI route optimization shell commands are deprecated." -InformationAction Continue
+    Write-Information "  Use in-app features and core commands (bbBuild, bbRun, bbTest, bbHealth)." -InformationAction Continue
 
     Write-Information "" -InformationAction Continue
     Write-Information "Functions:" -InformationAction Continue
-    $functions = Get-Command -Module BusBuddy -CommandType Function | Sort-Object Name
     $functions = Get-Command -Module BusBuddy -CommandType Function | Sort-Object Name
     foreach ($func in $functions) {
         Write-Information "  $($func.Name)" -InformationAction Continue
     }
 }
-
 #endregion
 
 #region XAML Validation Functions
@@ -3015,61 +3134,88 @@ function Test-BusBuddyAzureConnection {
 #endregion
 
 #region Aliases - Safe Alias Creation with Conflict Resolution
-
 # Core aliases with safe creation
-try { Set-Alias -Name 'bbBuild' -Value 'Invoke-BusBuddyBuild' -Description 'Build the Bus Buddy solution' -Force } catch { Write-Error "Alias 'bbBuild' could not be set: $($_.Exception.Message)" -ErrorAction SilentlyContinue }
+try { Set-Alias -Name 'bbBuild'      -Value 'Invoke-BusBuddyBuild'   -Force } catch { }
+try { Set-Alias -Name 'bbRun'        -Value 'Invoke-BusBuddyRun'     -Force } catch { }
+try { Set-Alias -Name 'bbClean'      -Value 'Invoke-BusBuddyClean'   -Force } catch { }
+try { Set-Alias -Name 'bbRestore'    -Value 'Invoke-BusBuddyRestore' -Force } catch { }
+try { Set-Alias -Name 'bbTest'       -Value 'Invoke-BusBuddyTest'    -Force } catch { }
+try { Set-Alias -Name 'bbHealth'     -Value 'Invoke-BusBuddyHealthCheck' -Force } catch { }
+
+# Developer discovery
+try { Set-Alias -Name 'bbDevSession' -Value 'Start-BusBuddyDevSession' -Force } catch { }
+try { Set-Alias -Name 'bbInfo'       -Value 'Get-BusBuddyInfo' -Force } catch { }
+try { Set-Alias -Name 'bbCommands'   -Value 'Get-BusBuddyCommand' -Force } catch { }
+
+# Removed alias for bbXamlValidate (function not present)
+
+# Session correlation
+try { Set-Alias -Name 'bbMantra'       -Value 'Get-BusBuddyMantraId'    -Force } catch { }
+try { Set-Alias -Name 'bbMantraReset'  -Value 'Reset-BusBuddyMantraId'  -Force } catch { }
+
+# Environment
+try { Set-Alias -Name 'bbEnv'          -Value 'Initialize-BusBuddyEnvironment' -Force } catch { }
+# Hyphenated variants
+foreach ($pair in @(
+    @{A='bb-build';V='Invoke-BusBuddyBuild'},
+    @{A='bb-run';V='Invoke-BusBuddyRun'},
+    @{A='bb-clean';V='Invoke-BusBuddyClean'},
+    @{A='bb-restore';V='Invoke-BusBuddyRestore'},
+    @{A='bb-test';V='Invoke-BusBuddyTest'},
+    @{A='bb-health';V='Invoke-BusBuddyHealthCheck'},
+    @{A='bb-env';V='Initialize-BusBuddyEnvironment'
+})) { try { Set-Alias -Name $pair.A -Value $pair.V -Force } catch { } }
+#endregion
 
 #region Exports
-
-
-# Export core commands plus health & test (needed for advertised aliases)
 Export-ModuleMember -Function @(
     'Invoke-BusBuddyBuild',
     'Invoke-BusBuddyRun',
     'Invoke-BusBuddyClean',
     'Invoke-BusBuddyRestore',
-    'Invoke-BusBuddyTest',        # ensure bbTest works
-    'Invoke-BusBuddyHealthCheck', # ensure bbHealth works
-    'Get-BusBuddyMantraId',       # Mantra accessor
-    'Reset-BusBuddyMantraId',     # Mantra reset
-    'Invoke-BusBuddyDuplicateScan' # Duplicate scan (Validation module)
+    'Invoke-BusBuddyTest',
+    'Invoke-BusBuddyHealthCheck',
+    'Get-BusBuddyMantraId',
+    'Reset-BusBuddyMantraId',
+    'Start-BusBuddyDevSession',
+    'Get-BusBuddyInfo',
+    'Get-BusBuddyCommand',
+    'Get-BusBuddyTestOutput',
+    'Invoke-BusBuddyTestFull',
+    'Get-BusBuddyTestError',
+    'Get-BusBuddyTestLog',
+    'Start-BusBuddyTestWatch',
+    'Invoke-BusBuddyPester',
+    'Get-BusBuddyTelemetrySummary',
+    'Invoke-BusBuddyTelemetryPurge',
+    'Get-BusBuddyPS75Compliance',
+    'Initialize-BusBuddyEnvironment'
 ) -Alias @(
-    'bbBuild', 'bbRun', 'bbClean', 'bbRestore', 'bbTest', 'bbHealth', 'bbMantra', 'bbMantraReset',
-    'bb-build', 'bb-run', 'bb-clean', 'bb-restore', 'bb-test', 'bb-health',
-    'bb-dup-scan'
+    'bbBuild','bbRun','bbClean','bbRestore','bbTest','bbHealth',
+    'bbDevSession','bbInfo','bbCommands',
+    'bb-build','bb-run','bb-clean','bb-restore','bb-test','bb-health',
+    'bbMantra','bbMantraReset','bbTestFull',
+    'bb-ps-review',
+    'bbEnv','bb-env'
 )
-
 #endregion
 
-if ($env:BUSBUDDY_SILENT -ne '1') {
-    Write-Output "🚌 BusBuddy PowerShell Module v3.0.0 loaded successfully!"
-    Write-Output "   🤖 NEW: XAI Route Optimization System - Ready for Monday!"
-}
-
 #region Welcome Screen
-
 function Show-BusBuddyWelcome {
     <#
     .SYNOPSIS
         Display a categorized welcome screen when the module loads.
-    .DESCRIPTION
-        Prints environment info and categorized bb-* commands for quick discovery.
-    .PARAMETER Quiet
-        Suppress verbose details and show only categories and key commands.
     #>
     [CmdletBinding()]
-    param(
-        [switch]$Quiet
-    )
+    param([switch]$Quiet)
 
     $ps = $PSVersionTable.PSVersion
     $dotnet = try { & dotnet --version 2>$null } catch { "unknown" }
-    $xai = if ($script:XAIAvailable) { "✅" } else { "⚠️" }
 
     if ($env:BUSBUDDY_SILENT -ne '1') {
         Write-Information "" -InformationAction Continue
         Write-BusBuddyStatus "🚌 BusBuddy Dev Shell — Ready" -Type Info
-        Write-Information "PowerShell: $ps | .NET: $dotnet | XAI: $xai" -InformationAction Continue
+        Write-Information "PowerShell: $ps | .NET: $dotnet" -InformationAction Continue
         Write-Information "Project: $(Get-BusBuddyProjectRoot)" -InformationAction Continue
         Write-Information "" -InformationAction Continue
     }
@@ -3081,27 +3227,13 @@ function Show-BusBuddyWelcome {
 
     if ($env:BUSBUDDY_SILENT -ne '1') {
         Write-BusBuddyStatus "Development" -Type Info
-        Write-Information "  bbDevSession, bbInfo, bbCommands" -InformationAction Continue
+        Write-Information "  bbDevSession, bbInfo, bbCommands, bbMantra, bbMantraReset" -InformationAction Continue
     }
 
-    if ($env:BUSBUDDY_SILENT -ne '1') {
-        Write-BusBuddyStatus "Validation & Safety" -Type Info
-        Write-Information "  bbXamlValidate, bbAntiRegression, bbCatchErrors, bbEnvCheck" -InformationAction Continue
-        Write-Information "  bb-validate-database, bb-db-validate" -InformationAction Continue
-    }
+    # Removed 'Validation & Safety' section (no bbXamlValidate)
 
-    if ($env:BUSBUDDY_SILENT -ne '1') {
-        Write-BusBuddyStatus "MVP Focus" -Type Info
-        Write-Information "  bbMvp, bbMvpCheck" -InformationAction Continue
-    }
-
-    if ($env:BUSBUDDY_SILENT -ne '1') {
-        Write-BusBuddyStatus "Routes & Reports" -Type Info
-        Write-Information "  bbRoutes, bbRouteDemo, bbRouteStatus, bbRouteOptimize" -InformationAction Continue
-        Write-Information "  bbGenerateReport" -InformationAction Continue
-    }
-
-    if ($env:BUSBUDDY_SILENT -ne '1') {
+    # Docs & Reference remains gated if bbCopilotRef exists
+    if ($env:BUSBUDDY_SILENT -ne '1' -and (Get-Command bbCopilotRef -ErrorAction SilentlyContinue)) {
         Write-BusBuddyStatus "Docs & Reference" -Type Info
         Write-Information "  bbCopilotRef [Topic] (-ShowTopics)" -InformationAction Continue
     }
@@ -3119,32 +3251,7 @@ function Show-BusBuddyWelcome {
 if (-not $env:BUSBUDDY_NO_WELCOME -and $env:BUSBUDDY_SILENT -ne '1') {
     Show-BusBuddyWelcome -Quiet
 }
-
 #endregion
 
-# Import additional validation functions via module (no dot-sourcing)
-try {
-    $validationPath = Join-Path (Get-BusBuddyProjectRoot) "PowerShell\Validation"
-    if (Test-Path $validationPath) {
-        # Additional validation modules can be imported here
-    }
-} catch {
-    Write-Verbose "Optional validation modules not available"
-}
-
-# Consolidated welcome export logic
-try { Export-ModuleMember -Function 'Show-BusBuddyWelcome' -ErrorAction SilentlyContinue } catch { Write-Verbose 'Welcome already exported' }
-if (-not $env:BUSBUDDY_NO_WELCOME -and $env:BUSBUDDY_SILENT -ne '1') {
-    try { Show-BusBuddyWelcome -ErrorAction SilentlyContinue } catch { Write-Verbose 'Welcome suppressed due to error' }
-}
-
-# Stub dynamic import functions (manifest consistency)
-if (-not (Get-Command Import-BusBuddyFunction -ErrorAction SilentlyContinue)) {
-    function Import-BusBuddyFunction { [CmdletBinding()] param([Parameter(Mandatory)][string]$Name) Write-Verbose "Dynamic function loading not yet implemented for $Name" }
-}
-if (-not (Get-Command Import-BusBuddyFunctionCategory -ErrorAction SilentlyContinue)) {
-    function Import-BusBuddyFunctionCategory { [CmdletBinding()] param([Parameter(Mandatory)][string]$Category) Write-Verbose "Dynamic category loading not yet implemented for $Category" }
-}
-
-#endregion
+# Removed duplicated trailing welcome/region markers at EOF to avoid double execution.
 

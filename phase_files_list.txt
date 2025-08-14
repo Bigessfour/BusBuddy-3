@@ -50,10 +50,7 @@ C:\Users\biges\Desktop\BusBuddy\Documentation\Archive\LegacyScripts\Enhanced-Tes
 C:\Users\biges\Desktop\BusBuddy\Documentation\Archive\LegacyScripts\MinimalOutputCapture.ps1
 C:\Users\biges\Desktop\BusBuddy\Documentation\Archive\LegacyScripts\Query-Students-Azure.ps1
 C:\Users\biges\Desktop\BusBuddy\Documentation\Archive\LegacyScripts\Quick-Azure-Test.ps1
-C:\Users\biges\Desktop\BusBuddy\Documentation\Archive\LegacyScripts\raw-index.csv
 C:\Users\biges\Desktop\BusBuddy\Documentation\Archive\LegacyScripts\raw-index.json
-C:\Users\biges\Desktop\BusBuddy\Documentation\Archive\LegacyScripts\RAW-LINKS-PINNED.txt
-C:\Users\biges\Desktop\BusBuddy\Documentation\Archive\LegacyScripts\RAW-LINKS.txt
 C:\Users\biges\Desktop\BusBuddy\Documentation\Archive\LegacyScripts\Run-Phase4-NUnitTests-Modular.ps1
 C:\Users\biges\Desktop\BusBuddy\Documentation\Archive\LegacyScripts\Runtime-Capture-Monitor.ps1
 C:\Users\biges\Desktop\BusBuddy\Documentation\Archive\LegacyScripts\test-module-load.ps1
@@ -91,9 +88,6 @@ C:\Users\biges\Desktop\BusBuddy\PowerShell\Testing\Run-Phase4-NUnitTests-Modular
 C:\Users\biges\Desktop\BusBuddy\PowerShell\Testing\Test-RouteService.ps1
 C:\Users\biges\Desktop\BusBuddy\Query-Students-Azure.cmd
 C:\Users\biges\Desktop\BusBuddy\Query-Students-Azure.ps1
-C:\Users\biges\Desktop\BusBuddy\raw-index.csv
 C:\Users\biges\Desktop\BusBuddy\raw-index.json
-C:\Users\biges\Desktop\BusBuddy\RAW-LINKS-PINNED.txt
-C:\Users\biges\Desktop\BusBuddy\RAW-LINKS.txt
 C:\Users\biges\Desktop\BusBuddy\README.md
 C:\Users\biges\Desktop\BusBuddy\TestDataSeeding\Program.cs

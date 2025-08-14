@@ -45,6 +45,12 @@ jobs:
             throw "Differing duplicates increased beyond allowed drift. Current=$different Baseline=$($baseline.different)"
           }
 
+      - name: Syncfusion-only XAML guard
+        shell: pwsh
+        run: |
+          $standard = Get-ChildItem -Recurse -Filter *.xaml | Select-String -Pattern "<DataGrid" -SimpleMatch | Select-Object -First 1
+          if ($standard) { Write-Error "Standard WPF <DataGrid> usage detected: $($standard.Path):$($standard.LineNumber)"; exit 1 }
+
       - name: Upload duplicate reports
         if: always()
         uses: actions/upload-artifact@v4

@@ -190,14 +190,7 @@ public partial class Route : INotifyPropertyChanged
     [Display(Name = "Waypoints GeoJSON")]
     public string? WaypointsJson { get; set; }
 
-    // Optional shapefile hints (paths) for boundaries
-    [StringLength(500)]
-    [Display(Name = "District Boundary Shapefile")]
-    public string? DistrictBoundaryShapefilePath { get; set; }
-
-    [StringLength(500)]
-    [Display(Name = "Town Boundary Shapefile")]
-    public string? TownBoundaryShapefilePath { get; set; }
+    // Optional shapefile hints removed — ShapefileEligibilityService deprecated for MVP
 
     // INotifyPropertyChanged implementation
 

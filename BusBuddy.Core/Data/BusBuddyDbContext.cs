@@ -432,8 +432,6 @@ public class BusBuddyDbContext : DbContext
 
             // Geo metadata
             entity.Property(e => e.WaypointsJson).HasMaxLength(4000);
-            entity.Property(e => e.DistrictBoundaryShapefilePath).HasMaxLength(500);
-            entity.Property(e => e.TownBoundaryShapefilePath).HasMaxLength(500);
         });
 
         // Configure Activity entity with comprehensive indexing

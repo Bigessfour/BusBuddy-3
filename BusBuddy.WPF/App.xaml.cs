@@ -21,6 +21,7 @@ using System.Threading.Tasks;
 using Syncfusion.SfSkinManager;
 using Syncfusion.Themes.FluentDark.WPF;
 using Syncfusion.Themes.FluentLight.WPF;
+using System.Windows.Media;
 
 namespace BusBuddy.WPF
 {
@@ -47,6 +48,11 @@ namespace BusBuddy.WPF
             // Register Syncfusion license before any UI initialization
             EnsureSyncfusionLicenseRegistered();
 
+            // Load Application resources defined in App.xaml so StaticResource lookups
+            // (e.g., BusBuddyButtonAdv.*) are available during MainWindow parsing
+            // Reference: WPF Application.InitializeComponent loads ResourceDictionaries
+            InitializeComponent();
+
             // Load configuration from appsettings.json
             IConfiguration configuration;
             try
@@ -72,11 +78,26 @@ namespace BusBuddy.WPF
             // Initialize Serilog logger using configuration from appsettings.json
             try
             {
+                // Ensure logs directory exists before initializing file sinks
+                var baseDir = AppDomain.CurrentDomain.BaseDirectory;
+                var logsDir = Path.Combine(baseDir, "logs");
+                try
+                {
+                    Directory.CreateDirectory(logsDir);
+                }
+                catch (Exception dirEx)
+                {
+                    _bootstrapLogger?.Warning(dirEx, "⚠️ Failed to ensure logs directory at {LogsDir}", logsDir);
+                }
+
+                // Build logger from configuration
                 Log.Logger = new LoggerConfiguration()
                     .ReadFrom.Configuration(configuration)
                     .CreateLogger();
 
-                Log.Information("🚌 Serilog initialized using configuration from appsettings.json");
+                // Early smoke log to both bootstrap and configured sinks
+                Log.Information("🚌 Serilog initialized via configuration. Logs path = {LogsPath}", logsDir);
+                _bootstrapLogger?.Information("� Serilog configured. Logs path = {LogsPath}", logsDir);
             }
             catch (Exception ex)
             {
@@ -85,8 +106,9 @@ namespace BusBuddy.WPF
                 Log.Logger = new LoggerConfiguration()
                     .MinimumLevel.Debug()
                     .WriteTo.Console()
-                    .WriteTo.File("Logs/busbuddy-.txt", rollingInterval: RollingInterval.Day)
+                    .WriteTo.File(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "logs", "busbuddy-.txt"), rollingInterval: RollingInterval.Day)
                     .CreateLogger();
+                Log.Warning(ex, "Using fallback Serilog configuration due to initialization failure");
             }
 
             Log.Information("🚌 BusBuddy MVP starting...");
@@ -99,6 +121,18 @@ namespace BusBuddy.WPF
         {
             try
             {
+                // Ensure logs directory exists before initializing bootstrap file sink
+                try
+                {
+                    var bootstrapLogsDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "logs");
+                    Directory.CreateDirectory(bootstrapLogsDir);
+                }
+                catch (Exception ex)
+                {
+                    // Non-fatal; console sink will still work
+                    Console.WriteLine($"Warning: Failed to create logs directory for bootstrap logger: {ex.Message}");
+                }
+
                 // Create a simple bootstrap logger for early startup errors
                 _bootstrapLogger = new LoggerConfiguration()
                     .MinimumLevel.Debug()
@@ -185,6 +219,18 @@ namespace BusBuddy.WPF
                 var mainWindow = CreateMainWindow();
                 mainWindow.Show();
 
+                // Log DPI details to verify High-DPI/Per-Monitor V2 behavior
+                try
+                {
+                    var dpi = VisualTreeHelper.GetDpi(mainWindow);
+                    Log.Information("🖥️ DPI detected: PixelsPerInchX={DpiX}, PixelsPerInchY={DpiY}, ScaleX={ScaleX}, ScaleY={ScaleY}",
+                        dpi.PixelsPerInchX, dpi.PixelsPerInchY, dpi.DpiScaleX, dpi.DpiScaleY);
+                }
+                catch (Exception dpiEx)
+                {
+                    Log.Warning(dpiEx, "⚠️ Unable to read DPI information");
+                }
+
                 Log.Information("🚌 BusBuddy MVP application started successfully");
             }
             catch (Exception ex)
@@ -259,12 +305,30 @@ namespace BusBuddy.WPF
                     var geeAccessToken = Environment.GetEnvironmentVariable("GEE_ACCESS_TOKEN") ?? "placeholder_token";
                     return new GeoDataService(geeApiBaseUrl, geeAccessToken);
                 });
-                services.AddSingleton<IEligibilityService>(_ =>
+                // Register eligibility when Google Earth Engine asset IDs are configured.
+                try
                 {
-                    var district = Path.Combine(AppContext.BaseDirectory, "Assets", "Maps", "WileyDistrict", "WileyDistrict.shp");
-                    var town = Path.Combine(AppContext.BaseDirectory, "Assets", "Maps", "WileyTown", "WileyTown.shp");
-                    return new ShapefileEligibilityService(district, town);
-                });
+                    var districtAssetId = configuration["GoogleEarthEngine:Eligibility:DistrictAssetId"] ?? Environment.GetEnvironmentVariable("GEE_DISTRICT_ASSET") ?? string.Empty;
+                    var townAssetId = configuration["GoogleEarthEngine:Eligibility:TownAssetId"] ?? Environment.GetEnvironmentVariable("GEE_TOWN_ASSET") ?? string.Empty;
+
+                    if (!string.IsNullOrWhiteSpace(districtAssetId) && !string.IsNullOrWhiteSpace(townAssetId))
+                    {
+                        services.AddScoped<IEligibilityService>(sp =>
+                        {
+                            var geo = sp.GetRequiredService<IGeoDataService>();
+                            return new GeoJsonEligibilityService(geo, districtAssetId, townAssetId);
+                        });
+                        Log.Information("✅ IEligibilityService registered (GeoJSON via GEE assets)");
+                    }
+                    else
+                    {
+                        Log.Warning("ℹ️ IEligibilityService not registered: configure GoogleEarthEngine:Eligibility:DistrictAssetId and TownAssetId or env vars GEE_DISTRICT_ASSET/GEE_TOWN_ASSET");
+                    }
+                }
+                catch (Exception regEx)
+                {
+                    Log.Warning(regEx, "⚠️ Skipping IEligibilityService registration due to configuration error");
+                }
 
                 // Register core business services for Students, Routes, Buses, Drivers
                 services.AddScoped<IStudentService, StudentService>();

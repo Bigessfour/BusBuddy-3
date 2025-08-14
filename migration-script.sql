@@ -1419,6 +1419,447 @@ BEGIN
     VALUES (N'20250805014747_UpdateBusDescription', N'9.0.8');
 END;
 
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20250809015130_FixDatabaseSchema'
+)
+BEGIN
+    ALTER TABLE [Students] DROP CONSTRAINT [FK_Students_Family];
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20250809015130_FixDatabaseSchema'
+)
+BEGIN
+    EXEC sp_rename N'[TripEvents].[IX_TripEvents_VehicleSchedule]', N'IX_TripEvents_BusSchedule', 'INDEX';
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20250809015130_FixDatabaseSchema'
+)
+BEGIN
+    EXEC sp_rename N'[Activities].[IX_Activities_VehicleSchedule]', N'IX_Activities_BusSchedule', 'INDEX';
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20250809015130_FixDatabaseSchema'
+)
+BEGIN
+    DROP INDEX [IX_Students_FamilyId] ON [Students];
+    DECLARE @var1 sysname;
+    SELECT @var1 = [d].[name]
+    FROM [sys].[default_constraints] [d]
+    INNER JOIN [sys].[columns] [c] ON [d].[parent_column_id] = [c].[column_id] AND [d].[parent_object_id] = [c].[object_id]
+    WHERE ([d].[parent_object_id] = OBJECT_ID(N'[Students]') AND [c].[name] = N'FamilyId');
+    IF @var1 IS NOT NULL EXEC(N'ALTER TABLE [Students] DROP CONSTRAINT [' + @var1 + '];');
+    EXEC(N'UPDATE [Students] SET [FamilyId] = 0 WHERE [FamilyId] IS NULL');
+    ALTER TABLE [Students] ALTER COLUMN [FamilyId] int NOT NULL;
+    ALTER TABLE [Students] ADD DEFAULT 0 FOR [FamilyId];
+    CREATE INDEX [IX_Students_FamilyId] ON [Students] ([FamilyId]);
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20250809015130_FixDatabaseSchema'
+)
+BEGIN
+    DECLARE @var2 sysname;
+    SELECT @var2 = [d].[name]
+    FROM [sys].[default_constraints] [d]
+    INNER JOIN [sys].[columns] [c] ON [d].[parent_column_id] = [c].[column_id] AND [d].[parent_object_id] = [c].[object_id]
+    WHERE ([d].[parent_object_id] = OBJECT_ID(N'[Routes]') AND [c].[name] = N'School');
+    IF @var2 IS NOT NULL EXEC(N'ALTER TABLE [Routes] DROP CONSTRAINT [' + @var2 + '];');
+    ALTER TABLE [Routes] ALTER COLUMN [School] nvarchar(100) NULL;
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20250809015130_FixDatabaseSchema'
+)
+BEGIN
+    ALTER TABLE [RouteAssignments] ADD [GuardianId] int NULL;
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20250809015130_FixDatabaseSchema'
+)
+BEGIN
+    CREATE TABLE [Guardians] (
+        [Id] int NOT NULL IDENTITY,
+        [GuardianId] int NOT NULL,
+        [FirstName] nvarchar(50) NOT NULL DEFAULT N'',
+        [LastName] nvarchar(50) NOT NULL DEFAULT N'',
+        [Address] nvarchar(200) NOT NULL DEFAULT N'',
+        [Latitude] float NULL,
+        [Longitude] float NULL,
+        [Phone] nvarchar(20) NOT NULL DEFAULT N'',
+        [Email] nvarchar(100) NULL,
+        [Notes] nvarchar(500) NULL,
+        [FamilyId] int NOT NULL,
+        CONSTRAINT [PK_Guardians] PRIMARY KEY ([Id]),
+        CONSTRAINT [FK_Guardians_Family] FOREIGN KEY ([FamilyId]) REFERENCES [Families] ([FamilyId]) ON DELETE CASCADE
+    );
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20250809015130_FixDatabaseSchema'
+)
+BEGIN
+    CREATE INDEX [IX_RouteAssignments_GuardianId] ON [RouteAssignments] ([GuardianId]);
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20250809015130_FixDatabaseSchema'
+)
+BEGIN
+    CREATE INDEX [IX_Guardians_FamilyId] ON [Guardians] ([FamilyId]);
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20250809015130_FixDatabaseSchema'
+)
+BEGIN
+    ALTER TABLE [RouteAssignments] ADD CONSTRAINT [FK_RouteAssignments_Guardians_GuardianId] FOREIGN KEY ([GuardianId]) REFERENCES [Guardians] ([Id]);
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20250809015130_FixDatabaseSchema'
+)
+BEGIN
+    ALTER TABLE [Students] ADD CONSTRAINT [FK_Students_Family] FOREIGN KEY ([FamilyId]) REFERENCES [Families] ([FamilyId]) ON DELETE CASCADE;
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20250809015130_FixDatabaseSchema'
+)
+BEGIN
+    INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
+    VALUES (N'20250809015130_FixDatabaseSchema', N'9.0.8');
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20250809214520_Auto_20250809154515'
+)
+BEGIN
+    ALTER TABLE [Vehicles] ADD [CurrentLatitude] decimal(10,8) NULL;
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20250809214520_Auto_20250809154515'
+)
+BEGIN
+    ALTER TABLE [Vehicles] ADD [CurrentLongitude] decimal(11,8) NULL;
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20250809214520_Auto_20250809154515'
+)
+BEGIN
+    ALTER TABLE [Students] ADD [Latitude] decimal(10,8) NULL;
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20250809214520_Auto_20250809154515'
+)
+BEGIN
+    ALTER TABLE [Students] ADD [Longitude] decimal(11,8) NULL;
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20250809214520_Auto_20250809154515'
+)
+BEGIN
+    ALTER TABLE [Routes] ADD [DistrictBoundaryShapefilePath] nvarchar(500) NULL;
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20250809214520_Auto_20250809154515'
+)
+BEGIN
+    ALTER TABLE [Routes] ADD [TownBoundaryShapefilePath] nvarchar(500) NULL;
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20250809214520_Auto_20250809154515'
+)
+BEGIN
+    ALTER TABLE [Routes] ADD [WaypointsJson] nvarchar(4000) NULL;
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20250809214520_Auto_20250809154515'
+)
+BEGIN
+    ALTER TABLE [Drivers] ADD [HomeLatitude] decimal(10,8) NULL;
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20250809214520_Auto_20250809154515'
+)
+BEGIN
+    ALTER TABLE [Drivers] ADD [HomeLongitude] decimal(11,8) NULL;
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20250809214520_Auto_20250809154515'
+)
+BEGIN
+    EXEC(N'UPDATE [Drivers] SET [HomeLatitude] = NULL, [HomeLongitude] = NULL
+    WHERE [DriverID] = 1;
+    SELECT @@ROWCOUNT');
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20250809214520_Auto_20250809154515'
+)
+BEGIN
+    EXEC(N'UPDATE [Drivers] SET [HomeLatitude] = NULL, [HomeLongitude] = NULL
+    WHERE [DriverID] = 2;
+    SELECT @@ROWCOUNT');
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20250809214520_Auto_20250809154515'
+)
+BEGIN
+    EXEC(N'UPDATE [Vehicles] SET [CurrentLatitude] = NULL, [CurrentLongitude] = NULL
+    WHERE [VehicleId] = 1;
+    SELECT @@ROWCOUNT');
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20250809214520_Auto_20250809154515'
+)
+BEGIN
+    EXEC(N'UPDATE [Vehicles] SET [CurrentLatitude] = NULL, [CurrentLongitude] = NULL
+    WHERE [VehicleId] = 2;
+    SELECT @@ROWCOUNT');
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20250809214520_Auto_20250809154515'
+)
+BEGIN
+    CREATE INDEX [IX_Vehicles_CurrentLocation] ON [Vehicles] ([CurrentLatitude], [CurrentLongitude]);
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20250809214520_Auto_20250809154515'
+)
+BEGIN
+    CREATE INDEX [IX_Drivers_HomeLocation] ON [Drivers] ([HomeLatitude], [HomeLongitude]);
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20250809214520_Auto_20250809154515'
+)
+BEGIN
+    INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
+    VALUES (N'20250809214520_Auto_20250809154515', N'9.0.8');
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20250809214820_Auto_20250809154814'
+)
+BEGIN
+    INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
+    VALUES (N'20250809214820_Auto_20250809154814', N'9.0.8');
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20250809215911_Auto_20250809155906'
+)
+BEGIN
+    INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
+    VALUES (N'20250809215911_Auto_20250809155906', N'9.0.8');
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20250809215953_Auto_20250809155949'
+)
+BEGIN
+    INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
+    VALUES (N'20250809215953_Auto_20250809155949', N'9.0.8');
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20250809220303_Auto_20250809160258'
+)
+BEGIN
+    INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
+    VALUES (N'20250809220303_Auto_20250809160258', N'9.0.8');
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20250809220834_Auto_20250809160830'
+)
+BEGIN
+    INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
+    VALUES (N'20250809220834_Auto_20250809160830', N'9.0.8');
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20250809221315_Auto_20250809161310'
+)
+BEGIN
+    INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
+    VALUES (N'20250809221315_Auto_20250809161310', N'9.0.8');
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20250809221354_Auto_20250809161348'
+)
+BEGIN
+    INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
+    VALUES (N'20250809221354_Auto_20250809161348', N'9.0.8');
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20250809221438_Auto_20250809161433'
+)
+BEGIN
+    INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
+    VALUES (N'20250809221438_Auto_20250809161433', N'9.0.8');
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20250809221534_Auto_20250809161530'
+)
+BEGIN
+    INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
+    VALUES (N'20250809221534_Auto_20250809161530', N'9.0.8');
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20250809222553_Auto_20250809162548'
+)
+BEGIN
+    INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
+    VALUES (N'20250809222553_Auto_20250809162548', N'9.0.8');
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20250809225337_Auto_20250809165332'
+)
+BEGIN
+    INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
+    VALUES (N'20250809225337_Auto_20250809165332', N'9.0.8');
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20250809230522_Auto_20250809170517'
+)
+BEGIN
+    INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
+    VALUES (N'20250809230522_Auto_20250809170517', N'9.0.8');
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20250809230705_Auto_20250809170700'
+)
+BEGIN
+    INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
+    VALUES (N'20250809230705_Auto_20250809170700', N'9.0.8');
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20250810190702_MVP_Sync_20250810'
+)
+BEGIN
+    DECLARE @var3 sysname;
+    SELECT @var3 = [d].[name]
+    FROM [sys].[default_constraints] [d]
+    INNER JOIN [sys].[columns] [c] ON [d].[parent_column_id] = [c].[column_id] AND [d].[parent_object_id] = [c].[object_id]
+    WHERE ([d].[parent_object_id] = OBJECT_ID(N'[Students]') AND [c].[name] = N'FamilyId');
+    IF @var3 IS NOT NULL EXEC(N'ALTER TABLE [Students] DROP CONSTRAINT [' + @var3 + '];');
+    ALTER TABLE [Students] ALTER COLUMN [FamilyId] int NULL;
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20250810190702_MVP_Sync_20250810'
+)
+BEGIN
+    INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
+    VALUES (N'20250810190702_MVP_Sync_20250810', N'9.0.8');
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20250814210725_RemoveShapefileColumns'
+)
+BEGIN
+    DECLARE @var4 sysname;
+    SELECT @var4 = [d].[name]
+    FROM [sys].[default_constraints] [d]
+    INNER JOIN [sys].[columns] [c] ON [d].[parent_column_id] = [c].[column_id] AND [d].[parent_object_id] = [c].[object_id]
+    WHERE ([d].[parent_object_id] = OBJECT_ID(N'[Routes]') AND [c].[name] = N'DistrictBoundaryShapefilePath');
+    IF @var4 IS NOT NULL EXEC(N'ALTER TABLE [Routes] DROP CONSTRAINT [' + @var4 + '];');
+    ALTER TABLE [Routes] DROP COLUMN [DistrictBoundaryShapefilePath];
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20250814210725_RemoveShapefileColumns'
+)
+BEGIN
+    DECLARE @var5 sysname;
+    SELECT @var5 = [d].[name]
+    FROM [sys].[default_constraints] [d]
+    INNER JOIN [sys].[columns] [c] ON [d].[parent_column_id] = [c].[column_id] AND [d].[parent_object_id] = [c].[object_id]
+    WHERE ([d].[parent_object_id] = OBJECT_ID(N'[Routes]') AND [c].[name] = N'TownBoundaryShapefilePath');
+    IF @var5 IS NOT NULL EXEC(N'ALTER TABLE [Routes] DROP CONSTRAINT [' + @var5 + '];');
+    ALTER TABLE [Routes] DROP COLUMN [TownBoundaryShapefilePath];
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20250814210725_RemoveShapefileColumns'
+)
+BEGIN
+    INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
+    VALUES (N'20250814210725_RemoveShapefileColumns', N'9.0.8');
+END;
+
 COMMIT;
 GO
 

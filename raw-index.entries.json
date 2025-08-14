@@ -2,32 +2,32 @@
   {
     "path": "-la",
     "url_branch": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/-la",
-  "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/7072240c7e82330b0397aa325dcbd5518b1a35f9/-la"
+    "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/7072240c7e82330b0397aa325dcbd5518b1a35f9/-la"
   },
   {
     "path": ".devcontainer/devcontainer.json",
     "url_branch": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/.devcontainer/devcontainer.json",
-  "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/7072240c7e82330b0397aa325dcbd5518b1a35f9/.devcontainer/devcontainer.json"
+    "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/7072240c7e82330b0397aa325dcbd5518b1a35f9/.devcontainer/devcontainer.json"
   },
   {
     "path": ".editorconfig",
     "url_branch": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/.editorconfig",
-  "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/7072240c7e82330b0397aa325dcbd5518b1a35f9/.editorconfig"
+    "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/7072240c7e82330b0397aa325dcbd5518b1a35f9/.editorconfig"
   },
   {
     "path": ".gitattributes",
     "url_branch": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/.gitattributes",
-  "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/7072240c7e82330b0397aa325dcbd5518b1a35f9/.gitattributes"
+    "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/7072240c7e82330b0397aa325dcbd5518b1a35f9/.gitattributes"
   },
   {
     "path": ".github/LARGE_FILE_HANDLING.md",
     "url_branch": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/.github/LARGE_FILE_HANDLING.md",
-  "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/7072240c7e82330b0397aa325dcbd5518b1a35f9/.github/LARGE_FILE_HANDLING.md"
+    "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/7072240c7e82330b0397aa325dcbd5518b1a35f9/.github/LARGE_FILE_HANDLING.md"
   },
   {
     "path": ".github/copilot-instructions.md",
     "url_branch": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/.github/copilot-instructions.md",
-  "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/7072240c7e82330b0397aa325dcbd5518b1a35f9/.github/copilot-instructions.md"
+    "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/7072240c7e82330b0397aa325dcbd5518b1a35f9/.github/copilot-instructions.md"
   },
   {
     "path": ".github/dependabot.yml",

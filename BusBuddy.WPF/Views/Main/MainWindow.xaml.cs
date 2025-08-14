@@ -37,8 +37,7 @@ namespace BusBuddy.WPF.Views.Main
     // Explicit reference placeholder to satisfy analyzer if generated partial field not yet recognized
     // At runtime, the XAML-generated field MainDockingManager will be used.
     private DockingManager? _designTimeDockingManagerAccessor => this.FindName("MainDockingManager") as DockingManager;
-        private static readonly ILogger Logger = Log.ForContext<MainWindow>();
-        private static readonly int DockActivatedWidthBump = 120; // consolidated width bump constant
+    private static readonly ILogger Logger = Log.ForContext<MainWindow>();
         private readonly Guid _windowInstanceId = Guid.NewGuid(); // correlation id for structured logs
         private BusBuddy.WPF.ViewModels.MainWindowViewModel? _viewModel;
         private INavigationService? _navigationService; // injected or initialized after DockingManager ready
@@ -113,6 +112,16 @@ namespace BusBuddy.WPF.Views.Main
                     {
                         MainDockingManager.WindowActivated += DockingManager_WindowActivated; // https://help.syncfusion.com/cr/wpf/Syncfusion.Windows.Tools.Controls.DockingManager.html#events
                         MainDockingManager.WindowDeactivated += DockingManager_WindowDeactivated;
+                        // Initialize navigation service now that DockingManager is available
+                        try
+                        {
+                            _navigationService = new BusBuddy.WPF.Services.Navigation.NavigationService(MainDockingManager);
+                            Logger.Information("NavigationService initialized for DockingManager");
+                        }
+                        catch (Exception navEx)
+                        {
+                            Logger.Warning(navEx, "Failed to initialize NavigationService");
+                        }
                         Logger.Information("DockingManager activation events wired (field access)");
                     }
                     else

@@ -37,13 +37,7 @@ public static class Phase1StartupExtensions
             return new GeoDataService(geeApiBaseUrl, geeAccessToken);
         });
 
-        // Register eligibility service with expected shapefile locations relative to WPF app output
-        services.AddSingleton<IEligibilityService>(_ =>
-        {
-            var district = Path.Combine(AppContext.BaseDirectory, "Assets", "Maps", "WileyDistrict", "WileyDistrict.shp");
-            var town = Path.Combine(AppContext.BaseDirectory, "Assets", "Maps", "WileyTown", "WileyTown.shp");
-            return new ShapefileEligibilityService(district, town);
-        });
+    // Eligibility service removed for MVP — shapefile approach deprecated.
 
         return services;
     }
