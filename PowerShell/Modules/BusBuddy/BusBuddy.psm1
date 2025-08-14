@@ -3014,7 +3014,7 @@ function Test-BusBuddyAzureConnection {
 
 #endregion
 
-﻿#region Aliases - Safe Alias Creation with Conflict Resolution
+#region Aliases - Safe Alias Creation with Conflict Resolution
 
 # Core aliases with safe creation
 try { Set-Alias -Name 'bbBuild' -Value 'Invoke-BusBuddyBuild' -Description 'Build the Bus Buddy solution' -Force } catch { Write-Error "Alias 'bbBuild' could not be set: $($_.Exception.Message)" -ErrorAction SilentlyContinue }
