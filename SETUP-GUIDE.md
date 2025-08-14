@@ -151,6 +151,12 @@ bbRouteDemo           # Demo with sample data
 bbRouteStatus         # Check optimization status
 ```
 
+## 🔁 CI Notes
+This repo includes a simplified GitHub Actions CI (see `.github/workflows/ci.yml`) that restores, builds, tests, and publishes WPF artifacts. To enable optional EF migration steps, add the following repository secrets (Settings → Secrets and variables → Actions):
+
+- `SYNCFUSION_LICENSE_KEY`
+- `BUSBUDDY_CONNECTION`, `AZURE_SQL_SERVER`, `AZURE_SQL_USER`, `AZURE_SQL_PASSWORD`
+
 ## 🧪 **Testing Setup**
 
 ### **Running Tests**

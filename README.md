@@ -110,6 +110,18 @@ bbRouteDemo           # Demo with sample data
 bbRouteStatus         # Check optimization status
 ```
 
+## 🔁 CI Workflow (Simplified)
+The repository uses a streamlined GitHub Actions workflow for .NET 9 WPF:
+- Triggers on push/PR to main and via manual dispatch
+- Steps: restore → build → test (TRX uploaded) → optional EF migration script/apply → publish WPF artifacts
+- Timeout: 15 minutes; secrets masked via `::add-mask::`
+
+Required secrets for optional steps (GitHub → Settings → Secrets and variables → Actions):
+- `SYNCFUSION_LICENSE_KEY`
+- `BUSBUDDY_CONNECTION`, `AZURE_SQL_SERVER`, `AZURE_SQL_USER`, `AZURE_SQL_PASSWORD`
+
+See Actions tab for run results and artifacts.
+
 ## ⚠️ **Known Risks & Issues**
 
 ### **Database & Migration Concerns**
