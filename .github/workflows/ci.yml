@@ -1,3 +1,4 @@
+# Simplified CI pipeline (restore → build → test → optional EF migration → publish)
 # Reference: https://docs.github.com/actions/using-workflows/workflow-syntax-for-github-actions
 name: 🚌 BusBuddy CI
 
