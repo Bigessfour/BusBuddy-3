@@ -8,9 +8,13 @@ env:
 
 on:
   push:
-    branches: [main]
+    branches:
+      - master
+      - main
   pull_request:
-    branches: [main]
+    branches:
+      - master
+      - main
   workflow_dispatch:
 
 jobs:
