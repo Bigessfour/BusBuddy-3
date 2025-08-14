@@ -118,6 +118,74 @@ bbRouteStatus         # Check optimization status
 - **Schema Changes**: Possible regression in UI data binding due to recent schema modifications
 - **LocalDB vs Production**: Differences between LocalDB development and production SQL Server behavior
 
+#### ✅ Dynamic Azure SQL Firewall (Non‑static IPs)
+If you see "Client IP is not allowed" when connecting to Azure SQL, quickly allow your current public IP and proceed—no static IP required.
+
+Local usage (PowerShell 7.5+):
+```powershell
+# Prereqs (first time): Az modules + Azure login
+Install-Module Az -Scope CurrentUser -Force
+Connect-AzAccount
+
+# Allow current IP on the Azure SQL server
+pwsh -File .\PowerShell\Networking\Enable-AzureSqlAccess.ps1 `
+  -SubscriptionId "57b297a5-44cf-4abc-9ac4-91a5ed147de1" `
+  -ResourceGroupName "BusBuddy-RG" `
+  -SqlServerName "busbuddy-server-sm2" `
+  -RuleName "bb-local-$(Get-Date -Format 'yyyyMMdd-HHmm')"
+
+# Run EF migrations after access is granted
+dotnet ef migrations list --project .\BusBuddy.Core --startup-project .\BusBuddy.WPF
+dotnet ef database update --project .\BusBuddy.Core --startup-project .\BusBuddy.WPF
+
+# Optional cleanup when finished
+pwsh -File .\PowerShell\Networking\Disable-AzureSqlAccess.ps1 `
+  -SubscriptionId "57b297a5-44cf-4abc-9ac4-91a5ed147de1" `
+  -ResourceGroupName "BusBuddy-RG" `
+  -SqlServerName "busbuddy-server-sm2" `
+  -RuleName "<the-rule-name-you-used>"
+```
+
+CI usage (GitHub Actions): grant runner IP before build/tests and clean up after:
+```yaml
+- name: Azure login
+  uses: azure/login@v2
+  with:
+    client-id: ${{ secrets.AZURE_CLIENT_ID }}
+    tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+    subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+- name: Allow runner IP on Azure SQL
+  shell: pwsh
+  run: |
+    $rule = "bb-${{ github.run_id }}-${{ github.job }}"
+    pwsh -File .\PowerShell\Networking\Enable-AzureSqlAccess.ps1 `
+      -SubscriptionId "${{ secrets.AZURE_SUBSCRIPTION_ID }}" `
+      -ResourceGroupName "BusBuddy-RG" `
+      -SqlServerName "busbuddy-server-sm2" `
+      -RuleName $rule
+    echo "RULE_NAME=$rule" >> $env:GITHUB_ENV
+
+# ... build/test steps ...
+
+- name: Remove runner IP rule
+  if: always()
+  shell: pwsh
+  run: |
+    if ($env:RULE_NAME) {
+      pwsh -File .\PowerShell\Networking\Disable-AzureSqlAccess.ps1 `
+        -SubscriptionId "${{ secrets.AZURE_SUBSCRIPTION_ID }}" `
+        -ResourceGroupName "BusBuddy-RG" `
+        -SqlServerName "busbuddy-server-sm2" `
+        -RuleName $env:RULE_NAME
+    }
+```
+
+References: Microsoft Azure SQL firewall configuration (https://learn.microsoft.com/azure/azure-sql/database/firewall-configure) and Az.Sql cmdlets (https://learn.microsoft.com/powershell/module/az.sql/).
+
+Troubleshooting tip: If you see "Missing Az modules: Az.Resources", run:
+`Install-Module Az -Scope CurrentUser -Force` then `Import-Module Az` and retry.
+
 ### **UI & Data Binding Risks**
 - **Syncfusion Migration**: Ongoing migration from standard WPF to Syncfusion controls may introduce temporary inconsistencies
 - **Data Binding**: Schema changes may affect existing MVVM data binding patterns
@@ -142,6 +210,52 @@ bbRouteStatus         # Check optimization status
 - **Security**: Production security review and hardening pending
 - **Performance Testing**: Load testing with realistic data volumes not yet conducted
 - **Backup & Recovery**: Database backup and disaster recovery procedures not implemented
+
+### **CI Workflow — Current Issues (Aug 13, 2025)**
+- YAML indentation defects in `.github/workflows/ci.yml` can break parsing (e.g., "Implicit keys need to be on a single line" / "All mapping items must start at the same column").
+- `enable-AzPSSession: true` is misplaced at the job level; it must be under the `with:` block of the `azure/login@v2` step.
+- One or more steps (e.g., the NuGet cache step) are out‑dented; `- name:` entries must align with other steps under `jobs.<job>.steps`.
+- Ensure the SQL firewall cleanup step runs with `if: ${{ always() && secrets.AZURE_SUBSCRIPTION_ID != '' }}` and only when `RULE_NAME` exists.
+
+Quick reference (correct structure):
+
+```yaml
+      - name: 🔐 Azure login (for SQL firewall)
+        if: ${{ secrets.AZURE_CLIENT_ID != '' && secrets.AZURE_TENANT_ID != '' && secrets.AZURE_SUBSCRIPTION_ID != '' }}
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          enable-AzPSSession: true
+
+      - name: 📦 Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.nuget/packages
+            ${{ github.workspace }}/**/obj/project.assets.json
+            ${{ github.workspace }}/**/obj/*.csproj.nuget.*
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj', '**/packages.lock.json') }}
+          restore-keys: ${{ runner.os }}-nuget-
+
+      - name: 🔐 Remove runner IP rule (cleanup)
+        if: ${{ always() && secrets.AZURE_SUBSCRIPTION_ID != '' }}
+        shell: pwsh
+        run: |
+          if ($env:RULE_NAME) {
+            pwsh -File .\PowerShell\Networking\Disable-AzureSqlAccess.ps1 `
+              -SubscriptionId "${{ secrets.AZURE_SUBSCRIPTION_ID }}" `
+              -ResourceGroupName "BusBuddy-RG" `
+              -SqlServerName "busbuddy-server-sm2" `
+              -RuleName $env:RULE_NAME
+          }
+```
+
+Validation tips:
+- Keep all `- name:` steps aligned exactly under `steps:`; `uses:`, `run:`, and `with:` are indented beneath each step.
+- Place `enable-AzPSSession: true` inside the `with:` block of `azure/login@v2` only.
+- Commit and push to a branch to let GitHub’s workflow linter surface YAML errors quickly.
 
 ### **Recommended Actions Before Production**
 1. **Database Audit**: Verify migration state and seeding integrity across all environments
