@@ -40,7 +40,7 @@
         <!-- Scheduler -->
         <syncfusion:SfScheduler Grid.Row="1"
                                 x:Name="Scheduler"
-                                ItemsSource="{Binding Appointments}"
+                                ItemsSource="{Binding Appointments, TargetNullValue={x:Static sys:Array.Empty}}"
                                 ViewType="{Binding SelectedViewType}"
                                 SelectedDate="{Binding SelectedDate}"
                                 Background="{DynamicResource BusBuddy.Brush.DataGrid.Background}"
