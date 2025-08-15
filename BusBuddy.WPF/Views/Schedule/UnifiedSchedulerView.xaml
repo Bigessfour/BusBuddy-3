@@ -16,8 +16,8 @@
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/SyncfusionV30_Validated_ResourceDictionary.xaml" />
+                <!-- Load a single theme dictionary to avoid duplicate implicit style keys -->
                 <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/Themes/FluentDarkTheme.xaml" />
-                <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/Themes/FluentLightTheme.xaml" />
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </UserControl.Resources>
@@ -35,7 +35,7 @@
         <!-- Scheduler -->
         <syncfusion:SfScheduler Grid.Row="1"
                                 x:Name="Scheduler"
-                                ItemsSource="{Binding Appointments, TargetNullValue={x:Static sys:Array.Empty}}"
+                                ItemsSource="{Binding Appointments}"
                                 ViewType="{Binding SelectedViewType}"
                                 SelectedDate="{Binding SelectedDate}"
                                 AppointmentEditFlag="None"
@@ -48,12 +48,11 @@
             <!-- Documentation-based mapping; harmless when ItemsSource is ScheduleAppointment
                  Ref: https://help.syncfusion.com/cr/wpf/Syncfusion.UI.Xaml.Scheduler.SfScheduler.html#Syncfusion_UI_Xaml_Scheduler_SfScheduler_AppointmentMappingProperty -->
             <syncfusion:SfScheduler.AppointmentMapping>
-                <syncfusion:AppointmentMapping
-                    Subject="Subject"
-                    StartTime="StartTime"
-                    EndTime="EndTime"
-                    Notes="Notes"
-                    AppointmentBackground="AppointmentBackground" />
+                <syncfusion:AppointmentMapping Subject="Subject"
+                                               StartTime="StartTime"
+                                               EndTime="EndTime"
+                                               Notes="Notes"
+                                               AppointmentBackground="AppointmentBackground" />
             </syncfusion:SfScheduler.AppointmentMapping>
         </syncfusion:SfScheduler>
     </Grid>
