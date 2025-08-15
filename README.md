@@ -61,25 +61,53 @@ bbHealth
 bbTest
 ```
 
+
+## 🧪 New: VS Code NUnit Test Runner integration
+
+Use the “NUnit Test Runner” extension for a fast local test UX alongside our bb* commands and CI pipeline.
+
+### Install (once)
+- In VS Code, open Extensions and install: “NUnit Test Runner” (Forms.nunit-test-runner)
+- Open the Testing view (beaker icon). After a build, click “Refresh” to discover tests in `BusBuddy.Tests`.
+
+### Local usage
+- Run all tests: Testing view ▶ or `bbTest`
+- Run a subset by category: use Testing view search (e.g., “Scheduler”, “Unit”), or run `bbTest -TestSuite Unit`
+- Debug a single test: click “Debug Test” CodeLens above the test method
+- Artifacts: TRX files are written under `BusBuddy.Tests/TestResults/`
+
+Notes
+- The legacy script `PowerShell/Testing/Run-Phase4-NUnitTests-Modular.ps1` is archived. Prefer `bbTest` (module command) for CLI and the Testing view for interactive runs.
+- If tests don’t appear, make sure the solution builds and click “Refresh Tests”.
+
+### Consistent filters (Local ↔ CI)
+We use the same NUnit category filters locally and in CI. Quick examples:
+
+```powershell
 ## 📊 **Current Status (August 8, 2025)**
 
 ### **🎉 MVP Core Features Ready**
 - ✅ **Build Status**: Clean build (0 errors, warnings documented)
 - ✅ **MVP Verification**: `bbMvpCheck` confirms core functionality working
-- ✅ **Core Features**: Student management and route assignment functional
+
+CI snippet (mirrors local behavior and emits TRX):
+
+```yaml
 - ✅ **Documentation**: Command references updated and standardized
 - ✅ **PowerShell Automation**: 20+ working commands with enterprise-grade tooling
 - ⚠️ **Production Status**: See Known Risks section below
 
 ### **Recent Achievements (Commit: 29b7dc1)**
-- ✅ **Command Standardization**: Updated all commands from `bb-*` to `bb*` format
 - ✅ **PowerShell Refactoring**: Fixed 49 Write-Host violations (5.4% compliance improvement)
 - ✅ **Professional Tooling**: Created automated refactoring and analysis tools
 - ✅ **Code Quality**: Fixed nullable reference warnings, maintained clean build
 - ✅ **Comprehensive Documentation**: Updated all guides and reference materials
 
 bbRun                 # Run application
-bbTest                # Execute tests (.NET 9 compatibility handled)
+
+Optional: to run a specific suite via CI inputs or environment, pass a filter string the same way you do locally (categories like Unit, Integration, Validation, Core, WPF):
+
+```yaml
 bbRestore             # Restore packages
 
 bbInfo                # Show module information
