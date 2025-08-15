@@ -22,6 +22,9 @@ using Syncfusion.SfSkinManager;
 using Syncfusion.Themes.FluentDark.WPF;
 using Syncfusion.Themes.FluentLight.WPF;
 using System.Windows.Media;
+using Microsoft.Data.SqlClient;
+using Serilog.Debugging;
+using System.Text.RegularExpressions;
 
 namespace BusBuddy.WPF
 {
@@ -84,20 +87,57 @@ namespace BusBuddy.WPF
                 try
                 {
                     Directory.CreateDirectory(logsDir);
+                    // Expose logs dir to scripts — Environment.SetEnvironmentVariable:
+                    // https://learn.microsoft.com/dotnet/api/system.environment.setenvironmentvariable
+                    Environment.SetEnvironmentVariable("BUSBUDDY_LOGS_DIR", logsDir); // process-level
                 }
                 catch (Exception dirEx)
                 {
                     _bootstrapLogger?.Warning(dirEx, "⚠️ Failed to ensure logs directory at {LogsDir}", logsDir);
                 }
 
-                // Build logger from configuration
-                Log.Logger = new LoggerConfiguration()
-                    .ReadFrom.Configuration(configuration)
-                    .CreateLogger();
+                // Build logger from configuration with optional verbose override
+                // Verbose mode sources:
+                // 1) Environment variable BUSBUDDY_VERBOSE in {"1","true","True"}
+                // 2) appsettings.json AppSettings:EnableDetailedLogging == true
+                var verboseFlag = (Environment.GetEnvironmentVariable("BUSBUDDY_VERBOSE") ?? string.Empty).Trim();
+                var verboseEnabled = !string.IsNullOrWhiteSpace(verboseFlag) &&
+                                      (string.Equals(verboseFlag, "1", StringComparison.Ordinal) || verboseFlag.Equals("true", StringComparison.OrdinalIgnoreCase));
+                if (!verboseEnabled)
+                {
+                    var cfgFlag = configuration["AppSettings:EnableDetailedLogging"];
+                    verboseEnabled = bool.TryParse(cfgFlag, out var detailed) && detailed;
+                }
+
+                var loggerConfig = new LoggerConfiguration()
+                    .ReadFrom.Configuration(configuration);
+
+                if (verboseEnabled)
+                {
+                    loggerConfig = loggerConfig.MinimumLevel.Verbose();
+                }
+
+                Log.Logger = loggerConfig.CreateLogger();
 
                 // Early smoke log to both bootstrap and configured sinks
                 Log.Information("🚌 Serilog initialized via configuration. Logs path = {LogsPath}", logsDir);
                 _bootstrapLogger?.Information("� Serilog configured. Logs path = {LogsPath}", logsDir);
+
+                // Enable Serilog self-log to capture configuration/IO issues for troubleshooting
+                try
+                {
+                    var selfLogPath = Path.Combine(logsDir, "serilog-selflog.txt");
+                    SelfLog.Enable(msg =>
+                    {
+                        try { File.AppendAllText(selfLogPath, msg); } catch { /* ignore self-log write failures */ }
+                    });
+                    if (verboseEnabled)
+                    {
+                        Log.Information("🪵 Verbose logging enabled via {Source}",
+                            !string.IsNullOrWhiteSpace(verboseFlag) ? "BUSBUDDY_VERBOSE env" : "AppSettings:EnableDetailedLogging");
+                    }
+                }
+                catch { /* non-fatal */ }
             }
             catch (Exception ex)
             {
@@ -106,12 +146,18 @@ namespace BusBuddy.WPF
                 Log.Logger = new LoggerConfiguration()
                     .MinimumLevel.Debug()
                     .WriteTo.Console()
-                    .WriteTo.File(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "logs", "busbuddy-.txt"), rollingInterval: RollingInterval.Day)
+                    .WriteTo.File(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "logs", "busbuddy-.log"), rollingInterval: RollingInterval.Day)
                     .CreateLogger();
                 Log.Warning(ex, "Using fallback Serilog configuration due to initialization failure");
             }
 
             Log.Information("🚌 BusBuddy MVP starting...");
+
+            var cleanupPaused = Environment.GetEnvironmentVariable("BB_CLEANUP_PAUSED");
+            if (!string.IsNullOrWhiteSpace(cleanupPaused) && cleanupPaused != "0")
+            {
+                Log.Information("🧹 Log cleanup is paused via BB_CLEANUP_PAUSED={PauseFlag}", cleanupPaused);
+            }
         }
 
         /// <summary>
@@ -139,7 +185,7 @@ namespace BusBuddy.WPF
                     .WriteTo.Console(
                         outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}{Exception}")
                     .WriteTo.File(
-                        path: "logs/bootstrap-.txt",
+                        path: "logs/bootstrap-.log",
                         rollingInterval: RollingInterval.Day,
                         outputTemplate: "[{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} {Level:u3}] {Message:lj}{NewLine}{Exception}")
                     .CreateLogger();
@@ -154,16 +200,34 @@ namespace BusBuddy.WPF
             }
         }
 
-        protected override async void OnStartup(StartupEventArgs e)
+        protected override void OnStartup(StartupEventArgs e)
         {
+            // WPF requires STA for UI thread:
+            // https://learn.microsoft.com/dotnet/desktop/wpf/advanced/threading-model
+            var threadState = Thread.CurrentThread.GetApartmentState();
+            if (threadState != ApartmentState.STA)
+            {
+                // Ensure error is logged and flushed before exit:
+                // https://github.com/serilog/serilog/wiki/Writing-Logs#closing-and-flushing
+                Log.Error("❌ Thread is not STA! Current state: {ApartmentState} - WPF requires STA", threadState);
+                try { Log.CloseAndFlush(); } catch { /* ignore flush errors */ }
+
+                // Inform user with a clear error dialog:
+                // https://learn.microsoft.com/dotnet/api/system.windows.messagebox.show
+                MessageBox.Show(
+                    "Application startup error: Thread must be STA for WPF",
+                    "Threading Error",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error
+                );
+
+                Environment.Exit(1);
+                return;
+            }
+
             base.OnStartup(e);
 
             // Verify STA thread state (except for EF migrations)
-            var threadState = Thread.CurrentThread.GetApartmentState();
-            Log.Information("🚌 BusBuddy starting on thread {ThreadId} with apartment state: {ApartmentState}",
-                Environment.CurrentManagedThreadId, threadState);
-
-            // Check if this is an EF migration or design-time operation
             var commandLineArgs = Environment.GetCommandLineArgs();
             var isEfMigration = commandLineArgs.Any(arg => arg.Contains("ef") || arg.Contains("migration") || arg.Contains("dotnet-ef"));
             var isDesignTime = System.ComponentModel.DesignerProperties.GetIsInDesignMode(new System.Windows.DependencyObject());
@@ -178,16 +242,6 @@ namespace BusBuddy.WPF
                 // For EF migrations, configure only essential services and exit without UI
                 ConfigureServicesForMigration();
                 Log.Information("🚌 EF migration configuration completed");
-                return;
-            }
-
-            // Enforce STA thread state for normal WPF operation
-            if (threadState != ApartmentState.STA)
-            {
-                Log.Error("❌ Thread is not STA! Current state: {ApartmentState} - WPF requires STA", threadState);
-                MessageBox.Show("Application startup error: Thread must be STA for WPF", "Threading Error",
-                    MessageBoxButton.OK, MessageBoxImage.Error);
-                Environment.Exit(1);
                 return;
             }
 
@@ -208,16 +262,30 @@ namespace BusBuddy.WPF
                 if (e.Args.Length > 0 && HandleCommandLineArgs(e.Args))
                 {
                     // Command line operation completed, exit gracefully
-                    Environment.Exit(0);
+                    try { Log.CloseAndFlush(); } catch { /* best-effort */ }
+                    try { Application.Current?.Shutdown(0); } catch { Environment.Exit(0); }
                     return;
                 }
 
-                // Initialize SyncFusion themes according to v30.1.42 API
+                // Initialize SyncFusion themes according to v30.2.4 API
                 InitializeSyncfusionThemes();
 
                 // Create and show the main window for normal GUI operation
                 var mainWindow = CreateMainWindow();
                 mainWindow.Show();
+
+                // Kick off a non-blocking Azure SQL connectivity probe using CI env vars
+                _ = Task.Run(async () =>
+                {
+                    try
+                    {
+                        await ProbeAzureSqlConnectivityAsync();
+                    }
+                    catch (Exception probeEx)
+                    {
+                        Log.Debug(probeEx, "Azure SQL connectivity probe threw an exception");
+                    }
+                });
 
                 // Log DPI details to verify High-DPI/Per-Monitor V2 behavior
                 try
@@ -238,7 +306,8 @@ namespace BusBuddy.WPF
                 Log.Fatal(ex, "🚌 Failed to start BusBuddy MVP application");
                 MessageBox.Show($"Failed to start application: {ex.Message}", "BusBuddy Error",
                     MessageBoxButton.OK, MessageBoxImage.Error);
-                Environment.Exit(1);
+                try { Log.CloseAndFlush(); } catch { /* best-effort */ }
+                try { Application.Current?.Shutdown(1); } catch { Environment.Exit(1); }
             }
         }
 
@@ -434,10 +503,8 @@ namespace BusBuddy.WPF
                         var viewModel = ServiceProvider.GetService<BusBuddy.WPF.ViewModels.MainWindowViewModel>();
                         if (viewModel != null)
                         {
-                            Log.Information("✅ MainWindowViewModel created successfully via DI");
-                            var mainWindow = new MainWindow();
-                            mainWindow.DataContext = viewModel;
-                            return mainWindow;
+                            var window = new MainWindow(viewModel);
+                            return window;
                         }
                         else
                         {
@@ -837,6 +904,103 @@ Examples:
         }
 
         /// <summary>
+        /// Non-blocking Azure SQL connectivity probe leveraging CI env vars and appsettings.json.
+        /// Does not throw; logs diagnostics only. Runs after UI starts.
+        /// </summary>
+        private static async Task ProbeAzureSqlConnectivityAsync()
+        {
+            try
+            {
+                var logger = Log.Logger;
+
+                // Prefer explicit connection via BUSBUDDY_CONNECTION, else expand placeholders from config AzureConnection,
+                // else build from discrete env vars (AZURE_SQL_SERVER/USER/PASSWORD).
+                string? connStr = Environment.GetEnvironmentVariable("BUSBUDDY_CONNECTION");
+
+                IConfiguration? cfg = null;
+                try { cfg = ServiceProvider?.GetService(typeof(IConfiguration)) as IConfiguration; } catch { /* ignore */ }
+
+                if (string.IsNullOrWhiteSpace(connStr) && cfg is not null)
+                {
+                    var fromConfig = cfg.GetConnectionString("AzureConnection");
+                    if (!string.IsNullOrWhiteSpace(fromConfig))
+                    {
+                        connStr = ExpandEnvPlaceholders(fromConfig);
+                    }
+                }
+
+                if (string.IsNullOrWhiteSpace(connStr))
+                {
+                    var server = Environment.GetEnvironmentVariable("AZURE_SQL_SERVER");
+                    var user = Environment.GetEnvironmentVariable("AZURE_SQL_USER");
+                    var pwd = Environment.GetEnvironmentVariable("AZURE_SQL_PASSWORD");
+                    if (!string.IsNullOrWhiteSpace(server) && !string.IsNullOrWhiteSpace(user) && !string.IsNullOrWhiteSpace(pwd))
+                    {
+                        // Default DB name used in CI scripts
+                        var db = "BusBuddyDB";
+                        var builder = new SqlConnectionStringBuilder
+                        {
+                            DataSource = server,
+                            InitialCatalog = db,
+                            UserID = user,
+                            Password = pwd,
+                            Encrypt = true,
+                            TrustServerCertificate = false,
+                            MultipleActiveResultSets = true,
+                            ConnectTimeout = 5
+                        };
+                        connStr = builder.ConnectionString;
+                    }
+                }
+
+                var providerSetting = cfg?["DatabaseProvider"] ?? "(unknown)";
+                if (string.IsNullOrWhiteSpace(connStr))
+                {
+                    logger.Information("🔎 Azure SQL probe skipped — no connection details found. Provider={Provider}", providerSetting);
+                    return;
+                }
+
+                // Note: Avoid logging secrets; keep diagnostics minimal.
+
+                try
+                {
+                    using var conn = new SqlConnection(connStr);
+                    await conn.OpenAsync();
+                    using var cmd = conn.CreateCommand();
+                    cmd.CommandText = "SELECT DB_NAME()";
+                    cmd.CommandTimeout = 5;
+                    var dbName = (await cmd.ExecuteScalarAsync()) as string ?? "(unknown)";
+                    logger.Information("✅ Azure SQL connectivity OK — Server={Server}, Database={Database}, Provider={Provider}", conn.DataSource, dbName, providerSetting);
+                }
+                catch (SqlException sqlEx)
+                {
+                    // Extract basic diagnostics without secrets
+                    logger.Warning(sqlEx, "⚠️ Azure SQL connectivity FAILED — Code={Number}, State={State}, Class={Class}", sqlEx.Number, sqlEx.State, sqlEx.Class);
+                }
+                catch (Exception ex)
+                {
+                    logger.Warning(ex, "⚠️ Azure SQL connectivity FAILED — {Message}", ex.Message);
+                }
+            }
+            catch
+            {
+                // Swallow — probe must never affect app stability
+            }
+        }
+
+        private static string ExpandEnvPlaceholders(string value)
+        {
+            if (string.IsNullOrEmpty(value)) return value;
+            // Replace ${VAR} with value of environment variable VAR
+            return Regex.Replace(value, "\\$\\{([A-Za-z0-9_]+)\\}", m =>
+            {
+                var name = m.Groups[1].Value;
+                var env = Environment.GetEnvironmentVariable(name);
+                return env ?? m.Value; // keep original if not found
+            });
+        }
+
+        /// <summary>
         /// Ensures Syncfusion license registration (runs only once). Based on Syncfusion WPF licensing documentation.
         /// </summary>
         private static void EnsureSyncfusionLicenseRegistered()
@@ -863,7 +1027,7 @@ Examples:
                 if (ValidateSyncfusionLicenseKey(licenseKey))
                 {
                     Syncfusion.Licensing.SyncfusionLicenseProvider.RegisterLicense(licenseKey);
-                    _bootstrapLogger?.Information("✅ Syncfusion license registered successfully for version 30.1.42");
+                    _bootstrapLogger?.Information("✅ Syncfusion license registered successfully for version 30.2.4");
 
                     // Log additional diagnostics to help verify registration
                     _bootstrapLogger?.Information("🔍 License Key Length: {Length} characters", licenseKey.Length);
@@ -927,7 +1091,7 @@ Examples:
             var logger = _bootstrapLogger ?? Log.Logger;
 
             logger.Information("🔍 Syncfusion Diagnostics:");
-            logger.Information("   Version: 30.1.42 (as defined in Directory.Build.props)");
+            logger.Information("   Version: 30.2.4 (as defined in Directory.Build.props)");
             logger.Information("   Platform: WPF (.NET 9.0-windows)");
             logger.Information("   License Type: Offline validation (no internet required)");
             logger.Information("   Registration Location: App() constructor (before any control initialization)");
@@ -966,16 +1130,16 @@ Examples:
         }
 
         /// <summary>
-        /// Initialize SyncFusion themes according to v30.1.42 API guidelines
+    /// Initialize SyncFusion themes according to v30.2.4 API guidelines
         /// Sets up FluentDark as primary theme with FluentLight fallback
         /// </summary>
         private void InitializeSyncfusionThemes()
         {
             try
             {
-                Log.Information("🎨 Initializing SyncFusion themes for v30.1.42...");
+        Log.Information("🎨 Initializing SyncFusion themes for v30.2.4...");
 
-                // Enable theme application as default style (required for v30.1.42)
+                // Enable theme application as default style (required for v30.x)
                 SfSkinManager.ApplyStylesOnApplication = true;
 
                 // Register FluentDark theme settings
