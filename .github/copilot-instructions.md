@@ -2095,5 +2095,21 @@ When creating temporary files:
 2. **Scope Analysis**: Determine if errors are localized (missing method, typo) or systemic
 3. **Impact Assessment**: Count affected files and error types
 4. **User Consultation**: For 3+ files or complex structural issues, ask user before rebuilding
-5. **Documentation**: Always report what was found before proposing solution approach
+
+## Minimal PowerShell Environment (August 2025)
+
+- **Profile**: Use `PowerShell\Profiles\BusBuddyProfile.ps1` only
+- **Modules**: BusBuddy.psd1, BusBuddy.Testing.psd1 only
+- **Aliases**: bbBuild, bbRun, bbTest, bbHealth (mapped to functions with BusBuddyBusBuddy prefix)
+- **Functions**: Exported as `Invoke-BusBuddyBusBuddyBuild`, `Start-BusBuddyBusBuddyApplication`, etc.
+- **Logging**: Serilog only (no ApplicationInsights)
+- **Requirements**: PowerShell 7.5+ Core, StrictMode 3.0
+- **Quick Start**:
+  ```powershell
+  . .\PowerShell\Profiles\BusBuddyProfile.ps1
+  bbHealth   # Test-BusBuddyHealth
+  bbBuild    # Invoke-BusBuddyBuild
+  bbRun      # Start-BusBuddyApplication
+  bbTest     # Start-BusBuddyTest
+  ```
 

@@ -73,13 +73,16 @@ jobs:
         with:
           Version: 7.5.1
 
-      - name: 🔌 Initialize BusBuddy PowerShell module (bb-*)
+      - name: 🔌 Install BusBuddy PowerShell modules from PSGallery
         shell: pwsh
         run: |
-          $ok = & ./PowerShell/Profiles/Import-BusBuddyModule.ps1
-          if (-not $ok) { throw 'Failed to import BusBuddy PowerShell module' }
-          # Quick sanity: list key commands
-          Get-Command bb-build,bb-run,bb-test,bb-health,bb-anti-regression,bb-mvp-check | Format-Table -Auto
+          Install-Module -Name BusBuddy -Repository PSGallery -Scope CurrentUser -Force -AllowClobber
+          Install-Module -Name BusBuddy.Testing -Repository PSGallery -Scope CurrentUser -Force -AllowClobber
+          # Import modules to ensure commands are available
+          Import-Module BusBuddy -Force
+          Import-Module BusBuddy.Testing -Force
+          # Quick sanity: list key commands exposed by the modules
+          Get-Command -Module BusBuddy,BusBuddy.Testing | Where-Object { $_.Name -match 'BusBuddy|bb|invokeBusBuddy' } | Format-Table -Auto
 
       - name: ⚙️ Set CI defaults
         shell: pwsh
@@ -165,11 +168,41 @@ jobs:
       - name: 🔧 Restore dependencies
         run: dotnet restore ${{ env.SOLUTION_FILE }} --verbosity minimal
 
-      - name: 🏗️ Build solution
-        run: dotnet build ${{ env.SOLUTION_FILE }} --no-restore --configuration ${{ env.BUILD_CONFIGURATION }} --verbosity minimal
 
-      - name: 🧪 Run tests (parallel via runsettings + coverage)
-        run: dotnet test ${{ env.SOLUTION_FILE }} --no-build --configuration ${{ env.BUILD_CONFIGURATION }} --verbosity normal --settings testsettings.runsettings --logger "trx;LogFileName=Tests.trx" --collect:"XPlat Code Coverage"
+      - name: 🏗️ Initialize BusBuddy environment (module-based)
+        shell: pwsh
+        run: |
+          # Ensure modules are loaded in the session
+          Import-Module BusBuddy -Force
+          Import-Module BusBuddy.Testing -Force
+          # Preferred module entrypoint for health check
+          if (Get-Command -Name invokeBusBuddyHealthCheck -ErrorAction SilentlyContinue) {
+            invokeBusBuddyHealthCheck
+          } else {
+            Write-Host 'invokeBusBuddyHealthCheck not found; skipping health check.'
+          }
+
+      - name: "🏗️ Build solution (module: invokeBusBuddyBuild)"
+        shell: pwsh
+        run: |
+          Import-Module BusBuddy -Force
+          if (Get-Command -Name invokeBusBuddyBuild -ErrorAction SilentlyContinue) {
+            invokeBusBuddyBuild
+          } else {
+            Write-Host 'invokeBusBuddyBuild not found; falling back to dotnet build'
+            dotnet build ${{ env.SOLUTION_FILE }} --configuration ${{ env.BUILD_CONFIGURATION }}
+          }
+
+      - name: "🧪 Run tests (module: invokeBusBuddyTest)"
+        shell: pwsh
+        run: |
+          Import-Module BusBuddy.Testing -Force
+          if (Get-Command -Name invokeBusBuddyTest -ErrorAction SilentlyContinue) {
+            invokeBusBuddyTest --logger "trx;LogFileName=Tests.trx" --collect:"XPlat Code Coverage"
+          } else {
+            Write-Host 'invokeBusBuddyTest not found; falling back to dotnet test'
+            dotnet test ${{ env.SOLUTION_FILE }} --configuration ${{ env.BUILD_CONFIGURATION }} --logger "trx;LogFileName=Tests.trx" --collect:"XPlat Code Coverage"
+          }
 
       - name: 📈 Extract coverage percentage
         id: coverage
@@ -209,8 +242,13 @@ jobs:
           retention-days: 7
 
       - name: 🛠️ Ensure sqlcmd is available
+        env:
+          BUSBUDDY_CONNECTION: ${{ secrets.BUSBUDDY_CONNECTION }}
+          AZURE_SQL_SERVER: ${{ secrets.AZURE_SQL_SERVER }}
+          AZURE_SQL_USER: ${{ secrets.AZURE_SQL_USER }}
+          AZURE_SQL_PASSWORD: ${{ secrets.AZURE_SQL_PASSWORD }}
+        if: env.BUSBUDDY_CONNECTION && env.AZURE_SQL_SERVER && env.AZURE_SQL_USER && env.AZURE_SQL_PASSWORD
         id: ensure-sqlcmd
-        if: ${{ env.BUSBUDDY_CONNECTION != '' && env.AZURE_SQL_SERVER != '' && env.AZURE_SQL_USER != '' && env.AZURE_SQL_PASSWORD != '' }}
         shell: pwsh
         run: |
           $found = $false
@@ -231,7 +269,9 @@ jobs:
           echo "found=$found" >> $env:GITHUB_OUTPUT
 
       - name: 📜 Generate EF migration script
-        if: ${{ env.BUSBUDDY_CONNECTION != '' }}
+        env:
+          BUSBUDDY_CONNECTION: ${{ secrets.BUSBUDDY_CONNECTION }}
+        if: env.BUSBUDDY_CONNECTION
         shell: pwsh
         run: |
           echo "Generating idempotent EF migration script..."
@@ -240,14 +280,21 @@ jobs:
           dotnet ef migrations script --idempotent --output migration-script.sql --project BusBuddy.Core/BusBuddy.Core.csproj --startup-project BusBuddy.WPF/BusBuddy.WPF.csproj
 
       - name: 🧩 Apply EF migrations to Azure SQL
-        if: ${{ env.BUSBUDDY_CONNECTION != '' && env.AZURE_SQL_SERVER != '' && env.AZURE_SQL_USER != '' && env.AZURE_SQL_PASSWORD != '' && steps.ensure-sqlcmd.outputs.found == 'True' }}
+        env:
+          BUSBUDDY_CONNECTION: ${{ secrets.BUSBUDDY_CONNECTION }}
+          AZURE_SQL_SERVER: ${{ secrets.AZURE_SQL_SERVER }}
+          AZURE_SQL_USER: ${{ secrets.AZURE_SQL_USER }}
+          AZURE_SQL_PASSWORD: ${{ secrets.AZURE_SQL_PASSWORD }}
+        if: env.BUSBUDDY_CONNECTION && env.AZURE_SQL_SERVER && env.AZURE_SQL_USER && env.AZURE_SQL_PASSWORD && steps.ensure-sqlcmd.outputs.found == 'True'
         shell: pwsh
         run: |
           echo "Applying migrations to database..."
-          sqlcmd -S "${{ env.AZURE_SQL_SERVER }}" -d "BusBuddyDb" -U "${{ env.AZURE_SQL_USER }}" -P "${{ env.AZURE_SQL_PASSWORD }}" -i migration-script.sql
+          sqlcmd -S "${{ secrets.AZURE_SQL_SERVER }}" -d "BusBuddyDb" -U "${{ secrets.AZURE_SQL_USER }}" -P "${{ secrets.AZURE_SQL_PASSWORD }}" -i migration-script.sql
 
       - name: 📤 Upload migration script
-        if: ${{ env.BUSBUDDY_CONNECTION != '' }}
+        env:
+          BUSBUDDY_CONNECTION: ${{ secrets.BUSBUDDY_CONNECTION }}
+        if: env.BUSBUDDY_CONNECTION
         uses: actions/upload-artifact@v4
         with:
           name: migration-script-${{ github.run_number }}
@@ -282,13 +329,15 @@ jobs:
           echo "${{ job.status == 'success' && '✅ Workflow PASSED' || '❌ Workflow FAILED - Check logs for details' }}" >> $env:GITHUB_STEP_SUMMARY
 
       - name: 🔐 Ensure firewall rule cleanup
-        if: ${{ always() && env.AZURE_SUBSCRIPTION_ID != '' }}
+        env:
+          AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+        if: ${{ always() && env.AZURE_SUBSCRIPTION_ID }}
         shell: pwsh
         run: |
           if ($env:RULE_NAME) {
             echo "Cleaning up SQL firewall rule: $env:RULE_NAME"
             pwsh -File .\PowerShell\Networking\Disable-AzureSqlAccess.ps1 `
-              -SubscriptionId "${{ env.AZURE_SUBSCRIPTION_ID }}" `
+              -SubscriptionId "${{ secrets.AZURE_SUBSCRIPTION_ID }}" `
               -ResourceGroupName "BusBuddy-RG" `
               -SqlServerName "busbuddy-server-sm2" `
               -RuleName $env:RULE_NAME

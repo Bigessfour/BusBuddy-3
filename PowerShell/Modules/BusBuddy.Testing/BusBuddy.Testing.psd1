@@ -1,72 +1,15 @@
 @{
-    # Module Manifest for BusBuddy Testing Infrastructure
     RootModule = 'BusBuddy.Testing.psm1'
     ModuleVersion = '1.0.0'
-    GUID = 'e3b8f6c9-2a7d-4e5f-9c1a-8b3d7e9f2a5c'
-
-    Author = 'BusBuddy Development Team'
-    CompanyName = 'BusBuddy'
-    Copyright = '(c) 2025 BusBuddy. All rights reserved.'
-
-    Description = 'Microsoft PowerShell standards-compliant testing module for BusBuddy with VS Code NUnit Test Runner integration'
-
-    # Minimum PowerShell version
-    PowerShellVersion = '7.5.0'
-
-    # Required modules
-    RequiredModules = @()
-
-    # Functions to export
-    FunctionsToExport = @(
-        'Start-BusBuddyTest'
-        'Start-BusBuddyTestWatch'
-        'New-BusBuddyTestReport'
-        'Get-BusBuddyTestStatus'
-        'Initialize-BusBuddyTestEnvironment'
-        'Test-BusBuddyCompliance'
-    )
-
-    # Cmdlets to export
-    CmdletsToExport = @()
-
-    # Variables to export
-    VariablesToExport = @()
-
-    # Aliases to export
-    AliasesToExport = @(
-        # Existing testing aliases
-        'bb-test-watch'
-        'bb-test-report'
-        'bb-test-status'
-        'bb-test-init'
-        'bb-test-compliance'
-
-        # Added per diagnostics — ensure bb* command surface is exported
-        # Core workflow aliases
-        'bbHealth'
-        'bbBuild'
-        'bbRun'
-        'bbTest'
-        'bbMvpCheck'
-        'bbAntiRegression'
-        'bbXamlValidate'
-        'bbDevSession'
-        'bbRefresh'
-        'bbCommands'
-        'bbTestWatch'
-        'bbTestReport'
-    )
-
-    # Private data
+    GUID = 'd9b9f7b2-0000-4000-8000-000000000002'
+    Author = 'BusBuddy Team'
+    Description = 'Testing utilities for BusBuddy.'
+    FunctionsToExport = @('invokeBusBuddyMvpCheck')
     PrivateData = @{
         PSData = @{
-            Tags = @('BusBuddy', 'Testing', 'NUnit', 'VSCode', 'PowerShell')
-            LicenseUri = ''
-            ProjectUri = ''
-            ReleaseNotes = 'Initial release of BusBuddy Testing Module with full NUnit Test Runner integration'
+            Tags = @('busbuddy','testing')
+            LicenseUri = 'https://github.com/your/repo/LICENSE'
+            ProjectUri = 'https://github.com/your/repo'
         }
     }
-
-    # Help info
-    HelpInfoURI = ''
 }

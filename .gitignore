@@ -1142,3 +1142,18 @@ global.json
 # Local database files
 *.db
 BusBuddy.db
+
+# PowerShell artifacts and backups
+PowerShell_Backup_*/
+PowerShell/Temp/
+PowerShell/**/*.backup
+PowerShell/**/*.old
+PowerShell/**/*.bak
+
+# Build and test artifacts
+bin/
+obj/
+TestResults/
+*.trx
+coverage.*.xml
+

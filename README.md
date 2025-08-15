@@ -30,31 +30,64 @@ Highlights
 git clone https://github.com/Bigessfour/BusBuddy-3.git
 cd BusBuddy
 
-# Load PowerShell automation
+
+# Load PowerShell automation (minimal profile)
 . .\PowerShell\Profiles\BusBuddyProfile.ps1
 
 # Optional — set Syncfusion license to avoid trial dialogs
 $env:SYNCFUSION_LICENSE_KEY = "<your-key>"  # https://help.syncfusion.com/wpf/wpf-license-registration
 
 # Health → Build → Run
-bbHealth
-bbBuild && bbRun
+bbHealth            # mapped to Test-BusBuddyHealth
+bbBuild             # mapped to Invoke-BusBuddyBuild
+bbRun               # mapped to Start-BusBuddyApplication
+bbTest              # mapped to Start-BusBuddyTest
 
 # Fallback (explicit target when using dotnet directly)
 dotnet run --project .\BusBuddy.WPF\BusBuddy.WPF.csproj
 ```
+
+### PowerShell-first workflow (updated)
+
+We now prefer a PowerShell-first setup with a minimal profile that installs/imports modules and maps bb* aliases. The profile also creates safe stubs for missing module functions so the environment stays usable.
+
+PowerShell directory updates:
+
+```
+PowerShell/
+├─ Profiles/
+│  ├─ BusBuddyProfile.ps1          # Minimal profile — installs/imports modules, sets bb* aliases, safe stubs
+│  ├─ Import-BusBuddyModule.ps1    # Legacy bootstrap (kept for compatibility)
+│  └─ .gitkeep
+```
+
+Standard modules from PowerShell Gallery (optional, supported):
+- InvokeBuild — build automation
+- Pester — testing
+- Az — Azure (e.g., SQL, resources)
+
+Install locally (CurrentUser scope):
+```powershell
+Install-Module -Name PowerShellGet -Force -Scope CurrentUser -Repository PSGallery -AllowClobber
+Install-Module -Name InvokeBuild, Pester -Repository PSGallery -Scope CurrentUser -Force -AllowClobber
+# Az is large — install separately to avoid partial failures
+Install-Module -Name Az -Repository PSGallery -Scope CurrentUser -Force -AllowClobber
+```
+
+Note: If a module is temporarily unavailable, the profile will continue in a degraded mode with warnings and stubbed commands. Set `$env:BUSBUDDY_PROFILE_STRICT = '1'` before sourcing the profile to fail-fast instead.
 
 ### What to expect
 - WPF desktop app; a dashboard window opens at launch.
 - Syncfusion‑only policy for new/refactored UI.
 - Prefer bb* commands for build/test/run.
 
+
 ### Dev quickref
 ```powershell
-bbHealth            # Environment and project diagnostics
-bbBuild             # Build the solution
-bbRun               # Run the WPF app
-bbTest              # Run tests (TRX + coverage)
+bbHealth            # Environment and project diagnostics (Test-BusBuddyHealth)
+bbBuild             # Build the solution (Invoke-BusBuddyBuild)
+bbRun               # Run the WPF app (Start-BusBuddyApplication)
+bbTest              # Run tests (Start-BusBuddyTest)
 bbAntiRegression    # Scan for disallowed APIs/patterns
 bbXamlValidate      # Validate Syncfusion‑only XAML
 bbMvpCheck          # Validate core MVP scenarios
@@ -121,6 +154,7 @@ BusBuddy/
 ├─ BusBuddy.WPF/    # WPF UI layer with Syncfusion controls
 ├─ BusBuddy.Tests/  # Unit and integration tests
 ├─ PowerShell/      # Build/test/run automation (bb* commands)
+├─ BusBuddy.Cli/    # .NET CLI tools for complex tasks (migrations, code analysis)
 └─ Documentation/   # Project documentation
 ```
 
