@@ -25,11 +25,11 @@ function Get-PublicIpAddress {
     try {
         $ip = (Invoke-RestMethod -Uri 'https://api.ipify.org?format=json' -TimeoutSec 5).ip
         if ($ip) { return $ip }
-    } catch { }
+    } catch { Write-Warning ("AzureSqlFirewallHelpers: Failed to remove firewall rule — {0}" -f $_.Exception.Message) }
     try {
         $ip = (Invoke-RestMethod -Uri 'https://ipinfo.io/json' -TimeoutSec 5).ip
         if ($ip) { return $ip }
-    } catch { }
+    } catch { Write-Warning ("AzureSqlFirewallHelpers: Failed to add firewall rule — {0}" -f $_.Exception.Message) }
     throw 'Unable to determine public IP. Check internet connectivity or provide -StartIp/-EndIp.'
 }
 

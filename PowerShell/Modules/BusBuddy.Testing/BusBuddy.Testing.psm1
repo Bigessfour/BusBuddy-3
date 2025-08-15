@@ -804,7 +804,7 @@ function Write-BusBuddyVSCodeTestingAssets {
         try {
             $extJson = Get-Content $extFile -Raw | ConvertFrom-Json -AsHashtable
             if ($extJson -and $extJson.ContainsKey('recommendations')) { $extPayload.recommendations = @($extJson.recommendations) }
-        } catch { }
+    } catch { Write-Warning ("BusBuddy.Testing: event unregistration failed — {0}" -f $_.Exception.Message) }
     }
     foreach ($r in $recommend) { if ($extPayload.recommendations -notcontains $r) { $extPayload.recommendations += $r } }
     $extPayload | ConvertTo-Json -Depth 5 | Set-Content -Path $extFile -Encoding UTF8
@@ -828,7 +828,7 @@ function Write-BusBuddyVSCodeTestingAssets {
                 if ($existing.ContainsKey('version')) { $tasksDoc.version = $existing.version }
                 if ($existing.ContainsKey('tasks')) { $tasksDoc.tasks = @($existing.tasks) }
             }
-        } catch { }
+    } catch { Write-Warning ("BusBuddy.Testing: watcher disposal failed — {0}" -f $_.Exception.Message) }
     }
     $hasTask = $false
     foreach ($t in $tasksDoc.tasks) { if ($t.label -eq $ourLabel) { $hasTask = $true; break } }
@@ -836,6 +836,17 @@ function Write-BusBuddyVSCodeTestingAssets {
     $tasksDoc | ConvertTo-Json -Depth 8 | Set-Content -Path $tasksFile -Encoding UTF8
 }
 #endregion
+
+#region bb* Testing Aliases (module-local)
+# Map bbTest / bbTestWatch / bbTestReport to functions in this module
+Set-Alias -Name bbTest       -Value Start-BusBuddyTest      -ErrorAction SilentlyContinue
+Set-Alias -Name bbTestWatch  -Value Start-BusBuddyTestWatch -ErrorAction SilentlyContinue
+if (Get-Command -Name New-BusBuddyTestReport -ErrorAction SilentlyContinue) {
+    Set-Alias -Name bbTestReport -Value New-BusBuddyTestReport -ErrorAction SilentlyContinue
+}
+# Export aliases for visibility to callers
+Export-ModuleMember -Alias @('bbTest','bbTestWatch','bbTestReport') -ErrorAction SilentlyContinue
+#endregion bb* Testing Aliases
 
 #region VS Code settings (optional NUnit Runner tuning)
 function Set-BusBuddyVSCodeNUnitSettings {

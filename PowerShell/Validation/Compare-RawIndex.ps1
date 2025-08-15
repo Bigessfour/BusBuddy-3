@@ -61,7 +61,7 @@ try {
         try {
             $rev = git rev-parse "origin/$b" 2>$null
             if ($LASTEXITCODE -eq 0 -and $rev) { $null = $remotes.Add($rev) }
-        } catch { }
+    } catch { Write-Warning ("Compare-RawIndex: Failed reading file — {0}" -f $_.Exception.Message) }
     }
 
     Write-Output ("Index SHAs:    " + ($unique  -join ', '))

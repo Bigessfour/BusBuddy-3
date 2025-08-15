@@ -180,9 +180,9 @@ function Invoke-ComprehensiveXamlValidation {
             try {
                 $logical = [int]([Environment]::ProcessorCount)
                 $cores = $null
-                try { $cores = (Get-CimInstance Win32_Processor | Select-Object -Expand NumberOfCores -First 1) } catch {}
+                try { $cores = (Get-CimInstance Win32_Processor | Select-Object -Expand NumberOfCores -First 1) } catch { Write-Warning ("Failed to read CPU cores — {0}" -f $_.Exception.Message) }
                 $memGiB = $null
-                try { $memGiB = [math]::Round((Get-CimInstance Win32_ComputerSystem).TotalPhysicalMemory/1GB, 1) } catch {}
+                try { $memGiB = [math]::Round((Get-CimInstance Win32_ComputerSystem).TotalPhysicalMemory/1GB, 1) } catch { Write-Warning ("Failed to read memory — {0}" -f $_.Exception.Message) }
 
                 # Base throttle: 75% of logical processors, min 2, max 12 (conservative default)
                 $computed = if ($logical -gt 0) { [math]::Max([math]::Min([int][math]::Floor($logical * 0.75), 12), 2) } else { 4 }

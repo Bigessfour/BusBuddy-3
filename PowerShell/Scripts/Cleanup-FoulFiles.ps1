@@ -29,7 +29,7 @@ function Test-References {
         try {
             $m = Select-String -Path $file.FullName -Pattern $pattern -SimpleMatch -ErrorAction SilentlyContinue
             if ($m) { $hits += $m }
-        } catch {}
+    } catch { Write-Warning ("Cleanup-FoulFiles: Failed to process item — {0}" -f $_.Exception.Message) }
     }
     return $hits
 }

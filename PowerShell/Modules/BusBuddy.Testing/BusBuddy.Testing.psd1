@@ -34,11 +34,27 @@
 
     # Aliases to export
     AliasesToExport = @(
+        # Existing testing aliases
         'bb-test-watch'
         'bb-test-report'
         'bb-test-status'
         'bb-test-init'
         'bb-test-compliance'
+
+        # Added per diagnostics — ensure bb* command surface is exported
+        # Core workflow aliases
+        'bbHealth'
+        'bbBuild'
+        'bbRun'
+        'bbTest'
+        'bbMvpCheck'
+        'bbAntiRegression'
+        'bbXamlValidate'
+        'bbDevSession'
+        'bbRefresh'
+        'bbCommands'
+        'bbTestWatch'
+        'bbTestReport'
     )
 
     # Private data

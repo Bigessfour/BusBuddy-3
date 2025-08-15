@@ -1,5 +1,3 @@
-#Requires -Version 7.5
-
 @{
     # Script module or binary module file associated with this manifest.
     RootModule           = 'BusBuddy.psm1'
@@ -25,8 +23,11 @@
     # Description of the functionality provided by this module
     Description          = 'Microsoft PowerShell 7.5.2 compliant modular development module for BusBuddy. Provides category-based function loading following Microsoft standards.'
 
-    # Minimum version of the PowerShell engine required by this module
-    PowerShellVersion    = '7.5'
+    # Minimum version of the PowerShell engine required by this module (about_Module_Manifests)
+    PowerShellVersion    = '7.5.2'
+
+    # Add a module command prefix to avoid name collisions (Docs: about_Module_Manifests — DefaultCommandPrefix)
+    DefaultCommandPrefix = 'BusBuddy'
 
     # Functions to export from this module
     FunctionsToExport    = @(
@@ -68,7 +69,9 @@
 
     # Readiness and Anti-Regression (required by bb-* wrappers)
     'Test-BusBuddyMVPReadiness',
-    'Invoke-BusBuddyAntiRegression'
+    'Invoke-BusBuddyAntiRegression',
+    # Validation
+    'Invoke-BusBuddyXamlValidation'
     )
 
     # Cmdlets to export from this module
@@ -77,8 +80,22 @@
     # Variables to export from this module
     VariablesToExport    = @()
 
-    # Aliases to export from this module (defer to Set-Alias in psm1; keep empty to avoid duplication across modules)
-    AliasesToExport      = @()
+    # Aliases to export from this module — ensure bb* command surface is available to sessions
+    # Note: Aliases are defined via Set-Alias within the module; exporting here makes them visible when module loads.
+    AliasesToExport      = @(
+        'bbHealth',
+        'bbBuild',
+        'bbRun',
+        'bbTest',
+        'bbMvpCheck',
+        'bbAntiRegression',
+        'bbXamlValidate',
+        'bbDevSession',
+        'bbRefresh',
+        'bbCommands',
+        'bbTestWatch',
+        'bbTestReport'
+    )
 
     # List of all files packaged with this module
     FileList             = @(
@@ -89,6 +106,10 @@
         'bb-anti-regression.ps1',
         'bb-health.ps1'
     )
+
+    # Provide help discovery for Update-Help (optional). Must point to a HelpInfo.xml endpoint.
+    # Until hosted, set to $null to avoid Update-Help warnings. Docs: https://learn.microsoft.com/powershell/module/microsoft.powershell.core/update-help
+    HelpInfoURI          = $null
 
     # Private data to pass to the module
     PrivateData          = @{

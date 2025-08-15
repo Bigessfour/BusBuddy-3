@@ -23,14 +23,14 @@ function Test-BusBuddyEnvironment {
     # 1. PowerShell Version Check
     Write-Output "1. PowerShell Version..."
     if ($PSVersionTable.PSVersion -ge [version]'7.5.0') {
-        Write-Host "   ✅ PowerShell $($PSVersionTable.PSVersion) (Required: 7.5+)" -ForegroundColor Green
+        Write-Information "   ✅ PowerShell $($PSVersionTable.PSVersion) (Required: 7.5+)" -InformationAction Continue
     } else {
         $issues += "PowerShell version $($PSVersionTable.PSVersion) is too old. Need 7.5+"
-        Write-Host "   ❌ PowerShell $($PSVersionTable.PSVersion) - UPGRADE REQUIRED" -ForegroundColor Red
+        Write-Error "   ❌ PowerShell $($PSVersionTable.PSVersion) - UPGRADE REQUIRED"
     }
 
     # 2. BusBuddy Workspace Detection
-    Write-Host "2. Workspace Detection..." -ForegroundColor Yellow
+    Write-Information "2. Workspace Detection..." -InformationAction Continue
     $workspaceFound = $false
     $possiblePaths = @(
         $PWD.Path,
@@ -41,7 +41,7 @@ function Test-BusBuddyEnvironment {
 
     foreach ($path in $possiblePaths) {
         if (Test-Path "$path\BusBuddy.sln" -ErrorAction SilentlyContinue) {
-            Write-Host "   ✅ Workspace found: $path" -ForegroundColor Green
+            Write-Information "   ✅ Workspace found: $path" -InformationAction Continue
             $workspaceFound = $true
             break
         }
@@ -49,30 +49,30 @@ function Test-BusBuddyEnvironment {
 
     if (-not $workspaceFound) {
         $issues += "BusBuddy workspace not found in standard locations"
-        Write-Host "   ❌ Workspace not found" -ForegroundColor Red
+    Write-Error "   ❌ Workspace not found"
     }
 
     # 3. Module File Existence
-    Write-Host "3. PowerShell Module..." -ForegroundColor Yellow
+    Write-Information "3. PowerShell Module..." -InformationAction Continue
     $modulePath = ".\PowerShell\Modules\BusBuddy\BusBuddy.psm1"
     if (Test-Path $modulePath) {
-        Write-Host "   ✅ Module file exists" -ForegroundColor Green
+    Write-Information "   ✅ Module file exists" -InformationAction Continue
 
         # Check module can be imported
         try {
             Import-Module $modulePath -Force -ErrorAction Stop
-            Write-Host "   ✅ Module imports successfully" -ForegroundColor Green
+            Write-Information "   ✅ Module imports successfully" -InformationAction Continue
         } catch {
             $issues += "Module exists but fails to import: $($_.Exception.Message)"
-            Write-Host "   ❌ Module import failed" -ForegroundColor Red
+            Write-Error "   ❌ Module import failed"
         }
     } else {
         $issues += "BusBuddy.psm1 module file not found"
-        Write-Host "   ❌ Module file missing" -ForegroundColor Red
+        Write-Error "   ❌ Module file missing"
     }
 
     # 4. Essential Commands Test
-    Write-Host "4. Essential Commands..." -ForegroundColor Yellow
+    Write-Information "4. Essential Commands..." -InformationAction Continue
     $essentialCommands = @('bb-build', 'bb-run', 'Test-BusBuddyHealth', 'bb-mvp', 'bb-mvp-check')
     $commandsWorking = 0
 
@@ -83,49 +83,49 @@ function Test-BusBuddyEnvironment {
     }
 
     if ($commandsWorking -eq $essentialCommands.Count) {
-        Write-Host "   ✅ All $($essentialCommands.Count) essential commands available" -ForegroundColor Green
+        Write-Information "   ✅ All $($essentialCommands.Count) essential commands available" -InformationAction Continue
     } else {
         $issues += "Only $commandsWorking of $($essentialCommands.Count) commands available"
-        Write-Host "   ❌ Missing commands ($commandsWorking/$($essentialCommands.Count))" -ForegroundColor Red
+        Write-Error "   ❌ Missing commands ($commandsWorking/$($essentialCommands.Count))"
     }
 
     # 5. .NET SDK Check
-    Write-Host "5. .NET SDK..." -ForegroundColor Yellow
+    Write-Information "5. .NET SDK..." -InformationAction Continue
     try {
         $dotnetVersion = & dotnet --version 2>$null
         if ($dotnetVersion -and $dotnetVersion -match '^9\.') {
-            Write-Host "   ✅ .NET $dotnetVersion" -ForegroundColor Green
+            Write-Information "   ✅ .NET $dotnetVersion" -InformationAction Continue
         } else {
             $warnings += ".NET version $dotnetVersion - expected 9.x"
-            Write-Host "   ⚠️ .NET $dotnetVersion (Expected: 9.x)" -ForegroundColor Yellow
+            Write-Warning "   ⚠️ .NET $dotnetVersion (Expected: 9.x)"
         }
     } catch {
         $issues += ".NET SDK not found or not working"
-        Write-Host "   ❌ .NET SDK not found" -ForegroundColor Red
+        Write-Error "   ❌ .NET SDK not found"
     }
 
     # 6. Git Status
-    Write-Host "6. Git Repository..." -ForegroundColor Yellow
+    Write-Information "6. Git Repository..." -InformationAction Continue
     try {
         $gitStatus = & git status --porcelain 2>$null
         if ($LASTEXITCODE -eq 0) {
             if ($gitStatus) {
                 $warnings += "Git has uncommitted changes"
-                Write-Host "   ⚠️ Uncommitted changes present" -ForegroundColor Yellow
+                Write-Warning "   ⚠️ Uncommitted changes present"
             } else {
-                Write-Host "   ✅ Git repository clean" -ForegroundColor Green
+                Write-Information "   ✅ Git repository clean" -InformationAction Continue
             }
         } else {
             $warnings += "Not in a Git repository or Git not available"
-            Write-Host "   ⚠️ Git issues detected" -ForegroundColor Yellow
+            Write-Warning "   ⚠️ Git issues detected"
         }
     } catch {
         $warnings += "Git not available: $($_.Exception.Message)"
-        Write-Host "   ⚠️ Git not available" -ForegroundColor Yellow
+        Write-Warning "   ⚠️ Git not available"
     }
 
     # 7. Grok Resources Check
-    Write-Host "7. AI Assistant Resources..." -ForegroundColor Yellow
+    Write-Information "7. AI Assistant Resources..." -InformationAction Continue
     if (Test-Path "Grok Resources\GROK-README.md") {
         Write-Output "   ✅ Grok Resources folder ready"
     } else {

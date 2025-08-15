@@ -1,0 +1,17 @@
+Logging Conflict Scan — Serilog-only policy
+Root: C:\Users\biges\Desktop\BusBuddy
+Rules: No Microsoft.Extensions.Logging, prefer Serilog (see repo copilot-instructions.md)
+
+Pattern: Microsoft.Extensions.Logging — Matches: 0
+Scan failed for pattern 'Microsoft.Extensions.Logging': The property 'Count' cannot be found on this object. Verify that the property exists.
+Pattern: Microsoft.ApplicationInsights — Matches: 0
+Scan failed for pattern 'Microsoft.ApplicationInsights': The property 'Count' cannot be found on this object. Verify that the property exists.
+Pattern: ApplicationInsights — Matches: 0
+Scan failed for pattern 'ApplicationInsights': The property 'Count' cannot be found on this object. Verify that the property exists.
+Pattern: Serilog — Matches: 33
+  - C:\Users\biges\Desktop\BusBuddy\BusBuddy.Tests\WileyTests.cs
+  - C:\Users\biges\Desktop\BusBuddy\BusBuddy.WPF\App.xaml.cs
+  - C:\Users\biges\Desktop\BusBuddy\Examples\RouteAssignmentExample.cs
+  - C:\Users\biges\Desktop\BusBuddy\TestDataSeeding\Program.cs
+
+

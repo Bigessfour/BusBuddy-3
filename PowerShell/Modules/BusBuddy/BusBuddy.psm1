@@ -229,8 +229,15 @@ try {
         'BusBuddy.TestWatcher/BusBuddy.TestWatcher.psm1',
         'BusBuddy.Cleanup/BusBuddy.Cleanup.psm1'
     )
-    # FIX: ensure $projectRoot is set even if previous block failed
-    if (-not $projectRoot) { $projectRoot = Get-BusBuddyProjectRoot }
+    # Ensure $projectRoot is computed without relying on functions that may be defined later.
+    if (-not $projectRoot) {
+        try {
+            $projectRoot = (Split-Path $PSScriptRoot -Parent | Split-Path -Parent | Split-Path -Parent)
+        } catch {
+            # Fallback to current location if path math fails
+            $projectRoot = (Get-Location).Path
+        }
+    }
 
     $telemetryDir = Join-Path $projectRoot 'logs'
     if (-not (Test-Path $telemetryDir)) { New-Item -ItemType Directory -Path $telemetryDir -Force | Out-Null }
@@ -247,7 +254,7 @@ try {
             if (Test-Path $telemetryFile) {
                 $item = Get-Item -Path $telemetryFile -ErrorAction SilentlyContinue
                 if ($item -and $item.Length -gt 1MB) {
-                $stamp = Get-Date -Format 'yyyyMMdd-HHmmss'
+                    $stamp = Get-Date -Format 'yyyyMMdd-HHmmss'
                     Move-Item $telemetryFile (Join-Path $telemetryDir "module-telemetry-$stamp.json") -Force
                 }
             }
@@ -503,6 +510,43 @@ function Test-BusBuddyErrorActionPipeline {
     if (-not (Test-Path $Root)) { Write-Warning "Root not found: $Root"; return @() }
 
     $files = Get-ChildItem -Path $Root -Recurse -Include *.ps1,*.psm1,*.psd1 -File -ErrorAction SilentlyContinue
+
+    #region bb* Aliases and Refresh Helper
+    function Invoke-BusBuddyRefresh {
+        <#
+        .SYNOPSIS
+            Reload BusBuddy module/profile wiring for the current session.
+        .DESCRIPTION
+            Calls the repo profile loader to reinitialize bb* aliases and module wiring.
+            Docs: https://learn.microsoft.com/powershell/scripting/developer/module/writing-a-windows-powershell-module
+        #>
+        [CmdletBinding(SupportsShouldProcess=$true,ConfirmImpact='Low')]
+        param()
+        try {
+            $projectRoot = Get-BusBuddyProjectRoot
+            $loader = Join-Path $projectRoot 'PowerShell/Profiles/Import-BusBuddyModule.ps1'
+            if (-not (Test-Path $loader)) { Write-Warning "Profile loader not found: $loader"; return }
+            if ($PSCmdlet.ShouldProcess($loader,'Invoke profile/module loader')) { & $loader }
+        } catch { Write-Warning ("bbRefresh failed: {0}" -f $_.Exception.Message) }
+    }
+
+    # Export bb* aliases within the module scope (no -Scope Global)
+    Set-Alias -Name bbHealth        -Value Test-BusBuddyHealth          -ErrorAction SilentlyContinue
+    Set-Alias -Name bbBuild         -Value Invoke-BusBuddyBuild         -ErrorAction SilentlyContinue
+    Set-Alias -Name bbRun           -Value Invoke-BusBuddyRun           -ErrorAction SilentlyContinue
+    Set-Alias -Name bbMvpCheck      -Value Test-BusBuddyMVPReadiness    -ErrorAction SilentlyContinue
+    Set-Alias -Name bbAntiRegression-Value Invoke-BusBuddyAntiRegression-ErrorAction SilentlyContinue
+    Set-Alias -Name bbXamlValidate  -Value Invoke-BusBuddyXamlValidation-ErrorAction SilentlyContinue
+    Set-Alias -Name bbDevSession    -Value Start-BusBuddyDevSession     -ErrorAction SilentlyContinue
+    Set-Alias -Name bbRefresh       -Value Invoke-BusBuddyRefresh       -ErrorAction SilentlyContinue
+    Set-Alias -Name bbCommands      -Value Get-BusBuddyCommand          -ErrorAction SilentlyContinue
+    # Note: bbTest, bbTestWatch, bbTestReport are defined in BusBuddy.Testing module
+    # Export aliases so they are visible to the importing session even when importing the psm1 directly
+    Export-ModuleMember -Alias @(
+        'bbHealth','bbBuild','bbRun','bbTest','bbMvpCheck','bbAntiRegression',
+        'bbXamlValidate','bbDevSession','bbRefresh','bbCommands','bbTestWatch','bbTestReport'
+    ) -ErrorAction SilentlyContinue
+    #endregion bb* Aliases and Refresh Helper
     $findings = @()
 
     foreach ($f in $files) {
@@ -2608,667 +2652,34 @@ try { Set-Alias -Name 'bbDevSession' -Value 'Start-BusBuddyDevSession' -Force } 
 try { Set-Alias -Name 'bbInfo'       -Value 'Get-BusBuddyInfo' -Force } catch { Write-Warning ("Failed to set alias bbInfo: {0}" -f $_.Exception.Message) }
 try { Set-Alias -Name 'bbCommands'   -Value 'Get-BusBuddyCommand' -Force } catch { Write-Warning ("Failed to set alias bbCommands: {0}" -f $_.Exception.Message) }
 
-# Removed alias for bbXamlValidate (function not present)
+# bb* verification and validation aliases
+try { Set-Alias -Name 'bbMvpCheck'       -Value 'Test-BusBuddyMVPReadiness'     -Force } catch { Write-Warning ("Failed to set alias bbMvpCheck: {0}" -f $_.Exception.Message) }
+try { Set-Alias -Name 'bbAntiRegression' -Value 'Invoke-BusBuddyAntiRegression'  -Force } catch { Write-Warning ("Failed to set alias bbAntiRegression: {0}" -f $_.Exception.Message) }
+try { Set-Alias -Name 'bbXamlValidate'   -Value 'Invoke-BusBuddyXamlValidation'  -Force } catch { Write-Warning ("Failed to set alias bbXamlValidate: {0}" -f $_.Exception.Message) }
 
-# Validation aliases (explicit): ensure hyphenated commands exist for CI/docs
-try { Set-Alias -Name 'bb-anti-regression' -Value 'Invoke-BusBuddyAntiRegression' -Force } catch { Write-Warning ("Failed to set alias bb-anti-regression: {0}" -f $_.Exception.Message) }
-try { Set-Alias -Name 'bb-mvp-check'      -Value 'Test-BusBuddyMVPReadiness' -Force } catch { Write-Warning ("Failed to set alias bb-mvp-check: {0}" -f $_.Exception.Message) }
+# Session refresh alias
+try { Set-Alias -Name 'bbRefresh'        -Value 'Invoke-BusBuddyRefresh'         -Force } catch { Write-Warning ("Failed to set alias bbRefresh: {0}" -f $_.Exception.Message) }
 
-# Session correlation
-try { Set-Alias -Name 'bbMantra'       -Value 'Get-BusBuddyMantraId'    -Force } catch { Write-Warning ("Failed to set alias bbMantra: {0}" -f $_.Exception.Message) }
-try { Set-Alias -Name 'bbMantraReset'  -Value 'Reset-BusBuddyMantraId'  -Force } catch { Write-Warning ("Failed to set alias bbMantraReset: {0}" -f $_.Exception.Message) }
-
-# Environment
-try { Set-Alias -Name 'bbEnv'          -Value 'Initialize-BusBuddyEnvironment' -Force } catch { Write-Warning ("Failed to set alias bbEnv: {0}" -f $_.Exception.Message) }
-# Hyphenated variants
-foreach ($pair in @(
-    @{A='bb-build';V='Invoke-BusBuddyBuild'},
-    @{A='bb-run';V='Invoke-BusBuddyRun'},
-    @{A='bb-run-sta';V='Invoke-BusBuddyRunSta'},
-    @{A='bb-clean';V='Invoke-BusBuddyClean'},
-    @{A='bb-restore';V='Invoke-BusBuddyRestore'},
-    @{A='bb-test';V='Invoke-BusBuddyTest'},
-    @{A='bb-health';V='Invoke-BusBuddyHealthCheck'},
-    @{A='bb-env';V='Initialize-BusBuddyEnvironment'
-})) { try { Set-Alias -Name $pair.A -Value $pair.V -Force } catch { Write-Warning ("Failed to set alias {0}: {1}" -f $pair.A, $_.Exception.Message) } }
-#endregion
-
-#region Exports
-Export-ModuleMember -Function @(
-    'Invoke-BusBuddyBuild',
-    'Invoke-BusBuddyRun',
-    'Invoke-BusBuddyRunSta',
-    'Invoke-BusBuddyClean',
-    'Invoke-BusBuddyRestore',
-    'Invoke-BusBuddyTest',
-    'Invoke-BusBuddyHealthCheck',
-    'Test-BusBuddyMVPReadiness',
-    'Invoke-BusBuddyAntiRegression',
-    'Get-BusBuddyApartmentState',
-    'Get-BusBuddyMantraId',
-    'Reset-BusBuddyMantraId',
-    'Start-BusBuddyDevSession',
-    'Get-BusBuddyInfo',
-    'Get-BusBuddyCommand',
-    'Get-BusBuddyTestOutput',
-    'Invoke-BusBuddyTestFull',
-    'Get-BusBuddyTestError',
-    'Get-BusBuddyTestLog',
-    'Start-BusBuddyTestWatch',
-    'Invoke-BusBuddyPester',
-    'Get-BusBuddyTelemetrySummary',
-    'Invoke-BusBuddyTelemetryPurge',
-    'Get-BusBuddyPS75Compliance',
-    'Initialize-BusBuddyEnvironment',
-    # Script Lint exports
-    'Test-BusBuddyErrorActionPipeline',
-    'Invoke-BusBuddyErrorActionAudit',
-    # Logging exports
-    'Get-BusBuddyLogSummary'
-) -Alias @(
-    'bbBuild','bbRun','bbRunSta','bbClean','bbRestore','bbTest','bbHealth',
-    'bbDevSession','bbInfo','bbCommands',
-    'bb-build','bb-run','bb-run-sta','bb-clean','bb-restore','bb-test','bb-health',
-    'bbMantra','bbMantraReset','bbTestFull',
-    'bb-ps-review',
-    'bbEnv','bb-env',
-    # Script Lint aliases
-    'bb-ps-validate-ea','bb-ps-validate-ea-run',
-    # Logging alias
-    'bb-logs-summary',
-    # Validation aliases
-    'bb-anti-regression','bb-mvp-check'
-)
-#endregion
-
-#region Welcome Screen
-function Show-BusBuddyWelcome {
-    <#
-    .SYNOPSIS
-        Display a categorized welcome screen when the module loads.
-    #>
-    [CmdletBinding()]
-    param([switch]$Quiet)
-
-    $ps = $PSVersionTable.PSVersion
-    $dotnet = try { & dotnet --version 2>$null } catch { "unknown" }
-
-    if ($env:BUSBUDDY_SILENT -ne '1') {
-        Write-Information "" -InformationAction Continue
-        Write-BusBuddyStatus "🚌 BusBuddy Dev Shell — Ready" -Type Info
-        Write-Information "PowerShell: $ps | .NET: $dotnet" -InformationAction Continue
-        Write-Information "Project: $(Get-BusBuddyProjectRoot)" -InformationAction Continue
-        Write-Information "" -InformationAction Continue
-    }
-
-    if ($env:BUSBUDDY_SILENT -ne '1') {
-        Write-BusBuddyStatus "Core" -Type Info
-        Write-Information "  bbBuild, bbRun, bbTest, bbClean, bbRestore, bbHealth" -InformationAction Continue
-    }
-
-    if ($env:BUSBUDDY_SILENT -ne '1') {
-        Write-BusBuddyStatus "Development" -Type Info
-        Write-Information "  bbDevSession, bbInfo, bbCommands, bbMantra, bbMantraReset" -InformationAction Continue
-    }
-
-    # Removed 'Validation & Safety' section (no bbXamlValidate)
-
-    # Docs & Reference remains gated if bbCopilotRef exists
-    if ($env:BUSBUDDY_SILENT -ne '1' -and (Get-Command bbCopilotRef -ErrorAction SilentlyContinue)) {
-        Write-BusBuddyStatus "Docs & Reference" -Type Info
-        Write-Information "  bbCopilotRef [Topic] (-ShowTopics)" -InformationAction Continue
-    }
-
-    if (-not $Quiet -and $env:BUSBUDDY_SILENT -ne '1') {
-        Write-Information "" -InformationAction Continue
-        Write-Information "Tips:" -InformationAction Continue
-        Write-Information "  • bbCommands — full list with functions" -InformationAction Continue
-        Write-Information "  • bbHealth — verify env quickly" -InformationAction Continue
-        Write-Information "  • Set 'BUSBUDDY_NO_WELCOME=1' to suppress on import" -InformationAction Continue
-    }
-}
-
-# Auto-run welcome unless suppressed
-if (-not $env:BUSBUDDY_NO_WELCOME -and $env:BUSBUDDY_SILENT -ne '1') {
-    Show-BusBuddyWelcome -Quiet
-}
-#endregion
-
-
-function Start-BusBuddyRuntimeErrorCapture {
-    <#
-    .SYNOPSIS
-        Advanced runtime error capture using WintellectPowerShell tools
-
-    .DESCRIPTION
-        Enhanced error monitoring and capture system that integrates WintellectPowerShell
-        tools for comprehensive diagnostics, crash dump analysis, and system monitoring.
-
-    .PARAMETER MonitorCrashes
-        Enable crash dump monitoring and automatic analysis
-
-    .PARAMETER SystemDiagnostics
-        Include system diagnostics (uptime, environment, etc.)
-
-    .PARAMETER ContinuousMonitoring
-        Run in continuous monitoring mode
-
-    .PARAMETER OutputPath
-        Path to save error reports and analysis (default: logs/error-capture)
-
-    .EXAMPLE
-        Start-BusBuddyRuntimeErrorCapture -MonitorCrashes -SystemDiagnostics
-    #>
+# Top-level refresh function so bbRefresh works consistently across sessions
+# Docs: about_Functions_CmdletBindingAttribute — https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_Functions_CmdletBindingAttribute
+# Docs: Writing modules — https://learn.microsoft.com/powershell/scripting/developer/module/writing-a-windows-powershell-module
+function Invoke-BusBuddyRefresh {
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'Low')]
-    [OutputType([hashtable])]
-    param(
-        [Parameter()]
-        [switch]$MonitorCrashes,
-
-        [Parameter()]
-        [switch]$SystemDiagnostics,
-
-        [Parameter()]
-    [switch]$ContinuousMonitoring,
-
-        [Parameter()]
-        [string]$OutputPath = "logs/error-capture"
-    )
-
-    $sessionId = [System.Guid]::NewGuid().ToString("N")[0..7] -join ""
-    $startTime = Get-Date
-
-    Write-BusBuddyStatus "🔍 Starting Enhanced Error Capture Session [$sessionId]" -Type Info
-    if ($ContinuousMonitoring) { Write-Information "Continuous Monitoring: Enabled" -InformationAction Continue }
-    Write-Information "⏰ Session Start: $($startTime.ToString('yyyy-MM-dd HH:mm:ss'))" -InformationAction Continue
-
-    # Ensure WintellectPowerShell is available
-    try {
-        Import-Module WintellectPowerShell -Force -ErrorAction Stop
-        Write-BusBuddyStatus "✅ WintellectPowerShell module loaded" -Type Success
-    }
-    catch {
-        Write-BusBuddyError "Failed to load WintellectPowerShell module" -Exception $_ -Suggestions @(
-            "Install WintellectPowerShell: Install-Module WintellectPowerShell -Scope CurrentUser",
-            "Check module availability: Get-Module -ListAvailable WintellectPowerShell"
-        )
-        return
-    }
-
-    # Create output directory
-    $fullOutputPath = Join-Path (Get-BusBuddyProjectRoot) $OutputPath
-    if (-not (Test-Path $fullOutputPath)) {
-        if ($PSCmdlet.ShouldProcess($fullOutputPath,'Create error-capture directory')) {
-            New-Item -ItemType Directory -Path $fullOutputPath -Force | Out-Null
-            Write-BusBuddyStatus "📁 Created output directory: $fullOutputPath" -Type Info
-        }
-    }
-
-    # System Diagnostics Collection
-    if ($SystemDiagnostics) {
-        Write-BusBuddyStatus "📊 Collecting System Diagnostics..." -Type Info
-
-        try {
-            # Get system uptime using WintellectPowerShell
-            $uptime = Get-Uptime
-            $uptimeInfo = @{
-                Days = $uptime.Days
-                Hours = $uptime.Hours
-                Minutes = $uptime.Minutes
-                TotalHours = [math]::Round($uptime.TotalHours, 2)
-                Timestamp = Get-Date
-            }
-
-            # Collect environment information
-            $envInfo = @{
-                PowerShellVersion = $PSVersionTable.PSVersion
-                DotNetVersion = & dotnet --version 2>$null
-                UserName = $env:USERNAME
-                MachineName = $env:COMPUTERNAME
-                WorkingDirectory = Get-Location
-                ProcessId = $PID
-                SessionId = $sessionId
-            }
-
-            # System resource information
-            $systemInfo = @{
-                Uptime = $uptimeInfo
-                Environment = $envInfo
-                Timestamp = Get-Date
-            }
-
-            # Save system diagnostics
-            $diagnosticsFile = Join-Path $fullOutputPath "system-diagnostics-$sessionId.json"
-            $systemInfo | ConvertTo-Json -Depth 3 | Out-File -FilePath $diagnosticsFile -Encoding UTF8
-
-            Write-BusBuddyStatus "✅ System diagnostics saved to: $diagnosticsFile" -Type Success
-            Write-Information "💻 System Uptime: $($uptime.Days) days, $($uptime.Hours) hours" -InformationAction Continue
-            Write-Information "🔧 PowerShell: $($PSVersionTable.PSVersion)" -InformationAction Continue
-            Write-Information "⚙️  .NET Version: $(& dotnet --version 2>$null)" -InformationAction Continue
-        }
-        catch {
-            Write-BusBuddyError "Failed to collect system diagnostics" -Exception $_
-        }
-    }
-
-    # Crash Dump Monitoring
-    if ($MonitorCrashes) {
-        Write-BusBuddyStatus "💥 Setting up crash dump monitoring..." -Type Info
-
-        # Look for existing crash dumps
-        $projectRoot = Get-BusBuddyProjectRoot
-        $possibleDumpLocations = @(
-            Join-Path $projectRoot "logs"
-            Join-Path $projectRoot "BusBuddy.WPF\bin\Debug\net9.0-windows"
-            Join-Path $projectRoot "BusBuddy.WPF\bin\Release\net9.0-windows"
-            $env:TEMP,
-            $env:LOCALAPPDATA
-        )
-
-        $foundDumps = @()
-        foreach ($location in $possibleDumpLocations) {
-            if (Test-Path $location) {
-                $dumps = Get-ChildItem -Path $location -Filter "*.dmp" -ErrorAction SilentlyContinue
-                if ($dumps) {
-                    $foundDumps += $dumps
-                    Write-Information "🔍 Found $($dumps.Count) dump file(s) in: $location" -InformationAction Continue
-                }
-            }
-        }
-
-        if ($foundDumps.Count -gt 0) {
-            Write-BusBuddyStatus "📋 Analyzing $($foundDumps.Count) existing crash dump(s)..." -Type Warning
-
-            # Create basic analysis script for CDB
-            $analysisScript = Join-Path $fullOutputPath "crash-analysis-commands.txt"
-            $cdbCommands = @(
-                "* Basic crash analysis commands",
-                ".sympath srv*https://msdl.microsoft.com/download/symbols",
-                ".reload",
-                "!analyze -v",
-                "k",
-                "!clrstack",
-                ".ecxr",
-                "!pe",
-                "q"
-            )
-            $cdbCommands | Out-File -FilePath $analysisScript -Encoding UTF8
-
-            foreach ($dump in $foundDumps) {
-                try {
-                    Write-Information "🔍 Analyzing: $($dump.Name)" -InformationAction Continue
-
-                    # Use WintellectPowerShell to analyze the dump
-                    Get-DumpAnalysis -Files $dump.FullName -DebuggingScript $analysisScript
-
-                    Write-BusBuddyStatus "✅ Analysis completed for: $($dump.Name)" -Type Success
-                }
-                catch {
-                    Write-BusBuddyError "Failed to analyze dump: $($dump.Name)" -Exception $_
-                }
-            }
-        } else {
-            Write-Information "ℹ️  No existing crash dumps found" -InformationAction Continue
-        }
-    }
-
-    # Enhanced BusBuddy Application Execution with Error Capture
-    Write-BusBuddyStatus "🚀 Starting BusBuddy with enhanced error monitoring..." -Type Info
-
-    try {
-        # Enhanced execution using existing exception capture
-        $result = Invoke-BusBuddyWithExceptionCapture -Command "dotnet" -Arguments @("run", "--project", "BusBuddy.WPF/BusBuddy.WPF.csproj") -Context "Enhanced BusBuddy Execution" -Timeout 300
-
-        # Final report
-        $endTime = Get-Date
-        $duration = $endTime - $startTime
-
-        $sessionReport = @{
-            SessionId = $sessionId
-            StartTime = $startTime
-            EndTime = $endTime
-            Duration = $duration.TotalMinutes
-            OutputPath = $fullOutputPath
-            MonitorCrashes = $MonitorCrashes.IsPresent
-            SystemDiagnostics = $SystemDiagnostics.IsPresent
-            Result = if ($result) { "Success" } else { "Failed" }
-            WintellectTools = "Available"
-        }
-
-        $reportFile = Join-Path $fullOutputPath "session-report-$sessionId.json"
-        $sessionReport | ConvertTo-Json -Depth 2 | Out-File -FilePath $reportFile -Encoding UTF8
-
-        Write-BusBuddyStatus "📋 Session report saved: $reportFile" -Type Success
-        Write-Information "⏱️  Total session duration: $([math]::Round($duration.TotalMinutes, 2)) minutes" -InformationAction Continue
-
-        return $sessionReport
-    }
-    catch {
-        Write-BusBuddyError "Enhanced error capture failed" -Exception $_ -Context "Runtime Error Monitoring"
-        return $null
-    }
-}
-
-#endregion
-
-#region Azure Firewall Management Functions
-
-function Update-BusBuddyAzureFirewall {
-    <#
-    .SYNOPSIS
-        Automatically updates Azure SQL firewall rules for BusBuddy dynamic IP addresses
-    .DESCRIPTION
-        Fetches current public IP and adds it to Azure SQL firewall rules.
-        Handles Starlink and work ISP dynamic IP changes automatically.
-        Based on Microsoft Azure SQL firewall configuration best practices.
-    .PARAMETER ResourceGroupName
-        Azure resource group containing the SQL server (auto-detected from config if not specified)
-    .PARAMETER ServerName
-        Azure SQL server name (default: busbuddy-server-sm2 from appsettings.azure.json)
-    .PARAMETER CleanupOldRules
-        Remove old dynamic IP rules to keep firewall clean
-    .PARAMETER Force
-        Skip confirmation prompts
-    .EXAMPLE
-        Update-BusBuddyAzureFirewall
-    .EXAMPLE
-        Update-BusBuddyAzureFirewall -CleanupOldRules -Force
-    .NOTES
-        Reference: https://learn.microsoft.com/en-us/azure/azure-sql/database/firewall-configure
-        Requires Az PowerShell module: Install-Module -Name Az.Sql -Scope CurrentUser
-        Auto-integrates with BusBuddy appsettings.azure.json configuration
-    #>
-    [CmdletBinding(SupportsShouldProcess)]
-    [OutputType([hashtable])]
-    param (
-        [Parameter(Mandatory = $false)]
-        [string]$ResourceGroupName,
-
-        [Parameter(Mandatory = $false)]
-        [string]$ServerName,
-
-        [Parameter(Mandatory = $false)]
-        [switch]$CleanupOldRules,
-
-        [Parameter(Mandatory = $false)]
-        [switch]$Force
-    )
-
-    try {
-        Write-Information "🚌 BusBuddy Azure SQL Firewall Updater" -InformationAction Continue
-        Write-Information "=" * 50 -InformationAction Continue
-
-        # Get BusBuddy Azure configuration
-        $config = Get-BusBuddyAzureConfig
-        if (-not $config) {
-            throw "Could not load BusBuddy Azure configuration from appsettings.azure.json"
-        }
-
-        # Use configuration values if not provided
-        if (-not $ServerName) {
-            $ServerName = $config.ServerName
-            if (-not $ServerName) {
-                throw "Server name not found in configuration and not provided"
-            }
-        }
-
-        if (-not $ResourceGroupName) {
-            $ResourceGroupName = $config.ResourceGroup
-            if (-not $ResourceGroupName) {
-                Write-Warning "Resource group not specified in config. Please provide it manually."
-                $ResourceGroupName = Read-Host "Enter Azure Resource Group name"
-                if (-not $ResourceGroupName) {
-                    throw "Resource group is required"
-                }
-            }
-        }
-
-        # Call the main update script
-        $scriptPath = Join-Path $PSScriptRoot "..\..\Scripts\Update-AzureFirewall.ps1"
-        if (-not (Test-Path $scriptPath)) {
-            throw "Update-AzureFirewall.ps1 script not found at: $scriptPath"
-        }
-
-        $params = @{
-            ResourceGroupName = $ResourceGroupName
-            ServerName = $ServerName
-            CleanupOldRules = $CleanupOldRules
-        }
-
-        Write-Information "🎯 Target: $ServerName in $ResourceGroupName" -InformationAction Continue
-
-        if ($Force -or $PSCmdlet.ShouldProcess("Azure SQL Server $ServerName", "Update firewall rules")) {
-            $result = & $scriptPath @params
-
-            if ($result.Success) {
-                Write-BusBuddyStatus "✅ Azure firewall updated successfully" -Type Success
-                Write-Information "   IP Address: $($result.IPAddress)" -InformationAction Continue
-                Write-Information "   Rule Name: $($result.RuleName)" -InformationAction Continue
-                Write-Information "⏱️ Allow up to 5 minutes for rule propagation" -InformationAction Continue
-            } else {
-                Write-BusBuddyError "Failed to update Azure firewall" -Exception ([System.Exception]::new($result.Error)) -Context "Azure Firewall"
-            }
-
-            return $result
-        }
-    }
-    catch {
-        Write-BusBuddyError "Azure firewall update failed" -Exception $_ -Context "Azure Firewall Management"
-        return @{
-            Success = $false
-            Error = $_.Exception.Message
-            Timestamp = Get-Date
-        }
-    }
-}
-
-function Get-BusBuddyAzureConfig {
-    <#
-    .SYNOPSIS
-        Extracts Azure configuration from BusBuddy appsettings files
-    .DESCRIPTION
-        Parses appsettings.azure.json to extract server name, resource group, and other Azure settings
-    .EXAMPLE
-        Get-BusBuddyAzureConfig
-    #>
-    [CmdletBinding()]
-    [OutputType([hashtable])]
     param()
-
     try {
-        $configFile = "appsettings.azure.json"
-        if (-not (Test-Path $configFile)) {
-            Write-Warning "appsettings.azure.json not found in current directory"
-            return $null
+        $projectRoot = Get-BusBuddyProjectRoot
+        $loader = Join-Path $projectRoot 'PowerShell/Profiles/Import-BusBuddyModule.ps1'
+        if (-not (Test-Path $loader)) {
+            Write-Warning "Profile loader not found: $loader"
+            return
         }
-
-        $config = Get-Content $configFile -Raw | ConvertFrom-Json
-
-        # Extract server name from connection string
-        $connectionString = $config.ConnectionStrings.DefaultConnection
-        if ($connectionString -match 'Server=tcp:([^.,]+)') {
-            $serverName = $matches[1]
-        } else {
-            Write-Warning "Could not extract server name from connection string"
-            $serverName = $null
+        if ($PSCmdlet.ShouldProcess($loader,'Invoke profile/module loader')) {
+            & $loader
         }
-
-        # Try to find resource group in various config locations
-        $resourceGroup = $null
-        if ($config.Azure.ResourceGroup) {
-            $resourceGroup = $config.Azure.ResourceGroup
-        } elseif ($config.ResourceGroup) {
-            $resourceGroup = $config.ResourceGroup
-        }
-
-        return @{
-            ServerName = $serverName
-            ResourceGroup = $resourceGroup
-            DatabaseName = "BusBuddyDB"
-            ConnectionString = $connectionString
-            Config = $config
-        }
-    }
-    catch {
-        Write-Warning "Failed to parse Azure configuration: $($_.Exception.Message)"
-        return $null
+    } catch {
+        Write-Warning ("bbRefresh failed: {0}" -f $_.Exception.Message)
     }
 }
-
-function Test-BusBuddyAzureConnection {
-    <#
-    .SYNOPSIS
-        Tests Azure SQL connection for BusBuddy database
-    .DESCRIPTION
-        Validates network connectivity and firewall rules for Azure SQL Database
-        Provides detailed diagnostics for connection issues
-    .EXAMPLE
-        Test-BusBuddyAzureConnection
-    .EXAMPLE
-        Test-BusBuddyAzureConnection -UpdateFirewall
-    #>
-    [CmdletBinding()]
-    [OutputType([hashtable])]
-    param (
-        [Parameter(Mandatory = $false)]
-        [switch]$UpdateFirewall
-    )
-
-    try {
-        Write-Information "🔍 Testing BusBuddy Azure SQL Connection" -InformationAction Continue
-        Write-Information "=" * 45 -InformationAction Continue
-
-        # Get configuration
-        $config = Get-BusBuddyAzureConfig
-        if (-not $config) {
-            throw "Could not load Azure configuration"
-        }
-
-        # Test network connectivity
-        Write-Information "🌐 Testing network connectivity..." -InformationAction Continue
-        $serverFqdn = "$($config.ServerName).database.windows.net"
-
-        try {
-            $tcpTest = Test-NetConnection -ComputerName $serverFqdn -Port 1433 -WarningAction SilentlyContinue
-            if ($tcpTest.TcpTestSucceeded) {
-                Write-Information "✅ Network connectivity: SUCCESS" -InformationAction Continue
-            } else {
-                Write-Information "❌ Network connectivity: FAILED" -InformationAction Continue
-                Write-Information "   This may indicate firewall or network issues" -InformationAction Continue
-            }
-        }
-        catch {
-            Write-Information "❌ Network test failed: $($_.Exception.Message)" -InformationAction Continue
-        }
-
-        # Get current IP
-        try {
-            $currentIP = (Invoke-RestMethod -Uri "https://api.ipify.org" -TimeoutSec 10).Trim()
-            Write-Information "📍 Current public IP: $currentIP" -InformationAction Continue
-        }
-        catch {
-            Write-Warning "Could not determine current IP address"
-            $currentIP = "Unknown"
-        }
-
-        # Test SQL connection
-        Write-Information "🔐 Testing SQL authentication..." -InformationAction Continue
-
-        $connectionSuccess = $false
-        $connectionError = $null
-
-        try {
-            # Use .NET SqlConnection for direct testing
-            $connectionString = $config.ConnectionString
-            # Replace environment variables for testing
-            $testConnectionString = $connectionString -replace '\$\{AZURE_SQL_USER\}', $env:AZURE_SQL_USER -replace '\$\{AZURE_SQL_PASSWORD\}', $env:AZURE_SQL_PASSWORD
-
-            if ($testConnectionString -match '\$\{') {
-                Write-Warning "Environment variables not set: AZURE_SQL_USER, AZURE_SQL_PASSWORD"
-                Write-Information "💡 Set environment variables or use manual portal test" -InformationAction Continue
-            } else {
-                Add-Type -AssemblyName System.Data
-                $sqlConnection = New-Object System.Data.SqlClient.SqlConnection($testConnectionString)
-                $sqlConnection.Open()
-                $sqlConnection.Close()
-                $connectionSuccess = $true
-                Write-Information "✅ SQL connection: SUCCESS" -InformationAction Continue
-            }
-        }
-        catch {
-            $connectionError = $_.Exception.Message
-            Write-Information "❌ SQL connection: FAILED" -InformationAction Continue
-            Write-Information "   Error: $connectionError" -InformationAction Continue
-
-            # Check for firewall-related errors
-            if ($connectionError -like "*Client with IP address*not allowed*") {
-                Write-Information "🛡️ Firewall issue detected!" -InformationAction Continue
-                if ($UpdateFirewall) {
-                    Write-Information "🔧 Attempting to update firewall rules..." -InformationAction Continue
-                    $firewallResult = Update-BusBuddyAzureFirewall -Force
-                    if ($firewallResult.Success) {
-                        Write-Information "✅ Firewall updated. Retry connection in 5 minutes." -InformationAction Continue
-                    }
-                } else {
-                    Write-Information "💡 Run with -UpdateFirewall to automatically fix" -InformationAction Continue
-                }
-            }
-        }
-
-        # Summary
-        Write-Information "`n📋 Connection Test Summary:" -InformationAction Continue
-        Write-Information "   Server: $serverFqdn" -InformationAction Continue
-        Write-Information "   Database: $($config.DatabaseName)" -InformationAction Continue
-        Write-Information "   Current IP: $currentIP" -InformationAction Continue
-        Write-Information "   Network: $(if ($tcpTest.TcpTestSucceeded) { '✅' } else { '❌' })" -InformationAction Continue
-        Write-Information "   SQL Auth: $(if ($connectionSuccess) { '✅' } else { '❌' })" -InformationAction Continue
-
-        if (-not $connectionSuccess) {
-            Write-Information "`n🔧 Troubleshooting options:" -InformationAction Continue
-            Write-Information "1. Update firewall: bb-azure-firewall" -InformationAction Continue
-            Write-Information "2. Use local database: Set DatabaseProvider=Local" -InformationAction Continue
-            Write-Information "3. Check Azure portal: https://portal.azure.com" -InformationAction Continue
-            Write-Information "4. Verify credentials: echo `$env:AZURE_SQL_USER" -InformationAction Continue
-        }
-
-        return @{
-            Success = $connectionSuccess
-            NetworkConnectivity = $tcpTest.TcpTestSucceeded
-            CurrentIP = $currentIP
-            Server = $serverFqdn
-            Database = $config.DatabaseName
-            Error = $connectionError
-            Timestamp = Get-Date
-        }
-    }
-    catch {
-        Write-BusBuddyError "Azure connection test failed" -Exception $_ -Context "Azure Connection Test"
-        return @{
-            Success = $false
-            Error = $_.Exception.Message
-            Timestamp = Get-Date
-        }
-    }
-}
-
-#endregion
-
-#region Aliases - Safe Alias Creation with Conflict Resolution
-# Core aliases with safe creation
-try { Set-Alias -Name 'bbBuild'      -Value 'Invoke-BusBuddyBuild'   -Force } catch { Write-Warning ("Failed to set alias bbBuild: {0}" -f $_.Exception.Message) }
-try { Set-Alias -Name 'bbRun'        -Value 'Invoke-BusBuddyRun'     -Force } catch { Write-Warning ("Failed to set alias bbRun: {0}" -f $_.Exception.Message) }
-try { Set-Alias -Name 'bbRunSta'     -Value 'Invoke-BusBuddyRunSta'  -Force } catch { Write-Warning ("Failed to set alias bbRunSta: {0}" -f $_.Exception.Message) }
-try { Set-Alias -Name 'bbClean'      -Value 'Invoke-BusBuddyClean'   -Force } catch { Write-Warning ("Failed to set alias bbClean: {0}" -f $_.Exception.Message) }
-try { Set-Alias -Name 'bbRestore'    -Value 'Invoke-BusBuddyRestore' -Force } catch { Write-Warning ("Failed to set alias bbRestore: {0}" -f $_.Exception.Message) }
-try { Set-Alias -Name 'bbTest'       -Value 'Invoke-BusBuddyTest'    -Force } catch { Write-Warning ("Failed to set alias bbTest: {0}" -f $_.Exception.Message) }
-try { Set-Alias -Name 'bbHealth'     -Value 'Invoke-BusBuddyHealthCheck' -Force } catch { Write-Warning ("Failed to set alias bbHealth: {0}" -f $_.Exception.Message) }
-
-# Developer discovery
-try { Set-Alias -Name 'bbDevSession' -Value 'Start-BusBuddyDevSession' -Force } catch { Write-Warning ("Failed to set alias bbDevSession: {0}" -f $_.Exception.Message) }
-try { Set-Alias -Name 'bbInfo'       -Value 'Get-BusBuddyInfo' -Force } catch { Write-Warning ("Failed to set alias bbInfo: {0}" -f $_.Exception.Message) }
-try { Set-Alias -Name 'bbCommands'   -Value 'Get-BusBuddyCommand' -Force } catch { Write-Warning ("Failed to set alias bbCommands: {0}" -f $_.Exception.Message) }
-
-# Removed alias for bbXamlValidate (function not present)
 
 # Session correlation
 try { Set-Alias -Name 'bbMantra'       -Value 'Get-BusBuddyMantraId'    -Force } catch { Write-Warning ("Failed to set alias bbMantra: {0}" -f $_.Exception.Message) }
@@ -3285,6 +2696,10 @@ foreach ($pair in @(
     @{A='bb-restore';V='Invoke-BusBuddyRestore'},
     @{A='bb-test';V='Invoke-BusBuddyTest'},
     @{A='bb-health';V='Invoke-BusBuddyHealthCheck'},
+    @{A='bb-anti-regression';V='Invoke-BusBuddyAntiRegression'},
+    @{A='bb-mvp-check';V='Test-BusBuddyMVPReadiness'},
+    @{A='bb-xaml-validate';V='Invoke-BusBuddyXamlValidation'},
+    @{A='bb-refresh';V='Invoke-BusBuddyRefresh'},
     @{A='bb-env';V='Initialize-BusBuddyEnvironment'
 })) { try { Set-Alias -Name $pair.A -Value $pair.V -Force } catch { Write-Warning ("Failed to set alias {0}: {1}" -f $pair.A, $_.Exception.Message) } }
 #endregion
@@ -3301,6 +2716,8 @@ Export-ModuleMember -Function @(
     # Ensure MVP and Anti-Regression functions are exported
     'Test-BusBuddyMVPReadiness',
     'Invoke-BusBuddyAntiRegression',
+    'Invoke-BusBuddyXamlValidation',
+    'Invoke-BusBuddyRefresh',
     'Get-BusBuddyApartmentState',
     'Get-BusBuddyMantraId',
     'Reset-BusBuddyMantraId',
@@ -3334,7 +2751,9 @@ Export-ModuleMember -Function @(
     # Logging alias
     'bb-logs-summary',
     # Validation aliases (export explicitly for reliability)
-    'bb-anti-regression','bb-mvp-check'
+    'bb-anti-regression','bb-mvp-check',
+    # CamelCase bb* surface (explicit exports ensure visibility)
+    'bbMvpCheck','bbAntiRegression','bbXamlValidate','bbRefresh'
 )
 #endregion
 
@@ -3368,8 +2787,6 @@ function Show-BusBuddyWelcome {
         Write-Information "  bbDevSession, bbInfo, bbCommands, bbMantra, bbMantraReset" -InformationAction Continue
     }
 
-    # Removed 'Validation & Safety' section (no bbXamlValidate)
-
     # Docs & Reference remains gated if bbCopilotRef exists
     if ($env:BUSBUDDY_SILENT -ne '1' -and (Get-Command bbCopilotRef -ErrorAction SilentlyContinue)) {
         Write-BusBuddyStatus "Docs & Reference" -Type Info
@@ -3390,6 +2807,4 @@ if (-not $env:BUSBUDDY_NO_WELCOME -and $env:BUSBUDDY_SILENT -ne '1') {
     Show-BusBuddyWelcome -Quiet
 }
 #endregion
-
-# Removed duplicated trailing welcome/region markers at EOF to avoid double execution.
 

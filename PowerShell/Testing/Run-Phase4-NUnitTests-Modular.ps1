@@ -17,22 +17,22 @@ throw "Run-Phase4-NUnitTests-Modular.ps1 archived. Use bbTest"
 
 <#
 # legacy snippet (unreachable)
-# Write-Host "`n=== TEST OUTPUT ===" -ForegroundColor Cyan
+Write-Information "`n=== TEST OUTPUT ===" -InformationAction Continue
         $testStdout -split "`n" | ForEach-Object {
             if ($_ -match "Passed|✓") {
-                Write-Host $_ -ForegroundColor Green
+                Write-Output $_
             } elseif ($_ -match "Failed|✗|ERROR") {
-                Write-Host $_ -ForegroundColor Red
+                Write-Error $_
             } elseif ($_ -match "Skipped") {
-                Write-Host $_ -ForegroundColor Yellow
+                Write-Warning $_
             } else {
-                Write-Host $_
+                Write-Information $_ -InformationAction Continue
             }
         }
 
         if ($testStderr) {
-            Write-Host "`n=== TEST ERRORS ===" -ForegroundColor Red
-            Write-Host $testStderr -ForegroundColor Red
+            Write-Error "`n=== TEST ERRORS ==="
+            Write-Error $testStderr
         }
 
         # Parse results
