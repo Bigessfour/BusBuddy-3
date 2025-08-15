@@ -4,7 +4,7 @@
       "args": [
         "-y",
         "@modelcontextprotocol/server-filesystem",
-        "C:\\Users\\biges\\Desktop\\BusBuddy\\BusBuddy"
+  "C:\\Users\\biges\\Desktop\\BusBuddy"
       ],
       "command": "npx"
     },

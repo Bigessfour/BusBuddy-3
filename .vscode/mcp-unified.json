@@ -1,19 +1,10 @@
 {
   "mcpServers": {
-    "busbuddy-git": {
-      "command": "node",
-      "env": {
-        "ALLOWED_REPOSITORIES": "C:\\Users\\biges\\Desktop\\BusBuddy\\BusBuddy"
-      },
-      "args": [
-        "C:\\Users\\biges\\Desktop\\BusBuddy\\BusBuddy\\mcp-servers\\git-mcp-server.js"
-      ]
-    },
-    "filesystem": {
+  "filesystem": {
       "args": [
         "-y",
         "@modelcontextprotocol/server-filesystem",
-        "C:\\Users\\biges\\Desktop\\BusBuddy\\BusBuddy"
+    "C:\\Users\\biges\\Desktop\\BusBuddy"
       ],
       "command": "npx"
     },
@@ -29,15 +20,6 @@
         "BRAVE_API_KEY": ""
       },
       "command": "npx"
-    },
-    "busbuddy-filesystem": {
-      "command": "node",
-      "env": {
-        "ALLOWED_DIRECTORIES": "C:\\Users\\biges\\Desktop\\BusBuddy\\BusBuddy"
-      },
-      "args": [
-        "C:\\Users\\biges\\Desktop\\BusBuddy\\BusBuddy\\mcp-servers\\filesystem-mcp-server.js"
-      ]
     }
   }
 }
