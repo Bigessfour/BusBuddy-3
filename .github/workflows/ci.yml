@@ -20,9 +20,13 @@ on:
 
 jobs:
   build-and-test:
-    name: 🏗️ Build & Test
+    name: 🏗️ Build & Test (Sf ${{ matrix.syncfusion }})
     runs-on: windows-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        syncfusion: ["30.2.4", "30.2.5"]
     steps:
       - name: 📥 Checkout code
         uses: actions/checkout@v4
@@ -34,6 +38,24 @@ jobs:
             $sln = Get-ChildItem -Path . -Filter *.sln -Recurse | Select-Object -First 1
             if ($sln) { "SOLUTION_FILE=$($sln.FullName)" >> $env:GITHUB_ENV }
           }
+      - name: 📌 Set and validate Syncfusion version pin
+        shell: pwsh
+        run: |
+          $desired = "${{ matrix.syncfusion }}"
+          [xml]$xml = Get-Content -Raw -Path "Directory.Build.props"
+          $node = $xml.Project.PropertyGroup.SyncfusionVersion
+          if (-not $node) { throw "Could not find <SyncfusionVersion> in Directory.Build.props" }
+          $current = $node.InnerText
+          if ($current -ne $desired) {
+            Write-Host "Updating SyncfusionVersion: $current -> $desired"
+            $node.InnerText = $desired
+            $xml.Save((Resolve-Path "Directory.Build.props"))
+          } else {
+            Write-Host "SyncfusionVersion already set to $current"
+          }
+          # Validate update
+          $props = Get-Content -Raw -Path "Directory.Build.props"
+          if ($props -notmatch "<SyncfusionVersion>$desired</SyncfusionVersion>") { throw "Failed to set SyncfusionVersion to $desired" }
 
       - name: 🏗️ Setup .NET
         uses: actions/setup-dotnet@v4
