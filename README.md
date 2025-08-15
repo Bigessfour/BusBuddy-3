@@ -30,16 +30,15 @@ Highlights
 git clone https://github.com/Bigessfour/BusBuddy-3.git
 cd BusBuddy
 
-# Load bb* aliases for the session
-./PowerShell/Profiles/Import-BusBuddyModule.ps1
+# Load PowerShell automation
+. .\PowerShell\Profiles\BusBuddyProfile.ps1
 
 # Optional — set Syncfusion license to avoid trial dialogs
 $env:SYNCFUSION_LICENSE_KEY = "<your-key>"  # https://help.syncfusion.com/wpf/wpf-license-registration
 
 # Health → Build → Run
 bbHealth
-bbBuild
-bbRun
+bbBuild && bbRun
 
 # Fallback (explicit target when using dotnet directly)
 dotnet run --project .\BusBuddy.WPF\BusBuddy.WPF.csproj
