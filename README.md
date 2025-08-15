@@ -108,6 +108,36 @@ Required secrets for optional steps (GitHub → Settings → Secrets and variabl
 
 See Actions tab for run results and artifacts.
 
+#### 🆕 Recent workflow updates (Aug 15, 2025)
+- `.github/workflows/db-migrations-seed.yml`
+  - Added post‑migration schema validation using `sqlcmd` (checks for `Schedule%` tables). Runs only when `BUSBUDDY_CONNECTION` is set and `ensure-sqlcmd` succeeded.
+  - Includes optional dynamic Azure SQL firewall allow/cleanup steps for runners.
+- `.github/workflows/production-release.yml`
+  - Exposes `SYNCFUSION_LICENSE_KEY` to the job when provided; logs a notice if missing to avoid silent license warnings.
+  - Calls the reusable DB job (`db-migrations-seed.yml`) after production build to apply migrations and (optionally) seed.
+
+### 🔐 Syncfusion & Azure SQL Integration
+
+- Syncfusion licensing
+  - CI: set `secrets.SYNCFUSION_LICENSE_KEY`. The pipeline exports it to `GITHUB_ENV` so builds avoid license warnings.
+  - Runtime: `BusBuddy.WPF/App.xaml.cs` registers the license at startup using `Syncfusion.Licensing.SyncfusionLicenseProvider.RegisterLicense(...)` if `SYNCFUSION_LICENSE_KEY` is present. Ensure this environment variable is set on production hosts to prevent trial dialogs. Reference: https://help.syncfusion.com/wpf/wpf-license-registration
+
+- Azure SQL migrations and schema validation
+  - Reusable workflow `.github/workflows/db-migrations-seed.yml` generates an idempotent EF script and applies it via `sqlcmd` when Azure SQL secrets are provided.
+  - Post‑migration, a schema validation step now checks for expected tables and fails fast if missing. Example snippet:
+
+```yaml
+- name: 🧪 Validate database schema
+  if: ${{ env.BUSBUDDY_CONNECTION != '' && steps.ensure-sqlcmd.outputs.found == 'True' }}
+  shell: pwsh
+  run: |
+    echo "Validating database schema..."
+    sqlcmd -S "${{ env.AZURE_SQL_SERVER }}" -d "BusBuddyDb" -U "${{ env.AZURE_SQL_USER }}" -P "${{ env.AZURE_SQL_PASSWORD }}" -Q "SELECT COUNT(*) FROM sys.tables WHERE name LIKE 'Schedule%';" -h -1 |
+      ForEach-Object { if ($_ -eq "0") { Write-Error "No Schedule tables found in database" } else { Write-Host "Schema OK — found $($_) Schedule tables." } }
+```
+
+  - Configure these secrets for CI validation: `BUSBUDDY_CONNECTION`, `AZURE_SQL_SERVER`, `AZURE_SQL_USER`, `AZURE_SQL_PASSWORD`. Adjust the table pattern (`Schedule%`) to fit future schema changes.
+
 ## ⚠️ **Known Risks & Issues**
 
 ### **Database & Migration Concerns**
