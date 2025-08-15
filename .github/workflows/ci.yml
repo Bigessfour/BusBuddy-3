@@ -42,19 +42,32 @@ jobs:
         shell: pwsh
         run: |
           $desired = "${{ matrix.syncfusion }}"
-          [xml]$xml = Get-Content -Raw -Path "Directory.Build.props"
-          $node = $xml.Project.PropertyGroup.SyncfusionVersion
-          if (-not $node) { throw "Could not find <SyncfusionVersion> in Directory.Build.props" }
-          $current = $node.InnerText
+          $propsPath = "Directory.Build.props"
+          [xml]$xml = Get-Content -Raw -Path $propsPath
+          # PropertyGroup may appear multiple times; pick the first group that contains the element
+          $node = ($xml.Project.PropertyGroup | ForEach-Object { $_.SyncfusionVersion } | Where-Object { $_ } | Select-Object -First 1)
+          if (-not $node) { throw "Could not find <SyncfusionVersion> in $propsPath" }
+          $current = try { $node.InnerText } catch { [string]$node }
           if ($current -ne $desired) {
             Write-Host "Updating SyncfusionVersion: $current -> $desired"
-            $node.InnerText = $desired
-            $xml.Save((Resolve-Path "Directory.Build.props"))
+            $updated = $false
+            try {
+              $node.InnerText = $desired
+              $xml.Save((Resolve-Path $propsPath))
+              $updated = $true
+            } catch {
+              Write-Host "XML DOM update failed — falling back to regex replace: $($_.Exception.Message)"
+            }
+            if (-not $updated) {
+              $raw = Get-Content -Raw -Path $propsPath
+              $new = [regex]::Replace($raw, '<SyncfusionVersion>.*?</SyncfusionVersion>', "<SyncfusionVersion>$desired</SyncfusionVersion>")
+              if ($new -ne $raw) { [IO.File]::WriteAllText((Resolve-Path $propsPath), $new, [Text.Encoding]::UTF8) }
+            }
           } else {
             Write-Host "SyncfusionVersion already set to $current"
           }
           # Validate update
-          $props = Get-Content -Raw -Path "Directory.Build.props"
+          $props = Get-Content -Raw -Path $propsPath
           if ($props -notmatch "<SyncfusionVersion>$desired</SyncfusionVersion>") { throw "Failed to set SyncfusionVersion to $desired" }
 
       - name: 🏗️ Setup .NET

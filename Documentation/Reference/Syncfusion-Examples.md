@@ -1,6 +1,6 @@
 # 🎨 Syncfusion WPF Examples - BusBuddy UI Reference
 
-**Purpose**: Curated Syncfusion WPF 30.1.42 code examples for GitHub Copilot context and rapid development.
+**Purpose**: Curated Syncfusion WPF 30.2.4 code examples for GitHub Copilot context and rapid development.
 
 **Official Sources**: 
 - [Syncfusion WPF Documentation](https://help.syncfusion.com/wpf/welcome-to-syncfusion-essential-wpf)

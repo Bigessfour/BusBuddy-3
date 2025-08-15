@@ -139,7 +139,8 @@ namespace BusBuddy.WPF.Views.Main
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Failed to initialize MainWindow");
+                try { Logger.Error(ex, "Failed to initialize MainWindow"); } catch { }
+                try { System.Windows.MessageBox.Show($"Main window failed to initialize: {ex.Message}", "BusBuddy", MessageBoxButton.OK, MessageBoxImage.Error); } catch { }
                 Logger.Debug("Creating fallback layout due to initialization failure");
                 CreateFallbackLayout();
             }

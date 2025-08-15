@@ -85,7 +85,7 @@ Following [Syncfusion WPF Installation Guide](https://help.syncfusion.com/window
 
 ### Current Syncfusion Configuration
 
-- **Version**: `30.1.40` (pinned in Directory.Build.props)
+- **Version**: `30.2.4` (pinned in Directory.Build.props)
 - **Source**: `nuget.org` (official public feed)
 - **License**: Community/Commercial (configured via environment variable)
 - **Controls Used**: DockingManager, NavigationDrawer, SfDataGrid, Charts
@@ -95,7 +95,7 @@ Following [Syncfusion WPF Installation Guide](https://help.syncfusion.com/window
 ```xml
 <!-- Centralized in Directory.Build.props -->
 <PropertyGroup>
-  <SyncfusionVersion>30.1.40</SyncfusionVersion>
+  <SyncfusionVersion>30.2.4</SyncfusionVersion>
 </PropertyGroup>
 
 <!-- Individual project references -->
@@ -135,11 +135,11 @@ public partial class App : Application
 
 ```xml
 <!-- ✅ CORRECT: Exact version pinning -->
-<PackageReference Include="Syncfusion.SfChart.WPF" Version="30.1.40" />
+<PackageReference Include="Syncfusion.SfChart.WPF" Version="30.2.4" />
 
 <!-- ❌ AVOID: Floating versions -->
 <PackageReference Include="Syncfusion.SfChart.WPF" Version="30.*" />
-<PackageReference Include="Syncfusion.SfChart.WPF" Version="[30.1.40,)" />
+<PackageReference Include="Syncfusion.SfChart.WPF" Version="[30.2.4,)" />
 ```
 
 ### Centralized Version Management
@@ -153,7 +153,7 @@ public partial class App : Application
     <UseWPF>true</UseWPF>
 
     <!-- Package Versions -->
-    <SyncfusionVersion>30.1.40</SyncfusionVersion>
+  <SyncfusionVersion>30.2.4</SyncfusionVersion>
     <EntityFrameworkVersion>8.0.0</EntityFrameworkVersion>
     <SerilogVersion>4.0.2</SerilogVersion>
   </PropertyGroup>
@@ -184,7 +184,7 @@ dotnet list package --vulnerable --include-transitive
 ### Current Security Status
 
 - **Last Scan**: Clean (no known vulnerabilities)
-- **Syncfusion 30.1.40**: No security advisories
+- **Syncfusion 30.2.4**: No security advisories
 - **Entity Framework**: Latest stable versions
 - **Regular Scanning**: Integrated into CI/CD pipeline
 

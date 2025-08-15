@@ -100,11 +100,12 @@ public class LogLifecycleManager
     }
 
     /// <summary>
-    /// Actionable errors are kept longer (30 days) as they need developer attention
+    /// Actionable errors are kept longer (60 days) as they need developer attention
     /// </summary>
     private static bool ShouldDeleteActionableErrors(FileInfo fileInfo)
     {
-        return fileInfo.LastWriteTime < DateTime.Now.AddDays(-30);
+        // Per retention policy: keep actionable error logs for 60 days
+        return fileInfo.LastWriteTime < DateTime.Now.AddDays(-60);
     }
 
     /// <summary>

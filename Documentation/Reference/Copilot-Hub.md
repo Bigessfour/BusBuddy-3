@@ -46,7 +46,7 @@
 
 ## 🎯 BusBuddy MVP Context
 - **Target Framework**: .NET 8.0-windows (WPF)
-- **UI Framework**: Syncfusion WPF 30.1.42 (FluentDark theme)
+- **UI Framework**: Syncfusion WPF 30.2.4 (FluentDark theme)
 - **Architecture**: MVVM with Entity Framework Core
 - **Logging**: Serilog (pure implementation, no Microsoft.Extensions.Logging)
 - **PowerShell**: 7.5.2 with bb-* command automation

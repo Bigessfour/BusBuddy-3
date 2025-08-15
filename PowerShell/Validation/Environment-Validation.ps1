@@ -129,7 +129,10 @@ function Test-BusBuddyEnvironment {
     if (Test-Path "Grok Resources\GROK-README.md") {
         Write-Output "   ✅ Grok Resources folder ready"
     } else {
-        $warnings += "Grok Resources not found - AI assistance may be limited"
+        if ($env:BUSBUDDY_NO_XAI_WARN -ne '1') {
+            # Removed per MVP request: avoid Grok/xAI warning noise in validation output
+            # $warnings += "Grok Resources not found - AI assistance may be limited"
+        }
         Write-Output "   ⚠️ Grok Resources missing"
     }
 

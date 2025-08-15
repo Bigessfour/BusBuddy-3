@@ -78,6 +78,7 @@
         "projitems",
         "Prowers",
         "pscustomobject",
+        "PSMODULEPATH",
         "psobject",
         "pwsh",
         "rawindex",

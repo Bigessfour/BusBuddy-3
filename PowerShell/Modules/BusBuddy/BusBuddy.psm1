@@ -118,7 +118,13 @@ function Start-BusBuddyTestWatch {
     $action = {
         Start-Sleep 1
         Write-Information '🔄 Change detected — re-running tests' -InformationAction Continue
-        Get-BusBuddyTestOutput -TestSuite $using:TestSuite -SaveToFile
+        try {
+            $p = $Event.SourceEventArgs.FullPath
+            if ($p -match '(?i)\\bin\\|\\obj\\|\\TestResults\\|\\\.git\\|\\\.vs\\') { return }
+            $ext = [IO.Path]::GetExtension($p)
+            if ($ext -notin '.cs','.xaml') { return }
+            Get-BusBuddyTestOutput -TestSuite $using:TestSuite -SaveToFile
+        } catch { Write-Warning "Watcher action failed: $($_.Exception.Message)" }
     }
 
     $subs = @()
@@ -263,7 +269,7 @@ function Get-BusBuddyTelemetrySummary {
     )
     try {
         if (-not $LogsPath) { $LogsPath = Join-Path (Get-BusBuddyProjectRoot) 'logs' }
-        if (-not (Test-Path $LogsPath)) { Write-Warning 'Logs directory not found.'; return }
+        # Copilot: Read JSON lines safely — ignore malformed lines and aggregate by module.
         $files = Get-ChildItem $LogsPath -Filter 'module-telemetry*.json' -File -ErrorAction SilentlyContinue | Sort-Object LastWriteTime
         if (-not $files) { Write-Warning 'No telemetry files present.'; return }
         $entries = foreach ($f in $files) {
@@ -438,7 +444,12 @@ function Invoke-BusBuddyPester {
         [string]$Path,
         [switch]$PassThru
     )
-    if (-not (Get-Module -ListAvailable -Name Pester)) { Write-Warning 'Pester module not found. Install with: Install-Module Pester -Scope CurrentUser'; return }
+    # Copilot: Validate suggestions — ensure cmdlet exists before use (Get-Command).
+    # Docs: https://learn.microsoft.com/powershell/module/microsoft.powershell.core/get-command
+    if (-not (Get-Command Invoke-Pester -ErrorAction SilentlyContinue)) {
+        Write-Warning 'Pester not available. Install with: Install-Module Pester -Scope CurrentUser'
+        return
+    }
     if (-not $Path) { $Path = Join-Path (Get-BusBuddyProjectRoot) 'PowerShell/Tests' }
     if (-not (Test-Path $Path)) { Write-Warning "Tests path not found: $Path"; return }
     Write-Information "🧪 Running Pester tests in $Path" -InformationAction Continue
@@ -457,6 +468,141 @@ Set-Alias -Name bbPester -Value Invoke-BusBuddyPester -ErrorAction SilentlyConti
 #endregion Pester Helper
 
 #endregion
+
+#region Script Lint: Detect invalid ErrorAction pipeline misuse
+function Test-BusBuddyErrorActionPipelines {
+    <#
+    .SYNOPSIS
+        Scans PowerShell scripts for the invalid pattern that causes "The variable '$_' cannot be retrieved because it has not been set".
+    .DESCRIPTION
+        Looks for statements like "ErrorAction SilentlyContinue | Select-Object Name, Definition" or attempts to pipe
+        preference variables (e.g., $ErrorActionPreference) directly into Select-Object. Reports offending files/lines.
+    .PARAMETER Root
+        Root folder to scan. Defaults to project PowerShell folder.
+    .OUTPUTS
+        PSCustomObject with File, LineNumber, Line
+    .LINK
+        https://learn.microsoft.com/powershell/scripting/learn/deep-dives/everything-about-output-streams
+    #>
+    [CmdletBinding()] param(
+        [string]$Root = (Join-Path (Get-BusBuddyProjectRoot) 'PowerShell')
+    )
+    if (-not (Test-Path $Root)) { Write-Warning "Root not found: $Root"; return @() }
+
+    $files = Get-ChildItem -Path $Root -Recurse -Include *.ps1,*.psm1,*.psd1 -File -ErrorAction SilentlyContinue
+    $findings = @()
+
+    foreach ($f in $files) {
+        try {
+            $i = 0
+            Get-Content -Path $f.FullName -ErrorAction Stop | ForEach-Object {
+                $i++
+                $line = $_
+                # Flag known-bad constructs
+                $bad1 = $line -match '(?i)\bErrorAction\s+SilentlyContinue\s*\|\s*Select-Object'
+                $bad2 = $line -match '(?i)\$ErrorActionPreference\s*\|\s*Select-Object'
+                if ($bad1 -or $bad2) {
+                    $findings += [pscustomobject]@{ File = $f.FullName; LineNumber = $i; Line = $line.Trim() }
+                }
+            }
+        } catch { }
+    }
+    return $findings
+}
+
+Set-Alias -Name bb-ps-validate-ea -Value Test-BusBuddyErrorActionPipelines -ErrorAction SilentlyContinue
+# Wrapper to safely run the validation and print a summary without relying on external variables like $r
+function Invoke-BusBuddyErrorActionAudit {
+    <#
+    .SYNOPSIS
+        Runs the ErrorAction pipeline validator and prints a concise summary.
+    .DESCRIPTION
+        Convenience wrapper that captures results from Test-BusBuddyErrorActionPipelines, writes a count,
+        and formats a table when findings exist—avoiding patterns that depend on a pre-set variable (e.g., $r).
+        Uses Write-Information/Write-Output per Microsoft guidelines.
+    .PARAMETER Root
+        Root folder to scan. Defaults to the project's PowerShell folder.
+    .OUTPUTS
+        Same objects as Test-BusBuddyErrorActionPipelines, passed through after printing.
+    .LINK
+        Microsoft PowerShell Output Streams — https://learn.microsoft.com/powershell/scripting/learn/deep-dives/everything-about-output-streams
+    #>
+    [CmdletBinding()]
+    param(
+        [string]$Root = (Join-Path (Get-BusBuddyProjectRoot) 'PowerShell')
+    )
+
+    try {
+        $results = Test-BusBuddyErrorActionPipelines -Root $Root
+    }
+    catch {
+        Write-Error ("Validation failed: {0}" -f $_.Exception.Message)
+        return @()
+    }
+
+    $count = @($results).Count
+    Write-Output ("Findings: {0}" -f $count)
+    if ($count -gt 0) {
+        $results |
+            Select-Object File, LineNumber, Line |
+            Format-Table -AutoSize |
+            Out-String |
+            Write-Output
+    }
+
+    return $results
+}
+
+Set-Alias -Name bb-ps-validate-ea-run -Value Invoke-BusBuddyErrorActionAudit -ErrorAction SilentlyContinue
+#endregion Script Lint
+
+#region Log Summary Utilities
+function Get-BusBuddyLogSummary {
+    <#
+    .SYNOPSIS
+        Loads BusBuddy.WPF utilities and prints a concise log summary.
+    .DESCRIPTION
+        Uses BusBuddy.WPF.Utilities.LogLifecycleManager to read logs and output a category count table.
+        Avoids relying on pre-set variables like $r and uses Write-Information/Write-Output per Microsoft guidelines.
+    .PARAMETER LogsDir
+        Logs directory path. Defaults to "logs" under the project root.
+    .PARAMETER PassThru
+        When specified, also returns the summary object.
+    #>
+    [CmdletBinding()]
+    param(
+        [string]$LogsDir = (Join-Path (Get-BusBuddyProjectRoot) 'logs'),
+        [switch]$PassThru
+    )
+
+    try {
+        # Copilot: Get log files and count them — ensure logs folder exists before reading.
+        # Docs (I/O): https://learn.microsoft.com/powershell/module/microsoft.powershell.management/new-item
+        if (-not (Test-Path -LiteralPath $LogsDir)) { New-Item -ItemType Directory -Path $LogsDir -Force | Out-Null }
+
+        $manager = New-Object BusBuddy.WPF.Utilities.LogLifecycleManager($LogsDir)
+        $summary = $manager.GetLogSummary()
+
+        # Copilot: Print a concise table — use Write-Output for pipeline-safe text.
+        $count = [int]($summary.TotalFiles)
+        Write-Output ("Findings: {0}" -f $count)
+        if ($count -gt 0) {
+            $summary.Categories.GetEnumerator() |
+                Select-Object @{n='Name';e={$_.Key}}, @{n='FileCount';e={$_.Value.FileCount}} |
+                Format-Table -AutoSize |
+                Out-String |
+                Write-Output
+        }
+
+        if ($PassThru) { return $summary }
+    }
+    catch {
+        Write-Error ("Log summary failed: {0}" -f $_.Exception.Message)
+    }
+}
+
+try { Set-Alias -Name bb-logs-summary -Value Get-BusBuddyLogSummary -Force } catch { }
+#endregion Log Summary Utilities
 
 #region Core Functions
 
@@ -809,20 +955,116 @@ function Invoke-BusBuddyBuild {
 function Invoke-BusBuddyRun {
     <#
     .SYNOPSIS
-        Run the BusBuddy application with automatic error capture
+        Run the BusBuddy application from an STA thread to avoid exit code 1.
+    .DESCRIPTION
+        Launches the built WPF executable using an STA runspace as required by WPF’s threading model.
+        References:
+        - WPF Threading Model — STA requirement:
+          https://learn.microsoft.com/dotnet/desktop/wpf/advanced/threading-model
+        - RunspaceFactory.CreateRunspace / ApartmentState:
+          https://learn.microsoft.com/dotnet/api/system.management.automation.runspaces.runspacefactory.createrunspace
+          https://learn.microsoft.com/dotnet/api/system.threading.apartmentstate
+        - powershell.exe -STA parameter (for callers):
+          https://learn.microsoft.com/powershell/scripting/windows-powershell/starting-windows-powershell#parameters
     #>
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'Low')]
     param(
-        [switch]$NoErrorCapture
+        [switch]$NoErrorCapture,
+        [switch]$WaitReady,
+        [int]$WaitSeconds = 30
     )
 
-    $projectRoot = Get-BusBuddyProjectRoot
-    Push-Location $projectRoot
-
+    # Optional: warn about Syncfusion license presence
     try {
-        Write-BusBuddyStatus "Starting BusBuddy application..." -Type Info
-        if ($PSCmdlet.ShouldProcess("BusBuddy.WPF/BusBuddy.WPF.csproj", "dotnet run")) {
-            dotnet run --project BusBuddy.WPF/BusBuddy.WPF.csproj
+        if ([string]::IsNullOrWhiteSpace($env:SYNCFUSION_LICENSE_KEY)) {
+            Write-BusBuddyStatus "SYNCFUSION_LICENSE_KEY not set — app may show trial watermarks" -Type Warning
+        }
+    } catch { }
+
+    $projectRoot = Get-BusBuddyProjectRoot
+    $wpfDir      = Join-Path $projectRoot 'BusBuddy.WPF'
+    $outDir      = Join-Path $wpfDir 'bin\Debug\net9.0-windows'
+
+    Push-Location $projectRoot
+    try {
+        # Locate the built exe (support both assembly names)
+        $exeCandidates = @(
+            (Join-Path $outDir 'BusBuddy.exe'),
+            (Join-Path $outDir 'BusBuddy.WPF.exe')
+        )
+        $exePath = $exeCandidates | Where-Object { Test-Path $_ } | Select-Object -First 1
+
+        # Build if missing
+        if (-not $exePath) {
+            Write-BusBuddyStatus "Building BusBuddy.WPF (Debug)..." -Type Info
+            if ($PSCmdlet.ShouldProcess("BusBuddy.WPF/BusBuddy.WPF.csproj", "dotnet build -c Debug")) {
+                & dotnet build "BusBuddy.WPF/BusBuddy.WPF.csproj" -c Debug --verbosity minimal 2>&1 | Out-Null
+            }
+            if ($LASTEXITCODE -ne 0) {
+                Write-BusBuddyError "Build failed with exit code $LASTEXITCODE"
+                return
+            }
+            $exePath = $exeCandidates | Where-Object { Test-Path $_ } | Select-Object -First 1
+        }
+
+        if (-not $exePath) {
+            Write-BusBuddyError "WPF executable not found after build — expected under: $outDir"
+            return
+        }
+
+        Write-BusBuddyStatus "Starting BusBuddy (STA)..." -Type Info
+
+    if ($PSCmdlet.ShouldProcess($exePath, "Start-Process (STA runspace)")) {
+            # Create an STA runspace and launch the GUI process inside it.
+            # Docs: RunspaceFactory.CreateRunspace / ApartmentState — see function header.
+            $rs = [System.Management.Automation.Runspaces.RunspaceFactory]::CreateRunspace()
+            $rs.ApartmentState = [System.Threading.ApartmentState]::STA
+            $rs.Open()
+
+            $ps = [System.Management.Automation.PowerShell]::Create().AddScript({
+                param($FilePath, $WorkingDir)
+                Start-Process -FilePath $FilePath -WorkingDirectory $WorkingDir
+            }).AddArgument($exePath).AddArgument($wpfDir)
+
+            $ps.Runspace = $rs
+            try {
+                $null = $ps.Invoke()
+            } finally {
+                $ps.Dispose()
+                $rs.Close()
+                $rs.Dispose()
+            }
+        }
+
+        Write-BusBuddyStatus "BusBuddy launch command issued (process started)" -Type Success
+
+        if ($WaitReady) {
+            # Wait for exact process name readiness up to WaitSeconds
+            $deadline = (Get-Date).AddSeconds($WaitSeconds)
+            $procName = 'BusBuddy.WPF'
+            $started = $false
+            do {
+                Start-Sleep -Milliseconds 300
+                $p = Get-Process -Name $procName -ErrorAction SilentlyContinue | Select-Object -First 1
+                if ($p) { $started = $true; break }
+            } while ((Get-Date) -lt $deadline)
+
+            if ($started) {
+                Write-BusBuddyStatus "Process $procName detected (PID=$($p.Id))" -Type Success
+            } else {
+                Write-BusBuddyStatus "Process $procName not detected within ${WaitSeconds}s — possible startup failure" -Type Warning
+                # Attempt to show last 60 lines of log for quick diagnostics
+                try {
+                    $logsDir = Join-Path $projectRoot 'BusBuddy.WPF\bin\Debug\net9.0-windows\logs'
+                    $latest = Get-ChildItem -Path $logsDir -Filter 'busbuddy-*.log' -ErrorAction SilentlyContinue | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+                    if ($latest) {
+                        Write-Information "📄 Last 60 log lines from $($latest.Name):" -InformationAction Continue
+                        Get-Content -Path $latest.FullName -Tail 60 | ForEach-Object { Write-Information "   $_" -InformationAction Continue }
+                    } else {
+                        Write-Information "No log files found under $logsDir" -InformationAction Continue
+                    }
+                } catch { Write-Warning "Failed reading logs: $($_.Exception.Message)" }
+            }
         }
     }
     catch {
@@ -830,6 +1072,56 @@ function Invoke-BusBuddyRun {
     }
     finally {
         Pop-Location
+    }
+}
+
+function Invoke-BusBuddyRunSta {
+    <#
+    .SYNOPSIS
+        Launch BusBuddy ensuring an STA-hosted PowerShell shell spawns the app.
+    .DESCRIPTION
+        WPF itself starts on an STA thread via Program.Main [STAThread], but this provides an
+        STA-hosted pwsh wrapper for environments sensitive to MTA shells. Uses Start-Process so
+        the main console isn’t blocked.
+        Docs: Windows PowerShell/PowerShell on Windows supports -STA switch for single-threaded apartment.
+    .PARAMETER Wait
+        Wait for the child shell to exit before returning.
+    #>
+    [CmdletBinding(SupportsShouldProcess = $true)]
+    param(
+        [switch]$Wait
+    )
+
+    $projectRoot = Get-BusBuddyProjectRoot
+    $pwsh = (Get-Command pwsh -ErrorAction SilentlyContinue)?.Source
+    if (-not $pwsh) { $pwsh = "pwsh.exe" }
+
+    $cmd = 'dotnet run --project "BusBuddy.WPF/BusBuddy.WPF.csproj"'
+    $args = @('-NoProfile','-NoLogo')
+    # Attempt -STA on Windows pwsh; ignore if not supported
+    $args = @('-STA') + $args + @('-Command', $cmd)
+
+    Write-BusBuddyStatus "Launching via STA-hosted shell..." -Type Info
+    if ($PSCmdlet.ShouldProcess($pwsh, "Start-Process (STA)")) {
+        $p = Start-Process -FilePath $pwsh -ArgumentList $args -WorkingDirectory $projectRoot -PassThru
+        if ($Wait) { try { $p.WaitForExit() } catch { } }
+        return $p
+    }
+}
+
+function Get-BusBuddyApartmentState {
+    <#
+    .SYNOPSIS
+        Show the current shell thread's apartment state (STA/MTA).
+    #>
+    [CmdletBinding()] param()
+    try {
+        $apt = [System.Threading.Thread]::CurrentThread.GetApartmentState()
+        Write-Information "Current apartment state: $apt" -InformationAction Continue
+        return $apt
+    } catch {
+        Write-Warning "Unable to read apartment state: $($_.Exception.Message)"
+        return $null
     }
 }
 
@@ -1430,7 +1722,7 @@ function Invoke-BusBuddyWithExceptionCapture {
         try {
             $errorEntry | Add-Content -Path $errorLogPath -Encoding UTF8
         } catch {
-            Write-Warning ("Could not append to error log at {0}: {1}" -f $errorLogPath, $_.Exception.Message)
+ Write-Warning ("Could not append to error log at {0}: {1}" -f $errorLogPath, $_.Exception.Message)
         }
 
         if ($ThrowOnError) {
@@ -1633,8 +1925,6 @@ function Test-BusBuddyMVPReadiness {
         Write-BusBuddyStatus "🚧 MVP NOT READY - Focus on the failures above" -Type Warning
         Write-BusBuddyStatus "💡 Don't add features until these basic things work" -Type Warning
     }
-
-    return $ready
 }
 
 #endregion
@@ -1863,7 +2153,11 @@ function Test-BusBuddyEnvironment {
     if (Test-Path "Grok Resources\GROK-README.md") {
         Write-Information "   ✅ Grok Resources folder ready" -InformationAction Continue
     } else {
-        $warnings += "Grok Resources not found - AI assistance may be limited"
+        # Respect suppression env var if present (used by VS Code tasks)
+        if ($env:BUSBUDDY_NO_XAI_WARN -ne '1') {
+            # Removed per MVP request: avoid Grok/xAI warning noise in health check
+            # $warnings += "Grok Resources not found - AI assistance may be limited"
+        }
         Write-Information "   ⚠️ Grok Resources missing" -InformationAction Continue
     }
 
@@ -1948,7 +2242,7 @@ function Start-BusBuddyRuntimeErrorCaptureBasic {
 
     if (-not (Test-Path $scriptPath)) {
         Write-BusBuddyError "Runtime error capture script not found: $scriptPath"
-        Write-BusBuddyStatus "Run the setup to create required scripts" -Type Warning
+        Write-BusBuddyStatus "Run the following to create required scripts" -Type Warning
         return
     }
 
@@ -2022,600 +2316,441 @@ function Invoke-BusBuddyRunCapture {
 
 #endregion
 
-#region XAI Route Optimization (MVP + Smart Features)
+#region Azure Firewall Management Functions
 
-# Import XAI Route Optimizer
-$xaiOptimizerPath = Join-Path $PSScriptRoot "XAI-RouteOptimizer.ps1"
-if (Test-Path $xaiOptimizerPath) {
-    . $xaiOptimizerPath
-    $script:XAIAvailable = $true
-    if ([string]::IsNullOrWhiteSpace($env:BUSBUDDY_NO_XAI_WARN)) {
-        Write-BusBuddyStatus "🤖 XAI Route Optimizer loaded successfully" -Type Success
-    }
-} else {
-    $script:XAIAvailable = $false
-    if ([string]::IsNullOrWhiteSpace($env:BUSBUDDY_NO_XAI_WARN)) {
-        if ($env:BUSBUDDY_NO_XAI_WARN -ne '1' -and $env:BUSBUDDY_SILENT -ne '1') {
-            Write-BusBuddyStatus "⚠️ XAI Route Optimizer not found - some features unavailable" -Type Warning
+function Update-BusBuddyAzureFirewall {
+    <#
+    .SYNOPSIS
+        Automatically updates Azure SQL firewall rules for BusBuddy dynamic IP addresses
+    .DESCRIPTION
+        Fetches current public IP and adds it to Azure SQL firewall rules.
+        Handles Starlink and work ISP dynamic IP changes automatically.
+        Based on Microsoft Azure SQL firewall configuration best practices.
+    .PARAMETER ResourceGroupName
+        Azure resource group containing the SQL server (auto-detected from config if not specified)
+    .PARAMETER ServerName
+        Azure SQL server name (default: busbuddy-server-sm2 from appsettings.azure.json)
+    .PARAMETER CleanupOldRules
+        Remove old dynamic IP rules to keep firewall clean
+    .PARAMETER Force
+        Skip confirmation prompts
+    .EXAMPLE
+        Update-BusBuddyAzureFirewall
+    .EXAMPLE
+        Update-BusBuddyAzureFirewall -CleanupOldRules -Force
+    .NOTES
+        Reference: https://learn.microsoft.com/en-us/azure/azure-sql/database/firewall-configure
+        Requires Az PowerShell module: Install-Module -Name Az.Sql -Scope CurrentUser
+        Auto-integrates with BusBuddy appsettings.azure.json configuration
+    #>
+    [CmdletBinding(SupportsShouldProcess)]
+    [OutputType([hashtable])]
+    param (
+        [Parameter(Mandatory = $false)]
+        [string]$ResourceGroupName,
+
+        [Parameter(Mandatory = $false)]
+        [string]$ServerName,
+
+        [Parameter(Mandatory = $false)]
+        [switch]$CleanupOldRules,
+
+        [Parameter(Mandatory = $false)]
+        [switch]$Force
+    )
+
+    try {
+        Write-Information "🚌 BusBuddy Azure SQL Firewall Updater" -InformationAction Continue
+        Write-Information "=" * 50 -InformationAction Continue
+
+        # Get BusBuddy Azure configuration
+        $config = Get-BusBuddyAzureConfig
+        if (-not $config) {
+            throw "Could not load BusBuddy Azure configuration from appsettings.azure.json"
         }
-    }
-}
 
-function Start-BusBuddyRouteOptimization {
-    <#
-    .SYNOPSIS
-        Main function to optimize bus routes using XAI intelligence
-    .DESCRIPTION
-        This is your Monday morning solution - takes students and buses,
-        returns optimized routes with driver schedules ready to print.
-    #>
-    [CmdletBinding()]
-    param(
-        [Parameter()]
-        [switch]$Demo,
-
-        [Parameter()]
-        [switch]$UseDatabase
-    )
-
-    if ($Demo) {
-        Write-BusBuddyStatus "🚌 Running Route Optimization Demo..." -Type Info
-        Show-RouteOptimizationDemo
-        return
-    }
-
-    if ($UseDatabase) {
-        Write-BusBuddyStatus "📊 Loading data from BusBuddy database..." -Type Info
-        # TODO: Connect to database and load real student/bus data
-        Write-BusBuddyStatus "Database integration coming soon - use Demo mode for now" -Type Warning
-        Write-BusBuddyStatus "Run: bb-route-demo" -Type Info
-        return
-    }
-
-    Write-BusBuddyStatus "🎯 Route Optimization Options:" -Type Info
-    Write-Information "  bbRouteDemo      - Run with sample data (READY NOW)" -InformationAction Continue
-    Write-Information "  bbRoutes -Demo   - Run demo directly" -InformationAction Continue
-    Write-Information "  bbRouteStatus    - Check system status" -InformationAction Continue
-    Write-Information "  bbRun            - Open WPF application for full UI" -InformationAction Continue
-    Write-Information "" -InformationAction Continue
-    Write-Information "💡 Quick Demo: Run 'bbRouteDemo' to see route optimization in action!" -InformationAction Continue
-}
-
-function Get-BusBuddyRouteStatus {
-    <#
-    .SYNOPSIS
-        Check the status of route optimization system
-    #>
-    [CmdletBinding()]
-    param()
-
-    Write-BusBuddyStatus "🚌 BusBuddy Route Optimization Status" -Type Info
-    Write-Information "" -InformationAction Continue
-
-    Write-Information "✅ READY NOW:" -InformationAction Continue
-    Write-Information "  • Route optimization algorithm" -InformationAction Continue
-    Write-Information "  • Student assignment logic" -InformationAction Continue
-    Write-Information "  • Pickup time calculation" -InformationAction Continue
-    Write-Information "  • Driver schedule generation" -InformationAction Continue
-    Write-Information "  • Printable route schedules" -InformationAction Continue
-
-    Write-Information "" -InformationAction Continue
-    Write-Information "🟡 PHASE 2 (After MVP):" -InformationAction Continue
-    Write-Information "  • XAI/Grok API integration" -InformationAction Continue
-    Write-Information "  • Real-time traffic analysis" -InformationAction Continue
-    Write-Information "  • Google Earth route visualization" -InformationAction Continue
-    Write-Information "  • Advanced optimization algorithms" -InformationAction Continue
-
-    Write-Information "" -InformationAction Continue
-    Write-Information "🚀 Quick Start:" -InformationAction Continue
-    Write-Information "  bb-route-demo  - See it working with sample data" -InformationAction Continue
-}
-
-function Show-RouteOptimizationDemo {
-    <#
-    .SYNOPSIS
-        Demonstrates route optimization with sample student and bus data
-    .DESCRIPTION
-        Shows the complete workflow of BusBuddy route optimization:
-        - Student entry and management
-        - Route design and optimization
-        - Driver assignment
-        - Schedule generation
-        This function uses sample data to demonstrate MVP functionality.
-    #>
-    [CmdletBinding()]
-    param()
-
-    Write-BusBuddyStatus "🚌 BusBuddy Route Optimization Demo" -Type Info
-    Write-Information "" -InformationAction Continue
-
-    # Sample Students Data
-    Write-BusBuddyStatus "👨‍🎓 Step 1: Student Entry" -Type Info
-    Write-Information "Creating sample students with addresses..." -InformationAction Continue
-
-    $sampleStudents = @(
-        @{ Name = "Alice Johnson"; Address = "123 Oak St"; Grade = "5"; School = "Wiley Elementary" }
-        @{ Name = "Bob Smith"; Address = "456 Pine Ave"; Grade = "3"; School = "Wiley Elementary" }
-        @{ Name = "Carol Davis"; Address = "789 Elm Dr"; Grade = "4"; School = "Wiley Elementary" }
-        @{ Name = "David Wilson"; Address = "321 Maple Ln"; Grade = "5"; School = "Wiley Elementary" }
-        @{ Name = "Emma Brown"; Address = "654 Cedar St"; Grade = "2"; School = "Wiley Elementary" }
-        @{ Name = "Frank Miller"; Address = "987 Birch Rd"; Grade = "1"; School = "Wiley Elementary" }
-    )
-
-    foreach ($student in $sampleStudents) {
-        Write-Information "  ✓ $($student.Name) - Grade $($student.Grade) at $($student.Address)" -InformationAction Continue
-    }
-    Write-Information "  Total Students: $($sampleStudents.Count)" -InformationAction Continue
-
-    Start-Sleep -Seconds 1
-
-    # Route Design
-    Write-BusBuddyStatus "🛣️ Step 2: Route Design" -Type Info
-    Write-Information "Designing optimal routes based on student locations..." -InformationAction Continue
-
-    $routes = @(
-        @{ Name = "Route A"; Students = @("Alice Johnson", "Bob Smith", "Carol Davis"); EstimatedTime = "25 min" }
-        @{ Name = "Route B"; Students = @("David Wilson", "Emma Brown", "Frank Miller"); EstimatedTime = "22 min" }
-    )
-
-    foreach ($route in $routes) {
-        Write-Information "  📍 $($route.Name): $($route.Students.Count) students, $($route.EstimatedTime)" -InformationAction Continue
-        foreach ($student in $route.Students) {
-            Write-Information "    - $student" -InformationAction Continue
+        # Use configuration values if not provided
+        if (-not $ServerName) {
+            $ServerName = $config.ServerName
+            if (-not $ServerName) {
+                throw "Server name not found in configuration and not provided"
+            }
         }
-    }
 
-    Start-Sleep -Seconds 1
+        if (-not $ResourceGroupName) {
+            $ResourceGroupName = $config.ResourceGroup
+            if (-not $ResourceGroupName) {
+                Write-Warning "Resource group not specified in config. Please provide it manually."
+                $ResourceGroupName = Read-Host "Enter Azure Resource Group name"
+                if (-not $ResourceGroupName) {
+                    throw "Resource group is required"
+                }
+            }
+        }
 
-    # Driver Assignment
-    Write-BusBuddyStatus "👨‍✈️ Step 3: Driver Assignment" -Type Info
-    Write-Information "Assigning qualified drivers to routes..." -InformationAction Continue
+        # Call the main update script
+        $scriptPath = Join-Path $PSScriptRoot "..\..\Scripts\Update-AzureFirewall.ps1"
+        if (-not (Test-Path $scriptPath)) {
+            throw "Update-AzureFirewall.ps1 script not found at: $scriptPath"
+        }
 
-    $driverAssignments = @(
-        @{ Route = "Route A"; Driver = "John Martinez"; License = "CDL-A"; Experience = "5 years" }
-        @{ Route = "Route B"; Driver = "Sarah Williams"; License = "CDL-B"; Experience = "3 years" }
-    )
+        $params = @{
+            ResourceGroupName = $ResourceGroupName
+            ServerName = $ServerName
+            CleanupOldRules = $CleanupOldRules
+        }
 
-    foreach ($assignment in $driverAssignments) {
-        Write-Information "  🚌 $($assignment.Route): $($assignment.Driver) ($($assignment.License), $($assignment.Experience))" -InformationAction Continue
-    }
+        Write-Information "🎯 Target: $ServerName in $ResourceGroupName" -InformationAction Continue
 
-    Start-Sleep -Seconds 1
+        if ($Force -or $PSCmdlet.ShouldProcess("Azure SQL Server $ServerName", "Update firewall rules")) {
+            $result = & $scriptPath @params
 
-    # Schedule Generation
-    Write-BusBuddyStatus "📅 Step 4: Schedule Generation" -Type Info
-    Write-Information "Generating daily schedules..." -InformationAction Continue
-
-    Write-Information "  Morning Schedule (7:00 AM - 8:30 AM):" -InformationAction Continue
-    Write-Information "    Route A: Depart 7:15 AM, Arrive School 7:40 AM" -InformationAction Continue
-    Write-Information "    Route B: Depart 7:20 AM, Arrive School 7:42 AM" -InformationAction Continue
-
-    Write-Information "  Afternoon Schedule (3:00 PM - 4:30 PM):" -InformationAction Continue
-    Write-Information "    Route A: Depart School 3:15 PM, Complete 3:40 PM" -InformationAction Continue
-    Write-Information "    Route B: Depart School 3:20 PM, Complete 3:42 PM" -InformationAction Continue
-
-    Start-Sleep -Seconds 1
-
-    # Summary
-    Write-BusBuddyStatus "✅ Demo Complete - Route Optimization Results:" -Type Success
-    Write-Information "" -InformationAction Continue
-    Write-Information "📊 Summary:" -InformationAction Continue
-    Write-Information "  • Students Processed: $($sampleStudents.Count)" -InformationAction Continue
-    Write-Information "  • Routes Created: $($routes.Count)" -InformationAction Continue
-    Write-Information "  • Drivers Assigned: $($driverAssignments.Count)" -InformationAction Continue
-    Write-Information "  • Total Route Time: 47 minutes" -InformationAction Continue
-    Write-Information "  • Efficiency Rating: 94%" -InformationAction Continue
-
-    Write-Information "" -InformationAction Continue
-    Write-Information "🚀 Next Steps:" -InformationAction Continue
-    Write-Information "  • Run 'bbRun' to open the BusBuddy WPF application" -InformationAction Continue
-    Write-Information "  • Use StudentsView for actual student entry" -InformationAction Continue
-    Write-Information "  • Use RoutesView for route design and optimization" -InformationAction Continue
-    Write-Information "  • Check 'bbMvpCheck' to verify full functionality" -InformationAction Continue
-}
-
-function Open-BusBuddyCopilotReference {
-    <#
-    .SYNOPSIS
-        Open Copilot Reference Hub files for enhanced GitHub Copilot context
-    .DESCRIPTION
-        Opens specific reference documentation files to provide GitHub Copilot with
-        rich context for better code completions and suggestions.
-    .PARAMETER Topic
-        Specific reference topic to open. If not provided, opens the main hub.
-        Valid topics: Syncfusion, Build-Configs, Code-Analysis, NuGet-Setup, VSCode-Extensions, PowerShell-Commands
-    .PARAMETER ShowTopics
-        Display available topics instead of opening files
-    .EXAMPLE
-        bb-copilot-ref
-        Opens the main Copilot Hub reference
-    .EXAMPLE
-        bb-copilot-ref Syncfusion
-        Opens the Syncfusion WPF examples reference
-    .EXAMPLE
-        bb-copilot-ref -ShowTopics
-        Lists all available reference topics
-    #>
-    [CmdletBinding()]
-    param(
-        [Parameter(Position=0)]
-        [string]$Topic,
-
-        [Parameter()]
-        [switch]$ShowTopics
-    )
-
-    $projectRoot = Get-BusBuddyProjectRoot
-    $referencePath = Join-Path $projectRoot "Documentation\Reference"
-
-    if (-not (Test-Path $referencePath)) {
-        Write-BusBuddyError "Reference folder not found at: $referencePath"
-        Write-Information "Run the following to create the reference hub:" -InformationAction Continue
-        Write-Information "  New-Item -Path '$referencePath' -ItemType Directory -Force" -InformationAction Continue
-        return
-    }
-
-    # Handle help requests and show topics
-    if ($ShowTopics -or $Topic -eq "help" -or $Topic -eq "--help" -or $Topic -eq "-h") {
-        Write-BusBuddyStatus "📚 Available Copilot Reference Topics:" -Type Info
-        Write-Information "" -InformationAction Continue
-        Get-ChildItem $referencePath -Filter "*.md" | Where-Object { $_.Name -ne "README.md" } | ForEach-Object {
-            $topicName = $_.BaseName
-            if ($topicName -eq "Copilot-Hub") {
-                Write-Information "  📖 Main Hub (default)" -InformationAction Continue
+            if ($result.Success) {
+                Write-BusBuddyStatus "✅ Azure firewall updated successfully" -Type Success
+                Write-Information "   IP Address: $($result.IPAddress)" -InformationAction Continue
+                Write-Information "   Rule Name: $($result.RuleName)" -InformationAction Continue
+                Write-Information "⏱️ Allow up to 5 minutes for rule propagation" -InformationAction Continue
             } else {
-                Write-Information "  📄 $topicName" -InformationAction Continue
+                Write-BusBuddyError "Failed to update Azure firewall" -Exception ([System.Exception]::new($result.Error)) -Context "Azure Firewall"
             }
-        }
-        Write-Information "" -InformationAction Continue
-        Write-Information "💡 Usage Examples:" -InformationAction Continue
-        Write-Information "  bb-copilot-ref              # Open main hub + folder" -InformationAction Continue
-        Write-Information "  bb-copilot-ref Syncfusion   # Open Syncfusion reference" -InformationAction Continue
-        Write-Information "  bb-copilot-ref -ShowTopics  # Show this help" -InformationAction Continue
-        return
-    }
 
-    if ($Topic) {
-        $targetFile = Join-Path $referencePath "$Topic.md"
-        if (Test-Path $targetFile) {
-            Write-BusBuddyStatus "Opening $Topic reference for Copilot context..." -Type Info
-            if (Get-Command code -ErrorAction SilentlyContinue) {
-                code $targetFile
-            } else {
-                Start-Process notepad $targetFile
-            }
-        } else {
-            Write-BusBuddyError "Reference file not found: $targetFile"
-            Write-Information "Available topics:" -InformationAction Continue
-            Get-ChildItem $referencePath -Filter "*.md" | Where-Object { $_.Name -ne "README.md" } | ForEach-Object {
-                Write-Information "  $($_.BaseName)" -InformationAction Continue
-            }
-            Write-Information "" -InformationAction Continue
-            Write-Information "Use 'bb-copilot-ref -ShowTopics' for detailed help" -InformationAction Continue
+            return $result
         }
-    } else {
-        $hubFile = Join-Path $referencePath "Copilot-Hub.md"
-        if (Test-Path $hubFile) {
-            Write-BusBuddyStatus "Opening Copilot Reference Hub..." -Type Info
-            if (Get-Command code -ErrorAction SilentlyContinue) {
-                # Open the entire reference folder for maximum context
-                code $referencePath
-            } else {
-                Start-Process notepad $hubFile
-            }
-        } else {
-            Write-BusBuddyError "Copilot Hub not found: $hubFile"
-            Write-Information "Create the reference hub by running the BusBuddy Copilot setup." -InformationAction Continue
+    }
+    catch {
+        Write-BusBuddyError "Azure firewall update failed" -Exception $_ -Context "Azure Firewall Management"
+        return @{
+            Success = $false
+            Error = $_.Exception.Message
+            Timestamp = Get-Date
         }
     }
 }
 
-function Invoke-BusBuddyReport {
+function Get-BusBuddyAzureConfig {
     <#
     .SYNOPSIS
-        Generate PDF reports using Syncfusion PDF tools
+        Extracts Azure configuration from BusBuddy appsettings files
     .DESCRIPTION
-        Generates student rosters and route manifests as PDFs.
-        Implements the bb-generate-report functionality requested.
-    .PARAMETER ReportType
-        Type of report to generate: Roster, RouteManifest, StudentList, DriverSchedule
-    .PARAMETER OutputPath
-        Path where the PDF report will be saved
-    .PARAMETER RouteId
-        Specific route ID for route-based reports
-    .PARAMETER Format
-        Output format: PDF (default), Excel, CSV
+        Parses appsettings.azure.json to extract server name, resource group, and other Azure settings
     .EXAMPLE
-        bb-generate-report -ReportType Roster -OutputPath "reports/student-roster.pdf"
-    .EXAMPLE
-        bb-generate-report -ReportType RouteManifest -RouteId "Route-001" -OutputPath "reports/route-001-manifest.pdf"
+        Get-BusBuddyAzureConfig
     #>
     [CmdletBinding()]
     [OutputType([hashtable])]
-    param(
-        [Parameter(Mandatory=$true)]
-        [ValidateSet("Roster", "RouteManifest", "StudentList", "DriverSchedule", "MaintenanceReport")]
-        [string]$ReportType,
-
-        [Parameter(Mandatory=$true)]
-        [ValidateNotNullOrEmpty()]
-        [string]$OutputPath,
-
-        [Parameter()]
-        [string]$RouteId,
-
-        [Parameter()]
-        [ValidateSet("PDF", "Excel", "CSV")]
-        [string]$Format = "PDF",
-
-        [Parameter()]
-        [switch]$OpenAfterGeneration
-    )
+    param()
 
     try {
-        Write-BusBuddyStatus "📄 Generating $ReportType report..." -Type Info
-
-        # Ensure output directory exists
-        $outputDir = Split-Path $OutputPath -Parent
-        if ($outputDir -and -not (Test-Path $outputDir)) {
-            New-Item -ItemType Directory -Path $outputDir -Force | Out-Null
-            Write-Information "Created output directory: $outputDir" -InformationAction Continue
+        $configFile = "appsettings.azure.json"
+        if (-not (Test-Path $configFile)) {
+            Write-Warning "appsettings.azure.json not found in current directory"
+            return $null
         }
 
-        # Build the API call to our .NET PDF service
-    $projectPath = (Split-Path $PSScriptRoot -Parent | Split-Path -Parent | Split-Path -Parent)
-    $exePath = Join-Path $projectPath "BusBuddy.WPF\bin\Debug\net9.0-windows\BusBuddy.exe"
+        $config = Get-Content $configFile -Raw | ConvertFrom-Json
 
-        if (Test-Path $exePath) {
-            # Call the .NET application with report generation parameters
-            $routeArgs = @(
-                "--generate-report",
-                "--report-type", $ReportType,
-                "--output", $OutputPath,
-                "--format", $Format
-            )
-
-            if ($RouteId) {
-                $routeArgs += "--route-id"
-                $routeArgs += $RouteId
-            }
-
-            Write-Information "Calling PdfReportService..." -InformationAction Continue
-            $reportResult = & $exePath $routeArgs 2>&1
-
-            if ($LASTEXITCODE -eq 0) {
-                Write-BusBuddyStatus "Report generated successfully: $OutputPath" -Type Success
-
-                if ($OpenAfterGeneration -and (Test-Path $OutputPath)) {
-                    Write-Information "Opening generated report..." -InformationAction Continue
-                    Start-Process $OutputPath
-                }
-
-                # Return report metadata
-                return @{
-                    ReportType = $ReportType
-                    OutputPath = $OutputPath
-                    Format = $Format
-                    RouteId = $RouteId
-                    GeneratedAt = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
-                    FileSize = if (Test-Path $OutputPath) { (Get-Item $OutputPath).Length } else { 0 }
-                }
-            } else {
-                Write-BusBuddyError "Report generation failed: $reportResult"
-                return
-            }
+        # Extract server name from connection string
+        $connectionString = $config.ConnectionStrings.DefaultConnection
+        if ($connectionString -match 'Server=tcp:([^.,]+)') {
+            $serverName = $matches[1]
         } else {
-            Write-BusBuddyStatus "BusBuddy application not built. Building now..." -Type Info
-            Invoke-BusBuddyBuild
+            Write-Warning "Could not extract server name from connection string"
+            $serverName = $null
+        }
 
-            if (Test-Path $exePath) {
-                Write-BusBuddyStatus "Retrying report generation..." -Type Info
-                # Retry the call after building
-                return Invoke-BusBuddyReport @PSBoundParameters
-            } else {
-                Write-BusBuddyError "Could not build BusBuddy application"
-                return
-            }
+        # Try to find resource group in various config locations
+        $resourceGroup = $null
+        if ($config.Azure.ResourceGroup) {
+            $resourceGroup = $config.Azure.ResourceGroup
+        } elseif ($config.ResourceGroup) {
+            $resourceGroup = $config.ResourceGroup
+        }
+
+        return @{
+            ServerName = $serverName
+            ResourceGroup = $resourceGroup
+            DatabaseName = "BusBuddyDB"
+            ConnectionString = $connectionString
+            Config = $config
         }
     }
     catch {
-        Write-BusBuddyError "Report generation failed: $($_.Exception.Message)"
-        Write-Information "Stack trace: $($_.ScriptStackTrace)" -InformationAction Continue
+        Write-Warning "Failed to parse Azure configuration: $($_.Exception.Message)"
+        return $null
     }
 }
 
-function Invoke-BusBuddyRouteOptimization {
+function Test-BusBuddyAzureConnection {
     <#
     .SYNOPSIS
-        Advanced route optimization using xAI Grok API integration
+        Tests Azure SQL connection for BusBuddy database
     .DESCRIPTION
-        Uses GrokGlobalAPI service to optimize bus routes with AI intelligence.
-        This implements the bb-route-optimize functionality requested.
-    .PARAMETER RouteId
-        The ID of the route to optimize
-    .PARAMETER CurrentPerformance
-        Current route performance metrics
-    .PARAMETER TargetMetrics
-        Target optimization goals
-    .PARAMETER Constraints
-        Route constraints to consider
-    .PARAMETER OutputPath
-        Optional path to save optimization report
+        Validates network connectivity and firewall rules for Azure SQL Database
+        Provides detailed diagnostics for connection issues
     .EXAMPLE
-        bb-route-optimize -RouteId "Route-001" -CurrentPerformance "45 min, 12 stops" -TargetMetrics "Reduce time by 10%, improve efficiency"
+        Test-BusBuddyAzureConnection
     .EXAMPLE
-        bb-route-optimize -RouteId "Route-001" -Constraints @("Max 8 stops", "Safety first") -OutputPath "reports/route-001-optimization.json"
+        Test-BusBuddyAzureConnection -UpdateFirewall
     #>
     [CmdletBinding()]
-    param(
-        [Parameter(Mandatory=$true)]
-        [ValidateNotNullOrEmpty()]
-        [string]$RouteId,
-
-        [Parameter()]
-        [string]$CurrentPerformance = "Standard performance metrics",
-
-        [Parameter()]
-        [string]$TargetMetrics = "Improve efficiency and reduce travel time",
-
-        [Parameter()]
-        [string[]]$Constraints = @(),
-
-        [Parameter()]
-        [string]$OutputPath,
-
-        [Parameter()]
-        [switch]$Mock
+    [OutputType([hashtable])]
+    param (
+        [Parameter(Mandatory = $false)]
+        [switch]$UpdateFirewall
     )
 
     try {
-        Write-BusBuddyStatus "🤖 Starting xAI Grok route optimization for route: $RouteId" -Type Info
+        Write-Information "🔍 Testing BusBuddy Azure SQL Connection" -InformationAction Continue
+        Write-Information "=" * 45 -InformationAction Continue
 
-        # Check if we should use mock data or real API
-        if ($Mock -or -not (Test-Path env:XAI_API_KEY) -or $env:XAI_API_KEY -like "*YOUR_XAI_API_KEY*") {
-            Write-BusBuddyStatus "Using mock optimization (set XAI_API_KEY environment variable for live AI)" -Type Warning
+        # Get configuration
+        $config = Get-BusBuddyAzureConfig
+        if (-not $config) {
+            throw "Could not load Azure configuration"
+        }
 
-            # Generate mock optimization result
-            $result = @{
-                RouteId = $RouteId
-                OptimizationSuggestions = @"
-🚌 Route Optimization Analysis for ${RouteId}:
+        # Test network connectivity
+        Write-Information "🌐 Testing network connectivity..." -InformationAction Continue
+        $serverFqdn = "$($config.ServerName).database.windows.net"
 
-EFFICIENCY IMPROVEMENTS:
-• Consolidate stops within 0.3 miles to reduce travel time by 12%
-• Optimize pickup sequence by grade level (K-2, 3-5, 6-8) for 8% efficiency gain
-• Implement GPS tracking for real-time traffic adjustments
-
-TIME OPTIMIZATION:
-• Reduce route time by 15% through strategic stop consolidation
-• Adjust departure times based on historical traffic patterns
-• Implement express routes for high-density areas
-
-FUEL EFFICIENCY:
-• Route adjustments could save 18% in fuel consumption
-• Reduce unnecessary turns and backtracking
-• Optimize idle time at stops
-
-SAFETY CONSIDERATIONS:
-• Minimize left turns at busy intersections
-• Ensure all stops have adequate visibility and safe boarding areas
-• Consider traffic light timing for safer crossings
-
-IMPLEMENTATION STEPS:
-1. Review current route data and student locations
-2. Identify consolidation opportunities within walking distance
-3. Test optimized route during off-peak hours
-4. Gradually implement changes with driver feedback
-5. Monitor performance metrics for 2 weeks
-"@
-                EfficiencyGain = 12.5
-                TimeReduction = 15.0
-                FuelSavings = 18.0
-                SafetyImprovements = @("Reduced left turns", "Improved stop visibility", "Better traffic light coordination")
-                ImplementationSteps = @(
-                    "Review current route data",
-                    "Identify consolidation opportunities",
-                    "Test optimized route",
-                    "Implement changes gradually",
-                    "Monitor performance metrics"
-                )
-                GeneratedAt = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
-                AIModel = "Mock-AI-Demo"
-            }
-        } else {
-            Write-BusBuddyStatus "Using live xAI Grok API for route optimization..." -Type Info
-
-            # Build the API call to our .NET service
-            $projectPath = (Split-Path $PSScriptRoot -Parent | Split-Path -Parent | Split-Path -Parent)
-            $exePath = Join-Path $projectPath "BusBuddy.WPF\bin\Debug\net9.0-windows\BusBuddy.exe"
-
-            if (Test-Path $exePath) {
-                # Call the .NET application with route optimization parameters
-                $routeArgs = @(
-                    "--optimize-route",
-                    "--route-id", $RouteId,
-                    "--current-performance", $CurrentPerformance,
-                    "--target-metrics", $TargetMetrics
-                )
-
-                if ($Constraints.Count -gt 0) {
-                    $routeArgs += "--constraints"
-                    $routeArgs += ($Constraints -join ";")
-                }
-
-                if ($OutputPath) {
-                    $routeArgs += "--output"
-                    $routeArgs += $OutputPath
-                }
-
-                Write-Information "Calling GrokGlobalAPI service..." -InformationAction Continue
-                $optimizationResult = & $exePath $routeArgs 2>&1
-
-                if ($LASTEXITCODE -eq 0) {
-                    Write-BusBuddyStatus "Route optimization completed successfully" -Type Success
-                    $result = $optimizationResult | ConvertFrom-Json
-                } else {
-                    Write-BusBuddyError "Route optimization failed: $optimizationResult"
-                    return
-                }
+        try {
+            $tcpTest = Test-NetConnection -ComputerName $serverFqdn -Port 1433 -WarningAction SilentlyContinue
+            if ($tcpTest.TcpTestSucceeded) {
+                Write-Information "✅ Network connectivity: SUCCESS" -InformationAction Continue
             } else {
-                Write-BusBuddyStatus "BusBuddy application not built. Building now..." -Type Info
-                Invoke-BusBuddyBuild
+                Write-Information "❌ Network connectivity: FAILED" -InformationAction Continue
+                Write-Information "   This may indicate firewall or network issues" -InformationAction Continue
+            }
+        }
+        catch {
+            Write-Information "❌ Network test failed: $($_.Exception.Message)" -InformationAction Continue
+        }
 
-                if (Test-Path $exePath) {
-                    Write-BusBuddyStatus "Retrying route optimization..." -Type Info
-                    # Retry the call after building
-                    return Invoke-BusBuddyRouteOptimization @PSBoundParameters
+        # Get current IP
+        try {
+            $currentIP = (Invoke-RestMethod -Uri "https://api.ipify.org" -TimeoutSec 10).Trim()
+            Write-Information "📍 Current public IP: $currentIP" -InformationAction Continue
+        }
+        catch {
+            Write-Warning "Could not determine current IP address"
+            $currentIP = "Unknown"
+        }
+
+        # Test SQL connection
+        Write-Information "🔐 Testing SQL authentication..." -InformationAction Continue
+
+        $connectionSuccess = $false
+        $connectionError = $null
+
+        try {
+            # Use .NET SqlConnection for direct testing
+            $connectionString = $config.ConnectionString
+            # Replace environment variables for testing
+            $testConnectionString = $connectionString -replace '\$\{AZURE_SQL_USER\}', $env:AZURE_SQL_USER -replace '\$\{AZURE_SQL_PASSWORD\}', $env:AZURE_SQL_PASSWORD
+
+            if ($testConnectionString -match '\$\{') {
+                Write-Warning "Environment variables not set: AZURE_SQL_USER, AZURE_SQL_PASSWORD"
+                Write-Information "💡 Set environment variables or use manual portal test" -InformationAction Continue
+            } else {
+                Add-Type -AssemblyName System.Data
+                $sqlConnection = New-Object System.Data.SqlClient.SqlConnection($testConnectionString)
+                $sqlConnection.Open()
+                $sqlConnection.Close()
+                $connectionSuccess = $true
+                Write-Information "✅ SQL connection: SUCCESS" -InformationAction Continue
+            }
+        }
+        catch {
+            $connectionError = $_.Exception.Message
+            Write-Information "❌ SQL connection: FAILED" -InformationAction Continue
+            Write-Information "   Error: $connectionError" -InformationAction Continue
+
+            # Check for firewall-related errors
+            if ($connectionError -like "*Client with IP address*not allowed*") {
+                Write-Information "🛡️ Firewall issue detected!" -InformationAction Continue
+                if ($UpdateFirewall) {
+                    Write-Information "🔧 Attempting to update firewall rules..." -InformationAction Continue
+                    $firewallResult = Update-BusBuddyAzureFirewall -Force
+                    if ($firewallResult.Success) {
+                        Write-Information "✅ Firewall updated. Retry connection in 5 minutes." -InformationAction Continue
+                    }
                 } else {
-                    Write-BusBuddyError "Could not build BusBuddy application"
-                    return
+                    Write-Information "💡 Run with -UpdateFirewall to automatically fix" -InformationAction Continue
                 }
             }
         }
 
-        # Display results
-        Write-Information "" -InformationAction Continue
-        Write-BusBuddyStatus "🎯 Route Optimization Results for $($result.RouteId)" -Type Success
-        Write-Information "" -InformationAction Continue
+        # Summary
+        Write-Information "`n📋 Connection Test Summary:" -InformationAction Continue
+        Write-Information "   Server: $serverFqdn" -InformationAction Continue
+        Write-Information "   Database: $($config.DatabaseName)" -InformationAction Continue
+        Write-Information "   Current IP: $currentIP" -InformationAction Continue
+        Write-Information "   Network: $(if ($tcpTest.TcpTestSucceeded) { '✅' } else { '❌' })" -InformationAction Continue
+        Write-Information "   SQL Auth: $(if ($connectionSuccess) { '✅' } else { '❌' })" -InformationAction Continue
 
-        Write-Information "📊 PERFORMANCE METRICS:" -InformationAction Continue
-        Write-Information "   • Efficiency Gain: $($result.EfficiencyGain)%" -InformationAction Continue
-        Write-Information "   • Time Reduction: $($result.TimeReduction)%" -InformationAction Continue
-        Write-Information "   • Fuel Savings: $($result.FuelSavings)%" -InformationAction Continue
-        Write-Information "   • AI Model: $($result.AIModel)" -InformationAction Continue
-        Write-Information "" -InformationAction Continue
-
-        Write-Information "🛡️ SAFETY IMPROVEMENTS:" -InformationAction Continue
-        $result.SafetyImprovements | ForEach-Object {
-            Write-Information "   • $_" -InformationAction Continue
-        }
-        Write-Information "" -InformationAction Continue
-
-        Write-Information "📋 IMPLEMENTATION STEPS:" -InformationAction Continue
-        for ($i = 0; $i -lt $result.ImplementationSteps.Count; $i++) {
-            Write-Information "   $($i+1). $($result.ImplementationSteps[$i])" -InformationAction Continue
-        }
-        Write-Information "" -InformationAction Continue
-
-        Write-Information "💡 DETAILED ANALYSIS:" -InformationAction Continue
-        Write-Information $result.OptimizationSuggestions -InformationAction Continue
-
-        # Save to output file if specified
-        if ($OutputPath) {
-            $result | ConvertTo-Json -Depth 10 | Out-File -FilePath $OutputPath -Encoding UTF8
-            Write-BusBuddyStatus "Optimization report saved to: $OutputPath" -Type Info
+        if (-not $connectionSuccess) {
+            Write-Information "`n🔧 Troubleshooting options:" -InformationAction Continue
+            Write-Information "1. Update firewall: bb-azure-firewall" -InformationAction Continue
+            Write-Information "2. Use local database: Set DatabaseProvider=Local" -InformationAction Continue
+            Write-Information "3. Check Azure portal: https://portal.azure.com" -InformationAction Continue
+            Write-Information "4. Verify credentials: echo `$env:AZURE_SQL_USER" -InformationAction Continue
         }
 
-        Write-Information "" -InformationAction Continue
-        Write-BusBuddyStatus "Route optimization analysis completed! 🚌✨" -Type Success
-
-        return $result
+        return @{
+            Success = $connectionSuccess
+            NetworkConnectivity = $tcpTest.TcpTestSucceeded
+            CurrentIP = $currentIP
+            Server = $serverFqdn
+            Database = $config.DatabaseName
+            Error = $connectionError
+            Timestamp = Get-Date
+        }
     }
     catch {
-        Write-BusBuddyError "Route optimization failed: $($_.Exception.Message)"
-        Write-Information "Stack trace: $($_.ScriptStackTrace)" -InformationAction Continue
+        Write-BusBuddyError "Azure connection test failed" -Exception $_ -Context "Azure Connection Test"
+        return @{
+            Success = $false
+            Error = $_.Exception.Message
+            Timestamp = Get-Date
+        }
     }
 }
+
+#endregion
+
+#region Aliases - Safe Alias Creation with Conflict Resolution
+# Core aliases with safe creation
+try { Set-Alias -Name 'bbBuild'      -Value 'Invoke-BusBuddyBuild'   -Force } catch { }
+try { Set-Alias -Name 'bbRun'        -Value 'Invoke-BusBuddyRun'     -Force } catch { }
+try { Set-Alias -Name 'bbRunSta'     -Value 'Invoke-BusBuddyRunSta'  -Force } catch { }
+try { Set-Alias -Name 'bbClean'      -Value 'Invoke-BusBuddyClean'   -Force } catch { }
+try { Set-Alias -Name 'bbRestore'    -Value 'Invoke-BusBuddyRestore' -Force } catch { }
+try { Set-Alias -Name 'bbTest'       -Value 'Invoke-BusBuddyTest'    -Force } catch { }
+try { Set-Alias -Name 'bbHealth'     -Value 'Invoke-BusBuddyHealthCheck' -Force } catch { }
+
+# Developer discovery
+try { Set-Alias -Name 'bbDevSession' -Value 'Start-BusBuddyDevSession' -Force } catch { }
+try { Set-Alias -Name 'bbInfo'       -Value 'Get-BusBuddyInfo' -Force } catch { }
+try { Set-Alias -Name 'bbCommands'   -Value 'Get-BusBuddyCommand' -Force } catch { }
+
+# Removed alias for bbXamlValidate (function not present)
+
+# Session correlation
+try { Set-Alias -Name 'bbMantra'       -Value 'Get-BusBuddyMantraId'    -Force } catch { }
+try { Set-Alias -Name 'bbMantraReset'  -Value 'Reset-BusBuddyMantraId'  -Force } catch { }
+
+# Environment
+try { Set-Alias -Name 'bbEnv'          -Value 'Initialize-BusBuddyEnvironment' -Force } catch { }
+# Hyphenated variants
+foreach ($pair in @(
+    @{A='bb-build';V='Invoke-BusBuddyBuild'},
+    @{A='bb-run';V='Invoke-BusBuddyRun'},
+    @{A='bb-run-sta';V='Invoke-BusBuddyRunSta'},
+    @{A='bb-clean';V='Invoke-BusBuddyClean'},
+    @{A='bb-restore';V='Invoke-BusBuddyRestore'},
+    @{A='bb-test';V='Invoke-BusBuddyTest'},
+    @{A='bb-health';V='Invoke-BusBuddyHealthCheck'},
+    @{A='bb-env';V='Initialize-BusBuddyEnvironment'
+})) { try { Set-Alias -Name $pair.A -Value $pair.V -Force } catch { } }
+#endregion
+
+#region Exports
+Export-ModuleMember -Function @(
+    'Invoke-BusBuddyBuild',
+    'Invoke-BusBuddyRun',
+    'Invoke-BusBuddyRunSta',
+    'Invoke-BusBuddyClean',
+    'Invoke-BusBuddyRestore',
+    'Invoke-BusBuddyTest',
+    'Invoke-BusBuddyHealthCheck',
+    'Get-BusBuddyApartmentState',
+    'Get-BusBuddyMantraId',
+    'Reset-BusBuddyMantraId',
+    'Start-BusBuddyDevSession',
+    'Get-BusBuddyInfo',
+    'Get-BusBuddyCommand',
+    'Get-BusBuddyTestOutput',
+    'Invoke-BusBuddyTestFull',
+    'Get-BusBuddyTestError',
+    'Get-BusBuddyTestLog',
+    'Start-BusBuddyTestWatch',
+    'Invoke-BusBuddyPester',
+    'Get-BusBuddyTelemetrySummary',
+    'Invoke-BusBuddyTelemetryPurge',
+    'Get-BusBuddyPS75Compliance',
+    'Initialize-BusBuddyEnvironment',
+    # Script Lint exports
+    'Test-BusBuddyErrorActionPipelines',
+    'Invoke-BusBuddyErrorActionAudit',
+    # Logging exports
+    'Get-BusBuddyLogSummary'
+) -Alias @(
+    'bbBuild','bbRun','bbRunSta','bbClean','bbRestore','bbTest','bbHealth',
+    'bbDevSession','bbInfo','bbCommands',
+    'bb-build','bb-run','bb-run-sta','bb-clean','bb-restore','bb-test','bb-health',
+    'bbMantra','bbMantraReset','bbTestFull',
+    'bb-ps-review',
+    'bbEnv','bb-env',
+    # Script Lint aliases
+    'bb-ps-validate-ea','bb-ps-validate-ea-run',
+    # Logging alias
+    'bb-logs-summary'
+)
+#endregion
+
+#region Welcome Screen
+function Show-BusBuddyWelcome {
+    <#
+    .SYNOPSIS
+        Display a categorized welcome screen when the module loads.
+    #>
+    [CmdletBinding()]
+    param([switch]$Quiet)
+
+    $ps = $PSVersionTable.PSVersion
+    $dotnet = try { & dotnet --version 2>$null } catch { "unknown" }
+
+    if ($env:BUSBUDDY_SILENT -ne '1') {
+        Write-Information "" -InformationAction Continue
+        Write-BusBuddyStatus "🚌 BusBuddy Dev Shell — Ready" -Type Info
+        Write-Information "PowerShell: $ps | .NET: $dotnet" -InformationAction Continue
+        Write-Information "Project: $(Get-BusBuddyProjectRoot)" -InformationAction Continue
+        Write-Information "" -InformationAction Continue
+    }
+
+    if ($env:BUSBUDDY_SILENT -ne '1') {
+        Write-BusBuddyStatus "Core" -Type Info
+        Write-Information "  bbBuild, bbRun, bbTest, bbClean, bbRestore, bbHealth" -InformationAction Continue
+    }
+
+    if ($env:BUSBUDDY_SILENT -ne '1') {
+        Write-BusBuddyStatus "Development" -Type Info
+        Write-Information "  bbDevSession, bbInfo, bbCommands, bbMantra, bbMantraReset" -InformationAction Continue
+    }
+
+    # Removed 'Validation & Safety' section (no bbXamlValidate)
+
+    # Docs & Reference remains gated if bbCopilotRef exists
+    if ($env:BUSBUDDY_SILENT -ne '1' -and (Get-Command bbCopilotRef -ErrorAction SilentlyContinue)) {
+        Write-BusBuddyStatus "Docs & Reference" -Type Info
+        Write-Information "  bbCopilotRef [Topic] (-ShowTopics)" -InformationAction Continue
+    }
+
+    if (-not $Quiet -and $env:BUSBUDDY_SILENT -ne '1') {
+        Write-Information "" -InformationAction Continue
+        Write-Information "Tips:" -InformationAction Continue
+        Write-Information "  • bbCommands — full list with functions" -InformationAction Continue
+        Write-Information "  • bbHealth — verify env quickly" -InformationAction Continue
+        Write-Information "  • Set 'BUSBUDDY_NO_WELCOME=1' to suppress on import" -InformationAction Continue
+    }
+}
+
+# Auto-run welcome unless suppressed
+if (-not $env:BUSBUDDY_NO_WELCOME -and $env:BUSBUDDY_SILENT -ne '1') {
+    Show-BusBuddyWelcome -Quiet
+}
+#endregion
+
 
 function Start-BusBuddyRuntimeErrorCapture {
     <#
@@ -3137,6 +3272,7 @@ function Test-BusBuddyAzureConnection {
 # Core aliases with safe creation
 try { Set-Alias -Name 'bbBuild'      -Value 'Invoke-BusBuddyBuild'   -Force } catch { }
 try { Set-Alias -Name 'bbRun'        -Value 'Invoke-BusBuddyRun'     -Force } catch { }
+try { Set-Alias -Name 'bbRunSta'     -Value 'Invoke-BusBuddyRunSta'  -Force } catch { }
 try { Set-Alias -Name 'bbClean'      -Value 'Invoke-BusBuddyClean'   -Force } catch { }
 try { Set-Alias -Name 'bbRestore'    -Value 'Invoke-BusBuddyRestore' -Force } catch { }
 try { Set-Alias -Name 'bbTest'       -Value 'Invoke-BusBuddyTest'    -Force } catch { }
@@ -3159,6 +3295,7 @@ try { Set-Alias -Name 'bbEnv'          -Value 'Initialize-BusBuddyEnvironment' -
 foreach ($pair in @(
     @{A='bb-build';V='Invoke-BusBuddyBuild'},
     @{A='bb-run';V='Invoke-BusBuddyRun'},
+    @{A='bb-run-sta';V='Invoke-BusBuddyRunSta'},
     @{A='bb-clean';V='Invoke-BusBuddyClean'},
     @{A='bb-restore';V='Invoke-BusBuddyRestore'},
     @{A='bb-test';V='Invoke-BusBuddyTest'},
@@ -3171,10 +3308,12 @@ foreach ($pair in @(
 Export-ModuleMember -Function @(
     'Invoke-BusBuddyBuild',
     'Invoke-BusBuddyRun',
+    'Invoke-BusBuddyRunSta',
     'Invoke-BusBuddyClean',
     'Invoke-BusBuddyRestore',
     'Invoke-BusBuddyTest',
     'Invoke-BusBuddyHealthCheck',
+    'Get-BusBuddyApartmentState',
     'Get-BusBuddyMantraId',
     'Reset-BusBuddyMantraId',
     'Start-BusBuddyDevSession',
@@ -3189,14 +3328,23 @@ Export-ModuleMember -Function @(
     'Get-BusBuddyTelemetrySummary',
     'Invoke-BusBuddyTelemetryPurge',
     'Get-BusBuddyPS75Compliance',
-    'Initialize-BusBuddyEnvironment'
+    'Initialize-BusBuddyEnvironment',
+    # Script Lint exports
+    'Test-BusBuddyErrorActionPipelines',
+    'Invoke-BusBuddyErrorActionAudit',
+    # Logging exports
+    'Get-BusBuddyLogSummary'
 ) -Alias @(
-    'bbBuild','bbRun','bbClean','bbRestore','bbTest','bbHealth',
+    'bbBuild','bbRun','bbRunSta','bbClean','bbRestore','bbTest','bbHealth',
     'bbDevSession','bbInfo','bbCommands',
-    'bb-build','bb-run','bb-clean','bb-restore','bb-test','bb-health',
+    'bb-build','bb-run','bb-run-sta','bb-clean','bb-restore','bb-test','bb-health',
     'bbMantra','bbMantraReset','bbTestFull',
     'bb-ps-review',
-    'bbEnv','bb-env'
+    'bbEnv','bb-env',
+    # Script Lint aliases
+    'bb-ps-validate-ea','bb-ps-validate-ea-run',
+    # Logging alias
+    'bb-logs-summary'
 )
 #endregion
 

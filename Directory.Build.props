@@ -1,111 +1,93 @@
 <Project>
-  <!-- 🚌 BusBuddy - Modern Foundation Configuration (.NET 9.0) -->
-
-  <PropertyGroup>
-  <!-- Target Framework default; projects may override with multi-targeting -->
-  <TargetFramework Condition="'$(TargetFrameworks)' == '' and '$(TargetFramework)' == ''">net9.0-windows</TargetFramework>
-    <Nullable>enable</Nullable>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <UseWPF>true</UseWPF>
-
-  <!-- Syncfusion / EF / Serilog Versions (single definitions) -->
-  <SyncfusionVersion>30.1.42</SyncfusionVersion>
-  <EntityFrameworkVersion>9.0.8</EntityFrameworkVersion>
-  <SerilogVersion>4.3.0</SerilogVersion>
-    <SerilogSinksFileVersion>7.0.0</SerilogSinksFileVersion>
-    <SerilogSinksConsoleVersion>6.0.0</SerilogSinksConsoleVersion>
-    <SerilogSinksDebugVersion>3.0.0</SerilogSinksDebugVersion>
-    <SerilogExtensionsLoggingVersion>8.0.0</SerilogExtensionsLoggingVersion>
-
-    <!-- WPF/UI Package Versions -->
-    <AutoMapperVersion>12.0.1</AutoMapperVersion>
-    <CommunityToolkitMvvmVersion>8.3.2</CommunityToolkitMvvmVersion>
-    <WebView2Version>1.0.2792.45</WebView2Version>
-    <XamlBehaviorsVersion>1.1.135</XamlBehaviorsVersion>
-
-    <!-- Testing Package Versions -->
-    <NUnitVersion>4.3.2</NUnitVersion>
-    <TestSdkVersion>17.14.1</TestSdkVersion>
-    <FluentAssertionsVersion>6.12.2</FluentAssertionsVersion>
-    <CoverletVersion>6.0.2</CoverletVersion>
-    <MoqVersion>4.20.72</MoqVersion>
-
-    <!-- External API Package Versions -->
-    <SqlClientVersion>6.0.2</SqlClientVersion>
-    <GoogleApisVersion>1.70.0</GoogleApisVersion>
-    <GoogleCloudStorageVersion>4.0.0</GoogleCloudStorageVersion>
-    <GoogleApisDriveVersion>1.70.0.3834</GoogleApisDriveVersion>
-    <OpenAIVersion>2.0.0-beta.10</OpenAIVersion>
-    <PollyVersion>8.4.1</PollyVersion>
-    <SystemNetHttpJsonVersion>9.0.7</SystemNetHttpJsonVersion>
-
-    <!-- Microsoft.Extensions Package Versions — Consistent versioning -->
-    <MicrosoftExtensionsVersion>9.0.8</MicrosoftExtensionsVersion>
-    <MicrosoftExtensionsDependencyInjectionVersion>9.0.8</MicrosoftExtensionsDependencyInjectionVersion>
-    <MicrosoftExtensionsHostingVersion>9.0.8</MicrosoftExtensionsHostingVersion>
-    <MicrosoftExtensionsLoggingVersion>9.0.8</MicrosoftExtensionsLoggingVersion>
-
-    <AzureIdentityVersion>1.13.0</AzureIdentityVersion>
-    <MoqVersion>4.20.72</MoqVersion>
-    <CoverletVersion>6.0.2</CoverletVersion>
-
-    <!-- INDUSTRY STANDARD: Practical Code Quality -->
-    <EnableNETAnalyzers>true</EnableNETAnalyzers>
-    <AnalysisMode>Recommended</AnalysisMode>
-    <CodeAnalysisRuleSet>$(MSBuildThisFileDirectory)BusBuddy-Practical.ruleset</CodeAnalysisRuleSet>
-
-    <!-- INDUSTRY STANDARD: Single-user desktop app settings -->
-    <!-- Documentation file generation enabled for public APIs — MVP compliance -->
-    <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
-    <!-- Temporarily relaxed null safety for development; re-enable later -->
-    <!-- <WarningsAsErrors>CS8600;CS8601;CS8602;CS8618</WarningsAsErrors> -->
-
-    <!-- INDUSTRY STANDARD: WPF debugging -->
-    <!-- OutputType set in individual project files to avoid conflicts -->
-
-    <!-- 🌐 GLOBALIZATION: Transportation system international support -->
-    <InvariantGlobalization>false</InvariantGlobalization>
-    <SatelliteResourceLanguages>en-US</SatelliteResourceLanguages>
-
-    <!-- Code analysis configuration -->
-  <CodeAnalysisRuleSet>$(MSBuildThisFileDirectory)BusBuddy-Practical.ruleset</CodeAnalysisRuleSet>
-  <EnableNETAnalyzers>true</EnableNETAnalyzers>
-  <AnalysisLevel>latest</AnalysisLevel>
-  <!-- Consolidated NoWarn list (low-impact + nullable MVP suppressions) -->
-  <NoWarn>$(NoWarn);CA1305;CA1860;CA1848;CA1851;CA1304;CA1707;CS1591;CS8600;CS8601;CS8602;CS8603;CS8604</NoWarn>
-  </PropertyGroup>
-
-
-  <!-- Global Build Performance Optimization — MVP stability -->
-  <PropertyGroup>
-    <UseSharedCompilation>true</UseSharedCompilation>
-    <BuildInParallel>true</BuildInParallel>
-    <RestorePackagesWithLockFile>false</RestorePackagesWithLockFile>
-    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
-    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
-    <GenerateBindingRedirectsOutputType>true</GenerateBindingRedirectsOutputType>
-    <DisableImplicitNuGetFallbackFolder>true</DisableImplicitNuGetFallbackFolder>
-
-    <!-- MSB4181 Prevention -->
-    <MSBuildAllProjects Condition="'$(MSBuildAllProjects)' == ''">$(MSBuildThisFileFullPath)</MSBuildAllProjects>
-    <EnableDefaultItems>true</EnableDefaultItems>
-    <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
-
-    <!-- .NET 9.0 Optimization -->
-    <LangVersion>12</LangVersion>
-    <WarningsAsErrors />
-    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
-  </PropertyGroup>
-
-  <!-- Test Project Specific Settings — MVP stability -->
-  <PropertyGroup Condition="'$(IsTestProject)' == 'true'">
-  <UseSharedCompilation>false</UseSharedCompilation>
-  <BuildInParallel>false</BuildInParallel>
-  <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
-  <ShadowCopyFiles>true</ShadowCopyFiles>
-    <ProduceOnlyReferenceAssembly>false</ProduceOnlyReferenceAssembly>
-    <GenerateDocumentationFile>false</GenerateDocumentationFile>
-  </PropertyGroup>
-
+    <!-- 🚌 BusBuddy - Modern Foundation Configuration (.NET 9.0) -->
+    <PropertyGroup>
+        <!-- Target Framework default; projects may override with multi-targeting -->
+        <TargetFramework Condition="'$(TargetFrameworks)' == '' and '$(TargetFramework)' == ''">net9.0-windows</TargetFramework>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <UseWPF>true</UseWPF>
+        <!-- Syncfusion / EF / Serilog Versions (single definitions) -->
+    <SyncfusionVersion>30.2.5</SyncfusionVersion>
+        <EntityFrameworkVersion>9.0.8</EntityFrameworkVersion>
+        <SerilogVersion>4.3.0</SerilogVersion>
+        <SerilogSinksFileVersion>7.0.0</SerilogSinksFileVersion>
+        <SerilogSinksConsoleVersion>6.0.0</SerilogSinksConsoleVersion>
+        <SerilogSinksDebugVersion>3.0.0</SerilogSinksDebugVersion>
+        <SerilogExtensionsLoggingVersion>8.0.0</SerilogExtensionsLoggingVersion>
+        <!-- WPF/UI Package Versions -->
+        <AutoMapperVersion>12.0.1</AutoMapperVersion>
+        <CommunityToolkitMvvmVersion>8.3.2</CommunityToolkitMvvmVersion>
+        <WebView2Version>1.0.2792.45</WebView2Version>
+        <XamlBehaviorsVersion>1.1.135</XamlBehaviorsVersion>
+        <!-- Testing Package Versions -->
+        <NUnitVersion>4.3.2</NUnitVersion>
+        <TestSdkVersion>17.14.1</TestSdkVersion>
+        <FluentAssertionsVersion>6.12.2</FluentAssertionsVersion>
+        <CoverletVersion>6.0.2</CoverletVersion>
+        <MoqVersion>4.20.72</MoqVersion>
+        <!-- External API Package Versions -->
+        <SqlClientVersion>6.0.2</SqlClientVersion>
+        <GoogleApisVersion>1.70.0</GoogleApisVersion>
+        <GoogleCloudStorageVersion>4.0.0</GoogleCloudStorageVersion>
+        <GoogleApisDriveVersion>1.70.0.3834</GoogleApisDriveVersion>
+        <OpenAIVersion>2.0.0-beta.10</OpenAIVersion>
+        <PollyVersion>8.4.1</PollyVersion>
+        <SystemNetHttpJsonVersion>9.0.7</SystemNetHttpJsonVersion>
+        <!-- Microsoft.Extensions Package Versions — Consistent versioning -->
+        <MicrosoftExtensionsVersion>9.0.8</MicrosoftExtensionsVersion>
+        <MicrosoftExtensionsDependencyInjectionVersion>9.0.8</MicrosoftExtensionsDependencyInjectionVersion>
+        <MicrosoftExtensionsHostingVersion>9.0.8</MicrosoftExtensionsHostingVersion>
+        <MicrosoftExtensionsLoggingVersion>9.0.8</MicrosoftExtensionsLoggingVersion>
+        <AzureIdentityVersion>1.13.0</AzureIdentityVersion>
+        <MoqVersion>4.20.72</MoqVersion>
+        <CoverletVersion>6.0.2</CoverletVersion>
+        <!-- INDUSTRY STANDARD: Practical Code Quality -->
+        <EnableNETAnalyzers>true</EnableNETAnalyzers>
+        <AnalysisMode>Recommended</AnalysisMode>
+        <CodeAnalysisRuleSet>$(MSBuildThisFileDirectory)BusBuddy-Practical.ruleset</CodeAnalysisRuleSet>
+        <!-- INDUSTRY STANDARD: Single-user desktop app settings -->
+        <!-- Documentation file generation enabled for public APIs — MVP compliance -->
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+        <!-- Temporarily relaxed null safety for development; re-enable later -->
+        <!-- <WarningsAsErrors>CS8600;CS8601;CS8602;CS8618</WarningsAsErrors> -->
+        <!-- INDUSTRY STANDARD: WPF debugging -->
+        <!-- OutputType set in individual project files to avoid conflicts -->
+        <!-- 🌐 GLOBALIZATION: Transportation system international support -->
+        <InvariantGlobalization>false</InvariantGlobalization>
+        <SatelliteResourceLanguages>en-US</SatelliteResourceLanguages>
+        <!-- Code analysis configuration -->
+        <CodeAnalysisRuleSet>$(MSBuildThisFileDirectory)BusBuddy-Practical.ruleset</CodeAnalysisRuleSet>
+        <EnableNETAnalyzers>true</EnableNETAnalyzers>
+        <AnalysisLevel>latest</AnalysisLevel>
+        <!-- Consolidated NoWarn list (low-impact + nullable MVP suppressions) -->
+        <NoWarn>$(NoWarn);CA1305;CA1860;CA1848;CA1851;CA1304;CA1707;CS1591;CS8600;CS8601;CS8602;CS8603;CS8604</NoWarn>
+    </PropertyGroup>
+    <!-- Global Build Performance Optimization — MVP stability -->
+    <PropertyGroup>
+        <UseSharedCompilation>true</UseSharedCompilation>
+        <BuildInParallel>true</BuildInParallel>
+        <RestorePackagesWithLockFile>false</RestorePackagesWithLockFile>
+        <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+        <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+        <GenerateBindingRedirectsOutputType>true</GenerateBindingRedirectsOutputType>
+        <DisableImplicitNuGetFallbackFolder>true</DisableImplicitNuGetFallbackFolder>
+        <!-- MSB4181 Prevention -->
+        <MSBuildAllProjects Condition="'$(MSBuildAllProjects)' == ''">$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+        <EnableDefaultItems>true</EnableDefaultItems>
+        <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+        <!-- .NET 9.0 Optimization -->
+        <LangVersion>12</LangVersion>
+        <WarningsAsErrors />
+        <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    </PropertyGroup>
+    <!-- Test Project Specific Settings — MVP stability -->
+    <PropertyGroup Condition="'$(IsTestProject)' == 'true'">
+        <UseSharedCompilation>false</UseSharedCompilation>
+        <BuildInParallel>false</BuildInParallel>
+        <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+        <ShadowCopyFiles>true</ShadowCopyFiles>
+        <ProduceOnlyReferenceAssembly>false</ProduceOnlyReferenceAssembly>
+        <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    </PropertyGroup>
 </Project>

@@ -2,10 +2,7 @@
 
 > **Modern WPF application for comprehensive school bus fleet management, built with .NET 9.0 and Syncfusion controls.**
 
-[![Build Status](https://img.shields.io/badge/build-✅%20passing-brightgreen)](https://github.com/Bigessfour/BusBuddy-3)
-[![.NET](https://img.shields.io/badge/.NET-9.0.304-blue)](https://dotnet.microsoft.com/download/dotnet/9.0)
-[![PowerShell](https://img.shields.io/badge/PowerShell-7.5.2-blue)](https://github.com/PowerShell/PowerShell)
-[![Syncfusion](https://img.shields.io/badge/Syncfusion-30.1.42%20✅%20Licensed-orange)](https://www.syncfusion.com/wpf-controls)
+[![Syncfusion](https://img.shields.io/badge/Syncfusion-30.2.4%20✅%20Licensed-orange)](https://www.syncfusion.com/wpf-controls)
 [![MVP Status](https://img.shields.io/badge/MVP-⚠️%20Development-yellow)](https://github.com/Bigessfour/BusBuddy-3)
 [![Production](https://img.shields.io/badge/Production-�%20In%20Progress-yellow)](https://github.com/Bigessfour/BusBuddy-3)
 
@@ -43,9 +40,6 @@ bbBuild && bbRun
 # Check for known issues before deployment
 bbHealth
 ```
-
-**⚠️ Note**: Before production deployment, please review the "Known Risks" section below.
-
 ### **📋 Current Build Status**
 **MVP functionality operational with ongoing improvements:**
 - ✅ **Build Status**: Clean build with 0 errors (warnings addressed)
@@ -84,18 +78,10 @@ bbTest
 - ✅ **Code Quality**: Fixed nullable reference warnings, maintained clean build
 - ✅ **Comprehensive Documentation**: Updated all guides and reference materials
 
-### **Available Commands**
-```powershell
-# Core Development
-bbBuild               # Build solution (24.36s clean build)
 bbRun                 # Run application
 bbTest                # Execute tests (.NET 9 compatibility handled)
-bbHealth              # System health check
-bbClean               # Clean build artifacts
 bbRestore             # Restore packages
 
-# Development Workflow
-bbDevSession          # Start complete development environment
 bbInfo                # Show module information
 bbCommands            # List all available commands
 
@@ -379,7 +365,7 @@ dotnet ef migrations list --project BusBuddy.Core
 |-----------|------------|---------|
 | **Framework** | .NET | 9.0.303 |
 | **UI Framework** | WPF | Built-in |
-| **UI Controls** | Syncfusion Essential Studio | 30.1.42 |
+| **UI Controls** | Syncfusion Essential Studio | 30.2.4 |
 | **Data Access** | Entity Framework Core | 9.0.7 |
 | **Database** | SQL Server / LocalDB | Latest |
 | **Logging** | Serilog | 4.3.0 |
@@ -453,7 +439,7 @@ bbRun
 
 If the app exits immediately, check `logs/bootstrap-YYYYMMDD.txt` for bootstrap diagnostics.
 
-## 🔑 Syncfusion licensing (WPF 30.1.42)
+## 🔑 Syncfusion licensing (WPF 30.2.4)
 
 Set before running:
 

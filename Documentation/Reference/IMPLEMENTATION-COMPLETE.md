@@ -116,7 +116,7 @@ bb-copilot-ref PowerShell-Commands
 ### Documentation Standards
 - **Microsoft compliant** - All PowerShell follows official standards
 - **Syncfusion official** - Only documented APIs and patterns used
-- **Version-specific** - Matches actual project versions (.NET 8, Syncfusion 30.1.42)
+- **Version-specific** - Matches actual project versions (.NET 8/9, Syncfusion 30.2.4)
 - **MVP-focused** - Prioritizes working examples over comprehensive coverage
 
 ### Integration Points

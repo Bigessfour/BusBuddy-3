@@ -10,8 +10,7 @@
             <ResourceDictionary.MergedDictionaries>
                 <!-- Our custom MenuStyles.xaml -->
                 <ResourceDictionary Source="Resources/MenuStyles.xaml" />
-                <!-- Syncfusion V30 Validated Resource Dictionary with proper theme brushes -->
-                <ResourceDictionary Source="Resources/SyncfusionV30_Validated_ResourceDictionary.xaml" />
+                <!-- Removed external Syncfusion dictionary include; themes applied programmatically via SfSkinManager -->
                 <!-- BusBuddy Fluent theme palettes for DynamicResource brushes used across views -->
                 <ResourceDictionary Source="Resources/Themes/FluentDarkTheme.xaml" />
                 <ResourceDictionary Source="Resources/Themes/FluentLightTheme.xaml" />

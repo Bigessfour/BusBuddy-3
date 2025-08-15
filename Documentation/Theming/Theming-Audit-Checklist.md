@@ -2,7 +2,7 @@
 
 (Migrated from former /docs directory during documentation unification — August 2025)
 
-This checklist verifies that every view (Window/UserControl) correctly integrates Syncfusion WPF 30.1.42 theming via `SfSkinManager` and BusBuddy brand dictionaries.
+This checklist verifies that every view (Window/UserControl) correctly integrates Syncfusion WPF 30.2.4 theming via `SfSkinManager` and BusBuddy brand dictionaries.
 
 Documentation-first references (use these only):
 - SfSkinManager API: https://help.syncfusion.com/cr/wpf/Syncfusion.SfSkinManager.html

@@ -21,7 +21,7 @@ of an enterprise-quality transportation management system that would have been i
 standard WPF controls alone.
 
 **Syncfusion Components Used:**
-- Essential Studio for WPF v30.1.40
+- Essential Studio for WPF v30.2.4
 - FluentDark/FluentLight Themes
 - Professional DataGrid, Chart, and Navigation Controls
 - Advanced PDF Generation and Reporting Tools

@@ -184,7 +184,7 @@ Write-Host "Build & launch smoke completed" -ForegroundColor Green
 - GROK-README.md: rolling change log & tech debt tables
 - SETUP-GUIDE.md: extended environment setup
 - FILE-FETCHABILITY-GUIDE.md: raw link retrieval patterns
-- Microsoft Docs (.NET / EF / PowerShell) & Syncfusion WPF docs (version 30.1.42)
+- Microsoft Docs (.NET / EF / PowerShell) & Syncfusion WPF docs (version 30.2.4)
 
 -------------------------------------------------------------------------------
 ## 16. Next Hardening Steps (Optional Post-Recovery)
