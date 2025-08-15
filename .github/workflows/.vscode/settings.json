@@ -1,0 +1,11 @@
+{
+  // Suppress local YAML linter false positives for GitHub Actions secrets in workflows
+  "yaml.customTags": [
+    "secrets.SYNCFUSION_LICENSE_KEY",
+    "secrets.BUSBUDDY_CONNECTION",
+    "secrets.AZURE_SQL_SERVER",
+    "secrets.AZURE_SQL_USER",
+    "secrets.AZURE_SQL_PASSWORD"
+  ],
+  "yaml.validate": true
+}

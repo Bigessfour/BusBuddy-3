@@ -29,6 +29,18 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Install PowerShell 7.5.x
+        uses: PSModule/install-powershell@v1
+        with:
+          Version: 7.5.1
+
+      - name: Initialize BusBuddy PowerShell module (bb-*)
+        shell: pwsh
+        run: |
+          $ok = & ./PowerShell/Profiles/Import-BusBuddyModule.ps1
+          if (-not $ok) { throw 'Failed to import BusBuddy PowerShell module' }
+          Get-Command bb-anti-regression,bb-mvp-check -ErrorAction SilentlyContinue | Format-Table -Auto
+
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
@@ -63,8 +75,11 @@ jobs:
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Continue'
-          pwsh -File PowerShell/Validation/PhaseNamingGuard.ps1 | Tee-Object -FilePath guard-output.log
-          if ($LASTEXITCODE -ne 0) { echo "guardStatus=CHECK" >> $env:GITHUB_OUTPUT } else { echo "guardStatus=PASS" >> $env:GITHUB_OUTPUT }
+          $guardScript = 'PowerShell/Validation/PhaseNamingGuard.ps1'
+          $outFile = 'guard-output.log'
+          # Run guard in a separate pwsh process and capture output; rely on process ExitCode for robust result
+          $proc = Start-Process -FilePath pwsh -ArgumentList @('-NoLogo','-NoProfile','-File', $guardScript) -RedirectStandardOutput $outFile -RedirectStandardError $outFile -NoNewWindow -Wait -PassThru
+          if ($proc.ExitCode -ne 0) { echo "guardStatus=CHECK" >> $env:GITHUB_OUTPUT } else { echo "guardStatus=PASS" >> $env:GITHUB_OUTPUT }
 
       - name: Syncfusion Regression Guard
         id: syncfusionguard

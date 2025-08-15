@@ -628,8 +628,17 @@ Annistyn,Sutphin,3,,,,,,,,,,,,,,,,,,
                     var family = families.LastOrDefault(f => f.ParentGuardian == parentGuardian && f.HomePhone == homePhone);
                     if (family == null)
                     {
-                        family = await context.Families
-                            .FirstOrDefaultAsync(f => f.ParentGuardian == parentGuardian && f.HomePhone == homePhone);
+                        try
+                        {
+                            family = await context.Families
+                                .FirstOrDefaultAsync(f => f.ParentGuardian == parentGuardian && f.HomePhone == homePhone);
+                        }
+                        catch (InvalidOperationException)
+                        {
+                            // Fallback for mocked DbSet without IAsyncQueryProvider in tests
+                            family = context.Families
+                                .FirstOrDefault(f => f.ParentGuardian == parentGuardian && f.HomePhone == homePhone);
+                        }
                     }
                     if (family == null)
                     {

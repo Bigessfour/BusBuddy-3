@@ -1,0 +1,27 @@
+{
+  "version": "0.2",
+  "words": [
+    "bbanti",
+    "bbmvp",
+    "choco",
+    "cmdline",
+    "phaseguard",
+    "psd1",
+    "psm1",
+    "pssa",
+    "Summarise",
+    "Syncfusion",
+    "syncfusionguard",
+    "USERPROFILE",
+    "XAML"
+  ],
+  "ignorePaths": [
+    "**/node_modules/**",
+    "**/bin/**",
+    "**/obj/**",
+    "**/.git/**",
+    "**/.vs/**",
+    "**/artifacts/**",
+    "logs/**"
+  ]
+}

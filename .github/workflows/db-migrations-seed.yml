@@ -52,6 +52,18 @@ jobs:
       - name: 📥 Checkout code
         uses: actions/checkout@v4
 
+      - name: Install PowerShell 7.5.x
+        uses: PSModule/install-powershell@v1
+        with:
+          Version: 7.5.1
+
+      - name: Initialize BusBuddy PowerShell module (bb-*)
+        shell: pwsh
+        run: |
+          $ok = & ./PowerShell/Profiles/Import-BusBuddyModule.ps1
+          if (-not $ok) { throw 'Failed to import BusBuddy PowerShell module' }
+          Get-Command bb-anti-regression -ErrorAction SilentlyContinue | Format-Table -Auto
+
       - name: 🏗️ Setup .NET
         uses: actions/setup-dotnet@v4
         with:
@@ -70,12 +82,19 @@ jobs:
         shell: pwsh
         run: |
           $rule = "bb-${{ github.run_id }}-db"
-          echo "Creating temporary SQL firewall rule: $rule"
-          pwsh -File .\PowerShell\Networking\Enable-AzureSqlAccess.ps1 `
-            -SubscriptionId "${{ env.AZURE_SUBSCRIPTION_ID }}" `
-            -ResourceGroupName "BusBuddy-RG" `
-            -SqlServerName "busbuddy-server-sm2" `
-            -RuleName $rule
+          $outFile = 'azure-sql-allow.log'
+          Write-Host "Creating temporary SQL firewall rule: $rule"
+          $script = (Join-Path $PWD 'PowerShell' 'Networking' 'Enable-AzureSqlAccess.ps1')
+          $args = @('-NoLogo','-NoProfile','-File', $script,
+            '-SubscriptionId', "${{ env.AZURE_SUBSCRIPTION_ID }}",
+            '-ResourceGroupName', 'BusBuddy-RG',
+            '-SqlServerName', 'busbuddy-server-sm2',
+            '-RuleName', $rule)
+          $proc = Start-Process -FilePath pwsh -ArgumentList $args -RedirectStandardOutput $outFile -RedirectStandardError $outFile -NoNewWindow -Wait -PassThru
+          if ($proc.ExitCode -ne 0) {
+            Get-Content $outFile | Write-Host
+            throw "Failed to create temporary SQL firewall rule (ExitCode=$($proc.ExitCode))"
+          }
           echo "RULE_NAME=$rule" >> $env:GITHUB_ENV
 
       - name: 🔧 Set BUSBUDDY_CONNECTION
@@ -91,7 +110,30 @@ jobs:
           $env:PATH += ";$env:USERPROFILE\.dotnet\tools"
           dotnet ef migrations script --idempotent --output migration-script.sql --project BusBuddy.Core/BusBuddy.Core.csproj --startup-project BusBuddy.WPF/BusBuddy.WPF.csproj
 
-      - name: 🗃️ Apply EF migrations
+      - name: �️ Ensure sqlcmd is available (optional)
+        id: ensure-sqlcmd
+        if: ${{ env.AZURE_SQL_SERVER != '' && env.AZURE_SQL_USER != '' && env.AZURE_SQL_PASSWORD != '' }}
+        shell: pwsh
+        run: |
+          $found = $false
+          if (-not (Get-Command sqlcmd -ErrorAction SilentlyContinue)) {
+            echo "sqlcmd not found — attempting install via Chocolatey..."
+            try {
+              choco install sqlserver-cmdline-utils -y --no-progress | Out-Null
+            } catch {
+              echo "::warning::Failed to install sqlcmd via Chocolatey"
+            }
+          }
+          if (Get-Command sqlcmd -ErrorAction SilentlyContinue) {
+            $found = $true
+            echo "sqlcmd available."
+          } else {
+            echo "::notice::sqlcmd not available; migration application will be skipped"
+          }
+          echo "found=$found" >> $env:GITHUB_OUTPUT
+
+      - name: �🗃️ Apply EF migrations
+        if: ${{ steps.ensure-sqlcmd.outputs.found == 'True' }}
         shell: pwsh
         run: |
           if ('${{ env.AZURE_SQL_SERVER }}' -and '${{ env.AZURE_SQL_USER }}' -and '${{ env.AZURE_SQL_PASSWORD }}') {
@@ -99,6 +141,14 @@ jobs:
           } else {
             echo "No Azure SQL secrets present; skipping sqlcmd apply"
           }
+
+      - name: 🧪 Validate database schema
+        if: ${{ env.BUSBUDDY_CONNECTION != '' && steps.ensure-sqlcmd.outputs.found == 'True' }}
+        shell: pwsh
+        run: |
+          echo "Validating database schema..."
+          sqlcmd -S "${{ env.AZURE_SQL_SERVER }}" -d "BusBuddyDb" -U "${{ env.AZURE_SQL_USER }}" -P "${{ env.AZURE_SQL_PASSWORD }}" -Q "SELECT COUNT(*) FROM sys.tables WHERE name LIKE 'Schedule%';" -h -1 |
+            ForEach-Object { if ($_ -eq "0") { Write-Error "No Schedule tables found in database" } else { Write-Host "Schema OK — found $($_) Schedule tables." } }
 
       - name: 🌱 Seed database
         if: ${{ github.event.inputs.seed == 'true' }}
@@ -111,11 +161,18 @@ jobs:
         shell: pwsh
         run: |
           if ($env:RULE_NAME) {
-            pwsh -File .\PowerShell\Networking\Disable-AzureSqlAccess.ps1 `
-              -SubscriptionId "${{ env.AZURE_SUBSCRIPTION_ID }}" `
-              -ResourceGroupName "BusBuddy-RG" `
-              -SqlServerName "busbuddy-server-sm2" `
-              -RuleName $env:RULE_NAME
+            $outFile = 'azure-sql-disable.log'
+            $script = (Join-Path $PWD 'PowerShell' 'Networking' 'Disable-AzureSqlAccess.ps1')
+            $args = @('-NoLogo','-NoProfile','-File', $script,
+              '-SubscriptionId', "${{ env.AZURE_SUBSCRIPTION_ID }}",
+              '-ResourceGroupName', 'BusBuddy-RG',
+              '-SqlServerName', 'busbuddy-server-sm2',
+              '-RuleName', $env:RULE_NAME)
+            $proc = Start-Process -FilePath pwsh -ArgumentList $args -RedirectStandardOutput $outFile -RedirectStandardError $outFile -NoNewWindow -Wait -PassThru
+            if ($proc.ExitCode -ne 0) {
+              Write-Warning "Failed to remove temporary SQL firewall rule (ExitCode=$($proc.ExitCode))"
+              Get-Content $outFile | Write-Host
+            }
           } else {
             echo "No RULE_NAME found; skipping firewall cleanup"
           }

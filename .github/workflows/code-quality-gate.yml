@@ -39,6 +39,50 @@ jobs:
         run: |
           dotnet test ${{ env.SOLUTION_FILE }} --no-build --configuration Release --collect:"XPlat Code Coverage" --results-directory ./TestResults --logger trx || echo "Tests completed with issues"
 
+      - name: 📏 Enforce coverage threshold (Cobertura)
+        id: coverage
+        shell: pwsh
+        run: |
+          $threshold = 70.0
+          $resultsDir = Join-Path (Get-Location) 'TestResults'
+          $files = @()
+          if (Test-Path $resultsDir) {
+            $files = Get-ChildItem -Path $resultsDir -Recurse -Filter 'coverage.cobertura.xml' -ErrorAction SilentlyContinue
+          }
+          if (-not $files -or $files.Count -eq 0) {
+            Write-Warning 'No Cobertura coverage files found under ./TestResults — setting coverage to 0.'
+            $covered = 0.0; $valid = 0.0
+          } else {
+            $covered = 0.0; $valid = 0.0
+            foreach ($f in $files) {
+              try {
+                [xml]$xml = Get-Content -Raw -Path $f.FullName
+                $node = $xml.SelectSingleNode('/coverage')
+                if ($null -ne $node) {
+                  $lv = [double]($node.Attributes['lines-valid'].Value)
+                  $lc = [double]($node.Attributes['lines-covered'].Value)
+                  $valid += $lv
+                  $covered += $lc
+                }
+              } catch {
+                Write-Warning ("Failed to parse coverage file {0}: {1}" -f $f.FullName, $_.Exception.Message)
+              }
+            }
+          }
+
+          $pct = if ($valid -gt 0) { [math]::Round(($covered / $valid) * 100, 2) } else { 0.0 }
+          Write-Host ("Aggregated coverage: {0}% (covered={1} / valid={2})" -f $pct, $covered, $valid)
+
+          # Export outputs for later steps
+          echo "coverage=$pct" >> $env:GITHUB_OUTPUT
+          echo "coverage-threshold=$threshold" >> $env:GITHUB_OUTPUT
+          if ($pct -ge $threshold) { echo "coverage-pass=true" >> $env:GITHUB_OUTPUT } else { echo "coverage-pass=false" >> $env:GITHUB_OUTPUT }
+
+          if ($pct -lt $threshold) {
+            Write-Error ("Test coverage {0}% is below threshold {1}%" -f $pct, $threshold)
+            exit 1
+          }
+
       - name: � Scan vulnerable dependencies
         shell: pwsh
         run: |
@@ -122,6 +166,7 @@ jobs:
           echo "| XAML Files | ${{ steps.quality-metrics.outputs.xaml-files }} | ✅ |" >> $GITHUB_STEP_SUMMARY
           echo "| Test Files | ${{ steps.quality-metrics.outputs.test-files }} | 📊 |" >> $GITHUB_STEP_SUMMARY
           echo "| Test Ratio | ${{ steps.quality-metrics.outputs.test-coverage }}% | 📈 |" >> $GITHUB_STEP_SUMMARY
+          echo "| Coverage (Cobertura) | ${{ steps.coverage.outputs.coverage }}% (min ${{ steps.coverage.outputs.coverage-threshold }}%) | ${{ steps.coverage.outputs.coverage-pass == 'true' && '✅' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
           echo "| ViewModels | ${{ steps.quality-metrics.outputs.viewmodel-files }} | 🏗️ |" >> $GITHUB_STEP_SUMMARY
           echo "| Services | ${{ steps.quality-metrics.outputs.service-files }} | ⚙️ |" >> $GITHUB_STEP_SUMMARY
           echo "| Quality Gate | ${{ steps.quality-gate.outputs.quality-gate-passed == 'true' && '✅ PASSED' || '⚠️ RECOMMENDATIONS' }} | 🎯 |" >> $GITHUB_STEP_SUMMARY

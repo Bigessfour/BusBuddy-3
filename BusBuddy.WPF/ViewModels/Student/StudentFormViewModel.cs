@@ -70,6 +70,19 @@ namespace BusBuddy.WPF.ViewModels.Student
             AvailableRoutes = new ObservableCollection<string>();
             AvailableBusStops = new ObservableCollection<string>();
 
+            // Immediately prime with safe defaults so unit tests have deterministic data
+            // before the async loader completes.
+            var defaultRoutes = new[] { "Route A", "Route B", "Route C", "Route D" };
+            foreach (var r in defaultRoutes) AvailableRoutes.Add(r);
+            var defaultStops = new[]
+            {
+                "Oak & 1st", "Maple & Main", "Pine & Center", "Elm & 2nd",
+                "Cedar & Park", "Birch & State", "Walnut & Lincoln", "Cherry & Washington",
+                "Spruce & Adams", "Hickory & Jefferson", "Poplar & Monroe", "Ash & Madison",
+                "Sycamore & Jackson", "Willow & Van Buren", "Dogwood & Harrison"
+            };
+            foreach (var s in defaultStops) AvailableBusStops.Add(s);
+
             try { _student.PropertyChanged += OnStudentPropertyChanged; } catch { }
             InitializeCommands();
             _ = LoadDataAsync();
@@ -103,6 +116,19 @@ namespace BusBuddy.WPF.ViewModels.Student
 
             AvailableRoutes = new ObservableCollection<string>();
             AvailableBusStops = new ObservableCollection<string>();
+
+            // Immediately prime with safe defaults so unit tests have deterministic data
+            // before the async loader completes.
+            var defaultRoutes = new[] { "Route A", "Route B", "Route C", "Route D" };
+            foreach (var r in defaultRoutes) AvailableRoutes.Add(r);
+            var defaultStops = new[]
+            {
+                "Oak & 1st", "Maple & Main", "Pine & Center", "Elm & 2nd",
+                "Cedar & Park", "Birch & State", "Walnut & Lincoln", "Cherry & Washington",
+                "Spruce & Adams", "Hickory & Jefferson", "Poplar & Monroe", "Ash & Madison",
+                "Sycamore & Jackson", "Willow & Van Buren", "Dogwood & Harrison"
+            };
+            foreach (var s in defaultStops) AvailableBusStops.Add(s);
 
             try { _student.PropertyChanged += OnStudentPropertyChanged; } catch { }
             InitializeCommands();

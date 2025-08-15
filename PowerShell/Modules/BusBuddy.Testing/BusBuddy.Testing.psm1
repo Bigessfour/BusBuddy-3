@@ -219,7 +219,7 @@ function Get-LatestTestResult {
         $testResultFiles = Get-ChildItem -Path $Script:TestResultsDir -Filter "*.trx" -ErrorAction SilentlyContinue |
             Sort-Object LastWriteTime -Descending
 
-        if ($testResultFiles.Count -eq 0) {
+        if (@($testResultFiles).Count -eq 0) {
             Write-Warning "No test result files found"
             return $null
         }
@@ -648,8 +648,8 @@ function Initialize-BusBuddyTestEnvironment {
 
         # Check test projects
         $testProjects = Get-ChildItem -Path $Script:WorkspaceRoot -Recurse -Filter "*.Tests.csproj" -ErrorAction SilentlyContinue
-        if ($testProjects.Count -gt 0) {
-            Write-Information "✅ Test projects found: $($testProjects.Count)" -InformationAction Continue
+            if (@($testProjects).Count -gt 0) {
+                Write-Information "✅ Test projects found: $(@($testProjects).Count)" -InformationAction Continue
             foreach ($project in $testProjects) {
                 Write-Information "   📁 $($project.Name)" -InformationAction Continue
             }
@@ -669,6 +669,9 @@ function Initialize-BusBuddyTestEnvironment {
             Write-Information "🔧 Install PowerShell 7: winget install --id Microsoft.PowerShell" -InformationAction Continue
             return $false
         }
+
+    # Ensure VS Code testing assets (extensions recommendation and Phase 4 task)
+    try { Write-BusBuddyVSCodeTestingAssets } catch { Write-Warning "VS Code testing assets step: $($_.Exception.Message)" }
 
         Write-Information "" -InformationAction Continue
         Write-Information "🎉 BusBuddy test environment is ready!" -InformationAction Continue
@@ -720,8 +723,8 @@ function Test-BusBuddyCompliance {
 
         # Check exported functions
         $exportedFunctions = Get-Command -Module BusBuddy.Testing -ErrorAction SilentlyContinue
-        if ($exportedFunctions.Count -ge 6) {
-            $complianceResults += @{ Check = "Function Exports"; Status = "✅ Pass"; Details = "$($exportedFunctions.Count) functions exported" }
+            if (@($exportedFunctions).Count -ge 6) {
+                $complianceResults += @{ Check = "Function Exports"; Status = "✅ Pass"; Details = "${(@($exportedFunctions).Count)} functions exported" }
         } else {
             $complianceResults += @{ Check = "Function Exports"; Status = "❌ Fail"; Details = "Insufficient functions exported" }
         }
@@ -756,7 +759,8 @@ function Test-BusBuddyCompliance {
         }
 
         $passCount = ($complianceResults | Where-Object { $_.Status -like "*Pass*" }).Count
-        $totalCount = $complianceResults.Count
+        $passCount = @($complianceResults | Where-Object { $_.Status -like "*Pass*" }).Count
+        $totalCount = @($complianceResults).Count
         $complianceRate = [math]::Round(($passCount / $totalCount) * 100, 2)
 
         Write-Information "" -InformationAction Continue
@@ -775,6 +779,94 @@ function Test-BusBuddyCompliance {
         return $false
     }
 }
+
+#region VS Code integration helpers
+function Write-BusBuddyVSCodeTestingAssets {
+    <#
+    .SYNOPSIS
+        Creates/updates VS Code workspace assets for testing.
+    .DESCRIPTION
+        - Recommends required extensions (PowerShell, C# Dev Kit, Task Explorer, NUnit Test Runner).
+        - Adds a "Phase 4 Modular Tests" task that runs the maintained wrapper script.
+    #>
+    [CmdletBinding()]
+    param()
+
+    Initialize-BusBuddyPath
+    $vscodeDir = Join-Path $Script:WorkspaceRoot '.vscode'
+    if (-not (Test-Path $vscodeDir)) { New-Item -ItemType Directory -Path $vscodeDir -Force | Out-Null }
+
+    # --- extensions.json ---
+    $extFile = Join-Path $vscodeDir 'extensions.json'
+    $recommend = @('Forms.nunit-test-runner','ms-vscode.powershell','ms-dotnettools.csdevkit','spmeesseman.vscode-taskexplorer')
+    $extPayload = @{ recommendations = @() }
+    if (Test-Path $extFile) {
+        try {
+            $extJson = Get-Content $extFile -Raw | ConvertFrom-Json -AsHashtable
+            if ($extJson -and $extJson.ContainsKey('recommendations')) { $extPayload.recommendations = @($extJson.recommendations) }
+        } catch { }
+    }
+    foreach ($r in $recommend) { if ($extPayload.recommendations -notcontains $r) { $extPayload.recommendations += $r } }
+    $extPayload | ConvertTo-Json -Depth 5 | Set-Content -Path $extFile -Encoding UTF8
+
+    # --- tasks.json ---
+    $tasksFile = Join-Path $vscodeDir 'tasks.json'
+    $ourLabel = 'Phase 4 Modular Tests'
+    $ourTask = @{
+        label   = $ourLabel
+        type    = 'shell'
+        command = 'pwsh'
+        args    = @('-NoProfile','-ExecutionPolicy','Bypass','-File','PowerShell/Testing/Run-Phase4-NUnitTests-Modular.ps1','-TestSuite','All','-Detailed')
+        group   = @{ kind = 'test'; isDefault = $true }
+        problemMatcher = @('$msCompile')
+    }
+    $tasksDoc = @{ version = '2.0.0'; tasks = @() }
+    if (Test-Path $tasksFile) {
+        try {
+            $existing = Get-Content $tasksFile -Raw | ConvertFrom-Json -AsHashtable
+            if ($existing) {
+                if ($existing.ContainsKey('version')) { $tasksDoc.version = $existing.version }
+                if ($existing.ContainsKey('tasks')) { $tasksDoc.tasks = @($existing.tasks) }
+            }
+        } catch { }
+    }
+    $hasTask = $false
+    foreach ($t in $tasksDoc.tasks) { if ($t.label -eq $ourLabel) { $hasTask = $true; break } }
+    if (-not $hasTask) { $tasksDoc.tasks += $ourTask }
+    $tasksDoc | ConvertTo-Json -Depth 8 | Set-Content -Path $tasksFile -Encoding UTF8
+}
+#endregion
+
+#region VS Code settings (optional NUnit Runner tuning)
+function Set-BusBuddyVSCodeNUnitSettings {
+    <#
+    .SYNOPSIS
+        Optionally configures NUnit Runner related VS Code settings.
+    .DESCRIPTION
+        Writes keys under .vscode/settings.json if present. Keys are best-effort because
+        the extension’s public docs don’t enumerate all settings; safe to skip if unknown.
+    #>
+    [CmdletBinding()]
+    param(
+        [hashtable]$Settings = @{
+            # Discovery is off by default per the marketplace page; turn on to avoid manual refresh
+            'nunit-runner.discoveryOnStartup' = $true
+            # Optional noise reduction and discovery focus can be toggled here later
+        }
+    )
+
+    Initialize-BusBuddyPath
+    $vscodeDir = Join-Path $Script:WorkspaceRoot '.vscode'
+    if (-not (Test-Path $vscodeDir)) { New-Item -ItemType Directory -Path $vscodeDir -Force | Out-Null }
+    $settingsFile = Join-Path $vscodeDir 'settings.json'
+    $data = @{}
+    if (Test-Path $settingsFile) {
+        try { $data = Get-Content $settingsFile -Raw | ConvertFrom-Json -AsHashtable } catch { $data = @{} }
+    }
+    foreach ($k in $Settings.Keys) { $data[$k] = $Settings[$k] }
+    $data | ConvertTo-Json -Depth 8 | Set-Content -Path $settingsFile -Encoding UTF8
+}
+#endregion
 
 #endregion
 

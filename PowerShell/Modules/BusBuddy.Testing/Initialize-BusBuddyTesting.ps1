@@ -86,7 +86,7 @@ function Test-Prerequisites {
     }
 
     $failedChecks = $checks | Where-Object { $_.Status -eq "❌" }
-    if ($failedChecks.Count -gt 0) {
+    if (@($failedChecks).Count -gt 0) {
         Write-Host ""
         Write-Host "❌ Prerequisites not met. Please resolve the issues above." -ForegroundColor Red
         return $false
@@ -125,7 +125,7 @@ function Import-BusBuddyTestingModule {
 
             # Check exported functions
             $functions = Get-Command -Module BusBuddy.Testing
-            Write-Host "  📋 Functions exported: $($functions.Count)" -ForegroundColor White
+            Write-Host "  📋 Functions exported: $(@($functions).Count)" -ForegroundColor White
 
             foreach ($function in $functions | Sort-Object Name) {
                 Write-Host "     • $($function.Name)" -ForegroundColor Gray
@@ -133,8 +133,8 @@ function Import-BusBuddyTestingModule {
 
             # Check aliases
             $aliases = Get-Alias | Where-Object { $_.Source -eq 'BusBuddy.Testing' }
-            if ($aliases.Count -gt 0) {
-                Write-Host "  🏷️ Aliases available: $($aliases.Count)" -ForegroundColor White
+            if (@($aliases).Count -gt 0) {
+                Write-Host "  🏷️ Aliases available: $(@($aliases).Count)" -ForegroundColor White
                 foreach ($alias in $aliases | Sort-Object Name) {
                     Write-Host "     • $($alias.Name) -> $($alias.Definition)" -ForegroundColor Gray
                 }

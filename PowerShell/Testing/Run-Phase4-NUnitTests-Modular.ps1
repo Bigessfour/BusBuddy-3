@@ -1,8 +1,8 @@
-<#!
+<#
 Thin wrapper maintained for backward compatibility.
 Prefer: Start-BusBuddyPhase4TestAdvanced (module function).
 Parameters mirror advanced function subset.
-!#>
+#>
 param(
     [ValidateSet('All','Unit','Integration','Validation','Core','WPF')][string]$TestSuite='All',
     [switch]$Detailed,
@@ -15,6 +15,7 @@ return Start-BusBuddyPhase4TestAdvanced -TestSuite $TestSuite -Detailed:$Detaile
 <# Archived (2025-08-12): Modular NUnit bridge replaced by bbTest. See Documentation/Archive/LegacyScripts/Run-Phase4-NUnitTests-Modular.ps1 #>
 throw "Run-Phase4-NUnitTests-Modular.ps1 archived. Use bbTest"
 
+<#
 # legacy snippet (unreachable)
 # Write-Host "`n=== TEST OUTPUT ===" -ForegroundColor Cyan
         $testStdout -split "`n" | ForEach-Object {
@@ -47,7 +48,7 @@ throw "Run-Phase4-NUnitTests-Modular.ps1 archived. Use bbTest"
         Write-Error "Test execution failed: $($_.Exception.Message)"
         return $false
     }
-}
+#>
 
 function Start-WatchMode {
     [CmdletBinding()]
@@ -193,6 +194,7 @@ try {
         # Run tests once first, then start watch mode
         $filter = Get-TestFilter -Suite $TestSuite
         $success = Invoke-TestExecution -Filter $filter
+        Write-Information ("Initial test run " + (if ($success) { "succeeded ✅" } else { "failed ❌" })) -InformationAction Continue
 
         if ($GenerateReport.IsPresent) {
             New-TestReport

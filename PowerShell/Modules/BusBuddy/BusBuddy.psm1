@@ -46,7 +46,17 @@ function Get-BusBuddyTestOutput {
             return @{ ExitCode=$buildExit; Status='BuildFailed'; BuildOutput= (Get-Content $buildOutPath -Raw) }
         }
         Write-Information '🧪 Testing...' -InformationAction Continue
-        $testArgs = @('test',$ProjectPath,'--configuration','Debug','--verbosity',$Verbosity,'--logger','trx','--results-directory','TestResults','--collect:XPlat Code Coverage','--no-build')
+        # Use explicit TRX filename per CI/reporting standards
+        # Docs: https://learn.microsoft.com/visualstudio/test/diagnostics/loggers?view=vs-2022
+        $testArgs = @(
+            'test', $ProjectPath,
+            '--configuration','Debug',
+            '--verbosity',$Verbosity,
+            '--logger','trx;LogFileName=Tests.trx',
+            '--results-directory','TestResults',
+            '--collect:XPlat Code Coverage',
+            '--no-build'
+        )
         if($Filter){$testArgs += @('--filter',$Filter)}
         $testOutPath = Join-Path $logDir "test-$ts.log"
         if ($PSCmdlet.ShouldProcess($ProjectPath, "dotnet $($testArgs -join ' ')")) {
@@ -99,14 +109,16 @@ function Get-BusBuddyTestLog {
 }
 
 function Start-BusBuddyTestWatch {
-    [CmdletBinding()]
+    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'Low')]
     [OutputType([System.Management.Automation.Job[]])]
     param(
         [ValidateSet('All','Unit','Integration','Validation','Core','WPF')]
         [string]$TestSuite='Unit'
     )
     Write-Information "🔄 Watch $TestSuite" -InformationAction Continue
-    Get-BusBuddyTestOutput -TestSuite $TestSuite -SaveToFile
+    if ($PSCmdlet.ShouldProcess('Tests',"Run initial suite: $TestSuite")) {
+        Get-BusBuddyTestOutput -TestSuite $TestSuite -SaveToFile
+    }
 
     # FIX: Correct FileSystemWatcher usage
     # Docs: https://learn.microsoft.com/dotnet/api/system.io.filesystemwatcher
@@ -274,7 +286,8 @@ function Get-BusBuddyTelemetrySummary {
         if (-not $files) { Write-Warning 'No telemetry files present.'; return }
         $entries = foreach ($f in $files) {
             Get-Content $f -ErrorAction SilentlyContinue | ForEach-Object {
-                if ($_ -match '^\s*{') { try { $_ | ConvertFrom-Json -ErrorAction Stop } catch { } }
+                if ($_ -match '^\s*{') { try { $_ | ConvertFrom-Json -ErrorAction Stop } catch { Write-Error ("Malformed telemetry JSON: {0}" -f $_) }
+                }
             }
         }
         if (-not $entries) { Write-Warning 'Telemetry empty.'; return }
@@ -470,7 +483,7 @@ Set-Alias -Name bbPester -Value Invoke-BusBuddyPester -ErrorAction SilentlyConti
 #endregion
 
 #region Script Lint: Detect invalid ErrorAction pipeline misuse
-function Test-BusBuddyErrorActionPipelines {
+function Test-BusBuddyErrorActionPipeline {
     <#
     .SYNOPSIS
         Scans PowerShell scripts for the invalid pattern that causes "The variable '$_' cannot be retrieved because it has not been set".
@@ -505,25 +518,25 @@ function Test-BusBuddyErrorActionPipelines {
                     $findings += [pscustomobject]@{ File = $f.FullName; LineNumber = $i; Line = $line.Trim() }
                 }
             }
-        } catch { }
+        } catch { Write-Error ("Failed scanning file {0}: {1}" -f $f.FullName, $_.Exception.Message) }
     }
     return $findings
 }
 
-Set-Alias -Name bb-ps-validate-ea -Value Test-BusBuddyErrorActionPipelines -ErrorAction SilentlyContinue
+Set-Alias -Name bb-ps-validate-ea -Value Test-BusBuddyErrorActionPipeline -ErrorAction SilentlyContinue
 # Wrapper to safely run the validation and print a summary without relying on external variables like $r
 function Invoke-BusBuddyErrorActionAudit {
     <#
     .SYNOPSIS
         Runs the ErrorAction pipeline validator and prints a concise summary.
     .DESCRIPTION
-        Convenience wrapper that captures results from Test-BusBuddyErrorActionPipelines, writes a count,
+    Convenience wrapper that captures results from Test-BusBuddyErrorActionPipeline, writes a count,
         and formats a table when findings exist—avoiding patterns that depend on a pre-set variable (e.g., $r).
         Uses Write-Information/Write-Output per Microsoft guidelines.
     .PARAMETER Root
         Root folder to scan. Defaults to the project's PowerShell folder.
     .OUTPUTS
-        Same objects as Test-BusBuddyErrorActionPipelines, passed through after printing.
+    Same objects as Test-BusBuddyErrorActionPipeline, passed through after printing.
     .LINK
         Microsoft PowerShell Output Streams — https://learn.microsoft.com/powershell/scripting/learn/deep-dives/everything-about-output-streams
     #>
@@ -533,7 +546,7 @@ function Invoke-BusBuddyErrorActionAudit {
     )
 
     try {
-        $results = Test-BusBuddyErrorActionPipelines -Root $Root
+    $results = Test-BusBuddyErrorActionPipeline -Root $Root
     }
     catch {
         Write-Error ("Validation failed: {0}" -f $_.Exception.Message)
@@ -601,7 +614,7 @@ function Get-BusBuddyLogSummary {
     }
 }
 
-try { Set-Alias -Name bb-logs-summary -Value Get-BusBuddyLogSummary -Force } catch { }
+try { Set-Alias -Name bb-logs-summary -Value Get-BusBuddyLogSummary -Force } catch { Write-Warning ("Failed to set alias bb-logs-summary: {0}" -f $_.Exception.Message) }
 #endregion Log Summary Utilities
 
 #region Core Functions
@@ -783,8 +796,9 @@ function Write-BusBuddyError {
         [Parameter(Mandatory)]
         [string]$Message,
 
+        # Accept either System.Exception or ErrorRecord (coerced below)
         [Parameter()]
-        [System.Exception]$Exception,
+        [object]$Exception,
 
         [Parameter()]
         [string]$Context,
@@ -806,25 +820,35 @@ function Write-BusBuddyError {
                 Write-Information "📍 Context: $Context" -InformationAction Continue
             }
 
-            # Exception details
+            # Exception details (coerce ErrorRecord -> Exception safely)
             if ($Exception) {
-                Write-Information "🔍 Exception: $($Exception.Message)" -InformationAction Continue
-
-                if ($ShowStackTrace -and $Exception.StackTrace) {
-                    Write-Information "📋 Stack Trace:" -InformationAction Continue
-                    $Exception.StackTrace.Split("`n") | ForEach-Object {
-                        Write-Information "   $_" -InformationAction Continue
-                    }
+                $exObj = $null
+                if ($Exception -is [System.Management.Automation.ErrorRecord]) {
+                    $exObj = $Exception.Exception
+                } elseif ($Exception -is [System.Exception]) {
+                    $exObj = $Exception
+                } else {
+                    try { $exObj = [System.Exception]::new([string]$Exception) } catch { $exObj = $null }
                 }
 
-                # Inner exception details
-                $innerEx = $Exception.InnerException
-                $level = 1
-                while ($innerEx -and $level -le 3) {
-                    # FIX: Replace corrupted glyph with a valid label
-                    Write-Information "↪️ Inner Exception ($level): $($innerEx.Message)" -InformationAction Continue
-                    $innerEx = $innerEx.InnerException
-                    $level++
+                if ($exObj) {
+                    Write-Information "🔍 Exception: $($exObj.Message)" -InformationAction Continue
+
+                    if ($ShowStackTrace -and $exObj.StackTrace) {
+                        Write-Information "📋 Stack Trace:" -InformationAction Continue
+                        $exObj.StackTrace.Split("`n") | ForEach-Object {
+                            Write-Information "   $_" -InformationAction Continue
+                        }
+                    }
+
+                    # Inner exception details
+                    $innerEx = $exObj.InnerException
+                    $level = 1
+                    while ($innerEx -and $level -le 3) {
+                        Write-Information "↪️ Inner Exception ($level): $($innerEx.Message)" -InformationAction Continue
+                        $innerEx = $innerEx.InnerException
+                        $level++
+                    }
                 }
             }
 
@@ -885,9 +909,11 @@ function Get-BusBuddyMantraId {
 }
 
 function Reset-BusBuddyMantraId {
-    [CmdletBinding()] param()
-    $script:MantraId = ([guid]::NewGuid().ToString('N').Substring(0,8))
-    Write-Information "New Mantra ID: $script:MantraId" -InformationAction Continue
+    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'Low')] param()
+    if ($PSCmdlet.ShouldProcess('Session','Rotate Mantra ID')) {
+        $script:MantraId = ([guid]::NewGuid().ToString('N').Substring(0,8))
+        Write-Information "New Mantra ID: $script:MantraId" -InformationAction Continue
+    }
     return $script:MantraId
 }
 
@@ -969,7 +995,6 @@ function Invoke-BusBuddyRun {
     #>
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'Low')]
     param(
-        [switch]$NoErrorCapture,
         [switch]$WaitReady,
         [int]$WaitSeconds = 30
     )
@@ -979,7 +1004,7 @@ function Invoke-BusBuddyRun {
         if ([string]::IsNullOrWhiteSpace($env:SYNCFUSION_LICENSE_KEY)) {
             Write-BusBuddyStatus "SYNCFUSION_LICENSE_KEY not set — app may show trial watermarks" -Type Warning
         }
-    } catch { }
+    } catch { Write-Warning ("Failed to access SYNCFUSION_LICENSE_KEY: {0}" -f $_.Exception.Message) }
 
     $projectRoot = Get-BusBuddyProjectRoot
     $wpfDir      = Join-Path $projectRoot 'BusBuddy.WPF'
@@ -1097,14 +1122,15 @@ function Invoke-BusBuddyRunSta {
     if (-not $pwsh) { $pwsh = "pwsh.exe" }
 
     $cmd = 'dotnet run --project "BusBuddy.WPF/BusBuddy.WPF.csproj"'
-    $args = @('-NoProfile','-NoLogo')
+    # Avoid assigning to automatic variable $args (PSAvoidAssignmentToAutomaticVariable)
+    $pwshArgs = @('-NoProfile','-NoLogo')
     # Attempt -STA on Windows pwsh; ignore if not supported
-    $args = @('-STA') + $args + @('-Command', $cmd)
+    $pwshArgs = @('-STA') + $pwshArgs + @('-Command', $cmd)
 
     Write-BusBuddyStatus "Launching via STA-hosted shell..." -Type Info
     if ($PSCmdlet.ShouldProcess($pwsh, "Start-Process (STA)")) {
-        $p = Start-Process -FilePath $pwsh -ArgumentList $args -WorkingDirectory $projectRoot -PassThru
-        if ($Wait) { try { $p.WaitForExit() } catch { } }
+        $p = Start-Process -FilePath $pwsh -ArgumentList $pwshArgs -WorkingDirectory $projectRoot -PassThru
+    if ($Wait) { try { $p.WaitForExit() } catch { Write-Warning ("WaitForExit failed: {0}" -f $_.Exception.Message) } }
         return $p
     }
 }
@@ -1148,125 +1174,64 @@ function Invoke-BusBuddyTest {
         Write-BusBuddyStatus "🚌 BusBuddy Phase 4 NUnit Test System" -Type Info
         Write-Information "Using reliable NUnit Test Runner (deprecated unreliable .NET 9 method)" -InformationAction Continue
 
-        # Path to the Phase 4 NUnit Test Runner script
-        $phase4ScriptPath = Join-Path $projectRoot "PowerShell\Testing\Run-Phase4-NUnitTests-Modular.ps1"
-
-        if (-not (Test-Path $phase4ScriptPath)) {
-            Write-BusBuddyError "❌ Phase 4 NUnit Test Runner script not found: $phase4ScriptPath"
-            Write-Information "Please ensure the PowerShell\Testing\Run-Phase4-NUnitTests-Modular.ps1 file exists" -InformationAction Continue
+        # Import the BusBuddy.Testing module which provides Start-BusBuddyPhase4TestAdvanced
+        $testingModule = Join-Path $projectRoot "PowerShell\Modules\BusBuddy.Testing\BusBuddy.Testing.psd1"
+        if (Test-Path $testingModule) {
+            Import-Module $testingModule -Force -ErrorAction Stop
+        } elseif (Test-Path (Join-Path $projectRoot "PowerShell\Modules\BusBuddy.Testing\BusBuddy.Testing.psm1")) {
+            Import-Module (Join-Path $projectRoot "PowerShell\Modules\BusBuddy.Testing\BusBuddy.Testing.psm1") -Force -ErrorAction Stop
+        } else {
+            Write-BusBuddyError "❌ BusBuddy.Testing module not found" -Context "Phase 4 NUnit"
             return @{
                 ExitCode = -1
-                ErrorMessage = "Phase 4 NUnit Test Runner script not found"
-                Output = "Script path: $phase4ScriptPath"
+                ErrorMessage = "BusBuddy.Testing module not found"
+                Method = "Phase4-NUnit"
             }
         }
 
-        Write-Information "📁 Using Phase 4 script: $phase4ScriptPath" -InformationAction Continue
+        if (-not (Get-Command Start-BusBuddyPhase4TestAdvanced -ErrorAction SilentlyContinue)) {
+            Write-BusBuddyError "❌ Start-BusBuddyPhase4TestAdvanced not available after module import" -Context "Phase 4 NUnit"
+            return @{
+                ExitCode = -1
+                ErrorMessage = "Start-BusBuddyPhase4TestAdvanced not available"
+                Method = "Phase4-NUnit"
+            }
+        }
+
         Write-Information "🧪 Test Suite: $TestSuite" -InformationAction Continue
+        Write-Information "🚀 Executing Phase 4 NUnit (module) runner..." -InformationAction Continue
 
-        # Prepare parameters for the Phase 4 script as string arguments (more reliable than hashtable)
-        $scriptArgs = @("-TestSuite", $TestSuite)
-
-        if ($SaveToFile) {
-            $scriptArgs += "-GenerateReport"
-        }
-
-        if ($DetailedOutput) {
-            $scriptArgs += "-Detailed"
-        }
-
-        Write-Information "🚀 Executing Phase 4 NUnit Test Runner..." -InformationAction Continue
-        Write-Information "Arguments: $($scriptArgs -join ' ')" -InformationAction Continue
-
-        # Execute the Phase 4 NUnit script with enhanced error handling
+        $ok = $false
         try {
-            # Capture both stdout and stderr to detect .NET 9 compatibility issues
-            $testOutputFile = Join-Path $projectRoot "TestResults" "bbtest-output-$(Get-Date -Format 'yyyyMMdd-HHmmss').log"
-            $testErrorFile  = Join-Path $projectRoot "TestResults" "bbtest-errors-$(Get-Date -Format 'yyyyMMdd-HHmmss').log"
-
-            # Ensure TestResults directory exists (gate with ShouldProcess for WhatIf support)
-            $testResultsDir = Join-Path $projectRoot "TestResults"
-            if (-not (Test-Path $testResultsDir)) {
-                if ($PSCmdlet.ShouldProcess($testResultsDir, 'Create directory')) {
-                    New-Item -ItemType Directory -Path $testResultsDir -Force | Out-Null
-                }
-            }
-
-            # Run with output capture (guard with ShouldProcess for WhatIf/Confirm)
-            $allArgs = @("-File", $phase4ScriptPath) + $scriptArgs
-            $testExitCode = 0
-            if ($PSCmdlet.ShouldProcess("pwsh.exe", "Start-Process $($allArgs -join ' ')")) {
-                $process = Start-Process -FilePath "pwsh.exe" -ArgumentList $allArgs `
-                    -RedirectStandardOutput $testOutputFile -RedirectStandardError $testErrorFile `
-                    -NoNewWindow -PassThru
-                $process.WaitForExit()
-                $testExitCode = $process.ExitCode
-            }
-
-            # Read captured output
-            $testOutput = if (Test-Path $testOutputFile) { Get-Content $testOutputFile -Raw } else { "" }
-            $testErrors = if (Test-Path $testErrorFile)  { Get-Content $testErrorFile  -Raw } else { "" }
-
-            # Check for specific .NET 9 compatibility issue
-            $hasNet9Issue = $testErrors -match "Microsoft\.TestPlatform\.CoreUtilities.*Version=15\.0\.0\.0" -or
-                           $testOutput -match "Microsoft\.TestPlatform\.CoreUtilities.*Version=15\.0\.0\.0"
-
-            if ($hasNet9Issue) {
-                Write-Information "`n🚨 KNOWN .NET 9 COMPATIBILITY ISSUE DETECTED" -InformationAction Continue
-                Write-Information "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -InformationAction Continue
-                Write-Error "❌ Microsoft.TestPlatform.CoreUtilities v15.0.0.0 not found"
-                Write-Information "🔍 This is a documented .NET 9 compatibility issue with test platform" -InformationAction Continue
-                Write-Information "" -InformationAction Continue
-                Write-Information "📋 WORKAROUND OPTIONS:" -InformationAction Continue
-                Write-Information "  1. Install VS Code NUnit Test Runner extension for UI testing" -InformationAction Continue
-                Write-Information "  2. Use Visual Studio Test Explorer instead of command line" -InformationAction Continue
-                Write-Information "  3. Temporarily downgrade to .NET 8.0 for testing (not recommended)" -InformationAction Continue
-                Write-Information "" -InformationAction Continue
-                Write-Information "📁 Test logs saved to:" -InformationAction Continue
-                Write-Information "   Output: $testOutputFile" -InformationAction Continue
-                Write-Information "   Errors: $testErrorFile" -InformationAction Continue
-                Write-Information "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -InformationAction Continue
-
-                return @{
-                    ExitCode = $testExitCode
-                    ErrorType = "NET9_COMPATIBILITY"
-                    Issue = "Microsoft.TestPlatform.CoreUtilities v15.0.0.0 compatibility"
-                    Workarounds = @("VS Code NUnit extension", "Visual Studio Test Explorer", "Downgrade to .NET 8")
-                    OutputFile = $testOutputFile
-                    ErrorFile = $testErrorFile
-                    Method = "Phase4-NUnit-NET9-Issue"
-                }
-            } elseif ($testExitCode -eq 0) {
-                Write-BusBuddyStatus "✅ Phase 4 NUnit tests completed successfully!" -Type Success
-                return @{
-                    ExitCode = 0
-                    PassedTests = 1  # Phase 4 script provides detailed results
-                    FailedTests = 0
-                    SkippedTests = 0
-                    Output = "Phase 4 NUnit Test Runner completed successfully"
-                    OutputFile = $testOutputFile
-                    Method = "Phase4-NUnit"
-                }
-            } else {
-                Write-BusBuddyError "❌ Phase 4 NUnit tests failed with exit code $testExitCode"
-                Write-Information "📁 Check test logs: $testOutputFile and $testErrorFile" -InformationAction Continue
-                return @{
-                    ExitCode = $testExitCode
-                    PassedTests = 0
-                    FailedTests = 1
-                    SkippedTests = 0
-                    Output = "Phase 4 NUnit Test Runner failed - check TestResults directory for details"
-                    OutputFile = $testOutputFile
-                    ErrorFile = $testErrorFile
-                    Method = "Phase4-NUnit"
-                }
-            }
+            $ok = Start-BusBuddyPhase4TestAdvanced -TestSuite $TestSuite -Detailed:$DetailedOutput -SaveFullOutput:$SaveToFile
         } catch {
-            Write-BusBuddyError "❌ Phase 4 NUnit execution failed: $($_.Exception.Message)"
+            Write-BusBuddyError "❌ Phase 4 NUnit execution failed" -Exception $_ -Context "Module Runner"
             return @{
                 ExitCode = -1
                 ErrorMessage = $_.Exception.Message
-                Output = "Phase 4 NUnit script execution error"
+                Output = "Phase 4 NUnit module runner execution error"
+                Method = "Phase4-NUnit"
+            }
+        }
+
+        if ($ok) {
+            Write-BusBuddyStatus "✅ Phase 4 NUnit tests completed successfully!" -Type Success
+            return @{
+                ExitCode = 0
+                PassedTests = 1
+                FailedTests = 0
+                SkippedTests = 0
+                Output = "Phase 4 NUnit Test Runner completed successfully"
+                Method = "Phase4-NUnit"
+            }
+        } else {
+            Write-BusBuddyError "❌ Phase 4 NUnit tests reported failures" -Context "Module Runner"
+            return @{
+                ExitCode = 1
+                PassedTests = 0
+                FailedTests = 1
+                SkippedTests = 0
+                Output = "Phase 4 NUnit Test Runner reported failures"
                 Method = "Phase4-NUnit"
             }
         }
@@ -1318,6 +1283,16 @@ function Invoke-BusBuddyTestLegacy {
     Write-Information "🔄 Redirecting to new Phase 4 NUnit method..." -InformationAction Continue
     return Invoke-BusBuddyTest @PSBoundParameters
 }
+
+# Hard deprecate legacy test helpers by forwarding to Phase 4 NUnit
+function Get-BusBuddyTestOutputDeprecated {
+    [CmdletBinding()] param(
+        [ValidateSet('All','Unit','Integration','Validation','Core','WPF')][string]$TestSuite='All'
+    )
+    Write-Warning "Get-BusBuddyTestOutput is deprecated. Use bbTest (Phase 4 NUnit)."
+    return Invoke-BusBuddyTest -TestSuite $TestSuite
+}
+
 
 function Invoke-BusBuddyClean {
     <#
@@ -1394,7 +1369,7 @@ function Start-BusBuddyDevSession {
     .SYNOPSIS
         Start a complete BusBuddy development session
     #>
-    [CmdletBinding()]
+    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'Low')]
     param()
 
     Write-BusBuddyStatus "Starting BusBuddy development session..." -Type Info
@@ -1402,9 +1377,9 @@ function Start-BusBuddyDevSession {
     $projectRoot = Get-BusBuddyProjectRoot
     Write-BusBuddyStatus "Project root: $projectRoot" -Type Info
 
-    Invoke-BusBuddyRestore
-    Invoke-BusBuddyBuild
-    Invoke-BusBuddyHealthCheck
+    if ($PSCmdlet.ShouldProcess('BusBuddy.sln','Restore')) { Invoke-BusBuddyRestore }
+    if ($PSCmdlet.ShouldProcess('BusBuddy.sln','Build')) { Invoke-BusBuddyBuild }
+    if ($PSCmdlet.ShouldProcess('Environment','HealthCheck')) { Invoke-BusBuddyHealthCheck }
 
     Write-BusBuddyStatus "Development session ready!" -Type Success
 }
@@ -2620,27 +2595,31 @@ function Test-BusBuddyAzureConnection {
 
 #region Aliases - Safe Alias Creation with Conflict Resolution
 # Core aliases with safe creation
-try { Set-Alias -Name 'bbBuild'      -Value 'Invoke-BusBuddyBuild'   -Force } catch { }
-try { Set-Alias -Name 'bbRun'        -Value 'Invoke-BusBuddyRun'     -Force } catch { }
-try { Set-Alias -Name 'bbRunSta'     -Value 'Invoke-BusBuddyRunSta'  -Force } catch { }
-try { Set-Alias -Name 'bbClean'      -Value 'Invoke-BusBuddyClean'   -Force } catch { }
-try { Set-Alias -Name 'bbRestore'    -Value 'Invoke-BusBuddyRestore' -Force } catch { }
-try { Set-Alias -Name 'bbTest'       -Value 'Invoke-BusBuddyTest'    -Force } catch { }
-try { Set-Alias -Name 'bbHealth'     -Value 'Invoke-BusBuddyHealthCheck' -Force } catch { }
+try { Set-Alias -Name 'bbBuild'      -Value 'Invoke-BusBuddyBuild'   -Force } catch { Write-Warning ("Failed to set alias bbBuild: {0}" -f $_.Exception.Message) }
+try { Set-Alias -Name 'bbRun'        -Value 'Invoke-BusBuddyRun'     -Force } catch { Write-Warning ("Failed to set alias bbRun: {0}" -f $_.Exception.Message) }
+try { Set-Alias -Name 'bbRunSta'     -Value 'Invoke-BusBuddyRunSta'  -Force } catch { Write-Warning ("Failed to set alias bbRunSta: {0}" -f $_.Exception.Message) }
+try { Set-Alias -Name 'bbClean'      -Value 'Invoke-BusBuddyClean'   -Force } catch { Write-Warning ("Failed to set alias bbClean: {0}" -f $_.Exception.Message) }
+try { Set-Alias -Name 'bbRestore'    -Value 'Invoke-BusBuddyRestore' -Force } catch { Write-Warning ("Failed to set alias bbRestore: {0}" -f $_.Exception.Message) }
+try { Set-Alias -Name 'bbTest'       -Value 'Invoke-BusBuddyTest'    -Force } catch { Write-Warning ("Failed to set alias bbTest: {0}" -f $_.Exception.Message) }
+try { Set-Alias -Name 'bbHealth'     -Value 'Invoke-BusBuddyHealthCheck' -Force } catch { Write-Warning ("Failed to set alias bbHealth: {0}" -f $_.Exception.Message) }
 
 # Developer discovery
-try { Set-Alias -Name 'bbDevSession' -Value 'Start-BusBuddyDevSession' -Force } catch { }
-try { Set-Alias -Name 'bbInfo'       -Value 'Get-BusBuddyInfo' -Force } catch { }
-try { Set-Alias -Name 'bbCommands'   -Value 'Get-BusBuddyCommand' -Force } catch { }
+try { Set-Alias -Name 'bbDevSession' -Value 'Start-BusBuddyDevSession' -Force } catch { Write-Warning ("Failed to set alias bbDevSession: {0}" -f $_.Exception.Message) }
+try { Set-Alias -Name 'bbInfo'       -Value 'Get-BusBuddyInfo' -Force } catch { Write-Warning ("Failed to set alias bbInfo: {0}" -f $_.Exception.Message) }
+try { Set-Alias -Name 'bbCommands'   -Value 'Get-BusBuddyCommand' -Force } catch { Write-Warning ("Failed to set alias bbCommands: {0}" -f $_.Exception.Message) }
 
 # Removed alias for bbXamlValidate (function not present)
 
+# Validation aliases (explicit): ensure hyphenated commands exist for CI/docs
+try { Set-Alias -Name 'bb-anti-regression' -Value 'Invoke-BusBuddyAntiRegression' -Force } catch { Write-Warning ("Failed to set alias bb-anti-regression: {0}" -f $_.Exception.Message) }
+try { Set-Alias -Name 'bb-mvp-check'      -Value 'Test-BusBuddyMVPReadiness' -Force } catch { Write-Warning ("Failed to set alias bb-mvp-check: {0}" -f $_.Exception.Message) }
+
 # Session correlation
-try { Set-Alias -Name 'bbMantra'       -Value 'Get-BusBuddyMantraId'    -Force } catch { }
-try { Set-Alias -Name 'bbMantraReset'  -Value 'Reset-BusBuddyMantraId'  -Force } catch { }
+try { Set-Alias -Name 'bbMantra'       -Value 'Get-BusBuddyMantraId'    -Force } catch { Write-Warning ("Failed to set alias bbMantra: {0}" -f $_.Exception.Message) }
+try { Set-Alias -Name 'bbMantraReset'  -Value 'Reset-BusBuddyMantraId'  -Force } catch { Write-Warning ("Failed to set alias bbMantraReset: {0}" -f $_.Exception.Message) }
 
 # Environment
-try { Set-Alias -Name 'bbEnv'          -Value 'Initialize-BusBuddyEnvironment' -Force } catch { }
+try { Set-Alias -Name 'bbEnv'          -Value 'Initialize-BusBuddyEnvironment' -Force } catch { Write-Warning ("Failed to set alias bbEnv: {0}" -f $_.Exception.Message) }
 # Hyphenated variants
 foreach ($pair in @(
     @{A='bb-build';V='Invoke-BusBuddyBuild'},
@@ -2651,7 +2630,7 @@ foreach ($pair in @(
     @{A='bb-test';V='Invoke-BusBuddyTest'},
     @{A='bb-health';V='Invoke-BusBuddyHealthCheck'},
     @{A='bb-env';V='Initialize-BusBuddyEnvironment'
-})) { try { Set-Alias -Name $pair.A -Value $pair.V -Force } catch { } }
+})) { try { Set-Alias -Name $pair.A -Value $pair.V -Force } catch { Write-Warning ("Failed to set alias {0}: {1}" -f $pair.A, $_.Exception.Message) } }
 #endregion
 
 #region Exports
@@ -2663,6 +2642,8 @@ Export-ModuleMember -Function @(
     'Invoke-BusBuddyRestore',
     'Invoke-BusBuddyTest',
     'Invoke-BusBuddyHealthCheck',
+    'Test-BusBuddyMVPReadiness',
+    'Invoke-BusBuddyAntiRegression',
     'Get-BusBuddyApartmentState',
     'Get-BusBuddyMantraId',
     'Reset-BusBuddyMantraId',
@@ -2680,7 +2661,7 @@ Export-ModuleMember -Function @(
     'Get-BusBuddyPS75Compliance',
     'Initialize-BusBuddyEnvironment',
     # Script Lint exports
-    'Test-BusBuddyErrorActionPipelines',
+    'Test-BusBuddyErrorActionPipeline',
     'Invoke-BusBuddyErrorActionAudit',
     # Logging exports
     'Get-BusBuddyLogSummary'
@@ -2694,7 +2675,9 @@ Export-ModuleMember -Function @(
     # Script Lint aliases
     'bb-ps-validate-ea','bb-ps-validate-ea-run',
     # Logging alias
-    'bb-logs-summary'
+    'bb-logs-summary',
+    # Validation aliases
+    'bb-anti-regression','bb-mvp-check'
 )
 #endregion
 
@@ -2776,7 +2759,7 @@ function Start-BusBuddyRuntimeErrorCapture {
     .EXAMPLE
         Start-BusBuddyRuntimeErrorCapture -MonitorCrashes -SystemDiagnostics
     #>
-    [CmdletBinding()]
+    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'Low')]
     [OutputType([hashtable])]
     param(
         [Parameter()]
@@ -2815,8 +2798,10 @@ function Start-BusBuddyRuntimeErrorCapture {
     # Create output directory
     $fullOutputPath = Join-Path (Get-BusBuddyProjectRoot) $OutputPath
     if (-not (Test-Path $fullOutputPath)) {
-        New-Item -ItemType Directory -Path $fullOutputPath -Force | Out-Null
-        Write-BusBuddyStatus "📁 Created output directory: $fullOutputPath" -Type Info
+        if ($PSCmdlet.ShouldProcess($fullOutputPath,'Create error-capture directory')) {
+            New-Item -ItemType Directory -Path $fullOutputPath -Force | Out-Null
+            Write-BusBuddyStatus "📁 Created output directory: $fullOutputPath" -Type Info
+        }
     }
 
     # System Diagnostics Collection
@@ -3270,27 +3255,27 @@ function Test-BusBuddyAzureConnection {
 
 #region Aliases - Safe Alias Creation with Conflict Resolution
 # Core aliases with safe creation
-try { Set-Alias -Name 'bbBuild'      -Value 'Invoke-BusBuddyBuild'   -Force } catch { }
-try { Set-Alias -Name 'bbRun'        -Value 'Invoke-BusBuddyRun'     -Force } catch { }
-try { Set-Alias -Name 'bbRunSta'     -Value 'Invoke-BusBuddyRunSta'  -Force } catch { }
-try { Set-Alias -Name 'bbClean'      -Value 'Invoke-BusBuddyClean'   -Force } catch { }
-try { Set-Alias -Name 'bbRestore'    -Value 'Invoke-BusBuddyRestore' -Force } catch { }
-try { Set-Alias -Name 'bbTest'       -Value 'Invoke-BusBuddyTest'    -Force } catch { }
-try { Set-Alias -Name 'bbHealth'     -Value 'Invoke-BusBuddyHealthCheck' -Force } catch { }
+try { Set-Alias -Name 'bbBuild'      -Value 'Invoke-BusBuddyBuild'   -Force } catch { Write-Warning ("Failed to set alias bbBuild: {0}" -f $_.Exception.Message) }
+try { Set-Alias -Name 'bbRun'        -Value 'Invoke-BusBuddyRun'     -Force } catch { Write-Warning ("Failed to set alias bbRun: {0}" -f $_.Exception.Message) }
+try { Set-Alias -Name 'bbRunSta'     -Value 'Invoke-BusBuddyRunSta'  -Force } catch { Write-Warning ("Failed to set alias bbRunSta: {0}" -f $_.Exception.Message) }
+try { Set-Alias -Name 'bbClean'      -Value 'Invoke-BusBuddyClean'   -Force } catch { Write-Warning ("Failed to set alias bbClean: {0}" -f $_.Exception.Message) }
+try { Set-Alias -Name 'bbRestore'    -Value 'Invoke-BusBuddyRestore' -Force } catch { Write-Warning ("Failed to set alias bbRestore: {0}" -f $_.Exception.Message) }
+try { Set-Alias -Name 'bbTest'       -Value 'Invoke-BusBuddyTest'    -Force } catch { Write-Warning ("Failed to set alias bbTest: {0}" -f $_.Exception.Message) }
+try { Set-Alias -Name 'bbHealth'     -Value 'Invoke-BusBuddyHealthCheck' -Force } catch { Write-Warning ("Failed to set alias bbHealth: {0}" -f $_.Exception.Message) }
 
 # Developer discovery
-try { Set-Alias -Name 'bbDevSession' -Value 'Start-BusBuddyDevSession' -Force } catch { }
-try { Set-Alias -Name 'bbInfo'       -Value 'Get-BusBuddyInfo' -Force } catch { }
-try { Set-Alias -Name 'bbCommands'   -Value 'Get-BusBuddyCommand' -Force } catch { }
+try { Set-Alias -Name 'bbDevSession' -Value 'Start-BusBuddyDevSession' -Force } catch { Write-Warning ("Failed to set alias bbDevSession: {0}" -f $_.Exception.Message) }
+try { Set-Alias -Name 'bbInfo'       -Value 'Get-BusBuddyInfo' -Force } catch { Write-Warning ("Failed to set alias bbInfo: {0}" -f $_.Exception.Message) }
+try { Set-Alias -Name 'bbCommands'   -Value 'Get-BusBuddyCommand' -Force } catch { Write-Warning ("Failed to set alias bbCommands: {0}" -f $_.Exception.Message) }
 
 # Removed alias for bbXamlValidate (function not present)
 
 # Session correlation
-try { Set-Alias -Name 'bbMantra'       -Value 'Get-BusBuddyMantraId'    -Force } catch { }
-try { Set-Alias -Name 'bbMantraReset'  -Value 'Reset-BusBuddyMantraId'  -Force } catch { }
+try { Set-Alias -Name 'bbMantra'       -Value 'Get-BusBuddyMantraId'    -Force } catch { Write-Warning ("Failed to set alias bbMantra: {0}" -f $_.Exception.Message) }
+try { Set-Alias -Name 'bbMantraReset'  -Value 'Reset-BusBuddyMantraId'  -Force } catch { Write-Warning ("Failed to set alias bbMantraReset: {0}" -f $_.Exception.Message) }
 
 # Environment
-try { Set-Alias -Name 'bbEnv'          -Value 'Initialize-BusBuddyEnvironment' -Force } catch { }
+try { Set-Alias -Name 'bbEnv'          -Value 'Initialize-BusBuddyEnvironment' -Force } catch { Write-Warning ("Failed to set alias bbEnv: {0}" -f $_.Exception.Message) }
 # Hyphenated variants
 foreach ($pair in @(
     @{A='bb-build';V='Invoke-BusBuddyBuild'},
@@ -3301,7 +3286,7 @@ foreach ($pair in @(
     @{A='bb-test';V='Invoke-BusBuddyTest'},
     @{A='bb-health';V='Invoke-BusBuddyHealthCheck'},
     @{A='bb-env';V='Initialize-BusBuddyEnvironment'
-})) { try { Set-Alias -Name $pair.A -Value $pair.V -Force } catch { } }
+})) { try { Set-Alias -Name $pair.A -Value $pair.V -Force } catch { Write-Warning ("Failed to set alias {0}: {1}" -f $pair.A, $_.Exception.Message) } }
 #endregion
 
 #region Exports
@@ -3313,6 +3298,9 @@ Export-ModuleMember -Function @(
     'Invoke-BusBuddyRestore',
     'Invoke-BusBuddyTest',
     'Invoke-BusBuddyHealthCheck',
+    # Ensure MVP and Anti-Regression functions are exported
+    'Test-BusBuddyMVPReadiness',
+    'Invoke-BusBuddyAntiRegression',
     'Get-BusBuddyApartmentState',
     'Get-BusBuddyMantraId',
     'Reset-BusBuddyMantraId',
@@ -3330,7 +3318,7 @@ Export-ModuleMember -Function @(
     'Get-BusBuddyPS75Compliance',
     'Initialize-BusBuddyEnvironment',
     # Script Lint exports
-    'Test-BusBuddyErrorActionPipelines',
+    'Test-BusBuddyErrorActionPipeline',
     'Invoke-BusBuddyErrorActionAudit',
     # Logging exports
     'Get-BusBuddyLogSummary'
@@ -3344,7 +3332,9 @@ Export-ModuleMember -Function @(
     # Script Lint aliases
     'bb-ps-validate-ea','bb-ps-validate-ea-run',
     # Logging alias
-    'bb-logs-summary'
+    'bb-logs-summary',
+    # Validation aliases (export explicitly for reliability)
+    'bb-anti-regression','bb-mvp-check'
 )
 #endregion
 

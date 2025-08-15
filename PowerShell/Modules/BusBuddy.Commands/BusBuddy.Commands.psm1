@@ -40,17 +40,28 @@ function Get-BbCommands {
 }
 
 function Test-BbAntiRegression {
-    [CmdletBinding()] param()
+    [CmdletBinding()]
+    param(
+        [switch]$Detailed
+    )
     # Very lightweight checks to align with project rules
     $errors = @()
 
     # 1) Forbid Microsoft.Extensions.Logging usage
     $mel = Get-ChildItem -Path $script:RepoRoot -Recurse -Include *.cs | Select-String -Pattern 'Microsoft\.Extensions\.Logging' -SimpleMatch
-    if ($mel) { $errors += "Found Microsoft.Extensions.Logging references in: $($mel.Path | Select-Object -Unique | Join-String -Separator ', ')" }
+    if ($mel) {
+        $paths = $mel.Path | Select-Object -Unique
+        $errors += "Found Microsoft.Extensions.Logging references in: $($paths -join ', ')"
+        if ($Detailed) { $mel | ForEach-Object { Write-Information "  $($_.Path):$($_.LineNumber) $($_.Line.Trim())" -InformationAction Continue } }
+    }
 
     # 2) Forbid Write-Host in PowerShell scripts
     $wh  = Get-ChildItem -Path $script:RepoRoot -Recurse -Include *.ps1,*.psm1 | Select-String -Pattern '\bWrite-Host\b'
-    if ($wh) { $errors += "Found Write-Host in PowerShell files: $($wh.Path | Select-Object -Unique | Join-String -Separator ', ')" }
+    if ($wh) {
+        $paths = $wh.Path | Select-Object -Unique
+        $errors += "Found Write-Host in PowerShell files: $($paths -join ', ')"
+        if ($Detailed) { $wh | ForEach-Object { Write-Information "  $($_.Path):$($_.LineNumber) $($_.Line.Trim())" -InformationAction Continue } }
+    }
 
     if ($errors.Count -gt 0) {
         Write-Error ("Anti-regression checks failed:`n" + ($errors -join "`n"))
@@ -86,6 +97,30 @@ function Invoke-BbBuild {
 
 # Create alias for build convenience
 Set-Alias -Name bb-build -Value Invoke-BbBuild
+
+# Expose standard bb-* developer commands
+# Map anti-regression: prefer core module's comprehensive check when available, else fallback to lightweight
+if (Get-Command Invoke-BusBuddyAntiRegression -ErrorAction SilentlyContinue) {
+    Set-Alias -Name bb-anti-regression -Value Invoke-BusBuddyAntiRegression
+} else {
+    Set-Alias -Name bb-anti-regression -Value Test-BbAntiRegression
+}
+
+# Map XAML validation to Syncfusion-only guard
+Set-Alias -Name bb-xaml-validate -Value Test-BbXaml
+
+# Map MVP readiness check to core BusBuddy module function (must be loaded)
+# If the function isn't available yet, importing the BusBuddy module will provide it
+if (-not (Get-Command Test-BusBuddyMVPReadiness -ErrorAction SilentlyContinue)) {
+    $busBuddyModule = Join-Path $PSScriptRoot '..' 'BusBuddy' 'BusBuddy.psd1'
+    if (Test-Path $busBuddyModule) { Import-Module $busBuddyModule -Force -ErrorAction SilentlyContinue | Out-Null }
+}
+# Second-chance import if still missing (ensures export list was picked up)
+if (-not (Get-Command Test-BusBuddyMVPReadiness -ErrorAction SilentlyContinue)) {
+    $busBuddyModulePsm1 = Join-Path $PSScriptRoot '..' 'BusBuddy' 'BusBuddy.psm1'
+    if (Test-Path $busBuddyModulePsm1) { Import-Module $busBuddyModulePsm1 -Force -ErrorAction SilentlyContinue | Out-Null }
+}
+Set-Alias -Name bb-mvp-check -Value Test-BusBuddyMVPReadiness
 
 
 

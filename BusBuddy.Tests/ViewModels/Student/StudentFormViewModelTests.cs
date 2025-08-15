@@ -88,7 +88,10 @@ namespace BusBuddy.Tests.ViewModels.Student
         [Test]
         public void ValidateAddress_WithInvalidAddress_SetsErrorMessage()
         {
-            _viewModel.Student.HomeAddress = "Invalid Address";
+            _viewModel.Student.HomeAddress = "Invalid"; // too short, lacks number/comma
+            _viewModel.Student.City = string.Empty;
+            _viewModel.Student.State = string.Empty;
+            _viewModel.Student.Zip = string.Empty;
             _viewModel.ValidateAddressCommand.Execute(null);
             _viewModel.AddressValidationMessage.Should().Contain("Address validation failed");
             _viewModel.AddressValidationColor.Should().Be(Brushes.Red);

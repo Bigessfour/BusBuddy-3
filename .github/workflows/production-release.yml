@@ -42,10 +42,15 @@ jobs:
 
       # Syncfusion licensing — set env var for build (official docs: https://help.syncfusion.com/wpf/wpf-license-registration)
       - name: Set Syncfusion License
-        if: ${{ secrets.SYNCFUSION_LICENSE_KEY != '' }}
         shell: pwsh
+        env:
+          SYNCFUSION_LICENSE_KEY: ${{ secrets.SYNCFUSION_LICENSE_KEY }}
         run: |
-          echo "SYNCFUSION_LICENSE_KEY=${{ secrets.SYNCFUSION_LICENSE_KEY }}" >> $env:GITHUB_ENV
+          if (-not $env:SYNCFUSION_LICENSE_KEY) {
+            Write-Host "SYNCFUSION_LICENSE_KEY not set; build may show license warnings."
+            exit 0
+          }
+          echo "SYNCFUSION_LICENSE_KEY=$env:SYNCFUSION_LICENSE_KEY" >> $env:GITHUB_ENV
 
       - name: 📦 Cache NuGet packages
         uses: actions/cache@v4

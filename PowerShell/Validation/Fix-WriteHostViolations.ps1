@@ -113,7 +113,7 @@ try {
 
     # Read module content
     $content = Get-Content $ModulePath -Raw
-    $originalContent = $content
+    # Content loaded. Proceeding with automated fixes.
 
     # Apply replacements
     $replacements = Get-WriteHostReplacements
@@ -121,18 +121,27 @@ try {
 
     foreach ($pattern in $replacements.Keys) {
         $replacement = $replacements[$pattern]
-        $matches = [regex]::Matches($content, $pattern, [System.Text.RegularExpressions.RegexOptions]::IgnoreCase)
+        $regexHits = [regex]::Matches($content, $pattern, [System.Text.RegularExpressions.RegexOptions]::IgnoreCase)
 
-        if ($matches.Count -gt 0) {
+        if ($regexHits.Count -gt 0) {
             Write-RefactorStatus "Applying replacement pattern: $($pattern.Substring(0, [Math]::Min(50, $pattern.Length)))..." -Type Info
             $content = [regex]::Replace($content, $pattern, $replacement, [System.Text.RegularExpressions.RegexOptions]::IgnoreCase)
-            $replacementCount += $matches.Count
-            Write-RefactorStatus "Replaced $($matches.Count) instances" -Type Success
+            $replacementCount += $regexHits.Count
+            Write-RefactorStatus "Replaced $($regexHits.Count) instances" -Type Success
         }
     }
 
+    # Also fix empty catch blocks: replace 'catch { }' with Write-Error
+    $emptyCatchPattern = 'catch\s*\{\s*\}'
+    $emptyCatchHits = [regex]::Matches($content, $emptyCatchPattern, [System.Text.RegularExpressions.RegexOptions]::IgnoreCase)
+    if ($emptyCatchHits.Count -gt 0) {
+        Write-RefactorStatus ("Fixing {0} empty catch block(s)" -f $emptyCatchHits.Count) -Type Info
+        $content = [regex]::Replace($content, $emptyCatchPattern, 'catch { Write-Error ("Unhandled error: {0}" -f $_.Exception.Message) }', [System.Text.RegularExpressions.RegexOptions]::IgnoreCase)
+        $replacementCount += $emptyCatchHits.Count
+    }
+
     if ($replacementCount -eq 0) {
-        Write-RefactorStatus "No Write-Host violations found to replace" -Type Info
+        Write-RefactorStatus "No Write-Host violations or empty catch blocks found to replace" -Type Info
         return
     }
 
@@ -143,7 +152,7 @@ try {
 
     # Save refactored content
     if ($PSCmdlet.ShouldProcess($ModulePath, "Apply $replacementCount Write-Host replacements")) {
-        Set-Content -Path $ModulePath -Value $content -Encoding UTF8
+        Set-Content -Path $ModulePath -Value $content -Encoding utf8BOM
         Write-RefactorStatus "Applied $replacementCount replacements to $ModulePath" -Type Success
 
         # Test compliance after changes

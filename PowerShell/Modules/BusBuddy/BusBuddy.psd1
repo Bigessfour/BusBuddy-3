@@ -64,7 +64,11 @@
     'Stop-BusBuddyTestWatchAdvanced',
     'Invoke-BusBuddyCleanup',
     'Get-BusBuddyUnusedFiles',
-    'Remove-BusBuddyUnusedFiles'
+    'Remove-BusBuddyUnusedFiles',
+
+    # Readiness and Anti-Regression (required by bb-* wrappers)
+    'Test-BusBuddyMVPReadiness',
+    'Invoke-BusBuddyAntiRegression'
     )
 
     # Cmdlets to export from this module
