@@ -459,21 +459,28 @@ namespace BusBuddy.Core.Services
                 var (context, dispose) = GetWriteContext();
                 try
                 {
-                    var route = await context.Routes.FirstOrDefaultAsync(r => r.RouteId == routeId);
-                    if (route == null)
+                    // Prefer an already-tracked entity (tests share the same DbContext)
+                    var entity = context.Routes.Local.FirstOrDefault(r => r.RouteId == routeId)
+                                 ?? await context.Routes.FindAsync(routeId);
+
+                    if (entity is null)
                     {
                         Logger.Warning("ActivateRoute — route {RouteId} not found", routeId);
                         return Result.FailureResult<bool>($"Route {routeId} not found");
                     }
-                    if (route.IsActive)
+
+                    if (entity.IsActive)
                     {
                         Logger.Information("ActivateRoute — route {RouteId} already active", routeId);
                         return Result.SuccessResult(true); // idempotent
                     }
-                    route.IsActive = true;
-                    context.Entry(route).Property(r => r.IsActive).IsModified = true; // force persistence
+
+                    // Update only the IsActive flag on the tracked entity
+                    entity.IsActive = true;
+                    context.Entry(entity).Property(r => r.IsActive).IsModified = true; // force persistence of just this flag
                     await context.SaveChangesAsync();
-                    Logger.Information("Successfully activated route {RouteId}: {RouteName}", routeId, route.RouteName);
+
+                    Logger.Information("Successfully activated route {RouteId}: {RouteName}", routeId, entity.RouteName);
                     return Result.SuccessResult(true);
                 }
                 finally
@@ -499,23 +506,27 @@ namespace BusBuddy.Core.Services
                 var (context, dispose) = GetWriteContext();
                 try
                 {
-                    var route = await context.Routes.FirstOrDefaultAsync(r => r.RouteId == routeId);
-                    if (route == null)
+                    // Prefer an already-tracked entity (tests may share context)
+                    var entity = context.Routes.Local.FirstOrDefault(r => r.RouteId == routeId)
+                                 ?? await context.Routes.FindAsync(routeId);
+
+                    if (entity is null)
                     {
                         var existingIds = await context.Routes.Select(r => r.RouteId).ToListAsync();
                         Logger.Warning("DeactivateRoute — route {RouteId} not found OpId={OpId} ExistingRouteIds=[{Ids}]", routeId, opId, string.Join(',', existingIds));
                         return Result.FailureResult<bool>($"Route {routeId} not found");
                     }
 
-                    if (!route.IsActive)
+                    if (!entity.IsActive)
                     {
                         Logger.Information("DeactivateRoute — route {RouteId} already inactive OpId={OpId}", routeId, opId);
                         EndOpOk("DeactivateRoute", opId, sw, routeId);
                         return Result.SuccessResult(true); // idempotent
                     }
 
-                    route.IsActive = false; // toggle flag
-                    context.Entry(route).Property(r => r.IsActive).IsModified = true; // force persistence
+                    // Toggle and persist only the IsActive flag
+                    entity.IsActive = false;
+                    context.Entry(entity).Property(r => r.IsActive).IsModified = true;
                     await context.SaveChangesAsync();
 
                     Logger.Information("Successfully deactivated route {RouteId} OpId={OpId}", routeId, opId);
