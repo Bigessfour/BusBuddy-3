@@ -39,7 +39,7 @@ jobs:
         run: |
           $ok = & ./PowerShell/Profiles/Import-BusBuddyModule.ps1
           if (-not $ok) { throw 'Failed to import BusBuddy PowerShell module' }
-          Get-Command bb-anti-regression,bb-mvp-check -ErrorAction SilentlyContinue | Format-Table -Auto
+          Get-Command bbAntiRegression,bbMvpCheck -ErrorAction SilentlyContinue | Format-Table -Auto
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
