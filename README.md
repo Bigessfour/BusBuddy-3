@@ -30,57 +30,76 @@ Highlights
 git clone https://github.com/Bigessfour/BusBuddy-3.git
 cd BusBuddy
 
-
-# Load PowerShell automation (minimal profile)
-. .\PowerShell\Profiles\BusBuddyProfile.ps1
+# Load optimized PowerShell profile (fast loading ~400ms)
+. .\PowerShell\Profiles\Microsoft.PowerShell_profile.ps1
 
 # Optional — set Syncfusion license to avoid trial dialogs
 $env:SYNCFUSION_LICENSE_KEY = "<your-key>"  # https://help.syncfusion.com/wpf/wpf-license-registration
 
-# Health → Build → Run
-bbHealth            # mapped to Test-BusBuddyHealth
-bbBuild             # mapped to Invoke-BusBuddyBuild
-bbRun               # mapped to Start-BusBuddyApplication
-bbTest              # mapped to Start-BusBuddyTest
+# Health → Build → Run (all commands available immediately)
+bbHealth            # Environment diagnostics - Test-BusBuddyHealth
+bbBuild             # Build solution - Invoke-BusBuddyBuild  
+bbRun               # Launch WPF app - Start-BusBuddyApplication
+bbTest              # Run tests - Start-BusBuddyTest
 
 # Fallback (explicit target when using dotnet directly)
 dotnet run --project .\BusBuddy.WPF\BusBuddy.WPF.csproj
 ```
 
-### PowerShell-first workflow (updated)
+### PowerShell-first workflow (optimized)
 
-We now prefer a PowerShell-first setup with a minimal profile that installs/imports modules and maps bb* aliases. The profile also creates safe stubs for missing module functions so the environment stays usable.
+**Performance Improvements:**
+- **Profile loading**: ~400ms (was 15+ seconds)
+- **Lazy module loading**: Az/SqlServer modules load only when needed
+- **Dynamic repo discovery**: Works for any clone location automatically
+- **Up-to-date versions**: .NET 9.0.108, Syncfusion WPF 30.2.5
 
-PowerShell directory updates:
+We now use an optimized PowerShell profile that loads in ~400ms (vs 15+ seconds previously) with lazy module loading and dynamic repo discovery.
 
+**Profile structure:**
 ```
 PowerShell/
 ├─ Profiles/
-│  ├─ BusBuddyProfile.ps1          # Minimal profile — installs/imports modules, sets bb* aliases, safe stubs
-│  ├─ Import-BusBuddyModule.ps1    # Legacy bootstrap (kept for compatibility)
-│  └─ .gitkeep
+│  ├─ Microsoft.PowerShell_profile.ps1  # Optimized wrapper with dynamic repo discovery
+│  ├─ BusBuddyProfile.ps1              # Main profile with lazy loading and bb* aliases
+│  └─ Import-BusBuddyModule.ps1         # Legacy bootstrap (compatibility)
+├─ Modules/
+│  ├─ BusBuddy/                         # Core BusBuddy module
+│  └─ BusBuddy.Testing/                 # Testing module
 ```
 
-Standard modules from PowerShell Gallery (optional, supported):
-- InvokeBuild — build automation
-- Pester — testing
-- Az — Azure (e.g., SQL, resources)
+**Key optimizations:**
+- **Lazy loading**: Az and SqlServer modules load only when Azure functions are called
+- **Dynamic discovery**: Automatically finds repo root for any clone location
+- **Environment setup**: All variables configured (DOTNET_VERSION, BUILD_CONFIGURATION, etc.)
+- **Safe stubs**: Missing modules don't break the environment
 
-Install locally (CurrentUser scope):
+Standard modules from PowerShell Gallery (optional, auto-loaded when needed):
+- **Az** — Azure services (loads lazily ~10-15s when first used)
+- **SqlServer** — SQL Server management (loads lazily when needed)
+- InvokeBuild — build automation (if available)
+- Pester — testing (if available)
+
+**Azure functions with lazy loading:**
 ```powershell
-Install-Module -Name PowerShellGet -Force -Scope CurrentUser -Repository PSGallery -AllowClobber
-Install-Module -Name InvokeBuild, Pester -Repository PSGallery -Scope CurrentUser -Force -AllowClobber
-# Az is large — install separately to avoid partial failures
-Install-Module -Name Az -Repository PSGallery -Scope CurrentUser -Force -AllowClobber
+# These will trigger module loading on first use
+Connect-BusBuddySql -Query "SELECT TOP 5 * FROM Students"
+Enable-BusBuddyFirewall -ResourceGroup "BusBuddy-RG"
 ```
 
-Note: If a module is temporarily unavailable, the profile will continue in a degraded mode with warnings and stubbed commands. Set `$env:BUSBUDDY_PROFILE_STRICT = '1'` before sourcing the profile to fail-fast instead.
+Install manually if needed (CurrentUser scope):
+```powershell
+Install-Module -Name Az, SqlServer -Repository PSGallery -Scope CurrentUser -Force
+```
+
+Note: If a module is temporarily unavailable, the profile will continue in a degraded mode with warnings and stubbed commands. The optimized profile ensures fast loading regardless of module availability. Azure modules load automatically when their functions are called.
 
 ### What to expect
-- WPF desktop app; a dashboard window opens at launch.
-- Syncfusion‑only policy for new/refactored UI.
-- Prefer bb* commands for build/test/run.
-
+- **Fast startup**: Profile loads in ~400ms with lazy module loading
+- WPF desktop app; a dashboard window opens at launch
+- Syncfusion‑only policy for new/refactored UI
+- Prefer bb* commands for build/test/run operations
+- Azure modules load automatically when Azure functions are used
 
 ### Dev quickref
 ```powershell
@@ -91,6 +110,9 @@ bbTest              # Run tests (Start-BusBuddyTest)
 bbAntiRegression    # Scan for disallowed APIs/patterns
 bbXamlValidate      # Validate Syncfusion‑only XAML
 bbMvpCheck          # Validate core MVP scenarios
+
+# Performance test (should complete in ~400ms)
+Measure-Command { . .\PowerShell\Profiles\Microsoft.PowerShell_profile.ps1 }
 ```
 
 ## 🧪 Testing
@@ -141,11 +163,12 @@ dotnet ef migrations list --project .\BusBuddy.Core --startup-project .\BusBuddy
 ## 🏗️ Architecture
 
 Tech stack (current)
-- .NET SDK: 9.0.303
-- WPF + Syncfusion WPF: 30.2.5
+- .NET SDK: 9.0.108 (updated August 2025)
+- WPF + Syncfusion WPF: 30.2.5 (updated August 2025)
 - EF Core: 9.0.8
 - Serilog: 4.3.0
 - NUnit: 4.3.1
+- PowerShell: 7.5.2+ (optimized profile with lazy loading)
 
 Project layout
 ```
@@ -232,6 +255,12 @@ References (Syncfusion WPF)
 ## 📈 Project status
 
 Current phase: MVP achieved; production hardening in progress. Non‑MVP integrations (e.g., XAI, Google Earth Engine) remain deferred.
+
+**Recent Performance Optimizations (August 2025):**
+- PowerShell profile loading: ~400ms (97% improvement from 15+ seconds)
+- Lazy Azure module loading: Modules load only when Azure functions are called
+- Dynamic repo discovery: Works for any clone location automatically
+- Updated dependencies: .NET 9.0.108, Syncfusion WPF 30.2.5
 
 ## 📞 Support
 

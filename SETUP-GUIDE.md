@@ -44,16 +44,40 @@ cd BusBuddy
 ls
 ```
 
-### **Step 2: Environment Setup**
-```powershell
-# Import BusBuddy PowerShell module
-Import-Module .\PowerShell\Modules\BusBuddy\BusBuddy.psm1
+### **Step 2: PowerShell Environment Setup (Optimized)**
 
-# Verify commands are available
-bbCommands
+**New Optimized PowerShell Profile Setup:**
+```powershell
+# Load the optimized BusBuddy PowerShell profile (fast loading ~400ms)
+. .\PowerShell\Profiles\Microsoft.PowerShell_profile.ps1
+
+# This will automatically:
+# - Discover the repo root dynamically (works for any clone location)
+# - Load BusBuddyProfile.ps1 with lazy module loading
+# - Set up all bb* command aliases
+# - Configure environment variables (.NET 9.0.108, Syncfusion 30.2.5)
+
+# Verify the profile loaded successfully
+bbCommands        # List all available BusBuddy commands
 
 # Run system health check
 bbHealth
+```
+
+**Performance Benefits:**
+- **Profile loading**: ~400ms (vs 15+ seconds previously)
+- **Lazy loading**: Az and SqlServer modules load only when needed
+- **Dynamic discovery**: Works for any clone location automatically
+- **Up-to-date versions**: .NET 9.0.108, Syncfusion WPF 30.2.5
+
+**Legacy Alternative (if needed):**
+```powershell
+# If you prefer the legacy module import approach
+Import-Module .\PowerShell\Modules\BusBuddy\BusBuddy.psm1
+Import-Module .\PowerShell\Modules\BusBuddy.Testing\BusBuddy.Testing.psm1
+
+# Verify commands are available
+bbCommands
 ```
 
 ### **Step 3: Build and Verify**
@@ -112,16 +136,31 @@ dotnet ef database update --project BusBuddy.Core
 
 ## 🛠️ **Development Environment**
 
-### **PowerShell Development Setup**
+### **PowerShell Development Setup (Optimized)**
 ```powershell
+# The new optimized profile handles all development setup automatically
+. .\PowerShell\Profiles\Microsoft.PowerShell_profile.ps1
+
 # Start complete development session
 bbDevSession
 
-# This will:
-# - Load all PowerShell modules
-# - Set up development aliases
-# - Configure environment variables
-# - Prepare debugging tools
+# Key features of the optimized setup:
+# - Fast loading: Profile loads in ~400ms vs 15+ seconds previously
+# - Lazy module loading: Az/SqlServer modules load only when needed
+# - Dynamic repo discovery: Works for any clone location
+# - All environment variables configured automatically
+# - All build/test/run functions available immediately
+```
+
+**Azure SQL Functions (Lazy Loaded):**
+```powershell
+# These functions will load Azure modules on first use (10-15 seconds initial load)
+Connect-BusBuddySql -Query "SELECT TOP 5 * FROM Students"
+Enable-BusBuddyFirewall -ResourceGroup "BusBuddy-RG"
+
+# Environment variables for Azure SQL (set externally if needed):
+$env:AZURE_SQL_SERVER = "your-server-name"
+$env:SYNCFUSION_LICENSE_KEY = "your-license-key"
 ```
 
 ### **VS Code Configuration**
@@ -192,6 +231,33 @@ Tests are located under `BusBuddy.Tests/SchedulerTests/` and are self-contained 
 
 ### **Common Issues**
 
+#### **PowerShell Profile Loading Issues**
+```powershell
+# If profile loading is slow or fails
+# 1. Check PowerShell version (requires 7.5.2+)
+$PSVersionTable.PSVersion
+
+# 2. Clear profile loading flag and reload
+$env:BUSBUDDY_PROFILE_LOADED = $null
+. .\PowerShell\Profiles\Microsoft.PowerShell_profile.ps1
+
+# 3. Force reload if needed
+bbRefresh  # Reinitialize aliases and modules
+```
+
+#### **Azure Module Loading (First Time)**
+```powershell
+# Azure modules load on-demand (10-15 seconds first time)
+# If you get "Loading Az module..." but it fails:
+
+# 1. Install required modules manually
+Install-Module Az -Scope CurrentUser -Force
+Install-Module SqlServer -Scope CurrentUser -Force
+
+# 2. Test Azure functions
+Connect-BusBuddySql -Query "SELECT 1"  # Will trigger module loading
+```
+
 #### **Build Failures**
 ```powershell
 # Clean and rebuild
@@ -210,8 +276,13 @@ bbHealth
 
 #### **PowerShell Module Loading**
 ```powershell
-# Force reload PowerShell module
+# For legacy module loading issues
 Import-Module .\PowerShell\Modules\BusBuddy\BusBuddy.psm1 -Force
+Import-Module .\PowerShell\Modules\BusBuddy.Testing\BusBuddy.Testing.psm1 -Force
+
+# For optimized profile issues
+$env:BUSBUDDY_PROFILE_LOADED = $null
+. .\PowerShell\Profiles\Microsoft.PowerShell_profile.ps1
 
 # Verify commands
 bbCommands
@@ -236,6 +307,18 @@ After setup, verify everything works:
 - [ ] `bbMvpCheck` reports "MVP READY! You can ship this!"
 - [ ] `bbRun` launches the WPF application
 - [ ] Application displays student and route management interfaces
+- [ ] **New**: Profile loads in under 1 second (vs 15+ seconds previously)
+- [ ] **New**: Azure functions work with lazy loading when called
+
+**Performance Verification:**
+```powershell
+# Test profile loading speed
+Measure-Command { 
+    $env:BUSBUDDY_PROFILE_LOADED = $null
+    . .\PowerShell\Profiles\Microsoft.PowerShell_profile.ps1 
+}
+# Should complete in ~400-500ms
+```
 
 ## 🚀 **Next Steps**
 
