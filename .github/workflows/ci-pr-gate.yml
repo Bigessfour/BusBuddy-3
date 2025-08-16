@@ -138,7 +138,7 @@ jobs:
           echo "pssa=$pssaStatus" >> $env:GITHUB_OUTPUT
           $body = @()
           $body += "### CI Summary"
-          $body += "* Branch: `${{ github.ref_name }}`"
+          $body += "* Branch: ${{ github.ref_name }}"
           $body += "* Build: $buildStatus"
           $body += "* Tests: $testSummary (ExitCode=$testExit)"
           $body += "* Naming Guard: $guardStatus"
