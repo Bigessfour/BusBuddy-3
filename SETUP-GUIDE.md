@@ -56,6 +56,7 @@ ls
 # - Load BusBuddyProfile.ps1 with lazy module loading
 # - Set up all bb* command aliases
 # - Configure environment variables (.NET 9.0.108, Syncfusion 30.2.5)
+# - Integrate CLI tools (GitHub CLI, Azure CLI, GitKraken CLI)
 
 # Verify the profile loaded successfully
 bbCommands        # List all available BusBuddy commands
@@ -64,11 +65,36 @@ bbCommands        # List all available BusBuddy commands
 bbHealth
 ```
 
+**CLI Integration Support:**
+The profile now includes integration with external CLI tools:
+- **GitHub CLI (gh)**: Repository scanning, workflow management
+- **Azure CLI (az)**: Azure resource management, SQL database operations
+- **GitKraken CLI (gk)**: Repository management and scanning
+
+```powershell
+# CLI Integration Commands (auto-loaded with profile)
+bbFullScan        # Comprehensive scan using all CLI tools
+bbWorkflows       # Scan GitHub workflows
+bbAzResources     # Scan Azure resources
+bbRepos           # Scan repositories (GitHub) or workspaces (GitKraken)
+bbGh <args>       # GitHub CLI wrapper
+bbAz <args>       # Azure CLI wrapper
+bbGk <args>       # GitKraken CLI wrapper
+```
+
+**CLI Prerequisites (Optional but Recommended):**
+- **GitHub CLI**: Download from https://cli.github.com
+- **Azure CLI**: Download from https://learn.microsoft.com/cli/azure/install-azure-cli
+- **GitKraken CLI**: Download from https://www.gitkraken.com/cli
+
+*Note: CLI tools are optional. Native CLI tools are preferred over PowerShell Gallery modules for better reliability. If not installed, the profile will warn but continue to work.*
+
 **Performance Benefits:**
 - **Profile loading**: ~400ms (vs 15+ seconds previously)
 - **Lazy loading**: Az and SqlServer modules load only when needed
 - **Dynamic discovery**: Works for any clone location automatically
 - **Up-to-date versions**: .NET 9.0.108, Syncfusion WPF 30.2.5
+- **CLI integration**: PowerShell Gallery modules preferred for better integration
 
 **Legacy Alternative (if needed):**
 ```powershell

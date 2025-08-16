@@ -42,6 +42,15 @@ bbBuild             # Build solution - Invoke-BusBuddyBuild
 bbRun               # Launch WPF app - Start-BusBuddyApplication
 bbTest              # Run tests - Start-BusBuddyTest
 
+# CLI Integration Commands (if GitHub CLI, Azure CLI, GitKraken CLI installed)
+bbFullScan          # Comprehensive scan using all CLI tools
+bbWorkflows         # Scan GitHub workflows  
+bbAzResources       # Scan Azure resources  
+bbRepos             # Scan repositories (GitHub) or workspaces (GitKraken)
+bbGh <args>         # GitHub CLI wrapper
+bbAz <args>         # Azure CLI wrapper  
+bbGk <args>         # GitKraken CLI wrapper
+
 # Fallback (explicit target when using dotnet directly)
 dotnet run --project .\BusBuddy.WPF\BusBuddy.WPF.csproj
 ```
@@ -53,6 +62,7 @@ dotnet run --project .\BusBuddy.WPF\BusBuddy.WPF.csproj
 - **Lazy module loading**: Az/SqlServer modules load only when needed
 - **Dynamic repo discovery**: Works for any clone location automatically
 - **Up-to-date versions**: .NET 9.0.108, Syncfusion WPF 30.2.5
+- **CLI integration**: GitHub CLI, Azure CLI, GitKraken CLI support with PowerShell Gallery modules
 
 We now use an optimized PowerShell profile that loads in ~400ms (vs 15+ seconds previously) with lazy module loading and dynamic repo discovery.
 
@@ -65,7 +75,8 @@ PowerShell/
 │  └─ Import-BusBuddyModule.ps1         # Legacy bootstrap (compatibility)
 ├─ Modules/
 │  ├─ BusBuddy/                         # Core BusBuddy module
-│  └─ BusBuddy.Testing/                 # Testing module
+│  ├─ BusBuddy.Testing/                 # Testing module
+│  └─ BusBuddy.CLI/                     # CLI integration module (GitHub, Azure, GitKraken)
 ```
 
 **Key optimizations:**
@@ -76,7 +87,8 @@ PowerShell/
 
 Standard modules from PowerShell Gallery (optional, auto-loaded when needed):
 - **Az** — Azure services (loads lazily ~10-15s when first used)
-- **SqlServer** — SQL Server management (loads lazily when needed)
+- **SqlServer** — SQL Server management (loads lazily when needed)  
+- **PowerShellForGitHub** — GitHub API integration (optional, falls back to gh CLI)
 - InvokeBuild — build automation (if available)
 - Pester — testing (if available)
 
@@ -89,7 +101,11 @@ Enable-BusBuddyFirewall -ResourceGroup "BusBuddy-RG"
 
 Install manually if needed (CurrentUser scope):
 ```powershell
+# Core modules (recommended)
 Install-Module -Name Az, SqlServer -Repository PSGallery -Scope CurrentUser -Force
+
+# Optional enhancements (CLI tools preferred for these operations)
+Install-Module -Name PowerShellForGitHub -Repository PSGallery -Scope CurrentUser -Force
 ```
 
 Note: If a module is temporarily unavailable, the profile will continue in a degraded mode with warnings and stubbed commands. The optimized profile ensures fast loading regardless of module availability. Azure modules load automatically when their functions are called.

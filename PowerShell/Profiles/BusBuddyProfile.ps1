@@ -41,7 +41,27 @@ if (Test-Path "$BusBuddyRepoPath\PowerShell") {
     $env:PSModulePath = $env:PSModulePath + ";$BusBuddyRepoPath\PowerShell"
 }
 
-# Lazy-load modules only when needed (performance optimization)
+# Lazy-load CLI integration module
+function Import-BusBuddyCli {
+    [CmdletBinding()]
+    param()
+
+    $cliModulePath = Join-Path $BusBuddyRepoPath "PowerShell\Modules\BusBuddy.CLI"
+    if (Test-Path $cliModulePath) {
+        try {
+            Import-Module $cliModulePath -Force -DisableNameChecking -ErrorAction SilentlyContinue
+            Write-Information "BusBuddy CLI module loaded (GitHub, Azure, GitKraken integration)" -InformationAction Continue
+            return $true
+        }
+        catch {
+            Write-Warning "Failed to load BusBuddy.CLI module: $($_.Exception.Message)"
+            return $false
+        }
+    } else {
+        Write-Warning "BusBuddy.CLI module not found at: $cliModulePath"
+        return $false
+    }
+}# Lazy-load modules only when needed (performance optimization)
 # Note: Az module import can take 10-15+ seconds, so we defer until Connect-BusBuddySql is called
 # Reference: https://learn.microsoft.com/powershell/azure/performance-tips
 
@@ -132,7 +152,9 @@ function Restore-BusBuddy { dotnet restore $env:SOLUTION_FILE }
 
 # Run on profile load
 Set-SyncfusionLicense
+Import-BusBuddyCli  # Load CLI integration
 Write-Information "BusBuddy Dev Profile Loaded: Use Connect-BusBuddySql for Azure SQL queries, Build-BusBuddy for builds." -InformationAction Continue
+Write-Information "CLI Commands: bbFullScan (comprehensive), bbWorkflows (GitHub), bbAzResources (Azure), bbRepos (GitKraken)" -InformationAction Continue
 
 # Example: Uncomment to test connection on load
 # Connect-BusBuddySql -Query "SELECT DB_NAME() AS DatabaseName"
