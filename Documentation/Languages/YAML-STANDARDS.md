@@ -244,7 +244,7 @@ comment:
 ```yaml
 # ❌ DON'T: Hardcode secrets
 env:
-  API_KEY: "hardcoded-secret-key"  # NEVER DO THIS
+  API_KEY: "NEVER-HARDCODE-SECRETS"  # NEVER DO THIS - Example only
 
 # ✅ DO: Use GitHub secrets
 env:
@@ -391,7 +391,7 @@ dotnet-version: 8.0  # Interpreted as float, becomes 8
 
 # DON'T: Hardcoded secrets
 env:
-  SECRET_KEY: "actual-secret-value"
+  SECRET_KEY: "EXAMPLE-ONLY-DO-NOT-USE"
 ```
 
 ### ✅ **Correct Patterns**

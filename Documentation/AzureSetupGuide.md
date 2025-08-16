@@ -177,7 +177,7 @@ Auto-pause: 1 hour of inactivity
 ### 🔗 Active Connection String
 Your application is now configured with:
 ```
-Server=tcp:busbuddy-server-sm2.database.windows.net,1433;Initial Catalog=BusBuddyDB;Persist Security Info=False;User ID=busbuddy_admin;Password=COspr1ng$;MultipleActiveResultSets=False;Encrypt=true;TrustServerCertificate=False;Connection Timeout=30;
+Server=tcp:busbuddy-server-sm2.database.windows.net,1433;Initial Catalog=BusBuddyDB;Persist Security Info=False;User ID=busbuddy_admin;Password=${AZURE_SQL_PASSWORD};MultipleActiveResultSets=False;Encrypt=true;TrustServerCertificate=False;Connection Timeout=30;
 ```
 
 ### ✅ Migration Status
