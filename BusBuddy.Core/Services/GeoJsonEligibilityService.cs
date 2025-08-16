@@ -56,8 +56,8 @@ namespace BusBuddy.Core.Services
 
                 lock (_lock)
                 {
-                    _district ??= district;
-                    _town ??= town;
+                    if (_district == null) _district = district;
+                    if (_town == null) _town = town;
                 }
             }
         }

@@ -295,11 +295,11 @@ function Test-ColorContrast {
     $ratio = Get-ContrastRatio -Foreground $ForegroundColor -Background $BackgroundColor
 
     if ($ratio -ge 4.5) {
-        Write-Host "✅ WCAG AA compliant: $ratio`:1" -ForegroundColor Green
+        Write-Information "✅ WCAG AA compliant: $ratio`:1" -InformationAction Continue
     } elseif ($ratio -ge 3.0) {
-        Write-Host "⚠️ Large text only: $ratio`:1" -ForegroundColor Yellow
+        Write-Information "⚠️ Large text only: $ratio`:1" -InformationAction Continue
     } else {
-        Write-Host "❌ Non-compliant: $ratio`:1" -ForegroundColor Red
+        Write-Information "❌ Non-compliant: $ratio`:1" -InformationAction Continue
     }
 }
 
@@ -310,12 +310,12 @@ function Test-KeyboardNavigation {
     $xaml = [xml](Get-Content $XamlFile)
     $tabIndexElements = $xaml.SelectNodes("//*[@TabIndex]")
 
-    Write-Host "🔍 Keyboard Navigation Analysis for $XamlFile"
-    Write-Host "📊 Elements with TabIndex: $($tabIndexElements.Count)"
+    Write-Information "🔍 Keyboard Navigation Analysis for $XamlFile" -InformationAction Continue
+    Write-Information "📊 Elements with TabIndex: $($tabIndexElements.Count)" -InformationAction Continue
 
     # Check for logical tab order
     foreach ($element in $tabIndexElements) {
-        Write-Host "  TabIndex $($element.TabIndex): $($element.Name)"
+        Write-Information "  TabIndex $($element.TabIndex): $($element.Name)" -InformationAction Continue
     }
 }
 
@@ -326,8 +326,8 @@ function Test-ScreenReaderSupport {
     $xaml = [xml](Get-Content $XamlFile)
     $automationElements = $xaml.SelectNodes("//*[@AutomationProperties.Name]")
 
-    Write-Host "🔊 Screen Reader Support Analysis for $XamlFile"
-    Write-Host "📊 Elements with AutomationProperties: $($automationElements.Count)"
+    Write-Information "🔊 Screen Reader Support Analysis for $XamlFile" -InformationAction Continue
+    Write-Information "📊 Elements with AutomationProperties: $($automationElements.Count)" -InformationAction Continue
 }
 ```
 
@@ -339,7 +339,7 @@ Add to `.github/workflows/ci-build-test.yml`:
 - name: 🎯 Accessibility Standards Check
   shell: pwsh
   run: |
-    Write-Host "🔍 Checking WCAG 2.1 compliance..." -ForegroundColor Cyan
+    Write-Information "🔍 Checking WCAG 2.1 compliance..." -InformationAction Continue
 
     # Check for AutomationProperties in XAML files
     $xamlFiles = Get-ChildItem -Recurse -Filter "*.xaml"
@@ -353,8 +353,8 @@ Add to `.github/workflows/ci-build-test.yml`:
     }
 
     if ($missingAccessibility.Count -gt 0) {
-      Write-Host "⚠️ Files missing accessibility properties:" -ForegroundColor Yellow
-      $missingAccessibility | ForEach-Object { Write-Host "  - $_" }
+      Write-Information "⚠️ Files missing accessibility properties:" -InformationAction Continue
+      $missingAccessibility | ForEach-Object { Write-Information "  - $_" -InformationAction Continue }
     } else {
       Write-Host "✅ All XAML files have accessibility properties" -ForegroundColor Green
     }

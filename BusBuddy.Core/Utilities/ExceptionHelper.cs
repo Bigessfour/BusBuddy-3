@@ -200,7 +200,7 @@ public static class ExceptionHelper
     {
         ArgumentNullException.ThrowIfNull(operation, nameof(operation));
 
-        Exception? lastException = null;
+        Exception lastException = new InvalidOperationException("Retry operation failed");
 
         for (int attempt = 1; attempt <= maxRetries; attempt++)
         {

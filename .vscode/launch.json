@@ -5,6 +5,75 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "Debug BusBuddy WPF (Startup Focus)",
+            "type": "coreclr",
+            "request": "launch",
+            "program": "${workspaceFolder}/BusBuddy.WPF/bin/Debug/net9.0-windows/BusBuddy.WPF.exe",
+            "args": [],
+            "cwd": "${workspaceFolder}/BusBuddy.WPF",
+            "stopAtEntry": false,
+            "console": "externalTerminal",
+            "env": {
+                "BUSBUDDY_VERBOSE": "1",
+                "BUSBUDDY_NO_WELCOME": "1",
+                "BUSBUDDY_NO_XAI_WARN": "1",
+                "DOTNET_ENVIRONMENT": "Development"
+            },
+            "preLaunchTask": "build-wpf-debug",
+            "justMyCode": false,
+            "enableStepFiltering": false,
+            "suppressJITOptimizations": true,
+            "symbolOptions": {
+                "searchPaths": [],
+                "searchMicrosoftSymbolServer": true,
+                "searchNuGetOrgSymbolServer": true
+            }
+        },
+        {
+            "name": "Debug BusBuddy WPF (Console Output)",
+            "type": "coreclr",
+            "request": "launch",
+            "program": "${workspaceFolder}/BusBuddy.WPF/bin/Debug/net9.0-windows/BusBuddy.WPF.exe",
+            "args": [],
+            "cwd": "${workspaceFolder}/BusBuddy.WPF",
+            "stopAtEntry": false,
+            "console": "integratedTerminal",
+            "env": {
+                "BUSBUDDY_VERBOSE": "1",
+                "BUSBUDDY_NO_WELCOME": "1",
+                "BUSBUDDY_SILENT": "0"
+            },
+            "preLaunchTask": "build-wpf-debug",
+            "justMyCode": false,
+            "enableStepFiltering": false,
+            "suppressJITOptimizations": true
+        },
+        {
+            "name": "Debug BusBuddy WPF (Exception Focus)",
+            "type": "coreclr",
+            "request": "launch",
+            "program": "${workspaceFolder}/BusBuddy.WPF/bin/Debug/net9.0-windows/BusBuddy.WPF.exe",
+            "args": [],
+            "cwd": "${workspaceFolder}/BusBuddy.WPF",
+            "stopAtEntry": true,
+            "console": "externalTerminal",
+            "env": {
+                "BUSBUDDY_VERBOSE": "1",
+                "DOTNET_ENVIRONMENT": "Development"
+            },
+            "preLaunchTask": "build-wpf-debug",
+            "justMyCode": false,
+            "enableStepFiltering": false,
+            "suppressJITOptimizations": true
+        },
+        {
+            "name": "Attach to BusBuddy Process",
+            "type": "coreclr",
+            "request": "attach",
+            "processName": "BusBuddy.WPF",
+            "justMyCode": false
+        },
+        {
             "name": "PowerShell: Windows PowerShell",
             "type": "PowerShell",
             "request": "launch",

@@ -29,101 +29,294 @@ using System.Text.RegularExpressions;
 namespace BusBuddy.WPF
 {
     /// <summary>
-    /// BusBuddy WPF Application startup with dual-mode operation
-    /// - EF Migration Mode: Minimal services for database operations only
-    /// - UI Mode: Full dependency injection with robust error handling
-    /// Features: Pure Serilog logging, Syncfusion license management, comprehensive error capture
-    /// Updated: Enhanced startup logic for MVP with full UI support
+    /// BusBuddy WPF Application Entry Point with Advanced Startup Management
+    ///
+    /// This class implements a robust WPF application startup with the following features:
+    ///
+    /// 🔧 DUAL-MODE OPERATION:
+    /// - EF Migration Mode: Minimal services for database operations only (no UI)
+    /// - UI Mode: Full dependency injection with complete WPF application lifecycle
+    ///
+    /// 🪵 LOGGING ARCHITECTURE:
+    /// - Bootstrap Logger: Early startup error capture before full Serilog initialization
+    /// - Serilog Main Logger: Configuration-driven with enrichers (Machine, Thread, Process, Custom)
+    /// - Verbose Mode: Environment variable (BUSBUDDY_VERBOSE=1) or appsettings.json override
+    /// - Self-Logging: Serilog internal diagnostics for configuration troubleshooting
+    ///
+    /// 🎨 SYNCFUSION INTEGRATION:
+    /// - License registration before any UI initialization to prevent trial watermarks
+    /// - Theme management with FluentDark/FluentLight support
+    /// - Version 30.2.5 compatibility with .NET 9.0
+    ///
+    /// 🛡️ ERROR HANDLING:
+    /// - Global exception handlers for unhandled WPF and AppDomain exceptions
+    /// - Graceful fallback configurations for missing files or network issues
+    /// - STA thread validation (required for WPF)
+    ///
+    /// 📊 DEBUGGING SUPPORT:
+    /// - Console debug checkpoints for startup flow tracking
+    /// - Structured logging with correlation IDs and operation context
+    /// - VS Code launch.json compatible for F5 debugging
+    ///
+    /// References:
+    /// - WPF Threading: https://learn.microsoft.com/dotnet/desktop/wpf/advanced/threading-model
+    /// - Serilog Configuration: https://github.com/serilog/serilog/wiki/Configuration-Basics
+    /// - Syncfusion WPF: https://help.syncfusion.com/wpf/welcome-to-syncfusion-essential-wpf
     /// </summary>
     public partial class App : Application
     {
+        /// <summary>
+        /// Global service provider for dependency injection throughout the application
+        /// Populated during ConfigureServices() or ConfigureServicesForMigration()
+        /// </summary>
         public static IServiceProvider? ServiceProvider { get; private set; }
-        private static ILogger? _bootstrapLogger;
-        private static bool _syncfusionLicenseChecked; // guard to ensure single execution
 
+        /// <summary>
+        /// Early bootstrap logger for capturing startup errors before full Serilog initialization
+        /// Uses simple console and file sinks with minimal configuration
+        /// </summary>
+        private static ILogger? _bootstrapLogger;
+
+        /// <summary>
+        /// Guard flag to ensure Syncfusion license is only registered once per application lifecycle
+        /// Prevents duplicate registration attempts that could cause licensing conflicts
+        /// </summary>
+        private static bool _syncfusionLicenseChecked;
+
+        /// <summary>
+        /// WPF Application Constructor - Critical Startup Sequence
+        ///
+        /// INITIALIZATION ORDER (Critical - DO NOT REORDER):
+        /// 1. Bootstrap Logger: Early error capture before configuration loading
+        /// 2. Syncfusion License: Must occur before any Syncfusion control instantiation
+        /// 3. InitializeComponent(): Loads XAML resources and application-level styles
+        /// 4. Configuration Loading: appsettings.json + environment-specific overrides
+        /// 5. Serilog Configuration: Full logging with enrichers and structured output
+        ///
+        /// DEBUG CHECKPOINTS:
+        /// Console.WriteLine checkpoints track startup flow for debugging startup failures.
+        /// Use BUSBUDDY_VERBOSE=1 to enable verbose Serilog output.
+        ///
+        /// EXCEPTION HANDLING:
+        /// Each critical step has try-catch blocks with graceful fallbacks.
+        /// Failures result in user-friendly error dialogs and clean application exit.
+        ///
+        /// References:
+        /// - WPF Application Lifecycle: https://learn.microsoft.com/dotnet/desktop/wpf/app-development/application-management-overview
+        /// - Configuration in .NET: https://learn.microsoft.com/dotnet/core/extensions/configuration
+        /// </summary>
         public App()
         {
-            // Initialize bootstrap logger first for early startup error capture
+            // ═══════════════════════════════════════════════════════════════════════════
+            // DEBUG CHECKPOINT 1: Constructor Entry Point
+            // ═══════════════════════════════════════════════════════════════════════════
+            Console.WriteLine("[DEBUG] App() constructor started");
+
+            // ═══════════════════════════════════════════════════════════════════════════
+            // STEP 1: Initialize Bootstrap Logger for Early Error Capture
+            // ═══════════════════════════════════════════════════════════════════════════
+            // The bootstrap logger captures errors that occur before full Serilog configuration.
+            // Uses minimal console + file logging to ensure startup failures are recorded.
             InitializeBootstrapLogger();
+            Console.WriteLine("[DEBUG] Checkpoint 1: Bootstrap logger initialized");
 
             _bootstrapLogger?.Information("🚌 BusBuddy bootstrap starting...");
 
-            // Register Syncfusion license before any UI initialization
+            // ═══════════════════════════════════════════════════════════════════════════
+            // STEP 2: Register Syncfusion License Before Any UI Components
+            // ═══════════════════════════════════════════════════════════════════════════
+            // CRITICAL: Must occur before any Syncfusion control instantiation to prevent trial watermarks.
+            // License key is loaded from environment variable SYNCFUSION_LICENSE_KEY.
+            // Failure here is non-fatal but will result in trial limitations.
             EnsureSyncfusionLicenseRegistered();
+            Console.WriteLine("[DEBUG] Checkpoint 2: Syncfusion license registered");
 
+            // ═══════════════════════════════════════════════════════════════════════════
+            // STEP 3: Load WPF Application Resources and XAML Components
+            // ═══════════════════════════════════════════════════════════════════════════
+            // InitializeComponent() loads App.xaml resources including:
+            // - Application-level styles and themes
+            // - Resource dictionaries for Syncfusion controls
+            // - StaticResource definitions used throughout the application
+            //
+            // FAILURE IMPACT: If this fails, no WPF UI can be displayed.
             // Load Application resources defined in App.xaml so StaticResource lookups
             // (e.g., BusBuddyButtonAdv.*) are available during MainWindow parsing
             // Reference: WPF Application.InitializeComponent loads ResourceDictionaries
-            InitializeComponent();
+            // InitializeComponent can throw if resources reference mismatched or missing assemblies.
+            try
+            {
+                Console.WriteLine("[DEBUG] Checkpoint 3: About to call InitializeComponent()");
+                InitializeComponent();
+                Console.WriteLine("[DEBUG] Checkpoint 4: InitializeComponent() completed successfully");
+            }
+            catch (Exception initEx)
+            {
+                // CRITICAL FAILURE: Cannot continue without WPF resources loaded
+                // Log via bootstrap logger (early) and Serilog if available, then show an error and exit cleanly.
+                _bootstrapLogger?.Error(initEx, "❌ Failed during InitializeComponent(): {Message}", initEx.Message);
+                try { Log.Error(initEx, "Failed during InitializeComponent(): {Message}", initEx.Message); } catch { /* non-fatal */ }
+                MessageBox.Show($"Application initialization failed while loading resources: {initEx.Message}", "Startup Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                try { Log.CloseAndFlush(); } catch { }
+                Environment.Exit(1);
+            }
+
+            // ═══════════════════════════════════════════════════════════════════════════
+            // STEP 4: Load Application Configuration from JSON Files
+            // ═══════════════════════════════════════════════════════════════════════════
+            // Configuration loading hierarchy (later files override earlier ones):
+            // 1. appsettings.json (base configuration)
+            // 2. appsettings.{Environment}.json (environment-specific overrides)
+            // 3. appsettings.azure.json (Azure-specific settings)
+            // 4. Environment variables (highest priority)
+            //
+            // Environment Detection:
+            // - ASPNETCORE_ENVIRONMENT variable determines which config files to load
+            // - Defaults to "Production" if not specified
+            // - Common values: Development, Staging, Production
 
             // Load configuration from appsettings.json
             IConfiguration configuration;
             try
             {
+                Console.WriteLine("[DEBUG] Checkpoint 5: Starting configuration loading");
                 var env = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production";
+                Console.WriteLine($"[DEBUG] Environment: {env}");
+
+                // Build configuration hierarchy with Microsoft.Extensions.Configuration
+                // Reference: https://learn.microsoft.com/dotnet/core/extensions/configuration
                 configuration = new ConfigurationBuilder()
-                    .SetBasePath(AppDomain.CurrentDomain.BaseDirectory) // Use app directory for config file
-                    .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
-                    .AddJsonFile($"appsettings.{env}.json", optional: true, reloadOnChange: true)
-                    .AddJsonFile("appsettings.azure.json", optional: true, reloadOnChange: true)
-                    .AddEnvironmentVariables()
+                    .SetBasePath(AppDomain.CurrentDomain.BaseDirectory) // Use app directory for config files
+                    .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)          // Base settings
+                    .AddJsonFile($"appsettings.{env}.json", optional: true, reloadOnChange: true)    // Environment overrides
+                    .AddJsonFile("appsettings.azure.json", optional: true, reloadOnChange: true)     // Azure-specific
+                    .AddEnvironmentVariables()                                                        // Highest priority
                     .Build();
 
+                Console.WriteLine("[DEBUG] Checkpoint 6: Configuration loaded successfully");
                 _bootstrapLogger?.Information("✅ Configuration loaded successfully");
             }
             catch (Exception configEx)
             {
+                // CRITICAL FAILURE: Cannot continue without configuration
                 _bootstrapLogger?.Error(configEx, "❌ Configuration loading failed: {ErrorMessage}", configEx.Message);
                 Console.WriteLine($"Configuration Error: {configEx.Message}");
                 throw new InvalidOperationException("Configuration loading failed. Application cannot start.", configEx);
             }
 
-            // Initialize Serilog logger using configuration from appsettings.json
+            // ═══════════════════════════════════════════════════════════════════════════
+            // STEP 5: Initialize Full Serilog Logger with Enrichers and Structured Logging
+            // ═══════════════════════════════════════════════════════════════════════════
+            // Serilog replaces the bootstrap logger with a fully-configured instance featuring:
+            // - Configuration-driven setup from appsettings.json "Serilog" section
+            // - Multiple sinks: Console (colored), File (rolling), Debug (VS output)
+            // - Enrichers: Machine name, thread ID, process ID, custom BusBuddy context
+            // - Structured logging with message templates and property extraction
+            // - Self-logging for troubleshooting Serilog configuration issues
+            //
+            // VERBOSE MODE ACTIVATION:
+            // - Environment variable: BUSBUDDY_VERBOSE=1 or BUSBUDDY_VERBOSE=true
+            // - Configuration setting: AppSettings:EnableDetailedLogging=true
+            // - Results in MinimumLevel.Verbose() for detailed startup diagnostics
             try
             {
-                // Ensure logs directory exists before initializing file sinks
+                Console.WriteLine("[DEBUG] Checkpoint 7: Starting Serilog initialization");
+
+                // ───────────────────────────────────────────────────────────────────────
+                // Create logs directory and set environment variable for script access
+                // ───────────────────────────────────────────────────────────────────────
                 var baseDir = AppDomain.CurrentDomain.BaseDirectory;
                 var logsDir = Path.Combine(baseDir, "logs");
+                Console.WriteLine($"[DEBUG] Base directory: {baseDir}");
+                Console.WriteLine($"[DEBUG] Logs directory: {logsDir}");
+
                 try
                 {
                     Directory.CreateDirectory(logsDir);
-                    // Expose logs dir to scripts — Environment.SetEnvironmentVariable:
-                    // https://learn.microsoft.com/dotnet/api/system.environment.setenvironmentvariable
-                    Environment.SetEnvironmentVariable("BUSBUDDY_LOGS_DIR", logsDir); // process-level
+                    Console.WriteLine("[DEBUG] Logs directory created successfully");
+                    // Expose logs directory to PowerShell scripts and external tools
+                    // Reference: https://learn.microsoft.com/dotnet/api/system.environment.setenvironmentvariable
+                    Environment.SetEnvironmentVariable("BUSBUDDY_LOGS_DIR", logsDir); // process-level scope
                 }
                 catch (Exception dirEx)
                 {
+                    // Non-fatal: Console and debug sinks will still work
+                    Console.WriteLine($"[DEBUG] Failed to create logs directory: {dirEx.Message}");
                     _bootstrapLogger?.Warning(dirEx, "⚠️ Failed to ensure logs directory at {LogsDir}", logsDir);
                 }
 
-                // Build logger from configuration with optional verbose override
-                // Verbose mode sources:
-                // 1) Environment variable BUSBUDDY_VERBOSE in {"1","true","True"}
-                // 2) appsettings.json AppSettings:EnableDetailedLogging == true
+                // ───────────────────────────────────────────────────────────────────────
+                // Determine Verbose Logging Mode from Multiple Sources
+                // ───────────────────────────────────────────────────────────────────────
+                // Priority order (first match wins):
+                // 1. Environment variable BUSBUDDY_VERBOSE in {"1", "true", "True"}
+                // 2. Configuration setting AppSettings:EnableDetailedLogging == true
+                //
+                // Verbose mode enables:
+                // - MinimumLevel.Verbose() for all log events
+                // - Detailed startup diagnostics and timing information
+                // - Enhanced error context and stack traces
                 var verboseFlag = (Environment.GetEnvironmentVariable("BUSBUDDY_VERBOSE") ?? string.Empty).Trim();
+                Console.WriteLine($"[DEBUG] Checkpoint 8: BUSBUDDY_VERBOSE = '{verboseFlag}'");
+
                 var verboseEnabled = !string.IsNullOrWhiteSpace(verboseFlag) &&
                                       (string.Equals(verboseFlag, "1", StringComparison.Ordinal) || verboseFlag.Equals("true", StringComparison.OrdinalIgnoreCase));
                 if (!verboseEnabled)
                 {
+                    // Check configuration fallback if environment variable not set
                     var cfgFlag = configuration["AppSettings:EnableDetailedLogging"];
                     verboseEnabled = bool.TryParse(cfgFlag, out var detailed) && detailed;
+                    Console.WriteLine($"[DEBUG] Config EnableDetailedLogging = '{cfgFlag}', verboseEnabled = {verboseEnabled}");
+                }
+                else
+                {
+                    Console.WriteLine($"[DEBUG] Verbose enabled via environment variable");
                 }
 
+                // ───────────────────────────────────────────────────────────────────────
+                // Create Serilog Logger with Configuration-Based Setup and Custom Enrichers
+                // ───────────────────────────────────────────────────────────────────────
+                // LoggerConfiguration sources (in order):
+                // 1. ReadFrom.Configuration() - loads from appsettings.json "Serilog" section
+                // 2. Custom BusBuddyEnricher - adds application version, build config, .NET version
+                // 3. Verbose override - sets MinimumLevel.Verbose() if enabled
+                //
+                // Configuration includes standard enrichers:
+                // - WithMachineName: Identifies the machine generating logs
+                // - WithThreadId: WPF thread tracking (UI vs background)
+                // - WithProcessId: Process identification for multiple instances
+                // - FromLogContext: Dynamic scoped properties via LogContext.PushProperty()
+                Console.WriteLine("[DEBUG] Checkpoint 9: Creating LoggerConfiguration");
                 var loggerConfig = new LoggerConfiguration()
-                    .ReadFrom.Configuration(configuration);
+                    .ReadFrom.Configuration(configuration)                      // Load from appsettings.json
+                    .Enrich.With<BusBuddy.WPF.Logging.BusBuddyEnricher>();     // Add custom enricher
 
+                Console.WriteLine($"[DEBUG] Checkpoint 10: Logger config created, verboseEnabled = {verboseEnabled}");
                 if (verboseEnabled)
                 {
+                    // Override minimum level for detailed startup diagnostics
                     loggerConfig = loggerConfig.MinimumLevel.Verbose();
+                    Console.WriteLine("[DEBUG] Verbose level set on logger");
                 }
 
+                Console.WriteLine("[DEBUG] Checkpoint 11: About to create logger");
                 Log.Logger = loggerConfig.CreateLogger();
+                Console.WriteLine("[DEBUG] Checkpoint 12: Serilog logger created successfully");
 
-                // Early smoke log to both bootstrap and configured sinks
+                // ───────────────────────────────────────────────────────────────────────
+                // Logger Transition: Bootstrap → Serilog Main Logger
+                // ───────────────────────────────────────────────────────────────────────
+                // First log to new Serilog instance with enriched context
                 Log.Information("🚌 Serilog initialized via configuration. Logs path = {LogsPath}", logsDir);
-                _bootstrapLogger?.Information("� Serilog configured. Logs path = {LogsPath}", logsDir);
+                // Final log to bootstrap logger before it's replaced
+                _bootstrapLogger?.Information("✅ Serilog configured. Logs path = {LogsPath}", logsDir);
 
-                // Enable Serilog self-log to capture configuration/IO issues for troubleshooting
+                // ───────────────────────────────────────────────────────────────────────
+                // Enable Serilog Self-Logging for Configuration Troubleshooting
+                // ───────────────────────────────────────────────────────────────────────
+                // Self-log captures Serilog's own internal errors (file access, config parsing, etc.)
+                // Useful for debugging when logs don't appear as expected
+                // Reference: https://github.com/serilog/serilog/wiki/Debugging-and-Diagnostics
                 try
                 {
                     var selfLogPath = Path.Combine(logsDir, "serilog-selflog.txt");
@@ -137,11 +330,15 @@ namespace BusBuddy.WPF
                             !string.IsNullOrWhiteSpace(verboseFlag) ? "BUSBUDDY_VERBOSE env" : "AppSettings:EnableDetailedLogging");
                     }
                 }
-                catch { /* non-fatal */ }
+                catch { /* non-fatal: self-log failures won't prevent application startup */ }
             }
             catch (Exception ex)
             {
-                // Fallback to basic configuration if loading from appsettings.json fails
+                // ───────────────────────────────────────────────────────────────────────
+                // Fallback Logger Configuration for Critical Serilog Failures
+                // ───────────────────────────────────────────────────────────────────────
+                // If configuration-based Serilog setup fails, create a minimal working logger
+                // This ensures logging continues to function even with configuration issues
                 Console.WriteLine($"Warning: Failed to initialize Serilog from config: {ex.Message}");
                 Log.Logger = new LoggerConfiguration()
                     .MinimumLevel.Debug()
@@ -151,8 +348,26 @@ namespace BusBuddy.WPF
                 Log.Warning(ex, "Using fallback Serilog configuration due to initialization failure");
             }
 
+            // ═══════════════════════════════════════════════════════════════════════════
+            // CONSTRUCTOR COMPLETION: Application Ready for OnStartup()
+            // ═══════════════════════════════════════════════════════════════════════════
+            // At this point, the application has successfully completed:
+            // ✅ Bootstrap logger initialization and early error capture
+            // ✅ Syncfusion license registration (prevents trial watermarks)
+            // ✅ WPF resource loading via InitializeComponent()
+            // ✅ Configuration hierarchy loading from JSON files and environment
+            // ✅ Full Serilog logger with enrichers and structured logging
+            // ✅ Verbose mode activation based on environment/configuration
+            // ✅ Self-logging enabled for Serilog diagnostics
+            //
+            // NEXT PHASE: OnStartup() will handle:
+            // - STA thread validation for WPF compatibility
+            // - Global exception handler registration
+            // - Service container configuration (full UI vs minimal EF migration)
+            // - Main window creation and display
             Log.Information("🚌 BusBuddy MVP starting...");
 
+            // Optional: Respect cleanup pause for development/debugging scenarios
             var cleanupPaused = Environment.GetEnvironmentVariable("BB_CLEANUP_PAUSED");
             if (!string.IsNullOrWhiteSpace(cleanupPaused) && cleanupPaused != "0")
             {
@@ -161,13 +376,37 @@ namespace BusBuddy.WPF
         }
 
         /// <summary>
-        /// Initialize a basic bootstrap logger for early startup error capture
+        /// Initialize Bootstrap Logger for Early Startup Error Capture
+        ///
+        /// PURPOSE:
+        /// Creates a minimal Serilog logger that operates before full configuration loading.
+        /// Essential for capturing errors that occur during:
+        /// - Configuration file loading failures
+        /// - Syncfusion license registration issues
+        /// - WPF resource loading problems
+        /// - Environment setup failures
+        ///
+        /// DESIGN:
+        /// - Simple console + file sinks only (no complex enrichers)
+        /// - Debug minimum level to capture all early diagnostic information
+        /// - Separate log file (bootstrap-{date}.log) to avoid conflicts with main logger
+        /// - Non-fatal if file logging fails (console sink remains operational)
+        ///
+        /// LIFECYCLE:
+        /// 1. Created at App() constructor start
+        /// 2. Used throughout constructor for early error reporting
+        /// 3. Replaced by main Serilog logger after configuration loading
+        /// 4. Final message logged before transition to main logger
+        ///
+        /// Reference: https://github.com/serilog/serilog/wiki/Provided-Sinks
         /// </summary>
         private static void InitializeBootstrapLogger()
         {
             try
             {
-                // Ensure logs directory exists before initializing bootstrap file sink
+                // ───────────────────────────────────────────────────────────────────────
+                // Create logs directory for bootstrap logger file sink
+                // ───────────────────────────────────────────────────────────────────────
                 try
                 {
                     var bootstrapLogsDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "logs");
@@ -175,7 +414,7 @@ namespace BusBuddy.WPF
                 }
                 catch (Exception ex)
                 {
-                    // Non-fatal; console sink will still work
+                    // Non-fatal: Console sink will still work for early error capture
                     Console.WriteLine($"Warning: Failed to create logs directory for bootstrap logger: {ex.Message}");
                 }
 
@@ -202,11 +441,17 @@ namespace BusBuddy.WPF
 
         protected override void OnStartup(StartupEventArgs e)
         {
+            Console.WriteLine("[DEBUG] Checkpoint 13: OnStartup() method entered");
+            Log.Debug("OnStartup method called with {ArgCount} arguments", e.Args.Length);
+
             // WPF requires STA for UI thread:
             // https://learn.microsoft.com/dotnet/desktop/wpf/advanced/threading-model
             var threadState = Thread.CurrentThread.GetApartmentState();
+            Console.WriteLine($"[DEBUG] Thread apartment state: {threadState}");
+
             if (threadState != ApartmentState.STA)
             {
+                Console.WriteLine("[DEBUG] ERROR: Thread is not STA!");
                 // Ensure error is logged and flushed before exit:
                 // https://github.com/serilog/serilog/wiki/Writing-Logs#closing-and-flushing
                 Log.Error("❌ Thread is not STA! Current state: {ApartmentState} - WPF requires STA", threadState);
@@ -225,12 +470,18 @@ namespace BusBuddy.WPF
                 return;
             }
 
+            Console.WriteLine("[DEBUG] Checkpoint 14: Calling base.OnStartup()");
             base.OnStartup(e);
+            Console.WriteLine("[DEBUG] Checkpoint 15: base.OnStartup() completed");
 
             // Verify STA thread state (except for EF migrations)
             var commandLineArgs = Environment.GetCommandLineArgs();
             var isEfMigration = commandLineArgs.Any(arg => arg.Contains("ef") || arg.Contains("migration") || arg.Contains("dotnet-ef"));
             var isDesignTime = System.ComponentModel.DesignerProperties.GetIsInDesignMode(new System.Windows.DependencyObject());
+
+            Console.WriteLine($"[DEBUG] Command line args: {string.Join(" ", commandLineArgs)}");
+            Console.WriteLine($"[DEBUG] EF Migration mode: {isEfMigration}");
+            Console.WriteLine($"[DEBUG] Design-time mode: {isDesignTime}");
 
             Log.Information("🚌 Command line args: {Args}", string.Join(" ", commandLineArgs));
             Log.Information("🚌 EF Migration mode: {IsEfMigration}", isEfMigration);
@@ -238,6 +489,7 @@ namespace BusBuddy.WPF
 
             if (isEfMigration)
             {
+                Console.WriteLine("[DEBUG] Checkpoint 16: Running in EF migration mode");
                 Log.Information("🚌 Running in EF migration mode - configuring minimal services only");
                 // For EF migrations, configure only essential services and exit without UI
                 ConfigureServicesForMigration();
@@ -245,6 +497,7 @@ namespace BusBuddy.WPF
                 return;
             }
 
+            Console.WriteLine("[DEBUG] Checkpoint 17: Setting up global error handlers");
             // Add global error handlers for runtime error capture
             DispatcherUnhandledException += OnDispatcherUnhandledException;
             AppDomain.CurrentDomain.UnhandledException += OnDomainUnhandledException;
@@ -267,7 +520,7 @@ namespace BusBuddy.WPF
                     return;
                 }
 
-                // Initialize SyncFusion themes according to v30.2.4 API
+                // Initialize SyncFusion themes according to v30.2.5 API
                 InitializeSyncfusionThemes();
 
                 // Create and show the main window for normal GUI operation
@@ -1027,7 +1280,7 @@ Examples:
                 if (ValidateSyncfusionLicenseKey(licenseKey))
                 {
                     Syncfusion.Licensing.SyncfusionLicenseProvider.RegisterLicense(licenseKey);
-                    _bootstrapLogger?.Information("✅ Syncfusion license registered successfully for version 30.2.4");
+                    _bootstrapLogger?.Information("✅ Syncfusion license registered successfully for version 30.2.5");
 
                     // Log additional diagnostics to help verify registration
                     _bootstrapLogger?.Information("🔍 License Key Length: {Length} characters", licenseKey.Length);
@@ -1060,7 +1313,34 @@ Examples:
             }
 
             // Check for common invalid placeholder values
-            var invalidPlaceholders = new[] { "YOUR_LICENSE_KEY", "YOUR LICENSE KEY", "PLACEHOLDER", "TRIAL", "DEMO" };
+            var invalidPlaceholders = new[] { "YOUR_LICENSE_KEY", "YOUR LICENSE KEY", "PLACEHOLDER", "TRIAL", "DEMO", "REPLACE_WITH_SYNCFUSION_KEY" };
+
+                    // Resolve actual Syncfusion.Licensing assembly version if available for accurate diagnostics
+                    try
+                    {
+                        var licAsm = typeof(Syncfusion.Licensing.SyncfusionLicenseProvider).Assembly;
+                        var licVersion = licAsm?.GetName()?.Version?.ToString() ?? "(unknown)";
+                        _bootstrapLogger?.Information("✅ Syncfusion license registered successfully (Licensing assembly version: {LicVersion})", licVersion);
+
+                        // Log all loaded Syncfusion assemblies and their versions to aid debugging of mismatches
+                        var syncfusionAssemblies = AppDomain.CurrentDomain.GetAssemblies()
+                            .Where(a => a.GetName().Name?.StartsWith("Syncfusion", StringComparison.OrdinalIgnoreCase) == true)
+                            .OrderBy(a => a.GetName().Name)
+                            .Select(a => new { Name = a.GetName().Name, Version = a.GetName().Version?.ToString() });
+
+                        foreach (var asm in syncfusionAssemblies)
+                        {
+                            _bootstrapLogger?.Information("   Loaded Syncfusion Assembly: {Name} - Version: {Version}", asm.Name, asm.Version);
+                        }
+                    }
+                    catch (Exception asmEx)
+                    {
+                        _bootstrapLogger?.Warning(asmEx, "Unable to read Syncfusion assembly versions: {Error}", asmEx.Message);
+                    }
+
+                    // Log additional diagnostics to help verify registration
+                    _bootstrapLogger?.Information("🔍 License Key Length: {Length} characters", licenseKey.Length);
+                    _bootstrapLogger?.Information("💡 If you see trial watermarks, verify your license key is valid and current");
             if (invalidPlaceholders.Any(placeholder =>
                 licenseKey.Equals(placeholder, StringComparison.OrdinalIgnoreCase)))
             {
@@ -1091,7 +1371,7 @@ Examples:
             var logger = _bootstrapLogger ?? Log.Logger;
 
             logger.Information("🔍 Syncfusion Diagnostics:");
-            logger.Information("   Version: 30.2.4 (as defined in Directory.Build.props)");
+            logger.Information("   Version: 30.2.5 (as defined in Directory.Build.props)");
             logger.Information("   Platform: WPF (.NET 9.0-windows)");
             logger.Information("   License Type: Offline validation (no internet required)");
             logger.Information("   Registration Location: App() constructor (before any control initialization)");
@@ -1130,14 +1410,14 @@ Examples:
         }
 
         /// <summary>
-    /// Initialize SyncFusion themes according to v30.2.4 API guidelines
+    /// Initialize SyncFusion themes according to v30.2.5 API guidelines
         /// Sets up FluentDark as primary theme with FluentLight fallback
         /// </summary>
         private void InitializeSyncfusionThemes()
         {
             try
             {
-        Log.Information("🎨 Initializing SyncFusion themes for v30.2.4...");
+    Log.Information("🎨 Initializing SyncFusion themes for v30.2.5...");
 
                 // Enable theme application as default style (required for v30.x)
                 SfSkinManager.ApplyStylesOnApplication = true;

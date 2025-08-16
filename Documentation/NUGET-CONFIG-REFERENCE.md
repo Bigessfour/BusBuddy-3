@@ -113,10 +113,10 @@ According to [Syncfusion's official documentation](https://help.syncfusion.com/w
 
 ```xml
 <!-- These packages are available on nuget.org -->
-<PackageReference Include="Syncfusion.SfChart.WPF" Version="30.2.4" />
-<PackageReference Include="Syncfusion.SfDataGrid.WPF" Version="30.2.4" />
-<PackageReference Include="Syncfusion.Tools.WPF" Version="30.2.4" />
-<PackageReference Include="Syncfusion.Themes.FluentDark.WPF" Version="30.2.4" />
+<PackageReference Include="Syncfusion.SfChart.WPF" Version="30.2.5" />
+<PackageReference Include="Syncfusion.SfDataGrid.WPF" Version="30.2.5" />
+<PackageReference Include="Syncfusion.Tools.WPF" Version="30.2.5" />
+<PackageReference Include="Syncfusion.Themes.FluentDark.WPF" Version="30.2.5" />
 ```
 
 ## 🔍 Validation Commands
@@ -266,4 +266,4 @@ dotnet nuget locals global-packages --clear
 
 **Configuration Version**: 1.0
 **Last Updated**: July 25, 2025
-**Compatible With**: .NET 8.0/9.0, Syncfusion 30.2.4
+**Compatible With**: .NET 8.0/9.0, Syncfusion 30.2.5

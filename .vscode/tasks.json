@@ -2,6 +2,30 @@
   "version": "2.0.0",
   "tasks": [
     {
+      "label": "build-wpf-debug",
+      "command": "dotnet",
+      "type": "process",
+      "args": [
+        "build",
+        "${workspaceFolder}/BusBuddy.WPF/BusBuddy.WPF.csproj",
+        "--configuration",
+        "Debug",
+        "--verbosity",
+        "minimal"
+      ],
+      "group": "build",
+      "presentation": {
+        "reveal": "silent"
+      },
+      "problemMatcher": "$msCompile",
+      "options": {
+        "env": {
+          "BUSBUDDY_NO_WELCOME": "1",
+          "BUSBUDDY_NO_XAI_WARN": "1"
+        }
+      }
+    },
+    {
       "type": "process",
       "label": "dotnet build BusBuddy.sln",
       "command": "dotnet",
@@ -167,8 +191,7 @@
       ],
       "isBackground": false,
       "problemMatcher": [
-        "$msCompile",
-        "$csc"
+        "$msCompile"
       ],
       "group": "build"
     },

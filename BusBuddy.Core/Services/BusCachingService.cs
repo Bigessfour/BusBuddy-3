@@ -55,18 +55,18 @@ namespace BusBuddy.Core.Services
                     buses = await factory();
 
                     // Ensure no null collections exist
-                    buses ??= new List<Bus>();
+                    if (buses == null) buses = new List<Bus>();
 
                     // Validate the data before caching
                     foreach (var bus in buses)
                     {
                         // Ensure string properties are not null
-                        bus.BusNumber ??= string.Empty;
-                        bus.Make ??= string.Empty;
-                        bus.Model ??= string.Empty;
-                        bus.VINNumber ??= string.Empty;
-                        bus.LicenseNumber ??= string.Empty;
-                        bus.Status ??= "Active";
+                        if (bus.BusNumber == null) bus.BusNumber = string.Empty;
+                        if (bus.Make == null) bus.Make = string.Empty;
+                        if (bus.Model == null) bus.Model = string.Empty;
+                        if (bus.VINNumber == null) bus.VINNumber = string.Empty;
+                        if (bus.LicenseNumber == null) bus.LicenseNumber = string.Empty;
+                        if (bus.Status == null) bus.Status = "Active";
                     }
 
                     var cacheOptions = new MemoryCacheEntryOptions()

@@ -31,7 +31,7 @@ namespace BusBuddy.TestDataSeeding
                 // Try both the original relative path and the solution-root-relative path
                 var dataPath = Path.Combine("..", "..", "..", "BusBuddy.Core", "Data", "wiley-school-district-data.json");
                 var altDataPath = Path.Combine("BusBuddy.Core", "Data", "wiley-school-district-data.json");
-                string usedPath = null;
+                string usedPath = string.Empty;
                 if (File.Exists(dataPath))
                 {
                     usedPath = dataPath;

@@ -166,7 +166,7 @@ bb-validate-syncfusion
 ### Directory.Build.props Coordination
 ```xml
 <!-- Central version management -->
-<SyncfusionVersion>30.2.4</SyncfusionVersion>
+<SyncfusionVersion>30.2.5</SyncfusionVersion>
 <EntityFrameworkVersion>9.0.7</EntityFrameworkVersion>
 
 <!-- Referenced in project files -->

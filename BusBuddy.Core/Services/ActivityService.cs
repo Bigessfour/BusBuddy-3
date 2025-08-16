@@ -1092,8 +1092,8 @@ public class ActivityService : IActivityService
     {
         try
         {
-            startDate ??= DateTime.Today.AddMonths(-1);
-            endDate ??= DateTime.Today.AddMonths(1);
+            if (startDate == null) startDate = DateTime.Today.AddMonths(-1);
+            if (endDate == null) endDate = DateTime.Today.AddMonths(1);
 
             Logger.Information("Exporting activities to CSV from {StartDate} to {EndDate}", startDate, endDate);
 

@@ -54,7 +54,7 @@ namespace BusBuddy.Core.Services
         public async Task<Guardian> AddGuardianAsync(Guardian guardian)
         {
             var useTxn = _context.Database?.ProviderName is not null && !_context.Database.IsInMemory();
-            Microsoft.EntityFrameworkCore.Storage.IDbContextTransaction? transaction = null;
+            Microsoft.EntityFrameworkCore.Storage.IDbContextTransaction? transaction = default;
             try
             {
                 if (useTxn)
@@ -83,7 +83,7 @@ namespace BusBuddy.Core.Services
         public async Task<Guardian?> UpdateGuardianAsync(Guardian guardian)
         {
             var useTxn = _context.Database?.ProviderName is not null && !_context.Database.IsInMemory();
-            Microsoft.EntityFrameworkCore.Storage.IDbContextTransaction? transaction = null;
+            Microsoft.EntityFrameworkCore.Storage.IDbContextTransaction? transaction = default;
             try
             {
                 if (useTxn)
@@ -118,7 +118,7 @@ namespace BusBuddy.Core.Services
         public async Task<bool> DeleteGuardianAsync(int guardianId)
         {
             var useTxn = _context.Database?.ProviderName is not null && !_context.Database.IsInMemory();
-            Microsoft.EntityFrameworkCore.Storage.IDbContextTransaction? transaction = null;
+            Microsoft.EntityFrameworkCore.Storage.IDbContextTransaction? transaction = default;
             try
             {
                 if (useTxn)

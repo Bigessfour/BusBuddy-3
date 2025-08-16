@@ -75,8 +75,8 @@ namespace BusBuddy.Core.Utilities
                             Log.Information("[RoutePdfPrinter] No students matched for route {RouteId} and slot {Slot} (OpId={OpId})", route.RouteId, slot, opId);
                         }
 
-                        Bus? bus = null; // Future: resolve assignment
-                        Driver? driver = null; // Future: resolve assignment
+                        Bus bus = new Bus(); // Future: resolve assignment
+                        Driver driver = new Driver(); // Future: resolve assignment
 
                         var pdfService = new PdfReportService();
                         Log.Debug("[RoutePdfPrinter] Invoking PdfReportService.GenerateRouteSummaryReport (OpId={OpId})");

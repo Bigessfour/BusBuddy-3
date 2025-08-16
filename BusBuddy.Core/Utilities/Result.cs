@@ -8,12 +8,16 @@ namespace BusBuddy.Core.Utilities;
 /// </summary>
 public class Result<T>
 {
-    internal Result(T value, bool isSuccess, string error, Exception? exception = null)
+    internal Result(T value, bool isSuccess, string error, Exception exception)
     {
         Value = value;
         IsSuccess = isSuccess;
         Error = error;
         Exception = exception;
+    }
+
+    internal Result(T value, bool isSuccess, string error) : this(value, isSuccess, error, new ArgumentException(error))
+    {
     }
 
     public T Value { get; }
@@ -49,11 +53,15 @@ public class Result<T>
 /// </summary>
 public class Result
 {
-    internal Result(bool isSuccess, string error, Exception? exception = null)
+    internal Result(bool isSuccess, string error, Exception exception)
     {
         IsSuccess = isSuccess;
         Error = error;
         Exception = exception;
+    }
+
+    internal Result(bool isSuccess, string error) : this(isSuccess, error, new ArgumentException(error))
+    {
     }
 
     public bool IsSuccess { get; }

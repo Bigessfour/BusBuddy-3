@@ -332,7 +332,7 @@ namespace BusBuddy.Core.Utilities
             var homePhone2 = GetStringCaseInsensitive(stu, "HomePhone");
             var cellPhone2 = GetStringCaseInsensitive(stu, "CellPhone");
 
-            var famDtoFlat = families.FirstOrDefault(f => f.ParentGuardian == parent && f.Address == addr);
+                var famDtoFlat = families.FirstOrDefault(f => f.ParentGuardian == parent && f.Address == addr);
             if (famDtoFlat == null)
             {
                 famDtoFlat = new FamilyImportDto
@@ -548,7 +548,7 @@ namespace BusBuddy.Core.Utilities
                     Path.Combine(Directory.GetCurrentDirectory(), "BusBuddy.Core", "Data", "enhanced-realworld-data.json")
                 };
 
-                string? jsonFilePath = null;
+                string? jsonFilePath = string.Empty;
                 foreach (var path in possiblePaths)
                 {
                     if (File.Exists(path))

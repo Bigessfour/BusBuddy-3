@@ -45,52 +45,52 @@ public class UnitOfWork : IUnitOfWork
 
     public IActivityRepository Activities
     {
-        get { return _activities ??= new ActivityRepository(_context, _userContextService); }
+        get { return _activities ?? (_activities = new ActivityRepository(_context, _userContextService)); }
     }
 
     public IBusRepository Buses
     {
-        get { return _buses ??= new BusRepository(_context, _userContextService); }
+        get { return _buses ?? (_buses = new BusRepository(_context, _userContextService)); }
     }
 
     public IDriverRepository Drivers
     {
-        get { return _drivers ??= new DriverRepository(_context, _userContextService); }
+        get { return _drivers ?? (_drivers = new DriverRepository(_context, _userContextService)); }
     }
 
     public IRouteRepository Routes
     {
-        get { return _routes ??= new RouteRepository(_context, _userContextService); }
+        get { return _routes ?? (_routes = new RouteRepository(_context, _userContextService)); }
     }
 
     public IStudentRepository Students
     {
-        get { return _students ??= new StudentRepository(_context, _userContextService); }
+        get { return _students ?? (_students = new StudentRepository(_context, _userContextService)); }
     }
 
     public IFuelRepository FuelRecords
     {
-        get { return _fuelRecords ??= new FuelRepository(_context, _userContextService); }
+        get { return _fuelRecords ?? (_fuelRecords = new FuelRepository(_context, _userContextService)); }
     }
 
     public IMaintenanceRepository MaintenanceRecords
     {
-        get { return _maintenanceRecords ??= new MaintenanceRepository(_context, _userContextService); }
+        get { return _maintenanceRecords ?? (_maintenanceRecords = new MaintenanceRepository(_context, _userContextService)); }
     }
 
     public IScheduleRepository Schedules
     {
-        get { return _schedules ??= new ScheduleRepository(_context, _userContextService); }
+        get { return _schedules ?? (_schedules = new ScheduleRepository(_context, _userContextService)); }
     }
 
     public ISchoolCalendarRepository SchoolCalendar
     {
-        get { return _schoolCalendar ??= new SchoolCalendarRepository(_context, _userContextService); }
+        get { return _schoolCalendar ?? (_schoolCalendar = new SchoolCalendarRepository(_context, _userContextService)); }
     }
 
     public IActivityScheduleRepository ActivitySchedules
     {
-        get { return _activitySchedules ??= new ActivityScheduleRepository(_context, _userContextService); }
+        get { return _activitySchedules ?? (_activitySchedules = new ActivityScheduleRepository(_context, _userContextService)); }
     }
 
     #endregion

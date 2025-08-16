@@ -242,8 +242,8 @@ namespace BusBuddy.Core.Services
             byte[]? mapImagePng)
         {
             ArgumentNullException.ThrowIfNull(route);
-            stops ??= Array.Empty<RouteStop>();
-            students ??= Array.Empty<Student>();
+            if (stops == null) stops = Array.Empty<RouteStop>();
+            if (students == null) students = Array.Empty<Student>();
 
             try
             {

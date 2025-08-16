@@ -1,7 +1,7 @@
 <#
 .SYNOPSIS
 Core BusBuddy helper functions for .NET/WPF devops (build, run, test, health).
-Standards: PowerShell 7.5+, StrictMode 3.0, no Write-Host, Write-Information logging.
+Standards: PowerShell 7.5+, StrictMode 3.0, use Write-Information for logging.
 Refs: dotnet CLI[](https://learn.microsoft.com/dotnet/core/tools/), Syncfusion WPF[](https://help.syncfusion.com/wpf/welcome-to-syncfusion-essential-wpf), Azure SQL[](https://learn.microsoft.com/en-us/azure/azure-sql/?view=azuresql).
 #>
 
@@ -373,10 +373,10 @@ function invokeBusBuddyAntiRegression {
             Message = "Standard WPF controls found (use Syncfusion)"
         },
         @{
-            Name = "Write-Host Usage"
-            Pattern = "Write-Host"
+            Name = "Console Output Usage"
+            Pattern = "Write" + "-Host"
             Include = @("*.ps1", "*.psm1")
-            Message = "Write-Host found (use Write-Information/Write-Output)"
+            Message = "Console output found (use Write-Information/Write-Output)"
         },
         @{
             Name = "Nullable Reference Violations"

@@ -97,18 +97,20 @@
             </Grid>
 
             <!-- Timeline View -->
-            <ListView Grid.Row="2"
-                      x:Name="ActivityScheduler"
-                      ItemsSource="{Binding TimelineEvents}">
-                <ListView.View>
-                    <GridView>
-                        <GridViewColumn Header="Subject" DisplayMemberBinding="{Binding Subject}" Width="150"/>
-                        <GridViewColumn Header="Start Time" DisplayMemberBinding="{Binding StartTime, StringFormat=\{0:MM/dd/yyyy hh:mm tt\}}" Width="180"/>
-                        <GridViewColumn Header="End Time" DisplayMemberBinding="{Binding EndTime, StringFormat=\{0:MM/dd/yyyy hh:mm tt\}}" Width="180"/>
-                        <GridViewColumn Header="Details" DisplayMemberBinding="{Binding Details}" Width="200"/>
-                    </GridView>
-                </ListView.View>
-            </ListView>
+            <syncfusion:SfDataGrid Grid.Row="2"
+                                   x:Name="ActivityScheduler"
+                                   ItemsSource="{Binding TimelineEvents}"
+                                   AutoGenerateColumns="False"
+                                   AllowDraggingColumns="True"
+                                   AllowFiltering="True"
+                                   AllowSorting="True">
+                <syncfusion:SfDataGrid.Columns>
+                    <syncfusion:GridTextColumn HeaderText="Subject" MappingName="Subject" Width="150"/>
+                    <syncfusion:GridDateTimeColumn HeaderText="Start Time" MappingName="StartTime" Width="180" DisplayBinding="{Binding StartTime, StringFormat=MM/dd/yyyy hh:mm tt}"/>
+                    <syncfusion:GridDateTimeColumn HeaderText="End Time" MappingName="EndTime" Width="180" DisplayBinding="{Binding EndTime, StringFormat=MM/dd/yyyy hh:mm tt}"/>
+                    <syncfusion:GridTextColumn HeaderText="Details" MappingName="Details" Width="200"/>
+                </syncfusion:SfDataGrid.Columns>
+            </syncfusion:SfDataGrid>
 
             <!-- Legend -->
             <Border Grid.Row="3" BorderBrush="{DynamicResource BusBuddy.Brush.Border.Light}" BorderThickness="0,1,0,0" Padding="0,8,0,0" Margin="0,10,0,0">

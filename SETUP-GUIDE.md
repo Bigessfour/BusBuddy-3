@@ -129,35 +129,61 @@ bbRun
 
 ## 🌐 **Database Configuration**
 
-### **Local Development (Default)**
-BusBuddy uses LocalDB by default:
+BusBuddy supports both LocalDB (for development) and Azure SQL Database (for production). Use the provided automation scripts for easy setup.
+
+### **Local Development (LocalDB) - Automated Setup**
+
+**Quick Setup with Database Scripts:**
+```powershell
+# Test all database scripts (includes LocalDB detection)
+.\Scripts\Database\Test-DatabaseScripts.ps1 -TestLocal
+
+# Install LocalDB if not present
+.\Scripts\Database\Install-LocalDB.ps1 -TestConnection
+
+# Configure appsettings.json for LocalDB
+.\Scripts\Database\Update-AppSettingsForLocalDB.ps1 -BackupOriginal
+
+# Run EF migrations to create database
+dotnet ef database update --project BusBuddy.Core
+```
+
+**Manual Configuration (if needed):**
 ```json
 {
+  "DatabaseProvider": "LocalDB",
   "ConnectionStrings": {
-    "DefaultConnection": "Data Source=(localdb)\\MSSQLLocalDB;Initial Catalog=BusBuddy;Integrated Security=True"
+    "DefaultConnection": "Server=(localdb)\\mssqllocaldb;Database=BusBuddy;Trusted_Connection=true;MultipleActiveResultSets=true"
   }
 }
 ```
 
 ### **Azure SQL Database (Production)**
-For Azure SQL Database connection:
-1. Update `appsettings.json`:
+
+**Automated Azure Setup:**
+```powershell
+# Test Azure connectivity (requires Azure CLI and login)
+.\Scripts\Database\Test-DatabaseScripts.ps1 -TestAzure
+
+# Add firewall rule for current IP (if needed)
+.\Scripts\Database\Add-AzureSqlFirewallRule.ps1 -ServerName "your-server" -ResourceGroup "your-rg"
+```
+
+**Manual Configuration:**
 ```json
 {
+  "DatabaseProvider": "Azure",
   "ConnectionStrings": {
-    "BusBuddyDb": "Server=tcp:busbuddy-server-sm2.database.windows.net,1433;Initial Catalog=BusBuddyDB;Authentication=Active Directory Default;Encrypt=True;"
+    "AzureConnection": "Server=tcp:busbuddy-server-sm2.database.windows.net,1433;Initial Catalog=BusBuddyDB;Authentication=Active Directory Default;Encrypt=True;"
   }
 }
 ```
 
-2. Ensure Azure CLI is logged in:
-```bash
-az login
-```
-
-3. Run database migrations:
+**Environment Variables for Azure:**
 ```powershell
-dotnet ef database update --project BusBuddy.Core
+$env:AZURE_SQL_SERVER = "your-server-name"
+$env:AZURE_SQL_USER = "your-username"     # If using SQL auth
+$env:AZURE_SQL_PASSWORD = "your-password" # If using SQL auth
 ```
 
 ## 🛠️ **Development Environment**
@@ -176,6 +202,20 @@ bbDevSession
 # - Dynamic repo discovery: Works for any clone location
 # - All environment variables configured automatically
 # - All build/test/run functions available immediately
+```
+
+### **Database Development Scripts**
+```powershell
+# Test database connectivity and script functionality
+.\Scripts\Database\Test-DatabaseScripts.ps1 -TestLocal   # Test LocalDB scripts
+.\Scripts\Database\Test-DatabaseScripts.ps1 -TestAzure   # Test Azure SQL scripts
+
+# LocalDB setup (for development)
+.\Scripts\Database\Install-LocalDB.ps1 -TestConnection   # Install and test LocalDB
+.\Scripts\Database\Update-AppSettingsForLocalDB.ps1      # Configure appsettings.json
+
+# Azure SQL setup (for production/staging)
+.\Scripts\Database\Add-AzureSqlFirewallRule.ps1          # Add firewall rules
 ```
 
 **Azure SQL Functions (Lazy Loaded):**
@@ -322,6 +362,21 @@ sqllocaldb start mssqllocaldb
 
 # For Azure SQL issues
 az account show  # Verify login
+```
+
+### **Database Script Issues**
+```powershell
+# Problem: Scripts can't find WPF project
+# Solution: Auto-detection now handles this automatically
+.\Scripts\Database\Test-DatabaseScripts.ps1 -TestLocal
+
+# Problem: Permission issues with LocalDB
+# Solution: Run PowerShell as Administrator for LocalDB installation
+.\Scripts\Database\Install-LocalDB.ps1 -TestConnection
+
+# Problem: Azure firewall blocking connection
+# Solution: Add your IP to firewall rules
+.\Scripts\Database\Add-AzureSqlFirewallRule.ps1 -ServerName "your-server" -ResourceGroup "your-rg"
 ```
 
 ## 🎯 **Verification Checklist**

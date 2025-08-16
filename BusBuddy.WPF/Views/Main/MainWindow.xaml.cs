@@ -1139,7 +1139,7 @@ namespace BusBuddy.WPF.Views.Main
                 // Defensive: type identity issues across reloads — match by name
                 if (DataContext != null && string.Equals(DataContext.GetType().Name, nameof(MainWindowViewModel), StringComparison.OrdinalIgnoreCase))
                 {
-                    _viewModel ??= new MainWindowViewModel();
+                    if (_viewModel == null) _viewModel = new MainWindowViewModel();
                     DataContext = _viewModel; // normalize instance
                     Logger.Debug("Normalized DataContext to MainWindowViewModel by name match");
                     return true;

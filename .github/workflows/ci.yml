@@ -63,7 +63,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        syncfusion: ["30.2.4", "30.2.5"]
+        # CI should use the authoritative Syncfusion version from Directory.Build.props.
+        # We standardize on 30.2.5 to avoid automated rewrites to older versions.
+        syncfusion: ["30.2.5"]
     steps:
       - name: 📥 Checkout code
         uses: actions/checkout@v4

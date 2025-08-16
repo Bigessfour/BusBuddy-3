@@ -43,7 +43,7 @@ function Initialize-CliModule {
                     Write-Warning "PowerShellForGitHub not installed. Run: Install-Module PowerShellForGitHub -Scope CurrentUser"
                     return $false
                 }
-                Write-Information "Loading PowerShellForGitHub module..." -InformationAction Continue
+                Write-Output "Loading PowerShellForGitHub module..."
                 Import-Module PowerShellForGitHub -Force -ErrorAction SilentlyContinue
             }
             'Az' {
@@ -51,7 +51,7 @@ function Initialize-CliModule {
                     Write-Warning "Az module not installed. Run: Install-Module Az -Scope CurrentUser"
                     return $false
                 }
-                Write-Information "Loading Az module (may take 10-15 seconds)..." -InformationAction Continue
+                Write-Output "Loading Az module (may take 10-15 seconds)..."
                 # Import core Az modules only to avoid dependency conflicts
                 Import-Module Az.Accounts, Az.Resources, Az.Sql -Force -ErrorAction SilentlyContinue
             }
@@ -111,8 +111,8 @@ function Invoke-BusBuddyGitHub {
     if (Get-Command gh -ErrorAction SilentlyContinue) {
         & gh $Arguments
     } else {
-        Write-Error "GitHub CLI (gh) not found. Install from https://cli.github.com"
-        Write-Information "Alternatively, install PowerShellForGitHub: Install-Module PowerShellForGitHub -Scope CurrentUser" -InformationAction Continue
+    Write-Warning "GitHub CLI (gh) not found. Install from https://cli.github.com"
+    Write-Output "Alternatively, install PowerShellForGitHub: Install-Module PowerShellForGitHub -Scope CurrentUser"
     }
 }
 
@@ -125,7 +125,7 @@ function Get-BusBuddyWorkflows {
 
     # Prefer native GitHub CLI for reliability
     if (Get-Command gh -ErrorAction SilentlyContinue) {
-        Write-Information "Scanning workflows with GitHub CLI..." -InformationAction Continue
+        Write-Output "Scanning workflows with GitHub CLI..."
         & gh workflow list --repo "$Owner/$Repository"
         return
     }
@@ -133,7 +133,7 @@ function Get-BusBuddyWorkflows {
     # Fallback to PowerShellForGitHub if gh CLI not available
     if (Initialize-CliModule -ModuleName 'PowerShellForGitHub') {
         try {
-            Write-Information "Using PowerShellForGitHub module..." -InformationAction Continue
+            Write-Output "Using PowerShellForGitHub module..."
             Get-GitHubWorkflow -OwnerName $Owner -RepositoryName $Repository
         }
         catch {
@@ -156,7 +156,7 @@ function Start-BusBuddyCiScan {
     if ($PSCmdlet.ShouldProcess("$Owner/$Repository", "Trigger workflow $Workflow on $Ref")) {
         # Prefer native GitHub CLI
         if (Get-Command gh -ErrorAction SilentlyContinue) {
-            Write-Information "Triggering workflow with GitHub CLI..." -InformationAction Continue
+            Write-Output "Triggering workflow with GitHub CLI..."
             & gh workflow run $Workflow --ref $Ref --repo "$Owner/$Repository"
             return
         }
@@ -164,9 +164,9 @@ function Start-BusBuddyCiScan {
         # Fallback to PowerShellForGitHub
         if (Initialize-CliModule -ModuleName 'PowerShellForGitHub') {
             try {
-                Write-Information "Using PowerShellForGitHub to trigger workflow..." -InformationAction Continue
+                Write-Output "Using PowerShellForGitHub to trigger workflow..."
                 Invoke-GitHubWorkflow -OwnerName $Owner -RepositoryName $Repository -WorkflowFileName $Workflow -Ref $Ref
-                Write-Information "Triggered workflow $Workflow on $Owner/$Repository" -InformationAction Continue
+                Write-Output "Triggered workflow $Workflow on $Owner/$Repository"
             }
             catch {
                 Write-Warning "PowerShellForGitHub failed: $($_.Exception.Message)"
@@ -194,7 +194,7 @@ function Invoke-BusBuddyAzure {
     if (Get-Command az -ErrorAction SilentlyContinue) {
         & az $Arguments
     } else {
-        Write-Error "Azure CLI (az) not found. Install from https://learn.microsoft.com/cli/azure/install-azure-cli"
+        Write-Warning "Azure CLI (az) not found. Install from https://learn.microsoft.com/cli/azure/install-azure-cli"
     }
 }
 
@@ -258,20 +258,20 @@ function Get-BusBuddyRepositories {
 
     # Check available CLI tools and use appropriate commands
     if (Get-Command gh -ErrorAction SilentlyContinue) {
-        Write-Information "Scanning repositories with GitHub CLI..." -InformationAction Continue
+        Write-Output "Scanning repositories with GitHub CLI..."
         & gh repo list $Organization
         return
     }
 
     if (Get-Command gk -ErrorAction SilentlyContinue) {
-        Write-Information "Checking GitKraken CLI workspace info..." -InformationAction Continue
+        Write-Output "Checking GitKraken CLI workspace info..."
         # GitKraken CLI focuses on workspaces rather than repo lists
         & gk workspace list
         return
     }
 
     Write-Warning "Neither GitHub CLI (gh) nor GitKraken CLI (gk) available for repository scanning"
-    Write-Information "Install GitHub CLI from https://cli.github.com for repository management" -InformationAction Continue
+    Write-Output "Install GitHub CLI from https://cli.github.com for repository management"
 }
 
 #endregion
@@ -287,14 +287,14 @@ function Invoke-BusBuddyFullScan {
         [switch]$IncludeFetchabilityIndex
     )
 
-    Write-Information "🔍 Starting comprehensive BusBuddy environment scan..." -InformationAction Continue
+    Write-Output "🔍 Starting comprehensive BusBuddy environment scan..."
 
     $repoInfo = Get-BusBuddyRepoInfo
-    Write-Information "📁 Repository Info: $($repoInfo.Path)" -InformationAction Continue
-    Write-Information "   Git Repo: $($repoInfo.IsGitRepo), BusBuddy Repo: $($repoInfo.IsBusBuddyRepo)" -InformationAction Continue
+    Write-Output "📁 Repository Info: $($repoInfo.Path)"
+    Write-Output "   Git Repo: $($repoInfo.IsGitRepo), BusBuddy Repo: $($repoInfo.IsBusBuddyRepo)"
 
     if ($IncludeWorkflows -or $PSBoundParameters.Count -eq 0) {
-        Write-Information "🔍 Scanning GitHub Workflows..." -InformationAction Continue
+    Write-Output "🔍 Scanning GitHub Workflows..."
         try {
             Get-BusBuddyWorkflows
         }
@@ -304,7 +304,7 @@ function Invoke-BusBuddyFullScan {
     }
 
     if ($IncludeAzureResources -or $PSBoundParameters.Count -eq 0) {
-        Write-Information "🔍 Scanning Azure Resources..." -InformationAction Continue
+    Write-Output "🔍 Scanning Azure Resources..."
         try {
             Get-BusBuddyAzureResources
         }
@@ -314,7 +314,7 @@ function Invoke-BusBuddyFullScan {
     }
 
     if ($IncludeRepositories -or $PSBoundParameters.Count -eq 0) {
-        Write-Information "🔍 Scanning Repositories..." -InformationAction Continue
+    Write-Output "🔍 Scanning Repositories..."
         try {
             Get-BusBuddyRepositories
         }
@@ -324,7 +324,7 @@ function Invoke-BusBuddyFullScan {
     }
 
     if ($IncludeFetchabilityIndex -or $PSBoundParameters.Count -eq 0) {
-        Write-Information "🔍 Checking Fetchability Index..." -InformationAction Continue
+    Write-Output "🔍 Checking Fetchability Index..."
         $indexFiles = @('raw-index.entries.json', 'raw-index.json')
         foreach ($indexFile in $indexFiles) {
             if (Test-Path $indexFile) {
@@ -334,7 +334,7 @@ function Invoke-BusBuddyFullScan {
                     if ($content) {
                         $indexData = $content | ConvertFrom-Json -ErrorAction Stop
                         $count = if ($indexData -is [array]) { $indexData.Count } else { 1 }
-                        Write-Information "   $indexFile`: $count entries" -InformationAction Continue
+                        Write-Output "   $indexFile`: $count entries"
                     } else {
                         Write-Warning "   $indexFile`: file is empty"
                     }
@@ -345,19 +345,19 @@ function Invoke-BusBuddyFullScan {
                     try {
                         $fileSize = (Get-Item $indexFile).Length
                         $lineCount = (Get-Content $indexFile | Measure-Object -Line).Lines
-                        Write-Information "   $indexFile`: $fileSize bytes, $lineCount lines (malformed JSON)" -InformationAction Continue
+                        Write-Output "   $indexFile`: $fileSize bytes, $lineCount lines (malformed JSON)"
                     }
                     catch {
                         Write-Warning "   $indexFile`: unable to read file details"
                     }
                 }
             } else {
-                Write-Information "   $indexFile`: not found" -InformationAction Continue
+                Write-Output "   $indexFile`: not found"
             }
         }
     }
 
-    Write-Information "✅ BusBuddy environment scan completed" -InformationAction Continue
+    Write-Output "✅ BusBuddy environment scan completed"
 }
 
 #endregion

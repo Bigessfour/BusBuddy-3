@@ -46,7 +46,7 @@ try {
     if (Test-Path $busBuddyModulePath) {
         Import-Module $busBuddyModulePath -Force -DisableNameChecking -ErrorAction Stop
         if (-not $Quiet) {
-            Write-Host "✅ BusBuddy core module loaded (bb* aliases available)" -ForegroundColor Green
+            Write-Information "✅ BusBuddy core module loaded (bb* aliases available)" -InformationAction Continue
         }
     } else {
         Write-Warning "BusBuddy core module not found at: $busBuddyModulePath"
@@ -58,7 +58,7 @@ try {
     if (Test-Path $testingModulePath) {
         Import-Module $testingModulePath -Force -DisableNameChecking -ErrorAction Stop
         if (-not $Quiet) {
-            Write-Host "✅ BusBuddy testing module loaded" -ForegroundColor Green
+            Write-Information "✅ BusBuddy testing module loaded" -InformationAction Continue
         }
     }
 
@@ -67,14 +67,14 @@ try {
     if (Test-Path $cliModulePath) {
         Import-Module $cliModulePath -Force -DisableNameChecking -ErrorAction Stop
         if (-not $Quiet) {
-            Write-Host "✅ BusBuddy CLI module loaded" -ForegroundColor Green
+            Write-Information "✅ BusBuddy CLI module loaded" -InformationAction Continue
         }
     }
 
     # Verify critical commands are available
     $requiredCommands = @('bbAntiRegression', 'bbMvpCheck', 'bbBuild', 'bbTest')
     $missingCommands = @()
-    
+
     foreach ($cmd in $requiredCommands) {
         if (-not (Get-Command $cmd -ErrorAction SilentlyContinue)) {
             $missingCommands += $cmd
@@ -84,15 +84,15 @@ try {
     if ($missingCommands.Count -gt 0) {
         Write-Warning "Missing required commands: $($missingCommands -join ', ')"
         if (-not $Quiet) {
-            Write-Host "Available bb* commands:" -ForegroundColor Yellow
+            Write-Information "Available bb* commands:" -InformationAction Continue
             Get-Command bb* -ErrorAction SilentlyContinue | Format-Table Name, Source -AutoSize
         }
         return $false
     }
 
     if (-not $Quiet) {
-        Write-Host "✅ All required BusBuddy commands available:" -ForegroundColor Green
-        Get-Command bbAntiRegression, bbMvpCheck, bbBuild, bbTest -ErrorAction SilentlyContinue | 
+        Write-Information "✅ All required BusBuddy commands available:" -InformationAction Continue
+        Get-Command bbAntiRegression, bbMvpCheck, bbBuild, bbTest -ErrorAction SilentlyContinue |
             Format-Table Name, Source -AutoSize
     }    # Set guard to prevent multiple executions
     $env:BUSBUDDY_MODULES_LOADED = '1'

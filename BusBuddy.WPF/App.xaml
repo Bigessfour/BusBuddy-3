@@ -8,120 +8,15 @@
     <Application.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
+                <!-- CONSOLIDATED: All BusBuddy colors, brushes, and Syncfusion v30.2.5 validated resources -->
+                <ResourceDictionary Source="Resources/SyncfusionV30_Validated_ResourceDictionary.xaml" />
                 <!-- Our custom MenuStyles.xaml -->
                 <ResourceDictionary Source="Resources/MenuStyles.xaml" />
-                <!-- Removed external Syncfusion dictionary include; themes applied programmatically via SfSkinManager -->
-                <!-- BusBuddy Fluent theme palettes for DynamicResource brushes used across views -->
-                <ResourceDictionary Source="Resources/Themes/FluentDarkTheme.xaml" />
-                <ResourceDictionary Source="Resources/Themes/FluentLightTheme.xaml" />
-                <!-- Shared Syncfusion styles and theme brushes -->
-                <ResourceDictionary Source="Resources/SyncfusionStyles.xaml" />
-                         <!-- Removed direct external Syncfusion theme dictionary include to avoid startup parse failures.
-                                 Theme resources are applied via SfSkinManager in App.xaml.cs per Syncfusion docs. -->
-                <!-- Shared view styles can go here if needed (kept empty for now) -->
-                <!-- <ResourceDictionary Source="Resources/Styles/SharedViewStyles.xaml"/> -->
-                <!-- Custom brush overrides for form label/input contrast -->
-                <ResourceDictionary Source="Resources/Themes/CustomBrushes.xaml" />
-                <!-- Phase 1: Basic styling without complex Syncfusion theme loading -->
+                <!-- Themes applied programmatically via SfSkinManager in App.xaml.cs per Syncfusion docs -->
+                <!-- Reference: https://help.syncfusion.com/wpf/themes/skin-manager#applying-themes -->
                 <!-- Note: Syncfusion themes will be applied programmatically via SfSkinManager in App.xaml.cs -->
-                <ResourceDictionary>
-                    <!-- Enhanced color palette for StudentsView and other components -->
-                    <SolidColorBrush x:Key="PrimaryBrush"
-                                     Color="#FF007ACC" />
-                    <SolidColorBrush x:Key="SecondaryBrush"
-                                     Color="#FFF0F0F0" />
-                    <SolidColorBrush x:Key="AccentBrush"
-                                     Color="#FF16A085" />
-                    <SolidColorBrush x:Key="TertiaryBrush"
-                                     Color="#FFE8E8E8" />
-                    <!-- Vehicle Form Styles -->
-                    <Style x:Key="VehicleFormContainer"
-                           TargetType="Grid">
-                        <Setter Property="Margin"
-                                Value="20" />
-                        <Setter Property="Background"
-                                Value="{DynamicResource ContentBackgroundBrush}" />
-                    </Style>
-                    <!-- Driver Form Styles -->
-                    <Style x:Key="DriverFormContainer"
-                           TargetType="Grid">
-                        <Setter Property="Margin"
-                                Value="20" />
-                        <Setter Property="Background"
-                                Value="{DynamicResource ContentBackgroundBrush}" />
-                    </Style>
-                    <!-- Centralized Syncfusion ButtonAdv Styles (Base + Semantic Variants) -->
-                    <!-- Reference: https://help.syncfusion.com/wpf/buttonadv/styles-and-templates -->
-                    <Style x:Key="BusBuddyButtonAdv"
-                           TargetType="syncfusion:ButtonAdv">
-                        <Setter Property="Padding"
-                                Value="12,6" />
-                        <Setter Property="Margin"
-                                Value="5" />
-                        <Setter Property="Background"
-                                Value="{DynamicResource BusBuddy.Brush.Primary}" />
-                        <Setter Property="Foreground"
-                                Value="{DynamicResource BusBuddy.Brush.Text.Primary}" />
-                        <Setter Property="BorderThickness"
-                                Value="0" />
-                        <Setter Property="FontWeight"
-                                Value="SemiBold" />
-                        <Setter Property="Cursor"
-                                Value="Hand" />
-                    </Style>
-                    <!-- Per request: Primary variant based on SyncfusionButtonAdvStyle with explicit colors -->
-                    <Style x:Key="BusBuddyButtonAdv.Primary"
-                           TargetType="{x:Type syncfusion:ButtonAdv}"
-                           BasedOn="{StaticResource BusBuddyButtonAdv}">
-                        <Setter Property="Background"
-                                Value="#007ACC" />
-                        <Setter Property="Foreground"
-                                Value="White" />
-                    </Style>
-                    <Style x:Key="BusBuddyButtonAdv.Success"
-                           TargetType="syncfusion:ButtonAdv"
-                           BasedOn="{StaticResource BusBuddyButtonAdv}">
-                        <Setter Property="Background"
-                                Value="{DynamicResource BusBuddy.Brush.Semantic.Success}" />
-                    </Style>
-                    <Style x:Key="BusBuddyButtonAdv.Warning"
-                           TargetType="syncfusion:ButtonAdv"
-                           BasedOn="{StaticResource BusBuddyButtonAdv}">
-                        <Setter Property="Background"
-                                Value="{DynamicResource BusBuddy.Brush.Semantic.Warning}" />
-                    </Style>
-                    <Style x:Key="BusBuddyButtonAdv.Danger"
-                           TargetType="syncfusion:ButtonAdv"
-                           BasedOn="{StaticResource BusBuddyButtonAdv}">
-                        <Setter Property="Background"
-                                Value="{DynamicResource BusBuddy.Brush.Semantic.Danger}" />
-                    </Style>
-                    <Style x:Key="BusBuddyButtonAdv.Info"
-                           TargetType="syncfusion:ButtonAdv"
-                           BasedOn="{StaticResource BusBuddyButtonAdv}">
-                        <Setter Property="Background"
-                                Value="{DynamicResource BusBuddy.Brush.Semantic.Info}" />
-                    </Style>
-                    <Style x:Key="BusBuddyButtonAdv.FleetGreen"
-                           TargetType="syncfusion:ButtonAdv"
-                           BasedOn="{StaticResource BusBuddyButtonAdv}">
-                        <Setter Property="Background"
-                                Value="{DynamicResource BusBuddy.Brush.FleetGreen}" />
-                    </Style>
-                    <Style x:Key="BusBuddyButtonAdv.SafetyOrange"
-                           TargetType="syncfusion:ButtonAdv"
-                           BasedOn="{StaticResource BusBuddyButtonAdv}">
-                        <Setter Property="Background"
-                                Value="{DynamicResource BusBuddy.Brush.SafetyOrange}" />
-                    </Style>
-                    <!-- Legacy alias retained for any existing references -->
-                    <Style x:Key="AIEnhancementButton"
-                           TargetType="syncfusion:ButtonAdv"
-                           BasedOn="{StaticResource BusBuddyButtonAdv}" />
-                </ResourceDictionary>
             </ResourceDictionary.MergedDictionaries>
             <!-- Essential Converters for Phase 1 -->
-            <!-- Note: InverseBooleanConverter will be created if it doesn't exist -->
             <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
             <!-- Form Navigation Commands (for expansion) -->
             <x:Static Member="ApplicationCommands.New"

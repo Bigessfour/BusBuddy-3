@@ -102,6 +102,10 @@ Standard modules from PowerShell Gallery (optional, auto-loaded when needed):
 - **Az** — Azure services (loads lazily ~10-15s when first used)
 - **SqlServer** — SQL Server management (loads lazily when needed)  
 - **PowerShellForGitHub** — GitHub API integration (optional, falls back to gh CLI)
+- **dbatools** — Advanced SQL Server administration tools (500+ commands)
+- **Logging** — Enhanced PowerShell logging framework with multiple targets
+- **WPFBot3000** — WPF DSL framework for UI automation and testing
+- **PoshWPF** — WPF XAML UI integration for PowerShell scripts
 - InvokeBuild — build automation (if available)
 - Pester — testing (if available)
 
@@ -116,6 +120,12 @@ Install manually if needed (CurrentUser scope):
 ```powershell
 # Core modules (recommended)
 Install-Module -Name Az, SqlServer -Repository PSGallery -Scope CurrentUser -Force
+
+# Database administration and logging (NEW - auto-installed with profile)
+Install-Module -Name dbatools, Logging -Repository PSGallery -Scope CurrentUser -Force
+
+# WPF UI automation and testing (NEW - auto-installed with profile)  
+Install-Module -Name WPFBot3000, PoshWPF -Repository PSGallery -Scope CurrentUser -Force
 
 # Optional enhancements (CLI tools preferred for these operations)
 Install-Module -Name PowerShellForGitHub -Repository PSGallery -Scope CurrentUser -Force
@@ -146,6 +156,15 @@ bbHealth -Detailed  # Detailed health check with system specs
 bbBuild -MaxCpuCount 12 -TimeoutSeconds 300  # Multi-core build with timeout
 bbTest -Parallel -MaxCpuCount 12  # Parallel test execution
 bbAntiRegression -ThrottleLimit 12  # 12-thread scanning for anti-patterns
+
+# NEW: Module and environment management
+bbModuleStatus      # Check PowerShell module installation and loading status
+bbCliStatus         # Check CLI tools availability (git, az, gh, winget, etc.)
+
+# Database operations (auto-loads SqlServer module)
+Connect-BusBuddySql -Query "SELECT TOP 5 * FROM Students"  # Azure SQL queries
+Invoke-Sqlcmd -ServerInstance "(localdb)\MSSQLLocalDB" -Query "SELECT @@VERSION"  # LocalDB
+```
 
 # Performance test (should complete in ~400ms)
 Measure-Command { . .\PowerShell\Profiles\Microsoft.PowerShell_profile.ps1 }
@@ -213,6 +232,21 @@ bbHealth -Detailed -TimeoutSeconds 30  # .NET SDK, Git, Node.js checked concurre
 - **Enhanced validation**: Detailed error messages with suggested fixes
 - **Resource management**: Automatic cleanup of failed processes and jobs
 
+### Environment Testing & Validation (NEW)
+Comprehensive testing scripts for development environment setup:
+
+```powershell
+# Test all PowerShell modules and capabilities
+.\PowerShell\Scripts\Test-AllModules.ps1
+
+# Database connectivity tests
+.\Scripts\Database\Test-DatabaseScripts.ps1 -TestLocal -TestAzure
+
+# Module and CLI tool status checks
+bbModuleStatus  # PowerShell modules (SqlServer, Logging, WPF tools)
+bbCliStatus     # CLI tools (git, az, gh, winget, grok, LocalDB)
+```
+
 ### Anti-Regression Scanning
 Enhanced scanning with parallel execution and detailed reporting:
 
@@ -247,6 +281,26 @@ Secrets commonly used
 ## 🛠️ Configuration
 
 ### Database setup
+
+**NEW: Automated Database Connectivity Scripts**
+
+BusBuddy now includes PowerShell scripts to resolve common database connectivity issues:
+
+```powershell
+# Quick database environment test
+.\Scripts\Database\Test-DatabaseScripts.ps1 -TestLocal -TestAzure
+
+# Switch to LocalDB for development (auto-backup original config)
+.\Scripts\Database\Update-AppSettingsForLocalDB.ps1 -WpfProjectPath "BusBuddy.WPF" -BackupOriginal
+
+# Install LocalDB if missing
+.\Scripts\Database\Install-LocalDB.ps1 -TestConnection
+
+# Add your IP to Azure SQL firewall (replace with actual values)
+.\Scripts\Database\Add-AzureSqlFirewallRule.ps1 -ResourceGroup "YourRG" -ServerName "YourServer"
+```
+
+**Standard EF Core Operations:**
 ```powershell
 # Update database using explicit project targets
 dotnet ef database update --project .\BusBuddy.Core --startup-project .\BusBuddy.WPF
@@ -269,6 +323,45 @@ dotnet ef migrations list --project .\BusBuddy.Core --startup-project .\BusBuddy
 - `SYNCFUSION_LICENSE_KEY` — required before any Syncfusion UI initialization (recommended for CI/production)
 - `BUSBUDDY_CONNECTION` — default connection string name/key for the application
 - Azure (optional): `AZURE_SQL_USER` and `AZURE_SQL_PASSWORD`
+
+### Enhanced PowerShell Tools (NEW)
+
+**Database Administration:**
+```powershell
+# SqlServer module (97 commands available)
+Invoke-Sqlcmd -ServerInstance "server" -Database "db" -Query "SELECT * FROM Users"
+Get-SqlDatabase -ServerInstance "(localdb)\MSSQLLocalDB"
+Backup-SqlDatabase / Restore-SqlDatabase
+
+# dbatools module (500+ advanced commands - install separately)
+# Note: May conflict with SqlServer module when loaded simultaneously
+```
+
+**Enhanced Logging:**
+```powershell
+# Logging module for PowerShell scripts
+Write-Log -Level INFO -Message "BusBuddy operation started"
+Add-LoggingTarget -File -Path "logs/powershell-debug.log"
+Set-LoggingDefaultLevel -Level DEBUG
+```
+
+**WPF UI Automation (for testing):**
+```powershell
+# WPFBot3000 - DSL framework
+Window {
+    TextBox -Name 'TestInput'
+    Button 'Execute Test' -OnClick { Show-MessageBox $WPFVariable.TestInput.Text }
+} | Show-WPFWindow
+
+# PoshWPF - XAML integration
+New-WPFXaml -Path "TestUI.xaml" | Show-WPFDialog
+```
+
+**Module Management:**
+```powershell
+bbModuleStatus      # Check all PowerShell module status
+bbCliStatus         # Check CLI tools (git, az, gh, winget, grok, etc.)
+```
 
 ## 🏗️ Architecture
 

@@ -9,7 +9,7 @@ Purpose: Keep BusBuddy stable and compliant. MVP is done; focus on production ha
 - PowerShell: 7.5.2; compliance ≈45%; known issues:
   - 35 empty catch blocks in BusBuddy.psm1 — fix required
   - PSUseShouldProcess violations — add SupportsShouldProcess/ShouldProcess
-  - No Write-Host — use Write-Information/Write-Output
+  - No Write-Host — use Write-Information (mandatory) for informational messages; use Write-Output only for emitting objects
 - Non-MVP integrations: XAI and Google Earth Engine deferred/disabled
 - UI: Syncfusion-only policy — no standard WPF controls in new or refactored code
 
@@ -20,11 +20,11 @@ Purpose: Keep BusBuddy stable and compliant. MVP is done; focus on production ha
 - Defer: XAI and Google Earth Engine until post-hardening
 
 3) Command surface (bb*) — use these first
-- Entrypoint: PowerShell 7.5.2. Ensure module import via PowerShell/Profiles/Import-BusBuddyModule.ps1
+- Entrypoint: PowerShell 7.5.2. Load profile via: `. .\PowerShell\Profiles\Microsoft.PowerShell_profile.ps1`
 - Discovery: bbCommands (lists active aliases)
 - Primary workflow:
-  - bbHealth — environment/project health
-  - bbBuild — build solution
+  - bbHealth — environment/project health ✅ WORKING
+  - bbBuild — build solution ⚠️ NEEDS FIX (RedirectStandardOutput parameter issue)
   - bbRun — run WPF app
   - bbTest — run tests
   - bbMvpCheck — validate core MVP scenarios (students/routes)
@@ -34,14 +34,19 @@ Purpose: Keep BusBuddy stable and compliant. MVP is done; focus on production ha
   - bbRefresh — rewire aliases/module for current session
 - Notes:
   - Prefer bb* over raw dotnet. Use dotnet only for diagnostics if bb* unavailable.
-  - If aliases are missing, run bbRefresh (or re-run Import-BusBuddyModule.ps1).
+  - If aliases are missing, reload profile: `. .\PowerShell\Profiles\Microsoft.PowerShell_profile.ps1`
+  - Known issue: bbBuild has parameter binding error, use `dotnet build BusBuddy.sln` as fallback
 
 4) Mandatory pre-change gates (prevent regressions)
 - Always run bbHealth, then bbAntiRegression and bbXamlValidate before proposing or committing changes.
 - Hard rules:
   - No Microsoft.Extensions.Logging (use Serilog only).
   - No standard WPF DataGrid or other stock controls where a Syncfusion equivalent exists.
-  - No Write-Host in PowerShell (use Write-Information/Write-Output).
+  - No Write-Host in PowerShell.
+  - Mandatory: Use Write-Information for all informational output in PowerShell modules and profiles. Do not use Write-Output for plain informational text (Write-Output remains allowed for returning objects).
+  - Use Write-Warning for warnings and structured non-terminating issues.
+  - Avoid Write-Error for non-terminating error reporting; prefer Write-Warning or Write-Information and throw for terminating errors.
+  - Do not use the Unix "grep" command in PowerShell scripts; use PowerShell-native alternatives such as `Select-String` or `Get-ChildItem | Select-String`.
 - If gates fail: fix violations first, then proceed.
 
 5) Documentation-first (zero tolerance)
@@ -59,6 +64,7 @@ Purpose: Keep BusBuddy stable and compliant. MVP is done; focus on production ha
 - Parallel defaults: ForEach-Object -Parallel -ThrottleLimit 12 (tune per task)
 - Output streams: replace Write-Host with Write-Information/Write-Output
   - Streams ref: https://learn.microsoft.com/powershell/scripting/learn/deep-dives/everything-about-output-streams
+  - Mandatory: use Write-Information for informational output; prefer structured objects for programmatic output.
 - Error handling:
   - Replace empty catch blocks; log with Write-Information and rethrow/handle appropriately
   - Try/Catch guidance: https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_Try_Catch_Finally
@@ -181,7 +187,8 @@ All development MUST follow official documentation standards:
 5. **NEVER**: Proceed without documentation reference or with "I think this works" approaches
 
 ### **ZERO TOLERANCE VIOLATIONS**
-- **Write-Host in PowerShell**: Use Write-Output, Write-Information, Write-Verbose instead
+- **Write-Host in PowerShell**: forbidden — use Write-Information for informational text, Write-Output for objects, Write-Verbose for verbose messages
+- **Do not use `grep`** in PowerShell scripts. Use `Select-String` or `findstr`/`Get-ChildItem | Select-String` for text searches.
 - **Undocumented Syncfusion patterns**: Only use officially documented control implementations
 - **Custom "enhanced" wrappers**: Use official APIs exactly as documented
 - **Assumed parameter combinations**: Verify all parameters exist in official API documentation

@@ -10,7 +10,7 @@ namespace BusBuddy.Core.Utilities
     /// </summary>
     public static class EnvironmentHelper
     {
-    private static readonly ILogger? Logger = Log.Logger;
+        private static readonly ILogger Logger = Log.ForContext(typeof(EnvironmentHelper));
         /// <summary>
         /// Checks if the application is running in development mode
         /// </summary>
@@ -21,7 +21,7 @@ namespace BusBuddy.Core.Utilities
             var environment = configuration?["Environment"]
                 ?? Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
 
-            return environment != null &&
+            return environment != default &&
                    environment.Equals("Development", StringComparison.OrdinalIgnoreCase);
         }
 
@@ -112,7 +112,7 @@ namespace BusBuddy.Core.Utilities
         /// <returns>The appropriate connection string for the current environment and database provider</returns>
         public static string GetConnectionString(IConfiguration configuration)
         {
-            string? raw = null;
+            string raw = string.Empty;
 
             if (IsUsingAzureSql(configuration))
             {

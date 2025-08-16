@@ -1,6 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Fixed malformed root element — header normalized for Pretty XAML formatting and editor toolchains.
+     WPF docs: https://learn.microsoft.com/dotnet/desktop/wpf/
+     Syncfusion WPF docs: https://help.syncfusion.com/wpf/welcome-to-syncfusion-essential-wpf -->
 <syncfusion:ChromelessWindow x:Class="BusBuddy.WPF.Views.Main.MainWindow"
                              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                             xmlns:views="clr-namespace:BusBuddy.WPF.Views.Schedule"
                              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
                              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
                              xmlns:syncfusion="http://schemas.syncfusion.com/wpf"
@@ -18,6 +23,19 @@
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/SyncfusionV30_Validated_ResourceDictionary.xaml" />
             </ResourceDictionary.MergedDictionaries>
+            <!-- Alias legacy style keys to the canonical keys to prevent XAML parse errors
+              when code/reference uses BusBuddyButtonAdv.* (case-sensitive).
+              Syncfusion ButtonAdv docs: https://help.syncfusion.com/wpf/button/getting-started
+              WPF StaticResource docs: https://learn.microsoft.com/dotnet/desktop/wpf/advanced/resources-overview -->
+            <Style x:Key="BusBuddyButtonAdv.Primary"
+                   TargetType="syncfusion:ButtonAdv"
+                   BasedOn="{StaticResource BusBuddy.ButtonAdv.Primary}" />
+            <Style x:Key="BusBuddyButtonAdv.Info"
+                   TargetType="syncfusion:ButtonAdv"
+                   BasedOn="{StaticResource BusBuddy.ButtonAdv.Info}" />
+            <Style x:Key="BusBuddyButtonAdv.Warning"
+                   TargetType="syncfusion:ButtonAdv"
+                   BasedOn="{StaticResource BusBuddy.ButtonAdv.Warning}" />
         </ResourceDictionary>
     </syncfusion:ChromelessWindow.Resources>
     <!-- MVP-Ready UI with DockingManager for professional layout -->
@@ -59,7 +77,7 @@
                     <syncfusion:ButtonAdv Label="🧾 Eligibility PDF"
                                           Margin="0,0,18,0"
                                           Padding="15,8"
-                                          Style="{StaticResource BusBuddyButtonAdv.Primary}"
+                                          Style="{DynamicResource BusBuddy.ButtonAdv.Primary}"
                                           Click="EligibilityPdfButton_Click"
                                           FontSize="14"
                                           FontWeight="SemiBold"
@@ -68,7 +86,7 @@
                     <syncfusion:ButtonAdv Label="Print Last PDF"
                                           Margin="0,0,25,0"
                                           Padding="15,8"
-                                          Style="{StaticResource BusBuddyButtonAdv.Primary}"
+                                          Style="{DynamicResource BusBuddyButtonAdv.Primary}"
                                           Click="PrintEligibilityPdfButton_Click"
                                           FontSize="14"
                                           FontWeight="SemiBold"
@@ -77,7 +95,7 @@
                     <syncfusion:ButtonAdv Label="🌍 Map"
                                           Margin="0,0,18,0"
                                           Padding="15,8"
-                                          Style="{StaticResource BusBuddyButtonAdv.Info}"
+                                          Style="{DynamicResource BusBuddyButtonAdv.Info}"
                                           Click="MapButton_Click"
                                           FontSize="14"
                                           FontWeight="SemiBold"
@@ -86,7 +104,7 @@
                     <syncfusion:ButtonAdv Label="Students"
                                           Margin="0,0,10,0"
                                           Padding="15,8"
-                                          Style="{StaticResource BusBuddyButtonAdv.Primary}"
+                                          Style="{DynamicResource BusBuddyButtonAdv.Primary}"
                                           Click="StudentsButton_Click"
                                           FontSize="14"
                                           FontWeight="SemiBold"
@@ -95,7 +113,7 @@
                     <syncfusion:ButtonAdv Label="🚌 Routes"
                                           Margin="0,0,10,0"
                                           Padding="15,8"
-                                          Style="{StaticResource BusBuddyButtonAdv.Primary}"
+                                          Style="{DynamicResource BusBuddyButtonAdv.Primary}"
                                           Click="RouteManagementButton_Click"
                                           FontSize="14"
                                           FontWeight="SemiBold"
@@ -104,7 +122,7 @@
                     <syncfusion:ButtonAdv Label="🚐 Buses"
                                           Margin="0,0,10,0"
                                           Padding="15,8"
-                                          Style="{StaticResource BusBuddyButtonAdv.Primary}"
+                                          Style="{DynamicResource BusBuddyButtonAdv.Primary}"
                                           Click="BusesButton_Click"
                                           FontSize="14"
                                           FontWeight="SemiBold"
@@ -113,7 +131,7 @@
                     <syncfusion:ButtonAdv Label="👨‍✈️ Drivers"
                                           Margin="0,0,10,0"
                                           Padding="15,8"
-                                          Style="{StaticResource BusBuddyButtonAdv.Primary}"
+                                          Style="{DynamicResource BusBuddyButtonAdv.Primary}"
                                           Click="DriversButton_Click"
                                           FontSize="14"
                                           FontWeight="SemiBold"
@@ -121,7 +139,7 @@
                                           AutomationProperties.Name="Driver Management" />
                     <syncfusion:ButtonAdv Label="📊 Reports"
                                           Padding="15,8"
-                                          Style="{StaticResource BusBuddyButtonAdv.Primary}"
+                                          Style="{DynamicResource BusBuddyButtonAdv.Primary}"
                                           Click="ReportsButton_Click"
                                           FontSize="14"
                                           FontWeight="SemiBold"
@@ -189,7 +207,6 @@
                                            AllowFiltering="True"
                                            AllowTriStateSorting="True"
                                            SelectionMode="Single"
-
                                            EnableDataVirtualization="True"
                                            GridLinesVisibility="Both"
                                            HeaderLinesVisibility="Both"
@@ -217,13 +234,13 @@
                         <syncfusion:ButtonAdv Label="➕ Add Student"
                                               Margin="0,0,10,0"
                                               Padding="12,6"
-                                              Style="{StaticResource BusBuddyButtonAdv.Primary}"
+                                              Style="{DynamicResource BusBuddyButtonAdv.Primary}"
                                               Click="AddStudent_Click"
                                               ToolTip="Add a new student to the system"
                                               AutomationProperties.Name="Add New Student" />
                         <syncfusion:ButtonAdv Label="📝 Edit Student"
                                               Padding="12,6"
-                                              Style="{StaticResource BusBuddyButtonAdv.Info}"
+                                              Style="{DynamicResource BusBuddyButtonAdv.Info}"
                                               Click="EditStudent_Click"
                                               ToolTip="Edit selected student information"
                                               AutomationProperties.Name="Edit Selected Student" />
@@ -252,7 +269,6 @@
                                            AllowFiltering="True"
                                            AllowTriStateSorting="True"
                                            SelectionMode="Single"
-
                                            EnableDataVirtualization="True"
                                            GridLinesVisibility="Both"
                                            HeaderLinesVisibility="Both"
@@ -281,13 +297,13 @@
                         <syncfusion:ButtonAdv Label="🗺️ Optimize Routes"
                                               Margin="0,0,10,0"
                                               Padding="12,6"
-                                              Style="{StaticResource BusBuddyButtonAdv.Info}"
+                                              Style="{DynamicResource BusBuddyButtonAdv.Info}"
                                               Click="OptimizeRoutes_Click"
                                               ToolTip="Optimize route efficiency and timing"
                                               AutomationProperties.Name="Optimize Transportation Routes" />
                         <syncfusion:ButtonAdv Label="📄 Export Schedules"
                                               Padding="12,6"
-                                              Style="{StaticResource BusBuddyButtonAdv.Primary}"
+                                              Style="{DynamicResource BusBuddyButtonAdv.Primary}"
                                               Click="ExportSchedules_Click"
                                               ToolTip="Export route schedules to file"
                                               AutomationProperties.Name="Export Route Schedules" />
@@ -313,7 +329,6 @@
                                            AllowFiltering="True"
                                            AllowTriStateSorting="True"
                                            SelectionMode="Single"
-
                                            EnableDataVirtualization="True"
                                            GridLinesVisibility="Both"
                                            HeaderLinesVisibility="Both"
@@ -347,20 +362,20 @@
                         <syncfusion:ButtonAdv Label="➕ Add Bus"
                                               Margin="0,0,10,0"
                                               Padding="12,6"
-                                              Style="{StaticResource BusBuddyButtonAdv.Primary}"
+                                              Style="{DynamicResource BusBuddyButtonAdv.Primary}"
                                               Click="AddBus_Click"
                                               ToolTip="Add a new bus to the fleet"
                                               AutomationProperties.Name="Add New Bus" />
                         <syncfusion:ButtonAdv Label="🔧 Maintenance"
                                               Margin="0,0,10,0"
                                               Padding="12,6"
-                                              Style="{StaticResource BusBuddyButtonAdv.Warning}"
+                                              Style="{DynamicResource BusBuddyButtonAdv.Warning}"
                                               Click="Maintenance_Click"
                                               ToolTip="Schedule and track bus maintenance"
                                               AutomationProperties.Name="Bus Maintenance" />
                         <syncfusion:ButtonAdv Label="📊 Fleet Status"
                                               Padding="12,6"
-                                              Style="{StaticResource BusBuddyButtonAdv.Info}"
+                                              Style="{DynamicResource BusBuddyButtonAdv.Info}"
                                               Click="FleetStatus_Click"
                                               ToolTip="View current fleet status and availability"
                                               AutomationProperties.Name="Fleet Status Overview" />
@@ -386,7 +401,6 @@
                                            AllowFiltering="True"
                                            AllowTriStateSorting="True"
                                            SelectionMode="Single"
-
                                            EnableDataVirtualization="True"
                                            GridLinesVisibility="Both"
                                            HeaderLinesVisibility="Both"
@@ -415,20 +429,20 @@
                         <syncfusion:ButtonAdv Label="➕ Add Driver"
                                               Margin="0,0,10,0"
                                               Padding="12,6"
-                                              Style="{StaticResource BusBuddyButtonAdv.Primary}"
+                                              Style="{DynamicResource BusBuddyButtonAdv.Primary}"
                                               Click="AddDriver_Click"
                                               ToolTip="Add a new driver to the system"
                                               AutomationProperties.Name="Add New Driver" />
                         <syncfusion:ButtonAdv Label="🚌 Assign Bus"
                                               Margin="0,0,10,0"
                                               Padding="12,6"
-                                              Style="{StaticResource BusBuddyButtonAdv.Info}"
+                                              Style="{DynamicResource BusBuddyButtonAdv.Info}"
                                               Click="AssignBus_Click"
                                               ToolTip="Assign a bus to the selected driver"
                                               AutomationProperties.Name="Assign Bus to Driver" />
                         <syncfusion:ButtonAdv Label="📅 Schedule"
                                               Padding="12,6"
-                                              Style="{StaticResource BusBuddyButtonAdv.Primary}"
+                                              Style="{DynamicResource BusBuddyButtonAdv.Primary}"
                                               Click="Schedule_Click"
                                               ToolTip="Manage driver schedules and assignments"
                                               AutomationProperties.Name="Driver Schedule Management" />
@@ -450,6 +464,14 @@
                             Background="{DynamicResource BusBuddy.Brush.Panel.Background}">
                 <Grid Background="{DynamicResource BusBuddy.Brush.Panel.Content}">
                     <route:RouteAssignmentView />
+                </Grid>
+            </ContentControl>
+            <!-- Unified Scheduler Panel (Sports + Activities) -->
+            <ContentControl syncfusion:DockingManager.Header="📅 Scheduler"
+                            syncfusion:DockingManager.State="Document"
+                            Background="{DynamicResource BusBuddy.Brush.Panel.Background}">
+                <Grid Background="{DynamicResource BusBuddy.Brush.Panel.Content}">
+                    <views:UnifiedSchedulerView />
                 </Grid>
             </ContentControl>
         </syncfusion:DockingManager>

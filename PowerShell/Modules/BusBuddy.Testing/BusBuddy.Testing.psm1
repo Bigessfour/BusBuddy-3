@@ -8,7 +8,7 @@ function invokeBusBuddyMvpCheck {
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'Medium')]
     param()
     if ($PSCmdlet.ShouldProcess('MVP Check')) {
-        Write-Information 'Running MVP checks...' -InformationAction Continue
+        Write-Output 'Running MVP checks...'
         $root = Resolve-BusBuddyRepoRoot
         $proj = Join-Path $root 'BusBuddy.Tests/BusBuddy.Tests.csproj'
         & dotnet test $proj --filter "TestCategory=Core" --no-build

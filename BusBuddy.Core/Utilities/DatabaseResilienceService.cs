@@ -27,15 +27,15 @@ public class DatabaseResilienceService
         Func<Task<T>> operation,
         string operationName,
         int maxRetries = 3,
-        TimeSpan? baseDelay = null)
+        TimeSpan baseDelay = default)
     {
         if (IsCircuitBreakerOpen())
         {
             throw new InvalidOperationException($"Circuit breaker is open for database operations. Last failure: {_lastFailureTime}");
         }
 
-        var delay = baseDelay ?? TimeSpan.FromSeconds(1);
-        Exception? lastException = null;
+        var delay = baseDelay == default ? TimeSpan.FromSeconds(1) : baseDelay;
+        Exception lastException = new InvalidOperationException("Database operation failed");
 
         for (int attempt = 1; attempt <= maxRetries; attempt++)
         {
