@@ -31,12 +31,12 @@ function invokeBusBuddyBuild {
 
     # Enhanced validation with detailed error reporting
     if (-not (Test-Path $Solution)) {
-        Write-Error "Solution file not found: $Solution. Current location: $(Get-Location). Available .sln files: $((Get-ChildItem -Filter '*.sln' -ErrorAction SilentlyContinue).Name -join ', ')"
+        Write-Warning "Solution file not found: $Solution. Current location: $(Get-Location). Available .sln files: $((Get-ChildItem -Filter '*.sln' -ErrorAction SilentlyContinue).Name -join ', ')"
         return 1
     }
 
     if ($PSCmdlet.ShouldProcess($Solution, "Build ($Configuration, $Verbosity, max CPU: $MaxCpuCount)")) {
-        Write-Information "Building $Solution with $MaxCpuCount CPU cores..." -InformationAction Continue
+    Write-Output "Building $Solution with $MaxCpuCount CPU cores..."
 
         try {
             # Use parallel builds and timeout protection
@@ -52,14 +52,14 @@ function invokeBusBuddyBuild {
             # Timeout protection
             if (-not $process.WaitForExit($TimeoutSeconds * 1000)) {
                 $process.Kill()
-                Write-Error "Build timed out after $TimeoutSeconds seconds"
+                Write-Warning "Build timed out after $TimeoutSeconds seconds"
                 return 124  # Standard timeout exit code
             }
 
             return $process.ExitCode
         }
         catch {
-            Write-Error "Build failed with exception: $($_.Exception.Message)"
+            Write-Warning "Build failed with exception: $($_.Exception.Message)"
             return 1
         }
     }
@@ -71,9 +71,9 @@ function invokeBusBuddyRun {
         [string]$Project = 'BusBuddy.csproj',
         [ValidateSet('Debug', 'Release')][string]$Configuration = 'Debug'
     )
-    if (-not (Test-Path $Project)) { Write-Error "Project not found: $Project"; return 1 }
+    if (-not (Test-Path $Project)) { Write-Warning "Project not found: $Project"; return 1 }
     if ($PSCmdlet.ShouldProcess($Project, "Run ($Configuration)")) {
-        Write-Information "Running $Project..." -InformationAction Continue
+    Write-Output "Running $Project..."
         & dotnet run --project $Project --configuration $Configuration
         return $LASTEXITCODE
     }
@@ -91,8 +91,9 @@ function invokeBusBuddyTest {
         [int]$TimeoutMinutes = 10
     )
     if (-not (Test-Path $Solution)) { Write-Error "Solution not found: $Solution"; return 1 }
+        if (-not (Test-Path $Solution)) { Write-Warning "Solution not found: $Solution"; return 1 }
     if ($PSCmdlet.ShouldProcess($Solution, "Test ($Configuration) with $MaxCpuCount cores")) {
-        Write-Information "Testing $Solution$(if($Parallel){' (parallel)'})..." -InformationAction Continue
+        Write-Output "Testing $Solution$(if($Parallel){' (parallel)'})..."
 
         $dotnetArgs = @(
             'test', $Solution,
@@ -117,14 +118,14 @@ function invokeBusBuddyTest {
 
             if (-not $process.WaitForExit($TimeoutMinutes * 60 * 1000)) {
                 $process.Kill()
-                Write-Error "Tests timed out after $TimeoutMinutes minutes"
+                Write-Warning "Tests timed out after $TimeoutMinutes minutes"
                 return 124  # Standard timeout exit code
             }
 
             return $process.ExitCode
         }
         catch {
-            Write-Error "Test execution failed: $($_.Exception.Message)"
+            Write-Warning "Test execution failed: $($_.Exception.Message)"
             return 1
         }
     }
@@ -139,12 +140,12 @@ function Invoke-BusBuddyParallelTests {
         [switch]$Coverage
     )
 
-    Write-Information "=== Parallel Test Execution (Throttle: $ThrottleLimit) ===" -InformationAction Continue
+    Write-Output "=== Parallel Test Execution (Throttle: $ThrottleLimit) ==="
 
     # Auto-discover test projects if none specified
     if (-not $TestProjects) {
         $TestProjects = Get-ChildItem -Recurse -Include "*Tests*.csproj", "*Test*.csproj" | ForEach-Object { $_.FullName }
-        Write-Information "Auto-discovered $($TestProjects.Count) test projects" -InformationAction Continue
+    Write-Output "Auto-discovered $($TestProjects.Count) test projects"
     }
 
     $results = [System.Collections.Concurrent.ConcurrentBag[PSCustomObject]]::new()
@@ -194,10 +195,10 @@ function Invoke-BusBuddyParallelTests {
 
     # Display results
     $allResults = $results.ToArray() | Sort-Object Project
-    Write-Information "`n=== Test Results Summary ===" -InformationAction Continue
+    Write-Output "`n=== Test Results Summary ==="
     $allResults | ForEach-Object {
         $durationStr = "{0:mm\:ss}" -f $_.Duration
-        Write-Information "$($_.Status) $($_.Project) ($durationStr)" -InformationAction Continue
+        Write-Output "$($_.Status) $($_.Project) ($durationStr)"
         if ($_.Error) {
             Write-Warning "  Error: $($_.Error)"
         }
@@ -207,7 +208,7 @@ function Invoke-BusBuddyParallelTests {
     $failed = $allResults.Count - $passed
     $totalDuration = ($allResults | Measure-Object -Property Duration -Sum).Sum
 
-    Write-Information "`nSummary: $passed passed, $failed failed, Total time: $("{0:mm\:ss}" -f $totalDuration)" -InformationAction Continue
+    Write-Output "`nSummary: $passed passed, $failed failed, Total time: $("{0:mm\:ss}" -f $totalDuration)"
 
     return $failed -eq 0
 }
@@ -218,7 +219,7 @@ function invokeBusBuddyHealthCheck {
         [switch]$Detailed,
         [int]$TimeoutSeconds = 30
     )
-    Write-Information "=== BusBuddy Health Check $(if($Detailed){'(Detailed)'}) ===" -InformationAction Continue
+    Write-Output "=== BusBuddy Health Check $(if($Detailed){'(Detailed)'}) ==="
 
     $healthStatus = @()
 
@@ -274,22 +275,22 @@ function invokeBusBuddyHealthCheck {
         }
     } -ThrottleLimit 4 | ForEach-Object {
         $healthStatus += $_
-        Write-Information $_.Message -InformationAction Continue
+        Write-Output $_.Message
     }
 
     # Check PowerShell version (synchronous)
-    Write-Information "✓ PowerShell: $($PSVersionTable.PSVersion) ($($PSVersionTable.PSEdition))" -InformationAction Continue
+    Write-Output "✓ PowerShell: $($PSVersionTable.PSVersion) ($($PSVersionTable.PSEdition))"
 
     # Check BusBuddy solution
     $repoRoot = Resolve-BusBuddyRepoRoot
     $solutionFile = Join-Path $repoRoot 'BusBuddy.sln'
     if (Test-Path $solutionFile) {
-        Write-Information "✓ BusBuddy solution found: $solutionFile" -InformationAction Continue
+    Write-Output "✓ BusBuddy solution found: $solutionFile"
 
         if ($Detailed) {
             # Check project files
             $projects = Get-ChildItem -Path $repoRoot -Recurse -Include "*.csproj" -ErrorAction SilentlyContinue
-            Write-Information "  → Found $($projects.Count) project files" -InformationAction Continue
+            Write-Output "  → Found $($projects.Count) project files"
         }
     } else {
         Write-Warning "✗ BusBuddy solution not found: $solutionFile"
@@ -299,21 +300,21 @@ function invokeBusBuddyHealthCheck {
     if ($env:SYNCFUSION_LICENSE_KEY) {
         $keyLength = $env:SYNCFUSION_LICENSE_KEY.Length
         $maskedKey = "*" * [Math]::Max(0, $keyLength - 8) + $env:SYNCFUSION_LICENSE_KEY.Substring([Math]::Max(0, $keyLength - 8))
-        Write-Information "✓ Syncfusion license key configured (length: $keyLength, ends: $maskedKey)" -InformationAction Continue
+    Write-Output "✓ Syncfusion license key configured (length: $keyLength, ends: $maskedKey)"
     } else {
         Write-Warning "✗ SYNCFUSION_LICENSE_KEY environment variable not set"
-        Write-Information "  → Set via: `$env:SYNCFUSION_LICENSE_KEY = 'your-key-here'" -InformationAction Continue
+    Write-Output "  → Set via: `$env:SYNCFUSION_LICENSE_KEY = 'your-key-here'"
     }
 
     if ($Detailed) {
         # Additional detailed checks
-        Write-Information "`n=== Detailed System Info ===" -InformationAction Continue
-        Write-Information "CPU Cores: $([Environment]::ProcessorCount)" -InformationAction Continue
-        Write-Information "RAM: $([Math]::Round((Get-CimInstance Win32_PhysicalMemory | Measure-Object -Property Capacity -Sum).Sum / 1GB, 2)) GB" -InformationAction Continue
-        Write-Information "OS: $([Environment]::OSVersion.VersionString)" -InformationAction Continue
+    Write-Output "`n=== Detailed System Info ==="
+    Write-Output "CPU Cores: $([Environment]::ProcessorCount)"
+    Write-Output "RAM: $([Math]::Round((Get-CimInstance Win32_PhysicalMemory | Measure-Object -Property Capacity -Sum).Sum / 1GB, 2)) GB"
+    Write-Output "OS: $([Environment]::OSVersion.VersionString)"
     }
 
-    Write-Information "=== Health Check Complete ===" -InformationAction Continue
+    Write-Output "=== Health Check Complete ==="
 
     # Return overall health status
     $failures = $healthStatus | Where-Object Status -eq "✗"
@@ -323,9 +324,10 @@ function invokeBusBuddyHealthCheck {
 function invokeBusBuddyRestore {
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'Low')]
     param([string]$Solution = 'BusBuddy.sln')
-    if (-not (Test-Path $Solution)) { Write-Error "Solution not found: $Solution"; return 1 }
+    if (-not (Test-Path $Solution)) { Write-Warning "Solution not found: $Solution"; return 1 }
     if ($PSCmdlet.ShouldProcess($Solution, "Restore packages")) {
         Write-Information "Restoring packages for $Solution..." -InformationAction Continue
+    Write-Output "Restoring packages for $Solution..."
         & dotnet restore $Solution
         return $LASTEXITCODE
     }
@@ -337,6 +339,7 @@ function invokeBusBuddyClean {
     if (-not (Test-Path $Solution)) { Write-Error "Solution not found: $Solution"; return 1 }
     if ($PSCmdlet.ShouldProcess($Solution, "Clean build artifacts")) {
         Write-Information "Cleaning $Solution..." -InformationAction Continue
+    Write-Output "Cleaning $Solution..."
         & dotnet clean $Solution
         return $LASTEXITCODE
     }
@@ -346,9 +349,11 @@ function invokeBusBuddyAntiRegression {
     [CmdletBinding()]
     param(
         [int]$ThrottleLimit = 12,
-        [string[]]$ExcludePaths = @('.git', 'bin', 'obj', 'node_modules', '.vs', 'TestResults')
+        [string[]]$ExcludePaths = @('.git', 'bin', 'obj', 'node_modules', '.vs', 'TestResults'),
+        [switch]$Detailed
     )
     Write-Information "=== Anti-Regression Scan (Parallel: $ThrottleLimit threads) ===" -InformationAction Continue
+    Write-Output "=== Anti-Regression Scan (Parallel: $ThrottleLimit threads) ==="
 
     $issues = [System.Collections.Concurrent.ConcurrentBag[string]]::new()
 
@@ -381,11 +386,14 @@ function invokeBusBuddyAntiRegression {
         }
     )
 
+    Write-Output "Scanning files for compliance violations..."
+
     # Execute scans in parallel for better performance
     $scanJobs | ForEach-Object -Parallel {
         $job = $_
         $excludePaths = $using:ExcludePaths
         $issues = $using:issues
+        $detailed = $using:Detailed
 
         try {
             # Build exclude filter
@@ -394,19 +402,24 @@ function invokeBusBuddyAntiRegression {
             $files = Get-ChildItem -Path . -Recurse -Include $job.Include -ErrorAction SilentlyContinue |
                 Where-Object { $path = $_.FullName; -not ($excludeFilter | Where-Object { $path -like $_ }) }
 
-            $matches = $files | Select-String $job.Pattern -List -ErrorAction SilentlyContinue
+            Write-Output "[$($job.Name)] Scanning $($files.Count) files..."
 
-            if ($matches) {
-                $issues.Add("$($job.Message): $($matches.Count) files")
-                # Add detailed file list for critical issues
-                if ($job.Name -eq "Microsoft.Extensions.Logging" -or $job.Name -eq "Standard WPF Controls") {
-                    $matches | Select-Object -First 5 | ForEach-Object {
-                        $issues.Add("  → $($_.Filename):$($_.LineNumber)")
-                    }
-                    if ($matches.Count -gt 5) {
-                        $issues.Add("  → ... and $($matches.Count - 5) more files")
-                    }
+            $foundMatches = $files | Select-String $job.Pattern -List -ErrorAction SilentlyContinue
+
+            if ($foundMatches) {
+                $issues.Add("$($job.Message): $($foundMatches.Count) files")
+
+                # Show file details for violations (limit to prevent overwhelming output)
+                $displayLimit = if ($detailed) { $foundMatches.Count } else { 10 }
+                $foundMatches | Select-Object -First $displayLimit | ForEach-Object {
+                    $relativePath = $_.Filename -replace [regex]::Escape((Get-Location).Path + "\"), ""
+                    $issues.Add("  → $relativePath`:$($_.LineNumber)")
                 }
+                if ($foundMatches.Count -gt $displayLimit) {
+                    $issues.Add("  → ... and $($foundMatches.Count - $displayLimit) more files (use -Detailed to see all)")
+                }
+            } else {
+                Write-Output "[$($job.Name)] ✓ No violations found"
             }
         }
         catch {
@@ -422,7 +435,7 @@ function invokeBusBuddyAntiRegression {
         $allIssues | ForEach-Object { Write-Warning "  ✗ $_" }
         return 1
     } else {
-        Write-Information "✓ No anti-regression issues found" -InformationAction Continue
+        Write-Output "✓ No anti-regression issues found"
         return 0
     }
 }
@@ -430,7 +443,7 @@ function invokeBusBuddyAntiRegression {
 function invokeBusBuddyXamlValidation {
     [CmdletBinding()]
     param()
-    Write-Information "=== XAML Validation ===" -InformationAction Continue
+    Write-Output "=== XAML Validation ==="
 
     $xamlFiles = Get-ChildItem -Path . -Recurse -Include "*.xaml"
     $issues = @()
@@ -454,7 +467,7 @@ function invokeBusBuddyXamlValidation {
         $issues | ForEach-Object { Write-Warning "  ✗ $_" }
         return 1
     } else {
-        Write-Information "✓ XAML validation passed" -InformationAction Continue
+        Write-Output "✓ XAML validation passed"
         return 0
     }
 }
@@ -462,7 +475,7 @@ function invokeBusBuddyXamlValidation {
 function testBusBuddyMvpReadiness {
     [CmdletBinding()]
     param()
-    Write-Information "=== MVP Readiness Check ===" -InformationAction Continue
+    Write-Output "=== MVP Readiness Check ==="
 
     $checks = @()
 
@@ -490,15 +503,15 @@ function testBusBuddyMvpReadiness {
         }
     }
 
-    $checks | ForEach-Object { Write-Information $_ -InformationAction Continue }
-    Write-Information "=== MVP Check Complete ===" -InformationAction Continue
+    $checks | ForEach-Object { Write-Output $_ }
+    Write-Output "=== MVP Check Complete ==="
 }
 
 function Get-BusBuddyCommands {
     [CmdletBinding()]
     param()
-    Write-Information "=== BusBuddy Commands ===" -InformationAction Continue
-    Write-Information "Core Development Commands:" -InformationAction Continue
+    Write-Output "=== BusBuddy Commands ==="
+    Write-Output "Core Development Commands:"
     Get-Command bb* | Where-Object Source -eq "BusBuddy" | Sort-Object Name | ForEach-Object {
         $description = switch ($_.Name) {
             'bbHealth' { 'Health check (SDK, solution, environment)' }
@@ -508,16 +521,16 @@ function Get-BusBuddyCommands {
             'bbClean' { 'Clean build artifacts' }
             'bbRestore' { 'Restore NuGet packages' }
             'bbMvpCheck' { 'Validate MVP readiness' }
-            'bbAntiRegression' { 'Scan for anti-patterns' }
+            'bbAntiRegression' { 'Scan for anti-patterns (use -Detailed for full file lists)' }
             'bbXamlValidate' { 'Validate XAML (Syncfusion-only)' }
             default { 'BusBuddy command' }
         }
-        Write-Information "  $($_.Name) - $description" -InformationAction Continue
+        Write-Output "  $($_.Name) - $description"
     }
 
-    Write-Information "`nCLI Integration Commands:" -InformationAction Continue
+    Write-Output "`nCLI Integration Commands:"
     Get-Command bb* | Where-Object Source -eq "BusBuddy.CLI" | Sort-Object Name | ForEach-Object {
-        Write-Information "  $($_.Name) - CLI integration command" -InformationAction Continue
+        Write-Output "  $($_.Name) - CLI integration command"
     }
 }
 
