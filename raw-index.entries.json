@@ -123,5 +123,120 @@
     "path": ".vscode/ai-efficiency-enforcement.md",
     "url_branch": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/.vscode/ai-efficiency-enforcement.md",
     "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/7072240c7e82330b0397aa325dcbd5518b1a35f9/.vscode/ai-efficiency-enforcement.md"
+  },
+  {
+    "path": ".cspell.json",
+    "url_branch": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/.cspell.json",
+    "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/b0e7263353ef85f1d0f0634db157cf235c545677/.cspell.json"
+  },
+  {
+    "path": ".github/SECRETS.md",
+    "url_branch": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/.github/SECRETS.md",
+    "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/b0e7263353ef85f1d0f0634db157cf235c545677/.github/SECRETS.md"
+  },
+  {
+    "path": "PowerShell/Profiles/BusBuddyProfile.ps1",
+    "url_branch": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/PowerShell/Profiles/BusBuddyProfile.ps1",
+    "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/b0e7263353ef85f1d0f0634db157cf235c545677/PowerShell/Profiles/BusBuddyProfile.ps1"
+  },
+  {
+    "path": "PowerShell/Profiles/Microsoft.PowerShell_profile.ps1",
+    "url_branch": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/PowerShell/Profiles/Microsoft.PowerShell_profile.ps1",
+    "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/b0e7263353ef85f1d0f0634db157cf235c545677/PowerShell/Profiles/Microsoft.PowerShell_profile.ps1"
+  },
+  {
+    "path": "SETUP-GUIDE.md",
+    "url_branch": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/SETUP-GUIDE.md",
+    "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/b0e7263353ef85f1d0f0634db157cf235c545677/SETUP-GUIDE.md"
+  },
+  {
+    "path": "README.md",
+    "url_branch": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/README.md",
+    "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/b0e7263353ef85f1d0f0634db157cf235c545677/README.md"
+  },
+  {
+    "path": "BusBuddy.Cli/BusBuddy.Cli.csproj",
+    "url_branch": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.Cli/BusBuddy.Cli.csproj",
+    "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/b0e7263353ef85f1d0f0634db157cf235c545677/BusBuddy.Cli/BusBuddy.Cli.csproj"
+  },
+  {
+    "path": "BusBuddy.Cli/Program.cs",
+    "url_branch": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.Cli/Program.cs",
+    "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/b0e7263353ef85f1d0f0634db157cf235c545677/BusBuddy.Cli/Program.cs"
+  },
+  {
+    "path": "BusBuddy.Cli/README.md",
+    "url_branch": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.Cli/README.md",
+    "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/b0e7263353ef85f1d0f0634db157cf235c545677/BusBuddy.Cli/README.md"
+  },
+  {
+    "path": "PowerShell/Import-BusBuddyMinimal.ps1",
+    "url_branch": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/PowerShell/Import-BusBuddyMinimal.ps1",
+    "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/b0e7263353ef85f1d0f0634db157cf235c545677/PowerShell/Import-BusBuddyMinimal.ps1"
+  },
+  {
+    "path": "PowerShell/Modules/BusBuddy.Commands/BusBuddy.Commands.psd1",
+    "url_branch": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/PowerShell/Modules/BusBuddy.Commands/BusBuddy.Commands.psd1",
+    "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/b0e7263353ef85f1d0f0634db157cf235c545677/PowerShell/Modules/BusBuddy.Commands/BusBuddy.Commands.psd1"
+  },
+  {
+    "path": "PowerShell/Modules/BusBuddy.Commands/BusBuddy.Commands.psm1",
+    "url_branch": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/PowerShell/Modules/BusBuddy.Commands/BusBuddy.Commands.psm1",
+    "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/b0e7263353ef85f1d0f0634db157cf235c545677/PowerShell/Modules/BusBuddy.Commands/BusBuddy.Commands.psm1"
+  },
+  {
+    "path": "Documentation/PowerShell-7.5.2-Reference.md",
+    "url_branch": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/Documentation/PowerShell-7.5.2-Reference.md",
+    "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/b0e7263353ef85f1d0f0634db157cf235c545677/Documentation/PowerShell-7.5.2-Reference.md"
+  },
+  {
+    "path": ".github/workflows/ci-pr-gate.yml",
+    "url_branch": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/.github/workflows/ci-pr-gate.yml",
+    "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/b0e7263353ef85f1d0f0634db157cf235c545677/.github/workflows/ci-pr-gate.yml"
+  },
+  {
+    "path": ".github/workflows/db-migrations-seed.yml",
+    "url_branch": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/.github/workflows/db-migrations-seed.yml",
+    "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/b0e7263353ef85f1d0f0634db157cf235c545677/.github/workflows/db-migrations-seed.yml"
+  },
+  {
+    "path": "PowerShell/Azure/Configure-AzureSQL-Firewall.ps1",
+    "url_branch": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/PowerShell/Azure/Configure-AzureSQL-Firewall.ps1",
+    "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/b0e7263353ef85f1d0f0634db157cf235c545677/PowerShell/Azure/Configure-AzureSQL-Firewall.ps1"
+  },
+  {
+    "path": "PowerShell/Modules/BusBuddy.ProfileTools/BusBuddy.ProfileTools.psd1",
+    "url_branch": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/PowerShell/Modules/BusBuddy.ProfileTools/BusBuddy.ProfileTools.psd1",
+    "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/b0e7263353ef85f1d0f0634db157cf235c545677/PowerShell/Modules/BusBuddy.ProfileTools/BusBuddy.ProfileTools.psd1"
+  },
+  {
+    "path": "PowerShell/Modules/BusBuddy.ProfileTools/BusBuddy.ProfileTools.psm1",
+    "url_branch": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/PowerShell/Modules/BusBuddy.ProfileTools/BusBuddy.ProfileTools.psm1",
+    "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/b0e7263353ef85f1d0f0634db157cf235c545677/PowerShell/Modules/BusBuddy.ProfileTools/BusBuddy.ProfileTools.psm1"
+  },
+  {
+    "path": "Tools/BusBuddyValidator/BusBuddyValidator.csproj",
+    "url_branch": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/Tools/BusBuddyValidator/BusBuddyValidator.csproj",
+    "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/b0e7263353ef85f1d0f0634db157cf235c545677/Tools/BusBuddyValidator/BusBuddyValidator.csproj"
+  },
+  {
+    "path": "Tools/BusBuddyValidator/Program.cs",
+    "url_branch": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/Tools/BusBuddyValidator/Program.cs",
+    "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/b0e7263353ef85f1d0f0634db157cf235c545677/Tools/BusBuddyValidator/Program.cs"
+  },
+  {
+    "path": "Tools/BusBuddyValidator/README.md",
+    "url_branch": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/Tools/BusBuddyValidator/README.md",
+    "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/b0e7263353ef85f1d0f0634db157cf235c545677/Tools/BusBuddyValidator/README.md"
+  },
+  {
+    "path": "BusBuddy.Core/Migrations/20250814120000_RemoveShapefileColumns.cs",
+    "url_branch": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.Core/Migrations/20250814120000_RemoveShapefileColumns.cs",
+    "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/b0e7263353ef85f1d0f0634db157cf235c545677/BusBuddy.Core/Migrations/20250814120000_RemoveShapefileColumns.cs"
+  },
+  {
+    "path": "BusBuddy.Core/Migrations/20250814210725_RemoveShapefileColumns.cs",
+    "url_branch": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.Core/Migrations/20250814210725_RemoveShapefileColumns.cs",
+    "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/b0e7263353ef85f1d0f0634db157cf235c545677/BusBuddy.Core/Migrations/20250814210725_RemoveShapefileColumns.cs"
   }
 ]
