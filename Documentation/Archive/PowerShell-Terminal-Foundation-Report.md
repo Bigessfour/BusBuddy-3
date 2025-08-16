@@ -3,7 +3,7 @@
 ## Issue Analysis
 
 ### Primary Problem
-The VS Code task "Load AI-Assistant Environment" is failing with exit code 1 due to improper PowerShell command nesting and module loading issues.
+The VS Code task "Load AI-Assistant Environment" was failing with exit code 1 due to improper PowerShell command nesting and module loading issues.
 
 ### Error Root Cause
 ```

@@ -46,7 +46,6 @@ $env:BUSBUDDY_REPO_ROOT = $probe
 $profilePath = Join-Path $probe 'PowerShell\Profiles\BusBuddyProfile.ps1'
 if (Test-Path $profilePath) {
     . $profilePath
-    $env:BUSBUDDY_PROFILE_LOADED = '1'
     Write-Information "BusBuddy profile loaded successfully from: $profilePath" -InformationAction Continue
 }
 else {

@@ -42,6 +42,19 @@ bbBuild             # Build solution - Invoke-BusBuddyBuild
 bbRun               # Launch WPF app - Start-BusBuddyApplication
 bbTest              # Run tests - Start-BusBuddyTest
 
+# Enhanced parallel processing commands (NEW)
+bbTestParallel      # Run test projects in parallel for faster execution
+bbHealth -Detailed  # Detailed health check with system info and parallel dependency checks
+bbBuild -MaxCpuCount 12 -TimeoutSeconds 300  # Multi-core build with timeout protection
+bbTest -Parallel -MaxCpuCount 12  # Parallel test execution with hyperthreading
+bbAntiRegression -ThrottleLimit 12  # 12-thread anti-regression scanning
+
+# Quality assurance commands
+bbMvpCheck          # Validate MVP readiness
+bbAntiRegression    # Scan for anti-patterns (Microsoft.Extensions.Logging, standard WPF controls, Write-Host)
+bbXamlValidate      # Ensure Syncfusion-only XAML controls
+bbCommands          # List all available bb* commands with descriptions
+
 # CLI Integration Commands (if GitHub CLI, Azure CLI, GitKraken CLI installed)
 bbFullScan          # Comprehensive scan using all CLI tools
 bbWorkflows         # Scan GitHub workflows  
@@ -127,11 +140,41 @@ bbAntiRegression    # Scan for disallowed APIs/patterns
 bbXamlValidate      # Validate Syncfusion‑only XAML
 bbMvpCheck          # Validate core MVP scenarios
 
+# NEW: Enhanced parallel processing commands
+bbTestParallel      # Run test projects in parallel (auto-discovers *Tests*.csproj)
+bbHealth -Detailed  # Detailed health check with system specs
+bbBuild -MaxCpuCount 12 -TimeoutSeconds 300  # Multi-core build with timeout
+bbTest -Parallel -MaxCpuCount 12  # Parallel test execution
+bbAntiRegression -ThrottleLimit 12  # 12-thread scanning for anti-patterns
+
 # Performance test (should complete in ~400ms)
 Measure-Command { . .\PowerShell\Profiles\Microsoft.PowerShell_profile.ps1 }
 ```
 
 ## 🧪 Testing
+
+**Parallel Test Execution (NEW):**
+The testing system now supports parallel execution for improved performance:
+
+```powershell
+# Standard test execution
+bbTest                              # Run all tests sequentially
+bbTest -Filter "TestCategory=Core"  # Run filtered tests
+bbTest -Coverage                    # Include code coverage
+
+# NEW: Parallel test execution
+bbTestParallel                      # Auto-discover and run test projects in parallel
+bbTestParallel -ThrottleLimit 4     # Limit to 4 concurrent test projects
+bbTestParallel -Coverage            # Parallel execution with coverage
+bbTest -Parallel -MaxCpuCount 12    # Enable parallel test runner within projects
+```
+
+**Performance Benefits:**
+- **Project-level parallelism**: Multiple test projects run simultaneously
+- **Test-level parallelism**: Within each project, tests can run in parallel
+- **Hyperthreading utilization**: Uses all available CPU cores efficiently
+- **Timeout protection**: Long-running tests are automatically terminated
+- **Detailed reporting**: Shows duration and status for each test project
 
 VS Code integration: use the Testing view (or the NUnit Test Runner extension) or stick with bb* commands.
 
@@ -141,6 +184,57 @@ bbTest --filter "TestCategory=Scheduler"   # Subset example
 ```
 
 Legacy harness scripts in `PowerShell/Testing` are archived — prefer `bbTest`.
+
+## ⚡ PowerShell Module Enhancements
+
+**Performance & Robustness Improvements (August 2025):**
+
+### Parallel Processing & Hyperthreading
+All bb* commands now support multi-core execution and timeout protection:
+
+```powershell
+# Multi-core builds (uses all available CPU cores)
+bbBuild -MaxCpuCount 12 -TimeoutSeconds 300
+
+# Parallel testing with hyperthreading
+bbTest -Parallel -MaxCpuCount 12 -TimeoutMinutes 10
+bbTestParallel -ThrottleLimit 4  # Run 4 test projects concurrently
+
+# Multi-threaded anti-regression scanning
+bbAntiRegression -ThrottleLimit 12  # 12 threads for faster scanning
+
+# Parallel health checks
+bbHealth -Detailed -TimeoutSeconds 30  # .NET SDK, Git, Node.js checked concurrently
+```
+
+### Enhanced Error Handling & Validation
+- **Timeout protection**: All long-running operations have configurable timeouts
+- **Process isolation**: Uses `Start-Process` with proper cleanup on failure
+- **Enhanced validation**: Detailed error messages with suggested fixes
+- **Resource management**: Automatic cleanup of failed processes and jobs
+
+### Anti-Regression Scanning
+Enhanced scanning with parallel execution and detailed reporting:
+
+```powershell
+bbAntiRegression  # Scans for:
+# ✗ Microsoft.Extensions.Logging (use Serilog)
+# ✗ Standard WPF controls (use Syncfusion equivalents)
+# ✗ Write-Host in PowerShell (use Write-Information/Write-Output)
+# ✗ Nullable reference type violations
+```
+
+### Performance Metrics
+- **Profile loading**: ~400ms (vs 15+ seconds previously)
+- **Parallel scanning**: 12-thread anti-regression checks
+- **Concurrent testing**: Multiple test projects run simultaneously
+- **Multi-core builds**: Utilizes all available CPU cores
+- **Health checks**: Parallel dependency validation with timeouts
+
+**Reference Documentation:**
+- [PowerShell ForEach-Object -Parallel](https://learn.microsoft.com/powershell/module/microsoft.powershell.core/foreach-object#example-14--using-parallel-processing)
+- [dotnet build options](https://learn.microsoft.com/dotnet/core/tools/dotnet-build#options)
+- [dotnet test selective execution](https://learn.microsoft.com/dotnet/core/testing/selective-unit-tests)
 
 ## 🔁 CI
 
@@ -179,12 +273,12 @@ dotnet ef migrations list --project .\BusBuddy.Core --startup-project .\BusBuddy
 ## 🏗️ Architecture
 
 Tech stack (current)
-- .NET SDK: 9.0.108 (updated August 2025)
-- WPF + Syncfusion WPF: 30.2.5 (updated August 2025)
+- .NET SDK: 9.0.304 (updated January 2025)
+- WPF + Syncfusion WPF: 30.2.5 (updated January 2025)
 - EF Core: 9.0.8
 - Serilog: 4.3.0
 - NUnit: 4.3.1
-- PowerShell: 7.5.2+ (optimized profile with lazy loading)
+- PowerShell: 7.5.2+ (enhanced with parallel processing and timeout protection)
 
 Project layout
 ```

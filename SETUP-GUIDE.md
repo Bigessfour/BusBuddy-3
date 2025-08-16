@@ -349,7 +349,7 @@ Measure-Command {
 ## 🚀 **Next Steps**
 
 1. **Explore the Application**: Use `bbRun` to launch and explore features
-2. **Review Documentation**: Check `GROK-README.md` for current development status
+2. **Review Documentation**: Check `README.md` for current development status
 3. **Start Development**: Use `bbDevSession` for full development environment
 4. **Run Tests**: Use `bbTest` to verify functionality
 5. **Check Commands**: Use `bbCommands` to see all available automation
@@ -357,14 +357,16 @@ Measure-Command {
 ## 📚 **Additional Resources**
 
 - **Main Documentation**: `README.md`
-- **Development Status**: `GROK-README.md`
 - **File Reference**: `Documentation/FILE-FETCHABILITY-GUIDE.md`
 - **Command Reference**: `COMMAND-REFERENCE.md`
 - **API Documentation**: `Documentation/API-REFERENCE.md`
+- **Learning Resources**: `Docs/Learning/` directory
+- **Architecture Docs**: `Docs/Architecture/` directory
 
 ## 🆘 **Getting Help**
 
 - **Health Check**: Run `bbHealth` for diagnostic information
 - **Command Help**: Run `bbCommands` for available commands
+- **Mentor System**: Use `bb-mentor <topic>` for interactive learning
 - **Issues**: Check GitHub Issues for known problems
-- **Documentation**: All guides are in the `Documentation/` folder
+- **Documentation**: All guides are in the `Documentation/` and `Docs/` folders

@@ -6,7 +6,7 @@
     CompanyName = 'BusBuddy'
     Copyright = '(c) BusBuddy'
     Description = 'Core BusBuddy helpers for build, run, test, health (WPF/Syncfusion/Azure SQL integration).'
-    FunctionsToExport = @('invokeBusBuddyBuild', 'invokeBusBuddyRun', 'invokeBusBuddyTest', 'invokeBusBuddyHealthCheck', 'invokeBusBuddyRestore', 'invokeBusBuddyClean', 'invokeBusBuddyAntiRegression', 'invokeBusBuddyXamlValidation', 'testBusBuddyMvpReadiness')
+    FunctionsToExport = @('invokeBusBuddyBuild', 'invokeBusBuddyRun', 'invokeBusBuddyTest', 'invokeBusBuddyHealthCheck', 'invokeBusBuddyRestore', 'invokeBusBuddyClean', 'invokeBusBuddyAntiRegression', 'invokeBusBuddyXamlValidation', 'testBusBuddyMvpReadiness', 'Get-BusBuddyCommands', 'Invoke-BusBuddyParallelTests')
     PrivateData = @{
         PSData = @{
             Tags = @('busbuddy', 'devops', 'wpf', 'syncfusion')

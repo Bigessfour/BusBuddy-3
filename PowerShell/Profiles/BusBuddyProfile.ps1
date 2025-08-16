@@ -5,8 +5,8 @@
 
 # Guard: prevent multiple loads in the same session.
 # Docs: PowerShell about_Profiles — https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_Profiles
-if ($env:BUSBUDDY_PROFILE_LOADED -eq '1') { return }
-$env:BUSBUDDY_PROFILE_LOADED = '1'
+if (Get-Variable -Name 'BusBuddyProfileLoaded' -Scope Script -ErrorAction SilentlyContinue) { return }
+$Script:BusBuddyProfileLoaded = $true
 
 Set-StrictMode -Version 3.0
 $ErrorActionPreference = 'Stop'
@@ -150,10 +150,25 @@ function Build-BusBuddy { dotnet build $env:SOLUTION_FILE --configuration $env:B
 function Test-BusBuddy { dotnet test $env:SOLUTION_FILE --configuration $env:BUILD_CONFIGURATION --no-build --verbosity normal }
 function Restore-BusBuddy { dotnet restore $env:SOLUTION_FILE }
 
+# Import core BusBuddy module (contains bb* aliases)
+$busBuddyModulePath = Join-Path $BusBuddyRepoPath 'PowerShell\Modules\BusBuddy'
+if (Test-Path $busBuddyModulePath) {
+    try {
+        Import-Module $busBuddyModulePath -Force -DisableNameChecking -ErrorAction SilentlyContinue
+        Write-Information "BusBuddy core module loaded (bb* aliases available)" -InformationAction Continue
+    }
+    catch {
+        Write-Warning "Failed to load BusBuddy core module: $($_.Exception.Message)"
+    }
+} else {
+    Write-Warning "BusBuddy core module not found at: $busBuddyModulePath"
+}
+
 # Run on profile load
 Set-SyncfusionLicense
 Import-BusBuddyCli  # Load CLI integration
-Write-Information "BusBuddy Dev Profile Loaded: Use Connect-BusBuddySql for Azure SQL queries, Build-BusBuddy for builds." -InformationAction Continue
+Write-Information "BusBuddy Dev Profile Loaded: Use bb* aliases (bbHealth, bbBuild, bbTest, bbRun, etc.) or Connect-BusBuddySql for Azure SQL queries." -InformationAction Continue
+Write-Information "Core Commands: bbHealth, bbBuild, bbTest, bbRun, bbMvpCheck, bbAntiRegression, bbXamlValidate" -InformationAction Continue
 Write-Information "CLI Commands: bbFullScan (comprehensive), bbWorkflows (GitHub), bbAzResources (Azure), bbRepos (GitKraken)" -InformationAction Continue
 
 # Example: Uncomment to test connection on load
