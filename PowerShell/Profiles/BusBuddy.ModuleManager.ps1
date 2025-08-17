@@ -109,24 +109,30 @@ class BusBuddyModuleManager {
                 $result.Issues += "PSVersionTable not available"
                 $result.IsValid = $false
             } else {
-                # Use PowerShell 7.5 null-coalescing operator with fallback
-                $psEdition = $psVersion.PSEdition ?? 'Unknown'
-                $result.Details += "PSEdition detected: $psEdition"
+                # Use standard PowerShell null fallback
+                $bbPsEdition = $psVersion.PSEdition
+                if ($null -eq $bbPsEdition) { $bbPsEdition = 'Unknown' }
+                $result.Details += "PSEdition detected: $bbPsEdition"
 
-                if ($psEdition -eq 'Desktop') {
-                    # Special handling for Windows PowerShell (Desktop edition)
+                if ($bbPsEdition -eq 'Unknown') {
+                    Write-Warning "⚠️  PowerShell edition could not be determined. BusBuddy requires PowerShell Core 7.5+."
                     Write-Warning "⚠️  PowerShell Desktop edition detected. BusBuddy requires PowerShell Core 7.5+ for optimal functionality."
-                    Write-Warning "   Current edition: $psEdition"
+                    Write-Warning "   Current edition: $bbPsEdition"
+                    Write-Warning "   Install PowerShell 7.5+ from: https://github.com/PowerShell/PowerShell/releases"
+                    Write-Warning "   Some commands may not work at all, and features may be limited or unavailable in Desktop edition."
+                    Write-Warning "⚠️  PowerShell Desktop edition detected. BusBuddy requires PowerShell Core 7.5+ for optimal functionality."
+                    Write-Warning "   Current edition: $bbPsEdition"
                     Write-Warning "   Install PowerShell 7.5+ from: https://github.com/PowerShell/PowerShell/releases"
                     Write-Warning "   Some features may be limited or unavailable in Desktop edition."
-
-                    $result.Issues += "PowerShell Core 7.5+ recommended. Current edition: $psEdition (Desktop)"
+                    $desktopSuffix = if ($bbPsEdition -eq 'Desktop') { ' (Desktop)' } else { '' }
+                    $result.Issues += "PowerShell Core 7.5+ recommended. Edition detected as 'Unknown' (may indicate Desktop or unsupported environment)."
+                    $result.Issues += "PowerShell Core 7.5+ recommended. Current edition: $bbPsEdition (Desktop)"
                     $result.IsValid = $false
-                } elseif ($psEdition -ne 'Core') {
-                    $result.Issues += "PowerShell Core required. Current edition: $psEdition"
+                } elseif ($bbPsEdition -ne 'Core') {
+                    $result.Issues += "PowerShell Core required. Current edition: $bbPsEdition"
                     $result.IsValid = $false
                 } else {
-                    $result.Details += "PowerShell edition OK: $psEdition"
+                    $result.Details += "PowerShell edition OK: $bbPsEdition"
                 }
             }
         }

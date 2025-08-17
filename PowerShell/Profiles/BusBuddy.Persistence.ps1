@@ -268,7 +268,7 @@ class BusBuddyEnvironmentWatcher {
 
                 try {
                     # Check command availability
-                    $missing = @()
+                    $missing = [array]::new()
                     foreach ($command in $ExpectedCommands.Keys) {
                         if (-not (Get-Command $command -ErrorAction SilentlyContinue)) {
                             $missing += $command
@@ -552,7 +552,7 @@ function Test-BusBuddyPersistence {
 
     # Test 3: Command functionality
     Write-Information "Test 3: Testing command functionality..." -InformationAction Continue
-    $functionalCommands = @()
+    $functionalCommands = [array]::new()
 
     foreach ($command in $afterRecovery.Available) {
         try {

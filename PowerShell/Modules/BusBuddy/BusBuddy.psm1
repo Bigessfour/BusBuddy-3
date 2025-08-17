@@ -5,7 +5,46 @@ Standards: PowerShell 7.5+, StrictMode 3.0, use Write-Information for logging.
 Refs: dotnet CLI[](https://learn.microsoft.com/dotnet/core/tools/), Syncfusion WPF[](https://help.syncfusion.com/wpf/welcome-to-syncfusion-essential-wpf), Azure SQL[](https://learn.microsoft.com/en-us/azure/azure-sql/?view=azuresql).
 #>
 
-# Helper to resolve repo root by finding BusBuddy.sln (up to 5 levels).
+# Helper to ensure fresh module state
+function Invoke-BusBuddyModuleReload {
+    [CmdletBinding()]
+    param([switch]$Quiet)
+
+    try {
+        if (-not $Quiet) { Write-Information "🔄 Reloading BusBuddy module..." -InformationAction Continue }
+
+        # Remove and reimport module to ensure latest code
+        if (Get-Module BusBuddy -ErrorAction SilentlyContinue) {
+            Remove-Module BusBuddy -Force -ErrorAction SilentlyContinue
+        }
+
+        # Find repo root directly without dependency on other functions
+        $current = $PSScriptRoot
+        $repoRoot = $null
+        for ($i = 0; $i -lt 5; $i++) {
+            if ([string]::IsNullOrEmpty($current)) { break }
+            $sln = Join-Path $current 'BusBuddy.sln'
+            if (Test-Path -LiteralPath $sln) {
+                $repoRoot = $current
+                break
+            }
+            $current = Split-Path $current -Parent
+        }
+
+        if (-not $repoRoot) { $repoRoot = (Get-Location).Path }
+        $modulePath = Join-Path $repoRoot "PowerShell\Modules\BusBuddy\BusBuddy.psm1"
+
+        if (Test-Path $modulePath) {
+            Import-Module $modulePath -Force -DisableNameChecking -ErrorAction Stop
+            if (-not $Quiet) { Write-Information "✅ Module reloaded successfully" -InformationAction Continue }
+        } else {
+            Write-Warning "Module file not found: $modulePath"
+        }
+    }
+    catch {
+        Write-Warning "Failed to reload module: $_"
+    }
+}# Helper to resolve repo root by finding BusBuddy.sln (up to 5 levels).
 function Resolve-BusBuddyRepoRoot {
     [CmdletBinding()]
     param()
@@ -861,7 +900,7 @@ function Invoke-BusBuddyParallelTests {
     Write-Output "Auto-discovered $($TestProjects.Count) test projects"
     }
 
-    $results = [System.Collections.Concurrent.ConcurrentBag[PSCustomObject]]::new()
+    $results = [System.Collections.ArrayList]::Synchronized([System.Collections.ArrayList]@())
 
     # Execute test projects in parallel
     $TestProjects | ForEach-Object -Parallel {
@@ -905,7 +944,6 @@ function Invoke-BusBuddyParallelTests {
             $results.Add($result)
         }
     } -ThrottleLimit $ThrottleLimit
-
     # Display results
     $allResults = $results.ToArray() | Sort-Object Project
     Write-Output "`n=== Test Results Summary ==="
@@ -934,6 +972,10 @@ function invokeBusBuddyHealthCheck {
         [switch]$AutoRepair,
         [int]$TimeoutSeconds = 30
     )
+
+    # Ensure fresh module state
+    Invoke-BusBuddyModuleReload -Quiet
+
     Write-Output "=== BusBuddy Comprehensive Health Check $(if($Detailed){'(Detailed)'}) $(if($ModernizationScan){'+ Modernization'}) $(if($AutoRepair){'+ Auto-Repair'}) ==="
 
     $healthStatus = @()
@@ -945,7 +987,13 @@ function invokeBusBuddyHealthCheck {
     $healthChecks = @(
         @{ Name = ".NET SDK"; Check = { & dotnet --version 2>$null } },
         @{ Name = "Git"; Check = { & git --version 2>$null } },
-        @{ Name = "Node.js"; Check = { & node --version 2>$null } }
+        @{ Name = "Node.js"; Check = {
+            if (Get-Command node -ErrorAction SilentlyContinue) {
+                & node --version 2>$null
+            } else {
+                "Not Installed"
+            }
+        } }
     )
 
     $healthChecks | ForEach-Object -Parallel {
@@ -953,7 +1001,7 @@ function invokeBusBuddyHealthCheck {
         $timeout = $using:TimeoutSeconds
 
         try {
-            $job = Start-Job -ScriptBlock $check.Check
+            $job = Start-Job -ScriptBlock $check.Check -ArgumentList @()
             if (Wait-Job $job -Timeout $timeout) {
                 $result = Receive-Job $job
                 Remove-Job $job
@@ -992,8 +1040,9 @@ function invokeBusBuddyHealthCheck {
         }
     } -ThrottleLimit 4 | ForEach-Object {
         $healthStatus += $_
-        Write-Output $_.Message
     }
+    # Output all health check messages after aggregation for clarity
+    $healthStatus | ForEach-Object { Write-Information $_.Message -InformationAction Continue }
 
     # Check PowerShell version (synchronous)
     $psVersion = $PSVersionTable.PSVersion
@@ -1050,6 +1099,7 @@ function invokeBusBuddyHealthCheck {
 
     # PSModulePath integrity checking with auto-repair
     Write-Output "`n=== PSModulePath Integrity & Auto-Repair ==="
+    $repoRoot = if ($env:BUSBUDDY_REPO_ROOT) { $env:BUSBUDDY_REPO_ROOT } else { (Get-Location).Path }
     $currentPSModulePath = $env:PSModulePath -split [IO.Path]::PathSeparator
     $repoModulesPath = Join-Path $repoRoot 'PowerShell\Modules'
     $pathRepairs = @()
@@ -1104,7 +1154,6 @@ function invokeBusBuddyHealthCheck {
     }
 
     # Check BusBuddy solution
-    $repoRoot = if ($env:BUSBUDDY_REPO_ROOT) { $env:BUSBUDDY_REPO_ROOT } else { (Get-Location).Path }
     $solutionFile = Join-Path $repoRoot 'BusBuddy.sln'
     if (Test-Path $solutionFile) {
         Write-Output "✓ BusBuddy solution found: $solutionFile"
@@ -1120,7 +1169,6 @@ function invokeBusBuddyHealthCheck {
 
     # Check BusBuddy modules - loaded vs available with hardening
     Write-Output "`n=== BusBuddy Module Status & Loading Hardening ==="
-    $repoRoot = if ($env:BUSBUDDY_REPO_ROOT) { $env:BUSBUDDY_REPO_ROOT } else { (Get-Location).Path }
     $modulesPath = Join-Path $repoRoot 'PowerShell\Modules'
 
     if (Test-Path $modulesPath) {
@@ -1992,10 +2040,14 @@ function invokeBusBuddyAntiRegression {
         [string[]]$ExcludePaths = @('.git', 'bin', 'obj', 'node_modules', '.vs', 'TestResults'),
         [switch]$Detailed
     )
+
+    # Ensure fresh module state
+    Invoke-BusBuddyModuleReload -Quiet
+
     Write-Information "=== Anti-Regression Scan (Parallel: $ThrottleLimit threads) ===" -InformationAction Continue
     Write-Output "=== Anti-Regression Scan (Parallel: $ThrottleLimit threads) ==="
 
-    $issues = [System.Collections.Concurrent.ConcurrentBag[string]]::new()
+    $issues = [System.Collections.ArrayList]::Synchronized([System.Collections.ArrayList]@())
 
     # Define scan jobs for parallel execution
     # Reference: https://learn.microsoft.com/powershell/module/microsoft.powershell.core/foreach-object#example-14--using-parallel-processing
@@ -2083,6 +2135,10 @@ function invokeBusBuddyAntiRegression {
 function invokeBusBuddyXamlValidation {
     [CmdletBinding()]
     param()
+
+    # Ensure fresh module state
+    Invoke-BusBuddyModuleReload -Quiet
+
     Write-Output "=== XAML Validation ==="
 
     $xamlFiles = Get-ChildItem -Path . -Recurse -Include "*.xaml"
@@ -2164,6 +2220,7 @@ function Get-BusBuddyCommands {
             'bbMvpCheck' { 'Validate MVP readiness' }
             'bbAntiRegression' { 'Scan for anti-patterns (use -Detailed for full file lists)' }
             'bbXamlValidate' { 'Validate XAML (Syncfusion-only)' }
+            'bbRefresh' { 'Reload BusBuddy module (fresh state)' }
             'bbTestParallel' { 'Legacy parallel testing (superseded by bbTest -Parallel)' }
             default { 'BusBuddy command' }
         }
@@ -2218,6 +2275,7 @@ Set-Alias -Name 'bbRestore' -Value 'invokeBusBuddyRestore'
 Set-Alias -Name 'bbClean' -Value 'invokeBusBuddyClean'
 Set-Alias -Name 'bbAntiRegression' -Value 'invokeBusBuddyAntiRegression'
 Set-Alias -Name 'bbXamlValidate' -Value 'invokeBusBuddyXamlValidation'
+Set-Alias -Name 'bbRefresh' -Value 'Invoke-BusBuddyModuleReload'
 Set-Alias -Name 'bbMvpCheck' -Value 'testBusBuddyMvpReadiness'
 Set-Alias -Name 'bbCommands' -Value 'Get-BusBuddyCommands'
 # Enhanced aliases for parallel/performance features

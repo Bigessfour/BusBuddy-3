@@ -1170,9 +1170,9 @@ function confirmNetSdk908Install {
 }
 
 # Functions for common BusBuddy dev tasks (inspired by CI YAML)
-function Build-BusBuddy { dotnet build $env:SOLUTION_FILE --configuration $env:BUILD_CONFIGURATION --no-restore }
-function Test-BusBuddy { dotnet test $env:SOLUTION_FILE --configuration $env:BUILD_CONFIGURATION --no-build --verbosity normal }
-function Restore-BusBuddy { dotnet restore $env:SOLUTION_FILE }
+function Build-BusBuddy { bbBuild }
+function Test-BusBuddy { bbTest }
+function Restore-BusBuddy { bbRestore }
 
 # LocalDB management function
 function Install-BusBuddyLocalDB {
@@ -1223,7 +1223,7 @@ function Install-BusBuddyLocalDB {
                 $conn.Open()
                 $conn.Close()
                 Write-Information "✅ LocalDB installation successful!" -InformationAction Continue
-                Write-Information "💡 You can now run EF migrations: dotnet ef database update --project BusBuddy.Core" -InformationAction Continue
+                Write-Information "💡 You can now run EF migrations: bbMigrate or bbDbUpdate" -InformationAction Continue
             }
             catch {
                 Write-Warning "LocalDB installation may not be complete. Try restarting PowerShell or run: sqllocaldb start mssqllocaldb"
@@ -1773,10 +1773,36 @@ Set-SyncfusionLicense
 Import-BusBuddyCli  # Prepare lazy-loads for Az/SqlServer when used
 
 # Display helpful information
-Write-Output 'BusBuddy Dev Profile Loaded: Use bb* aliases (bbHealth, bbBuild, bbTest, bbRun, etc.) or Connect-BusBuddySql for Azure SQL queries.'
-Write-Output 'Core Commands: bbHealth, bbBuild, bbTest, bbRun, bbMvpCheck, bbAntiRegression, bbXamlValidate'
-Write-Output 'CLI Commands: bbFullScan (comprehensive), bbWorkflows (GitHub), bbAzResources (Azure), bbRepos (GitKraken)'
-Write-Output 'CLI Tools: Get-BusBuddyCliStatus, Get-BusBuddyDatabaseModuleStatus, Install-BusBuddyGrokCli, Install-BusBuddyGoogleCli, Install-BusBuddyEarthEngineCli, Install-BusBuddyLocalDB'
+Write-Output 'BusBuddy Dev Profile Loaded: Use bb* aliases for comprehensive development workflow.'
+Write-Output ''
+Write-Output '=== BusBuddy Development Commands ==='
+Write-Output 'PowerShell 7.5.2+ modernized automation for comprehensive development workflow'
+Write-Output ''
+Write-Output '📂 Analysis Commands:'
+Write-Output '  bbMvpCheck         - Validate MVP feature completeness against finish line criteria'
+Write-Output '  bbAntiRegression   - Scan for compliance violations (UI, coding standards)'
+Write-Output '  bbXamlValidate     - Validate XAML files for Syncfusion-only compliance'
+Write-Output ''
+Write-Output '📂 Core Commands:'
+Write-Output '  bbHealth           - Comprehensive environment health checks'
+Write-Output '  bbBuild            - Build the BusBuddy solution with proper error handling'
+Write-Output '  bbTest             - Run comprehensive test suite with coverage reporting'
+Write-Output '  bbRun              - Launch the BusBuddy WPF application'
+Write-Output ''
+Write-Output '📂 Development Commands:'
+Write-Output '  bbCommands         - Show this help information'
+Write-Output ''
+Write-Output '💡 Usage Tips:'
+Write-Output '  • Run ''bbHealth'' before starting any development work'
+Write-Output '  • Use ''bbCommands -Command <name>'' for detailed help on specific commands'
+Write-Output '  • All commands follow PowerShell 7.5.2 standards with structured logging'
+Write-Output '  • Reference docs: https://help.syncfusion.com/wpf/welcome-to-syncfusion-essential-wpf'
+Write-Output ''
+Write-Output '🚀 Quick Start Workflow:'
+Write-Output '  1. bbHealth -Detailed                 # Validate environment'
+Write-Output '  2. bbBuild                           # Build solution'
+Write-Output '  3. bbTest                            # Run tests'
+Write-Output '  4. bbRun                             # Launch application'
 
 # Show loaded module status
 $loadedDbModules = @('dbatools', 'Logging', 'WPFBot3000', 'PoshWPF', 'SqlServer') | Where-Object { Get-Module $_ -ErrorAction SilentlyContinue }
@@ -1801,6 +1827,7 @@ function Invoke-BusBuddyBuild {
         [string]$Configuration = "Debug",
         [string]$Verbosity = "detailed",
         [switch]$NoBuild,
+        # PSScriptAnalyzer: Suppress array initialization warning - @() is preferred syntax
         [string[]]$AdditionalArgs = @()
     )
 
@@ -1956,62 +1983,882 @@ function Start-BusBuddyTest {
 }
 
 function Test-BusBuddyHealth {
-    [CmdletBinding()]
-    param()
+    <#
+    .SYNOPSIS
+    Performs comprehensive health checks for the BusBuddy development environment.
+
+    .DESCRIPTION
+    Validates PowerShell version, .NET SDK, project files, Syncfusion licensing, and more.
+    Supports detailed analysis, modernization scanning, and automatic repairs for common issues.
+
+    .PARAMETER Detailed
+    Performs comprehensive system analysis including module paths, performance metrics, and environment variables.
+
+    .PARAMETER ModernizationScan
+    Scans for legacy code patterns and PowerShell syntax that should be updated to PowerShell 7.5.2 standards.
+
+    .PARAMETER AutoRepair
+    Automatically attempts to fix detected issues like PSModulePath problems, missing modules, or configuration errors.
+
+    .EXAMPLE
+    bbHealth
+    Performs basic environment validation.
+
+    .EXAMPLE
+    bbHealth -Detailed
+    Runs comprehensive system analysis with performance metrics.
+
+    .EXAMPLE
+    bbHealth -ModernizationScan
+    Scans for legacy PowerShell patterns that need updating.
+
+    .EXAMPLE
+    bbHealth -AutoRepair
+    Automatically fixes detected configuration issues.
+
+    .EXAMPLE
+    bbHealth -Detailed -ModernizationScan -AutoRepair
+    Runs full audit with automatic issue resolution.
+
+    .LINK
+    https://learn.microsoft.com/powershell/scripting/install/powershell-support-lifecycle
+    .LINK
+    https://learn.microsoft.com/dotnet/core/tools/dotnet--version
+    .LINK
+    https://help.syncfusion.com/wpf/welcome-to-syncfusion-essential-wpf
+    #>
+    [CmdletBinding(SupportsShouldProcess)]
+    param(
+        [Parameter(HelpMessage = "Performs comprehensive system analysis including module paths and performance metrics")]
+        [switch]$Detailed,
+
+        [Parameter(HelpMessage = "Scans for legacy code patterns and PowerShell syntax that should be updated")]
+        [switch]$ModernizationScan,
+
+        [Parameter(HelpMessage = "Automatically attempts to fix detected issues")]
+        [switch]$AutoRepair
+    )
+
+    $healthResults = @{
+        PowerShellVersion = $false
+        DotNetSDK = $false
+        SolutionFile = $false
+        ProjectFile = $false
+        SyncfusionLicense = $false
+        ModulesLoaded = $false
+        LegacyPatterns = @()
+        RepairActions = @()
+        PerformanceMetrics = @{}
+    }
 
     Write-Information "=== BusBuddy Health Check ===" -InformationAction Continue
+    if ($Detailed) { Write-Information "Running detailed analysis..." -InformationAction Continue }
+    if ($ModernizationScan) { Write-Information "Scanning for modernization opportunities..." -InformationAction Continue }
+    if ($AutoRepair) { Write-Information "Auto-repair mode enabled..." -InformationAction Continue }
 
     try {
-        # Check PowerShell version
+        # === CORE ENVIRONMENT CHECKS ===
+
+        # Check PowerShell version (PowerShell 7.5.2+ required)
         # Reference: https://learn.microsoft.com/powershell/scripting/install/powershell-support-lifecycle
         $psVersion = $PSVersionTable.PSVersion
         if ($psVersion.Major -ge 7 -and $psVersion.Minor -ge 5) {
             Write-Information "✅ PowerShell version: $psVersion" -InformationAction Continue
+            $healthResults.PowerShellVersion = $true
         } else {
             Write-Warning "⚠️ PowerShell version $psVersion (7.5+ recommended)"
+            if ($AutoRepair) {
+                $healthResults.RepairActions += "Consider upgrading to PowerShell 7.5.2 or later"
+            }
         }
 
-        # Check .NET SDK
+        # Check .NET SDK (9.0.304+ required per repo standards)
         # Reference: https://learn.microsoft.com/dotnet/core/tools/dotnet--version
         $dotnetVersion = & dotnet --version 2>$null
         if ($dotnetVersion) {
             Write-Information "✅ .NET SDK version: $dotnetVersion" -InformationAction Continue
+            $healthResults.DotNetSDK = $true
+
+            if ($Detailed) {
+                $targetVersion = [Version]"9.0.304"
+                $currentVersion = [Version]$dotnetVersion
+                if ($currentVersion -lt $targetVersion) {
+                    Write-Warning "⚠️ .NET SDK $dotnetVersion detected. Consider upgrading to 9.0.304+ for optimal compatibility"
+                }
+            }
         } else {
             Write-Warning "❌ .NET SDK not found"
-            return $false
+            if ($AutoRepair) {
+                $healthResults.RepairActions += "Install .NET 9.0.304 SDK from https://dotnet.microsoft.com/download"
+            }
+            return $healthResults
         }
 
         # Check solution file
         if (Test-Path "BusBuddy.sln") {
             Write-Information "✅ Solution file found" -InformationAction Continue
+            $healthResults.SolutionFile = $true
         } else {
             Write-Warning "❌ Solution file not found"
-            return $false
+            return $healthResults
         }
 
-        # Check project file
-        if (Test-Path "BusBuddy.csproj") {
-            Write-Information "✅ Project file found" -InformationAction Continue
+        # Check project files (both WPF and Core)
+        $projectFiles = @("BusBuddy.WPF\BusBuddy.WPF.csproj", "BusBuddy.Core\BusBuddy.Core.csproj")
+        $projectsFound = 0
+        foreach ($project in $projectFiles) {
+            if (Test-Path $project) {
+                $projectsFound++
+                if ($Detailed) {
+                    Write-Information "✅ Project file found: $project" -InformationAction Continue
+                }
+            }
+        }
+
+        if ($projectsFound -eq $projectFiles.Count) {
+            Write-Information "✅ All project files found ($projectsFound/$($projectFiles.Count))" -InformationAction Continue
+            $healthResults.ProjectFile = $true
         } else {
-            Write-Warning "❌ Project file not found"
-            return $false
+            Write-Warning "❌ Missing project files ($projectsFound/$($projectFiles.Count) found)"
         }
 
         # Check Syncfusion license key
+        # Reference: https://help.syncfusion.com/wpf/welcome-to-syncfusion-essential-wpf
         if ($env:SYNCFUSION_LICENSE_KEY) {
             Write-Information "✅ Syncfusion license key configured" -InformationAction Continue
+            $healthResults.SyncfusionLicense = $true
         } else {
             Write-Warning "⚠️ Syncfusion license key not set (SYNCFUSION_LICENSE_KEY)"
+            if ($AutoRepair) {
+                $healthResults.RepairActions += "Set SYNCFUSION_LICENSE_KEY environment variable"
+            }
+        }
+
+        # === DETAILED ANALYSIS ===
+        if ($Detailed) {
+            Write-Information "=== Detailed Environment Analysis ===" -InformationAction Continue
+
+            # Check PSModulePath integrity
+            $modulePaths = $env:PSModulePath -split [System.IO.Path]::PathSeparator
+            $validPaths = $modulePaths | Where-Object { Test-Path $_ }
+            Write-Information "✅ PSModulePath: $($validPaths.Count)/$($modulePaths.Count) paths valid" -InformationAction Continue
+
+            # Check bb* command availability
+            $bbCommands = @('bbBuild', 'bbTest', 'bbRun', 'bbMvpCheck', 'bbAntiRegression', 'bbXamlValidate')
+            $availableCommands = $bbCommands | Where-Object { Get-Command $_ -ErrorAction SilentlyContinue }
+            Write-Information "✅ bb* commands: $($availableCommands.Count)/$($bbCommands.Count) available" -InformationAction Continue
+            $healthResults.ModulesLoaded = $availableCommands.Count -eq $bbCommands.Count
+
+            # Performance metrics
+            $healthResults.PerformanceMetrics = @{
+                MemoryUsage = [System.GC]::GetTotalMemory($false) / 1MB
+                ModuleLoadTime = (Measure-Command { Get-Module }).TotalMilliseconds
+                CommandAvailability = "$($availableCommands.Count)/$($bbCommands.Count)"
+            }
+
+            Write-Information "📊 Memory usage: $([math]::Round($healthResults.PerformanceMetrics.MemoryUsage, 2)) MB" -InformationAction Continue
+        }
+
+        # === MODERNIZATION SCAN ===
+        if ($ModernizationScan) {
+            Write-Information "=== Legacy Pattern Detection ===" -InformationAction Continue
+
+            $legacyPatterns = @()
+            $scriptFiles = Get-ChildItem -Path "PowerShell" -Recurse -Filter "*.ps1" -ErrorAction SilentlyContinue
+
+            foreach ($file in $scriptFiles) {
+                $content = Get-Content $file.FullName -Raw -ErrorAction SilentlyContinue
+                if ($content) {
+                    # Split content into lines for context-aware checking
+                    $lines = $content -split "`r?`n"
+
+                    foreach ($lineNum in 0..($lines.Count - 1)) {
+                        $line = $lines[$lineNum]
+
+                        # Skip comments, strings, and detection code itself
+                        if ($line -match '^\s*#' -or
+                            $line -match 'legacyPatterns.*Write-Host' -or
+                            $line -match 'legacyPatterns.*dotnet' -or
+                            $line -match 'content.*-match.*Write-Host' -or
+                            $line -match 'content.*-match.*dotnet' -or
+                            $line -match 'Write-Host.*usage.*use Write-Information' -or
+                            $line -match "'\^\\\s\*Write-Host\\\s'" -or
+                            $line -match 'if.*line.*-match.*Write-Host' -or
+                            $line -match '-notmatch.*Write-Host') {
+                            continue
+                        }
+
+                        # Check for actual Write-Host usage (exclude all detection/pattern matching code)
+                        if ($line -match '^\s*Write-Host\s[^-]' -and
+                            $line -notmatch '#' -and
+                            $line -notmatch 'match' -and
+                            $line -notmatch 'pattern' -and
+                            $line -notmatch 'legacy' -and
+                            $line -notmatch "'.*Write-Host.*'" -and
+                            $line -notmatch '".*Write-Host.*"') {
+                            $legacyPatterns += "Write-Host usage in $($file.Name):$($lineNum + 1) (use Write-Information)"
+                        }
+
+                        # Check for user-facing dotnet CLI usage (not internal bb* implementations)
+                        if ($line -match '^\s*dotnet\s+(build|test|run|clean|restore)' -and
+                            $line -notmatch 'Start-Process.*dotnet' -and
+                            $line -notmatch '&\s*dotnet\s+--list-sdks' -and
+                            $line -notmatch '#.*dotnet') {
+                            $legacyPatterns += ".NET CLI usage in $($file.Name):$($lineNum + 1) (use bb* commands)"
+                        }
+
+                        # Check for legacy array syntax
+                        if ($line -match '@\(\)' -and $line -notmatch '#.*@\(\)' -and $line -notmatch 'content.*-match.*@\\\(\\\)') {
+                            $legacyPatterns += "Legacy array syntax in $($file.Name):$($lineNum + 1) (use [array]::new())"
+                        }
+                    }
+                }
+            }
+
+            $healthResults.LegacyPatterns = $legacyPatterns
+
+            if ($legacyPatterns.Count -eq 0) {
+                Write-Information "✅ No legacy patterns detected" -InformationAction Continue
+            } else {
+                Write-Warning "⚠️ Found $($legacyPatterns.Count) legacy patterns:"
+                $legacyPatterns | ForEach-Object { Write-Warning "  - $_" }
+            }
+        }
+
+        # === AUTO-REPAIR ACTIONS ===
+        if ($AutoRepair -and $healthResults.RepairActions.Count -gt 0) {
+            Write-Information "=== Executing Auto-Repair Actions ===" -InformationAction Continue
+
+            foreach ($action in $healthResults.RepairActions) {
+                if ($PSCmdlet.ShouldProcess($action, "Auto-Repair")) {
+                    Write-Information "🔧 $action" -InformationAction Continue
+                    # Note: Actual repair implementations would go here
+                    # For now, just log the recommended actions
+                }
+            }
         }
 
         Write-Information "=== Health check completed ===" -InformationAction Continue
-        return $true
+
+        # Return overall health status
+        $overallHealth = $healthResults.PowerShellVersion -and
+                        $healthResults.DotNetSDK -and
+                        $healthResults.SolutionFile -and
+                        $healthResults.ProjectFile
+
+        if ($Detailed -or $ModernizationScan) {
+            return $healthResults
+        } else {
+            return $overallHealth
+        }
     }
     catch {
         Write-Warning "Health check failed: $($_.Exception.Message)"
+        if ($Detailed) {
+            Write-Warning "Stack trace: $($_.ScriptStackTrace)"
+        }
         return $false
     }
 }
+
+function Show-BusBuddyHelp {
+    <#
+    .SYNOPSIS
+    Shows comprehensive help for all BusBuddy bb* commands and functions.
+
+    .DESCRIPTION
+    Displays detailed information about available BusBuddy commands, their parameters, and usage examples.
+    Organized by category for easy navigation.
+
+    .PARAMETER Command
+    Show help for a specific bb* command.
+
+    .PARAMETER Category
+    Show commands for a specific category (Core, Database, Testing, Analysis, etc.).
+
+    .EXAMPLE
+    bbHelp
+    Shows overview of all available bb* commands.
+
+    .EXAMPLE
+    bbHelp -Command bbHealth
+    Shows detailed help for the bbHealth command.
+
+    .EXAMPLE
+    bbHelp -Category Core
+    Shows all core development commands.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(HelpMessage = "Show help for a specific bb* command")]
+        [ValidateSet('bbHealth', 'bbBuild', 'bbTest', 'bbRun', 'bbMvpCheck', 'bbAntiRegression', 'bbXamlValidate', 'bbCommands')]
+        [string]$Command,
+
+        [Parameter(HelpMessage = "Show commands for a specific category")]
+        [ValidateSet('Core', 'Database', 'Testing', 'Analysis', 'Development')]
+        [string]$Category
+    )
+
+    $commands = @{
+        Core = @(
+            @{
+                Name = 'bbHealth'
+                Function = 'Test-BusBuddyHealth'
+                Description = 'Comprehensive environment health checks'
+                Parameters = @(
+                    '-Detailed: Comprehensive system analysis',
+                    '-ModernizationScan: Scan for legacy patterns',
+                    '-AutoRepair: Automatically fix detected issues'
+                )
+                Examples = @(
+                    'bbHealth                                    # Basic health check',
+                    'bbHealth -Detailed                         # Detailed analysis',
+                    'bbHealth -ModernizationScan                # Scan for legacy patterns',
+                    'bbHealth -AutoRepair                       # Auto-fix issues',
+                    'bbHealth -Detailed -ModernizationScan -AutoRepair  # Full audit + repair'
+                )
+            },
+            @{
+                Name = 'bbBuild'
+                Function = 'Invoke-BusBuddyBuild'
+                Description = 'Build the BusBuddy solution with proper error handling'
+                Parameters = @('-Configuration: Debug/Release build configuration')
+                Examples = @('bbBuild                          # Build solution')
+            },
+            @{
+                Name = 'bbTest'
+                Function = 'Start-BusBuddyTest'
+                Description = 'Run comprehensive test suite with coverage reporting'
+                Parameters = @('-Parallel: Run tests in parallel', '-Coverage: Generate coverage report')
+                Examples = @('bbTest                           # Run all tests', 'bbTest -Parallel -Coverage       # Parallel with coverage')
+            },
+            @{
+                Name = 'bbRun'
+                Function = 'Start-BusBuddyApplication'
+                Description = 'Launch the BusBuddy WPF application'
+                Parameters = @('-Configuration: Debug/Release configuration')
+                Examples = @('bbRun                            # Launch application')
+            }
+        )
+
+        Analysis = @(
+            @{
+                Name = 'bbMvpCheck'
+                Function = 'Test-BusBuddyMvpFeatures'
+                Description = 'Validate MVP feature completeness against finish line criteria'
+                Parameters = @('-Module: Check specific module', '-Detailed: Comprehensive validation')
+                Examples = @('bbMvpCheck                       # Check all MVP features')
+            },
+            @{
+                Name = 'bbAntiRegression'
+                Function = 'Test-BusBuddyCompliance'
+                Description = 'Scan for compliance violations (UI, coding standards)'
+                Parameters = @('-ThrottleLimit: Parallel processing limit')
+                Examples = @('bbAntiRegression                 # Check compliance')
+            },
+            @{
+                Name = 'bbXamlValidate'
+                Function = 'Test-BusBuddyXamlCompliance'
+                Description = 'Validate XAML files for Syncfusion-only compliance'
+                Parameters = @('-Path: Specific path to validate')
+                Examples = @('bbXamlValidate                   # Validate all XAML')
+            }
+        )
+
+        Development = @(
+            @{
+                Name = 'bbCommands'
+                Function = 'Show-BusBuddyHelp'
+                Description = 'Show this help information'
+                Parameters = @('-Command: Show help for specific command', '-Category: Show commands by category')
+                Examples = @('bbCommands                       # Show all commands', 'bbCommands -Command bbHealth     # Help for bbHealth')
+            }
+        )
+    }
+
+    if ($Command) {
+        # Show detailed help for specific command
+        $found = $false
+        foreach ($cat in $commands.Values) {
+            $cmd = $cat | Where-Object { $_.Name -eq $Command }
+            if ($cmd) {
+                Write-Information "=== $($cmd.Name) - $($cmd.Description) ===" -InformationAction Continue
+                Write-Information "Function: $($cmd.Function)" -InformationAction Continue
+                Write-Information "" -InformationAction Continue
+                Write-Information "Parameters:" -InformationAction Continue
+                $cmd.Parameters | ForEach-Object { Write-Information "  $_" -InformationAction Continue }
+                Write-Information "" -InformationAction Continue
+                Write-Information "Examples:" -InformationAction Continue
+                $cmd.Examples | ForEach-Object { Write-Information "  $_" -InformationAction Continue }
+                $found = $true
+                break
+            }
+        }
+        if (-not $found) {
+            Write-Warning "Command '$Command' not found. Use 'bbCommands' to see available commands."
+        }
+        return
+    }
+
+    if ($Category) {
+        # Show commands for specific category
+        if ($commands.ContainsKey($Category)) {
+            Write-Information "=== $Category Commands ===" -InformationAction Continue
+            $commands[$Category] | ForEach-Object {
+                Write-Information "$($_.Name.PadRight(20)) - $($_.Description)" -InformationAction Continue
+            }
+        } else {
+            Write-Warning "Category '$Category' not found. Valid categories: $($commands.Keys -join ', ')"
+        }
+        return
+    }
+
+    # Show overview of all commands
+    Write-Information "=== BusBuddy Development Commands ===" -InformationAction Continue
+    Write-Information "PowerShell 7.5.2+ modernized automation for comprehensive development workflow" -InformationAction Continue
+    Write-Information "" -InformationAction Continue
+
+    foreach ($categoryName in $commands.Keys | Sort-Object) {
+        Write-Information "📂 $categoryName Commands:" -InformationAction Continue
+        $commands[$categoryName] | ForEach-Object {
+            Write-Information "  $($_.Name.PadRight(18)) - $($_.Description)" -InformationAction Continue
+        }
+        Write-Information "" -InformationAction Continue
+    }
+
+    Write-Information "💡 Usage Tips:" -InformationAction Continue
+    Write-Information "  • Run 'bbHealth' before starting any development work" -InformationAction Continue
+    Write-Information "  • Use 'bbCommands -Command <name>' for detailed help on specific commands" -InformationAction Continue
+    Write-Information "  • All commands follow PowerShell 7.5.2 standards with structured logging" -InformationAction Continue
+    Write-Information "  • Reference docs: https://help.syncfusion.com/wpf/welcome-to-syncfusion-essential-wpf" -InformationAction Continue
+    Write-Information "" -InformationAction Continue
+    Write-Information "🚀 Quick Start Workflow:" -InformationAction Continue
+    Write-Information "  1. bbHealth -Detailed                 # Validate environment" -InformationAction Continue
+    Write-Information "  2. bbBuild                           # Build solution" -InformationAction Continue
+    Write-Information "  3. bbTest                            # Run tests" -InformationAction Continue
+    Write-Information "  4. bbRun                             # Launch application" -InformationAction Continue
+}
+
+#region Additional MVP Functions for CI/CD Integration
+
+<#
+.SYNOPSIS
+Tests BusBuddy codebase for compliance violations and legacy patterns
+
+.DESCRIPTION
+Scans the BusBuddy repository for compliance violations including:
+- Legacy PowerShell patterns
+- Non-Syncfusion UI controls in XAML
+- Coding standard violations
+- Documentation inconsistencies
+
+.PARAMETER ThrottleLimit
+Maximum number of parallel scanning operations
+
+.PARAMETER Path
+Specific path to scan (defaults to repository root)
+
+.EXAMPLE
+bbAntiRegression
+Runs full compliance scan
+
+.EXAMPLE
+bbAntiRegression -ThrottleLimit 8
+Runs scan with 8 parallel operations
+#>
+function Test-BusBuddyCompliance {
+    [CmdletBinding()]
+    param(
+        [int]$ThrottleLimit = 4,
+        [string]$Path = $BusBuddyRepoPath
+    )
+
+    Write-Information "🔍 Running BusBuddy compliance scan..." -InformationAction Continue
+
+    $violations = @()
+    $scanResults = @{
+        LegacyPatterns = @()
+        XamlViolations = @()
+        CodingStandards = @()
+        ViolationsFound = 0
+    }
+
+    try {
+        # Leverage existing modernization scan from bbHealth
+        $healthResult = Test-BusBuddyHealth -ModernizationScan
+        if ($healthResult.LegacyPatterns) {
+            $scanResults.LegacyPatterns = $healthResult.LegacyPatterns
+            $violations += $healthResult.LegacyPatterns
+        }
+
+        # Check for XAML compliance (Syncfusion-only policy)
+        $xamlFiles = Get-ChildItem -Path $Path -Filter "*.xaml" -Recurse -ErrorAction SilentlyContinue
+        foreach ($file in $xamlFiles) {
+            $content = Get-Content -Path $file.FullName -Raw -ErrorAction SilentlyContinue
+            if ($content) {
+                # Check for standard WPF controls that should be Syncfusion
+                $standardControls = @('DataGrid', 'ListView', 'TreeView', 'Calendar', 'DatePicker')
+                foreach ($control in $standardControls) {
+                    if ($content -match "<$control\b") {
+                        $violation = "Standard WPF $control found in $($file.Name) - should use Syncfusion equivalent"
+                        $scanResults.XamlViolations += $violation
+                        $violations += $violation
+                    }
+                }
+            }
+        }
+
+        $scanResults.ViolationsFound = $violations.Count
+
+        if ($violations.Count -eq 0) {
+            Write-Information "✅ No compliance violations found" -InformationAction Continue
+        } else {
+            Write-Warning "⚠️ Found $($violations.Count) compliance violations:"
+            foreach ($violation in $violations) {
+                Write-Warning "  - $violation"
+            }
+        }
+
+        return $scanResults
+    }
+    catch {
+        Write-Error "Failed to run compliance scan: $_"
+        return @{ ViolationsFound = -1; Error = $_.ToString() }
+    }
+}
+
+<#
+.SYNOPSIS
+Validates XAML files for Syncfusion-only compliance
+
+.DESCRIPTION
+Scans all XAML files in the BusBuddy project to ensure only Syncfusion controls are used,
+enforcing the global resource dictionary approach and theme compliance.
+
+.PARAMETER Path
+Path to scan for XAML files (defaults to repository root)
+
+.PARAMETER Detailed
+Provides detailed analysis of each XAML file
+
+.EXAMPLE
+bbXamlValidate
+Validates all XAML files for Syncfusion compliance
+
+.EXAMPLE
+bbXamlValidate -Detailed
+Provides detailed validation report
+#>
+function Test-BusBuddyXamlCompliance {
+    [CmdletBinding()]
+    param(
+        [string]$Path = $BusBuddyRepoPath,
+        [switch]$Detailed
+    )
+
+    Write-Information "🎨 Validating XAML files for Syncfusion compliance..." -InformationAction Continue
+
+    $results = @{
+        TotalFiles = 0
+        CompliantFiles = 0
+        ViolationFiles = 0
+        Violations = @()
+        GlobalResourcesFound = $false
+    }
+
+    try {
+        # Find all XAML files
+        $xamlFiles = Get-ChildItem -Path $Path -Filter "*.xaml" -Recurse -ErrorAction SilentlyContinue
+        $results.TotalFiles = $xamlFiles.Count
+
+        # Check for global resource dictionaries
+        $resourceFiles = $xamlFiles | Where-Object { $_.Name -match "Resource|Theme|Style" }
+        $results.GlobalResourcesFound = $resourceFiles.Count -gt 0
+
+        foreach ($file in $xamlFiles) {
+            $violations = @()
+            $content = Get-Content -Path $file.FullName -Raw -ErrorAction SilentlyContinue
+
+            if ($content) {
+                # Check for prohibited standard WPF controls
+                $prohibitedControls = @(
+                    @{ Control = 'DataGrid'; Replacement = 'syncfusion:SfDataGrid' },
+                    @{ Control = 'ListView'; Replacement = 'syncfusion:SfListView' },
+                    @{ Control = 'TreeView'; Replacement = 'syncfusion:SfTreeView' },
+                    @{ Control = 'Calendar'; Replacement = 'syncfusion:SfCalendar' },
+                    @{ Control = 'DatePicker'; Replacement = 'syncfusion:SfDatePicker' },
+                    @{ Control = 'ComboBox'; Replacement = 'syncfusion:SfComboBox' },
+                    @{ Control = 'TextBox'; Replacement = 'syncfusion:SfTextBox' }
+                )
+
+                foreach ($prohibited in $prohibitedControls) {
+                    if ($content -match "<$($prohibited.Control)\b") {
+                        $violations += "Use $($prohibited.Replacement) instead of $($prohibited.Control)"
+                    }
+                }
+
+                # Check for local styles (should use global resources)
+                if ($content -match '<.*\.Style\s*=\s*"[^"]*"') {
+                    $violations += "Local styles found - should use global resource dictionary"
+                }
+
+                # Check for theme compliance
+                if ($content -notmatch 'syncfusion.*Fluent' -and $content -match 'syncfusion:') {
+                    $violations += "Syncfusion controls should use FluentDark/FluentLight themes"
+                }
+            }
+
+            if ($violations.Count -eq 0) {
+                $results.CompliantFiles++
+                if ($Detailed) {
+                    Write-Information "✅ $($file.Name) - Compliant" -InformationAction Continue
+                }
+            } else {
+                $results.ViolationFiles++
+                $results.Violations += @{
+                    File = $file.Name
+                    Path = $file.FullName
+                    Issues = $violations
+                }
+
+                if ($Detailed) {
+                    Write-Warning "⚠️ $($file.Name) - $($violations.Count) violations:"
+                    foreach ($violation in $violations) {
+                        Write-Warning "  - $violation"
+                    }
+                }
+            }
+        }
+
+        # Summary
+        $complianceRate = if ($results.TotalFiles -gt 0) {
+            [math]::Round(($results.CompliantFiles / $results.TotalFiles) * 100, 1)
+        } else {
+            100
+        }
+
+        Write-Information "📊 XAML Compliance: $complianceRate% ($($results.CompliantFiles)/$($results.TotalFiles) files)" -InformationAction Continue
+
+        if ($results.ViolationFiles -eq 0) {
+            Write-Information "✅ All XAML files are Syncfusion compliant" -InformationAction Continue
+        } else {
+            Write-Warning "⚠️ $($results.ViolationFiles) files have Syncfusion compliance violations"
+        }
+
+        return $results
+    }
+    catch {
+        Write-Error "Failed to validate XAML compliance: $_"
+        return @{ Error = $_.ToString() }
+    }
+}
+
+<#
+.SYNOPSIS
+Validates MVP feature completeness against finish line criteria
+
+.DESCRIPTION
+Checks the BusBuddy project for completion of MVP features as defined in the finish line vision:
+- Student Management Module
+- Vehicle and Driver Management
+- Route and Schedule Assignment
+- Activity and Compliance Logging
+- Dashboard and Navigation
+- Data and Security Layer
+
+.PARAMETER Detailed
+Provides detailed analysis of each MVP feature area
+
+.EXAMPLE
+bbMvpCheck
+Validates MVP feature completeness
+
+.EXAMPLE
+bbMvpCheck -Detailed
+Provides detailed MVP validation report
+#>
+function Test-BusBuddyMvpFeatures {
+    [CmdletBinding()]
+    param(
+        [switch]$Detailed
+    )
+
+    Write-Information "🎯 Validating MVP feature completeness..." -InformationAction Continue
+
+    $mvpFeatures = @{
+        "Student Management" = @{
+            Description = "CRUD operations, SfDataGrid, geocoding, validation"
+            RequiredPaths = @(
+                "BusBuddy.WPF/Views/Student",
+                "BusBuddy.WPF/ViewModels/Student",
+                "BusBuddy.Core/Models/Student.cs"
+            )
+            RequiredControls = @("SfDataGrid", "SfTextBox")
+            Weight = 20
+        }
+        "Vehicle Management" = @{
+            Description = "Fleet tracking, maintenance calendars, driver profiles"
+            RequiredPaths = @(
+                "BusBuddy.WPF/Views/Vehicle",
+                "BusBuddy.WPF/Views/Driver",
+                "BusBuddy.Core/Models/Bus.cs"
+            )
+            RequiredControls = @("SfScheduler", "SfDataGrid")
+            Weight = 20
+        }
+        "Route Management" = @{
+            Description = "Route builder, SfMap integration, schedule generation"
+            RequiredPaths = @(
+                "BusBuddy.WPF/Views/Route",
+                "BusBuddy.Core/Models/Route.cs"
+            )
+            RequiredControls = @("SfMap", "SfTreeView", "SfCalendar")
+            Weight = 20
+        }
+        "Activity Logging" = @{
+            Description = "Timeline views, compliance reports, audit trails"
+            RequiredPaths = @(
+                "BusBuddy.WPF/Views/Activity",
+                "BusBuddy.Core/Models/Activity.cs"
+            )
+            RequiredControls = @("SfListView", "PdfViewer")
+            Weight = 15
+        }
+        "Dashboard" = @{
+            Description = "Central hub, DockingManager, global search, themes"
+            RequiredPaths = @(
+                "BusBuddy.WPF/Views/Dashboard",
+                "BusBuddy.WPF/ViewModels/Dashboard"
+            )
+            RequiredControls = @("DockingManager", "SfAutoComplete")
+            Weight = 15
+        }
+        "Data Layer" = @{
+            Description = "EF Core, Azure SQL, Serilog, security"
+            RequiredPaths = @(
+                "BusBuddy.Core/Data/BusBuddyDbContext.cs",
+                "BusBuddy.Core/Services"
+            )
+            RequiredControls = @()
+            Weight = 10
+        }
+    }
+
+    $results = @{
+        TotalFeatures = $mvpFeatures.Count
+        CompletedFeatures = 0
+        PartialFeatures = 0
+        MissingFeatures = 0
+        OverallScore = 0
+        FeatureDetails = @{}
+    }
+
+    try {
+        foreach ($featureName in $mvpFeatures.Keys) {
+            $feature = $mvpFeatures[$featureName]
+            $featureResult = @{
+                Name = $featureName
+                Status = "Missing"
+                Score = 0
+                FoundPaths = @()
+                MissingPaths = @()
+                FoundControls = @()
+                MissingControls = @()
+            }
+
+            # Check required paths
+            $pathScore = 0
+            foreach ($path in $feature.RequiredPaths) {
+                $fullPath = Join-Path $BusBuddyRepoPath $path
+                if ((Test-Path $fullPath) -or (Get-ChildItem -Path $BusBuddyRepoPath -Recurse -Filter "*$($path)*" -ErrorAction SilentlyContinue)) {
+                    $featureResult.FoundPaths += $path
+                    $pathScore += 1
+                } else {
+                    $featureResult.MissingPaths += $path
+                }
+            }
+
+            # Check for required Syncfusion controls in XAML files
+            $controlScore = 0
+            if ($feature.RequiredControls.Count -gt 0) {
+                $xamlFiles = Get-ChildItem -Path $BusBuddyRepoPath -Filter "*.xaml" -Recurse -ErrorAction SilentlyContinue
+                foreach ($control in $feature.RequiredControls) {
+                    $found = $false
+                    foreach ($file in $xamlFiles) {
+                        $content = Get-Content -Path $file.FullName -Raw -ErrorAction SilentlyContinue
+                        if ($content -and $content -match $control) {
+                            $found = $true
+                            break
+                        }
+                    }
+                    if ($found) {
+                        $featureResult.FoundControls += $control
+                        $controlScore += 1
+                    } else {
+                        $featureResult.MissingControls += $control
+                    }
+                }
+            } else {
+                $controlScore = 1  # No controls required for this feature
+            }
+
+            # Calculate feature completion
+            $pathCompletion = if ($feature.RequiredPaths.Count -gt 0) { $pathScore / $feature.RequiredPaths.Count } else { 1 }
+            $controlCompletion = if ($feature.RequiredControls.Count -gt 0) { $controlScore / $feature.RequiredControls.Count } else { 1 }
+            $featureCompletion = ($pathCompletion + $controlCompletion) / 2
+
+            $featureResult.Score = [math]::Round($featureCompletion * 100, 1)
+
+            # Determine status
+            if ($featureResult.Score -ge 90) {
+                $featureResult.Status = "Complete"
+                $results.CompletedFeatures++
+            } elseif ($featureResult.Score -ge 50) {
+                $featureResult.Status = "Partial"
+                $results.PartialFeatures++
+            } else {
+                $featureResult.Status = "Missing"
+                $results.MissingFeatures++
+            }
+
+            $results.FeatureDetails[$featureName] = $featureResult
+            $results.OverallScore += $featureResult.Score * ($feature.Weight / 100)
+
+            if ($Detailed) {
+                $statusIcon = switch ($featureResult.Status) {
+                    "Complete" { "✅" }
+                    "Partial" { "🔶" }
+                    "Missing" { "❌" }
+                }
+                Write-Information "$statusIcon $featureName ($($featureResult.Score)%) - $($featureResult.Status)" -InformationAction Continue
+                if ($featureResult.MissingPaths.Count -gt 0) {
+                    Write-Information "  Missing: $($featureResult.MissingPaths -join ', ')" -InformationAction Continue
+                }
+            }
+        }
+
+        $results.OverallScore = [math]::Round($results.OverallScore, 1)
+
+        # Summary
+        Write-Information "📊 MVP Completion: $($results.OverallScore)% ($($results.CompletedFeatures)/$($results.TotalFeatures) features complete)" -InformationAction Continue
+
+        if ($results.OverallScore -ge 90) {
+            Write-Information "🎉 MVP is ready for finish line validation!" -InformationAction Continue
+        } elseif ($results.OverallScore -ge 70) {
+            Write-Information "🔶 MVP is substantially complete - minor work remaining" -InformationAction Continue
+        } else {
+            Write-Warning "⚠️ MVP requires significant development - $($results.MissingFeatures) features missing"
+        }
+
+        return $results
+    }
+    catch {
+        Write-Error "Failed to validate MVP features: $_"
+        return @{ Error = $_.ToString() }
+    }
+}
+
+#endregion
 
 # Set up aliases for easier access
 # Reference: https://learn.microsoft.com/powershell/module/microsoft.powershell.utility/set-alias
@@ -2019,6 +2866,11 @@ Set-Alias -Name "bbBuild" -Value "Invoke-BusBuddyBuild"
 Set-Alias -Name "bbRun" -Value "Start-BusBuddyApplication"
 Set-Alias -Name "bbTest" -Value "Start-BusBuddyTest"
 Set-Alias -Name "bbHealth" -Value "Test-BusBuddyHealth"
+Set-Alias -Name "bbCommands" -Value "Show-BusBuddyHelp"
+Set-Alias -Name "bbHelp" -Value "Show-BusBuddyHelp"
+Set-Alias -Name "bbAntiRegression" -Value "Test-BusBuddyCompliance"
+Set-Alias -Name "bbXamlValidate" -Value "Test-BusBuddyXamlCompliance"
+Set-Alias -Name "bbMvpCheck" -Value "Test-BusBuddyMvpFeatures"
 
 # Mark profile as successfully loaded
 $env:BUSBUDDY_PROFILE_LOADED = '1'

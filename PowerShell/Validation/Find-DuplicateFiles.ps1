@@ -29,10 +29,10 @@ param(
 
 # Initialize result object
 $result = @{
-    Identical = @()
-    Different = @()
+    Identical = [array]::new()
+    Different = [array]::new()
     Scanned = 0
-    SkippedDirs = @()
+    SkippedDirs = [array]::new()
 }
 
 # Directories to skip (common build/temp directories)

@@ -152,9 +152,9 @@ namespace BusBuddy.Tests.UI
             // Arrange
             var buses = new List<Bus>
             {
-                new Bus { VehicleId = 1, BusNumber = "BUS001", Make = "Blue Bird", Model = "Vision", Year = 2020, Active = true },
-                new Bus { VehicleId = 2, BusNumber = "BUS002", Make = "Thomas Built", Model = "Saf-T-Liner", Year = 2019, Active = true },
-                new Bus { VehicleId = 3, BusNumber = "BUS003", Make = "Blue Bird", Model = "All American", Year = 2021, Active = false }
+                new Bus { VehicleId = 1, BusNumber = "BUS001", Make = "Blue Bird", Model = "Vision", Year = 2020, Status = "Active" },
+                new Bus { VehicleId = 2, BusNumber = "BUS002", Make = "Thomas Built", Model = "Saf-T-Liner", Year = 2019, Status = "Active" },
+                new Bus { VehicleId = 3, BusNumber = "BUS003", Make = "Blue Bird", Model = "All American", Year = 2021, Status = "Inactive" }
             };
 
             // Act & Assert
@@ -226,7 +226,7 @@ namespace BusBuddy.Tests.UI
                     RouteId = i,
                     RouteName = $"Route {i:D3}",
                     Description = $"Test route {i} for performance testing",
-                    Active = i % 10 != 0 // 90% active
+                    IsActive = i % 10 != 0 // 90% active
                 });
             }
 

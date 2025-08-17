@@ -1,0 +1,505 @@
+# ⚠️ DEPRECATED: Legacy CI Pipeline - DO NOT USE
+# This file is preserved for historical reference only
+#
+# MIGRATION NOTICE:
+# - Replaced by: .github/workflows/ci.yml (modernized version)
+# - Migration Date: August 17, 2025
+# - Reason: bb* command integration, 90% coverage enforcement, finish line compliance
+#
+# This workflow is DISABLED - it will not run on push/PR events
+# Reference: https://docs.github.com/actions/using-workflows/workflow-syntax-for-github-actions
+name: 🚌 BusBuddy CI (DEPRECATED - DO NOT USE)
+
+env:
+  DOTNET_VERSION: 9.0.303  # OUTDATED - Use 9.0.304 in new CI
+  BUILD_CONFIGURATION: Release
+  SOLUTION_FILE: BusBuddy.sln
+
+# DISABLED: Remove all triggers to prevent accidental execution
+# on:
+#   push:
+#     branches:
+#       - master
+#       - main
+#   pull_request:
+#     branches:
+#       - master
+#       - main
+#   workflow_dispatch:
+
+jobs:
+  security-scan:
+    name: 🔒 Security Scan for Potential Secrets
+    runs-on: windows-latest
+    timeout-minutes: 5
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🔍 Scan repository for common secret patterns
+        shell: pwsh
+        run: |
+          # Gather tracked files only to avoid scanning build artifacts
+          $files = git ls-files
+          $patterns = @(
+            '(?i)password\s*=\s*[^\s]+' ,
+            '(?i)api[_-]?key\s*=\s*[^\s]+' ,
+            '(?i)secret\s*=\s*[^\s]+' ,
+            '(?i)connection(string)?\s*=\s*[^\s]+' ,
+            '(?i)Authorization:\s*Bearer\s+\S+'
+          )
+          $secretIssues = @()
+          foreach ($file in $files) {
+            try {
+              $matches = Select-String -Path $file -Pattern $patterns -SimpleMatch:$false -AllMatches -ErrorAction SilentlyContinue
+              if ($matches) { $secretIssues += $matches }
+            } catch { }
+          }
+          if ($secretIssues.Count -gt 0) {
+            Write-Error "Found $($secretIssues.Count) potential secrets in code"
+            exit 1
+          } else {
+            Write-Host "No potential secrets found."
+          }
+
+  build-and-test:
+    name: 🏗️ Build & Test (Sf ${{ matrix.syncfusion }})
+    runs-on: windows-latest
+    timeout-minutes: 20
+    needs: [security-scan]
+    outputs:
+      coverage-percentage: ${{ steps.coverage.outputs.coverage-percentage }}
+    strategy:
+      fail-fast: false
+      matrix:
+        # CI should use the authoritative Syncfusion version from Directory.Build.props.
+        # We standardize on 30.2.5 to avoid automated rewrites to older versions.
+        syncfusion: ["30.2.5"]
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install PowerShell 7.5.x
+        uses: PSModule/install-powershell@v1
+        with:
+          Version: 7.5.1
+
+      - name: 🔌 Install BusBuddy PowerShell modules from PSGallery
+        shell: pwsh
+        run: |
+          Install-Module -Name BusBuddy -Repository PSGallery -Scope CurrentUser -Force -AllowClobber
+          Install-Module -Name BusBuddy.Testing -Repository PSGallery -Scope CurrentUser -Force -AllowClobber
+          # Import modules to ensure commands are available
+          Import-Module BusBuddy -Force
+          Import-Module BusBuddy.Testing -Force
+          # Quick sanity: list key commands exposed by the modules
+          Get-Command -Module BusBuddy,BusBuddy.Testing | Where-Object { $_.Name -match 'BusBuddy|bb|invokeBusBuddy' } | Format-Table -Auto
+
+      - name: ⚙️ Set CI defaults
+        shell: pwsh
+        run: |
+          if (-not $env:SOLUTION_FILE) {
+            $sln = Get-ChildItem -Path . -Filter *.sln -Recurse | Select-Object -First 1
+            if ($sln) { "SOLUTION_FILE=$($sln.FullName)" >> $env:GITHUB_ENV }
+          }
+      - name: 📌 Set and validate Syncfusion version pin
+        shell: pwsh
+        run: |
+          $desired = "${{ matrix.syncfusion }}"
+          $propsPath = "Directory.Build.props"
+          [xml]$xml = Get-Content -Raw -Path $propsPath
+          # PropertyGroup may appear multiple times; pick the first group that contains the element
+          $node = ($xml.Project.PropertyGroup | ForEach-Object { $_.SyncfusionVersion } | Where-Object { $_ } | Select-Object -First 1)
+          if (-not $node) { throw "Could not find <SyncfusionVersion> in $propsPath" }
+          $current = try { $node.InnerText } catch { [string]$node }
+          if ($current -ne $desired) {
+            Write-Host "Updating SyncfusionVersion: $current -> $desired"
+            $updated = $false
+            try {
+              $node.InnerText = $desired
+              $xml.Save((Resolve-Path $propsPath))
+              $updated = $true
+            } catch {
+              Write-Host "XML DOM update failed — falling back to regex replace: $($_.Exception.Message)"
+            }
+            if (-not $updated) {
+              $raw = Get-Content -Raw -Path $propsPath
+              $new = [regex]::Replace($raw, '<SyncfusionVersion>.*?</SyncfusionVersion>', "<SyncfusionVersion>$desired</SyncfusionVersion>")
+              if ($new -ne $raw) { [IO.File]::WriteAllText((Resolve-Path $propsPath), $new, [Text.Encoding]::UTF8) }
+            }
+          } else {
+            Write-Host "SyncfusionVersion already set to $current"
+          }
+          # Validate update
+          $props = Get-Content -Raw -Path $propsPath
+          if ($props -notmatch "<SyncfusionVersion>$desired</SyncfusionVersion>") { throw "Failed to set SyncfusionVersion to $desired" }
+
+      - name: 🏗️ Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: ♻️ Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ env.DOTNET_VERSION }}-${{ hashFiles('**/*.csproj', '**/packages.lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-${{ env.DOTNET_VERSION }}-
+            ${{ runner.os }}-nuget-
+
+      - name: 🔐 Export secrets to env
+        shell: pwsh
+        run: |
+          $secrets = @{
+            SYNCFUSION_LICENSE_KEY = '${{ secrets.SYNCFUSION_LICENSE_KEY }}'
+            BUSBUDDY_CONNECTION    = '${{ secrets.BUSBUDDY_CONNECTION }}'
+            AZURE_SUBSCRIPTION_ID  = '${{ secrets.AZURE_SUBSCRIPTION_ID }}'
+            AZURE_SQL_SERVER       = '${{ secrets.AZURE_SQL_SERVER }}'
+            AZURE_SQL_USER         = '${{ secrets.AZURE_SQL_USER }}'
+            AZURE_SQL_PASSWORD     = '${{ secrets.AZURE_SQL_PASSWORD }}'
+          }
+          foreach ($k in $secrets.Keys) {
+            $v = $secrets[$k]
+            if ($null -ne $v -and $v -ne '') {
+              Write-Output "::add-mask::$v"
+              Add-Content -Path $env:GITHUB_ENV -Value "$k=$v"
+            }
+          }
+
+      - name: Configure Syncfusion license
+        run: |
+          if (-not $env:SYNCFUSION_LICENSE_KEY) {
+            echo "::notice::SYNCFUSION_LICENSE_KEY not set; build may show license warnings."
+          } else {
+            Write-Information "Syncfusion license key present." -InformationAction Continue
+          }
+
+      - name: 🔧 Restore dependencies
+        run: dotnet restore ${{ env.SOLUTION_FILE }} --verbosity minimal
+
+
+      - name: 🏗️ Initialize BusBuddy environment (module-based)
+        shell: pwsh
+        run: |
+          # Ensure modules are loaded in the session
+          Import-Module BusBuddy -Force
+          Import-Module BusBuddy.Testing -Force
+          # Preferred module entrypoint for health check
+          if (Get-Command -Name invokeBusBuddyHealthCheck -ErrorAction SilentlyContinue) {
+            invokeBusBuddyHealthCheck
+          } else {
+            Write-Host 'invokeBusBuddyHealthCheck not found; skipping health check.'
+          }
+
+      - name: "🏗️ Build solution (module: invokeBusBuddyBuild)"
+        shell: pwsh
+        run: |
+          Import-Module BusBuddy -Force
+          if (Get-Command -Name invokeBusBuddyBuild -ErrorAction SilentlyContinue) {
+            invokeBusBuddyBuild
+          } else {
+            Write-Host 'invokeBusBuddyBuild not found; falling back to dotnet build'
+            dotnet build ${{ env.SOLUTION_FILE }} --configuration ${{ env.BUILD_CONFIGURATION }}
+          }
+
+      - name: "🧪 Run tests (module: invokeBusBuddyTest)"
+        shell: pwsh
+        run: |
+          Import-Module BusBuddy.Testing -Force
+          if (Get-Command -Name invokeBusBuddyTest -ErrorAction SilentlyContinue) {
+            invokeBusBuddyTest --logger "trx;LogFileName=Tests.trx" --collect:"XPlat Code Coverage"
+          } else {
+            Write-Host 'invokeBusBuddyTest not found; falling back to dotnet test'
+            dotnet test ${{ env.SOLUTION_FILE }} --configuration ${{ env.BUILD_CONFIGURATION }} --logger "trx;LogFileName=Tests.trx" --collect:"XPlat Code Coverage"
+          }
+
+      - name: 📈 Extract coverage percentage
+        id: coverage
+        if: always()
+        shell: pwsh
+        run: |
+          # Find Cobertura coverage generated by coverlet.collector
+          $coverageFiles = Get-ChildItem -Recurse -Filter "coverage.cobertura.xml" -ErrorAction SilentlyContinue
+          if (-not $coverageFiles) {
+            Write-Host "No coverage file found. Defaulting to 0%."
+            "coverage-percentage=0" >> $env:GITHUB_OUTPUT
+            exit 0
+          }
+          $file = $coverageFiles | Select-Object -First 1
+          Write-Host "Using coverage file: $($file.FullName)"
+          [xml]$xml = Get-Content -Raw -Path $file.FullName
+          $rate = $xml.coverage.'line-rate'
+          if (-not $rate) { $rate = 0 }
+          $pct = [math]::Round(([double]$rate) * 100, 2)
+          "coverage-percentage=$pct" >> $env:GITHUB_OUTPUT
+
+      - name: 📦 Upload coverage artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-${{ matrix.syncfusion }}-${{ github.run_number }}
+          path: |
+            **/coverage.cobertura.xml
+          retention-days: 7
+
+      - name: 📊 Publish test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results-${{ github.run_number }}
+          path: "**/Tests.trx"
+          retention-days: 7
+
+      - name: 🛠️ Ensure sqlcmd is available
+        env:
+          BUSBUDDY_CONNECTION: ${{ secrets.BUSBUDDY_CONNECTION }}
+          AZURE_SQL_SERVER: ${{ secrets.AZURE_SQL_SERVER }}
+          AZURE_SQL_USER: ${{ secrets.AZURE_SQL_USER }}
+          AZURE_SQL_PASSWORD: ${{ secrets.AZURE_SQL_PASSWORD }}
+        if: env.BUSBUDDY_CONNECTION && env.AZURE_SQL_SERVER && env.AZURE_SQL_USER && env.AZURE_SQL_PASSWORD
+        id: ensure-sqlcmd
+        shell: pwsh
+        run: |
+          $found = $false
+          if (-not (Get-Command sqlcmd -ErrorAction SilentlyContinue)) {
+            echo "sqlcmd not found — attempting install via Chocolatey..."
+            try {
+              choco install sqlserver-cmdline-utils -y --no-progress | Out-Null
+            } catch {
+              echo "::warning::Failed to install sqlcmd via Chocolatey"
+            }
+          }
+          if (Get-Command sqlcmd -ErrorAction SilentlyContinue) {
+            $found = $true
+            echo "sqlcmd available."
+          } else {
+            echo "::notice::sqlcmd not available; migration application will be skipped"
+          }
+          echo "found=$found" >> $env:GITHUB_OUTPUT
+
+      - name: 📜 Generate EF migration script
+        env:
+          BUSBUDDY_CONNECTION: ${{ secrets.BUSBUDDY_CONNECTION }}
+        if: env.BUSBUDDY_CONNECTION
+        shell: pwsh
+        run: |
+          echo "Generating idempotent EF migration script..."
+          dotnet tool install --global dotnet-ef --version 9.* 2>$null | Out-Null
+          $env:PATH += ";$env:USERPROFILE\.dotnet\tools"
+          dotnet ef migrations script --idempotent --output migration-script.sql --project BusBuddy.Core/BusBuddy.Core.csproj --startup-project BusBuddy.WPF/BusBuddy.WPF.csproj
+
+      - name: 🧩 Apply EF migrations to Azure SQL
+        env:
+          BUSBUDDY_CONNECTION: ${{ secrets.BUSBUDDY_CONNECTION }}
+          AZURE_SQL_SERVER: ${{ secrets.AZURE_SQL_SERVER }}
+          AZURE_SQL_USER: ${{ secrets.AZURE_SQL_USER }}
+          AZURE_SQL_PASSWORD: ${{ secrets.AZURE_SQL_PASSWORD }}
+        if: env.BUSBUDDY_CONNECTION && env.AZURE_SQL_SERVER && env.AZURE_SQL_USER && env.AZURE_SQL_PASSWORD && steps.ensure-sqlcmd.outputs.found == 'True'
+        shell: pwsh
+        run: |
+          echo "Applying migrations to database..."
+          sqlcmd -S "${{ secrets.AZURE_SQL_SERVER }}" -d "BusBuddyDb" -U "${{ secrets.AZURE_SQL_USER }}" -P "${{ secrets.AZURE_SQL_PASSWORD }}" -i migration-script.sql
+
+      - name: 📤 Upload migration script
+        env:
+          BUSBUDDY_CONNECTION: ${{ secrets.BUSBUDDY_CONNECTION }}
+        if: env.BUSBUDDY_CONNECTION
+        uses: actions/upload-artifact@v4
+        with:
+          name: migration-script-${{ github.run_number }}
+          path: migration-script.sql
+          retention-days: 7
+
+      - name: 📦 Publish WPF application
+        if: success() && github.event_name == 'push'
+        run: |
+          echo "Publishing WPF application..."
+          dotnet publish BusBuddy.WPF/BusBuddy.WPF.csproj --configuration ${{ env.BUILD_CONFIGURATION }} --no-build --output ./publish --runtime win-x64
+
+      - name: 📦 Archive build artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: build-artifacts-${{ github.run_number }}
+          path: |
+            **/bin/Release/
+            publish/
+          retention-days: 7
+
+      - name: 📊 Generate workflow summary
+        if: always()
+        shell: pwsh
+        run: |
+          echo "## 🚌 BusBuddy CI Summary" >> $env:GITHUB_STEP_SUMMARY
+          echo "| Job | Status |" >> $env:GITHUB_STEP_SUMMARY
+          echo "|-----|--------|" >> $env:GITHUB_STEP_SUMMARY
+          echo "| Build & Test | ${{ job.status }} |" >> $env:GITHUB_STEP_SUMMARY
+          echo "" >> $env:GITHUB_STEP_SUMMARY
+          echo "${{ job.status == 'success' && '✅ Workflow PASSED' || '❌ Workflow FAILED - Check logs for details' }}" >> $env:GITHUB_STEP_SUMMARY
+
+      - name: 🔐 Ensure firewall rule cleanup
+        env:
+          AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+        if: ${{ always() && env.AZURE_SUBSCRIPTION_ID }}
+        shell: pwsh
+        run: |
+          if ($env:RULE_NAME) {
+            echo "Cleaning up SQL firewall rule: $env:RULE_NAME"
+            pwsh -File .\PowerShell\Networking\Disable-AzureSqlAccess.ps1 `
+              -SubscriptionId "${{ secrets.AZURE_SUBSCRIPTION_ID }}" `
+              -ResourceGroupName "BusBuddy-RG" `
+              -SqlServerName "busbuddy-server-sm2" `
+              -RuleName $env:RULE_NAME
+          }
+
+  quality-analysis:
+    name: 🧮 Quality Analysis and Metrics
+    runs-on: windows-latest
+    needs: [build-and-test, security-scan]
+    if: always()
+    outputs:
+      cs-files: ${{ steps.quality-metrics.outputs.cs-files }}
+      xaml-files: ${{ steps.quality-metrics.outputs.xaml-files }}
+      test-files: ${{ steps.quality-metrics.outputs.test-files }}
+      viewmodel-files: ${{ steps.quality-metrics.outputs.viewmodel-files }}
+      service-files: ${{ steps.quality-metrics.outputs.service-files }}
+      potential-secrets: ${{ steps.quality-metrics.outputs.potential-secrets }}
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🧮 Gather quality metrics
+        id: quality-metrics
+        shell: pwsh
+        run: |
+          # Use tracked files to avoid scanning build outputs
+          $tracked = & git ls-files
+
+          # File counts
+          $csCount = ($tracked | Where-Object { $_ -match '\.cs$' -and $_ -notmatch '\.xaml\.cs$' }).Count
+          $xamlCount = ($tracked | Where-Object { $_ -match '\.xaml$' }).Count
+          $testCount = ($tracked | Where-Object { $_ -match '(^|[\\/])BusBuddy\.Tests([\\/].*)?\.cs$' -or $_ -match 'Tests?\.cs$' }).Count
+          $vmCount = ($tracked | Where-Object { $_ -match '([\\/])ViewModels([\\/].*)?\.cs$' }).Count
+          $svcCount = ($tracked | Where-Object { $_ -match '([\\/])Services([\\/].*)?\.cs$' }).Count
+
+          # Potential secrets scan (non-fatal)
+          $patterns = @(
+            '(?i)password\s*=\s*[^\s]+' ,
+            '(?i)api[_-]?key\s*=\s*[^\s]+',
+            '(?i)secret\s*=\s*[^\s]+',
+            '(?i)connection(string)?\s*=\s*[^\s]+',
+            '(?i)Authorization:\s*Bearer\s+\S+'
+          )
+          $secretIssues = 0
+          foreach ($file in $tracked) {
+            try {
+              $m = Select-String -Path $file -Pattern $patterns -AllMatches -SimpleMatch:$false -ErrorAction SilentlyContinue
+              if ($m) { $secretIssues += $m.Count }
+            } catch { }
+          }
+
+          "cs-files=$csCount" >> $env:GITHUB_OUTPUT
+          "xaml-files=$xamlCount" >> $env:GITHUB_OUTPUT
+          "test-files=$testCount" >> $env:GITHUB_OUTPUT
+          "viewmodel-files=$vmCount" >> $env:GITHUB_OUTPUT
+          "service-files=$svcCount" >> $env:GITHUB_OUTPUT
+          "potential-secrets=$secretIssues" >> $env:GITHUB_OUTPUT
+
+      - name: 📊 Visualize code metrics
+        if: always()
+        shell: pwsh
+        run: |
+          echo "Generating code metrics chart..."
+          echo '```chartjs
+          {
+            "type": "bar",
+            "data": {
+              "labels": ["C# Files", "XAML Files", "Test Files", "ViewModels", "Services"],
+              "datasets": [{
+                "label": "File Counts",
+                "data": [${{ steps.quality-metrics.outputs.cs-files }}, ${{ steps.quality-metrics.outputs.xaml-files }}, ${{ steps.quality-metrics.outputs.test-files }}, ${{ steps.quality-metrics.outputs.viewmodel-files }}, ${{ steps.quality-metrics.outputs.service-files }}],
+                "backgroundColor": ["#36A2EB", "#FF6384", "#4BC0C0", "#FFCE56", "#9966FF"],
+                "borderColor": ["#2A8BBF", "#D4566D", "#3FA0A0", "#D4A647", "#7F55D4"],
+                "borderWidth": 1
+              }]
+            },
+            "options": {
+              "scales": {
+                "y": {
+                  "beginAtZero": true,
+                  "title": { "display": true, "text": "Count" }
+                },
+                "x": {
+                  "title": { "display": true, "text": "File Types" }
+                }
+              },
+              "plugins": {
+                "title": { "display": true, "text": "BusBuddy Code Metrics" }
+              }
+            }
+          }
+          ```' >> $env:GITHUB_STEP_SUMMARY
+
+  coverage-summary:
+    name: 📈 Coverage Summary Aggregation
+    runs-on: windows-latest
+    needs: [build-and-test]
+    if: always()
+    outputs:
+      coverage-percentage: ${{ steps.aggregate.outputs.coverage-percentage }}
+    steps:
+      - name: 📥 Download coverage artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: coverage-*-${{ github.run_number }}
+          merge-multiple: true
+          path: coverage
+
+      - name: 🔎 Aggregate coverage
+        id: aggregate
+        shell: pwsh
+        run: |
+          $files = Get-ChildItem -Recurse -Path coverage -Filter "coverage.cobertura.xml" -ErrorAction SilentlyContinue
+          if (-not $files) {
+            Write-Host "No coverage files found. Defaulting to 0%."
+            "coverage-percentage=0" >> $env:GITHUB_OUTPUT
+            exit 0
+          }
+          $totalCovered = 0
+          $totalValid = 0
+          foreach ($f in $files) {
+            try {
+              [xml]$x = Get-Content -Raw -Path $f.FullName
+              $covered = [double]($x.coverage.'lines-covered')
+              $valid   = [double]($x.coverage.'lines-valid')
+              if (-not $valid -and $x.coverage.'line-rate') {
+                # Fallback: approximate with a nominal scale if only rate exists
+                $valid = 100
+                $covered = [double]$x.coverage.'line-rate' * $valid
+              }
+              if ($valid -gt 0) {
+                $totalCovered += $covered
+                $totalValid   += $valid
+              }
+            } catch { }
+          }
+          if ($totalValid -le 0) { $pct = 0 } else { $pct = [math]::Round(($totalCovered / $totalValid) * 100, 2) }
+          "coverage-percentage=$pct" >> $env:GITHUB_OUTPUT
+
+  notify-completion:
+    name: 🧾 Notify Completion
+    runs-on: windows-latest
+    needs: [quality-analysis, coverage-summary]
+    if: always()
+    steps:
+      - name: 🧾 Write overall summary
+        shell: pwsh
+        run: |
+          echo "## ✅ CI Completion Summary" >> $env:GITHUB_STEP_SUMMARY
+          echo "" >> $env:GITHUB_STEP_SUMMARY
+          echo "| Metric | Value |" >> $env:GITHUB_STEP_SUMMARY
+          echo "|---|---|" >> $env:GITHUB_STEP_SUMMARY
+          echo "| Test Coverage | ${{ needs.coverage-summary.outputs.coverage-percentage }}% |" >> $env:GITHUB_STEP_SUMMARY
+          echo "| Security Issues | ${{ needs.quality-analysis.outputs.potential-secrets }} |" >> $env:GITHUB_STEP_SUMMARY
