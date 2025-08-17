@@ -11,6 +11,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:conv="clr-namespace:BusBuddy.WPF.Views.Shared.Converters"
+             xmlns:syncfusion="http://schemas.syncfusion.com/wpf"
              xmlns:sftools="clr-namespace:Syncfusion.Windows.Tools.Controls;assembly=Syncfusion.Shared.WPF"
              xmlns:sfgrid="clr-namespace:Syncfusion.UI.Xaml.Grid;assembly=Syncfusion.SfGrid.WPF"
              xmlns:sfinput="clr-namespace:Syncfusion.Windows.Controls.Input;assembly=Syncfusion.SfInput.WPF"
@@ -29,16 +30,9 @@
                  WPF converter docs: https://learn.microsoft.com/dotnet/api/system.windows.data.ivalueconverter
             -->
 
-            <!-- Simple inverse boolean converter for Phase 1 -->
+            <!-- Simple inverse boolean style using global converter -->
             <Style x:Key="InverseBooleanStyle" TargetType="Control">
-                <Style.Triggers>
-                    <DataTrigger Binding="{Binding IsBusy}" Value="True">
-                        <Setter Property="IsEnabled" Value="False"/>
-                    </DataTrigger>
-                    <DataTrigger Binding="{Binding IsBusy}" Value="False">
-                        <Setter Property="IsEnabled" Value="True"/>
-                    </DataTrigger>
-                </Style.Triggers>
+                <Setter Property="IsEnabled" Value="{Binding IsBusy, Converter={StaticResource BusBuddy.Converter.InverseBoolean}}"/>
             </Style>
         </ResourceDictionary>
     </UserControl.Resources>
@@ -210,7 +204,7 @@
                     <StackPanel Grid.Row="2"
                                 Orientation="Horizontal"
                                 Margin="0,15,0,0">
-            <sftools:ButtonAdv Label="➕ New Vehicle"
+            <syncfusion:ButtonAdv Label="➕ New Vehicle"
                                 Command="{Binding NewVehicleCommand}"
                 Background="{DynamicResource BusBuddy.Brush.Primary}"
                 Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"
@@ -218,7 +212,7 @@
                                 Padding="15,8"
                                 Margin="0,0,10,0"
                                 Cursor="Hand"/>
-            <sftools:ButtonAdv Label="🔄 Refresh"
+            <syncfusion:ButtonAdv Label="🔄 Refresh"
                                 Command="{Binding RefreshCommand}"
                 Background="{DynamicResource ButtonBackgroundBrush}"
                 Foreground="{DynamicResource ButtonForegroundBrush}"
@@ -360,7 +354,7 @@
                         <StackPanel Orientation="Horizontal"
                                     HorizontalAlignment="Right"
                                     Margin="0,20,0,0">
-                <sftools:ButtonAdv Label="💾 Save"
+                <syncfusion:ButtonAdv Label="💾 Save"
                                     Command="{Binding DataContext.SaveVehicleCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                     Style="{StaticResource InverseBooleanStyle}"
                     Background="{DynamicResource BusBuddy.Brush.FleetGreen}"
@@ -369,7 +363,7 @@
                                     Padding="15,8"
                                     Margin="0,0,10,0"
                                     Cursor="Hand"/>
-                <sftools:ButtonAdv Label="🗑️ Delete"
+                <syncfusion:ButtonAdv Label="🗑️ Delete"
                                     Command="{Binding DataContext.DeleteVehicleCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                     Style="{StaticResource InverseBooleanStyle}"
                     Background="{DynamicResource BusBuddy.Brush.Semantic.Error}"

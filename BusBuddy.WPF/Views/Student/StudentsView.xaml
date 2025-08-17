@@ -3,6 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:syncfusion="http://schemas.syncfusion.com/wpf"
              xmlns:sftools="clr-namespace:Syncfusion.Windows.Tools.Controls;assembly=Syncfusion.Shared.WPF"
              xmlns:sfgrid="clr-namespace:Syncfusion.UI.Xaml.Grid;assembly=Syncfusion.SfGrid.WPF"
              xmlns:sfinput="clr-namespace:Syncfusion.Windows.Controls.Input;assembly=Syncfusion.SfInput.WPF"
@@ -53,15 +54,8 @@
             </ResourceDictionary.MergedDictionaries>
             <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
 
-            <!-- ActionButtonStyle used for small inline action buttons in the grid -->
-            <Style x:Key="ActionButtonStyle" TargetType="{x:Type sftools:ButtonAdv}">
-                <Setter Property="Width" Value="28"/>
-                <Setter Property="Height" Value="28"/>
-                <Setter Property="Margin" Value="2"/>
-                <Setter Property="Padding" Value="0"/>
-                <Setter Property="HorizontalAlignment" Value="Center"/>
-                <Setter Property="VerticalAlignment" Value="Center"/>
-            </Style>
+            <!-- ActionButtonStyle now defined globally in SyncfusionV30_Validated_ResourceDictionary.xaml -->
+            <!-- Use BusBuddy.ButtonAdv.ActionButton for small inline action buttons in the grid -->
         </ResourceDictionary>
     </UserControl.Resources>
 
@@ -96,19 +90,19 @@
         <!-- Main Actions — all Buttons must bind to ViewModel commands (verified below) -->
                 <StackPanel Grid.Column="0" Orientation="Horizontal">
         <!-- Add student — always enabled. Command: AddStudentCommand -->
-    <sftools:ButtonAdv Name="AddStudentButton" Label="➕ Add Student"
+    <syncfusion:ButtonAdv Name="AddStudentButton" Label="➕ Add Student"
                 Command="{Binding AddStudentCommand}"
                 Style="{StaticResource BusBuddy.ButtonAdv.Primary}"
                             AutomationProperties.Name="Add Student"
                             AutomationProperties.HelpText="Opens form to add a new student to the system"/>
             <!-- Edit selected student — enabled only when HasSelectedStudent is true. Command: EditStudentCommand -->
-            <sftools:ButtonAdv Name="EditStudentButton" Label="✏️ Edit Student"
+            <syncfusion:ButtonAdv Name="EditStudentButton" Label="✏️ Edit Student"
                             Command="{Binding EditStudentCommand}"
                             IsEnabled="{Binding HasSelectedStudent}"
                             AutomationProperties.Name="Edit Student"
                             AutomationProperties.HelpText="Opens form to edit the currently selected student"/>
             <!-- Delete selected student — enabled only when HasSelectedStudent is true. Command: DeleteStudentCommand -->
-            <sftools:ButtonAdv Name="DeleteStudentButton" Label="🗑️ Delete Student"
+            <syncfusion:ButtonAdv Name="DeleteStudentButton" Label="🗑️ Delete Student"
                             Command="{Binding DeleteStudentCommand}"
                             IsEnabled="{Binding HasSelectedStudent}"
                             AutomationProperties.Name="Delete Student"
@@ -117,13 +111,13 @@
 
                     <!-- Bulk Operations -->
         <!-- Import students from CSV/Excel (placeholder) — Command: ImportStudentsCommand -->
-    <sftools:ButtonAdv Name="ImportStudentsButton" Label="📥 Import CSV (Stub)"
+    <syncfusion:ButtonAdv Name="ImportStudentsButton" Label="📥 Import CSV (Stub)"
                             Command="{Binding ImportStudentsCommand}"
                             Style="{StaticResource BusBuddy.ButtonAdv.FleetGreen}"
                             AutomationProperties.Name="Import Students from CSV"
                 AutomationProperties.HelpText="Placeholder — CSV/Excel bulk import coming soon"/>
         <!-- Bulk assign route to selection — requires HasSelectedStudents. Command: BulkAssignRouteCommand -->
-        <sftools:ButtonAdv Name="BulkAssignRouteButton" Label="🚌 Bulk Assign Route"
+        <syncfusion:ButtonAdv Name="BulkAssignRouteButton" Label="🚌 Bulk Assign Route"
                                     Command="{Binding BulkAssignRouteCommand}"
                                     IsEnabled="{Binding HasSelectedStudents}"
                                     Style="{StaticResource BusBuddy.ButtonAdv.SafetyOrange}"
@@ -133,13 +127,13 @@
 
                     <!-- AI & Mapping -->
         <!-- Start AI optimization (placeholder). Command: OptimizeRoutesCommand -->
-    <sftools:ButtonAdv Name="OptimizeRoutesButton" Label="🤖 AI Optimize (Stub)"
+    <syncfusion:ButtonAdv Name="OptimizeRoutesButton" Label="🤖 AI Optimize (Stub)"
                             Command="{Binding OptimizeRoutesCommand}"
                             Style="{StaticResource BusBuddy.ButtonAdv.Warning}"
                             AutomationProperties.Name="AI Optimize Routes"
                 AutomationProperties.HelpText="Placeholder — AI optimization disabled for MVP"/>
         <!-- Plot all students on the map. Command: ViewMapCommand -->
-        <sftools:ButtonAdv Name="ViewMapButton" Label="🗺️ View Map"
+        <syncfusion:ButtonAdv Name="ViewMapButton" Label="🗺️ View Map"
                                     Command="{Binding ViewMapCommand}"
                                     Style="{StaticResource BusBuddy.ButtonAdv.Info}"
                                 AutomationProperties.Name="View Map"
@@ -148,12 +142,12 @@
 
                 <!-- Quick Actions — utility commands (Refresh/Export) and quick search -->
                 <StackPanel Grid.Column="1" Orientation="Horizontal">
-            <sftools:ButtonAdv Name="RefreshButton" Label="🔄 Refresh"
+            <syncfusion:ButtonAdv Name="RefreshButton" Label="🔄 Refresh"
                 Command="{Binding RefreshCommand}"
                 Style="{StaticResource BusBuddy.ButtonAdv.Info}"
                             AutomationProperties.Name="Refresh Student List"
                             AutomationProperties.HelpText="Reload student data from the database"/>
-            <sftools:ButtonAdv Name="ExportButton" Label="📤 Export"
+            <syncfusion:ButtonAdv Name="ExportButton" Label="📤 Export"
                 Command="{Binding ExportCommand}"
                 Style="{StaticResource BusBuddy.ButtonAdv.Primary}"
                             AutomationProperties.Name="Export Students"
@@ -355,17 +349,17 @@
                     <sfgrid:GridTemplateColumn.CellTemplate>
                         <DataTemplate>
                                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                    <sftools:ButtonAdv Label="🗺️"
+                                    <syncfusion:ButtonAdv Label="🗺️"
                                                           ToolTip="View on Map"
                                                           Command="{Binding DataContext.ViewOnMapCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                           CommandParameter="{Binding}"
-                                                          Style="{StaticResource ActionButtonStyle}"
+                                                          Style="{StaticResource BusBuddy.ButtonAdv.ActionButton}"
                                                           AutomationProperties.Name="View Student On Map"/>
-                                    <sftools:ButtonAdv Label="🎯"
+                                    <syncfusion:ButtonAdv Label="🎯"
                                                           ToolTip="AI Route Suggest"
                                                           Command="{Binding DataContext.SuggestRouteCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                           CommandParameter="{Binding}"
-                                                          Style="{StaticResource ActionButtonStyle}"
+                                                          Style="{StaticResource BusBuddy.ButtonAdv.ActionButton}"
                                                           AutomationProperties.Name="Suggest Route For Student"/>
                                 </StackPanel>
                         </DataTemplate>
@@ -403,15 +397,15 @@
                     <TextBlock Text="Status: " FontStyle="Italic"/>
                     <TextBlock Text="{Binding StatusMessage}" Margin="4,0,10,0"/>
                     <TextBlock Text="{Binding FilterStatusText}" FontStyle="Italic" Margin="0,0,10,0"/>
-            <sftools:ButtonAdv Label="💾 Save" Width="80" Height="30" Margin="0,0,6,0"
+            <syncfusion:ButtonAdv Label="💾 Save" Width="80" Height="30" Margin="0,0,6,0"
                             Command="{Binding SaveGridEditsCommand}"
                             Style="{StaticResource BusBuddyButtonAdv.Primary}"
                             ToolTip="Save inline edits (including phone/route changes)"/>
-            <sftools:ButtonAdv Label="📋 Summary" Width="100" Height="30"
+            <syncfusion:ButtonAdv Label="📋 Summary" Width="100" Height="30"
                             Command="{Binding ShowSummaryCommand}"
                             Style="{StaticResource BusBuddyButtonAdv.Info}"
                 ToolTip="Show route assignment summary"/>
-            <sftools:ButtonAdv Label="⚡ Quick Actions" Width="130" Height="30" Margin="8,0,0,0"
+            <syncfusion:ButtonAdv Label="⚡ Quick Actions" Width="130" Height="30" Margin="8,0,0,0"
                             Command="{Binding ShowQuickActionsCommand}"
                             Style="{StaticResource BusBuddyButtonAdv.Primary}"
                 ToolTip="Open quick actions menu (assign route, filter active, clear filters)"/>

@@ -102,23 +102,32 @@ class BusBuddyModuleManager {
             $result.IsValid = $false
         }
 
-        # Check PSEdition with enhanced null safety
+        # Check PSEdition with enhanced null safety and Desktop fallback warning
         try {
             $psVersion = $global:PSVersionTable
             if ($null -eq $psVersion) {
                 $result.Issues += "PSVersionTable not available"
                 $result.IsValid = $false
-            } elseif (-not $psVersion.ContainsKey('PSEdition')) {
-                $result.Issues += "PSEdition property not found in PSVersionTable"
-                $result.IsValid = $false
-            } elseif ([string]::IsNullOrEmpty($psVersion.PSEdition)) {
-                $result.Issues += "PSEdition is null or empty"
-                $result.IsValid = $false
-            } elseif ($psVersion.PSEdition -ne 'Core') {
-                $result.Issues += "PowerShell Core required. Current: $($psVersion.PSEdition)"
-                $result.IsValid = $false
             } else {
-                $result.Details += "PowerShell edition OK: $($psVersion.PSEdition)"
+                # Use PowerShell 7.5 null-coalescing operator with fallback
+                $psEdition = $psVersion.PSEdition ?? 'Unknown'
+                $result.Details += "PSEdition detected: $psEdition"
+
+                if ($psEdition -eq 'Desktop') {
+                    # Special handling for Windows PowerShell (Desktop edition)
+                    Write-Warning "⚠️  PowerShell Desktop edition detected. BusBuddy requires PowerShell Core 7.5+ for optimal functionality."
+                    Write-Warning "   Current edition: $psEdition"
+                    Write-Warning "   Install PowerShell 7.5+ from: https://github.com/PowerShell/PowerShell/releases"
+                    Write-Warning "   Some features may be limited or unavailable in Desktop edition."
+
+                    $result.Issues += "PowerShell Core 7.5+ recommended. Current edition: $psEdition (Desktop)"
+                    $result.IsValid = $false
+                } elseif ($psEdition -ne 'Core') {
+                    $result.Issues += "PowerShell Core required. Current edition: $psEdition"
+                    $result.IsValid = $false
+                } else {
+                    $result.Details += "PowerShell edition OK: $psEdition"
+                }
             }
         }
         catch {

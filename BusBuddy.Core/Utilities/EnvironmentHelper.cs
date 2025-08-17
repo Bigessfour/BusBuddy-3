@@ -116,8 +116,16 @@ namespace BusBuddy.Core.Utilities
 
             if (IsUsingAzureSql(configuration))
             {
-                // Prefer Azure AD interactive/password auth first, then fallback to SQL auth, then default, then sqlite
-                raw = configuration.GetConnectionString("AzureADConnection") ??
+                // Priority order for Azure SQL:
+                // 1. Managed Identity (for production Azure hosting)
+                // 2. Entra ID Default (for local dev with az login)
+                // 3. Interactive (for manual login)
+                // 4. Traditional SQL auth (legacy fallback)
+                // 5. Fallback options
+                raw = configuration.GetConnectionString("AzureManagedIdentityConnection") ??
+                      configuration.GetConnectionString("AzureEntraIDConnection") ??
+                      configuration.GetConnectionString("AzureInteractiveConnection") ??
+                      configuration.GetConnectionString("AzureADConnection") ??
                       configuration.GetConnectionString("AzureConnection") ??
                       configuration.GetConnectionString("DefaultConnection") ??
                       "Data Source=BusBuddy.db";
