@@ -3,16 +3,65 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-             xmlns:syncfusion="http://schemas.syncfusion.com/wpf"
+             xmlns:sftools="clr-namespace:Syncfusion.Windows.Tools.Controls;assembly=Syncfusion.Shared.WPF"
+             xmlns:sfgrid="clr-namespace:Syncfusion.UI.Xaml.Grid;assembly=Syncfusion.SfGrid.WPF"
+             xmlns:sfinput="clr-namespace:Syncfusion.Windows.Controls.Input;assembly=Syncfusion.SfInput.WPF"
              mc:Ignorable="d"
              d:DesignHeight="450" d:DesignWidth="800">
 
     <UserControl.Resources>
         <ResourceDictionary>
+            <!--
+              NOTE — UI control audit (StudentsView.xaml)
+
+              1) Non‑Syncfusion (standard WPF) controls found in this view:
+                 - UserControl, Grid, RowDefinition, ColumnDefinition
+                 - Border, StackPanel, TextBlock, Separator
+                 - DataTemplate, BooleanToVisibilityConverter
+                 These are layout/presentation primitives. Per project Syncfusion-only UI policy, prefer Syncfusion equivalents for complex controls; the data grid itself is already using Syncfusion SfDataGrid.
+
+              2) Skin / theme (Fluent Dark) status:
+                 - No SkinManager / global Syncfusion theme initialization is present in this XAML.
+                 - Theme must be applied centrally (App.xaml / App.xaml.cs) so all Syncfusion controls get the Fluent Dark theme consistently.
+
+              3) Recommended action (apply globally in App.xaml.cs) — see Syncfusion docs:
+                 https://help.syncfusion.com/wpf/themes/overview
+                 https://help.syncfusion.com/wpf/themes/sfskinmanager
+
+                 Minimal guidance (do this in App.xaml.cs OnStartup or before window creation):
+                 // App.xaml.cs — example (documentation-first, adapt to installed Syncfusion API)
+                 // Reference: https://help.syncfusion.com/wpf/themes/overview
+                 /*
+                 protected override void OnStartup(StartupEventArgs e)
+                 {
+                     base.OnStartup(e);
+                     // Register or set the Syncfusion theme globally — use the API matching your Syncfusion version
+                     // Example conceptual call (check exact method names in installed Syncfusion package):
+                     // Syncfusion.SfSkinManager.SfSkinManager.SetTheme(Application.Current, new Theme("FluentDark"));
+                     // or merge the official Fluent Dark resource dictionary:
+                     // Application.Current.Resources.MergedDictionaries.Add(
+                     //     new ResourceDictionary { Source = new Uri("pack://application:,,,/Syncfusion.Themes.FluentDark;component/FluentDark.xaml") });
+                 }
+                 */
+
+              4) Next steps:
+                 - If you want strict Syncfusion-only layout primitives, list specific replacements to consider (e.g., SfContainer / SfCard alternatives) and I will provide a targeted replacement plan.
+            -->
+            <!-- Reference: Syncfusion SfDataGrid docs — https://help.syncfusion.com/wpf/datagrid/getting-started -->
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/SyncfusionV30_Validated_ResourceDictionary.xaml"/>
             </ResourceDictionary.MergedDictionaries>
             <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+
+            <!-- ActionButtonStyle used for small inline action buttons in the grid -->
+            <Style x:Key="ActionButtonStyle" TargetType="{x:Type sftools:ButtonAdv}">
+                <Setter Property="Width" Value="28"/>
+                <Setter Property="Height" Value="28"/>
+                <Setter Property="Margin" Value="2"/>
+                <Setter Property="Padding" Value="0"/>
+                <Setter Property="HorizontalAlignment" Value="Center"/>
+                <Setter Property="VerticalAlignment" Value="Center"/>
+            </Style>
         </ResourceDictionary>
     </UserControl.Resources>
 
@@ -25,20 +74,20 @@
         </Grid.RowDefinitions>
 
     <!-- Header -->
-    <Border Grid.Row="0" Background="{DynamicResource BusBuddy.Brush.Primary}"
+    <Border Grid.Row="0" Background="{StaticResource BusBuddy.Brush.Primary}"
                 CornerRadius="5" Padding="15" Margin="0,0,0,10">
             <StackPanel Orientation="Horizontal">
                 <TextBlock Text="&#xE716;" FontFamily="Segoe MDL2 Assets"
-                          FontSize="24" Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                          FontSize="24" Foreground="{StaticResource BusBuddy.Brush.Text.Primary}" VerticalAlignment="Center" Margin="0,0,10,0"/>
                 <TextBlock Text="Student Management" FontSize="20" FontWeight="Bold"
-                          Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}" VerticalAlignment="Center"/>
+                          Foreground="{StaticResource BusBuddy.Brush.Text.Primary}" VerticalAlignment="Center"/>
             </StackPanel>
         </Border>
 
     <!-- Enhanced Toolbar for Route Building -->
-    <Border Grid.Row="1" Background="{DynamicResource BusBuddy.Brush.Surface.Light}"
+    <Border Grid.Row="1" Background="{StaticResource BusBuddy.Brush.Surface.Light}"
                 CornerRadius="3" Padding="10" Margin="0,0,0,10">
-            <Grid Background="{DynamicResource ContentBackgroundBrush}">
+            <Grid Background="{StaticResource ContentBackgroundBrush}">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
@@ -47,19 +96,19 @@
         <!-- Main Actions — all Buttons must bind to ViewModel commands (verified below) -->
                 <StackPanel Grid.Column="0" Orientation="Horizontal">
         <!-- Add student — always enabled. Command: AddStudentCommand -->
-    <syncfusion:ButtonAdv Name="AddStudentButton" Label="➕ Add Student"
+    <sftools:ButtonAdv Name="AddStudentButton" Label="➕ Add Student"
                 Command="{Binding AddStudentCommand}"
-                Style="{StaticResource BusBuddyButtonAdv.Primary}"
+                Style="{StaticResource BusBuddy.ButtonAdv.Primary}"
                             AutomationProperties.Name="Add Student"
                             AutomationProperties.HelpText="Opens form to add a new student to the system"/>
             <!-- Edit selected student — enabled only when HasSelectedStudent is true. Command: EditStudentCommand -->
-            <syncfusion:ButtonAdv Name="EditStudentButton" Label="✏️ Edit Student"
+            <sftools:ButtonAdv Name="EditStudentButton" Label="✏️ Edit Student"
                             Command="{Binding EditStudentCommand}"
                             IsEnabled="{Binding HasSelectedStudent}"
                             AutomationProperties.Name="Edit Student"
                             AutomationProperties.HelpText="Opens form to edit the currently selected student"/>
             <!-- Delete selected student — enabled only when HasSelectedStudent is true. Command: DeleteStudentCommand -->
-            <syncfusion:ButtonAdv Name="DeleteStudentButton" Label="🗑️ Delete Student"
+            <sftools:ButtonAdv Name="DeleteStudentButton" Label="🗑️ Delete Student"
                             Command="{Binding DeleteStudentCommand}"
                             IsEnabled="{Binding HasSelectedStudent}"
                             AutomationProperties.Name="Delete Student"
@@ -68,50 +117,50 @@
 
                     <!-- Bulk Operations -->
         <!-- Import students from CSV/Excel (placeholder) — Command: ImportStudentsCommand -->
-    <syncfusion:ButtonAdv Name="ImportStudentsButton" Label="📥 Import CSV (Stub)"
+    <sftools:ButtonAdv Name="ImportStudentsButton" Label="📥 Import CSV (Stub)"
                             Command="{Binding ImportStudentsCommand}"
-                            Style="{StaticResource BusBuddyButtonAdv.FleetGreen}"
+                            Style="{StaticResource BusBuddy.ButtonAdv.FleetGreen}"
                             AutomationProperties.Name="Import Students from CSV"
                 AutomationProperties.HelpText="Placeholder — CSV/Excel bulk import coming soon"/>
         <!-- Bulk assign route to selection — requires HasSelectedStudents. Command: BulkAssignRouteCommand -->
-        <syncfusion:ButtonAdv Name="BulkAssignRouteButton" Label="🚌 Bulk Assign Route"
-                                Command="{Binding BulkAssignRouteCommand}"
-                                IsEnabled="{Binding HasSelectedStudents}"
-                                Style="{StaticResource BusBuddyButtonAdv.SafetyOrange}"
-                            AutomationProperties.Name="Bulk Assign Route"
-                            AutomationProperties.HelpText="Assign routes to multiple selected students at once"/>
+        <sftools:ButtonAdv Name="BulkAssignRouteButton" Label="🚌 Bulk Assign Route"
+                                    Command="{Binding BulkAssignRouteCommand}"
+                                    IsEnabled="{Binding HasSelectedStudents}"
+                                    Style="{StaticResource BusBuddy.ButtonAdv.SafetyOrange}"
+                                AutomationProperties.Name="Bulk Assign Route"
+                                AutomationProperties.HelpText="Assign routes to multiple selected students at once"/>
                     <Separator Margin="10,0"/>
 
                     <!-- AI & Mapping -->
         <!-- Start AI optimization (placeholder). Command: OptimizeRoutesCommand -->
-    <syncfusion:ButtonAdv Name="OptimizeRoutesButton" Label="🤖 AI Optimize (Stub)"
+    <sftools:ButtonAdv Name="OptimizeRoutesButton" Label="🤖 AI Optimize (Stub)"
                             Command="{Binding OptimizeRoutesCommand}"
-                            Style="{StaticResource BusBuddyButtonAdv.Warning}"
+                            Style="{StaticResource BusBuddy.ButtonAdv.Warning}"
                             AutomationProperties.Name="AI Optimize Routes"
                 AutomationProperties.HelpText="Placeholder — AI optimization disabled for MVP"/>
         <!-- Plot all students on the map. Command: ViewMapCommand -->
-        <syncfusion:ButtonAdv Name="ViewMapButton" Label="🗺️ View Map"
-                                Command="{Binding ViewMapCommand}"
-                                Style="{StaticResource BusBuddyButtonAdv.Info}"
-                            AutomationProperties.Name="View Map"
-                            AutomationProperties.HelpText="Display student locations on interactive map"/>
+        <sftools:ButtonAdv Name="ViewMapButton" Label="🗺️ View Map"
+                                    Command="{Binding ViewMapCommand}"
+                                    Style="{StaticResource BusBuddy.ButtonAdv.Info}"
+                                AutomationProperties.Name="View Map"
+                                AutomationProperties.HelpText="Display student locations on interactive map"/>
                 </StackPanel>
 
                 <!-- Quick Actions — utility commands (Refresh/Export) and quick search -->
                 <StackPanel Grid.Column="1" Orientation="Horizontal">
-            <syncfusion:ButtonAdv Name="RefreshButton" Label="🔄 Refresh"
+            <sftools:ButtonAdv Name="RefreshButton" Label="🔄 Refresh"
                 Command="{Binding RefreshCommand}"
-                Style="{StaticResource BusBuddyButtonAdv.Info}"
+                Style="{StaticResource BusBuddy.ButtonAdv.Info}"
                             AutomationProperties.Name="Refresh Student List"
                             AutomationProperties.HelpText="Reload student data from the database"/>
-            <syncfusion:ButtonAdv Name="ExportButton" Label="📤 Export"
+            <sftools:ButtonAdv Name="ExportButton" Label="📤 Export"
                 Command="{Binding ExportCommand}"
-                Style="{StaticResource BusBuddyButtonAdv.Primary}"
+                Style="{StaticResource BusBuddy.ButtonAdv.Primary}"
                             AutomationProperties.Name="Export Students"
                             AutomationProperties.HelpText="Export student data to CSV file"/>
 
                     <!-- Quick Filter using Syncfusion SfTextBoxExt per docs -->
-                    <syncfusion:SfTextBoxExt Name="QuickSearchBox" Width="150" Margin="10,0,0,0"
+                    <sfinput:SfTextBoxExt Name="QuickSearchBox" Width="150" Margin="10,0,0,0"
                                               Text="{Binding QuickSearchText, UpdateSourceTrigger=PropertyChanged}"
                                               Watermark="\ud83d\udd0d Quick search..."
                                               AutomationProperties.Name="Quick Search"
@@ -121,141 +170,212 @@
         </Border>
 
     <!-- Student Data Grid — Enhanced for route building (Syncfusion SfDataGrid per official docs) -->
-    <syncfusion:SfDataGrid Grid.Row="2"
-                               Name="StudentsDataGrid"
-                   ItemsSource="{Binding StudentsView}"
-                               SelectedItem="{Binding SelectedStudent, Mode=TwoWay}"
-                               AutoGenerateColumns="False"
-                               AllowEditing="True"
-                               EditTrigger="OnTap"
-                               AllowSorting="True"
-                               AllowFiltering="True"
-                               AllowGrouping="True"
-                               ShowGroupDropArea="True"
-                               ShowRowHeader="True"
-                               SelectionMode="Single"
-                               SelectionUnit="Row"
-                               GridLinesVisibility="Both"
-                               HeaderLinesVisibility="Both"
-                               ColumnSizer="Star"
-                               AutomationProperties.Name="Students Data Grid"
-                               AutomationProperties.HelpText="Grid displaying all students with their route assignments and contact information"
-                               AddNewRowPosition="Top"
-                               ShowBusyIndicator="True"
-                               NavigationMode="Cell"
-                               AllowResizingColumns="True">
+    <sfgrid:SfDataGrid Grid.Row="2"
+                       Name="StudentsDataGrid"
+                       ItemsSource="{Binding StudentsView}"
+                       SelectedItem="{Binding SelectedStudent, Mode=TwoWay}"
+                       AutoGenerateColumns="False"
+                       AllowEditing="True"
+                       AllowSorting="True"
+                       AllowFiltering="True"
+                       AllowGrouping="True"
+                       ShowGroupDropArea="True"
+                       ShowRowHeader="True"
+                       SelectionMode="Single"
+                       SelectionUnit="Row"
+                       GridLinesVisibility="Both"
+                       HeaderLinesVisibility="Both"
+                       ColumnSizer="Star"
+                       AutomationProperties.Name="Students Data Grid"
+                       AutomationProperties.HelpText="Grid displaying all students with their route assignments and contact information"
+                       AddNewRowPosition="Top"
+                       ShowBusyIndicator="True"
+                       NavigationMode="Cell"
+                       AllowResizingColumns="True">
 
             <!-- Table Summary for Route Analytics -->
-            <syncfusion:SfDataGrid.TableSummaryRows>
-                <syncfusion:GridTableSummaryRow ShowSummaryInRow="False">
-                    <syncfusion:GridTableSummaryRow.SummaryColumns>
-                        <syncfusion:GridSummaryColumn Name="TotalStudents"
+            <sfgrid:SfDataGrid.TableSummaryRows>
+                <sfgrid:GridTableSummaryRow ShowSummaryInRow="False">
+                    <sfgrid:GridTableSummaryRow.SummaryColumns>
+                        <sfgrid:GridSummaryColumn Name="TotalStudents"
                                                     MappingName="StudentNumber"
                                                     SummaryType="CountAggregate"
                                                     Format="'Total: {Count:0}'" />
-                        <syncfusion:GridSummaryColumn Name="ActiveCount"
+                        <sfgrid:GridSummaryColumn Name="ActiveCount"
                                                     MappingName="Active"
                                                     SummaryType="CountAggregate"
                                                     Format="'Active: {Count:0}'" />
-                    </syncfusion:GridTableSummaryRow.SummaryColumns>
-                </syncfusion:GridTableSummaryRow>
-            </syncfusion:SfDataGrid.TableSummaryRows>
+                    </sfgrid:GridTableSummaryRow.SummaryColumns>
+                </sfgrid:GridTableSummaryRow>
+            </sfgrid:SfDataGrid.TableSummaryRows>
 
             <!-- Group Summary for Route Assignment Analysis -->
-            <syncfusion:SfDataGrid.GroupSummaryRows>
-                <syncfusion:GridSummaryRow ShowSummaryInRow="True">
-                    <syncfusion:GridSummaryRow.SummaryColumns>
-                        <syncfusion:GridSummaryColumn Name="GroupCount"
+            <sfgrid:SfDataGrid.GroupSummaryRows>
+                <sfgrid:GridSummaryRow ShowSummaryInRow="True">
+                    <sfgrid:GridSummaryRow.SummaryColumns>
+                        <sfgrid:GridSummaryColumn Name="GroupCount"
                                                     MappingName="StudentNumber"
                                                     SummaryType="CountAggregate"
                                                     Format="'{Count} students in this group'" />
-                    </syncfusion:GridSummaryRow.SummaryColumns>
-                </syncfusion:GridSummaryRow>
-            </syncfusion:SfDataGrid.GroupSummaryRows>
+                    </sfgrid:GridSummaryRow.SummaryColumns>
+                </sfgrid:GridSummaryRow>
+            </sfgrid:SfDataGrid.GroupSummaryRows>
 
-            <syncfusion:SfDataGrid.Columns>
-                <syncfusion:GridTextColumn HeaderText="Student ID"
+            <sfgrid:SfDataGrid.Columns>
+                <sfgrid:GridTextColumn HeaderText="Student ID"
                                          MappingName="StudentNumber"
                                          Width="100"
-                                         AllowEditing="True"/>
-                <syncfusion:GridTextColumn HeaderText="Name"
+                                         AllowEditing="True">
+                    <sfgrid:GridTextColumn.HeaderTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="Student ID" AutomationProperties.Name="Students - Student ID" />
+                        </DataTemplate>
+                    </sfgrid:GridTextColumn.HeaderTemplate>
+                </sfgrid:GridTextColumn>
+                <sfgrid:GridTextColumn HeaderText="Name"
                                          MappingName="StudentName"
                                          Width="180"
-                                         AllowEditing="True"/>
+                                         AllowEditing="True">
+                    <sfgrid:GridTextColumn.HeaderTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="Name" AutomationProperties.Name="Students - Name" />
+                        </DataTemplate>
+                    </sfgrid:GridTextColumn.HeaderTemplate>
+                </sfgrid:GridTextColumn>
                 <!-- Optional: Enrollment Date column using Pattern per Syncfusion docs -->
-                <syncfusion:GridDateTimeColumn HeaderText="Enrolled"
+                <sfgrid:GridDateTimeColumn HeaderText="Enrolled"
                                              MappingName="EnrollmentDate"
                                              Width="110"
-                                             Pattern="ShortDate"/>
-                <syncfusion:GridComboBoxColumn HeaderText="Grade"
+                                             Pattern="ShortDate">
+                    <sfgrid:GridDateTimeColumn.HeaderTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="Enrolled" AutomationProperties.Name="Students - Enrolled" />
+                        </DataTemplate>
+                    </sfgrid:GridDateTimeColumn.HeaderTemplate>
+                </sfgrid:GridDateTimeColumn>
+                <sfgrid:GridComboBoxColumn HeaderText="Grade"
                                              MappingName="Grade"
                                              Width="80"
                                              ItemsSource="{Binding AvailableGrades}"
-                                             AllowEditing="True"/>
-                <syncfusion:GridComboBoxColumn HeaderText="School"
+                                             AllowEditing="True">
+                    <sfgrid:GridComboBoxColumn.HeaderTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="Grade" AutomationProperties.Name="Students - Grade" />
+                        </DataTemplate>
+                    </sfgrid:GridComboBoxColumn.HeaderTemplate>
+                </sfgrid:GridComboBoxColumn>
+                <sfgrid:GridComboBoxColumn HeaderText="School"
                                              MappingName="School"
                                              Width="150"
                                              ItemsSource="{Binding AvailableSchools}"
-                                             AllowEditing="True"/>
-                <syncfusion:GridTextColumn HeaderText="Address"
+                                             AllowEditing="True">
+                    <sfgrid:GridComboBoxColumn.HeaderTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="School" AutomationProperties.Name="Students - School" />
+                        </DataTemplate>
+                    </sfgrid:GridComboBoxColumn.HeaderTemplate>
+                </sfgrid:GridComboBoxColumn>
+                <sfgrid:GridTextColumn HeaderText="Address"
                                          MappingName="HomeAddress"
                                          Width="200"
-                                         AllowEditing="True"/>
-                <syncfusion:GridTextColumn HeaderText="City"
+                                         AllowEditing="True">
+                    <sfgrid:GridTextColumn.HeaderTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="Address" AutomationProperties.Name="Students - Address" />
+                        </DataTemplate>
+                    </sfgrid:GridTextColumn.HeaderTemplate>
+                </sfgrid:GridTextColumn>
+                <sfgrid:GridTextColumn HeaderText="City"
                                          MappingName="City"
                                          Width="120"
-                                         AllowEditing="True"/>
+                                         AllowEditing="True">
+                    <sfgrid:GridTextColumn.HeaderTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="City" AutomationProperties.Name="Students - City" />
+                        </DataTemplate>
+                    </sfgrid:GridTextColumn.HeaderTemplate>
+                </sfgrid:GridTextColumn>
                 <!-- Phone number uses GridMaskColumn per Syncfusion documentation -->
-                <syncfusion:GridMaskColumn HeaderText="Phone"
+                <sfgrid:GridMaskColumn HeaderText="Phone"
                                            MappingName="HomePhone"
                                            Width="120"
                                            AllowEditing="True"
                                            Mask="(###) ###-####"
-                                           PromptChar="_" />
-                <syncfusion:GridTextColumn HeaderText="Parent/Guardian"
+                                           PromptChar="_">
+                    <sfgrid:GridMaskColumn.HeaderTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="Phone" AutomationProperties.Name="Students - Phone" />
+                        </DataTemplate>
+                    </sfgrid:GridMaskColumn.HeaderTemplate>
+                </sfgrid:GridMaskColumn>
+                <sfgrid:GridTextColumn HeaderText="Parent/Guardian"
                                          MappingName="ParentGuardian"
                                          Width="150"
-                                         AllowEditing="True"/>
-                <syncfusion:GridComboBoxColumn HeaderText="AM Route"
+                                         AllowEditing="True">
+                    <sfgrid:GridTextColumn.HeaderTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="Parent/Guardian" AutomationProperties.Name="Students - Parent Guardian" />
+                        </DataTemplate>
+                    </sfgrid:GridTextColumn.HeaderTemplate>
+                </sfgrid:GridTextColumn>
+                <sfgrid:GridComboBoxColumn HeaderText="AM Route"
                                              MappingName="AMRoute"
                                              Width="120"
                                              ItemsSource="{Binding AvailableRoutes}"
                                              DisplayMemberPath="RouteName"
-                                             AllowEditing="True"/>
-                <syncfusion:GridComboBoxColumn HeaderText="PM Route"
+                                             AllowEditing="True">
+                    <sfgrid:GridComboBoxColumn.HeaderTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="AM Route" AutomationProperties.Name="Students - AM Route" />
+                        </DataTemplate>
+                    </sfgrid:GridComboBoxColumn.HeaderTemplate>
+                </sfgrid:GridComboBoxColumn>
+                <sfgrid:GridComboBoxColumn HeaderText="PM Route"
                                              MappingName="PMRoute"
                                              Width="120"
                                              ItemsSource="{Binding AvailableRoutes}"
                                              DisplayMemberPath="RouteName"
-                                             AllowEditing="True"/>
-                <syncfusion:GridCheckBoxColumn HeaderText="Active"
+                                             AllowEditing="True">
+                    <sfgrid:GridComboBoxColumn.HeaderTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="PM Route" AutomationProperties.Name="Students - PM Route" />
+                        </DataTemplate>
+                    </sfgrid:GridComboBoxColumn.HeaderTemplate>
+                </sfgrid:GridComboBoxColumn>
+                <sfgrid:GridCheckBoxColumn HeaderText="Active"
                                              MappingName="Active"
-                                             Width="80"/>
-                <syncfusion:GridTemplateColumn HeaderText="Actions" Width="100" AllowFiltering="False" AllowSorting="False">
-                    <syncfusion:GridTemplateColumn.CellTemplate>
+                                             Width="80">
+                    <sfgrid:GridCheckBoxColumn.HeaderTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="Active" AutomationProperties.Name="Students - Active" />
+                        </DataTemplate>
+                    </sfgrid:GridCheckBoxColumn.HeaderTemplate>
+                </sfgrid:GridCheckBoxColumn>
+                <sfgrid:GridTemplateColumn HeaderText="Actions" Width="100" AllowFiltering="False" AllowSorting="False">
+                    <sfgrid:GridTemplateColumn.CellTemplate>
                         <DataTemplate>
                                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                    <syncfusion:ButtonAdv Label="🗺️"
+                                    <sftools:ButtonAdv Label="🗺️"
                                                           ToolTip="View on Map"
                                                           Command="{Binding DataContext.ViewOnMapCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                           CommandParameter="{Binding}"
-                                                          Width="28" Height="28" Margin="2"
+                                                          Style="{StaticResource ActionButtonStyle}"
                                                           AutomationProperties.Name="View Student On Map"/>
-                                    <syncfusion:ButtonAdv Label="🎯"
+                                    <sftools:ButtonAdv Label="🎯"
                                                           ToolTip="AI Route Suggest"
                                                           Command="{Binding DataContext.SuggestRouteCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                           CommandParameter="{Binding}"
-                                                          Width="28" Height="28" Margin="2"
+                                                          Style="{StaticResource ActionButtonStyle}"
                                                           AutomationProperties.Name="Suggest Route For Student"/>
                                 </StackPanel>
                         </DataTemplate>
-                    </syncfusion:GridTemplateColumn.CellTemplate>
-                </syncfusion:GridTemplateColumn>
-            </syncfusion:SfDataGrid.Columns>
-        </syncfusion:SfDataGrid>
+                    </sfgrid:GridTemplateColumn.CellTemplate>
+                </sfgrid:GridTemplateColumn>
+            </sfgrid:SfDataGrid.Columns>
+        </sfgrid:SfDataGrid>
 
     <!-- Enhanced Status Bar with Route Analytics -->
-    <Border Grid.Row="3" Background="{DynamicResource BusBuddy.Brush.Surface.Light}"
+    <Border Grid.Row="3" Background="{StaticResource BusBuddy.Brush.Surface.Light}"
                 CornerRadius="3" Padding="10" Margin="0,10,0,0">
             <Grid>
                 <Grid.ColumnDefinitions>
@@ -278,20 +398,20 @@
                 </StackPanel>
 
                 <!-- Quick Actions & Filter Status -->
-        <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
                     <TextBlock Text="| " Margin="0,0,6,0"/>
                     <TextBlock Text="Status: " FontStyle="Italic"/>
                     <TextBlock Text="{Binding StatusMessage}" Margin="4,0,10,0"/>
                     <TextBlock Text="{Binding FilterStatusText}" FontStyle="Italic" Margin="0,0,10,0"/>
-            <syncfusion:ButtonAdv Label="💾 Save" Width="80" Height="30" Margin="0,0,6,0"
+            <sftools:ButtonAdv Label="💾 Save" Width="80" Height="30" Margin="0,0,6,0"
                             Command="{Binding SaveGridEditsCommand}"
                             Style="{StaticResource BusBuddyButtonAdv.Primary}"
                             ToolTip="Save inline edits (including phone/route changes)"/>
-            <syncfusion:ButtonAdv Label="📋 Summary" Width="100" Height="30"
+            <sftools:ButtonAdv Label="📋 Summary" Width="100" Height="30"
                             Command="{Binding ShowSummaryCommand}"
                             Style="{StaticResource BusBuddyButtonAdv.Info}"
                 ToolTip="Show route assignment summary"/>
-            <syncfusion:ButtonAdv Label="⚡ Quick Actions" Width="130" Height="30" Margin="8,0,0,0"
+            <sftools:ButtonAdv Label="⚡ Quick Actions" Width="130" Height="30" Margin="8,0,0,0"
                             Command="{Binding ShowQuickActionsCommand}"
                             Style="{StaticResource BusBuddyButtonAdv.Primary}"
                 ToolTip="Open quick actions menu (assign route, filter active, clear filters)"/>

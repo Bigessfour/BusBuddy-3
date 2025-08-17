@@ -6,30 +6,41 @@
 -->
 
 <UserControl x:Class="BusBuddy.WPF.Views.Vehicle.VehicleForm"
-        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-        xmlns:syncfusion="http://schemas.syncfusion.com/wpf"
-        mc:Ignorable="d"
-        d:DesignHeight="400"
-        d:DesignWidth="600">
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:conv="clr-namespace:BusBuddy.WPF.Views.Shared.Converters"
+             xmlns:sftools="clr-namespace:Syncfusion.Windows.Tools.Controls;assembly=Syncfusion.Shared.WPF"
+             xmlns:sfgrid="clr-namespace:Syncfusion.UI.Xaml.Grid;assembly=Syncfusion.SfGrid.WPF"
+             xmlns:sfinput="clr-namespace:Syncfusion.Windows.Controls.Input;assembly=Syncfusion.SfInput.WPF"
+             mc:Ignorable="d"
+             d:DesignHeight="400" d:DesignWidth="600">
 
     <UserControl.Resources>
-        <!-- Value Converters for Phase 1 -->
-        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+        <ResourceDictionary>
+            <!-- Register standard BooleanToVisibilityConverter -->
+            <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
 
-        <!-- Simple inverse boolean converter for Phase 1 -->
-        <Style x:Key="InverseBooleanStyle" TargetType="Control">
-            <Style.Triggers>
-                <DataTrigger Binding="{Binding IsBusy}" Value="True">
-                    <Setter Property="IsEnabled" Value="False"/>
-                </DataTrigger>
-                <DataTrigger Binding="{Binding IsBusy}" Value="False">
-                    <Setter Property="IsEnabled" Value="True"/>
-                </DataTrigger>
-            </Style.Triggers>
-        </Style>
+            <!-- If any styles used BasedOn with DynamicResource, prefer StaticResource per policy.
+                 Example replacement (do not duplicate existing style definitions):
+                 { replace: BasedOn="{DynamicResource SomeStyle}"  —  BasedOn="{StaticResource SomeStyle}" }
+                 This file will pick up the StaticResource converters above via {StaticResource InverseBooleanToVisibilityConverter}.
+                 WPF converter docs: https://learn.microsoft.com/dotnet/api/system.windows.data.ivalueconverter
+            -->
+
+            <!-- Simple inverse boolean converter for Phase 1 -->
+            <Style x:Key="InverseBooleanStyle" TargetType="Control">
+                <Style.Triggers>
+                    <DataTrigger Binding="{Binding IsBusy}" Value="True">
+                        <Setter Property="IsEnabled" Value="False"/>
+                    </DataTrigger>
+                    <DataTrigger Binding="{Binding IsBusy}" Value="False">
+                        <Setter Property="IsEnabled" Value="True"/>
+                    </DataTrigger>
+                </Style.Triggers>
+            </Style>
+        </ResourceDictionary>
     </UserControl.Resources>
     <Grid>
         <Grid.RowDefinitions>
@@ -60,7 +71,7 @@
                                VerticalAlignment="Center"/>
 
                     <!-- Step 3: Search input (Phase 1: TextBox → Phase 2: SfTextBox) -->
-                    <syncfusion:SfMaskedEdit x:Name="SearchBox"
+                    <sfinput:SfMaskedEdit x:Name="SearchBox"
                              Width="300"
                              Margin="30,0,0,0"
                              Text="{Binding SearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
@@ -130,7 +141,7 @@
                                Margin="0,0,0,15"/>
 
                     <!-- Step 3: Vehicle list with Core service integration -->
-                    <syncfusion:SfDataGrid Grid.Row="1"
+                    <sfgrid:SfDataGrid Grid.Row="1"
                               x:Name="VehicleGrid"
                               ItemsSource="{Binding Vehicles}"
                               SelectedItem="{Binding SelectedVehicle, Mode=TwoWay}"
@@ -143,27 +154,27 @@
                               HeaderLinesVisibility="Both"
                               ShowRowHeader="False">
 
-                        <syncfusion:SfDataGrid.Columns>
-                            <syncfusion:GridTextColumn HeaderText="Bus #"
+                        <sfgrid:SfDataGrid.Columns>
+                            <sfgrid:GridTextColumn HeaderText="Bus #"
                                                 MappingName="BusNumber"
                                                 Width="80"/>
-                            <syncfusion:GridTextColumn HeaderText="License"
+                            <sfgrid:GridTextColumn HeaderText="License"
                                                 MappingName="LicenseNumber"
                                                 Width="100"/>
-                            <syncfusion:GridTextColumn HeaderText="Make"
+                            <sfgrid:GridTextColumn HeaderText="Make"
                                                 MappingName="Make"
                                                 Width="80"/>
-                            <syncfusion:GridTextColumn HeaderText="Model"
+                            <sfgrid:GridTextColumn HeaderText="Model"
                                                 MappingName="Model"
                                                 Width="90"/>
-                            <syncfusion:GridTextColumn HeaderText="Year"
+                            <sfgrid:GridTextColumn HeaderText="Year"
                                                 MappingName="Year"
                                                 Width="60"/>
-                            <syncfusion:GridTextColumn HeaderText="Capacity"
+                            <sfgrid:GridTextColumn HeaderText="Capacity"
                                                 MappingName="Capacity"
                                                 Width="70"/>
-                            <syncfusion:GridTemplateColumn HeaderText="Status" Width="90">
-                                <syncfusion:GridTemplateColumn.CellTemplate>
+                            <sfgrid:GridTemplateColumn HeaderText="Status" Width="90">
+                                <sfgrid:GridTemplateColumn.CellTemplate>
                                     <DataTemplate>
                                         <Border CornerRadius="12"
                                                 Padding="8,4"
@@ -190,16 +201,16 @@
                                                        Foreground="White"/>
                                         </Border>
                                     </DataTemplate>
-                                </syncfusion:GridTemplateColumn.CellTemplate>
-                            </syncfusion:GridTemplateColumn>
-                        </syncfusion:SfDataGrid.Columns>
-                    </syncfusion:SfDataGrid>
+                                </sfgrid:GridTemplateColumn.CellTemplate>
+                            </sfgrid:GridTemplateColumn>
+                        </sfgrid:SfDataGrid.Columns>
+                    </sfgrid:SfDataGrid>
 
                     <!-- List Actions -->
                     <StackPanel Grid.Row="2"
                                 Orientation="Horizontal"
                                 Margin="0,15,0,0">
-            <syncfusion:ButtonAdv Label="➕ New Vehicle"
+            <sftools:ButtonAdv Label="➕ New Vehicle"
                                 Command="{Binding NewVehicleCommand}"
                 Background="{DynamicResource BusBuddy.Brush.Primary}"
                 Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"
@@ -207,7 +218,7 @@
                                 Padding="15,8"
                                 Margin="0,0,10,0"
                                 Cursor="Hand"/>
-            <syncfusion:ButtonAdv Label="🔄 Refresh"
+            <sftools:ButtonAdv Label="🔄 Refresh"
                                 Command="{Binding RefreshCommand}"
                 Background="{DynamicResource ButtonBackgroundBrush}"
                 Foreground="{DynamicResource ButtonForegroundBrush}"
@@ -249,7 +260,7 @@
                                    FontSize="12"
                                    Foreground="{DynamicResource BusBuddy.Brush.Text.Secondary}"
                                    Margin="0,0,0,5"/>
-                        <syncfusion:SfMaskedEdit Text="{Binding BusNumber, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                        <sfinput:SfMaskedEdit Text="{Binding BusNumber, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                  Background="{DynamicResource ContentBackgroundBrush}"
                                  Foreground="{DynamicResource PrimaryTextBrush}"
                                  BorderBrush="{DynamicResource TextBoxBorderBrush}"
@@ -261,7 +272,7 @@
                                    FontSize="12"
                                    Foreground="{DynamicResource BusBuddy.Brush.Text.Secondary}"
                                    Margin="0,0,0,5"/>
-                        <syncfusion:SfMaskedEdit Text="{Binding LicenseNumber, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                        <sfinput:SfMaskedEdit Text="{Binding LicenseNumber, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                  Background="{DynamicResource ContentBackgroundBrush}"
                                  Foreground="{DynamicResource PrimaryTextBrush}"
                                  BorderBrush="{DynamicResource TextBoxBorderBrush}"
@@ -274,7 +285,7 @@
                                    FontSize="12"
                                    Foreground="{DynamicResource BusBuddy.Brush.Text.Secondary}"
                                    Margin="0,0,0,5"/>
-                        <syncfusion:SfMaskedEdit Text="{Binding Make, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                        <sfinput:SfMaskedEdit Text="{Binding Make, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                  Background="{DynamicResource ContentBackgroundBrush}"
                                  Foreground="{DynamicResource PrimaryTextBrush}"
                                  BorderBrush="{DynamicResource TextBoxBorderBrush}"
@@ -286,7 +297,7 @@
                                    FontSize="12"
                                    Foreground="{DynamicResource BusBuddy.Brush.Text.Secondary}"
                                    Margin="0,0,0,5"/>
-                        <syncfusion:SfMaskedEdit Text="{Binding Model, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                        <sfinput:SfMaskedEdit Text="{Binding Model, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                  Background="{DynamicResource ContentBackgroundBrush}"
                                  Foreground="{DynamicResource PrimaryTextBrush}"
                                  BorderBrush="{DynamicResource TextBoxBorderBrush}"
@@ -307,7 +318,7 @@
                                            FontSize="12"
                                            Foreground="{DynamicResource BusBuddy.Brush.Text.Secondary}"
                                            Margin="0,0,0,5"/>
-                                <syncfusion:SfMaskedEdit Text="{Binding Year, Mode=TwoWay}"
+                                <sfinput:SfMaskedEdit Text="{Binding Year, Mode=TwoWay}"
                                          Background="{DynamicResource ContentBackgroundBrush}"
                                          Foreground="{DynamicResource PrimaryTextBrush}"
                                          BorderBrush="{DynamicResource TextBoxBorderBrush}"
@@ -320,7 +331,7 @@
                                            FontSize="12"
                                            Foreground="{DynamicResource BusBuddy.Brush.Text.Secondary}"
                                            Margin="0,0,0,5"/>
-                                <syncfusion:SfMaskedEdit Text="{Binding Capacity, Mode=TwoWay}"
+                                <sfinput:SfMaskedEdit Text="{Binding Capacity, Mode=TwoWay}"
                                          Background="{DynamicResource ContentBackgroundBrush}"
                                          Foreground="{DynamicResource PrimaryTextBrush}"
                                          BorderBrush="{DynamicResource TextBoxBorderBrush}"
@@ -333,7 +344,7 @@
                                    FontSize="12"
                                    Foreground="{DynamicResource BusBuddy.Brush.Text.Secondary}"
                                    Margin="0,0,0,5"/>
-                        <syncfusion:ComboBoxAdv SelectedItem="{Binding Status, Mode=TwoWay}"
+                        <sftools:ComboBoxAdv SelectedItem="{Binding Status, Mode=TwoWay}"
                                   Background="{DynamicResource ContentBackgroundBrush}"
                                   Foreground="{DynamicResource PrimaryTextBrush}"
                                   BorderBrush="{DynamicResource TextBoxBorderBrush}"
@@ -343,13 +354,13 @@
                             <ComboBoxItem Content="Maintenance"/>
                             <ComboBoxItem Content="OutOfService"/>
                             <ComboBoxItem Content="Retired"/>
-                        </syncfusion:ComboBoxAdv>
+                        </sftools:ComboBoxAdv>
 
                         <!-- Action Buttons -->
                         <StackPanel Orientation="Horizontal"
                                     HorizontalAlignment="Right"
                                     Margin="0,20,0,0">
-                <syncfusion:ButtonAdv Label="💾 Save"
+                <sftools:ButtonAdv Label="💾 Save"
                                     Command="{Binding DataContext.SaveVehicleCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                     Style="{StaticResource InverseBooleanStyle}"
                     Background="{DynamicResource BusBuddy.Brush.FleetGreen}"
@@ -358,7 +369,7 @@
                                     Padding="15,8"
                                     Margin="0,0,10,0"
                                     Cursor="Hand"/>
-                <syncfusion:ButtonAdv Label="🗑️ Delete"
+                <sftools:ButtonAdv Label="🗑️ Delete"
                                     Command="{Binding DataContext.DeleteVehicleCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                     Style="{StaticResource InverseBooleanStyle}"
                     Background="{DynamicResource BusBuddy.Brush.Semantic.Error}"

@@ -54,11 +54,41 @@
                    AutomationProperties.Name="Route Stops Grid"
                    AutomationProperties.HelpText="Grid listing route stops with timing information">
             <syncfusion:SfDataGrid.Columns>
-                <syncfusion:GridNumericColumn HeaderText="#" MappingName="StopOrder" Width="60" />
-                <syncfusion:GridTextColumn HeaderText="Stop Name" MappingName="StopName" Width="180" />
-                <syncfusion:GridDateTimeColumn HeaderText="Arrival" MappingName="EstimatedArrivalTime" Width="110" DisplayBinding="{Binding EstimatedArrivalTime, StringFormat=HH:mm}" />
-                <syncfusion:GridDateTimeColumn HeaderText="Departure" MappingName="EstimatedDepartureTime" Width="110" DisplayBinding="{Binding EstimatedDepartureTime, StringFormat=HH:mm}" />
-                <syncfusion:GridNumericColumn HeaderText="Dwell (min)" MappingName="StopDuration" Width="100" />
+                <syncfusion:GridNumericColumn HeaderText="#" MappingName="StopOrder" Width="60">
+                    <syncfusion:GridNumericColumn.HeaderTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="#" AutomationProperties.Name="Route Stops - Order" />
+                        </DataTemplate>
+                    </syncfusion:GridNumericColumn.HeaderTemplate>
+                </syncfusion:GridNumericColumn>
+                <syncfusion:GridTextColumn HeaderText="Stop Name" MappingName="StopName" Width="180">
+                    <syncfusion:GridTextColumn.HeaderTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="Stop Name" AutomationProperties.Name="Route Stops - Stop Name" />
+                        </DataTemplate>
+                    </syncfusion:GridTextColumn.HeaderTemplate>
+                </syncfusion:GridTextColumn>
+                <syncfusion:GridDateTimeColumn HeaderText="Arrival" MappingName="EstimatedArrivalTime" Width="110" DisplayBinding="{Binding EstimatedArrivalTime, StringFormat=HH:mm}">
+                    <syncfusion:GridDateTimeColumn.HeaderTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="Arrival" AutomationProperties.Name="Route Stops - Arrival" />
+                        </DataTemplate>
+                    </syncfusion:GridDateTimeColumn.HeaderTemplate>
+                </syncfusion:GridDateTimeColumn>
+                <syncfusion:GridDateTimeColumn HeaderText="Departure" MappingName="EstimatedDepartureTime" Width="110" DisplayBinding="{Binding EstimatedDepartureTime, StringFormat=HH:mm}">
+                    <syncfusion:GridDateTimeColumn.HeaderTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="Departure" AutomationProperties.Name="Route Stops - Departure" />
+                        </DataTemplate>
+                    </syncfusion:GridDateTimeColumn.HeaderTemplate>
+                </syncfusion:GridDateTimeColumn>
+                <syncfusion:GridNumericColumn HeaderText="Dwell (min)" MappingName="StopDuration" Width="100">
+                    <syncfusion:GridNumericColumn.HeaderTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="Dwell (min)" AutomationProperties.Name="Route Stops - Dwell Minutes" />
+                        </DataTemplate>
+                    </syncfusion:GridNumericColumn.HeaderTemplate>
+                </syncfusion:GridNumericColumn>
             </syncfusion:SfDataGrid.Columns>
         </syncfusion:SfDataGrid>
         <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,6,0,0">

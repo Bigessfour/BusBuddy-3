@@ -68,12 +68,13 @@ function invokeBusBuddyBuild {
 function invokeBusBuddyRun {
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'Medium')]
     param(
-        [string]$Project = 'BusBuddy.csproj',
+        [string]$Project = 'BusBuddy.WPF\BusBuddy.WPF.csproj',
         [ValidateSet('Debug', 'Release')][string]$Configuration = 'Debug'
     )
     if (-not (Test-Path $Project)) { Write-Warning "Project not found: $Project"; return 1 }
     if ($PSCmdlet.ShouldProcess($Project, "Run ($Configuration)")) {
-    Write-Output "Running $Project..."
+        Write-Information "Running BusBuddy WPF application..." -InformationAction Continue
+        Write-Output "Running $Project..."
         & dotnet run --project $Project --configuration $Configuration
         return $LASTEXITCODE
     }
@@ -549,4 +550,73 @@ Set-Alias -Name 'bbCommands' -Value 'Get-BusBuddyCommands'
 Set-Alias -Name 'bbTestParallel' -Value 'Invoke-BusBuddyParallelTests'
 Set-Alias -Name 'bbHealthDetailed' -Value 'invokeBusBuddyHealthCheck'
 
-Export-ModuleMember -Function invokeBusBuddyBuild, invokeBusBuddyRun, invokeBusBuddyTest, invokeBusBuddyHealthCheck, invokeBusBuddyRestore, invokeBusBuddyClean, invokeBusBuddyAntiRegression, invokeBusBuddyXamlValidation, testBusBuddyMvpReadiness, Get-BusBuddyCommands, Invoke-BusBuddyParallelTests -Alias bbBuild, bbRun, bbTest, bbHealth, bbRestore, bbClean, bbAntiRegression, bbXamlValidate, bbMvpCheck, bbCommands, bbTestParallel, bbHealthDetailed
+function invokeBusBuddyRefresh {
+    <#
+    .SYNOPSIS
+    Refresh BusBuddy modules and commands (legacy compatibility)
+    .DESCRIPTION
+    Provides legacy compatibility for bbRefresh command.
+    If hardened module manager is available, delegates to it. Otherwise, reloads basic modules.
+
+    .NOTES
+    Reference: https://learn.microsoft.com/powershell/module/microsoft.powershell.core/import-module
+    #>
+    [CmdletBinding()]
+    param([switch]$Force)
+
+    Write-Information "🔄 Refreshing BusBuddy modules..." -InformationAction Continue
+
+    # Check if hardened module manager functions are available
+    if (Get-Command Invoke-BusBuddyModuleRefresh -ErrorAction SilentlyContinue) {
+        Write-Information "Using hardened module manager for refresh..." -InformationAction Continue
+        return Invoke-BusBuddyModuleRefresh -Force:$Force
+    }
+
+    # Fallback to basic module refresh
+    Write-Information "Using basic module refresh..." -InformationAction Continue
+
+    try {
+        # Remove existing modules
+        Get-Module BusBuddy* | Remove-Module -Force -ErrorAction SilentlyContinue
+
+        # Clear module loaded flag
+        $env:BUSBUDDY_MODULES_LOADED = $null
+
+        # Find repo root
+        $repoRoot = $env:BUSBUDDY_REPO_ROOT
+        if (-not $repoRoot) {
+            $probe = (Get-Location).Path
+            while ($probe -and -not (Test-Path (Join-Path $probe 'BusBuddy.sln'))) {
+                $next = Split-Path $probe -Parent
+                if (-not $next -or $next -eq $probe) { $probe = $null; break }
+                $probe = $next
+            }
+            $repoRoot = $probe
+        }
+
+        if (-not $repoRoot) {
+            Write-Error "BusBuddy repository root not found"
+            return $false
+        }
+
+        # Reload modules using Import-BusBuddyModule.ps1
+        $importScript = Join-Path $repoRoot "PowerShell\Profiles\Import-BusBuddyModule.ps1"
+        if (Test-Path $importScript) {
+            . $importScript
+            Write-Information "✅ Modules refreshed successfully" -InformationAction Continue
+            return $true
+        } else {
+            Write-Error "Import script not found: $importScript"
+            return $false
+        }
+    }
+    catch {
+        Write-Error "Failed to refresh modules: $($_.Exception.Message)"
+        return $false
+    }
+}
+
+# Add bbRefresh alias
+Set-Alias -Name 'bbRefresh' -Value 'invokeBusBuddyRefresh'
+
+Export-ModuleMember -Function invokeBusBuddyBuild, invokeBusBuddyRun, invokeBusBuddyTest, invokeBusBuddyHealthCheck, invokeBusBuddyRestore, invokeBusBuddyClean, invokeBusBuddyAntiRegression, invokeBusBuddyXamlValidation, testBusBuddyMvpReadiness, Get-BusBuddyCommands, Invoke-BusBuddyParallelTests, invokeBusBuddyRefresh -Alias bbBuild, bbRun, bbTest, bbHealth, bbRestore, bbClean, bbAntiRegression, bbXamlValidate, bbMvpCheck, bbCommands, bbTestParallel, bbHealthDetailed, bbRefresh

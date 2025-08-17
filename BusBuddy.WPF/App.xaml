@@ -2,12 +2,16 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:local="clr-namespace:BusBuddy.WPF"
-             xmlns:syncfusion="http://schemas.syncfusion.com/wpf">
+             xmlns:syncfusion="http://schemas.syncfusion.com/wpf"
+             xmlns:conv="clr-namespace:BusBuddy.WPF.Views.Shared.Converters">
     <!-- StartupUri removed - handled programmatically in App.xaml.cs OnStartup method -->
     <!-- xmlns:converters="clr-namespace:BusBuddy.WPF.Converters" Temporarily disabled for MVP -->
     <Application.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
+                <!-- Global theme proxies (local files that merge official Syncfusion theme XAML and validated keys) -->
+                <ResourceDictionary Source="Resources/Themes/FluentDarkTheme.xaml" />
+                <ResourceDictionary Source="Resources/Themes/FluentLightTheme.xaml" />
                 <!-- CONSOLIDATED: All BusBuddy colors, brushes, and Syncfusion v30.2.5 validated resources -->
                 <ResourceDictionary Source="Resources/SyncfusionV30_Validated_ResourceDictionary.xaml" />
                 <!-- Our custom MenuStyles.xaml -->
@@ -18,6 +22,8 @@
             </ResourceDictionary.MergedDictionaries>
             <!-- Essential Converters for Phase 1 -->
             <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
+            <!-- Global inverse boolean converter (registered once for application-wide use) -->
+            <conv:InverseBooleanToVisibilityConverter x:Key="InverseBooleanToVisibilityConverter" />
             <!-- Form Navigation Commands (for expansion) -->
             <x:Static Member="ApplicationCommands.New"
                       x:Key="NewItemCommand" />

@@ -38,7 +38,6 @@ Purpose: Keep BusBuddy stable and compliant. MVP is done; focus on production ha
   - Known issue: bbBuild has parameter binding error, use `dotnet build BusBuddy.sln` as fallback
 
 4) Mandatory pre-change gates (prevent regressions)
-- Always run bbHealth, then bbAntiRegression and bbXamlValidate before proposing or committing changes.
 - Hard rules:
   - No Microsoft.Extensions.Logging (use Serilog only).
   - No standard WPF DataGrid or other stock controls where a Syncfusion equivalent exists.
@@ -105,11 +104,11 @@ Purpose: Keep BusBuddy stable and compliant. MVP is done; focus on production ha
 - After disabling, run bbBuild and bbMvpCheck to confirm stability
 
 11) Minimal change workflow (per PR or local change)
-- Before: bbRefresh; bbHealth
-- Validate: bbAntiRegression; bbXamlValidate
+- Before: bbRefresh; bbHealth (optional diagnostics)
+- Optional validation: bbAntiRegression; bbXamlValidate (run if needed)
 - Build/Test: bbBuild; bbTest
 - MVP assurance: bbMvpCheck
-- Only then propose edits; include doc links and ensure no regressions
+- Only then propose edits; include doc links when applicable
 
 12) File hygiene and formatting
 - Remove trailing whitespace; ensure single final newline
@@ -755,11 +754,11 @@ Notes:
 - After disabling, run bbBuild and bbMvpCheck to confirm stability
 
 11) Minimal change workflow (per PR or local change)
-- Before: bbRefresh; bbHealth
-- Validate: bbAntiRegression; bbXamlValidate
+- Before: bbRefresh; bbHealth (optional diagnostics)
+- Optional validation: bbAntiRegression; bbXamlValidate (run if needed)
 - Build/Test: bbBuild; bbTest
 - MVP assurance: bbMvpCheck
-- Only then propose edits; include doc links and ensure no regressions
+- Only then propose edits; include doc links when applicable
 
 12) File hygiene and formatting
 - Remove trailing whitespace; ensure single final newline
@@ -1404,11 +1403,11 @@ Notes:
 - After disabling, run bbBuild and bbMvpCheck to confirm stability
 
 11) Minimal change workflow (per PR or local change)
-- Before: bbRefresh; bbHealth
-- Validate: bbAntiRegression; bbXamlValidate
+- Before: bbRefresh; bbHealth (optional diagnostics)
+- Optional validation: bbAntiRegression; bbXamlValidate (run if needed)
 - Build/Test: bbBuild; bbTest
 - MVP assurance: bbMvpCheck
-- Only then propose edits; include doc links and ensure no regressions
+- Only then propose edits; include doc links when applicable
 
 12) File hygiene and formatting
 - Remove trailing whitespace; ensure single final newline

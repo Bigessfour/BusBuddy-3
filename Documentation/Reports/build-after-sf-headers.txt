@@ -1,0 +1,24 @@
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+  Starting build for BusBuddy.Tests at 8/16/2025 8:09:09 PM
+  Starting build for BusBuddy.Core at 8/16/2025 8:09:09 PM
+  BusBuddy.Core -> C:\Users\biges\Desktop\BusBuddy\BusBuddy.Core\bin\Debug\net9.0-windows\BusBuddy.Core.dll
+  Build completed for BusBuddy.Core at 8/16/2025 8:09:09 PM
+  Starting build for BusBuddy.WPF at 8/16/2025 8:09:10 PM
+  Logs directory already exists
+  Logs directory already exists
+C:\Users\biges\Desktop\BusBuddy\BusBuddy.WPF\Views\Shared\Converters\InverseBooleanToVisibilityConverter.cs(6,37): warning CA1716: Rename namespace BusBuddy.WPF.Views.Shared.Converters so that it no longer conflicts with the reserved language keyword 'Shared'. Using a reserved keyword as the name of a namespace makes it harder for consumers in other languages to use the namespace. (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1716) [C:\Users\biges\Desktop\BusBuddy\BusBuddy.WPF\BusBuddy.WPF_ywvgmx0n_wpftmp.csproj::TargetFramework=net9.0-windows]
+C:\Users\biges\Desktop\BusBuddy\BusBuddy.WPF\Views\Shared\Converters\InverseBooleanToVisibilityConverter.cs(6,37): warning CA1716: Rename namespace BusBuddy.WPF.Views.Shared.Converters so that it no longer conflicts with the reserved language keyword 'Shared'. Using a reserved keyword as the name of a namespace makes it harder for consumers in other languages to use the namespace. (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1716) [C:\Users\biges\Desktop\BusBuddy\BusBuddy.WPF\BusBuddy.WPF.csproj::TargetFramework=net9.0-windows]
+  BusBuddy.WPF -> C:\Users\biges\Desktop\BusBuddy\BusBuddy.WPF\bin\Debug\net9.0-windows\BusBuddy.WPF.dll
+  Build completed for BusBuddy.WPF at 8/16/2025 8:09:26 PM
+  BusBuddy.Tests -> C:\Users\biges\Desktop\BusBuddy\BusBuddy.Tests\bin\Debug\net9.0-windows\BusBuddy.Tests.dll
+  Build completed for BusBuddy.Tests at 8/16/2025 8:09:31 PM
+
+Build succeeded.
+
+C:\Users\biges\Desktop\BusBuddy\BusBuddy.WPF\Views\Shared\Converters\InverseBooleanToVisibilityConverter.cs(6,37): warning CA1716: Rename namespace BusBuddy.WPF.Views.Shared.Converters so that it no longer conflicts with the reserved language keyword 'Shared'. Using a reserved keyword as the name of a namespace makes it harder for consumers in other languages to use the namespace. (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1716) [C:\Users\biges\Desktop\BusBuddy\BusBuddy.WPF\BusBuddy.WPF_ywvgmx0n_wpftmp.csproj::TargetFramework=net9.0-windows]
+C:\Users\biges\Desktop\BusBuddy\BusBuddy.WPF\Views\Shared\Converters\InverseBooleanToVisibilityConverter.cs(6,37): warning CA1716: Rename namespace BusBuddy.WPF.Views.Shared.Converters so that it no longer conflicts with the reserved language keyword 'Shared'. Using a reserved keyword as the name of a namespace makes it harder for consumers in other languages to use the namespace. (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1716) [C:\Users\biges\Desktop\BusBuddy\BusBuddy.WPF\BusBuddy.WPF.csproj::TargetFramework=net9.0-windows]
+    2 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:24.18

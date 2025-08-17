@@ -11,8 +11,7 @@
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/SyncfusionV30_Validated_ResourceDictionary.xaml"/>
-                <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/Themes/FluentDarkTheme.xaml"/>
-                <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/Themes/FluentLightTheme.xaml"/>
+                <!-- Themes are merged at the application level (App.xaml) -->
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </UserControl.Resources>

@@ -1227,12 +1227,32 @@ Examples:
                 }
                 catch (SqlException sqlEx)
                 {
-                    // Extract basic diagnostics without secrets
-                    logger.Warning(sqlEx, "⚠️ Azure SQL connectivity FAILED — Code={Number}, State={State}, Class={Class}", sqlEx.Number, sqlEx.State, sqlEx.Class);
+                    // Handle Azure SQL firewall errors gracefully per Azure SQL docs
+                    // https://learn.microsoft.com/en-us/azure/azure-sql/database/firewall-configure?view=azuresql
+                    if (sqlEx.Number == 40615) // Firewall rule error
+                    {
+                        logger.Error(sqlEx, "🔥 Azure SQL firewall blocking connection (Error 40615) — Client IP needs to be added to Azure firewall rules. Server={Server}, Code={Number}, State={State}, Class={Class}",
+                            new SqlConnection(connStr).DataSource, sqlEx.Number, sqlEx.State, sqlEx.Class);
+                        logger.Information("💡 Action Required: Add your client IP address to Azure SQL firewall rules via Azure Portal or Azure CLI. See: https://learn.microsoft.com/en-us/azure/azure-sql/database/firewall-configure");
+
+                        // Attempt fallback to LocalDB connection
+                        await AttemptLocalDbFallbackAsync(cfg, logger);
+                    }
+                    else
+                    {
+                        // Extract basic diagnostics without secrets for other SQL errors
+                        logger.Warning(sqlEx, "⚠️ Azure SQL connectivity FAILED — Code={Number}, State={State}, Class={Class}", sqlEx.Number, sqlEx.State, sqlEx.Class);
+
+                        // For other connection errors, also try LocalDB fallback
+                        await AttemptLocalDbFallbackAsync(cfg, logger);
+                    }
                 }
                 catch (Exception ex)
                 {
                     logger.Warning(ex, "⚠️ Azure SQL connectivity FAILED — {Message}", ex.Message);
+
+                    // For general connection errors, attempt LocalDB fallback
+                    await AttemptLocalDbFallbackAsync(cfg, logger);
                 }
             }
             catch
@@ -1251,6 +1271,52 @@ Examples:
                 var env = Environment.GetEnvironmentVariable(name);
                 return env ?? m.Value; // keep original if not found
             });
+        }
+
+        /// <summary>
+        /// Attempts to test LocalDB connectivity as fallback when Azure SQL fails.
+        /// Based on appsettings.json LocalConnection configuration.
+        /// </summary>
+        private static async Task AttemptLocalDbFallbackAsync(IConfiguration? cfg, ILogger logger)
+        {
+            try
+            {
+                if (cfg is null)
+                {
+                    logger.Information("🔄 LocalDB fallback skipped — configuration not available");
+                    return;
+                }
+
+                var localConnStr = cfg.GetConnectionString("LocalConnection");
+                if (string.IsNullOrWhiteSpace(localConnStr))
+                {
+                    logger.Information("🔄 LocalDB fallback skipped — LocalConnection not configured in appsettings.json");
+                    return;
+                }
+
+                logger.Information("🔄 Attempting LocalDB fallback connectivity test...");
+
+                using var conn = new SqlConnection(localConnStr);
+                await conn.OpenAsync();
+                using var cmd = conn.CreateCommand();
+                cmd.CommandText = "SELECT DB_NAME()";
+                cmd.CommandTimeout = 5;
+                var dbName = (await cmd.ExecuteScalarAsync()) as string ?? "(unknown)";
+
+                logger.Information("✅ LocalDB fallback connectivity OK — Server={Server}, Database={Database}",
+                    conn.DataSource, dbName);
+                logger.Information("💡 Consider using LocalDB connection for development until Azure SQL firewall is configured");
+            }
+            catch (SqlException localSqlEx)
+            {
+                logger.Warning(localSqlEx, "⚠️ LocalDB fallback also failed — Code={Number}, State={State}, Class={Class}",
+                    localSqlEx.Number, localSqlEx.State, localSqlEx.Class);
+                logger.Information("💡 Ensure SQL Server LocalDB is installed and running. Install via: https://learn.microsoft.com/en-us/sql/database-engine/configure-windows/sql-server-express-localdb");
+            }
+            catch (Exception localEx)
+            {
+                logger.Warning(localEx, "⚠️ LocalDB fallback failed — {Message}", localEx.Message);
+            }
         }
 
         /// <summary>

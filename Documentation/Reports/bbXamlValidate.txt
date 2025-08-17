@@ -1,0 +1,1 @@
+No bbXamlValidate or bb-xaml-validate command found.

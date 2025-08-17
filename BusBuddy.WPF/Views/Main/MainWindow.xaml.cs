@@ -5,6 +5,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
+using System.Windows.Media;
 using Microsoft.Extensions.DependencyInjection;
 using Syncfusion.UI.Xaml.Grid;
 using BusBuddy.WPF.ViewModels;
@@ -612,30 +613,278 @@ namespace BusBuddy.WPF.Views.Main
             }
         }
 
+        /// <summary>
+        /// Creates fallback layout using Syncfusion ChromelessWindow and DockingManager patterns.
+        /// Based on official Syncfusion documentation:
+        /// https://help.syncfusion.com/wpf/chromeless-window/getting-started
+        /// https://help.syncfusion.com/wpf/docking/getting-started
+        /// </summary>
         private void CreateFallbackLayout()
         {
             Logger.Debug("CreateFallbackLayout method started");
-            Logger.Information("Creating fallback layout due to XAML initialization failure");
+            Logger.Information("Creating fallback layout due to XAML initialization failure using Syncfusion documented patterns");
 
-            // Simplified layout if XAML fails
-            this.Width = 1200;
-            this.Height = 800;
-            this.Title = "BusBuddy - Transportation Management";
-
-            var welcomeText = new TextBlock
+            try
             {
-                Text = "BusBuddy MVP - Syncfusion Layout Loading...\n\nIf this message persists, check Syncfusion assembly references.",
-                FontSize = 18,
-                TextAlignment = TextAlignment.Center,
-                VerticalAlignment = VerticalAlignment.Center,
-                HorizontalAlignment = HorizontalAlignment.Center,
-                Margin = new Thickness(20)
-            };
+                // Set ChromelessWindow properties per Syncfusion documentation
+                this.Width = 1200;
+                this.Height = 800;
+                this.Title = "BusBuddy - Transportation Management";
 
-            this.Content = welcomeText;
+                // ChromelessWindow-specific properties from Syncfusion docs
+                this.WindowStartupLocation = WindowStartupLocation.CenterScreen;
+                this.ResizeMode = ResizeMode.CanResize;
+
+                // Create DockingManager programmatically per Syncfusion documentation
+                // Reference: https://help.syncfusion.com/wpf/docking/getting-started#creating-dockingmanager-programmatically
+                var fallbackDockingManager = new DockingManager
+                {
+                    UseDocumentContainer = true,
+                    DockFill = true
+                    // Note: Theme property may vary by Syncfusion version - using default theme
+                };
+
+                // Create document container for main content per Syncfusion patterns
+                var documentContainer = new Border
+                {
+                    Background = new SolidColorBrush(Color.FromRgb(45, 45, 48)),
+                    Padding = new Thickness(20)
+                };
+
+                var welcomeContent = new StackPanel
+                {
+                    VerticalAlignment = VerticalAlignment.Center,
+                    HorizontalAlignment = HorizontalAlignment.Center
+                };
+
+                // Add title with Syncfusion-compatible styling
+                var titleBlock = new TextBlock
+                {
+                    Text = "BusBuddy - Fallback Mode",
+                    FontSize = 28,
+                    FontWeight = FontWeights.Bold,
+                    Foreground = new SolidColorBrush(Color.FromRgb(255, 255, 255)),
+                    HorizontalAlignment = HorizontalAlignment.Center,
+                    Margin = new Thickness(0, 0, 0, 20)
+                };
+                welcomeContent.Children.Add(titleBlock);
+
+                // Add status message with detailed Syncfusion guidance
+                var statusBlock = new TextBlock
+                {
+                    Text = "XAML initialization failed - Running in programmatic fallback mode\n\n" +
+                           "This layout uses Syncfusion ChromelessWindow and DockingManager\n" +
+                           "created programmatically per official documentation.\n\n" +
+                           "To restore full functionality:\n" +
+                           "• Verify Syncfusion license key (SYNCFUSION_LICENSE_KEY)\n" +
+                           "• Check ChromelessWindow XAML syntax\n" +
+                           "• Ensure DockingManager initialization\n" +
+                           "• Validate theme registration",
+                    FontSize = 16,
+                    Foreground = new SolidColorBrush(Color.FromRgb(229, 229, 229)),
+                    TextAlignment = TextAlignment.Center,
+                    TextWrapping = TextWrapping.Wrap,
+                    LineHeight = 22,
+                    Margin = new Thickness(0, 0, 0, 30)
+                };
+                welcomeContent.Children.Add(statusBlock);
+
+                // Create navigation panel with Syncfusion ButtonAdv controls
+                var navigationPanel = new UniformGrid
+                {
+                    Columns = 3,
+                    Rows = 2,
+                    Margin = new Thickness(20, 0, 20, 0)
+                };
+
+                // Create Syncfusion ButtonAdv controls per documentation
+                CreateSyncfusionFallbackButton(navigationPanel, "Dashboard", "📊");
+                CreateSyncfusionFallbackButton(navigationPanel, "Students", "🎓");
+                CreateSyncfusionFallbackButton(navigationPanel, "Routes", "🗺️");
+                CreateSyncfusionFallbackButton(navigationPanel, "Drivers", "👨‍💼");
+                CreateSyncfusionFallbackButton(navigationPanel, "Buses", "🚌");
+                CreateSyncfusionFallbackButton(navigationPanel, "Reports", "📋");
+
+                welcomeContent.Children.Add(navigationPanel);
+                documentContainer.Child = welcomeContent;
+
+                // Set up DockingManager with document container per Syncfusion patterns
+                // Reference: https://help.syncfusion.com/wpf/docking/document-container
+                DockingManager.SetState(documentContainer, DockState.Document);
+                DockingManager.SetHeader(documentContainer, "Main");
+
+                fallbackDockingManager.Children.Add(documentContainer);
+
+                // Apply DockingManager as main content per Syncfusion documentation
+                this.Content = fallbackDockingManager;
+
+                Logger.Information("Fallback layout created successfully using Syncfusion DockingManager and ChromelessWindow patterns");
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Failed to create Syncfusion fallback layout, using ultra-minimal fallback");
+
+                // Ultra-minimal fallback if Syncfusion controls fail
+                var errorContent = new Grid
+                {
+                    Background = new SolidColorBrush(Color.FromRgb(139, 35, 35)) // Dark red
+                };
+
+                var errorText = new TextBlock
+                {
+                    Text = "BusBuddy - Critical UI Error\n\n" +
+                           "Unable to create Syncfusion fallback layout.\n" +
+                           "Check Syncfusion installation and license.\n\n" +
+                           "Please restart the application.",
+                    FontSize = 18,
+                    FontWeight = FontWeights.Bold,
+                    Foreground = Brushes.White,
+                    TextAlignment = TextAlignment.Center,
+                    VerticalAlignment = VerticalAlignment.Center,
+                    HorizontalAlignment = HorizontalAlignment.Center,
+                    Padding = new Thickness(40)
+                };
+
+                errorContent.Children.Add(errorText);
+                this.Content = errorContent;
+            }
         }
 
-        #region Navigation Button Click Handlers
+        /// <summary>
+        /// Creates Syncfusion ButtonAdv controls for fallback navigation per official documentation.
+        /// Reference: https://help.syncfusion.com/wpf/button/getting-started
+        /// </summary>
+        private void CreateSyncfusionFallbackButton(Panel parent, string text, string icon)
+        {
+            try
+            {
+                // Use Syncfusion ButtonAdv per official documentation
+                var buttonAdv = new Syncfusion.Windows.Tools.Controls.ButtonAdv
+                {
+                    Content = $"{icon} {text}",
+                    Margin = new Thickness(8),
+                    Padding = new Thickness(16, 12, 16, 12),
+                    MinWidth = 140,
+                    MinHeight = 45,
+                    FontSize = 14,
+                    FontWeight = FontWeights.Medium,
+                    Cursor = Cursors.Hand
+                };
+
+                // Apply Syncfusion theme properties per documentation
+                try
+                {
+                    // Attempt to apply BusBuddyButtonAdvStyle from resource dictionary
+                    var buttonAdvStyle = this.FindResource("BusBuddyButtonAdvStyle") as Style;
+                    if (buttonAdvStyle != null && buttonAdvStyle.TargetType == typeof(Syncfusion.Windows.Tools.Controls.ButtonAdv))
+                    {
+                        buttonAdv.Style = buttonAdvStyle;
+                        Logger.Debug("Applied BusBuddyButtonAdvStyle to Syncfusion ButtonAdv: {ButtonText}", text);
+                    }
+                    else
+                    {
+                        // Apply manual Syncfusion-compatible styling per theme documentation
+                        ApplySyncfusionFallbackStyling(buttonAdv);
+                        Logger.Debug("Applied manual Syncfusion styling to ButtonAdv: {ButtonText}", text);
+                    }
+                }
+                catch (ResourceReferenceKeyNotFoundException ex)
+                {
+                    Logger.Warning(ex, "BusBuddyButtonAdvStyle resource not found, applying Syncfusion manual styling for: {ButtonText}", text);
+                    ApplySyncfusionFallbackStyling(buttonAdv);
+                }
+                catch (InvalidCastException ex)
+                {
+                    Logger.Error(ex, "InvalidCastException when applying Syncfusion style to ButtonAdv: {ButtonText}. Style type mismatch detected", text);
+                    ApplySyncfusionFallbackStyling(buttonAdv);
+                }
+                catch (Exception ex)
+                {
+                    Logger.Warning(ex, "Unexpected error applying Syncfusion style to ButtonAdv: {ButtonText}, using fallback", text);
+                    ApplySyncfusionFallbackStyling(buttonAdv);
+                }
+
+                // Add click handler for navigation
+                buttonAdv.Click += (s, e) => HandleSyncfusionFallbackNavigation(text);
+
+                parent.Children.Add(buttonAdv);
+                Logger.Debug("Created Syncfusion ButtonAdv for navigation: {ButtonText}", text);
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Failed to create Syncfusion ButtonAdv: {ButtonText}, falling back to standard Button", text);
+
+                // Fallback to standard WPF Button if Syncfusion fails
+                var standardButton = new Button
+                {
+                    Content = $"{icon} {text}",
+                    Margin = new Thickness(8),
+                    Padding = new Thickness(16, 12, 16, 12),
+                    MinWidth = 140,
+                    MinHeight = 45,
+                    FontSize = 14
+                };
+
+                standardButton.Click += (s, e) => HandleSyncfusionFallbackNavigation(text);
+                parent.Children.Add(standardButton);
+            }
+        }
+
+        /// <summary>
+        /// Applies Syncfusion FluentDark theme-compatible styling to ButtonAdv controls.
+        /// Based on Syncfusion FluentDark theme documentation and color specifications.
+        /// Reference: https://help.syncfusion.com/wpf/themes/fluent-theme
+        /// </summary>
+        private void ApplySyncfusionFallbackStyling(Syncfusion.Windows.Tools.Controls.ButtonAdv buttonAdv)
+        {
+            try
+            {
+                // Apply FluentDark theme colors per Syncfusion documentation
+                buttonAdv.Background = new SolidColorBrush(Color.FromRgb(50, 49, 48)); // Syncfusion FluentDark button background
+                buttonAdv.Foreground = new SolidColorBrush(Color.FromRgb(255, 255, 255)); // White text
+                buttonAdv.BorderBrush = new SolidColorBrush(Color.FromRgb(96, 94, 92)); // FluentDark border
+                buttonAdv.BorderThickness = new Thickness(1, 1, 1, 1);
+
+                // Set Syncfusion-specific properties per ButtonAdv documentation
+                buttonAdv.SmallIcon = null; // No icon for fallback
+                // Note: SizeMode may vary by Syncfusion version - using default                Logger.Debug("Applied Syncfusion FluentDark theme styling to ButtonAdv");
+            }
+            catch (Exception ex)
+            {
+                Logger.Warning(ex, "Failed to apply Syncfusion FluentDark styling to ButtonAdv");
+            }
+        }
+
+        /// <summary>
+        /// Handles navigation in Syncfusion fallback mode with basic functionality.
+        /// Maintains compatibility with ChromelessWindow container.
+        /// </summary>
+        private void HandleSyncfusionFallbackNavigation(string destination)
+        {
+            try
+            {
+                Logger.Information("Syncfusion fallback navigation requested: {Destination}", destination);
+
+                var message = destination.ToLowerInvariant() switch
+                {
+                    "students" => "Students management will open when ChromelessWindow XAML is restored.\n\nSyncfusion controls are functioning in fallback mode.",
+                    "routes" => "Route management will open when DockingManager XAML is restored.\n\nSyncfusion navigation is active.",
+                    "drivers" => "Driver management will open when full Syncfusion UI is restored.",
+                    "buses" => "Bus management will open when Syncfusion layout is restored.",
+                    "dashboard" => "Dashboard will open when ChromelessWindow initialization completes.",
+                    "reports" => "Reports will open when Syncfusion document container is restored.",
+                    _ => $"{destination} functionality will be available when Syncfusion XAML layout is restored."
+                };
+
+                MessageBox.Show(message, "Syncfusion Fallback Mode", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Error in Syncfusion fallback navigation for destination: {Destination}", destination);
+            }
+        }
+
+        #region Navigation Button Click Handlers        #region Navigation Button Click Handlers
 
         private void DashboardButton_Click(object sender, RoutedEventArgs e)
         {

@@ -30,7 +30,7 @@ Highlights
 git clone https://github.com/Bigessfour/BusBuddy-3.git
 cd BusBuddy
 
-# Load optimized PowerShell profile (fast loading ~400ms)
+# Load hardened PowerShell module system (persistent ~300ms)
 . .\PowerShell\Profiles\Microsoft.PowerShell_profile.ps1
 
 # Optional — set Syncfusion license to avoid trial dialogs
@@ -42,12 +42,18 @@ bbBuild             # Build solution - Invoke-BusBuddyBuild
 bbRun               # Launch WPF app - Start-BusBuddyApplication
 bbTest              # Run tests - Start-BusBuddyTest
 
-# Enhanced parallel processing commands (NEW)
+# Enhanced parallel processing commands
 bbTestParallel      # Run test projects in parallel for faster execution
 bbHealth -Detailed  # Detailed health check with system info and parallel dependency checks
 bbBuild -MaxCpuCount 12 -TimeoutSeconds 300  # Multi-core build with timeout protection
 bbTest -Parallel -MaxCpuCount 12  # Parallel test execution with hyperthreading
 bbAntiRegression -ThrottleLimit 12  # 12-thread anti-regression scanning
+
+# Module system persistence (NEW)
+bbRefresh           # Refresh/reload all bb* commands if missing
+bbStatus            # Check module load status and environment
+bbValidate          # Validate environment setup and dependencies
+bbRepair            # Repair module system if commands are unavailable
 
 # Quality assurance commands
 bbMvpCheck          # Validate MVP readiness
@@ -71,32 +77,36 @@ dotnet run --project .\BusBuddy.WPF\BusBuddy.WPF.csproj
 ### PowerShell-first workflow (optimized)
 
 **Performance Improvements:**
-- **Profile loading**: ~400ms (was 15+ seconds)
-- **Lazy module loading**: Az/SqlServer modules load only when needed
+- **Profile loading**: ~300ms (hardened module system)
+- **Hardened persistence**: bb* commands survive terminal refreshes and crashes
+- **Retry logic**: Robust module loading with validation and recovery
 - **Dynamic repo discovery**: Works for any clone location automatically
 - **Up-to-date versions**: .NET 9.0.108, Syncfusion WPF 30.2.5
 - **CLI integration**: GitHub CLI, Azure CLI, GitKraken CLI support with PowerShell Gallery modules
 
-We now use an optimized PowerShell profile that loads in ~400ms (vs 15+ seconds previously) with lazy module loading and dynamic repo discovery.
+We now use a hardened PowerShell module system that loads in ~300ms with comprehensive persistence, retry logic, and crash recovery to ensure bb* commands are always available.
 
-**Profile structure:**
+**Hardened profile structure:**
 ```
 PowerShell/
 ├─ Profiles/
-│  ├─ Microsoft.PowerShell_profile.ps1  # Optimized wrapper with dynamic repo discovery
+│  ├─ Microsoft.PowerShell_profile.ps1  # Hardened wrapper with module manager integration
 │  ├─ BusBuddyProfile.ps1              # Main profile with lazy loading and bb* aliases
-│  └─ Import-BusBuddyModule.ps1         # Legacy bootstrap (compatibility)
+│  ├─ Import-BusBuddyModule.ps1         # Legacy bootstrap (compatibility)
+│  └─ BusBuddy.ModuleManager.ps1        # NEW: Hardened module manager with retry logic
 ├─ Modules/
 │  ├─ BusBuddy/                         # Core BusBuddy module
 │  ├─ BusBuddy.Testing/                 # Testing module
 │  └─ BusBuddy.CLI/                     # CLI integration module (GitHub, Azure, GitKraken)
 ```
 
-**Key optimizations:**
-- **Lazy loading**: Az and SqlServer modules load only when Azure functions are called
-- **Dynamic discovery**: Automatically finds repo root for any clone location
-- **Environment setup**: All variables configured (DOTNET_VERSION, BUILD_CONFIGURATION, etc.)
-- **Safe stubs**: Missing modules don't break the environment
+**Hardening features:**
+- **Persistent commands**: bb* aliases survive terminal refreshes, crashes, and environment changes
+- **Retry logic**: Comprehensive validation with 3-attempt retry system for robust loading
+- **Environment monitoring**: Continuous validation of PowerShell version, repository state
+- **Recovery system**: Automatic repair of broken module states and missing commands
+- **Validation gates**: Pre-load checks for PowerShell Core 7.5+, repository structure
+- **Fallback mechanisms**: Graceful degradation when components are unavailable
 
 Standard modules from PowerShell Gallery (optional, auto-loaded when needed):
 - **Az** — Azure services (loads lazily ~10-15s when first used)

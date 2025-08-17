@@ -1,0 +1,13 @@
+
+Name          Source
+----          ------
+bbAz          BusBuddy.CLI
+bbAzResources BusBuddy.CLI
+bbCiScan      BusBuddy.CLI
+bbFullScan    BusBuddy.CLI
+bbGh          BusBuddy.CLI
+bbGk          BusBuddy.CLI
+bbRepos       BusBuddy.CLI
+bbWorkflows   BusBuddy.CLI
+
+

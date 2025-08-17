@@ -2,7 +2,7 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:syncfusion="http://schemas.syncfusion.com/wpf">
     <!-- =============================================================================== -->
-    <!-- BUSBUDDY SYNCFUSION V30.1.42 RESOURCE DICTIONARY -->
+    <!-- BUSBUDDY SYNCFUSION V30.2.5 RESOURCE DICTIONARY -->
     <!-- =============================================================================== -->
     <!-- 🚌 BUSBUDDY COMPLETE INVENTORY - COLORS AND BRUSHES ONLY -->
     <!-- ✅ OFFICIAL API COMPLIANCE: Theme management via SfSkinManager in App.xaml.cs -->
@@ -176,6 +176,41 @@
     <SolidColorBrush x:Key="BusBuddy.Brush.DataGrid.Border"
                      Color="{StaticResource BusBuddy.DataGrid.Border}" />
     <!-- =============================================================================== -->
+    <!-- SECTION 2.2.1: MISSING THEME BRUSHES FOR COMPATIBILITY -->
+    <!-- =============================================================================== -->
+    <!-- Common theme brushes referenced by views but not previously defined -->
+    <!-- These provide compatibility with legacy resource references -->
+
+    <!-- Header background (maps to panel header) -->
+    <SolidColorBrush x:Key="BusBuddy.Brush.Header.Background"
+                     Color="{StaticResource BusBuddy.Panel.Header}" />
+
+    <!-- Button foreground brush (maps to primary text) -->
+    <SolidColorBrush x:Key="ButtonForegroundBrush"
+                     Color="{StaticResource BusBuddy.Text.Primary}" />
+
+    <!-- Legacy theme compatibility brushes for GoogleEarth and other views -->
+    <SolidColorBrush x:Key="PrimaryBackgroundBrush"
+                     Color="{StaticResource BusBuddy.Surface.Dark}" />
+    <SolidColorBrush x:Key="AccentBackgroundBrush"
+                     Color="{StaticResource BusBuddy.Surface.Medium}" />
+    <SolidColorBrush x:Key="BorderBrush"
+                     Color="{StaticResource BusBuddy.Surface.Border}" />
+    <SolidColorBrush x:Key="ButtonBackgroundBrush"
+                     Color="{StaticResource BusBuddy.Primary}" />
+    <SolidColorBrush x:Key="PrimaryTextBrush"
+                     Color="{StaticResource BusBuddy.Text.Primary}" />
+    <SolidColorBrush x:Key="AccentTextBrush"
+                     Color="{StaticResource BusBuddy.Text.Accent}" />
+
+    <!-- WPF separator style compatibility -->
+    <Style x:Key="WPFSeparatorStyle" TargetType="Separator">
+        <Setter Property="Background" Value="{StaticResource BorderBrush}" />
+        <Setter Property="Height" Value="1" />
+        <Setter Property="Margin" Value="0,8" />
+    </Style>
+
+    <!-- =============================================================================== -->
     <!-- SECTION 2.3: WARNING PANEL AND MUTED BRUSHES — USED BY FORMS (e.g., DriverForm) -->
     <!-- These keys are referenced directly via StaticResource in views and must be brushes -->
     <!-- to avoid XAML parse errors. -->
@@ -310,6 +345,23 @@
         <Setter Property="Foreground"
                 Value="{StaticResource BusBuddy.Brush.Text.Primary}" />
     </Style>
+    <!-- Canonical semantic styles (ensure keys used by views are defined) -->
+    <Style x:Key="BusBuddy.ButtonAdv.Info"
+           TargetType="syncfusion:ButtonAdv"
+           BasedOn="{StaticResource BusBuddy.ButtonAdv.Base}">
+        <Setter Property="Background"
+                Value="{StaticResource BusBuddy.Brush.Semantic.Info}" />
+        <Setter Property="Foreground"
+                Value="{StaticResource BusBuddy.Brush.Text.Primary}" />
+    </Style>
+    <Style x:Key="BusBuddy.ButtonAdv.Warning"
+           TargetType="syncfusion:ButtonAdv"
+           BasedOn="{StaticResource BusBuddy.ButtonAdv.Base}">
+        <Setter Property="Background"
+                Value="{StaticResource BusBuddy.Brush.Semantic.Warning}" />
+        <Setter Property="Foreground"
+                Value="{StaticResource BusBuddy.Brush.Text.Primary}" />
+    </Style>
     <!-- Missing BusBuddyButtonAdv styles (referenced in views) -->
     <Style x:Key="BusBuddyButtonAdv.Primary"
            TargetType="syncfusion:ButtonAdv"
@@ -404,8 +456,8 @@
     ║     • PdfViewerControl - Document viewing
     ║     • SfSpreadsheet - Data analysis
     ║
-    ║  📦 SYNCFUSION PACKAGES INSTALLED (30.1.42):
-    ║     • Syncfusion.Licensing
+        ║  📦 SYNCFUSION PACKAGES INSTALLED (30.2.5):
+        ║     • Syncfusion.Licensing
     ║     • Syncfusion.SfSkinManager.WPF
     ║     • Syncfusion.Themes.FluentDark.WPF
     ║     • Syncfusion.Themes.FluentLight.WPF
@@ -447,11 +499,298 @@
     ║     • This resource dictionary provides ONLY colors and brushes
     ║     • Control-specific styles defined in individual XAML files
     ║
-    ║  ⚠️  IMPORTANT NOTES:
-    ║     • All controls validated against Syncfusion WPF 30.1.40 API
+        ║  ⚠️  IMPORTANT NOTES:
+        ║     • All controls validated against Syncfusion WPF 30.2.5 API
     ║     • ButtonAdv uses Label property (NOT Content)
     ║     • FluentDark theme applied via SfSkinManager
     ║     • License registration required in App.xaml.cs
     ║
     ╚══════════════════════════════════════════════════════════════════════════════╝ -->
+
+    <!-- =============================================================================== -->
+    <!-- SECTION 6: MISSING UI COMPONENT STYLES -->
+    <!-- =============================================================================== -->
+    <!-- Common UI styles referenced by views but not previously defined -->
+    <!-- These provide basic styling for form components and layout elements -->
+
+    <!-- Section header style for view titles -->
+    <Style x:Key="SectionHeaderStyle" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="16" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Foreground" Value="{StaticResource BusBuddy.Brush.Text.Primary}" />
+        <Setter Property="Margin" Value="0,0,0,8" />
+    </Style>
+
+    <!-- Action button style for form actions -->
+    <Style x:Key="ActionButtonStyle" TargetType="Button">
+        <Setter Property="Padding" Value="12,6" />
+        <Setter Property="Margin" Value="4,2" />
+        <Setter Property="Background" Value="{StaticResource BusBuddy.Brush.Primary}" />
+        <Setter Property="Foreground" Value="{StaticResource BusBuddy.Brush.Text.Primary}" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="MinWidth" Value="80" />
+    </Style>
+
+    <!-- Form label style for input labels -->
+    <Style x:Key="FormLabelStyle" TargetType="TextBlock">
+        <Setter Property="FontWeight" Value="Medium" />
+        <Setter Property="Foreground" Value="{StaticResource BusBuddy.Brush.Text.Secondary}" />
+        <Setter Property="Margin" Value="0,0,0,4" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+
+    <!-- Inverse boolean style (for checkboxes with inverted logic) -->
+    <Style x:Key="InverseBooleanStyle" TargetType="CheckBox">
+        <Setter Property="Foreground" Value="{StaticResource BusBuddy.Brush.Text.Primary}" />
+        <Setter Property="Margin" Value="4,2" />
+    </Style>
+
+    <!-- =============================================================================== -->
+    <!-- SECTION 7: MISSING FORM AND COMPONENT STYLES -->
+    <!-- =============================================================================== -->
+    <!-- Critical missing styles identified in StaticResource_Scan_Report.md -->
+    <!-- Reference: https://help.syncfusion.com/wpf/themes/fluent-theme -->
+
+    <!-- Stub button style for placeholder/inactive buttons -->
+    <Style x:Key="StubButtonStyle" TargetType="Button">
+        <Setter Property="Background" Value="{StaticResource BusBuddy.Brush.Surface.Medium}" />
+        <Setter Property="Foreground" Value="{StaticResource BusBuddy.Brush.Text.Secondary}" />
+        <Setter Property="BorderBrush" Value="{StaticResource BusBuddy.Brush.Surface.Border}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Padding" Value="8,4" />
+        <Setter Property="Margin" Value="2" />
+        <Setter Property="MinWidth" Value="60" />
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="IsEnabled" Value="False" />
+    </Style>
+
+    <!-- Field label style for form labels -->
+    <Style x:Key="FieldLabelStyle" TargetType="Label">
+        <Setter Property="FontWeight" Value="Medium" />
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="Foreground" Value="{StaticResource BusBuddy.Brush.Text.Secondary}" />
+        <Setter Property="Margin" Value="0,2,4,2" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="HorizontalAlignment" Value="Left" />
+    </Style>
+
+    <!-- Field input style for form text inputs -->
+    <Style x:Key="FieldInputStyle" TargetType="TextBox">
+        <Setter Property="Padding" Value="8,4" />
+        <Setter Property="Margin" Value="2" />
+        <Setter Property="Background" Value="{StaticResource BusBuddy.Brush.Surface.Light}" />
+        <Setter Property="Foreground" Value="{StaticResource BusBuddy.Brush.Text.Primary}" />
+        <Setter Property="BorderBrush" Value="{StaticResource BusBuddy.Brush.Surface.Border}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="MinHeight" Value="30" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+    </Style>
+
+    <!-- General ButtonAdv style for fuel dialogs and other components -->
+    <Style x:Key="BusBuddyButtonAdvStyle" TargetType="syncfusion:ButtonAdv"
+           BasedOn="{StaticResource BusBuddy.ButtonAdv.Base}">
+        <Setter Property="Background" Value="{StaticResource BusBuddy.Brush.Primary}" />
+        <Setter Property="Foreground" Value="{StaticResource BusBuddy.Brush.Text.Primary}" />
+    </Style>
+
+    <!-- Data grid style for Syncfusion SfDataGrid v30.2.5 -->
+    <!-- Reference: https://help.syncfusion.com/wpf/datagrid/getting-started -->
+    <!-- Note: Theming handled by SfSkinManager in App.xaml.cs, not individual property setters -->
+    <Style x:Key="BusBuddySfDataGridStyle" TargetType="syncfusion:SfDataGrid">
+        <Setter Property="Background" Value="{StaticResource BusBuddy.Brush.DataGrid.Background}" />
+        <Setter Property="RowHeight" Value="28" />
+        <Setter Property="HeaderRowHeight" Value="32" />
+        <Setter Property="GridLinesVisibility" Value="Both" />
+        <Setter Property="HeaderLinesVisibility" Value="Both" />
+        <Setter Property="BorderBrush" Value="{StaticResource BusBuddy.Brush.DataGrid.Border}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="AutoGenerateColumns" Value="False" />
+        <Setter Property="AllowSorting" Value="True" />
+        <Setter Property="AllowFiltering" Value="True" />
+        <Setter Property="SelectionMode" Value="Single" />
+        <Setter Property="ColumnSizer" Value="Star" />
+    </Style>
+
+    <!-- Watermark text box style for search/filter inputs -->
+    <Style x:Key="WatermarkTextBox" TargetType="TextBox" BasedOn="{StaticResource FieldInputStyle}">
+        <Setter Property="FontStyle" Value="Italic" />
+        <Setter Property="Foreground" Value="{StaticResource BusBuddy.Brush.Text.Disabled}" />
+    </Style>
+
+    <!-- =============================================================================== -->
+    <!-- SECTION 8: VALIDATION STYLES AND TEMPLATES -->
+    <!-- =============================================================================== -->
+    <!-- Based on Syncfusion WPF input controls documentation: -->
+    <!-- https://help.syncfusion.com/wpf/textboxext/getting-started -->
+
+    <!-- ValidationErrorTemplate: WCAG-compliant error display with Border-based design -->
+    <ControlTemplate x:Key="ValidationErrorTemplate">
+        <DockPanel LastChildFill="True">
+            <!-- Error message text with high contrast for accessibility -->
+            <TextBlock Foreground="{StaticResource BusBuddy.Brush.Semantic.Error}"
+                       Margin="0,0,0,4"
+                       DockPanel.Dock="Bottom"
+                       FontWeight="Medium"
+                       Text="{Binding [0].ErrorContent}"/>
+            <!-- Error border around control with BusBuddy semantic error color -->
+            <Border BorderBrush="{StaticResource BusBuddy.Brush.Semantic.Error}"
+                    BorderThickness="2"
+                    CornerRadius="3">
+                <AdornedElementPlaceholder/>
+            </Border>
+        </DockPanel>
+    </ControlTemplate>
+
+    <!-- ValidatedTextBoxStyle: Standard WPF TextBox with validation error styling -->
+    <Style x:Key="ValidatedTextBoxStyle" TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
+        <!-- Base styling using BusBuddy color scheme for WCAG compliance -->
+        <Setter Property="Background" Value="{StaticResource BusBuddy.Brush.Surface.Light}" />
+        <Setter Property="Foreground" Value="{StaticResource BusBuddy.Brush.Text.Primary}" />
+        <Setter Property="BorderBrush" Value="{StaticResource BusBuddy.Brush.Surface.Border}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Padding" Value="8,4" />
+        <Setter Property="MinHeight" Value="32" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+        <Style.Triggers>
+            <!-- Validation error state with semantic error color -->
+            <Trigger Property="Validation.HasError" Value="True">
+                <Setter Property="BorderBrush" Value="{StaticResource BusBuddy.Brush.Semantic.Error}"/>
+                <Setter Property="BorderThickness" Value="2"/>
+                <Setter Property="ToolTip" Value="{Binding (Validation.Errors)[0].ErrorContent, RelativeSource={RelativeSource Self}}"/>
+            </Trigger>
+            <!-- Focus state with primary accent -->
+            <Trigger Property="IsFocused" Value="True">
+                <Setter Property="BorderBrush" Value="{StaticResource BusBuddy.Brush.Primary}"/>
+                <Setter Property="BorderThickness" Value="2"/>
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <!-- ValidatedSfTextBoxStyle: Syncfusion SfTextBoxExt with validation and BusBuddy theming -->
+    <!-- Reference: https://help.syncfusion.com/wpf/textboxext/getting-started -->
+    <Style x:Key="ValidatedSfTextBoxStyle" TargetType="syncfusion:SfTextBoxExt" BasedOn="{StaticResource {x:Type syncfusion:SfTextBoxExt}}">
+        <!-- Base styling with BusBuddy theme colors for accessibility -->
+        <Setter Property="Background" Value="{StaticResource BusBuddy.Brush.Surface.Light}" />
+        <Setter Property="Foreground" Value="{StaticResource BusBuddy.Brush.Text.Primary}" />
+        <Setter Property="BorderBrush" Value="{StaticResource BusBuddy.Brush.Surface.Border}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Padding" Value="8,4" />
+        <Setter Property="MinHeight" Value="32" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+        <Style.Triggers>
+            <!-- Validation error state -->
+            <Trigger Property="Validation.HasError" Value="True">
+                <Setter Property="BorderBrush" Value="{StaticResource BusBuddy.Brush.Semantic.Error}"/>
+                <Setter Property="BorderThickness" Value="2"/>
+                <Setter Property="ToolTip" Value="{Binding (Validation.Errors)[0].ErrorContent, RelativeSource={RelativeSource Self}}"/>
+            </Trigger>
+            <!-- Focus state -->
+            <Trigger Property="IsFocused" Value="True">
+                <Setter Property="BorderBrush" Value="{StaticResource BusBuddy.Brush.Primary}"/>
+                <Setter Property="BorderThickness" Value="2"/>
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <!-- ValidatedComboBoxAdvStyle: Syncfusion ComboBoxAdv with validation support -->
+    <Style x:Key="ValidatedComboBoxAdvStyle" TargetType="syncfusion:ComboBoxAdv" BasedOn="{StaticResource {x:Type syncfusion:ComboBoxAdv}}">
+        <!-- Base styling consistent with other validated controls -->
+        <Setter Property="Background" Value="{StaticResource BusBuddy.Brush.Surface.Light}" />
+        <Setter Property="Foreground" Value="{StaticResource BusBuddy.Brush.Text.Primary}" />
+        <Setter Property="BorderBrush" Value="{StaticResource BusBuddy.Brush.Surface.Border}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="MinHeight" Value="32" />
+        <Style.Triggers>
+            <!-- Validation error state -->
+            <Trigger Property="Validation.HasError" Value="True">
+                <Setter Property="BorderBrush" Value="{StaticResource BusBuddy.Brush.Semantic.Error}"/>
+                <Setter Property="BorderThickness" Value="2"/>
+                <Setter Property="ToolTip" Value="{Binding (Validation.Errors)[0].ErrorContent, RelativeSource={RelativeSource Self}}"/>
+            </Trigger>
+            <!-- Default to first item when no selection and items exist -->
+            <Trigger Property="SelectedItem" Value="{x:Null}">
+                <Setter Property="SelectedIndex" Value="0"/>
+            </Trigger>
+            <!-- Focus state -->
+            <Trigger Property="IsFocused" Value="True">
+                <Setter Property="BorderBrush" Value="{StaticResource BusBuddy.Brush.Primary}"/>
+                <Setter Property="BorderThickness" Value="2"/>
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <!-- ValidatedMaskedEditStyle: Syncfusion SfMaskedEdit with validation -->
+    <Style x:Key="ValidatedMaskedEditStyle" TargetType="syncfusion:SfMaskedEdit" BasedOn="{StaticResource {x:Type syncfusion:SfMaskedEdit}}">
+        <!-- Base styling for consistency -->
+        <Setter Property="Background" Value="{StaticResource BusBuddy.Brush.Surface.Light}" />
+        <Setter Property="Foreground" Value="{StaticResource BusBuddy.Brush.Text.Primary}" />
+        <Setter Property="BorderBrush" Value="{StaticResource BusBuddy.Brush.Surface.Border}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="MinHeight" Value="32" />
+        <Style.Triggers>
+            <!-- Validation error state -->
+            <Trigger Property="Validation.HasError" Value="True">
+                <Setter Property="BorderBrush" Value="{StaticResource BusBuddy.Brush.Semantic.Error}"/>
+                <Setter Property="BorderThickness" Value="2"/>
+                <Setter Property="ToolTip" Value="{Binding (Validation.Errors)[0].ErrorContent, RelativeSource={RelativeSource Self}}"/>
+            </Trigger>
+            <!-- Focus state -->
+            <Trigger Property="IsFocused" Value="True">
+                <Setter Property="BorderBrush" Value="{StaticResource BusBuddy.Brush.Primary}"/>
+                <Setter Property="BorderThickness" Value="2"/>
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <!-- =============================================================================== -->
+    <!-- SECTION 9: DATA SOURCES AND OBJECT DATA PROVIDERS -->
+    <!-- =============================================================================== -->
+    <!-- Based on .NET WPF data binding patterns: -->
+    <!-- https://learn.microsoft.com/dotnet/desktop/wpf/data/data-binding-overview -->
+
+    <!-- United States state abbreviations for student address forms -->
+    <x:Array x:Key="USStates" Type="sys:String" xmlns:sys="clr-namespace:System;assembly=mscorlib">
+        <sys:String>AL</sys:String><sys:String>AK</sys:String><sys:String>AZ</sys:String><sys:String>AR</sys:String>
+        <sys:String>CA</sys:String><sys:String>CO</sys:String><sys:String>CT</sys:String><sys:String>DE</sys:String>
+        <sys:String>FL</sys:String><sys:String>GA</sys:String><sys:String>HI</sys:String><sys:String>ID</sys:String>
+        <sys:String>IL</sys:String><sys:String>IN</sys:String><sys:String>IA</sys:String><sys:String>KS</sys:String>
+        <sys:String>KY</sys:String><sys:String>LA</sys:String><sys:String>ME</sys:String><sys:String>MD</sys:String>
+        <sys:String>MA</sys:String><sys:String>MI</sys:String><sys:String>MN</sys:String><sys:String>MS</sys:String>
+        <sys:String>MO</sys:String><sys:String>MT</sys:String><sys:String>NE</sys:String><sys:String>NV</sys:String>
+        <sys:String>NH</sys:String><sys:String>NJ</sys:String><sys:String>NM</sys:String><sys:String>NY</sys:String>
+        <sys:String>NC</sys:String><sys:String>ND</sys:String><sys:String>OH</sys:String><sys:String>OK</sys:String>
+        <sys:String>OR</sys:String><sys:String>PA</sys:String><sys:String>RI</sys:String><sys:String>SC</sys:String>
+        <sys:String>SD</sys:String><sys:String>TN</sys:String><sys:String>TX</sys:String><sys:String>UT</sys:String>
+        <sys:String>VT</sys:String><sys:String>VA</sys:String><sys:String>WA</sys:String><sys:String>WV</sys:String>
+        <sys:String>WI</sys:String><sys:String>WY</sys:String><sys:String>DC</sys:String>
+    </x:Array>
+
+    <!-- Grade levels for student registration (K-12) -->
+    <x:Array x:Key="GradesList" Type="sys:String" xmlns:sys="clr-namespace:System;assembly=mscorlib">
+        <sys:String>K</sys:String>
+        <sys:String>1</sys:String>
+        <sys:String>2</sys:String>
+        <sys:String>3</sys:String>
+        <sys:String>4</sys:String>
+        <sys:String>5</sys:String>
+        <sys:String>6</sys:String>
+        <sys:String>7</sys:String>
+        <sys:String>8</sys:String>
+        <sys:String>9</sys:String>
+        <sys:String>10</sys:String>
+        <sys:String>11</sys:String>
+        <sys:String>12</sys:String>
+    </x:Array>
+
+    <!-- RouteTimeSlot enum values for route assignment -->
+    <!-- Reference: BusBuddy.Core.Models.RouteTimeSlot enum -->
+    <ObjectDataProvider x:Key="RouteTimeSlotValues"
+                        MethodName="GetValues"
+                        ObjectType="{x:Type sys:Enum}"
+                        xmlns:sys="clr-namespace:System;assembly=mscorlib">
+        <ObjectDataProvider.MethodParameters>
+            <x:Type TypeName="models:RouteTimeSlot" xmlns:models="clr-namespace:BusBuddy.Core.Models;assembly=BusBuddy.Core" />
+        </ObjectDataProvider.MethodParameters>
+    </ObjectDataProvider>
+
 </ResourceDictionary>

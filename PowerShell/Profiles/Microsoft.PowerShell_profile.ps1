@@ -172,6 +172,51 @@ if (Test-Path "$BusBuddyRepoPath\PowerShell") {
     $env:PSModulePath = $env:PSModulePath + ";$BusBuddyRepoPath\PowerShell"
 }
 
+# === HARDENED MODULE LOADING SYSTEM ===
+# Load the hardened module manager for robust command availability
+# Reference: https://learn.microsoft.com/powershell/scripting/developer/module/writing-a-windows-powershell-module
+$moduleManagerPath = Join-Path $BusBuddyRepoPath "PowerShell\Profiles\BusBuddy.ModuleManager.ps1"
+if (Test-Path $moduleManagerPath) {
+    try {
+        Write-Information "🔧 Loading hardened module manager..." -InformationAction Continue
+        . $moduleManagerPath -Quiet
+
+        # Verify critical commands are available
+        $criticalCommands = @('bbHealth', 'bbBuild', 'bbTest', 'bbRefresh', 'bbStatus')
+        $missingCommands = @()
+
+        foreach ($cmd in $criticalCommands) {
+            if (-not (Get-Command $cmd -ErrorAction SilentlyContinue)) {
+                $missingCommands += $cmd
+            }
+        }
+
+        if ($missingCommands.Count -eq 0) {
+            Write-Information "✅ All critical commands available via hardened loader" -InformationAction Continue
+        } else {
+            Write-Warning "Some commands unavailable: $($missingCommands -join ', '). Use bbRefresh to reload."
+        }
+    }
+    catch {
+        Write-Warning "Failed to load hardened module manager: $($_.Exception.Message)"
+        Write-Information "Falling back to basic module loading..." -InformationAction Continue
+
+        # Fallback to basic module loading
+        $importScript = Join-Path $BusBuddyRepoPath "PowerShell\Profiles\Import-BusBuddyModule.ps1"
+        if (Test-Path $importScript) {
+            . $importScript -Quiet
+        }
+    }
+} else {
+    Write-Information "⚠️ Hardened module manager not found, using basic loading..." -InformationAction Continue
+
+    # Fallback to basic module loading
+    $importScript = Join-Path $BusBuddyRepoPath "PowerShell\Profiles\Import-BusBuddyModule.ps1"
+    if (Test-Path $importScript) {
+        . $importScript -Quiet
+    }
+}
+
 # === FUNCTION DEFINITIONS ===
 # Lazy-load CLI integration module
 function Import-BusBuddyCli {
@@ -240,6 +285,320 @@ function Enable-BusBuddyFirewall {
     New-AzSqlServerFirewallRule -ResourceGroupName $ResourceGroup -ServerName $SqlServer -FirewallRuleName $RuleName -StartIpAddress $ip -EndIpAddress $ip
 }
 
+# Function: Enable Broad Azure SQL Firewall Access (All IPs) — DEV/TESTING ONLY
+# WARNING: This exposes your database to the public internet. Use strong authentication and passwords.
+# Reference: https://learn.microsoft.com/azure/azure-sql/database/firewall-configure?view=azuresql
+function Enable-BusBuddyBroadFirewall {
+    <#
+    .SYNOPSIS
+    Creates an Azure SQL firewall rule allowing all IP addresses (0.0.0.0 to 255.255.255.255)
+
+    .DESCRIPTION
+    For development/testing scenarios where specific IP restrictions are impractical.
+    This effectively bypasses IP restrictions while relying on strong authentication.
+
+    SECURITY WARNING: This exposes your database to the public internet.
+    - Use very strong passwords (16+ characters, mixed case, symbols, numbers)
+    - Consider Azure AD authentication instead of SQL authentication
+    - Prefer LocalDB for development when possible
+    - Remove this rule when not needed
+
+    .PARAMETER ResourceGroup
+    Azure resource group containing the SQL server
+
+    .PARAMETER SqlServer
+    Azure SQL server name (without .database.windows.net suffix)
+
+    .PARAMETER RuleName
+    Name for the firewall rule (default: AllowAllIPs-{date})
+
+    .EXAMPLE
+    Enable-BusBuddyBroadFirewall -ResourceGroup 'BusBuddy-RG' -SqlServer 'busbuddy-server-sm2'
+
+    .NOTES
+    Requires Az.Sql module and Azure login (Connect-AzAccount)
+    Rule takes ~5 minutes to propagate globally
+    #>
+    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'High')]
+    param (
+        [Parameter(Mandatory = $true)]
+        [string]$ResourceGroup,
+
+        [Parameter(Mandatory = $true)]
+        [string]$SqlServer,
+
+        [string]$RuleName = "AllowAllIPs-$(Get-Date -Format 'yyyyMMdd-HHmm')"
+    )
+
+    # Lazy-load Az.Sql module only when needed
+    if (-not (Get-Module Az.Sql -ListAvailable)) {
+        Write-Warning 'Az.Sql module not installed. Run: Install-Module Az -Scope CurrentUser'
+        return
+    }
+    if (-not (Get-Module Az.Sql)) {
+        Write-Information 'Loading Az.Sql module...' -InformationAction Continue
+        Import-Module Az.Sql -ErrorAction Stop
+    }
+
+    # Check Azure authentication
+    try {
+        $context = Get-AzContext
+        if (-not $context) {
+            Write-Warning 'Not authenticated to Azure. Run: Connect-AzAccount'
+            return
+        }
+        Write-Information "Connected to Azure as: $($context.Account.Id)" -InformationAction Continue
+    }
+    catch {
+        Write-Warning 'Failed to get Azure context. Run: Connect-AzAccount'
+        return
+    }
+
+    # Security confirmation
+    $confirmMessage = @"
+WARNING: This will allow ALL IP addresses (0.0.0.0 to 255.255.255.255) to connect to your Azure SQL server '$SqlServer'.
+
+This exposes your database to the public internet. Ensure you have:
+- Very strong SQL authentication passwords (16+ characters)
+- Azure AD authentication enabled if possible
+- Database-level security properly configured
+- Plan to remove this rule when testing is complete
+
+Do you want to proceed?
+"@
+
+    if ($PSCmdlet.ShouldProcess("Azure SQL Server '$SqlServer'", $confirmMessage)) {
+        try {
+            Write-Information "Creating broad firewall rule '$RuleName' on server '$SqlServer'..." -InformationAction Continue
+
+            $result = New-AzSqlServerFirewallRule `
+                -ResourceGroupName $ResourceGroup `
+                -ServerName $SqlServer `
+                -FirewallRuleName $RuleName `
+                -StartIpAddress "0.0.0.0" `
+                -EndIpAddress "255.255.255.255" `
+                -ErrorAction Stop
+
+            Write-Information "✅ Firewall rule created successfully!" -InformationAction Continue
+            Write-Information "📡 Rule will propagate globally within ~5 minutes" -InformationAction Continue
+            Write-Information "🔒 Remember to use strong authentication and remove this rule when not needed" -InformationAction Continue
+
+            # Show the created rule
+            Write-Information "Rule details:" -InformationAction Continue
+            $result | Format-Table -Property FirewallRuleName, StartIpAddress, EndIpAddress -AutoSize
+
+            return $result
+        }
+        catch {
+            Write-Error "Failed to create firewall rule: $($_.Exception.Message)"
+            Write-Information "💡 Troubleshooting tips:" -InformationAction Continue
+            Write-Information "  - Verify resource group and server names are correct" -InformationAction Continue
+            Write-Information "  - Check Azure permissions (Contributor role on SQL server)" -InformationAction Continue
+            Write-Information "  - Ensure server exists: Get-AzSqlServer -ResourceGroupName '$ResourceGroup'" -InformationAction Continue
+        }
+    }
+    else {
+        Write-Information "Operation cancelled by user." -InformationAction Continue
+    }
+}
+
+# Function: Remove Broad Azure SQL Firewall Rule
+# Reference: https://learn.microsoft.com/azure/azure-sql/database/firewall-configure?view=azuresql
+function Remove-BusBuddyBroadFirewall {
+    <#
+    .SYNOPSIS
+    Removes broad Azure SQL firewall rules (cleanup after testing)
+
+    .DESCRIPTION
+    Removes firewall rules that allow broad IP access, identified by name pattern or explicit rule name.
+    Use this to clean up after development/testing with broad access rules.
+
+    .PARAMETER ResourceGroup
+    Azure resource group containing the SQL server
+
+    .PARAMETER SqlServer
+    Azure SQL server name (without .database.windows.net suffix)
+
+    .PARAMETER RuleName
+    Specific rule name to remove. If not specified, removes rules matching "AllowAllIPs*" pattern
+
+    .EXAMPLE
+    Remove-BusBuddyBroadFirewall -ResourceGroup 'BusBuddy-RG' -SqlServer 'busbuddy-server-sm2'
+
+    .EXAMPLE
+    Remove-BusBuddyBroadFirewall -ResourceGroup 'BusBuddy-RG' -SqlServer 'busbuddy-server-sm2' -RuleName 'AllowAllIPs-20250816-1430'
+    #>
+    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'Medium')]
+    param (
+        [Parameter(Mandatory = $true)]
+        [string]$ResourceGroup,
+
+        [Parameter(Mandatory = $true)]
+        [string]$SqlServer,
+
+        [string]$RuleName
+    )
+
+    # Lazy-load Az.Sql module
+    if (-not (Get-Module Az.Sql)) {
+        Import-Module Az.Sql -ErrorAction Stop
+    }
+
+    try {
+        # Get existing firewall rules
+        $existingRules = Get-AzSqlServerFirewallRule -ResourceGroupName $ResourceGroup -ServerName $SqlServer -ErrorAction Stop
+
+        if ($RuleName) {
+            # Remove specific rule
+            $ruleToRemove = $existingRules | Where-Object { $_.FirewallRuleName -eq $RuleName }
+            if (-not $ruleToRemove) {
+                Write-Warning "Firewall rule '$RuleName' not found on server '$SqlServer'"
+                return
+            }
+            $rulesToRemove = @($ruleToRemove)
+        }
+        else {
+            # Find broad access rules by pattern and IP range
+            $rulesToRemove = $existingRules | Where-Object {
+                $_.FirewallRuleName -like "AllowAllIPs*" -or
+                ($_.StartIpAddress -eq "0.0.0.0" -and $_.EndIpAddress -eq "255.255.255.255")
+            }
+        }
+
+        if (-not $rulesToRemove -or $rulesToRemove.Count -eq 0) {
+            Write-Information "No broad firewall rules found to remove." -InformationAction Continue
+            return
+        }
+
+        Write-Information "Found $($rulesToRemove.Count) broad firewall rule(s) to remove:" -InformationAction Continue
+        $rulesToRemove | Format-Table -Property FirewallRuleName, StartIpAddress, EndIpAddress -AutoSize
+
+        foreach ($rule in $rulesToRemove) {
+            if ($PSCmdlet.ShouldProcess("Firewall rule '$($rule.FirewallRuleName)'", "Remove from Azure SQL server '$SqlServer'")) {
+                try {
+                    Remove-AzSqlServerFirewallRule -ResourceGroupName $ResourceGroup -ServerName $SqlServer -FirewallRuleName $rule.FirewallRuleName -ErrorAction Stop
+                    Write-Information "✅ Removed firewall rule: $($rule.FirewallRuleName)" -InformationAction Continue
+                }
+                catch {
+                    Write-Error "Failed to remove rule '$($rule.FirewallRuleName)': $($_.Exception.Message)"
+                }
+            }
+        }
+    }
+    catch {
+        Write-Error "Failed to retrieve firewall rules: $($_.Exception.Message)"
+    }
+}
+
+# Function: Update Azure SQL Firewall Rule for Dynamic IP (Auto-updates when IP changes)
+# Usage: Update-BusBuddyDynamicFirewall -ResourceGroup 'BusBuddy-RG' -SqlServer 'busbuddy-server-sm2'
+# Reference: https://learn.microsoft.com/azure/azure-sql/database/firewall-configure?view=azuresql
+function Update-BusBuddyDynamicFirewall {
+    <#
+    .SYNOPSIS
+    Automatically updates Azure SQL firewall rule when your IP address changes
+
+    .DESCRIPTION
+    Checks your current public IP and updates/creates a firewall rule if needed.
+    This solves the dynamic IP problem by automatically maintaining a current rule.
+
+    .PARAMETER ResourceGroup
+    Azure resource group containing the SQL server
+
+    .PARAMETER SqlServer
+    Azure SQL server name (without .database.windows.net suffix)
+
+    .PARAMETER RuleName
+    Name for the firewall rule (default: DynamicIP-{hostname})
+
+    .PARAMETER Force
+    Force update even if IP hasn't changed
+
+    .EXAMPLE
+    Update-BusBuddyDynamicFirewall -ResourceGroup 'BusBuddy-RG' -SqlServer 'busbuddy-server-sm2'
+
+    .NOTES
+    Requires Az.Sql module and Azure login (Connect-AzAccount)
+    Stores last IP in environment variable to avoid unnecessary updates
+    #>
+    [CmdletBinding()]
+    param (
+        [Parameter(Mandatory = $true)]
+        [string]$ResourceGroup,
+
+        [Parameter(Mandatory = $true)]
+        [string]$SqlServer,
+
+        [string]$RuleName = "DynamicIP-$($env:COMPUTERNAME)",
+
+        [switch]$Force
+    )
+
+    # Lazy-load Az.Sql module
+    if (-not (Get-Module Az.Sql -ListAvailable)) {
+        Write-Warning 'Az.Sql module not installed. Run: Install-Module Az -Scope CurrentUser'
+        return
+    }
+    if (-not (Get-Module Az.Sql)) {
+        Write-Information 'Loading Az.Sql module...' -InformationAction Continue
+        Import-Module Az.Sql -ErrorAction Stop
+    }
+
+    try {
+        # Get current public IP
+        Write-Information "🔍 Checking current public IP..." -InformationAction Continue
+        $currentIp = (Invoke-RestMethod -Uri 'http://ipinfo.io/json' -TimeoutSec 10).ip
+        Write-Information "📍 Current IP: $currentIp" -InformationAction Continue
+
+        # Check if IP has changed (stored in environment variable)
+        $lastIpVar = "BUSBUDDY_LAST_IP_$($SqlServer.Replace('-', '_').ToUpper())"
+        $lastIp = [Environment]::GetEnvironmentVariable($lastIpVar, 'User')
+
+        if (-not $Force -and $lastIp -eq $currentIp) {
+            Write-Information "✅ IP hasn't changed ($currentIp), firewall rule should still be valid" -InformationAction Continue
+            return
+        }
+
+        # Check if rule exists
+        $existingRule = Get-AzSqlServerFirewallRule -ResourceGroupName $ResourceGroup -ServerName $SqlServer -FirewallRuleName $RuleName -ErrorAction SilentlyContinue
+
+        if ($existingRule) {
+            if ($existingRule.StartIpAddress -eq $currentIp -and $existingRule.EndIpAddress -eq $currentIp) {
+                Write-Information "✅ Firewall rule '$RuleName' already matches current IP: $currentIp" -InformationAction Continue
+                # Store current IP
+                [Environment]::SetEnvironmentVariable($lastIpVar, $currentIp, 'User')
+                return
+            }
+
+            Write-Information "🔄 Updating existing firewall rule '$RuleName' from $($existingRule.StartIpAddress) to $currentIp" -InformationAction Continue
+            Set-AzSqlServerFirewallRule -ResourceGroupName $ResourceGroup -ServerName $SqlServer -FirewallRuleName $RuleName -StartIpAddress $currentIp -EndIpAddress $currentIp -ErrorAction Stop
+        }
+        else {
+            Write-Information "🆕 Creating new firewall rule '$RuleName' for IP: $currentIp" -InformationAction Continue
+            New-AzSqlServerFirewallRule -ResourceGroupName $ResourceGroup -ServerName $SqlServer -FirewallRuleName $RuleName -StartIpAddress $currentIp -EndIpAddress $currentIp -ErrorAction Stop
+        }
+
+        # Store current IP for next time
+        [Environment]::SetEnvironmentVariable($lastIpVar, $currentIp, 'User')
+
+        Write-Information "✅ Firewall rule updated successfully!" -InformationAction Continue
+        Write-Information "📝 IP stored for future comparisons: $currentIp" -InformationAction Continue
+
+        # Show current rules
+        Write-Information "Current firewall rules:" -InformationAction Continue
+        Get-AzSqlServerFirewallRule -ResourceGroupName $ResourceGroup -ServerName $SqlServer |
+            Where-Object { $_.FirewallRuleName -like "*Dynamic*" -or $_.FirewallRuleName -eq $RuleName } |
+            Format-Table -Property FirewallRuleName, StartIpAddress, EndIpAddress -AutoSize
+    }
+    catch {
+        Write-Error "Failed to update dynamic firewall rule: $($_.Exception.Message)"
+        Write-Information "💡 Troubleshooting:" -InformationAction Continue
+        Write-Information "  - Check internet connection for IP detection" -InformationAction Continue
+        Write-Information "  - Verify Azure authentication: Get-AzContext" -InformationAction Continue
+        Write-Information "  - Confirm resource group and server names are correct" -InformationAction Continue
+    }
+}
+
 # Function: Connect to Azure SQL Database
 # Reference: https://learn.microsoft.com/azure/azure-sql/database/connect-query-powershell?view=azuresql
 function Connect-BusBuddySql {
@@ -266,6 +625,84 @@ function Connect-BusBuddySql {
 
     # Execute query
     Invoke-Sqlcmd -ServerInstance $server -Database $Database -AccessToken $token -Query $Query
+}
+
+# Function: Set up Windows Scheduled Task for Automatic Firewall Updates
+# Usage: Set-BusBuddyFirewallSchedule -ResourceGroup 'BusBuddy-RG' -SqlServer 'busbuddy-server-sm2'
+# Reference: https://learn.microsoft.com/powershell/module/scheduledtasks/
+function Set-BusBuddyFirewallSchedule {
+    <#
+    .SYNOPSIS
+    Creates a Windows Scheduled Task to automatically update Azure SQL firewall rules
+
+    .DESCRIPTION
+    Sets up a scheduled task that runs every 30 minutes to check and update firewall rules.
+    This provides hands-off dynamic IP handling for Azure SQL connectivity.
+
+    .PARAMETER ResourceGroup
+    Azure resource group containing the SQL server
+
+    .PARAMETER SqlServer
+    Azure SQL server name (without .database.windows.net suffix)
+
+    .PARAMETER IntervalMinutes
+    How often to check for IP changes (default: 30 minutes)
+
+    .EXAMPLE
+    Set-BusBuddyFirewallSchedule -ResourceGroup 'BusBuddy-RG' -SqlServer 'busbuddy-server-sm2'
+
+    .NOTES
+    Requires administrator privileges to create scheduled tasks
+    Creates task under current user context to maintain Azure authentication
+    #>
+    [CmdletBinding(SupportsShouldProcess = $true)]
+    param (
+        [Parameter(Mandatory = $true)]
+        [string]$ResourceGroup,
+
+        [Parameter(Mandatory = $true)]
+        [string]$SqlServer,
+
+        [int]$IntervalMinutes = 30
+    )
+
+    $taskName = "BusBuddy-DynamicFirewall-$SqlServer"
+
+    if ($PSCmdlet.ShouldProcess("Windows Scheduled Task '$taskName'", "Create automatic firewall update task")) {
+        try {
+            # Create the PowerShell command to run
+            $command = "pwsh.exe"
+            $arguments = @(
+                "-NoProfile"
+                "-WindowStyle", "Hidden"
+                "-Command"
+                "& {Import-Module '$BusBuddyRepoPath\PowerShell\Profiles\Microsoft.PowerShell_profile.ps1' -Force; Update-BusBuddyDynamicFirewall -ResourceGroup '$ResourceGroup' -SqlServer '$SqlServer'}"
+            )
+
+            # Create scheduled task action
+            $action = New-ScheduledTaskAction -Execute $command -Argument ($arguments -join ' ')
+
+            # Create trigger (every X minutes, starting now)
+            $trigger = New-ScheduledTaskTrigger -Once -At (Get-Date) -RepetitionInterval (New-TimeSpan -Minutes $IntervalMinutes)
+
+            # Create settings
+            $settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -StartWhenAvailable -RunOnlyIfNetworkAvailable
+
+            # Create principal (run as current user to maintain Azure auth)
+            $principal = New-ScheduledTaskPrincipal -UserId $env:USERNAME -LogonType Interactive
+
+            # Register the task
+            Register-ScheduledTask -TaskName $taskName -Action $action -Trigger $trigger -Settings $settings -Principal $principal -Description "Automatically updates Azure SQL firewall rules for BusBuddy when IP address changes" -Force
+
+            Write-Information "✅ Scheduled task '$taskName' created successfully!" -InformationAction Continue
+            Write-Information "⏰ Will check for IP changes every $IntervalMinutes minutes" -InformationAction Continue
+            Write-Information "💡 To remove: Unregister-ScheduledTask -TaskName '$taskName' -Confirm:`$false" -InformationAction Continue
+        }
+        catch {
+            Write-Error "Failed to create scheduled task: $($_.Exception.Message)"
+            Write-Information "💡 Try running PowerShell as Administrator for scheduled task creation" -InformationAction Continue
+        }
+    }
 }
 
 # Function: Check and Set Syncfusion WPF License (supports v30.x)

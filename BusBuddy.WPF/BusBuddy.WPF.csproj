@@ -92,6 +92,8 @@
                           Version="$(SyncfusionVersion)" />
         <PackageReference Include="Syncfusion.SfSkinManager.WPF"
                           Version="$(SyncfusionVersion)" />
+        <PackageReference Include="Syncfusion.Licensing"
+                          Version="$(SyncfusionVersion)" />
         <PackageReference Include="Syncfusion.Shared.WPF"
                           Version="$(SyncfusionVersion)" />
         <PackageReference Include="Syncfusion.Tools.WPF"
