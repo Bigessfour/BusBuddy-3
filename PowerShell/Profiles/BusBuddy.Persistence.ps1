@@ -18,6 +18,28 @@ Set-StrictMode -Version 3.0
 $ErrorActionPreference = 'Continue'
 
 # =============================================================================
+# LOGGING UTILITIES
+# =============================================================================
+
+function Write-ProfileLog {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [string]$Message,
+
+        [ValidateSet('Information', 'Warning', 'Error')]
+        [string]$Level = 'Information'
+    )
+
+    # Simple fallback logging for persistence module
+    switch ($Level) {
+        'Information' { Write-Information $Message -InformationAction Continue }
+        'Warning' { Write-Warning $Message }
+        'Error' { Write-Error $Message }
+    }
+}
+
+# =============================================================================
 # PERSISTENT ENVIRONMENT MONITORING
 # =============================================================================
 
@@ -29,6 +51,7 @@ class BusBuddyEnvironmentWatcher {
     [datetime]$LastCheck
     [int]$RecoveryAttempts = 0
     [int]$MaxRecoveryAttempts = 3
+    [hashtable]$ModuleLoadMetrics
 
     BusBuddyEnvironmentWatcher() {
         $this.ExpectedCommands = @{
@@ -45,6 +68,13 @@ class BusBuddyEnvironmentWatcher {
         }
         $this.IsMonitoring = $false
         $this.RepoRoot = $this.FindRepoRoot()
+        $this.ModuleLoadMetrics = @{
+            LoadTimes = @()
+            AverageLoadTime = [TimeSpan]::Zero
+            FastestLoad = [TimeSpan]::MaxValue
+            SlowestLoad = [TimeSpan]::Zero
+            TotalLoads = 0
+        }
     }
 
     [string] FindRepoRoot() {
@@ -77,6 +107,96 @@ class BusBuddyEnvironmentWatcher {
         return $results
     }
 
+    [TimeSpan] MeasureModuleLoadTime([string]$ModulePath, [hashtable]$Parameters = @{}) {
+        <#
+        .SYNOPSIS
+        Measures module load time using Measure-Command and tracks performance metrics
+        .DESCRIPTION
+        Uses PowerShell 7.5 pipeline chaining for concise calculation and updates performance hashtable
+        .PARAMETER ModulePath
+        Path to the module or script to load
+        .PARAMETER Parameters
+        Optional parameters to pass to the module
+        #>
+
+        $loadTime = Measure-Command {
+            try {
+                if ($Parameters.Count -gt 0) {
+                    . $ModulePath @Parameters
+                } else {
+                    . $ModulePath
+                }
+            }
+            catch {
+                Write-Warning "Module load failed for $ModulePath`: $($_.Exception.Message)"
+                throw
+            }
+        }
+
+        # Update metrics using pipeline chaining for concise calculation
+        $this.ModuleLoadMetrics.LoadTimes += $loadTime
+        $this.ModuleLoadMetrics.TotalLoads++
+        $this.ModuleLoadMetrics.AverageLoadTime = ($this.ModuleLoadMetrics.LoadTimes |
+            Measure-Object -Property TotalMilliseconds -Average).Average |
+            ForEach-Object { [TimeSpan]::FromMilliseconds($_) }
+
+        # Update fastest/slowest using pipeline comparison
+        $this.ModuleLoadMetrics.FastestLoad = ($this.ModuleLoadMetrics.FastestLoad, $loadTime |
+            Measure-Object -Property TotalMilliseconds -Minimum).Minimum |
+            ForEach-Object { [TimeSpan]::FromMilliseconds($_) }
+
+        $this.ModuleLoadMetrics.SlowestLoad = ($this.ModuleLoadMetrics.SlowestLoad, $loadTime |
+            Measure-Object -Property TotalMilliseconds -Maximum).Maximum |
+            ForEach-Object { [TimeSpan]::FromMilliseconds($_) }
+
+        Write-Information "🕒 Module load time: $($loadTime.TotalMilliseconds)ms for $([System.IO.Path]::GetFileName($ModulePath))" -InformationAction Continue
+
+        return $loadTime
+    }
+
+    [TimeSpan] MeasureModuleLoad([string]$ModuleName, [scriptblock]$LoadCommand) {
+        <#
+        .SYNOPSIS
+        Measures module load time using provided script block and tracks performance metrics
+        .DESCRIPTION
+        Uses PowerShell 7.5 Measure-Command with script block execution for flexible module loading
+        .PARAMETER ModuleName
+        Name of the module being loaded (for tracking purposes)
+        .PARAMETER LoadCommand
+        Script block containing the module load command
+        #>
+
+        $loadTime = Measure-Command {
+            try {
+                & $LoadCommand
+            }
+            catch {
+                Write-Warning "Module load failed for $ModuleName`: $($_.Exception.Message)"
+                throw
+            }
+        }
+
+        # Update metrics using pipeline chaining for concise calculation
+        $this.ModuleLoadMetrics.LoadTimes += $loadTime
+        $this.ModuleLoadMetrics.TotalLoads++
+        $this.ModuleLoadMetrics.AverageLoadTime = ($this.ModuleLoadMetrics.LoadTimes |
+            Measure-Object -Property TotalMilliseconds -Average).Average |
+            ForEach-Object { [TimeSpan]::FromMilliseconds($_) }
+
+        # Update fastest/slowest using pipeline comparison
+        $this.ModuleLoadMetrics.FastestLoad = ($this.ModuleLoadMetrics.FastestLoad, $loadTime |
+            Measure-Object -Property TotalMilliseconds -Minimum).Minimum |
+            ForEach-Object { [TimeSpan]::FromMilliseconds($_) }
+
+        $this.ModuleLoadMetrics.SlowestLoad = ($this.ModuleLoadMetrics.SlowestLoad, $loadTime |
+            Measure-Object -Property TotalMilliseconds -Maximum).Maximum |
+            ForEach-Object { [TimeSpan]::FromMilliseconds($_) }
+
+        Write-Information "🕒 Module load time: $($loadTime.TotalMilliseconds)ms for $ModuleName" -InformationAction Continue
+
+        return $loadTime
+    }
+
     [bool] AttemptRecovery() {
         Write-Information "🔧 Attempting environment recovery (attempt $($this.RecoveryAttempts + 1)/$($this.MaxRecoveryAttempts))..." -InformationAction Continue
 
@@ -86,7 +206,8 @@ class BusBuddyEnvironmentWatcher {
             # Step 1: Try bbRefresh if available
             if (Get-Command bbRefresh -ErrorAction SilentlyContinue) {
                 Write-Information "Using bbRefresh for recovery..." -InformationAction Continue
-                bbRefresh -Force
+                $refreshTime = Measure-Command { bbRefresh -Force }
+                Write-Information "🕒 bbRefresh completed in $($refreshTime.TotalMilliseconds)ms" -InformationAction Continue
                 Start-Sleep -Seconds 3
             }
             # Step 2: Try hardened module manager
@@ -94,7 +215,7 @@ class BusBuddyEnvironmentWatcher {
                 $moduleManagerPath = Join-Path $this.RepoRoot "PowerShell\Profiles\BusBuddy.ModuleManager.ps1"
                 if (Test-Path $moduleManagerPath) {
                     Write-Information "Loading hardened module manager..." -InformationAction Continue
-                    . $moduleManagerPath -Force -Quiet
+                    $this.MeasureModuleLoadTime($moduleManagerPath, @{ Force = $true; Quiet = $true })
                     Start-Sleep -Seconds 3
                 }
             }
@@ -103,7 +224,7 @@ class BusBuddyEnvironmentWatcher {
                 $importScript = Join-Path $this.RepoRoot "PowerShell\Profiles\Import-BusBuddyModule.ps1"
                 if (Test-Path $importScript) {
                     Write-Information "Using basic module import..." -InformationAction Continue
-                    . $importScript
+                    $this.MeasureModuleLoadTime($importScript)
                     Start-Sleep -Seconds 3
                 }
             }
@@ -189,6 +310,47 @@ class BusBuddyEnvironmentWatcher {
         $this.IsMonitoring = $false
     }
 
+    [void] DisplayPerformanceMetrics() {
+        <#
+        .SYNOPSIS
+        Display formatted performance metrics for module loading
+        .DESCRIPTION
+        Shows comprehensive performance statistics using pipeline chaining for formatting
+        #>
+
+        if ($this.ModuleLoadMetrics.TotalLoads -eq 0) {
+            Write-Information "📊 No module load metrics available yet" -InformationAction Continue
+            return
+        }
+
+        $metrics = $this.ModuleLoadMetrics
+        $recentTimes = @($metrics.LoadTimes | Select-Object -Last 10)
+
+        Write-Information "`n📊 Module Load Performance Metrics:" -InformationAction Continue
+        Write-Information "   Total Loads: $($metrics.TotalLoads)" -InformationAction Continue
+        Write-Information "   Average: $([math]::Round($metrics.AverageLoadTime.TotalMilliseconds, 2))ms" -InformationAction Continue
+        Write-Information "   Fastest: $([math]::Round($metrics.FastestLoad.TotalMilliseconds, 2))ms" -InformationAction Continue
+        Write-Information "   Slowest: $([math]::Round($metrics.SlowestLoad.TotalMilliseconds, 2))ms" -InformationAction Continue
+
+        # Performance trending using pipeline operations (only if we have enough data)
+        if ($recentTimes.Count -ge 5) {
+            $trend = ($recentTimes |
+                Select-Object -Last 3 |
+                Measure-Object -Property TotalMilliseconds -Average).Average -
+                ($recentTimes |
+                Select-Object -First 3 |
+                Measure-Object -Property TotalMilliseconds -Average).Average
+
+            $trendIndicator = if ($trend -lt -10) { "📈 Improving" }
+                             elseif ($trend -gt 10) { "📉 Degrading" }
+                             else { "➡️ Stable" }
+
+            Write-Information "   Trend: $trendIndicator ($([math]::Round($trend, 1))ms change)" -InformationAction Continue
+        }
+
+        Write-Information "   Recent 5: $($recentTimes | Select-Object -Last 5 | ForEach-Object { "$([math]::Round($_.TotalMilliseconds, 1))ms" } | Join-String -Separator ', ')" -InformationAction Continue
+    }
+
     [hashtable] GetStatus() {
         $commandCheck = $this.CheckCommandAvailability()
 
@@ -201,7 +363,103 @@ class BusBuddyEnvironmentWatcher {
             AvailableCommands = $commandCheck.Available
             MissingCommands = $commandCheck.Missing
             AvailabilityRatio = "$($commandCheck.Available.Count)/$($this.ExpectedCommands.Count)"
+            PerformanceMetrics = @{
+                TotalModuleLoads = $this.ModuleLoadMetrics.TotalLoads
+                AverageLoadTime = "$([math]::Round($this.ModuleLoadMetrics.AverageLoadTime.TotalMilliseconds, 2))ms"
+                FastestLoad = "$([math]::Round($this.ModuleLoadMetrics.FastestLoad.TotalMilliseconds, 2))ms"
+                SlowestLoad = "$([math]::Round($this.ModuleLoadMetrics.SlowestLoad.TotalMilliseconds, 2))ms"
+                RecentLoadTimes = ($this.ModuleLoadMetrics.LoadTimes |
+                    Select-Object -Last 5 |
+                    ForEach-Object { "$([math]::Round($_.TotalMilliseconds, 2))ms" }) -join ', '
+            }
         }
+    }
+}
+
+# =============================================================================
+# PERFORMANCE MONITORING FUNCTIONS
+# =============================================================================
+
+function Invoke-BusBuddyModuleWithMetrics {
+    <#
+    .SYNOPSIS
+    Load a module with performance measurement using the global watcher
+    .DESCRIPTION
+    Wrapper function that uses the global BusBuddy watcher to measure module load times
+    .PARAMETER ModulePath
+    Path to the module to load
+    .PARAMETER Parameters
+    Optional parameters for the module
+    .EXAMPLE
+    Invoke-BusBuddyModuleWithMetrics -ModulePath ".\BusBuddy.ModuleManager.ps1" -Parameters @{Force=$true}
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [string]$ModulePath,
+
+        [hashtable]$Parameters = @{}
+    )
+
+    if (-not $global:BusBuddyWatcher) {
+        Write-Warning "Global BusBuddy watcher not available, using standard loading"
+        if ($Parameters.Count -gt 0) {
+            . $ModulePath @Parameters
+        } else {
+            . $ModulePath
+        }
+        return
+    }
+
+    try {
+        $loadTime = $global:BusBuddyWatcher.MeasureModuleLoadTime($ModulePath, $Parameters)
+        return $loadTime
+    }
+    catch {
+        Write-Error "Failed to load module with metrics: $($_.Exception.Message)"
+        throw
+    }
+}
+
+function Show-BusBuddyPerformanceReport {
+    <#
+    .SYNOPSIS
+    Display comprehensive performance report for module loading
+    .DESCRIPTION
+    Shows performance metrics and trends using pipeline operations for analysis
+    .EXAMPLE
+    Show-BusBuddyPerformanceReport
+    #>
+    [CmdletBinding()]
+    param()
+
+    if (-not $global:BusBuddyWatcher) {
+        Write-Warning "Global BusBuddy watcher not available"
+        return
+    }
+
+    $global:BusBuddyWatcher.DisplayPerformanceMetrics()
+
+    # Additional analysis using pipeline chaining
+    $metrics = $global:BusBuddyWatcher.ModuleLoadMetrics
+    if ($metrics.TotalLoads -ge 10) {
+        $sortedTimes = $metrics.LoadTimes |
+            ForEach-Object { $_.TotalMilliseconds } |
+            Sort-Object
+
+        $count = $sortedTimes.Count
+        $p50Index = [math]::Floor($count * 0.5)
+        $p90Index = [math]::Floor($count * 0.9)
+        $p95Index = [math]::Floor($count * 0.95)
+
+        $p50 = $sortedTimes[$p50Index]
+        $p90 = $sortedTimes[$p90Index]
+        $p95 = $sortedTimes[$p95Index]
+
+        Write-Information "`n📈 Performance Percentiles:" -InformationAction Continue
+        Write-Information "   P50 (median): $([math]::Round($p50, 2))ms" -InformationAction Continue
+        Write-Information "   P90: $([math]::Round($p90, 2))ms" -InformationAction Continue
+        Write-Information "   P95: $([math]::Round($p95, 2))ms" -InformationAction Continue
     }
 }
 
@@ -352,7 +610,7 @@ if (-not $env:BUSBUDDY_SESSION_ID) {
 # Create global watcher instance
 $global:BusBuddyWatcher = [BusBuddyEnvironmentWatcher]::new()
 
-# Export functions for use in other scripts
-Export-ModuleMember -Function Register-BusBuddySession, Unregister-BusBuddySession, Test-BusBuddyPersistence
+# Note: Functions are available globally when script is dot-sourced
+# Available functions: Register-BusBuddySession, Unregister-BusBuddySession, Test-BusBuddyPersistence, Invoke-BusBuddyModuleWithMetrics, Show-BusBuddyPerformanceReport
 
 Write-Information "✅ BusBuddy Environment Persistence Manager loaded" -InformationAction Continue

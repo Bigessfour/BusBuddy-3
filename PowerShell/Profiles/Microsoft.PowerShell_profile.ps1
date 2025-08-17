@@ -48,6 +48,80 @@ if (-not $probe) {
 $env:BUSBUDDY_REPO_ROOT = $probe
 $BusBuddyRepoPath = $probe
 
+# Initialize script-level variables
+$script:ProfileLogger = $null
+
+# === LOGGING FUNCTIONS (MUST BE DEFINED EARLY) ===
+function Initialize-BusBuddyProfileLogger {
+    [CmdletBinding()]
+    param()
+
+    # Skip if already initialized
+    if ($script:ProfileLogger) { return $script:ProfileLogger }
+
+    try {
+        # Check for Serilog module availability (lazy-loading)
+        if (-not (Get-Module Serilog -ListAvailable -ErrorAction SilentlyContinue)) {
+            Write-Verbose "Serilog module not available - profile logging disabled"
+            return $null
+        }
+
+        # Import Serilog module only when needed
+        Import-Module Serilog -Force -ErrorAction Stop
+
+        # Configure logger for profile events with structured output
+        $logPath = Join-Path $BusBuddyRepoPath "logs\profile.log"
+        $loggerConfig = [Serilog.LoggerConfiguration]::new()
+        $loggerConfig = $loggerConfig.MinimumLevel.Information()
+        $loggerConfig = $loggerConfig.WriteTo.File($logPath,
+            [Serilog.Events.LogEventLevel]::Information,
+            "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {Message:lj}{NewLine}{Exception}",
+            $null, 1048576, 31, $false, $false, $null, [System.Text.Encoding]::UTF8)
+        $loggerConfig = $loggerConfig.WriteTo.Console([Serilog.Events.LogEventLevel]::Warning)
+        $script:ProfileLogger = $loggerConfig.CreateLogger()
+
+        Write-Verbose "✅ Profile logger initialized: $logPath"
+        return $script:ProfileLogger
+    }
+    catch {
+        Write-Verbose "⚠️ Failed to initialize profile logger: $($_.Exception.Message)"
+        return $null
+    }
+}
+
+function Write-ProfileLog {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [string]$Message,
+
+        [ValidateSet('Information', 'Warning', 'Error')]
+        [string]$Level = 'Information'
+    )
+
+    # Initialize logger on first use (lazy loading)
+    if (-not $script:ProfileLogger) {
+        $script:ProfileLogger = Initialize-BusBuddyProfileLogger
+    }
+
+    # Fall back to Write-Information/Write-Warning if Serilog unavailable
+    if (-not $script:ProfileLogger) {
+        switch ($Level) {
+            'Information' { Write-Information $Message -InformationAction Continue }
+            'Warning' { Write-Warning $Message }
+            'Error' { Write-Error $Message }
+        }
+        return
+    }
+
+    # Log via Serilog with structured format
+    switch ($Level) {
+        'Information' { $script:ProfileLogger.Information($Message) }
+        'Warning' { $script:ProfileLogger.Warning($Message) }
+        'Error' { $script:ProfileLogger.Error($Message) }
+    }
+}
+
 # === ENVIRONMENT SETUP ===
 # Set default environment variables from BusBuddy CI defaults
 $env:DOTNET_VERSION = "9.0.108"  # Latest as of August 2025
@@ -76,8 +150,10 @@ foreach ($pathPattern in $localDbPaths) {
 if ($localDbExe -and $localDbExe -notin ($env:PATH -split ';')) {
     $env:PATH = "$env:PATH;$localDbExe"
     Write-Verbose "✅ Added SqlLocalDB to PATH: $localDbExe"
+    Write-ProfileLog "Added SqlLocalDB to PATH: $localDbExe" -Level Information
 } elseif (-not $localDbExe) {
     Write-Verbose "⚠️  SqlLocalDB.exe not found. Install SQL Server Express LocalDB: https://www.microsoft.com/en-us/sql-server/sql-server-downloads"
+    Write-ProfileLog "SqlLocalDB.exe not found - install SQL Server Express LocalDB" -Level Warning
 }
 
 # === WINGET PATH DETECTION ===
@@ -87,8 +163,10 @@ $wingetPath = "$env:USERPROFILE\AppData\Local\Microsoft\WindowsApps"
 if ((Test-Path "$wingetPath\winget.exe") -and ($wingetPath -notin ($env:PATH -split ';'))) {
     $env:PATH = "$env:PATH;$wingetPath"
     Write-Verbose "✅ Added winget to PATH: $wingetPath"
+    Write-ProfileLog "Added winget to PATH: $wingetPath" -Level Information
 } elseif (-not (Test-Path "$wingetPath\winget.exe")) {
     Write-Verbose "⚠️  winget.exe not found. Install from Microsoft Store or GitHub: https://github.com/microsoft/winget-cli"
+    Write-ProfileLog "winget.exe not found - install from Microsoft Store or GitHub" -Level Warning
 }
 
 # === GROK CLI PATH DETECTION ===
@@ -113,8 +191,10 @@ foreach ($grokPath in $grokPaths) {
 if ($grokExe -and ($grokExe -notin ($env:PATH -split ';'))) {
     $env:PATH = "$env:PATH;$grokExe"
     Write-Verbose "✅ Added Grok CLI to PATH: $grokExe"
+    Write-ProfileLog "Added Grok CLI to PATH: $grokExe" -Level Information
 } elseif (-not $grokExe) {
     Write-Verbose "⚠️  grok.exe not found. Install Grok CLI: Install-BusBuddyGrokCli"
+    Write-ProfileLog "grok.exe not found - install Grok CLI: Install-BusBuddyGrokCli" -Level Warning
 }
 
 # === GOOGLE CLOUD CLI PATH DETECTION ===
@@ -138,8 +218,10 @@ foreach ($gcloudPath in $gcloudPaths) {
 if ($gcloudExe -and ($gcloudExe -notin ($env:PATH -split ';'))) {
     $env:PATH = "$env:PATH;$gcloudExe"
     Write-Verbose "✅ Added Google Cloud CLI to PATH: $gcloudExe"
+    Write-ProfileLog "Added Google Cloud CLI to PATH: $gcloudExe" -Level Information
 } elseif (-not $gcloudExe) {
     Write-Verbose "⚠️  gcloud.cmd not found. Install Google Cloud CLI: Install-BusBuddyGoogleCli"
+    Write-ProfileLog "gcloud.cmd not found - install Google Cloud CLI: Install-BusBuddyGoogleCli" -Level Warning
 }
 
 # === EARTH ENGINE CLI PATH DETECTION ===
@@ -163,14 +245,21 @@ foreach ($pathPattern in $earthenginePaths) {
 if ($earthengineExe -and ($earthengineExe -notin ($env:PATH -split ';'))) {
     $env:PATH = "$env:PATH;$earthengineExe"
     Write-Verbose "✅ Added Earth Engine CLI to PATH: $earthengineExe"
+    Write-ProfileLog "Added Earth Engine CLI to PATH: $earthengineExe" -Level Information
 } elseif (-not $earthengineExe) {
     Write-Verbose "⚠️  earthengine.exe not found. Install Earth Engine CLI: pip install earthengine-api"
+    Write-ProfileLog "earthengine.exe not found - install Earth Engine CLI: pip install earthengine-api" -Level Warning
 }
 
 # Add BusBuddy PowerShell scripts folder to PSModulePath for easy import
 if (Test-Path "$BusBuddyRepoPath\PowerShell") {
     $env:PSModulePath = $env:PSModulePath + ";$BusBuddyRepoPath\PowerShell"
 }
+
+# === SERILOG INTEGRATION ===
+# Lazy-load Serilog for profile event logging with PowerShell 7.5 compliance
+# Reference: https://learn.microsoft.com/powershell/scripting/learn/deep-dives/everything-about-output-streams
+$script:ProfileLogger = $null
 
 # === HARDENED MODULE LOADING SYSTEM ===
 # Load the hardened module manager for robust command availability
@@ -179,6 +268,7 @@ $moduleManagerPath = Join-Path $BusBuddyRepoPath "PowerShell\Profiles\BusBuddy.M
 if (Test-Path $moduleManagerPath) {
     try {
         Write-Information "🔧 Loading hardened module manager..." -InformationAction Continue
+        Write-ProfileLog "Loading hardened module manager: $moduleManagerPath" -Level Information
         . $moduleManagerPath -Quiet
 
         # Verify critical commands are available
@@ -193,26 +283,32 @@ if (Test-Path $moduleManagerPath) {
 
         if ($missingCommands.Count -eq 0) {
             Write-Information "✅ All critical commands available via hardened loader" -InformationAction Continue
+            Write-ProfileLog "All critical commands loaded successfully: $($criticalCommands -join ', ')" -Level Information
         } else {
             Write-Warning "Some commands unavailable: $($missingCommands -join ', '). Use bbRefresh to reload."
+            Write-ProfileLog "Missing commands detected: $($missingCommands -join ', ')" -Level Warning
         }
     }
     catch {
         Write-Warning "Failed to load hardened module manager: $($_.Exception.Message)"
+        Write-ProfileLog "Failed to load hardened module manager: $($_.Exception.Message)" -Level Warning
         Write-Information "Falling back to basic module loading..." -InformationAction Continue
 
         # Fallback to basic module loading
         $importScript = Join-Path $BusBuddyRepoPath "PowerShell\Profiles\Import-BusBuddyModule.ps1"
         if (Test-Path $importScript) {
+            Write-ProfileLog "Using fallback module loading: $importScript" -Level Information
             . $importScript -Quiet
         }
     }
 } else {
     Write-Information "⚠️ Hardened module manager not found, using basic loading..." -InformationAction Continue
+    Write-ProfileLog "Hardened module manager not found at: $moduleManagerPath" -Level Warning
 
     # Fallback to basic module loading
     $importScript = Join-Path $BusBuddyRepoPath "PowerShell\Profiles\Import-BusBuddyModule.ps1"
     if (Test-Path $importScript) {
+        Write-ProfileLog "Using basic module loading: $importScript" -Level Information
         . $importScript -Quiet
     }
 }
@@ -627,6 +723,253 @@ function Connect-BusBuddySql {
     Invoke-Sqlcmd -ServerInstance $server -Database $Database -AccessToken $token -Query $Query
 }
 
+# Function: Configure Azure SQL Database for Entra ID (Managed Identity) Authentication
+# Reference: https://learn.microsoft.com/azure/azure-sql/database/authentication-aad-configure
+function Set-BusBuddyEntraIDAuth {
+    <#
+    .SYNOPSIS
+    Configures Azure SQL Database for Microsoft Entra ID (Managed Identity) authentication
+
+    .DESCRIPTION
+    Sets up passwordless authentication for BusBuddy using Microsoft Entra ID.
+    This eliminates the need for passwords in connection strings and environment variables.
+
+    .PARAMETER ResourceGroup
+    Azure resource group containing the SQL server
+
+    .PARAMETER SqlServer
+    Azure SQL server name (without .database.windows.net suffix)
+
+    .PARAMETER Database
+    Database name (default: BusBuddyDB)
+
+    .PARAMETER SetEntraAdmin
+    Whether to set the current user as Entra ID admin (default: true)
+
+    .EXAMPLE
+    Set-BusBuddyEntraIDAuth -ResourceGroup 'BusBuddy-RG' -SqlServer 'busbuddy-server-sm2'
+
+    .NOTES
+    Requires Az.Sql module and Azure login with sufficient permissions
+    Reference: https://learn.microsoft.com/azure/azure-sql/database/authentication-aad-configure
+    #>
+    [CmdletBinding(SupportsShouldProcess = $true)]
+    param (
+        [Parameter(Mandatory = $true)]
+        [string]$ResourceGroup,
+
+        [Parameter(Mandatory = $true)]
+        [string]$SqlServer,
+
+        [string]$Database = 'BusBuddyDB',
+
+        [bool]$SetEntraAdmin = $true
+    )
+
+    # Load required modules
+    if (-not (Get-Module Az.Sql -ListAvailable)) {
+        Write-Warning 'Az.Sql module not installed. Run: Install-Module Az -Scope CurrentUser'
+        return
+    }
+    if (-not (Get-Module Az.Sql)) {
+        Write-Information 'Loading Az.Sql module...' -InformationAction Continue
+        Import-Module Az.Sql -ErrorAction Stop
+    }
+
+    try {
+        # Get current Azure context
+        $context = Get-AzContext
+        if (-not $context) {
+            Write-Warning 'Not logged in to Azure. Run: Connect-AzAccount'
+            return
+        }
+
+        Write-Information "✅ Connected to Azure as: $($context.Account.Id)" -InformationAction Continue
+
+        if ($SetEntraAdmin -and $PSCmdlet.ShouldProcess("Azure SQL Server '$SqlServer'", "Set Entra ID Admin")) {
+            # Set the current user as Entra ID admin for the SQL server
+            Write-Information "🔧 Setting Entra ID admin for SQL server '$SqlServer'..." -InformationAction Continue
+
+            $currentUser = $context.Account.Id
+            Set-AzSqlServerActiveDirectoryAdministrator -ResourceGroupName $ResourceGroup -ServerName $SqlServer -DisplayName $currentUser
+
+            Write-Information "✅ Entra ID admin set to: $currentUser" -InformationAction Continue
+        }
+
+        # Instructions for database user setup
+        Write-Information "" -InformationAction Continue
+        Write-Information "📋 Next Steps for Database Configuration:" -InformationAction Continue
+        Write-Information "1. Connect to your database using Azure Data Studio or SSMS with Entra ID authentication" -InformationAction Continue
+        Write-Information "2. Run the following SQL commands to create database users:" -InformationAction Continue
+        Write-Information "" -InformationAction Continue
+        Write-Information "   -- For your user account:" -InformationAction Continue
+        Write-Information "   CREATE USER [$($context.Account.Id)] FROM EXTERNAL PROVIDER;" -InformationAction Continue
+        Write-Information "   ALTER ROLE db_owner ADD MEMBER [$($context.Account.Id)];" -InformationAction Continue
+        Write-Information "" -InformationAction Continue
+        Write-Information "   -- For system-assigned managed identity (when deploying to Azure):" -InformationAction Continue
+        Write-Information "   CREATE USER [your-app-name] FROM EXTERNAL PROVIDER;" -InformationAction Continue
+        Write-Information "   ALTER ROLE db_datareader ADD MEMBER [your-app-name];" -InformationAction Continue
+        Write-Information "   ALTER ROLE db_datawriter ADD MEMBER [your-app-name];" -InformationAction Continue
+        Write-Information "" -InformationAction Continue
+        Write-Information "💡 Test connection with: Test-BusBuddyEntraIDConnection" -InformationAction Continue
+
+    }
+    catch {
+        Write-Error "Failed to configure Entra ID authentication: $($_.Exception.Message)"
+    }
+}
+
+# Function: Test Entra ID Connection to Azure SQL
+function Test-BusBuddyEntraIDConnection {
+    <#
+    .SYNOPSIS
+    Tests Microsoft Entra ID authentication to Azure SQL Database
+
+    .DESCRIPTION
+    Verifies that passwordless authentication is working correctly for BusBuddy
+
+    .PARAMETER ConnectionType
+    Type of Entra ID connection to test: Default, Interactive, or ManagedIdentity
+
+    .PARAMETER Database
+    Database name to test (default: BusBuddyDB)
+
+    .EXAMPLE
+    Test-BusBuddyEntraIDConnection -ConnectionType Default
+
+    .EXAMPLE
+    Test-BusBuddyEntraIDConnection -ConnectionType Interactive -Database BusBuddyDB
+    #>
+    [CmdletBinding()]
+    param (
+        [Parameter(Mandatory = $false)]
+        [ValidateSet('Default', 'Interactive', 'ManagedIdentity')]
+        [string]$ConnectionType = 'Default',
+
+        [string]$Database = 'BusBuddyDB'
+    )
+
+    $connectionStrings = @{
+        'Default' = "Server=tcp:busbuddy-server-sm2.database.windows.net,1433;Initial Catalog=$Database;Authentication=Active Directory Default;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;"
+        'Interactive' = "Server=tcp:busbuddy-server-sm2.database.windows.net,1433;Initial Catalog=$Database;Authentication=Active Directory Interactive;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;"
+        'ManagedIdentity' = "Server=tcp:busbuddy-server-sm2.database.windows.net,1433;Initial Catalog=$Database;Authentication=Active Directory Managed Identity;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;"
+    }
+
+    $connectionString = $connectionStrings[$ConnectionType]
+    Write-Information "🧪 Testing $ConnectionType Entra ID connection..." -InformationAction Continue
+    Write-Information "Connection string: $connectionString" -InformationAction Continue
+
+    try {
+        # Load SqlClient assembly
+        Add-Type -AssemblyName "Microsoft.Data.SqlClient"
+
+        $connection = New-Object Microsoft.Data.SqlClient.SqlConnection($connectionString)
+        $connection.Open()
+
+        # Test basic query
+        $command = New-Object Microsoft.Data.SqlClient.SqlCommand("SELECT GETDATE() AS CurrentTime, USER_NAME() AS CurrentUser, DB_NAME() AS DatabaseName", $connection)
+        $result = $command.ExecuteReader()
+
+        if ($result.Read()) {
+            Write-Information "✅ Connection successful!" -InformationAction Continue
+            Write-Information "📅 Server Time: $($result['CurrentTime'])" -InformationAction Continue
+            Write-Information "👤 Connected User: $($result['CurrentUser'])" -InformationAction Continue
+            Write-Information "🗄️  Database: $($result['DatabaseName'])" -InformationAction Continue
+        }
+
+        $result.Close()
+        $connection.Close()
+
+        Write-Information "🎉 Entra ID authentication is working correctly!" -InformationAction Continue
+        return $true
+    }
+    catch {
+        Write-Warning "❌ Connection failed: $($_.Exception.Message)"
+
+        if ($_.Exception.Message -like "*firewall*" -or $_.Exception.Message -like "*40615*") {
+            Write-Information "💡 Firewall issue detected. Run: Enable-BusBuddyBroadFirewall -ResourceGroup 'BusBuddy-RG' -SqlServer 'busbuddy-server-sm2'" -InformationAction Continue
+        }
+        elseif ($_.Exception.Message -like "*authentication*" -or $_.Exception.Message -like "*login*") {
+            Write-Information "💡 Authentication issue. Ensure:" -InformationAction Continue
+            Write-Information "  - You're logged in to Azure: az login" -InformationAction Continue
+            Write-Information "  - Entra ID admin is set: Set-BusBuddyEntraIDAuth" -InformationAction Continue
+            Write-Information "  - Database user exists (see Set-BusBuddyEntraIDAuth output)" -InformationAction Continue
+        }
+
+        return $false
+    }
+}
+
+# Function: Switch BusBuddy to use Entra ID Authentication
+function Switch-BusBuddyToEntraID {
+    <#
+    .SYNOPSIS
+    Switches BusBuddy configuration to use Entra ID passwordless authentication
+
+    .DESCRIPTION
+    Updates BusBuddy configuration files to prioritize Entra ID connections over traditional SQL authentication
+
+    .PARAMETER ConnectionType
+    Type of Entra ID connection to use: Default (recommended for local dev), Interactive, or ManagedIdentity (for Azure hosting)
+
+    .EXAMPLE
+    Switch-BusBuddyToEntraID -ConnectionType Default
+
+    .NOTES
+    This updates appsettings.json to set DatabaseProvider=Azure and prioritize Entra ID connections
+    #>
+    [CmdletBinding(SupportsShouldProcess = $true)]
+    param (
+        [Parameter(Mandatory = $false)]
+        [ValidateSet('Default', 'Interactive', 'ManagedIdentity')]
+        [string]$ConnectionType = 'Default'
+    )
+
+    if ($PSCmdlet.ShouldProcess("BusBuddy configuration", "Switch to Entra ID authentication")) {
+        try {
+            # Update the main appsettings.json
+            $appsettingsPath = "$BusBuddyRepoPath\appsettings.json"
+            if (Test-Path $appsettingsPath) {
+                $config = Get-Content $appsettingsPath -Raw | ConvertFrom-Json
+                $config.DatabaseProvider = "Azure"
+
+                # Set environment hint for which Entra ID connection to prefer
+                $env:BUSBUDDY_ENTRAID_TYPE = $ConnectionType
+
+                $config | ConvertTo-Json -Depth 10 | Set-Content $appsettingsPath -Encoding UTF8
+                Write-Information "✅ Updated $appsettingsPath to use Azure provider" -InformationAction Continue
+            }
+
+            # Update WPF appsettings.json
+            $wpfAppsettingsPath = "$BusBuddyRepoPath\BusBuddy.WPF\appsettings.json"
+            if (Test-Path $wpfAppsettingsPath) {
+                $wpfConfig = Get-Content $wpfAppsettingsPath -Raw | ConvertFrom-Json
+                if ($wpfConfig.PSObject.Properties['DatabaseProvider']) {
+                    $wpfConfig.DatabaseProvider = "Azure"
+                } else {
+                    $wpfConfig | Add-Member -NotePropertyName 'DatabaseProvider' -NotePropertyValue 'Azure'
+                }
+                $wpfConfig | ConvertTo-Json -Depth 10 | Set-Content $wpfAppsettingsPath -Encoding UTF8
+                Write-Information "✅ Updated $wpfAppsettingsPath to use Azure provider" -InformationAction Continue
+            }
+
+            Write-Information "" -InformationAction Continue
+            Write-Information "🎉 BusBuddy is now configured for Entra ID authentication!" -InformationAction Continue
+            Write-Information "📋 Configuration Details:" -InformationAction Continue
+            Write-Information "  - Database Provider: Azure" -InformationAction Continue
+            Write-Information "  - Auth Type: $ConnectionType" -InformationAction Continue
+            Write-Information "  - Connection: Passwordless via Entra ID" -InformationAction Continue
+            Write-Information "" -InformationAction Continue
+            Write-Information "🧪 Test the connection: Test-BusBuddyEntraIDConnection -ConnectionType $ConnectionType" -InformationAction Continue
+            Write-Information "🚀 Run the app: bbRun" -InformationAction Continue
+
+        }
+        catch {
+            Write-Error "Failed to switch to Entra ID configuration: $($_.Exception.Message)"
+        }
+    }
+}
+
 # Function: Set up Windows Scheduled Task for Automatic Firewall Updates
 # Usage: Set-BusBuddyFirewallSchedule -ResourceGroup 'BusBuddy-RG' -SqlServer 'busbuddy-server-sm2'
 # Reference: https://learn.microsoft.com/powershell/module/scheduledtasks/
@@ -748,6 +1091,82 @@ function Set-SyncfusionLicense {
     }
 
     Write-Output 'Syncfusion WPF Latest Version: 30.2.5 (update NuGet packages if needed)'
+}
+
+# Function: Check and Install .NET SDK 9.0.108 if missing
+# Uses dotnet --list-sdks to check for specific version and offers winget installation
+# Reference: https://learn.microsoft.com/dotnet/core/tools/dotnet-sdk-check
+function confirmNetSdk908Install {
+    [CmdletBinding(SupportsShouldProcess)]
+    param()
+
+    try {
+        Write-Information "Checking for .NET SDK 9.0.108..." -InformationAction Continue
+
+        # Get list of installed SDKs
+        $installedSdks = & dotnet --list-sdks 2>$null
+        if ($LASTEXITCODE -ne 0) {
+            Write-Warning "dotnet command not found or failed. Ensure .NET SDK is installed."
+            return $false
+        }
+
+        # Parse SDK versions and check for 9.0.108
+        $targetVersion = "9.0.108"
+        $hasTargetSdk = $false
+
+        foreach ($sdkLine in $installedSdks) {
+            if ($sdkLine -match '^(\d+\.\d+\.\d+)') {
+                $version = $matches[1]
+                if ($version -eq $targetVersion) {
+                    $hasTargetSdk = $true
+                    break
+                }
+            }
+        }
+
+        if ($hasTargetSdk) {
+            Write-Information "✅ .NET SDK $targetVersion is already installed." -InformationAction Continue
+            return $true
+        }
+
+        Write-Information "⚠️  .NET SDK $targetVersion not found." -InformationAction Continue
+        Write-Information "Currently installed SDKs:" -InformationAction Continue
+        foreach ($sdk in $installedSdks) {
+            Write-Information "  $sdk" -InformationAction Continue
+        }
+
+        # Offer installation via winget with ShouldProcess confirmation
+        if ($PSCmdlet.ShouldProcess("Microsoft.DotNet.SDK.9", "Install .NET SDK 9.0.108 via winget")) {
+            Write-Information "Installing .NET SDK 9.0.108 via winget..." -InformationAction Continue
+
+            # Check if winget is available
+            if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
+                Write-Warning "winget not found. Install from Microsoft Store or GitHub: https://github.com/microsoft/winget-cli"
+                return $false
+            }
+
+            # Install the SDK
+            $installResult = & winget install Microsoft.DotNet.SDK.9 --accept-package-agreements --accept-source-agreements 2>&1
+            if ($LASTEXITCODE -eq 0) {
+                Write-Information "✅ .NET SDK 9.0.108 installation completed successfully." -InformationAction Continue
+                Write-Information "💡 You may need to restart your terminal for PATH changes to take effect." -InformationAction Continue
+                return $true
+            } else {
+                Write-Warning "Failed to install .NET SDK 9.0.108. Exit code: $LASTEXITCODE"
+                Write-Warning "Output: $($installResult -join "`n")"
+                return $false
+            }
+        } else {
+            Write-Information "Installation cancelled by user." -InformationAction Continue
+            Write-Information "To install manually: winget install Microsoft.DotNet.SDK.9" -InformationAction Continue
+            return $false
+        }
+    }
+    catch {
+        Write-Warning "Error checking/installing .NET SDK: $($_.Exception.Message)"
+        Write-Information "Manual installation: winget install Microsoft.DotNet.SDK.9" -InformationAction Continue
+        return $false
+    }
 }
 
 # Functions for common BusBuddy dev tasks (inspired by CI YAML)
@@ -1375,3 +1794,234 @@ Set-Alias -Name bbInstallLocalDB -Value Install-BusBuddyLocalDB
 # Connect-BusBuddySql -Query "SELECT DB_NAME() AS DatabaseName"
 
 Write-Output 'BusBuddy unified profile loaded successfully.'
+
+function Invoke-BusBuddyBuild {
+    [CmdletBinding(SupportsShouldProcess = $true)]
+    param(
+        [string]$Configuration = "Debug",
+        [string]$Verbosity = "detailed",
+        [switch]$NoBuild,
+        [string[]]$AdditionalArgs = @()
+    )
+
+    # Reference: https://learn.microsoft.com/powershell/scripting/developer/cmdlet/should-process
+    if ($PSCmdlet.ShouldProcess("BusBuddy solution", "Build")) {
+        try {
+            $solutionPath = "BusBuddy.sln"
+
+            if (-not (Test-Path $solutionPath)) {
+                Write-Warning "Solution file not found: $solutionPath"
+                return $false
+            }
+
+            $buildArgs = @(
+                "build"
+                $solutionPath
+                "--configuration", $Configuration
+                "--verbosity", $Verbosity
+            )
+
+            if ($AdditionalArgs) {
+                $buildArgs += $AdditionalArgs
+            }
+
+            Write-Information "Building solution with configuration: $Configuration" -InformationAction Continue
+            Write-Information "Command: dotnet $($buildArgs -join ' ')" -InformationAction Continue
+
+            # Use proper .NET build command without problematic redirection
+            # Reference: https://learn.microsoft.com/dotnet/core/tools/dotnet-build
+            $process = Start-Process -FilePath "dotnet" -ArgumentList $buildArgs -Wait -PassThru -NoNewWindow
+
+            if ($process.ExitCode -eq 0) {
+                Write-Information "Build completed successfully" -InformationAction Continue
+                return $true
+            } else {
+                Write-Warning "Build failed with exit code: $($process.ExitCode)"
+                return $false
+            }
+        }
+        catch {
+            Write-Warning "Build operation failed: $($_.Exception.Message)"
+            throw
+        }
+    }
+}
+
+function Start-BusBuddyApplication {
+    [CmdletBinding(SupportsShouldProcess = $true)]
+    param(
+        [string]$Configuration = "Debug",
+        [string[]]$AdditionalArgs = @()
+    )
+
+    # Reference: https://learn.microsoft.com/powershell/scripting/developer/cmdlet/should-process
+    if ($PSCmdlet.ShouldProcess("BusBuddy application", "Start")) {
+        try {
+            $projectPath = "BusBuddy.csproj"
+
+            if (-not (Test-Path $projectPath)) {
+                Write-Warning "Project file not found: $projectPath"
+                return $false
+            }
+
+            $runArgs = @(
+                "run"
+                "--project", $projectPath
+                "--configuration", $Configuration
+            )
+
+            if ($AdditionalArgs) {
+                $runArgs += $AdditionalArgs
+            }
+
+            Write-Information "Starting BusBuddy application..." -InformationAction Continue
+            Write-Information "Command: dotnet $($runArgs -join ' ')" -InformationAction Continue
+
+            # Reference: https://learn.microsoft.com/dotnet/core/tools/dotnet-run
+            Start-Process -FilePath "dotnet" -ArgumentList $runArgs -NoNewWindow
+
+            Write-Information "Application started successfully" -InformationAction Continue
+            return $true
+        }
+        catch {
+            Write-Warning "Failed to start application: $($_.Exception.Message)"
+            throw
+        }
+    }
+}
+
+function Start-BusBuddyTest {
+    [CmdletBinding(SupportsShouldProcess = $true)]
+    param(
+        [string]$Configuration = "Release",
+        [string]$Filter = "",
+        [string]$Logger = "",
+        [switch]$Collect,
+        [string[]]$AdditionalArgs = @()
+    )
+
+    # Reference: https://learn.microsoft.com/powershell/scripting/developer/cmdlet/should-process
+    if ($PSCmdlet.ShouldProcess("BusBuddy tests", "Run")) {
+        try {
+            $testProject = "BusBuddy.Tests/BusBuddy.Tests.csproj"
+
+            if (-not (Test-Path $testProject)) {
+                Write-Warning "Test project not found: $testProject"
+                return $false
+            }
+
+            $testArgs = @(
+                "test"
+                $testProject
+                "--configuration", $Configuration
+            )
+
+            if ($Filter) {
+                $testArgs += "--filter", $Filter
+            }
+
+            if ($Logger) {
+                $testArgs += "--logger", $Logger
+            }
+
+            if ($Collect) {
+                $testArgs += "--collect:`"XPlat Code Coverage`""
+            }
+
+            if ($AdditionalArgs) {
+                $testArgs += $AdditionalArgs
+            }
+
+            Write-Information "Running tests with configuration: $Configuration" -InformationAction Continue
+            Write-Information "Command: dotnet $($testArgs -join ' ')" -InformationAction Continue
+
+            # Reference: https://learn.microsoft.com/dotnet/core/tools/dotnet-test
+            # Use direct invocation instead of Start-Process to avoid parameter issues
+            & dotnet @testArgs
+            $exitCode = $LASTEXITCODE
+
+            if ($exitCode -eq 0) {
+                Write-Information "Tests completed successfully" -InformationAction Continue
+                return $true
+            } else {
+                Write-Warning "Tests failed with exit code: $exitCode"
+                return $false
+            }
+        }
+        catch {
+            Write-Warning "Test operation failed: $($_.Exception.Message)"
+            throw
+        }
+    }
+}
+
+function Test-BusBuddyHealth {
+    [CmdletBinding()]
+    param()
+
+    Write-Information "=== BusBuddy Health Check ===" -InformationAction Continue
+
+    try {
+        # Check PowerShell version
+        # Reference: https://learn.microsoft.com/powershell/scripting/install/powershell-support-lifecycle
+        $psVersion = $PSVersionTable.PSVersion
+        if ($psVersion.Major -ge 7 -and $psVersion.Minor -ge 5) {
+            Write-Information "✅ PowerShell version: $psVersion" -InformationAction Continue
+        } else {
+            Write-Warning "⚠️ PowerShell version $psVersion (7.5+ recommended)"
+        }
+
+        # Check .NET SDK
+        # Reference: https://learn.microsoft.com/dotnet/core/tools/dotnet--version
+        $dotnetVersion = & dotnet --version 2>$null
+        if ($dotnetVersion) {
+            Write-Information "✅ .NET SDK version: $dotnetVersion" -InformationAction Continue
+        } else {
+            Write-Warning "❌ .NET SDK not found"
+            return $false
+        }
+
+        # Check solution file
+        if (Test-Path "BusBuddy.sln") {
+            Write-Information "✅ Solution file found" -InformationAction Continue
+        } else {
+            Write-Warning "❌ Solution file not found"
+            return $false
+        }
+
+        # Check project file
+        if (Test-Path "BusBuddy.csproj") {
+            Write-Information "✅ Project file found" -InformationAction Continue
+        } else {
+            Write-Warning "❌ Project file not found"
+            return $false
+        }
+
+        # Check Syncfusion license key
+        if ($env:SYNCFUSION_LICENSE_KEY) {
+            Write-Information "✅ Syncfusion license key configured" -InformationAction Continue
+        } else {
+            Write-Warning "⚠️ Syncfusion license key not set (SYNCFUSION_LICENSE_KEY)"
+        }
+
+        Write-Information "=== Health check completed ===" -InformationAction Continue
+        return $true
+    }
+    catch {
+        Write-Warning "Health check failed: $($_.Exception.Message)"
+        return $false
+    }
+}
+
+# Set up aliases for easier access
+# Reference: https://learn.microsoft.com/powershell/module/microsoft.powershell.utility/set-alias
+Set-Alias -Name "bbBuild" -Value "Invoke-BusBuddyBuild"
+Set-Alias -Name "bbRun" -Value "Start-BusBuddyApplication"
+Set-Alias -Name "bbTest" -Value "Start-BusBuddyTest"
+Set-Alias -Name "bbHealth" -Value "Test-BusBuddyHealth"
+
+# Mark profile as successfully loaded
+$env:BUSBUDDY_PROFILE_LOADED = '1'
+Write-ProfileLog "BusBuddy PowerShell profile loaded successfully - PowerShell $($PSVersionTable.PSVersion)" -Level Information
+
+# Profile scripts don't need Export-ModuleMember - functions are automatically available globally
