@@ -35,7 +35,7 @@ function Initialize-GitKrakenEnvironment {
     param()
 
     Write-Information "🚀 Initializing GitKraken Environment..." -InformationAction Continue
-    
+
     try {
         # Step 1: Verify GitKraken CLI is available
         $gkVersion = & gk version 2>$null
@@ -429,8 +429,8 @@ function Invoke-GitKrakenWorkflow {
             $untrackedFiles = git ls-files --others --exclude-standard
 
             if (-not $stagedFiles) {
-                Write-Warning "No staged changes found." 
-                
+                Write-Warning "No staged changes found."
+
                 if ($modifiedFiles -or $untrackedFiles) {
                     Write-Information "📋 Available files to stage:" -InformationAction Continue
                     if ($modifiedFiles) {
@@ -441,7 +441,7 @@ function Invoke-GitKrakenWorkflow {
                         Write-Information "  Untracked files:" -InformationAction Continue
                         $untrackedFiles | ForEach-Object { Write-Information "    $_" -InformationAction Continue }
                     }
-                    
+
                     Write-Information "💡 Stage files with one of these commands:" -InformationAction Continue
                     Write-Information "  git add <specific-files>     # Stage specific files" -InformationAction Continue
                     Write-Information "  git add .                    # Stage all changes" -InformationAction Continue
@@ -481,7 +481,7 @@ function Invoke-GitKrakenWorkflow {
 
             Write-Information "💡 Suggested commit format:" -InformationAction Continue
             Write-Information "  git commit -m '${commitType}: brief description of changes'" -InformationAction Continue
-            
+
             # Provide specific suggestions based on file types
             if ($stagedFiles -match "GitKraken") {
                 Write-Information "💡 GitKraken-specific suggestion:" -InformationAction Continue
