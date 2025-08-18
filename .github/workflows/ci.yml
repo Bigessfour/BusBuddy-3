@@ -20,6 +20,11 @@ env:
   DOTNET_VERSION: "9.0.x"
   SOLUTION_FILE: "BusBuddy.sln"
   BUILD_CONFIGURATION: "Release"
+  # GitHub CLI configuration - disable paging for CI logs
+  GH_PAGER: ""
+  GH_NO_UPDATE_NOTIFIER: "1"
+  # PowerShell configuration for CI
+  POWERSHELL_TELEMETRY_OPTOUT: "1"
 
 jobs:
   build-and-test:
@@ -131,18 +136,7 @@ jobs:
             echo "⚠️ No coverage files found"
           }
 
-      - name: ☁️ Upload coverage reports to Codecov
-        uses: codecov/codecov-action@v4
-        if: always() && !cancelled()
-        with:
-          files: "**/coverage.cobertura.xml"
-          fail_ci_if_error: false
-          verbose: true
-          token: ${{ secrets.CODECOV_TOKEN }}
-          flags: unittests
-          name: codecov-umbrella
-          directory: ./TestResults
-        continue-on-error: true
+
 
       - name: 📊 Publish test results
         uses: dorny/test-reporter@v1

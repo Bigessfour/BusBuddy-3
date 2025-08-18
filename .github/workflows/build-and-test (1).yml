@@ -100,34 +100,7 @@ jobs:
             echo "⚠️ No coverage files found"
           }
 
-      - name: ☁️ Upload coverage reports to Codecov
-        uses: codecov/codecov-action@v4
-        if: always() && !cancelled()
-        with:
-          files: "**/coverage.cobertura.xml"
-          fail_ci_if_error: false
-          verbose: true
-          # Note: VS Code may show a warning about CODECOV_TOKEN context access
-          # This is a false positive - the secret exists and the syntax is correct
-          token: ${{ secrets.CODECOV_TOKEN }}
-          flags: unittests
-          name: codecov-umbrella
-          directory: ./TestResults
-        continue-on-error: true
 
-      - name: 📊 Coverage upload summary
-        if: always()
-        run: |
-          echo "📊 Code coverage reports have been generated and uploaded to Codecov."
-          echo "💡 Codecov Integration Status:"
-          echo "   ✅ codecov.yml configuration file created"
-          echo "   ✅ GitHub Actions workflow updated with proper token usage"
-          echo "   ✅ Coverage collection configured with XPlat Code Coverage"
-          echo ""
-          echo "🔧 Setup verification:"
-          echo "   1. Ensure CODECOV_TOKEN secret is set in GitHub repository settings"
-          echo "   2. Visit https://app.codecov.io/gh/Bigessfour/BusBuddy-WPF for coverage reports"
-          echo "   3. Check that coverage reports are being uploaded successfully"
           echo ""
           echo "📁 Coverage files location: ./TestResults/**/coverage.cobertura.xml"
 

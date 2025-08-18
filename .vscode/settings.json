@@ -42,6 +42,16 @@
         "geospatial",
         "GETDATE",
         "GETUTCDATE",
+        "gkai",
+        "gkaitest",
+        "gkbranch",
+        "gkcommit",
+        "gkhelp",
+        "gkprs",
+        "startswith",
+        "gkruns",
+        "gkstart",
+        "gkworkflow",
         "globalconfig",
         "Grasmick",
         "HGBH",
@@ -66,6 +76,7 @@
         "nums",
         "nvarchar",
         "omnisharp",
+        "oneline",
         "openstreetmap",
         "Parallelizable",
         "Parmely",
@@ -80,6 +91,7 @@
         "retime",
         "retiming",
         "rname",
+        "Rollup",
         "RTRIM",
         "SEEDLIC",
         "SEEDVIN",
@@ -126,5 +138,9 @@
     "terminal.integrated.defaultProfile.windows": "PowerShell",
     "prettyxml.settings.enableLogs": true,
     "prettyxml.settings.formatOnSave": true,
-    "window.density.editorTabHeight": "compact"
+    "window.density.editorTabHeight": "compact",
+    "workbench.editor.autoLockGroups": {
+        "workbench.input.interactive": true
+    },
+    "workbench.editor.defaultBinaryEditor": "default"
 }

@@ -12,6 +12,11 @@ concurrency:
 env:
   DOTNET_VERSION: "9.0.x"
   SOLUTION_FILE: "BusBuddy.sln"
+  # GitHub CLI configuration - disable paging for CI logs
+  GH_PAGER: ""
+  GH_NO_UPDATE_NOTIFIER: "1"
+  # PowerShell configuration for CI
+  POWERSHELL_TELEMETRY_OPTOUT: "1"
 
 jobs:
   quality-gate:

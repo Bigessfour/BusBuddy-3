@@ -197,6 +197,50 @@ function Get-OptimalCLITool {
     return $result
 }
 
+# GitHub CLI Helper with No-Pager Configuration
+function Invoke-GitHubCLI {
+    <#
+    .SYNOPSIS
+        Invokes GitHub CLI with proper no-pager configuration for CI/CD compatibility
+    .DESCRIPTION
+        Automatically sets GH_PAGER="" and adds --no-pager to prevent paging issues in CI logs
+    .PARAMETER Command
+        The GitHub CLI command to execute (without 'gh')
+    .EXAMPLE
+        Invoke-GitHubCLI pr list --json number,title
+        # Equivalent to: GH_PAGER="" gh pr list --json number,title --no-pager
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory, ValueFromRemainingArguments)]
+        [string[]]$Command
+    )
+
+    # Set environment variable to disable pager
+    $env:GH_PAGER = ""
+    $env:GH_NO_UPDATE_NOTIFIER = "1"
+
+    # Add --no-pager if not already present and command supports it
+    $supportsPager = $Command[0] -in @('pr', 'issue', 'api', 'repo', 'workflow', 'run')
+    if ($supportsPager -and $Command -notcontains '--no-pager') {
+        $Command += '--no-pager'
+    }
+
+    try {
+        $result = & gh @Command 2>&1
+        if ($LASTEXITCODE -eq 0) {
+            return $result
+        } else {
+            Write-Error "GitHub CLI command failed: $result"
+            return $null
+        }
+    }
+    catch {
+        Write-Error "Failed to execute GitHub CLI: $_"
+        return $null
+    }
+}
+
 function Test-GitKrakenCloudCLI {
     <#
     .SYNOPSIS
@@ -237,7 +281,7 @@ function Test-GitHubCLI {
         }
 
         # Test authentication
-        $authStatus = & gh auth status 2>$null
+        $null = & gh auth status 2>$null
         $authenticated = $LASTEXITCODE -eq 0
 
         return @{
@@ -300,8 +344,8 @@ function Get-BusBuddyPullRequests {
         switch ($cliInfo.Tool) {
             "gh" {
                 Write-Information "📋 Using GitHub CLI for comprehensive PR data..." -InformationAction Continue
-                $prs = & gh pr list --json number,title,state,author,createdAt,headRefName,statusCheckRollup,reviewDecision
-                if ($LASTEXITCODE -eq 0 -and $prs) {
+                $prs = Invoke-GitHubCLI pr list --json number,title,state,author,createdAt,headRefName,statusCheckRollup,reviewDecision
+                if ($prs) {
                     $prData = $prs | ConvertFrom-Json
                     foreach ($pr in $prData) {
                         $checksInfo = ""
@@ -583,7 +627,7 @@ function Get-PRAnalysisFallback {
         Manual PR analysis using GitHub CLI
     #>
     try {
-        $prs = gh pr list --json number,title,state,checks
+        $prs = Invoke-GitHubCLI pr list --json number,title,state,checks
         if ($prs) {
             $prData = $prs | ConvertFrom-Json
             $analysis = "🔍 **PR Status Analysis** (Fallback Mode)`n`n"
@@ -607,8 +651,7 @@ function Get-PRAnalysisFallback {
     }
     catch {
         return "Unable to fetch PR data: $_"
-}
-
+    }
 }
 
 # GitKraken Environment Initialization

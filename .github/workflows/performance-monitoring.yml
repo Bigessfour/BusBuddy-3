@@ -23,6 +23,9 @@ env:
   DOTNET_VERSION: "9.0.x"
   SOLUTION_FILE: "BusBuddy.sln"
   BUILD_CONFIGURATION: "Release"
+  # GitHub CLI configuration - disable paging for CI logs
+  GH_PAGER: ""
+  GH_NO_UPDATE_NOTIFIER: "1"
 
 jobs:
   performance-benchmark:
@@ -110,7 +113,7 @@ jobs:
 
           # Download previous performance data if available
           try {
-            $artifactNames = gh api repos/${{ github.repository }}/actions/artifacts --jq '.artifacts[] | select(.name | startswith("performance-data-")) | .name' 2>$null
+            $artifactNames = gh api repos/${{ github.repository }}/actions/artifacts --no-pager --jq '.artifacts[] | select(.name | starts_with("performance-data-")) | .name' 2>$null
 
             if ($artifactNames) {
               echo "📥 Found previous performance data artifacts"
