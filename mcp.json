@@ -1,18 +1,11 @@
 {
   "mcpServers": {
     "filesystem": {
-      "args": [
-        "-y",
-        "@modelcontextprotocol/server-filesystem",
-        "C:\\Users\\biges\\Desktop\\BusBuddy\\BusBuddy"
-      ],
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "C:\\Users\\biges\\Desktop\\BusBuddy\\BusBuddy"],
       "command": "npx"
     },
     "brave-search": {
-      "args": [
-        "-y",
-        "@modelcontextprotocol/server-brave-search"
-      ],
+      "args": ["-y", "@modelcontextprotocol/server-brave-search"],
       "env": {
         "BRAVE_API_KEY": ""
       },

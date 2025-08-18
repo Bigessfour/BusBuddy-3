@@ -5,12 +5,15 @@
 ## 🎯 **Development Philosophy**
 
 ### **MVP-First Approach**
+
 BusBuddy follows a clean build, MVP-first development strategy:
+
 - **Primary Goal**: Maintain 0 build errors at all times
 - **MVP Focus**: Student management and route assignment core functionality
 - **Quality Gates**: All changes must pass `bbMvpCheck` and `bbAntiRegression`
 
 ### **Technology Stack**
+
 - **Framework**: .NET 9.0 WPF with C# 12
 - **UI Library**: Syncfusion WPF 30.1.42 (FluentDark theme)
 - **Database**: Entity Framework Core 9.0.7 with Azure SQL/LocalDB
@@ -20,6 +23,7 @@ BusBuddy follows a clean build, MVP-first development strategy:
 ## 🏗️ **Architecture Overview**
 
 ### **Project Structure**
+
 ```
 BusBuddy/
 ├── BusBuddy.Core/           # Business logic and data access
@@ -38,6 +42,7 @@ BusBuddy/
 ```
 
 ### **MVVM Pattern**
+
 ```csharp
 // ViewModel Pattern
 public class StudentsViewModel : BaseViewModel
@@ -80,6 +85,7 @@ public class StudentsViewModel : BaseViewModel
 ## 🎨 **UI Development Standards**
 
 ### **Syncfusion Control Usage**
+
 Always use Syncfusion controls over standard WPF controls:
 
 ```xml
@@ -102,6 +108,7 @@ Always use Syncfusion controls over standard WPF controls:
 ```
 
 ### **Theme Integration**
+
 ```xml
 <!-- Resource Dictionary Integration -->
 <ResourceDictionary>
@@ -115,13 +122,14 @@ Always use Syncfusion controls over standard WPF controls:
 ## 📝 **Coding Standards**
 
 ### **C# Standards**
+
 ```csharp
 // ✅ Proper nullable handling
 public async Task<Student?> GetStudentAsync(int? studentId)
 {
     if (!studentId.HasValue)
         return null;
-        
+
     return await _context.Students
         .FirstOrDefaultAsync(s => s.Id == studentId.Value);
 }
@@ -132,7 +140,7 @@ private static readonly ILogger Logger = Log.ForContext<StudentService>();
 public async Task CreateStudentAsync(CreateStudentRequest request)
 {
     Logger.Information("Creating student {StudentName}", request.Name);
-    
+
     try
     {
         var student = new Student
@@ -140,11 +148,11 @@ public async Task CreateStudentAsync(CreateStudentRequest request)
             Name = request.Name,
             CreatedDate = DateTime.UtcNow
         };
-        
+
         _context.Students.Add(student);
         await _context.SaveChangesAsync();
-        
-        Logger.Information("Student {StudentName} created with ID {StudentId}", 
+
+        Logger.Information("Student {StudentName} created with ID {StudentId}",
             student.Name, student.Id);
     }
     catch (Exception ex)
@@ -156,14 +164,15 @@ public async Task CreateStudentAsync(CreateStudentRequest request)
 ```
 
 ### **PowerShell Standards**
+
 ```powershell
 # ✅ CORRECT: Use proper output streams
 function Get-BuildStatus {
     [CmdletBinding()]
     param()
-    
+
     Write-Information "Checking build status..." -InformationAction Continue
-    
+
     try {
         $result = dotnet build --no-restore
         if ($LASTEXITCODE -eq 0) {
@@ -186,6 +195,7 @@ function Bad-Example {
 ## 🚀 **Development Workflow**
 
 ### **Daily Development Session**
+
 ```powershell
 # Start development environment
 bbDevSession
@@ -198,7 +208,9 @@ bbDevSession
 ```
 
 ### **Feature Development Process**
+
 1. **Start with Health Check**
+
    ```powershell
    bbHealth              # Verify system state
    bbMvpCheck           # Ensure MVP baseline
@@ -210,6 +222,7 @@ bbDevSession
    - Implement structured logging
 
 3. **Validate Changes**
+
    ```powershell
    bbBuild              # Verify build
    bbXamlValidate       # Check XAML compliance
@@ -223,6 +236,7 @@ bbDevSession
    ```
 
 ### **Commit Standards**
+
 ```bash
 # Commit message format
 git commit -m "feat: add student search functionality
@@ -238,6 +252,7 @@ Fixes #123"
 ## 🔍 **Quality Assurance**
 
 ### **Anti-Regression Checks**
+
 ```powershell
 # Mandatory checks before commits
 bbAntiRegression     # Scans for:
@@ -252,6 +267,7 @@ bbXamlValidate       # Ensures:
 ```
 
 ### **Code Quality Gates**
+
 1. **Build**: Must be 0 errors, warnings acceptable during MVP
 2. **MVP Check**: Must pass all essential functionality tests
 3. **Anti-Regression**: Must not introduce forbidden patterns
@@ -260,6 +276,7 @@ bbXamlValidate       # Ensures:
 ## 🧪 **Testing Practices**
 
 ### **Test Categories**
+
 ```csharp
 // Unit Tests
 [Test]
@@ -268,10 +285,10 @@ public async Task CreateStudent_ValidData_ReturnsStudent()
     // Arrange
     var service = new StudentService(_mockContext.Object, _mockLogger.Object);
     var request = new CreateStudentRequest { Name = "John Doe" };
-    
+
     // Act
     var result = await service.CreateStudentAsync(request);
-    
+
     // Assert
     Assert.That(result.Name, Is.EqualTo("John Doe"));
     Assert.That(result.Id, Is.GreaterThan(0));
@@ -286,6 +303,7 @@ public async Task StudentsView_LoadData_DisplaysInGrid()
 ```
 
 ### **Running Tests**
+
 ```powershell
 # Run tests (note: .NET 9 compatibility issues)
 bbTest
@@ -297,6 +315,7 @@ bbTest
 ## 📊 **Data Access Patterns**
 
 ### **Entity Framework Standards**
+
 ```csharp
 // Service Pattern with EF Core
 public class StudentService : IStudentService
@@ -330,6 +349,7 @@ public class StudentService : IStudentService
 ```
 
 ### **Database Configuration**
+
 ```csharp
 // Context Configuration
 protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
@@ -341,7 +361,7 @@ protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         "LocalDB" => _configuration.GetConnectionString("DefaultConnection"),
         _ => _configuration.GetConnectionString("DefaultConnection")
     };
-    
+
     optionsBuilder.UseSqlServer(connectionString);
 }
 ```
@@ -349,6 +369,7 @@ protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
 ## 🐛 **Debugging and Diagnostics**
 
 ### **Debug Helper Integration**
+
 ```powershell
 # Start debug monitoring
 bbDebugStart
@@ -361,6 +382,7 @@ bbHealth --watch
 ```
 
 ### **Logging Configuration**
+
 ```csharp
 // Serilog setup in Program.cs
 Log.Logger = new LoggerConfiguration()
@@ -376,11 +398,13 @@ Log.Logger = new LoggerConfiguration()
 ## 🔧 **Performance Optimization**
 
 ### **UI Performance**
+
 - Use data virtualization for large lists
 - Implement async data loading
 - Use background threads for heavy operations
 
 ### **Database Performance**
+
 - Use EF Core query optimization
 - Implement proper indexing
 - Use projection for large datasets
@@ -388,6 +412,7 @@ Log.Logger = new LoggerConfiguration()
 ## 📚 **Documentation Standards**
 
 ### **Code Documentation**
+
 ```csharp
 /// <summary>
 /// Creates a new student record in the database
@@ -399,21 +424,22 @@ public async Task<Student> CreateStudentAsync(CreateStudentRequest request)
 ```
 
 ### **PowerShell Documentation**
+
 ```powershell
 <#
 .SYNOPSIS
     Validates the current build state and MVP readiness
-    
+
 .DESCRIPTION
     Performs comprehensive checks including:
     - Build compilation status
     - Essential functionality tests
     - Data access validation
     - UI component verification
-    
+
 .EXAMPLE
     bbMvpCheck
-    
+
 .NOTES
     Must return "MVP READY! You can ship this!" for deployment
 #>
@@ -425,6 +451,7 @@ function Invoke-MvpCheck {
 ## 🚦 **Error Handling Patterns**
 
 ### **Service Layer Errors**
+
 ```csharp
 public async Task<Result<Student>> CreateStudentAsync(CreateStudentRequest request)
 {
@@ -433,11 +460,11 @@ public async Task<Result<Student>> CreateStudentAsync(CreateStudentRequest reque
         // Validation
         if (request == null)
             return Result<Student>.Failure("Request cannot be null");
-            
+
         // Implementation
         var student = new Student { Name = request.Name };
         await _context.SaveChangesAsync();
-        
+
         return Result<Student>.Success(student);
     }
     catch (Exception ex)
@@ -451,12 +478,14 @@ public async Task<Result<Student>> CreateStudentAsync(CreateStudentRequest reque
 ## 🎯 **MVP Requirements**
 
 ### **Core Functionality**
+
 - ✅ Student management (CRUD operations)
 - ✅ Route assignment
 - ✅ Basic dashboard
 - ✅ Data persistence
 
 ### **Deferred Features**
+
 - XAI integration
 - Google Earth Engine
 - Advanced reporting
@@ -467,6 +496,7 @@ public async Task<Result<Student>> CreateStudentAsync(CreateStudentRequest reque
 ## 🛠️ **Available Commands**
 
 ### **Core Development**
+
 - `bbBuild` - Build solution
 - `bbRun` - Run application
 - `bbTest` - Execute tests
@@ -474,11 +504,13 @@ public async Task<Result<Student>> CreateStudentAsync(CreateStudentRequest reque
 - `bbClean` - Clean build artifacts
 
 ### **Quality Assurance**
+
 - `bbXamlValidate` - Validate XAML files
 - `bbAntiRegression` - Run compliance checks
 - `bbMvpCheck` - Verify MVP readiness
 
 ### **Advanced Workflows**
+
 - `bbDevSession` - Complete dev environment setup
 - `bbQuickTest` - Rapid build-test cycle
 - `bbDiagnostic` - Comprehensive system analysis
@@ -487,12 +519,14 @@ public async Task<Result<Student>> CreateStudentAsync(CreateStudentRequest reque
 ## 🆘 **Troubleshooting**
 
 ### **Common Issues**
+
 1. **Build Failures**: Run `bbHealth` for diagnostics
 2. **Test Issues**: Use VS Code NUnit Test Runner for .NET 9
 3. **UI Problems**: Verify Syncfusion namespace declarations
 4. **Database Errors**: Check connection strings and migrations
 
 ### **Getting Help**
+
 - Run `bbCommands` for available automation
 - Check `GROK-README.md` for current status
 - Use `bbHealth` for diagnostic information

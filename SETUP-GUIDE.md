@@ -5,12 +5,14 @@
 ## 📋 **Prerequisites**
 
 ### **System Requirements**
+
 - **Operating System**: Windows 10/11 (for WPF development)
 - **RAM**: 8GB minimum, 16GB recommended
 - **Storage**: 2GB free space for development environment
 - **Internet**: Required for package downloads and Azure services
 
 ### **Required Software**
+
 1. **.NET 9.0 SDK** (9.0.303 or later)
    - Download: https://dotnet.microsoft.com/download/dotnet/9.0
    - Verify: `dotnet --version`
@@ -24,6 +26,7 @@
    - Verify: `git --version`
 
 ### **Recommended IDE**
+
 - **Visual Studio Code** (preferred) with extensions:
   - C# Dev Kit (`ms-dotnettools.csdevkit`)
   - XAML (`ms-dotnettools.xaml`)
@@ -35,6 +38,7 @@
 ## 🔧 **Installation Steps**
 
 ### **Step 1: Clone Repository**
+
 ```bash
 # Clone the repository
 git clone https://github.com/Bigessfour/BusBuddy-3.git
@@ -45,6 +49,7 @@ ls
 ```
 
 ### **Step 2: Environment Setup**
+
 ```powershell
 # Import BusBuddy PowerShell module
 Import-Module .\PowerShell\Modules\BusBuddy\BusBuddy.psm1
@@ -57,6 +62,7 @@ bbHealth
 ```
 
 ### **Step 3: Build and Verify**
+
 ```powershell
 # Clean and restore packages
 bbClean
@@ -70,6 +76,7 @@ bbMvpCheck
 ```
 
 ### **Step 4: First Run**
+
 ```powershell
 # Run the application
 bbRun
@@ -80,7 +87,9 @@ bbRun
 ## 🌐 **Database Configuration**
 
 ### **Local Development (Default)**
+
 BusBuddy uses LocalDB by default:
+
 ```json
 {
   "ConnectionStrings": {
@@ -90,8 +99,11 @@ BusBuddy uses LocalDB by default:
 ```
 
 ### **Azure SQL Database (Production)**
+
 For Azure SQL Database connection:
+
 1. Update `appsettings.json`:
+
 ```json
 {
   "ConnectionStrings": {
@@ -101,11 +113,13 @@ For Azure SQL Database connection:
 ```
 
 2. Ensure Azure CLI is logged in:
+
 ```bash
 az login
 ```
 
 3. Run database migrations:
+
 ```powershell
 dotnet ef database update --project BusBuddy.Core
 ```
@@ -113,6 +127,7 @@ dotnet ef database update --project BusBuddy.Core
 ## 🛠️ **Development Environment**
 
 ### **PowerShell Development Setup**
+
 ```powershell
 # Start complete development session
 bbDevSession
@@ -125,13 +140,16 @@ bbDevSession
 ```
 
 ### **VS Code Configuration**
+
 The repository includes pre-configured VS Code settings:
+
 - **Tasks**: Pre-defined build, run, and test tasks
 - **Launch Configurations**: Ready-to-use debugging setups
 - **Extensions**: Recommended extensions list
 - **Settings**: Optimized for BusBuddy development
 
 ### **Available Commands**
+
 ```powershell
 # Core Development
 bbBuild               # Build solution
@@ -154,6 +172,7 @@ bbRouteStatus         # Check optimization status
 ## 🧪 **Testing Setup**
 
 ### **Running Tests**
+
 ```powershell
 # Run all tests
 bbTest
@@ -164,6 +183,7 @@ bbTest
 ```
 
 ### **Test Categories**
+
 - **Unit Tests**: Core business logic validation
 - **Integration Tests**: Database and service integration
 - **XAML Validation**: UI component verification
@@ -174,6 +194,7 @@ bbTest
 ### **Common Issues**
 
 #### **Build Failures**
+
 ```powershell
 # Clean and rebuild
 bbClean
@@ -185,11 +206,13 @@ bbHealth
 ```
 
 #### **.NET 9 Test Platform Issues**
+
 - **Issue**: Microsoft.TestPlatform.CoreUtilities compatibility
 - **Solution**: Use VS Code NUnit Test Runner extension
 - **Alternative**: Use Visual Studio Test Explorer
 
 #### **PowerShell Module Loading**
+
 ```powershell
 # Force reload PowerShell module
 Import-Module .\PowerShell\Modules\BusBuddy\BusBuddy.psm1 -Force
@@ -199,6 +222,7 @@ bbCommands
 ```
 
 #### **Database Connection Issues**
+
 ```powershell
 # For LocalDB issues
 sqllocaldb info mssqllocaldb
