@@ -12,8 +12,8 @@
       "activities": 200
     },
     "coordinates": {
-      "centerLat": 40.0150,
-      "centerLon": -75.1250,
+      "centerLat": 40.015,
+      "centerLon": -75.125,
       "radius": "15 mile coverage area"
     }
   },
@@ -31,10 +31,7 @@
       "emergencyPhone": "(610) 555-0102",
       "isActive": true,
       "experienceYears": 12,
-      "specialCertifications": [
-        "Special Needs",
-        "Field Trip Authorization"
-      ],
+      "specialCertifications": ["Special Needs", "Field Trip Authorization"],
       "notes": "Senior driver with excellent safety record; Experienced in special needs transportation"
     },
     {
@@ -50,10 +47,7 @@
       "emergencyPhone": "(610) 555-0104",
       "isActive": true,
       "experienceYears": 8,
-      "specialCertifications": [
-        "Defensive Driving",
-        "First Aid"
-      ],
+      "specialCertifications": ["Defensive Driving", "First Aid"],
       "notes": "Certified for field trip operations; Multi-lingual capabilities"
     },
     {
@@ -69,10 +63,7 @@
       "emergencyPhone": "(610) 555-0106",
       "isActive": true,
       "experienceYears": 10,
-      "specialCertifications": [
-        "Special Needs",
-        "Bilingual Communication"
-      ],
+      "specialCertifications": ["Special Needs", "Bilingual Communication"],
       "notes": "Experienced in special needs transportation; Fluent in Spanish and English"
     },
     {
@@ -88,10 +79,7 @@
       "emergencyPhone": "(610) 555-0108",
       "isActive": true,
       "experienceYears": 6,
-      "specialCertifications": [
-        "GPS Navigation",
-        "Vehicle Maintenance"
-      ],
+      "specialCertifications": ["GPS Navigation", "Vehicle Maintenance"],
       "notes": "Technology-savvy driver; Certified for field trip operations"
     },
     {
@@ -107,11 +95,7 @@
       "emergencyPhone": "(610) 555-0110",
       "isActive": true,
       "experienceYears": 15,
-      "specialCertifications": [
-        "Special Needs",
-        "Field Trip Authorization",
-        "Trainer Certification"
-      ],
+      "specialCertifications": ["Special Needs", "Field Trip Authorization", "Trainer Certification"],
       "notes": "Senior driver with excellent safety record; Trains new drivers"
     }
   ],
@@ -130,11 +114,7 @@
       "maintenanceDue": "2025-04-15",
       "status": "Active",
       "location": "Depot 1",
-      "features": [
-        "Wheelchair Accessible",
-        "GPS Tracking",
-        "Security Cameras"
-      ],
+      "features": ["Wheelchair Accessible", "GPS Tracking", "Security Cameras"],
       "notes": "Recently serviced; Wheelchair accessible"
     },
     {
@@ -151,11 +131,7 @@
       "maintenanceDue": "2025-03-10",
       "status": "Active",
       "location": "Depot 2",
-      "features": [
-        "Air Conditioning",
-        "GPS Tracking",
-        "Stop Arm Cameras"
-      ],
+      "features": ["Air Conditioning", "GPS Tracking", "Stop Arm Cameras"],
       "notes": "CNG vehicle; Air conditioning serviced"
     },
     {
@@ -172,10 +148,7 @@
       "maintenanceDue": "2025-02-20",
       "status": "Maintenance",
       "location": "Service Bay 1",
-      "features": [
-        "Compact Design",
-        "Fuel Efficient"
-      ],
+      "features": ["Compact Design", "Fuel Efficient"],
       "notes": "Due for inspection; New tires installed"
     }
   ],
@@ -185,10 +158,10 @@
       "description": "Regular School Route from district stops to Lincoln Elementary",
       "startLocation": "Downtown (40.0200, -75.1300)",
       "endLocation": "Lincoln Elementary",
-      "startLatitude": 40.0200,
-      "startLongitude": -75.1300,
-      "endLatitude": 40.0180,
-      "endLongitude": -75.1280,
+      "startLatitude": 40.02,
+      "startLongitude": -75.13,
+      "endLatitude": 40.018,
+      "endLongitude": -75.128,
       "distance": 2.8,
       "estimatedDuration": 25,
       "difficultyLevel": 2,
@@ -204,14 +177,14 @@
         },
         {
           "name": "Oak Ave & Pine St",
-          "lat": 40.0190,
-          "lon": -75.1290,
+          "lat": 40.019,
+          "lon": -75.129,
           "time": "07:18"
         },
         {
           "name": "Lincoln Elementary",
-          "lat": 40.0180,
-          "lon": -75.1280,
+          "lat": 40.018,
+          "lon": -75.128,
           "time": "07:25"
         }
       ]
@@ -221,10 +194,10 @@
       "description": "Special Needs Transport from district stops to Washington Middle School",
       "startLocation": "Northside (40.0250, -75.1200)",
       "endLocation": "Washington Middle School",
-      "startLatitude": 40.0250,
-      "startLongitude": -75.1200,
-      "endLatitude": 40.0230,
-      "endLongitude": -75.1180,
+      "startLatitude": 40.025,
+      "startLongitude": -75.12,
+      "endLatitude": 40.023,
+      "endLongitude": -75.118,
       "distance": 3.2,
       "estimatedDuration": 35,
       "difficultyLevel": 3,
@@ -240,14 +213,14 @@
         },
         {
           "name": "Residential Area B",
-          "lat": 40.0240,
-          "lon": -75.1190,
+          "lat": 40.024,
+          "lon": -75.119,
           "time": "07:35"
         },
         {
           "name": "Washington Middle School",
-          "lat": 40.0230,
-          "lon": -75.1180,
+          "lat": 40.023,
+          "lon": -75.118,
           "time": "07:45"
         }
       ]
@@ -257,10 +230,10 @@
       "description": "Field Trip from district stops to Roosevelt High School",
       "startLocation": "Southside (40.0100, -75.1350)",
       "endLocation": "Roosevelt High School",
-      "startLatitude": 40.0100,
-      "startLongitude": -75.1350,
-      "endLatitude": 40.0080,
-      "endLongitude": -75.1320,
+      "startLatitude": 40.01,
+      "startLongitude": -75.135,
+      "endLatitude": 40.008,
+      "endLongitude": -75.132,
       "distance": 4.1,
       "estimatedDuration": 30,
       "difficultyLevel": 1,
@@ -277,13 +250,13 @@
         {
           "name": "Sports Complex",
           "lat": 40.0085,
-          "lon": -75.1330,
+          "lon": -75.133,
           "time": "08:15"
         },
         {
           "name": "Roosevelt High School",
-          "lat": 40.0080,
-          "lon": -75.1320,
+          "lat": 40.008,
+          "lon": -75.132,
           "time": "08:30"
         }
       ]
@@ -293,10 +266,10 @@
       "description": "Sports Event Transport from district stops to Jefferson Academy",
       "startLocation": "Eastside (40.0180, -75.1100)",
       "endLocation": "Jefferson Academy",
-      "startLatitude": 40.0180,
-      "startLongitude": -75.1100,
-      "endLatitude": 40.0160,
-      "endLongitude": -75.1080,
+      "startLatitude": 40.018,
+      "startLongitude": -75.11,
+      "endLatitude": 40.016,
+      "endLongitude": -75.108,
       "distance": 2.5,
       "estimatedDuration": 20,
       "difficultyLevel": 2,
@@ -312,14 +285,14 @@
         },
         {
           "name": "Training Center",
-          "lat": 40.0170,
-          "lon": -75.1090,
+          "lat": 40.017,
+          "lon": -75.109,
           "time": "15:35"
         },
         {
           "name": "Jefferson Academy",
-          "lat": 40.0160,
-          "lon": -75.1080,
+          "lat": 40.016,
+          "lon": -75.108,
           "time": "15:45"
         }
       ]
@@ -329,10 +302,10 @@
       "description": "Late Bus from district stops to Madison Elementary",
       "startLocation": "Westside (40.0120, -75.1400)",
       "endLocation": "Madison Elementary",
-      "startLatitude": 40.0120,
-      "startLongitude": -75.1400,
-      "endLatitude": 40.0140,
-      "endLongitude": -75.1380,
+      "startLatitude": 40.012,
+      "startLongitude": -75.14,
+      "endLatitude": 40.014,
+      "endLongitude": -75.138,
       "distance": 3.5,
       "estimatedDuration": 28,
       "difficultyLevel": 2,
@@ -354,8 +327,8 @@
         },
         {
           "name": "Madison Elementary",
-          "lat": 40.0140,
-          "lon": -75.1380,
+          "lat": 40.014,
+          "lon": -75.138,
           "time": "16:15"
         }
       ]
@@ -474,28 +447,28 @@
     "landmarks": [
       {
         "name": "Downtown Jefferson",
-        "lat": 40.0150,
-        "lon": -75.1250
+        "lat": 40.015,
+        "lon": -75.125
       },
       {
         "name": "Jefferson County Hospital",
-        "lat": 40.0200,
-        "lon": -75.1200
+        "lat": 40.02,
+        "lon": -75.12
       },
       {
         "name": "Regional Shopping Center",
-        "lat": 40.0100,
-        "lon": -75.1300
+        "lat": 40.01,
+        "lon": -75.13
       },
       {
         "name": "Industrial Park",
-        "lat": 40.0050,
-        "lon": -75.1350
+        "lat": 40.005,
+        "lon": -75.135
       },
       {
         "name": "Recreation Complex",
-        "lat": 40.0250,
-        "lon": -75.1150
+        "lat": 40.025,
+        "lon": -75.115
       }
     ]
   }

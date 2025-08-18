@@ -5,37 +5,44 @@
 When debugging, instead of scrolling through thousands of log entries, use these simple methods to see only what matters:
 
 ### 1. **Quick Issues Check**
+
 ```csharp
 // In your debug code, add this line:
 DebugHelper.ShowIssues();
 ```
+
 This shows only actionable errors, warnings, and exceptions with recommended fixes.
 
 ### 2. **Errors Only**
+
 ```csharp
 // Show only errors that need fixing:
 DebugHelper.ShowErrorsOnly();
 ```
 
 ### 3. **Sports Scheduling Issues**
+
 ```csharp
 // Show only sports scheduling related problems:
 DebugHelper.ShowSportsSchedulingIssues();
 ```
 
 ### 4. **UI/XAML Issues**
+
 ```csharp
 // Show only UI, XAML, and Syncfusion issues:
 DebugHelper.ShowUIIssues();
 ```
 
 ### 5. **Health Check**
+
 ```csharp
 // Quick health check of the application:
 DebugHelper.HealthCheck();
 ```
 
 ### 6. **Critical Issues Check**
+
 ```csharp
 // Check if there are any critical issues:
 if (DebugHelper.HasCriticalIssues())
@@ -47,12 +54,14 @@ if (DebugHelper.HasCriticalIssues())
 ## Output Format
 
 The filtered output shows:
+
 - 🚨 **CRITICAL** - Must fix immediately
 - ⚠️ **HIGH** - Should fix soon
 - 🔶 **MEDIUM** - Fix when convenient
 - ℹ️ **LOW** - Optional improvements
 
 Each entry includes:
+
 - **📝 Message**: What happened
 - **🎯 ACTION**: What to do about it
 - **📍 LOCATION**: Where it happened (if available)
@@ -60,6 +69,7 @@ Each entry includes:
 ## Integration with Debug Session
 
 ### Option 1: Add to your debug code
+
 ```csharp
 public void SomeMethod()
 {
@@ -72,13 +82,17 @@ public void SomeMethod()
 ```
 
 ### Option 2: Use in Immediate Window
+
 In Visual Studio's Immediate Window:
+
 ```csharp
 DebugHelper.ShowIssues()
 ```
 
 ### Option 3: Use with breakpoints
+
 Set a breakpoint and use the Watch window to monitor:
+
 ```csharp
 DebugHelper.HasCriticalIssues()
 ```
@@ -86,6 +100,7 @@ DebugHelper.HasCriticalIssues()
 ## What Gets Filtered Out
 
 The filter removes:
+
 - ✅ Routine info messages
 - ✅ Debug trace messages
 - ✅ Normal startup messages
@@ -96,6 +111,7 @@ The filter removes:
 ## What Gets Shown
 
 The filter shows:
+
 - 🚨 Actionable errors
 - ⚠️ Performance warnings
 - 🔶 XAML/UI issues
