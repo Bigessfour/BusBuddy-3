@@ -26,6 +26,7 @@ BusBuddy/
 ```
 
 **Key Points:**
+
 - **`<clear />`**: Removes all inherited package sources (ensures clean configuration)
 - **nuget.org**: Official NuGet package repository (includes Syncfusion packages)
 - **protocolVersion="3"**: Uses NuGet v3 API for better performance
@@ -41,6 +42,7 @@ BusBuddy/
 ```
 
 **Behavior:**
+
 - **enabled=True**: Allows package restoration
 - **automatic=True**: Restores packages automatically during build
 
@@ -54,6 +56,7 @@ BusBuddy/
 ```
 
 **Purpose:**
+
 - Automatically generates assembly binding redirects
 - Resolves version conflicts between dependencies
 
@@ -68,6 +71,7 @@ BusBuddy/
 ```
 
 **Settings:**
+
 - **format=1**: Uses PackageReference format (modern approach)
 - **disabled=False**: Package management is enabled
 
@@ -91,12 +95,12 @@ BusBuddy/
 
 **Configuration Details:**
 
-| Setting | Value | Purpose |
-|---------|-------|---------|
-| `globalPackagesFolder` | `""` (empty) | Uses default global packages location |
-| `dependencyVersion` | `Highest` | Resolves to highest available version |
-| `signatureValidationMode` | `accept` | Accepts packages without signature validation |
-| `defaultPushSource` | `nuget.org` | Default source for package publishing |
+| Setting                   | Value        | Purpose                                       |
+| ------------------------- | ------------ | --------------------------------------------- |
+| `globalPackagesFolder`    | `""` (empty) | Uses default global packages location         |
+| `dependencyVersion`       | `Highest`    | Resolves to highest available version         |
+| `signatureValidationMode` | `accept`     | Accepts packages without signature validation |
+| `defaultPushSource`       | `nuget.org`  | Default source for package publishing         |
 
 ## 🎯 Syncfusion-Specific Configuration
 
@@ -163,11 +167,13 @@ dotnet list package --outdated | Select-String "Syncfusion"
 #### Issue: "Unable to load the service index"
 
 **Symptoms:**
+
 ```
 error NU1301: Unable to load the service index for source https://api.nuget.org/v3/index.json
 ```
 
 **Solutions:**
+
 1. Check internet connectivity
 2. Verify DNS resolution for `api.nuget.org`
 3. Check corporate firewall/proxy settings
@@ -176,11 +182,13 @@ error NU1301: Unable to load the service index for source https://api.nuget.org/
 #### Issue: Package signature validation errors
 
 **Symptoms:**
+
 ```
 error NU3012: Package signature validation failed
 ```
 
 **Solutions:**
+
 1. Current config uses `signatureValidationMode="accept"` for development
 2. For production, consider enabling signature validation
 3. Update trusted signers if needed
@@ -188,11 +196,13 @@ error NU3012: Package signature validation failed
 #### Issue: Package source authentication
 
 **Symptoms:**
+
 ```
 error NU1301: Authentication failed
 ```
 
 **Solutions:**
+
 1. nuget.org doesn't require authentication for public packages
 2. Verify no proxy authentication is interfering
 3. Check system credentials manager
@@ -239,6 +249,7 @@ Using the default global packages folder provides:
 ### Package Cache Location
 
 Default locations by OS:
+
 - **Windows**: `%userprofile%\.nuget\packages`
 - **Linux/macOS**: `~/.nuget/packages`
 

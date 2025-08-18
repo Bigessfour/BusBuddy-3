@@ -9,33 +9,34 @@
 ## 📋 **Student Data Entry Form Structure**
 
 ### **Core Student Model Pattern**
+
 ```csharp
 // BusBuddy.Core/Models/Student.cs
 public class Student
 {
     public int StudentId { get; set; }
-    
+
     [Required, MaxLength(50)]
     public string FirstName { get; set; } = string.Empty;
-    
+
     [Required, MaxLength(50)]
     public string LastName { get; set; } = string.Empty;
-    
+
     [Range(1, 12)]
     public int Grade { get; set; }
-    
+
     [MaxLength(200)]
     public string Address { get; set; } = string.Empty;
-    
+
     [Phone]
     public string? EmergencyContact { get; set; }
-    
+
     public DateTime DateOfBirth { get; set; }
-    
+
     // Navigation Properties
     public int? RouteId { get; set; }
     public Route? Route { get; set; }
-    
+
     public List<StudentNote> Notes { get; set; } = new();
 }
 
@@ -49,13 +50,14 @@ public int Age => DateTime.Now.Year - DateOfBirth.Year;
 ## 🎨 **Syncfusion WPF Form Patterns**
 
 ### **Student Entry View (XAML)**
+
 ```xml
 <!-- BusBuddy.WPF/Views/StudentEntryView.xaml -->
 <UserControl x:Class="BusBuddy.WPF.Views.StudentEntryView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:syncfusion="http://schemas.syncfusion.com/wpf">
-    
+
     <Grid Margin="20">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -67,11 +69,11 @@ public int Age => DateTime.Now.Year - DateOfBirth.Year;
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
-        
+
         <!-- Header -->
-        <TextBlock Grid.Row="0" Text="Student Information" 
+        <TextBlock Grid.Row="0" Text="Student Information"
                    FontSize="24" FontWeight="Bold" Margin="0,0,0,20"/>
-        
+
         <!-- First Name -->
         <StackPanel Grid.Row="1" Margin="0,0,0,10">
             <TextBlock Text="First Name *" FontWeight="SemiBold"/>
@@ -81,7 +83,7 @@ public int Age => DateTime.Now.Year - DateOfBirth.Year;
                                   HasError="{Binding HasFirstNameError}"
                                   ErrorText="{Binding FirstNameError}"/>
         </StackPanel>
-        
+
         <!-- Last Name -->
         <StackPanel Grid.Row="2" Margin="0,0,0,10">
             <TextBlock Text="Last Name *" FontWeight="SemiBold"/>
@@ -91,7 +93,7 @@ public int Age => DateTime.Now.Year - DateOfBirth.Year;
                                   HasError="{Binding HasLastNameError}"
                                   ErrorText="{Binding LastNameError}"/>
         </StackPanel>
-        
+
         <!-- Grade Selection -->
         <StackPanel Grid.Row="3" Margin="0,0,0,10">
             <TextBlock Text="Grade *" FontWeight="SemiBold"/>
@@ -102,7 +104,7 @@ public int Age => DateTime.Now.Year - DateOfBirth.Year;
                                    SelectedValuePath="Value"
                                    Watermark="Select grade level"/>
         </StackPanel>
-        
+
         <!-- Date of Birth -->
         <StackPanel Grid.Row="4" Margin="0,0,0,10">
             <TextBlock Text="Date of Birth *" FontWeight="SemiBold"/>
@@ -111,7 +113,7 @@ public int Age => DateTime.Now.Year - DateOfBirth.Year;
                                      Watermark="Select date of birth"
                                      MaxDate="{Binding MaxBirthDate}"/>
         </StackPanel>
-        
+
         <!-- Address -->
         <StackPanel Grid.Row="5" Margin="0,0,0,10">
             <TextBlock Text="Home Address" FontWeight="SemiBold"/>
@@ -122,7 +124,7 @@ public int Age => DateTime.Now.Year - DateOfBirth.Year;
                                   TextWrapping="Wrap"
                                   Height="60"/>
         </StackPanel>
-        
+
         <!-- Emergency Contact -->
         <StackPanel Grid.Row="6" Margin="0,0,0,20">
             <TextBlock Text="Emergency Contact Phone" FontWeight="SemiBold"/>
@@ -132,7 +134,7 @@ public int Age => DateTime.Now.Year - DateOfBirth.Year;
                                         Mask="(000) 000-0000"
                                         Watermark="(555) 123-4567"/>
         </StackPanel>
-        
+
         <!-- Action Buttons -->
         <StackPanel Grid.Row="7" Orientation="Horizontal" HorizontalAlignment="Right">
             <syncfusion:SfButton Content="Cancel"
@@ -149,6 +151,7 @@ public int Age => DateTime.Now.Year - DateOfBirth.Year;
 ```
 
 ### **Student List View with Data Grid**
+
 ```xml
 <!-- Student list with search and filtering -->
 <Grid>
@@ -158,9 +161,9 @@ public int Age => DateTime.Now.Year - DateOfBirth.Year;
         <RowDefinition Height="*"/>
         <RowDefinition Height="Auto"/>
     </Grid.RowDefinitions>
-    
+
     <!-- Search Bar -->
-    <syncfusion:SfTextBox Grid.Row="0" 
+    <syncfusion:SfTextBox Grid.Row="0"
                           Text="{Binding SearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                           Watermark="Search students..."
                           Margin="0,0,0,10">
@@ -168,7 +171,7 @@ public int Age => DateTime.Now.Year - DateOfBirth.Year;
             <Path Data="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
         </syncfusion:SfTextBox.LeadingView>
     </syncfusion:SfTextBox>
-    
+
     <!-- Filter Options -->
     <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,10">
         <TextBlock Text="Filter by Grade:" VerticalAlignment="Center" Margin="0,0,10,0"/>
@@ -178,7 +181,7 @@ public int Age => DateTime.Now.Year - DateOfBirth.Year;
                                SelectedValuePath="Value"
                                Width="120"/>
     </StackPanel>
-    
+
     <!-- Students Data Grid -->
     <syncfusion:SfDataGrid Grid.Row="2"
                            x:Name="StudentsDataGrid"
@@ -190,45 +193,45 @@ public int Age => DateTime.Now.Year - DateOfBirth.Year;
                            AllowFiltering="True"
                            SelectionMode="Single"
                            GridLinesVisibility="Both">
-        
+
         <syncfusion:SfDataGrid.Columns>
-            <syncfusion:GridTextColumn HeaderText="Student ID" 
-                                     MappingName="StudentId" 
+            <syncfusion:GridTextColumn HeaderText="Student ID"
+                                     MappingName="StudentId"
                                      Width="100"/>
-            <syncfusion:GridTextColumn HeaderText="First Name" 
-                                     MappingName="FirstName" 
+            <syncfusion:GridTextColumn HeaderText="First Name"
+                                     MappingName="FirstName"
                                      Width="120"/>
-            <syncfusion:GridTextColumn HeaderText="Last Name" 
-                                     MappingName="LastName" 
+            <syncfusion:GridTextColumn HeaderText="Last Name"
+                                     MappingName="LastName"
                                      Width="120"/>
-            <syncfusion:GridNumericColumn HeaderText="Grade" 
-                                        MappingName="Grade" 
+            <syncfusion:GridNumericColumn HeaderText="Grade"
+                                        MappingName="Grade"
                                         Width="80"/>
-            <syncfusion:GridTextColumn HeaderText="Age" 
-                                     MappingName="Age" 
+            <syncfusion:GridTextColumn HeaderText="Age"
+                                     MappingName="Age"
                                      Width="60"/>
-            <syncfusion:GridTextColumn HeaderText="Address" 
-                                     MappingName="Address" 
+            <syncfusion:GridTextColumn HeaderText="Address"
+                                     MappingName="Address"
                                      Width="200"/>
-            <syncfusion:GridTextColumn HeaderText="Route" 
-                                     MappingName="Route.RouteName" 
+            <syncfusion:GridTextColumn HeaderText="Route"
+                                     MappingName="Route.RouteName"
                                      Width="100"/>
         </syncfusion:SfDataGrid.Columns>
-        
+
         <syncfusion:SfDataGrid.ContextMenuSettings>
             <syncfusion:ContextMenuSettings>
                 <syncfusion:ContextMenuSettings.ContextMenuItems>
-                    <syncfusion:GridContextMenuItemInfo ItemName="Edit Student" 
+                    <syncfusion:GridContextMenuItemInfo ItemName="Edit Student"
                                                        CommandParameter="{Binding SelectedStudent}"/>
-                    <syncfusion:GridContextMenuItemInfo ItemName="Assign Route" 
+                    <syncfusion:GridContextMenuItemInfo ItemName="Assign Route"
                                                        CommandParameter="{Binding SelectedStudent}"/>
-                    <syncfusion:GridContextMenuItemInfo ItemName="View Details" 
+                    <syncfusion:GridContextMenuItemInfo ItemName="View Details"
                                                        CommandParameter="{Binding SelectedStudent}"/>
                 </syncfusion:ContextMenuSettings.ContextMenuItems>
             </syncfusion:ContextMenuSettings>
         </syncfusion:SfDataGrid.ContextMenuSettings>
     </syncfusion:SfDataGrid>
-    
+
     <!-- Action Bar -->
     <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,10,0,0">
         <syncfusion:SfButton Content="Add Student"
@@ -253,6 +256,7 @@ public int Age => DateTime.Now.Year - DateOfBirth.Year;
 ## 🎯 **ViewModel Patterns**
 
 ### **Student Entry ViewModel**
+
 ```csharp
 // BusBuddy.WPF/ViewModels/StudentEntryViewModel.cs
 public class StudentEntryViewModel : BaseViewModel
@@ -266,10 +270,10 @@ public class StudentEntryViewModel : BaseViewModel
     {
         _studentService = studentService;
         _logger = logger;
-        
+
         SaveStudentCommand = new RelayCommand(async () => await SaveStudentAsync(), CanSaveStudent);
         CancelCommand = new RelayCommand(Cancel);
-        
+
         InitializeGrades();
     }
 
@@ -293,17 +297,17 @@ public class StudentEntryViewModel : BaseViewModel
     }
 
     public ObservableCollection<GradeOption> AvailableGrades { get; } = new();
-    
+
     public DateTime MaxBirthDate => DateTime.Today.AddYears(-4); // Minimum age 4
-    
+
     // Validation Properties
     public bool HasFirstNameError => !string.IsNullOrWhiteSpace(FirstNameError);
     public string FirstNameError { get; private set; } = string.Empty;
-    
+
     public bool HasLastNameError => !string.IsNullOrWhiteSpace(LastNameError);
     public string LastNameError { get; private set; } = string.Empty;
-    
-    public bool CanSaveStudent => !HasFirstNameError && !HasLastNameError && 
+
+    public bool CanSaveStudent => !HasFirstNameError && !HasLastNameError &&
                                   !string.IsNullOrWhiteSpace(Student.FirstName) &&
                                   !string.IsNullOrWhiteSpace(Student.LastName) &&
                                   Student.Grade > 0;
@@ -316,16 +320,16 @@ public class StudentEntryViewModel : BaseViewModel
     {
         for (int i = 1; i <= 12; i++)
         {
-            AvailableGrades.Add(new GradeOption 
-            { 
-                Value = i, 
-                DisplayName = $"Grade {i}" 
+            AvailableGrades.Add(new GradeOption
+            {
+                Value = i,
+                DisplayName = $"Grade {i}"
             });
         }
-        AvailableGrades.Add(new GradeOption 
-        { 
-            Value = 0, 
-            DisplayName = "Pre-K" 
+        AvailableGrades.Add(new GradeOption
+        {
+            Value = 0,
+            DisplayName = "Pre-K"
         });
     }
 
@@ -334,7 +338,7 @@ public class StudentEntryViewModel : BaseViewModel
         try
         {
             IsLoading = true;
-            
+
             if (IsEditMode)
             {
                 await _studentService.UpdateStudentAsync(Student);
@@ -343,12 +347,12 @@ public class StudentEntryViewModel : BaseViewModel
             else
             {
                 await _studentService.AddStudentAsync(Student);
-                _logger.LogInformation("Added new student {FirstName} {LastName}", 
+                _logger.LogInformation("Added new student {FirstName} {LastName}",
                     Student.FirstName, Student.LastName);
             }
-            
+
             ShowSuccess($"Student {Student.FullName} saved successfully!");
-            
+
             // Navigate back or reset form
             if (!IsEditMode)
             {
@@ -369,17 +373,17 @@ public class StudentEntryViewModel : BaseViewModel
     private void ValidateStudent()
     {
         // First Name Validation
-        FirstNameError = string.IsNullOrWhiteSpace(Student.FirstName) ? 
-            "First name is required" : 
-            Student.FirstName.Length > 50 ? "First name must be 50 characters or less" : 
+        FirstNameError = string.IsNullOrWhiteSpace(Student.FirstName) ?
+            "First name is required" :
+            Student.FirstName.Length > 50 ? "First name must be 50 characters or less" :
             string.Empty;
-        
+
         // Last Name Validation
-        LastNameError = string.IsNullOrWhiteSpace(Student.LastName) ? 
-            "Last name is required" : 
-            Student.LastName.Length > 50 ? "Last name must be 50 characters or less" : 
+        LastNameError = string.IsNullOrWhiteSpace(Student.LastName) ?
+            "Last name is required" :
+            Student.LastName.Length > 50 ? "Last name must be 50 characters or less" :
             string.Empty;
-        
+
         OnPropertyChanged(nameof(HasFirstNameError));
         OnPropertyChanged(nameof(FirstNameError));
         OnPropertyChanged(nameof(HasLastNameError));
@@ -417,6 +421,7 @@ public class GradeOption
 ## 💾 **Data Service Patterns**
 
 ### **Student Service Implementation**
+
 ```csharp
 // BusBuddy.Core/Services/StudentService.cs
 public interface IStudentService
@@ -447,7 +452,7 @@ public class StudentService : IStudentService
         try
         {
             _logger.LogInformation("Retrieving all students");
-            
+
             return await _context.Students
                 .Include(s => s.Route)
                 .OrderBy(s => s.LastName)
@@ -485,7 +490,7 @@ public class StudentService : IStudentService
         try
         {
             var lowerSearchTerm = searchTerm.ToLower();
-            
+
             return await _context.Students
                 .Include(s => s.Route)
                 .Where(s => s.FirstName.ToLower().Contains(lowerSearchTerm) ||
@@ -516,13 +521,13 @@ public class StudentService : IStudentService
 
             _context.Students.Add(student);
             await _context.SaveChangesAsync();
-            
-            _logger.LogInformation("Added student {StudentId}: {FirstName} {LastName}", 
+
+            _logger.LogInformation("Added student {StudentId}: {FirstName} {LastName}",
                 student.StudentId, student.FirstName, student.LastName);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error adding student {FirstName} {LastName}", 
+            _logger.LogError(ex, "Error adding student {FirstName} {LastName}",
                 student.FirstName, student.LastName);
             throw;
         }
@@ -534,7 +539,7 @@ public class StudentService : IStudentService
         {
             _context.Students.Update(student);
             await _context.SaveChangesAsync();
-            
+
             _logger.LogInformation("Updated student {StudentId}", student.StudentId);
         }
         catch (Exception ex)
@@ -553,7 +558,7 @@ public class StudentService : IStudentService
             {
                 _context.Students.Remove(student);
                 await _context.SaveChangesAsync();
-                
+
                 _logger.LogInformation("Deleted student {StudentId}", studentId);
             }
         }
@@ -579,6 +584,7 @@ public class StudentService : IStudentService
 ## 🎨 **Style Resources**
 
 ### **Button Styles for Student Forms**
+
 ```xml
 <!-- Add to App.xaml or Resource Dictionary -->
 <Style x:Key="PrimaryButtonStyle" TargetType="syncfusion:SfButton">
@@ -618,6 +624,7 @@ public class StudentService : IStudentService
 ## 🧪 **Testing Patterns**
 
 ### **Student Service Unit Tests**
+
 ```csharp
 // BusBuddy.Tests/Core/StudentServiceTests.cs
 [TestFixture]
@@ -634,7 +641,7 @@ public class StudentServiceTests
         var options = new DbContextOptionsBuilder<BusBuddyContext>()
             .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
             .Options;
-        
+
         _context = new BusBuddyContext(options);
         _logger = Substitute.For<ILogger<StudentService>>();
         _studentService = new StudentService(_context, _logger);
@@ -680,7 +687,7 @@ public class StudentServiceTests
             Grade = 3,
             DateOfBirth = DateTime.Today.AddYears(-8)
         };
-        
+
         await _context.Students.AddAsync(existingStudent);
         await _context.SaveChangesAsync();
 
@@ -695,7 +702,7 @@ public class StudentServiceTests
         // Act & Assert
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(
             () => _studentService.AddStudentAsync(duplicateStudent));
-        
+
         Assert.That(ex.Message, Does.Contain("already exists"));
     }
 
@@ -733,6 +740,7 @@ public class StudentServiceTests
 ## 📚 **Quick Reference Commands**
 
 ### **Create New Student Entry Feature**
+
 ```powershell
 # Generate student entry scaffolding
 bb-copilot-ref Student-Entry-Examples  # Load this reference
@@ -744,6 +752,7 @@ bb-test-watch -TestSuite Unit         # Continuous testing
 ```
 
 ### **Common Syncfusion Student Form Controls**
+
 - **SfTextBox**: Basic text input with validation
 - **SfComboBox**: Grade selection dropdown
 - **SfDatePicker**: Date of birth selection
@@ -752,6 +761,7 @@ bb-test-watch -TestSuite Unit         # Continuous testing
 - **SfButton**: Form actions (Save, Cancel, Delete)
 
 ### **Entity Framework Patterns**
+
 - **Include()**: Load related data (Routes, Notes)
 - **Where()**: Filter students by criteria
 - **OrderBy()**: Sort student lists

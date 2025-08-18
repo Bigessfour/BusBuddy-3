@@ -11,11 +11,14 @@ This document details PowerShell 7.5 features and how the Bus Buddy PowerShell m
 ### 🚀 Performance Improvements
 
 #### Array `+=` Operator Optimization
+
 **PowerShell 7.5 Feature**: Significant performance improvement for array `+=` operations
+
 - **Before 7.5**: 2606x slower than direct assignment for 10k elements
 - **After 7.5**: 59x slower than direct assignment (44x improvement!)
 
 **Bus Buddy Usage**:
+
 ```powershell
 # Our module uses optimized array operations for collecting build outputs
 $buildErrors = @()
@@ -27,9 +30,11 @@ foreach ($project in $projects) {
 ### 🔧 New Cmdlets
 
 #### `ConvertTo-CliXml` and `ConvertFrom-CliXml`
+
 **PowerShell 7.5 Feature**: New cmdlets for CLI XML serialization
 
 **Bus Buddy Integration**:
+
 ```powershell
 # Export build results for analysis
 function Export-BusBuddyBuildReport {
@@ -43,12 +48,15 @@ function Export-BusBuddyBuildReport {
 ### 📊 JSON Improvements
 
 #### Enhanced `ConvertTo-Json` and `ConvertFrom-Json`
+
 **PowerShell 7.5 Features**:
+
 - `BigInteger` serialization as numbers
 - `DateKind` parameter for date handling
 - `IgnoreComments` and `AllowTrailingCommas` for `Test-Json`
 
 **Bus Buddy Usage**:
+
 ```powershell
 # Enhanced configuration file validation
 function Test-BusBuddyConfiguration {
@@ -70,13 +78,16 @@ function Test-BusBuddyConfiguration {
 ### 🎯 Tab Completion Enhancements
 
 #### Improved Type Inference and Completion
+
 **PowerShell 7.5 Features**:
+
 - Better hashtable key-value completion
 - Improved `$_` type inference
 - Windows `~` expansion to `$HOME`
 - Enhanced argument completers
 
 **Bus Buddy Benefits**:
+
 - Better tab completion for our module functions
 - Improved parameter completion for `-Configuration`, `-Verbosity`, etc.
 - Enhanced path completion for project files
@@ -84,12 +95,15 @@ function Test-BusBuddyConfiguration {
 ### 🔍 Error Handling Improvements
 
 #### Enhanced Error Reporting
+
 **PowerShell 7.5 Features**:
+
 - `RecommendedAction` in error output
 - Better ANSI color support for errors
 - Improved error serialization
 
 **Bus Buddy Implementation**:
+
 ```powershell
 function Write-BusBuddyError {
     param(
@@ -116,12 +130,15 @@ function Write-BusBuddyError {
 ### 🌐 Web Cmdlet Improvements
 
 #### Enhanced `Invoke-WebRequest` and `Invoke-RestMethod`
+
 **PowerShell 7.5 Features**:
+
 - `-PassThru` and `-OutFile` work together
 - Better filename reporting with `-Verbose`
 - Improved resume functionality
 
 **Bus Buddy Potential Usage**:
+
 ```powershell
 # Download NuGet packages or dependencies with better progress reporting
 function Get-BusBuddyDependencies {
@@ -134,12 +151,15 @@ function Get-BusBuddyDependencies {
 ### ⚡ Engine Improvements
 
 #### .NET Method Invocation Optimization
+
 **PowerShell 7.5 Features**:
+
 - Optimized .NET method invocation logging
 - Better generic method overload definitions
 - Improved type conversion performance
 
 **Bus Buddy Benefits**:
+
 - Faster .NET interop for build processes
 - Better performance when calling MSBuild APIs
 - Improved Entity Framework operations
@@ -147,21 +167,27 @@ function Get-BusBuddyDependencies {
 ## 🎯 Experimental Features Available
 
 ### PSRedirectToVariable
+
 Allow redirecting command output to variables:
+
 ```powershell
 # Future Bus Buddy enhancement possibility
 dotnet build 2>&1 | Set-Variable buildOutput
 ```
 
 ### PSNativeWindowsTildeExpansion
+
 Tilde expansion for Windows native executables:
+
 ```powershell
 # Enhanced path handling in Bus Buddy
 notepad ~/Documents/bus-buddy-config.json
 ```
 
 ### PSSerializeJSONLongEnumAsNumber
+
 Better enum serialization in JSON:
+
 ```powershell
 # Improved configuration serialization
 $config | ConvertTo-Json -Depth 10  # Enums as numbers, not strings
@@ -225,14 +251,16 @@ function Invoke-BusBuddyBuild {
 ## 📈 Performance Benchmarks
 
 ### Array Operations Improvement
+
 Based on Microsoft's benchmarks, our module benefits from:
 
-| Operation | PS 7.4 Performance | PS 7.5 Performance | Improvement |
-|-----------|-------------------|-------------------|-------------|
-| Small Arrays (5k) | 82x slower than direct | 8.5x slower than direct | **90% improvement** |
-| Large Arrays (10k) | 2606x slower than direct | 59x slower than direct | **98% improvement** |
+| Operation          | PS 7.4 Performance       | PS 7.5 Performance      | Improvement         |
+| ------------------ | ------------------------ | ----------------------- | ------------------- |
+| Small Arrays (5k)  | 82x slower than direct   | 8.5x slower than direct | **90% improvement** |
+| Large Arrays (10k) | 2606x slower than direct | 59x slower than direct  | **98% improvement** |
 
 ### Real-World Bus Buddy Impact
+
 - **Build Output Collection**: 90% faster when gathering compilation errors
 - **Dependency Processing**: Significantly faster package validation
 - **Configuration Loading**: Enhanced JSON parsing with comments support
@@ -240,11 +268,13 @@ Based on Microsoft's benchmarks, our module benefits from:
 ## 🛠 Development Environment Requirements
 
 ### Minimum Requirements
+
 - **PowerShell 7.5+** (Required for performance and feature benefits)
 - **.NET 9.0+** (Underlying runtime for PowerShell 7.5)
 - **Windows PowerShell ISE/VS Code** (Enhanced tab completion support)
 
 ### Verification Script
+
 ```powershell
 # Verify PowerShell 7.5 features are available
 function Test-PowerShell75Features {
@@ -281,15 +311,18 @@ function Test-PowerShell75Features {
 ## 📚 Additional Resources
 
 ### Official Documentation
+
 - [PowerShell 7.5 Release Notes](https://github.com/PowerShell/PowerShell/blob/master/CHANGELOG/7.5.md)
 - [.NET 9 What's New](https://learn.microsoft.com/en-us/dotnet/core/whats-new/dotnet-9/overview)
 - [PowerShell Experimental Features](https://learn.microsoft.com/en-us/powershell/scripting/learn/experimental-features?view=powershell-7.5)
 
 ### Performance Resources
+
 - [PowerShell Performance Best Practices](https://learn.microsoft.com/en-us/powershell/scripting/dev-cross-plat/performance/performance-best-practices)
 - [.NET 9 Performance Improvements](https://devblogs.microsoft.com/dotnet/performance-improvements-in-net-9/)
 
 ### Community Resources
+
 - [PowerShell GitHub Repository](https://github.com/PowerShell/PowerShell)
 - [PowerShell Community](https://github.com/PowerShell/PowerShell/discussions)
 

@@ -8,17 +8,19 @@
 ## 🌟 **GitKraken Cloud vs Desktop CLI Differences**
 
 ### **What You Have: GitKraken Cloud** ☁️
+
 - **AI-powered features** built into the CLI
 - **Cloud-synchronized workspaces** and organizations
 - **MCP (Model Context Protocol)** for VS Code integration
 - **Premium developer experience** with cloud analytics
 
 ### **Key Command Differences**
+
 ```powershell
 # ❌ WRONG (Desktop CLI pattern)
 gk --version                    # Returns git version (incorrect)
 
-# ✅ CORRECT (Cloud CLI pattern)  
+# ✅ CORRECT (Cloud CLI pattern)
 gk version                      # Returns: Core: 3.1.8, CLI: 3.1.9
 gk --help                       # Shows GitKraken Cloud features
 gk ai --help                    # AI-powered Git assistance
@@ -29,6 +31,7 @@ gk workspace list               # Cloud workspace sync
 ## 🚀 **BusBuddy Cloud Integration Setup**
 
 ### **Step 1: Authentication** 🔐
+
 ```powershell
 # Login to GitKraken Cloud
 gk auth login
@@ -40,6 +43,7 @@ gk organization list
 ```
 
 ### **Step 2: Organization Setup** 🏢
+
 ```powershell
 # Create BusBuddy organization (enables AI features)
 gk organization create BusBuddyOrg
@@ -53,6 +57,7 @@ gk ai --help
 ```
 
 ### **Step 3: Workspace Configuration** 📁
+
 ```powershell
 # Create BusBuddy workspace
 gk workspace create BusBuddy-Development
@@ -67,6 +72,7 @@ gk workspace list
 ## 🤖 **AI Features for BusBuddy Development**
 
 ### **AI-Powered Commit Messages**
+
 ```powershell
 # Analyze changes and generate commit message
 gk ai commit
@@ -77,6 +83,7 @@ gk ai commit
 ```
 
 ### **AI Code Explanations**
+
 ```powershell
 # Explain complex changes
 gk ai explain
@@ -86,6 +93,7 @@ gk ai explain
 ```
 
 ### **AI Repository Analysis**
+
 ```powershell
 # Get repository insights
 gk ai analyze-repo
@@ -99,6 +107,7 @@ gk ai analyze-repo
 ## 🔄 **CI/CD Workflow Integration**
 
 ### **Getting CI Results with GitKraken Cloud**
+
 ```powershell
 # View work items (includes CI status)
 gk work list
@@ -110,7 +119,8 @@ gk issue list
 gk graph --oneline --limit 10
 ```
 
-### **Enhanced bb* Commands**
+### **Enhanced bb\* Commands**
+
 Update BusBuddy commands to use GitKraken Cloud:
 
 ```powershell
@@ -129,7 +139,7 @@ function bbGkCI {
 
 function bbGkAI {
     param([string]$Command = "help")
-    
+
     switch ($Command) {
         "commit" { gk ai commit }
         "explain" { gk ai explain }
@@ -142,6 +152,7 @@ function bbGkAI {
 ## 🧩 **MCP Integration with VS Code**
 
 ### **Model Context Protocol Setup**
+
 ```powershell
 # Start MCP server for VS Code
 gk mcp start
@@ -153,7 +164,9 @@ gk mcp start
 ```
 
 ### **VS Code Configuration**
+
 Add to VS Code `settings.json`:
+
 ```json
 {
   "gitkraken.mcp.enabled": true,
@@ -166,11 +179,13 @@ Add to VS Code `settings.json`:
 ## 📊 **Monitoring and Analytics**
 
 ### **Cloud Dashboard Access**
+
 - **URL**: https://app.gitkraken.com
 - **Features**: Repository analytics, team velocity, AI usage stats
 - **BusBuddy Metrics**: Track Syncfusion compliance, test coverage trends
 
 ### **PowerShell Integration**
+
 ```powershell
 # Add to Microsoft.PowerShell_profile.ps1
 function Show-GitKrakenCloudDashboard {
@@ -184,11 +199,13 @@ Set-Alias -Name "bbGkDashboard" -Value "Show-GitKrakenCloudDashboard"
 ## 🛠️ **Troubleshooting Common Issues**
 
 ### **"gk --version shows git version"**
+
 - ✅ **Expected Behavior**: GitKraken Cloud CLI doesn't use `--version`
 - ✅ **Correct Command**: Use `gk version` instead
 - ✅ **Verification**: `gk --help` should show GitKraken features
 
 ### **Authentication Issues**
+
 ```powershell
 # Clear auth and re-login
 gk auth logout
@@ -199,6 +216,7 @@ gk organization list
 ```
 
 ### **AI Features Not Available**
+
 ```powershell
 # Check organization setup
 gk organization list
@@ -211,11 +229,12 @@ gk ai --help
 ## 🎯 **BusBuddy-Specific Workflows**
 
 ### **Daily Development Routine**
+
 ```powershell
 # 1. Check GitKraken Cloud status
 bbGkStatus
 
-# 2. Get AI-powered development insights  
+# 2. Get AI-powered development insights
 gk ai analyze-repo
 
 # 3. Work on features with AI assistance
@@ -226,6 +245,7 @@ bbGkDashboard
 ```
 
 ### **Phase 2 Module Development**
+
 ```powershell
 # Student Management Module workflow
 gk workspace set BusBuddy-Development
@@ -238,6 +258,7 @@ gk ai explain --context="Syncfusion WPF integration"
 ## 📈 **Success Metrics**
 
 ### **Cloud Integration KPIs**
+
 - ✅ **Authentication**: GitKraken Cloud login successful
 - ✅ **Organization**: BusBuddyOrg configured with AI access
 - ✅ **Workspace**: BusBuddy-Development workspace active
@@ -245,6 +266,7 @@ gk ai explain --context="Syncfusion WPF integration"
 - ✅ **MCP Integration**: VS Code GitKraken context enabled
 
 ### **Next Steps**
+
 1. **Complete Authentication**: `gk auth login`
 2. **Set Up Organization**: `gk organization create BusBuddyOrg`
 3. **Configure Workspace**: `gk workspace create BusBuddy-Development`

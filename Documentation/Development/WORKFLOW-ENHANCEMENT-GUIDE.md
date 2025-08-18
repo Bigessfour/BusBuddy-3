@@ -32,18 +32,21 @@ gh run view <run-id> --log-failed
 ### 3. **🛠️ Workflow Jobs Breakdown**
 
 #### **Build & Test Jobs:**
+
 - ✅ .NET Solution Compilation
 - ✅ Unit Test Execution
 - ✅ Test Result Reporting (.trx files)
 - ✅ Build Artifact Generation
 
 #### **Standards Validation Jobs:**
+
 - ✅ JSON File Validation
 - ✅ PowerShell Script Analysis
 - ✅ Code Quality Checks
 - ✅ Dependency Analysis
 
 #### **Security & Health Jobs:**
+
 - ✅ Vulnerability Scanning
 - ✅ Secret Detection (GitGuardian)
 - ✅ Repository Health Assessment
@@ -82,4 +85,4 @@ gh run view <run-id> --job="Build & Test"
 
 ---
 
-*This guide shows advanced workflow monitoring and debugging capabilities.*
+_This guide shows advanced workflow monitoring and debugging capabilities._

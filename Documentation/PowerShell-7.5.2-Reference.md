@@ -18,6 +18,7 @@
 ## Threading and Parallel Processing
 
 ### ForEach-Object -Parallel Enhancements
+
 - **Improved thread management** with better resource cleanup
 - **Enhanced throttling** with `-ThrottleLimit` parameter
 - **Better error propagation** from parallel threads
@@ -45,6 +46,7 @@ $results = $items | ForEach-Object -Parallel {
 ```
 
 ### Start-ThreadJob Improvements
+
 - **Better job lifecycle management**
 - **Enhanced output capture**
 - **Improved cleanup mechanisms**
@@ -68,6 +70,7 @@ $jobs | Remove-Job
 ## Error Handling Enhancements
 
 ### Structured Error Information
+
 - **$ErrorActionPreference** improvements
 - **Better exception details** in parallel contexts
 - **Enhanced error propagation**
@@ -87,6 +90,7 @@ try {
 ```
 
 ### Improved $LASTEXITCODE Handling
+
 - **More reliable exit code capture**
 - **Better integration with external processes**
 
@@ -95,11 +99,13 @@ try {
 ## Performance Improvements
 
 ### Memory Management
+
 - **Reduced memory allocation** in loops
 - **Better garbage collection** integration
 - **Optimized string operations**
 
 ### Execution Speed
+
 - **Faster cmdlet resolution**
 - **Improved pipeline performance**
 - **Enhanced tab completion**
@@ -115,11 +121,13 @@ $stringBuilder = [System.Text.StringBuilder]::new()  # For string concatenation
 ## New Cmdlets and Parameters
 
 ### Enhanced Test Commands
+
 - `Test-Path` improvements
 - Better file system operations
 - Cross-platform compatibility
 
 ### Improved Get-CimInstance
+
 - **Better hardware detection**
 - **Enhanced error handling**
 - **Cross-platform support**
@@ -138,11 +146,13 @@ if ($systemInfo) {
 ## Cross-Platform Features
 
 ### Path Handling
+
 - **Join-Path** enhancements
 - **Resolve-Path** improvements
 - **Cross-platform compatibility**
 
 ### Process Management
+
 - **Start-Process** improvements
 - **Better process monitoring**
 - **Enhanced output capture**
@@ -152,6 +162,7 @@ if ($systemInfo) {
 ## BusBuddy Implementation Examples
 
 ### Phase 2 Module Integration
+
 ```powershell
 # Version check for optimal features
 $script:PowerShellVersion = $PSVersionTable.PSVersion
@@ -167,6 +178,7 @@ if ($script:IsOptimalEnvironment) {
 ```
 
 ### Hardware-Optimized Threading
+
 ```powershell
 # Dell laptop optimization pattern
 $processorInfo = Get-CimInstance -Class Win32_Processor -ErrorAction SilentlyContinue
@@ -177,6 +189,7 @@ if ($processorInfo) {
 ```
 
 ### Parallel Build System
+
 ```powershell
 # Thread job pattern for build system
 $buildJobs = @()
@@ -209,25 +222,33 @@ $buildJobs | Remove-Job
 ## Implementation Guidelines
 
 ### 1. Version Detection
+
 Always check PowerShell version before using advanced features:
+
 ```powershell
 $script:IsOptimalEnvironment = $PSVersionTable.PSVersion -ge [version]"7.5.0"
 ```
 
 ### 2. Error Handling Strategy
+
 Use `Continue` preference for parallel operations:
+
 ```powershell
 $ErrorActionPreference = "Continue"
 ```
 
 ### 3. Resource Management
+
 Always clean up thread jobs:
+
 ```powershell
 $jobs | Remove-Job  # Essential for memory management
 ```
 
 ### 4. Hardware Optimization
+
 Detect and optimize for specific hardware:
+
 ```powershell
 $isDellSystem = (Get-CimInstance Win32_ComputerSystem).Manufacturer -like "*Dell*"
 ```
@@ -252,6 +273,7 @@ $isDellSystem = (Get-CimInstance Win32_ComputerSystem).Manufacturer -like "*Dell
 ### Recommended PDF to Markdown Conversion Workflow
 
 #### Method 1: GPT-4o Vision API (High Quality)
+
 ```python
 # Base64 encode PDF and send to GPT-4o
 import base64
@@ -275,6 +297,7 @@ def convert_pdf_to_markdown(pdf_path):
 ```
 
 #### Method 2: Ghostscript + PyTesseract (Cost-Effective)
+
 ```bash
 # Convert PDF to TIFF images
 ghostscript -dNOPAUSE -dBATCH -sDEVICE=tiff24nc -r300 -sOutputFile=page_%03d.tiff input.pdf
@@ -288,6 +311,7 @@ done
 ```
 
 #### Method 3: PowerShell Automation Script
+
 ```powershell
 # PowerShell script for automated PDF processing
 function Convert-PDFToMarkdown {

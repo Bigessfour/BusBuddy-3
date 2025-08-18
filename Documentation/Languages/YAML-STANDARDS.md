@@ -1,6 +1,7 @@
 # 🌊 YAML Standards for BusBuddy
 
 ## **Official YAML Standards**
+
 - **Core Specification**: [YAML 1.2.2 Specification](https://yaml.org/spec/1.2.2/)
 - **Official Website**: [YAML.org](https://yaml.org/)
 - **GitHub Actions Schema**: [GitHub Actions Workflow Syntax](https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions)
@@ -8,10 +9,12 @@
 ## **YAML Usage in BusBuddy**
 
 ### **CI/CD Configuration**
+
 - `.github/workflows/build-and-test.yml` - GitHub Actions workflow
 - `.github/workflows/*.yml` - Additional workflow files
 
 ### **Configuration Files**
+
 - `codecov.yml` - Code coverage configuration
 - `docker-compose.yml` - Docker orchestration (if used)
 
@@ -20,9 +23,10 @@
 ### ✅ **Required YAML Standards**
 
 #### **1. Basic Syntax (YAML 1.2)**
+
 ```yaml
 # Comments start with hash symbol
----  # Document start marker (optional but recommended)
+--- # Document start marker (optional but recommended)
 
 # Scalars (strings, numbers, booleans)
 string_value: "Hello World"
@@ -53,11 +57,11 @@ multiline_folded: >
   This is a folded string
   that converts line breaks
   to spaces
-
-...  # Document end marker (optional)
+... # Document end marker (optional)
 ```
 
 #### **2. Indentation Standards**
+
 - **Use 2 spaces** for indentation (consistent with GitHub Actions)
 - **No tabs** - only spaces
 - **Consistent nesting** - maintain alignment
@@ -80,10 +84,11 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '8.0.x'
+          dotnet-version: "8.0.x"
 ```
 
 #### **3. Naming Conventions**
+
 - **Keys**: Use `snake_case` or `kebab-case` consistently
 - **Environment Variables**: Use `UPPER_SNAKE_CASE`
 - **GitHub Actions**: Follow GitHub naming conventions
@@ -91,6 +96,7 @@ jobs:
 ### ✅ **GitHub Actions-Specific Standards**
 
 #### **1. Workflow Structure**
+
 ```yaml
 name: 🚌 Bus Buddy CI/CD Pipeline
 
@@ -99,23 +105,23 @@ on:
   push:
     branches: [main, master]
     paths:
-      - 'src/**'
-      - 'tests/**'
-      - '.github/workflows/**'
+      - "src/**"
+      - "tests/**"
+      - ".github/workflows/**"
   pull_request:
     branches: [main, master]
   workflow_dispatch:
     inputs:
       debug_enabled:
         type: boolean
-        description: 'Enable debug mode'
+        description: "Enable debug mode"
         default: false
 
 # Environment variables
 env:
-  DOTNET_VERSION: '8.0.x'
-  BUILD_CONFIGURATION: 'Release'
-  SOLUTION_FILE: 'BusBuddy.sln'
+  DOTNET_VERSION: "8.0.x"
+  BUILD_CONFIGURATION: "Release"
+  SOLUTION_FILE: "BusBuddy.sln"
 
 # Job definitions
 jobs:
@@ -127,7 +133,7 @@ jobs:
       - name: 📥 Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Full history for proper versioning
+          fetch-depth: 0 # Full history for proper versioning
 
       - name: 🏗️ Setup .NET
         uses: actions/setup-dotnet@v4
@@ -146,6 +152,7 @@ jobs:
 ```
 
 #### **2. Job Organization**
+
 ```yaml
 jobs:
   # Build job
@@ -176,6 +183,7 @@ jobs:
 ```
 
 #### **3. Secrets and Variables**
+
 ```yaml
 # Using repository secrets
 env:
@@ -202,6 +210,7 @@ inputs:
 ### ✅ **Configuration File Standards**
 
 #### **1. CodeCov Configuration**
+
 ```yaml
 # Codecov configuration for Bus Buddy WPF project
 # Documentation: https://docs.codecov.com/docs/codecov-yaml
@@ -247,6 +256,7 @@ comment:
 ### ✅ **Security Standards**
 
 #### **1. Secrets Management**
+
 ```yaml
 # ❌ DON'T: Hardcode secrets
 env:
@@ -262,6 +272,7 @@ env:
 ```
 
 #### **2. Permission Configuration**
+
 ```yaml
 # Set minimal required permissions
 permissions:
@@ -279,6 +290,7 @@ permissions:
 ### ✅ **Performance Standards**
 
 #### **1. Caching Strategy**
+
 ```yaml
 - name: 📦 Cache NuGet packages
   uses: actions/cache@v4
@@ -302,14 +314,15 @@ permissions:
 ```
 
 #### **2. Matrix Builds**
+
 ```yaml
 strategy:
   matrix:
     os: [windows-latest, ubuntu-latest]
-    dotnet-version: ['8.0.x']
-    configuration: ['Debug', 'Release']
-  fail-fast: false  # Continue other jobs if one fails
-  max-parallel: 4   # Limit concurrent jobs
+    dotnet-version: ["8.0.x"]
+    configuration: ["Debug", "Release"]
+  fail-fast: false # Continue other jobs if one fails
+  max-parallel: 4 # Limit concurrent jobs
 
 runs-on: ${{ matrix.os }}
 ```
@@ -317,6 +330,7 @@ runs-on: ${{ matrix.os }}
 ## **BusBuddy-Specific YAML Patterns**
 
 ### **Complete Workflow Template**
+
 ```yaml
 name: 🚌 Bus Buddy Comprehensive Pipeline
 
@@ -328,8 +342,8 @@ on:
   workflow_dispatch:
 
 env:
-  DOTNET_VERSION: '8.0.x'
-  SOLUTION_FILE: 'BusBuddy.sln'
+  DOTNET_VERSION: "8.0.x"
+  SOLUTION_FILE: "BusBuddy.sln"
 
 jobs:
   validate:
@@ -383,6 +397,7 @@ try {
 ## **Common Pitfalls and Solutions**
 
 ### ❌ **Common Mistakes**
+
 ```yaml
 # DON'T: Inconsistent indentation
 name: Bad Example
@@ -401,6 +416,7 @@ env:
 ```
 
 ### ✅ **Correct Patterns**
+
 ```yaml
 # DO: Consistent indentation
 name: Good Example
@@ -412,7 +428,7 @@ jobs:
         run: echo "Hello"
 
 # DO: Quote version numbers
-dotnet-version: '8.0'
+dotnet-version: "8.0"
 
 # DO: Use secrets properly
 env:
@@ -422,22 +438,26 @@ env:
 ## **Tools and Extensions**
 
 ### **VS Code Extensions**
+
 - **YAML Language Support**: Built-in YAML support
 - **GitHub Actions**: GitHub Actions workflow IntelliSense
 - **YAML Schema Validator**: Schema validation
 
 ### **Command Line Tools**
+
 - **yamllint**: YAML linting tool
 - **yq**: YAML processor and validator
 - **actionlint**: GitHub Actions workflow linter
 
 ## **References**
+
 - **YAML 1.2.2**: [Official YAML Specification](https://yaml.org/spec/1.2.2/)
 - **GitHub Actions**: [Workflow Syntax](https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions)
 - **CodeCov YAML**: [CodeCov Configuration](https://docs.codecov.com/docs/codecov-yaml)
 - **YAML Security**: [YAML Security Best Practices](https://blog.gitguardian.com/security-yaml-files/)
 
 ---
+
 **Last Updated**: July 25, 2025
 **YAML Version**: 1.2.2
 **GitHub Actions**: Latest Schema

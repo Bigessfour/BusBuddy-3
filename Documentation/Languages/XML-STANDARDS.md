@@ -1,6 +1,7 @@
 # 🏗️ XML Standards for BusBuddy
 
 ## **Official XML Standards**
+
 - **Core Specification**: [W3C XML 1.0 (Fifth Edition)](https://www.w3.org/TR/xml/)
 - **Schema Specification**: [W3C XML Schema 1.1](https://www.w3.org/TR/xmlschema11-1/)
 - **Namespaces**: [W3C XML Namespaces 1.0](https://www.w3.org/TR/xml-names/)
@@ -9,16 +10,19 @@
 ## **XML Usage in BusBuddy**
 
 ### **MSBuild Files**
+
 - `*.csproj` - Project files
 - `Directory.Build.props` - Global build properties
 - `*.targets` - Build target definitions
 - `*.ruleset` - Code analysis rules
 
 ### **Configuration Files**
+
 - `app.config` - Application configuration
 - `testsettings.runsettings.xml` - Test execution settings
 
 ### **Resource Files**
+
 - `*.resx` - Localization resources (if used)
 
 ## **XML Standards Enforcement**
@@ -26,6 +30,7 @@
 ### ✅ **Required XML Standards**
 
 #### **1. Basic Syntax (W3C XML 1.0)**
+
 ```xml
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Comments use double-dash syntax -->
@@ -37,6 +42,7 @@
 ```
 
 #### **2. MSBuild Project Standards**
+
 ```xml
 <Project Sdk="Microsoft.NET.Sdk">
 
@@ -56,12 +62,14 @@
 ```
 
 #### **3. Naming Conventions**
+
 - **Elements**: Use `PascalCase` for element names
 - **Attributes**: Use `camelCase` for attribute names (MSBuild exception: PascalCase)
 - **Properties**: Use descriptive, hierarchical names
 - **Namespaces**: Use meaningful namespace prefixes
 
 #### **4. Indentation and Formatting**
+
 ```xml
 <Project>
   <PropertyGroup>
@@ -77,6 +85,7 @@
 ```
 
 #### **5. XML Comments**
+
 ```xml
 <!-- 🚌 BusBuddy Core Configuration -->
 <!-- This section defines the core project properties -->
@@ -89,6 +98,7 @@
 ### ✅ **MSBuild-Specific Standards**
 
 #### **1. Property Organization**
+
 ```xml
 <Project Sdk="Microsoft.NET.Sdk">
 
@@ -115,6 +125,7 @@
 ```
 
 #### **2. Package Reference Standards**
+
 ```xml
 <ItemGroup Label="Core Framework">
   <!-- Use version variables for consistency -->
@@ -130,6 +141,7 @@
 ```
 
 #### **3. Conditional Properties**
+
 ```xml
 <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
   <DefineConstants>DEBUG;TRACE</DefineConstants>
@@ -146,6 +158,7 @@
 ### ✅ **Configuration File Standards**
 
 #### **1. App.config Structure**
+
 ```xml
 <?xml version="1.0" encoding="utf-8"?>
 <configuration>
@@ -165,6 +178,7 @@
 ```
 
 #### **2. Test Configuration**
+
 ```xml
 <?xml version="1.0" encoding="utf-8"?>
 <RunSettings>
@@ -198,16 +212,19 @@
 ### ✅ **Security and Performance Standards**
 
 #### **1. Security Considerations**
+
 - **No Hardcoded Secrets**: Use environment variables or secure configuration
 - **Input Validation**: Validate all XML input using XSD schemas
 - **Entity Resolution**: Disable external entity resolution to prevent XXE attacks
 
 #### **2. Performance Guidelines**
+
 - **File Size**: Keep project files under 500KB
 - **Conditional Logic**: Minimize complex conditions in MSBuild files
 - **Import Optimization**: Use targeted imports, avoid wildcards
 
 #### **3. Schema Validation**
+
 ```xml
 <!-- Always declare encoding -->
 <?xml version="1.0" encoding="utf-8"?>
@@ -221,6 +238,7 @@
 ## **BusBuddy-Specific XML Patterns**
 
 ### **Project Structure Template**
+
 ```xml
 <Project Sdk="Microsoft.NET.Sdk">
 
@@ -273,11 +291,13 @@ $xml.Validate($null)
 ## **Tools and Extensions**
 
 ### **VS Code Extensions**
+
 - **XML Language Support**: Built-in XML support
 - **MSBuild Project Tools**: MSBuild IntelliSense
 - **XML Tools**: XML formatting and validation
 
 ### **.NET Tools**
+
 - **System.Xml**: Built-in XML processing
 - **XDocument/XElement**: LINQ to XML
 - **MSBuild API**: Programmatic MSBuild file manipulation
@@ -285,6 +305,7 @@ $xml.Validate($null)
 ## **Common Pitfalls and Solutions**
 
 ### ❌ **Common Mistakes**
+
 ```xml
 <!-- DON'T: Inconsistent casing -->
 <packageReference include="Library" version="1.0.0" />
@@ -301,6 +322,7 @@ $xml.Validate($null)
 ```
 
 ### ✅ **Correct Patterns**
+
 ```xml
 <!-- DO: Consistent PascalCase for MSBuild -->
 <PackageReference Include="Library" Version="1.0.0" />
@@ -317,12 +339,14 @@ $xml.Validate($null)
 ```
 
 ## **References**
+
 - **W3C XML 1.0**: [XML Core Specification](https://www.w3.org/TR/xml/)
 - **XML Schema**: [W3C XML Schema](https://www.w3.org/TR/xmlschema11-1/)
 - **MSBuild Reference**: [Microsoft MSBuild Documentation](https://learn.microsoft.com/en-us/visualstudio/msbuild/)
 - **XML Security**: [OWASP XML Security](https://cheatsheetseries.owasp.org/cheatsheets/XML_Security_Cheat_Sheet.html)
 
 ---
+
 **Last Updated**: July 25, 2025
 **XML Version**: 1.0 (Fifth Edition)
 **MSBuild Version**: 17.11.31

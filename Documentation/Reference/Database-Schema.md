@@ -9,6 +9,7 @@
 ## 🏗️ **Core Entity Models**
 
 ### **Student Entity**
+
 ```csharp
 // BusBuddy.Core/Models/Student.cs
 using System.ComponentModel.DataAnnotations;
@@ -19,62 +20,62 @@ public class Student
 {
     [Key]
     public int StudentId { get; set; }
-    
+
     [Required]
     [MaxLength(50)]
     public string FirstName { get; set; } = string.Empty;
-    
+
     [Required]
     [MaxLength(50)]
     public string LastName { get; set; } = string.Empty;
-    
+
     [Required]
     [Range(0, 12)]
     public int Grade { get; set; }
-    
+
     [Required]
     public DateTime DateOfBirth { get; set; }
-    
+
     [MaxLength(200)]
     public string Address { get; set; } = string.Empty;
-    
+
     [MaxLength(100)]
     public string City { get; set; } = string.Empty;
-    
+
     [MaxLength(10)]
     public string ZipCode { get; set; } = string.Empty;
-    
+
     [Phone]
     [MaxLength(20)]
     public string? EmergencyContact { get; set; }
-    
+
     [MaxLength(100)]
     public string? EmergencyContactName { get; set; }
-    
+
     [MaxLength(50)]
     public string? MedicalNotes { get; set; }
-    
+
     public bool IsActive { get; set; } = true;
-    
+
     public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
     public DateTime? ModifiedDate { get; set; }
-    
+
     // Navigation Properties
     [ForeignKey("Route")]
     public int? RouteId { get; set; }
     public virtual Route? Route { get; set; }
-    
+
     public virtual ICollection<StudentNote> Notes { get; set; } = new List<StudentNote>();
     public virtual ICollection<AttendanceRecord> AttendanceRecords { get; set; } = new List<AttendanceRecord>();
-    
+
     // Computed Properties
     [NotMapped]
     public string FullName => $"{FirstName} {LastName}";
-    
+
     [NotMapped]
-    public int Age => DateTime.Today.Year - DateOfBirth.Year - 
+    public int Age => DateTime.Today.Year - DateOfBirth.Year -
                      (DateTime.Today.DayOfYear < DateOfBirth.DayOfYear ? 1 : 0);
-    
+
     [NotMapped]
     public string GradeDisplay => Grade switch
     {
@@ -86,6 +87,7 @@ public class Student
 ```
 
 ### **Route Entity**
+
 ```csharp
 // BusBuddy.Core/Models/Route.cs
 [Table("Routes")]
@@ -93,61 +95,62 @@ public class Route
 {
     [Key]
     public int RouteId { get; set; }
-    
+
     [Required]
     [MaxLength(50)]
     public string RouteName { get; set; } = string.Empty;
-    
+
     [MaxLength(200)]
     public string Description { get; set; } = string.Empty;
-    
+
     [Required]
     public TimeSpan StartTime { get; set; }
-    
+
     [Required]
     public TimeSpan EndTime { get; set; }
-    
+
     [Column(TypeName = "decimal(8,2)")]
     public decimal EstimatedDistance { get; set; } // in miles
-    
+
     public int EstimatedDuration { get; set; } // in minutes
-    
+
     public bool IsActive { get; set; } = true;
-    
+
     public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
     public DateTime? ModifiedDate { get; set; }
-    
+
     // Navigation Properties
     [ForeignKey("Bus")]
     public int BusId { get; set; }
     [Required]
     public virtual Bus Bus { get; set; } = null!;
-    
+
     [ForeignKey("Driver")]
     public int DriverId { get; set; }
     [Required]
     public virtual Driver Driver { get; set; } = null!;
-    
+
     public virtual ICollection<Student> Students { get; set; } = new List<Student>();
     public virtual ICollection<RouteStop> Stops { get; set; } = new List<RouteStop>();
     public virtual ICollection<RouteSchedule> Schedules { get; set; } = new List<RouteSchedule>();
-    
+
     // Computed Properties
     [NotMapped]
     public int StudentCount => Students?.Count ?? 0;
-    
+
     [NotMapped]
     public bool IsAtCapacity => Students?.Count >= Bus?.Capacity;
-    
+
     [NotMapped]
     public double UtilizationRate => Bus?.Capacity > 0 ? (double)(Students?.Count ?? 0) / Bus.Capacity : 0;
-    
+
     [NotMapped]
     public string TimeRange => $"{StartTime:hh\\:mm} - {EndTime:hh\\:mm}";
 }
 ```
 
 ### **Bus Entity**
+
 ```csharp
 // BusBuddy.Core/Models/Bus.cs
 [Table("Buses")]
@@ -155,64 +158,64 @@ public class Bus
 {
     [Key]
     public int BusId { get; set; }
-    
+
     [Required]
     [MaxLength(20)]
     public string LicensePlate { get; set; } = string.Empty;
-    
+
     [Required]
     [MaxLength(50)]
     public string Make { get; set; } = string.Empty;
-    
+
     [Required]
     [MaxLength(50)]
     public string Model { get; set; } = string.Empty;
-    
+
     [Required]
     [Range(1990, 2050)]
     public int Year { get; set; }
-    
+
     [Required]
     [Range(1, 100)]
     public int Capacity { get; set; }
-    
+
     [Range(0, int.MaxValue)]
     public int Mileage { get; set; }
-    
+
     [MaxLength(17)]
     public string? VinNumber { get; set; }
-    
+
     [Column(TypeName = "decimal(10,2)")]
     public decimal? PurchasePrice { get; set; }
-    
+
     public DateTime? PurchaseDate { get; set; }
-    
+
     public DateTime? LastInspectionDate { get; set; }
     public DateTime? NextInspectionDate { get; set; }
-    
+
     public BusStatus Status { get; set; } = BusStatus.Active;
-    
+
     public bool IsActive { get; set; } = true;
     public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
     public DateTime? ModifiedDate { get; set; }
-    
+
     // Navigation Properties
     public virtual ICollection<Route> Routes { get; set; } = new List<Route>();
     public virtual ICollection<MaintenanceRecord> MaintenanceRecords { get; set; } = new List<MaintenanceRecord>();
     public virtual ICollection<FuelRecord> FuelRecords { get; set; } = new List<FuelRecord>();
-    
+
     // Computed Properties
     [NotMapped]
     public string DisplayName => $"{LicensePlate} ({Make} {Model})";
-    
+
     [NotMapped]
     public int Age => DateTime.Now.Year - Year;
-    
+
     [NotMapped]
     public bool InspectionDue => NextInspectionDate.HasValue && NextInspectionDate.Value <= DateTime.Today.AddDays(30);
-    
+
     [NotMapped]
-    public decimal AverageMpg => FuelRecords?.Any() == true ? 
+    public decimal AverageMpg => FuelRecords?.Any() == true ?
         (decimal)FuelRecords.Average(f => f.MilesPerGallon) : 0;
 }
 
@@ -226,6 +229,7 @@ public enum BusStatus
 ```
 
 ### **Driver Entity**
+
 ```csharp
 // BusBuddy.Core/Models/Driver.cs
 [Table("Drivers")]
@@ -233,53 +237,53 @@ public class Driver
 {
     [Key]
     public int DriverId { get; set; }
-    
+
     [Required]
     [MaxLength(100)]
     public string FullName { get; set; } = string.Empty;
-    
+
     [Required]
     [MaxLength(20)]
     public string LicenseNumber { get; set; } = string.Empty;
-    
+
     [Required]
     public DateTime LicenseExpiry { get; set; }
-    
+
     [Phone]
     [MaxLength(20)]
     public string Phone { get; set; } = string.Empty;
-    
+
     [EmailAddress]
     [MaxLength(100)]
     public string? Email { get; set; }
-    
+
     [MaxLength(200)]
     public string? Address { get; set; }
-    
+
     public DateTime? HireDate { get; set; }
     public DateTime? LastPhysicalDate { get; set; }
     public DateTime? NextPhysicalDate { get; set; }
-    
+
     [Column(TypeName = "decimal(8,2)")]
     public decimal? HourlyRate { get; set; }
-    
+
     public DriverStatus Status { get; set; } = DriverStatus.Active;
-    
+
     public bool IsActive { get; set; } = true;
     public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
     public DateTime? ModifiedDate { get; set; }
-    
+
     // Navigation Properties
     public virtual ICollection<Route> Routes { get; set; } = new List<Route>();
     public virtual ICollection<DriverNote> Notes { get; set; } = new List<DriverNote>();
-    
+
     // Computed Properties
     [NotMapped]
     public bool LicenseExpiringSoon => LicenseExpiry <= DateTime.Today.AddDays(90);
-    
+
     [NotMapped]
     public bool PhysicalDue => NextPhysicalDate.HasValue && NextPhysicalDate.Value <= DateTime.Today.AddDays(30);
-    
+
     [NotMapped]
     public int YearsOfService => HireDate.HasValue ? DateTime.Today.Year - HireDate.Value.Year : 0;
 }
@@ -294,6 +298,7 @@ public enum DriverStatus
 ```
 
 ### **Supporting Entities**
+
 ```csharp
 // BusBuddy.Core/Models/RouteStop.cs
 [Table("RouteStops")]
@@ -301,32 +306,32 @@ public class RouteStop
 {
     [Key]
     public int RouteStopId { get; set; }
-    
+
     [ForeignKey("Route")]
     public int RouteId { get; set; }
     public virtual Route Route { get; set; } = null!;
-    
+
     [Required]
     [MaxLength(200)]
     public string Address { get; set; } = string.Empty;
-    
+
     [MaxLength(100)]
     public string? StopName { get; set; }
-    
+
     [Column(TypeName = "decimal(9,6)")]
     public decimal? Latitude { get; set; }
-    
+
     [Column(TypeName = "decimal(9,6)")]
     public decimal? Longitude { get; set; }
-    
+
     [Required]
     public int StopOrder { get; set; }
-    
+
     [Required]
     public TimeSpan ScheduledTime { get; set; }
-    
+
     public bool IsActive { get; set; } = true;
-    
+
     public virtual ICollection<Student> Students { get; set; } = new List<Student>();
 }
 
@@ -336,19 +341,19 @@ public class StudentNote
 {
     [Key]
     public int StudentNoteId { get; set; }
-    
+
     [ForeignKey("Student")]
     public int StudentId { get; set; }
     public virtual Student Student { get; set; } = null!;
-    
+
     [Required]
     [MaxLength(500)]
     public string Note { get; set; } = string.Empty;
-    
+
     public NoteType NoteType { get; set; } = NoteType.General;
-    
+
     public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
-    
+
     [MaxLength(100)]
     public string CreatedBy { get; set; } = string.Empty;
 }
@@ -368,29 +373,29 @@ public class MaintenanceRecord
 {
     [Key]
     public int MaintenanceRecordId { get; set; }
-    
+
     [ForeignKey("Bus")]
     public int BusId { get; set; }
     public virtual Bus Bus { get; set; } = null!;
-    
+
     [Required]
     public DateTime ServiceDate { get; set; }
-    
+
     [Required]
     [MaxLength(100)]
     public string ServiceType { get; set; } = string.Empty;
-    
+
     [MaxLength(500)]
     public string? Description { get; set; }
-    
+
     [Column(TypeName = "decimal(8,2)")]
     public decimal Cost { get; set; }
-    
+
     [MaxLength(100)]
     public string? ServiceProvider { get; set; }
-    
+
     public int MileageAtService { get; set; }
-    
+
     public bool IsActive { get; set; } = true;
     public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
 }
@@ -401,31 +406,31 @@ public class FuelRecord
 {
     [Key]
     public int FuelRecordId { get; set; }
-    
+
     [ForeignKey("Bus")]
     public int BusId { get; set; }
     public virtual Bus Bus { get; set; } = null!;
-    
+
     [Required]
     public DateTime FuelDate { get; set; }
-    
+
     [Column(TypeName = "decimal(6,2)")]
     public decimal Gallons { get; set; }
-    
+
     [Column(TypeName = "decimal(6,2)")]
     public decimal PricePerGallon { get; set; }
-    
+
     [Column(TypeName = "decimal(8,2)")]
     public decimal TotalCost { get; set; }
-    
+
     public int Odometer { get; set; }
-    
+
     [Column(TypeName = "decimal(6,2)")]
     public decimal MilesPerGallon { get; set; }
-    
+
     [MaxLength(100)]
     public string? Location { get; set; }
-    
+
     public bool IsActive { get; set; } = true;
     public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
 }
@@ -436,6 +441,7 @@ public class FuelRecord
 ## 🗄️ **DbContext Configuration**
 
 ### **BusBuddyContext Implementation**
+
 ```csharp
 // BusBuddy.Core/BusBuddyDbContext.cs
 using Microsoft.EntityFrameworkCore;
@@ -449,7 +455,7 @@ public class BusBuddyContext : DbContext
     {
     }
 
-    public BusBuddyContext(DbContextOptions<BusBuddyContext> options, IConfiguration configuration) 
+    public BusBuddyContext(DbContextOptions<BusBuddyContext> options, IConfiguration configuration)
         : base(options)
     {
         _configuration = configuration;
@@ -501,7 +507,7 @@ public class BusBuddyContext : DbContext
         ConfigureBusEntity(modelBuilder);
         ConfigureDriverEntity(modelBuilder);
         ConfigureRouteStopEntity(modelBuilder);
-        
+
         // Seed initial data
         SeedInitialData(modelBuilder);
     }
@@ -513,13 +519,13 @@ public class BusBuddyContext : DbContext
             // Indexes for performance
             entity.HasIndex(e => e.LastName)
                   .HasDatabaseName("IX_Students_LastName");
-            
+
             entity.HasIndex(e => e.Grade)
                   .HasDatabaseName("IX_Students_Grade");
-            
+
             entity.HasIndex(e => e.RouteId)
                   .HasDatabaseName("IX_Students_RouteId");
-            
+
             entity.HasIndex(e => new { e.FirstName, e.LastName, e.DateOfBirth })
                   .IsUnique()
                   .HasDatabaseName("UK_Students_Name_DOB");
@@ -538,7 +544,7 @@ public class BusBuddyContext : DbContext
             // Default values
             entity.Property(e => e.IsActive)
                   .HasDefaultValue(true);
-            
+
             entity.Property(e => e.CreatedDate)
                   .HasDefaultValueSql("GETUTCDATE()");
         });
@@ -552,10 +558,10 @@ public class BusBuddyContext : DbContext
             entity.HasIndex(e => e.RouteName)
                   .IsUnique()
                   .HasDatabaseName("UK_Routes_RouteName");
-            
+
             entity.HasIndex(e => e.BusId)
                   .HasDatabaseName("IX_Routes_BusId");
-            
+
             entity.HasIndex(e => e.DriverId)
                   .HasDatabaseName("IX_Routes_DriverId");
 
@@ -578,7 +584,7 @@ public class BusBuddyContext : DbContext
             // Default values
             entity.Property(e => e.IsActive)
                   .HasDefaultValue(true);
-            
+
             entity.Property(e => e.CreatedDate)
                   .HasDefaultValueSql("GETUTCDATE()");
         });
@@ -592,7 +598,7 @@ public class BusBuddyContext : DbContext
             entity.HasIndex(e => e.LicensePlate)
                   .IsUnique()
                   .HasDatabaseName("UK_Buses_LicensePlate");
-            
+
             entity.HasIndex(e => e.VinNumber)
                   .IsUnique()
                   .HasDatabaseName("UK_Buses_VinNumber");
@@ -611,10 +617,10 @@ public class BusBuddyContext : DbContext
             // Default values
             entity.Property(e => e.Status)
                   .HasDefaultValue(BusStatus.Active);
-            
+
             entity.Property(e => e.IsActive)
                   .HasDefaultValue(true);
-            
+
             entity.Property(e => e.CreatedDate)
                   .HasDefaultValueSql("GETUTCDATE()");
         });
@@ -628,7 +634,7 @@ public class BusBuddyContext : DbContext
             entity.HasIndex(e => e.LicenseNumber)
                   .IsUnique()
                   .HasDatabaseName("UK_Drivers_LicenseNumber");
-            
+
             entity.HasIndex(e => e.FullName)
                   .HasDatabaseName("IX_Drivers_FullName");
 
@@ -641,10 +647,10 @@ public class BusBuddyContext : DbContext
             // Default values
             entity.Property(e => e.Status)
                   .HasDefaultValue(DriverStatus.Active);
-            
+
             entity.Property(e => e.IsActive)
                   .HasDefaultValue(true);
-            
+
             entity.Property(e => e.CreatedDate)
                   .HasDefaultValueSql("GETUTCDATE()");
         });
@@ -800,6 +806,7 @@ public interface BaseEntity
 ## 🔄 **Migration Patterns**
 
 ### **Initial Migration Creation**
+
 ```powershell
 # Create initial migration
 dotnet ef migrations add InitialCreate --project BusBuddy.Core --startup-project BusBuddy.WPF
@@ -812,6 +819,7 @@ dotnet ef migrations script --project BusBuddy.Core --startup-project BusBuddy.W
 ```
 
 ### **Sample Migration File**
+
 ```csharp
 // BusBuddy.Core/Migrations/20250803000001_InitialCreate.cs
 using Microsoft.EntityFrameworkCore.Migrations;
@@ -880,7 +888,7 @@ namespace BusBuddy.Core.Migrations
                 });
 
             // Additional table creation code...
-            
+
             migrationBuilder.CreateIndex(
                 name: "UK_Buses_LicensePlate",
                 table: "Buses",
@@ -923,6 +931,7 @@ namespace BusBuddy.Core.Migrations
 ## 🎯 **Database Service Patterns**
 
 ### **Generic Repository Pattern**
+
 ```csharp
 // BusBuddy.Core/Data/IRepository.cs
 public interface IRepository<T> where T : class
@@ -1045,6 +1054,7 @@ public class Repository<T> : IRepository<T> where T : class
 ```
 
 ### **Specialized Student Repository**
+
 ```csharp
 // BusBuddy.Core/Data/IStudentRepository.cs
 public interface IStudentRepository : IRepository<Student>
@@ -1060,7 +1070,7 @@ public interface IStudentRepository : IRepository<Student>
 // BusBuddy.Core/Data/StudentRepository.cs
 public class StudentRepository : Repository<Student>, IStudentRepository
 {
-    public StudentRepository(BusBuddyContext context, ILogger<StudentRepository> logger) 
+    public StudentRepository(BusBuddyContext context, ILogger<StudentRepository> logger)
         : base(context, logger)
     {
     }
@@ -1157,6 +1167,7 @@ public class StudentRepository : Repository<Student>, IStudentRepository
 ## 🧪 **Testing Database Patterns**
 
 ### **In-Memory Database Testing**
+
 ```csharp
 // BusBuddy.Tests/Core/DatabaseTests.cs
 [TestFixture]
@@ -1215,7 +1226,7 @@ public class DatabaseTests
         // Arrange
         var bus = new Bus { LicensePlate = "TEST123", Make = "Test", Model = "Bus", Year = 2020, Capacity = 50 };
         var driver = new Driver { FullName = "Test Driver", LicenseNumber = "DL123", LicenseExpiry = DateTime.Today.AddYears(1), Phone = "555-1234" };
-        
+
         _context.Buses.Add(bus);
         _context.Drivers.Add(driver);
         await _context.SaveChangesAsync();
@@ -1263,6 +1274,7 @@ public class DatabaseTests
 ## 📋 **Quick Reference**
 
 ### **Key Entity Framework Features**
+
 - **Code First Migrations**: Database schema managed through code
 - **Fluent API Configuration**: Advanced entity relationships and constraints
 - **Navigation Properties**: Automatic loading of related entities
@@ -1270,6 +1282,7 @@ public class DatabaseTests
 - **Seed Data**: Initial data population for development and testing
 
 ### **Migration Commands**
+
 ```powershell
 # Create new migration
 dotnet ef migrations add [MigrationName] --project BusBuddy.Core --startup-project BusBuddy.WPF
@@ -1288,6 +1301,7 @@ bb-copilot-ref Database-Schema
 ```
 
 ### **Connection String Patterns**
+
 - **LocalDB**: `Data Source=(localdb)\\MSSQLLocalDB;Initial Catalog=BusBuddy;Integrated Security=True`
 - **Azure SQL**: `Server=tcp:[server].database.windows.net,1433;Initial Catalog=[database];User ID=${AZURE_SQL_USER};Password=${AZURE_SQL_PASSWORD}`
 - **SQL Server**: `Server=[server];Database=BusBuddy;Trusted_Connection=true`

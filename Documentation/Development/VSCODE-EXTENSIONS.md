@@ -5,9 +5,11 @@ This document outlines the recommended VS Code extensions for optimal BusBuddy d
 ## 🚀 Quick Setup
 
 ### Automatic Installation (Recommended)
+
 When you open the BusBuddy project in VS Code, you'll see a notification to install recommended extensions. Click "Install All" for the best experience.
 
 ### Manual Installation via PowerShell
+
 ```powershell
 # Import the BusBuddy module
 Import-Module .\PowerShell\BusBuddy.psm1
@@ -31,63 +33,70 @@ bb-validate-vscode
 ## 📚 Extension Categories
 
 ### ✨ Essential Extensions
+
 These are **required** for basic BusBuddy development:
 
-| Extension | Purpose | Why Essential |
-|-----------|---------|---------------|
-| **C#** (ms-dotnettools.csharp) | .NET 9 & WPF development | Core IntelliSense, debugging, and XAML support |
-| **PowerShell** (ms-vscode.powershell) | PowerShell 7.5 support | Essential for bb- commands and automation |
-| **C# Dev Kit** (ms-dotnettools.csdevkit) | .NET development tools | Integrated build/test without CLI spam |
-| **GitLens** (eamodio.gitlens) | Git supercharged | GitHub integration for workflow monitoring |
-| **Task Explorer** (spmeesseman.vscode-taskexplorer) | Task management | **EXCLUSIVE** method for task execution |
+| Extension                                           | Purpose                  | Why Essential                                  |
+| --------------------------------------------------- | ------------------------ | ---------------------------------------------- |
+| **C#** (ms-dotnettools.csharp)                      | .NET 9 & WPF development | Core IntelliSense, debugging, and XAML support |
+| **PowerShell** (ms-vscode.powershell)               | PowerShell 7.5 support   | Essential for bb- commands and automation      |
+| **C# Dev Kit** (ms-dotnettools.csdevkit)            | .NET development tools   | Integrated build/test without CLI spam         |
+| **GitLens** (eamodio.gitlens)                       | Git supercharged         | GitHub integration for workflow monitoring     |
+| **Task Explorer** (spmeesseman.vscode-taskexplorer) | Task management          | **EXCLUSIVE** method for task execution        |
 
 ### 🔧 Core Development Extensions
+
 Recommended for enhanced development experience:
 
-| Extension | Purpose | Benefits |
-|-----------|---------|----------|
-| **.NET Runtime** (ms-dotnettools.vscode-dotnet-runtime) | Runtime management | Ensures .NET 9 compatibility |
-| **XAML** (ms-dotnettools.xaml) | XAML language support | Better WPF development experience |
-| **Roslynator** (josefpihrt-vscode.roslynator) | C# analysis | Advanced refactoring and code quality |
-| **Prettier** (esbenp.prettier-vscode) | Code formatting | Consistent code style across team |
-| **EditorConfig** (editorconfig.editorconfig) | Editor configuration | Team coding standards enforcement |
+| Extension                                               | Purpose               | Benefits                              |
+| ------------------------------------------------------- | --------------------- | ------------------------------------- |
+| **.NET Runtime** (ms-dotnettools.vscode-dotnet-runtime) | Runtime management    | Ensures .NET 9 compatibility          |
+| **XAML** (ms-dotnettools.xaml)                          | XAML language support | Better WPF development experience     |
+| **Roslynator** (josefpihrt-vscode.roslynator)           | C# analysis           | Advanced refactoring and code quality |
+| **Prettier** (esbenp.prettier-vscode)                   | Code formatting       | Consistent code style across team     |
+| **EditorConfig** (editorconfig.editorconfig)            | Editor configuration  | Team coding standards enforcement     |
 
 ### 🧪 Testing & Quality Extensions
+
 For robust code quality and testing:
 
-| Extension | Purpose | Impact |
-|-----------|---------|--------|
-| **Test Adapter Converter** (ms-vscode.test-adapter-converter) | Test integration | Visual test runner for unit tests |
+| Extension                                                      | Purpose               | Impact                             |
+| -------------------------------------------------------------- | --------------------- | ---------------------------------- |
+| **Test Adapter Converter** (ms-vscode.test-adapter-converter)  | Test integration      | Visual test runner for unit tests  |
 | **Code Spell Checker** (streetsidesoftware.code-spell-checker) | Documentation quality | Catches typos in comments and docs |
-| **Better Comments** (aaron-bond.better-comments) | Enhanced comments | Color-coded comment highlighting |
+| **Better Comments** (aaron-bond.better-comments)               | Enhanced comments     | Color-coded comment highlighting   |
 
 ### 🤖 AI & Productivity Extensions
+
 For enhanced productivity and AI assistance:
 
-| Extension | Purpose | Benefits |
-|-----------|---------|----------|
-| **GitHub Copilot** (github.copilot) | AI code assistance | Intelligent code suggestions |
-| **GitHub Copilot Chat** (github.copilot-chat) | AI chat interface | Conversational code help |
-| **PowerShell Preview** (ms-vscode.powershell-preview) | PS 7.5.2 features | Latest PowerShell language features |
+| Extension                                             | Purpose            | Benefits                            |
+| ----------------------------------------------------- | ------------------ | ----------------------------------- |
+| **GitHub Copilot** (github.copilot)                   | AI code assistance | Intelligent code suggestions        |
+| **GitHub Copilot Chat** (github.copilot-chat)         | AI chat interface  | Conversational code help            |
+| **PowerShell Preview** (ms-vscode.powershell-preview) | PS 7.5.2 features  | Latest PowerShell language features |
 
 ### ☁️ Azure & Cloud Extensions
+
 For Azure integration and cloud development:
 
-| Extension | Purpose | Usage |
-|-----------|---------|-------|
-| **Azure Account** (ms-vscode.azure-account) | Azure authentication | Cloud resource management |
-| **Azure Resource Groups** (ms-azuretools.vscode-azureresourcegroups) | Azure resources | Direct Azure management from VS Code |
+| Extension                                                            | Purpose              | Usage                                |
+| -------------------------------------------------------------------- | -------------------- | ------------------------------------ |
+| **Azure Account** (ms-vscode.azure-account)                          | Azure authentication | Cloud resource management            |
+| **Azure Resource Groups** (ms-azuretools.vscode-azureresourcegroups) | Azure resources      | Direct Azure management from VS Code |
 
 ### 🚀 Advanced Tools
+
 Specialized tools for advanced scenarios:
 
-| Extension | Purpose | When to Use |
-|-----------|---------|-------------|
-| **Syncfusion Extensions** (syncfusioninc.maui-vscode-extensions) | Syncfusion support | Enhanced Syncfusion control development |
-| **Hex Editor** (ms-vscode.hexeditor) | Binary file editing | Database files, compiled assets |
-| **Remote SSH** (ms-vscode-remote.remote-ssh) | Remote development | Cloud development, team collaboration |
+| Extension                                                        | Purpose             | When to Use                             |
+| ---------------------------------------------------------------- | ------------------- | --------------------------------------- |
+| **Syncfusion Extensions** (syncfusioninc.maui-vscode-extensions) | Syncfusion support  | Enhanced Syncfusion control development |
+| **Hex Editor** (ms-vscode.hexeditor)                             | Binary file editing | Database files, compiled assets         |
+| **Remote SSH** (ms-vscode-remote.remote-ssh)                     | Remote development  | Cloud development, team collaboration   |
 
 ## 🛡️ Blocked Extensions
+
 These extensions are explicitly blocked to prevent conflicts:
 
 - **Auto Close/Rename Tag** - Conflicts with XAML formatting
@@ -98,29 +107,35 @@ These extensions are explicitly blocked to prevent conflicts:
 ## 🔧 Configuration Files
 
 ### .vscode/extensions.json
+
 Defines recommended and blocked extensions for team consistency:
+
 ```json
 {
-    "recommendations": [
-        "ms-dotnettools.csharp",
-        "ms-vscode.powershell",
-        // ... full list in file
-    ],
-    "unwantedRecommendations": [
-        // Blocked extensions that cause conflicts
-    ]
+  "recommendations": [
+    "ms-dotnettools.csharp",
+    "ms-vscode.powershell"
+    // ... full list in file
+  ],
+  "unwantedRecommendations": [
+    // Blocked extensions that cause conflicts
+  ]
 }
 ```
 
 ### .vscode/settings.json
+
 Project-specific settings for optimal development:
+
 - PowerShell terminal integration
 - C# formatting preferences
 - Task Explorer configuration
 - XAML indentation settings
 
 ### .vscode/tasks.json
+
 Pre-configured tasks for common operations:
+
 - Build solution
 - Run application
 - Run tests
@@ -129,6 +144,7 @@ Pre-configured tasks for common operations:
 ## 🏥 Health Checking
 
 ### Validate Your Setup
+
 ```powershell
 # Quick validation
 bb-validate-vscode
@@ -143,6 +159,7 @@ bb-health
 ### Common Issues & Solutions
 
 #### VS Code CLI Not Found
+
 ```powershell
 # Solution 1: Add VS Code to PATH
 # Windows: Add VS Code installation directory to PATH environment variable
@@ -155,6 +172,7 @@ bb-health
 ```
 
 #### Extensions Not Installing
+
 ```powershell
 # Check network connectivity and proxy settings
 # Try forcing reinstall
@@ -165,6 +183,7 @@ code --install-extension ms-dotnettools.csharp
 ```
 
 #### Task Explorer Not Working
+
 ```powershell
 # Verify Task Explorer is installed
 bb-install-extensions -Essential
@@ -180,31 +199,37 @@ bb-validate-vscode -CheckTasks
 These extensions directly support Phase 2 objectives:
 
 ### UI Testing Enhancement
+
 - **C# Dev Kit**: Integrated test runner for UI tests
 - **Test Adapter Converter**: Visual test execution and debugging
 
 ### Warning Reduction (Target: <100 warnings)
+
 - **Roslynator**: Advanced C# analysis and quick fixes
 - **C#**: Real-time error detection and null safety warnings
 - **Prettier**: Consistent formatting reduces style warnings
 
 ### GitHub Actions Integration
+
 - **GitLens**: Direct GitHub Actions monitoring
 - **GitHub Copilot**: AI assistance for workflow optimization
 
 ### Azure SQL & Data Integration
+
 - **Azure Account**: Direct database connection management
 - **PowerShell**: Enhanced data scripting capabilities
 
 ## 🚀 Getting Started Workflow
 
 1. **Clone Repository**
+
    ```bash
    git clone https://github.com/Bigessfour/BusBuddy-2.git
    cd BusBuddy-2
    ```
 
 2. **Open in VS Code**
+
    ```bash
    code .
    ```
@@ -214,6 +239,7 @@ These extensions directly support Phase 2 objectives:
    - Or use `bb-install-extensions` in terminal
 
 4. **Validate Setup**
+
    ```powershell
    bb-validate-vscode
    ```
@@ -226,6 +252,7 @@ These extensions directly support Phase 2 objectives:
 ## 📊 Success Metrics
 
 After proper setup, you should see:
+
 - ✅ All essential extensions installed
 - ✅ Task Explorer functioning for builds/tests
 - ✅ PowerShell 7.5 features working in terminal
@@ -236,16 +263,19 @@ After proper setup, you should see:
 ## 💡 Tips & Best Practices
 
 ### Team Consistency
+
 - Always use the recommended extensions list
 - Don't install conflicting extensions
 - Keep extensions updated via VS Code
 
 ### Performance Optimization
+
 - Disable unused extensions in workspace settings
 - Use workspace-specific settings for team projects
 - Restart VS Code after major extension changes
 
 ### Troubleshooting
+
 - Use `bb-validate-vscode` for diagnostic information
 - Check extension compatibility with VS Code version
 - Report issues via GitHub with validation report

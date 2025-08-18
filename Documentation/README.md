@@ -5,6 +5,7 @@
 ## 🚀 August 2025 Refactor: Canonicalization, Cleanup, and Data Modernization
 
 **Summary of Accomplishments:**
+
 - **Canonicalized DbContext:**
   - Removed all obsolete/duplicate `BusBuddyDbContext` files. All code now uses `BusBuddy.Core.Data.BusBuddyDbContext` for consistency and maintainability.
   - Updated every service, repository, and test to reference the canonical context only.
@@ -20,6 +21,7 @@
   - All changes are committed, tracked, and fetchable via GitHub and raw URLs.
 
 **Impact:**
+
 - ✅ Build is clean and stable; all business logic and UI code is consistent and modernized.
 - ✅ Data seeding and onboarding are faster and more reliable.
 - ✅ Project structure is easier to navigate and maintain.
@@ -32,14 +34,18 @@ Welcome to the BusBuddy comprehensive documentation center! This organized struc
 ## 🗂️ Documentation Structure
 
 ### 🧪 **Testing & TDD** (CRITICAL)
+
 Essential development practices and our advanced testing infrastructure:
+
 - **[TDD Best Practices with Copilot](TDD-COPILOT-BEST-PRACTICES.md)** — LOCKED-IN TDD workflow preventing test failures
 - **[Testing Standards](../BusBuddy.Tests/TESTING-STANDARDS.md)** — NUnit framework and patterns
 - **[Phase 4 Testing Complete](Phase4-Implementation-Complete.md)** — ✨ **NEW**: Advanced NUnit Test Runner integration
 - **[BusBuddy.Testing Module](../PowerShell/Modules/BusBuddy.Testing/README.md)** — ✨ **NEW**: PowerShell testing automation
 
 ### 📖 **Learning Resources** (`/Learning/`)
+
 Perfect for newcomers and skill building:
+
 - **[Getting Started Guide](Learning/Getting-Started.md)** — Your first steps with BusBuddy
 - **[PowerShell Learning Path](Learning/PowerShell-Learning-Path.md)** — From zero to PowerShell hero
 - **[WPF Development Guide](Learning/WPF-Development-Guide.md)** — Modern WPF with Syncfusion
@@ -47,20 +53,26 @@ Perfect for newcomers and skill building:
 - **[Azure Integration Guide](Learning/Azure-Integration-Guide.md)** — Cloud deployment basics
 
 ### 🎭 **Humor & Fun** (`/Humor/`)
+
 Because coding should be enjoyable:
+
 - **[Bug Hall of Fame](Humor/Bug-Hall-of-Fame.md)** — Our funniest bugs and fixes
 - **[PowerShell Poetry](Humor/PowerShell-Poetry.md)** — Artistic command line expressions
 - **[Error Message Collection](Humor/Error-Message-Collection.md)** — When computers get creative
 
 ### 🏗️ **Architecture** (`/Architecture/`)
+
 Deep technical documentation:
+
 - **[System Architecture](Architecture/System-Architecture.md)** — Overall system design
 - **[MVVM Implementation](Architecture/MVVM-Implementation.md)** — Our MVVM patterns
 - **[Database Design](Architecture/Database-Design.md)** — Entity relationships and design
 - **[PowerShell Module Architecture](Architecture/PowerShell-Module-Architecture.md)** — Module design patterns
 
 ### 📡 **API Documentation** (`/API/`)
+
 Technical references:
+
 - **[PowerShell Module API](API/PowerShell-Module-API.md)** — Complete function reference
 - **[Service Layer API](API/Service-Layer-API.md)** — Business logic interfaces
 - **[External API Integration](API/External-API-Integration.md)** — Third-party integrations
@@ -83,29 +95,34 @@ Search-OfficialDocs -Technology "WPF" -Query "data binding"
 ## 📚 **Quick Reference Links**
 
 ### Official Microsoft Documentation
+
 - **[PowerShell Documentation](https://learn.microsoft.com/en-us/powershell/)** — Complete PowerShell reference
 - **[WPF Documentation](https://learn.microsoft.com/en-us/dotnet/desktop/wpf/)** — Windows Presentation Foundation guide
 - **[Entity Framework Documentation](https://learn.microsoft.com/en-us/ef/)** — Database ORM documentation
 - **[Azure Documentation](https://learn.microsoft.com/en-us/azure/)** — Cloud services reference
 
 ### Third-Party Documentation
+
 - **[Syncfusion WPF Controls](https://help.syncfusion.com/wpf/welcome-to-syncfusion-essential-wpf)** — UI component library
 - **[Serilog Documentation](https://serilog.net/)** — Structured logging framework
 
 ## 🚀 **Getting Started Quickly**
 
 ### For Newcomers
+
 1. Start with **[Getting Started Guide](Learning/Getting-Started.md)**
 2. Set up your environment using **[PowerShell Learning Path](Learning/PowerShell-Learning-Path.md)**
 3. Explore **[WPF Development Guide](Learning/WPF-Development-Guide.md)** for UI development
 4. Check out **[Bug Hall of Fame](Humor/Bug-Hall-of-Fame.md)** for a laugh!
 
 ### For Experienced Developers
+
 1. Review **[System Architecture](Architecture/System-Architecture.md)** for the big picture
 2. Check **[API Documentation](API/PowerShell-Module-API.md)** for quick reference
 3. Use the AI mentor system: `Get-BusBuddyMentor -Topic "Advanced"`
 
 ### For Contributors
+
 1. Read **[CONTRIBUTING.md](../CONTRIBUTING.md)** in the root directory
 2. Review **[MVVM Implementation](Architecture/MVVM-Implementation.md)** for coding patterns
 3. Check **[PowerShell Module Architecture](Architecture/PowerShell-Module-Architecture.md)** for scripting standards
@@ -121,6 +138,7 @@ Search-OfficialDocs -Technology "WPF" -Query "data binding"
 ## 🔄 **Migration from Old README**
 
 This Docs structure replaces sections that were previously in the main README:
+
 - ✅ **Setup Instructions** → `Learning/Getting-Started.md`
 - ✅ **Architecture Overview** → `Architecture/System-Architecture.md`
 - ✅ **PowerShell Functions** → `API/PowerShell-Module-API.md`

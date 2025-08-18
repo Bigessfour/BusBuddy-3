@@ -9,34 +9,35 @@
 ## 🧠 **Route Assignment Architecture**
 
 ### **Core Route Models**
+
 ```csharp
 // BusBuddy.Core/Models/Route.cs
 public class Route
 {
     public int RouteId { get; set; }
-    
+
     [Required, MaxLength(50)]
     public string RouteName { get; set; } = string.Empty;
-    
+
     [MaxLength(200)]
     public string Description { get; set; } = string.Empty;
-    
+
     public TimeSpan StartTime { get; set; }
     public TimeSpan EndTime { get; set; }
-    
+
     public double EstimatedDistance { get; set; } // in miles
     public int EstimatedDuration { get; set; } // in minutes
-    
+
     // Navigation Properties
     public int BusId { get; set; }
     public Bus Bus { get; set; } = null!;
-    
+
     public int DriverId { get; set; }
     public Driver Driver { get; set; } = null!;
-    
+
     public List<Student> Students { get; set; } = new();
     public List<RouteStop> Stops { get; set; } = new();
-    
+
     // Computed Properties
     public int StudentCount => Students.Count;
     public bool IsAtCapacity => Students.Count >= Bus.Capacity;
@@ -46,22 +47,22 @@ public class Route
 public class Bus
 {
     public int BusId { get; set; }
-    
+
     [Required, MaxLength(20)]
     public string LicensePlate { get; set; } = string.Empty;
-    
+
     [Required, MaxLength(50)]
     public string Make { get; set; } = string.Empty;
-    
+
     [Required, MaxLength(50)]
     public string Model { get; set; } = string.Empty;
-    
+
     public int Year { get; set; }
     public int Capacity { get; set; }
     public int Mileage { get; set; }
-    
+
     public BusStatus Status { get; set; } = BusStatus.Active;
-    
+
     // Navigation Properties
     public List<Route> Routes { get; set; } = new();
 }
@@ -69,20 +70,20 @@ public class Bus
 public class Driver
 {
     public int DriverId { get; set; }
-    
+
     [Required, MaxLength(100)]
     public string FullName { get; set; } = string.Empty;
-    
+
     [Required, MaxLength(20)]
     public string LicenseNumber { get; set; } = string.Empty;
-    
+
     public DateTime LicenseExpiry { get; set; }
-    
+
     [Phone]
     public string Phone { get; set; } = string.Empty;
-    
+
     public DriverStatus Status { get; set; } = DriverStatus.Active;
-    
+
     // Navigation Properties
     public List<Route> Routes { get; set; } = new();
 }
@@ -92,16 +93,16 @@ public class RouteStop
     public int RouteStopId { get; set; }
     public int RouteId { get; set; }
     public Route Route { get; set; } = null!;
-    
+
     [Required, MaxLength(200)]
     public string Address { get; set; } = string.Empty;
-    
+
     public double Latitude { get; set; }
     public double Longitude { get; set; }
-    
+
     public int StopOrder { get; set; }
     public TimeSpan ScheduledTime { get; set; }
-    
+
     public List<Student> Students { get; set; } = new();
 }
 
@@ -114,6 +115,7 @@ public enum DriverStatus { Active, OnLeave, Inactive }
 ## 🤖 **xAI Grok API Integration**
 
 ### **Grok API Service Implementation**
+
 ```csharp
 // BusBuddy.Core/Services/GrokRouteOptimizationService.cs
 public interface IGrokRouteOptimizationService
@@ -133,8 +135,8 @@ public class GrokRouteOptimizationService : IGrokRouteOptimizationService
     private readonly string _baseUrl;
 
     public GrokRouteOptimizationService(
-        HttpClient httpClient, 
-        IConfiguration configuration, 
+        HttpClient httpClient,
+        IConfiguration configuration,
         ILogger<GrokRouteOptimizationService> logger)
     {
         _httpClient = httpClient;
@@ -142,13 +144,13 @@ public class GrokRouteOptimizationService : IGrokRouteOptimizationService
         _logger = logger;
         _apiKey = _configuration["XAI:ApiKey"] ?? throw new InvalidOperationException("XAI API key not configured");
         _baseUrl = _configuration["XAI:BaseUrl"] ?? "https://api.x.ai/v1";
-        
+
         _httpClient.DefaultRequestHeaders.Authorization = new("Bearer", _apiKey);
     }
 
     public async Task<RouteOptimizationResult> OptimizeRoutesAsync(
-        List<Student> students, 
-        List<Bus> buses, 
+        List<Student> students,
+        List<Bus> buses,
         List<Driver> drivers)
     {
         try
@@ -156,7 +158,7 @@ public class GrokRouteOptimizationService : IGrokRouteOptimizationService
             _logger.LogInformation("Starting route optimization for {StudentCount} students", students.Count);
 
             var optimizationPrompt = BuildOptimizationPrompt(students, buses, drivers);
-            
+
             var grokRequest = new GrokChatRequest
             {
                 Model = "grok-beta",
@@ -188,13 +190,13 @@ public class GrokRouteOptimizationService : IGrokRouteOptimizationService
     }
 
     public async Task<StudentAssignmentResult> AssignStudentToOptimalRouteAsync(
-        Student student, 
+        Student student,
         List<Route> availableRoutes)
     {
         try
         {
             var assignmentPrompt = BuildStudentAssignmentPrompt(student, availableRoutes);
-            
+
             var grokRequest = new GrokChatRequest
             {
                 Model = "grok-beta",
@@ -230,27 +232,27 @@ public class GrokRouteOptimizationService : IGrokRouteOptimizationService
         var prompt = new StringBuilder();
         prompt.AppendLine("Please optimize bus routes for the following school transportation scenario:");
         prompt.AppendLine();
-        
+
         prompt.AppendLine("STUDENTS TO ASSIGN:");
         foreach (var student in students.Take(50)) // Limit for token constraints
         {
             prompt.AppendLine($"- Student {student.StudentId}: {student.FullName}, Grade {student.Grade}, Address: {student.Address}");
         }
-        
+
         prompt.AppendLine();
         prompt.AppendLine("AVAILABLE BUSES:");
         foreach (var bus in buses)
         {
             prompt.AppendLine($"- Bus {bus.BusId}: {bus.LicensePlate}, Capacity: {bus.Capacity}, Status: {bus.Status}");
         }
-        
+
         prompt.AppendLine();
         prompt.AppendLine("AVAILABLE DRIVERS:");
         foreach (var driver in drivers)
         {
             prompt.AppendLine($"- Driver {driver.DriverId}: {driver.FullName}, Status: {driver.Status}");
         }
-        
+
         prompt.AppendLine();
         prompt.AppendLine("OPTIMIZATION CRITERIA:");
         prompt.AppendLine("1. Minimize total travel distance");
@@ -261,7 +263,7 @@ public class GrokRouteOptimizationService : IGrokRouteOptimizationService
         prompt.AppendLine();
         prompt.AppendLine("Please provide a JSON response with route assignments in the following format:");
         prompt.AppendLine(GetOptimizationResponseFormat());
-        
+
         return prompt.ToString();
     }
 
@@ -304,28 +306,28 @@ public class GrokRouteOptimizationService : IGrokRouteOptimizationService
         {
             PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower
         });
-        
+
         var content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
-        
+
         var response = await _httpClient.PostAsync($"{_baseUrl}/chat/completions", content);
-        
+
         if (!response.IsSuccessStatusCode)
         {
             var errorContent = await response.Content.ReadAsStringAsync();
             throw new HttpRequestException($"Grok API request failed: {response.StatusCode} - {errorContent}");
         }
-        
+
         var responseContent = await response.Content.ReadAsStringAsync();
         var grokResponse = JsonSerializer.Deserialize<GrokChatResponse>(responseContent);
-        
-        return grokResponse?.Choices?.FirstOrDefault()?.Message?.Content ?? 
+
+        return grokResponse?.Choices?.FirstOrDefault()?.Message?.Content ??
                throw new InvalidOperationException("Empty response from Grok API");
     }
 
     private RouteOptimizationResult ParseOptimizationResponse(
-        string grokResponse, 
-        List<Student> students, 
-        List<Bus> buses, 
+        string grokResponse,
+        List<Student> students,
+        List<Bus> buses,
         List<Driver> drivers)
     {
         try
@@ -333,15 +335,15 @@ public class GrokRouteOptimizationService : IGrokRouteOptimizationService
             // Extract JSON from response if wrapped in text
             var jsonStart = grokResponse.IndexOf('{');
             var jsonEnd = grokResponse.LastIndexOf('}') + 1;
-            
+
             if (jsonStart >= 0 && jsonEnd > jsonStart)
             {
                 var jsonResponse = grokResponse.Substring(jsonStart, jsonEnd - jsonStart);
                 var optimizationData = JsonSerializer.Deserialize<GrokOptimizationResponse>(jsonResponse);
-                
+
                 return ConvertToRouteOptimizationResult(optimizationData, students, buses, drivers);
             }
-            
+
             throw new InvalidOperationException("No valid JSON found in Grok response");
         }
         catch (Exception ex)
@@ -422,13 +424,14 @@ public class AlternativeRoute
 ## 🎯 **Route Assignment UI Patterns**
 
 ### **Route Assignment View (XAML)**
+
 ```xml
 <!-- BusBuddy.WPF/Views/RouteAssignmentView.xaml -->
 <UserControl x:Class="BusBuddy.WPF.Views.RouteAssignmentView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:syncfusion="http://schemas.syncfusion.com/wpf">
-    
+
     <Grid Margin="20">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -436,17 +439,17 @@ public class AlternativeRoute
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
-        
+
         <!-- Header and Actions -->
         <Grid Grid.Row="0" Margin="0,0,0,20">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
-            
-            <TextBlock Grid.Column="0" Text="Route Assignment Management" 
+
+            <TextBlock Grid.Column="0" Text="Route Assignment Management"
                        FontSize="24" FontWeight="Bold" VerticalAlignment="Center"/>
-            
+
             <StackPanel Grid.Column="1" Orientation="Horizontal">
                 <syncfusion:SfButton Content="🤖 Optimize All Routes"
                                      Command="{Binding OptimizeAllRoutesCommand}"
@@ -458,7 +461,7 @@ public class AlternativeRoute
                                      Style="{StaticResource SecondaryButtonStyle}"/>
             </StackPanel>
         </Grid>
-        
+
         <!-- Filter and Search -->
         <Grid Grid.Row="1" Margin="0,0,0,15">
             <Grid.ColumnDefinitions>
@@ -466,13 +469,13 @@ public class AlternativeRoute
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
-            
+
             <!-- Search -->
             <syncfusion:SfTextBox Grid.Column="0"
                                   Text="{Binding SearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                   Watermark="Search routes or students..."
                                   Margin="0,0,10,0"/>
-            
+
             <!-- View Toggle -->
             <StackPanel Grid.Column="2" Orientation="Horizontal">
                 <TextBlock Text="View:" VerticalAlignment="Center" Margin="0,0,10,0"/>
@@ -483,7 +486,7 @@ public class AlternativeRoute
                                        Width="120"/>
             </StackPanel>
         </Grid>
-        
+
         <!-- Main Content Area -->
         <Grid Grid.Row="2">
             <Grid.ColumnDefinitions>
@@ -491,7 +494,7 @@ public class AlternativeRoute
                 <ColumnDefinition Width="5"/>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
-            
+
             <!-- Routes Grid -->
             <syncfusion:SfDataGrid Grid.Column="0"
                                    x:Name="RoutesDataGrid"
@@ -502,7 +505,7 @@ public class AlternativeRoute
                                    AllowSorting="True"
                                    AllowFiltering="True"
                                    SelectionMode="Single">
-                
+
                 <syncfusion:SfDataGrid.Columns>
                     <syncfusion:GridTextColumn HeaderText="Route" MappingName="RouteName" Width="100"/>
                     <syncfusion:GridTextColumn HeaderText="Bus" MappingName="Bus.LicensePlate" Width="80"/>
@@ -513,7 +516,7 @@ public class AlternativeRoute
                     <syncfusion:GridTimeSpanColumn HeaderText="Start Time" MappingName="StartTime" Width="80"/>
                     <syncfusion:GridNumericColumn HeaderText="Distance" MappingName="EstimatedDistance" Width="80"/>
                 </syncfusion:SfDataGrid.Columns>
-                
+
                 <syncfusion:SfDataGrid.DetailsViewDefinition>
                     <syncfusion:GridViewDefinition RelationalColumn="Students">
                         <syncfusion:GridViewDefinition.DataGrid>
@@ -538,15 +541,15 @@ public class AlternativeRoute
                     </syncfusion:GridViewDefinition>
                 </syncfusion:SfDataGrid.DetailsViewDefinition>
             </syncfusion:SfDataGrid>
-            
+
             <!-- Splitter -->
             <GridSplitter Grid.Column="1" HorizontalAlignment="Stretch" Background="LightGray"/>
-            
+
             <!-- Route Details Panel -->
             <ScrollViewer Grid.Column="2" VerticalScrollBarVisibility="Auto">
                 <StackPanel Margin="15,0,0,0" DataContext="{Binding SelectedRoute}">
                     <TextBlock Text="Route Details" FontSize="18" FontWeight="Bold" Margin="0,0,0,15"/>
-                    
+
                     <!-- Route Info -->
                     <Grid Visibility="{Binding Converter={StaticResource NullToVisibilityConverter}}">
                         <Grid.RowDefinitions>
@@ -557,22 +560,22 @@ public class AlternativeRoute
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
                         </Grid.RowDefinitions>
-                        
+
                         <TextBlock Grid.Row="0" Text="{Binding RouteName}" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,10"/>
-                        
+
                         <StackPanel Grid.Row="1" Margin="0,0,0,10">
                             <TextBlock Text="Bus Information" FontWeight="SemiBold" Margin="0,0,0,5"/>
                             <TextBlock Text="{Binding Bus.LicensePlate, StringFormat='License: {0}'}"/>
                             <TextBlock Text="{Binding Bus.Make, StringFormat='Make: {0}'}"/>
                             <TextBlock Text="{Binding Bus.Capacity, StringFormat='Capacity: {0} students'}"/>
                         </StackPanel>
-                        
+
                         <StackPanel Grid.Row="2" Margin="0,0,0,10">
                             <TextBlock Text="Driver Information" FontWeight="SemiBold" Margin="0,0,0,5"/>
                             <TextBlock Text="{Binding Driver.FullName}"/>
                             <TextBlock Text="{Binding Driver.Phone, StringFormat='Phone: {0}'}"/>
                         </StackPanel>
-                        
+
                         <StackPanel Grid.Row="3" Margin="0,0,0,10">
                             <TextBlock Text="Route Statistics" FontWeight="SemiBold" Margin="0,0,0,5"/>
                             <TextBlock Text="{Binding StudentCount, StringFormat='Students: {0}'}"/>
@@ -580,7 +583,7 @@ public class AlternativeRoute
                             <TextBlock Text="{Binding EstimatedDistance, StringFormat='Distance: {0:F1} miles'}"/>
                             <TextBlock Text="{Binding EstimatedDuration, StringFormat='Duration: {0} minutes'}"/>
                         </StackPanel>
-                        
+
                         <!-- Grok AI Actions -->
                         <StackPanel Grid.Row="4" Margin="0,0,0,15">
                             <TextBlock Text="AI Optimization" FontWeight="SemiBold" Margin="0,0,0,5"/>
@@ -594,7 +597,7 @@ public class AlternativeRoute
                                                  CommandParameter="{Binding}"
                                                  Style="{StaticResource SmallSecondaryButtonStyle}"/>
                         </StackPanel>
-                        
+
                         <!-- Unassigned Students -->
                         <StackPanel Grid.Row="5">
                             <TextBlock Text="Quick Assign Students" FontWeight="SemiBold" Margin="0,0,0,5"/>
@@ -611,7 +614,7 @@ public class AlternativeRoute
                 </StackPanel>
             </ScrollViewer>
         </Grid>
-        
+
         <!-- Status Bar -->
         <Border Grid.Row="3" BorderThickness="0,1,0,0" BorderBrush="LightGray" Padding="0,10,0,0" Margin="0,15,0,0">
             <Grid>
@@ -619,14 +622,14 @@ public class AlternativeRoute
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
-                
+
                 <StackPanel Grid.Column="0" Orientation="Horizontal">
                     <TextBlock Text="{Binding Routes.Count, StringFormat='Routes: {0}'}" Margin="0,0,20,0"/>
                     <TextBlock Text="{Binding TotalAssignedStudents, StringFormat='Assigned Students: {0}'}" Margin="0,0,20,0"/>
                     <TextBlock Text="{Binding UnassignedStudents.Count, StringFormat='Unassigned: {0}'}" Margin="0,0,20,0"/>
                     <TextBlock Text="{Binding AverageUtilization, StringFormat='Avg Utilization: {0:P0}'}"/>
                 </StackPanel>
-                
+
                 <StackPanel Grid.Column="1" Orientation="Horizontal" Visibility="{Binding IsOptimizing, Converter={StaticResource BooleanToVisibilityConverter}}">
                     <syncfusion:SfBusyIndicator IsBusy="True" Width="16" Height="16" Margin="0,0,5,0"/>
                     <TextBlock Text="AI optimization in progress..." FontStyle="Italic"/>
@@ -640,6 +643,7 @@ public class AlternativeRoute
 ---
 
 ## 🎯 **Route Assignment ViewModel**
+
 ```csharp
 // BusBuddy.WPF/ViewModels/RouteAssignmentViewModel.cs
 public class RouteAssignmentViewModel : BaseViewModel
@@ -741,9 +745,9 @@ public class RouteAssignmentViewModel : BaseViewModel
     }
 
     public bool HasSelectedRoute => SelectedRoute != null;
-    
+
     public int TotalAssignedStudents => Routes.Sum(r => r.StudentCount);
-    
+
     public double AverageUtilization => Routes.Count > 0 ? Routes.Average(r => r.UtilizationRate) : 0;
 
     // Commands
@@ -799,7 +803,7 @@ public class RouteAssignmentViewModel : BaseViewModel
             ShowInfo($"🤖 Analyzing route {route.RouteName} for optimization...");
 
             var analysis = await _grokService.AnalyzeRouteEfficiencyAsync(route);
-            
+
             // Show optimization suggestions
             var message = $"Route Analysis for {route.RouteName}:\n\n" +
                          $"Efficiency Score: {analysis.EfficiencyScore:P0}\n" +
@@ -838,7 +842,7 @@ public class RouteAssignmentViewModel : BaseViewModel
                              $"Reasoning: {suggestion.Reasoning}\n\n" +
                              "Would you like to apply this assignment?";
 
-                var result = MessageBox.Show(message, "AI Route Assignment Suggestion", 
+                var result = MessageBox.Show(message, "AI Route Assignment Suggestion",
                     MessageBoxButton.YesNo, MessageBoxImage.Question);
 
                 if (result == MessageBoxResult.Yes)
@@ -856,8 +860,8 @@ public class RouteAssignmentViewModel : BaseViewModel
 
     private bool CanSuggestAssignment()
     {
-        return SelectedUnassignedStudent != null && 
-               Routes.Any(r => !r.IsAtCapacity) && 
+        return SelectedUnassignedStudent != null &&
+               Routes.Any(r => !r.IsAtCapacity) &&
                !IsOptimizing;
     }
 
@@ -866,17 +870,17 @@ public class RouteAssignmentViewModel : BaseViewModel
         try
         {
             await _routeService.AssignStudentToRouteAsync(student.StudentId, route.RouteId);
-            
+
             // Update UI
             route.Students.Add(student);
             UnassignedStudents.Remove(student);
-            
+
             // Refresh computed properties
             OnPropertyChanged(nameof(TotalAssignedStudents));
             OnPropertyChanged(nameof(AverageUtilization));
-            
+
             ShowSuccess($"✅ {student.FullName} assigned to {route.RouteName}");
-            
+
             _logger.LogInformation("Assigned student {StudentId} to route {RouteId}", student.StudentId, route.RouteId);
         }
         catch (Exception ex)
@@ -893,6 +897,7 @@ public class RouteAssignmentViewModel : BaseViewModel
 ## 📚 **PowerShell Integration Commands**
 
 ### **Route Optimization Commands**
+
 ```powershell
 # BusBuddy PowerShell Commands for Route Management
 
@@ -902,29 +907,29 @@ function Invoke-BusBuddyRouteOptimization {
         [Parameter()]
         [ValidateSet("All", "Single", "Unassigned")]
         [string]$OptimizationType = "All",
-        
+
         [Parameter()]
         [int]$RouteId,
-        
+
         [Parameter()]
         [switch]$DryRun
     )
-    
+
     Write-Information "🤖 Starting Grok AI route optimization..." -InformationAction Continue
-    
+
     try {
         $arguments = @("--optimize-routes", "--type", $OptimizationType)
-        
+
         if ($RouteId) {
             $arguments += @("--route-id", $RouteId)
         }
-        
+
         if ($DryRun) {
             $arguments += "--dry-run"
         }
-        
+
         $result = & dotnet run --project "BusBuddy.WPF/BusBuddy.WPF.csproj" -- $arguments
-        
+
         Write-Information "✅ Route optimization completed successfully" -InformationAction Continue
         return $result
     }
@@ -940,12 +945,12 @@ function Get-BusBuddyRouteAnalysis {
         [Parameter(Mandatory)]
         [int]$RouteId
     )
-    
+
     Write-Information "📊 Analyzing route $RouteId with Grok AI..." -InformationAction Continue
-    
+
     $arguments = @("--analyze-route", "--route-id", $RouteId, "--output", "json")
     $result = & dotnet run --project "BusBuddy.WPF/BusBuddy.WPF.csproj" -- $arguments
-    
+
     return $result | ConvertFrom-Json
 }
 
@@ -954,19 +959,19 @@ function Start-BusBuddyStudentAssignment {
     param(
         [Parameter(Mandatory)]
         [int]$StudentId,
-        
+
         [Parameter()]
         [int]$PreferredRouteId
     )
-    
+
     Write-Information "🎯 Getting AI assignment suggestion for student $StudentId..." -InformationAction Continue
-    
+
     $arguments = @("--suggest-assignment", "--student-id", $StudentId)
-    
+
     if ($PreferredRouteId) {
         $arguments += @("--preferred-route", $PreferredRouteId)
     }
-    
+
     $result = & dotnet run --project "BusBuddy.WPF/BusBuddy.WPF.csproj" -- $arguments
     return $result | ConvertFrom-Json
 }
@@ -986,6 +991,7 @@ Export-ModuleMember -Alias bb-routes, bb-route-analyze, bb-assign-student
 ## 🧪 **Testing Patterns**
 
 ### **Route Optimization Service Tests**
+
 ```csharp
 // BusBuddy.Tests/Core/GrokRouteOptimizationServiceTests.cs
 [TestFixture]
@@ -1003,7 +1009,7 @@ public class GrokRouteOptimizationServiceTests
     {
         _httpHandlerMock = new Mock<HttpMessageHandler>();
         _httpClient = new HttpClient(_httpHandlerMock.Object);
-        
+
         var configValues = new Dictionary<string, string>
         {
             {"XAI:ApiKey", "test-api-key"},
@@ -1012,7 +1018,7 @@ public class GrokRouteOptimizationServiceTests
         _configuration = new ConfigurationBuilder()
             .AddInMemoryCollection(configValues)
             .Build();
-            
+
         _logger = Substitute.For<ILogger<GrokRouteOptimizationService>>();
         _service = new GrokRouteOptimizationService(_httpClient, _configuration, _logger);
     }
@@ -1024,7 +1030,7 @@ public class GrokRouteOptimizationServiceTests
         var students = CreateTestStudents();
         var buses = CreateTestBuses();
         var drivers = CreateTestDrivers();
-        
+
         var grokResponse = CreateMockGrokResponse();
         SetupHttpMock(grokResponse);
 
@@ -1043,7 +1049,7 @@ public class GrokRouteOptimizationServiceTests
         // Arrange
         var student = CreateTestStudent();
         var routes = CreateTestRoutes();
-        
+
         var grokResponse = CreateMockAssignmentResponse();
         SetupHttpMock(grokResponse);
 
@@ -1088,12 +1094,14 @@ public class GrokRouteOptimizationServiceTests
 ## 📋 **Quick Reference**
 
 ### **Key Grok API Features for Route Optimization**
+
 - **Route Optimization**: Analyze student addresses and bus capacities for optimal assignments
-- **Student Assignment**: Get AI recommendations for individual student-to-route assignments  
+- **Student Assignment**: Get AI recommendations for individual student-to-route assignments
 - **Efficiency Analysis**: Evaluate existing routes for improvement opportunities
 - **Real-time Suggestions**: Interactive assignment suggestions during manual operations
 
 ### **Commands for Route Management**
+
 ```powershell
 # Optimize all routes with AI
 bb-routes -OptimizationType All
@@ -1109,6 +1117,7 @@ bb-copilot-ref Route-Assignment-Logic
 ```
 
 ### **Integration Points**
+
 - **xAI Grok API**: Route optimization and assignment suggestions
 - **Entity Framework**: Route, Student, Bus, and Driver data management
 - **Syncfusion WPF**: Professional UI components for route management

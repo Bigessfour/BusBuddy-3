@@ -7,6 +7,7 @@
 ## 🎯 Core Framework Configuration
 
 ### Target Framework & Language
+
 ```xml
 <!-- Modern .NET Foundation -->
 <TargetFramework>net9.0-windows</TargetFramework>
@@ -21,13 +22,15 @@
 ## 📦 Package Version Standards
 
 ### Core Technology Stack
-| Package | Version | Purpose | Copilot Benefit |
-|---------|---------|---------|-----------------|
-| **Syncfusion WPF** | `30.1.42` | Professional UI controls | Rich XAML control completions |
-| **Entity Framework Core** | `9.0.7` | Data access layer | Modern EF Core patterns |
-| **Serilog** | `4.3.0` | Pure logging (no Microsoft.Extensions) | Structured logging patterns |
+
+| Package                   | Version   | Purpose                                | Copilot Benefit               |
+| ------------------------- | --------- | -------------------------------------- | ----------------------------- |
+| **Syncfusion WPF**        | `30.1.42` | Professional UI controls               | Rich XAML control completions |
+| **Entity Framework Core** | `9.0.7`   | Data access layer                      | Modern EF Core patterns       |
+| **Serilog**               | `4.3.0`   | Pure logging (no Microsoft.Extensions) | Structured logging patterns   |
 
 ### MVVM & UI Support
+
 ```xml
 <!-- MVVM and UI Enhancement Packages -->
 <CommunityToolkitMvvmVersion>8.3.2</CommunityToolkitMvvmVersion>
@@ -37,6 +40,7 @@
 ```
 
 ### Testing Framework
+
 ```xml
 <!-- Comprehensive Testing Stack -->
 <NUnitVersion>4.3.1</NUnitVersion>
@@ -49,6 +53,7 @@
 ## 🔍 Code Analysis Configuration
 
 ### Quality Standards
+
 ```xml
 <!-- Industry Standard Code Quality -->
 <EnableNETAnalyzers>true</EnableNETAnalyzers>
@@ -58,6 +63,7 @@
 ```
 
 ### MVP-Friendly Suppressions
+
 ```xml
 <!-- Practical suppressions for rapid development -->
 <NoWarn>$(NoWarn);CA1305;CA1860;CA1848;CA1851;CA1304</NoWarn>
@@ -70,6 +76,7 @@
 ## ⚡ Performance Optimization
 
 ### Build Performance
+
 ```xml
 <!-- Optimal Build Configuration -->
 <UseSharedCompilation>true</UseSharedCompilation>
@@ -80,6 +87,7 @@
 ```
 
 ### Test Project Optimization
+
 ```xml
 <!-- Test-specific performance settings -->
 <PropertyGroup Condition="'$(IsTestProject)' == 'true'">
@@ -92,6 +100,7 @@
 ## 🌐 Globalization Support
 
 ### International Transportation
+
 ```xml
 <!-- Global transportation system support -->
 <InvariantGlobalization>false</InvariantGlobalization>
@@ -103,24 +112,28 @@
 ## 💡 Copilot Usage Examples
 
 ### Creating New Projects
+
 ```csharp
 // Copilot Prompt: "Create new WPF project following BusBuddy standards"
 // Result: Inherits all Directory.Build.props settings automatically
 ```
 
 ### Package References
+
 ```xml
 <!-- Copilot Prompt: "Add Syncfusion chart control with version management" -->
 <PackageReference Include="Syncfusion.SfChart.WPF" Version="$(SyncfusionVersion)" />
 ```
 
 ### Entity Framework Usage
+
 ```csharp
 // Copilot Prompt: "Create EF Core DbContext following BusBuddy patterns"
 // Result: Uses EntityFrameworkVersion for consistent package references
 ```
 
 ### Serilog Implementation
+
 ```csharp
 // Copilot Prompt: "Implement Serilog structured logging"
 // Result: Pure Serilog without Microsoft.Extensions.Logging conflicts
@@ -129,6 +142,7 @@
 ## 🔧 Project-Specific Overrides
 
 ### WPF Projects
+
 ```xml
 <!-- Automatically applied to WPF projects -->
 <UseWPF>true</UseWPF>
@@ -137,6 +151,7 @@
 ```
 
 ### Core/Library Projects
+
 ```xml
 <!-- Automatically applied to library projects -->
 <OutputType>Library</OutputType>
@@ -144,6 +159,7 @@
 ```
 
 ### Test Projects
+
 ```xml
 <!-- Automatically detected and configured -->
 <IsTestProject>true</IsTestProject>
@@ -153,6 +169,7 @@
 ## 🚀 Advanced Features
 
 ### MSBuild Optimization
+
 ```xml
 <!-- Prevents MSB4181 warnings -->
 <MSBuildAllProjects Condition="'$(MSBuildAllProjects)' == ''">$(MSBuildThisFileFullPath)</MSBuildAllProjects>
@@ -160,6 +177,7 @@
 ```
 
 ### .NET 9 Specific Features
+
 ```xml
 <!-- Latest C# and .NET features -->
 <LangVersion>12</LangVersion>
@@ -169,6 +187,7 @@
 ## 🔄 Maintenance Commands
 
 ### Validate Configuration
+
 ```powershell
 # Check build configuration
 bb-health --check-build
@@ -181,6 +200,7 @@ dotnet build --verbosity minimal
 ```
 
 ### Update Packages
+
 ```powershell
 # Update central package versions
 # Edit Directory.Build.props versions
@@ -189,4 +209,5 @@ dotnet restore --force
 ```
 
 ---
-*Standardized for BusBuddy MVP with Microsoft best practices* 🚀
+
+_Standardized for BusBuddy MVP with Microsoft best practices_ 🚀
