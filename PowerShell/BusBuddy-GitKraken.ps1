@@ -42,9 +42,396 @@ $script:GitKrakenConfig = @{
     SyncfusionDocsUrl = "https://help.syncfusion.com/wpf/welcome-to-syncfusion-essential-wpf"
     AzureSqlDocsUrl = "https://learn.microsoft.com/en-us/azure/azure-sql/?view=azuresql"
     AiEndpoint = "api.openai.com" # Make AI endpoint configurable
+
+    # CLI Tool Selection Strategy
+    CLIStrategy = @{
+        # GitKraken Cloud CLI (gk) - Best for AI-powered Git operations
+        GitKrakenCloud = @{
+            Command = "gk"
+            BestFor = @("AI explanations", "Workspaces", "Organizations", "AI commit messages")
+            RequiresAuth = $true
+            AuthCommand = "gk auth login"
+            TestCommand = "gk auth status"
+        }
+
+        # GitHub CLI (gh) - Best for PR/Issue management and GitHub-specific operations
+        GitHubCLI = @{
+            Command = "gh"
+            BestFor = @("PR management", "Issue tracking", "GitHub Actions", "Repository operations")
+            RequiresAuth = $true
+            AuthCommand = "gh auth login"
+            TestCommand = "gh auth status"
+        }
+
+        # Git CLI - Fallback for basic Git operations
+        GitCore = @{
+            Command = "git"
+            BestFor = @("Basic Git operations", "Local repository management")
+            RequiresAuth = $false
+            TestCommand = "git --version"
+        }
+    }
 }
 
-# Enhanced GitKraken AI with Robust Fallback Strategy
+# CLI Tool Selection and Detection
+function Get-OptimalCLITool {
+    <#
+    .SYNOPSIS
+        Determines the best CLI tool for a specific Git/GitHub operation
+    .PARAMETER Operation
+        The type of operation (PR, AI, Issue, Commit, etc.)
+    .EXAMPLE
+        Get-OptimalCLITool -Operation "PR"
+        Returns: @{ Tool="gh"; Command="gh pr list"; Reason="GitHub CLI authenticated and best for PR management" }
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [ValidateSet("PR", "Issue", "AI", "Commit", "Workspace", "Branch", "Diff", "Log")]
+        [string]$Operation
+    )
+
+    $result = @{
+        Tool = $null
+        Command = $null
+        Reason = $null
+        Available = $false
+        AuthRequired = $false
+    }
+
+    # Test CLI availability and authentication
+    $cliStatus = @{
+        GitKrakenCloud = Test-GitKrakenCloudCLI
+        GitHubCLI = Test-GitHubCLI
+        GitCore = Test-GitCoreCLI
+    }
+
+    # Operation-specific CLI selection logic
+    switch ($Operation) {
+        "PR" {
+            if ($cliStatus.GitHubCLI.Available -and $cliStatus.GitHubCLI.Authenticated) {
+                $result.Tool = "gh"
+                $result.Command = "gh pr"
+                $result.Reason = "GitHub CLI is authenticated and optimal for PR management"
+                $result.Available = $true
+            }
+            elseif ($cliStatus.GitKrakenCloud.Available -and $cliStatus.GitKrakenCloud.Authenticated) {
+                $result.Tool = "gk"
+                $result.Command = "gk work"
+                $result.Reason = "GitKraken Cloud available as secondary option for PR operations"
+                $result.Available = $true
+            }
+            else {
+                $result.Tool = "gh"
+                $result.Command = "gh pr"
+                $result.Reason = "GitHub CLI required for PR operations (not authenticated)"
+                $result.Available = $false
+                $result.AuthRequired = $true
+            }
+        }
+        "AI" {
+            if ($cliStatus.GitKrakenCloud.Available -and $cliStatus.GitKrakenCloud.Authenticated) {
+                $result.Tool = "gk"
+                $result.Command = "gk ai"
+                $result.Reason = "GitKraken Cloud CLI provides AI-powered Git explanations"
+                $result.Available = $true
+            }
+            else {
+                $result.Tool = "git"
+                $result.Command = "git log"
+                $result.Reason = "GitKraken AI not available, using manual Git analysis"
+                $result.Available = $true
+            }
+        }
+        "Issue" {
+            if ($cliStatus.GitHubCLI.Available -and $cliStatus.GitHubCLI.Authenticated) {
+                $result.Tool = "gh"
+                $result.Command = "gh issue"
+                $result.Reason = "GitHub CLI is optimal for issue management"
+                $result.Available = $true
+            }
+            elseif ($cliStatus.GitKrakenCloud.Available) {
+                $result.Tool = "gk"
+                $result.Command = "gk issue"
+                $result.Reason = "GitKraken Cloud as secondary option for issues"
+                $result.Available = $true
+            }
+            else {
+                $result.Tool = "gh"
+                $result.Command = "gh issue"
+                $result.Reason = "GitHub CLI required for issue operations"
+                $result.Available = $false
+                $result.AuthRequired = $true
+            }
+        }
+        { $_ -in @("Commit", "Branch", "Diff", "Log") } {
+            if ($cliStatus.GitKrakenCloud.Available -and $cliStatus.GitKrakenCloud.Authenticated -and $Operation -eq "Commit") {
+                $result.Tool = "gk"
+                $result.Command = "gk ai commit"
+                $result.Reason = "GitKraken AI can generate intelligent commit messages"
+                $result.Available = $true
+            }
+            else {
+                $result.Tool = "git"
+                $result.Command = "git"
+                $result.Reason = "Core Git operations use standard git CLI"
+                $result.Available = $cliStatus.GitCore.Available
+            }
+        }
+        "Workspace" {
+            if ($cliStatus.GitKrakenCloud.Available) {
+                $result.Tool = "gk"
+                $result.Command = "gk workspace"
+                $result.Reason = "GitKraken Cloud provides workspace management"
+                $result.Available = $true
+            }
+            else {
+                $result.Tool = "git"
+                $result.Command = "git status"
+                $result.Reason = "Basic workspace info via git status"
+                $result.Available = $true
+            }
+        }
+    }
+
+    return $result
+}
+
+function Test-GitKrakenCloudCLI {
+    <#
+    .SYNOPSIS
+        Tests GitKraken Cloud CLI availability and authentication status
+    #>
+    try {
+        # Test if gk command exists and is GitKraken Cloud CLI (not git)
+        $version = & gk version 2>$null
+        if ($LASTEXITCODE -ne 0 -or -not $version -or $version -notmatch "CLI:") {
+            return @{ Available = $false; Authenticated = $false; Version = $null }
+        }
+
+        # Test authentication
+        $authStatus = & gk auth status 2>$null
+        $authenticated = $LASTEXITCODE -eq 0 -and $authStatus -notmatch "Authenticate with"
+
+        return @{
+            Available = $true
+            Authenticated = $authenticated
+            Version = $version
+            Type = "GitKraken Cloud CLI"
+        }
+    }
+    catch {
+        return @{ Available = $false; Authenticated = $false; Version = $null }
+    }
+}
+
+function Test-GitHubCLI {
+    <#
+    .SYNOPSIS
+        Tests GitHub CLI availability and authentication status
+    #>
+    try {
+        $version = & gh --version 2>$null
+        if ($LASTEXITCODE -ne 0) {
+            return @{ Available = $false; Authenticated = $false; Version = $null }
+        }
+
+        # Test authentication
+        $authStatus = & gh auth status 2>$null
+        $authenticated = $LASTEXITCODE -eq 0
+
+        return @{
+            Available = $true
+            Authenticated = $authenticated
+            Version = $version
+            Type = "GitHub CLI"
+        }
+    }
+    catch {
+        return @{ Available = $false; Authenticated = $false; Version = $null }
+    }
+}
+
+function Test-GitCoreCLI {
+    <#
+    .SYNOPSIS
+        Tests core Git CLI availability
+    #>
+    try {
+        $version = & git --version 2>$null
+        return @{
+            Available = $LASTEXITCODE -eq 0
+            Authenticated = $true  # Git doesn't require auth for local operations
+            Version = $version
+            Type = "Core Git CLI"
+        }
+    }
+    catch {
+        return @{ Available = $false; Authenticated = $false; Version = $null }
+    }
+}
+
+# Smart PR Management with Optimal CLI Selection
+function Get-BusBuddyPullRequests {
+    <#
+    .SYNOPSIS
+        Get pull requests using the optimal available CLI tool
+    .DESCRIPTION
+        Automatically selects between GitHub CLI and GitKraken Cloud based on availability and authentication
+    #>
+    [CmdletBinding()]
+    param()
+
+    $cliInfo = Get-OptimalCLITool -Operation "PR"
+
+    Write-Information "🔍 Getting PR information using $($cliInfo.Tool)..." -InformationAction Continue
+    Write-Verbose "Reason: $($cliInfo.Reason)"
+
+    if (-not $cliInfo.Available) {
+        if ($cliInfo.AuthRequired) {
+            Write-Warning "Authentication required for $($cliInfo.Tool). Run: $($script:GitKrakenConfig.CLIStrategy.GitHubCLI.AuthCommand)"
+            return $null
+        }
+        Write-Error "No suitable CLI tool available for PR operations"
+        return $null
+    }
+
+    try {
+        switch ($cliInfo.Tool) {
+            "gh" {
+                Write-Information "📋 Using GitHub CLI for comprehensive PR data..." -InformationAction Continue
+                $prs = & gh pr list --json number,title,state,author,createdAt,headRefName,statusCheckRollup,reviewDecision
+                if ($LASTEXITCODE -eq 0 -and $prs) {
+                    $prData = $prs | ConvertFrom-Json
+                    foreach ($pr in $prData) {
+                        $checksInfo = ""
+                        if ($pr.statusCheckRollup -and $pr.statusCheckRollup.Count -gt 0) {
+                            $total = $pr.statusCheckRollup.Count
+                            $passing = ($pr.statusCheckRollup | Where-Object { $_.status -eq "COMPLETED" -and $_.conclusion -eq "SUCCESS" }).Count
+                            $checksInfo = " | CI: $passing/$total ✅"
+                        }
+
+                        $reviewInfo = if ($pr.reviewDecision) { " | Review: $($pr.reviewDecision)" } else { "" }
+
+                        $timeAgo = if ($pr.createdAt) {
+                            $created = [DateTime]::Parse($pr.createdAt)
+                            $ago = (Get-Date) - $created
+                            if ($ago.Days -gt 0) { "$($ago.Days)d ago" }
+                            elseif ($ago.Hours -gt 0) { "$($ago.Hours)h ago" }
+                            else { "$($ago.Minutes)m ago" }
+                        } else { "unknown" }
+
+                        Write-Host "PR #$($pr.number): " -ForegroundColor Yellow -NoNewline
+                        Write-Host "$($pr.title)" -ForegroundColor White
+                        Write-Host "  Branch: $($pr.headRefName) | State: $($pr.state) | Created: $timeAgo$checksInfo$reviewInfo" -ForegroundColor Gray
+                    }
+                    return $prData
+                }
+            }
+            "gk" {
+                Write-Information "🤖 Using GitKraken Cloud for PR information..." -InformationAction Continue
+                & gk work list
+                return "GitKraken Cloud work items listed above"
+            }
+        }
+    }
+    catch {
+        Write-Error "Failed to retrieve PR information: $_"
+        return $null
+    }
+}
+
+function Invoke-BusBuddyAIAnalysis {
+    <#
+    .SYNOPSIS
+        Perform AI-powered Git analysis using the best available tool
+    .PARAMETER Type
+        Type of analysis: branch, commit, or pr
+    .PARAMETER Target
+        Target for analysis (branch name, commit SHA, etc.)
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [ValidateSet("branch", "commit", "pr")]
+        [string]$Type,
+
+        [Parameter()]
+        [string]$Target
+    )
+
+    $cliInfo = Get-OptimalCLITool -Operation "AI"
+
+    Write-Information "🤖 Performing AI analysis using $($cliInfo.Tool)..." -InformationAction Continue
+    Write-Verbose "Reason: $($cliInfo.Reason)"
+
+    if ($cliInfo.Tool -eq "gk" -and $cliInfo.Available) {
+        try {
+            switch ($Type) {
+                "branch" {
+                    $branch = $Target ?? (git branch --show-current)
+                    Write-Information "🔍 GitKraken AI analyzing branch: $branch" -InformationAction Continue
+                    & gk ai explain branch --branch $branch
+                }
+                "commit" {
+                    $commit = $Target ?? "HEAD"
+                    Write-Information "🔍 GitKraken AI analyzing commit: $commit" -InformationAction Continue
+                    & gk ai explain commit --commit $commit
+                }
+                "pr" {
+                    Write-Information "🔍 GitKraken AI analyzing current PR context..." -InformationAction Continue
+                    # GitKraken Cloud may provide PR insights through work items
+                    & gk work list
+                }
+            }
+        }
+        catch {
+            Write-Warning "GitKraken AI failed: $_"
+            Write-Information "🔄 Falling back to manual analysis..." -InformationAction Continue
+            Get-ManualGitAnalysis -Type $Type -Target $Target
+        }
+    }
+    else {
+        Write-Information "🔧 Using manual Git analysis (GitKraken AI not available)..." -InformationAction Continue
+        Get-ManualGitAnalysis -Type $Type -Target $Target
+    }
+}
+
+function Get-ManualGitAnalysis {
+    <#
+    .SYNOPSIS
+        Fallback manual Git analysis when AI tools aren't available
+    #>
+    [CmdletBinding()]
+    param(
+        [string]$Type,
+        [string]$Target
+    )
+
+    switch ($Type) {
+        "branch" {
+            $branch = $Target ?? (git branch --show-current)
+            Write-Host "🔍 Manual Branch Analysis: $branch" -ForegroundColor Cyan
+            Write-Host "Recent commits:" -ForegroundColor Gray
+            git log --oneline -5 $branch
+            Write-Host "`nFiles changed:" -ForegroundColor Gray
+            git diff --name-only main..$branch 2>$null | ForEach-Object { Write-Host "  $_" }
+        }
+        "commit" {
+            $commit = if ([string]::IsNullOrWhiteSpace($Target)) { "HEAD" } else { $Target }
+            Write-Host "🔍 Manual Commit Analysis: $commit" -ForegroundColor Cyan
+            git show --stat $commit
+        }
+        "pr" {
+            Write-Host "🔍 Manual PR Context Analysis" -ForegroundColor Cyan
+            $branch = git branch --show-current
+            Write-Host "Current branch: $branch" -ForegroundColor Gray
+            Write-Host "Commits ahead of main:" -ForegroundColor Gray
+            git log --oneline main..$branch 2>$null
+        }
+    }
+}
+
 function Invoke-GitKrakenAIWithFallback {
     <#
     .SYNOPSIS
@@ -1285,8 +1672,15 @@ Set-Alias -Name gkaitest -Value Test-GitKrakenAiAvailability
 Set-Alias -Name gkruns -Value Get-GitHubWorkflowRuns
 Set-Alias -Name gkcommit -Value Start-BusBuddyCommitWorkflow
 
+# NEW: Intelligent CLI Selection Aliases
+Set-Alias -Name bb-pr -Value Get-BusBuddyPullRequests -Force
+Set-Alias -Name bb-ai-branch -Value Invoke-BusBuddyAIAnalysis -Force
+Set-Alias -Name bb-ai-commit -Value Invoke-BusBuddyAIAnalysis -Force
+Set-Alias -Name gkprs -Value Get-BusBuddyPullRequests -Force  # GitKraken-style alias
+
 # Module initialization message
 Write-Information "🎯 BusBuddy GitKraken integration loaded successfully" -InformationAction Continue
 Write-Information "   Available commands: Start-GitKrakenDesktop, Invoke-GitKrakenWorkflow, New-BusBuddyBranch, Get-GitHubWorkflowRuns, Start-BusBuddyCommitWorkflow" -InformationAction Continue
-Write-Information "   Available aliases: gkstart, gkworkflow, gkbranch, gkhelp, gkai, gkaitest, gkruns, gkcommit" -InformationAction Continue
+Write-Information "   🆕 Smart CLI commands: Get-BusBuddyPullRequests, Invoke-BusBuddyAIAnalysis (auto-selects best CLI tool)" -InformationAction Continue
+Write-Information "   Available aliases: gkstart, gkworkflow, gkbranch, gkhelp, gkai, gkaitest, gkruns, gkcommit, bb-pr, gkprs" -InformationAction Continue
 Write-Information "   🔧 Updated: Enhanced commit workflow with intelligent file staging and better guidance" -InformationAction Continue
