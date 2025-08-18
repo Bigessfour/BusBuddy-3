@@ -48,7 +48,8 @@ if (-not $script:SerilogInitialized) {
                 Write-Warning "Serilog assembly loaded but configuration failed: $($_.Exception.Message)"
                 $script:SerilogInitialized = $false
             }
-        } else {
+        }
+        else {
             Write-Warning "Serilog assembly not found. Using Write-Output fallback for logging."
             $script:SerilogInitialized = $false
         }
@@ -145,14 +146,14 @@ function Invoke-ComprehensiveXamlValidation {
 
         # Standard WPF controls that should be replaced with Syncfusion equivalents
         $wpfControlsToReplace = @{
-            "Button" = "SfButton"
-            "TextBox" = "SfTextBox"
-            "ComboBox" = "SfComboBox"
-            "DataGrid" = "SfDataGrid"
-            "ListView" = "SfListView"
-            "TreeView" = "SfTreeView"
+            "Button"     = "SfButton"
+            "TextBox"    = "SfTextBox"
+            "ComboBox"   = "SfComboBox"
+            "DataGrid"   = "SfDataGrid"
+            "ListView"   = "SfListView"
+            "TreeView"   = "SfTreeView"
             "DatePicker" = "SfDatePicker"
-            "Slider" = "SfRangeSlider"
+            "Slider"     = "SfRangeSlider"
         }
     }
 
@@ -182,7 +183,7 @@ function Invoke-ComprehensiveXamlValidation {
                 $cores = $null
                 try { $cores = (Get-CimInstance Win32_Processor | Select-Object -Expand NumberOfCores -First 1) } catch {}
                 $memGiB = $null
-                try { $memGiB = [math]::Round((Get-CimInstance Win32_ComputerSystem).TotalPhysicalMemory/1GB, 1) } catch {}
+                try { $memGiB = [math]::Round((Get-CimInstance Win32_ComputerSystem).TotalPhysicalMemory / 1GB, 1) } catch {}
 
                 # Base throttle: 75% of logical processors, min 2, max 12 (conservative default)
                 $computed = if ($logical -gt 0) { [math]::Max([math]::Min([int][math]::Floor($logical * 0.75), 12), 2) } else { 4 }
@@ -209,13 +210,13 @@ function Invoke-ComprehensiveXamlValidation {
             $results = $xamlFiles | ForEach-Object -Parallel {
                 $file = $_
                 $result = [PSCustomObject]@{
-                    File = $file
-                    IsValid = $true
-                    Errors = @()
-                    IsResourceDictionary = $false
-                    SyncfusionIssues = @()
+                    File                   = $file
+                    IsValid                = $true
+                    Errors                 = @()
+                    IsResourceDictionary   = $false
+                    SyncfusionIssues       = @()
                     HasSyncfusionNamespace = $false
-                    StandardWpfControls = @()
+                    StandardWpfControls    = @()
                 }
 
                 try {
@@ -235,10 +236,10 @@ function Invoke-ComprehensiveXamlValidation {
                     catch {
                         $result.IsValid = $false
                         $result.Errors += [PSCustomObject]@{
-                            Line = if ($_.Exception.LineNumber) { $_.Exception.LineNumber } else { 1 }
-                            Message = $_.Exception.Message
+                            Line       = if ($_.Exception.LineNumber) { $_.Exception.LineNumber } else { 1 }
+                            Message    = $_.Exception.Message
                             Suggestion = "Check XML syntax; ensure well-formed XAML."
-                            ErrorType = "XmlSyntax"
+                            ErrorType  = "XmlSyntax"
                         }
                     }
 
@@ -261,11 +262,11 @@ function Invoke-ComprehensiveXamlValidation {
                                 if ($lines[$i] -match $pattern) {
                                     $result.StandardWpfControls += $control
                                     $result.SyncfusionIssues += [PSCustomObject]@{
-                                        Line = $i + 1
-                                        Message = "Standard WPF $control detected; should use Syncfusion $($wpfControlsToReplace[$control])"
-                                        Suggestion = "Replace <$control> with <syncfusion:$($wpfControlsToReplace[$control])>"
-                                        ErrorType = "ControlUpgrade"
-                                        ControlType = $control
+                                        Line               = $i + 1
+                                        Message            = "Standard WPF $control detected; should use Syncfusion $($wpfControlsToReplace[$control])"
+                                        Suggestion         = "Replace <$control> with <syncfusion:$($wpfControlsToReplace[$control])>"
+                                        ErrorType          = "ControlUpgrade"
+                                        ControlType        = $control
                                         RecommendedControl = $wpfControlsToReplace[$control]
                                     }
                                 }
@@ -276,20 +277,20 @@ function Invoke-ComprehensiveXamlValidation {
                     # Check for missing Syncfusion namespace when controls are found
                     if ($result.StandardWpfControls.Count -gt 0 -and -not $result.HasSyncfusionNamespace) {
                         $result.SyncfusionIssues += [PSCustomObject]@{
-                            Line = 1
-                            Message = "Missing Syncfusion namespace declaration"
+                            Line       = 1
+                            Message    = "Missing Syncfusion namespace declaration"
                             Suggestion = "Add xmlns:syncfusion='http://schemas.syncfusion.com/wpf' to root element"
-                            ErrorType = "MissingNamespace"
+                            ErrorType  = "MissingNamespace"
                         }
                     }
                 }
                 catch {
                     $result.IsValid = $false
                     $result.Errors += [PSCustomObject]@{
-                        Line = 1
-                        Message = "Failed to read or process file: $($_.Exception.Message)"
+                        Line       = 1
+                        Message    = "Failed to read or process file: $($_.Exception.Message)"
                         Suggestion = "Check file permissions and encoding"
-                        ErrorType = "FileAccess"
+                        ErrorType  = "FileAccess"
                     }
                 }
 
@@ -309,29 +310,30 @@ function Invoke-ComprehensiveXamlValidation {
                 if ($result.IsValid -and $result.SyncfusionIssues.Count -eq 0) {
                     $validFiles += $result.File
                     Write-ValidationLog -Level "Debug" -Message "✅ {FileName}: Valid XAML with proper Syncfusion usage" -Properties @{ FileName = $fileName }
-                } else {
+                }
+                else {
                     $invalidFiles += [PSCustomObject]@{
-                        File = $result.File
-                        Errors = $result.Errors
-                        SyncfusionIssues = $result.SyncfusionIssues
+                        File                   = $result.File
+                        Errors                 = $result.Errors
+                        SyncfusionIssues       = $result.SyncfusionIssues
                         HasSyncfusionNamespace = $result.HasSyncfusionNamespace
-                        StandardWpfControls = $result.StandardWpfControls
+                        StandardWpfControls    = $result.StandardWpfControls
                     }
 
                     # Log specific issues found
                     if ($result.Errors.Count -gt 0) {
                         Write-ValidationLog -Level "Error" -Message "❌ {FileName}: {ErrorCount} XAML syntax errors" -Properties @{
-                            FileName = $fileName
+                            FileName   = $fileName
                             ErrorCount = $result.Errors.Count
-                            Errors = ($result.Errors | ForEach-Object { $_.Message }) -join "; "
+                            Errors     = ($result.Errors | ForEach-Object { $_.Message }) -join "; "
                         }
                     }
 
                     if ($result.SyncfusionIssues.Count -gt 0) {
                         Write-ValidationLog -Level "Warning" -Message "⚠️ {FileName}: {IssueCount} Syncfusion compliance issues" -Properties @{
-                            FileName = $fileName
+                            FileName   = $fileName
                             IssueCount = $result.SyncfusionIssues.Count
-                            Issues = ($result.SyncfusionIssues | ForEach-Object { $_.Message }) -join "; "
+                            Issues     = ($result.SyncfusionIssues | ForEach-Object { $_.Message }) -join "; "
                         }
                     }
                 }
@@ -341,26 +343,26 @@ function Invoke-ComprehensiveXamlValidation {
 
             # Generate comprehensive summary with structured logging
             $summary = [PSCustomObject]@{
-                TotalFiles = $xamlFiles.Count
-                ValidFiles = $validFiles.Count
-                InvalidFiles = $invalidFiles.Count
+                TotalFiles           = $xamlFiles.Count
+                ValidFiles           = $validFiles.Count
+                InvalidFiles         = $invalidFiles.Count
                 ResourceDictionaries = $resourceDictionaries.Count
                 SyncfusionViolations = $syncfusionViolations.Count
-                InvalidFileDetails = $invalidFiles
-                ProjectPath = $ProjectPath
-                ValidationDate = Get-Date
+                InvalidFileDetails   = $invalidFiles
+                ProjectPath          = $ProjectPath
+                ValidationDate       = Get-Date
                 ValidationDurationMs = (Get-Date).Subtract($startTime).TotalMilliseconds
             }
 
             # Log comprehensive summary
             Write-ValidationLog -Level "Information" -Message "📊 XAML Validation Summary - {TotalFiles} files processed" -Properties @{
-                TotalFiles = $summary.TotalFiles
-                ValidFiles = $summary.ValidFiles
-                InvalidFiles = $summary.InvalidFiles
+                TotalFiles           = $summary.TotalFiles
+                ValidFiles           = $summary.ValidFiles
+                InvalidFiles         = $summary.InvalidFiles
                 ResourceDictionaries = $summary.ResourceDictionaries
                 SyncfusionViolations = $summary.SyncfusionViolations
-                ProjectPath = $summary.ProjectPath
-                DurationMs = $summary.ValidationDurationMs
+                ProjectPath          = $summary.ProjectPath
+                DurationMs           = $summary.ValidationDurationMs
             }
             # Display results with proper output streams (following PowerShell 7.5.2 standards)
             Write-Output "📊 XAML Validation Summary"
@@ -389,26 +391,26 @@ function Invoke-ComprehensiveXamlValidation {
             # CI/CD JSON output with enhanced structure
             if ($OutputJson) {
                 $jsonOutput = @{
-                    Summary = $summary
-                    DetailedResults = $results | ForEach-Object {
+                    Summary            = $summary
+                    DetailedResults    = $results | ForEach-Object {
                         @{
-                            FileName = $_.File.Name
-                            FilePath = $_.File.FullName
-                            IsValid = $_.IsValid
-                            IsResourceDictionary = $_.IsResourceDictionary
+                            FileName               = $_.File.Name
+                            FilePath               = $_.File.FullName
+                            IsValid                = $_.IsValid
+                            IsResourceDictionary   = $_.IsResourceDictionary
                             HasSyncfusionNamespace = $_.HasSyncfusionNamespace
-                            StandardWpfControls = $_.StandardWpfControls
-                            Errors = $_.Errors
-                            SyncfusionIssues = $_.SyncfusionIssues
+                            StandardWpfControls    = $_.StandardWpfControls
+                            Errors                 = $_.Errors
+                            SyncfusionIssues       = $_.SyncfusionIssues
                         }
                     }
                     ValidationMetadata = @{
                         PowerShellVersion = $PSVersionTable.PSVersion.ToString()
-                        ModuleVersion = "2.1"
-            SerilogEnabled = $global:SerilogInitialized
-                        ValidationDate = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+                        ModuleVersion     = "2.1"
+                        SerilogEnabled    = $global:SerilogInitialized
+                        ValidationDate    = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
                     }
-        }
+                }
 
                 $jsonOutput | ConvertTo-Json -Depth 10 | Out-File -FilePath $OutputJson -Encoding utf8
                 Write-ValidationLog -Level "Information" -Message "📄 JSON report written to {Path}" -Properties @{ Path = $OutputJson }
@@ -454,24 +456,25 @@ function Test-BusBuddyXml {
         Write-ValidationLog -Level "Debug" -Message "Successfully validated XML structure for {FilePath}" -Properties @{ FilePath = $FilePath }
 
         return [PSCustomObject]@{
-            IsValid = $true
-            Errors = @()
-            FilePath = $FilePath
+            IsValid        = $true
+            Errors         = @()
+            FilePath       = $FilePath
             ValidationDate = Get-Date
         }
-    } catch {
+    }
+    catch {
         $errorMessage = "XML validation failed for $FilePath`: $($_.Exception.Message)"
         Write-ValidationLog -Level "Error" -Message $errorMessage -Exception $_.Exception
 
         return [PSCustomObject]@{
-            IsValid = $false
-            Errors = @([PSCustomObject]@{
-                Line = if ($_.Exception.LineNumber) { $_.Exception.LineNumber } else { 1 }
-                Message = $_.Exception.Message
-                Suggestion = "Check XML syntax; ensure well-formed XAML."
-                ErrorType = "XmlSyntax"
-            })
-            FilePath = $FilePath
+            IsValid        = $false
+            Errors         = @([PSCustomObject]@{
+                    Line       = if ($_.Exception.LineNumber) { $_.Exception.LineNumber } else { 1 }
+                    Message    = $_.Exception.Message
+                    Suggestion = "Check XML syntax; ensure well-formed XAML."
+                    ErrorType  = "XmlSyntax"
+                })
+            FilePath       = $FilePath
             ValidationDate = Get-Date
         }
     }
@@ -493,5 +496,3 @@ if ($MyInvocation.InvocationName -ne '.') {
         Write-Output "   Syncfusion Violations: $($result.SyncfusionViolations)"
     }
 }
-
-

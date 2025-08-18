@@ -7,7 +7,7 @@
 param(
     [string]$Search = "",
     [int]$Top = 25,
-    [ValidateSet('ActiveDirectoryDefault','ActiveDirectoryInteractive','ActiveDirectoryDeviceCode')]
+    [ValidateSet('ActiveDirectoryDefault', 'ActiveDirectoryInteractive', 'ActiveDirectoryDeviceCode')]
     [string]$Auth = 'ActiveDirectoryDefault'
 )
 

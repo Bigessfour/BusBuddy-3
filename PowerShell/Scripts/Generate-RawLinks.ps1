@@ -36,7 +36,8 @@ function Resolve-RepositoryId {
         if ($remote -match 'github.com[:/]([^/]+)/([^/.]+)') {
             return "{0}/{1}" -f $Matches[1], $Matches[2]
         }
-    } catch {
+    }
+    catch {
         Write-Verbose "Unable to read git remote origin: $($_.Exception.Message)"
     }
     return $RepositoryFallback
@@ -47,10 +48,10 @@ function Encode-PathSegment {
         [Parameter(Mandatory, ValueFromPipeline)] [string] $Path
     )
     process {
-    # Encode each segment but preserve slashes for GitHub raw URLs
-    # Note: Wrap the pipeline in parentheses before using -join to avoid it binding
-    # to ForEach-Object's RemainingScripts parameter (PS 7.x parsing behavior).
-    (( $Path -split '/' ) | ForEach-Object { [System.Uri]::EscapeDataString($_) }) -join '/'
+        # Encode each segment but preserve slashes for GitHub raw URLs
+        # Note: Wrap the pipeline in parentheses before using -join to avoid it binding
+        # to ForEach-Object's RemainingScripts parameter (PS 7.x parsing behavior).
+        (( $Path -split '/' ) | ForEach-Object { [System.Uri]::EscapeDataString($_) }) -join '/'
     }
 }
 
@@ -67,7 +68,7 @@ try {
         $sha = (git rev-parse HEAD).Trim()
 
         $baseRawBranch = "https://raw.githubusercontent.com/$repo/$branch"
-        $baseRawSha    = "https://raw.githubusercontent.com/$repo/$sha"
+        $baseRawSha = "https://raw.githubusercontent.com/$repo/$sha"
 
         $files = git ls-files | Where-Object { $_ }
         if (-not $files) { throw 'No tracked files found (git ls-files returned empty).' }
@@ -105,12 +106,12 @@ try {
         ) -InformationAction Continue
 
         Write-Output ([PSCustomObject]@{
-            Repository = $repo
-            Branch     = $branch
-            Sha        = $sha
-            Count      = $files.Count
-            Outputs    = @('RAW-LINKS.txt','RAW-LINKS-PINNED.txt','raw-index.csv','raw-index.json')
-        })
+                Repository = $repo
+                Branch     = $branch
+                Sha        = $sha
+                Count      = $files.Count
+                Outputs    = @('RAW-LINKS.txt', 'RAW-LINKS-PINNED.txt', 'raw-index.csv', 'raw-index.json')
+            })
     }
     finally {
         Pop-Location

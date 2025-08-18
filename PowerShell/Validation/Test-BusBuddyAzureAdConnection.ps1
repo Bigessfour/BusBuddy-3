@@ -40,7 +40,7 @@
 #>
 [CmdletBinding()]
 param(
-    [ValidateSet('Default','Interactive')]
+    [ValidateSet('Default', 'Interactive')]
     [string]$Mode = 'Default',
     [string]$Server = 'busbuddy-server-sm2.database.windows.net',
     [string]$Database = 'BusBuddyDB',
@@ -98,11 +98,11 @@ if ($ApplyMigrations -and $connectionResult -eq 'Success') {
 }
 
 [PSCustomObject]@{
-    ConnectionTest        = $connectionResult
-    AuthenticationMode    = $Mode
-    Server                = $Server
-    Database              = $Database
-    EfMigrationsApplied   = $efApplied
-    Error                 = $exceptionMessage
-    TimestampUtc          = [DateTime]::UtcNow
+    ConnectionTest      = $connectionResult
+    AuthenticationMode  = $Mode
+    Server              = $Server
+    Database            = $Database
+    EfMigrationsApplied = $efApplied
+    Error               = $exceptionMessage
+    TimestampUtc        = [DateTime]::UtcNow
 }

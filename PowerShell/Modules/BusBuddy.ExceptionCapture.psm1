@@ -42,7 +42,7 @@ Start-BusBuddyWithCapture -ProjectPath $pwd -DurationSeconds 120 -ShowLogs
 function Start-BusBuddyWithCapture {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
         [string]$ProjectPath,
 
@@ -78,24 +78,24 @@ function Start-BusBuddyWithCapture {
             # Start application monitoring job
             $monitorJob = Start-ThreadJob -Name 'BusBuddyCapture' -ScriptBlock {
                 param(
-                    [string]$logFile,
-                    [string]$errorLogFile,
-                    [int]$duration,
-                    [string]$projectPath,
-                    [string]$message
+                    [string]$using:using:logFile,
+                    [string]$using:using:errorLogFile,
+                    [int]$using:using:duration,
+                    [string]$using:using:projectPath,
+                    [string]$using:using:message
                 )
 
                 # Use the parameters to avoid PSReviewUnusedParameter and to make the job self-contained
-                if (-not (Test-Path -LiteralPath $logFile)) {
-                    $null = New-Item -ItemType File -Path $logFile -Force
+                if (-not (Test-Path -LiteralPath $using:logFile)) {
+                    $null = New-Item -ItemType File -Path $using:logFile -Force
                 }
-                if (-not (Test-Path -LiteralPath $errorLogFile)) {
-                    $null = New-Item -ItemType File -Path $errorLogFile -Force
+                if (-not (Test-Path -LiteralPath $using:errorLogFile)) {
+                    $null = New-Item -ItemType File -Path $using:errorLogFile -Force
                 }
 
-                if ($message) {
+                if ($using:message) {
                     # Minimal usage to demonstrate consumption
-                    Add-Content -Path $logFile -Value ("{0:u} {1}" -f (Get-Date), $message)
+                    Add-Content -Path $using:logFile -Value ("{0:u} {1}" -f (Get-Date), $using:message)
                 }
 
                 # Monitoring logic
@@ -117,10 +117,10 @@ function Start-BusBuddyWithCapture {
                         if ($content -match "Exception|Error|Fatal|Crash|Failed") {
                             $errorData = @{
                                 Timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
-                                File = $errorLog.Name
-                                Path = $errorLog.FullName
-                                Error = ($content -split "\r?\n" | Where-Object { $_ -match "Exception|Error|Fatal" } | Select-Object -First 5) -join "`n"
-                                Priority = if ($content -match "System\.Exception|Fatal") { "High" } else { "Medium" }
+                                File      = $errorLog.Name
+                                Path      = $errorLog.FullName
+                                Error     = ($content -split "\r?\n" | Where-Object { $_ -match "Exception|Error|Fatal" } | Select-Object -First 5) -join "`n"
+                                Priority  = if ($content -match "System\.Exception|Fatal") { "High" } else { "Medium" }
                             }
                             $errors += $errorData
                             Add-Content -Path $logFile -Value "Detected error in $($errorLog.Name): $($errorData.Error)"
@@ -230,15 +230,15 @@ function Get-BusBuddyErrorReport {
 
         # Return results
         return [PSCustomObject]@{
-            TotalErrors = $allErrors.Count
-            HighPriorityErrors = ($allErrors | Where-Object { $_.Priority -eq "High" }).Count
+            TotalErrors          = $allErrors.Count
+            HighPriorityErrors   = ($allErrors | Where-Object { $_.Priority -eq "High" }).Count
             MediumPriorityErrors = ($allErrors | Where-Object { $_.Priority -eq "Medium" }).Count
-            LowPriorityErrors = ($allErrors | Where-Object { $_.Priority -eq "Low" }).Count
-            MostRecentError = $allErrors | Sort-Object -Property Timestamp -Descending | Select-Object -First 1
-            ErrorSummary = $allErrors | Group-Object -Property File |
+            LowPriorityErrors    = ($allErrors | Where-Object { $_.Priority -eq "Low" }).Count
+            MostRecentError      = $allErrors | Sort-Object -Property Timestamp -Descending | Select-Object -First 1
+            ErrorSummary         = $allErrors | Group-Object -Property File |
                 Sort-Object -Property Count -Descending |
                 Select-Object Name, Count
-            Errors = $allErrors
+            Errors               = $allErrors
         }
     }
     catch {
@@ -530,16 +530,16 @@ function Get-BusBuddyExceptionSummary {
             }
 
             $summary = [PSCustomObject]@{
-                LogFile = $LogPath
-                AnalysisPeriod = "$Hours hours"
-                TotalExceptions = $recentExceptions.Count
+                LogFile              = $LogPath
+                AnalysisPeriod       = "$Hours hours"
+                TotalExceptions      = $recentExceptions.Count
                 UniqueExceptionTypes = ($recentExceptions | ForEach-Object {
-                    if ($_ -match "Type: (.+)") { $matches[1] }
-                } | Sort-Object -Unique).Count
-                CommonExceptions = ($recentExceptions | ForEach-Object {
-                    if ($_ -match "Type: (.+)") { $matches[1] }
-                } | Group-Object | Sort-Object Count -Descending | Select-Object -First 5)
-                RecommendedActions = @(
+                        if ($_ -match "Type: (.+)") { $matches[1] }
+                    } | Sort-Object -Unique).Count
+                CommonExceptions     = ($recentExceptions | ForEach-Object {
+                        if ($_ -match "Type: (.+)") { $matches[1] }
+                    } | Group-Object | Sort-Object Count -Descending | Select-Object -First 5)
+                RecommendedActions   = @(
                     "Review most common exception types",
                     "Check for patterns in exception timing",
                     "Validate input data and error handling",
@@ -753,15 +753,15 @@ function Start-BusBuddyWithCapture {
                 $today = Get-Date -Format "yyyyMMdd"
                 $logFiles = @(
                     # Custom error log (from our script)
-                    @{Path = $LogPath; Description = "PowerShell Error Capture Log"; MaxEntries = 5},
+                    @{Path = $LogPath; Description = "PowerShell Error Capture Log"; MaxEntries = 5 },
                     # Serilog main log files
-                    @{Path = (Join-Path $projectRoot "logs\busbuddy-$today.txt"); Description = "Main Application Log"; MaxEntries = 5},
-                    @{Path = (Join-Path $projectRoot "Logs\busbuddy-$today.txt"); Description = "Main Application Log (alt path)"; MaxEntries = 5},
+                    @{Path = (Join-Path $projectRoot "logs\busbuddy-$today.txt"); Description = "Main Application Log"; MaxEntries = 5 },
+                    @{Path = (Join-Path $projectRoot "Logs\busbuddy-$today.txt"); Description = "Main Application Log (alt path)"; MaxEntries = 5 },
                     # Serilog error logs
-                    @{Path = (Join-Path $projectRoot "Logs\errors-actionable-$today.log"); Description = "Actionable Errors Log"; MaxEntries = 3},
+                    @{Path = (Join-Path $projectRoot "Logs\errors-actionable-$today.log"); Description = "Actionable Errors Log"; MaxEntries = 3 },
                     # Runtime errors from global handlers
-                    @{Path = (Join-Path $projectRoot "logs\runtime-errors.log"); Description = "Runtime Errors Log"; MaxEntries = 3},
-                    @{Path = (Join-Path $projectRoot "Logs\runtime-errors.log"); Description = "Runtime Errors Log (alt path)"; MaxEntries = 3}
+                    @{Path = (Join-Path $projectRoot "logs\runtime-errors.log"); Description = "Runtime Errors Log"; MaxEntries = 3 },
+                    @{Path = (Join-Path $projectRoot "Logs\runtime-errors.log"); Description = "Runtime Errors Log (alt path)"; MaxEntries = 3 }
                 )
 
                 $foundAnyLogs = $false

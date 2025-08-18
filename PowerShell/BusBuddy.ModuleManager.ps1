@@ -16,13 +16,13 @@ param()
 
 # Global configuration for module management
 $script:BusBuddyModuleConfig = @{
-    ModulePath = Join-Path $PSScriptRoot "Modules"
-    LoadTimeout = 30
-    RetryCount = 3
-    RetryDelay = 1
-    ParallelLoading = $true
+    ModulePath        = Join-Path $PSScriptRoot "Modules"
+    LoadTimeout       = 30
+    RetryCount        = 3
+    RetryDelay        = 1
+    ParallelLoading   = $true
     ValidateAfterLoad = $true
-    CacheEnabled = $true
+    CacheEnabled      = $true
 }
 
 function Initialize-BusBuddyModuleSystem {
@@ -60,7 +60,8 @@ function Initialize-BusBuddyModuleSystem {
         # Load optional modules in parallel if enabled
         if ($script:BusBuddyModuleConfig.ParallelLoading) {
             Import-OptionalModulesParallel
-        } else {
+        }
+        else {
             Import-OptionalModulesSequential
         }
 
@@ -103,9 +104,11 @@ function Import-BusBuddyModuleWithRetry {
 
             if (Test-Path "$modulePath\$ModuleName.psd1") {
                 $manifestPath = "$modulePath\$ModuleName.psd1"
-            } elseif (Test-Path "$modulePath\$ModuleName.psm1") {
+            }
+            elseif (Test-Path "$modulePath\$ModuleName.psm1") {
                 $manifestPath = "$modulePath\$ModuleName.psm1"
-            } else {
+            }
+            else {
                 throw "Module manifest not found for $ModuleName"
             }
 
@@ -129,9 +132,11 @@ function Import-BusBuddyModuleWithRetry {
 
             if ($retryCount -lt $maxRetries) {
                 Start-Sleep -Seconds $script:BusBuddyModuleConfig.RetryDelay
-            } elseif ($Critical) {
+            }
+            elseif ($Critical) {
                 throw "Critical module $ModuleName failed to load after $maxRetries attempts: $_"
-            } else {
+            }
+            else {
                 Write-Warning "Optional module $ModuleName skipped after $maxRetries failed attempts"
                 return $false
             }
@@ -167,10 +172,12 @@ function Import-OptionalModulesParallel {
                 if (Test-Path "$modulePath\$ModuleName.psd1") {
                     Import-Module "$modulePath\$ModuleName.psd1" -Force -Global
                     return @{ Success = $true; Module = $ModuleName }
-                } elseif (Test-Path "$modulePath\$ModuleName.psm1") {
+                }
+                elseif (Test-Path "$modulePath\$ModuleName.psm1") {
                     Import-Module "$modulePath\$ModuleName.psm1" -Force -Global
                     return @{ Success = $true; Module = $ModuleName }
-                } else {
+                }
+                else {
                     return @{ Success = $false; Module = $ModuleName; Error = "Module not found" }
                 }
             }
@@ -182,9 +189,40 @@ function Import-OptionalModulesParallel {
         $jobs += $job
     }
 
-    # Wait for jobs with timeout
+    # Wait for jobs with timeout (use Wait-Job then Receive-Job for wider compatibility)
     $timeout = $script:BusBuddyModuleConfig.LoadTimeout
-    $results = $jobs | Receive-Job -Wait -Timeout $timeout
+    if ($jobs.Count -gt 0) {
+        try {
+            # Wait for the jobs to complete (Wait-Job supports -Timeout reliably)
+            Wait-Job -Job $jobs -Timeout $timeout -ErrorAction SilentlyContinue | Out-Null
+        }
+        catch {
+            # If Wait-Job doesn't accept -Timeout in some host environments, fall back to polling
+            $end = (Get-Date).AddSeconds($timeout)
+            while ((Get-Date) -lt $end -and ($jobs | Where-Object { $_.State -in @('Running', 'NotStarted') })) {
+                Start-Sleep -Milliseconds 200
+            }
+        }
+
+        # Collect results from completed jobs only
+        $results = @()
+        foreach ($job in $jobs) {
+            try {
+                if ($job.State -eq 'Completed') {
+                    $results += Receive-Job -Job $job -ErrorAction SilentlyContinue
+                }
+                else {
+                    $results += @{ Success = $false; Module = $job.ChildJobs[0].Command; Error = "Job state: $($job.State)" }
+                }
+            }
+            catch {
+                $results += @{ Success = $false; Module = $job.ChildJobs[0].Command; Error = $_.Exception.Message }
+            }
+        }
+    }
+    else {
+        $results = @()
+    }
 
     # Clean up jobs
     $jobs | Remove-Job -Force
@@ -193,7 +231,8 @@ function Import-OptionalModulesParallel {
     foreach ($result in $results) {
         if ($result.Success) {
             Write-Verbose "✅ Optional module loaded: $($result.Module)"
-        } else {
+        }
+        else {
             Write-Warning "⚠️ Optional module failed: $($result.Module) - $($result.Error)"
         }
     }
@@ -232,11 +271,11 @@ function Test-BusBuddyModuleHealth {
     param()
 
     $results = @{
-        CoreModulesLoaded = $true
+        CoreModulesLoaded    = $true
         OptionalModulesCount = 0
-        TotalModulesCount = 0
-        Errors = @()
-        Warnings = @()
+        TotalModulesCount    = 0
+        Errors               = @()
+        Warnings             = @()
     }
 
     try {
@@ -261,7 +300,8 @@ function Test-BusBuddyModuleHealth {
         # Performance check
         if ($results.TotalModulesCount -eq 0) {
             $results.Errors += "No BusBuddy modules loaded"
-        } elseif ($results.TotalModulesCount -lt 2) {
+        }
+        elseif ($results.TotalModulesCount -lt 2) {
             $results.Warnings += "Only $($results.TotalModulesCount) BusBuddy modules loaded"
         }
 
@@ -299,7 +339,8 @@ function Repair-BusBuddyModuleSystem {
 
         if ($result) {
             Write-Information "✅ Module system repaired successfully" -InformationAction Continue
-        } else {
+        }
+        else {
             Write-Error "❌ Module system repair failed"
         }
 
@@ -311,13 +352,19 @@ function Repair-BusBuddyModuleSystem {
     }
 }
 
-# Export functions for external use
-Export-ModuleMember -Function @(
-    'Initialize-BusBuddyModuleSystem',
-    'Import-BusBuddyModuleWithRetry',
-    'Test-BusBuddyModuleHealth',
-    'Repair-BusBuddyModuleSystem'
-)
+# Export functions for external use when running as a module. If this file is dot-sourced
+# (for example from a profile), Export-ModuleMember will error; guard it.
+if ($null -ne $PSModuleInfo) {
+    Export-ModuleMember -Function @(
+        'Initialize-BusBuddyModuleSystem',
+        'Import-BusBuddyModuleWithRetry',
+        'Test-BusBuddyModuleHealth',
+        'Repair-BusBuddyModuleSystem'
+    )
+}
+else {
+    Write-Verbose "Skipping Export-ModuleMember because BusBuddy.ModuleManager.ps1 is not loaded as a module"
+}
 
 # Module initialization message
 Write-Information "📦 BusBuddy Module Manager loaded successfully" -InformationAction Continue

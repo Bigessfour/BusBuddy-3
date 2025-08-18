@@ -1,6 +1,6 @@
 param(
     [switch]$Clean,
-    [ValidateSet('AAD','SQL')]
+    [ValidateSet('AAD', 'SQL')]
     [string]$Auth = 'AAD'
 )
 

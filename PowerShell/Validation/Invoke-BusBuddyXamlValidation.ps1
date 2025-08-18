@@ -55,7 +55,7 @@ $ErrorActionPreference = 'Stop'
 
 function Write-BusBuddyStatus {
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
         [string]$Message,
         [ValidateSet("Success", "Error", "Warning", "Info")]
@@ -66,9 +66,9 @@ function Write-BusBuddyStatus {
 
     $colors = @{
         "Success" = "Green"
-        "Error" = "Red"
+        "Error"   = "Red"
         "Warning" = "Yellow"
-        "Info" = "Cyan"
+        "Info"    = "Cyan"
     }
 
     switch ($Status) {
@@ -159,7 +159,8 @@ function Invoke-BusBuddyXamlValidation {
         Write-BusBuddyStatus "✅ XAML validation completed: $($validationResults.Count) issues found" -Status Success
         return $true
 
-    } catch {
+    }
+    catch {
         Write-BusBuddyStatus "❌ XAML validation failed: $($_.Exception.Message)" -Status Error
         return $false
     }
@@ -198,17 +199,17 @@ function Write-VSCodeProblemsFile {
 
     $problems = $Results | ForEach-Object {
         @{
-            file = $_.File
-            line = [int]($_.Line ?? 1)
-            column = [int]($_.Column ?? 1)
+            file     = $_.File
+            line     = [int]($_.Line ?? 1)
+            column   = [int]($_.Column ?? 1)
             severity = if ($_.Severity -eq "Error") { 1 } else { 2 }
-            message = $_.Message
-            source = "BusBuddy XAML Validator"
+            message  = $_.Message
+            source   = "BusBuddy XAML Validator"
         }
     }
 
     $problemsJson = @{
-        version = "1.0.0"
+        version  = "1.0.0"
         problems = $problems
     } | ConvertTo-Json -Depth 3
 
@@ -231,7 +232,8 @@ try {
     Write-BusBuddyStatus "✅ XAML validation completed successfully!" -Status Success
     exit 0
 
-} catch {
+}
+catch {
     Write-BusBuddyStatus "💥 Unexpected error: $($_.Exception.Message)" -Status Error
     exit 1
 }

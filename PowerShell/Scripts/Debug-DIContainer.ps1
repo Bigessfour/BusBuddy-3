@@ -5,7 +5,8 @@ throw "Archived: Use bbHealth (future DI section)"
 try {
     $healthResult = Test-BusBuddyHealth
     Write-Host "  ✅ Health check completed successfully" -ForegroundColor Green
-} catch {
+}
+catch {
     Write-Host "  ❌ Health check failed: $($_.Exception.Message)" -ForegroundColor Red
 }
 #endregion
@@ -16,11 +17,13 @@ try {
     $buildOutput = dotnet build BusBuddy.sln --verbosity quiet --nologo 2>&1
     if ($LASTEXITCODE -eq 0) {
         Write-Host "  ✅ Solution builds successfully" -ForegroundColor Green
-    } else {
+    }
+    else {
         Write-Host "  ❌ Build failed with exit code: $LASTEXITCODE" -ForegroundColor Red
         Write-Host "  📄 Build output: $buildOutput" -ForegroundColor Gray
     }
-} catch {
+}
+catch {
     Write-Host "  ❌ Build check failed: $($_.Exception.Message)" -ForegroundColor Red
 }
 #endregion
@@ -38,14 +41,16 @@ if (Test-Path $serviceExtensionsFile) {
     # Check for IBusBuddyDbContextFactory registration
     if ($content -match "IBusBuddyDbContextFactory") {
         Write-Host "  ✅ IBusBuddyDbContextFactory registration found" -ForegroundColor Green
-    } else {
+    }
+    else {
         Write-Host "  ❌ IBusBuddyDbContextFactory registration NOT found" -ForegroundColor Red
     }
 
     # Check for AddDataServices method
     if ($content -match "AddDataServices") {
         Write-Host "  ✅ AddDataServices method found" -ForegroundColor Green
-    } else {
+    }
+    else {
         Write-Host "  ❌ AddDataServices method NOT found" -ForegroundColor Red
     }
 
@@ -66,13 +71,15 @@ if (Test-Path $appXamlFile) {
 
     if ($appContent -match "AddDataServices") {
         Write-Host "  ✅ AddDataServices called in App.xaml.cs" -ForegroundColor Green
-    } else {
+    }
+    else {
         Write-Host "  ❌ AddDataServices NOT called in App.xaml.cs" -ForegroundColor Red
     }
 
     if ($appContent -match "ServiceProvider") {
         Write-Host "  ✅ ServiceProvider setup found" -ForegroundColor Green
-    } else {
+    }
+    else {
         Write-Host "  ❌ ServiceProvider setup NOT found" -ForegroundColor Red
     }
 }
@@ -90,11 +97,13 @@ try {
         if (Get-Command Get-DumpAnalysis -ErrorAction SilentlyContinue) {
             Write-Host "  🔍 Wintellect analysis available for running process" -ForegroundColor Cyan
         }
-    } else {
+    }
+    else {
         Write-Host "  ℹ️  BusBuddy application is not currently running" -ForegroundColor Yellow
         Write-Host "  💡 Try starting with: bb-run" -ForegroundColor Gray
     }
-} catch {
+}
+catch {
     Write-Host "  ❌ Runtime test failed: $($_.Exception.Message)" -ForegroundColor Red
 }
 #endregion
@@ -117,7 +126,8 @@ if (!(Test-Path $appXamlFile)) {
 if (Get-Module WintellectPowerShell -ErrorAction SilentlyContinue) {
     $recommendations += "✅ Wintellect debugging tools are available"
     $recommendations += "💡 Use Get-DumpAnalysis for deeper runtime analysis"
-} else {
+}
+else {
     $recommendations += "⚠️  Install WintellectPowerShell for advanced debugging"
 }
 

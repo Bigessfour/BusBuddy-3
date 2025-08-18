@@ -57,7 +57,8 @@ function Initialize-BusBuddyPath {
 
         Write-Verbose "BusBuddy workspace initialized: $Script:WorkspaceRoot"
 
-    } catch {
+    }
+    catch {
         Write-Error "Failed to initialize BusBuddy paths: $($_.Exception.Message)"
         throw
     }
@@ -71,48 +72,49 @@ function Invoke-BusBuddyBuild {
     try {
         Write-Information "🏗️ Building BusBuddy solution..." -InformationAction Continue
 
-            # Prefer module-based enhanced build output if available
-            $buildOutputModule = Join-Path (Split-Path $PSScriptRoot -Parent) "BusBuddy.BuildOutput" "BusBuddy.BuildOutput.psd1"
-            if (Test-Path $buildOutputModule) {
-                Import-Module $buildOutputModule -Force -ErrorAction SilentlyContinue
-                if (Get-Command -Name Get-BusBuddyBuildOutput -ErrorAction SilentlyContinue) {
-                    $buildResult = Get-BusBuddyBuildOutput -ProjectPath $Script:SolutionFile -Configuration "Debug"
-                    return ($buildResult.ExitCode -eq 0)
-                }
+        # Prefer module-based enhanced build output if available
+        $buildOutputModule = Join-Path (Split-Path $PSScriptRoot -Parent) "BusBuddy.BuildOutput" "BusBuddy.BuildOutput.psd1"
+        if (Test-Path $buildOutputModule) {
+            Import-Module $buildOutputModule -Force -ErrorAction SilentlyContinue
+            if (Get-Command -Name Get-BusBuddyBuildOutput -ErrorAction SilentlyContinue) {
+                $buildResult = Get-BusBuddyBuildOutput -ProjectPath $Script:SolutionFile -Configuration "Debug"
+                return ($buildResult.ExitCode -eq 0)
             }
+        }
 
-            # Fallback to original with output capture
-            $buildArgs = @(
-                'build'
-                $Script:SolutionFile
-                '--configuration', 'Debug'
-                '--verbosity', 'detailed'  # More verbose for troubleshooting
-            )
+        # Fallback to original with output capture
+        $buildArgs = @(
+            'build'
+            $Script:SolutionFile
+            '--configuration', 'Debug'
+            '--verbosity', 'detailed'  # More verbose for troubleshooting
+        )
 
-            # Capture all output streams
-            $buildOutput = & dotnet @buildArgs 2>&1
+        # Capture all output streams
+        $buildOutput = & dotnet @buildArgs 2>&1
 
-            # Save build output to file for analysis
-            $timestamp = Get-Date -Format "yyyyMMdd-HHmmss"
-            $buildLogFile = Join-Path $Script:TestResultsDir "build-log-$timestamp.txt"
-            $buildOutput | Out-File -FilePath $buildLogFile -Encoding UTF8 -Width 500
+        # Save build output to file for analysis
+        $timestamp = Get-Date -Format "yyyyMMdd-HHmmss"
+        $buildLogFile = Join-Path $Script:TestResultsDir "build-log-$timestamp.txt"
+        $buildOutput | Out-File -FilePath $buildLogFile -Encoding UTF8 -Width 500
 
-            Write-Information "Build output saved to: $buildLogFile" -InformationAction Continue
+        Write-Information "Build output saved to: $buildLogFile" -InformationAction Continue
 
-            # Display errors prominently
-            $errorLines = $buildOutput | Where-Object { $_ -match "error|Error|ERROR|CS\d+|MSB\d+" }
-            if ($errorLines) {
-                Write-Warning "Build errors found:"
-                $errorLines | ForEach-Object { Write-Warning $_ }
-            }
+        # Display errors prominently
+        $errorLines = $buildOutput | Where-Object { $_ -match "error|Error|ERROR|CS\d+|MSB\d+" }
+        if ($errorLines) {
+            Write-Warning "Build errors found:"
+            $errorLines | ForEach-Object { Write-Warning $_ }
+        }
 
-            if ($LASTEXITCODE -ne 0) {
-                throw "Build failed with exit code $LASTEXITCODE. See $buildLogFile for details."
-            }
+        if ($LASTEXITCODE -ne 0) {
+            throw "Build failed with exit code $LASTEXITCODE. See $buildLogFile for details."
+        }
 
         Write-Information "✅ Build completed successfully" -InformationAction Continue
         return $true
-    } catch {
+    }
+    catch {
         Write-Error "Build failed: $($_.Exception.Message)"
         return $false
     }
@@ -197,14 +199,16 @@ function Invoke-TestRunner {
 
             if ($testSummary.Failed -eq 0) {
                 Write-Information "✅ All tests passed!" -InformationAction Continue
-            } else {
+            }
+            else {
                 Write-Warning "❌ $($testSummary.Failed) test(s) failed!"
             }
         }
 
         return $exitCode -eq 0
 
-    } catch {
+    }
+    catch {
         Write-Error "Test execution failed: $($_.Exception.Message)"
         return $false
     }
@@ -233,14 +237,15 @@ function Get-LatestTestResult {
         $totalTests = $passedTests + $failedTests
 
         return @{
-            Total = $totalTests
-            Passed = $passedTests
-            Failed = $failedTests
+            Total      = $totalTests
+            Passed     = $passedTests
+            Failed     = $failedTests
             ResultFile = $latestResult.FullName
-            Timestamp = $latestResult.LastWriteTime
+            Timestamp  = $latestResult.LastWriteTime
         }
 
-    } catch {
+    }
+    catch {
         Write-Warning "Failed to parse test results: $($_.Exception.Message)"
         return $null
     }
@@ -320,13 +325,15 @@ function Start-BusBuddyTest {
         Write-Information "" -InformationAction Continue
         if ($testSuccess) {
             Write-Information "🎉 Test execution completed successfully!" -InformationAction Continue
-        } else {
+        }
+        else {
             Write-Warning "⚠️ Test execution completed with failures"
         }
 
         return $testSuccess
 
-    } catch {
+    }
+    catch {
         Write-Error "Test execution failed: $($_.Exception.Message)"
         return $false
     }
@@ -419,10 +426,12 @@ function Start-BusBuddyTestWatch {
             Start-Sleep -Seconds 2
         }
 
-    } catch [System.Management.Automation.HaltCommandException] {
+    }
+    catch [System.Management.Automation.HaltCommandException] {
         Write-Information "" -InformationAction Continue
         Write-Information "👋 Watch mode stopped by user" -InformationAction Continue
-    } catch {
+    }
+    catch {
         Write-Error "Watch mode failed: $($_.Exception.Message)"
     }
 }
@@ -461,7 +470,8 @@ function New-BusBuddyTestReport {
         $reportPath = Join-Path $Script:ReportsDir "TestResults-$(Get-Date -Format 'yyyyMMdd-HHmmss').md"
         $successRate = if ($testSummary.Total -gt 0) {
             [math]::Round(($testSummary.Passed / $testSummary.Total) * 100, 2)
-        } else { 0 }
+        }
+        else { 0 }
 
         $statusIcon = if ($testSummary.Failed -eq 0) { "✅" } else { "❌" }
         $statusText = if ($testSummary.Failed -eq 0) { "All tests passed!" } else { "$($testSummary.Failed) test(s) failed" }
@@ -546,7 +556,8 @@ $(if ($testSummary.Failed -eq 0) {
 
         return $reportPath
 
-    } catch {
+    }
+    catch {
         Write-Error "Failed to generate test report: $($_.Exception.Message)"
     }
 }
@@ -580,7 +591,8 @@ function Get-BusBuddyTestStatus {
 
         $successRate = if ($testSummary.Total -gt 0) {
             [math]::Round(($testSummary.Passed / $testSummary.Total) * 100, 2)
-        } else { 0 }
+        }
+        else { 0 }
 
         Write-Information "🚌 BusBuddy Test Status" -InformationAction Continue
         Write-Information "========================" -InformationAction Continue
@@ -592,13 +604,15 @@ function Get-BusBuddyTestStatus {
 
         if ($testSummary.Failed -eq 0) {
             Write-Information "🎉 All tests are passing!" -InformationAction Continue
-        } else {
+        }
+        else {
             Write-Warning "⚠️ $($testSummary.Failed) test(s) are failing"
         }
 
         return $testSummary
 
-    } catch {
+    }
+    catch {
         Write-Error "Failed to get test status: $($_.Exception.Message)"
     }
 }
@@ -633,7 +647,8 @@ function Initialize-BusBuddyTestEnvironment {
         $dotnetVersion = dotnet --version 2>$null
         if ($LASTEXITCODE -eq 0) {
             Write-Information "✅ .NET CLI: $dotnetVersion" -InformationAction Continue
-        } else {
+        }
+        else {
             Write-Error "❌ .NET CLI not found or not working"
             return $false
         }
@@ -641,7 +656,8 @@ function Initialize-BusBuddyTestEnvironment {
         # Check solution file
         if (Test-Path $Script:SolutionFile) {
             Write-Information "✅ Solution file: BusBuddy.sln" -InformationAction Continue
-        } else {
+        }
+        else {
             Write-Error "❌ Solution file not found: $Script:SolutionFile"
             return $false
         }
@@ -653,7 +669,8 @@ function Initialize-BusBuddyTestEnvironment {
             foreach ($project in $testProjects) {
                 Write-Information "   📁 $($project.Name)" -InformationAction Continue
             }
-        } else {
+        }
+        else {
             Write-Warning "⚠️ No test projects found"
         }
 
@@ -664,7 +681,8 @@ function Initialize-BusBuddyTestEnvironment {
         # Check PowerShell version
         if ($PSVersionTable.PSVersion -ge [version]"7.5.0") {
             Write-Information "✅ PowerShell: $($PSVersionTable.PSVersion) (Compatible)" -InformationAction Continue
-        } else {
+        }
+        else {
             Write-Error "❌ PowerShell: $($PSVersionTable.PSVersion) (Requires 7.5+)"
             Write-Information "🔧 Install PowerShell 7: winget install --id Microsoft.PowerShell" -InformationAction Continue
             return $false
@@ -680,7 +698,8 @@ function Initialize-BusBuddyTestEnvironment {
 
         return $true
 
-    } catch {
+    }
+    catch {
         Write-Error "Failed to initialize test environment: $($_.Exception.Message)"
         return $false
     }
@@ -714,7 +733,8 @@ function Test-BusBuddyCompliance {
         $moduleManifest = Join-Path $PSScriptRoot "BusBuddy.Testing.psd1"
         if (Test-Path $moduleManifest) {
             $complianceResults += @{ Check = "Module Manifest"; Status = "✅ Pass"; Details = "BusBuddy.Testing.psd1 found" }
-        } else {
+        }
+        else {
             $complianceResults += @{ Check = "Module Manifest"; Status = "❌ Fail"; Details = "Module manifest missing" }
         }
 
@@ -722,14 +742,16 @@ function Test-BusBuddyCompliance {
         $exportedFunctions = Get-Command -Module BusBuddy.Testing -ErrorAction SilentlyContinue
         if ($exportedFunctions.Count -ge 6) {
             $complianceResults += @{ Check = "Function Exports"; Status = "✅ Pass"; Details = "$($exportedFunctions.Count) functions exported" }
-        } else {
+        }
+        else {
             $complianceResults += @{ Check = "Function Exports"; Status = "❌ Fail"; Details = "Insufficient functions exported" }
         }
 
         # Check PowerShell version
         if ($PSVersionTable.PSVersion -ge [version]"7.5.0") {
             $complianceResults += @{ Check = "PowerShell Version"; Status = "✅ Pass"; Details = "v$($PSVersionTable.PSVersion)" }
-        } else {
+        }
+        else {
             $complianceResults += @{ Check = "PowerShell Version"; Status = "❌ Fail"; Details = "Requires PowerShell 7.5+" }
         }
 
@@ -737,7 +759,8 @@ function Test-BusBuddyCompliance {
         Initialize-BusBuddyPath
         if ($Script:WorkspaceRoot) {
             $complianceResults += @{ Check = "Workspace Detection"; Status = "✅ Pass"; Details = "BusBuddy workspace found" }
-        } else {
+        }
+        else {
             $complianceResults += @{ Check = "Workspace Detection"; Status = "❌ Fail"; Details = "Workspace not detected" }
         }
 
@@ -745,7 +768,8 @@ function Test-BusBuddyCompliance {
         $dotnetAvailable = Get-Command dotnet -ErrorAction SilentlyContinue
         if ($dotnetAvailable) {
             $complianceResults += @{ Check = ".NET CLI"; Status = "✅ Pass"; Details = "dotnet command available" }
-        } else {
+        }
+        else {
             $complianceResults += @{ Check = ".NET CLI"; Status = "❌ Fail"; Details = ".NET CLI not found" }
         }
 
@@ -764,13 +788,15 @@ function Test-BusBuddyCompliance {
 
         if ($complianceRate -eq 100) {
             Write-Information "🎉 Full compliance achieved!" -InformationAction Continue
-        } else {
+        }
+        else {
             Write-Warning "⚠️ Compliance issues detected"
         }
 
         return $complianceRate -eq 100
 
-    } catch {
+    }
+    catch {
         Write-Error "Compliance check failed: $($_.Exception.Message)"
         return $false
     }
@@ -804,7 +830,7 @@ function Start-BusBuddyPhase4TestAdvanced {
     #>
     [CmdletBinding()] [OutputType([bool])]
     param(
-        [Parameter()][ValidateSet('All','Unit','Integration','Validation','Core','WPF')][string]$TestSuite='All',
+        [Parameter()][ValidateSet('All', 'Unit', 'Integration', 'Validation', 'Core', 'WPF')][string]$TestSuite = 'All',
         [Parameter()][switch]$Detailed,
         [Parameter()][switch]$CollectCoverage,
         [Parameter()][switch]$SaveFullOutput
@@ -827,7 +853,7 @@ function Start-BusBuddyPhase4TestAdvanced {
         $stderrFile = Join-Path $Script:TestResultsDir "adv-test-stderr-$timestamp.txt"
         $summaryFile = Join-Path $Script:TestResultsDir "adv-test-summary-$timestamp.txt"
 
-        $testArgs = @('test', "`"$($Script:SolutionFile)`"", '--configuration','Debug', '--logger','trx', '--logger',"console;verbosity=$verbosity", '--results-directory', "`"$($Script:TestResultsDir)`"", '--no-build')
+        $testArgs = @('test', "`"$($Script:SolutionFile)`"", '--configuration', 'Debug', '--logger', 'trx', '--logger', "console;verbosity=$verbosity", '--results-directory', "`"$($Script:TestResultsDir)`"", '--no-build')
         if ($filter) { $testArgs += '--filter'; $testArgs += $filter }
         if ($CollectCoverage) { $testArgs += '--collect:"XPlat Code Coverage"' }
 
@@ -838,7 +864,8 @@ function Start-BusBuddyPhase4TestAdvanced {
             $proc = Start-Process -FilePath 'dotnet' -ArgumentList $testArgs -RedirectStandardOutput $stdoutFile -RedirectStandardError $stderrFile -NoNewWindow -PassThru
             $proc.WaitForExit()
             $exit = $proc.ExitCode
-        } else {
+        }
+        else {
             & dotnet $testArgs
             $exit = $LASTEXITCODE
         }
@@ -848,7 +875,8 @@ function Start-BusBuddyPhase4TestAdvanced {
         $summary = Get-LatestTestResult
         if ($summary) {
             Write-Information "📈 Total: $($summary.Total) Passed: $($summary.Passed) Failed: $($summary.Failed)" -InformationAction Continue
-        } else {
+        }
+        else {
             Write-Warning "No parsed test summary available"
         }
 
@@ -881,7 +909,8 @@ $stderr
         if ($exit -ne 0) { Write-Warning "Test process exit code: $exit" }
         if ($summary -and $summary.Failed -gt 0) { Write-Warning "❌ $($summary.Failed) failing test(s)" }
         return $false
-    } catch {
+    }
+    catch {
         Write-Error "Advanced test run failed: $($_.Exception.Message)"
         return $false
     }

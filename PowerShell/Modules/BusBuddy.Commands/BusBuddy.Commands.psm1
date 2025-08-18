@@ -1,4 +1,30 @@
 # Modern PowerShell 7.5.2 Welcome Menu
+<#
+.SYNOPSIS
+Short description
+
+.DESCRIPTION
+Long description
+
+.EXAMPLE
+An example
+
+.NOTES
+General notes
+#>
+<#
+.SYNOPSIS
+Short description
+
+.DESCRIPTION
+Long description
+
+.EXAMPLE
+An example
+
+.NOTES
+General notes
+#>
 function Show-BbWelcome {
     [CmdletBinding()]
     param()
@@ -27,10 +53,10 @@ function Show-BbWelcome {
 # Exported functions will be declared below and exported explicitly.
 
 $script:RepoRoot = (Resolve-Path -Path (Join-Path $PSScriptRoot '..' '..' '..')).Path
-$script:SlnPath   = Join-Path $script:RepoRoot 'BusBuddy.sln'
+$script:SlnPath = Join-Path $script:RepoRoot 'BusBuddy.sln'
 
 
-function Get-BbCommands {
+function Get-BbCommand {
     [CmdletBinding()] param()
     Write-Output @(
         'Test-BbAntiRegression  # Scan for disallowed patterns (logging/xaml)'
@@ -39,6 +65,19 @@ function Get-BbCommands {
     )
 }
 
+<#
+.SYNOPSIS
+Short description
+
+.DESCRIPTION
+Long description
+
+.EXAMPLE
+An example
+
+.NOTES
+General notes
+#>
 function Test-BbAntiRegression {
     [CmdletBinding()] param()
     # Very lightweight checks to align with project rules
@@ -49,7 +88,7 @@ function Test-BbAntiRegression {
     if ($mel) { $errors += "Found Microsoft.Extensions.Logging references in: $($mel.Path | Select-Object -Unique | Join-String -Separator ', ')" }
 
     # 2) Forbid Write-Host in PowerShell scripts
-    $wh  = Get-ChildItem -Path $script:RepoRoot -Recurse -Include *.ps1,*.psm1 | Select-String -Pattern '\bWrite-Host\b'
+    $wh = Get-ChildItem -Path $script:RepoRoot -Recurse -Include *.ps1, *.psm1 | Select-String -Pattern '\bWrite-Host\b'
     if ($wh) { $errors += "Found Write-Host in PowerShell files: $($wh.Path | Select-Object -Unique | Join-String -Separator ', ')" }
 
     if ($errors.Count -gt 0) {
@@ -59,6 +98,19 @@ function Test-BbAntiRegression {
     Write-Information "Anti-regression checks passed" -InformationAction Continue
 }
 
+<#
+.SYNOPSIS
+Short description
+
+.DESCRIPTION
+Long description
+
+.EXAMPLE
+An example
+
+.NOTES
+General notes
+#>
 function Test-BbXaml {
     [CmdletBinding()] param()
     # Ensure Syncfusion controls are used instead of standard WPF DataGrid
@@ -74,6 +126,22 @@ function Test-BbXaml {
     Write-Information "XAML validation passed" -InformationAction Continue
 }
 
+<#
+.SYNOPSIS
+Short description
+
+.DESCRIPTION
+Long description
+
+.PARAMETER Configuration
+Parameter description
+
+.EXAMPLE
+An example
+
+.NOTES
+General notes
+#>
 function Invoke-BbBuild {
     [CmdletBinding()] param(
         [string]$Configuration = 'Debug'
@@ -91,30 +159,100 @@ Set-Alias -Name bb-build -Value Invoke-BbBuild
 
 
 
- # Report Write-Host occurrences across repo
- function Get-BbWriteHost {
-     [CmdletBinding()] param(
-         [string]$Path = $script:RepoRoot
-     )
-     Get-ChildItem -Path $Path -Recurse -Include *.ps1,*.psm1 | Select-String -Pattern '\bWrite-Host\b' -List | Select-Object -ExpandProperty Path -Unique
- }
+# Report Write-Host occurrences across repo
+<#
+ .SYNOPSIS
+ Short description
 
- # Replace Write-Host with Write-Information (default) or Write-Output; preview with -WhatIf
- function Update-BbWriteHost {
-     [CmdletBinding(SupportsShouldProcess)] param(
-         [string]$Path = $script:RepoRoot,
-         [ValidateSet('Information','Output')][string]$ReplaceWith = 'Information'
-     )
-     $files = Get-ChildItem -Path $Path -Recurse -Include *.ps1,*.psm1 | Where-Object { Select-String -Path $_.FullName -Pattern '\bWrite-Host\b' -Quiet }
-     foreach ($f in $files) {
-         if ($PSCmdlet.ShouldProcess($f.FullName, 'Replace Write-Host')) {
-             $content = Get-Content -Raw -Path $f.FullName
-             $replacement = if ($ReplaceWith -eq 'Output') { 'Write-Output' } else { 'Write-Information' }
-             $new = [regex]::Replace($content, '\bWrite-Host\b', $replacement)
-             if ($new -ne $content) { Set-Content -Path $f.FullName -Value $new -Encoding UTF8 }
-         }
-     }
- }
+ .DESCRIPTION
+ Long description
+
+ .PARAMETER Path
+ Parameter description
+
+ .EXAMPLE
+ An example
+
+ .NOTES
+ General notes
+ #>
+<#
+ .SYNOPSIS
+ Short description
+ 
+ .DESCRIPTION
+ Long description
+ 
+ .PARAMETER Path
+ Parameter description
+ 
+ .EXAMPLE
+ An example
+ 
+ .NOTES
+ General notes
+ #>
+function Get-BbWriteHost {
+    [CmdletBinding()] param(
+        [string]$Path = $script:RepoRoot
+    )
+    Get-ChildItem -Path $Path -Recurse -Include *.ps1, *.psm1 | Select-String -Pattern '\bWrite-Host\b' -List | Select-Object -ExpandProperty Path -Unique
+}
+
+# Replace Write-Host with Write-Information (default) or Write-Output; preview with -WhatIf
+<#
+ .SYNOPSIS
+ Short description
+
+ .DESCRIPTION
+ Long description
+
+ .PARAMETER Path
+ Parameter description
+
+ .PARAMETER ReplaceWith
+ Parameter description
+
+ .EXAMPLE
+ An example
+
+ .NOTES
+ General notes
+ #>
+<#
+ .SYNOPSIS
+ Short description
+ 
+ .DESCRIPTION
+ Long description
+ 
+ .PARAMETER Path
+ Parameter description
+ 
+ .PARAMETER ReplaceWith
+ Parameter description
+ 
+ .EXAMPLE
+ An example
+ 
+ .NOTES
+ General notes
+ #>
+function Update-BbWriteHost {
+    [CmdletBinding(SupportsShouldProcess)] param(
+        [string]$Path = $script:RepoRoot,
+        [ValidateSet('Information', 'Output')][string]$ReplaceWith = 'Information'
+    )
+    $files = Get-ChildItem -Path $Path -Recurse -Include *.ps1, *.psm1 | Where-Object { Select-String -Path $_.FullName -Pattern '\bWrite-Host\b' -Quiet }
+    foreach ($f in $files) {
+        if ($PSCmdlet.ShouldProcess($f.FullName, 'Replace Write-Host')) {
+            $content = Get-Content -Raw -Path $f.FullName
+            $replacement = if ($ReplaceWith -eq 'Output') { 'Write-Output' } else { 'Write-Information' }
+            $new = [regex]::Replace($content, '\bWrite-Host\b', $replacement)
+            if ($new -ne $content) { Set-Content -Path $f.FullName -Value $new -Encoding UTF8 }
+        }
+    }
+}
 
 # Create discoverability alias for command listing
 # Ref: about_Aliases — https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_Aliases

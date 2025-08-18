@@ -35,7 +35,7 @@ Module Path: $PSScriptRoot
     Write-Host ""
 }
 
-function Test-Prerequisites {
+function Test-Prerequisite {
     [CmdletBinding()]
     param()
 
@@ -46,7 +46,8 @@ function Test-Prerequisites {
     # PowerShell version
     if ($PSVersionTable.PSVersion -ge [version]"7.5.0") {
         $checks += @{ Name = "PowerShell 7.5+"; Status = "✅"; Details = "v$($PSVersionTable.PSVersion)" }
-    } else {
+    }
+    else {
         $checks += @{ Name = "PowerShell 7.5+"; Status = "❌"; Details = "Current: v$($PSVersionTable.PSVersion)" }
     }
 
@@ -55,10 +56,12 @@ function Test-Prerequisites {
         $dotnetVersion = dotnet --version 2>$null
         if ($LASTEXITCODE -eq 0) {
             $checks += @{ Name = ".NET CLI"; Status = "✅"; Details = "v$dotnetVersion" }
-        } else {
+        }
+        else {
             $checks += @{ Name = ".NET CLI"; Status = "❌"; Details = "Not found" }
         }
-    } catch {
+    }
+    catch {
         $checks += @{ Name = ".NET CLI"; Status = "❌"; Details = "Not available" }
     }
 
@@ -76,7 +79,8 @@ function Test-Prerequisites {
 
     if ($workspaceRoot) {
         $checks += @{ Name = "BusBuddy Workspace"; Status = "✅"; Details = $workspaceRoot }
-    } else {
+    }
+    else {
         $checks += @{ Name = "BusBuddy Workspace"; Status = "❌"; Details = "Not found" }
     }
 
@@ -141,11 +145,13 @@ function Import-BusBuddyTestingModule {
             }
 
             return $true
-        } else {
+        }
+        else {
             throw "Module import failed"
         }
 
-    } catch {
+    }
+    catch {
         Write-Host "  ❌ Module import failed: $($_.Exception.Message)" -ForegroundColor Red
         return $false
     }
@@ -164,7 +170,8 @@ function Test-ModuleFunctionality {
 
         if ($initResult) {
             Write-Host "  ✅ Environment initialization successful" -ForegroundColor Green
-        } else {
+        }
+        else {
             Write-Host "  ❌ Environment initialization failed" -ForegroundColor Red
             return $false
         }
@@ -175,7 +182,8 @@ function Test-ModuleFunctionality {
 
         if ($complianceResult) {
             Write-Host "  ✅ Compliance validation successful" -ForegroundColor Green
-        } else {
+        }
+        else {
             Write-Host "  ⚠️ Compliance issues detected (see details above)" -ForegroundColor Yellow
         }
 
@@ -186,7 +194,8 @@ function Test-ModuleFunctionality {
 
         return $true
 
-    } catch {
+    }
+    catch {
         Write-Host "  ❌ Functionality test failed: $($_.Exception.Message)" -ForegroundColor Red
         return $false
     }
@@ -257,7 +266,8 @@ try {
     # Show quick start guide
     Show-QuickStart
 
-} catch {
+}
+catch {
     Write-Host ""
     Write-Host "❌ Initialization failed: $($_.Exception.Message)" -ForegroundColor Red
     exit 1

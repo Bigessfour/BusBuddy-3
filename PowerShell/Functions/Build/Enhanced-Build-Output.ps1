@@ -114,7 +114,8 @@ $stderr
             if ($SaveToFile) {
                 Write-Host "🔍 Full details in: $outputFile" -ForegroundColor Yellow
             }
-        } else {
+        }
+        else {
             Write-Host "✅ No errors found!" -ForegroundColor Green
         }
 
@@ -125,19 +126,21 @@ $stderr
 
         if ($exitCode -eq 0) {
             Write-Host "   Status: SUCCESS ✅" -ForegroundColor Green
-        } else {
+        }
+        else {
             Write-Host "   Status: FAILED ❌" -ForegroundColor Red
         }
 
         return @{
-            ExitCode = $exitCode
-            Duration = $duration
+            ExitCode   = $exitCode
+            Duration   = $duration
             ErrorLines = $errorLines
             OutputFile = if ($SaveToFile) { $outputFile } else { $null }
             FullOutput = $fullOutput
         }
 
-    } catch {
+    }
+    catch {
         Write-Error "Failed to execute build: $($_.Exception.Message)"
         return $null
     }

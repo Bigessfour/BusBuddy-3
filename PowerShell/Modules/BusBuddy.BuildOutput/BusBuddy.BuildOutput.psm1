@@ -58,12 +58,12 @@ function Get-BusBuddyBuildOutput {
 
         # Use Start-Process for complete output capture
         $processInfo = @{
-            FilePath = "dotnet"
-            ArgumentList = @("build", $ProjectPath, "--configuration", $Configuration, "--verbosity", $verbosity, "--no-restore")
+            FilePath               = "dotnet"
+            ArgumentList           = @("build", $ProjectPath, "--configuration", $Configuration, "--verbosity", $verbosity, "--no-restore")
             RedirectStandardOutput = $true
-            RedirectStandardError = $true
-            UseShellExecute = $false
-            CreateNoWindow = $true
+            RedirectStandardError  = $true
+            UseShellExecute        = $false
+            CreateNoWindow         = $true
         }
 
         $process = Start-Process @processInfo -PassThru
@@ -116,7 +116,8 @@ $stderr
             if ($SaveToFile) {
                 Write-Host "🔍 Full details in: $outputFile" -ForegroundColor Yellow
             }
-        } else {
+        }
+        else {
             Write-Host "✅ No errors found!" -ForegroundColor Green
         }
 
@@ -127,19 +128,21 @@ $stderr
 
         if ($exitCode -eq 0) {
             Write-Host "   Status: SUCCESS ✅" -ForegroundColor Green
-        } else {
+        }
+        else {
             Write-Host "   Status: FAILED ❌" -ForegroundColor Red
         }
 
         return @{
-            ExitCode = $exitCode
-            Duration = $duration
+            ExitCode   = $exitCode
+            Duration   = $duration
             ErrorLines = $errorLines
             OutputFile = if ($SaveToFile) { $outputFile } else { $null }
             FullOutput = $fullOutput
         }
 
-    } catch {
+    }
+    catch {
         Write-Error "Failed to execute build: $($_.Exception.Message)"
         return $null
     }
@@ -153,7 +156,7 @@ function Start-BusBuddyBuildFull {
     Get-BusBuddyBuildOutput -SaveToFile
 }
 
-function Get-BusBuddyBuildErrors {
+function Get-BusBuddyBuildError {
     <#
     .SYNOPSIS
         Get only build errors without full output
@@ -173,7 +176,8 @@ function Show-BusBuddyBuildLog {
         Write-Host "📅 Created: $($latestLog.LastWriteTime)" -ForegroundColor Gray
         Write-Host ""
         Get-Content $latestLog.FullName
-    } else {
+    }
+    else {
         Write-Host "No build logs found. Run Start-BusBuddyBuildFull first." -ForegroundColor Yellow
     }
 }

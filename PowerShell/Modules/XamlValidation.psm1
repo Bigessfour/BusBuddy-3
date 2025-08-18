@@ -83,9 +83,10 @@ function Invoke-ComprehensiveXamlValidation {
                     if ($result.IsValid) {
                         $validFiles += $file
                         Write-Information "   ✅ Valid XAML" -InformationAction Continue
-                    } else {
+                    }
+                    else {
                         $invalidFiles += [PSCustomObject]@{
-                            File = $file
+                            File   = $file
                             Errors = $result.Errors
                         }
                         Write-Warning "   ❌ Invalid XAML: $($file.Name)"
@@ -93,9 +94,10 @@ function Invoke-ComprehensiveXamlValidation {
                             Write-Error "      Error: $($validationError.Exception.Message)" -ErrorAction Continue
                         }
                     }
-                } catch {
+                }
+                catch {
                     $invalidFiles += [PSCustomObject]@{
-                        File = $file
+                        File   = $file
                         Errors = @($_)
                     }
                     Write-Error "   ❌ Validation failed for $($file.Name): $($_.Exception.Message)" -ErrorAction Continue
@@ -120,13 +122,13 @@ function Invoke-ComprehensiveXamlValidation {
             }
 
             $result = [PSCustomObject]@{
-                TotalFiles = $xamlFiles.Count
-                ValidFiles = $validFiles.Count
-                InvalidFiles = $invalidFiles.Count
+                TotalFiles           = $xamlFiles.Count
+                ValidFiles           = $validFiles.Count
+                InvalidFiles         = $invalidFiles.Count
                 ResourceDictionaries = $resourceDictionaries.Count
-                InvalidFileDetails = $invalidFiles
-                ProjectPath = $ProjectPath
-                ValidationDate = Get-Date
+                InvalidFileDetails   = $invalidFiles
+                ProjectPath          = $ProjectPath
+                ValidationDate       = Get-Date
             }
 
             Write-Output $result

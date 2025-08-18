@@ -13,7 +13,7 @@ function Write-Header([string]$text) {
     Write-Host "`n=== $text ===" -ForegroundColor Cyan
 }
 
-function Test-References {
+function Test-Reference {
     param(
         [Parameter(Mandatory)] [string]$Path,
         [Parameter(Mandatory)] [string]$Workspace
@@ -21,7 +21,7 @@ function Test-References {
     if (-not (Test-Path -LiteralPath $Path)) { return @() }
     $name = Split-Path -Leaf $Path
     $pattern = [Regex]::Escape($name)
-    $excludeDirs = @('bin','obj','.git','.trash','.vs')
+    $excludeDirs = @('bin', 'obj', '.git', '.trash', '.vs')
     $searchPaths = Get-ChildItem -LiteralPath $Workspace -Recurse -File -ErrorAction SilentlyContinue |
         Where-Object { $excludeDirs -notcontains ($_.DirectoryName | Split-Path -Leaf) }
     $hits = @()
@@ -29,26 +29,27 @@ function Test-References {
         try {
             $m = Select-String -Path $file.FullName -Pattern $pattern -SimpleMatch -ErrorAction SilentlyContinue
             if ($m) { $hits += $m }
-        } catch {}
+        }
+        catch {}
     }
     return $hits
 }
 
 Write-Header "Validating cleanup plan"
 $targets = @(
-  'appsettings (1).json',
-  'appsettings.staging.json',
-  'appsettings.azure.json',
-  '.editorconfig (1)',
-  '.editorconfig (2)',
-  '.gitattributes (1)',
-  'global (1).json',
-  'Directory (1).Build.props',
-  'BusBuddy.WPF/BusBuddy.WPF_0dy3nte3_wpftmp.csproj',
-  'BusBuddy.WPF/BusBuddy.WPF_1kpo3wuk_wpftmp.csproj',
-  'BusBuddy.WPF/BusBuddy.WPF_ozpq1ooy_wpftmp.csproj',
-  'BusBuddy.WPF/BusBuddy.WPF_x2j2zbh1_wpftmp.csproj',
-  'BusBuddy.WPF/runtime-errors-fixed.log'
+    'appsettings (1).json',
+    'appsettings.staging.json',
+    'appsettings.azure.json',
+    '.editorconfig (1)',
+    '.editorconfig (2)',
+    '.gitattributes (1)',
+    'global (1).json',
+    'Directory (1).Build.props',
+    'BusBuddy.WPF/BusBuddy.WPF_0dy3nte3_wpftmp.csproj',
+    'BusBuddy.WPF/BusBuddy.WPF_1kpo3wuk_wpftmp.csproj',
+    'BusBuddy.WPF/BusBuddy.WPF_ozpq1ooy_wpftmp.csproj',
+    'BusBuddy.WPF/BusBuddy.WPF_x2j2zbh1_wpftmp.csproj',
+    'BusBuddy.WPF/runtime-errors-fixed.log'
 )
 
 $rootFull = (Resolve-Path -LiteralPath $Root).Path
@@ -62,11 +63,11 @@ foreach ($rel in $targets) {
     $exists = Test-Path -LiteralPath $full
     $refs = if ($exists) { Test-References -Path $full -Workspace $rootFull } else { @() }
     $item = [PSCustomObject]@{
-        File = $rel
-        Exists = $exists
+        File       = $rel
+        Exists     = $exists
         References = $refs.Count
-        Action = if ($exists) { 'Archive' } else { 'Skip (missing)' }
-        Notes = ''
+        Action     = if ($exists) { 'Archive' } else { 'Skip (missing)' }
+        Notes      = ''
     }
     if ($rel -ieq 'appsettings.azure.json') {
         if ($refs.Count -gt 0 -and -not $IncludeAzureConfig -and -not $Force) {
@@ -86,7 +87,8 @@ Write-Header "Dry-run summary"
 $plan | ForEach-Object {
     if ($_.Action -like 'Archive') {
         Write-Host ("Would archive: {0}" -f $_.File) -ForegroundColor Yellow
-    } else {
+    }
+    else {
         Write-Host ("{0}: {1}" -f $_.Action, $_.File) -ForegroundColor DarkGray
     }
 }

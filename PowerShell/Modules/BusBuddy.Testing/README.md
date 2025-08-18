@@ -53,6 +53,7 @@ bb-test-watch
 ### 3. VS Code Integration
 
 Use the Task Explorer or Command Palette:
+
 - **🧪 BB: Phase 4 Modular Tests** - Run all tests with modular approach
 - **🔄 BB: Phase 4 Test Watch** - Start continuous testing
 
@@ -60,27 +61,27 @@ Use the Task Explorer or Command Palette:
 
 ### Core Functions
 
-| Function | Description | Alias |
-|----------|-------------|-------|
-| `Invoke-BusBuddyTests` | Execute NUnit tests with filtering and reporting | `bb-test` |
-| `Start-BusBuddyTestWatch` | Start continuous test monitoring | `bb-test-watch` |
-| `Export-BusBuddyTestReport` | Generate comprehensive test reports | `bb-test-report` |
-| `Test-BusBuddyNUnit` | Validate testing infrastructure | - |
+| Function                    | Description                                      | Alias            |
+| --------------------------- | ------------------------------------------------ | ---------------- |
+| `Invoke-BusBuddyTests`      | Execute NUnit tests with filtering and reporting | `bb-test`        |
+| `Start-BusBuddyTestWatch`   | Start continuous test monitoring                 | `bb-test-watch`  |
+| `Export-BusBuddyTestReport` | Generate comprehensive test reports              | `bb-test-report` |
+| `Test-BusBuddyNUnit`        | Validate testing infrastructure                  | -                |
 
 ### Profile Functions
 
-| Function | Description | Alias |
-|----------|-------------|-------|
-| `Get-BusBuddyInfo` | Display BusBuddy environment information | `bb-info` |
-| `Start-BusBuddyDev` | Navigate to BusBuddy workspace | `bb-dev`, `bb-cd` |
-| `Initialize-BusBuddyTesting` | Load testing environment | - |
+| Function                     | Description                              | Alias             |
+| ---------------------------- | ---------------------------------------- | ----------------- |
+| `Get-BusBuddyInfo`           | Display BusBuddy environment information | `bb-info`         |
+| `Start-BusBuddyDev`          | Navigate to BusBuddy workspace           | `bb-dev`, `bb-cd` |
+| `Initialize-BusBuddyTesting` | Load testing environment                 | -                 |
 
 ## 🎛️ Function Parameters
 
 ### Invoke-BusBuddyTests
 
 ```powershell
-Invoke-BusBuddyTests 
+Invoke-BusBuddyTests
     [-TestSuite] <String>           # All, Unit, Integration, Validation, Core, WPF
     [-WorkspacePath] <String>       # Path to BusBuddy workspace (auto-detected)
     [-GenerateReport]               # Generate markdown test report
@@ -99,14 +100,14 @@ Start-BusBuddyTestWatch
 
 The module supports category-based test filtering:
 
-| Category | Filter | Description |
-|----------|--------|-------------|
-| **All** | *(no filter)* | Execute all available tests |
-| **Unit** | `Category=UnitTest` | Isolated component testing |
-| **Integration** | `Category=IntegrationTest` | Cross-component validation |
-| **Validation** | `Category=ValidationTest` | Phase compliance checks |
-| **Core** | `Category=CoreTest` | Business logic validation |
-| **WPF** | `Category=UITest` | User interface testing |
+| Category        | Filter                     | Description                 |
+| --------------- | -------------------------- | --------------------------- |
+| **All**         | _(no filter)_              | Execute all available tests |
+| **Unit**        | `Category=UnitTest`        | Isolated component testing  |
+| **Integration** | `Category=IntegrationTest` | Cross-component validation  |
+| **Validation**  | `Category=ValidationTest`  | Phase compliance checks     |
+| **Core**        | `Category=CoreTest`        | Business logic validation   |
+| **WPF**         | `Category=UITest`          | User interface testing      |
 
 ## 📄 Report Generation
 
@@ -128,12 +129,12 @@ The module generates comprehensive markdown reports including:
 
 ## 📊 Test Results Summary
 
-| Metric | Count | Percentage |
-|--------|-------|------------|
-| **Total Tests** | 25 | 100% |
-| **Passed** | 23 | 92% |
-| **Failed** | 2 | 8% |
-| **Skipped** | 0 | 0% |
+| Metric          | Count | Percentage |
+| --------------- | ----- | ---------- |
+| **Total Tests** | 25    | 100%       |
+| **Passed**      | 23    | 92%        |
+| **Failed**      | 2     | 8%         |
+| **Skipped**     | 0     | 0%         |
 ```
 
 ## 🔧 Configuration
@@ -167,6 +168,7 @@ if (Test-Path "C:\Path\To\BusBuddy\PowerShell\Modules\BusBuddy.Testing\Profile-I
 ### Common Issues
 
 1. **Module Not Found**
+
    ```powershell
    # Ensure PSModulePath includes BusBuddy modules
    $env:PSModulePath += ";C:\Path\To\BusBuddy\PowerShell\Modules"
@@ -177,6 +179,7 @@ if (Test-Path "C:\Path\To\BusBuddy\PowerShell\Modules\BusBuddy.Testing\Profile-I
    - Restart VS Code after installation
 
 3. **Test Project Build Failures**
+
    ```powershell
    # Clean and restore packages
    dotnet clean BusBuddy.sln
@@ -227,6 +230,7 @@ This module follows:
 ### Legacy Script Compatibility
 
 The original `Run-Phase4-NUnitTests.ps1` is replaced by:
+
 - `Run-Phase4-NUnitTests-Modular.ps1` - Compatibility bridge
 - `BusBuddy.Testing` module - New modular implementation
 
@@ -276,6 +280,6 @@ For issues or questions:
 
 ---
 
-*BusBuddy.Testing PowerShell Module*  
-*Phase 4 Testing and Validation Infrastructure*  
-*Microsoft PowerShell Standards Compliant*
+_BusBuddy.Testing PowerShell Module_  
+_Phase 4 Testing and Validation Infrastructure_  
+_Microsoft PowerShell Standards Compliant_

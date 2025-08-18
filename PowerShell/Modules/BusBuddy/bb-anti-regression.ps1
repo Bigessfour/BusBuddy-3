@@ -16,6 +16,22 @@ param(
     [switch]$Detailed
 )
 
+<#
+.SYNOPSIS
+Short description
+
+.DESCRIPTION
+Long description
+
+.PARAMETER Detailed
+Parameter description
+
+.EXAMPLE
+An example
+
+.NOTES
+General notes
+#>
 function bbAntiRegression {
     [CmdletBinding()]
     param(
@@ -26,7 +42,7 @@ function bbAntiRegression {
     $violations = @()
 
     # 1. PowerShell Write-Host violations
-    $psFiles = Get-ChildItem -Recurse -Path $root/../.. -Include *.ps1,*.psm1 | Where-Object { $_.FullName -notmatch 'Archive|TestData|bin|obj' }
+    $psFiles = Get-ChildItem -Recurse -Path $root/../.. -Include *.ps1, *.psm1 | Where-Object { $_.FullName -notmatch 'Archive|TestData|bin|obj' }
     $writeHostHits = foreach ($file in $psFiles) {
         Select-String -Path $file.FullName -Pattern 'Write-Host' | ForEach-Object {
             [PSCustomObject]@{ File = $_.Path; Line = $_.LineNumber; Text = $_.Line.Trim() }
@@ -71,7 +87,8 @@ function bbAntiRegression {
     Write-Information "  Standard WPF controls: $($summary['WPF'])" -InformationAction Continue
     if ($summary.Values | Where-Object { $_ -gt 0 }) {
         Write-Information "❌ Violations found. See above for details." -InformationAction Continue
-    } else {
+    }
+    else {
         Write-Information "✅ No anti-regression violations detected." -InformationAction Continue
     }
 }

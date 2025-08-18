@@ -11,10 +11,10 @@ if ($env:BUSBUDDY_SKIP_PROFILE_UPDATE -eq '1') {
 
 # Locate an existing profile (do not create a new one)
 $targets = @(
-    [pscustomobject]@{ Name='CurrentUserCurrentHost'; Path=$PROFILE; Exists=(Test-Path $PROFILE) },
-    [pscustomobject]@{ Name='CurrentUserAllHosts'; Path=$PROFILE.CurrentUserAllHosts; Exists=(Test-Path $PROFILE.CurrentUserAllHosts) },
-    [pscustomobject]@{ Name='AllUsersCurrentHost'; Path=$PROFILE.AllUsersCurrentHost; Exists=(Test-Path $PROFILE.AllUsersCurrentHost) },
-    [pscustomobject]@{ Name='AllUsersAllHosts'; Path=$PROFILE.AllUsersAllHosts; Exists=(Test-Path $PROFILE.AllUsersAllHosts) }
+    [pscustomobject]@{ Name = 'CurrentUserCurrentHost'; Path = $PROFILE; Exists = (Test-Path $PROFILE) },
+    [pscustomobject]@{ Name = 'CurrentUserAllHosts'; Path = $PROFILE.CurrentUserAllHosts; Exists = (Test-Path $PROFILE.CurrentUserAllHosts) },
+    [pscustomobject]@{ Name = 'AllUsersCurrentHost'; Path = $PROFILE.AllUsersCurrentHost; Exists = (Test-Path $PROFILE.AllUsersCurrentHost) },
+    [pscustomobject]@{ Name = 'AllUsersAllHosts'; Path = $PROFILE.AllUsersAllHosts; Exists = (Test-Path $PROFILE.AllUsersAllHosts) }
 )
 $target = $targets | Where-Object Exists | Select-Object -First 1
 if (-not $target) {
@@ -32,7 +32,7 @@ if (-not (Test-Path $busBuddyModules)) {
 
 # Idempotent insert of a bootstrap block
 $blockStart = '# >>> BusBuddy bootstrap BEGIN'
-$blockEnd   = '# <<< BusBuddy bootstrap END'
+$blockEnd = '# <<< BusBuddy bootstrap END'
 
 # The profile bootstrap block that will be inserted or updated in-place
 $bootstrapTemplate = @'
@@ -64,7 +64,7 @@ if (Test-Path $busBuddyModules) {
 # <<< BusBuddy bootstrap END
 '@
 
-$bootstrap = $bootstrapTemplate.Replace('__MODULES_PATH__', ($busBuddyModules -replace "'","''"))
+$bootstrap = $bootstrapTemplate.Replace('__MODULES_PATH__', ($busBuddyModules -replace "'", "''"))
 
 $content = Get-Content -Raw -Path $target.Path
 
@@ -83,7 +83,8 @@ if ($hasBlock) {
     $newContent = ($contentNoBlocks.TrimEnd() + [Environment]::NewLine + [Environment]::NewLine + $bootstrap)
     Set-Content -Path $target.Path -Value $newContent -Encoding UTF8
     Write-Output "Profile blocks consolidated and updated: $($target.Path)"
-} else {
+}
+else {
     # Append the block once
     $newContent = ($content.TrimEnd() + [Environment]::NewLine + [Environment]::NewLine + $bootstrap)
     Set-Content -Path $target.Path -Value $newContent -Encoding UTF8

@@ -44,13 +44,13 @@ function Get-BusBuddyTestOutput {
     }
     if (-not $Filter) {
         $Filter = switch ($TestSuite) {
-            'Unit'        { 'Category=Unit|TestCategory=Unit' }
+            'Unit' { 'Category=Unit|TestCategory=Unit' }
             'Integration' { 'Category=Integration|TestCategory=Integration' }
-            'Validation'  { 'Category=Validation|TestCategory=Validation' }
-            'Core'        { 'FullyQualifiedName~BusBuddy.Tests.Core' }
-            'WPF'         { 'FullyQualifiedName~BusBuddy.UITests' }
-            'All'         { '' }
-            default       { '' }
+            'Validation' { 'Category=Validation|TestCategory=Validation' }
+            'Core' { 'FullyQualifiedName~BusBuddy.Tests.Core' }
+            'WPF' { 'FullyQualifiedName~BusBuddy.UITests' }
+            'All' { '' }
+            default { '' }
         }
     }
     $env:DOTNET_CLI_UI_LANGUAGE = "en-US"
@@ -58,21 +58,21 @@ function Get-BusBuddyTestOutput {
     try {
         $startTime = Get-Date
         Write-Information "🏗️ Building solution first..." -InformationAction Continue
-    $buildCmd = "dotnet build $ProjectPath --configuration Debug --verbosity $Verbosity" # used in invocation below
-    $buildStdOutPath = "logs/build-stdout-$timestamp.log"
-    $buildStdErrPath = "logs/build-stderr-$timestamp.log" # now used to persist stderr lines
-    $buildOutput = & $buildCmd 2>&1 | Tee-Object -FilePath $buildStdOutPath
+        $buildCmd = "dotnet build $ProjectPath --configuration Debug --verbosity $Verbosity" # used in invocation below
+        $buildStdOutPath = "logs/build-stdout-$timestamp.log"
+        $buildStdErrPath = "logs/build-stderr-$timestamp.log" # now used to persist stderr lines
+        $buildOutput = & $buildCmd 2>&1 | Tee-Object -FilePath $buildStdOutPath
         $buildStdout = Get-Content $buildStdOutPath -Raw
-    $buildStderr = $buildOutput | Where-Object { $_ -match 'error' -or $_ -match 'FAILED' }
-    if ($buildStderr) { $buildStderr | Out-File -FilePath $buildStdErrPath -Encoding utf8 }
+        $buildStderr = $buildOutput | Where-Object { $_ -match 'error' -or $_ -match 'FAILED' }
+        if ($buildStderr) { $buildStderr | Out-File -FilePath $buildStdErrPath -Encoding utf8 }
         $buildExitCode = $LASTEXITCODE
         if ($buildExitCode -ne 0) {
             Write-Error "❌ Build failed! Cannot proceed with testing."
             Write-Error "Build errors:"
             Write-Error $1
             return @{
-                ExitCode = $buildExitCode
-                Status = "BuildFailed"
+                ExitCode    = $buildExitCode
+                Status      = "BuildFailed"
                 BuildOutput = $buildStdout + $buildStderr
             }
         }
@@ -135,7 +135,8 @@ $testStderr
             if ($SaveToFile) {
                 Write-Information "🔍 Full details in: $outputFile" -InformationAction Continue
             }
-        } else {
+        }
+        else {
             Write-Output "✅ All tests passed!"
         }
         Write-Information "`n📊 TEST SUMMARY:" -InformationAction Continue
@@ -147,22 +148,23 @@ $testStderr
         Write-Information "   Build Status: $(if ($buildExitCode -eq 0) { " -InformationAction ContinueSUCCESS ✅" } else { "FAILED ❌" })" -ForegroundColor $(if ($buildExitCode -eq 0) { "Green" } else { "Red" })
         Write-Information "   Test Status: $(if ($testExitCode -eq 0) { " -InformationAction ContinueSUCCESS ✅" } else { "FAILED ❌" })" -ForegroundColor $(if ($testExitCode -eq 0) { "Green" } else { "Red" })
         return @{
-            ExitCode = $testExitCode
-            Duration = $duration
-            PassedTests = $passedTests
-            FailedTests = $failedTests
-            SkippedTests = $skippedTests
-            ErrorLines = $errorLines
-            OutputFile = if ($SaveToFile) { $outputFile } else { $null }
-            FullOutput = $fullOutput
+            ExitCode      = $testExitCode
+            Duration      = $duration
+            PassedTests   = $passedTests
+            FailedTests   = $failedTests
+            SkippedTests  = $skippedTests
+            ErrorLines    = $errorLines
+            OutputFile    = if ($SaveToFile) { $outputFile } else { $null }
+            FullOutput    = $fullOutput
             BuildExitCode = $buildExitCode
-            Status = if ($testExitCode -eq 0) { "Success" } else { "Failed" }
+            Status        = if ($testExitCode -eq 0) { "Success" } else { "Failed" }
         }
-    } catch {
+    }
+    catch {
         Write-Error "Failed to execute tests: $($_.Exception.Message)"
         return @{
-            ExitCode = -1
-            Status = "Error"
+            ExitCode     = -1
+            Status       = "Error"
             ErrorMessage = $_.Exception.Message
         }
     }
@@ -205,8 +207,9 @@ function Get-BusBuddyTestLog {
         Write-Information "📅 Created: $($latestLog.LastWriteTime)" -InformationAction Continue
         Write-Information "" -InformationAction Continue
         Get-Content $latestLog.FullName
-    } else {
-    Write-Information "No test logs found. Run bbTestFull first." -InformationAction Continue
+    }
+    else {
+        Write-Information "No test logs found. Run bbTestFull first." -InformationAction Continue
     }
 }
 
@@ -241,7 +244,8 @@ function Start-BusBuddyTestWatch {
         while ($true) {
             Start-Sleep -Seconds 1
         }
-    } finally {
+    }
+    finally {
         $watcher.EnableRaisingEvents = $false
         $watcher.Dispose()
         Get-EventSubscriber | Unregister-Event
@@ -293,7 +297,8 @@ try {
     }
 
     Write-Verbose "✅ PowerShell buffer configuration optimized for full output capture"
-} catch {
+}
+catch {
     Write-Warning "Could not optimize PowerShell buffer: $($_.Exception.Message)"
 }
 
@@ -314,10 +319,12 @@ try {
     if (Test-Path $enhancedTestModule) {
         Import-Module $enhancedTestModule -Force -ErrorAction SilentlyContinue
         Write-Verbose "✅ Enhanced test output module loaded"
-    } else {
+    }
+    else {
         Write-Warning "BusBuddy.TestOutput module not found at $enhancedTestModule"
     }
-} catch {
+}
+catch {
     Write-Warning "Error loading enhanced output functions: $($_.Exception.Message)"
 }
 #endregion
@@ -385,16 +392,16 @@ function Write-BusBuddyStatus {
     #>
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$false, Position=0, ValueFromPipeline=$true)]
+        [Parameter(Mandatory = $false, Position = 0, ValueFromPipeline = $true)]
         [AllowEmptyString()]
         [AllowNull()]
         [string]$Message = "",
 
-        [Parameter(ParameterSetName='Type')]
+        [Parameter(ParameterSetName = 'Type')]
         [ValidateSet('Info', 'Success', 'Warning', 'Error', 'Debug')]
         [string]$Type = 'Info',
 
-        [Parameter(ParameterSetName='Status')]
+        [Parameter(ParameterSetName = 'Status')]
         [ValidateSet('Info', 'Success', 'Warning', 'Error', 'Debug')]
         [string]$Status = 'Info',
 
@@ -429,12 +436,12 @@ function Write-BusBuddyStatus {
             # Enhanced formatting with ANSI colors and icons
             $icon = if ($NoEmoji) { "" } else {
                 switch ($statusType) {
-                    'Info'    { "🚌" }
+                    'Info' { "🚌" }
                     'Success' { "✅" }
                     'Warning' { "⚠️ " }
-                    'Error'   { "❌" }
-                    'Debug'   { "🔍" }
-                    default   { "🚌" }
+                    'Error' { "❌" }
+                    'Debug' { "🔍" }
+                    default { "🚌" }
                 }
             }
 
@@ -591,21 +598,48 @@ try {
             }
         }
         if (-not $script:MantraId) {
-            $script:MantraId = ([guid]::NewGuid().ToString('N').Substring(0,8))
+            $script:MantraId = ([guid]::NewGuid().ToString('N').Substring(0, 8))
             Write-Information "Generated transient Mantra ID: $script:MantraId" -InformationAction Continue
         }
     }
-} catch {
+}
+catch {
     Write-Information "(Non-fatal) Mantra initialization issue: $($_.Exception.Message)" -InformationAction Continue
 }
 
+<#
+.SYNOPSIS
+Short description
+
+.DESCRIPTION
+Long description
+
+.EXAMPLE
+An example
+
+.NOTES
+General notes
+#>
 function Get-BusBuddyMantraId {
     [CmdletBinding()] [OutputType([string])] param() return $script:MantraId
 }
 
+<#
+.SYNOPSIS
+Short description
+
+.DESCRIPTION
+Long description
+
+.EXAMPLE
+An example
+
+.NOTES
+General notes
+#>
 function Reset-BusBuddyMantraId {
     [CmdletBinding()] param()
-    $script:MantraId = ([guid]::NewGuid().ToString('N').Substring(0,8))
+    $script:MantraId = ([guid]::NewGuid().ToString('N').Substring(0, 8))
     Write-Information "New Mantra ID: $script:MantraId" -InformationAction Continue
     return $script:MantraId
 }
@@ -657,7 +691,8 @@ function Invoke-BusBuddyBuild {
 
         if ($LASTEXITCODE -eq 0) {
             Write-BusBuddyStatus "Build completed successfully" -Type Success
-        } else {
+        }
+        else {
             Write-BusBuddyError "Build failed with exit code $LASTEXITCODE"
         }
     }
@@ -688,7 +723,8 @@ function Invoke-BusBuddyRun {
         # Use automatic error capture unless disabled
         if (-not $NoErrorCapture -and (Get-Command Invoke-BusBuddyWithExceptionCapture -ErrorAction SilentlyContinue)) {
             Invoke-BusBuddyWithExceptionCapture -Command "dotnet" -Arguments @("run", "--project", "BusBuddy.WPF/BusBuddy.WPF.csproj") -Context "Application Startup"
-        } else {
+        }
+        else {
             # Fallback to direct execution
             dotnet run --project BusBuddy.WPF/BusBuddy.WPF.csproj
         }
@@ -739,9 +775,9 @@ function Invoke-BusBuddyTest {
             Write-BusBuddyError "❌ Phase 4 NUnit Test Runner script not found: $phase4ScriptPath"
             Write-Information "Please ensure the PowerShell\Testing\Run-Phase4-NUnitTests-Modular.ps1 file exists" -InformationAction Continue
             return @{
-                ExitCode = -1
+                ExitCode     = -1
                 ErrorMessage = "Phase 4 NUnit Test Runner script not found"
-                Output = "Script path: $phase4ScriptPath"
+                Output       = "Script path: $phase4ScriptPath"
             }
         }
 
@@ -786,7 +822,7 @@ function Invoke-BusBuddyTest {
 
             # Check for specific .NET 9 compatibility issue
             $hasNet9Issue = $testErrors -match "Microsoft\.TestPlatform\.CoreUtilities.*Version=15\.0\.0\.0" -or
-                           $testOutput -match "Microsoft\.TestPlatform\.CoreUtilities.*Version=15\.0\.0\.0"
+            $testOutput -match "Microsoft\.TestPlatform\.CoreUtilities.*Version=15\.0\.0\.0"
 
             if ($hasNet9Issue) {
                 Write-Information "`n🚨 KNOWN .NET 9 COMPATIBILITY ISSUE DETECTED" -InformationAction Continue
@@ -805,55 +841,58 @@ function Invoke-BusBuddyTest {
                 Write-Information "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -InformationAction Continue
 
                 return @{
-                    ExitCode = $testExitCode
-                    ErrorType = "NET9_COMPATIBILITY"
-                    Issue = "Microsoft.TestPlatform.CoreUtilities v15.0.0.0 compatibility"
+                    ExitCode    = $testExitCode
+                    ErrorType   = "NET9_COMPATIBILITY"
+                    Issue       = "Microsoft.TestPlatform.CoreUtilities v15.0.0.0 compatibility"
                     Workarounds = @("VS Code NUnit extension", "Visual Studio Test Explorer", "Downgrade to .NET 8")
-                    OutputFile = $testOutputFile
-                    ErrorFile = $testErrorFile
-                    Method = "Phase4-NUnit-NET9-Issue"
+                    OutputFile  = $testOutputFile
+                    ErrorFile   = $testErrorFile
+                    Method      = "Phase4-NUnit-NET9-Issue"
                 }
-            } elseif ($testExitCode -eq 0) {
+            }
+            elseif ($testExitCode -eq 0) {
                 Write-BusBuddyStatus "✅ Phase 4 NUnit tests completed successfully!" -Type Success
                 return @{
-                    ExitCode = 0
-                    PassedTests = 1  # Phase 4 script provides detailed results
-                    FailedTests = 0
+                    ExitCode     = 0
+                    PassedTests  = 1  # Phase 4 script provides detailed results
+                    FailedTests  = 0
                     SkippedTests = 0
-                    Output = "Phase 4 NUnit Test Runner completed successfully"
-                    OutputFile = $testOutputFile
-                    Method = "Phase4-NUnit"
+                    Output       = "Phase 4 NUnit Test Runner completed successfully"
+                    OutputFile   = $testOutputFile
+                    Method       = "Phase4-NUnit"
                 }
-            } else {
+            }
+            else {
                 Write-BusBuddyError "❌ Phase 4 NUnit tests failed with exit code $testExitCode"
                 Write-Information "📁 Check test logs: $testOutputFile and $testErrorFile" -InformationAction Continue
                 return @{
-                    ExitCode = $testExitCode
-                    PassedTests = 0
-                    FailedTests = 1
+                    ExitCode     = $testExitCode
+                    PassedTests  = 0
+                    FailedTests  = 1
                     SkippedTests = 0
-                    Output = "Phase 4 NUnit Test Runner failed - check TestResults directory for details"
-                    OutputFile = $testOutputFile
-                    ErrorFile = $testErrorFile
-                    Method = "Phase4-NUnit"
+                    Output       = "Phase 4 NUnit Test Runner failed - check TestResults directory for details"
+                    OutputFile   = $testOutputFile
+                    ErrorFile    = $testErrorFile
+                    Method       = "Phase4-NUnit"
                 }
             }
-        } catch {
+        }
+        catch {
             Write-BusBuddyError "❌ Phase 4 NUnit execution failed: $($_.Exception.Message)"
             return @{
-                ExitCode = -1
+                ExitCode     = -1
                 ErrorMessage = $_.Exception.Message
-                Output = "Phase 4 NUnit script execution error"
-                Method = "Phase4-NUnit"
+                Output       = "Phase 4 NUnit script execution error"
+                Method       = "Phase4-NUnit"
             }
         }
     }
     catch {
         Write-BusBuddyError "Test execution error" -Exception $_
         return @{
-            ExitCode = -1
+            ExitCode     = -1
             ErrorMessage = $_.Exception.Message
-            Method = "Phase4-NUnit-Error"
+            Method       = "Phase4-NUnit-Error"
         }
     }
     finally {
@@ -902,14 +941,15 @@ function Invoke-BusBuddyClean {
         Clean BusBuddy build artifacts
     #>
     Push-Location $projectRoot
-        Write-Information "(Non-fatal: Show-BusBuddyWelcome already exported or export failed)" -InformationAction Continue
+    Write-Information "(Non-fatal: Show-BusBuddyWelcome already exported or export failed)" -InformationAction Continue
     try {
         Write-BusBuddyStatus "Cleaning BusBuddy artifacts..." -Type Info
         dotnet clean BusBuddy.sln
 
         if ($LASTEXITCODE -eq 0) {
             Write-BusBuddyStatus "Clean completed successfully" -Type Success
-        } else {
+        }
+        else {
             Write-BusBuddyError "Clean failed with exit code $LASTEXITCODE"
         }
     }
@@ -939,13 +979,15 @@ function Invoke-BusBuddyRestore {
 
         if ($Force) {
             dotnet restore BusBuddy.sln --force
-        } else {
+        }
+        else {
             dotnet restore BusBuddy.sln
         }
 
         if ($LASTEXITCODE -eq 0) {
             Write-BusBuddyStatus "Package restore completed successfully" -Type Success
-        } else {
+        }
+        else {
             Write-BusBuddyError "Package restore failed with exit code $LASTEXITCODE"
         }
     }
@@ -1010,7 +1052,8 @@ function Invoke-BusBuddyHealthCheck {
         $filePath = Join-Path $projectRoot $file
         if (Test-Path $filePath) {
             Write-BusBuddyStatus "✓ Found: $file" -Type Success
-        } else {
+        }
+        else {
             $issues += "Missing required file: $file"
             Write-BusBuddyStatus "✗ Missing: $file" -Type Warning
         }
@@ -1018,7 +1061,8 @@ function Invoke-BusBuddyHealthCheck {
 
     if ($issues.Count -eq 0) {
         Write-BusBuddyStatus "All health checks passed!" -Type Success
-    } else {
+    }
+    else {
         Write-BusBuddyStatus "Health check found $($issues.Count) issue(s):" -Type Warning
         foreach ($issue in $issues) {
             Write-BusBuddyStatus "  - $issue" -Type Warning
@@ -1151,7 +1195,8 @@ function Invoke-BusBuddyXamlValidation {
             if ($content -match '<.*?>' -and $content -match 'xmlns') {
                 $validFiles++
                 Write-BusBuddyStatus "  ✓ $($file.Name)" -Type Success
-            } else {
+            }
+            else {
                 $invalidFiles++
                 Write-BusBuddyStatus "  ✗ $($file.Name) - Invalid XAML structure" -Type Warning
             }
@@ -1209,8 +1254,8 @@ function Invoke-BusBuddyWithExceptionCapture {
         [Parameter()]
         [string]$Context = "BusBuddy Operation",
 
-    [Parameter()]
-    [switch]$ThrowOnError,
+        [Parameter()]
+        [switch]$ThrowOnError,
         [Parameter()]
         [int]$Timeout = 300
     )
@@ -1226,13 +1271,13 @@ function Invoke-BusBuddyWithExceptionCapture {
 
     # System context capture
     $systemContext = @{
-        WorkingDirectory = Get-Location
+        WorkingDirectory  = Get-Location
         PowerShellVersion = $PSVersionTable.PSVersion
-        ProcessId = $PID
-        UserName = $env:USERNAME
-        MachineName = $env:COMPUTERNAME
-        Timestamp = $startTime.ToString("yyyy-MM-dd HH:mm:ss.fff")
-        SessionId = $sessionId
+        ProcessId         = $PID
+        UserName          = $env:USERNAME
+        MachineName       = $env:COMPUTERNAME
+        Timestamp         = $startTime.ToString("yyyy-MM-dd HH:mm:ss.fff")
+        SessionId         = $sessionId
     }
 
     try {
@@ -1240,7 +1285,8 @@ function Invoke-BusBuddyWithExceptionCapture {
         $stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
         if ($Arguments.Count -gt 0) {
             $result = & $Command @Arguments 2>&1
-        } else {
+        }
+        else {
             $result = & $Command 2>&1
         }
         $stopwatch.Stop()
@@ -1274,15 +1320,15 @@ function Invoke-BusBuddyWithExceptionCapture {
 
         # Capture additional diagnostics
         $diagnostics = @{
-            LastExitCode = $LASTEXITCODE
-            ErrorRecord = $_
+            LastExitCode  = $LASTEXITCODE
+            ErrorRecord   = $_
             SystemContext = $systemContext
-            Duration = $duration
-            FullCommand = $fullCommand
+            Duration      = $duration
+            FullCommand   = $fullCommand
         }
 
         # Check for common error patterns and provide suggestions
-    $suggestions = Get-BusBuddyErrorSuggestion -ErrorMessage $errorDetails -Command $Command
+        $suggestions = Get-BusBuddyErrorSuggestion -ErrorMessage $errorDetails -Command $Command
         if ($suggestions) {
             Write-Information "💡 Suggestions:" -InformationAction Continue
             $suggestions | ForEach-Object {
@@ -1293,19 +1339,20 @@ function Invoke-BusBuddyWithExceptionCapture {
         # Log to error capture file for analysis
         $errorLogPath = Join-Path (Get-BusBuddyProjectRoot) "logs" "command-errors.log"
         $errorEntry = @{
-            Timestamp = $startTime.ToString("yyyy-MM-dd HH:mm:ss.fff")
-            SessionId = $sessionId
-            Command = $fullCommand
-            Context = $Context
-            Duration = $duration.TotalSeconds
-            Error = $errorDetails
-            ExitCode = $LASTEXITCODE
+            Timestamp   = $startTime.ToString("yyyy-MM-dd HH:mm:ss.fff")
+            SessionId   = $sessionId
+            Command     = $fullCommand
+            Context     = $Context
+            Duration    = $duration.TotalSeconds
+            Error       = $errorDetails
+            ExitCode    = $LASTEXITCODE
             Diagnostics = $diagnostics
         } | ConvertTo-Json -Depth 3 -Compress
 
         try {
             $errorEntry | Add-Content -Path $errorLogPath -Encoding UTF8
-        } catch {
+        }
+        catch {
             Write-Warning ("Could not append to error log at {0}: {1}" -f $errorLogPath, $_.Exception.Message)
         }
 
@@ -1374,7 +1421,7 @@ function Start-BusBuddyMVP {
     )
 
     $mvpFeatures = @{
-        "✅ CORE MVP" = @(
+        "✅ CORE MVP"                = @(
             "Basic WPF window that opens",
             "Simple student list (Name, Address)",
             "Simple route list (Route Number, Description)",
@@ -1390,7 +1437,7 @@ function Start-BusBuddyMVP {
             "Multi-theme support",
             "Performance monitoring"
         )
-        "🚫 ENTERPRISE OVERKILL" = @(
+        "🚫 ENTERPRISE OVERKILL"    = @(
             "Microservices architecture",
             "Container deployment",
             "Advanced security patterns",
@@ -1463,11 +1510,13 @@ function Test-BusBuddyMVPReadiness {
         & dotnet build BusBuddy.sln --verbosity quiet 2>&1
         if ($LASTEXITCODE -eq 0) {
             Write-BusBuddyStatus "  ✅ App builds successfully" -Type Success
-        } else {
+        }
+        else {
             Write-BusBuddyStatus "  ❌ App doesn't build - FIX THIS FIRST" -Type Error
             $ready = $false
         }
-    } catch {
+    }
+    catch {
         Write-BusBuddyStatus "  ❌ Build check failed - FIX THIS FIRST" -Type Error
         $ready = $false
     }
@@ -1476,7 +1525,8 @@ function Test-BusBuddyMVPReadiness {
     $mainWindow = Join-Path $projectRoot "BusBuddy.WPF\Views\Main\MainWindow.xaml"
     if (Test-Path $mainWindow) {
         Write-BusBuddyStatus "  ✅ Main window exists" -Type Success
-    } else {
+    }
+    else {
         Write-BusBuddyStatus "  ❌ No main window found - NEED BASIC UI" -Type Error
         $ready = $false
     }
@@ -1488,14 +1538,16 @@ function Test-BusBuddyMVPReadiness {
 
     if ($studentModel) {
         Write-BusBuddyStatus "  ✅ Student model exists" -Type Success
-    } else {
+    }
+    else {
         Write-BusBuddyStatus "  ❌ No Student model - NEED BASIC DATA" -Type Error
         $ready = $false
     }
 
     if ($routeModel) {
         Write-BusBuddyStatus "  ✅ Route model exists" -Type Success
-    } else {
+    }
+    else {
         Write-BusBuddyStatus "  ❌ No Route model - NEED BASIC DATA" -Type Error
         $ready = $false
     }
@@ -1505,7 +1557,8 @@ function Test-BusBuddyMVPReadiness {
     if ($ready) {
         Write-BusBuddyStatus "🎉 MVP READY! You can ship this!" -Type Success
         Write-BusBuddyStatus "Next: Test that you can actually assign a student to a route" -Type Success
-    } else {
+    }
+    else {
         Write-BusBuddyStatus "🚧 MVP NOT READY - Focus on the failures above" -Type Warning
         Write-BusBuddyStatus "💡 Don't add features until these basic things work" -Type Warning
     }
@@ -1546,10 +1599,12 @@ function Invoke-BusBuddyAntiRegression {
                     Write-BusBuddyStatus "  📄 $($_.Filename):$($_.LineNumber)" -Type Warning
                 }
             }
-        } else {
+        }
+        else {
             Write-BusBuddyStatus "  ✅ No Microsoft.Extensions.Logging violations" -Type Success
         }
-    } catch {
+    }
+    catch {
         Write-BusBuddyStatus "  ⚠️ Could not check logging violations: $($_.Exception.Message)" -Type Warning
     }
 
@@ -1567,10 +1622,12 @@ function Invoke-BusBuddyAntiRegression {
                     Write-BusBuddyStatus "  📄 $($_.Filename):$($_.LineNumber)" -Type Warning
                 }
             }
-        } else {
+        }
+        else {
             Write-BusBuddyStatus "  ✅ No standard WPF controls found" -Type Success
         }
-    } catch {
+    }
+    catch {
         Write-BusBuddyStatus "  ⚠️ Could not check XAML violations: $($_.Exception.Message)" -Type Warning
     }
 
@@ -1588,10 +1645,12 @@ function Invoke-BusBuddyAntiRegression {
                     Write-BusBuddyStatus "  📄 $($_.Filename):$($_.LineNumber)" -Type Warning
                 }
             }
-        } else {
+        }
+        else {
             Write-BusBuddyStatus "  ✅ PowerShell compliance maintained" -Type Success
         }
-    } catch {
+    }
+    catch {
         Write-BusBuddyStatus "  ⚠️ Could not check PowerShell violations: $($_.Exception.Message)" -Type Warning
     }
 
@@ -1603,13 +1662,15 @@ function Invoke-BusBuddyAntiRegression {
 
         if ($LASTEXITCODE -eq 0) {
             Write-BusBuddyStatus "  ✅ Build successful" -Type Success
-        } else {
+        }
+        else {
             $issues += "❌ Build failed with exit code: $LASTEXITCODE"
             if ($Detailed) {
                 Write-BusBuddyStatus "  Build output: $buildOutput" -Type Warning
             }
         }
-    } catch {
+    }
+    catch {
         $issues += "❌ Build check failed: $($_.Exception.Message)"
     }
 
@@ -1619,7 +1680,8 @@ function Invoke-BusBuddyAntiRegression {
         Write-BusBuddyStatus "🎉 All anti-regression checks passed!" -Type Success
         Write-BusBuddyStatus "Repository is compliant with BusBuddy standards." -Type Success
         return $true
-    } else {
+    }
+    else {
         Write-BusBuddyError "🚨 Anti-regression violations found:"
         $issues | ForEach-Object { Write-BusBuddyError "  $_" }
         Write-BusBuddyStatus " " -Type Info
@@ -1653,7 +1715,8 @@ function Test-BusBuddyEnvironment {
     Write-Information "1. PowerShell Version..." -InformationAction Continue
     if ($PSVersionTable.PSVersion -ge [version]'7.5.0') {
         Write-Information "   ✅ PowerShell $($PSVersionTable.PSVersion) (Required: 7.5+)" -InformationAction Continue
-    } else {
+    }
+    else {
         $issues += "PowerShell version $($PSVersionTable.PSVersion) is too old. Need 7.5+"
         Write-Information "   ❌ PowerShell $($PSVersionTable.PSVersion) - UPGRADE REQUIRED" -InformationAction Continue
     }
@@ -1694,7 +1757,8 @@ function Test-BusBuddyEnvironment {
 
     if ($commandsWorking -eq $essentialCommands.Count) {
         Write-Information "   ✅ All $($essentialCommands.Count) essential commands available" -InformationAction Continue
-    } else {
+    }
+    else {
         $issues += "Only $commandsWorking of $($essentialCommands.Count) commands available"
         Write-Information "   ❌ Missing commands ($commandsWorking/$($essentialCommands.Count))" -InformationAction Continue
     }
@@ -1705,11 +1769,13 @@ function Test-BusBuddyEnvironment {
         $dotnetVersion = & dotnet --version 2>$null
         if ($dotnetVersion -and $dotnetVersion -match '^9\.') {
             Write-Information "   ✅ .NET $dotnetVersion" -InformationAction Continue
-        } else {
+        }
+        else {
             $warnings += ".NET version $dotnetVersion - expected 9.x"
             Write-Information "   ⚠️ .NET $dotnetVersion (Expected: 9.x)" -InformationAction Continue
         }
-    } catch {
+    }
+    catch {
         $issues += ".NET SDK not found or not working"
         Write-Information "   ❌ .NET SDK not found" -InformationAction Continue
     }
@@ -1722,14 +1788,17 @@ function Test-BusBuddyEnvironment {
             if ($gitStatus) {
                 $warnings += "Git has uncommitted changes"
                 Write-Information "   ⚠️ Uncommitted changes present" -InformationAction Continue
-            } else {
+            }
+            else {
                 Write-Information "   ✅ Git repository clean" -InformationAction Continue
             }
-        } else {
+        }
+        else {
             $warnings += "Not in a Git repository or Git not available"
             Write-Information "   ⚠️ Git issues detected" -InformationAction Continue
         }
-    } catch {
+    }
+    catch {
         $warnings += "Git not available: $($_.Exception.Message)"
         Write-Information "   ⚠️ Git not available" -InformationAction Continue
     }
@@ -1738,7 +1807,8 @@ function Test-BusBuddyEnvironment {
     Write-Information "6. AI Assistant Resources..." -InformationAction Continue
     if (Test-Path "Grok Resources\GROK-README.md") {
         Write-Information "   ✅ Grok Resources folder ready" -InformationAction Continue
-    } else {
+    }
+    else {
         $warnings += "Grok Resources not found - AI assistance may be limited"
         Write-Information "   ⚠️ Grok Resources missing" -InformationAction Continue
     }
@@ -1769,7 +1839,8 @@ function Test-BusBuddyEnvironment {
         }
 
         return $true
-    } else {
+    }
+    else {
         Write-Information "❌ ENVIRONMENT NOT READY" -InformationAction Continue
         Write-Information "   Fix these issues before starting development:" -InformationAction Continue
         Write-Information "" -InformationAction Continue
@@ -1850,7 +1921,8 @@ function Start-BusBuddyRuntimeErrorCaptureBasic {
 
         if ($result.Success) {
             Write-BusBuddyStatus "Runtime capture completed successfully! No errors detected." -Type Success
-        } else {
+        }
+        else {
             Write-BusBuddyStatus "Runtime capture detected $($result.ErrorCount) errors - review logs" -Type Warning
         }
 
@@ -1886,7 +1958,7 @@ function Invoke-BusBuddyRunCapture {
     #>
     [CmdletBinding()]
     param(
-        [ValidateRange(10,3600)]
+        [ValidateRange(10, 3600)]
         [int]$Duration = 60,
         [switch]$DetailedLogging,
         [switch]$OpenLogsAfter
@@ -1908,7 +1980,8 @@ if (Test-Path $xaiOptimizerPath) {
     if ([string]::IsNullOrWhiteSpace($env:BUSBUDDY_NO_XAI_WARN)) {
         Write-BusBuddyStatus "🤖 XAI Route Optimizer loaded successfully" -Type Success
     }
-} else {
+}
+else {
     $script:XAIAvailable = $false
     if ([string]::IsNullOrWhiteSpace($env:BUSBUDDY_NO_XAI_WARN)) {
         if ($env:BUSBUDDY_NO_XAI_WARN -ne '1' -and $env:BUSBUDDY_SILENT -ne '1') {
@@ -2114,7 +2187,7 @@ function Open-BusBuddyCopilotReference {
     #>
     [CmdletBinding()]
     param(
-        [Parameter(Position=0)]
+        [Parameter(Position = 0)]
         [string]$Topic,
 
         [Parameter()]
@@ -2139,7 +2212,8 @@ function Open-BusBuddyCopilotReference {
             $topicName = $_.BaseName
             if ($topicName -eq "Copilot-Hub") {
                 Write-Information "  📖 Main Hub (default)" -InformationAction Continue
-            } else {
+            }
+            else {
                 Write-Information "  📄 $topicName" -InformationAction Continue
             }
         }
@@ -2157,10 +2231,12 @@ function Open-BusBuddyCopilotReference {
             Write-BusBuddyStatus "Opening $Topic reference for Copilot context..." -Type Info
             if (Get-Command code -ErrorAction SilentlyContinue) {
                 code $targetFile
-            } else {
+            }
+            else {
                 Start-Process notepad $targetFile
             }
-        } else {
+        }
+        else {
             Write-BusBuddyError "Reference file not found: $targetFile"
             Write-Information "Available topics:" -InformationAction Continue
             Get-ChildItem $referencePath -Filter "*.md" | Where-Object { $_.Name -ne "README.md" } | ForEach-Object {
@@ -2169,17 +2245,20 @@ function Open-BusBuddyCopilotReference {
             Write-Information "" -InformationAction Continue
             Write-Information "Use 'bb-copilot-ref -ShowTopics' for detailed help" -InformationAction Continue
         }
-    } else {
+    }
+    else {
         $hubFile = Join-Path $referencePath "Copilot-Hub.md"
         if (Test-Path $hubFile) {
             Write-BusBuddyStatus "Opening Copilot Reference Hub..." -Type Info
             if (Get-Command code -ErrorAction SilentlyContinue) {
                 # Open the entire reference folder for maximum context
                 code $referencePath
-            } else {
+            }
+            else {
                 Start-Process notepad $hubFile
             }
-        } else {
+        }
+        else {
             Write-BusBuddyError "Copilot Hub not found: $hubFile"
             Write-Information "Create the reference hub by running the BusBuddy Copilot setup." -InformationAction Continue
         }
@@ -2209,11 +2288,11 @@ function Invoke-BusBuddyReport {
     [CmdletBinding()]
     [OutputType([hashtable])]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [ValidateSet("Roster", "RouteManifest", "StudentList", "DriverSchedule", "MaintenanceReport")]
         [string]$ReportType,
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
         [string]$OutputPath,
 
@@ -2239,8 +2318,8 @@ function Invoke-BusBuddyReport {
         }
 
         # Build the API call to our .NET PDF service
-    $projectPath = (Split-Path $PSScriptRoot -Parent | Split-Path -Parent | Split-Path -Parent)
-    $exePath = Join-Path $projectPath "BusBuddy.WPF\bin\Debug\net9.0-windows\BusBuddy.exe"
+        $projectPath = (Split-Path $PSScriptRoot -Parent | Split-Path -Parent | Split-Path -Parent)
+        $exePath = Join-Path $projectPath "BusBuddy.WPF\bin\Debug\net9.0-windows\BusBuddy.exe"
 
         if (Test-Path $exePath) {
             # Call the .NET application with report generation parameters
@@ -2269,18 +2348,20 @@ function Invoke-BusBuddyReport {
 
                 # Return report metadata
                 return @{
-                    ReportType = $ReportType
-                    OutputPath = $OutputPath
-                    Format = $Format
-                    RouteId = $RouteId
+                    ReportType  = $ReportType
+                    OutputPath  = $OutputPath
+                    Format      = $Format
+                    RouteId     = $RouteId
                     GeneratedAt = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
-                    FileSize = if (Test-Path $OutputPath) { (Get-Item $OutputPath).Length } else { 0 }
+                    FileSize    = if (Test-Path $OutputPath) { (Get-Item $OutputPath).Length } else { 0 }
                 }
-            } else {
+            }
+            else {
                 Write-BusBuddyError "Report generation failed: $reportResult"
                 return
             }
-        } else {
+        }
+        else {
             Write-BusBuddyStatus "BusBuddy application not built. Building now..." -Type Info
             Invoke-BusBuddyBuild
 
@@ -2288,7 +2369,8 @@ function Invoke-BusBuddyReport {
                 Write-BusBuddyStatus "Retrying report generation..." -Type Info
                 # Retry the call after building
                 return Invoke-BusBuddyReport @PSBoundParameters
-            } else {
+            }
+            else {
                 Write-BusBuddyError "Could not build BusBuddy application"
                 return
             }
@@ -2324,7 +2406,7 @@ function Invoke-BusBuddyRouteOptimization {
     #>
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
         [string]$RouteId,
 
@@ -2353,7 +2435,7 @@ function Invoke-BusBuddyRouteOptimization {
 
             # Generate mock optimization result
             $result = @{
-                RouteId = $RouteId
+                RouteId                 = $RouteId
                 OptimizationSuggestions = @"
 🚌 Route Optimization Analysis for ${RouteId}:
 
@@ -2384,21 +2466,22 @@ IMPLEMENTATION STEPS:
 4. Gradually implement changes with driver feedback
 5. Monitor performance metrics for 2 weeks
 "@
-                EfficiencyGain = 12.5
-                TimeReduction = 15.0
-                FuelSavings = 18.0
-                SafetyImprovements = @("Reduced left turns", "Improved stop visibility", "Better traffic light coordination")
-                ImplementationSteps = @(
+                EfficiencyGain          = 12.5
+                TimeReduction           = 15.0
+                FuelSavings             = 18.0
+                SafetyImprovements      = @("Reduced left turns", "Improved stop visibility", "Better traffic light coordination")
+                ImplementationSteps     = @(
                     "Review current route data",
                     "Identify consolidation opportunities",
                     "Test optimized route",
                     "Implement changes gradually",
                     "Monitor performance metrics"
                 )
-                GeneratedAt = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
-                AIModel = "Mock-AI-Demo"
+                GeneratedAt             = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+                AIModel                 = "Mock-AI-Demo"
             }
-        } else {
+        }
+        else {
             Write-BusBuddyStatus "Using live xAI Grok API for route optimization..." -Type Info
 
             # Build the API call to our .NET service
@@ -2430,11 +2513,13 @@ IMPLEMENTATION STEPS:
                 if ($LASTEXITCODE -eq 0) {
                     Write-BusBuddyStatus "Route optimization completed successfully" -Type Success
                     $result = $optimizationResult | ConvertFrom-Json
-                } else {
+                }
+                else {
                     Write-BusBuddyError "Route optimization failed: $optimizationResult"
                     return
                 }
-            } else {
+            }
+            else {
                 Write-BusBuddyStatus "BusBuddy application not built. Building now..." -Type Info
                 Invoke-BusBuddyBuild
 
@@ -2442,7 +2527,8 @@ IMPLEMENTATION STEPS:
                     Write-BusBuddyStatus "Retrying route optimization..." -Type Info
                     # Retry the call after building
                     return Invoke-BusBuddyRouteOptimization @PSBoundParameters
-                } else {
+                }
+                else {
                     Write-BusBuddyError "Could not build BusBuddy application"
                     return
                 }
@@ -2527,7 +2613,7 @@ function Start-BusBuddyRuntimeErrorCapture {
         [switch]$SystemDiagnostics,
 
         [Parameter()]
-    [switch]$ContinuousMonitoring,
+        [switch]$ContinuousMonitoring,
 
         [Parameter()]
         [string]$OutputPath = "logs/error-capture"
@@ -2568,29 +2654,29 @@ function Start-BusBuddyRuntimeErrorCapture {
             # Get system uptime using WintellectPowerShell
             $uptime = Get-Uptime
             $uptimeInfo = @{
-                Days = $uptime.Days
-                Hours = $uptime.Hours
-                Minutes = $uptime.Minutes
+                Days       = $uptime.Days
+                Hours      = $uptime.Hours
+                Minutes    = $uptime.Minutes
                 TotalHours = [math]::Round($uptime.TotalHours, 2)
-                Timestamp = Get-Date
+                Timestamp  = Get-Date
             }
 
             # Collect environment information
             $envInfo = @{
                 PowerShellVersion = $PSVersionTable.PSVersion
-                DotNetVersion = & dotnet --version 2>$null
-                UserName = $env:USERNAME
-                MachineName = $env:COMPUTERNAME
-                WorkingDirectory = Get-Location
-                ProcessId = $PID
-                SessionId = $sessionId
+                DotNetVersion     = & dotnet --version 2>$null
+                UserName          = $env:USERNAME
+                MachineName       = $env:COMPUTERNAME
+                WorkingDirectory  = Get-Location
+                ProcessId         = $PID
+                SessionId         = $sessionId
             }
 
             # System resource information
             $systemInfo = @{
-                Uptime = $uptimeInfo
+                Uptime      = $uptimeInfo
                 Environment = $envInfo
-                Timestamp = Get-Date
+                Timestamp   = Get-Date
             }
 
             # Save system diagnostics
@@ -2663,7 +2749,8 @@ function Start-BusBuddyRuntimeErrorCapture {
                     Write-BusBuddyError "Failed to analyze dump: $($dump.Name)" -Exception $_
                 }
             }
-        } else {
+        }
+        else {
             Write-Information "ℹ️  No existing crash dumps found" -InformationAction Continue
         }
     }
@@ -2680,15 +2767,15 @@ function Start-BusBuddyRuntimeErrorCapture {
         $duration = $endTime - $startTime
 
         $sessionReport = @{
-            SessionId = $sessionId
-            StartTime = $startTime
-            EndTime = $endTime
-            Duration = $duration.TotalMinutes
-            OutputPath = $fullOutputPath
-            MonitorCrashes = $MonitorCrashes.IsPresent
+            SessionId         = $sessionId
+            StartTime         = $startTime
+            EndTime           = $endTime
+            Duration          = $duration.TotalMinutes
+            OutputPath        = $fullOutputPath
+            MonitorCrashes    = $MonitorCrashes.IsPresent
             SystemDiagnostics = $SystemDiagnostics.IsPresent
-            Result = if ($result) { "Success" } else { "Failed" }
-            WintellectTools = "Available"
+            Result            = if ($result) { "Success" } else { "Failed" }
+            WintellectTools   = "Available"
         }
 
         $reportFile = Join-Path $fullOutputPath "session-report-$sessionId.json"
@@ -2787,8 +2874,8 @@ function Update-BusBuddyAzureFirewall {
 
         $params = @{
             ResourceGroupName = $ResourceGroupName
-            ServerName = $ServerName
-            CleanupOldRules = $CleanupOldRules
+            ServerName        = $ServerName
+            CleanupOldRules   = $CleanupOldRules
         }
 
         Write-Information "🎯 Target: $ServerName in $ResourceGroupName" -InformationAction Continue
@@ -2801,7 +2888,8 @@ function Update-BusBuddyAzureFirewall {
                 Write-Information "   IP Address: $($result.IPAddress)" -InformationAction Continue
                 Write-Information "   Rule Name: $($result.RuleName)" -InformationAction Continue
                 Write-Information "⏱️ Allow up to 5 minutes for rule propagation" -InformationAction Continue
-            } else {
+            }
+            else {
                 Write-BusBuddyError "Failed to update Azure firewall" -Exception ([System.Exception]::new($result.Error)) -Context "Azure Firewall"
             }
 
@@ -2811,8 +2899,8 @@ function Update-BusBuddyAzureFirewall {
     catch {
         Write-BusBuddyError "Azure firewall update failed" -Exception $_ -Context "Azure Firewall Management"
         return @{
-            Success = $false
-            Error = $_.Exception.Message
+            Success   = $false
+            Error     = $_.Exception.Message
             Timestamp = Get-Date
         }
     }
@@ -2844,7 +2932,8 @@ function Get-BusBuddyAzureConfig {
         $connectionString = $config.ConnectionStrings.DefaultConnection
         if ($connectionString -match 'Server=tcp:([^.,]+)') {
             $serverName = $matches[1]
-        } else {
+        }
+        else {
             Write-Warning "Could not extract server name from connection string"
             $serverName = $null
         }
@@ -2853,16 +2942,17 @@ function Get-BusBuddyAzureConfig {
         $resourceGroup = $null
         if ($config.Azure.ResourceGroup) {
             $resourceGroup = $config.Azure.ResourceGroup
-        } elseif ($config.ResourceGroup) {
+        }
+        elseif ($config.ResourceGroup) {
             $resourceGroup = $config.ResourceGroup
         }
 
         return @{
-            ServerName = $serverName
-            ResourceGroup = $resourceGroup
-            DatabaseName = "BusBuddyDB"
+            ServerName       = $serverName
+            ResourceGroup    = $resourceGroup
+            DatabaseName     = "BusBuddyDB"
             ConnectionString = $connectionString
-            Config = $config
+            Config           = $config
         }
     }
     catch {
@@ -2908,7 +2998,8 @@ function Test-BusBuddyAzureConnection {
             $tcpTest = Test-NetConnection -ComputerName $serverFqdn -Port 1433 -WarningAction SilentlyContinue
             if ($tcpTest.TcpTestSucceeded) {
                 Write-Information "✅ Network connectivity: SUCCESS" -InformationAction Continue
-            } else {
+            }
+            else {
                 Write-Information "❌ Network connectivity: FAILED" -InformationAction Continue
                 Write-Information "   This may indicate firewall or network issues" -InformationAction Continue
             }
@@ -2942,7 +3033,8 @@ function Test-BusBuddyAzureConnection {
             if ($testConnectionString -match '\$\{') {
                 Write-Warning "Environment variables not set: AZURE_SQL_USER, AZURE_SQL_PASSWORD"
                 Write-Information "💡 Set environment variables or use manual portal test" -InformationAction Continue
-            } else {
+            }
+            else {
                 Add-Type -AssemblyName System.Data
                 $sqlConnection = New-Object System.Data.SqlClient.SqlConnection($testConnectionString)
                 $sqlConnection.Open()
@@ -2965,7 +3057,8 @@ function Test-BusBuddyAzureConnection {
                     if ($firewallResult.Success) {
                         Write-Information "✅ Firewall updated. Retry connection in 5 minutes." -InformationAction Continue
                     }
-                } else {
+                }
+                else {
                     Write-Information "💡 Run with -UpdateFirewall to automatically fix" -InformationAction Continue
                 }
             }
@@ -2988,20 +3081,20 @@ function Test-BusBuddyAzureConnection {
         }
 
         return @{
-            Success = $connectionSuccess
+            Success             = $connectionSuccess
             NetworkConnectivity = $tcpTest.TcpTestSucceeded
-            CurrentIP = $currentIP
-            Server = $serverFqdn
-            Database = $config.DatabaseName
-            Error = $connectionError
-            Timestamp = Get-Date
+            CurrentIP           = $currentIP
+            Server              = $serverFqdn
+            Database            = $config.DatabaseName
+            Error               = $connectionError
+            Timestamp           = Get-Date
         }
     }
     catch {
         Write-BusBuddyError "Azure connection test failed" -Exception $_ -Context "Azure Connection Test"
         return @{
-            Success = $false
-            Error = $_.Exception.Message
+            Success   = $false
+            Error     = $_.Exception.Message
             Timestamp = Get-Date
         }
     }
@@ -3135,13 +3228,13 @@ function Get-BusBuddyTestOutput {
 
     if (-not $Filter) {
         $Filter = switch ($TestSuite) {
-            'Unit'        { 'Category=Unit|TestCategory=Unit' }
+            'Unit' { 'Category=Unit|TestCategory=Unit' }
             'Integration' { 'Category=Integration|TestCategory=Integration' }
-            'Validation'  { 'Category=Validation|TestCategory=Validation' }
-            'Core'        { 'FullyQualifiedName~BusBuddy.Tests.Core' }
-            'WPF'         { 'FullyQualifiedName~BusBuddy.UITests' }
-            'All'         { '' }
-            default       { '' }
+            'Validation' { 'Category=Validation|TestCategory=Validation' }
+            'Core' { 'FullyQualifiedName~BusBuddy.Tests.Core' }
+            'WPF' { 'FullyQualifiedName~BusBuddy.UITests' }
+            'All' { '' }
+            default { '' }
         }
     }
 
@@ -3152,9 +3245,9 @@ function Get-BusBuddyTestOutput {
         $startTime = Get-Date
         Write-Information "🏗️ Building solution first..." -InformationAction Continue
 
-    # Direct invocation; removed unused buildCmd variable to satisfy analyzer
-    $buildStdOutPath = "logs/build-stdout-$timestamp.log"
-    $buildOutput = & dotnet build $ProjectPath --configuration Debug --verbosity $Verbosity 2>&1 | Tee-Object -FilePath $buildStdOutPath
+        # Direct invocation; removed unused buildCmd variable to satisfy analyzer
+        $buildStdOutPath = "logs/build-stdout-$timestamp.log"
+        $buildOutput = & dotnet build $ProjectPath --configuration Debug --verbosity $Verbosity 2>&1 | Tee-Object -FilePath $buildStdOutPath
 
         $buildStdout = Get-Content $buildStdOutPath -Raw -ErrorAction SilentlyContinue
         $buildStderr = $buildOutput | Where-Object { $_ -match 'error' -or $_ -match 'FAILED' }
@@ -3165,8 +3258,8 @@ function Get-BusBuddyTestOutput {
             Write-Error "Build errors:"
             $buildStderr | ForEach-Object { Write-Error $_ }
             return @{
-                ExitCode = $buildExitCode
-                Status = "BuildFailed"
+                ExitCode    = $buildExitCode
+                Status      = "BuildFailed"
                 BuildOutput = $buildStdout + ($buildStderr -join "`n")
             }
         }
@@ -3241,7 +3334,8 @@ $($testStderr -join "`n")
             if ($SaveToFile) {
                 Write-Information "🔍 Full details in: $outputFile" -InformationAction Continue
             }
-        } else {
+        }
+        else {
             Write-Information "✅ All tests passed!" -InformationAction Continue
         }
 
@@ -3255,23 +3349,23 @@ $($testStderr -join "`n")
         Write-Information "   Test Status: $(if ($testExitCode -eq 0) { 'SUCCESS ✅' } else { 'FAILED ❌' })" -InformationAction Continue
 
         return @{
-            ExitCode = $testExitCode
-            Duration = $duration
-            PassedTests = $passedTests
-            FailedTests = $failedTests
-            SkippedTests = $skippedTests
-            ErrorLines = $errorLines
-            OutputFile = if ($SaveToFile) { $outputFile } else { $null }
-            FullOutput = $fullOutput
+            ExitCode      = $testExitCode
+            Duration      = $duration
+            PassedTests   = $passedTests
+            FailedTests   = $failedTests
+            SkippedTests  = $skippedTests
+            ErrorLines    = $errorLines
+            OutputFile    = if ($SaveToFile) { $outputFile } else { $null }
+            FullOutput    = $fullOutput
             BuildExitCode = $buildExitCode
-            Status = if ($testExitCode -eq 0) { "Success" } else { "Failed" }
+            Status        = if ($testExitCode -eq 0) { "Success" } else { "Failed" }
         }
     }
     catch {
         Write-Error "Failed to execute tests: $($_.Exception.Message)"
         return @{
-            ExitCode = -1
-            Status = "Error"
+            ExitCode     = -1
+            Status       = "Error"
             ErrorMessage = $_.Exception.Message
         }
     }
@@ -3314,7 +3408,8 @@ function Get-BusBuddyTestLog {
         Write-Information "📅 Created: $($latestLog.LastWriteTime)" -InformationAction Continue
         Write-Information "" -InformationAction Continue
         Get-Content $latestLog.FullName
-    } else {
+    }
+    else {
         Write-Information "No test logs found. Run bbTestFull first." -InformationAction Continue
     }
 }
@@ -3355,7 +3450,8 @@ function Start-BusBuddyTestWatch {
         while ($true) {
             Start-Sleep -Seconds 1
         }
-    } finally {
+    }
+    finally {
         $watcher.EnableRaisingEvents = $false
         $watcher.Dispose()
         Get-EventSubscriber | Unregister-Event
@@ -3497,14 +3593,16 @@ try {
     if (Test-Path $validationPath) {
         # Additional validation modules can be imported here
     }
-} catch {
+}
+catch {
     Write-Verbose "Optional validation modules not available"
 }
 
 # Ensure the welcome function is exported after its definition so external callers can invoke bb-welcome
 try {
     Export-ModuleMember -Function 'Show-BusBuddyWelcome' -ErrorAction SilentlyContinue
-} catch {
+}
+catch {
     Write-Information "(Non-fatal: Show-BusBuddyWelcome already exported or export failed)" -InformationAction Continue
 }
 
@@ -3523,18 +3621,20 @@ try {
     if (Test-Path $validationModule) {
         Import-Module $validationModule -Force -ErrorAction Stop
         Write-Verbose "Successfully loaded BusBuddy.Validation module"
-    } else {
+    }
+    else {
         Write-Warning "Validation module not found at $validationModule"
     }
-} catch {
+}
+catch {
     Write-Warning "Could not import BusBuddy.Validation: $($_.Exception.Message)"
 }
 
 # Ensure the welcome function is exported after its definition so external callers can invoke bb-welcome
 try {
     Export-ModuleMember -Function 'Show-BusBuddyWelcome' -ErrorAction SilentlyContinue
-} catch {
+}
+catch {
     Write-Information "Non-fatal error occurred during module export." -InformationAction Continue
 }
 #endregion
-

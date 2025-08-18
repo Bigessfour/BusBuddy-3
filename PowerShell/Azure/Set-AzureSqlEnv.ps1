@@ -5,7 +5,7 @@
 
 [CmdletBinding()] param(
     [Parameter()] [string] $User,
-    [Parameter()] [string] $Password,
+    [Parameter()] [SecureString] $Password,
     [Parameter()] [switch] $Prompt,
     [Parameter()] [switch] $Persist
 )
@@ -41,7 +41,7 @@ if ($Persist) {
 }
 
 Write-Output ([pscustomobject]@{
-    User = $env:AZURE_SQL_USER
-    PasswordLength = ($env:AZURE_SQL_PASSWORD | ForEach-Object { $_.Length })
-    Persisted = [bool]$Persist
-})
+        User           = $env:AZURE_SQL_USER
+        PasswordLength = ($env:AZURE_SQL_PASSWORD | ForEach-Object { $_.Length })
+        Persisted      = [bool]$Persist
+    })

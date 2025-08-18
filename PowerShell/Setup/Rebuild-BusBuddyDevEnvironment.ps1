@@ -11,7 +11,7 @@
 .EXAMPLE
     ./PowerShell/Setup/Rebuild-BusBuddyDevEnvironment.ps1 -Full -Verbose
 #>
-[CmdletBinding(SupportsShouldProcess=$true)]
+[CmdletBinding(SupportsShouldProcess = $true)]
 param(
     [switch]$Full,             # Performs extended cleanup (NuGet locals, dotnet clean)
     [switch]$NoRestore,        # Skip dotnet restore (useful if already restored)
@@ -46,21 +46,22 @@ function Assert-PowerShellVersion {
 function Assert-DotNetVersion($ExpectedVersion) {
     $actual = (& dotnet --version 2>$null)
     if (-not $actual) { throw '.NET SDK not found on PATH.' }
-    if (-not $actual.StartsWith(($ExpectedVersion -replace '\\.$',''))) {
+    if (-not $actual.StartsWith(($ExpectedVersion -replace '\\.$', ''))) {
         Write-Warning "SDK mismatch: expected baseline $ExpectedVersion (global.json) got $actual"
-    } else {
+    }
+    else {
         Write-Information "✅ .NET SDK: $actual (matches global.json baseline $ExpectedVersion)" -InformationAction Continue
     }
 }
 
-function Clear-BusBuddyImportedModules {
+function Clear-BusBuddyImportedModule {
     Get-Module | Where-Object { $_.Name -like 'BusBuddy*' } | ForEach-Object {
         Write-Verbose "Removing loaded module: $($_.Name)"
         Remove-Module $_.Name -Force -ErrorAction SilentlyContinue
     }
 }
 
-function Import-BusBuddyLocalModules($Root) {
+function Import-BusBuddyLocalModule($Root) {
     $modulesPath = Join-Path $Root 'PowerShell/Modules'
     if (-not (Test-Path $modulesPath)) { throw "Modules directory not found: $modulesPath" }
 
@@ -106,7 +107,7 @@ function Use-BusBuddyExtendedCleanup($Root) {
     & dotnet clean (Join-Path $Root 'BusBuddy.sln') --verbosity minimal | Out-Null
 }
 
-function Show-LoadedBusBuddyModules {
+function Show-LoadedBusBuddyModule {
     Write-Section 'Loaded BusBuddy Modules'
     Get-Module | Where-Object { $_.Name -like 'BusBuddy*' } | Select-Object Name, Version | Format-Table -AutoSize | Out-String | ForEach-Object { Write-Information $_ -InformationAction Continue }
 }
@@ -117,8 +118,8 @@ function Invoke-BusBuddyAnalyzer($Root) {
     if (-not (Test-Path $settings)) { Write-Warning 'Analyzer settings not found – skipping.'; return }
     $results = Invoke-ScriptAnalyzer -Path (Join-Path $Root 'PowerShell') -Settings $settings -Recurse -ErrorAction SilentlyContinue
     if (-not $results) { Write-Information 'No issues found (or analyzer produced no output).' -InformationAction Continue; return }
-    $errors = $results | Where-Object Severity -eq 'Error'
-    $warnings = $results | Where-Object Severity -eq 'Warning'
+    $errors = $results | Where-Object Severity -EQ 'Error'
+    $warnings = $results | Where-Object Severity -EQ 'Warning'
     Write-Information ("Errors: {0}  Warnings: {1}" -f $errors.Count, $warnings.Count) -InformationAction Continue
     if ($errors.Count -gt 0) { Write-Warning 'Analyzer errors detected.' }
 }

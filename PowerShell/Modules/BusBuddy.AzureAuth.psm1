@@ -1,17 +1,18 @@
 # BusBuddy.AzureAuth.psm1
 # Default Azure Subscription ID for BusBuddy            Write-Warning "Existing context cannot access target subscription. Forcing fresh login..."
-            Write-Host "You will receive a device code to enter at https://microsoft.com/devicelogin" -ForegroundColor Cyan
-            Disconnect-AzAccount -Scope Process -ErrorAction SilentlyContinue | Out-Null
-            Clear-AzContext -Scope Process -Force -ErrorAction SilentlyContinue | Out-Null
-            try {
-                $result = Connect-AzAccount -DeviceCode -ErrorAction Stop
-                if ($result) {
-                    Write-Host "Re-authentication successful!" -ForegroundColor Green
-                }
-            } catch {
-                Write-Warning "Device code authentication failed. Attempting standard interactive login..."
-                Connect-AzAccount -ErrorAction Stop | Out-Null
-            }yDefaultSubscriptionId = '57b297a5-44cf-4abc-9ac4-91a5ed147de1'
+Write-Host "You will receive a device code to enter at https://microsoft.com/devicelogin" -ForegroundColor Cyan
+Disconnect-AzAccount -Scope Process -ErrorAction SilentlyContinue | Out-Null
+Clear-AzContext -Scope Process -Force -ErrorAction SilentlyContinue | Out-Null
+try {
+    $result = Connect-AzAccount -DeviceCode -ErrorAction Stop
+    if ($result) {
+        Write-Host "Re-authentication successful!" -ForegroundColor Green
+    }
+}
+catch {
+    Write-Warning "Device code authentication failed. Attempting standard interactive login..."
+    Connect-AzAccount -ErrorAction Stop | Out-Null
+}yDefaultSubscriptionId = '57b297a5-44cf-4abc-9ac4-91a5ed147de1'
 # Minimal Azure authentication module (Microsoft-compliant)
 # Reference: https://learn.microsoft.com/en-us/powershell/azure/authenticate-azureps?view=azps-14.3.0
 
@@ -44,21 +45,24 @@ function Connect-BusBuddyAzure {
     )
     # Use environment variables if parameters are not provided
     if (-not $TenantId) { $TenantId = $env:AZURE_TENANT_ID }
-    if (-not $AppId)   { $AppId   = $env:AZURE_CLIENT_ID }
-    if (-not $Secret)  { $Secret  = $env:AZURE_CLIENT_SECRET }
+    if (-not $AppId) { $AppId = $env:AZURE_CLIENT_ID }
+    if (-not $Secret) { $Secret = $env:AZURE_CLIENT_SECRET }
 
     $context = $null
     try {
         $context = Get-AzContext -ErrorAction SilentlyContinue
-    } catch {}
+    }
+    catch {}
 
     if ($UseManagedIdentity) {
         Connect-AzAccount -Identity | Out-Null
-    } elseif ($TenantId -and $AppId -and $Secret) {
+    }
+    elseif ($TenantId -and $AppId -and $Secret) {
         $secureSecret = ConvertTo-SecureString $Secret -AsPlainText -Force
         $credential = New-Object System.Management.Automation.PSCredential($AppId, $secureSecret)
         Connect-AzAccount -ServicePrincipal -Tenant $TenantId -Credential $credential | Out-Null
-    } elseif (-not $context) {
+    }
+    elseif (-not $context) {
         Write-Host "No Azure context found. Starting device code authentication..." -ForegroundColor Yellow
         Write-Host "You will receive a device code to enter at https://microsoft.com/devicelogin" -ForegroundColor Cyan
         try {
@@ -66,27 +70,32 @@ function Connect-BusBuddyAzure {
             if ($result) {
                 Write-Host "Authentication successful!" -ForegroundColor Green
             }
-        } catch {
+        }
+        catch {
             Write-Warning "Device code authentication failed. Attempting standard interactive login..."
             try {
                 Connect-AzAccount -ErrorAction Stop | Out-Null
-            } catch {
+            }
+            catch {
                 Write-Error "Both device code and browser authentication failed. Please check your MFA/conditional access settings or contact your Azure admin. Error: $_"
                 return
             }
         }
-    } else {
+    }
+    else {
         Write-Host "Azure context already exists: $($context.Account) ($($context.Subscription.Name))" -ForegroundColor Green
         # Check if the existing context has access to subscription, if not force re-login
         try {
             Get-AzSubscription -SubscriptionId $BusBuddyDefaultSubscriptionId -ErrorAction Stop | Out-Null
-        } catch {
+        }
+        catch {
             Write-Warning "Existing context cannot access target subscription. Forcing fresh login..."
             Disconnect-AzAccount -Scope Process -ErrorAction SilentlyContinue | Out-Null
             Clear-AzContext -Scope Process -Force -ErrorAction SilentlyContinue | Out-Null
             try {
                 Connect-AzAccount -DeviceCode -ErrorAction Stop | Out-Null
-            } catch {
+            }
+            catch {
                 Write-Warning "Device code authentication failed. Attempting standard interactive login..."
                 Connect-AzAccount -ErrorAction Stop | Out-Null
             }
@@ -96,7 +105,8 @@ function Connect-BusBuddyAzure {
     try {
         Set-AzContext -Subscription $BusBuddyDefaultSubscriptionId -ErrorAction Stop | Out-Null
         Write-Output "Azure context set to subscription $BusBuddyDefaultSubscriptionId."
-    } catch {
+    }
+    catch {
         Write-Warning "Could not set default subscription context: $_"
     }
 }
@@ -130,10 +140,12 @@ function Get-BusBuddyAzContext {
         $ctx = Get-AzContext
         if ($null -eq $ctx) {
             Write-Output "No Azure context is set. Use Connect-BusBuddyAzure to sign in."
-        } else {
+        }
+        else {
             Write-Output $ctx
         }
-    } catch {
+    }
+    catch {
         Write-Error "Failed to get Azure context: $_"
     }
 }
@@ -150,7 +162,7 @@ function Set-BusBuddyAzContext {
         https://learn.microsoft.com/en-us/powershell/module/az.accounts/set-azcontext
     #>
     param(
-        [Parameter(Position=0)]
+        [Parameter(Position = 0)]
         [string]$Name
     )
     $sub = $Name
@@ -159,7 +171,8 @@ function Set-BusBuddyAzContext {
         Import-Module Az.Accounts -MinimumVersion 5.2.0 -ErrorAction Stop
         $result = Set-AzContext -Subscription $sub -ErrorAction Stop
         Write-Output "Context set to: $($result.Subscription.Name) ($($result.Account))"
-    } catch {
+    }
+    catch {
         Write-Error "Failed to set Azure context: $_"
     }
 }
@@ -178,12 +191,13 @@ function Disconnect-BusBuddyAzure {
         Disconnect-AzAccount -Scope Process -ErrorAction SilentlyContinue | Out-Null
         Clear-AzContext -Scope Process -Force -ErrorAction SilentlyContinue | Out-Null
         Write-Output "Disconnected all Azure accounts and cleared context."
-    } catch {
+    }
+    catch {
         Write-Error "Failed to disconnect Azure accounts: $_"
     }
 }
 
-function Install-BusBuddyAzureMigrationModules {
+function Install-BusBuddyAzureMigrationModule {
     <#
         .SYNOPSIS
         Installs Azure migration and database modules for BusBuddy.
@@ -196,9 +210,9 @@ function Install-BusBuddyAzureMigrationModules {
     param()
 
     $modules = @(
-        @{Name="Az.Sql"; MinVersion="6.0.5"; Description="Azure SQL service cmdlets"},
-        @{Name="Az.DataMigration"; MinVersion="0.15.0"; Description="Database Migration Service cmdlets"},
-        @{Name="AzSqlGateway"; MinVersion="0.0.1"; Description="Azure SQL Gateway IP retrieval"}
+        @{Name = "Az.Sql"; MinVersion = "6.0.5"; Description = "Azure SQL service cmdlets" },
+        @{Name = "Az.DataMigration"; MinVersion = "0.15.0"; Description = "Database Migration Service cmdlets" },
+        @{Name = "AzSqlGateway"; MinVersion = "0.0.1"; Description = "Azure SQL Gateway IP retrieval" }
     )
 
     foreach ($module in $modules) {
@@ -206,13 +220,14 @@ function Install-BusBuddyAzureMigrationModules {
             Write-Host "Installing $($module.Name) - $($module.Description)..." -ForegroundColor Yellow
             Install-Module -Name $module.Name -MinimumVersion $module.MinVersion -Force -AllowClobber -Scope CurrentUser
             Write-Host "✓ $($module.Name) installed successfully" -ForegroundColor Green
-        } catch {
+        }
+        catch {
             Write-Warning "Failed to install $($module.Name): $_"
         }
     }
 }
 
-function Get-BusBuddyAzureSqlDatabases {
+function Get-BusBuddyAzureSqlDatabasis {
     <#
         .SYNOPSIS
         Lists all Azure SQL databases in the current subscription.
@@ -226,7 +241,8 @@ function Get-BusBuddyAzureSqlDatabases {
         Import-Module Az.Sql -ErrorAction Stop
         $databases = Get-AzSqlDatabase
         Write-Output $databases | Format-Table ResourceGroupName, ServerName, DatabaseName, Edition, ServiceObjectiveName -AutoSize
-    } catch {
+    }
+    catch {
         Write-Error "Failed to retrieve Azure SQL databases: $_"
         Write-Host "Run 'Install-BusBuddyAzureMigrationModules' first if Az.Sql is not installed." -ForegroundColor Yellow
     }
@@ -247,11 +263,11 @@ function Start-BusBuddyDatabaseMigration {
     #>
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]$SourceConnectionString,
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]$TargetServer,
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]$TargetDatabase
     )
 
@@ -265,13 +281,14 @@ function Start-BusBuddyDatabaseMigration {
         # This is a framework for future implementation
         Write-Warning "Migration framework ready. Implement specific migration logic based on BusBuddy schema requirements."
 
-    } catch {
+    }
+    catch {
         Write-Error "Failed to start database migration: $_"
         Write-Host "Run 'Install-BusBuddyAzureMigrationModules' first if Az.DataMigration is not installed." -ForegroundColor Yellow
     }
 }
 
-function Get-BusBuddyAzureSqlGatewayIPs {
+function Get-BusBuddyAzureSqlGatewayIP {
     <#
         .SYNOPSIS
         Gets Azure SQL Gateway IP addresses for firewall configuration.
@@ -286,7 +303,8 @@ function Get-BusBuddyAzureSqlGatewayIPs {
         $gatewayIPs = Get-AzSqlGatewayIpAddress
         Write-Output "Azure SQL Gateway IP Addresses for firewall configuration:"
         Write-Output $gatewayIPs | Format-Table -AutoSize
-    } catch {
+    }
+    catch {
         Write-Error "Failed to retrieve Azure SQL Gateway IPs: $_"
         Write-Host "Run 'Install-BusBuddyAzureMigrationModules' first if AzSqlGateway is not installed." -ForegroundColor Yellow
     }

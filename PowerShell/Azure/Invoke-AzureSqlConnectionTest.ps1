@@ -24,7 +24,8 @@ if ($UseAzureAD -or ($env:AZURE_SQL_USE_AAD -eq 'true')) {
             }
             $token = (Get-AzAccessToken -ResourceUrl "https://database.windows.net/").Token
         }
-    } catch { }
+    }
+    catch { }
 
     if (-not $token) {
         try {
@@ -32,7 +33,8 @@ if ($UseAzureAD -or ($env:AZURE_SQL_USE_AAD -eq 'true')) {
             if ($azCli) {
                 $token = az account get-access-token --resource https://database.windows.net/ --query accessToken -o tsv 2>$null
             }
-        } catch { }
+        }
+        catch { }
     }
 
     if (-not $token) {
@@ -50,11 +52,13 @@ if ($UseAzureAD -or ($env:AZURE_SQL_USE_AAD -eq 'true')) {
         $version = $cmd.ExecuteScalar()
         $connection.Close()
         Write-Output ([pscustomobject]@{ Connected = $true; Server = $Server; Database = $Database; Version = $version; Auth = 'AzureAD' })
-    } catch {
+    }
+    catch {
         Write-Output ([pscustomobject]@{ Connected = $false; Error = $_.Exception.Message; Auth = 'AzureAD' })
         exit 1
     }
-} else {
+}
+else {
     $azureUser = $env:AZURE_SQL_USER
     $azurePassword = $env:AZURE_SQL_PASSWORD
     if (-not $azureUser) { Write-Error "AZURE_SQL_USER not set"; exit 1 }
@@ -69,7 +73,8 @@ if ($UseAzureAD -or ($env:AZURE_SQL_USE_AAD -eq 'true')) {
         $version = $cmd.ExecuteScalar()
         $connection.Close()
         Write-Output ([pscustomobject]@{ Connected = $true; Server = $Server; Database = $Database; Version = $version; Auth = 'SqlLogin' })
-    } catch {
+    }
+    catch {
         Write-Output ([pscustomobject]@{ Connected = $false; Error = $_.Exception.Message; Auth = 'SqlLogin' })
         exit 1
     }

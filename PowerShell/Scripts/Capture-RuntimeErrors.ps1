@@ -40,9 +40,9 @@ if (-not (Test-Path $fullOutputPath)) {
 }
 
 $logFiles = @{
-    MainLog = Join-Path $fullOutputPath "$sessionName-main.log"
-    ErrorLog = Join-Path $fullOutputPath "$sessionName-errors.log"
-    DebugLog = Join-Path $fullOutputPath "$sessionName-debug.log"
+    MainLog       = Join-Path $fullOutputPath "$sessionName-main.log"
+    ErrorLog      = Join-Path $fullOutputPath "$sessionName-errors.log"
+    DebugLog      = Join-Path $fullOutputPath "$sessionName-debug.log"
     SummaryReport = Join-Path $fullOutputPath "$sessionName-summary.md"
 }
 
@@ -244,10 +244,12 @@ try {
         if ($actualErrors.Count -gt 0) {
             $errorSummary = "### Captured Errors ($($actualErrors.Count) total):`n`n"
             $actualErrors | ForEach-Object { $errorSummary += "- ``$_```n" }
-        } else {
+        }
+        else {
             $errorSummary = "✅ No actual errors detected in error stream"
         }
-    } else {
+    }
+    else {
         $errorSummary = "✅ No error log file created or no errors detected"
     }
 
@@ -347,10 +349,12 @@ The application appears to have failed to start or crashed immediately.
         Write-Output "🚨 **CRITICAL ISSUE:** No application output captured!"
         Write-Output "   This indicates the application failed to start or crashed immediately."
         Write-Output "   Manual test required: dotnet run --project BusBuddy.WPF\\BusBuddy.WPF.csproj"
-    } elseif ($outputLines -gt 0 -and $errorCount -eq 0) {
+    }
+    elseif ($outputLines -gt 0 -and $errorCount -eq 0) {
         Write-Output "🎉 **EXCELLENT!** Application ran with proper output capture."
         Write-Output "   $outputLines lines of output captured with no errors!"
-    } else {
+    }
+    else {
         Write-Output "⚠️ **MIXED RESULTS:** $outputLines lines captured, $errorCount errors detected."
         Write-Output "   Review error log: $($logFiles.ErrorLog)"
     }
@@ -366,18 +370,18 @@ The application appears to have failed to start or crashed immediately.
 
     # Return comprehensive summary object
     return @{
-        SessionId = $sessionName
-        Duration = $actualDuration
+        SessionId      = $sessionName
+        Duration       = $actualDuration
         TargetDuration = $Duration
-        ErrorCount = $errorCount
-        OutputLines = $outputLines
-        MainLogSize = $mainLogSize
-        ErrorLogSize = $errorLogSize
-        ExitCode = $exitCode
-        ProcessExited = if ($process) { $process.HasExited } else { $false }
-        LogFiles = $logFiles
-        Success = ($outputLines -gt 0 -and $errorCount -eq 0)
-        CriticalIssue = ($outputLines -eq 0 -and $errorCount -eq 0)
+        ErrorCount     = $errorCount
+        OutputLines    = $outputLines
+        MainLogSize    = $mainLogSize
+        ErrorLogSize   = $errorLogSize
+        ExitCode       = $exitCode
+        ProcessExited  = if ($process) { $process.HasExited } else { $false }
+        LogFiles       = $logFiles
+        Success        = ($outputLines -gt 0 -and $errorCount -eq 0)
+        CriticalIssue  = ($outputLines -eq 0 -and $errorCount -eq 0)
     }
 }
 catch {

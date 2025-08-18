@@ -36,7 +36,8 @@ try {
 
             if ($LASTEXITCODE -eq 0) {
                 Write-Host "✅ Unit tests passed!" -ForegroundColor Green
-            } else {
+            }
+            else {
                 Write-Host "❌ Unit tests failed!" -ForegroundColor Red
                 exit 1
             }
@@ -52,7 +53,8 @@ try {
 
             if ($LASTEXITCODE -eq 0) {
                 Write-Host "✅ Integration tests passed!" -ForegroundColor Green
-            } else {
+            }
+            else {
                 Write-Host "❌ Integration tests failed!" -ForegroundColor Red
                 exit 1
             }
@@ -67,7 +69,8 @@ try {
 
             if ($LASTEXITCODE -eq 0) {
                 Write-Host "✅ UI tests passed!" -ForegroundColor Green
-            } else {
+            }
+            else {
                 Write-Host "❌ UI tests failed!" -ForegroundColor Red
                 exit 1
             }
@@ -81,7 +84,8 @@ try {
 
             if ($LASTEXITCODE -eq 0) {
                 Write-Host "✅ All tests passed!" -ForegroundColor Green
-            } else {
+            }
+            else {
                 Write-Host "❌ Some tests failed!" -ForegroundColor Red
                 exit 1
             }
@@ -104,7 +108,8 @@ try {
         dotnet watch test "BusBuddy.Tests" --project "BusBuddy.Tests\BusBuddy.Tests.csproj"
     }
 
-} catch {
+}
+catch {
     Write-Host "💥 Test execution failed: $_" -ForegroundColor Red
     exit 1
 }

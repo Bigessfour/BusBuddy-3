@@ -39,12 +39,12 @@ if (-not $meta -or -not $meta.Count) {
 }
 
 $branch = Get-CurrentBranch
-$sha    = Get-CurrentSha
+$sha = Get-CurrentSha
 
-$rawLinks   = "https://raw.githubusercontent.com/$RepoSlug/$branch/RAW-LINKS.txt"
-$rawPinned  = "https://raw.githubusercontent.com/$RepoSlug/$branch/RAW-LINKS-PINNED.txt"
+$rawLinks = "https://raw.githubusercontent.com/$RepoSlug/$branch/RAW-LINKS.txt"
+$rawPinned = "https://raw.githubusercontent.com/$RepoSlug/$branch/RAW-LINKS-PINNED.txt"
 $rawIdxJson = "https://raw.githubusercontent.com/$RepoSlug/$branch/raw-index.json"
-$rawIdxCsv  = "https://raw.githubusercontent.com/$RepoSlug/$branch/raw-index.csv"
+$rawIdxCsv = "https://raw.githubusercontent.com/$RepoSlug/$branch/raw-index.csv"
 
 Write-Verbose "Appending index for $($meta.Count) files to $ReadmePath..."
 
@@ -57,12 +57,12 @@ $sb = New-Object System.Text.StringBuilder
 [void]$sb.AppendLine(("Branch: {0}" -f $branch))
 [void]$sb.AppendLine(("Commit: {0}" -f $sha))
 [void]$sb.AppendLine()
-[void]$sb.AppendLine(("Quick links: [RAW-LINKS.txt]({0}) · [RAW-LINKS-PINNED.txt]({1}) · [raw-index.json]({2}) · [raw-index.csv]({3})" -f $rawLinks,$rawPinned,$rawIdxJson,$rawIdxCsv))
+[void]$sb.AppendLine(("Quick links: [RAW-LINKS.txt]({0}) · [RAW-LINKS-PINNED.txt]({1}) · [raw-index.json]({2}) · [raw-index.csv]({3})" -f $rawLinks, $rawPinned, $rawIdxJson, $rawIdxCsv))
 [void]$sb.AppendLine()
 [void]$sb.AppendLine('<details>')
 [void]$sb.AppendLine(("<summary>All raw links (branch {0}) - {1} files</summary>" -f $branch, $meta.Count))
 [void]$sb.AppendLine()
-foreach($f in $meta){
+foreach ($f in $meta) {
     [void]$sb.AppendLine(("- [{0}]({1})" -f $f.path, $f.url_branch))
 }
 [void]$sb.AppendLine()
@@ -73,10 +73,11 @@ Add-Content -LiteralPath $ReadmePath -Value $sb.ToString() -Encoding UTF8
 if (-not $NoGit) {
     Write-Verbose 'Staging and committing changes...'
     git add -- $ReadmePath 'RAW-LINKS.txt' 'RAW-LINKS-PINNED.txt' 'raw-index.csv' 'raw-index.json'
-    if ((git diff --cached --name-only) -ne $null) {
+    if ($null -ne (git diff --cached --name-only)) {
         git commit -m "docs: append comprehensive raw fetch index to GROK-README.md; update raw link artifacts"
         git push origin $branch
-    } else {
+    }
+    else {
         Write-Verbose 'No changes detected to commit.'
     }
 }

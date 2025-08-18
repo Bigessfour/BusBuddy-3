@@ -114,15 +114,18 @@ function Start-RuntimeCaptureWithMonitoring {
             Write-Host "🏁 Exit Code: $($process.ExitCode)" -ForegroundColor $(if ($process.ExitCode -eq 0) { "Green" } else { "Red" })
 
             return $true
-        } else {
+        }
+        else {
             Write-Error "Process did not complete within timeout"
             return $false
         }
 
-    } catch {
+    }
+    catch {
         Write-Error "Error running capture process: $($_.Exception.Message)"
         return $false
-    } finally {
+    }
+    finally {
         if (-not $process.HasExited) {
             Write-Warning "Forcibly stopping process..."
             $process.Kill()
@@ -131,7 +134,7 @@ function Start-RuntimeCaptureWithMonitoring {
     }
 }
 
-function Show-CaptureResults {
+function Show-CaptureResult {
     $captureDir = "logs\runtime-capture"
 
     if (-not (Test-Path $captureDir)) {
@@ -173,27 +176,30 @@ function Invoke-RuntimeCaptureMonitor {
         [switch]$DetailedLogging
     )
 
-try {
-    Write-Host "🔧 BusBuddy Runtime Capture Monitor v1.0" -ForegroundColor Magenta
-    Write-Host "=" * 60 -ForegroundColor Magenta
-    Write-Host ""
-
-    $success = Start-RuntimeCaptureWithMonitoring -Duration $Duration -DetailedLogging:$DetailedLogging
-
-    if ($success) {
+    try {
+        Write-Host "🔧 BusBuddy Runtime Capture Monitor v1.0" -ForegroundColor Magenta
+        Write-Host "=" * 60 -ForegroundColor Magenta
         Write-Host ""
-        Write-Host "📊 Showing capture results..." -ForegroundColor Cyan
-        Show-CaptureResults
-    } else {
-        Write-Host "❌ Capture process failed" -ForegroundColor Red
-    }
 
-} catch {
-    Write-Error "Monitor error: $($_.Exception.Message)"
-} finally {
-    Write-Host ""
-    Write-Host "🏁 Monitor session completed at $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')" -ForegroundColor Magenta
-}
+        $success = Start-RuntimeCaptureWithMonitoring -Duration $Duration -DetailedLogging:$DetailedLogging
+
+        if ($success) {
+            Write-Host ""
+            Write-Host "📊 Showing capture results..." -ForegroundColor Cyan
+            Show-CaptureResults
+        }
+        else {
+            Write-Host "❌ Capture process failed" -ForegroundColor Red
+        }
+
+    }
+    catch {
+        Write-Error "Monitor error: $($_.Exception.Message)"
+    }
+    finally {
+        Write-Host ""
+        Write-Host "🏁 Monitor session completed at $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')" -ForegroundColor Magenta
+    }
 }
 
 # Only run automatically if script is invoked directly (not dot-sourced)

@@ -35,40 +35,40 @@ Required Version: 7.5.0+
 
 # Global variables for GitKraken integration
 $script:GitKrakenConfig = @{
-    RepoUrl = "https://github.com/Bigessfour/BusBuddy-3"
-    ProjectName = "BusBuddy"
-    DefaultBranch = "main"
-    LaunchpadUrl = "https://gitkraken.dev/launchpad/personal?groupBy=none&prs=github&issues=github"
+    RepoUrl           = "https://github.com/Bigessfour/BusBuddy-3"
+    ProjectName       = "BusBuddy"
+    DefaultBranch     = "main"
+    LaunchpadUrl      = "https://gitkraken.dev/launchpad/personal?groupBy=none&prs=github&issues=github"
     SyncfusionDocsUrl = "https://help.syncfusion.com/wpf/welcome-to-syncfusion-essential-wpf"
-    AzureSqlDocsUrl = "https://learn.microsoft.com/en-us/azure/azure-sql/?view=azuresql"
-    AiEndpoint = "api.openai.com" # Make AI endpoint configurable
+    AzureSqlDocsUrl   = "https://learn.microsoft.com/en-us/azure/azure-sql/?view=azuresql"
+    AiEndpoint        = "api.openai.com" # Make AI endpoint configurable
 
     # CLI Tool Selection Strategy
-    CLIStrategy = @{
+    CLIStrategy       = @{
         # GitKraken Cloud CLI (gk) - Best for AI-powered Git operations
         GitKrakenCloud = @{
-            Command = "gk"
-            BestFor = @("AI explanations", "Workspaces", "Organizations", "AI commit messages")
+            Command      = "gk"
+            BestFor      = @("AI explanations", "Workspaces", "Organizations", "AI commit messages")
             RequiresAuth = $true
-            AuthCommand = "gk auth login"
-            TestCommand = "gk auth status"
+            AuthCommand  = "gk auth login"
+            TestCommand  = "gk auth status"
         }
 
         # GitHub CLI (gh) - Best for PR/Issue management and GitHub-specific operations
-        GitHubCLI = @{
-            Command = "gh"
-            BestFor = @("PR management", "Issue tracking", "GitHub Actions", "Repository operations")
+        GitHubCLI      = @{
+            Command      = "gh"
+            BestFor      = @("PR management", "Issue tracking", "GitHub Actions", "Repository operations")
             RequiresAuth = $true
-            AuthCommand = "gh auth login"
-            TestCommand = "gh auth status"
+            AuthCommand  = "gh auth login"
+            TestCommand  = "gh auth status"
         }
 
         # Git CLI - Fallback for basic Git operations
-        GitCore = @{
-            Command = "git"
-            BestFor = @("Basic Git operations", "Local repository management")
+        GitCore        = @{
+            Command      = "git"
+            BestFor      = @("Basic Git operations", "Local repository management")
             RequiresAuth = $false
-            TestCommand = "git --version"
+            TestCommand  = "git --version"
         }
     }
 }
@@ -92,18 +92,18 @@ function Get-OptimalCLITool {
     )
 
     $result = @{
-        Tool = $null
-        Command = $null
-        Reason = $null
-        Available = $false
+        Tool         = $null
+        Command      = $null
+        Reason       = $null
+        Available    = $false
         AuthRequired = $false
     }
 
     # Test CLI availability and authentication
     $cliStatus = @{
         GitKrakenCloud = Test-GitKrakenCloudCLI
-        GitHubCLI = Test-GitHubCLI
-        GitCore = Test-GitCoreCLI
+        GitHubCLI      = Test-GitHubCLI
+        GitCore        = Test-GitCoreCLI
     }
 
     # Operation-specific CLI selection logic
@@ -230,7 +230,8 @@ function Invoke-GitHubCLI {
         $result = & gh @Command 2>&1
         if ($LASTEXITCODE -eq 0) {
             return $result
-        } else {
+        }
+        else {
             Write-Error "GitHub CLI command failed: $result"
             return $null
         }
@@ -258,10 +259,10 @@ function Test-GitKrakenCloudCLI {
         $authenticated = $LASTEXITCODE -eq 0 -and $authStatus -notmatch "Authenticate with"
 
         return @{
-            Available = $true
+            Available     = $true
             Authenticated = $authenticated
-            Version = $version
-            Type = "GitKraken Cloud CLI"
+            Version       = $version
+            Type          = "GitKraken Cloud CLI"
         }
     }
     catch {
@@ -285,10 +286,10 @@ function Test-GitHubCLI {
         $authenticated = $LASTEXITCODE -eq 0
 
         return @{
-            Available = $true
+            Available     = $true
             Authenticated = $authenticated
-            Version = $version
-            Type = "GitHub CLI"
+            Version       = $version
+            Type          = "GitHub CLI"
         }
     }
     catch {
@@ -304,10 +305,10 @@ function Test-GitCoreCLI {
     try {
         $version = & git --version 2>$null
         return @{
-            Available = $LASTEXITCODE -eq 0
+            Available     = $LASTEXITCODE -eq 0
             Authenticated = $true  # Git doesn't require auth for local operations
-            Version = $version
-            Type = "Core Git CLI"
+            Version       = $version
+            Type          = "Core Git CLI"
         }
     }
     catch {
@@ -344,7 +345,7 @@ function Get-BusBuddyPullRequests {
         switch ($cliInfo.Tool) {
             "gh" {
                 Write-Information "📋 Using GitHub CLI for comprehensive PR data..." -InformationAction Continue
-                $prs = Invoke-GitHubCLI pr list --json number,title,state,author,createdAt,headRefName,statusCheckRollup,reviewDecision
+                $prs = Invoke-GitHubCLI pr list --json number, title, state, author, createdAt, headRefName, statusCheckRollup, reviewDecision
                 if ($prs) {
                     $prData = $prs | ConvertFrom-Json
                     foreach ($pr in $prData) {
@@ -363,7 +364,8 @@ function Get-BusBuddyPullRequests {
                             if ($ago.Days -gt 0) { "$($ago.Days)d ago" }
                             elseif ($ago.Hours -gt 0) { "$($ago.Hours)h ago" }
                             else { "$($ago.Minutes)m ago" }
-                        } else { "unknown" }
+                        }
+                        else { "unknown" }
 
                         Write-Host "PR #$($pr.number): " -ForegroundColor Yellow -NoNewline
                         Write-Host "$($pr.title)" -ForegroundColor White
@@ -506,7 +508,7 @@ function Invoke-GitKrakenAIWithFallback {
     try {
         # Step 1: Network connectivity check
         $aiEndpoint = $script:GitKrakenConfig.AiEndpoint
-            throw "Network connectivity to OpenAI API (api.openai.com:443) failed. Please check your internet connection and firewall settings."
+        throw "Network connectivity to OpenAI API (api.openai.com:443) failed. Please check your internet connection and firewall settings."
         if (-not $networkTest.TcpTestSucceeded) {
             throw "Network connectivity to AI endpoint ($aiEndpoint) failed"
         }
@@ -526,7 +528,8 @@ function Invoke-GitKrakenAIWithFallback {
         # Wait for AI job to complete then receive results (use Wait-Job then Receive-Job for compatibility)
         try {
             Wait-Job -Job $job -Timeout $TimeoutSeconds -ErrorAction SilentlyContinue | Out-Null
-        } catch {
+        }
+        catch {
             # Fallback: simple polling loop
             $end = (Get-Date).AddSeconds($TimeoutSeconds)
             while ((Get-Date) -lt $end -and $job.State -eq 'Running') { Start-Sleep -Milliseconds 200 }
@@ -536,10 +539,12 @@ function Invoke-GitKrakenAIWithFallback {
         try {
             if ($job.State -eq 'Completed') {
                 $result = Receive-Job -Job $job -ErrorAction SilentlyContinue
-            } else {
+            }
+            else {
                 $result = "timeout"
             }
-        } finally {
+        }
+        finally {
             if ($null -ne $job) { $job | Remove-Job -Force }
         }
 
@@ -627,7 +632,7 @@ function Get-PRAnalysisFallback {
         Manual PR analysis using GitHub CLI
     #>
     try {
-        $prs = Invoke-GitHubCLI pr list --json number,title,state,checks
+        $prs = Invoke-GitHubCLI pr list --json number, title, state, checks
         if ($prs) {
             $prData = $prs | ConvertFrom-Json
             $analysis = "🔍 **PR Status Analysis** (Fallback Mode)`n`n"
@@ -637,7 +642,8 @@ function Get-PRAnalysisFallback {
                     $passing = ($pr.checks | Where-Object { $_.state -eq "success" }).Count
                     $total = $pr.checks.Count
                     "$passing/$total passing"
-                } else { "No checks" }
+                }
+                else { "No checks" }
 
                 $analysis += "**PR #$($pr.number)**: $($pr.title)`n"
                 $analysis += "• Status: $($pr.state)`n"
@@ -645,7 +651,8 @@ function Get-PRAnalysisFallback {
             }
 
             return $analysis
-        } else {
+        }
+        else {
             return "No open PRs found"
         }
     }
@@ -690,10 +697,12 @@ function Initialize-GitKrakenEnvironment {
 
         if (-not $orgsJson -or $orgsJson -match '^(undefined|null|error)$') {
             Write-Verbose "GitKraken organization list returned no usable JSON: '$orgsJson'"
-        } else {
+        }
+        else {
             try {
                 $orgs = $orgsJson | ConvertFrom-Json -ErrorAction Stop
-            } catch {
+            }
+            catch {
                 Write-Warning "Failed to parse GitKraken organization list JSON: $($_.Exception.Message)"
                 $orgs = @()
             }
@@ -726,7 +735,8 @@ function Initialize-GitKrakenEnvironment {
             Write-Information "✅ GitKraken AI ready with token allocation" -InformationAction Continue
             $script:GitKrakenConfig.AIEnabled = $true
             return $true
-        } else {
+        }
+        else {
             Write-Warning "GitKraken AI tokens not available"
             return $false
         }
@@ -740,29 +750,29 @@ function Initialize-GitKrakenEnvironment {
 # Decision Tree for GitKraken Integration
 $script:GitKrakenDecisionTree = @{
     # Capability Detection
-    HasCLI = $false
+    HasCLI            = $false
     HasAuthentication = $false
-    HasOrganization = $false
-    HasAITokens = $false
+    HasOrganization   = $false
+    HasAITokens       = $false
 
     # Available Commands (validated dynamically)
-    ValidCommands = @{
+    ValidCommands     = @{
         "gk ai explain branch" = $false
         "gk ai explain commit" = $false
-        "gk ai pr create" = $false
-        "gk ai commit" = $false
-        "gk ai changelog" = $false
-        "gk work list" = $false
-        "gk work start" = $false
+        "gk ai pr create"      = $false
+        "gk ai commit"         = $false
+        "gk ai changelog"      = $false
+        "gk work list"         = $false
+        "gk work start"        = $false
     }
 
     # Fallback Strategy
-    FallbackStrategy = @{
-        "AI Explain" = "git log + git diff analysis"
-        "PR Creation" = "GitHub browser interface"
+    FallbackStrategy  = @{
+        "AI Explain"      = "git log + git diff analysis"
+        "PR Creation"     = "GitHub browser interface"
         "Commit Messages" = "Manual git commit"
-        "Work Items" = "GitHub Issues browser"
-        "CI Monitoring" = "GitHub Actions browser + gh CLI"
+        "Work Items"      = "GitHub Issues browser"
+        "CI Monitoring"   = "GitHub Actions browser + gh CLI"
     }
 }
 
@@ -850,7 +860,8 @@ function Initialize-GitKrakenCapabilities {
         $script:GitKrakenDecisionTree.HasAuthentication = ($LASTEXITCODE -eq 0)
         if ($script:GitKrakenDecisionTree.HasAuthentication) {
             Write-Information "✅ GitKraken authentication: OK" -InformationAction Continue
-        } else {
+        }
+        else {
             Write-Warning "⚠️  GitKraken not authenticated - AI features unavailable"
         }
     }
@@ -866,7 +877,8 @@ function Initialize-GitKrakenCapabilities {
             $script:GitKrakenDecisionTree.HasOrganization = ($LASTEXITCODE -eq 0 -and $orgList)
             if ($script:GitKrakenDecisionTree.HasOrganization) {
                 Write-Information "✅ GitKraken organization: Configured" -InformationAction Continue
-            } else {
+            }
+            else {
                 Write-Warning "⚠️  Organization not configured - some AI features may be limited"
             }
         }
@@ -887,7 +899,8 @@ function Initialize-GitKrakenCapabilities {
                 if ($tokenStatus -match "low|limit|exhausted") {
                     Write-Warning "⚠️  AI token usage approaching limits"
                 }
-            } else {
+            }
+            else {
                 Write-Warning "⚠️  AI tokens unavailable - AI features disabled"
             }
         }
@@ -900,11 +913,11 @@ function Initialize-GitKrakenCapabilities {
     $commandTests = @{
         "gk ai explain branch" = { & gk ai explain branch --help 2>$null | Out-Null; $LASTEXITCODE -eq 0 }
         "gk ai explain commit" = { & gk ai explain commit --help 2>$null | Out-Null; $LASTEXITCODE -eq 0 }
-        "gk ai pr create" = { & gk ai pr create --help 2>$null | Out-Null; $LASTEXITCODE -eq 0 }
-        "gk ai commit" = { & gk ai commit --help 2>$null | Out-Null; $LASTEXITCODE -eq 0 }
-        "gk ai changelog" = { & gk ai changelog --help 2>$null | Out-Null; $LASTEXITCODE -eq 0 }
-        "gk work list" = { & gk work list --help 2>$null | Out-Null; $LASTEXITCODE -eq 0 }
-        "gk work start" = { & gk work start --help 2>$null | Out-Null; $LASTEXITCODE -eq 0 }
+        "gk ai pr create"      = { & gk ai pr create --help 2>$null | Out-Null; $LASTEXITCODE -eq 0 }
+        "gk ai commit"         = { & gk ai commit --help 2>$null | Out-Null; $LASTEXITCODE -eq 0 }
+        "gk ai changelog"      = { & gk ai changelog --help 2>$null | Out-Null; $LASTEXITCODE -eq 0 }
+        "gk work list"         = { & gk work list --help 2>$null | Out-Null; $LASTEXITCODE -eq 0 }
+        "gk work start"        = { & gk work start --help 2>$null | Out-Null; $LASTEXITCODE -eq 0 }
     }
 
     foreach ($command in $commandTests.Keys) {
@@ -1091,7 +1104,8 @@ function Invoke-GitKrakenWorkflow {
                     Write-Information "  git add <specific-files>     # Stage specific files" -InformationAction Continue
                     Write-Information "  git add .                    # Stage all changes" -InformationAction Continue
                     Write-Information "  git add -A                   # Stage all including deletions" -InformationAction Continue
-                } else {
+                }
+                else {
                     Write-Information "✅ Working directory is clean - no changes to commit" -InformationAction Continue
                 }
                 return
@@ -1119,10 +1133,10 @@ function Invoke-GitKrakenWorkflow {
             Write-Information "💡 Manual commit guidance:" -InformationAction Continue
 
             $commitType = if ($stagedFiles -match "\.feature|\.cs|\.xaml") { "feat" }
-                         elseif ($stagedFiles -match "test|spec") { "test" }
-                         elseif ($stagedFiles -match "doc|readme|\.md") { "docs" }
-                         elseif ($stagedFiles -match "PowerShell|\.ps1") { "chore" }
-                         else { "chore" }
+            elseif ($stagedFiles -match "test|spec") { "test" }
+            elseif ($stagedFiles -match "doc|readme|\.md") { "docs" }
+            elseif ($stagedFiles -match "PowerShell|\.ps1") { "chore" }
+            else { "chore" }
 
             Write-Information "💡 Suggested commit format:" -InformationAction Continue
             Write-Information "  git commit -m '${commitType}: brief description of changes'" -InformationAction Continue
@@ -1205,7 +1219,8 @@ function Start-BusBuddyCommitWorkflow {
                 if (Test-Path $file) {
                     git add $file
                     Write-Information "  ✅ Staged: $file" -InformationAction Continue
-                } else {
+                }
+                else {
                     Write-Warning "File not found: $file"
                 }
             }
@@ -1686,7 +1701,8 @@ function Get-GitHubWorkflowRuns {
                 $end = [DateTime]::Parse($run.updated_at)
                 $span = $end - $start
                 "$($span.Minutes)m $($span.Seconds)s"
-            } else { "N/A" }
+            }
+            else { "N/A" }
 
             Write-Information "  $status | $($run.name) | $($run.head_branch) | $duration" -InformationAction Continue
         }

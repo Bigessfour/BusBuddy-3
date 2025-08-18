@@ -39,7 +39,8 @@ function Test-BusBuddyExecutable {
         }
 
         return $true
-    } else {
+    }
+    else {
         Write-Warning "❌ Executable not found: $exePath"
         Write-Information "🔧 Diagnostic steps:" -InformationAction Continue
         Write-Information "   1. Run 'dotnet clean BusBuddy.WPF/BusBuddy.WPF.csproj'" -InformationAction Continue
@@ -54,7 +55,8 @@ function Test-BusBuddyExecutable {
             Get-ChildItem $outputDir -Name "BusBuddy.WPF.*" | ForEach-Object {
                 Write-Information "   📄 Found: $_" -InformationAction Continue
             }
-        } else {
+        }
+        else {
             Write-Information "📂 Output directory does not exist: $outputDir" -InformationAction Continue
         }
 

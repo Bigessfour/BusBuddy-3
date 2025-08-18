@@ -51,7 +51,7 @@ param (
 )
 
 # Import required modules (Accounts + Sql)
-foreach ($requiredModule in @('Az.Accounts','Az.Sql')) {
+foreach ($requiredModule in @('Az.Accounts', 'Az.Sql')) {
     if (-not (Get-Module -Name $requiredModule -ListAvailable)) {
         Write-Warning "$requiredModule module not found. Installing..."
         try {
@@ -83,7 +83,8 @@ function Get-PublicIPAddress {
 
             if ($service.Property) {
                 $ip = $response.($service.Property)
-            } else {
+            }
+            else {
                 $ip = $response.Trim()
             }
 
@@ -274,13 +275,13 @@ EXECUTE sp_set_database_firewall_rule N'$fullRuleName', '$currentIP', '$currentI
 
     # Return success object for PowerShell automation
     return @{
-        Success = $true
-        IPAddress = $currentIP
-        RuleName = $fullRuleName
-        ServerName = $ServerName
-        ResourceGroup = $ResourceGroupName
-    SubscriptionId = $SubscriptionId
-        Timestamp = Get-Date
+        Success        = $true
+        IPAddress      = $currentIP
+        RuleName       = $fullRuleName
+        ServerName     = $ServerName
+        ResourceGroup  = $ResourceGroupName
+        SubscriptionId = $SubscriptionId
+        Timestamp      = Get-Date
     }
 }
 catch {
@@ -293,8 +294,8 @@ catch {
     Write-Information "4. Use local database temporarily: Set 'DatabaseProvider=Local' in config" -InformationAction Continue
 
     return @{
-        Success = $false
-        Error = $_.Exception.Message
+        Success   = $false
+        Error     = $_.Exception.Message
         IPAddress = $currentIP
         Timestamp = Get-Date
     }

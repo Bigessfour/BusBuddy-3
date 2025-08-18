@@ -17,4 +17,4 @@ if (-not $u -or -not $p) {
 $env:AZURE_SQL_USER = $u
 $env:AZURE_SQL_PASSWORD = $p
 
-Write-Output ([pscustomobject]@{ User=$env:AZURE_SQL_USER; PasswordLength=$env:AZURE_SQL_PASSWORD.Length })
+Write-Output ([pscustomobject]@{ User = $env:AZURE_SQL_USER; PasswordLength = $env:AZURE_SQL_PASSWORD.Length })

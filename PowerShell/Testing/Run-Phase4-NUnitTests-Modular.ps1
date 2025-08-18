@@ -4,7 +4,7 @@ Prefer: Start-BusBuddyPhase4TestAdvanced (module function).
 Parameters mirror advanced function subset.
 !#>
 param(
-    [ValidateSet('All','Unit','Integration','Validation','Core','WPF')][string]$TestSuite='All',
+    [ValidateSet('All', 'Unit', 'Integration', 'Validation', 'Core', 'WPF')][string]$TestSuite = 'All',
     [switch]$Detailed,
     [switch]$CollectCoverage,
     [switch]$SaveFullOutput
@@ -17,36 +17,39 @@ throw "Run-Phase4-NUnitTests-Modular.ps1 archived. Use bbTest"
 
 # legacy snippet (unreachable)
 # Write-Host "`n=== TEST OUTPUT ===" -ForegroundColor Cyan
-        $testStdout -split "`n" | ForEach-Object {
-            if ($_ -match "Passed|✓") {
-                Write-Host $_ -ForegroundColor Green
-            } elseif ($_ -match "Failed|✗|ERROR") {
-                Write-Host $_ -ForegroundColor Red
-            } elseif ($_ -match "Skipped") {
-                Write-Host $_ -ForegroundColor Yellow
-            } else {
-                Write-Host $_
-            }
-        }
-
-        if ($testStderr) {
-            Write-Host "`n=== TEST ERRORS ===" -ForegroundColor Red
-            Write-Host $testStderr -ForegroundColor Red
-        }
-
-        # Parse results
-        $testSuccess = $testExitCode -eq 0
-
-        Write-Information "📊 Test execution completed in $($testDuration.TotalSeconds) seconds" -InformationAction Continue
-        Write-Information "Exit Code: $testExitCode" -InformationAction Continue
-        Write-Information "Full log: $testLogFile" -InformationAction Continue
-
-        return $testSuccess
-
-    } catch {
-        Write-Error "Test execution failed: $($_.Exception.Message)"
-        return $false
+$testStdout -split "`n" | ForEach-Object {
+    if ($_ -match "Passed|✓") {
+        Write-Host $_ -ForegroundColor Green
     }
+    elseif ($_ -match "Failed|✗|ERROR") {
+        Write-Host $_ -ForegroundColor Red
+    }
+    elseif ($_ -match "Skipped") {
+        Write-Host $_ -ForegroundColor Yellow
+    }
+    else {
+        Write-Host $_
+    }
+}
+
+if ($testStderr) {
+    Write-Host "`n=== TEST ERRORS ===" -ForegroundColor Red
+    Write-Host $testStderr -ForegroundColor Red
+}
+
+# Parse results
+$testSuccess = $testExitCode -eq 0
+
+Write-Information "📊 Test execution completed in $($testDuration.TotalSeconds) seconds" -InformationAction Continue
+Write-Information "Exit Code: $testExitCode" -InformationAction Continue
+Write-Information "Full log: $testLogFile" -InformationAction Continue
+
+return $testSuccess
+
+} catch {
+    Write-Error "Test execution failed: $($_.Exception.Message)"
+    return $false
+}
 }
 
 function Start-WatchMode {

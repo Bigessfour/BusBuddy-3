@@ -23,10 +23,10 @@ function Write-AnalysisResult {
     )
 
     $prefix = switch ($Type) {
-        'Info'           { "🔍" }
-        'Finding'        { "📋" }
+        'Info' { "🔍" }
+        'Finding' { "📋" }
         'Recommendation' { "💡" }
-        'Summary'        { "📊" }
+        'Summary' { "📊" }
     }
 
     Write-Information "$prefix $Message" -InformationAction Continue
@@ -51,11 +51,11 @@ try {
     # Categorize violations
     $categories = @{
         ComplexExpressions = @()
-        VariableOutput = @()
-        ConditionalOutput = @()
-        LoopOutput = @()
-        MultilineOutput = @()
-        UnknownPatterns = @()
+        VariableOutput     = @()
+        ConditionalOutput  = @()
+        LoopOutput         = @()
+        MultilineOutput    = @()
+        UnknownPatterns    = @()
     }
 
     $lineNumber = 1
@@ -65,8 +65,8 @@ try {
         if ($line -match 'Write-Host') {
             $violation = @{
                 LineNumber = $lineNumber
-                Content = $line.Trim()
-                Context = ""
+                Content    = $line.Trim()
+                Context    = ""
             }
 
             # Add context from surrounding lines

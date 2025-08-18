@@ -149,7 +149,7 @@ function New-AzureSQLDatabase {
 }
 
 # Function to setup database tables using Entity Framework
-function Initialize-DatabaseTables {
+function Initialize-DatabaseTable {
     Write-Host "📋 Setting up database tables..." -ForegroundColor Yellow
 
     try {

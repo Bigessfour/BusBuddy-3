@@ -43,7 +43,8 @@ function Test-BusBuddyDatabase {
         try {
             Install-Module -Name SqlServer -Scope CurrentUser -Force -ErrorAction Stop
             Write-Host "SqlServer module installed successfully." -ForegroundColor Green
-        } catch {
+        }
+        catch {
             Write-Host "Failed to install SqlServer module: $($_.Exception.Message)" -ForegroundColor Red
             Write-Warning "SqlServer module is required for full validation. Please install manually if this fails."
         }
@@ -104,7 +105,8 @@ function Test-BusBuddyDatabase {
                 if ($missingTables.Count -eq 0) {
                     Write-Host " ✅" -ForegroundColor Green
                     $successes += "All critical tables present"
-                } else {
+                }
+                else {
                     Write-Host " ⚠️" -ForegroundColor Yellow
                     $issues += "Missing tables: $($missingTables -join ', ')"
                 }
@@ -140,7 +142,8 @@ function Test-BusBuddyDatabase {
                 if ($migrations.Count -gt 0) {
                     Write-Host " ✅" -ForegroundColor Green
                     $successes += "Migration history present ($($migrations.Count) migrations)"
-                } else {
+                }
+                else {
                     Write-Host " ⚠️" -ForegroundColor Yellow
                     $issues += "No migration history found"
                 }
@@ -178,7 +181,8 @@ function Test-BusBuddyDatabase {
                 if ($orphanCheck.OrphanedStudents -eq 0) {
                     Write-Host " ✅" -ForegroundColor Green
                     $successes += "Data integrity check passed"
-                } else {
+                }
+                else {
                     Write-Host " ⚠️" -ForegroundColor Yellow
                     $issues += "Found $($orphanCheck.OrphanedStudents) orphaned student records"
                 }
@@ -200,7 +204,8 @@ function Test-BusBuddyDatabase {
             if ($efVersion -like "*9.0.8*") {
                 Write-Host " ✅" -ForegroundColor Green
                 $successes += "EF Core Tools version correct (9.0.8)"
-            } else {
+            }
+            else {
                 Write-Host " ⚠️" -ForegroundColor Yellow
                 $issues += "EF Core Tools version mismatch. Current: $efVersion, Expected: 9.0.8"
             }
@@ -218,7 +223,8 @@ function Test-BusBuddyDatabase {
                 if ($LASTEXITCODE -eq 0) {
                     Write-Host " ✅" -ForegroundColor Green
                     $successes += "CRUD operations validated successfully"
-                } else {
+                }
+                else {
                     Write-Host " ❌" -ForegroundColor Red
                     $issues += "CRUD validation failed"
                 }
@@ -255,7 +261,8 @@ function Test-BusBuddyDatabase {
         }
         Write-Host ""
         Write-Host "💡 For detailed solutions, see: TROUBLESHOOTING-LOG.md" -ForegroundColor Cyan
-    } else {
+    }
+    else {
         Write-Host ""
         Write-Host "🎉 All validations passed! Database is ready for use." -ForegroundColor Green
     }
@@ -266,4 +273,3 @@ function Test-BusBuddyDatabase {
 # Create alias for backwards compatibility and short command
 New-Alias -Name "bb-validate-database" -Value "Test-BusBuddyDatabase" -Force
 New-Alias -Name "bb-db-validate" -Value "Test-BusBuddyDatabase" -Force
-

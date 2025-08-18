@@ -36,7 +36,8 @@ if ($aadRequested) {
             }
             $token = (Get-AzAccessToken -ResourceUrl "https://database.windows.net/").Token
         }
-    } catch { }
+    }
+    catch { }
 
     if (-not $token) {
         try {
@@ -44,7 +45,8 @@ if ($aadRequested) {
             if ($azCli) {
                 $token = az account get-access-token --resource https://database.windows.net/ --query accessToken -o tsv 2>$null
             }
-        } catch { }
+        }
+        catch { }
     }
 
     if (-not $token) {
@@ -57,7 +59,8 @@ if ($aadRequested) {
     # Use token-based auth supported by SqlClient via AccessToken property
     $conn.AccessToken = $token
     try { Invoke-QueryWithConnection -Connection $conn -Sql $Query } catch { Write-Error $_.Exception.Message; exit 1 }
-} else {
+}
+else {
     $azureUser = $env:AZURE_SQL_USER
     $azurePassword = $env:AZURE_SQL_PASSWORD
     if (-not $azureUser -or -not $azurePassword) { Write-Error "AZURE_SQL_USER/AZURE_SQL_PASSWORD not set. Set them or pass -UseAzureAD."; exit 1 }

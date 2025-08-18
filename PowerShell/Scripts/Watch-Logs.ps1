@@ -11,7 +11,7 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Continue'
 
 function Get-NewestLogFile {
-    param([string]$Path,[string]$Filter)
+    param([string]$Path, [string]$Filter)
     if (-not (Test-Path -LiteralPath $Path)) { return $null }
     Get-ChildItem -LiteralPath $Path -Filter $Filter -File -ErrorAction SilentlyContinue |
         Sort-Object LastWriteTime -Descending |

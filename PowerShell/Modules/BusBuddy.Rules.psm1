@@ -31,9 +31,9 @@ function Test-BusBuddyBBPrefix {
 
     # Find function definitions
     $functionDefinitions = $ast.FindAll({
-        param($node)
-        $node -is [System.Management.Automation.Language.FunctionDefinitionAst]
-    }, $true)
+            param($node)
+            $node -is [System.Management.Automation.Language.FunctionDefinitionAst]
+        }, $true)
 
     foreach ($function in $functionDefinitions) {
         $functionName = $function.Name
@@ -41,8 +41,8 @@ function Test-BusBuddyBBPrefix {
         # Check if it's a BusBuddy function that should have bb- prefix
         if ($functionName -like "*BusBuddy*" -and $functionName -notlike "bb-*" -and $functionName -notlike "*-BusBuddy*") {
             $result = [Microsoft.Windows.PowerShell.ScriptAnalyzer.Generic.DiagnosticRecord]@{
-                Message = "BusBuddy function '$functionName' should have a corresponding bb- alias"
-                Extent = $function.Extent
+                Message  = "BusBuddy function '$functionName' should have a corresponding bb- alias"
+                Extent   = $function.Extent
                 RuleName = 'BusBuddyUseBBPrefix'
                 Severity = 'Warning'
             }
@@ -69,9 +69,9 @@ function Test-BusBuddyErrorActionPreference {
 
     # Check if script sets ErrorActionPreference
     $assignments = $ast.FindAll({
-        param($node)
-        $node -is [System.Management.Automation.Language.AssignmentStatementAst]
-    }, $true)
+            param($node)
+            $node -is [System.Management.Automation.Language.AssignmentStatementAst]
+        }, $true)
 
     $hasErrorActionPreference = $false
     foreach ($assignment in $assignments) {
@@ -83,14 +83,14 @@ function Test-BusBuddyErrorActionPreference {
 
     # Also check for try-catch blocks as alternative error handling
     $tryCatchBlocks = $ast.FindAll({
-        param($node)
-        $node -is [System.Management.Automation.Language.TryStatementAst]
-    }, $true)
+            param($node)
+            $node -is [System.Management.Automation.Language.TryStatementAst]
+        }, $true)
 
     if (-not $hasErrorActionPreference -and $tryCatchBlocks.Count -eq 0) {
         $result = [Microsoft.Windows.PowerShell.ScriptAnalyzer.Generic.DiagnosticRecord]@{
-            Message = "Script should set `$ErrorActionPreference or use try-catch for error handling"
-            Extent = $ast.Extent
+            Message  = "Script should set `$ErrorActionPreference or use try-catch for error handling"
+            Extent   = $ast.Extent
             RuleName = 'BusBuddyRequireErrorActionPreference'
             Severity = 'Information'
         }
@@ -100,7 +100,7 @@ function Test-BusBuddyErrorActionPreference {
     return $results
 }
 
-function Test-BusBuddyNoHardcodedPaths {
+function Test-BusBuddyNoHardcodedPath {
     <#
     .SYNOPSIS
         Avoid hardcoded paths in favor of dynamic path resolution
@@ -116,9 +116,9 @@ function Test-BusBuddyNoHardcodedPaths {
 
     # Find string constants that look like Windows paths
     $stringConstants = $ast.FindAll({
-        param($node)
-        $node -is [System.Management.Automation.Language.StringConstantExpressionAst]
-    }, $true)
+            param($node)
+            $node -is [System.Management.Automation.Language.StringConstantExpressionAst]
+        }, $true)
 
     foreach ($string in $stringConstants) {
         $value = $string.Value
@@ -126,8 +126,8 @@ function Test-BusBuddyNoHardcodedPaths {
         # Check for hardcoded Windows paths (C:\, \, absolute paths)
         if ($value -match '^[A-Za-z]:\\' -or $value -match '^\\\\' -or $value -match '\\Users\\') {
             $result = [Microsoft.Windows.PowerShell.ScriptAnalyzer.Generic.DiagnosticRecord]@{
-                Message = "Avoid hardcoded path '$value'. Use Join-Path, `$PSScriptRoot, or relative paths"
-                Extent = $string.Extent
+                Message  = "Avoid hardcoded path '$value'. Use Join-Path, `$PSScriptRoot, or relative paths"
+                Extent   = $string.Extent
                 RuleName = 'BusBuddyAvoidHardcodedPaths'
                 Severity = 'Warning'
             }
@@ -154,15 +154,15 @@ function Test-BusBuddyWriteHostUsage {
 
     # Find Write-Host command calls
     $writeHostCalls = $ast.FindAll({
-        param($node)
-        $node -is [System.Management.Automation.Language.CommandAst] -and
-        $node.GetCommandName() -eq 'Write-Host'
-    }, $true)
+            param($node)
+            $node -is [System.Management.Automation.Language.CommandAst] -and
+            $node.GetCommandName() -eq 'Write-Host'
+        }, $true)
 
     if ($writeHostCalls.Count -gt 10) {
         $result = [Microsoft.Windows.PowerShell.ScriptAnalyzer.Generic.DiagnosticRecord]@{
-            Message = "Consider using Write-Information, Write-Verbose, or Write-Debug instead of excessive Write-Host calls ($($writeHostCalls.Count) found)"
-            Extent = $writeHostCalls[0].Extent
+            Message  = "Consider using Write-Information, Write-Verbose, or Write-Debug instead of excessive Write-Host calls ($($writeHostCalls.Count) found)"
+            Extent   = $writeHostCalls[0].Extent
             RuleName = 'BusBuddyUseWriteHostSparingly'
             Severity = 'Information'
         }
@@ -199,8 +199,8 @@ function Test-BusBuddyVersion75 {
 
     if (-not $hasCorrectVersion) {
         $result = [Microsoft.Windows.PowerShell.ScriptAnalyzer.Generic.DiagnosticRecord]@{
-            Message = "BusBuddy scripts should include '#Requires -Version 7.5' directive"
-            Extent = $ast.Extent
+            Message  = "BusBuddy scripts should include '#Requires -Version 7.5' directive"
+            Extent   = $ast.Extent
             RuleName = 'BusBuddyRequireVersion75'
             Severity = 'Warning'
         }

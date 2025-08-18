@@ -6,6 +6,22 @@ $moduleRoot = Split-Path -Parent $PSScriptRoot
 $workspaceRoot = Split-Path -Parent (Split-Path -Parent $moduleRoot)
 $enhancedTestPath = Join-Path $workspaceRoot 'PowerShell\Scripts\Enhanced-Test-Output.ps1'
 
+<#
+.SYNOPSIS
+Short description
+
+.DESCRIPTION
+Long description
+
+.PARAMETER Args
+Parameter description
+
+.EXAMPLE
+An example
+
+.NOTES
+General notes
+#>
 function Invoke-BusBuddyEnhancedTestOutput {
     [CmdletBinding()]
     param(

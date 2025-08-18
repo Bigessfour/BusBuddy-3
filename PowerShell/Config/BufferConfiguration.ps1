@@ -9,7 +9,8 @@ try {
         $Host.UI.RawUI.BufferSize = New-Object System.Management.Automation.Host.Size(200, 5000)
         $Host.UI.RawUI.WindowSize = New-Object System.Management.Automation.Host.Size(200, 50)
     }
-} catch {
+}
+catch {
     Write-Warning "Could not set buffer size: $($_.Exception.Message)"
 }
 
@@ -74,12 +75,12 @@ function Invoke-WithFullOutput {
 
         # Use Start-Process for complete output capture
         $processInfo = @{
-            FilePath = $Command
-            ArgumentList = $Arguments
+            FilePath               = $Command
+            ArgumentList           = $Arguments
             RedirectStandardOutput = $true
-            RedirectStandardError = $true
-            UseShellExecute = $false
-            CreateNoWindow = $true
+            RedirectStandardError  = $true
+            UseShellExecute        = $false
+            CreateNoWindow         = $true
         }
 
         $process = Start-Process @processInfo -PassThru
@@ -147,21 +148,23 @@ $stderr
 
         if ($exitCode -eq 0) {
             Write-Information "   Status: SUCCESS ✅" -InformationAction Continue
-        } else {
+        }
+        else {
             Write-Error "   Status: FAILED ❌"
         }
 
         return @{
-            ExitCode = $exitCode
-            Duration = $duration
-            ErrorLines = $errorLines
-            LogFile = if ($SaveLog) { $logFile } else { $null }
-            FullOutput = $fullOutput
+            ExitCode       = $exitCode
+            Duration       = $duration
+            ErrorLines     = $errorLines
+            LogFile        = if ($SaveLog) { $logFile } else { $null }
+            FullOutput     = $fullOutput
             StandardOutput = $stdout
-            StandardError = $stderr
+            StandardError  = $stderr
         }
 
-    } catch {
+    }
+    catch {
         Write-Error "Failed to execute command: $($_.Exception.Message)"
         return $null
     }

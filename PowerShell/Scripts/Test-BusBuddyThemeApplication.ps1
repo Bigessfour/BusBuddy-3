@@ -3,7 +3,7 @@ param()
 
 Write-Information "Validating theme application and parsing logs..." -InformationAction Continue
 
-if (Get-Command bb-health -ErrorAction SilentlyContinue) { bb-health -Quick | Out-Null }
+if (Get-Command bb-health -ErrorAction SilentlyContinue) { bbHealthWithGitKraken -Quick | Out-Null }
 if (Get-Command bb-anti-regression -ErrorAction SilentlyContinue) { bb-anti-regression | Out-Null }
 if (Get-Command bb-xaml-validate -ErrorAction SilentlyContinue) { bb-xaml-validate | Out-Null }
 
@@ -50,7 +50,8 @@ foreach ($log in $logFiles) {
 $total = $themeIssues.Count + $logIssues.Count
 if ($total -eq 0) {
     Write-Information "Theme application and logs validated — no issues found." -InformationAction Continue
-} else {
+}
+else {
     Write-Warning "Issues found ($total):"
     ($themeIssues + $logIssues) | ForEach-Object { Write-Warning $_ }
 }

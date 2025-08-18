@@ -17,7 +17,7 @@ function Test-DynamicResource {
     param([string]$xaml)
     # Look for StaticResource or hard-coded color literals where DynamicResource is expected
     $hasStatic = $xaml -match 'StaticResource\s*\{'
-    $hasHex     = $xaml -match '#[0-9a-fA-F]{6,8}'
+    $hasHex = $xaml -match '#[0-9a-fA-F]{6,8}'
     return @{ StaticResource = $hasStatic; Hex = $hasHex }
 }
 
@@ -53,32 +53,32 @@ function Test-ThemeApplication {
 }
 
 $views = Get-ChildItem -Path $Root -Recurse -Include *.xaml -ErrorAction SilentlyContinue |
-         Where-Object { $_.FullName -notmatch 'bin\\|obj\\|g\\|TemporaryGeneratedFile' }
+    Where-Object { $_.FullName -notmatch 'bin\\|obj\\|g\\|TemporaryGeneratedFile' }
 
 $issues = @()
 foreach ($view in $views) {
     try {
         $text = Get-Content -Raw -LiteralPath $view.FullName
         $nsOk = Test-SyncfusionNamespace -xaml $text
-        $dyn  = Test-DynamicResource -xaml $text
+        $dyn = Test-DynamicResource -xaml $text
         $ctrl = Test-ControlUsage -xaml $text
         $them = Test-ThemeApplication -xaml $text
 
         $entry = [PSCustomObject]@{
-            View                 = $view.FullName
-            SyncfusionNamespace  = $nsOk
-            UsesDynamicResource  = -not $dyn.StaticResource
-            HasHexColors         = $dyn.Hex
-            ApplyStylesOnApp     = $them.ApplyOnApp
-            HasExplicitTheme     = $them.ExplicitTheme
-            HasStdDataGrid       = $ctrl.Standard.DataGrid
-            HasStdButton         = $ctrl.Standard.Button
-            HasStdTextBox        = $ctrl.Standard.TextBox
-            HasSfButtonAdv       = $ctrl.Syncfusion.ButtonAdv
-            HasSfDataGrid        = $ctrl.Syncfusion.SfDataGrid
-            HasSfTextBoxExt      = $ctrl.Syncfusion.SfTextBoxExt
-            HasSfChart           = $ctrl.Syncfusion.SfChart
-            HasSfScheduler       = $ctrl.Syncfusion.SfScheduler
+            View                = $view.FullName
+            SyncfusionNamespace = $nsOk
+            UsesDynamicResource = -not $dyn.StaticResource
+            HasHexColors        = $dyn.Hex
+            ApplyStylesOnApp    = $them.ApplyOnApp
+            HasExplicitTheme    = $them.ExplicitTheme
+            HasStdDataGrid      = $ctrl.Standard.DataGrid
+            HasStdButton        = $ctrl.Standard.Button
+            HasStdTextBox       = $ctrl.Standard.TextBox
+            HasSfButtonAdv      = $ctrl.Syncfusion.ButtonAdv
+            HasSfDataGrid       = $ctrl.Syncfusion.SfDataGrid
+            HasSfTextBoxExt     = $ctrl.Syncfusion.SfTextBoxExt
+            HasSfChart          = $ctrl.Syncfusion.SfChart
+            HasSfScheduler      = $ctrl.Syncfusion.SfScheduler
         }
         $issues += $entry
     }

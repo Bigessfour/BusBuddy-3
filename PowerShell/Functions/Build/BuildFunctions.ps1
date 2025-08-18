@@ -138,7 +138,7 @@ function Invoke-BusBuddyRun {
     return Invoke-WithFullOutput -Command "dotnet" -Arguments $runArgs -SaveLog:$SaveLog -LogPrefix "run"
 }
 
-function Get-BusBuddyBuildErrors {
+function Get-BusBuddyBuildError {
     <#
     .SYNOPSIS
         Get only build errors without full output
@@ -152,7 +152,8 @@ function Get-BusBuddyBuildErrors {
 
     if ($result -and $result.ErrorLines) {
         return $result.ErrorLines
-    } else {
+    }
+    else {
         Write-Host "✅ No build errors found!" -ForegroundColor Green
         return @()
     }
@@ -176,7 +177,8 @@ function Show-BusBuddyBuildLog {
         Write-Host "📅 Created: $($latestLog.LastWriteTime)" -ForegroundColor Gray
         Write-Host ""
         Get-Content $latestLog.FullName
-    } else {
+    }
+    else {
         Write-Host "No $LogType logs found. Run with -SaveLog first." -ForegroundColor Yellow
     }
 }

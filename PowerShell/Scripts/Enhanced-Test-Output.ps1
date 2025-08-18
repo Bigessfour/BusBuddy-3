@@ -3,20 +3,20 @@ Archive: Documentation/Archive/LegacyScripts/Enhanced-Test-Output.ps1
 #>
 throw "Archived: Use bbTest"
 
-        [string]$ProjectPath = "BusBuddy.sln",
+[string]$ProjectPath = "BusBuddy.sln",
 
-        [switch]$SaveToFile,
+[switch]$SaveToFile,
 
-        [switch]$WatchMode,
+[switch]$WatchMode,
 
-        [string]$Filter,
+[string]$Filter,
 
-        [ValidateSet('quiet', 'minimal', 'normal', 'detailed', 'diagnostic')]
-        [string]$Verbosity = 'normal'
-    )
+[ValidateSet('quiet', 'minimal', 'normal', 'detailed', 'diagnostic')]
+[string]$Verbosity = 'normal'
+)
 
-    Write-Warning "Get-BusBuddyTestOutput is deprecated. Please use bbTest or bbTestFull to run tests via the NUnit Test Runner extension."
-    return @{ Status = "Deprecated"; Message = "Use bbTest or bbTestFull for all test automation." }
+Write-Warning "Get-BusBuddyTestOutput is deprecated. Please use bbTest or bbTestFull to run tests via the NUnit Test Runner extension."
+return @{ Status = "Deprecated"; Message = "Use bbTest or bbTestFull for all test automation." }
 }
 
 function Invoke-BusBuddyTestFull {
@@ -53,7 +53,7 @@ function Invoke-BusBuddyTestSimple {
     Write-Output "[NUnit Test Runner] Executed $TestSuite tests. See extension UI for results."
 }
 
-function Get-BusBuddyTestErrors {
+function Get-BusBuddyTestError {
     <#
     .SYNOPSIS
         Get only test errors without full output

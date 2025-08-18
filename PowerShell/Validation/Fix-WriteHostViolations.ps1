@@ -35,42 +35,42 @@ function Write-RefactorStatus {
     )
 
     $prefix = switch ($Type) {
-        'Info'    { "🔄" }
+        'Info' { "🔄" }
         'Success' { "✅" }
         'Warning' { "⚠️" }
-        'Error'   { "❌" }
+        'Error' { "❌" }
     }
 
     Write-Information "$prefix $Message" -InformationAction Continue
 }
 
-function Get-WriteHostReplacements {
+function Get-WriteHostReplacement {
     return @{
         # Success messages (Green)
         'Write-Host\s+"([^"]*(?:✅|Success|successful|completed|passed|ready|built|finished)[^"]*)"[^-]*-ForegroundColor\s+Green' = 'Write-Output "$1"'
-        'Write-Host\s+\$([^-\s]+)[^-]*-ForegroundColor\s+Green' = 'Write-Output $$1'
+        'Write-Host\s+\$([^-\s]+)[^-]*-ForegroundColor\s+Green'                                                                  = 'Write-Output $$1'
 
         # Error messages (Red)
-        'Write-Host\s+"([^"]*(?:❌|Error|Failed|failed|error|cannot|unable)[^"]*)"[^-]*-ForegroundColor\s+Red' = 'Write-Error "$1"'
-        'Write-Host\s+\$([^-\s]+)[^-]*-ForegroundColor\s+Red' = 'Write-Error $$1'
+        'Write-Host\s+"([^"]*(?:❌|Error|Failed|failed|error|cannot|unable)[^"]*)"[^-]*-ForegroundColor\s+Red'                    = 'Write-Error "$1"'
+        'Write-Host\s+\$([^-\s]+)[^-]*-ForegroundColor\s+Red'                                                                    = 'Write-Error $$1'
 
         # Warning messages (Yellow)
-        'Write-Host\s+"([^"]*(?:⚠️|Warning|warning|deprecated|caution)[^"]*)"[^-]*-ForegroundColor\s+Yellow' = 'Write-Warning "$1"'
-        'Write-Host\s+\$([^-\s]+)[^-]*-ForegroundColor\s+Yellow' = 'Write-Warning $$1'
+        'Write-Host\s+"([^"]*(?:⚠️|Warning|warning|deprecated|caution)[^"]*)"[^-]*-ForegroundColor\s+Yellow'                     = 'Write-Warning "$1"'
+        'Write-Host\s+\$([^-\s]+)[^-]*-ForegroundColor\s+Yellow'                                                                 = 'Write-Warning $$1'
 
         # Debug/Verbose messages (Gray, DarkGray, Cyan for debugging)
-        'Write-Host\s+"([^"]*(?:Debug|verbose|trace|📝|🔍)[^"]*)"[^-]*-ForegroundColor\s+(?:Gray|DarkGray|Cyan)' = 'Write-Verbose "$1"'
-        'Write-Host\s+\$([^-\s]+)[^-]*-ForegroundColor\s+(?:Gray|DarkGray|Cyan)' = 'Write-Verbose $$1'
+        'Write-Host\s+"([^"]*(?:Debug|verbose|trace|📝|🔍)[^"]*)"[^-]*-ForegroundColor\s+(?:Gray|DarkGray|Cyan)'                 = 'Write-Verbose "$1"'
+        'Write-Host\s+\$([^-\s]+)[^-]*-ForegroundColor\s+(?:Gray|DarkGray|Cyan)'                                                 = 'Write-Verbose $$1'
 
         # Informational messages (any other colors or no color)
-        'Write-Host\s+"([^"]*)"(?:\s+-ForegroundColor\s+\w+)?' = 'Write-Information "$1" -InformationAction Continue'
-        'Write-Host\s+\$([^-\s]+)(?:\s+-ForegroundColor\s+\w+)?' = 'Write-Information $$1 -InformationAction Continue'
+        'Write-Host\s+"([^"]*)"(?:\s+-ForegroundColor\s+\w+)?'                                                                   = 'Write-Information "$1" -InformationAction Continue'
+        'Write-Host\s+\$([^-\s]+)(?:\s+-ForegroundColor\s+\w+)?'                                                                 = 'Write-Information $$1 -InformationAction Continue'
 
         # Pattern separators and decorative lines
-        'Write-Host\s+"(=+|#+|-+|\*+)"[^-]*-ForegroundColor\s+\w+' = 'Write-Information "$1" -InformationAction Continue'
+        'Write-Host\s+"(=+|#+|-+|\*+)"[^-]*-ForegroundColor\s+\w+'                                                               = 'Write-Information "$1" -InformationAction Continue'
 
         # Newline patterns
-        'Write-Host\s+"`n([^"]*)"' = 'Write-Information "`n$1" -InformationAction Continue'
+        'Write-Host\s+"`n([^"]*)"'                                                                                               = 'Write-Information "`n$1" -InformationAction Continue'
     }
 }
 
@@ -82,12 +82,12 @@ function Test-ModuleCompliance {
     try {
         $result = & bbAntiRegression 2>&1
         $writeHostCount = ($result | Select-String "Write-Host violations" | ForEach-Object {
-            if ($_ -match "violations:\s*(\d+)") { [int]$matches[1] }
-        }) | Measure-Object -Sum | Select-Object -ExpandProperty Sum
+                if ($_ -match "violations:\s*(\d+)") { [int]$matches[1] }
+            }) | Measure-Object -Sum | Select-Object -ExpandProperty Sum
 
         return @{
             WriteHostViolations = $writeHostCount
-            Passed = $writeHostCount -eq 0
+            Passed              = $writeHostCount -eq 0
         }
     }
     catch {
@@ -153,7 +153,8 @@ try {
 
             if ($finalCompliance.Passed) {
                 Write-RefactorStatus "✅ Module now passes compliance checks!" -Type Success
-            } else {
+            }
+            else {
                 Write-RefactorStatus "⚠️ Module still has $($finalCompliance.WriteHostViolations) violations" -Type Warning
                 Write-RefactorStatus "Additional manual refactoring may be needed" -Type Info
             }

@@ -72,11 +72,11 @@ function Invoke-ComprehensiveXamlValidation {
                 $log = [Serilog.Log]::ForContext('SourceContext', 'Invoke-ComprehensiveXamlValidation')
                 $file = $_
                 $result = [PSCustomObject]@{
-                    File = $file
-                    IsValid = $true
-                    Errors = @()
+                    File                 = $file
+                    IsValid              = $true
+                    Errors               = @()
                     IsResourceDictionary = $false
-                    SyncfusionIssues = @()
+                    SyncfusionIssues     = @()
                 }
                 $content = Get-Content $file.FullName -Raw
                 if ($content -match '<ResourceDictionary') {
@@ -87,11 +87,12 @@ function Invoke-ComprehensiveXamlValidation {
                 try {
                     $xamlDoc = [System.Xml.Linq.XDocument]::Parse($content)
                     $result.IsValid = $true
-                } catch {
+                }
+                catch {
                     $result.IsValid = $false
                     $result.Errors += [PSCustomObject]@{
-                        Line = $_.Exception.LineNumber
-                        Message = $_.Exception.Message
+                        Line       = $_.Exception.LineNumber
+                        Message    = $_.Exception.Message
                         Suggestion = "Check XML syntax; ensure well-formed XAML."
                     }
                     $log.Error("📄 {File}: Invalid XAML - {Message}", $file.Name, $_.Exception.Message)
@@ -101,8 +102,8 @@ function Invoke-ComprehensiveXamlValidation {
                     if ($content -match "<$control\s") {
                         $line = ($content -split '\n' | Select-String "<$control\s").LineNumber
                         $result.SyncfusionIssues += [PSCustomObject]@{
-                            Line = $line
-                            Message = "Standard WPF $control detected; use Syncfusion equivalent (e.g., Sf$control)."
+                            Line       = $line
+                            Message    = "Standard WPF $control detected; use Syncfusion equivalent (e.g., Sf$control)."
                             Suggestion = "Replace with Syncfusion.$control (e.g., SfButton, SfTextBox)."
                         }
                         $log.Warning("📄 {File}:{Line}: WPF {Control} found", $file.Name, $line, $control)
@@ -117,8 +118,8 @@ function Invoke-ComprehensiveXamlValidation {
                 }
                 if (-not $hasSyncfusion -and -not $result.IsResourceDictionary) {
                     $result.SyncfusionIssues += [PSCustomObject]@{
-                        Line = 1
-                        Message = "Missing Syncfusion namespace."
+                        Line       = 1
+                        Message    = "Missing Syncfusion namespace."
                         Suggestion = "Add xmlns:syncfusion='$($using:syncfusionNamespaces[0])' to root element."
                     }
                     $log.Warning("📄 {File}: Missing Syncfusion namespace", $file.Name)
@@ -132,24 +133,25 @@ function Invoke-ComprehensiveXamlValidation {
                 }
                 if ($result.IsValid -and $result.SyncfusionIssues.Count -eq 0) {
                     $validFiles += $result.File
-                } else {
+                }
+                else {
                     $invalidFiles += [PSCustomObject]@{
-                        File = $result.File
-                        Errors = $result.Errors
+                        File             = $result.File
+                        Errors           = $result.Errors
                         SyncfusionIssues = $result.SyncfusionIssues
                     }
                 }
                 $syncfusionViolations += $result.SyncfusionIssues
             }
             $summary = [PSCustomObject]@{
-                TotalFiles = $xamlFiles.Count
-                ValidFiles = $validFiles.Count
-                InvalidFiles = $invalidFiles.Count
+                TotalFiles           = $xamlFiles.Count
+                ValidFiles           = $validFiles.Count
+                InvalidFiles         = $invalidFiles.Count
                 ResourceDictionaries = $resourceDictionaries.Count
                 SyncfusionViolations = $syncfusionViolations.Count
-                InvalidFileDetails = $invalidFiles
-                ProjectPath = $ProjectPath
-                ValidationDate = Get-Date
+                InvalidFileDetails   = $invalidFiles
+                ProjectPath          = $ProjectPath
+                ValidationDate       = Get-Date
             }
             $log.Information("📊 XAML Validation Summary: {Summary}", $summary)
             Write-Information "📊 XAML Validation Summary" -InformationAction Continue
@@ -186,7 +188,8 @@ function Invoke-ComprehensiveXamlValidation {
             }
             $results | ConvertTo-Json -Depth 5 | Out-File -FilePath "XamlValidationResults.json" -Encoding utf8
             Write-Output "\nDetailed results exported to XamlValidationResults.json"
-        } catch {
+        }
+        catch {
             $log.Error("XAML validation failed: {Message}", $_.Exception.Message)
             Write-Error "XAML validation failed: $($_.Exception.Message)" -ErrorAction Stop
         }
@@ -216,16 +219,17 @@ function Test-BusBuddyXml {
         $xamlDoc = [System.Xml.Linq.XDocument]::Parse($content)
         return [PSCustomObject]@{
             IsValid = $true
-            Errors = @()
+            Errors  = @()
         }
-    } catch {
+    }
+    catch {
         return [PSCustomObject]@{
             IsValid = $false
-            Errors = @([PSCustomObject]@{
-                Line = $_.Exception.LineNumber
-                Message = $_.Exception.Message
-                Suggestion = "Check XML syntax; ensure well-formed XAML."
-            })
+            Errors  = @([PSCustomObject]@{
+                    Line       = $_.Exception.LineNumber
+                    Message    = $_.Exception.Message
+                    Suggestion = "Check XML syntax; ensure well-formed XAML."
+                })
         }
     }
 }

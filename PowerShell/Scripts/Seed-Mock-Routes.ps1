@@ -26,7 +26,7 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-function Invoke-ScalarInt([string]$query){
+function Invoke-ScalarInt([string]$query) {
     $out = & sqlcmd -S $Server -d $Database -G -W -h -1 -Q ("SET NOCOUNT ON; " + $query) 2>&1
     if ($LASTEXITCODE -ne 0) { throw "sqlcmd failed: $($out -join ' ')" }
     # Filter out empty lines and lines that are not pure integers
@@ -37,13 +37,14 @@ function Invoke-ScalarInt([string]$query){
     }
     try {
         return [int]$line
-    } catch {
+    }
+    catch {
         Write-Warning "Failed to parse integer from sqlcmd output: $line"
         return 0
     }
 }
 
-function Invoke-Sql([string]$tsql){
+function Invoke-Sql([string]$tsql) {
     if ($WhatIf) {
         # Use Write-Information instead of Write-Host per Microsoft guidance
         Write-Information "--- WHATIF T-SQL BEGIN ---" -InformationAction Continue
@@ -56,8 +57,8 @@ function Invoke-Sql([string]$tsql){
 }
 
 # Count current rows
-$counts      = [PSCustomObject]@{ Vehicles = 0; Drivers = 0; Routes = 0 }
-$countQuery  = @"
+$counts = [PSCustomObject]@{ Vehicles = 0; Drivers = 0; Routes = 0 }
+$countQuery = @"
 SELECT
     (SELECT COUNT(1) FROM Vehicles) AS Vehicles,
     (SELECT COUNT(1) FROM Drivers)  AS Drivers,
@@ -82,32 +83,32 @@ if ($nums.Count -ne 3) {
 }
 
 $counts.Vehicles = [int]$nums[0]
-$counts.Drivers  = [int]$nums[1]
-$counts.Routes   = [int]$nums[2]
+$counts.Drivers = [int]$nums[1]
+$counts.Routes = [int]$nums[2]
 
 $needVehicles = [Math]::Max(0, $TargetVehicles - $counts.Vehicles)
-$needDrivers  = [Math]::Max(0, $TargetDrivers  - $counts.Drivers)
-$needRoutes   = [Math]::Max(0, $TargetRoutes   - $counts.Routes)
+$needDrivers = [Math]::Max(0, $TargetDrivers - $counts.Drivers)
+$needRoutes = [Math]::Max(0, $TargetRoutes - $counts.Routes)
 
 # Start indexes based on current totals to reduce collision w/ existing data
 $seedStartVehicle = $counts.Vehicles + 1
-$seedStartDriver  = $counts.Drivers + 1
-$seedStartRoute   = $counts.Routes + 1
+$seedStartDriver = $counts.Drivers + 1
+$seedStartRoute = $counts.Routes + 1
 
 # Informational output (no Write-Host)
 Write-Information ("Current -> Target (need): Vehicles={0} -> {1} (+{2}), Drivers={3} -> {4} (+{5}), Routes={6} -> {7} (+{8})" -f `
-    $counts.Vehicles, $TargetVehicles, $needVehicles, `
-    $counts.Drivers,  $TargetDrivers,  $needDrivers,  `
-    $counts.Routes,   $TargetRoutes,   $needRoutes) -InformationAction Continue
+        $counts.Vehicles, $TargetVehicles, $needVehicles, `
+        $counts.Drivers, $TargetDrivers, $needDrivers, `
+        $counts.Routes, $TargetRoutes, $needRoutes) -InformationAction Continue
 
-function New-VehiclesSql([int]$n){
+function New-VehiclesSql([int]$n) {
     if ($n -le 0) { return $null }
     $values = @()
-    for($i=1; $i -le $n; $i++){
-        $idx   = $seedStartVehicle + $i - 1
+    for ($i = 1; $i -le $n; $i++) {
+        $idx = $seedStartVehicle + $i - 1
         $busNo = "SEED-BUS-{0:000}" -f $idx
-        $vin   = "SEEDVIN{0:010}" -f $idx  # 17 chars total (7 + 10)
-        $lic   = "SEEDLIC{0:0000}" -f $idx
+        $vin = "SEEDVIN{0:010}" -f $idx  # 17 chars total (7 + 10)
+        $lic = "SEEDLIC{0:0000}" -f $idx
         $values += @"
 IF NOT EXISTS (SELECT 1 FROM Vehicles WHERE BusNumber = '$busNo')
 BEGIN
@@ -132,15 +133,15 @@ END
     return ($values -join "`n")
 }
 
-function New-DriversSql([int]$n){
+function New-DriversSql([int]$n) {
     if ($n -le 0) { return $null }
-    $first = @('John','Jane','Mike','Sarah','Tom','Lisa','Mark','Emily','Chris','Anna')
-    $last  = @('Smith','Johnson','Williams','Brown','Davis','Miller','Wilson','Taylor','Anderson','Thomas')
+    $first = @('John', 'Jane', 'Mike', 'Sarah', 'Tom', 'Lisa', 'Mark', 'Emily', 'Chris', 'Anna')
+    $last = @('Smith', 'Johnson', 'Williams', 'Brown', 'Davis', 'Miller', 'Wilson', 'Taylor', 'Anderson', 'Thomas')
     $sb = New-Object System.Text.StringBuilder
-    for($i=1; $i -le $n; $i++){
+    for ($i = 1; $i -le $n; $i++) {
         $idx = $seedStartDriver + $i - 1
-        $fn = $first[($idx-1) % $first.Count]
-        $ln = $last[($idx-1) % $last.Count]
+        $fn = $first[($idx - 1) % $first.Count]
+        $ln = $last[($idx - 1) % $last.Count]
         $name = "$fn $ln"
         $phone = ("555-100-{0:0000}" -f $idx)
         [void]$sb.AppendLine(@"
@@ -167,10 +168,10 @@ END
     return $sb.ToString()
 }
 
-function New-RoutesSql([int]$n){
+function New-RoutesSql([int]$n) {
     if ($n -le 0) { return $null }
     $sb = New-Object System.Text.StringBuilder
-    for($i=1; $i -le $n; $i++){
+    for ($i = 1; $i -le $n; $i++) {
         $idx = $seedStartRoute + $i - 1
         $rname = "Seed Route $idx"
         [void]$sb.AppendLine(@"
@@ -186,10 +187,10 @@ END
 
 $tsql = @()
 if ($needVehicles -gt 0) { $tsql += New-VehiclesSql -n $needVehicles }
-if ($needDrivers  -gt 0) { $tsql += New-DriversSql  -n $needDrivers }
-if ($needRoutes   -gt 0) { $tsql += New-RoutesSql   -n $needRoutes }
+if ($needDrivers -gt 0) { $tsql += New-DriversSql  -n $needDrivers }
+if ($needRoutes -gt 0) { $tsql += New-RoutesSql   -n $needRoutes }
 
-if (-not $tsql -or ($tsql -join '').Trim().Length -eq 0){
+if (-not $tsql -or ($tsql -join '').Trim().Length -eq 0) {
     Write-Information "No seeding required. Targets already satisfied." -InformationAction Continue
     return
 }
@@ -203,15 +204,14 @@ foreach ($stmt in $tsql) {
 
 Write-Information "Seeding complete (or previewed with -WhatIf). Verifying..." -InformationAction Continue
 $postVehicles = Invoke-ScalarInt 'SELECT COUNT(1) FROM Vehicles;'
-$postDrivers  = Invoke-ScalarInt 'SELECT COUNT(1) FROM Drivers;'
-$postRoutes   = Invoke-ScalarInt 'SELECT COUNT(1) FROM Routes;'
+$postDrivers = Invoke-ScalarInt 'SELECT COUNT(1) FROM Drivers;'
+$postRoutes = Invoke-ScalarInt 'SELECT COUNT(1) FROM Routes;'
 
 Write-Output ([PSCustomObject]@{
-    VehiclesBefore = $counts.Vehicles
-    DriversBefore  = $counts.Drivers
-    RoutesBefore   = $counts.Routes
-    VehiclesAfter  = $postVehicles
-    DriversAfter   = $postDrivers
-    RoutesAfter    = $postRoutes
-})
-
+        VehiclesBefore = $counts.Vehicles
+        DriversBefore  = $counts.Drivers
+        RoutesBefore   = $counts.Routes
+        VehiclesAfter  = $postVehicles
+        DriversAfter   = $postDrivers
+        RoutesAfter    = $postRoutes
+    })

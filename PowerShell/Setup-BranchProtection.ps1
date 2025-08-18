@@ -5,10 +5,10 @@
 param(
     [Parameter(Mandatory = $false)]
     [string]$BranchPattern = "main",
-    
+
     [Parameter(Mandatory = $false)]
     [switch]$DryRun = $false,
-    
+
     [Parameter(Mandatory = $false)]
     [switch]$Verbose = $false
 )
@@ -16,7 +16,7 @@ param(
 # Required status checks that must pass before merging
 $RequiredChecks = @(
     "build-test-x64",
-    "build-test-x86", 
+    "build-test-x86",
     "quality-gate",
     "security-scan",
     "pr-status-summary"
@@ -29,28 +29,30 @@ $AdditionalChecks = @(
 
 function Write-StatusMessage {
     param([string]$Message, [string]$Type = "Info")
-    
+
     $timestamp = Get-Date -Format "HH:mm:ss"
     switch ($Type) {
         "Success" { Write-Host "[$timestamp] ✅ $Message" -ForegroundColor Green }
         "Warning" { Write-Host "[$timestamp] ⚠️  $Message" -ForegroundColor Yellow }
-        "Error"   { Write-Host "[$timestamp] ❌ $Message" -ForegroundColor Red }
-        "Info"    { Write-Host "[$timestamp] ℹ️  $Message" -ForegroundColor Cyan }
-        default   { Write-Host "[$timestamp] $Message" }
+        "Error" { Write-Host "[$timestamp] ❌ $Message" -ForegroundColor Red }
+        "Info" { Write-Host "[$timestamp] ℹ️  $Message" -ForegroundColor Cyan }
+        default { Write-Host "[$timestamp] $Message" }
     }
 }
 
 function Test-GitHubCLI {
     try {
         gh auth status 2>&1 | Out-Null
-        if ($LASTEXITCODE -eq 0) {
+        if ($?) {
             Write-StatusMessage "GitHub CLI authenticated successfully" "Success"
             return $true
-        } else {
+        }
+        else {
             Write-StatusMessage "GitHub CLI not authenticated. Please run 'gh auth login'" "Error"
             return $false
         }
-    } catch {
+    }
+    catch {
         Write-StatusMessage "GitHub CLI not found. Please install GitHub CLI first." "Error"
         return $false
     }
@@ -58,9 +60,9 @@ function Test-GitHubCLI {
 
 function Get-CurrentBranchProtection {
     param([string]$Branch)
-    
+
     Write-StatusMessage "Checking current branch protection for '$Branch'..."
-    
+
     try {
         $protection = gh api "repos/{owner}/{repo}/branches/$Branch/protection" 2>$null | ConvertFrom-Json
         if ($protection) {
@@ -71,10 +73,11 @@ function Get-CurrentBranchProtection {
             }
             return $protection
         }
-    } catch {
+    }
+    catch {
         Write-StatusMessage "No existing branch protection found for '$Branch'" "Info"
     }
-    
+
     return $null
 }
 
@@ -84,44 +87,44 @@ function Set-BranchProtection {
         [string[]]$StatusChecks,
         [bool]$DryRunMode = $false
     )
-    
+
     $protectionConfig = @{
-        required_status_checks = @{
+        required_status_checks           = @{
             strict = $true
             checks = @()
         }
-        enforce_admins = $true
-        required_pull_request_reviews = @{
-            dismiss_stale_reviews = $true
-            require_code_owner_reviews = $false
+        enforce_admins                   = $true
+        required_pull_request_reviews    = @{
+            dismiss_stale_reviews           = $true
+            require_code_owner_reviews      = $false
             required_approving_review_count = 1
-            require_last_push_approval = $true
+            require_last_push_approval      = $true
         }
-        restrictions = $null
-        allow_force_pushes = $false
-        allow_deletions = $false
-        block_creations = $false
+        restrictions                     = $null
+        allow_force_pushes               = $false
+        allow_deletions                  = $false
+        block_creations                  = $false
         required_conversation_resolution = $true
     }
-    
+
     # Add status checks
     foreach ($check in $StatusChecks) {
         $protectionConfig.required_status_checks.checks += @{
             context = $check
-            app_id = -1  # -1 means any app can provide this status
+            app_id  = -1  # -1 means any app can provide this status
         }
     }
-    
+
     $configJson = $protectionConfig | ConvertTo-Json -Depth 4 -Compress
-    
+
     if ($DryRunMode) {
         Write-StatusMessage "DRY RUN: Would apply the following protection to '$Branch':" "Warning"
         $protectionConfig | ConvertTo-Json -Depth 4 | Write-Host
         return $true
     }
-    
+
     Write-StatusMessage "Applying branch protection to '$Branch'..."
-    
+
     try {
         # Use temporary file for input since PowerShell doesn't support here-strings with external commands
         $tempFile = New-TemporaryFile
@@ -130,7 +133,8 @@ function Set-BranchProtection {
         Remove-Item $tempFile.FullName -Force
         Write-StatusMessage "Branch protection applied successfully to '$Branch'" "Success"
         return $true
-    } catch {
+    }
+    catch {
         Write-StatusMessage "Failed to apply branch protection: $($_.Exception.Message)" "Error"
         return $false
     }
@@ -138,7 +142,7 @@ function Set-BranchProtection {
 
 function Show-ProtectionSummary {
     param([string]$Branch, [string[]]$StatusChecks)
-    
+
     Write-Host ""
     Write-StatusMessage "🛡️ Branch Protection Summary for '$Branch'" "Info"
     Write-Host "  📋 Required Status Checks:" -ForegroundColor Cyan
@@ -188,11 +192,13 @@ if ($success) {
     if ($DryRun) {
         Write-StatusMessage "Dry run completed successfully" "Success"
         Write-StatusMessage "Run without -DryRun to actually apply the protection" "Info"
-    } else {
+    }
+    else {
         Write-StatusMessage "Branch protection configured successfully!" "Success"
         Write-StatusMessage "PRs to '$BranchPattern' now require CI approval before merging" "Info"
     }
-} else {
+}
+else {
     Write-StatusMessage "Failed to configure branch protection" "Error"
     exit 1
 }
@@ -201,7 +207,7 @@ if ($success) {
 Write-Host ""
 Write-StatusMessage "📋 Next Steps:" "Info"
 Write-Host "  1. Test the new workflow by creating a PR" -ForegroundColor White
-Write-Host "  2. Verify all status checks appear and must pass" -ForegroundColor White  
+Write-Host "  2. Verify all status checks appear and must pass" -ForegroundColor White
 Write-Host "  3. Confirm PR requires approval before merging" -ForegroundColor White
 Write-Host "  4. Update team on new protection requirements" -ForegroundColor White
 Write-Host ""

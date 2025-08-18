@@ -55,9 +55,11 @@ function Invoke-Query {
 # Resolve config path (prefer root), fallback to BusBuddy.WPF/appsettings.json if requested path not found
 $resolvedConfig = if (Test-Path -LiteralPath $ConfigPath) {
     (Resolve-Path -LiteralPath $ConfigPath).Path
-} elseif (Test-Path -LiteralPath "BusBuddy.WPF/appsettings.json") {
+}
+elseif (Test-Path -LiteralPath "BusBuddy.WPF/appsettings.json") {
     (Resolve-Path -LiteralPath "BusBuddy.WPF/appsettings.json").Path
-} else {
+}
+else {
     throw "Could not find appsettings.json at '$ConfigPath' or 'BusBuddy.WPF/appsettings.json'"
 }
 

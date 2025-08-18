@@ -20,7 +20,7 @@ $queries = @{
     Drivers  = 'SELECT COUNT(1) FROM Drivers;'
 }
 
-function Invoke-CountQuery([string]$name, [string]$q){
+function Invoke-CountQuery([string]$name, [string]$q) {
     $val = & sqlcmd -S $Server -d $Database -G -Q ("SET NOCOUNT ON; " + $q) -W -h -1 2>&1
     if ($LASTEXITCODE -ne 0) { throw ("sqlcmd failed for {0}: {1}" -f $name, ($val -join ' ')) }
     $line = $val | Where-Object { $_ -match '^[0-9]+$' } | Select-Object -First 1
@@ -30,7 +30,7 @@ function Invoke-CountQuery([string]$name, [string]$q){
 
 try {
     $results = [ordered]@{}
-    foreach($k in $queries.Keys){ $results[$k] = Invoke-CountQuery $k $queries[$k] }
+    foreach ($k in $queries.Keys) { $results[$k] = Invoke-CountQuery $k $queries[$k] }
 
     Write-Output (
         [PSCustomObject]@{

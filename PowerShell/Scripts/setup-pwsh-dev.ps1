@@ -11,9 +11,9 @@ param(
 $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path -Parent $PSCommandPath
 $modulesRoot = Join-Path $repoRoot 'Modules'
-if(-not (Test-Path $modulesRoot)) { throw "Modules directory not found: $modulesRoot" }
+if (-not (Test-Path $modulesRoot)) { throw "Modules directory not found: $modulesRoot" }
 # Ensure PSModulePath includes repo Modules (session only)
-if(-not ($env:PSModulePath -split ';' | Where-Object { $_ -eq $modulesRoot })) {
+if (-not ($env:PSModulePath -split ';' | Where-Object { $_ -eq $modulesRoot })) {
     $env:PSModulePath = "$modulesRoot;" + $env:PSModulePath
 }
 $modules = @(
@@ -24,15 +24,16 @@ $modules = @(
     'BusBuddy'
 ) | Where-Object { Test-Path (Join-Path $modulesRoot $_ ("$_.psd1")) }
 $results = @()
-foreach($m in $modules){
+foreach ($m in $modules) {
     try {
         Import-Module (Join-Path $modulesRoot $m ("$m.psd1")) -Force -ErrorAction Stop
-        $results += [pscustomobject]@{Module=$m; Status='Imported'}
-    } catch {
-        $results += [pscustomobject]@{Module=$m; Status='Failed'; Error=$_.Exception.Message}
+        $results += [pscustomobject]@{Module = $m; Status = 'Imported' }
+    }
+    catch {
+        $results += [pscustomobject]@{Module = $m; Status = 'Failed'; Error = $_.Exception.Message }
     }
 }
-if(-not $Quiet){ $results | Format-Table -AutoSize }
+if (-not $Quiet) { $results | Format-Table -AutoSize }
 # Recommend profile snippet (no automatic write by default)
 $profileSnippet = @"
 # BusBuddy Dev Environment (add manually to your profile if desired)
@@ -47,4 +48,4 @@ if(-not (`$env:PSModulePath -split ';' | Where-Object { `$_ -eq `$modulesPath })
 foreach(`$m in `$busModules){ `$mf = Join-Path `$modulesPath `$m ("`$m.psd1"); if(Test-Path `$mf){ Import-Module `$mf -ErrorAction SilentlyContinue }}
 "@
 Set-Content -LiteralPath (Join-Path $repoRoot 'suggested-profile-snippet.ps1') -Value $profileSnippet -Encoding UTF8
-if(-not $Quiet){ Write-Information "Created suggested-profile-snippet.ps1 (review & append to your profile)." -InformationAction Continue }
+if (-not $Quiet) { Write-Information "Created suggested-profile-snippet.ps1 (review & append to your profile)." -InformationAction Continue }

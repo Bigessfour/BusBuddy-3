@@ -43,7 +43,7 @@ function Invoke-BusBuddyRawIndex {
 function Invoke-BusBuddyRuntimeCapture {
     [CmdletBinding()]
     param(
-        [Parameter()] [int]    $Duration       = 60,
+        [Parameter()] [int]    $Duration = 60,
         [Parameter()] [switch] $DetailedLogging,
         [Parameter()] [switch] $OpenLogsAfter,
         [Parameter()] [string] $OutputDirectory = 'logs\runtime-capture'
@@ -70,7 +70,7 @@ function Start-BusBuddyRuntimeMonitor {
     & $scriptPath @Args
 }
 
-function Test-BusBuddyDatabaseConnections {
+function Test-BusBuddyDatabaseConnection {
     [CmdletBinding()]
     param(
         [Parameter(ValueFromRemainingArguments = $true)]

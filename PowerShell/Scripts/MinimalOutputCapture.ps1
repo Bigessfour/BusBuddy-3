@@ -2,16 +2,16 @@
 Archive: Documentation/Archive/LegacyScripts/MinimalOutputCapture.ps1
 #>
 throw "Archived: Use module utility version"
-    $output = $process.StandardOutput.ReadToEnd()
-    $stderrOutput = $process.StandardError.ReadToEnd()
-    $process.WaitForExit()
+$output = $process.StandardOutput.ReadToEnd()
+$stderrOutput = $process.StandardError.ReadToEnd()
+$process.WaitForExit()
 
-    return @{
-        Output = $output
-        ErrorOutput = $stderrOutput
-        ExitCode = $process.ExitCode
-        Combined = $output + $stderrOutput
-    }
+return @{
+    Output      = $output
+    ErrorOutput = $stderrOutput
+    ExitCode    = $process.ExitCode
+    Combined    = $output + $stderrOutput
+}
 }
 
 # Simple build function with full output (using approved verb)

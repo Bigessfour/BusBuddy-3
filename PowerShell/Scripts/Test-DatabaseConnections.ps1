@@ -34,7 +34,8 @@ try {
     if ($LASTEXITCODE -eq 0) {
         Write-Information "✅ EF migrations available:" -InformationAction Continue
         $migrationsResult | ForEach-Object { Write-Information "   $_" -InformationAction Continue }
-    } else {
+    }
+    else {
         Write-Warning "⚠️ EF migrations check failed: $migrationsResult"
     }
 
@@ -46,7 +47,8 @@ try {
     if ($LASTEXITCODE -eq 0) {
         Write-Information "✅ Database connection successful!" -InformationAction Continue
         Write-Information "✅ Database is up to date with migrations" -InformationAction Continue
-    } else {
+    }
+    else {
         Write-Warning "⚠️ Database connection issue: $dbUpdateResult"
         Write-Information "💡 This might be expected if Azure credentials aren't configured" -InformationAction Continue
     }
@@ -66,7 +68,8 @@ try {
         # Stop the application
         $appProcess.Kill()
         Write-Information "📱 Application stopped for testing" -InformationAction Continue
-    } else {
+    }
+    else {
         Write-Warning "⚠️ Application exited immediately - check logs for errors"
     }
 
@@ -94,10 +97,12 @@ try {
     Write-Information "   2. Test students, drivers, buses, routes functionality in the UI" -InformationAction Continue
     Write-Information "   3. Add sample data if database is empty" -InformationAction Continue
 
-} catch {
+}
+catch {
     Write-Error "❌ Database connection test failed: $($_.Exception.Message)"
     Write-Information "💡 Check Azure SQL connection string and credentials" -InformationAction Continue
-} finally {
+}
+finally {
     # Ensure any background processes are cleaned up
     Get-Process | Where-Object { $_.ProcessName -eq "BusBuddy.WPF" -or $_.ProcessName -eq "dotnet" } |
         Where-Object { $_.StartTime -gt (Get-Date).AddMinutes(-1) } |

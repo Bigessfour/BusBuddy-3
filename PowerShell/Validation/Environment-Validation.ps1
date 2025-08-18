@@ -9,6 +9,19 @@
     This ensures the environment won't break and remains consistent across sessions.
 #>
 
+<#
+.SYNOPSIS
+Short description
+
+.DESCRIPTION
+Long description
+
+.EXAMPLE
+An example
+
+.NOTES
+General notes
+#>
 function Test-BusBuddyEnvironment {
     [CmdletBinding()]
     param()
@@ -24,7 +37,8 @@ function Test-BusBuddyEnvironment {
     Write-Output "1. PowerShell Version..."
     if ($PSVersionTable.PSVersion -ge [version]'7.5.0') {
         Write-Host "   ✅ PowerShell $($PSVersionTable.PSVersion) (Required: 7.5+)" -ForegroundColor Green
-    } else {
+    }
+    else {
         $issues += "PowerShell version $($PSVersionTable.PSVersion) is too old. Need 7.5+"
         Write-Host "   ❌ PowerShell $($PSVersionTable.PSVersion) - UPGRADE REQUIRED" -ForegroundColor Red
     }
@@ -62,11 +76,13 @@ function Test-BusBuddyEnvironment {
         try {
             Import-Module $modulePath -Force -ErrorAction Stop
             Write-Host "   ✅ Module imports successfully" -ForegroundColor Green
-        } catch {
+        }
+        catch {
             $issues += "Module exists but fails to import: $($_.Exception.Message)"
             Write-Host "   ❌ Module import failed" -ForegroundColor Red
         }
-    } else {
+    }
+    else {
         $issues += "BusBuddy.psm1 module file not found"
         Write-Host "   ❌ Module file missing" -ForegroundColor Red
     }
@@ -84,7 +100,8 @@ function Test-BusBuddyEnvironment {
 
     if ($commandsWorking -eq $essentialCommands.Count) {
         Write-Host "   ✅ All $($essentialCommands.Count) essential commands available" -ForegroundColor Green
-    } else {
+    }
+    else {
         $issues += "Only $commandsWorking of $($essentialCommands.Count) commands available"
         Write-Host "   ❌ Missing commands ($commandsWorking/$($essentialCommands.Count))" -ForegroundColor Red
     }
@@ -95,11 +112,13 @@ function Test-BusBuddyEnvironment {
         $dotnetVersion = & dotnet --version 2>$null
         if ($dotnetVersion -and $dotnetVersion -match '^9\.') {
             Write-Host "   ✅ .NET $dotnetVersion" -ForegroundColor Green
-        } else {
+        }
+        else {
             $warnings += ".NET version $dotnetVersion - expected 9.x"
             Write-Host "   ⚠️ .NET $dotnetVersion (Expected: 9.x)" -ForegroundColor Yellow
         }
-    } catch {
+    }
+    catch {
         $issues += ".NET SDK not found or not working"
         Write-Host "   ❌ .NET SDK not found" -ForegroundColor Red
     }
@@ -112,14 +131,17 @@ function Test-BusBuddyEnvironment {
             if ($gitStatus) {
                 $warnings += "Git has uncommitted changes"
                 Write-Host "   ⚠️ Uncommitted changes present" -ForegroundColor Yellow
-            } else {
+            }
+            else {
                 Write-Host "   ✅ Git repository clean" -ForegroundColor Green
             }
-        } else {
+        }
+        else {
             $warnings += "Not in a Git repository or Git not available"
             Write-Host "   ⚠️ Git issues detected" -ForegroundColor Yellow
         }
-    } catch {
+    }
+    catch {
         $warnings += "Git not available: $($_.Exception.Message)"
         Write-Host "   ⚠️ Git not available" -ForegroundColor Yellow
     }
@@ -128,7 +150,8 @@ function Test-BusBuddyEnvironment {
     Write-Host "7. AI Assistant Resources..." -ForegroundColor Yellow
     if (Test-Path "Grok Resources\GROK-README.md") {
         Write-Output "   ✅ Grok Resources folder ready"
-    } else {
+    }
+    else {
         $warnings += "Grok Resources not found - AI assistance may be limited"
         Write-Output "   ⚠️ Grok Resources missing"
     }
@@ -143,7 +166,7 @@ function Test-BusBuddyEnvironment {
         Write-Output "   All critical systems are operational"
         Write-Output ""
         Write-Output "🚀 Quick Start Commands:"
-    Write-Output "   Test-BusBuddyHealth - System health check"
+        Write-Output "   Test-BusBuddyHealth - System health check"
         Write-Output "   bb-mvp -JustShow - Show MVP priorities"
         Write-Output "   bb-build       - Build the solution"
         Write-Output "   bb-run         - Run the application"
@@ -159,7 +182,8 @@ function Test-BusBuddyEnvironment {
         }
 
         return $true
-    } else {
+    }
+    else {
         Write-Output "❌ ENVIRONMENT NOT READY"
         Write-Output "   Fix these issues before starting development:"
         Write-Output ""

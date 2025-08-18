@@ -40,7 +40,7 @@ function Write-RemediationSuccess {
     Write-Information "✅ $Message" -InformationAction Continue
 }
 
-function Resolve-LoggingViolations {
+function Resolve-LoggingViolation {
     Write-RemediationInfo "Addressing Microsoft.Extensions.Logging violations..."
 
     $violations = @(
@@ -70,16 +70,18 @@ function Resolve-LoggingViolations {
 
                 Set-Content $fullPath -Value $content -Encoding UTF8
                 Write-RemediationSuccess "Updated: $file"
-            } else {
+            }
+            else {
                 Write-RemediationInfo "Would update: $file"
             }
-        } else {
+        }
+        else {
             Write-RemediationError "File not found: $file"
         }
     }
 }
 
-function Resolve-UIControlViolations {
+function Resolve-UIControlViolation {
     Write-RemediationInfo "Addressing standard WPF control violations..."
 
     $xamlFiles = @(
@@ -117,16 +119,18 @@ function Resolve-UIControlViolations {
 
                 Set-Content $fullPath -Value $content -Encoding UTF8
                 Write-RemediationSuccess "Updated XAML: $file"
-            } else {
+            }
+            else {
                 Write-RemediationInfo "Would update XAML: $file"
             }
-        } else {
+        }
+        else {
             Write-RemediationError "XAML file not found: $file"
         }
     }
 }
 
-function Resolve-PowerShellViolations {
+function Resolve-PowerShellViolation {
     Write-RemediationInfo "Addressing PowerShell Write-Host violations..."
 
     $psFiles = Get-ChildItem -Path (Join-Path $PSScriptRoot "..") -Filter "*.ps1" -Recurse
@@ -149,7 +153,8 @@ function Resolve-PowerShellViolations {
 
                 Set-Content $file.FullName -Value $content -Encoding UTF8
                 Write-RemediationSuccess "Updated PowerShell: $($file.Name)"
-            } else {
+            }
+            else {
                 Write-RemediationInfo "Would update PowerShell: $($file.Name)"
             }
         }
@@ -219,11 +224,13 @@ try {
         foreach ($route in $routes) {
             if ($route.Boundary -notmatch '^[A-Z]{2,}-[0-9]{2,}$') {
                 $results += "❌ Route boundary format invalid: $($route.RouteName) ($($route.Boundary))"
-            } else {
+            }
+            else {
                 $results += "✅ Route boundary valid: $($route.RouteName)"
             }
         }
-    } else {
+    }
+    else {
         $results += "⚠️ WileyRoutes.csv not found. Skipping route boundary validation."
     }
 
@@ -234,11 +241,13 @@ try {
         foreach ($bus in $buses) {
             if ($bus.VIN -notmatch '^[A-HJ-NPR-Z0-9]{17}$') {
                 $results += "❌ Invalid VIN: $($bus.BusNumber) ($($bus.VIN))"
-            } else {
+            }
+            else {
                 $results += "✅ VIN valid: $($bus.BusNumber)"
             }
         }
-    } else {
+    }
+    else {
         $results += "⚠️ WileyBuses.csv not found. Skipping VIN validation."
     }
 
@@ -249,11 +258,13 @@ try {
         foreach ($student in $students) {
             if ([string]::IsNullOrWhiteSpace($student.RouteAssigned)) {
                 $results += "❌ Student not assigned to route: $($student.StudentName)"
-            } else {
+            }
+            else {
                 $results += "✅ Student assigned: $($student.StudentName) → $($student.RouteAssigned)"
             }
         }
-    } else {
+    }
+    else {
         $results += "⚠️ WileyStudents.csv not found. Skipping student assignment validation."
     }
 
@@ -281,10 +292,12 @@ try {
     try {
         Write-RemediationInfo "Running bb-anti-regression..."
         bb-anti-regression
-    } catch {
+    }
+    catch {
         Write-RemediationError "bb-anti-regression failed: $($_.Exception.Message)"
     }
-} catch {
+}
+catch {
     Write-RemediationError "Remediation failed: $($_.Exception.Message)"
     exit 1
 }

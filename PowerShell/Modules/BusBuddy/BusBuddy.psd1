@@ -51,7 +51,7 @@
         'Invoke-BusBuddyHealthCheck',
         'Test-BusBuddyHealth',
         'Start-BusBuddyDevSession',
-    # 'Test-BusBuddyDatabase',
+        # 'Test-BusBuddyDatabase',
         'Get-BusBuddyCommand',
         'Get-BusBuddyInfo',
         'Show-BusBuddyWelcome'

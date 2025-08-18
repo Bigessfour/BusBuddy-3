@@ -43,8 +43,8 @@ function Test-BusBuddyAzModule {
     $loaded = Get-Module $ModuleName -ErrorAction SilentlyContinue
 
     $result = [PSCustomObject]@{
-        Available = [bool]$available
-        Loaded = [bool]$loaded
+        Available   = [bool]$available
+        Loaded      = [bool]$loaded
         NeedsImport = [bool]$available -and -not [bool]$loaded
     }
 
@@ -70,7 +70,7 @@ function Start-BusBuddyAzPreload {
     }
 
     $job = Start-Job -Name "BusBuddyAzPreload" -ScriptBlock {
-        param($ModulesToLoad)
+        param($using:ModulesToLoad)
 
         $results = @{}
         foreach ($module in $ModulesToLoad) {
@@ -84,7 +84,7 @@ function Start-BusBuddyAzPreload {
             }
         }
         return $results
-    } -ArgumentList (,$Modules)
+    } -ArgumentList (, $Modules)
 
     Write-Information "Started background Az module preload job" -InformationAction Continue
     return $job
@@ -138,27 +138,43 @@ function Import-BusBuddyAzModule {
 
     try {
         $importJob = Start-Job -ScriptBlock {
-            param($Module)
-            Import-Module $Module -Force
+            param($using:Module)
+            Import-Module $using:Module -Force
         } -ArgumentList $ModuleName
 
-        $completed = Wait-Job $importJob -Timeout $TimeoutSeconds
-        if ($completed) {
-            Receive-Job $importJob | Out-Null
-            Remove-Job $importJob
-
-            # Clear cache
-            $global:BusBuddyAzModuleCache.Remove($ModuleName)
-
-            Write-Information "$ModuleName loaded successfully" -InformationAction Continue
-            return $true
-        }
-        else {
-            Stop-Job $importJob -Force
-            if (Get-Job -Id $importJob.Id -ErrorAction SilentlyContinue) {
-                Remove-Job $importJob -Force
+        # Wait for import job to complete with timeout (robust across hosts)
+        $importCompleted = $false
+        try {
+            try {
+                Wait-Job -Job $importJob -Timeout $TimeoutSeconds -ErrorAction SilentlyContinue | Out-Null
+                $importCompleted = $importJob.State -eq 'Completed'
             }
-            Write-Warning "Import of $ModuleName timed out after $TimeoutSeconds seconds"
+            catch {
+                # Fallback polling if Wait-Job doesn't support -Timeout in this host
+                $end = (Get-Date).AddSeconds($TimeoutSeconds)
+                while ((Get-Date) -lt $end -and $importJob.State -eq 'Running') { Start-Sleep -Milliseconds 200 }
+                $importCompleted = $importJob.State -eq 'Completed'
+            }
+
+            if ($importCompleted) {
+                Receive-Job -Job $importJob | Out-Null
+                Remove-Job $importJob
+
+                # Clear cache
+                $global:BusBuddyAzModuleCache.Remove($ModuleName)
+
+                Write-Information "$ModuleName loaded successfully" -InformationAction Continue
+                return $true
+            }
+            else {
+                Stop-Job $importJob -Force
+                if (Get-Job -Id $importJob.Id -ErrorAction SilentlyContinue) { Remove-Job $importJob -Force }
+                Write-Warning "Import of $ModuleName timed out after $TimeoutSeconds seconds"
+                return $false
+            }
+        }
+        catch {
+            Write-Warning "Failed to import $ModuleName. Exception details:`n$($_ | Out-String)"
             return $false
         }
     }
@@ -178,12 +194,12 @@ function Get-BusBuddyAzLoadStatus {
     $status = foreach ($module in $modules) {
         $info = Test-BusBuddyAzModule -ModuleName $module
         [PSCustomObject]@{
-            Module = $module
+            Module    = $module
             Available = $info.Available
-            Loaded = $info.Loaded
-            Status = if ($info.Loaded) { "✅ Ready" }
-                    elseif ($info.Available) { "⏳ Available" }
-                    else { "❌ Missing" }
+            Loaded    = $info.Loaded
+            Status    = if ($info.Loaded) { "✅ Ready" }
+            elseif ($info.Available) { "⏳ Available" }
+            else { "❌ Missing" }
         }
     }
 
