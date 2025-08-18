@@ -134,11 +134,7 @@
         "PSAvoidUsingCmdletAliases": "Error",
         "PSUseCmdletCorrectly": "Error"
       },
-      "customRules": [
-        "NoActionBasedFunctionNames",
-        "RequireApprovedVerbPatterns",
-        "EnforceReturnValueNaming"
-      ]
+      "customRules": ["NoActionBasedFunctionNames", "RequireApprovedVerbPatterns", "EnforceReturnValueNaming"]
     },
 
     "codeStyle": {

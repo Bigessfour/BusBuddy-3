@@ -1,0 +1,40 @@
+# Official GitHub/GitKraken YAML Formatting Configuration
+# Based on GitHub Actions official style guide and YAML 1.2 specification
+
+# Basic YAML formatting
+tabWidth: 2
+useTabs: false
+semi: false
+singleQuote: false
+quoteProps: "as-needed"
+trailingComma: "none"
+bracketSpacing: true
+bracketSameLine: false
+arrowParens: "avoid"
+endOfLine: "crlf"
+insertFinalNewline: true
+printWidth: 120
+
+# YAML-specific settings
+overrides:
+  - files: "*.{yml,yaml}"
+    options:
+      tabWidth: 2
+      useTabs: false
+      printWidth: 120
+      singleQuote: false
+      bracketSpacing: true
+      # Preserve GitHub Actions expressions
+      htmlWhitespaceSensitivity: "strict"
+      # Keep multiline strings intact
+      proseWrap: "preserve"
+
+  - files: ".github/workflows/*.{yml,yaml}"
+    options:
+      # GitHub Actions specific formatting
+      tabWidth: 2
+      useTabs: false
+      printWidth: 120
+      # Preserve GitHub expressions like ${{ }}
+      htmlWhitespaceSensitivity: "strict"
+      proseWrap: "preserve"

@@ -1,140 +1,95 @@
 {
-	"version": "2.0.0",
-	"tasks": [
-		{
-			"type": "process",
-			"label": "dotnet build BusBuddy.sln",
-			"command": "dotnet",
-			"args": [
-				"build",
-				"BusBuddy.sln"
-			],
-			"options": {
-				"env": {
-					"BUSBUDDY_NO_WELCOME": "1",
-					"BUSBUDDY_NO_XAI_WARN": "1",
-					"BUSBUDDY_SILENT": "1"
-				}
-			},
-			"problemMatcher": [
-				"$msCompile"
-			]
-		},
-		{
-			"label": "build (process) dotnet",
-			"type": "shell",
-			"command": "dotnet",
-			"args": [
-				"build",
-				"BusBuddy.sln"
-			],
-			"problemMatcher": [
-				"$msCompile"
-			],
-			"group": "build"
-		},
-		{
-			"label": "build (process) dotnet",
-			"type": "shell",
-			"command": "dotnet",
-			"args": [
-				"build",
-				"BusBuddy.sln"
-			],
-			"group": "build"
-		},
-		{
-			"label": "build (process) dotnet",
-			"type": "shell",
-			"command": "dotnet",
-			"args": [
-				"build",
-				"BusBuddy.sln"
-			],
-			"problemMatcher": [
-				"$msCompile"
-			],
-			"group": "build"
-		},
-		{
-			"label": "build (process) dotnet",
-			"type": "shell",
-			"command": "dotnet",
-			"args": [
-				"build",
-				"BusBuddy.sln"
-			],
-			"group": "build"
-		},
-		{
-			"label": "build (process) dotnet",
-			"type": "shell",
-			"command": "dotnet",
-			"args": [
-				"build",
-				"BusBuddy.sln"
-			],
-			"group": "build"
-		},
-		{
-			"label": "bb-build (dotnet build BusBuddy.sln)",
-			"type": "shell",
-			"command": "dotnet",
-			"args": [
-				"build",
-				"BusBuddy.sln",
-				"-v",
-				"m"
-			],
-			"options": {
-				"env": {
-					"BUSBUDDY_NO_WELCOME": "1",
-					"BUSBUDDY_NO_XAI_WARN": "1",
-					"BUSBUDDY_SILENT": "1"
-				}
-			},
-			"problemMatcher": [
-				"$msCompile"
-			],
-			"group": "build"
-		},
-		{
-			"label": "build seeder only",
-			"type": "shell",
-			"command": "dotnet",
-			"args": [
-				"build",
-				"c:\\Users\\biges\\Desktop\\BusBuddy\\TestDataSeeding\\TestDataSeeding.csproj",
-				"-v",
-				"m"
-			],
-			"options": {
-				"env": {
-					"BUSBUDDY_NO_WELCOME": "1",
-					"BUSBUDDY_NO_XAI_WARN": "1",
-					"BUSBUDDY_SILENT": "1"
-				}
-			},
-			"problemMatcher": [
-				"$msCompile"
-			],
-			"group": "build"
-		},
-		{
-			"label": "bb-build (dotnet build BusBuddy.sln)",
-			"type": "shell",
-			"command": "dotnet",
-			"args": [
-				"build",
-				"BusBuddy.sln",
-				"-v",
-				"m"
-			],
-			"isBackground": false,
-			"problemMatcher": [
-				"$msCompile"
-			],
-			"group": "build"
-		}
-	]
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "type": "process",
+      "label": "dotnet build BusBuddy.sln",
+      "command": "dotnet",
+      "args": ["build", "BusBuddy.sln"],
+      "options": {
+        "env": {
+          "BUSBUDDY_NO_WELCOME": "1",
+          "BUSBUDDY_NO_XAI_WARN": "1",
+          "BUSBUDDY_SILENT": "1"
+        }
+      },
+      "problemMatcher": ["$msCompile"]
+    },
+    {
+      "label": "build (process) dotnet",
+      "type": "shell",
+      "command": "dotnet",
+      "args": ["build", "BusBuddy.sln"],
+      "problemMatcher": ["$msCompile"],
+      "group": "build"
+    },
+    {
+      "label": "build (process) dotnet",
+      "type": "shell",
+      "command": "dotnet",
+      "args": ["build", "BusBuddy.sln"],
+      "group": "build"
+    },
+    {
+      "label": "build (process) dotnet",
+      "type": "shell",
+      "command": "dotnet",
+      "args": ["build", "BusBuddy.sln"],
+      "problemMatcher": ["$msCompile"],
+      "group": "build"
+    },
+    {
+      "label": "build (process) dotnet",
+      "type": "shell",
+      "command": "dotnet",
+      "args": ["build", "BusBuddy.sln"],
+      "group": "build"
+    },
+    {
+      "label": "build (process) dotnet",
+      "type": "shell",
+      "command": "dotnet",
+      "args": ["build", "BusBuddy.sln"],
+      "group": "build"
+    },
+    {
+      "label": "bb-build (dotnet build BusBuddy.sln)",
+      "type": "shell",
+      "command": "dotnet",
+      "args": ["build", "BusBuddy.sln", "-v", "m"],
+      "options": {
+        "env": {
+          "BUSBUDDY_NO_WELCOME": "1",
+          "BUSBUDDY_NO_XAI_WARN": "1",
+          "BUSBUDDY_SILENT": "1"
+        }
+      },
+      "problemMatcher": ["$msCompile"],
+      "group": "build"
+    },
+    {
+      "label": "build seeder only",
+      "type": "shell",
+      "command": "dotnet",
+      "args": ["build", "c:\\Users\\biges\\Desktop\\BusBuddy\\TestDataSeeding\\TestDataSeeding.csproj", "-v", "m"],
+      "options": {
+        "env": {
+          "BUSBUDDY_NO_WELCOME": "1",
+          "BUSBUDDY_NO_XAI_WARN": "1",
+          "BUSBUDDY_SILENT": "1"
+        }
+      },
+      "problemMatcher": ["$msCompile"],
+      "group": "build"
+    },
+    {
+      "label": "bb-build (dotnet build BusBuddy.sln)",
+      "type": "shell",
+      "command": "dotnet",
+      "args": ["build", "BusBuddy.sln", "-v", "m"],
+      "isBackground": false,
+      "problemMatcher": ["$msCompile"],
+      "group": "build"
+    }
+  ]
 }

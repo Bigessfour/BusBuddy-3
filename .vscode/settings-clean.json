@@ -29,8 +29,12 @@
   "terminal.integrated.profiles.windows": {
     "PowerShell 7.5.2": {
       "path": "C:\\Program Files\\PowerShell\\7\\pwsh.exe",
-      "args": ["-NoProfile", "-NoExit", "-Command",
-               "& 'C:\\Users\\steve.mckitrick\\Desktop\\BusBuddy\\PowerShell\\Profiles\\Microsoft.PowerShell_profile.ps1'"]
+      "args": [
+        "-NoProfile",
+        "-NoExit",
+        "-Command",
+        "& 'C:\\Users\\steve.mckitrick\\Desktop\\BusBuddy\\PowerShell\\Profiles\\Microsoft.PowerShell_profile.ps1'"
+      ]
     }
   },
   "terminal.integrated.defaultProfile.windows": "PowerShell 7.5.2",

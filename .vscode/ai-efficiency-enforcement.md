@@ -1,10 +1,13 @@
 # 🤖 AI Assistant Efficiency Enforcement Protocol
+
 # ==============================================
+
 # This file defines mandatory efficiency standards for AI assistants working with BusBuddy
 
 ## 🚨 MANDATORY PRE-EXECUTION CHECKS
 
 ### Environment Validation (REQUIRED)
+
 ```powershell
 # ALWAYS run these checks FIRST before any commands
 $IsWindows = $env:OS -eq "Windows_NT"
@@ -13,6 +16,7 @@ $WorkspaceRoot = Get-Location
 ```
 
 ### Platform Command Validation
+
 ```powershell
 # FORBIDDEN commands on Windows:
 # - head, tail, grep (use Select-Object, Where-Object)
@@ -27,6 +31,7 @@ $WorkspaceRoot = Get-Location
 ## 📋 EFFICIENCY ENFORCEMENT RULES
 
 ### Rule 1: Batch Operations Only
+
 ```yaml
 Constraint: "No more than 3 single-file edits per session"
 Enforcement: "Group similar warnings/issues and fix in batches"
@@ -34,6 +39,7 @@ Example: "Fix all CA1860 warnings together, not one-by-one"
 ```
 
 ### Rule 2: Environment-First Approach
+
 ```yaml
 Constraint: "Must validate environment before any commands"
 Enforcement: "Check PowerShell version, available functions, workspace tools"
@@ -41,6 +47,7 @@ Validation: "Test-Path, Get-Command, $PSVersionTable checks required"
 ```
 
 ### Rule 3: Workspace Tools Priority
+
 ```yaml
 Constraint: "Use existing BusBuddy functions before custom commands"
 Enforcement: "Check for bb-*, use tasks.json, leverage existing scripts"
@@ -48,6 +55,7 @@ Example: "Use bb-health instead of parsing build output manually"
 ```
 
 ### Rule 4: Simple Commands Only
+
 ```yaml
 Constraint: "No complex pipe chains that can fail"
 Enforcement: "Break complex operations into simple, reliable steps"
@@ -56,6 +64,7 @@ GoodPattern: "dotnet build; Count warnings separately"
 ```
 
 ### Rule 5: Strategic Analysis Required
+
 ```yaml
 Constraint: "Identify top 3 highest-impact issues before fixing"
 Enforcement: "Target most frequent warning types first"
@@ -65,6 +74,7 @@ Process: "Analyze → Prioritize → Batch Fix → Validate"
 ## 🛠️ ENFORCEMENT MECHANISMS
 
 ### VS Code Settings Enforcement
+
 ```json
 {
   "agentic.platformValidationRequired": true,
@@ -78,6 +88,7 @@ Process: "Analyze → Prioritize → Batch Fix → Validate"
 ```
 
 ### PowerShell Profile Enforcement
+
 ```powershell
 # Add to BusBuddy PowerShell profile
 function Assert-EfficiencyCompliance {
@@ -89,6 +100,7 @@ function Assert-EfficiencyCompliance {
 ```
 
 ### Task System Enforcement
+
 ```json
 {
   "label": "🚨 AI Efficiency Validation",
@@ -103,12 +115,14 @@ function Assert-EfficiencyCompliance {
 ## 📊 EFFICIENCY METRICS
 
 ### Time Allocation Targets
+
 - **Environment Setup**: 30 seconds max
 - **Problem Analysis**: 2 minutes max
 - **Systematic Execution**: 5-10 minutes max
 - **Validation**: 1 minute max
 
 ### Quality Metrics
+
 - **Command Success Rate**: >95%
 - **Single-Pass Fix Rate**: >80%
 - **Platform Compatibility**: 100%
@@ -117,6 +131,7 @@ function Assert-EfficiencyCompliance {
 ## 🚫 ANTI-PATTERNS TO AVOID
 
 ### Command Anti-Patterns
+
 ```bash
 # FORBIDDEN on Windows
 head -n 20 file.txt          # Use: Get-Content file.txt | Select-Object -First 20
@@ -125,12 +140,14 @@ ls -la                       # Use: Get-ChildItem -Force
 ```
 
 ### Workflow Anti-Patterns
+
 - ❌ Parse build output with complex regex
 - ❌ Fix warnings one-by-one across multiple files
 - ❌ Use Unix commands without checking platform
 - ❌ Create custom commands without checking existing tools
 
 ### Code Quality Anti-Patterns
+
 - ❌ Edit files without understanding full context
 - ❌ Apply fixes without testing in batches
 - ❌ Make changes without considering side effects
@@ -138,6 +155,7 @@ ls -la                       # Use: Get-ChildItem -Force
 ## ✅ APPROVED PATTERNS
 
 ### Efficient Workflow Pattern
+
 ```powershell
 # 1. Environment Check
 Assert-EfficiencyCompliance
@@ -156,6 +174,7 @@ dotnet build --verbosity quiet
 ```
 
 ### Bulk Fix Pattern
+
 ```csharp
 // Instead of: Fix one .Any() at a time
 // Do this: grep_search for \.Any\(\), group by type, batch replace
@@ -169,6 +188,7 @@ find_all_instances("\.Any\(\)")
 ## 🎯 SUCCESS CRITERIA
 
 An AI assistant session is considered efficient when:
+
 - ✅ Zero platform command failures
 - ✅ 70%+ issues fixed in batch operations
 - ✅ Uses existing workspace tools effectively
@@ -180,6 +200,7 @@ An AI assistant session is considered efficient when:
 ## 📝 VIOLATION REPORTING
 
 When efficiency violations occur:
+
 1. **Log the violation type** (Unix command, single-file fix, etc.)
 2. **Note the time impact** (how much time was wasted)
 3. **Document the correct approach** for future reference
@@ -188,12 +209,14 @@ When efficiency violations occur:
 ## 🔄 CONTINUOUS IMPROVEMENT
 
 This protocol should be updated when:
+
 - New efficiency anti-patterns are discovered
 - Better workspace tools become available
 - PowerShell/VS Code capabilities change
 - User feedback identifies new pain points
 
 ---
+
 **Last Updated**: July 26, 2025
 **Next Review**: August 2025
 **Owner**: BusBuddy Development Team

@@ -17,11 +17,13 @@ For files larger than 50MB, we use Git LFS to handle them properly.
 ### Setting Up Git LFS
 
 1. Install Git LFS:
+
    ```
    git lfs install
    ```
 
 2. Clone this repository (if you haven't already):
+
    ```
    git clone https://github.com/Bigessfour/BusBuddy-WPF.git
    ```

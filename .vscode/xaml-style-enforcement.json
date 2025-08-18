@@ -64,10 +64,7 @@
     "themeConsistency": {
       "enabled": true,
       "severity": "warning",
-      "allowedThemes": [
-        "FluentDark",
-        "FluentLight"
-      ],
+      "allowedThemes": ["FluentDark", "FluentLight"],
       "message": "Use consistent FluentDark or FluentLight themes"
     },
     "controlNaming": {
