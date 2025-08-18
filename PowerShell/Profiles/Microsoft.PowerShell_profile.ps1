@@ -2291,11 +2291,11 @@ function Show-BusBuddyHelp {
     [CmdletBinding()]
     param(
         [Parameter(HelpMessage = "Show help for a specific bb* command")]
-        [ValidateSet('bbHealth', 'bbBuild', 'bbTest', 'bbRun', 'bbMvpCheck', 'bbAntiRegression', 'bbXamlValidate', 'bbCommands')]
+        [ValidateSet('bbHealth', 'bbBuild', 'bbTest', 'bbRun', 'bbMvpCheck', 'bbAntiRegression', 'bbXamlValidate', 'bbCommands', 'bbGitKraken', 'bbGkWorkflow', 'bbGkBranch', 'bbGkHelp')]
         [string]$Command,
 
         [Parameter(HelpMessage = "Show commands for a specific category")]
-        [ValidateSet('Core', 'Database', 'Testing', 'Analysis', 'Development')]
+        [ValidateSet('Core', 'Database', 'Testing', 'Analysis', 'Development', 'GitKraken')]
         [string]$Category
     )
 
@@ -2338,6 +2338,54 @@ function Show-BusBuddyHelp {
                 Description = 'Launch the BusBuddy WPF application'
                 Parameters = @('-Configuration: Debug/Release configuration')
                 Examples = @('bbRun                            # Launch application')
+            }
+        )
+
+        GitKraken = @(
+            @{
+                Name = 'bbGitKraken'
+                Function = 'Start-GitKrakenDesktop'
+                Description = 'Launch GitKraken Desktop with BusBuddy repository'
+                Parameters = @()
+                Examples = @('bbGitKraken                      # Launch GitKraken Desktop')
+            },
+            @{
+                Name = 'bbGkWorkflow'
+                Function = 'Invoke-GitKrakenWorkflow'
+                Description = 'Execute GitKraken workflows for BusBuddy development'
+                Parameters = @(
+                    '-Workflow Status: Check repository status',
+                    '-Workflow BranchAnalysis: Analyze current branch',
+                    '-Workflow CreatePR: Create pull request',
+                    '-Workflow LaunchLaunchpad: Open GitKraken Launchpad',
+                    '-Workflow SetupCI: Monitor CI/CD workflows'
+                )
+                Examples = @(
+                    'bbGkWorkflow Status                     # Check repo status',
+                    'bbGkWorkflow BranchAnalysis             # Analyze branch',
+                    'bbGkWorkflow CreatePR                   # Create PR',
+                    'bbGkWorkflow LaunchLaunchpad            # Open Launchpad'
+                )
+            },
+            @{
+                Name = 'bbGkBranch'
+                Function = 'New-BusBuddyBranch'
+                Description = 'Create new branch following BusBuddy naming conventions'
+                Parameters = @(
+                    '-BranchName: Name of the branch',
+                    '-BranchType: feature/bugfix/hotfix/chore/docs'
+                )
+                Examples = @(
+                    'bbGkBranch "azure-sql-integration"      # Create feature branch',
+                    'bbGkBranch "grid-fix" -BranchType bugfix  # Create bugfix branch'
+                )
+            },
+            @{
+                Name = 'bbGkHelp'
+                Function = 'Show-BusBuddyGitKrakenHelp'
+                Description = 'Show comprehensive GitKraken integration help'
+                Parameters = @()
+                Examples = @('bbGkHelp                          # Show GitKraken help')
             }
         )
 
@@ -2860,6 +2908,21 @@ function Test-BusBuddyMvpFeatures {
 
 #endregion
 
+# Load GitKraken integration script
+try {
+    $gitKrakenScriptPath = Join-Path $BusBuddyRepoPath "PowerShell\BusBuddy-GitKraken.ps1"
+    if (Test-Path $gitKrakenScriptPath) {
+        . $gitKrakenScriptPath
+        Write-ProfileLog "GitKraken integration script loaded successfully" -Level Information
+    }
+    else {
+        Write-ProfileLog "GitKraken integration script not found at: $gitKrakenScriptPath" -Level Warning
+    }
+}
+catch {
+    Write-ProfileLog "Failed to load GitKraken integration: $($_.Exception.Message)" -Level Warning
+}
+
 # Set up aliases for easier access
 # Reference: https://learn.microsoft.com/powershell/module/microsoft.powershell.utility/set-alias
 Set-Alias -Name "bbBuild" -Value "Invoke-BusBuddyBuild"
@@ -2871,6 +2934,15 @@ Set-Alias -Name "bbHelp" -Value "Show-BusBuddyHelp"
 Set-Alias -Name "bbAntiRegression" -Value "Test-BusBuddyCompliance"
 Set-Alias -Name "bbXamlValidate" -Value "Test-BusBuddyXamlCompliance"
 Set-Alias -Name "bbMvpCheck" -Value "Test-BusBuddyMvpFeatures"
+
+# GitKraken aliases (bb-prefixed for consistency)
+Set-Alias -Name "bbGitKraken" -Value "Start-GitKrakenDesktop"
+Set-Alias -Name "bbGkStart" -Value "Start-GitKrakenDesktop"
+Set-Alias -Name "bbGkWorkflow" -Value "Invoke-GitKrakenWorkflow"
+Set-Alias -Name "bbGkBranch" -Value "New-BusBuddyBranch"
+Set-Alias -Name "bbGkHelp" -Value "Show-BusBuddyGitKrakenHelp"
+Set-Alias -Name "bbGkAI" -Value "Invoke-GitKrakenAI"
+Set-Alias -Name "bbGkAITest" -Value "Test-GitKrakenAiAvailability"
 
 # Mark profile as successfully loaded
 $env:BUSBUDDY_PROFILE_LOADED = '1'

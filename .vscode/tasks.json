@@ -11,7 +11,7 @@
         "--configuration",
         "Debug",
         "--verbosity",
-        "minimal"
+      Import-Module .\PowerShell\BusBuddy-GitKraken.ps1 -Force; Show-BusBuddyGitKrakenHelp; $choice = Read-Host 'Select workflow [1] Start Desktop [2] Repository Status [3] Branch Analysis [4] Create PR [5] Launch Launchpad [6] New Branch [H] Help [Q] Quit'; switch ($choice) { '1' { Start-GitKrakenDesktop } '2' { Invoke-GitKrakenWorkflow -Workflow Status } '3' { Invoke-GitKrakenWorkflow -Workflow BranchAnalysis } '4' { Invoke-GitKrakenWorkflow -Workflow CreatePR } '5' { Invoke-GitKrakenWorkflow -Workflow LaunchLaunchpad } '6' { $name = Read-Host 'Enter branch name'; $type = Read-Host 'Enter type [feature/bugfix/chore/docs] (default: feature)'; if ([string]::IsNullOrWhiteSpace($type)) { $type = 'feature' }; New-BusBuddyBranch -BranchName $name -BranchType $type } 'H' { Show-BusBuddyGitKrakenHelp } 'Q' { Write-Host 'Exiting...' -ForegroundColor Green } default { Write-Host 'Invalid choice' -ForegroundColor Red } }; Read-Host 'Press Enter to continue' "minimal"
       ],
       "group": "build",
       "presentation": {
@@ -172,8 +172,7 @@
       ],
       "isBackground": false,
       "problemMatcher": [
-        "$msCompile",
-        "$csc"
+        "$msCompile"
       ],
       "group": "build"
     },
@@ -216,6 +215,146 @@
       "command": "pwsh",
       "label": "Phase 4 Modular Tests",
       "type": "shell"
+    },
+    {
+      "label": "GitKraken: CI/CD Monitor",
+      "type": "shell",
+      "command": "pwsh",
+      "args": [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-Command",
+        "& { Write-Host 'BusBuddy CI/CD Monitor - GitKraken CLI Interface' -ForegroundColor Cyan; Write-Host '=======================================================' -ForegroundColor Cyan; Write-Host ''; $choice = Read-Host 'Select operation: [1] Check CI Status [2] Explain Branch [3] Repository Insights [4] Custom Command [Q] Quit'; switch ($choice) { '1' { Write-Host 'Checking CI/CD status...' -ForegroundColor Yellow; gk status; gk workflow list } '2' { $branch = Read-Host 'Enter branch name (or press Enter for current)'; if ([string]::IsNullOrWhiteSpace($branch)) { gk ai explain branch } else { gk ai explain branch $branch } } '3' { Write-Host 'Getting repository insights...' -ForegroundColor Yellow; gk ai explain repo; gk stats } '4' { $cmd = Read-Host 'Enter GitKraken command (without gk prefix)'; if (![string]::IsNullOrWhiteSpace($cmd)) { Invoke-Expression \"gk $cmd\" } } 'Q' { Write-Host 'Exiting GitKraken monitor...' -ForegroundColor Green; exit } default { Write-Host 'Invalid choice. Please select 1-4 or Q' -ForegroundColor Red } } }"
+      ],
+      "group": "test",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": true,
+        "panel": "new",
+        "showReuseMessage": false,
+        "clear": true
+      },
+      "options": {
+        "cwd": "${workspaceFolder}",
+        "env": {
+          "BUSBUDDY_TASK_MODE": "1"
+        }
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "GitKraken: Quick CI Check",
+      "type": "shell",
+      "command": "pwsh",
+      "args": [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-Command",
+        "& { Write-Host 'BusBuddy Quick CI Check' -ForegroundColor Green; Write-Host '======================' -ForegroundColor Green; Write-Host ''; Write-Host 'Repository Status:' -ForegroundColor Yellow; gk status; Write-Host ''; Write-Host 'Recent Workflows:' -ForegroundColor Yellow; gk workflow list --limit 5; Write-Host ''; Write-Host 'Branch Analysis:' -ForegroundColor Yellow; gk ai explain branch; Write-Host ''; Write-Host 'Press any key to continue...'; Read-Host }"
+      ],
+      "group": "test",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": true,
+        "panel": "new",
+        "showReuseMessage": false,
+        "clear": true
+      },
+      "options": {
+        "cwd": "${workspaceFolder}",
+        "env": {
+          "BUSBUDDY_TASK_MODE": "1"
+        }
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "GitKraken: Phase Analysis",
+      "type": "shell",
+      "command": "pwsh",
+      "args": [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-Command",
+        "& { Write-Host 'BusBuddy Phase Analysis - GitKraken AI' -ForegroundColor Magenta; Write-Host '=====================================' -ForegroundColor Magenta; Write-Host ''; $phase = Read-Host 'Enter phase to analyze [1] Phase 1 Completion [2] Current Branch [3] Recent Commits [C] Custom Query'; switch ($phase) { '1' { Write-Host 'Analyzing Phase 1 completion...' -ForegroundColor Yellow; gk ai explain commit --message \"Phase 1 COMPLETED\"; gk workflow list --limit 3 } '2' { Write-Host 'Analyzing current branch...' -ForegroundColor Yellow; gk ai explain branch; gk stats } '3' { Write-Host 'Analyzing recent commits...' -ForegroundColor Yellow; gk log --oneline --limit 10; gk ai explain repo } 'C' { $query = Read-Host 'Enter custom AI query'; if (![string]::IsNullOrWhiteSpace($query)) { Write-Host \"Analyzing: $query\" -ForegroundColor Yellow; gk ai ask \"$query\" } } default { Write-Host 'Invalid choice' -ForegroundColor Red } } Write-Host ''; Write-Host 'Analysis complete. Press any key to continue...'; Read-Host }"
+      ],
+      "group": "test",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": true,
+        "panel": "new",
+        "showReuseMessage": false,
+        "clear": true
+      },
+      "options": {
+        "cwd": "${workspaceFolder}",
+        "env": {
+          "BUSBUDDY_TASK_MODE": "1"
+        }
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "GitKraken: Enhanced Workflow Manager",
+      "type": "shell",
+      "command": "pwsh",
+      "args": [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-Command",
+        "Import-Module .\\PowerShell\\BusBuddy-GitKraken.ps1 -Force; Show-BusBuddyGitKrakenHelp; $choice = Read-Host 'Select workflow [1] Start Desktop [2] Repository Status [3] Branch Analysis [4] Create PR [5] Launch Launchpad [6] New Branch [H] Help [Q] Quit'; switch ($choice) { '1' { Start-GitKrakenDesktop } '2' { Invoke-GitKrakenWorkflow -Workflow Status } '3' { Invoke-GitKrakenWorkflow -Workflow BranchAnalysis } '4' { Invoke-GitKrakenWorkflow -Workflow CreatePR } '5' { Invoke-GitKrakenWorkflow -Workflow LaunchLaunchpad } '6' { $name = Read-Host 'Enter branch name'; $type = Read-Host 'Enter type [feature/bugfix/chore/docs] (default: feature)'; if ([string]::IsNullOrWhiteSpace($type)) { $type = 'feature' }; New-BusBuddyBranch -BranchName $name -BranchType $type } 'H' { Show-BusBuddyGitKrakenHelp } 'Q' { Write-Host 'Exiting...' -ForegroundColor Green } default { Write-Host 'Invalid choice' -ForegroundColor Red } }; Read-Host 'Press Enter to continue'"
+      ],
+      "group": "test",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": true,
+        "panel": "new",
+        "showReuseMessage": false,
+        "clear": true
+      },
+      "options": {
+        "cwd": "${workspaceFolder}",
+        "env": {
+          "BUSBUDDY_TASK_MODE": "1"
+        }
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "GitKraken: BusBuddy Development Workflow",
+      "type": "shell",
+      "command": "pwsh",
+      "args": [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-Command",
+        "Import-Module .\\PowerShell\\BusBuddy-GitKraken.ps1 -Force; Write-Host '🚀 BusBuddy Development Workflow with GitKraken' -ForegroundColor Cyan; Write-Host '=================================================' -ForegroundColor Cyan; Write-Host ''; Write-Host '1. Environment Check' -ForegroundColor Yellow; bbHealth; Write-Host ''; Write-Host '2. GitKraken Integration Status' -ForegroundColor Yellow; Test-GitKrakenCli; Write-Host ''; Write-Host '3. Repository Status' -ForegroundColor Yellow; Invoke-GitKrakenWorkflow -Workflow Status; Write-Host ''; Write-Host '4. Build and Test' -ForegroundColor Yellow; bbBuild; bbTest; Write-Host ''; Write-Host '✅ Development environment ready!' -ForegroundColor Green; Write-Host 'Next steps:' -ForegroundColor White; Write-Host '  • Use Start-GitKrakenDesktop to open GitKraken' -ForegroundColor White; Write-Host '  • Use New-BusBuddyBranch to create feature branches' -ForegroundColor White; Write-Host '  • Use bb* commands for build/test operations' -ForegroundColor White; Read-Host 'Press Enter to continue'"
+      ],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": true,
+        "panel": "new",
+        "showReuseMessage": false,
+        "clear": true
+      },
+      "options": {
+        "cwd": "${workspaceFolder}",
+        "env": {
+          "BUSBUDDY_TASK_MODE": "1"
+        }
+      },
+      "problemMatcher": []
     }
   ]
 }
