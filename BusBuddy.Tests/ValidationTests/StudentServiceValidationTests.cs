@@ -40,6 +40,7 @@ namespace BusBuddy.Tests.ValidationTests
                 .UseInMemoryDatabase($"BusBuddy_Unit_{Guid.NewGuid()}")
                 .Options;
             _context = new BusBuddyDbContext(options);
+            // Null geocoding service is acceptable for testing - parameter is optional
             _service = new StudentService(new TestDbContextFactory(_context), null);
         }
 

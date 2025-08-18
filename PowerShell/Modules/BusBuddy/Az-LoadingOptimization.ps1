@@ -155,9 +155,7 @@ function Import-BusBuddyAzModule {
         }
         else {
             Stop-Job $importJob -Force
-            if (Get-Job -Id $importJob.Id -ErrorAction SilentlyContinue) {
-                Remove-Job $importJob -Force
-            }
+            Remove-Job $importJob -Force
             Write-Warning "Import of $ModuleName timed out after $TimeoutSeconds seconds"
             return $false
         }

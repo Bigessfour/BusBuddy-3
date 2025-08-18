@@ -1,0 +1,32 @@
+name: Trunk Formatting and Checks
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  push:
+    branches:
+      - master
+      - main
+
+jobs:
+  trunk-format:
+    name: Run Trunk fmt + check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Trunk CLI
+        run: |
+          curl -sSfL https://get.trunk.io | sh
+          export PATH="$HOME/.trunk/bin:$PATH"
+
+      - name: Run Trunk format (CI)
+        run: |
+          ~/.trunk/bin/trunk fmt --ci --no-progress
+
+      - name: Run Trunk checks (CI)
+        run: |
+          ~/.trunk/bin/trunk check --ci --no-progress
+        # If trunk check exits non-zero, this job will fail and prevent merge
+

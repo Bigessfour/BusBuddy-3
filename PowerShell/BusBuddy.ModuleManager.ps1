@@ -156,28 +156,56 @@ function Import-OptionalModulesParallel {
         'BusBuddy.AzureAuth'
     )
     
+    # Check if ThreadJob is available, fallback to Start-Job
+    $useThreadJob = $null -ne (Get-Command Start-ThreadJob -ErrorAction SilentlyContinue)
+    if (-not $useThreadJob) {
+        Write-Verbose "ThreadJob not available, falling back to Start-Job"
+    }
+    
     $jobs = @()
     
     foreach ($module in $optionalModules) {
-        $job = Start-ThreadJob -ScriptBlock {
-            param($ModuleName, $Config)
-            
-            try {
-                $modulePath = Join-Path $Config.ModulePath $ModuleName
-                if (Test-Path "$modulePath\$ModuleName.psd1") {
-                    Import-Module "$modulePath\$ModuleName.psd1" -Force -Global
-                    return @{ Success = $true; Module = $ModuleName }
-                } elseif (Test-Path "$modulePath\$ModuleName.psm1") {
-                    Import-Module "$modulePath\$ModuleName.psm1" -Force -Global
-                    return @{ Success = $true; Module = $ModuleName }
-                } else {
-                    return @{ Success = $false; Module = $ModuleName; Error = "Module not found" }
+        if ($useThreadJob) {
+            $job = Start-ThreadJob -ScriptBlock {
+                param($ModuleName, $Config)
+                
+                try {
+                    $modulePath = Join-Path $Config.ModulePath $ModuleName
+                    if (Test-Path "$modulePath\$ModuleName.psd1") {
+                        Import-Module "$modulePath\$ModuleName.psd1" -Force -Global
+                        return @{ Success = $true; Module = $ModuleName }
+                    } elseif (Test-Path "$modulePath\$ModuleName.psm1") {
+                        Import-Module "$modulePath\$ModuleName.psm1" -Force -Global
+                        return @{ Success = $true; Module = $ModuleName }
+                    } else {
+                        return @{ Success = $false; Module = $ModuleName; Error = "Module not found" }
+                    }
                 }
-            }
-            catch {
-                return @{ Success = $false; Module = $ModuleName; Error = $_.Exception.Message }
-            }
-        } -ArgumentList $module, $script:BusBuddyModuleConfig
+                catch {
+                    return @{ Success = $false; Module = $ModuleName; Error = $_.Exception.Message }
+                }
+            } -ArgumentList $module, $script:BusBuddyModuleConfig
+        } else {
+            $job = Start-Job -ScriptBlock {
+                param($ModuleName, $Config)
+                
+                try {
+                    $modulePath = Join-Path $Config.ModulePath $ModuleName
+                    if (Test-Path "$modulePath\$ModuleName.psd1") {
+                        Import-Module "$modulePath\$ModuleName.psd1" -Force -Global
+                        return @{ Success = $true; Module = $ModuleName }
+                    } elseif (Test-Path "$modulePath\$ModuleName.psm1") {
+                        Import-Module "$modulePath\$ModuleName.psm1" -Force -Global
+                        return @{ Success = $true; Module = $ModuleName }
+                    } else {
+                        return @{ Success = $false; Module = $ModuleName; Error = "Module not found" }
+                    }
+                }
+                catch {
+                    return @{ Success = $false; Module = $ModuleName; Error = $_.Exception.Message }
+                }
+            } -ArgumentList $module, $script:BusBuddyModuleConfig
+        }
         
         $jobs += $job
     }
