@@ -126,10 +126,3 @@ jobs:
           echo "| Quality Gate | ${{ steps.quality-gate.outputs.quality-gate-passed == 'true' && '✅ PASSED' || '⚠️ RECOMMENDATIONS' }} | 🎯 |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**💡 Recommendation:** Focus on test coverage for critical business logic and ViewModels" >> $GITHUB_STEP_SUMMARY
-
-
-
-
-
-
-

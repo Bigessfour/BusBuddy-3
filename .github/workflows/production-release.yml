@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
     inputs:
       release_version:
-        description: 'Release version (e.g., v1.0.0)'
+        description: "Release version (e.g., v1.0.0)"
         required: true
         type: string
 
@@ -131,8 +131,3 @@ jobs:
           echo "| Windows x86 | ✅ Built |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**✅ All platform builds completed successfully!**" >> $GITHUB_STEP_SUMMARY
-
-
-
-
-

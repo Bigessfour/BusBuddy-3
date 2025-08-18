@@ -1,0 +1,257 @@
+name: 🚌 BusBuddy PR Validation Pipeline
+
+# Security: Restrict permissions to read-only by default
+permissions:
+  contents: read
+  pull-requests: read
+  checks: write
+  statuses: write
+
+on:
+  pull_request:
+    branches: [main, master, develop]
+    types: [opened, synchronize, reopened, ready_for_review]
+  # Security: Remove workflow_dispatch inputs per CKV_GHA_7
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DOTNET_VERSION: 9.0.x
+  SOLUTION_FILE: BusBuddy.sln
+  BUILD_CONFIGURATION: Release
+
+jobs:
+  # 🔍 PR Analysis and Validation
+  pr-analysis:
+    name: 🔍 PR Analysis
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    if: github.event_name == 'pull_request'
+
+    outputs:
+      should-run-ci: ${{ steps.analysis.outputs.should-run-ci }}
+      is-draft: ${{ steps.analysis.outputs.is-draft }}
+      has-code-changes: ${{ steps.analysis.outputs.has-code-changes }}
+      change-summary: ${{ steps.analysis.outputs.change-summary }}
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 🔍 Analyze PR changes
+        id: analysis
+        run: |
+          echo "🔍 Analyzing PR changes..."
+
+          # Check if PR is draft
+          IS_DRAFT="${{ github.event.pull_request.draft }}"
+          echo "is-draft=$IS_DRAFT" >> $GITHUB_OUTPUT
+
+          # Get changed files
+          CHANGED_FILES=$(gh pr view ${{ github.event.pull_request.number }} --json files --jq '.files[].path')
+          echo "Changed files:"
+          echo "$CHANGED_FILES"
+
+          # Check for code changes (not just docs/markdown)
+          CODE_CHANGES=$(echo "$CHANGED_FILES" | grep -E '\.(cs|csproj|sln|xaml|config|json|ps1|yml|yaml)$' || true)
+          HAS_CODE_CHANGES="false"
+          if [ -n "$CODE_CHANGES" ]; then
+            HAS_CODE_CHANGES="true"
+          fi
+          echo "has-code-changes=$HAS_CODE_CHANGES" >> $GITHUB_OUTPUT
+
+          # Determine if CI should run
+          SHOULD_RUN_CI="true"
+          if [ "$IS_DRAFT" = "true" ]; then
+            SHOULD_RUN_CI="false"
+            echo "⏸️ Skipping CI for draft PR"
+          elif [ "$HAS_CODE_CHANGES" = "false" ]; then
+            SHOULD_RUN_CI="false"
+            echo "⏸️ Skipping CI - no code changes detected"
+          fi
+          echo "should-run-ci=$SHOULD_RUN_CI" >> $GITHUB_OUTPUT
+
+          # Create change summary
+          CHANGE_COUNT=$(echo "$CHANGED_FILES" | wc -l)
+          echo "change-summary=Modified $CHANGE_COUNT files" >> $GITHUB_OUTPUT
+
+          echo "✅ PR analysis completed"
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+  # 🏗️ Multi-platform Build and Test
+  build-test-x64:
+    name: 🏗️ Build & Test (x64)
+    needs: [pr-analysis]
+    if: always() && (needs.pr-analysis.outputs.should-run-ci == 'true' || github.event_name == 'workflow_dispatch')
+    uses: ./.github/workflows/reusable-build-test.yml
+    with:
+      dotnet-version: 9.0.x
+      build-configuration: Release
+      solution-file: BusBuddy.sln
+      run-tests: true
+      upload-artifacts: false
+      target-platform: x64
+
+  build-test-x86:
+    name: 🏗️ Build & Test (x86)
+    needs: [pr-analysis]
+    if: always() && (needs.pr-analysis.outputs.should-run-ci == 'true' || github.event_name == 'workflow_dispatch')
+    uses: ./.github/workflows/reusable-build-test.yml
+    with:
+      dotnet-version: 9.0.x
+      build-configuration: Release
+      solution-file: BusBuddy.sln
+      run-tests: true
+      upload-artifacts: false
+      target-platform: x86
+
+  # 🎯 Code Quality Gate
+  quality-gate:
+    name: 🎯 Quality Gate
+    runs-on: windows-latest
+    needs: [pr-analysis]
+    if: always() && (needs.pr-analysis.outputs.should-run-ci == 'true' || github.event_name == 'workflow_dispatch')
+    timeout-minutes: 15
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 🏗️ Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: 📦 Restore dependencies
+        run: dotnet restore ${{ env.SOLUTION_FILE }}
+
+      - name: 🔍 Code analysis
+        run: |
+          Write-Output "🔍 Running code analysis..."
+          dotnet build ${{ env.SOLUTION_FILE }} --no-restore --configuration ${{ env.BUILD_CONFIGURATION }} --verbosity minimal
+
+          # Check for build warnings
+          $warnings = dotnet build ${{ env.SOLUTION_FILE }} --no-restore --configuration ${{ env.BUILD_CONFIGURATION }} --verbosity normal 2>&1 | Select-String "warning"
+          if ($warnings) {
+            Write-Output "⚠️ Build warnings detected:"
+            $warnings | ForEach-Object { Write-Output $_ }
+          } else {
+            Write-Output "✅ No build warnings detected"
+          }
+
+      - name: 🧪 Validate tests
+        run: |
+          Write-Output "🧪 Validating test structure..."
+          dotnet test ${{ env.SOLUTION_FILE }} --no-build --configuration ${{ env.BUILD_CONFIGURATION }} --list-tests --verbosity minimal
+          Write-Output "✅ Test validation completed"
+
+  # 🔒 Security Scan
+  security-scan:
+    name: 🔒 Security Scan
+    runs-on: ubuntu-latest
+    needs: [pr-analysis]
+    if: always() && (needs.pr-analysis.outputs.should-run-ci == 'true' || github.event_name == 'workflow_dispatch')
+    timeout-minutes: 10
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🔒 Run security scan
+        run: |
+          echo "🔒 Running security analysis..."
+
+          # Check for sensitive files
+          echo "🔍 Checking for sensitive files..."
+          find . -name "*.key" -o -name "*.pem" -o -name "*.p12" -o -name "*.pfx" | grep -v node_modules || echo "✅ No sensitive files found"
+
+          # Check for hardcoded secrets (basic patterns)
+          echo "🔍 Checking for potential secrets..."
+          grep -r -E "(password|secret|key|token)\s*[:=]\s*['\"][^'\"]{8,}" --include="*.cs" --include="*.json" --include="*.config" . || echo "✅ No obvious secrets found"
+
+          echo "✅ Security scan completed"
+
+  # 📊 PR Status Summary
+  pr-status-summary:
+    name: 📊 PR Status Summary
+    runs-on: ubuntu-latest
+    needs: [pr-analysis, build-test-x64, build-test-x86, quality-gate, security-scan]
+    if: always() && github.event_name == 'pull_request'
+
+    steps:
+      - name: 📊 Generate PR status summary
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          CHANGE_SUMMARY: ${{ needs.pr-analysis.outputs.change-summary || 'Unknown' }}
+        run: |
+          echo "## 🚌 BusBuddy PR Validation Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**PR #${PR_NUMBER}**: ${PR_TITLE}" >> $GITHUB_STEP_SUMMARY
+          echo "**Changes**: ${CHANGE_SUMMARY}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Check | Status | Details |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|--------|---------|" >> $GITHUB_STEP_SUMMARY
+          echo "| PR Analysis | ${{ needs.pr-analysis.result == 'success' && '✅' || '❌' }} | ${{ needs.pr-analysis.outputs.is-draft == 'true' && 'Draft PR' || 'Ready for review' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Build (x64) | ${{ needs.build-test-x64.result == 'success' && '✅' || needs.build-test-x64.result == 'skipped' && '⏸️' || '❌' }} | ${{ needs.build-test-x64.outputs.build-success == 'true' && 'Build successful' || needs.build-test-x64.result == 'skipped' && 'Skipped' || 'Build failed' }} |" >> $GITHUB_STEP_SUMMARY
+          # Build x86 status
+          echo "| Build (x86) | ${{ needs.build-test-x86.result == 'success' && '✅' || needs.build-test-x86.result == 'skipped' && '⏸️' || '❌' }} | ${{ needs.build-test-x86.result == 'skipped' && 'Skipped' || 'Completed' }} |" >> $GITHUB_STEP_SUMMARY
+
+          # Test results
+          echo "| Tests (x64) | ${{ needs.build-test-x64.result == 'success' && '✅' || needs.build-test-x64.result == 'skipped' && '⏸️' || '❌' }} | Coverage: ${{ needs.build-test-x64.outputs.coverage-percentage || '0' }}% |" >> $GITHUB_STEP_SUMMARY
+          echo "| Tests (x86) | ${{ needs.build-test-x86.result == 'success' && '✅' || needs.build-test-x86.result == 'skipped' && '⏸️' || '❌' }} | Coverage: ${{ needs.build-test-x86.outputs.coverage-percentage || '0' }}% |" >> $GITHUB_STEP_SUMMARY
+          echo "| Quality Gate | ${{ needs.quality-gate.result == 'success' && '✅' || needs.quality-gate.result == 'skipped' && '⏸️' || '❌' }} | Code analysis and validation |" >> $GITHUB_STEP_SUMMARY
+          echo "| Security | ${{ needs.security-scan.result == 'success' && '✅' || needs.security-scan.result == 'skipped' && '⏸️' || '❌' }} | Security analysis |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Overall status
+          ALL_SUCCESS="true"
+          if [[ "${{ needs.build-test-x64.result }}" != "success" && "${{ needs.build-test-x64.result }}" != "skipped" ]]; then ALL_SUCCESS="false"; fi
+          if [[ "${{ needs.build-test-x86.result }}" != "success" && "${{ needs.build-test-x86.result }}" != "skipped" ]]; then ALL_SUCCESS="false"; fi
+          if [[ "${{ needs.quality-gate.result }}" != "success" && "${{ needs.quality-gate.result }}" != "skipped" ]]; then ALL_SUCCESS="false"; fi
+          if [[ "${{ needs.security-scan.result }}" != "success" && "${{ needs.security-scan.result }}" != "skipped" ]]; then ALL_SUCCESS="false"; fi
+
+          if [[ "$ALL_SUCCESS" == "true" ]]; then
+            echo "## ✅ All checks passed! This PR is ready for review and merge." >> $GITHUB_STEP_SUMMARY
+          else
+            echo "## ❌ Some checks failed. Please review and fix the issues before merging." >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: 💬 Update PR status comment
+        if: github.event_name == 'pull_request'
+        run: |
+          # Create or update a status comment on the PR
+          COMMENT_BODY="## 🚌 BusBuddy CI Pipeline Status
+
+          **Latest run**: [${{ github.run_id }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+          **Commit**: ${{ github.sha }}
+
+          | Check | Status |
+          |-------|--------|
+          | Build (x64) | ${{ needs.build-test-x64.result == 'success' && '✅ Passed' || needs.build-test-x64.result == 'skipped' && '⏸️ Skipped' || '❌ Failed' }} |
+          | Build (x86) | ${{ needs.build-test-x86.result == 'success' && '✅ Passed' || needs.build-test-x86.result == 'skipped' && '⏸️ Skipped' || '❌ Failed' }} |
+          | Quality Gate | ${{ needs.quality-gate.result == 'success' && '✅ Passed' || needs.quality-gate.result == 'skipped' && '⏸️ Skipped' || '❌ Failed' }} |
+          | Security Scan | ${{ needs.security-scan.result == 'success' && '✅ Passed' || needs.security-scan.result == 'skipped' && '⏸️ Skipped' || '❌ Failed' }} |
+
+          > This comment is automatically updated with the latest CI status."
+
+          # Find existing comment
+          EXISTING_COMMENT=$(gh pr view ${{ github.event.pull_request.number }} --json comments --jq '.comments[] | select(.body | startswith("## 🚌 BusBuddy CI Pipeline Status")) | .id' | head -1)
+
+          if [ -n "$EXISTING_COMMENT" ]; then
+            echo "Updating existing comment: $EXISTING_COMMENT"
+            gh api repos/${{ github.repository }}/issues/comments/$EXISTING_COMMENT -X PATCH -f body="$COMMENT_BODY"
+          else
+            echo "Creating new status comment"
+            gh pr comment ${{ github.event.pull_request.number }} --body "$COMMENT_BODY"
+          fi
+        env:
+          GH_TOKEN: ${{ github.token }}

@@ -107,3 +107,19 @@ csharp_space_between_method_call_empty_parameter_list_parentheses = false
 # Wrapping preferences
 csharp_preserve_single_line_statements = true
 csharp_preserve_single_line_blocks = true
+
+# YAML Formatting - GitHub/GitKraken Official Standards
+[*.{yml,yaml}]
+indent_style = space
+indent_size = 2
+max_line_length = 120
+trim_trailing_whitespace = true
+insert_final_newline = true
+
+# GitHub Actions workflows (specific)
+[.github/workflows/*.{yml,yaml}]
+indent_style = space
+indent_size = 2
+max_line_length = 120
+trim_trailing_whitespace = true
+insert_final_newline = true

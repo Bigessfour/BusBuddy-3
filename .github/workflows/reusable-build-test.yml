@@ -1,0 +1,223 @@
+name: 🔄 Reusable Build & Test
+
+# Security: Restrict permissions to read-only by default
+permissions:
+  contents: read
+  checks: write
+  pull-requests: read
+
+on:
+  workflow_call:
+    inputs:
+      dotnet-version:
+        description: .NET version to use
+        required: false
+        type: string
+        default: 9.0.x
+      build-configuration:
+        description: Build configuration (Debug/Release)
+        required: false
+        type: string
+        default: Release
+      solution-file:
+        description: Solution file to build
+        required: false
+        type: string
+        default: BusBuddy.sln
+      run-tests:
+        description: Whether to run tests
+        required: false
+        type: boolean
+        default: true
+      upload-artifacts:
+        description: Whether to upload build artifacts
+        required: false
+        type: boolean
+        default: false
+      target-platform:
+        description: Target platform (x64/x86/Any CPU)
+        required: false
+        type: string
+        default: x64
+    outputs:
+      build-success:
+        description: Whether the build was successful
+        value: ${{ jobs.build-and-test.outputs.build-success }}
+      test-success:
+        description: Whether tests passed
+        value: ${{ jobs.build-and-test.outputs.test-success }}
+      coverage-percentage:
+        description: Test coverage percentage
+        value: ${{ jobs.build-and-test.outputs.coverage-percentage }}
+      artifact-name:
+        description: Name of uploaded artifact
+        value: ${{ jobs.build-and-test.outputs.artifact-name }}
+
+env:
+  DOTNET_VERSION: ${{ inputs.dotnet-version }}
+  SOLUTION_FILE: ${{ inputs.solution-file }}
+  BUILD_CONFIGURATION: ${{ inputs.build-configuration }}
+  # GitHub CLI configuration - disable paging for CI logs
+  GH_PAGER: ""
+  GH_NO_UPDATE_NOTIFIER: "1"
+  # PowerShell configuration for CI
+  POWERSHELL_TELEMETRY_OPTOUT: "1"
+  # BusBuddy specific environment
+  BUSBUDDY_NO_WELCOME: "1"
+  BUSBUDDY_NO_XAI_WARN: "1"
+  BUSBUDDY_SILENT: "1"
+
+jobs:
+  build-and-test:
+    name: 🏗️ Build & Test (${{ inputs.target-platform }})
+    runs-on: windows-latest
+    timeout-minutes: 30
+
+    outputs:
+      build-success: ${{ steps.build-step.outcome == 'success' }}
+      test-success: ${{ steps.test-step.outcome == 'success' }}
+      coverage-percentage: ${{ steps.coverage-step.outputs.coverage || '0' }}
+      artifact-name: ${{ steps.artifact-upload.outputs.artifact-name || '' }}
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Enable GitVersion and better diff analysis
+
+      - name: 🏗️ Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: 📋 Environment Information
+        run: |
+          Write-Output "🔍 Build Environment Information"
+          Write-Output "Platform: ${{ inputs.target-platform }}"
+          Write-Output "Configuration: ${{ env.BUILD_CONFIGURATION }}"
+          Write-Output "Solution: ${{ env.SOLUTION_FILE }}"
+          Write-Output ".NET Version: ${{ env.DOTNET_VERSION }}"
+          Write-Output "Run Tests: ${{ inputs.run-tests }}"
+          Write-Output "Upload Artifacts: ${{ inputs.upload-artifacts }}"
+          dotnet --info
+
+      - name: 📦 Restore dependencies
+        id: restore-step
+        run: |
+          Write-Output "🔄 Restoring NuGet packages..."
+          dotnet restore ${{ env.SOLUTION_FILE }} --verbosity minimal
+          if ($LASTEXITCODE -ne 0) {
+            Write-Error "❌ Package restore failed"
+            exit 1
+          }
+          Write-Output "✅ Package restore completed successfully"
+
+      - name: 🏗️ Build solution
+        id: build-step
+        run: |
+          Write-Output "🔨 Building solution..."
+          $buildArgs = @(
+            'build'
+            '${{ env.SOLUTION_FILE }}'
+            '--no-restore'
+            '--configuration', '${{ env.BUILD_CONFIGURATION }}'
+            '--verbosity', 'minimal'
+          )
+
+          # Add platform-specific arguments
+          if ('${{ inputs.target-platform }}' -ne 'Any CPU') {
+            $buildArgs += '--arch', '${{ inputs.target-platform }}'.ToLower()
+          }
+
+          dotnet @buildArgs
+          if ($LASTEXITCODE -ne 0) {
+            Write-Error "❌ Build failed"
+            exit 1
+          }
+          Write-Output "✅ Build completed successfully"
+
+      - name: 🧪 Run tests
+        id: test-step
+        if: inputs.run-tests == true
+        run: |
+          Write-Output "🧪 Running tests with coverage..."
+          dotnet test ${{ env.SOLUTION_FILE }} `
+            --no-build `
+            --configuration ${{ env.BUILD_CONFIGURATION }} `
+            --collect:"XPlat Code Coverage" `
+            --results-directory ./TestResults `
+            --logger trx `
+            --verbosity minimal
+
+          if ($LASTEXITCODE -ne 0) {
+            Write-Warning "⚠️ Tests completed with issues"
+          } else {
+            Write-Output "✅ All tests passed"
+          }
+
+      - name: 📊 Calculate test coverage
+        id: coverage-step
+        if: inputs.run-tests == true
+        run: |
+          Write-Output "📊 Calculating test coverage..."
+          $coverageFiles = Get-ChildItem -Path "TestResults" -Recurse -Filter "coverage.cobertura.xml" -ErrorAction SilentlyContinue
+
+          if ($coverageFiles) {
+            $coverageFile = $coverageFiles | Select-Object -First 1
+            Write-Output "Found coverage file: $($coverageFile.FullName)"
+
+            # Simple coverage extraction (you might want to use a proper tool)
+            $coverageContent = Get-Content $coverageFile.FullName -Raw
+            if ($coverageContent -match 'line-rate="([^"]*)"') {
+              $coverage = [math]::Round([double]$matches[1] * 100, 2)
+              Write-Output "Coverage: $coverage%"
+              "coverage=$coverage" >> $env:GITHUB_OUTPUT
+            } else {
+              Write-Output "Could not parse coverage percentage"
+              "coverage=0" >> $env:GITHUB_OUTPUT
+            }
+          } else {
+            Write-Output "No coverage files found"
+            "coverage=0" >> $env:GITHUB_OUTPUT
+          }
+
+      - name: 📦 Upload build artifacts
+        id: artifact-upload
+        if: inputs.upload-artifacts == true && steps.build-step.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: busbuddy-build-${{ inputs.target-platform }}-${{ github.run_number }}
+          path: |
+            **/bin/${{ env.BUILD_CONFIGURATION }}/**
+            !**/bin/${{ env.BUILD_CONFIGURATION }}/**/ref/**
+            !**/bin/${{ env.BUILD_CONFIGURATION }}/**/*.pdb
+          retention-days: 7
+          if-no-files-found: warn
+
+      - name: 📋 Upload test results
+        if: always() && inputs.run-tests == true
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-${{ inputs.target-platform }}-${{ github.run_number }}
+          path: TestResults/
+          retention-days: 7
+          if-no-files-found: warn
+
+      - name: 📋 Build summary
+        if: always()
+        run: |
+          Write-Output "## 🚌 BusBuddy Build Summary" >> $env:GITHUB_STEP_SUMMARY
+          Write-Output "" >> $env:GITHUB_STEP_SUMMARY
+          Write-Output "| Component | Status |" >> $env:GITHUB_STEP_SUMMARY
+          Write-Output "|-----------|--------|" >> $env:GITHUB_STEP_SUMMARY
+          Write-Output "| Platform | ${{ inputs.target-platform }} |" >> $env:GITHUB_STEP_SUMMARY
+          Write-Output "| Build | ${{ steps.build-step.outcome == 'success' && '✅ Success' || '❌ Failed' }} |" >> $env:GITHUB_STEP_SUMMARY
+
+          if ('${{ inputs.run-tests }}' -eq 'true') {
+            Write-Output "| Tests | ${{ steps.test-step.outcome == 'success' && '✅ Passed' || '❌ Failed' }} |" >> $env:GITHUB_STEP_SUMMARY
+            Write-Output "| Coverage | ${{ steps.coverage-step.outputs.coverage || '0' }}% |" >> $env:GITHUB_STEP_SUMMARY
+          }
+
+          if ('${{ inputs.upload-artifacts }}' -eq 'true') {
+            Write-Output "| Artifacts | ${{ steps.artifact-upload.outcome == 'success' && '✅ Uploaded' || '❌ Failed' }} |" >> $env:GITHUB_STEP_SUMMARY
+          }
