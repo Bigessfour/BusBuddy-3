@@ -36,37 +36,37 @@ function Initialize-BusBuddyModuleSystem {
     #>
     [CmdletBinding()]
     param()
-    
+
     $startTime = Get-Date
     Write-Information "🚀 Initializing BusBuddy Module System..." -InformationAction Continue
-    
+
     try {
         # Validate PowerShell version
         if ($PSVersionTable.PSVersion.Major -lt 7) {
             throw "PowerShell 7.0 or higher required. Current: $($PSVersionTable.PSVersion)"
         }
-        
+
         # Validate module path
         if (-not (Test-Path $script:BusBuddyModuleConfig.ModulePath)) {
             throw "Module path not found: $($script:BusBuddyModuleConfig.ModulePath)"
         }
-        
+
         # Load core modules first
         $coreModules = @('BusBuddy', 'BusBuddy.Utilities')
         foreach ($module in $coreModules) {
             Import-BusBuddyModuleWithRetry -ModuleName $module -Critical
         }
-        
+
         # Load optional modules in parallel if enabled
         if ($script:BusBuddyModuleConfig.ParallelLoading) {
             Import-OptionalModulesParallel
         } else {
             Import-OptionalModulesSequential
         }
-        
+
         $duration = (Get-Date) - $startTime
         Write-Information "✅ Module system initialized in $($duration.TotalMilliseconds)ms" -InformationAction Continue
-        
+
         return $true
     }
     catch {
@@ -90,17 +90,17 @@ function Import-BusBuddyModuleWithRetry {
     param(
         [Parameter(Mandatory)]
         [string]$ModuleName,
-        
+
         [switch]$Critical
     )
-    
+
     $retryCount = 0
     $maxRetries = $script:BusBuddyModuleConfig.RetryCount
-    
+
     do {
         try {
             $modulePath = Join-Path $script:BusBuddyModuleConfig.ModulePath $ModuleName
-            
+
             if (Test-Path "$modulePath\$ModuleName.psd1") {
                 $manifestPath = "$modulePath\$ModuleName.psd1"
             } elseif (Test-Path "$modulePath\$ModuleName.psm1") {
@@ -108,10 +108,10 @@ function Import-BusBuddyModuleWithRetry {
             } else {
                 throw "Module manifest not found for $ModuleName"
             }
-            
+
             Write-Verbose "Loading module: $ModuleName"
             Import-Module $manifestPath -Force -Global -ErrorAction Stop
-            
+
             # Validate module loaded successfully
             if ($script:BusBuddyModuleConfig.ValidateAfterLoad) {
                 $loadedModule = Get-Module $ModuleName -ErrorAction SilentlyContinue
@@ -119,14 +119,14 @@ function Import-BusBuddyModuleWithRetry {
                     throw "Module $ModuleName failed validation after import"
                 }
             }
-            
+
             Write-Verbose "✅ Module loaded: $ModuleName"
             return $true
         }
         catch {
             $retryCount++
             Write-Warning "Failed to load module $ModuleName (attempt $retryCount/$maxRetries): $_"
-            
+
             if ($retryCount -lt $maxRetries) {
                 Start-Sleep -Seconds $script:BusBuddyModuleConfig.RetryDelay
             } elseif ($Critical) {
@@ -137,7 +137,7 @@ function Import-BusBuddyModuleWithRetry {
             }
         }
     } while ($retryCount -lt $maxRetries)
-    
+
     return $false
 }
 
@@ -148,20 +148,20 @@ function Import-OptionalModulesParallel {
     #>
     [CmdletBinding()]
     param()
-    
+
     $optionalModules = @(
         'BusBuddy.Testing',
         'BusBuddy.Validation',
         'BusBuddy.ProfileTools',
         'BusBuddy.AzureAuth'
     )
-    
+
     $jobs = @()
-    
+
     foreach ($module in $optionalModules) {
         $job = Start-ThreadJob -ScriptBlock {
             param($ModuleName, $Config)
-            
+
             try {
                 $modulePath = Join-Path $Config.ModulePath $ModuleName
                 if (Test-Path "$modulePath\$ModuleName.psd1") {
@@ -178,17 +178,17 @@ function Import-OptionalModulesParallel {
                 return @{ Success = $false; Module = $ModuleName; Error = $_.Exception.Message }
             }
         } -ArgumentList $module, $script:BusBuddyModuleConfig
-        
+
         $jobs += $job
     }
-    
+
     # Wait for jobs with timeout
     $timeout = $script:BusBuddyModuleConfig.LoadTimeout
     $results = $jobs | Receive-Job -Wait -Timeout $timeout
-    
+
     # Clean up jobs
     $jobs | Remove-Job -Force
-    
+
     # Report results
     foreach ($result in $results) {
         if ($result.Success) {
@@ -206,14 +206,14 @@ function Import-OptionalModulesSequential {
     #>
     [CmdletBinding()]
     param()
-    
+
     $optionalModules = @(
         'BusBuddy.Testing',
-        'BusBuddy.Validation', 
+        'BusBuddy.Validation',
         'BusBuddy.ProfileTools',
         'BusBuddy.AzureAuth'
     )
-    
+
     foreach ($module in $optionalModules) {
         Import-BusBuddyModuleWithRetry -ModuleName $module
     }
@@ -230,7 +230,7 @@ function Test-BusBuddyModuleHealth {
     #>
     [CmdletBinding()]
     param()
-    
+
     $results = @{
         CoreModulesLoaded = $true
         OptionalModulesCount = 0
@@ -238,7 +238,7 @@ function Test-BusBuddyModuleHealth {
         Errors = @()
         Warnings = @()
     }
-    
+
     try {
         # Check core modules
         $coreModules = @('BusBuddy', 'BusBuddy.Utilities')
@@ -249,22 +249,22 @@ function Test-BusBuddyModuleHealth {
                 $results.Errors += "Core module not loaded: $module"
             }
         }
-        
+
         # Count all BusBuddy modules
         $allBusBuddyModules = Get-Module | Where-Object { $_.Name -like "BusBuddy*" }
         $results.TotalModulesCount = $allBusBuddyModules.Count
-        
+
         # Count optional modules
         $optionalModules = $allBusBuddyModules | Where-Object { $_.Name -notin $coreModules }
         $results.OptionalModulesCount = $optionalModules.Count
-        
+
         # Performance check
         if ($results.TotalModulesCount -eq 0) {
             $results.Errors += "No BusBuddy modules loaded"
         } elseif ($results.TotalModulesCount -lt 2) {
             $results.Warnings += "Only $($results.TotalModulesCount) BusBuddy modules loaded"
         }
-        
+
         return $results
     }
     catch {
@@ -284,25 +284,25 @@ function Repair-BusBuddyModuleSystem {
     #>
     [CmdletBinding()]
     param()
-    
+
     Write-Information "🔧 Repairing BusBuddy module system..." -InformationAction Continue
-    
+
     try {
         # Remove all BusBuddy modules
         Get-Module | Where-Object { $_.Name -like "BusBuddy*" } | Remove-Module -Force
-        
+
         # Clear any cached assemblies (if possible)
         [System.GC]::Collect()
-        
+
         # Reinitialize the system
         $result = Initialize-BusBuddyModuleSystem
-        
+
         if ($result) {
             Write-Information "✅ Module system repaired successfully" -InformationAction Continue
         } else {
             Write-Error "❌ Module system repair failed"
         }
-        
+
         return $result
     }
     catch {
