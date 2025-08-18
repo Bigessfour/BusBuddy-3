@@ -165,16 +165,16 @@ function Import-OptionalModulesParallel {
 
     foreach ($module in $optionalModules) {
         $job = Start-ThreadJob -ScriptBlock {
-            param($ModuleName, $Config)
+            param($ModuleName, $ModulePath)
 
             try {
-                $modulePath = Join-Path $Config.ModulePath $ModuleName
-                if (Test-Path "$modulePath\$ModuleName.psd1") {
-                    Import-Module "$modulePath\$ModuleName.psd1" -Force -Global
+                $moduleFullPath = Join-Path $ModulePath $ModuleName
+                if (Test-Path "$moduleFullPath\$ModuleName.psd1") {
+                    Import-Module "$moduleFullPath\$ModuleName.psd1" -Force -Global
                     return @{ Success = $true; Module = $ModuleName }
                 }
-                elseif (Test-Path "$modulePath\$ModuleName.psm1") {
-                    Import-Module "$modulePath\$ModuleName.psm1" -Force -Global
+                elseif (Test-Path "$moduleFullPath\$ModuleName.psm1") {
+                    Import-Module "$moduleFullPath\$ModuleName.psm1" -Force -Global
                     return @{ Success = $true; Module = $ModuleName }
                 }
                 else {
@@ -184,7 +184,7 @@ function Import-OptionalModulesParallel {
             catch {
                 return @{ Success = $false; Module = $ModuleName; Error = $_.Exception.Message }
             }
-        } -ArgumentList $module, $script:BusBuddyModuleConfig
+        } -ArgumentList $module, $script:BusBuddyModuleConfig.ModulePath
 
         $jobs += $job
     }
@@ -217,6 +217,14 @@ function Import-OptionalModulesParallel {
             }
             catch {
                 $results += @{ Success = $false; Module = $job.ChildJobs[0].Command; Error = $_.Exception.Message }
+            }
+        }
+
+        # Check for jobs that did not complete (timed out)
+        foreach ($job in $jobs) {
+            if ($job.State -ne 'Completed') {
+                $moduleName = $job.ChildJobs[0].Arguments[0]
+                Write-Warning "⏰ Optional module failed: $moduleName - Job timed out or did not complete."
             }
         }
     }
@@ -330,9 +338,6 @@ function Repair-BusBuddyModuleSystem {
     try {
         # Remove all BusBuddy modules
         Get-Module | Where-Object { $_.Name -like "BusBuddy*" } | Remove-Module -Force
-
-        # Clear any cached assemblies (if possible)
-        [System.GC]::Collect()
 
         # Reinitialize the system
         $result = Initialize-BusBuddyModuleSystem

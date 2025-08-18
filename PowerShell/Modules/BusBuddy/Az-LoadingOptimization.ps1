@@ -1,4 +1,4 @@
-# Az Module Loading Optimization for BusBuddy
+﻿# Az Module Loading Optimization for BusBuddy
 # Addresses lazy loading delays by implementing smart pre-loading and caching
 
 <#
@@ -19,8 +19,8 @@
 #>
 
 # Global cache for module availability (avoids repeated Get-Module calls)
-if (-not $global:BusBuddyAzModuleCache) {
-    $global:BusBuddyAzModuleCache = @{}
+if (-not $global:BusBuddy_AzModuleCache) {
+    $global:BusBuddy_AzModuleCache = @{}
 }
 
 function Test-BusBuddyAzModule {
@@ -34,8 +34,8 @@ function Test-BusBuddyAzModule {
     )
 
     # Check cache first
-    if ($global:BusBuddyAzModuleCache.ContainsKey($ModuleName)) {
-        return $global:BusBuddyAzModuleCache[$ModuleName]
+    if ($global:BusBuddy_AzModuleCache.ContainsKey($ModuleName)) {
+        return $global:BusBuddy_AzModuleCache[$ModuleName]
     }
 
     # Check if module is available and loaded
@@ -49,7 +49,7 @@ function Test-BusBuddyAzModule {
     }
 
     # Cache the result
-    $global:BusBuddyAzModuleCache[$ModuleName] = $result
+    $global:BusBuddy_AzModuleCache[$ModuleName] = $result
     return $result
 }
 
@@ -70,7 +70,7 @@ function Start-BusBuddyAzPreload {
     }
 
     $job = Start-Job -Name "BusBuddyAzPreload" -ScriptBlock {
-        param($using:ModulesToLoad)
+        param($using:using:using:ModulesToLoad)
 
         $results = @{}
         foreach ($module in $ModulesToLoad) {
@@ -86,7 +86,7 @@ function Start-BusBuddyAzPreload {
         return $results
     } -ArgumentList (, $Modules)
 
-    Write-Information "Started background Az module preload job" -InformationAction Continue
+    Write-Information "Started background Az module preload job"
     return $job
 }
 
@@ -122,23 +122,23 @@ function Import-BusBuddyAzModule {
     # Check if preload job has it ready
     $preloadJob = Get-Job -Name "BusBuddyAzPreload" -ErrorAction SilentlyContinue
     if ($preloadJob -and $preloadJob.State -eq "Completed") {
-        Write-Information "Using preloaded Az modules from background job" -InformationAction Continue
+        Write-Information "Using preloaded Az modules from background job"
         $preloadResults = Receive-Job $preloadJob
         Remove-Job $preloadJob
 
         if ($preloadResults[$ModuleName] -eq "Success") {
             # Clear cache since module should now be loaded
-            $global:BusBuddyAzModuleCache.Remove($ModuleName)
+            $global:BusBuddy_AzModuleCache.Remove($ModuleName)
             return $true
         }
     }
 
     # Fallback to direct import with progress indication
-    Write-Information "Loading $ModuleName (this may take 5-10 seconds)..." -InformationAction Continue
+    Write-Information "Loading $ModuleName (this may take 5-10 seconds)..."
 
     try {
         $importJob = Start-Job -ScriptBlock {
-            param($using:Module)
+            param($using:using:using:Module)
             Import-Module $using:Module -Force
         } -ArgumentList $ModuleName
 
@@ -161,9 +161,9 @@ function Import-BusBuddyAzModule {
                 Remove-Job $importJob
 
                 # Clear cache
-                $global:BusBuddyAzModuleCache.Remove($ModuleName)
+                $global:BusBuddy_AzModuleCache.Remove($ModuleName)
 
-                Write-Information "$ModuleName loaded successfully" -InformationAction Continue
+                Write-Information "$ModuleName loaded successfully"
                 return $true
             }
             else {
