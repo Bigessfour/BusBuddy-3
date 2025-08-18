@@ -1,4 +1,24 @@
-#Requires -Version 7.5
+#Requires -Version 7.0
+
+# PowerShell 7.5+ compatibility check
+if ($PSVersionTable.PSVersion -lt [Version]"7.5.0") {
+    Write-Error @"
+⚠️  BusBuddy GitKraken Integration requires PowerShell 7.5.2 or later.
+
+Current PowerShell Version: $($PSVersionTable.PSVersion)
+Required Version: 7.5.0+
+
+📥 Install PowerShell 7.5.2:
+   • Windows: winget install Microsoft.PowerShell
+   • Manual: https://github.com/PowerShell/PowerShell/releases
+
+🔧 Run this script with PowerShell 7.5.2:
+   pwsh -File "BusBuddy-GitKraken.ps1"
+
+💡 Check your PowerShell version: pwsh -Command '$PSVersionTable.PSVersion'
+"@
+    exit 1
+}
 
 <#
 .SYNOPSIS
@@ -21,6 +41,187 @@ $script:GitKrakenConfig = @{
     LaunchpadUrl = "https://gitkraken.dev/launchpad/personal?groupBy=none&prs=github&issues=github"
     SyncfusionDocsUrl = "https://help.syncfusion.com/wpf/welcome-to-syncfusion-essential-wpf"
     AzureSqlDocsUrl = "https://learn.microsoft.com/en-us/azure/azure-sql/?view=azuresql"
+    AiEndpoint = "api.openai.com" # Make AI endpoint configurable
+}
+
+# Enhanced GitKraken AI with Robust Fallback Strategy
+function Invoke-GitKrakenAIWithFallback {
+    <#
+    .SYNOPSIS
+        Invoke GitKraken AI with comprehensive fallback strategy
+    .DESCRIPTION
+        Attempts GitKraken AI with timeout handling, network validation, and intelligent fallbacks
+    .PARAMETER Command
+        GitKraken AI command to execute
+    .PARAMETER Arguments
+        Arguments for the GitKraken command
+    .PARAMETER TimeoutSeconds
+        Timeout for AI response (default: 30 seconds)
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [string]$Command,
+
+        [Parameter()]
+        [string[]]$Arguments = @(),
+
+        [Parameter()]
+        [int]$TimeoutSeconds = 30
+    )
+
+    Write-Information "🤖 Attempting GitKraken AI: $Command" -InformationAction Continue
+
+    try {
+        # Step 1: Network connectivity check
+        $aiEndpoint = $script:GitKrakenConfig.AiEndpoint
+            throw "Network connectivity to OpenAI API (api.openai.com:443) failed. Please check your internet connection and firewall settings."
+        if (-not $networkTest.TcpTestSucceeded) {
+            throw "Network connectivity to AI endpoint ($aiEndpoint) failed"
+        }
+
+        # Step 2: Validate GitKraken auth and tokens
+        $tokenOutput = & gk ai tokens 2>$null
+        if ($LASTEXITCODE -ne 0 -or -not $tokenOutput -or $tokenOutput -match "error|not available|invalid|expired") {
+            throw "GitKraken AI tokens not available or invalid"
+        }
+
+        # Step 3: Execute GitKraken AI with timeout
+        $job = Start-ThreadJob -ScriptBlock {
+            param($cmd, $cmdArgs)
+            & gk ai $cmd @cmdArgs 2>&1
+        } -ArgumentList $Command, $Arguments
+
+        # Wait for AI job to complete then receive results (use Wait-Job then Receive-Job for compatibility)
+        try {
+            Wait-Job -Job $job -Timeout $TimeoutSeconds -ErrorAction SilentlyContinue | Out-Null
+        } catch {
+            # Fallback: simple polling loop
+            $end = (Get-Date).AddSeconds($TimeoutSeconds)
+            while ((Get-Date) -lt $end -and $job.State -eq 'Running') { Start-Sleep -Milliseconds 200 }
+        }
+
+        $result = $null
+        try {
+            if ($job.State -eq 'Completed') {
+                $result = Receive-Job -Job $job -ErrorAction SilentlyContinue
+            } else {
+                $result = "timeout"
+            }
+        } finally {
+            if ($null -ne $job) { $job | Remove-Job -Force }
+        }
+
+        if ($result -match "failure fetching AI explanation|please try again|timeout|error") {
+            throw "GitKraken AI returned error: $result"
+        }
+
+        if ($result -match "failure fetching AI explanation|please try again|timeout|error") {
+            throw "GitKraken AI returned error: $result"
+        }
+
+        Write-Information "✅ GitKraken AI response received" -InformationAction Continue
+        return $result
+    }
+    catch {
+        Write-Warning "GitKraken AI failed: $_"
+        Write-Information "🔄 Using fallback analysis..." -InformationAction Continue
+
+        # Fallback strategy based on command type
+        switch ($Command) {
+            "explain" {
+                switch ($Arguments[0]) {
+                    "branch" {
+                        return Get-BranchAnalysisFallback -BranchName $Arguments[2]
+                    }
+                    "commit" {
+                        return Get-CommitAnalysisFallback -CommitSHA $Arguments[2]
+                    }
+                }
+            }
+            "pr" {
+                return Get-PRAnalysisFallback
+            }
+            default {
+                return "Manual analysis required for command: $Command"
+            }
+        }
+    }
+}
+
+function Get-BranchAnalysisFallback {
+    <#
+    .SYNOPSIS
+        Manual branch analysis when GitKraken AI fails
+    #>
+    [CmdletBinding()]
+    param([string]$BranchName)
+
+    $currentBranch = if ($BranchName) { $BranchName } else { git branch --show-current }
+    $baseBranch = "main"
+
+    # Get branch statistics
+    $commits = git rev-list --count "$baseBranch..$currentBranch" 2>$null
+    $files = git diff --name-only "$baseBranch..$currentBranch" 2>$null
+    $additions = git diff --stat "$baseBranch..$currentBranch" 2>$null | Select-String "insertion"
+    $deletions = git diff --stat "$baseBranch..$currentBranch" 2>$null | Select-String "deletion"
+
+    # Recent commits
+    $recentCommits = git log --oneline -5 "$currentBranch" 2>$null
+
+    $analysis = @"
+🔍 **Branch Analysis: $currentBranch** (Fallback Mode)
+
+📊 **Statistics:**
+• Commits ahead: $commits
+• Files changed: $($files.Count)
+• Additions: $($additions -replace '.*?(\d+) insertion.*','$1' -join ', ')
+• Deletions: $($deletions -replace '.*?(\d+) deletion.*','$1' -join ', ')
+
+📝 **Recent Commits:**
+$($recentCommits -join "`n")
+
+🎯 **Branch Purpose Analysis:**
+Based on commit patterns, this appears to be a $($currentBranch -replace 'feature/|bugfix/|hotfix/' -replace '-', ' ') branch.
+
+⚠️ **Note:** This is a fallback analysis. For AI-powered insights, retry: gk ai explain branch --branch $currentBranch
+"@
+
+    return $analysis
+}
+
+function Get-PRAnalysisFallback {
+    <#
+    .SYNOPSIS
+        Manual PR analysis using GitHub CLI
+    #>
+    try {
+        $prs = gh pr list --json number,title,state,checks
+        if ($prs) {
+            $prData = $prs | ConvertFrom-Json
+            $analysis = "🔍 **PR Status Analysis** (Fallback Mode)`n`n"
+
+            foreach ($pr in $prData) {
+                $checksStatus = if ($pr.checks) {
+                    $passing = ($pr.checks | Where-Object { $_.state -eq "success" }).Count
+                    $total = $pr.checks.Count
+                    "$passing/$total passing"
+                } else { "No checks" }
+
+                $analysis += "**PR #$($pr.number)**: $($pr.title)`n"
+                $analysis += "• Status: $($pr.state)`n"
+                $analysis += "• CI Checks: $checksStatus`n`n"
+            }
+
+            return $analysis
+        } else {
+            return "No open PRs found"
+        }
+    }
+    catch {
+        return "Unable to fetch PR data: $_"
+}
+
 }
 
 # GitKraken Environment Initialization
@@ -45,7 +246,7 @@ function Initialize-GitKrakenEnvironment {
         Write-Verbose "GitKraken CLI found: $gkVersion"
 
         # Step 2: Check authentication
-        $authStatus = & gk auth status 2>$null
+        & gk auth status 2>$null | Out-Null
         if ($LASTEXITCODE -ne 0) {
             Write-Warning "GitKraken not authenticated. Run 'gk auth login' to enable AI features."
             return $false
@@ -53,7 +254,21 @@ function Initialize-GitKrakenEnvironment {
         Write-Verbose "GitKraken authenticated successfully"
 
         # Step 3: Set organization (required for AI)
-        $orgs = & gk organization list --format json 2>$null | ConvertFrom-Json
+        $orgsJson = (& gk organization list --format json 2>$null) -as [string]
+        $orgs = @()
+        if ($orgsJson) { $orgsJson = $orgsJson.Trim() }
+
+        if (-not $orgsJson -or $orgsJson -match '^(undefined|null|error)$') {
+            Write-Verbose "GitKraken organization list returned no usable JSON: '$orgsJson'"
+        } else {
+            try {
+                $orgs = $orgsJson | ConvertFrom-Json -ErrorAction Stop
+            } catch {
+                Write-Warning "Failed to parse GitKraken organization list JSON: $($_.Exception.Message)"
+                $orgs = @()
+            }
+        }
+
         if ($orgs -and $orgs.Count -gt 0) {
             $activeOrg = $orgs | Where-Object { $_.active -eq $true }
             if (-not $activeOrg) {
@@ -392,7 +607,7 @@ function Invoke-GitKrakenWorkflow {
             }
 
             # Check if branch is pushed
-            $remoteExists = git ls-remote --exit-code --heads origin $currentBranch 2>$null
+            git ls-remote --exit-code --heads origin $currentBranch 2>$null | Out-Null
             if ($LASTEXITCODE -ne 0) {
                 Write-Warning "Branch not pushed to remote. Pushing now..."
                 git push -u origin $currentBranch
