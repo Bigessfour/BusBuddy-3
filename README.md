@@ -14,6 +14,7 @@
 BusBuddy streamlines school transportation operations through intelligent route management, vehicle tracking, and student assignment systems. Built with modern .NET technologies and professional-grade UI components.
 
 ### **Core Features**
+
 - 🚌 **Fleet Management**: Vehicle tracking, maintenance scheduling, driver assignments
 - 📍 **Route Optimization**: Google Earth Engine integration for efficient route planning
 - 👥 **Student Management**: Student enrollment, route assignments, pickup/dropoff tracking
@@ -23,143 +24,129 @@ BusBuddy streamlines school transportation operations through intelligent route 
 ## 🚀 **Quick Start**
 
 ### **Prerequisites**
+
 - **Windows 10/11** (for WPF)
 - **.NET 9.0 SDK** (9.0.303 or later)
 - **PowerShell 7.5.2+** (for automation)
 - **Visual Studio Code** (recommended) or Visual Studio 2022
 
 ### **Installation & Setup**
+
 ```bash
 # Clone the repository
 git clone https://github.com/Bigessfour/BusBuddy-3.git
 cd BusBuddy
 
-# Load PowerShell automation
-Import-Module .\PowerShell\Modules\BusBuddy\BusBuddy.psm1
+# Build the solution
+dotnet build BusBuddy.sln
 
-# Build and run (MVP development version)
-bbBuild && bbRun
+# Run the application
+dotnet run --project BusBuddy.WPF\BusBuddy.WPF.csproj
 
-# Check for known issues before deployment
-bbHealth
+# Optional: Load PowerShell development helpers
+Import-Module .\PowerShell\Modules\BusBuddy.Commands\BusBuddy.Commands.psm1
 ```
 
-**⚠️ Note**: Before production deployment, please review the "Known Risks" section below.
+**✅ Current Status**: Application builds and runs successfully with modern UI.
 
 ### **📋 Current Build Status**
-**MVP functionality operational with ongoing improvements:**
-- ✅ **Build Status**: Clean build with 0 errors (warnings addressed)
-- ✅ **Package Integrity**: Version conflicts resolved
-- ✅ **Syncfusion License**: Configured and operational
-- ✅ **MVP Validation**: Core functionality confirmed working
-- ⚠️ **Environment**: .NET 9.0.304, PowerShell 7.5.2 operational
-- 🔄 **Production Readiness**: In progress (see Known Risks section)
+
+**Application is functional and ready for feature development:**
+
+- ✅ **Build Status**: Clean build with 0 errors
+- ✅ **Dependencies**: All packages resolved (.NET 9.0, Syncfusion 30.1.42)
+- ✅ **Database**: Entity Framework migrations working with LocalDB
+- ✅ **UI Framework**: WPF with Syncfusion controls operational
+- ✅ **Development Tools**: PowerShell automation module available
+- 🔄 **Active Development**: Ready for feature work
 
 ### **Development Setup**
+
 ```powershell
-# Complete development environment setup
-bbDevSession
+# Build and run the application
+dotnet build BusBuddy.sln
+dotnet run --project BusBuddy.WPF\BusBuddy.WPF.csproj
 
-# Verify system health
-bbHealth
-
-# Run tests
-bbTest
+# Development helpers (optional)
+Import-Module .\PowerShell\Modules\BusBuddy.Commands\BusBuddy.Commands.psm1
+Test-BbAntiRegression  # Check code quality
+Test-BbXaml           # Validate UI controls
 ```
 
-## 📊 **Current Status (August 8, 2025)**
+## 📊 **Current Status (August 19, 2025)**
 
-### **🎉 MVP Core Features Ready**
-- ✅ **Build Status**: Clean build (0 errors, warnings documented)
-- ✅ **MVP Verification**: `bbMvpCheck` confirms core functionality working
-- ✅ **Core Features**: Student management and route assignment functional
-- ✅ **Documentation**: Command references updated and standardized
-- ✅ **PowerShell Automation**: 20+ working commands with enterprise-grade tooling
-- ⚠️ **Production Status**: See Known Risks section below
+### **🎉 Application Status**
 
-### **Recent Achievements (Commit: 29b7dc1)**
-- ✅ **Command Standardization**: Updated all commands from `bb-*` to `bb*` format
-- ✅ **PowerShell Refactoring**: Fixed 49 Write-Host violations (5.4% compliance improvement)
-- ✅ **Professional Tooling**: Created automated refactoring and analysis tools
-- ✅ **Code Quality**: Fixed nullable reference warnings, maintained clean build
-- ✅ **Comprehensive Documentation**: Updated all guides and reference materials
+- ✅ **Build Status**: Clean build with .NET 9.0 and Syncfusion 30.1.42
+- ✅ **Core Application**: WPF application runs successfully
+- ✅ **Student Management**: Working student entry and management features
+- ✅ **Route Management**: Basic route assignment functionality
+- ✅ **Database**: Entity Framework with LocalDB for development
+- ✅ **PowerShell Tools**: Development automation commands working
+- ✅ **Syncfusion Licensing**: Proper license registration implemented
+- ✅ **Log Management**: Centralized logging with consolidated workspace logs
+
+### **Recent Progress (August 19, 2025)**
+
+- ✅ **Enhanced Syncfusion License Handling**: Improved registration with validation and diagnostics
+- ✅ **Centralized Logging**: All workspace logs consolidated into `logs/collected/` directory
+- ✅ **PowerShell Profile Formatting**: Applied trunk formatting standards and PSScriptAnalyzer compliance
+- ✅ **License Management Helper**: Added interactive `bbLicense` command for secure key management
+- ✅ **Documentation Updates**: Verified Syncfusion licensing requirements and NuGet package setup
 
 ### **Available Commands**
+
 ```powershell
 # Core Development
-bbBuild               # Build solution (24.36s clean build)
-bbRun                 # Run application
-bbTest                # Execute tests (.NET 9 compatibility handled)
-bbHealth              # System health check
-bbClean               # Clean build artifacts
-bbRestore             # Restore packages
+dotnet build BusBuddy.sln           # Direct build
+dotnet run --project BusBuddy.WPF   # Run application
 
-# Development Workflow
-bbDevSession          # Start complete development environment
-bbInfo                # Show module information
-bbCommands            # List all available commands
+# PowerShell Helpers (from profile)
+bbBuild                  # Build with environment setup
+bbRun                    # Run with proper project targeting
+bbLicense                # Interactive Syncfusion license management
+bbHealth                 # System health diagnostics
 
-# Quality Assurance
-bbXamlValidate        # Validate XAML files
-bbAntiRegression      # Run compliance checks
-bbMvpCheck            # Verify MVP readiness
-
-# Route Optimization
-bbRoutes              # XAI route optimization system
-bbRouteDemo           # Demo with sample data
-bbRouteStatus         # Check optimization status
+# Code Quality & Validation
+bb-anti-regression       # Scan for code quality issues
+bb-xaml-validate        # Validate Syncfusion controls usage
+trunk check --force     # Format and lint files with trunk
 ```
 
-## ⚠️ **Known Risks & Issues**
+## ⚠️ **Development Notes**
 
-### **Database & Migration Concerns**
-- **Migration History**: Potential migration history out of sync between environments
-- **Seeding Issues**: Database seeding shows "0 records" despite "Already seeded" messages
-- **Schema Changes**: Possible regression in UI data binding due to recent schema modifications
-- **LocalDB vs Production**: Differences between LocalDB development and production SQL Server behavior
+### **Current Focus Areas**
 
-### **UI & Data Binding Risks**
-- **Syncfusion Migration**: Ongoing migration from standard WPF to Syncfusion controls may introduce temporary inconsistencies
-- **Data Binding**: Schema changes may affect existing MVVM data binding patterns
-- **Performance**: Large datasets may impact UI responsiveness during initial load
-- **Theme Consistency**: FluentDark/FluentLight theme application may be incomplete across all controls
+- **Feature Development**: Building student and route management functionality
+- **UI Polish**: Continuing Syncfusion control implementation for professional look
+- **Code Quality**: Maintaining clean architecture and following .NET best practices
+- **Database**: Using Entity Framework with LocalDB for development
 
-### **PowerShell & Automation**
-- **Module Compliance**: BusBuddy.psm1 has 45% compliance with Microsoft PowerShell standards
-- **Write-Host Usage**: 50+ Write-Host violations need remediation for enterprise deployment
-- **Command Standardization**: Recent `bb-*` to `bb*` format changes may require workflow adjustments
-- **Environment Dependencies**: PowerShell 7.5.2+ requirement may limit deployment environments
+### **Known Development Items**
 
-### **External Dependencies**
-- **Syncfusion Licensing**: Community license limitations in production environments
-- **Google Earth Engine**: API rate limits and authentication dependencies
-- **Azure SQL**: Network connectivity and firewall configuration requirements
-- **Package Versions**: .NET 9.0.304 and associated package dependencies still stabilizing
+- **PowerShell Module**: Recently fixed merge conflicts and improved compliance
+- **UI Consistency**: Ongoing migration to Syncfusion controls throughout application
+- **Testing**: Unit test coverage being expanded as features are added
+- **Documentation**: Keeping docs current with active development
 
-### **Production Readiness Gaps**
-- **Error Handling**: Exception handling patterns need standardization across modules
-- **Logging**: Transition from multiple logging frameworks to Serilog-only not fully complete
-- **Security**: Production security review and hardening pending
-- **Performance Testing**: Load testing with realistic data volumes not yet conducted
-- **Backup & Recovery**: Database backup and disaster recovery procedures not implemented
+### **For Production Deployment**
 
-### **Recommended Actions Before Production**
-1. **Database Audit**: Verify migration state and seeding integrity across all environments
-2. **End-to-End Testing**: Run comprehensive CRUD validation with `.\Test-EndToEndCRUD.ps1`
-3. **UI Testing**: Comprehensive testing of all Syncfusion controls with real data
-4. **PowerShell Remediation**: Address Write-Host violations and improve module compliance
-5. **Security Review**: Conduct security assessment and implement recommended hardening
-6. **Performance Testing**: Test with production-scale data volumes
+- Database migration to production SQL Server
+- Environment-specific configuration
+- Security review and hardening
 
 ### **🔧 Troubleshooting & Diagnostics**
 
 #### **Quick Issue Resolution**
+
+- **Syncfusion License**: Use `bbLicense` to check/set license key interactively
+- **Log Analysis**: All workspace logs consolidated in `logs/collected/` for easy review
+- **Code Formatting**: Use `trunk fmt --force [file]` to apply project formatting standards
 - **Migration Issues**: `dotnet ef database update --force` (see [Troubleshooting Log](TROUBLESHOOTING-LOG.md))
-- **EF Version Sync**: `dotnet tool update --global dotnet-ef --version 9.0.8`
-- **FK Constraint Errors**: Run `.\Test-EndToEndCRUD.ps1 -IncludeForeignKeyTests` for validation
-- **Seeding Problems**: Check table mapping in DbContext (Bus entity → Vehicles table)
+- **Build Errors**: Run `bbHealth` for comprehensive system diagnostics
 
 #### **Comprehensive Testing**
+
 ```powershell
 # Run end-to-end CRUD validation
 .\Test-EndToEndCRUD.ps1 -IncludeForeignKeyTests -GenerateReport
@@ -169,15 +156,19 @@ bbHealth
 
 # Validate migration status
 dotnet ef migrations list --project BusBuddy.Core
+
+# Check Syncfusion license status
+bbLicense
 ```
 
 #### **Common Fixes**
-| Issue | Quick Fix | Documentation |
-|-------|-----------|---------------|
-| **Migration History Out of Sync** | `dotnet ef database update --force` | [Troubleshooting Log](TROUBLESHOOTING-LOG.md#migration-history-out-of-sync) |
-| **EF Tools Version Mismatch** | `dotnet tool update --global dotnet-ef --version 9.0.8` | [Troubleshooting Log](TROUBLESHOOTING-LOG.md#ef-tools-version-mismatch) |
-| **Table Mapping Errors** | Update DbContext entity configuration | [Troubleshooting Log](TROUBLESHOOTING-LOG.md#table-mapping--entity-configuration-issues) |
-| **FK Constraint Violations** | Validate referential integrity with test script | [Troubleshooting Log](TROUBLESHOOTING-LOG.md#foreign-key-constraint-violations) |
+
+| Issue                             | Quick Fix                                               | Documentation                                                                            |
+| --------------------------------- | ------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| **Migration History Out of Sync** | `dotnet ef database update --force`                     | [Troubleshooting Log](TROUBLESHOOTING-LOG.md#migration-history-out-of-sync)              |
+| **EF Tools Version Mismatch**     | `dotnet tool update --global dotnet-ef --version 9.0.8` | [Troubleshooting Log](TROUBLESHOOTING-LOG.md#ef-tools-version-mismatch)                  |
+| **Table Mapping Errors**          | Update DbContext entity configuration                   | [Troubleshooting Log](TROUBLESHOOTING-LOG.md#table-mapping--entity-configuration-issues) |
+| **FK Constraint Violations**      | Validate referential integrity with test script         | [Troubleshooting Log](TROUBLESHOOTING-LOG.md#foreign-key-constraint-violations)          |
 
 📋 **Complete Issue Tracking**: See [TROUBLESHOOTING-LOG.md](TROUBLESHOOTING-LOG.md) for detailed solutions and verification steps.
 
@@ -186,22 +177,24 @@ dotnet ef migrations list --project BusBuddy.Core
 > August 2025 Streamlining: Service interfaces are being migrated into `BusBuddy.Core/Services/Contracts`, experimental XAI placeholders collapsed into archive (`experiments/xai/XAI-ARCHIVE.md`), and centralized PowerShell alias registration introduced (`Register-BusBuddyAliases`).
 
 ### **Technology Stack**
-| Component | Technology | Version |
-|-----------|------------|---------|
-| **Framework** | .NET | 9.0.303 |
-| **UI Framework** | WPF | Built-in |
-| **UI Controls** | Syncfusion Essential Studio | 30.1.42 |
-| **Data Access** | Entity Framework Core | 9.0.7 |
-| **Database** | SQL Server / LocalDB | Latest |
-| **Logging** | Serilog | 4.3.0 |
-| **Testing** | NUnit | 4.3.1 |
-| **MVVM** | CommunityToolkit.MVVM | 8.3.2 |
+
+| Component        | Technology                  | Version  |
+| ---------------- | --------------------------- | -------- |
+| **Framework**    | .NET                        | 9.0.303  |
+| **UI Framework** | WPF                         | Built-in |
+| **UI Controls**  | Syncfusion Essential Studio | 30.1.42  |
+| **Data Access**  | Entity Framework Core       | 9.0.7    |
+| **Database**     | SQL Server / LocalDB        | Latest   |
+| **Logging**      | Serilog                     | 4.3.0    |
+| **Testing**      | NUnit                       | 4.3.1    |
+| **MVVM**         | CommunityToolkit.MVVM       | 8.3.2    |
 
 ### **Project Structure**
+
 ```
 BusBuddy/
 
-## 🖥️ High DPI and font sizing (Syncfusion WPF v30.4.42)
+## 🖥️ High DPI and font sizing (Syncfusion WPF v30.1.42)
 
 - App is PerMonitorV2 DPI-aware via application manifest (`BusBuddy.WPF/app.manifest`).
 - Windows-level: we use layout rounding and device pixel snapping on key windows.
@@ -228,6 +221,7 @@ Testing guidance:
 ```
 
 ### **Design Patterns**
+
 - **MVVM**: Model-View-ViewModel for clean separation of concerns
 - **Dependency Injection**: Built-in .NET DI container
 - **Repository Pattern**: Data access abstraction
@@ -236,41 +230,51 @@ Testing guidance:
 ## 🔧 **Development**
 
 ### **PowerShell Automation**
-BusBuddy includes a comprehensive PowerShell module for development tasks:
+
+BusBuddy includes comprehensive PowerShell functions in the user profile for development tasks:
 
 ```powershell
-# Essential commands (Updated August 8, 2025)
-bbBuild               # Build the solution
-bbRun                 # Run the application
+# Essential commands (Updated August 19, 2025)
+bbBuild               # Build the solution with environment setup
+bbRun                 # Run the application with proper project targeting
+bbLicense             # Interactive Syncfusion license management
+bbHealth              # System diagnostics and health check
+
+# Development workflow
+bbClean               # Clean solution and packages
+bbRestore             # Restore NuGet packages
 bbTest                # Execute all tests
-bbHealth              # System diagnostics
-bbDevSession          # Complete development setup
 
-# Advanced commands
-bb-xaml-validate      # Validate XAML files
-bb-catch-errors       # Execute with exception capture
-bb-anti-regression    # Prevent legacy patterns
-bbDiagnostic          # Comprehensive system analysis
+# Code quality and formatting
+trunk check --force [file]    # Format and lint with trunk tools
+bb-anti-regression           # Prevent legacy patterns
+bb-xaml-validate            # Validate XAML files for Syncfusion compliance
+```
 
-# Testing and Validation
-./Test-EndToEndCRUD.ps1              # Comprehensive CRUD testing
-./Test-EndToEndCRUD.ps1 -IncludeForeignKeyTests -GenerateReport  # Full validation with report
-```
-bb-commands           # List all available commands
-```
+### **Log Management**
+
+All workspace logs are automatically consolidated into `logs/collected/` directory for easy analysis:
+
+- Application logs (bootstrap, runtime, errors)
+- Build artifacts and file lists
+- Trunk tool logs
+- Test results and coverage reports
+
+````
 
 ### **Building**
 ```bash
-# Standard .NET CLI
-dotnet restore
+# Standard .NET CLI approach
 dotnet build BusBuddy.sln
-dotnet run --project BusBuddy.WPF/BusBuddy.WPF.csproj
+dotnet run --project BusBuddy.WPF\BusBuddy.WPF.csproj
 
-# Or use PowerShell automation
-bb-build && bb-run
-```
+# Alternative: Use PowerShell helpers
+Import-Module .\PowerShell\Modules\BusBuddy.Commands\BusBuddy.Commands.psm1
+Invoke-BbBuild
+````
 
 ### **Testing**
+
 ```bash
 # Run all tests
 dotnet test BusBuddy.sln
@@ -284,6 +288,7 @@ bb-test
 BusBuddy uses Syncfusion Essential Studio for WPF to provide a modern, professional user interface:
 
 ### **Key UI Components**
+
 - **SfDataGrid**: Advanced data grid with sorting, filtering, and editing
 - **DockingManager**: Professional layout management
 - **SfChart**: Rich charting and visualization
@@ -291,6 +296,7 @@ BusBuddy uses Syncfusion Essential Studio for WPF to provide a modern, professio
 - **SfScheduler**: Calendar and scheduling interface
 
 ### **Themes**
+
 - **FluentDark**: Modern dark theme
 - **FluentLight**: Clean light theme
 - **Custom**: BusBuddy-specific styling
@@ -300,6 +306,7 @@ BusBuddy uses Syncfusion Essential Studio for WPF to provide a modern, professio
 ### **Core Modules**
 
 #### **🚌 Vehicle Management**
+
 - Fleet inventory and specifications
 - Maintenance scheduling and tracking
 - Driver assignments and qualifications
@@ -307,6 +314,7 @@ BusBuddy uses Syncfusion Essential Studio for WPF to provide a modern, professio
 - Inspection compliance
 
 #### **📍 Route Management**
+
 - Interactive route planning with Google Earth Engine
 - Stop optimization and timing
 - Student assignment to routes
@@ -314,6 +322,7 @@ BusBuddy uses Syncfusion Essential Studio for WPF to provide a modern, professio
 - Performance analytics
 
 #### **👥 Student Management**
+
 - Student enrollment and profiles
 - Route assignments and pickup locations
 - Attendance tracking
@@ -321,6 +330,7 @@ BusBuddy uses Syncfusion Essential Studio for WPF to provide a modern, professio
 - Special needs accommodation
 
 #### **📈 Analytics & Reporting**
+
 - Operational dashboards
 - Performance metrics
 - Cost analysis
@@ -330,6 +340,7 @@ BusBuddy uses Syncfusion Essential Studio for WPF to provide a modern, professio
 ## 🛠️ **Configuration**
 
 ### **Database Setup**
+
 ```bash
 # Create/update database
 dotnet ef database update
@@ -339,28 +350,35 @@ dotnet ef migrations add NewMigrationName
 ```
 
 ### **Environment Variables**
-- `SYNCFUSION_LICENSE_KEY`: **Community License key** (required for production)
-  - **Community License**: Free for individual developers and small teams
-  - **Setup**: Set your actual license key from Syncfusion account
-  - **Format**: Long alphanumeric string (200+ characters)
-  - **Example**: `[System.Environment]::SetEnvironmentVariable("SYNCFUSION_LICENSE_KEY", "YOUR_ACTUAL_LICENSE_KEY", "User")`
-- `ConnectionStrings__DefaultConnection`: Database connection string
-- `GoogleEarthEngine__ApiKey`: Google Earth Engine API key
 
-### **Syncfusion Community License Setup**
-1. **Get License**: Visit [Syncfusion Community License](https://www.syncfusion.com/products/communitylicense) 
+- `SYNCFUSION_LICENSE_KEY`: **License key for Syncfusion WPF controls** (required)
+    - **Community License**: Free for individual developers and small teams
+    - **Setup**: Use `bbLicense -Set` to securely configure your license key
+    - **Format**: Long alphanumeric string (200+ characters)
+    - **Validation**: Built-in placeholder detection prevents trial dialogs
+- `ConnectionStrings__DefaultConnection`: Database connection string
+- `GoogleEarthEngine__ApiKey`: Google Earth Engine API key (optional for basic features)
+
+### **Syncfusion License Setup**
+
+1. **Get License**: Visit [Syncfusion Community License](https://www.syncfusion.com/products/communitylicense)
 2. **Generate Key**: Login to your Syncfusion account and generate license key
-3. **Set Environment**: Replace placeholder with your actual key (NOT "TRIAL_MODE")
-4. **Verify**: Application should start without trial dialogs
+3. **Set Environment**: Use `bbLicense -Set` command and paste your key when prompted
+4. **Verify**: Run `bbLicense` to check status; application should start without trial dialogs
+
+**Note**: No separate licensing NuGet package required - license registration is built into Syncfusion WPF packages.
 
 ### **Development Settings**
+
 Configuration is managed through `appsettings.json` files in each project:
+
 - `BusBuddy.Core/appsettings.json`: Core configuration
 - `BusBuddy.WPF/appsettings.json`: UI-specific settings
 
 ## 🧪 **Testing** - Advanced NUnit Integration
 
 ### **PowerShell Testing Module** ✨ **NEW**
+
 BusBuddy includes a comprehensive testing infrastructure with VS Code NUnit Test Runner integration:
 
 ```powershell
@@ -376,50 +394,60 @@ bb-test-status             # Check current test status
 ```
 
 ### **Test Structure**
+
 Legacy Phase 3/4 harness scripts have been archived (see `Documentation/Archive/LegacyScripts/INDEX.md`). Current active tests:
+
 - **Unit Tests**: `BusBuddy.Tests/Core/` - Core business logic validation
 - **Integration Tests**: `BusBuddy.Tests/Phase3Tests/` - Database and service interactions (rename planned post-MVP)
 - **Validation Tests**: `BusBuddy.Tests/ValidationTests/` - Input validation and error handling
 
 ### **Test Categories**
-| Category | Filter | Description |
-|----------|--------|-------------|
-| **All** | No filter | Complete test suite |
-| **Unit** | `Category=Unit` | Core business logic |
-| **Integration** | `Category=Integration` | Database/service interactions |
-| **Validation** | `Category=Validation` | Input validation & error handling |
-| **Core** | `TestName~Core` | BusBuddy.Core project tests |
-| **WPF** | `TestName~WPF` | UI and presentation layer |
+
+| Category        | Filter                 | Description                       |
+| --------------- | ---------------------- | --------------------------------- |
+| **All**         | No filter              | Complete test suite               |
+| **Unit**        | `Category=Unit`        | Core business logic               |
+| **Integration** | `Category=Integration` | Database/service interactions     |
+| **Validation**  | `Category=Validation`  | Input validation & error handling |
+| **Core**        | `TestName~Core`        | BusBuddy.Core project tests       |
+| **WPF**         | `TestName~WPF`         | UI and presentation layer         |
 
 ### **VS Code Integration**
+
 Legacy Phase 4 tasks removed; use standard NUnit Test Explorer or `bbTest` commands.
+
 - **NUnit Test Runner Extension**: Automatic test discovery and execution
 - **PowerShell**: `bbTest` (all) / future `bbTest -Watch` (planned)
 
 ### **Advanced Features**
+
 - **Watch Mode**: Monitors `*.cs` and `*.xaml` files for changes, auto-runs tests
 - **Detailed Reporting**: Markdown reports with metrics, environment details, and recommendations
 - **Category-Based Testing**: Focus on specific test types during development
 - **Microsoft Compliance**: PowerShell 7.5.2 standards-compliant automation
 
 ### **Coverage**
+
 Test coverage reports are generated in `TestResults/` directory with detailed TRX files and comprehensive markdown reports in `Documentation/Reports/`.
 
 ## 📚 **Documentation**
 
 ### **For Developers**
+
 - [**System Architecture**](Documentation/PHASE-2-IMPLEMENTATION-PLAN.md)
 - [**Development Standards**](Standards/MASTER-STANDARDS.md)
 - [**PowerShell Reference**](Documentation/PowerShell-7.5.2-Reference.md)
 - [**Phase 4 Status**](Documentation/Phase4-Milestone-Report.md)
 
 ### **For AI Assistants**
+
 - [**AI Assistant Guide**](Grok%20Resources/GROK-README.md)
 - [**Repository Navigation**](Grok%20Resources/AI-ASSISTANT-GUIDE.md)
 
 ## 🤝 **Contributing**
 
 ### **Development Workflow**
+
 1. Fork the repository
 2. Create a feature branch: `git checkout -b feature/amazing-feature`
 3. Follow the [development standards](Standards/MASTER-STANDARDS.md)
@@ -428,6 +456,7 @@ Test coverage reports are generated in `TestResults/` directory with detailed TR
 6. Open a Pull Request
 
 ### **Standards**
+
 - ✅ **Syncfusion controls only** (no standard WPF controls)
 - ✅ **Serilog logging** (no Microsoft.Extensions.Logging)
 - ✅ **PowerShell 7.5.2 compliance** (no Write-Host)
@@ -435,6 +464,7 @@ Test coverage reports are generated in `TestResults/` directory with detailed TR
 - ✅ **MVVM pattern** with proper separation of concerns
 
 ### **Code Quality**
+
 - All tests must pass: `bb-test`
 - Code analysis must pass: `bb-build`
 - XAML validation: `bb-xaml-validate`
@@ -443,6 +473,7 @@ Test coverage reports are generated in `TestResults/` directory with detailed TR
 ## 📈 **Project Status**
 
 ### **Current Phase**: MVP Development (Historic Phase 4 artifacts archived)
+
 - ✅ **Foundation**: Complete (.NET 9, Syncfusion, EF Core)
 - ✅ **Testing Infrastructure**: Operational (NUnit, coverage reporting)
 - ✅ **PowerShell Automation**: Core functionality stable (compliance improvements needed)
@@ -452,6 +483,7 @@ Test coverage reports are generated in `TestResults/` directory with detailed TR
 - 🎯 **Route Optimization**: Next major milestone
 
 ### **Quality Metrics**
+
 - **Build Status**: ✅ Passing (0 errors, warnings documented)
 - **Test Coverage**: 75%+ achieved (85% target)
 - **Code Quality**: Meets development standards (production review pending)
@@ -461,6 +493,7 @@ Test coverage reports are generated in `TestResults/` directory with detailed TR
 ## 🌟 **Roadmap**
 
 ### **Upcoming Features**
+
 - 🎯 **Student Entry System**: Complete student-to-route assignment
 - 📱 **Mobile Companion**: Driver mobile app
 - 🔔 **Real-time Notifications**: Parent and administrator alerts
@@ -468,6 +501,7 @@ Test coverage reports are generated in `TestResults/` directory with detailed TR
 - 📊 **Advanced Analytics**: Predictive maintenance and cost optimization
 
 ### **Long-term Vision**
+
 - Integration with state transportation reporting systems
 - Multi-district support
 - IoT device integration for real-time tracking
@@ -476,12 +510,14 @@ Test coverage reports are generated in `TestResults/` directory with detailed TR
 ## 📞 **Support**
 
 ### **Getting Help**
+
 - 📚 **Documentation**: Start with this README and linked guides
 - 🔧 **PowerShell**: Use `bbHealth` for system diagnostics
 - 🐛 **Issues**: Create GitHub issues for bugs or feature requests
 - 💬 **Discussions**: Use GitHub discussions for questions
 
 ### **Troubleshooting**
+
 ```powershell
 # System health check
 bbHealth
@@ -508,4 +544,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 **Built with ❤️ for school transportation professionals**
 
-*Last Updated: August 8, 2025*
+_Last Updated: August 19, 2025 - Enhanced licensing, logging, and PowerShell automation_

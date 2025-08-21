@@ -1,64 +1,202 @@
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:syncfusion="http://schemas.syncfusion.com/wpf">
+    <!-- IMPORTANT: This theme is NOT loaded by default in App.xaml to avoid duplicate key conflicts.
+    FluentDarkTheme.xaml is the primary theme. This file can be loaded dynamically via SfSkinManager
+    when switching to light theme mode.
 
+    Note: Keys in this file (ButtonBackgroundBrush, ButtonForegroundBrush, etc.)
+    intentionally match those in FluentDarkTheme.xaml for theme switching compatibility. -->
     <!-- Fluent Light Color Palette -->
-
     <!-- Background Colors -->
-    <SolidColorBrush x:Key="PrimaryBackgroundBrush" Color="#FFFFFF"/>
-    <SolidColorBrush x:Key="SecondaryBackgroundBrush" Color="#F3F2F1"/>
-    <SolidColorBrush x:Key="ContentBackgroundBrush" Color="#FAFAFA"/>
-    <SolidColorBrush x:Key="AccentBackgroundBrush" Color="#0078D4"/>
-
+    <SolidColorBrush x:Key="PrimaryBackgroundBrush"
+                     Color="#FFFFFF" />
+    <SolidColorBrush x:Key="SecondaryBackgroundBrush"
+                     Color="#F3F2F1" />
+    <SolidColorBrush x:Key="ContentBackgroundBrush"
+                     Color="#FAFAFA" />
+    <SolidColorBrush x:Key="AccentBackgroundBrush"
+                     Color="#0078D4" />
     <!-- Text Colors -->
-    <SolidColorBrush x:Key="PrimaryTextBrush" Color="#323130"/>
-    <SolidColorBrush x:Key="SecondaryTextBrush" Color="#605E5C"/>
-    <SolidColorBrush x:Key="AccentTextBrush" Color="#0078D4"/>
-    <SolidColorBrush x:Key="DisabledTextBrush" Color="#A19F9D"/>
-
+    <SolidColorBrush x:Key="PrimaryTextBrush"
+                     Color="#323130" />
+    <SolidColorBrush x:Key="SecondaryTextBrush"
+                     Color="#605E5C" />
+    <SolidColorBrush x:Key="AccentTextBrush"
+                     Color="#0078D4" />
+    <SolidColorBrush x:Key="DisabledTextBrush"
+                     Color="#A19F9D" />
     <!-- Border Colors -->
-    <SolidColorBrush x:Key="BorderBrush" Color="#D2D0CE"/>
-    <SolidColorBrush x:Key="FocusBorderBrush" Color="#0078D4"/>
-    <SolidColorBrush x:Key="HoverBorderBrush" Color="#C7C6C4"/>
-
+    <SolidColorBrush x:Key="BorderBrush"
+                     Color="#D2D0CE" />
+    <SolidColorBrush x:Key="FocusBorderBrush"
+                     Color="#0078D4" />
+    <SolidColorBrush x:Key="HoverBorderBrush"
+                     Color="#C7C6C4" />
     <!-- Button Colors -->
-    <SolidColorBrush x:Key="ButtonBackgroundBrush" Color="#0078D4"/>
-    <SolidColorBrush x:Key="ButtonHoverBackgroundBrush" Color="#106EBE"/>
-    <SolidColorBrush x:Key="ButtonPressedBackgroundBrush" Color="#005A9E"/>
-    <SolidColorBrush x:Key="ButtonForegroundBrush" Color="#FFFFFF"/>
-
+    <SolidColorBrush x:Key="ButtonBackgroundBrush"
+                     Color="#0078D4" />
+    <SolidColorBrush x:Key="ButtonHoverBackgroundBrush"
+                     Color="#106EBE" />
+    <SolidColorBrush x:Key="ButtonPressedBackgroundBrush"
+                     Color="#005A9E" />
+    <SolidColorBrush x:Key="ButtonForegroundBrush"
+                     Color="#FFFFFF" />
     <!-- Input Control Colors -->
-    <SolidColorBrush x:Key="TextBoxBackgroundBrush" Color="#FFFFFF"/>
-    <SolidColorBrush x:Key="TextBoxForegroundBrush" Color="#323130"/>
-    <SolidColorBrush x:Key="TextBoxBorderBrush" Color="#D2D0CE"/>
-
+    <SolidColorBrush x:Key="TextBoxBackgroundBrush"
+                     Color="#FFFFFF" />
+    <SolidColorBrush x:Key="TextBoxForegroundBrush"
+                     Color="#323130" />
+    <SolidColorBrush x:Key="TextBoxBorderBrush"
+                     Color="#D2D0CE" />
     <!-- Data Grid Colors -->
-    <SolidColorBrush x:Key="DataGridHeaderBackgroundBrush" Color="#F3F2F1"/>
-    <SolidColorBrush x:Key="DataGridHeaderForegroundBrush" Color="#323130"/>
-    <SolidColorBrush x:Key="DataGridRowBackgroundBrush" Color="#FFFFFF"/>
-    <SolidColorBrush x:Key="DataGridAlternateRowBackgroundBrush" Color="#F8F8F8"/>
-    <SolidColorBrush x:Key="DataGridSelectionBackgroundBrush" Color="#CCE8FF"/>
-    <SolidColorBrush x:Key="DataGridGridLinesBrush" Color="#E1DFDD"/>
-
+    <SolidColorBrush x:Key="DataGridHeaderBackgroundBrush"
+                     Color="#F3F2F1" />
+    <SolidColorBrush x:Key="DataGridHeaderForegroundBrush"
+                     Color="#323130" />
+    <SolidColorBrush x:Key="DataGridRowBackgroundBrush"
+                     Color="#FFFFFF" />
+    <SolidColorBrush x:Key="DataGridAlternateRowBackgroundBrush"
+                     Color="#F8F8F8" />
+    <SolidColorBrush x:Key="DataGridSelectionBackgroundBrush"
+                     Color="#CCE8FF" />
+    <SolidColorBrush x:Key="DataGridGridLinesBrush"
+                     Color="#E1DFDD" />
     <!-- Syncfusion control styles integrated with Fluent Light theme -->
     <Style TargetType="{x:Type syncfusion:ButtonAdv}">
-        <Setter Property="Background" Value="{DynamicResource ButtonBackgroundBrush}"/>
-        <Setter Property="Foreground" Value="{DynamicResource ButtonForegroundBrush}"/>
-        <Setter Property="BorderBrush" Value="{DynamicResource HoverBorderBrush}"/>
-        <Setter Property="BorderThickness" Value="1"/>
-        <Setter Property="Padding" Value="12,6"/>
-        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="Background"
+                Value="{DynamicResource ButtonBackgroundBrush}" />
+        <Setter Property="Foreground"
+                Value="{DynamicResource ButtonForegroundBrush}" />
+        <Setter Property="BorderBrush"
+                Value="{DynamicResource HoverBorderBrush}" />
+        <Setter Property="BorderThickness"
+                Value="1" />
+        <Setter Property="Padding"
+                Value="12,6" />
+        <Setter Property="Cursor"
+                Value="Hand" />
         <Style.Triggers>
-            <Trigger Property="IsMouseOver" Value="True">
-                <Setter Property="Background" Value="{DynamicResource ButtonHoverBackgroundBrush}"/>
+            <Trigger Property="IsMouseOver"
+                     Value="True">
+                <Setter Property="Background"
+                        Value="{DynamicResource ButtonHoverBackgroundBrush}" />
             </Trigger>
-            <Trigger Property="IsPressed" Value="True">
-                <Setter Property="Background" Value="{DynamicResource ButtonPressedBackgroundBrush}"/>
+            <Trigger Property="IsPressed"
+                     Value="True">
+                <Setter Property="Background"
+                        Value="{DynamicResource ButtonPressedBackgroundBrush}" />
             </Trigger>
-            <Trigger Property="IsEnabled" Value="False">
-                <Setter Property="Opacity" Value="0.6"/>
+            <Trigger Property="IsEnabled"
+                     Value="False">
+                <Setter Property="Opacity"
+                        Value="0.6" />
             </Trigger>
         </Style.Triggers>
     </Style>
 
+    <!-- Named ButtonAdv Success style for semantic success actions -->
+    <!-- Based on official Syncfusion ButtonAdv documentation: https://help.syncfusion.com/cr/wpf/Syncfusion.Windows.Tools.Controls.ButtonAdv.html -->
+    <Style x:Key="BusBuddy.ButtonAdv.Success" TargetType="{x:Type syncfusion:ButtonAdv}">
+        <Setter Property="Background" Value="#28A745"/>
+        <Setter Property="Foreground" Value="#FFFFFF"/>
+        <Setter Property="BorderBrush" Value="#28A745"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="Padding" Value="12,6"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Style.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="Background" Value="#218838"/>
+                <Setter Property="BorderBrush" Value="#1E7E34"/>
+            </Trigger>
+            <Trigger Property="IsPressed" Value="True">
+                <Setter Property="Background" Value="#1E7E34"/>
+                <Setter Property="BorderBrush" Value="#1C7430"/>
+            </Trigger>
+            <Trigger Property="IsEnabled" Value="False">
+                <Setter Property="Opacity" Value="0.6"/>
+                <Setter Property="Background" Value="#A19F9D"/>
+                <Setter Property="BorderBrush" Value="#A19F9D"/>
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <!-- Named ButtonAdv Warning style for semantic warning actions -->
+    <Style x:Key="BusBuddy.ButtonAdv.Warning" TargetType="{x:Type syncfusion:ButtonAdv}">
+        <Setter Property="Background" Value="#FFC107"/>
+        <Setter Property="Foreground" Value="#212529"/>
+        <Setter Property="BorderBrush" Value="#FFC107"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="Padding" Value="12,6"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Style.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="Background" Value="#E0A800"/>
+                <Setter Property="BorderBrush" Value="#D39E00"/>
+            </Trigger>
+            <Trigger Property="IsPressed" Value="True">
+                <Setter Property="Background" Value="#D39E00"/>
+                <Setter Property="BorderBrush" Value="#C69500"/>
+            </Trigger>
+            <Trigger Property="IsEnabled" Value="False">
+                <Setter Property="Opacity" Value="0.6"/>
+                <Setter Property="Background" Value="#A19F9D"/>
+                <Setter Property="BorderBrush" Value="#A19F9D"/>
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <!-- Named ButtonAdv Error/Danger style for semantic error actions -->
+    <Style x:Key="BusBuddy.ButtonAdv.Danger" TargetType="{x:Type syncfusion:ButtonAdv}">
+        <Setter Property="Background" Value="#DC3545"/>
+        <Setter Property="Foreground" Value="#FFFFFF"/>
+        <Setter Property="BorderBrush" Value="#DC3545"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="Padding" Value="12,6"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Style.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="Background" Value="#C82333"/>
+                <Setter Property="BorderBrush" Value="#BD2130"/>
+            </Trigger>
+            <Trigger Property="IsPressed" Value="True">
+                <Setter Property="Background" Value="#BD2130"/>
+                <Setter Property="BorderBrush" Value="#B21F2D"/>
+            </Trigger>
+            <Trigger Property="IsEnabled" Value="False">
+                <Setter Property="Opacity" Value="0.6"/>
+                <Setter Property="Background" Value="#A19F9D"/>
+                <Setter Property="BorderBrush" Value="#A19F9D"/>
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <!-- Named ButtonAdv Info style for semantic info actions -->
+    <Style x:Key="BusBuddy.ButtonAdv.Info" TargetType="{x:Type syncfusion:ButtonAdv}">
+        <Setter Property="Background" Value="#17A2B8"/>
+        <Setter Property="Foreground" Value="#FFFFFF"/>
+        <Setter Property="BorderBrush" Value="#17A2B8"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="Padding" Value="12,6"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Style.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="Background" Value="#138496"/>
+                <Setter Property="BorderBrush" Value="#117A8B"/>
+            </Trigger>
+            <Trigger Property="IsPressed" Value="True">
+                <Setter Property="Background" Value="#117A8B"/>
+                <Setter Property="BorderBrush" Value="#10707F"/>
+            </Trigger>
+            <Trigger Property="IsEnabled" Value="False">
+                <Setter Property="Opacity" Value="0.6"/>
+                <Setter Property="Background" Value="#A19F9D"/>
+                <Setter Property="BorderBrush" Value="#A19F9D"/>
+            </Trigger>
+        </Style.Triggers>
+    </Style>
 </ResourceDictionary>

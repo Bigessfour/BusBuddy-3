@@ -7,29 +7,28 @@
     <Application.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
-                <!-- Our custom MenuStyles.xaml -->
+                <!-- Load custom MenuStyles first -->
                 <ResourceDictionary Source="Resources/MenuStyles.xaml"/>
 
-                <!-- Syncfusion V30 Validated Resource Dictionary with proper theme brushes -->
+                <!-- Load Syncfusion V30 Validated Resource Dictionary (colors/brushes only) -->
                 <ResourceDictionary Source="Resources/SyncfusionV30_Validated_ResourceDictionary.xaml"/>
 
-                    <!-- BusBuddy Fluent theme palettes for DynamicResource brushes used across views -->
-                    <ResourceDictionary Source="Resources/Themes/FluentDarkTheme.xaml"/>
-                    <ResourceDictionary Source="Resources/Themes/FluentLightTheme.xaml"/>
-
-                <!-- Shared Syncfusion styles and theme brushes -->
+                <!-- Load Syncfusion styles (no duplicate brushes, minimal control styles) -->
                 <ResourceDictionary Source="Resources/SyncfusionStyles.xaml" />
 
-                <!-- Shared view styles can go here if needed (kept empty for now) -->
-                <!-- <ResourceDictionary Source="Resources/Styles/SharedViewStyles.xaml"/> -->
+                <!-- Load theme-specific resources -->
+                <!-- Note: Only load one theme at a time to avoid duplicate implicit styles -->
+                <!-- FluentDark is primary theme; FluentLight can be loaded dynamically via SfSkinManager -->
+                <ResourceDictionary Source="Resources/Themes/FluentDarkTheme.xaml"/>
 
-                <!-- Custom brush overrides for form label/input contrast -->
+                <!-- Custom brush overrides for enhanced form contrast -->
                 <ResourceDictionary Source="Resources/Themes/CustomBrushes.xaml"/>
 
-                <!-- Phase 1: Basic styling without complex Syncfusion theme loading -->
-                <!-- Note: Syncfusion themes will be applied programmatically via SfSkinManager in App.xaml.cs -->
+                <!-- Phase 1: Basic styling without complex theme conflicts -->
+                <!-- Note: Syncfusion themes are applied programmatically via SfSkinManager in App.xaml.cs -->
                 <ResourceDictionary>
                     <!-- Enhanced color palette for StudentsView and other components -->
+                    <!-- Note: These complement but don't override the main theme brushes -->
                     <SolidColorBrush x:Key="PrimaryBrush" Color="#FF007ACC"/>
                     <SolidColorBrush x:Key="SecondaryBrush" Color="#FFF0F0F0"/>
                     <SolidColorBrush x:Key="AccentBrush" Color="#FF16A085"/>

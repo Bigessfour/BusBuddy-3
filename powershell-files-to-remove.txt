@@ -1,0 +1,51 @@
+# PowerShell Files to Remove via GitHub CLI
+# Generated on August 20, 2025
+# Files currently tracked by git that should be removed
+
+# Legacy Scripts from Documentation/Archive/LegacyScripts/
+Documentation/Archive/LegacyScripts/Debug-DIContainer.ps1
+Documentation/Archive/LegacyScripts/Enhanced-Test-Output.ps1
+Documentation/Archive/LegacyScripts/MinimalOutputCapture.ps1
+Documentation/Archive/LegacyScripts/Query-Students-Azure.ps1
+Documentation/Archive/LegacyScripts/Quick-Azure-Test.ps1
+Documentation/Archive/LegacyScripts/Run-Phase4-NUnitTests-Modular.ps1
+Documentation/Archive/LegacyScripts/Runtime-Capture-Monitor.ps1
+Documentation/Archive/LegacyScripts/Test-RouteService.ps1
+Documentation/Archive/LegacyScripts/Test-WileyDataSeeding.ps1
+Documentation/Archive/LegacyScripts/WileySeed.ps1
+Documentation/Archive/LegacyScripts/test-module-load.ps1
+
+# Phase 3 cleanup files
+Documentation/Archive/phase3-cleanup-consolidated-files.ps1
+Documentation/Archive/phase3-final-push.ps1
+Documentation/Archive/phase3b-aggressive-consolidation.ps1
+
+# PowerShell Config and Scripts
+PowerShell/Config/BufferConfiguration.ps1
+
+# Main PowerShell Module (the large monolithic one mentioned in instructions)
+PowerShell/Modules/BusBuddy.ExceptionCapture.psm1
+
+# Root level scripts
+Query-Students-Azure.ps1
+
+# Scripts directory
+scripts/collect-logs.ps1
+
+# VS Code PowerShell configuration (these should stay, but documenting for reference)
+# .vscode/powershell-extension-config.json
+# .vscode/powershell-problem-matcher.json
+# .vscode/powershell-style-enforcement.json
+
+# NEW/UNTRACKED FILES TO PRESERVE (DO NOT DELETE):
+# Execute-BusBuddyOptimization.ps1
+# Powershell/BusBuddy.ModuleManager.ps1
+# Powershell/Modules/BusBuddy.AntiRegression.psm1
+# Powershell/Modules/BusBuddy.Azure.psm1
+# Powershell/Modules/BusBuddy.Performance.psm1
+# Powershell/Modules/BusBuddy.Trunk.psm1
+# Powershell/Modules/BusBuddy.Validation.psm1
+# Powershell/Modules/BusBuddy.XamlValidation.psm1
+# Powershell/PSScriptAnalyzerSettings.psd1
+# scripts/Safe-PowerShell-Cleanup.ps1
+# scripts/gh-cleanup-powershell.ps1

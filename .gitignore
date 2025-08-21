@@ -2,12 +2,21 @@
 *.wpftmp.csproj
 * (1).*
 * (2).*
+* (3).*
 *.tmp
 *.temp
 *.bak
 *.backup
 *.old
 *.crdownload
+
+# VS Code specific duplicates
+.vscode/*.bak
+.vscode/*.(1).*
+.vscode/*.(2).*
+.vscode/*_backup.*
+.vscode/*_temp.*
+.vscode/*_tmp.*
 
 # Build and IDE artifacts
 /bin/
