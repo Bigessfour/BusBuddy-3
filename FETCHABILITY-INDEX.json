@@ -5,7 +5,7 @@
     "repository": "https://github.com/Bigessfour/BusBuddy-3",
     "base_url_branch": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master",
     "base_url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/7f9dc1b9a7fd6733198abf11320082bca121a94c",
-    "total_files": 500,
+    "total_files": 80,
     "categories": [
       "documentation",
       "source_code",
@@ -13,7 +13,8 @@
       "assets",
       "tests",
       "build_artifacts"
-    ]
+    ],
+    "cleanup_notes": "Legacy cleanup: removed 5 dead references"
   },
   "files": [
     {
@@ -213,13 +214,6 @@
       "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/7f9dc1b9a7fd6733198abf11320082bca121a94c/BusBuddy.sln"
     },
     {
-      "path": "cleanup-documentation.ps1",
-      "category": "build_artifacts",
-      "type": "powershell",
-      "url_branch": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/cleanup-documentation.ps1",
-      "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/7f9dc1b9a7fd6733198abf11320082bca121a94c/cleanup-documentation.ps1"
-    },
-    {
       "path": "CONTRIBUTING.md",
       "category": "documentation",
       "type": "markdown",
@@ -330,27 +324,6 @@
       "type": "json",
       "url_branch": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/package.json",
       "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/7f9dc1b9a7fd6733198abf11320082bca121a94c/package.json"
-    },
-    {
-      "path": "raw-index.json",
-      "category": "documentation",
-      "type": "json",
-      "url_branch": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/raw-index.json",
-      "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/7f9dc1b9a7fd6733198abf11320082bca121a94c/raw-index.json"
-    },
-    {
-      "path": "RAW-LINKS-PINNED.txt",
-      "category": "documentation",
-      "type": "text",
-      "url_branch": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/RAW-LINKS-PINNED.txt",
-      "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/7f9dc1b9a7fd6733198abf11320082bca121a94c/RAW-LINKS-PINNED.txt"
-    },
-    {
-      "path": "RAW-LINKS.txt",
-      "category": "documentation",
-      "type": "text",
-      "url_branch": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/RAW-LINKS.txt",
-      "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/7f9dc1b9a7fd6733198abf11320082bca121a94c/RAW-LINKS.txt"
     },
     {
       "path": "README.md",
@@ -603,13 +576,6 @@
       "type": "markdown",
       "url_branch": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/Documentation/Reference/Route-Assignment-Logic.md",
       "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/7f9dc1b9a7fd6733198abf11320082bca121a94c/Documentation/Reference/Route-Assignment-Logic.md"
-    },
-    {
-      "path": "Documentation/Archive/LegacyScripts/INDEX.md",
-      "category": "documentation",
-      "type": "markdown",
-      "url_branch": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/Documentation/Archive/LegacyScripts/INDEX.md",
-      "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/7f9dc1b9a7fd6733198abf11320082bca121a94c/Documentation/Archive/LegacyScripts/INDEX.md"
     }
   ]
 }

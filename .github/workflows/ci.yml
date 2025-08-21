@@ -1,0 +1,299 @@
+# 🚌 BusBuddy CI/CD Pipeline
+# Comprehensive build, test, and dependency validation workflow
+# Includes Syncfusion license monitoring and dependency security checks
+
+name: 🚌 BusBuddy CI Pipeline
+
+on:
+  push:
+    branches: [main, master, develop]
+    paths-ignore:
+      - '**/*.md'
+      - 'docs/**'
+      - 'Documentation/**'
+  pull_request:
+    branches: [main, master]
+    paths-ignore:
+      - '**/*.md'
+      - 'docs/**'
+      - 'Documentation/**'
+  workflow_dispatch:
+    inputs:
+      debug_enabled:
+        type: boolean
+        description: "Enable debug mode for troubleshooting"
+        default: false
+      skip_tests:
+        type: boolean
+        description: "Skip test execution"
+        default: false
+
+env:
+  DOTNET_VERSION: "9.0.x"
+  SOLUTION_FILE: "BusBuddy.sln"
+  BUILD_CONFIGURATION: "Release"
+  BUSBUDDY_NO_WELCOME: "1"
+  BUSBUDDY_NO_XAI_WARN: "1"
+  BUSBUDDY_SILENT: "1"
+
+jobs:
+  # Pre-build validation and dependency checks
+  validate-dependencies:
+    name: 🔍 Validate Dependencies & Licenses
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    
+    steps:
+      - name: 📥 Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          
+      - name: ⚙️ Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+          
+      - name: 🔐 Check Syncfusion License Configuration
+        run: |
+          echo "🔍 Checking Syncfusion license configuration..."
+          
+          # Check if license key is configured (without exposing the value)
+          if [ -z "${{ secrets.SYNCFUSION_LICENSE_KEY }}" ]; then
+            echo "❌ SYNCFUSION_LICENSE_KEY secret is not configured"
+            echo "::warning::Syncfusion license key is missing. Add SYNCFUSION_LICENSE_KEY to repository secrets."
+            echo "::notice::Visit https://help.syncfusion.com/common/essential-studio/licensing/license-key to obtain a license key"
+            exit 1
+          else
+            echo "✅ Syncfusion license key is configured"
+          fi
+          
+          # Check for license registration in code
+          if grep -r "RegisterLicense" --include="*.cs" .; then
+            echo "✅ Found license registration calls in code"
+          else
+            echo "⚠️ No license registration calls found in code"
+            echo "::warning::Ensure Syncfusion.Licensing.SyncfusionLicenseProvider.RegisterLicense() is called"
+          fi
+          
+      - name: 📦 Restore Dependencies
+        run: |
+          echo "📦 Restoring NuGet packages..."
+          dotnet restore ${{ env.SOLUTION_FILE }} --verbosity normal
+          
+      - name: 🔍 Dependency Security Audit
+        run: |
+          echo "🔍 Running dependency security audit..."
+          dotnet list package --vulnerable --include-transitive || true
+          dotnet list package --deprecated || true
+          
+      - name: 📊 Package Version Report
+        run: |
+          echo "📊 Generating package version report..."
+          dotnet list package --outdated || true
+          
+          # Check for Syncfusion version consistency
+          echo "🔍 Checking Syncfusion version consistency..."
+          grep -r "SyncfusionVersion" --include="*.props" --include="*.targets" . || true
+
+  # Main build and test job
+  build-and-test:
+    name: 🏗️ Build & Test
+    runs-on: windows-latest
+    needs: validate-dependencies
+    timeout-minutes: 30
+    
+    steps:
+      - name: 📥 Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          
+      - name: ⚙️ Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+          
+      - name: 💾 Cache NuGet Packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj', '**/Directory.Build.props') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+            
+      - name: 🔐 Configure Syncfusion License
+        env:
+          SYNCFUSION_LICENSE_KEY: ${{ secrets.SYNCFUSION_LICENSE_KEY }}
+        run: |
+          if ([string]::IsNullOrEmpty($env:SYNCFUSION_LICENSE_KEY)) {
+            Write-Warning "Syncfusion license key is not configured"
+            Write-Output "::notice::Running without Syncfusion license - community license features only"
+          } else {
+            Write-Output "✅ Syncfusion license configured for build"
+            # Set environment variable for build process
+            echo "SYNCFUSION_LICENSE_KEY=$env:SYNCFUSION_LICENSE_KEY" >> $env:GITHUB_ENV
+          }
+        shell: pwsh
+        
+      - name: 📦 Restore Dependencies
+        run: dotnet restore ${{ env.SOLUTION_FILE }} --verbosity minimal
+        
+      - name: 🏗️ Build Solution
+        run: |
+          dotnet build ${{ env.SOLUTION_FILE }} `
+            --configuration ${{ env.BUILD_CONFIGURATION }} `
+            --no-restore `
+            --verbosity minimal `
+            /p:TreatWarningsAsErrors=false `
+            /p:WarningLevel=1
+        shell: pwsh
+        
+      - name: 🧪 Run Tests
+        if: ${{ !inputs.skip_tests }}
+        run: |
+          dotnet test ${{ env.SOLUTION_FILE }} `
+            --configuration ${{ env.BUILD_CONFIGURATION }} `
+            --no-build `
+            --verbosity normal `
+            --logger "trx;LogFileName=test-results.trx" `
+            --collect:"XPlat Code Coverage" `
+            --results-directory ./TestResults
+        shell: pwsh
+        
+      - name: 📊 Upload Test Results
+        if: ${{ !inputs.skip_tests && always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: ./TestResults
+          retention-days: 7
+          
+      - name: 📈 Code Coverage Report
+        if: ${{ !inputs.skip_tests }}
+        uses: codecov/codecov-action@v4
+        with:
+          directory: ./TestResults
+          fail_ci_if_error: false
+          verbose: true
+          
+      - name: 🔍 Build Artifacts Analysis
+        run: |
+          Write-Output "🔍 Analyzing build artifacts..."
+          
+          # Check for Syncfusion references in assemblies
+          $assemblies = Get-ChildItem -Recurse -Filter "*.dll" -Path "*/bin/${{ env.BUILD_CONFIGURATION }}"
+          foreach ($assembly in $assemblies) {
+            try {
+              $refs = [System.Reflection.Assembly]::ReflectionOnlyLoadFrom($assembly.FullName).GetReferencedAssemblies()
+              $syncfusionRefs = $refs | Where-Object { $_.Name -like "Syncfusion*" }
+              if ($syncfusionRefs) {
+                Write-Output "✅ Found Syncfusion references in $($assembly.Name)"
+              }
+            } catch {
+              # Assembly loading can fail for various reasons, ignore
+            }
+          }
+          
+          # Check total artifact size
+          $totalSize = (Get-ChildItem -Recurse -Path "*/bin/${{ env.BUILD_CONFIGURATION }}" | Measure-Object -Property Length -Sum).Sum
+          Write-Output "📦 Total build artifacts size: $([math]::Round($totalSize / 1MB, 2)) MB"
+        shell: pwsh
+
+  # Security and compliance checks
+  security-analysis:
+    name: 🔒 Security Analysis
+    runs-on: ubuntu-latest
+    needs: validate-dependencies
+    timeout-minutes: 15
+    
+    steps:
+      - name: 📥 Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          
+      - name: 🔒 Run CodeQL Analysis
+        uses: github/codeql-action/init@v3
+        with:
+          languages: csharp
+          
+      - name: ⚙️ Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+          
+      - name: 🏗️ Build for Analysis
+        run: dotnet build ${{ env.SOLUTION_FILE }} --configuration Release
+        
+      - name: 🔒 Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        
+      - name: 🔍 Dependency Review
+        uses: actions/dependency-review-action@v4
+        if: github.event_name == 'pull_request'
+        with:
+          fail-on-severity: high
+          allow-licenses: MIT, Apache-2.0, BSD-3-Clause, ISC
+          
+  # Deployment readiness check
+  deployment-readiness:
+    name: 🚀 Deployment Readiness
+    runs-on: windows-latest
+    needs: [build-and-test, security-analysis]
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+    timeout-minutes: 10
+    
+    steps:
+      - name: 📥 Checkout Code
+        uses: actions/checkout@v4
+        
+      - name: ⚙️ Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+          
+      - name: 🔐 Configure Syncfusion License
+        env:
+          SYNCFUSION_LICENSE_KEY: ${{ secrets.SYNCFUSION_LICENSE_KEY }}
+        run: |
+          if ([string]::IsNullOrEmpty($env:SYNCFUSION_LICENSE_KEY)) {
+            Write-Error "❌ Syncfusion license required for deployment"
+            exit 1
+          }
+          echo "SYNCFUSION_LICENSE_KEY=$env:SYNCFUSION_LICENSE_KEY" >> $env:GITHUB_ENV
+        shell: pwsh
+        
+      - name: 📦 Create Release Build
+        run: |
+          dotnet publish ./BusBuddy.WPF/BusBuddy.WPF.csproj `
+            --configuration Release `
+            --runtime win-x64 `
+            --self-contained true `
+            --output ./publish `
+            /p:PublishSingleFile=true `
+            /p:IncludeNativeLibrariesForSelfExtract=true
+        shell: pwsh
+        
+      - name: 📊 Deployment Package Analysis
+        run: |
+          $publishSize = (Get-ChildItem -Recurse -Path "./publish" | Measure-Object -Property Length -Sum).Sum
+          Write-Output "📦 Deployment package size: $([math]::Round($publishSize / 1MB, 2)) MB"
+          
+          # Check for required files
+          $requiredFiles = @("BusBuddy.exe", "appsettings.json")
+          foreach ($file in $requiredFiles) {
+            if (Test-Path "./publish/$file") {
+              Write-Output "✅ Required file found: $file"
+            } else {
+              Write-Error "❌ Missing required file: $file"
+            }
+          }
+        shell: pwsh
+        
+      - name: 📤 Upload Deployment Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: deployment-package
+          path: ./publish
+          retention-days: 30
