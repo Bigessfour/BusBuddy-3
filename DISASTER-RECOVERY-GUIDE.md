@@ -81,13 +81,13 @@ Ensure firewall / AAD access. Set env vars (`AZURE_SQL_USER`, `AZURE_SQL_PASSWOR
 Update `DatabaseProvider` in WPF/Core `appsettings.*` if required.
 
 -------------------------------------------------------------------------------
-## 6. Data Seeding (MVP Baseline)
+## 6. Data Seeding (Production Baseline)
 Seeds: Students (~54), Routes (5), Vehicles (10), Drivers (8).
 Scripts (PowerShell 7):
 ```
 pwsh -File .\PowerShell\Scripts\Seed-Mock-Routes.ps1 -WhatIf   # Preview
 pwsh -File .\PowerShell\Scripts\Seed-Mock-Routes.ps1          # Apply
-pwsh -File .\PowerShell\Scripts\Verify-MVP-Data.ps1            # Counts
+pwsh -File .\PowerShell\Scripts\Verify-Quality-Data.ps1            # Counts
 ```
 Expected Counts (post-run): Students=54, Routes=5, Vehicles=10, Drivers=8.
 
@@ -152,7 +152,7 @@ Keep last 14 daily archives; prune older.
 |---------|-------|-----|
 | Syncfusion license dialog | Missing env var | Set `SYNCFUSION_LICENSE_KEY` then rebuild/run |
 | CS1729 on RouteAssignmentViewModel | Missing new constructors (added in commit 67f6c21) | Pull latest master |
-| Map / geo features disabled | Non-MVP services disabled in config | Re-enable flags in `appsettings.*` post-MVP |
+| Map / geo features disabled | Experimental services disabled in config | Re-enable flags in `appsettings.*` after development |
 | Duplicate seed rows | Reran seeding scripts against already saturated targets | Scripts are idempotent; review logs; no action |
 | WPF build asks which project to run | Using `dotnet run` at solution root | Use explicit project argument |
 
@@ -190,7 +190,7 @@ Write-Host "Build & launch smoke completed" -ForegroundColor Green
 ## 16. Next Hardening Steps (Optional Post-Recovery)
 | Priority | Item | Benefit |
 |----------|------|---------|
-| High | Tag snapshot `v0.1.0-mvp-backup` | Immutable reference point |
+| High | Tag snapshot `v0.1.0-quality-backup` | Immutable reference point |
 | High | GitHub Release w/ attached zip | One-click restore asset |
 | Med | Automated nightly CI artifact (zip) | Continuous restore points |
 | Med | Add DB migration verification step in CI | Early drift detection |
@@ -198,8 +198,8 @@ Write-Host "Build & launch smoke completed" -ForegroundColor Green
 
 Tag Example:
 ```
-git tag -a v0.1.0-mvp-backup -m "MVP backup (post RouteAssignmentViewModel repair)"
-git push origin v0.1.0-mvp-backup
+git tag -a v0.1.0-quality-backup -m "Quality backup (post RouteAssignmentViewModel repair)"
+git push origin v0.1.0-quality-backup
 ```
 
 -------------------------------------------------------------------------------
