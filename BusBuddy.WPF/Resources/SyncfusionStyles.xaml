@@ -10,10 +10,12 @@
         <ResourceDictionary Source="/Syncfusion.Themes.FluentLight.WPF;component/SfSkinManager/SfSkinManagerStyle.xaml"/>
     </ResourceDictionary.MergedDictionaries>
 
-    <!-- Brushes -->
-    <SolidColorBrush x:Key="BusBuddy.Brush.Primary" Color="#3B82F6" />
-    <SolidColorBrush x:Key="BusBuddy.Brush.Text.Primary" Color="White" />
-    <SolidColorBrush x:Key="BusBuddy.Brush.Text.Secondary" Color="#D1D5DB" />
+    <!--
+    Note: Removed duplicate BusBuddy.Brush.Primary and BusBuddy.Brush.Text.Primary
+    to resolve "Item has already been added" errors in ResourceDictionary.
+    These brushes are defined in SyncfusionV30_Validated_ResourceDictionary.xaml
+    and will be used via DynamicResource bindings.
+    -->
 
     <!-- Default styles for Syncfusion inputs -->
     <!-- Note: Syncfusion controls pick up styles via SfSkinManager; keep minimal defaults here -->
