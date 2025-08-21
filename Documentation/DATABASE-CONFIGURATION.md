@@ -43,11 +43,11 @@ Modified `BusBuddyDbContext.cs` to:
 - **Opt-in seeding**: Seeding must be explicitly invoked in development/test environments and is never run in production.
 
 >>>>>>> df2d18d (chore: stage and commit all changes after migration to BusBuddy-3 repo (CRLF to LF warnings acknowledged))
-### 4. Utility Scripts
-Created PowerShell scripts for database management:
-- `Scripts\Setup\setup-localdb.ps1`: Sets up LocalDB for development
-- `deploy-azure-sql.ps1`: Deploys schema to Azure SQL
-- `switch-database-provider.ps1`: Switches between providers
+### 4. Database Management Tools
+Database management through .NET CLI and Azure CLI:
+- Entity Framework migrations for schema management
+- Azure CLI for Azure SQL deployment and configuration
+- Direct connection string management through appsettings.json files
 
 <<<<<<< HEAD
 ## 🚀 Azure SQL Production-Readiness Improvements (2025)

@@ -1,31 +1,31 @@
-# GitHub Copilot Custom Instructions - BusBuddy MVP Development
+# GitHub Copilot Custom Instructions - BusBuddy Excellence Development
 
-**Purpose**: Guides AI assistants (GitHub Copilot, Grok, etc.) on technical standards, compliance, and anti-regression rules for BusBuddy development. For project-specific MVP goals and developer workflows, see `vscode-userdata/BusBuddy.instructions.md`.
+**Purpose**: Guides AI assistants (GitHub Copilot, Grok, etc.) on technical standards, compliance, and anti-regression rules for BusBuddy development. For project-specific quality goals and developer workflows, see `vscode-userdata/BusBuddy.instructions.md`.
 
-**Scope**: Ensures AI suggestions align with Microsoft, Syncfusion, and .NET standards, prioritize a clean build, and prevent regressions during MVP development.
-
-## 🎯 **BusBuddy MVP Priority**
+**Scope**: Ensures AI suggestions align with Microsoft, Syncfusion, and .NET standards, prioritize clean builds, and prevent regressions during excellence-driven development.
 
 ## 🎯 **BusBuddy MVP Priority**
 
-**Primary Goal**: Achieve a clean build (0 errors) and support a runnable application with student entry and route assignment by end-of-day, per the Greenfield Reset strategy.
+## 🎯 **BusBuddy Excellence Standards**
 
-**MVP Focus**: See `vscode-userdata/BusBuddy.instructions.md` for detailed priorities (students, routes, basic UI forms). AI assistants must:
-- Prioritize `bb-*` commands (`bb-build`, `bb-run`, `bb-mvp-check`) over raw `dotnet` commands.
-- Support disabling non-MVP services (e.g., XAI, GoogleEarthEngine) to resolve build errors (e.g., CS0246).
-- Enforce Syncfusion-only UI and Serilog logging to prevent regressions.
+**Primary Goal**: Achieve production-quality software with clean builds (0 errors), excellent architecture, and comprehensive functionality including student entry and route assignment, following best practices and documentation standards.
+
+**Excellence Focus**: See `vscode-userdata/BusBuddy.instructions.md` for detailed quality standards (students, routes, UI excellence). AI assistants must:
+- Prioritize `bb-*` commands (`bb-build`, `bb-run`, `bb-quality-check`) over raw `dotnet` commands.
+- Support disabling experimental services (e.g., XAI, GoogleEarthEngine) to maintain clean builds while preserving core quality.
+- Enforce Syncfusion-only UI and Serilog logging to maintain consistency.
 - Run `bb-anti-regression` and `bb-xaml-validate` before suggesting changes.
 
-**Deferred Until Post-MVP** (per `vscode-userdata/BusBuddy.instructions.md`):
-- XAI integration (e.g., `XAIService`, `OptimizedXAIService`).
-- Google Earth Engine integration (e.g., `GoogleEarthEngineService`).
-- Complex features: vehicle management, driver scheduling, maintenance, fuel tracking, advanced reporting.
+**Advanced Features** (implemented with proper architecture):
+- XAI integration (e.g., `XAIService`, `OptimizedXAIService`) - when properly architected.
+- Google Earth Engine integration (e.g., `GoogleEarthEngineService`) - with clean interfaces.
+- Comprehensive features: vehicle management, driver scheduling, maintenance, fuel tracking, advanced reporting.
 
 **CRITICAL: Use BusBuddy PowerShell Commands First**
 - **Always use `bb-*` commands** instead of raw dotnet commands
 - **Check available commands**: Use `bb-commands` to see all options
 - **Health checks**: Use `bb-health` before troubleshooting
-- **MVP validation**: Use `bb-mvp-check` to ensure student/route functionality
+- **Quality validation**: Use `bb-quality-check` to ensure excellent student/route functionality
 - **Anti-regression**: Use `bb-anti-regression` and `bb-xaml-validate` before commits
 
 **Primary Development Commands:**
@@ -33,15 +33,15 @@
 bb-health         # System health check
 bb-build          # Build solution
 bb-run            # Run application  
-bb-test           # Run tests
-bb-mvp-check      # Check MVP readiness
+bb-test           # Run comprehensive tests
+bb-quality-check  # Verify production excellence
 bb-anti-regression # Prevent legacy patterns
 bb-xaml-validate  # Ensure Syncfusion-only UI
 bb-commands       # List all commands
 ```
 
-**Greenfield Reset Strategy:**
-To achieve a clean build, temporarily disable non-MVP services causing compilation errors (e.g., CS0246) by renaming files to `.disabled`. Example:
+**Clean Architecture Strategy:**
+To maintain excellent code quality, properly isolate experimental services by renaming files to `.disabled` when they cause build issues. Example:
 ```powershell
 cd BusBuddy.Core/Services
 Rename-Item "AIEnhancedRouteService.cs" "AIEnhancedRouteService.cs.disabled"
@@ -49,10 +49,10 @@ bb-build  # Verify clean build
 ```
 - Track `.disabled` files in Git with descriptive commits.
 - Document in `GROK-README.md` and `ANTI-REGRESSION-CHECKLIST.md`.
-- Run `bb-mvp-check` to ensure student/route functionality remains intact.
+- Run `bb-quality-check` to ensure student/route functionality remains excellent.
 
-### **Greenfield Reset Strategy for MVP**
-To achieve a clean build (0 errors), temporarily disable non-MVP services causing compilation errors (e.g., CS0246) by renaming files to `.disabled`. This preserves code for later re-enablement without risking regressions.
+### **Greenfield Reset Strategy for Quality Development**
+To achieve a clean build (0 errors), temporarily disable experimental services causing compilation errors (e.g., CS0246) by renaming files to `.disabled`. This preserves code for later re-enablement without risking regressions.
 
 **Steps for Disabling Services:**
 1. **Identify**: Locate files causing build errors (e.g., `BusBuddy.Core/Services/AIEnhancedRouteService.cs`).
@@ -71,14 +71,14 @@ To achieve a clean build (0 errors), temporarily disable non-MVP services causin
 5. **Document**: Update `GROK-README.md` and `ANTI-REGRESSION-CHECKLIST.md` with disabled components.
 
 **Rules:**
-- Only disable non-MVP services (e.g., XAI, GoogleEarthEngine).
+- Only disable experimental services (e.g., XAI, GoogleEarthEngine).
 - Never delete files—always use `.disabled` extension.
-- Run `bb-mvp-check` after disabling to ensure core functionality (students/routes) remains intact.
-- Plan re-enablement post-MVP with `bb-anti-regression` checks.
+- Run `bb-quality-check` after disabling to ensure core functionality (students/routes) remains excellent.
+- Plan re-enablement with proper architecture and `bb-anti-regression` checks.
 
 **For BusBuddy-specific requirements, also reference:**
-- **`vscode-userdata\BusBuddy.instructions.md`** - BusBuddy domain knowledge and MVP requirements
-- **Integration Note**: BusBuddy MVP phase prioritizes working functionality over perfect architecture
+- **`vscode-userdata\BusBuddy.instructions.md`** - BusBuddy domain knowledge and excellence standards
+- **Integration Note**: BusBuddy prioritizes clean architecture and proper development practices
 
 ## 🛠️ **Technology Stack & Versions**
 
@@ -94,7 +94,7 @@ To achieve a clean build (0 errors), temporarily disable non-MVP services causin
 - **Entity Framework Core**: 9.0.7 (.NET 9 compatible)
 - **Serilog**: 4.3.0 (Pure Serilog implementation)
 - **Code Analysis**: Enabled with Recommended analysis mode
-- **Practical Ruleset**: `BusBuddy-Practical.ruleset` for MVP development
+- **Practical Ruleset**: `BusBuddy-Practical.ruleset` for quality development
 
 ### **Database Configuration Standards**
 - **Development**: LocalDB with SQL Server LocalDB instance
@@ -122,8 +122,8 @@ To achieve a clean build (0 errors), temporarily disable non-MVP services causin
 - **Nullable Reference Types**: Enabled throughout solution
 - **Implicit Usings**: Enabled for common namespace imports
 - **Documentation Generation**: XML documentation files for all public APIs
-- **Code Analysis**: .NET analyzers with practical ruleset for MVP development
-- **Warning Treatment**: Warnings allowed during MVP, errors enforced in production
+- **Code Analysis**: .NET analyzers with practical ruleset for quality development
+- **Warning Treatment**: Warnings allowed during development phases, errors enforced in production
 
 ## ⚠️ **DOCUMENTATION-FIRST MANDATE - ZERO TOLERANCE**
 
@@ -344,7 +344,7 @@ catch (Exception ex)
 
 ## Architecture Standards - Phase 1 Simplified
 
-### **Phase 1 Architecture (Minimum Viable)**
+### **Phase 1 Architecture (Excellence-Driven Approach)**
 - ✅ **Basic MVVM**: Simple ViewModels with INotifyPropertyChanged, defer advanced patterns
 - ✅ **Direct Data Access**: Simple Entity Framework queries, defer complex repositories
 - ✅ **Basic Navigation**: Simple Frame.Navigate() calls, defer advanced navigation service
@@ -514,7 +514,7 @@ var entities = await context.Entity1s.ToListAsync();
 - **Migration Guides**: [Version Migration Documentation](https://help.syncfusion.com/wpf/upgrade-guide)
 - **Target Framework**: WPF projects targeting .NET 8.0-windows (per Directory.Build.props)
 
-### MVP Core Controls for Phase 1
+### Quality-Focused Core Controls for Phase 1
 - **SfDataGrid**: [DataGrid Documentation](https://help.syncfusion.com/wpf/datagrid/getting-started) - Used for all tabular data display
 - **DockingManager**: [DockingManager Documentation](https://help.syncfusion.com/wpf/docking/getting-started) - Used for main UI layout
 - **NavigationDrawer**: [NavigationDrawer Documentation](https://help.syncfusion.com/wpf/navigation-drawer/getting-started) - Used for side navigation
@@ -1081,12 +1081,12 @@ bb-report               # Generate comprehensive project report
 - **Export Declarations**: Missing required Export-ModuleMember statements throughout
 - **Error Handling**: Inconsistent patterns violating Microsoft exception handling standards
 
-**MVP Guidance**:
-- Avoid adding new functions to `BusBuddy.psm1` during MVP phase—use existing `bb-*` commands.
+**Quality Development Guidance**:
+- Avoid adding new functions to `BusBuddy.psm1` during Phase 1—use existing `bb-*` commands.
 - If new PowerShell code is needed, create temporary scripts in `PowerShell/Validation/` and validate with `Invoke-ScriptAnalyzer`.
-- Post-MVP: Split `BusBuddy.psm1` into smaller modules (e.g., `Build.psm1`, `MVP.psm1`) per Microsoft guidelines.
+- Post-Phase 1: Split `BusBuddy.psm1` into smaller modules (e.g., `Build.psm1`, `Quality.psm1`) per Microsoft guidelines.
 - Replace all `Write-Host` with `Write-Output` or `Write-Information` in new code.
-- Document remediation plan in `GROK-README.md` under "Post-MVP Tasks":
+- Document remediation plan in `GROK-README.md` under "Post-Phase 1 Tasks":
   ```markdown
   - Refactor BusBuddy.psm1 into single-responsibility modules.
   - Eliminate 50+ Write-Host violations with proper output streams.
@@ -1199,7 +1199,7 @@ bb-report               # Generate comprehensive project report
 - **Zero Dependencies**: No external API dependencies for core functionality
 - **Simple and Fast**: Optimized for speed and reliability over complexity
 
-## MVP Batch Command Integration
+## Quality Development Command Integration
 
 ### Quick Build and Run Commands
 ```batch
@@ -1274,24 +1274,24 @@ dotnet build [Project].sln --verbosity minimal
 #### CS0246 Errors (Type or Namespace Not Found)
 - **Symptoms**: Errors like "The type or namespace name 'XAIService' could not be found" in build output.
 - **Causes**: Missing class definitions (e.g., disabled files), incorrect namespaces, or missing package references.
-- **MVP Resolution** (Greenfield Reset):
-1. **Check Disabled Files**: If the missing type (e.g., `XAIService`) is in a `.disabled` file, confirm it's non-MVP and keep disabled.
+- **Quality Development Resolution** (Greenfield Reset):
+1. **Check Disabled Files**: If the missing type (e.g., `XAIService`) is in a `.disabled` file, confirm it's non-core and keep disabled.
    ```powershell
    Get-ChildItem -Recurse -Filter "*.disabled" | Select-Object Name
    ```
 2. **Comment Out References**: If urgent, comment out the problematic code in the source file:
    ```csharp
-   // Temporarily commented for MVP clean build
+   // Temporarily commented for clean build
    // private readonly XAIService _xaiService;
    ```
 3. **Verify Build**: Run `bb-build` to confirm resolution.
-4. **Avoid Adding Dependencies**: Do not add new packages or re-enable complex services during MVP phase.
+4. **Avoid Adding Dependencies**: Do not add new packages or re-enable complex services during early phases.
 5. **Document**: Note in commit message and GROK-README.md:
    ```bash
    git commit -m "fix: comment out XAIService references for clean build"
    ```
 
-**Post-MVP**: Re-enable disabled files one-by-one, fixing references with proper packages or namespaces per official documentation.
+**Post-Development**: Re-enable disabled files one-by-one, fixing references with proper packages or namespaces per official documentation.
 
 ### Performance Troubleshooting
 
