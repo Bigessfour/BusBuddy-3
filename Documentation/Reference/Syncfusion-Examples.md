@@ -129,7 +129,7 @@ public class GoogleEarthViewModel : BaseViewModel
 bb-test-full              # Detailed test output
 bb-test-errors           # Show only failures
 bb-test-watch            # Continuous testing
-bb-mvp-check             # MVP readiness validation
+bb-quality-check        # Production readiness validation
 ```
 
 ## 🚌 BusBuddy Core Controls

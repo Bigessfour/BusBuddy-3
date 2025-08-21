@@ -9,7 +9,7 @@ namespace BusBuddy.Examples;
 /// <summary>
 /// Comprehensive example demonstrating enhanced route assignment logic
 /// Shows integration of Result pattern, error handling, and business logic
-/// Based on BusBuddy MVP requirements and route assignment documentation
+/// Based on BusBuddy excellence requirements and route assignment documentation
 /// </summary>
 public class RouteAssignmentExample
 {

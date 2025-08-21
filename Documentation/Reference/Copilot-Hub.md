@@ -44,7 +44,7 @@
 - **Run `bb-copilot-ref [topic]`** to open specific reference files
 - **Open multiple reference files** in VS Code tabs for maximum context
 
-## 🎯 BusBuddy MVP Context
+## 🎯 BusBuddy Excellence Context
 - **Target Framework**: .NET 8.0-windows (WPF)
 - **UI Framework**: Syncfusion WPF 30.1.42 (FluentDark theme)
 - **Architecture**: MVVM with Entity Framework Core
@@ -59,7 +59,7 @@
 
 ## 📋 Cross-References
 - [System Architecture](../Architecture/System-Architecture.md)
-- [MVP Implementation Plan](../PHASE-2-IMPLEMENTATION-PLAN.md)
+- [Excellence Implementation Plan](../PHASE-2-IMPLEMENTATION-PLAN.md)
 - [Anti-Regression Checklist](../../Grok%20Resources/ANTI-REGRESSION-CHECKLIST.md)
 - [PowerShell Standards](../PowerShell-7.5.2-Reference.md)
 

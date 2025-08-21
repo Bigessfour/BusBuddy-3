@@ -34,7 +34,7 @@ bb-copilot-ref -ShowTopics      # List all reference files
 - **Structured for Copilot**: Markdown format optimized for AI parsing
 - **Rich Context**: Code examples, configuration snippets, usage patterns
 - **Cross-Referenced**: Links between related documentation files
-- **BusBuddy-Specific**: Tailored to project standards and MVP requirements
+- **BusBuddy-Specific**: Tailored to project standards and excellence requirements
 
 ### 2. **Official Source Integration**
 - **Syncfusion Official Links**: https://www.syncfusion.com/code-examples/?search=wpf
@@ -117,7 +117,7 @@ bb-copilot-ref PowerShell-Commands
 - **Microsoft compliant** - All PowerShell follows official standards
 - **Syncfusion official** - Only documented APIs and patterns used
 - **Version-specific** - Matches actual project versions (.NET 8, Syncfusion 30.1.42)
-- **MVP-focused** - Prioritizes working examples over comprehensive coverage
+- **Quality-focused** - Prioritizes comprehensive examples with proper architecture
 
 ### Integration Points
 - **BusBuddy.psm1** - Main module with bb-copilot-ref command

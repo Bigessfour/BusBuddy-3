@@ -1272,7 +1272,7 @@ All code examples in this document have been validated against official Syncfusi
 **Context Requirements:**
 - Reference this document in prompts: "Use patterns from Syncfusion-Pdf-Examples.md"
 - Include BusBuddy service context: "Integrate with RouteService and StudentService"
-- Specify MVP requirements: "Focus on basic PDF generation without advanced features"
+- Specify quality requirements: "Focus on robust PDF generation with comprehensive features"
 
 **Expected Accuracy:**
 - **Basic PDF generation**: 90% success rate with proper context
