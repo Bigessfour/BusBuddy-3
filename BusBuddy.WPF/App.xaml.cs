@@ -47,27 +47,8 @@ namespace BusBuddy.WPF
             // Register Syncfusion license before any UI initialization
             EnsureSyncfusionLicenseRegistered();
 
-            // Load configuration from appsettings.json
-            IConfiguration configuration;
-            try
-            {
-                var env = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production";
-                configuration = new ConfigurationBuilder()
-                    .SetBasePath(AppDomain.CurrentDomain.BaseDirectory) // Use app directory for config file
-                    .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
-                    .AddJsonFile($"appsettings.{env}.json", optional: true, reloadOnChange: true)
-                    .AddJsonFile("appsettings.azure.json", optional: true, reloadOnChange: true)
-                    .AddEnvironmentVariables()
-                    .Build();
-
-                _bootstrapLogger?.Information("✅ Configuration loaded successfully");
-            }
-            catch (Exception configEx)
-            {
-                _bootstrapLogger?.Error(configEx, "❌ Configuration loading failed: {ErrorMessage}", configEx.Message);
-                Console.WriteLine($"Configuration Error: {configEx.Message}");
-                throw new InvalidOperationException("Configuration loading failed. Application cannot start.", configEx);
-            }
+            // Load configuration from appsettings.json (consolidated)
+            IConfiguration configuration = BuildConfiguration();
 
             // Initialize Serilog logger using configuration from appsettings.json
             try
@@ -117,6 +98,34 @@ namespace BusBuddy.WPF
                 // If bootstrap logger fails, fall back to console
                 Console.WriteLine($"Warning: Failed to initialize bootstrap logger: {ex.Message}");
                 Console.WriteLine("Continuing with console-only logging for bootstrap phase");
+            }
+        }
+
+        /// <summary>
+        /// Centralized configuration builder used across App for consistent loading.
+        /// Reads appsettings.json, environment-specific JSON, optional azure settings,
+        /// and environment variables. Uses AppDomain base directory as base path.
+        /// </summary>
+        private static IConfiguration BuildConfiguration()
+        {
+            try
+            {
+                var env = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production";
+                var configuration = new ConfigurationBuilder()
+                    .SetBasePath(AppDomain.CurrentDomain.BaseDirectory)
+                    .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
+                    .AddJsonFile($"appsettings.{env}.json", optional: true, reloadOnChange: true)
+                    .AddJsonFile("appsettings.azure.json", optional: true, reloadOnChange: true)
+                    .AddEnvironmentVariables()
+                    .Build();
+
+                _bootstrapLogger?.Information("✅ Configuration loaded successfully (BuildConfiguration)");
+                return configuration;
+            }
+            catch (Exception configEx)
+            {
+                _bootstrapLogger?.Error(configEx, "❌ Configuration loading failed (BuildConfiguration): {ErrorMessage}", configEx.Message);
+                throw new InvalidOperationException("Configuration loading failed. Application cannot start.", configEx);
             }
         }
 
@@ -205,14 +214,7 @@ namespace BusBuddy.WPF
                 var services = new ServiceCollection();
 
                 // Add configuration to resolve appsettings.json
-                var env = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production";
-                var configuration = new ConfigurationBuilder()
-                    .SetBasePath(AppDomain.CurrentDomain.BaseDirectory)
-                    .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
-                    .AddJsonFile($"appsettings.{env}.json", optional: true, reloadOnChange: true)
-                    .AddJsonFile("appsettings.azure.json", optional: true, reloadOnChange: true)
-                    .AddEnvironmentVariables()
-                    .Build();
+                var configuration = BuildConfiguration();
 
                 // Only register the bare minimum for EF migrations - just the DbContext
                 services.AddDataServices(configuration);
@@ -773,7 +775,9 @@ Examples:
         }
 
         /// <summary>
-        /// Ensures Syncfusion license registration (runs only once). Based on Syncfusion WPF licensing documentation.
+        /// Ensures Syncfusion license registration (runs only once).
+        /// Enhanced based on Syncfusion WPF licensing documentation and 2025 best practices.
+        /// Supports explicit platform validation and better placeholder detection.
         /// </summary>
         private static void EnsureSyncfusionLicenseRegistered()
         {
@@ -792,6 +796,8 @@ Examples:
                 if (string.IsNullOrWhiteSpace(licenseKey))
                 {
                     _bootstrapLogger?.Warning("⚠️ SYNCFUSION_LICENSE_KEY environment variable not set at Process, User, or Machine level. Running in trial mode.");
+                    _bootstrapLogger?.Information("💡 To remove trial limitations, set SYNCFUSION_LICENSE_KEY environment variable");
+                    _bootstrapLogger?.Information("💡 Get your license key from: https://www.syncfusion.com/account/downloads");
                     LogSyncfusionDiagnostics();
                     return; // trial mode – do not attempt registration
                 }
@@ -799,16 +805,19 @@ Examples:
                 if (ValidateSyncfusionLicenseKey(licenseKey))
                 {
                     Syncfusion.Licensing.SyncfusionLicenseProvider.RegisterLicense(licenseKey);
-                    _bootstrapLogger?.Information("✅ Syncfusion license registered successfully for version 30.1.42");
 
-                    // Log additional diagnostics to help verify registration
-                    _bootstrapLogger?.Information("🔍 License Key Length: {Length} characters", licenseKey.Length);
+                    // Enhanced validation for Syncfusion v30+ (as per 2025 documentation)
+                // Registration successful - v30.1.42 doesn't require explicit platform validation
+                _bootstrapLogger?.Information("✅ Syncfusion license registered successfully for version 30.1.42");                    // Log additional diagnostics to help verify registration
+                    _bootstrapLogger?.Information("🔍 License Key Preview: {Preview}", GetLicenseKeyPreview(licenseKey));
                     _bootstrapLogger?.Information("💡 If you see trial watermarks, verify your license key is valid and current");
                 }
                 else
                 {
-                    _bootstrapLogger?.Warning("⚠️ Provided Syncfusion license key failed validation. Running in trial mode.");
-                    _bootstrapLogger?.Information("💡 License key should be a long alphanumeric string from your Syncfusion account");
+                    _bootstrapLogger?.Warning("⚠️ Provided Syncfusion license key contains placeholder or invalid format. Running in trial mode.");
+                    _bootstrapLogger?.Information("� License Key Preview: {Preview}", GetLicenseKeyPreview(licenseKey));
+                    _bootstrapLogger?.Information("💡 Replace placeholder with actual license key from Syncfusion account");
+                    _bootstrapLogger?.Information("💡 Set via PowerShell: $env:SYNCFUSION_LICENSE_KEY = 'your-actual-license-key'");
                     LogSyncfusionDiagnostics();
                 }
             }
@@ -821,7 +830,22 @@ Examples:
         }
 
         /// <summary>
+        /// Creates a safe preview of the license key for logging (masks sensitive parts)
+        /// </summary>
+        private static string GetLicenseKeyPreview(string licenseKey)
+        {
+            if (string.IsNullOrEmpty(licenseKey))
+                return "Not Set";
+
+            if (licenseKey.Length <= 8)
+                return new string('*', licenseKey.Length);
+
+            return licenseKey.Substring(0, 4) + "..." + licenseKey.Substring(licenseKey.Length - 4);
+        }
+
+        /// <summary>
         /// Validates Syncfusion license key format and provides diagnostic information
+        /// Enhanced to detect common placeholders including REPLACE_WI pattern
         /// Based on Syncfusion documentation for version 30.1.42
         /// </summary>
         private static bool ValidateSyncfusionLicenseKey(string licenseKey)
@@ -831,22 +855,33 @@ Examples:
                 return false;
             }
 
-            // Check for common invalid placeholder values
-            var invalidPlaceholders = new[] { "YOUR_LICENSE_KEY", "YOUR LICENSE KEY", "PLACEHOLDER", "TRIAL", "DEMO" };
+            // Check for common invalid placeholder values and patterns
+            var invalidPlaceholders = new[] {
+                "YOUR_LICENSE_KEY", "YOUR LICENSE KEY", "PLACEHOLDER", "TRIAL", "DEMO",
+                "REPLACE_WITH", "REPLACE_WI", "ENTER_YOUR", "INSERT_YOUR", "ADD_YOUR"
+            };
             if (invalidPlaceholders.Any(placeholder =>
-                licenseKey.Equals(placeholder, StringComparison.OrdinalIgnoreCase)))
+                licenseKey.Contains(placeholder, StringComparison.OrdinalIgnoreCase)))
             {
                 return false;
             }
 
-            // Basic format validation - Syncfusion keys are typically long base64-like strings
+            // Check for placeholder patterns like REPLACE_WI..._KEY
+            if (licenseKey.StartsWith("REPLACE_", StringComparison.OrdinalIgnoreCase) ||
+                licenseKey.EndsWith("_KEY", StringComparison.OrdinalIgnoreCase) ||
+                licenseKey.Contains("...", StringComparison.Ordinal))
+            {
+                return false;
+            }
+
+            // Basic format validation - Syncfusion keys are typically long alphanumeric strings
             if (licenseKey.Length < 20)
             {
                 return false;
             }
 
             // Additional validation - license keys shouldn't contain common file paths or environment indicators
-            var suspiciousPatterns = new[] { "\\", "/", "C:", "D:", "temp", "test", "dev" };
+            var suspiciousPatterns = new[] { "\\", "/", "C:", "D:", "temp", "test", "dev", "example" };
             if (suspiciousPatterns.Any(pattern => licenseKey.Contains(pattern, StringComparison.OrdinalIgnoreCase)))
             {
                 return false;

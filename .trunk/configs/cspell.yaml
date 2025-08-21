@@ -1,0 +1,14 @@
+version: "0.2"
+# Suggestions can sometimes take longer on CI machines,
+# leading to inconsistent results.
+suggestionsTimeout: 5000 # ms
+
+# Custom words for BusBuddy project
+words:
+  - hyperthreading
+  - psscriptanalyzer
+  - syncfusion
+  - busbuddy
+  - gitleaks
+  - Intel
+  - i5
