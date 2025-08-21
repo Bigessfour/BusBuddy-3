@@ -24,14 +24,14 @@ bb-restore                 # Force package restore
 ### Testing Commands
 ```powershell
 # Test execution
-bb-test                    # Run all tests with MVP focus
+bb-test                    # Run all tests with quality focus
 bb-test-full              # Tests with detailed, non-truncated output
 bb-test-errors            # Show only test failures and errors
 bb-test-log               # Test execution with enhanced logging
 bb-test-watch             # Continuous testing with file monitoring
 
 # Test validation
-bb-mvp-check              # Verify MVP functionality (students/routes)
+bb-quality-check          # Verify production functionality (students/routes)
 bb-validate-tests         # Comprehensive test suite validation
 ```
 
@@ -62,12 +62,12 @@ bb-code-analysis         # Run detailed code analysis against practical ruleset
 
 ## 🧪 Testing & Validation
 
-### MVP Testing Commands
+### Quality Excellence Testing Commands
 ```powershell
 # Student/Route functionality validation
 bb-test-students          # Test student management features
 bb-test-routes           # Test route assignment features
-bb-test-mvp              # Comprehensive MVP feature testing
+bb-test-quality          # Comprehensive excellence feature testing
 
 # Integration testing
 bb-test-integration      # Database and service integration tests
@@ -174,7 +174,7 @@ bb-generate-report -ReportType MaintenanceReport -Format CSV -OutputPath "mainte
 
 ### Advanced Testing & Validation
 ```powershell
-# Comprehensive testing beyond MVP
+# Comprehensive testing for excellence standards
 bb-test-ui              # WPF UI automation tests
 bb-validate-all         # Comprehensive system validation
 bb-benchmark            # Performance benchmarking
@@ -203,19 +203,19 @@ bb-packages-clean       # Clear NuGet caches and restore
 bb-validate-syncfusion  # Verify Syncfusion package integrity
 ```
 
-## 🎯 MVP-Specific Commands
+## 🎯 Quality-Specific Commands
 
-### Greenfield Reset Support
+### Excellence Development Support
 ```powershell
-# Clean slate operations for MVP focus
-bb-disable-services     # Temporarily disable non-MVP services
-bb-enable-services      # Re-enable disabled services post-MVP
-bb-mvp-status          # Check MVP completion status
+# Clean slate operations for quality focus
+bb-disable-services     # Temporarily disable experimental services
+bb-enable-services      # Re-enable disabled services after development
+bb-quality-status       # Check production readiness status
 ```
 
 ### Build Validation
 ```powershell
-# Ensure clean builds for MVP
+# Ensure clean builds for excellence
 bb-validate-build      # Comprehensive build validation
 bb-check-errors        # Identify and categorize build errors
 bb-fix-cs0246          # Helper for missing type errors
@@ -251,7 +251,7 @@ function bb-test-comprehensive {
         if ($IncludeIntegration) {
             bb-test-integration
         }
-        bb-mvp-check
+        bb-quality-check
         Write-Output "All tests completed successfully"
     }
     catch {

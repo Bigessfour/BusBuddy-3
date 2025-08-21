@@ -57,7 +57,7 @@
 <GenerateDocumentationFile>true</GenerateDocumentationFile>
 ```
 
-### MVP-Friendly Suppressions
+### Quality-Friendly Suppressions
 ```xml
 <!-- Practical suppressions for rapid development -->
 <NoWarn>$(NoWarn);CA1305;CA1860;CA1848;CA1851;CA1304</NoWarn>

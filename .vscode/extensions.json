@@ -1,60 +1,69 @@
 {
   "recommendations": [
-    // C# Development and Corruption Detection
-    "ms-dotnettools.csharp",
-    "ms-dotnettools.csdevkit",
-    "ms-dotnettools.vscode-dotnet-runtime",
-    "ms-dotnettools.vscode-dotnet-pack",
-    "josefpihrt-vscode.roslynator",
-    // XAML Development and Formatting
-    "ms-dotnettools.xaml",
-    "noesistechnologies.noesisgui-tools",
-    "doggy8088.netcore-extension-pack",
-    "redhat.vscode-xml",
-    "rogalmic.vscode-xml-complete",
-    // Testing and Test Explorer
-    "ms-vscode.test-adapter-converter",
-    // PowerShell Development (v2025.2.0 — Latest Stable)
-    "ms-vscode.powershell",
-    // Advanced PowerShell Tools (Preview for bleeding edge features)
-    // CRITICAL: Provides enhanced PS7.5 syntax highlighting, ternary operators, null conditionals
-    // and modern PowerShell 7.5.2 language features (2025 updates)
-    "ms-vscode.powershell-preview",
-    // AI-Native Development (BusBuddy's AI-first approach)
-    "github.copilot",
-    "github.copilot-chat",
+    // Core C# Development Excellence
+    "ms-dotnettools.csharp",                    // Essential C# language support
+    "ms-dotnettools.csdevkit",                  // Professional C# development suite
+    "ms-dotnettools.vscode-dotnet-runtime",     // .NET runtime management
+    "ms-dotnettools.vscode-dotnet-pack",        // Complete .NET development pack
+    "josefpihrt-vscode.roslynator",             // Advanced C# refactoring and quality
+
+    // XAML & WPF Excellence
+    "ms-dotnettools.xaml",                      // Professional XAML formatting and IntelliSense
+    "noesistechnologies.noesisgui-tools",       // Enhanced WPF development tools
+    "redhat.vscode-xml",                        // Comprehensive XML support
+    "rogalmic.vscode-xml-complete",             // Advanced XML/XAML completion
+
+    // Testing Excellence
+    "ms-vscode.test-adapter-converter",         // Unified test management
+
+    // PowerShell Excellence (Microsoft Standards)
+    "ms-vscode.powershell",                     // Core PowerShell 7.5.2 support
+    "ms-vscode.powershell-preview",             // Latest PowerShell features and syntax
+
+    // AI-Enhanced Development
+    "github.copilot",                           // Core AI code assistance
+    "github.copilot-chat",                      // Conversational AI guidance
+
     // Syncfusion Development Support
-    "syncfusioninc.maui-vscode-extensions",
-    // Task Management (EXCLUSIVE METHOD)
-    "spmeesseman.vscode-taskexplorer",
-    // Enhanced Productivity
-    "ms-vscode.vscode-json",
-    "aaron-bond.better-comments",
-    "streetsidesoftware.code-spell-checker",
-    "ms-vscode.hexeditor",
-    "ms-vscode.vscode-yaml",
-    // Git and Version Control
-    "eamodio.gitlens",
-    "github.vscode-pull-request-github",
-    // Enhanced IntelliSense
-    "ms-vscode.vscode-typescript-next",
-    "bradlc.vscode-tailwindcss"
+    "syncfusioninc.maui-vscode-extensions",     // Syncfusion control support
+
+    // Task Management Excellence
+    "spmeesseman.vscode-taskexplorer",          // Professional task management
+
+    // Productivity & Quality Tools
+    "ms-vscode.vscode-json",                    // Enhanced JSON editing
+    "aaron-bond.better-comments",               // Professional code documentation
+    "streetsidesoftware.code-spell-checker",    // Documentation quality assurance
+    "ms-vscode.hexeditor",                      // Binary file inspection
+    "ms-vscode.vscode-yaml",                    // YAML configuration support
+
+    // Git & Collaboration Excellence
+    "eamodio.gitlens",                          // Advanced Git integration
+    "github.vscode-pull-request-github",       // GitHub workflow integration
+
+    // Language Support Enhancement
+    "ms-vscode.vscode-typescript-next",         // Enhanced TypeScript support
+    "bradlc.vscode-tailwindcss"                 // CSS framework support
   ],
   "unwantedRecommendations": [
-    // Block competing task runners
+    // Prevent extension conflicts with our quality-focused approach
+    
+    // Competing auto-formatting tools (conflicts with XAML Styler excellence)
     "formulahendry.auto-close-tag",
     "formulahendry.auto-rename-tag",
-    // CRITICAL: Block TypeScript linting to prevent conflicts with PSScriptAnalyzer
-    // Prevents linting conflicts with PowerShell 7.5.2 syntax analysis
-    "ms-vscode.vscode-typescript-tslint-plugin",
-    // Block competing XAML formatters
     "DotJoshJohnson.xml",
-    // Block npm/node task runners
+
+    // Prevents PowerShell 7.5.2 syntax conflicts with PSScriptAnalyzer
+    "ms-vscode.vscode-typescript-tslint-plugin",
+
+    // Node.js tools (not applicable to BusBuddy .NET/WPF architecture)
     "eg2.vscode-npm-script",
-    // Block competing test extensions
+
+    // Competing test tools (we use built-in .NET test explorer)
     "hbenl.vscode-test-explorer",
     "kavod-io.vscode-jest-test-adapter",
-    // Block competing XML/XAML tools
+
+    // Competing XML tools (covered by our quality extension set)
     "ms-vscode.vscode-xml"
   ]
 }
