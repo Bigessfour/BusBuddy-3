@@ -1,0 +1,615 @@
+{
+  "meta": {
+    "generated": "2025-08-21",
+    "description": "Machine-readable fetchability index for BusBuddy project",
+    "repository": "https://github.com/Bigessfour/BusBuddy-3",
+    "base_url_branch": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master",
+    "base_url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/7f9dc1b9a7fd6733198abf11320082bca121a94c",
+    "total_files": 500,
+    "categories": [
+      "documentation",
+      "source_code",
+      "configuration",
+      "assets",
+      "tests",
+      "build_artifacts"
+    ]
+  },
+  "files": [
+    {
+      "path": ".devcontainer/devcontainer.json",
+      "category": "configuration",
+      "type": "json",
+      "url_branch": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/.devcontainer/devcontainer.json",
+      "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/7f9dc1b9a7fd6733198abf11320082bca121a94c/.devcontainer/devcontainer.json"
+    },
+    {
+      "path": ".editorconfig",
+      "category": "configuration",
+      "type": "config",
+      "url_branch": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/.editorconfig",
+      "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/7f9dc1b9a7fd6733198abf11320082bca121a94c/.editorconfig"
+    },
+    {
+      "path": ".env",
+      "category": "configuration",
+      "type": "env",
+      "url_branch": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/.env",
+      "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/7f9dc1b9a7fd6733198abf11320082bca121a94c/.env"
+    },
+    {
+      "path": ".trunk/configs/.markdownlint.yaml",
+      "category": "configuration",
+      "type": "yaml",
+      "url_branch": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/.trunk/configs/.markdownlint.yaml",
+      "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/7f9dc1b9a7fd6733198abf11320082bca121a94c/.trunk/configs/.markdownlint.yaml"
+    },
+    {
+      "path": ".trunk/configs/.yamllint.yaml",
+      "category": "configuration",
+      "type": "yaml",
+      "url_branch": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/.trunk/configs/.yamllint.yaml",
+      "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/7f9dc1b9a7fd6733198abf11320082bca121a94c/.trunk/configs/.yamllint.yaml"
+    },
+    {
+      "path": ".trunk/configs/cspell.yaml",
+      "category": "configuration",
+      "type": "yaml",
+      "url_branch": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/.trunk/configs/cspell.yaml",
+      "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/7f9dc1b9a7fd6733198abf11320082bca121a94c/.trunk/configs/cspell.yaml"
+    },
+    {
+      "path": ".trunk/trunk.yaml",
+      "category": "configuration",
+      "type": "yaml",
+      "url_branch": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/.trunk/trunk.yaml",
+      "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/7f9dc1b9a7fd6733198abf11320082bca121a94c/.trunk/trunk.yaml"
+    },
+    {
+      "path": ".vscode/ai-efficiency-enforcement.md",
+      "category": "documentation",
+      "type": "markdown",
+      "url_branch": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/.vscode/ai-efficiency-enforcement.md",
+      "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/7f9dc1b9a7fd6733198abf11320082bca121a94c/.vscode/ai-efficiency-enforcement.md"
+    },
+    {
+      "path": ".vscode/ai-quick-reference.md",
+      "category": "documentation",
+      "type": "markdown",
+      "url_branch": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/.vscode/ai-quick-reference.md",
+      "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/7f9dc1b9a7fd6733198abf11320082bca121a94c/.vscode/ai-quick-reference.md"
+    },
+    {
+      "path": ".vscode/copilot-workflow-prompts.md",
+      "category": "documentation",
+      "type": "markdown",
+      "url_branch": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/.vscode/copilot-workflow-prompts.md",
+      "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/7f9dc1b9a7fd6733198abf11320082bca121a94c/.vscode/copilot-workflow-prompts.md"
+    },
+    {
+      "path": ".vscode/duplicate-prevention-guide.md",
+      "category": "documentation",
+      "type": "markdown",
+      "url_branch": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/.vscode/duplicate-prevention-guide.md",
+      "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/7f9dc1b9a7fd6733198abf11320082bca121a94c/.vscode/duplicate-prevention-guide.md"
+    },
+    {
+      "path": ".vscode/enhanced-build-tasks.json",
+      "category": "configuration",
+      "type": "json",
+      "url_branch": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/.vscode/enhanced-build-tasks.json",
+      "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/7f9dc1b9a7fd6733198abf11320082bca121a94c/.vscode/enhanced-build-tasks.json"
+    },
+    {
+      "path": ".vscode/extensions.json",
+      "category": "configuration",
+      "type": "json",
+      "url_branch": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/.vscode/extensions.json",
+      "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/7f9dc1b9a7fd6733198abf11320082bca121a94c/.vscode/extensions.json"
+    },
+    {
+      "path": ".vscode/instructions.md",
+      "category": "documentation",
+      "type": "markdown",
+      "url_branch": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/.vscode/instructions.md",
+      "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/7f9dc1b9a7fd6733198abf11320082bca121a94c/.vscode/instructions.md"
+    },
+    {
+      "path": ".vscode/launch.json",
+      "category": "configuration",
+      "type": "json",
+      "url_branch": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/.vscode/launch.json",
+      "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/7f9dc1b9a7fd6733198abf11320082bca121a94c/.vscode/launch.json"
+    },
+    {
+      "path": ".vscode/omnisharp.json",
+      "category": "configuration",
+      "type": "json",
+      "url_branch": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/.vscode/omnisharp.json",
+      "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/7f9dc1b9a7fd6733198abf11320082bca121a94c/.vscode/omnisharp.json"
+    },
+    {
+      "path": ".vscode/powershell-extension-config.json",
+      "category": "configuration",
+      "type": "json",
+      "url_branch": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/.vscode/powershell-extension-config.json",
+      "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/7f9dc1b9a7fd6733198abf11320082bca121a94c/.vscode/powershell-extension-config.json"
+    },
+    {
+      "path": ".vscode/powershell-problem-matcher.json",
+      "category": "configuration",
+      "type": "json",
+      "url_branch": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/.vscode/powershell-problem-matcher.json",
+      "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/7f9dc1b9a7fd6733198abf11320082bca121a94c/.vscode/powershell-problem-matcher.json"
+    },
+    {
+      "path": ".vscode/powershell-style-enforcement.json",
+      "category": "configuration",
+      "type": "json",
+      "url_branch": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/.vscode/powershell-style-enforcement.json",
+      "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/7f9dc1b9a7fd6733198abf11320082bca121a94c/.vscode/powershell-style-enforcement.json"
+    },
+    {
+      "path": ".vscode/settings.json",
+      "category": "configuration",
+      "type": "json",
+      "url_branch": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/.vscode/settings.json",
+      "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/7f9dc1b9a7fd6733198abf11320082bca121a94c/.vscode/settings.json"
+    },
+    {
+      "path": ".vscode/syncfusion-snippets.code-snippets",
+      "category": "configuration",
+      "type": "json",
+      "url_branch": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/.vscode/syncfusion-snippets.code-snippets",
+      "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/7f9dc1b9a7fd6733198abf11320082bca121a94c/.vscode/syncfusion-snippets.code-snippets"
+    },
+    {
+      "path": ".vscode/tasks.json",
+      "category": "configuration",
+      "type": "json",
+      "url_branch": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/.vscode/tasks.json",
+      "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/7f9dc1b9a7fd6733198abf11320082bca121a94c/.vscode/tasks.json"
+    },
+    {
+      "path": ".vscode/xaml-style-enforcement.json",
+      "category": "configuration",
+      "type": "json",
+      "url_branch": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/.vscode/xaml-style-enforcement.json",
+      "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/7f9dc1b9a7fd6733198abf11320082bca121a94c/.vscode/xaml-style-enforcement.json"
+    },
+    {
+      "path": "appsettings.azure.json",
+      "category": "configuration",
+      "type": "json",
+      "url_branch": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/appsettings.azure.json",
+      "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/7f9dc1b9a7fd6733198abf11320082bca121a94c/appsettings.azure.json"
+    },
+    {
+      "path": "appsettings.json",
+      "category": "configuration",
+      "type": "json",
+      "url_branch": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/appsettings.json",
+      "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/7f9dc1b9a7fd6733198abf11320082bca121a94c/appsettings.json"
+    },
+    {
+      "path": "appsettings.staging.json",
+      "category": "configuration",
+      "type": "json",
+      "url_branch": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/appsettings.staging.json",
+      "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/7f9dc1b9a7fd6733198abf11320082bca121a94c/appsettings.staging.json"
+    },
+    {
+      "path": "BusBuddy-Practical.ruleset",
+      "category": "configuration",
+      "type": "xml",
+      "url_branch": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy-Practical.ruleset",
+      "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/7f9dc1b9a7fd6733198abf11320082bca121a94c/BusBuddy-Practical.ruleset"
+    },
+    {
+      "path": "BusBuddy.sln",
+      "category": "build_artifacts",
+      "type": "sln",
+      "url_branch": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.sln",
+      "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/7f9dc1b9a7fd6733198abf11320082bca121a94c/BusBuddy.sln"
+    },
+    {
+      "path": "cleanup-documentation.ps1",
+      "category": "build_artifacts",
+      "type": "powershell",
+      "url_branch": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/cleanup-documentation.ps1",
+      "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/7f9dc1b9a7fd6733198abf11320082bca121a94c/cleanup-documentation.ps1"
+    },
+    {
+      "path": "CONTRIBUTING.md",
+      "category": "documentation",
+      "type": "markdown",
+      "url_branch": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/CONTRIBUTING.md",
+      "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/7f9dc1b9a7fd6733198abf11320082bca121a94c/CONTRIBUTING.md"
+    },
+    {
+      "path": "DEVELOPMENT-GUIDE.md",
+      "category": "documentation",
+      "type": "markdown",
+      "url_branch": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/DEVELOPMENT-GUIDE.md",
+      "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/7f9dc1b9a7fd6733198abf11320082bca121a94c/DEVELOPMENT-GUIDE.md"
+    },
+    {
+      "path": "Directory.Build.props",
+      "category": "configuration",
+      "type": "xml",
+      "url_branch": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/Directory.Build.props",
+      "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/7f9dc1b9a7fd6733198abf11320082bca121a94c/Directory.Build.props"
+    },
+    {
+      "path": "Directory.Build.targets",
+      "category": "configuration",
+      "type": "xml",
+      "url_branch": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/Directory.Build.targets",
+      "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/7f9dc1b9a7fd6733198abf11320082bca121a94c/Directory.Build.targets"
+    },
+    {
+      "path": "DISASTER-RECOVERY-GUIDE.md",
+      "category": "documentation",
+      "type": "markdown",
+      "url_branch": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/DISASTER-RECOVERY-GUIDE.md",
+      "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/7f9dc1b9a7fd6733198abf11320082bca121a94c/DISASTER-RECOVERY-GUIDE.md"
+    },
+    {
+      "path": "DockLayout.xml",
+      "category": "configuration",
+      "type": "xml",
+      "url_branch": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/DockLayout.xml",
+      "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/7f9dc1b9a7fd6733198abf11320082bca121a94c/DockLayout.xml"
+    },
+    {
+      "path": "Documentation-Audit-Report.md",
+      "category": "documentation",
+      "type": "markdown",
+      "url_branch": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/Documentation-Audit-Report.md",
+      "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/7f9dc1b9a7fd6733198abf11320082bca121a94c/Documentation-Audit-Report.md"
+    },
+    {
+      "path": "global.json",
+      "category": "configuration",
+      "type": "json",
+      "url_branch": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/global.json",
+      "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/7f9dc1b9a7fd6733198abf11320082bca121a94c/global.json"
+    },
+    {
+      "path": "GROK-README.md",
+      "category": "documentation",
+      "type": "markdown",
+      "url_branch": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/GROK-README.md",
+      "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/7f9dc1b9a7fd6733198abf11320082bca121a94c/GROK-README.md"
+    },
+    {
+      "path": "LICENSE",
+      "category": "documentation",
+      "type": "text",
+      "url_branch": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/LICENSE",
+      "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/7f9dc1b9a7fd6733198abf11320082bca121a94c/LICENSE"
+    },
+    {
+      "path": "LICENSE-ETHICAL.md",
+      "category": "documentation",
+      "type": "markdown",
+      "url_branch": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/LICENSE-ETHICAL.md",
+      "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/7f9dc1b9a7fd6733198abf11320082bca121a94c/LICENSE-ETHICAL.md"
+    },
+    {
+      "path": "mcp.json",
+      "category": "configuration",
+      "type": "json",
+      "url_branch": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/mcp.json",
+      "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/7f9dc1b9a7fd6733198abf11320082bca121a94c/mcp.json"
+    },
+    {
+      "path": "migration-script.sql",
+      "category": "build_artifacts",
+      "type": "sql",
+      "url_branch": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/migration-script.sql",
+      "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/7f9dc1b9a7fd6733198abf11320082bca121a94c/migration-script.sql"
+    },
+    {
+      "path": "MVP-to-FA-Transformation-Plan.md",
+      "category": "documentation",
+      "type": "markdown",
+      "url_branch": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/MVP-to-FA-Transformation-Plan.md",
+      "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/7f9dc1b9a7fd6733198abf11320082bca121a94c/MVP-to-FA-Transformation-Plan.md"
+    },
+    {
+      "path": "NuGet.config",
+      "category": "configuration",
+      "type": "xml",
+      "url_branch": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/NuGet.config",
+      "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/7f9dc1b9a7fd6733198abf11320082bca121a94c/NuGet.config"
+    },
+    {
+      "path": "package.json",
+      "category": "configuration",
+      "type": "json",
+      "url_branch": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/package.json",
+      "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/7f9dc1b9a7fd6733198abf11320082bca121a94c/package.json"
+    },
+    {
+      "path": "raw-index.json",
+      "category": "documentation",
+      "type": "json",
+      "url_branch": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/raw-index.json",
+      "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/7f9dc1b9a7fd6733198abf11320082bca121a94c/raw-index.json"
+    },
+    {
+      "path": "RAW-LINKS-PINNED.txt",
+      "category": "documentation",
+      "type": "text",
+      "url_branch": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/RAW-LINKS-PINNED.txt",
+      "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/7f9dc1b9a7fd6733198abf11320082bca121a94c/RAW-LINKS-PINNED.txt"
+    },
+    {
+      "path": "RAW-LINKS.txt",
+      "category": "documentation",
+      "type": "text",
+      "url_branch": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/RAW-LINKS.txt",
+      "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/7f9dc1b9a7fd6733198abf11320082bca121a94c/RAW-LINKS.txt"
+    },
+    {
+      "path": "README.md",
+      "category": "documentation",
+      "type": "markdown",
+      "url_branch": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/README.md",
+      "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/7f9dc1b9a7fd6733198abf11320082bca121a94c/README.md"
+    },
+    {
+      "path": "SETUP-GUIDE.md",
+      "category": "documentation",
+      "type": "markdown",
+      "url_branch": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/SETUP-GUIDE.md",
+      "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/7f9dc1b9a7fd6733198abf11320082bca121a94c/SETUP-GUIDE.md"
+    },
+    {
+      "path": "TempAssemblyFix.props",
+      "category": "configuration",
+      "type": "xml",
+      "url_branch": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/TempAssemblyFix.props",
+      "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/7f9dc1b9a7fd6733198abf11320082bca121a94c/TempAssemblyFix.props"
+    },
+    {
+      "path": "testsettings.runsettings",
+      "category": "configuration",
+      "type": "xml",
+      "url_branch": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/testsettings.runsettings",
+      "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/7f9dc1b9a7fd6733198abf11320082bca121a94c/testsettings.runsettings"
+    },
+    {
+      "path": "vscode-userdata/BusBuddy.instructions.md",
+      "category": "documentation",
+      "type": "markdown",
+      "url_branch": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/vscode-userdata/BusBuddy.instructions.md",
+      "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/7f9dc1b9a7fd6733198abf11320082bca121a94c/vscode-userdata/BusBuddy.instructions.md"
+    },
+    {
+      "path": "BusBuddy.Core/BusBuddy.Core.csproj",
+      "category": "source_code",
+      "type": "xml",
+      "url_branch": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.Core/BusBuddy.Core.csproj",
+      "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/7f9dc1b9a7fd6733198abf11320082bca121a94c/BusBuddy.Core/BusBuddy.Core.csproj"
+    },
+    {
+      "path": "BusBuddy.Core/appsettings.json",
+      "category": "configuration",
+      "type": "json",
+      "url_branch": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.Core/appsettings.json",
+      "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/7f9dc1b9a7fd6733198abf11320082bca121a94c/BusBuddy.Core/appsettings.json"
+    },
+    {
+      "path": "BusBuddy.Core/appsettings.Production.json",
+      "category": "configuration",
+      "type": "json",
+      "url_branch": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.Core/appsettings.Production.json",
+      "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/7f9dc1b9a7fd6733198abf11320082bca121a94c/BusBuddy.Core/appsettings.Production.json"
+    },
+    {
+      "path": "BusBuddy.Core/Data/BusBuddyDbContext.cs",
+      "category": "source_code",
+      "type": "csharp",
+      "url_branch": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.Core/Data/BusBuddyDbContext.cs",
+      "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/7f9dc1b9a7fd6733198abf11320082bca121a94c/BusBuddy.Core/Data/BusBuddyDbContext.cs"
+    },
+    {
+      "path": "BusBuddy.Core/Data/BusBuddyDbContextFactory.cs",
+      "category": "source_code",
+      "type": "csharp",
+      "url_branch": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.Core/Data/BusBuddyDbContextFactory.cs",
+      "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/7f9dc1b9a7fd6733198abf11320082bca121a94c/BusBuddy.Core/Data/BusBuddyDbContextFactory.cs"
+    },
+    {
+      "path": "BusBuddy.Core/Models/Activity.cs",
+      "category": "source_code",
+      "type": "csharp",
+      "url_branch": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.Core/Models/Activity.cs",
+      "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/7f9dc1b9a7fd6733198abf11320082bca121a94c/BusBuddy.Core/Models/Activity.cs"
+    },
+    {
+      "path": "BusBuddy.Core/Models/BaseEntity.cs",
+      "category": "source_code",
+      "type": "csharp",
+      "url_branch": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.Core/Models/BaseEntity.cs",
+      "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/7f9dc1b9a7fd6733198abf11320082bca121a94c/BusBuddy.Core/Models/BaseEntity.cs"
+    },
+    {
+      "path": "BusBuddy.Core/Models/Bus.cs",
+      "category": "source_code",
+      "type": "csharp",
+      "url_branch": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.Core/Models/Bus.cs",
+      "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/7f9dc1b9a7fd6733198abf11320082bca121a94c/BusBuddy.Core/Models/Bus.cs"
+    },
+    {
+      "path": "BusBuddy.Core/Models/Driver.cs",
+      "category": "source_code",
+      "type": "csharp",
+      "url_branch": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.Core/Models/Driver.cs",
+      "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/7f9dc1b9a7fd6733198abf11320082bca121a94c/BusBuddy.Core/Models/Driver.cs"
+    },
+    {
+      "path": "BusBuddy.Core/Models/Route.cs",
+      "category": "source_code",
+      "type": "csharp",
+      "url_branch": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.Core/Models/Route.cs",
+      "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/7f9dc1b9a7fd6733198abf11320082bca121a94c/BusBuddy.Core/Models/Route.cs"
+    },
+    {
+      "path": "BusBuddy.Core/Models/Student.cs",
+      "category": "source_code",
+      "type": "csharp",
+      "url_branch": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.Core/Models/Student.cs",
+      "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/7f9dc1b9a7fd6733198abf11320082bca121a94c/BusBuddy.Core/Models/Student.cs"
+    },
+    {
+      "path": "BusBuddy.Core/Services/ActivityService.cs",
+      "category": "source_code",
+      "type": "csharp",
+      "url_branch": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.Core/Services/ActivityService.cs",
+      "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/7f9dc1b9a7fd6733198abf11320082bca121a94c/BusBuddy.Core/Services/ActivityService.cs"
+    },
+    {
+      "path": "BusBuddy.Core/Services/BusService.cs",
+      "category": "source_code",
+      "type": "csharp",
+      "url_branch": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.Core/Services/BusService.cs",
+      "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/7f9dc1b9a7fd6733198abf11320082bca121a94c/BusBuddy.Core/Services/BusService.cs"
+    },
+    {
+      "path": "BusBuddy.Core/Services/DriverService.cs",
+      "category": "source_code",
+      "type": "csharp",
+      "url_branch": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.Core/Services/DriverService.cs",
+      "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/7f9dc1b9a7fd6733198abf11320082bca121a94c/BusBuddy.Core/Services/DriverService.cs"
+    },
+    {
+      "path": "BusBuddy.Core/Services/RouteService.cs",
+      "category": "source_code",
+      "type": "csharp",
+      "url_branch": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.Core/Services/RouteService.cs",
+      "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/7f9dc1b9a7fd6733198abf11320082bca121a94c/BusBuddy.Core/Services/RouteService.cs"
+    },
+    {
+      "path": "BusBuddy.Core/Services/StudentService.cs",
+      "category": "source_code",
+      "type": "csharp",
+      "url_branch": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.Core/Services/StudentService.cs",
+      "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/7f9dc1b9a7fd6733198abf11320082bca121a94c/BusBuddy.Core/Services/StudentService.cs"
+    },
+    {
+      "path": "BusBuddy.WPF/BusBuddy.WPF.csproj",
+      "category": "source_code",
+      "type": "xml",
+      "url_branch": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.WPF/BusBuddy.WPF.csproj",
+      "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/7f9dc1b9a7fd6733198abf11320082bca121a94c/BusBuddy.WPF/BusBuddy.WPF.csproj"
+    },
+    {
+      "path": "BusBuddy.WPF/App.xaml",
+      "category": "source_code",
+      "type": "xaml",
+      "url_branch": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.WPF/App.xaml",
+      "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/7f9dc1b9a7fd6733198abf11320082bca121a94c/BusBuddy.WPF/App.xaml"
+    },
+    {
+      "path": "BusBuddy.WPF/App.xaml.cs",
+      "category": "source_code",
+      "type": "csharp",
+      "url_branch": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.WPF/App.xaml.cs",
+      "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/7f9dc1b9a7fd6733198abf11320082bca121a94c/BusBuddy.WPF/App.xaml.cs"
+    },
+    {
+      "path": "BusBuddy.WPF/Views/Main/MainWindow.xaml",
+      "category": "source_code",
+      "type": "xaml",
+      "url_branch": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.WPF/Views/Main/MainWindow.xaml",
+      "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/7f9dc1b9a7fd6733198abf11320082bca121a94c/BusBuddy.WPF/Views/Main/MainWindow.xaml"
+    },
+    {
+      "path": "BusBuddy.WPF/Views/Main/MainWindow.xaml.cs",
+      "category": "source_code",
+      "type": "csharp",
+      "url_branch": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.WPF/Views/Main/MainWindow.xaml.cs",
+      "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/7f9dc1b9a7fd6733198abf11320082bca121a94c/BusBuddy.WPF/Views/Main/MainWindow.xaml.cs"
+    },
+    {
+      "path": "BusBuddy.WPF/Views/Student/StudentsView.xaml",
+      "category": "source_code",
+      "type": "xaml",
+      "url_branch": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.WPF/Views/Student/StudentsView.xaml",
+      "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/7f9dc1b9a7fd6733198abf11320082bca121a94c/BusBuddy.WPF/Views/Student/StudentsView.xaml"
+    },
+    {
+      "path": "BusBuddy.WPF/Views/Student/StudentsView.xaml.cs",
+      "category": "source_code",
+      "type": "csharp",
+      "url_branch": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.WPF/Views/Student/StudentsView.xaml.cs",
+      "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/7f9dc1b9a7fd6733198abf11320082bca121a94c/BusBuddy.WPF/Views/Student/StudentsView.xaml.cs"
+    },
+    {
+      "path": "BusBuddy.WPF/ViewModels/Student/StudentsViewModel.cs",
+      "category": "source_code",
+      "type": "csharp",
+      "url_branch": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.WPF/ViewModels/Student/StudentsViewModel.cs",
+      "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/7f9dc1b9a7fd6733198abf11320082bca121a94c/BusBuddy.WPF/ViewModels/Student/StudentsViewModel.cs"
+    },
+    {
+      "path": "BusBuddy.Tests/BusBuddy.Tests.csproj",
+      "category": "tests",
+      "type": "xml",
+      "url_branch": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.Tests/BusBuddy.Tests.csproj",
+      "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/7f9dc1b9a7fd6733198abf11320082bca121a94c/BusBuddy.Tests/BusBuddy.Tests.csproj"
+    },
+    {
+      "path": "BusBuddy.Tests/StudentsViewModelTests.cs",
+      "category": "tests",
+      "type": "csharp",
+      "url_branch": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/BusBuddy.Tests/StudentsViewModelTests.cs",
+      "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/7f9dc1b9a7fd6733198abf11320082bca121a94c/BusBuddy.Tests/StudentsViewModelTests.cs"
+    },
+    {
+      "path": "Documentation/README.md",
+      "category": "documentation",
+      "type": "markdown",
+      "url_branch": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/Documentation/README.md",
+      "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/7f9dc1b9a7fd6733198abf11320082bca121a94c/Documentation/README.md"
+    },
+    {
+      "path": "Documentation/FILE-FETCHABILITY-GUIDE.md",
+      "category": "documentation",
+      "type": "markdown",
+      "url_branch": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/Documentation/FILE-FETCHABILITY-GUIDE.md",
+      "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/7f9dc1b9a7fd6733198abf11320082bca121a94c/Documentation/FILE-FETCHABILITY-GUIDE.md"
+    },
+    {
+      "path": "Documentation/Reference/README.md",
+      "category": "documentation",
+      "type": "markdown",
+      "url_branch": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/Documentation/Reference/README.md",
+      "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/7f9dc1b9a7fd6733198abf11320082bca121a94c/Documentation/Reference/README.md"
+    },
+    {
+      "path": "Documentation/Reference/Student-Entry-Examples.md",
+      "category": "documentation",
+      "type": "markdown",
+      "url_branch": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/Documentation/Reference/Student-Entry-Examples.md",
+      "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/7f9dc1b9a7fd6733198abf11320082bca121a94c/Documentation/Reference/Student-Entry-Examples.md"
+    },
+    {
+      "path": "Documentation/Reference/Route-Assignment-Logic.md",
+      "category": "documentation",
+      "type": "markdown",
+      "url_branch": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/Documentation/Reference/Route-Assignment-Logic.md",
+      "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/7f9dc1b9a7fd6733198abf11320082bca121a94c/Documentation/Reference/Route-Assignment-Logic.md"
+    },
+    {
+      "path": "Documentation/Archive/LegacyScripts/INDEX.md",
+      "category": "documentation",
+      "type": "markdown",
+      "url_branch": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/Documentation/Archive/LegacyScripts/INDEX.md",
+      "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/7f9dc1b9a7fd6733198abf11320082bca121a94c/Documentation/Archive/LegacyScripts/INDEX.md"
+    }
+  ]
+}
