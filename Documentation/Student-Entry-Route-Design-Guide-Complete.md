@@ -3,22 +3,21 @@
 **🎯 Status**: READY FOR USE - Fully integrated with Azure SQL for persistent data ✅  
 **📅 Updated**: August 08, 2025 07:45:00 MDT  
 **🚀 Health**: MVP-ready with clean build (0 errors), Azure SQL operational, all commands validated  
-**📊 Latest Enhancement**: Complete route optimization workflow with bbRoutes commands integrated  
+**📊 Latest Enhancement**: Student management through WPF UI with Azure SQL integration  
 
 ---
 
 ## 🚀 **Quick Summary**
 
-This guide walks you through entering students and designing routes in BusBuddy using both the WPF UI and PowerShell commands. Data is persisted to Azure SQL Database (`busbuddy-server-sm2.database.windows.net`) via Entity Framework Core. The process leverages `StudentsView.xaml` for student management and the new `bbRoutes` command suite for route optimization.
+This guide walks you through entering students and designing routes in BusBuddy using the WPF UI. Data is persisted to Azure SQL Database (`busbuddy-server-sm2.database.windows.net`) via Entity Framework Core. The process leverages `StudentsView.xaml` for student management and route assignment functionality.
 
 **Key Benefits**:
-- 👨‍🎓 **Student Entry**: Add/edit students with route assignments using SfDataGrid
-- 🛣️ **Route Design**: Create/optimize routes with stops and assignments via UI and commands
-- 🔒 **Persistence**: Real-time saves to Azure SQL with passwordless auth
-- 🤖 **Route Optimization**: Interactive demonstration and optimization via bbRoutes commands
-- 🛠️ **Fetchability**: View code/docs at `https://github.com/Bigessfour/BusBuddy-3` (latest commits include route commands)
+- 👨‍🎓 **Student Entry**: Add/edit students with route assignments using SfDataGrid UI
+- 🛣️ **Route Design**: Create/optimize routes with stops and assignments via WPF interface  
+- 🔒 **Persistence**: Real-time saves to Azure SQL with Entity Framework Core
+- 🛠️ **Fetchability**: View code/docs at `https://github.com/Bigessfour/BusBuddy-3`
 
-**Pro Tip**: Run `bbHealth` before starting to verify Azure SQL connectivity. Use `bbRouteDemo` to see the complete workflow in action!
+**Pro Tip**: Use the WPF application's integrated health checks to verify Azure SQL connectivity before starting student entry!
 
 ---
 
@@ -28,21 +27,20 @@ Ensure your setup is ready based on the committed repo (`https://github.com/Bige
 
 ### **1. Environment Setup**
 - ✅ **.NET 9.0 SDK** (via `global.json`)
-- ✅ **PowerShell 7.5.2+** with BusBuddy module imported
 - ✅ **Azure AD logged in** (`az login`) for database access
 - ✅ **VS Code** with extensions from `.vscode/extensions.json`
 
-### **2. Repository Setup**
-```powershell
+### **2. Build and Run Setup**
+```bash
 # Clone and setup
 git clone https://github.com/Bigessfour/BusBuddy-3.git
 cd BusBuddy-3
 
-# Import the enhanced BusBuddy module
-Import-Module .\PowerShell\Modules\BusBuddy\BusBuddy.psm1
+# Build the solution
+dotnet build BusBuddy.sln
 
-# Verify all commands are available
-bbCommands
+# Run the WPF application
+dotnet run --project BusBuddy.WPF/BusBuddy.WPF.csproj
 ```
 
 ### **3. Database Verification**
@@ -50,31 +48,22 @@ bbCommands
 - ✅ **Database** (`BusBuddyDB`) with migrations applied
 - ✅ **Firewall rules** configured for your IP
 
-**Quick Validation**:
-```powershell
-bbHealth        # System health check
-bbMvpCheck      # MVP readiness verification
-bbRouteDemo     # Route optimization demonstration
-```
+**Quick Validation**: Launch the WPF application to verify Azure SQL connectivity through the application's built-in connection health monitoring.
 
 ---
 
 ## 🏗️ **Complete Step-by-Step Workflow**
 
-### **Step 1: System Validation**
-Before starting, validate your environment:
+### **Step 1: Launch Application**
+Start the BusBuddy WPF application:
 
-```powershell
-# Health check
-bbHealth
-# Expected: ✅ All health checks passed!
+```bash
+# Navigate to project directory
+cd BusBuddy-3
 
-# MVP readiness
-bbMvpCheck  
-# Expected: ✅ MVP READY! You can ship this!
-
-# Route commands verification
-bbRouteStatus
+# Launch the application
+dotnet run --project BusBuddy.WPF/BusBuddy.WPF.csproj
+```
 # Expected: Shows ready features and system status
 ```
 
@@ -83,31 +72,21 @@ Start with the interactive route demonstration to understand the workflow:
 
 ```powershell
 # Complete route optimization demo
-bbRouteDemo
-```
+### **Step 2: Navigate to Students View**
+Once the application launches:
 
-**Expected Output**:
-```
-🚌 Step 1: Student Entry - 6 sample students with addresses
-🛣️ Step 2: Route Design - 2 optimized routes (25 min, 22 min)
-👨‍✈️ Step 3: Driver Assignment - CDL-qualified drivers assigned
-📅 Step 4: Schedule Generation - Complete AM/PM schedules
-📊 Summary: 94% efficiency rating achieved
-```
-
-### **Step 3: Launch the WPF Application**
-```powershell
-# Start the main application
-bbRun
-```
+1. **Access Student Management**: Use the navigation drawer to access the Students view
+2. **Verify Database Connection**: Check the status indicators for Azure SQL connectivity
+3. **Review Existing Data**: Examine any existing student records in the SfDataGrid
 
 **Expected Behavior**:
 - MainWindow loads with Syncfusion NavigationDrawer
-- Students and Routes views available
+- Students and Routes views available in navigation
 - Application starts without crashes
-- Azure SQL connectivity established (or mock data if offline)
+- Azure SQL connectivity established automatically
+- Student data displays in the SfDataGrid interface
 
-### **Step 4: Student Entry Workflow**
+### **Step 3: Student Entry Workflow**
 
 #### **4.1 Navigate to Students View**
 - In NavigationDrawer, select **"Students"** to load `StudentsView.xaml`
@@ -176,59 +155,37 @@ bbRun
 - **Real-time Updates**: Changes reflected immediately in UI
 - **Validation**: Automatic checks for conflicts and capacity
 
-### **Step 6: Integration and Testing**
+### **Step 4: Integration and Testing**
 
-#### **6.1 Student-Route Assignment Testing**
-```powershell
-# Run the interactive demo to see the workflow
-bbRouteDemo
+#### **4.1 Student-Route Assignment Testing**
+1. **Assign Students to Routes**: Use the route assignment dropdown in the Students view
+2. **Verify Updates**: Check that route assignments appear in both Students and Routes views
+3. **Test Data Persistence**: Close and reopen the application to verify changes persist
 
-# Validate with actual UI
-bbRun
-# Then: Assign a student to a route and verify updates
-```
+#### **4.2 Data Persistence Verification**
+- **Azure SQL Verification**: Use Azure Portal or SQL Management Studio to check database tables
+- **Application Restart**: Verify data persists after closing and reopening the application
+- **Real-time Sync**: Multiple views show consistent data updates
 
-#### **6.2 Data Persistence Verification**
-- **Azure SQL Portal**: Check data appears in database tables
-- **Application Restart**: Verify data persists after app restart
-- **Real-time Sync**: Multiple views show consistent data
+#### **4.3 System Health Validation**
+- **Application Monitoring**: Check application health through the WPF interface status indicators
+- **Database Connectivity**: Verify Azure SQL connection status in the application
+- **Error Handling**: Test application behavior with network interruptions
 
-#### **6.3 System Health Validation**
-```powershell
-# Comprehensive system check
-bbHealth
+### **Step 5: Advanced Features**
 
-# Anti-regression verification
-bbAntiRegression  # Should show 0 violations
+#### **5.1 Route Management**
+- **Route Optimization**: Use the built-in optimization algorithms accessible through the Routes view
+- **Real-time Updates**: Changes to routes automatically update student assignments
+- **Capacity Management**: Automatic validation of bus capacity limits
 
-# Test suite (if needed)
-bbTest
-```
-
-### **Step 7: Advanced Features**
-
-#### **7.1 PowerShell Route Commands**
-```powershell
-# Main route hub
-bbRoutes
-# Options: Demo, Database integration, Status
-
-# Interactive demo
-bbRouteDemo
-# Complete 4-step workflow demonstration
-
-# System status
-bbRouteStatus  
-# Shows ready features and planned enhancements
-```
-
-#### **7.2 Google Earth Integration**
+#### **5.2 Google Earth Integration**
 - **Map Visualization**: Routes displayed on interactive map
 - **Stop Optimization**: Visual drag-drop route planning
 - **Real-time Updates**: Route changes reflected on map
 - **Export Options**: Save routes as KML files
 
-#### **7.3 Driver and Vehicle Management**
+#### **5.3 Driver and Vehicle Management**
 - **Driver Assignment**: Match drivers to routes based on qualifications
 - **Vehicle Scheduling**: Coordinate bus assignments and maintenance
 - **Schedule Generation**: Automatic AM/PM schedule creation
@@ -260,24 +217,16 @@ bbRouteStatus
 
 ## 🧪 **Validation and Testing**
 
-### **System Validation Commands**
-```powershell
-# Complete system health check
-bbHealth
-
-# MVP functionality verification  
-bbMvpCheck
-
-# Route commands validation
-.\validate-route-commands.ps1
-
-# Anti-regression check
-bbAntiRegression
-```
+### **System Validation Steps**
+1. **Launch Application**: Verify WPF application starts without errors
+2. **Database Connection**: Confirm Azure SQL connectivity through application status
+3. **Student Management**: Test adding, editing, and deleting students
+4. **Route Management**: Verify route creation and optimization functionality
+5. **Data Persistence**: Ensure changes persist across application restarts
 
 ### **Manual Testing Checklist**
 - [ ] Student entry form works correctly
-- [ ] Route creation and optimization functional
+- [ ] Route creation and optimization functional  
 - [ ] Student-route assignment successful
 - [ ] Data persists to Azure SQL
 - [ ] UI updates reflect database changes
@@ -346,19 +295,18 @@ bbAntiRegression
 **✅ Guide Complete**: Start entering students and designing routes!
 
 **Quick Start Commands**:
-```powershell
-bbHealth      # Verify system ready
-bbRouteDemo   # See the complete workflow
-bbRun         # Launch the application
-bbMvpCheck    # Confirm MVP readiness
+```bash
+# Build and run the application
+dotnet build BusBuddy.sln
+dotnet run --project BusBuddy.WPF/BusBuddy.WPF.csproj
 ```
 
 **If Issues Arise**:
-- Check `bbAntiRegression` for code violations
+- Check application logs for errors and exceptions
 - Verify Azure SQL connectivity via Azure portal
-- Review logs in `logs/` directory
-- Consult `GROK-README.md` for troubleshooting
+- Review Entity Framework migration status
+- Consult `DEVELOPMENT-GUIDE.md` for troubleshooting
 
 **Repository Status**: All changes committed and pushed to `https://github.com/Bigessfour/BusBuddy-3.git`
 
-🚌✨ **BusBuddy MVP is ready for production use!** ✨🚌
+🚌✨ **BusBuddy WPF application ready for student and route management!** ✨🚌
