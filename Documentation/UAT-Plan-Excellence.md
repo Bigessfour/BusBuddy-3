@@ -1,10 +1,10 @@
 # BusBuddy User Acceptance Testing Plan
-## MVP Focus: Student Entry and Route Design
+## Excellence Focus: Student Entry and Route Design
 
 ### Test Environment Setup
 - **Environment**: Azure staging environment
 - **Database**: Azure SQL (separate from production)
-- **Application**: BusBuddy MVP build (commit 860c2e4)
+- **Application**: BusBuddy Excellence build (latest commit)
 - **Users**: Transportation coordinators and administrators
 
 ### Test Scenarios
@@ -64,7 +64,7 @@
 - **Communication**: Regular check-ins with test users
 
 ### Success Metrics
-- **Functional**: All MVP features work as expected
+- **Functional**: All quality features work as expected
 - **Performance**: Application responds within 3 seconds
 - **Usability**: Users can complete tasks without training
 - **Reliability**: Zero data loss or corruption incidents
