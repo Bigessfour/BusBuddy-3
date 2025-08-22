@@ -1,14 +1,102 @@
 {
-    // Use IntelliSense to learn about possible attributes.
-    // Hover to view descriptions of existing attributes.
-    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
-    "version": "0.2.0",
-    "configurations": [
-        {
-            "name": "PowerShell: Windows PowerShell",
-            "type": "PowerShell",
-            "request": "launch",
-            "sessionName": "Windows PowerShell (x64)"
-        }
-    ]
+  // Use IntelliSense to learn about possible attributes.
+  // Hover to view descriptions of existing attributes.
+  // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+  "version": "0.2.0",
+  "configurations": [
+    // === POWERSHELL DEBUGGING ===
+    {
+      "name": "PowerShell: Windows PowerShell",
+      "type": "PowerShell",
+      "request": "launch",
+      "sessionName": "Windows PowerShell (x64)"
+    },
+    {
+      "name": "PowerShell: BusBuddy Profile Debug",
+      "type": "PowerShell",
+      "request": "launch",
+      "script": "${workspaceFolder}\\PowerShell\\Profiles\\Microsoft.PowerShell_profile_optimized.ps1",
+      "args": [],
+      "cwd": "${workspaceFolder}",
+      "createTemporaryIntegratedConsole": false
+    },
+
+    // === .NET WPF DEBUGGING ===
+    {
+      "name": ".NET Core Launch (BusBuddy WPF)",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "bb-build (dotnet build BusBuddy.sln)",
+      "program": "${workspaceFolder}/BusBuddy.WPF/bin/Debug/net8.0-windows/BusBuddy.WPF.exe",
+      "args": [],
+      "cwd": "${workspaceFolder}",
+      "console": "internalConsole",
+      "stopAtEntry": false,
+      "env": {
+        "BUSBUDDY_DEBUG": "1",
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      }
+    },
+    {
+      "name": ".NET Core Launch (BusBuddy WPF - Staging)",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "bb-build (dotnet build BusBuddy.sln)",
+      "program": "${workspaceFolder}/BusBuddy.WPF/bin/Debug/net8.0-windows/BusBuddy.WPF.exe",
+      "args": ["--environment", "Staging"],
+      "cwd": "${workspaceFolder}",
+      "console": "internalConsole",
+      "stopAtEntry": false,
+      "env": {
+        "BUSBUDDY_DEBUG": "1",
+        "ASPNETCORE_ENVIRONMENT": "Staging"
+      }
+    },
+
+    // === ATTACH TO RUNNING PROCESS ===
+    {
+      "name": ".NET Core Attach",
+      "type": "coreclr",
+      "request": "attach"
+    },
+
+    // === TESTING DEBUGGING ===
+    {
+      "name": ".NET Core Launch (Tests)",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "dotnet test (All Tests)",
+      "program": "${workspaceFolder}/BusBuddy.Tests/bin/Debug/net8.0/BusBuddy.Tests.dll",
+      "args": [],
+      "cwd": "${workspaceFolder}",
+      "console": "internalConsole",
+      "stopAtEntry": false,
+      "env": {
+        "BUSBUDDY_TEST_MODE": "1"
+      }
+    },
+    {
+      "name": "bb-test (PowerShell-Integrated Tests)",
+      "type": "PowerShell",
+      "request": "launch",
+      "script": "bb-test", // Profile alias for dotnet test
+      "cwd": "${workspaceFolder}"
+    },
+
+    // === AZURE & SQL DEBUGGING ===
+    {
+      "name": "PowerShell: Azure SQL Test",
+      "type": "PowerShell",
+      "request": "launch",
+      "script": "${workspaceFolder}\\Scripts\\Test-AzureSqlConnection.ps1",
+      "args": [],
+      "cwd": "${workspaceFolder}"
+    }
+  ],
+  "compounds": [
+    {
+      "name": "Launch BusBuddy with Health Check",
+      "configurations": [".NET Core Launch (BusBuddy WPF)"]
+    }
+  ]
 }
