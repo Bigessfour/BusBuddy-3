@@ -1,0 +1,55 @@
+# 🚌 BusBuddy SQLFluff Configuration for Azure SQL Database
+# SQLFluff configuration for T-SQL (Azure SQL Database) formatting
+# Reference: https://docs.sqlfluff.com/en/stable/configuration.html
+
+[sqlfluff]
+# Use T-SQL dialect for Azure SQL Database compatibility
+dialect = tsql
+
+# Template handling for SQL files
+templater = jinja
+
+# Core linting rules
+[sqlfluff:rules]
+# Capitalize keywords for consistency
+capitalisation.keywords = upper
+capitalisation.functions = upper
+capitalisation.literals = upper
+
+# Indentation rules (4 spaces to match .editorconfig)
+indentation.tab_space_size = 4
+indentation.indent_unit = space
+
+# Line length (120 chars to match C# standards)
+max_line_length = 120
+
+# Comma handling for multi-line statements
+comma_style = trailing
+
+# Alias rules for readability
+aliasing.table = explicit
+aliasing.column = explicit
+aliasing.length = short
+
+# Layout rules for consistent formatting
+layout.type.comma = alone
+layout.type.binary_operator = leading
+layout.type.set_operator = alone
+
+[sqlfluff:rules:layout.long_lines]
+# Allow longer lines for complex Azure SQL queries
+ignore_comment_lines = true
+ignore_comment_clauses = true
+
+[sqlfluff:rules:references.keywords]
+# Ignore keywords in comments (for Azure SQL documentation)
+ignore_words = azure,sql,database,migration,ef,core
+
+[sqlfluff:rules:ambiguous.column_references]
+# Single table queries don't need table prefixes
+single_table_references = consistent
+
+# File patterns for Azure SQL and EF migrations
+[sqlfluff:rules:structure.unused_cte]
+# Allow unused CTEs in migration scripts
+ignore_words_regex = migration.*|seed.*|test.*

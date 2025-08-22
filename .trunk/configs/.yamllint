@@ -1,0 +1,62 @@
+# BusBuddy YAMLLint Configuration
+# Configuration for YAML files in Azure DevOps, GitHub Actions, and configuration files
+# Reference: https://yamllint.readthedocs.io/en/stable/configuration.html
+
+extends: default
+
+rules:
+  # Line length - accommodate longer Azure resource names and commands
+  line-length:
+    max: 120
+    level: warning
+  
+  # Indentation - 2 spaces for YAML (standard)
+  indentation:
+    spaces: 2
+    indent-sequences: true
+    check-multi-line-strings: false
+  
+  # Comments - allow for detailed Azure configuration documentation
+  comments:
+    min-spaces-from-content: 1
+    require-starting-space: true
+  
+  # Document separators - useful for multi-document YAML files
+  document-start:
+    present: false
+  
+  # Trailing spaces - clean up (aligns with .editorconfig)
+  trailing-spaces: enable
+  
+  # Empty lines - reasonable limits for readability
+  empty-lines:
+    max: 2
+    max-start: 1
+    max-end: 1
+  
+  # Brackets and braces - flexibility for Azure ARM templates
+  brackets:
+    min-spaces-inside: 0
+    max-spaces-inside: 1
+  
+  braces:
+    min-spaces-inside: 0
+    max-spaces-inside: 1
+  
+  # Key ordering - disabled for flexibility in Azure configurations
+  key-ordering: disable
+  
+  # Truthy values - Azure YAML often uses yes/no, true/false
+  truthy:
+    allowed-values: ['true', 'false', 'yes', 'no']
+    check-keys: false
+
+# File-specific overrides
+ignore: |
+  # Ignore generated or vendor files
+  /node_modules/
+  /.git/
+  /bin/
+  /obj/
+  /TestResults/
+  /.trunk/out/

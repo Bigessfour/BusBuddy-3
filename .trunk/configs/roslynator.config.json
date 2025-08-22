@@ -1,0 +1,51 @@
+{
+  "settings": {
+    "severity": {
+      "RCS1036": "info",
+      "RCS1037": "info",
+      "RCS1055": "warning",
+      "RCS1077": "info",
+      "RCS1090": "error",
+      "RCS1118": "info",
+      "RCS1124": "info",
+      "RCS1140": "warning",
+      "RCS1141": "info",
+      "RCS1142": "info",
+      "RCS1151": "warning",
+      "RCS1163": "warning",
+      "RCS1168": "warning",
+      "RCS1170": "warning",
+      "RCS1194": "warning",
+      "RCS1256": "warning",
+      "RCS1259": "warning",
+      "RCS1174": "warning",
+      "RCS1229": "warning",
+      "RCS1158": "info",
+      "RCS1102": "warning",
+      "RCS1169": "warning",
+      "RCS1197": "warning",
+      "RCS1156": "info",
+      "RCS1113": "warning",
+      "RCS1146": "warning",
+      "RCS1179": "warning",
+      "RCS1096": "info",
+      "RCS1215": "info",
+      "RCS1134": "warning",
+      "RCS1108": "info"
+    }
+  },
+  "rules": {
+    "suppressedDiagnostics": [
+      "RCS1043",
+      "RCS1110"
+    ]
+  },
+  "formatting": {
+    "indentationSize": 4,
+    "useTabs": false,
+    "newLineBeforeOpenBrace": true,
+    "newLineBeforeElse": true,
+    "newLineBeforeCatch": true,
+    "newLineBeforeFinally": true
+  }
+}

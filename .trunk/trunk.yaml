@@ -1,0 +1,64 @@
+# 🚌 Trunk config for BusBuddy: .NET 9 WPF, PowerShell 7.5.2, Azure SQL
+# Centralizes linting/formatting for consistent code quality across the project
+# Reference: https://docs.trunk.io/reference/trunk-yaml
+version: 0.1
+cli:
+  version: 1.25.0
+
+# Trunk plugins for extended functionality
+plugins:
+  sources:
+    - id: trunk
+      ref: v1.7.2
+      uri: https://github.com/trunk-io/plugins
+
+# Runtime versions matching BusBuddy project standards
+runtimes:
+  enabled:
+    - node@22.16.0      # For Prettier and other JS-based tools
+    - python@3.10.8     # For SQLFluff and other Python-based tools
+
+# Core linting and formatting configuration
+lint:
+  disabled:
+    - markdownlint       # Using custom markdown standards
+  enabled:
+    # Security and infrastructure scanning
+    - checkov@3.2.464           # Infrastructure as code security
+    - git-diff-check             # Git hygiene
+    - osv-scanner@2.2.1         # Vulnerability scanning
+    - trufflehog@3.90.5         # Secret detection
+    
+    # Code formatting and quality
+    - prettier@3.6.2            # JSON, YAML formatting
+    - yamllint@1.37.1           # YAML linting
+    
+    # PowerShell linting (uses PSScriptAnalyzerSettings.psd1)
+    - psscriptanalyzer@1.24.0   # PowerShell best practices
+
+  # File path ignores for build artifacts and logs
+  ignore:
+    - linters: [ALL]
+      paths:
+        - "**/*.disabled"        # Disabled files for clean builds
+        - "**/bin/**"            # Build outputs
+        - "**/obj/**"            # Build intermediates
+        - "**/TestResults/**"    # Test outputs
+        - "**/logs/**"           # Log files
+        - "**/artifacts/**"      # Build artifacts
+        - "**/Migrations/**"     # EF auto-generated migrations
+
+# Git hooks and actions configuration
+actions:
+  disabled:
+    - git-lfs                    # Not using Git LFS
+    - trunk-announce             # Reduce noise
+    - trunk-check-pre-push       # Manual control
+    - trunk-fmt-pre-commit       # Manual formatting
+  enabled:
+    - trunk-upgrade-available    # Version update notifications
+
+# Tools configuration
+tools:
+  enabled:
+    - converttosarif@1.0.0       # SARIF conversion for VS Code integration
