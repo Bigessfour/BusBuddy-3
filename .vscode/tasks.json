@@ -1,6 +1,7 @@
 {
   "version": "2.0.0",
   "tasks": [
+    // === BUILD TASKS ===
     {
       "type": "process",
       "label": "dotnet build BusBuddy.sln",
@@ -53,6 +54,225 @@
       },
       "problemMatcher": ["$msCompile"],
       "group": "build"
+    },
+    {
+      "label": "bb-wpf-build (C# WPF via PowerShell)",
+      "type": "shell",
+      "command": "bb-build", // From optimized profile
+      "problemMatcher": ["$msCompile"],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      }
+    },
+
+    // === BUSBUDDY POWERSHELL PROFILE TASKS ===
+    {
+      "label": "bb-run (PowerShell Profile)",
+      "type": "shell",
+      "command": "pwsh",
+      "args": ["-Command", "bb-run"],
+      "group": {
+        "kind": "build",
+        "isDefault": false
+      },
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "showReuseMessage": true,
+        "clear": false
+      },
+      "options": {
+        "env": {
+          "BUSBUDDY_NO_WELCOME": "1"
+        }
+      }
+    },
+    {
+      "label": "bb-health (System Health Check)",
+      "type": "shell",
+      "command": "pwsh",
+      "args": ["-Command", "bb-health"],
+      "group": "test",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": true,
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "bb-sql-test (SQL Database Test)",
+      "type": "shell",
+      "command": "pwsh",
+      "args": ["-Command", "bb-sql-test"],
+      "group": "test",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": true,
+        "panel": "shared"
+      }
+    },
+
+    // === CODE QUALITY & TRUNK TASKS ===
+    {
+      "label": "Trunk Check All",
+      "type": "shell",
+      "command": "trunk",
+      "args": ["check", "--all"],
+      "group": {
+        "kind": "test",
+        "isDefault": false
+      },
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": true,
+        "panel": "shared"
+      },
+      "problemMatcher": {
+        "owner": "trunk",
+        "fileLocation": ["relative", "${workspaceFolder}"],
+        "pattern": {
+          "regexp": "^(.*):(\\d+):(\\d+):\\s+(warning|error|info):\\s+(.*)$",
+          "file": 1,
+          "line": 2,
+          "column": 3,
+          "severity": 4,
+          "message": 5
+        }
+      }
+    },
+    {
+      "label": "Trunk Format All",
+      "type": "shell",
+      "command": "trunk",
+      "args": ["fmt", "--all"],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "PSScriptAnalyzer (PowerShell Quality)",
+      "type": "shell",
+      "command": "pwsh",
+      "args": [
+        "-Command",
+        "Invoke-ScriptAnalyzer -Path '${workspaceFolder}\\PowerShell' -Recurse -Settings '${workspaceFolder}\\PSScriptAnalyzerSettings.psd1'"
+      ],
+      "group": "test",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": true,
+        "panel": "shared"
+      },
+      "problemMatcher": {
+        "owner": "psscriptanalyzer",
+        "fileLocation": ["relative", "${workspaceFolder}"],
+        "pattern": {
+          "regexp": "^(.*):(\\d+):(\\d+):\\s+(Error|Warning|Information):\\s+(.*)$",
+          "file": 1,
+          "line": 2,
+          "column": 3,
+          "severity": 4,
+          "message": 5
+        }
+      }
+    },
+
+    // === TESTING TASKS ===
+    {
+      "label": "dotnet test (All Tests)",
+      "type": "shell",
+      "command": "dotnet",
+      "args": [
+        "test",
+        "BusBuddy.sln",
+        "--configuration",
+        "Debug",
+        "--logger",
+        "trx",
+        "--collect:\"XPlat Code Coverage\""
+      ],
+      "group": "test",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": true,
+        "panel": "shared"
+      },
+      "problemMatcher": "$msCompile"
+    },
+
+    // === AZURE & SQL TASKS ===
+    {
+      "label": "Azure Login Check",
+      "type": "shell",
+      "command": "pwsh",
+      "args": ["-Command", "az account show || az login"],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": true,
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "bb-azure-sql-query (Azure SQL via PowerShell)",
+      "type": "shell",
+      "command": "pwsh",
+      "args": ["-Command", "bb-sql-test"], // Uses profile alias for Azure SQL operations
+      "group": "test",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": true,
+        "panel": "shared"
+      },
+      "problemMatcher": []
+    },
+
+    // === UTILITY TASKS ===
+    {
+      "label": "Clean All (dotnet clean + bin/obj)",
+      "type": "shell",
+      "command": "pwsh",
+      "args": [
+        "-Command",
+        "dotnet clean BusBuddy.sln; Remove-Item -Path './*/bin', './*/obj' -Recurse -Force -ErrorAction SilentlyContinue"
+      ],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Restore NuGet Packages",
+      "type": "shell",
+      "command": "dotnet",
+      "args": ["restore", "BusBuddy.sln", "--force", "--no-cache"],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      }
     }
   ]
 }

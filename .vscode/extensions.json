@@ -1,76 +1,78 @@
 {
   "recommendations": [
+    // Code Quality & Linting Excellence (Trunk Integration)
+    "trunk.io", // Trunk Code Quality: Multi-language linting/formatting for PowerShell (PSScriptAnalyzer), C# (Roslynator integration), XAML, SQL. Repo-wide checks with git hooks.
+
     // Core C# Development Excellence
-    "ms-dotnettools.csharp",                    // Essential C# language support
-    "ms-dotnettools.csdevkit",                  // Professional C# development suite
-    "ms-dotnettools.vscode-dotnet-runtime",     // .NET runtime management
-    "ms-dotnettools.vscode-dotnet-pack",        // Complete .NET development pack
-    "josefpihrt-vscode.roslynator",             // Advanced C# refactoring and quality
+    "ms-dotnettools.csharp", // Essential C# language support
+    "ms-dotnettools.csdevkit", // Professional C# development suite
+    "ms-dotnettools.vscode-dotnet-runtime", // .NET runtime management
+    "ms-dotnettools.vscode-dotnet-pack", // Complete .NET development pack
+    "josefpihrt-vscode.roslynator", // Advanced C# refactoring and quality
 
     // XAML & WPF Excellence
-    "ms-dotnettools.xaml",                      // Professional XAML formatting and IntelliSense
-    "noesistechnologies.noesisgui-tools",       // Enhanced WPF development tools
-    "redhat.vscode-xml",                        // Comprehensive XML support
-    "rogalmic.vscode-xml-complete",             // Advanced XML/XAML completion
+    "ms-dotnettools.xaml", // Professional XAML formatting and IntelliSense
+    "noesistechnologies.noesisgui-tools", // Enhanced WPF development tools
+    "redhat.vscode-xml", // Comprehensive XML support
+    "rogalmic.vscode-xml-complete", // Advanced XML/XAML completion
 
     // Testing Excellence
-    "ms-vscode.test-adapter-converter",         // Unified test management
+    "ms-vscode.test-adapter-converter", // Unified test management
 
     // PowerShell Excellence (Microsoft Standards)
-    "ms-vscode.powershell",                     // Core PowerShell 7.5.2 support
-    "ms-vscode.powershell-preview",             // Latest PowerShell features and syntax
+    "ms-vscode.powershell", // Stable PowerShell 7.5+ support (remove preview for no conflicts)
 
     // Azure & Cloud Development Excellence (Supporting Az modules)
     "ms-azuretools.vscode-azureresourcegroups", // Azure resource management
-    "ms-azuretools.vscode-azurestorage",        // Azure Storage integration
-    "ms-azuretools.vscode-azurefunctions",     // Azure Functions development
-    "ms-azuretools.vscode-azureappservice",    // Azure App Service deployment
+    "ms-azuretools.vscode-azurestorage", // Azure Storage integration
+    "ms-azuretools.vscode-azurefunctions", // Azure Functions development
+    "ms-azuretools.vscode-azureappservice", // Azure App Service deployment
 
     // Database & SQL Excellence (Supporting SqlServer module)
-    "ms-mssql.mssql",                          // SQL Server connection and query execution
-    "ms-mssql.sql-database-projects-vscode",  // SQL database project management
-    "ms-azuretools.vscode-cosmosdb",          // NoSQL database support
-    "ms-azuretools.vscode-azuresql",          // Enhanced Azure SQL explorer for WPF data previews
+    "ms-mssql.mssql", // SQL Server connection and query execution
+    "ms-mssql.sql-database-projects-vscode", // SQL database project management
+    "ms-azuretools.vscode-cosmosdb", // NoSQL database support
+    "ms-azuretools.vscode-azuresql", // Enhanced Azure SQL explorer for WPF data previews
 
     // PowerShell Module Development Support
-    "formulahendry.code-runner",               // Execute PowerShell snippets for module testing
-    "ms-vscode.remote-repositories",          // Git repository integration for PSGallery modules
+    "formulahendry.code-runner", // For running PS snippets in persistent terminals
+    "ms-vscode.remote-repositories", // Git repository integration for PSGallery modules
 
     // AI-Enhanced Development
-    "github.copilot",                           // Core AI code assistance
-    "github.copilot-chat",                      // Conversational AI guidance
+    "github.copilot", // Core AI code assistance
+    "github.copilot-chat", // Conversational AI guidance
 
     // Syncfusion Development Support
-    "syncfusioninc.maui-vscode-extensions",     // Syncfusion control support
+    "syncfusioninc.maui-vscode-extensions", // Syncfusion control support
 
     // Task Management Excellence
-    "spmeesseman.vscode-taskexplorer",          // Professional task management
+    "spmeesseman.vscode-taskexplorer", // Professional task management
 
     // Productivity & Quality Tools
-    "ms-vscode.vscode-json",                    // Enhanced JSON editing
-    "aaron-bond.better-comments",               // Professional code documentation
-    "streetsidesoftware.code-spell-checker",    // Documentation quality assurance
-    "ms-vscode.hexeditor",                      // Binary file inspection
-    "ms-vscode.vscode-yaml",                    // YAML configuration support
+    "ms-vscode.vscode-json", // Enhanced JSON editing
+    "aaron-bond.better-comments", // Professional code documentation
+    "streetsidesoftware.code-spell-checker", // Documentation quality assurance
+    "ms-vscode.hexeditor", // Binary file inspection
+    "ms-vscode.vscode-yaml", // YAML configuration support
 
     // Git & Collaboration Excellence
-    "eamodio.gitlens",                          // Advanced Git integration
-    "github.vscode-pull-request-github",       // GitHub workflow integration
+    "eamodio.gitlens", // Advanced Git integration
+    "github.vscode-pull-request-github", // GitHub workflow integration
 
     // Language Support Enhancement
-    "ms-vscode.vscode-typescript-next",         // Enhanced TypeScript support
-    "bradlc.vscode-tailwindcss"                 // CSS framework support
+    "ms-vscode.vscode-typescript-next", // Enhanced TypeScript support
+    "bradlc.vscode-tailwindcss" // CSS framework support
   ],
   "unwantedRecommendations": [
     // Prevent extension conflicts with our quality-focused approach
-    
-    // Competing auto-formatting tools (conflicts with XAML Styler excellence)
+
+    // Competing auto-formatting tools (conflicts with XAML Styler excellence and Trunk)
     "formulahendry.auto-close-tag",
     "formulahendry.auto-rename-tag",
     "DotJoshJohnson.xml",
 
-    // Prevents PowerShell 7.5.2 syntax conflicts with PSScriptAnalyzer
-    "ms-vscode.vscode-typescript-tslint-plugin",
+    // Prevents PowerShell 7.5.2 syntax conflicts with PSScriptAnalyzer via Trunk
+    "ms-vscode.vscode-typescript-tslint-plugin", // Trunk handles TypeScript linting if needed
 
     // Competing SQL extensions (we use ms-mssql.mssql as primary)
     "oracle.oracledevtools",
@@ -78,8 +80,8 @@
     "ms-ossdata.vscode-postgresql",
 
     // Competing Azure extensions (we use official Microsoft Azure tools)
-    "ms-vscode.azure-account",                 // Superseded by azureresourcegroups
-    "bradymholt.pgformatter",                  // PostgreSQL specific, not needed
+    "ms-vscode.azure-account", // Superseded by azureresourcegroups
+    "bradymholt.pgformatter", // PostgreSQL specific, not needed
 
     // Node.js tools (not applicable to BusBuddy .NET/WPF architecture)
     "eg2.vscode-npm-script",
@@ -89,7 +91,8 @@
     "kavod-io.vscode-jest-test-adapter",
 
     // Competing PowerShell extensions
-    "ironmansoftware.powershellprotools",      // Commercial tool, we use free Microsoft tools
+    "ms-vscode.powershell-preview", // Avoid duplicate if stable is used (conflicts with stable extension)
+    "ironmansoftware.powershellprotools", // Commercial tool, we use free Microsoft tools
 
     // Competing XML tools (covered by our quality extension set)
     "ms-vscode.vscode-xml"
