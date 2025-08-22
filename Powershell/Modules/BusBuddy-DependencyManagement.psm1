@@ -1,8 +1,535 @@
 # 🚌 BusBuddy Dependency Management PowerShell Functions
 # Integrated dependency management functions for the BusBuddy PowerShell module
 # Usage: Import-Module or add to BusBuddy.psm1
+# Enhanced with full module ecosystem: Az, PSScriptAnalyzer, SecretManagement, Pester, SqlServer, PSDepend, PSRule.Azure, etc.
 
-#Requires -Version 7.0
+#Requires -Version 7.5
+#Requires -Module PSScriptAnalyzer
+
+# PowerShell 7.5.2 strict mode for enhanced syntax compliance
+Set-StrictMode -Version 3.0
+
+# Configure PSScriptAnalyzer settings for this module
+$PSScriptAnalyzerSettings = Join-Path $PSScriptRoot '..\..\PSScriptAnalyzerSettings.psd1'
+
+#region Module Installation and Management
+
+function Install-BusBuddyRequiredModules {
+    <#
+    .SYNOPSIS
+    Installs all required PowerShell modules for BusBuddy development.
+    
+    .DESCRIPTION
+    Ensures all necessary modules are installed for Azure management, testing,
+    security, compliance, and development workflows.
+    
+    .PARAMETER Force
+    Force installation even if modules exist.
+    
+    .EXAMPLE
+    Install-BusBuddyRequiredModules
+    
+    .EXAMPLE
+    bb-install-modules -Force
+    #>
+    [CmdletBinding()]
+    [Alias('bb-install-modules')]
+    param(
+        [switch]$Force
+    )
+    
+    begin {
+        Write-Information "🚌 Installing BusBuddy required PowerShell modules..." -InformationAction Continue
+        
+        $requiredModules = @(
+            @{ Name = 'Az.Accounts'; Description = 'Azure authentication and account management' },
+            @{ Name = 'Az.Sql'; Description = 'Azure SQL database management' },
+            @{ Name = 'Az.Resources'; Description = 'Azure resource management' },
+            @{ Name = 'Az.Storage'; Description = 'Azure storage account operations' },
+            @{ Name = 'Az.KeyVault'; Description = 'Azure Key Vault secrets management' },
+            @{ Name = 'Az.Monitor'; Description = 'Azure monitoring and diagnostics' },
+            @{ Name = 'PSScriptAnalyzer'; Description = 'PowerShell code analysis and linting' },
+            @{ Name = 'Microsoft.PowerShell.SecretManagement'; Description = 'Secure secret storage' },
+            @{ Name = 'Microsoft.PowerShell.SecretStore'; Description = 'Local secret store provider' },
+            @{ Name = 'Pester'; Description = 'PowerShell testing framework'; Version = '5.6.1' },
+            @{ Name = 'SqlServer'; Description = 'SQL Server management cmdlets' },
+            @{ Name = 'PSDepend'; Description = 'PowerShell dependency management' },
+            @{ Name = 'PSRule.Azure'; Description = 'Azure compliance and best practices validation' },
+            @{ Name = 'Plaster'; Description = 'PowerShell template and scaffolding engine' },
+            @{ Name = 'PSFramework'; Description = 'PowerShell development framework' },
+            @{ Name = 'NuGet.PackageManagement'; Description = 'NuGet package management integration' }
+        )
+    }
+    
+    process {
+        $installed = @()
+        $failed = @()
+        
+        foreach ($module in $requiredModules) {
+            try {
+                $existing = Get-Module -ListAvailable -Name $module.Name -ErrorAction SilentlyContinue
+                
+                if ($existing -and -not $Force) {
+                    Write-Information "✅ $($module.Name) already installed (version: $($existing[0].Version))" -InformationAction Continue
+                    $installed += $module.Name
+                    continue
+                }
+                
+                Write-Information "📦 Installing $($module.Name) - $($module.Description)" -InformationAction Continue
+                
+                $installParams = @{
+                    Name = $module.Name
+                    Scope = 'CurrentUser'
+                    Force = $true
+                    AllowClobber = $true
+                    SkipPublisherCheck = $true
+                    ErrorAction = 'Stop'
+                }
+                
+                if ($module.Version) {
+                    $installParams.RequiredVersion = $module.Version
+                }
+                
+                Install-Module @installParams
+                $installed += $module.Name
+                Write-Information "✅ $($module.Name) installed successfully" -InformationAction Continue
+                
+            } catch {
+                $failed += $module.Name
+                Write-Warning "❌ Failed to install $($module.Name): $($_.Exception.Message)"
+            }
+        }
+        
+        # Summary
+        Write-Output "`n📊 Installation Summary:"
+        Write-Output "✅ Successfully installed: $($installed.Count) modules"
+        Write-Output "❌ Failed installations: $($failed.Count) modules"
+        
+        if ($failed.Count -gt 0) {
+            Write-Warning "Failed modules: $($failed -join ', ')"
+            Write-Output "💡 Try running in elevated PowerShell or check network connectivity"
+        }
+        
+        return @{
+            Installed = $installed
+            Failed = $failed
+            TotalRequired = $requiredModules.Count
+        }
+    }
+}
+
+#endregion
+
+#region SecretManagement Integration
+
+function Set-BusBuddySecrets {
+    <#
+    .SYNOPSIS
+    Securely manages BusBuddy secrets using Microsoft.PowerShell.SecretManagement.
+    
+    .DESCRIPTION
+    Replaces plain text environment variables with secure secret storage.
+    Manages Syncfusion license keys, Azure credentials, and other sensitive data.
+    
+    .PARAMETER SecretName
+    Name of the secret to store.
+    
+    .PARAMETER SecretValue
+    Value of the secret to store (accepts both plain text and SecureString).
+    
+    .PARAMETER VaultName
+    Name of the secret vault (defaults to 'BusBuddy').
+    
+    .EXAMPLE
+    Set-BusBuddySecrets -SecretName "SYNCFUSION_LICENSE_KEY" -SecretValue "your-license-key"
+    
+    .EXAMPLE
+    bb-secrets-set -SecretName "AZURE_SQL_CONNECTION" -SecretValue "connection-string"
+    #>
+    [CmdletBinding()]
+    [Alias('bb-secrets-set')]
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$SecretName,
+        
+        [Parameter(Mandatory = $true)]
+        [object]$SecretValue,
+        
+        [string]$VaultName = "BusBuddy"
+    )
+    
+    begin {
+        Write-Information "🔐 Setting up BusBuddy secret management..." -InformationAction Continue
+        
+        # Install SecretManagement if not available
+        if (-not (Get-Module -ListAvailable Microsoft.PowerShell.SecretManagement -ErrorAction SilentlyContinue)) {
+            Write-Information "Installing Microsoft.PowerShell.SecretManagement..." -InformationAction Continue
+            Install-Module Microsoft.PowerShell.SecretManagement -Scope CurrentUser -Force -AllowClobber
+        }
+        
+        if (-not (Get-Module -ListAvailable Microsoft.PowerShell.SecretStore -ErrorAction SilentlyContinue)) {
+            Write-Information "Installing Microsoft.PowerShell.SecretStore..." -InformationAction Continue
+            Install-Module Microsoft.PowerShell.SecretStore -Scope CurrentUser -Force -AllowClobber
+        }
+    }
+    
+    process {
+        try {
+            Import-Module Microsoft.PowerShell.SecretManagement -Force
+            Import-Module Microsoft.PowerShell.SecretStore -Force
+            
+            # Register secret vault if it doesn't exist
+            if (-not (Get-SecretVault -Name $VaultName -ErrorAction SilentlyContinue)) {
+                Write-Information "Registering secret vault: $VaultName" -InformationAction Continue
+                Register-SecretVault -Name $VaultName -ModuleName Microsoft.PowerShell.SecretStore
+            }
+            
+            # Convert to secure string if needed
+            $secureValue = if ($SecretValue -is [SecureString]) {
+                $SecretValue
+            } else {
+                ConvertTo-SecureString -String $SecretValue -AsPlainText -Force
+            }
+            
+            Set-Secret -Name $SecretName -Secret $secureValue -Vault $VaultName
+            Write-Information "✅ Secret '$SecretName' stored securely in vault '$VaultName'" -InformationAction Continue
+            
+            # Remove from environment if it exists
+            if (Test-Path "Env:$SecretName") {
+                Remove-Item "Env:$SecretName"
+                Write-Information "🗑️ Removed '$SecretName' from environment variables" -InformationAction Continue
+            }
+            
+        } catch {
+            Write-Error "Failed to store secret '$SecretName': $($_.Exception.Message)"
+            throw
+        }
+    }
+}
+
+function Get-BusBuddySecret {
+    <#
+    .SYNOPSIS
+    Retrieves BusBuddy secrets from secure storage.
+    
+    .DESCRIPTION
+    Safely retrieves secrets from the BusBuddy secret vault.
+    
+    .PARAMETER SecretName
+    Name of the secret to retrieve.
+    
+    .PARAMETER VaultName
+    Name of the secret vault (defaults to 'BusBuddy').
+    
+    .PARAMETER AsPlainText
+    Return the secret as plain text (use with caution).
+    
+    .EXAMPLE
+    $license = Get-BusBuddySecret -SecretName "SYNCFUSION_LICENSE_KEY"
+    
+    .EXAMPLE
+    bb-secrets-get -SecretName "AZURE_SQL_CONNECTION" -AsPlainText
+    #>
+    [CmdletBinding()]
+    [Alias('bb-secrets-get')]
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$SecretName,
+        
+        [string]$VaultName = "BusBuddy",
+        
+        [switch]$AsPlainText
+    )
+    
+    try {
+        Import-Module Microsoft.PowerShell.SecretManagement -Force
+        
+        $secret = Get-Secret -Name $SecretName -Vault $VaultName -ErrorAction Stop
+        
+        if ($AsPlainText) {
+            return [System.Runtime.InteropServices.Marshal]::PtrToStringAuto([System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($secret))
+        } else {
+            return $secret
+        }
+        
+    } catch {
+        Write-Error "Failed to retrieve secret '$SecretName': $($_.Exception.Message)"
+        return $null
+    }
+}
+
+function Initialize-BusBuddySecretVault {
+    <#
+    .SYNOPSIS
+    Initializes the BusBuddy secret vault with common secrets.
+    
+    .DESCRIPTION
+    Sets up the secret vault and migrates common environment variables to secure storage.
+    
+    .EXAMPLE
+    Initialize-BusBuddySecretVault
+    
+    .EXAMPLE
+    bb-init-secrets
+    #>
+    [CmdletBinding()]
+    [Alias('bb-init-secrets')]
+    param()
+    
+    begin {
+        Write-Information "🚀 Initializing BusBuddy secret vault..." -InformationAction Continue
+    }
+    
+    process {
+        try {
+            # Common secrets to migrate
+            $commonSecrets = @(
+                'SYNCFUSION_LICENSE_KEY',
+                'AZURE_SQL_CONNECTION',
+                'AZURE_CLIENT_ID',
+                'AZURE_CLIENT_SECRET',
+                'AZURE_TENANT_ID',
+                'AZURE_SUBSCRIPTION_ID'
+            )
+            
+            $migrated = 0
+            
+            foreach ($secretName in $commonSecrets) {
+                $envValue = [Environment]::GetEnvironmentVariable($secretName)
+                
+                if (-not [string]::IsNullOrEmpty($envValue)) {
+                    Set-BusBuddySecrets -SecretName $secretName -SecretValue $envValue
+                    $migrated++
+                    Write-Information "📦 Migrated $secretName to secure storage" -InformationAction Continue
+                } else {
+                    Write-Information "⚠️ $secretName not found in environment variables" -InformationAction Continue
+                }
+            }
+            
+            Write-Output "✅ Secret vault initialized. Migrated $migrated secrets."
+            Write-Output "💡 Use Set-BusBuddySecrets to add more secrets securely."
+            
+        } catch {
+            Write-Error "❌ Failed to initialize secret vault: $($_.Exception.Message)"
+            throw
+        }
+    }
+}
+
+#endregion
+
+#region Azure SQL Server Integration (SqlServer Module)
+
+function Invoke-BusBuddyAdvancedSqlQuery {
+    <#
+    .SYNOPSIS
+    Enhanced SQL query execution with SqlServer module capabilities.
+    
+    .DESCRIPTION
+    Executes SQL queries against BusBuddy Azure SQL database with advanced features
+    like CSV export, query timing, and result formatting.
+    
+    .PARAMETER Query
+    SQL query to execute.
+    
+    .PARAMETER Database
+    Database name (defaults to BusBuddyDB).
+    
+    .PARAMETER ExportToCsv
+    Export results to CSV file.
+    
+    .PARAMETER OutputPath
+    Path for CSV export.
+    
+    .PARAMETER ShowTiming
+    Display query execution time.
+    
+    .EXAMPLE
+    Invoke-BusBuddyAdvancedSqlQuery -Query "SELECT TOP 10 * FROM Students" -ShowTiming
+    
+    .EXAMPLE
+    bb-sql-query -Query "SELECT * FROM Vehicles WHERE Status = 'Active'" -ExportToCsv -OutputPath "active-vehicles.csv"
+    #>
+    [CmdletBinding()]
+    [Alias('bb-sql-query')]
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Query,
+        
+        [string]$Database = "BusBuddyDB",
+        
+        [switch]$ExportToCsv,
+        
+        [string]$OutputPath,
+        
+        [switch]$ShowTiming
+    )
+    
+    begin {
+        Write-Information "🗃️ Executing advanced SQL query..." -InformationAction Continue
+        
+        # Ensure SqlServer module is available
+        if (-not (Get-Module -ListAvailable SqlServer -ErrorAction SilentlyContinue)) {
+            Install-Module SqlServer -Scope CurrentUser -Force -AllowClobber
+        }
+        
+        Import-Module SqlServer -Force
+    }
+    
+    process {
+        try {
+            # Get connection string from secrets or environment
+            $connectionString = $null
+            
+            try {
+                $connectionString = Get-BusBuddySecret -SecretName "AZURE_SQL_CONNECTION" -AsPlainText -ErrorAction SilentlyContinue
+            } catch {
+                # Fallback to environment variable
+                $connectionString = $env:BUSBUDDY_CONNECTION
+            }
+            
+            if ([string]::IsNullOrEmpty($connectionString)) {
+                throw "No connection string found. Set AZURE_SQL_CONNECTION secret or BUSBUDDY_CONNECTION environment variable."
+            }
+            
+            $startTime = Get-Date
+            
+            # Execute query using SqlServer module
+            $results = Invoke-Sqlcmd -ConnectionString $connectionString -Query $Query -Database $Database -ErrorAction Stop
+            
+            $endTime = Get-Date
+            $executionTime = $endTime - $startTime
+            
+            if ($ShowTiming) {
+                Write-Information "⏱️ Query executed in $($executionTime.TotalMilliseconds.ToString('F2')) ms" -InformationAction Continue
+            }
+            
+            # Export to CSV if requested
+            if ($ExportToCsv) {
+                if ([string]::IsNullOrEmpty($OutputPath)) {
+                    $timestamp = Get-Date -Format "yyyyMMdd_HHmmss"
+                    $OutputPath = "BusBuddy-Query-Results-$timestamp.csv"
+                }
+                
+                $results | Export-Csv -Path $OutputPath -NoTypeInformation
+                Write-Information "📄 Results exported to: $OutputPath" -InformationAction Continue
+            }
+            
+            # Display results summary
+            $rowCount = if ($results) { $results.Count } else { 0 }
+            Write-Information "📊 Query returned $rowCount rows" -InformationAction Continue
+            
+            return $results
+            
+        } catch {
+            Write-Error "SQL query execution failed: $($_.Exception.Message)"
+            throw
+        }
+    }
+}
+
+#endregion
+
+#region PowerShell Module Health Check
+
+function Test-BusBuddyModuleHealth {
+    <#
+    .SYNOPSIS
+    Comprehensive health check for all BusBuddy PowerShell modules.
+    
+    .DESCRIPTION
+    Validates installation status and versions of all required and optional modules.
+    
+    .EXAMPLE
+    Test-BusBuddyModuleHealth
+    
+    .EXAMPLE
+    bb-module-health
+    #>
+    [CmdletBinding()]
+    [Alias('bb-module-health')]
+    param()
+    
+    begin {
+        Write-Information "🔍 Testing BusBuddy PowerShell module health..." -InformationAction Continue
+    }
+    
+    process {
+        $coreModules = @('Az.Accounts', 'Az.Sql', 'Az.Resources', 'PSScriptAnalyzer', 'Microsoft.PowerShell.SecretManagement')
+        $optionalModules = @('Az.Storage', 'Az.KeyVault', 'Az.Monitor', 'SqlServer', 'Pester', 'PSDepend', 'Plaster', 'PSFramework')
+        
+        $moduleStatus = @{}
+        $healthScore = 0
+        $totalModules = $coreModules.Count + $optionalModules.Count
+        
+        # Check core modules
+        foreach ($module in $coreModules) {
+            $available = Get-Module -ListAvailable -Name $module -ErrorAction SilentlyContinue
+            
+            if ($available) {
+                $moduleStatus[$module] = @{
+                    Status = 'Available'
+                    Version = $available[0].Version.ToString()
+                    Critical = $true
+                }
+                $healthScore += 1
+                Write-Output "✅ $module (v$($available[0].Version)) - Available (Core)"
+            } else {
+                $moduleStatus[$module] = @{
+                    Status = 'Missing'
+                    Critical = $true
+                }
+                Write-Error "❌ $module - Missing (Critical)"
+            }
+        }
+        
+        # Check optional modules  
+        foreach ($module in $optionalModules) {
+            $available = Get-Module -ListAvailable -Name $module -ErrorAction SilentlyContinue
+            
+            if ($available) {
+                $moduleStatus[$module] = @{
+                    Status = 'Available'
+                    Version = $available[0].Version.ToString()
+                    Critical = $false
+                }
+                $healthScore += 0.5
+                Write-Output "✅ $module (v$($available[0].Version)) - Available (Optional)"
+            } else {
+                $moduleStatus[$module] = @{
+                    Status = 'Missing'
+                    Critical = $false
+                }
+                Write-Information "⚠️ $module - Missing (Optional)" -InformationAction Continue
+            }
+        }
+        
+        $healthPercentage = [math]::Round(($healthScore / $totalModules) * 100, 1)
+        
+        Write-Output "`n📊 Module Health Summary:"
+        Write-Output "Health Score: $healthPercentage%"
+        Write-Output "Core Modules: $($coreModules.Count)"
+        Write-Output "Optional Modules: $($optionalModules.Count)"
+        
+        if ($healthPercentage -ge 80) {
+            Write-Output "🎉 Module health is excellent!"
+        } elseif ($healthPercentage -ge 60) {
+            Write-Warning "⚠️ Module health needs attention"
+        } else {
+            Write-Error "❌ Critical module health issues detected"
+        }
+        
+        return @{
+            HealthScore = $healthPercentage
+            ModuleStatus = $moduleStatus
+            CriticalMissing = ($moduleStatus.Values | Where-Object { $_.Status -eq 'Missing' -and $_.Critical }).Count
+        }
+    }
+}
+
+#endregion
+
+#region Dependency Management Functions
 
 function Invoke-BusBuddyDependencyCheck {
     <#
@@ -47,6 +574,12 @@ function Invoke-BusBuddyDependencyCheck {
     begin {
         Write-Information "🚌 Starting BusBuddy dependency health check..." -InformationAction Continue
         $startTime = Get-Date
+        
+        # Install PSScriptAnalyzer if not available
+        if (-not (Get-Module -ListAvailable PSScriptAnalyzer -ErrorAction SilentlyContinue)) {
+            Write-Information "Installing PSScriptAnalyzer module..." -InformationAction Continue
+            Install-Module PSScriptAnalyzer -Scope CurrentUser -Force -AllowClobber
+        }
     }
     
     process {
@@ -381,7 +914,7 @@ function Test-BusBuddyDependabotConfig {
         $configContent = Get-Content $configPath -Raw
         
         # Check for NuGet ecosystem
-        if ($configContent -match 'package-ecosystem:\s*["\']?nuget["\']?') {
+        if ($configContent -match 'package-ecosystem:\s*["\'']*nuget["\'']*') {
             $validation.HasNuGetEcosystem = $true
             Write-Output "✅ NuGet ecosystem configured"
         } else {
@@ -608,29 +1141,30 @@ $(foreach ($version in $reportData.Details.PackageVersions.GetEnumerator()) { "$
                     $textReport | Out-File -FilePath $OutputPath -Encoding UTF8
                 }
             }
-            
-            Write-Output "📄 Dependency report generated: $OutputPath"
-            Write-Output "📊 Report format: $OutputFormat"
-            Write-Output "📈 Overall health: $($reportData.Summary.OverallHealth)"
-            
-            return $reportData
-            
         } catch {
-            Write-Error "Report generation failed: $($_.Exception.Message)"
+            Write-Error "Failed to generate dependency report: $($_.Exception.Message)"
             throw
         }
     }
 }
 
-# Export functions for module use
+# Export module members
 Export-ModuleMember -Function @(
-    'Invoke-BusBuddyDependencyCheck',
+    'Install-BusBuddyDependencies',
     'Update-BusBuddyDependencies', 
-    'Test-BusBuddyDependabotConfig',
+    'Test-BusBuddyDependencies',
+    'Resolve-BusBuddyDependencyConflicts',
+    'Get-BusBuddyPackageVersions',
+    'Test-SyncfusionLicense',
+    'Initialize-DependabotConfig',
     'Get-BusBuddyDependencyReport'
 ) -Alias @(
-    'bb-deps-check',
-    'bb-deps-update',
-    'bb-deps-dependabot', 
+    'bb-deps-install',
+    'bb-deps-update', 
+    'bb-deps-test',
+    'bb-deps-resolve',
+    'bb-deps-versions',
+    'bb-deps-syncfusion',
+    'bb-deps-dependabot',
     'bb-deps-report'
 )
