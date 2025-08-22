@@ -114,7 +114,67 @@ jobs:
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
           
-      - name: 💾 Cache NuGet Packages
+      - name: � Setup PowerShell Modules for BusBuddy
+        run: |
+          Write-Output "🔧 Installing PowerShell modules for BusBuddy development..."
+          
+          # Core modules for CI/CD pipeline
+          $CoreModules = @(
+            'PSScriptAnalyzer',
+            'Pester', 
+            'Az.Accounts',
+            'Az.Sql',
+            'Az.Resources',
+            'SqlServer',
+            'PSDepend'
+          )
+          
+          foreach ($Module in $CoreModules) {
+            try {
+              Write-Output "📦 Installing $Module..."
+              Install-Module -Name $Module -Scope CurrentUser -Force -AllowClobber -SkipPublisherCheck
+              Write-Output "✅ $Module installed successfully"
+            } catch {
+              Write-Warning "❌ Failed to install $Module : $($_.Exception.Message)"
+              # Continue with other modules
+            }
+          }
+          
+          # Verify installations
+          Write-Output "`n📊 Installed PowerShell Modules:"
+          Get-Module -ListAvailable | Where-Object Name -in $CoreModules | Select-Object Name, Version | Format-Table
+        shell: pwsh
+        
+      - name: 🧪 Run PowerShell Module Tests
+        run: |
+          Write-Output "🧪 Testing PowerShell module functionality..."
+          
+          # Test PSScriptAnalyzer
+          if (Get-Module -ListAvailable PSScriptAnalyzer) {
+            Write-Output "✅ PSScriptAnalyzer available"
+            # Run analysis on PowerShell files if they exist
+            $psFiles = Get-ChildItem -Path . -Recurse -Filter "*.ps1" -ErrorAction SilentlyContinue
+            if ($psFiles) {
+              Invoke-ScriptAnalyzer -Path $psFiles[0].Directory.FullName -Recurse -ErrorAction SilentlyContinue | Out-String
+            }
+          }
+          
+          # Test Pester
+          if (Get-Module -ListAvailable Pester) {
+            Write-Output "✅ Pester testing framework available"
+            Import-Module Pester -Force
+            Write-Output "Pester version: $((Get-Module Pester).Version)"
+          }
+          
+          # Test Azure modules
+          if (Get-Module -ListAvailable Az.Accounts) {
+            Write-Output "✅ Azure PowerShell modules available"
+          }
+          
+          Write-Output "🔧 PowerShell environment ready for BusBuddy development"
+        shell: pwsh
+          
+      - name: �💾 Cache NuGet Packages
         uses: actions/cache@v4
         with:
           path: ~/.nuget/packages

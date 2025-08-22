@@ -121,22 +121,11 @@
     "Wintellect",
     "xlsz"
   ],
-
-  // Ensure BusBuddy PowerShell modules are on PSModulePath for integrated terminals
-  // This enables PowerShell module autoloading for bb-* commands without editing user profiles.
   "terminal.integrated.env.windows": {
-    "PSModulePath": "${workspaceFolder}\\PowerShell\\Modules;${env:PSModulePath}"
+    "PSModulePath": "${workspaceFolder}\\PowerShell\\Modules;${env:PSModulePath};${env:USERPROFILE}\\Documents\\PowerShell\\Modules",
+    "BUSBUDDY_WORKSPACE": "${workspaceFolder}",
+    "DOTNET_CLI_TELEMETRY_OPTOUT": "1"
   },
-
-  // Force integrated terminal to use PowerShell 7.5.2
-  "terminal.integrated.profiles.windows": {
-    "PowerShell": {
-      "path": "C:\\Program Files\\PowerShell\\7\\pwsh.exe"
-    }
-  },
-  "terminal.integrated.defaultProfile.windows": "PowerShell",
-
-  // Trunk.io Configuration - Enhanced for BusBuddy Development
   "trunk.enableLinting": true,
   "trunk.enableFormatting": true,
   "trunk.formatOnSave": true,
@@ -144,8 +133,6 @@
   "trunk.showStatusInExplorer": true,
   "trunk.autoFormatOnPaste": true,
   "trunk.enableActions": true,
-
-  // File duplication prevention settings
   "files.autoSave": "afterDelay",
   "files.autoSaveDelay": 1000,
   "files.hotExit": "onExitAndWindowClose",
@@ -159,8 +146,6 @@
     "**/*.tmp": true,
     "**/*.temp": true
   },
-
-  // Global YAML settings
   "yaml.format.enable": true,
   "yaml.format.singleQuote": false,
   "yaml.format.bracketSpacing": true,
@@ -169,8 +154,40 @@
   "yaml.schemas": {
     "https://json.schemastore.org/github-workflow.json": ".github/workflows/*.yml"
   },
-
+  "powershell.powerShellDefaultVersion": "PowerShell (x64)",
+  "powershell.enableProfileLoading": true,
+  "powershell.codeFormatting.preset": "OTBS",
+  "powershell.codeFormatting.openBraceOnSameLine": true,
+  "powershell.codeFormatting.newLineAfterOpenBrace": true,
+  "powershell.codeFormatting.newLineAfterCloseBrace": true,
+  "powershell.codeFormatting.whitespaceBeforeOpenBrace": true,
+  "powershell.codeFormatting.whitespaceBeforeOpenParen": true,
+  "powershell.codeFormatting.whitespaceAroundOperator": true,
+  "powershell.codeFormatting.whitespaceAfterSeparator": true,
+  "powershell.codeFormatting.whitespaceBetweenParameters": false,
+  "powershell.codeFormatting.ignoreOneLineBlock": true,
+  "powershell.scriptAnalysis.enable": true,
+  "powershell.scriptAnalysis.settingsPath": "./PSScriptAnalyzerSettings.psd1",
   "prettyxml.settings.enableLogs": true,
   "prettyxml.settings.formatOnSave": true,
-  "window.density.editorTabHeight": "compact"
+  "window.density.editorTabHeight": "compact",
+  "terminal.integrated.enablePersistentSessions": true,
+  "terminal.integrated.defaultProfile.windows": "BusBuddy PowerShell 7.5.2",
+  "terminal.integrated.profiles.windows": {
+    "BusBuddy PowerShell 7.5.2": {
+      "args": [
+        "-NoProfile",
+        "-NoExit",
+        "-Command",
+        "& 'C:\\Users\\biges\\Desktop\\BusBuddy\\PowerShell\\Profiles\\Microsoft.PowerShell_profile.ps1'"
+      ],
+      "icon": "terminal-powershell",
+      "path": "pwsh.exe"
+    }
+  },
+  "terminal.integrated.showExitAlert": false,
+  "terminal.integrated.enableImages": true,
+  "terminal.integrated.persistentSessionReviveProcess": "onExitAndWindowClose",
+  "terminal.integrated.gpuAcceleration": "on",
+  "terminal.integrated.confirmOnExit": "hasChildProcesses"
 }

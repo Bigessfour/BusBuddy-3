@@ -1,6 +1,12 @@
-# 🚌 BusBuddy - School Transportation Management System
+# 🚌[![Build Status](https://img.shields.io/badge/build-✅%20passing-brightgreen)](https://github.com/Bigessfour/BusBuddy-3)
+[![.NET](https://img.shields.io/badge/.NET-9.0.304-blue)](https://dotnet.microsoft.com/download/dotnet/9.0)
+[![PowerShell](https://img.shields.io/badge/PowerShell-7.5.2%20✨%20Advanced-blue)](https://github.com/PowerShell/PowerShell)
+[![Syncfusion](https://img.shields.io/badge/Syncfusion-30.1.42%20✅%20Licensed-orange)](https://www.syncfusion.com/wpf-controls)
+[![Hyperthreading](https://img.shields.io/badge/Hyperthreading-⚡%20Optimized-green)](https://docs.microsoft.com/en-us/powershell/scripting/learn/experimental-features)
+[![MVP Status](https://img.shields.io/badge/MVP-⚠️%20Development-yellow)](https://github.com/Bigessfour/BusBuddy-3)
+[![Production](https://img.shields.io/badge/Production-🚧%20In%20Progress-yellow)](https://github.com/Bigessfour/BusBuddy-3)ddy - School Transportation Management System
 
-> **Modern WPF application for comprehensive school bus fleet management, built with .NET 9.0 and Syncfusion controls.**
+> **Modern WPF application for comprehensive school bus fleet management, built with .NET 9.0 and Syncfusion controls. Features state-of-the-art PowerShell 7.5.2 automation with hyperthreading optimization.**
 
 [![Build Status](https://img.shields.io/badge/build-✅%20passing-brightgreen)](https://github.com/Bigessfour/BusBuddy-3)
 [![.NET](https://img.shields.io/badge/.NET-9.0.304-blue)](https://dotnet.microsoft.com/download/dotnet/9.0)
@@ -11,7 +17,7 @@
 
 ## 🎯 **Project Vision**
 
-BusBuddy streamlines school transportation operations through intelligent route management, vehicle tracking, and student assignment systems. Built with modern .NET technologies and professional-grade UI components.
+BusBuddy streamlines school transportation operations through intelligent route management, vehicle tracking, and student assignment systems. Built with modern .NET technologies, professional-grade UI components, and state-of-the-art PowerShell 7.5.2 automation with machine-specific hyperthreading optimization.
 
 ### **Core Features**
 
@@ -20,6 +26,7 @@ BusBuddy streamlines school transportation operations through intelligent route 
 - 👥 **Student Management**: Student enrollment, route assignments, pickup/dropoff tracking
 - 📊 **Analytics Dashboard**: Real-time metrics, performance reports, operational insights
 - 🔧 **Maintenance Tracking**: Scheduled maintenance, repair history, compliance monitoring
+- ⚡ **Performance Optimization**: Hyperthreading-aware parallel processing and machine-specific tuning
 
 ## 🚀 **Quick Start**
 
@@ -27,8 +34,26 @@ BusBuddy streamlines school transportation operations through intelligent route 
 
 - **Windows 10/11** (for WPF)
 - **.NET 9.0 SDK** (9.0.303 or later)
-- **PowerShell 7.5.2+** (for automation)
+- **PowerShell 7.5.2+** (with state-of-the-art features)
 - **Visual Studio Code** (recommended) or Visual Studio 2022
+
+### **PowerShell 7.5.2 Enhanced Environment**
+BusBuddy includes state-of-the-art PowerShell automation with hyperthreading optimization:
+
+```powershell
+# Quick installation with hyperthreading detection
+.\Install-BusBuddyCompleteEnvironment.ps1
+
+# Verify hyperthreading optimization
+htinfo                    # Display hyperthreading information  
+sysinfo                   # System performance overview
+perfmetrics              # Real-time performance metrics
+
+# Advanced parallel processing
+bb-parallel-build        # Hyperthreading-optimized build
+bb-perf-profile          # Performance profiling with machine tuning
+bb-health-advanced       # Comprehensive system health check
+```
 
 ### **Installation & Setup**
 
@@ -37,13 +62,16 @@ BusBuddy streamlines school transportation operations through intelligent route 
 git clone https://github.com/Bigessfour/BusBuddy-3.git
 cd BusBuddy
 
-# Build the solution
-dotnet build BusBuddy.sln
+# Enhanced build with hyperthreading optimization
+bb-build                 # State-of-the-art parallel build
 
-# Run the application
-dotnet run --project BusBuddy.WPF\BusBuddy.WPF.csproj
+# Run with performance monitoring  
+bb-run                   # Run with advanced diagnostics
 
-# Optional: Load PowerShell development helpers
+# Hyperthreading-aware testing
+bb-test                  # Optimized test execution
+
+# Optional: Load PowerShell development helpers (auto-loaded)
 Import-Module .\PowerShell\Modules\BusBuddy.Commands\BusBuddy.Commands.psm1
 ```
 

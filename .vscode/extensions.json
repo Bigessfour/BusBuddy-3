@@ -20,6 +20,22 @@
     "ms-vscode.powershell",                     // Core PowerShell 7.5.2 support
     "ms-vscode.powershell-preview",             // Latest PowerShell features and syntax
 
+    // Azure & Cloud Development Excellence (Supporting Az modules)
+    "ms-azuretools.vscode-azureresourcegroups", // Azure resource management
+    "ms-azuretools.vscode-azurestorage",        // Azure Storage integration
+    "ms-azuretools.vscode-azurefunctions",     // Azure Functions development
+    "ms-azuretools.vscode-azureappservice",    // Azure App Service deployment
+
+    // Database & SQL Excellence (Supporting SqlServer module)
+    "ms-mssql.mssql",                          // SQL Server connection and query execution
+    "ms-mssql.sql-database-projects-vscode",  // SQL database project management
+    "ms-azuretools.vscode-cosmosdb",          // NoSQL database support
+    "ms-azuretools.vscode-azuresql",          // Enhanced Azure SQL explorer for WPF data previews
+
+    // PowerShell Module Development Support
+    "formulahendry.code-runner",               // Execute PowerShell snippets for module testing
+    "ms-vscode.remote-repositories",          // Git repository integration for PSGallery modules
+
     // AI-Enhanced Development
     "github.copilot",                           // Core AI code assistance
     "github.copilot-chat",                      // Conversational AI guidance
@@ -56,12 +72,24 @@
     // Prevents PowerShell 7.5.2 syntax conflicts with PSScriptAnalyzer
     "ms-vscode.vscode-typescript-tslint-plugin",
 
+    // Competing SQL extensions (we use ms-mssql.mssql as primary)
+    "oracle.oracledevtools",
+    "mtxr.sqltools",
+    "ms-ossdata.vscode-postgresql",
+
+    // Competing Azure extensions (we use official Microsoft Azure tools)
+    "ms-vscode.azure-account",                 // Superseded by azureresourcegroups
+    "bradymholt.pgformatter",                  // PostgreSQL specific, not needed
+
     // Node.js tools (not applicable to BusBuddy .NET/WPF architecture)
     "eg2.vscode-npm-script",
 
     // Competing test tools (we use built-in .NET test explorer)
     "hbenl.vscode-test-explorer",
     "kavod-io.vscode-jest-test-adapter",
+
+    // Competing PowerShell extensions
+    "ironmansoftware.powershellprotools",      // Commercial tool, we use free Microsoft tools
 
     // Competing XML tools (covered by our quality extension set)
     "ms-vscode.vscode-xml"
