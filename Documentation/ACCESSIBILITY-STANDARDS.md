@@ -11,23 +11,25 @@ BusBuddy transportation management system must be accessible to users with disab
 
 ## 📊 **COMPLIANCE TARGETS**
 
-| **Level** | **Status** | **Priority** | **Target Date** |
-|-----------|------------|--------------|-----------------|
-| **Level A** | 🎯 Required | Critical | Phase 2 |
-| **Level AA** | 🎯 Required | High | Phase 2 |
-| **Level AAA** | 📋 Recommended | Medium | Phase 3 |
+| **Level**     | **Status**     | **Priority** | **Target Date** |
+| ------------- | -------------- | ------------ | --------------- |
+| **Level A**   | 🎯 Required    | Critical     | Phase 2         |
+| **Level AA**  | 🎯 Required    | High         | Phase 2         |
+| **Level AAA** | 📋 Recommended | Medium       | Phase 3         |
 
 ## 🎨 **VISUAL ACCESSIBILITY STANDARDS**
 
 ### **Color and Contrast Requirements**
 
 **📏 WCAG 2.1 Contrast Ratios:**
+
 - **Normal Text**: 4.5:1 minimum
 - **Large Text**: 3:1 minimum
 - **UI Components**: 3:1 minimum
 - **Focus Indicators**: 3:1 minimum
 
 **🎨 Syncfusion Theme Compliance:**
+
 ```xml
 <!-- FluentDark Theme - High Contrast -->
 <SolidColorBrush x:Key="PrimaryTextBrush" Color="#FFFFFF"/>        <!-- Contrast: 21:1 -->
@@ -41,6 +43,7 @@ BusBuddy transportation management system must be accessible to users with disab
 ```
 
 **🎯 Color Usage Guidelines:**
+
 - **Never rely on color alone** for information
 - **Provide text alternatives** for color-coded information
 - **Support high contrast mode** detection
@@ -49,6 +52,7 @@ BusBuddy transportation management system must be accessible to users with disab
 ### **Typography and Text Standards**
 
 **📝 Font Requirements:**
+
 ```xml
 <!-- Minimum font sizes -->
 <Style x:Key="BodyTextStyle" TargetType="TextBlock">
@@ -64,6 +68,7 @@ BusBuddy transportation management system must be accessible to users with disab
 ```
 
 **📏 Text Scaling Support:**
+
 ```csharp
 // Support Windows text scaling (100% - 200%)
 public void ApplyTextScaling()
@@ -83,6 +88,7 @@ public void ApplyTextScaling()
 ### **Keyboard Navigation Requirements**
 
 **🎯 Tab Order Standards:**
+
 ```xml
 <!-- Logical tab order for MainWindow -->
 <Grid>
@@ -94,6 +100,7 @@ public void ApplyTextScaling()
 ```
 
 **⌨️ Required Keyboard Shortcuts:**
+
 ```csharp
 // Standard application shortcuts
 public static class AccessibilityShortcuts
@@ -113,6 +120,7 @@ public static class AccessibilityShortcuts
 ### **Focus Management**
 
 **🎯 Focus Indicator Standards:**
+
 ```xml
 <!-- High-visibility focus indicators -->
 <Style x:Key="AccessibleButtonStyle" TargetType="Button" BasedOn="{StaticResource SyncfusionButtonStyle}">
@@ -131,6 +139,7 @@ public static class AccessibilityShortcuts
 ```
 
 **🎯 Focus Trap Implementation:**
+
 ```csharp
 // Modal dialog focus trapping
 public class AccessibleDialog : Window
@@ -165,6 +174,7 @@ public class AccessibleDialog : Window
 ### **ARIA and Automation Properties**
 
 **🎯 AutomationProperties Standards:**
+
 ```xml
 <!-- Data grid accessibility -->
 <syncfusion:SfDataGrid x:Name="DriversDataGrid"
@@ -196,6 +206,7 @@ public class AccessibleDialog : Window
 ### **Dynamic Content Announcements**
 
 **🔊 Live Region Implementation:**
+
 ```csharp
 // Announce important changes to screen readers
 public class AccessibilityAnnouncer
@@ -231,6 +242,7 @@ announcer.Announce("Error: Please fill in required fields", AutomationLiveSettin
 ### **Syncfusion Control Standards**
 
 **📊 SfDataGrid Accessibility:**
+
 ```xml
 <syncfusion:SfDataGrid x:Name="ActivitiesGrid"
                        AutomationProperties.Name="Activities Schedule"
@@ -260,6 +272,7 @@ announcer.Announce("Error: Please fill in required fields", AutomationLiveSettin
 ```
 
 **🗂️ NavigationDrawer Accessibility:**
+
 ```xml
 <syncfusion:SfNavigationDrawer x:Name="MainNavigationDrawer"
                                AutomationProperties.Name="Main Navigation"
@@ -339,25 +352,25 @@ Add to `.github/workflows/ci-build-test.yml`:
 - name: 🎯 Accessibility Standards Check
   shell: pwsh
   run: |
-    Write-Host "🔍 Checking WCAG 2.1 compliance..." -ForegroundColor Cyan
+      Write-Host "🔍 Checking WCAG 2.1 compliance..." -ForegroundColor Cyan
 
-    # Check for AutomationProperties in XAML files
-    $xamlFiles = Get-ChildItem -Recurse -Filter "*.xaml"
-    $missingAccessibility = @()
+      # Check for AutomationProperties in XAML files
+      $xamlFiles = Get-ChildItem -Recurse -Filter "*.xaml"
+      $missingAccessibility = @()
 
-    foreach ($file in $xamlFiles) {
-      $content = Get-Content $file.FullName -Raw
-      if ($content -notmatch "AutomationProperties\." -and $content -match "<Button|<TextBox|<ComboBox") {
-        $missingAccessibility += $file.Name
+      foreach ($file in $xamlFiles) {
+        $content = Get-Content $file.FullName -Raw
+        if ($content -notmatch "AutomationProperties\." -and $content -match "<Button|<TextBox|<ComboBox") {
+          $missingAccessibility += $file.Name
+        }
       }
-    }
 
-    if ($missingAccessibility.Count -gt 0) {
-      Write-Host "⚠️ Files missing accessibility properties:" -ForegroundColor Yellow
-      $missingAccessibility | ForEach-Object { Write-Host "  - $_" }
-    } else {
-      Write-Host "✅ All XAML files have accessibility properties" -ForegroundColor Green
-    }
+      if ($missingAccessibility.Count -gt 0) {
+        Write-Host "⚠️ Files missing accessibility properties:" -ForegroundColor Yellow
+        $missingAccessibility | ForEach-Object { Write-Host "  - $_" }
+      } else {
+        Write-Host "✅ All XAML files have accessibility properties" -ForegroundColor Green
+      }
 ```
 
 ## 📚 **IMPLEMENTATION CHECKLIST**
@@ -382,17 +395,20 @@ Add to `.github/workflows/ci-build-test.yml`:
 ## 🎯 **RESOURCES AND TOOLS**
 
 **📚 Official Guidelines:**
+
 - [WCAG 2.1 Guidelines](https://www.w3.org/WAI/WCAG21/quickref/)
 - [Microsoft Accessibility Guidelines](https://docs.microsoft.com/en-us/dotnet/desktop/wpf/advanced/accessibility-best-practices)
 - [Syncfusion Accessibility Documentation](https://help.syncfusion.com/wpf/accessibility)
 
 **🛠️ Testing Tools:**
+
 - **Color Contrast**: [WebAIM Contrast Checker](https://webaim.org/resources/contrastchecker/)
 - **Screen Reader**: [NVDA (Free)](https://www.nvaccess.org/download/)
 - **Keyboard Testing**: Manual testing with Tab, Arrow keys
 - **Accessibility Insights**: [Microsoft Accessibility Insights](https://accessibilityinsights.io/)
 
 **🎯 Success Criteria:**
+
 - ✅ **Level AA compliance** for all interactive elements
 - ✅ **4.5:1 contrast ratio** for all text
 - ✅ **Full keyboard navigation** without mouse

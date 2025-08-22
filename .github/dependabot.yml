@@ -13,7 +13,7 @@ updates:
       time: "09:00"
       timezone: "America/New_York"
     open-pull-requests-limit: 10
-    
+
     # Review and merge settings
     reviewers:
       - "project-maintainer"
@@ -22,13 +22,13 @@ updates:
     labels:
       - "dependencies"
       - "nuget"
-    
+
     # Commit message preferences
     commit-message:
       prefix: "chore"
       prefix-development: "chore"
       include: "scope"
-    
+
     # Group related updates together
     groups:
       syncfusion:
@@ -37,28 +37,28 @@ updates:
         update-types:
           - "minor"
           - "patch"
-      
+
       microsoft-extensions:
         patterns:
           - "Microsoft.Extensions.*"
         update-types:
           - "minor"
           - "patch"
-      
+
       entity-framework:
         patterns:
           - "Microsoft.EntityFrameworkCore.*"
         update-types:
           - "minor"
           - "patch"
-      
+
       serilog:
         patterns:
           - "Serilog.*"
         update-types:
           - "minor"
           - "patch"
-      
+
       testing:
         patterns:
           - "NUnit*"
@@ -69,14 +69,14 @@ updates:
         update-types:
           - "minor"
           - "patch"
-      
+
       google-apis:
         patterns:
           - "Google.*"
         update-types:
           - "minor"
           - "patch"
-    
+
     # Ignore specific packages that require manual updates
     ignore:
       - dependency-name: "Syncfusion.*"
@@ -85,7 +85,7 @@ updates:
         update-types: ["version-update:semver-major"]
       - dependency-name: "Microsoft.Extensions.*"
         update-types: ["version-update:semver-major"]
-    
+
     # Allow specific versions to be updated
     allow:
       - dependency-type: "direct"

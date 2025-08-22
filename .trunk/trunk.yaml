@@ -47,16 +47,20 @@ lint:
         - "**/logs/**"           # Log files
         - "**/artifacts/**"      # Build artifacts
         - "**/Migrations/**"     # EF auto-generated migrations
+    - linters: [git-diff-check]
+      paths:
+        - ".vscode/settings.json"  # VS Code settings have different formatting standards
+        - ".vscode/tasks.json"     # VS Code tasks have different formatting standards
 
 # Git hooks and actions configuration
 actions:
   disabled:
     - git-lfs                    # Not using Git LFS
     - trunk-announce             # Reduce noise
-    - trunk-check-pre-push       # Manual control
-    - trunk-fmt-pre-commit       # Manual formatting
   enabled:
     - trunk-upgrade-available    # Version update notifications
+    - trunk-fmt-pre-commit       # Auto-format on commit
+    - trunk-check-pre-push       # Check quality before push
 
 # Tools configuration
 tools:

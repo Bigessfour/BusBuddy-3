@@ -1,4 +1,5 @@
 # 🚌 BusBuddy Professional Development Standards
+
 ## Comprehensive Code Quality & Development Guidelines
 
 ---
@@ -10,6 +11,7 @@
 You have established professional-grade infrastructure:
 
 #### **Code Quality Infrastructure**
+
 - ✅ **StyleCop.json** - Professional documentation and style rules
 - ✅ **GlobalAssemblyInfo.cs** - Centralized assembly metadata
 - ✅ **Directory.Build.props** - MSBuild standardization
@@ -17,13 +19,15 @@ You have established professional-grade infrastructure:
 - ✅ **Null safety enforcement** - CS8xxx errors enabled
 
 #### **Logging & Architecture**
+
 - ✅ **Serilog with enrichments** (Environment, Process, Thread)
 - ✅ **Microsoft.Extensions DI** - Professional dependency injection
 - ✅ **Structured logging** - Proper message templates
 - ✅ **Configuration management** - appsettings.json + environment variables
 
 #### **Development Workflow**
-- ✅ **PowerShell automation** - Custom bb-* commands
+
+- ✅ **PowerShell automation** - Custom bb-\* commands
 - ✅ **VS Code tasks** - Standardized build/run workflows
 - ✅ **Package lock files** - RestorePackagesWithLockFile enabled
 - ✅ **Build logging** - MSBuild logs to files
@@ -37,6 +41,7 @@ Based on your existing high-quality foundation, here are the standards to implem
 ### **1. CODE DOCUMENTATION STANDARDS**
 
 #### **Current State**: StyleCop configured for documentation
+
 #### **Recommendation**: Implement comprehensive XML documentation
 
 ```csharp
@@ -70,6 +75,7 @@ public class BusScheduleService : IBusScheduleService
 ### **2. XAML DESIGN-TIME SUPPORT STANDARDS**
 
 #### **Current State**: Basic XAML without design-time data
+
 #### **Recommendation**: Add design-time ViewModels for XAML designer
 
 ```xml
@@ -90,6 +96,7 @@ public class BusScheduleService : IBusScheduleService
 ### **3. PROJECT STRUCTURE STANDARDS**
 
 #### **Current State**: Good solution organization
+
 #### **Recommendation**: Enhance with standardized folder patterns
 
 ```
@@ -117,6 +124,7 @@ BusBuddy.WPF/
 ### **4. LOGGING STANDARDS**
 
 #### **Current State**: Excellent Serilog implementation
+
 #### **Recommendation**: Standardize logging patterns across all classes
 
 ```csharp
@@ -151,11 +159,13 @@ public class ServiceClass
 ### **5. SYNCFUSION CONTROL STANDARDS**
 
 #### **Current State**: Basic Syncfusion usage
+
 #### **Recommendation**: Implement standardized control patterns with Version 30.1.40
 
 #### **📦 SYNCFUSION ASSEMBLY REFERENCE STANDARDS**
 
 **Required Package References (Version 30.1.40):**
+
 ```xml
 <!-- Core Syncfusion Assemblies - MANDATORY for all projects -->
 <PackageReference Include="Syncfusion.Licensing" Version="30.1.40" />
@@ -177,6 +187,7 @@ public class ServiceClass
 #### **📋 STANDARD NAMESPACE DECLARATIONS**
 
 **Every XAML file MUST include these standard namespaces:**
+
 ```xml
 <!-- MANDATORY: Standard WPF namespaces -->
 xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -196,6 +207,7 @@ xmlns:sftools="clr-namespace:Syncfusion.Windows.Tools.Controls;assembly=Syncfusi
 #### **🎨 STANDARD CONTROL PATTERNS**
 
 **SfDataGrid Standard:**
+
 ```xml
 <syncfusion:SfDataGrid ItemsSource="{Binding Items}"
                        SelectedItem="{Binding SelectedItem, Mode=TwoWay}"
@@ -223,6 +235,7 @@ xmlns:sftools="clr-namespace:Syncfusion.Windows.Tools.Controls;assembly=Syncfusi
 ```
 
 **ButtonAdv Standard:**
+
 ```xml
 <!-- Primary Action Button -->
 <syncfusion:ButtonAdv Label="Save"
@@ -253,6 +266,7 @@ xmlns:sftools="clr-namespace:Syncfusion.Windows.Tools.Controls;assembly=Syncfusi
 ```
 
 **SfTextBoxExt Standard:**
+
 ```xml
 <sfinput:SfTextBoxExt Text="{Binding TextValue, Mode=TwoWay}"
                       Watermark="Enter text..."
@@ -263,6 +277,7 @@ xmlns:sftools="clr-namespace:Syncfusion.Windows.Tools.Controls;assembly=Syncfusi
 ```
 
 **ComboBoxAdv Standard:**
+
 ```xml
 <syncfusion:ComboBoxAdv ItemsSource="{Binding Items}"
                         SelectedItem="{Binding SelectedItem, Mode=TwoWay}"
@@ -277,6 +292,7 @@ xmlns:sftools="clr-namespace:Syncfusion.Windows.Tools.Controls;assembly=Syncfusi
 ### **6. THEME MANAGEMENT STANDARDS**
 
 #### **Current State**: Basic theme application
+
 #### **Recommendation**: Centralized theme management
 
 ```csharp
@@ -328,6 +344,7 @@ private void UserControl_Loaded(object sender, RoutedEventArgs e)
 Every UserControl MUST follow this standard layout pattern:
 
 #### **📄 Standard XAML Header Template**
+
 ```xml
 <!--
 ╔══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
@@ -357,6 +374,7 @@ Every UserControl MUST follow this standard layout pattern:
 ```
 
 #### **📐 Standard Layout Grid Structure**
+
 ```xml
 <Grid Margin="24"> <!-- STANDARD: 24px margin for all views -->
     <Grid.RowDefinitions>
@@ -389,6 +407,7 @@ Every UserControl MUST follow this standard layout pattern:
 ### **🎯 UI ELEMENT STANDARDS**
 
 #### **Button Layout Standards**
+
 ```xml
 <!-- STANDARD: Action button section (always bottom-right) -->
 <StackPanel Grid.Row="2"
@@ -431,6 +450,7 @@ Every UserControl MUST follow this standard layout pattern:
 ```
 
 #### **Form Layout Standards**
+
 ```xml
 <!-- STANDARD: Form layout using Grid for alignment -->
 <Grid Margin="0,0,0,16">
@@ -480,6 +500,7 @@ Every UserControl MUST follow this standard layout pattern:
 ```
 
 #### **DataGrid Layout Standards**
+
 ```xml
 <!-- STANDARD: DataGrid with consistent styling -->
 <syncfusion:SfDataGrid ItemsSource="{Binding Items}"
@@ -552,6 +573,7 @@ Every UserControl MUST follow this standard layout pattern:
 ### **🎨 STANDARD STYLING PATTERNS**
 
 #### **Resource Dictionary Standards**
+
 ```xml
 <!-- STANDARD: Resource dictionary structure in UserControl -->
 <UserControl.Resources>
@@ -574,6 +596,7 @@ Every UserControl MUST follow this standard layout pattern:
 ### **📱 RESPONSIVE DESIGN STANDARDS**
 
 #### **Minimum Size Requirements**
+
 ```xml
 <!-- STANDARD: All UserControls must support these minimum sizes -->
 d:DesignHeight="600"    <!-- Minimum height: 600px -->
@@ -589,6 +612,7 @@ d:DesignWidth="900"     <!-- Minimum width: 900px -->
 ```
 
 #### **Grid Responsive Patterns**
+
 ```xml
 <!-- STANDARD: Responsive grid that works on different screen sizes -->
 <Grid>
@@ -611,6 +635,7 @@ d:DesignWidth="900"     <!-- Minimum width: 900px -->
 ### **♿ ACCESSIBILITY STANDARDS**
 
 #### **Mandatory Accessibility Attributes**
+
 ```xml
 <!-- STANDARD: All interactive elements MUST have accessibility support -->
 <syncfusion:ButtonAdv Label="Save"
@@ -630,6 +655,7 @@ d:DesignWidth="900"     <!-- Minimum width: 900px -->
 ### **🎯 VALIDATION DISPLAY STANDARDS**
 
 #### **Error Display Pattern**
+
 ```xml
 <!-- STANDARD: Validation error display -->
 <Grid>
@@ -677,38 +703,43 @@ Before completing any view, verify:
 ### **Phase 1: Core Standards Implementation (Week 1 - 3-4 hours total)**
 
 #### **✅ COMPLETED**
+
 1. ✅ **StyleCop.json** - Professional documentation rules implemented
 2. ✅ **GlobalAssemblyInfo.cs** - Centralized assembly metadata
 3. ✅ **Syncfusion Assembly References** - Version 30.1.40 packages configured
 4. ✅ **Namespace Standards** - Standard XAML namespace declarations documented
 
 #### **🔧 TO IMPLEMENT**
+
 1. **XML Documentation Generation**
-   ```xml
-   <!-- Add to Directory.Build.props -->
-   <PropertyGroup>
-     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-     <DocumentationFile>$(OutputPath)$(AssemblyName).xml</DocumentationFile>
-   </PropertyGroup>
-   ```
+
+    ```xml
+    <!-- Add to Directory.Build.props -->
+    <PropertyGroup>
+      <GenerateDocumentationFile>true</GenerateDocumentationFile>
+      <DocumentationFile>$(OutputPath)$(AssemblyName).xml</DocumentationFile>
+    </PropertyGroup>
+    ```
 
 2. **StyleCop Analyzer Package**
-   ```xml
-   <!-- Add to BusBuddy.WPF.csproj -->
-   <PackageReference Include="StyleCop.Analyzers" Version="1.2.0-beta.507" PrivateAssets="all" />
-   ```
+
+    ```xml
+    <!-- Add to BusBuddy.WPF.csproj -->
+    <PackageReference Include="StyleCop.Analyzers" Version="1.2.0-beta.507" PrivateAssets="all" />
+    ```
 
 3. **Standard Resource Dictionaries**
-   ```powershell
-   # Create standard button styles
-   New-Item "BusBuddy.WPF/Resources/Styles/ButtonStyles.xaml"
-   New-Item "BusBuddy.WPF/Resources/Styles/DataGridStyles.xaml"
-   New-Item "BusBuddy.WPF/Resources/Styles/InputStyles.xaml"
-   ```
+    ```powershell
+    # Create standard button styles
+    New-Item "BusBuddy.WPF/Resources/Styles/ButtonStyles.xaml"
+    New-Item "BusBuddy.WPF/Resources/Styles/DataGridStyles.xaml"
+    New-Item "BusBuddy.WPF/Resources/Styles/InputStyles.xaml"
+    ```
 
 ### **Phase 2: View Standardization (Week 2 - 4-5 hours total)**
 
 #### **ActivityScheduleView Conversion to Standards**
+
 1. **Update XAML Header** - Apply standard namespace declarations
 2. **Implement 3-Row Grid Layout** - Title, Content, Actions structure
 3. **Standardize Button Layout** - Right-aligned action buttons with consistent sizing
@@ -717,6 +748,7 @@ Before completing any view, verify:
 6. **Theme Application** - Ensure SfSkinManager implementation
 
 #### **Create Design-Time ViewModels**
+
 ```csharp
 // BusBuddy.WPF/ViewModels/DesignTime/ActivityScheduleDesignViewModel.cs
 public class ActivityScheduleDesignViewModel : ActivityScheduleViewModel
@@ -751,6 +783,7 @@ public class ActivityScheduleDesignViewModel : ActivityScheduleViewModel
 #### **Create Standard Style Resources**
 
 **ButtonStyles.xaml:**
+
 ```xml
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -781,6 +814,7 @@ public class ActivityScheduleDesignViewModel : ActivityScheduleViewModel
 ```
 
 **DataGridStyles.xaml:**
+
 ```xml
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -802,6 +836,7 @@ public class ActivityScheduleDesignViewModel : ActivityScheduleViewModel
 ### **Phase 4: Quality Assurance (Week 4 - 1-2 hours total)**
 
 #### **Validation Checklist**
+
 1. **Build Validation** - Ensure all views compile without errors
 2. **StyleCop Compliance** - Run StyleCop analyzer and fix violations
 3. **Design-Time Testing** - Verify XAML designer shows sample data
@@ -811,27 +846,27 @@ public class ActivityScheduleDesignViewModel : ActivityScheduleViewModel
 
 ### **📊 IMPLEMENTATION PROGRESS TRACKING**
 
-| Phase | Status | Time Estimate | Priority |
-|-------|--------|---------------|----------|
-| Core Standards | 75% Complete | 1-2 hours remaining | 🔴 High |
-| View Standardization | 25% Complete | 4-5 hours | 🔴 High |
-| Style Resources | 0% Complete | 2-3 hours | 🟡 Medium |
-| Quality Assurance | 0% Complete | 1-2 hours | 🟡 Medium |
+| Phase                | Status       | Time Estimate       | Priority  |
+| -------------------- | ------------ | ------------------- | --------- |
+| Core Standards       | 75% Complete | 1-2 hours remaining | 🔴 High   |
+| View Standardization | 25% Complete | 4-5 hours           | 🔴 High   |
+| Style Resources      | 0% Complete  | 2-3 hours           | 🟡 Medium |
+| Quality Assurance    | 0% Complete  | 1-2 hours           | 🟡 Medium |
 
 ### **🚀 IMMEDIATE NEXT STEPS**
 
 1. **Enable XML Documentation** (15 minutes)
-   - Add GenerateDocumentationFile to Directory.Build.props
-   - Add StyleCop.Analyzers package reference
+    - Add GenerateDocumentationFile to Directory.Build.props
+    - Add StyleCop.Analyzers package reference
 
 2. **Convert ActivityScheduleView** (2 hours)
-   - Apply standard 3-row grid layout
-   - Implement standard button positioning
-   - Add design-time ViewModel support
+    - Apply standard 3-row grid layout
+    - Implement standard button positioning
+    - Add design-time ViewModel support
 
 3. **Create Button Style Resources** (1 hour)
-   - Create ButtonStyles.xaml with standard button styles
-   - Reference in App.xaml resource dictionaries
+    - Create ButtonStyles.xaml with standard button styles
+    - Reference in App.xaml resource dictionaries
 
 **Total Remaining Time: 8-12 hours spread over 2-3 weeks**
 

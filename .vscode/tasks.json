@@ -163,6 +163,23 @@
       }
     },
     {
+      "label": "Generate Fetchability Index",
+      "type": "shell",
+      "command": "pwsh",
+      "args": ["-Command", "& './generate-fetchability-index.ps1' -Validate"],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": true,
+        "panel": "shared"
+      },
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": []
+    },
+    {
       "label": "PSScriptAnalyzer (PowerShell Quality)",
       "type": "shell",
       "command": "pwsh",

@@ -19,6 +19,7 @@
 BusBuddy uses a centralized `NuGet.config` at the repository root to ensure consistent package restoration across all development environments.
 
 **Key Features:**
+
 - **Single Source**: Only uses `nuget.org` (no private feeds required)
 - **Automatic Restore**: Packages restore automatically during build
 - **No Local Packages**: Uses global packages folder (repository remains lightweight)
@@ -70,12 +71,12 @@ dotnet restore --verbosity detailed
 
 ### Core Dependencies Overview
 
-| Package Category | Primary Packages | Version Management |
-|-----------------|------------------|-------------------|
-| **UI Framework** | Syncfusion.WPF.* | Centralized in Directory.Build.props |
-| **Data Access** | Microsoft.EntityFrameworkCore.* | Exact version pinning |
-| **Logging** | Serilog.* | Compatible version ranges |
-| **Testing** | Microsoft.NET.Test.Sdk | Latest stable versions |
+| Package Category | Primary Packages                 | Version Management                   |
+| ---------------- | -------------------------------- | ------------------------------------ |
+| **UI Framework** | Syncfusion.WPF.\*                | Centralized in Directory.Build.props |
+| **Data Access**  | Microsoft.EntityFrameworkCore.\* | Exact version pinning                |
+| **Logging**      | Serilog.\*                       | Compatible version ranges            |
+| **Testing**      | Microsoft.NET.Test.Sdk           | Latest stable versions               |
 
 ## 🎨 Syncfusion Package Management
 
@@ -145,6 +146,7 @@ public partial class App : Application
 ### Centralized Version Management
 
 **Directory.Build.props Example:**
+
 ```xml
 <Project>
   <PropertyGroup>
@@ -196,15 +198,17 @@ BusBuddy includes dedicated VS Code tasks for package management:
 
 ```json
 {
-  "label": "🛡️ BB: Dependency Security Scan",
-  "type": "shell",
-  "command": "pwsh.exe",
-  "args": [
-    "-ExecutionPolicy", "Bypass",
-    "-File", "${workspaceFolder}\\dependency-management.ps1",
-    "-ScanVulnerabilities"
-  ],
-  "group": "test"
+    "label": "🛡️ BB: Dependency Security Scan",
+    "type": "shell",
+    "command": "pwsh.exe",
+    "args": [
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "${workspaceFolder}\\dependency-management.ps1",
+        "-ScanVulnerabilities"
+    ],
+    "group": "test"
 }
 ```
 
@@ -237,10 +241,12 @@ BusBuddy includes dedicated VS Code tasks for package management:
 #### 1. Package Restore Failures
 
 **Symptoms:**
+
 - Build errors about missing packages
 - "Package not found" errors
 
 **Solutions:**
+
 ```bash
 # Clear NuGet caches
 dotnet nuget locals all --clear
@@ -255,10 +261,12 @@ dotnet nuget list source
 #### 2. Syncfusion License Issues
 
 **Symptoms:**
+
 - Syncfusion trial messages in application
 - License validation errors
 
 **Solutions:**
+
 ```bash
 # Set environment variable (Windows)
 setx SYNCFUSION_LICENSE_KEY "your_license_key_here"
@@ -270,10 +278,12 @@ setx SYNCFUSION_LICENSE_KEY "your_license_key_here"
 #### 3. Version Conflicts
 
 **Symptoms:**
+
 - Assembly binding errors
 - Conflicting package versions
 
 **Solutions:**
+
 ```bash
 # Check package versions across projects
 .\dependency-management.ps1 -ValidateVersions
@@ -285,10 +295,12 @@ setx SYNCFUSION_LICENSE_KEY "your_license_key_here"
 #### 4. Network/Proxy Issues
 
 **Symptoms:**
+
 - Package download timeouts
 - Connection errors to nuget.org
 
 **Solutions:**
+
 ```bash
 # Configure proxy in NuGet.config if needed
 # Check corporate firewall settings
@@ -324,7 +336,7 @@ dotnet restore --verbosity diagnostic
 
 ### ❌ Don'ts
 
-1. **Don't use floating versions** (*, [1.0,), etc.)
+1. **Don't use floating versions** (\*, [1.0,), etc.)
 2. **Don't commit packages folder** to source control
 3. **Don't mix PackageReference and packages.config**
 4. **Don't hardcode license keys** in source code

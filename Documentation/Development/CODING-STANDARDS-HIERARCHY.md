@@ -3,9 +3,11 @@
 ## **Settings Hierarchy (Priority Order)**
 
 ### 1. **Primary: Custom Instructions** (Highest Priority)
+
 **Location**: `.github/copilot-instructions.md`
 **Purpose**: Project-specific guidance for GitHub Copilot
 **Key Standards**:
+
 - ✅ Phase 1: Functional over perfect
 - ✅ Incremental fixes over rewrites
 - ✅ .NET 8.0 + WPF + Syncfusion 30.1.40
@@ -16,18 +18,22 @@
 ## **Settings Hierarchy (Priority Order)**
 
 ### 1. **Primary: Custom Instructions** (Highest Priority)
+
 **Location**: `.github/copilot-instructions.md`
 **Purpose**: Project-specific guidance for GitHub Copilot
 **Key Standards**:
+
 - ✅ Phase 1: Functional over perfect
 - ✅ Incremental fixes over rewrites
 - ✅ .NET 8.0 + WPF + Syncfusion 30.1.40
 - ✅ Serilog structured logging ONLY
 
 ### 2. **Official Microsoft C# 12.0 Standards** ⭐ **ENFORCED**
+
 **Source**: [Microsoft Learn C# 12.0 Documentation](https://learn.microsoft.com/en-us/dotnet/csharp/whats-new/csharp-12)
 **Purpose**: Official C# 12.0 language features and best practices
 **Key Standards**:
+
 - ✅ **Primary Constructors**: `public class Person(string firstName, string lastName)`
 - ✅ **Collection Expressions**: `int[] row = [1, 2, 3, 4, 5]` and spread operator `..`
 - ✅ **Ref Readonly Parameters**: `ref readonly` for large struct parameters
@@ -38,9 +44,11 @@
 - ✅ **Nullable Reference Types**: Enabled throughout project
 
 ### 3. **Official Microsoft XAML/WPF Standards** ⭐ **ENFORCED**
+
 **Source**: [Microsoft Learn WPF Documentation](https://learn.microsoft.com/en-us/dotnet/desktop/wpf/)
 **Purpose**: Official WPF/XAML patterns and best practices
 **Key Standards**:
+
 - ✅ **Data Binding**: `OneWay`, `TwoWay`, `OneWayToSource`, `OneTime` modes
 - ✅ **DataContext**: Establish clear hierarchy with inheritance
 - ✅ **UpdateSourceTrigger**: `PropertyChanged` for immediate, `LostFocus` for text
@@ -55,9 +63,11 @@
 - ✅ **Collections**: Omit explicit collection tags when parser can infer
 
 ### 4. **PowerShell 7.5 Standards** ⭐ **VALIDATED**
+
 **Location**: `.powershell-profile-75-standards.ps1` + `PSScriptAnalyzerSettings.psd1`
 **Purpose**: PowerShell 7.5 modern syntax and best practices
 **Key Standards**:
+
 - ✅ Modern operators: `??`, `&&`, `||`, ternary `?:`
 - ✅ ForEach-Object -Parallel for performance
 - ✅ $"string {interpolation}" syntax
@@ -65,9 +75,11 @@
 - ✅ ProgressAction SilentlyContinue
 
 ### 5. **VS Code Integration**
+
 **Location**: `.vscode/settings.json` + `tasks.json`
 **Purpose**: Development environment consistency
 **Key Standards**:
+
 - ✅ PowerShell 7.5.2 as default terminal
 - ✅ Task Explorer for build/run operations
 - ✅ Enhanced task monitoring with logging
@@ -75,6 +87,7 @@
 ## **Official Microsoft Standards Compliance**
 
 ### ✅ **C# 12.0 COMPLIANCE STATUS**:
+
 - **Primary Constructors**: Ready for implementation in new classes
 - **Collection Expressions**: Can replace array/list initialization syntax
 - **Ref Readonly Parameters**: Available for high-performance scenarios
@@ -84,6 +97,7 @@
 - **Experimental Features**: Marked with `[Experimental]` attribute
 
 ### ✅ **XAML/WPF COMPLIANCE STATUS**:
+
 - **Data Binding**: All binding modes and patterns validated
 - **Validation**: Built-in and custom validation rules supported
 - **Converters**: Type conversion patterns established
@@ -92,6 +106,7 @@
 - **Architecture**: MVVM patterns with proper data context management
 
 ### ✅ **ALIGNED with PS 7.5 Standards**:
+
 - Modern operator support (`??`, `&&`, `||`)
 - Enhanced error handling patterns
 - Performance optimizations (parallel processing)
@@ -99,6 +114,7 @@
 - Compatible syntax validation
 
 ### 🔧 **ENHANCED for BusBuddy**:
+
 - Allows Write-Host for user feedback (utility scripts)
 - Allows global variables for configuration
 - Practical over perfectionist rules
@@ -122,6 +138,7 @@ dotnet build BusBuddy.WPF/BusBuddy.WPF.csproj --verbosity normal
 ```
 
 ## **References**
+
 - **C# 12.0 Official**: https://learn.microsoft.com/en-us/dotnet/csharp/whats-new/csharp-12
 - **WPF Data Binding**: https://learn.microsoft.com/en-us/dotnet/desktop/wpf/data/
 - **XAML Overview**: https://learn.microsoft.com/en-us/dotnet/desktop/wpf/xaml/
@@ -133,6 +150,7 @@ dotnet build BusBuddy.WPF/BusBuddy.WPF.csproj --verbosity normal
 ## **🗂️ Extended Standards Organization**
 
 **Comprehensive Language Standards**: See `Standards/` directory for detailed specifications:
+
 - **📋 LANGUAGE-INVENTORY.md**: Complete technology inventory (17 languages/technologies)
 - **📚 Standards/Languages/**: Individual language standards with official documentation
 - **⚙️ Standards/Configurations/**: Configuration file standards and patterns
@@ -140,6 +158,7 @@ dotnet build BusBuddy.WPF/BusBuddy.WPF.csproj --verbosity normal
 - **📖 Standards/MASTER-STANDARDS.md**: Directory structure and integration guide
 
 **Key Extended Standards Available**:
+
 - 📋 **JSON Standards**: RFC 8259 compliance, security patterns, validation
 - 🏗️ **XML Standards**: W3C XML 1.0, MSBuild patterns, project structure
 - 🌊 **YAML Standards**: YAML 1.2.2, GitHub Actions CI/CD patterns
@@ -147,6 +166,7 @@ dotnet build BusBuddy.WPF/BusBuddy.WPF.csproj --verbosity normal
 - 📝 **Documentation Standards**: Markdown, comments, naming conventions (pending)
 
 ---
+
 **Last Updated**: July 25, 2025
 **PowerShell Version**: 7.5.2
 **Target Framework**: .NET 8.0

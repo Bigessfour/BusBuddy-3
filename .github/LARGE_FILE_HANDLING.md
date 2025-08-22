@@ -17,14 +17,16 @@ For files larger than 50MB, we use Git LFS to handle them properly.
 ### Setting Up Git LFS
 
 1. Install Git LFS:
-   ```
-   git lfs install
-   ```
+
+    ```
+    git lfs install
+    ```
 
 2. Clone this repository (if you haven't already):
-   ```
-   git clone https://github.com/Bigessfour/BusBuddy-WPF.git
-   ```
+
+    ```
+    git clone https://github.com/Bigessfour/BusBuddy-WPF.git
+    ```
 
 3. Git LFS is already configured for this repository via the `.gitattributes` file.
 
@@ -34,16 +36,16 @@ When adding new large files to the repository:
 
 1. Ensure the file type is tracked by Git LFS by checking `.gitattributes`
 2. If it's a new file type, add it to tracking:
-   ```
-   git lfs track "*.your-extension"
-   git add .gitattributes
-   git commit -m "Track *.your-extension files with Git LFS"
-   ```
+    ```
+    git lfs track "*.your-extension"
+    git add .gitattributes
+    git commit -m "Track *.your-extension files with Git LFS"
+    ```
 3. Add and commit your large file normally:
-   ```
-   git add path/to/large/file
-   git commit -m "Add large file"
-   ```
+    ```
+    git add path/to/large/file
+    git commit -m "Add large file"
+    ```
 
 ## What Files Should Use Git LFS?
 
