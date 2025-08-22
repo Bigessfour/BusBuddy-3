@@ -20,9 +20,9 @@
     
     # Required modules
     RequiredModules = @(
-        @{ModuleName='PSScriptAnalyzer'; ModuleVersion='1.21.0'},
-        @{ModuleName='Microsoft.PowerShell.SecretManagement'; ModuleVersion='1.1.2'},
-        @{ModuleName='Microsoft.PowerShell.SecretStore'; ModuleVersion='1.0.6'}
+        @{ModuleName = 'PSScriptAnalyzer'; ModuleVersion = '1.21.0' },
+        @{ModuleName = 'Microsoft.PowerShell.SecretManagement'; ModuleVersion = '1.1.2' },
+        @{ModuleName = 'Microsoft.PowerShell.SecretStore'; ModuleVersion = '1.0.6' }
     )
     
     # Required assemblies

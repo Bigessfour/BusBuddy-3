@@ -15,12 +15,14 @@ copies or substantial portions of the Software.
 ## 🌟 **ACKNOWLEDGMENTS & THIRD-PARTY LICENSES**
 
 ### **🎯 SYNCFUSION COMMUNITY LICENSE ACKNOWLEDGMENT**
+
 This project was built using **Syncfusion Essential Studio for WPF** under their generous
 **Community License Program**. Syncfusion's professional-grade UI controls enabled the creation
 of an enterprise-quality transportation management system that would have been impossible with
 standard WPF controls alone.
 
 **Syncfusion Components Used:**
+
 - Essential Studio for WPF v30.1.40
 - FluentDark/FluentLight Themes
 - Professional DataGrid, Chart, and Navigation Controls
@@ -31,11 +33,13 @@ standard WPF controls alone.
 **Gratitude**: Special thanks to Syncfusion for supporting open-source and educational projects!
 
 ### **🤖 AI DEVELOPMENT PARTNERS**
+
 - **Claude Sonnet 4 (Anthropic)**: Primary development architect and coding mentor
 - **Grok-4 (xAI)**: Performance optimization and AI framework design
 - **GitHub Copilot**: Code completion and development assistance
 
 ### **⚙️ CORE TECHNOLOGY STACK**
+
 - **.NET 8.0** (Microsoft) - Latest LTS framework
 - **Entity Framework Core 9.0.7** (Microsoft) - Data access layer
 - **Serilog** - Structured logging framework
@@ -44,21 +48,25 @@ standard WPF controls alone.
 - **PowerShell 7.5.2** (Microsoft) - Development automation
 
 ### **🗄️ DATABASE PROVIDERS**
+
 - **Microsoft.EntityFrameworkCore.SqlServer** - Primary database provider
 - **Microsoft.EntityFrameworkCore.Sqlite** - Development and testing
 - **Microsoft.EntityFrameworkCore.InMemory** - Unit testing
 
 ### **☁️ CLOUD & API SERVICES**
+
 - **Google APIs** - Drive integration and geospatial services
 - **Microsoft Azure** - Cloud hosting and deployment capabilities
 
 ### **🛠️ DEVELOPMENT TOOLS**
+
 - **Visual Studio Code** (Microsoft) - Primary development environment
 - **Git** - Version control and collaboration
 - **NuGet** (Microsoft) - Package management
 - **MSBuild** (Microsoft) - Build system and automation
 
 ### **📝 OPEN SOURCE LIBRARIES**
+
 All third-party packages and their licenses are documented in the project's NuGet dependencies.
 This project stands on the shoulders of giants in the open-source community.
 
@@ -68,6 +76,7 @@ software accessible to individual developers and educational institutions.
 
 ETHICAL USE REQUIREMENT:
 This software shall be used only for lawful and ethical purposes. Prohibited uses include:
+
 - Adult/pornographic content generation or management
 - Malicious software development
 - Illegal activities or content

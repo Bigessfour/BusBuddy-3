@@ -7,6 +7,7 @@
 ## 🚀 Core Development Commands
 
 ### Build & Run Commands
+
 ```powershell
 # Build entire solution
 bb-build                    # Clean build with standard output
@@ -22,6 +23,7 @@ bb-restore                 # Force package restore
 ```
 
 ### Testing Commands
+
 ```powershell
 # Test execution
 bb-test                    # Run all tests with quality focus
@@ -36,6 +38,7 @@ bb-validate-tests         # Comprehensive test suite validation
 ```
 
 ### Health & Diagnostics
+
 ```powershell
 # System health checks
 bb-health                 # Comprehensive system health analysis
@@ -51,6 +54,7 @@ bb-report                 # Generate comprehensive project report
 ## 🛡️ Anti-Regression Commands
 
 ### Code Quality Validation
+
 ```powershell
 # Prevent regressions during development
 bb-anti-regression        # Scan for Microsoft.Extensions.Logging, Write-Host violations
@@ -63,6 +67,7 @@ bb-code-analysis         # Run detailed code analysis against practical ruleset
 ## 🧪 Testing & Validation
 
 ### Quality Excellence Testing Commands
+
 ```powershell
 # Student/Route functionality validation
 bb-test-students          # Test student management features
@@ -75,6 +80,7 @@ bb-test-ui               # WPF UI automation tests
 ```
 
 ### Test Output Management
+
 ```powershell
 # Enhanced test output (from Enhanced-Test-Output.ps1)
 bb-test-full             # Full test output without truncation
@@ -86,16 +92,18 @@ bb-test-watch            # Continuous testing with file system monitoring
 ## 🔧 Development Workflow
 
 ### Session Management
+
 ```powershell
 # Complete development session startup
 bb-dev-session           # Opens workspace, builds, starts debug monitoring
 
-# Quick development cycles  
+# Quick development cycles
 bb-quick-test            # Clean, build, test, validate cycle
 bb-quick-build           # Fast iteration build process
 ```
 
 ### Debug & Monitoring
+
 ```powershell
 # Debug helper integration (from App.xaml.cs DebugHelper)
 bb-debug-start           # Start real-time debug filtering
@@ -107,6 +115,7 @@ bb-debug-test            # Test debug monitoring functionality
 ## 📚 Documentation & Reference
 
 ### Copilot Integration
+
 ```powershell
 # Reference system access
 bb-copilot-ref           # Open main Copilot Hub reference
@@ -116,6 +125,7 @@ bb-mentor                # AI mentor assistance (if available)
 ```
 
 ### Knowledge Management
+
 ```powershell
 # Documentation utilities
 bb-docs-update           # Update reference documentation
@@ -126,6 +136,7 @@ bb-search-docs [query]   # Search documentation for specific topics
 ## 🚀 Special BusBuddy Features
 
 ### Google Earth Integration
+
 ```powershell
 # Map visualization and route planning
 bb-maps                  # Launch Google Earth view (if implemented)
@@ -136,6 +147,7 @@ bb-earth-view           # Open Google Earth interface
 ```
 
 ### XAI Chat & AI Features
+
 ```powershell
 # AI-powered development and route optimization
 bb-xai-chat             # Open XAI chat interface
@@ -156,6 +168,7 @@ bb-generate-report -ReportType DriverSchedule -Format Excel -OutputPath "schedul
 ```
 
 ### Route Management & Analysis
+
 ```powershell
 # Core route operations
 bb-routes               # Main route optimization system
@@ -164,15 +177,16 @@ bb-route-status         # Check route optimization system status
 
 # Route optimization examples
 bb-route-optimize -RouteId "K-5-North" -CurrentPerformance "38 stops, 65 minutes" -TargetMetrics "Reduce stops to 30, target 50 minutes"
-bb-route-optimize -RouteId "Middle-School-East" -Constraints @("No left turns on Main St", "Pickup before 7:30 AM") 
+bb-route-optimize -RouteId "Middle-School-East" -Constraints @("No left turns on Main St", "Pickup before 7:30 AM")
 bb-route-optimize -RouteId "High-School-Express" -TargetMetrics "Express route, minimize stops" -OutputPath "optimization-reports/hs-express.json"
 
-# Report generation examples  
+# Report generation examples
 bb-generate-report -ReportType StudentList -OutputPath "daily-reports/students-$(Get-Date -Format 'yyyy-MM-dd').pdf"
 bb-generate-report -ReportType MaintenanceReport -Format CSV -OutputPath "maintenance/weekly-report.csv"
 ```
 
 ### Advanced Testing & Validation
+
 ```powershell
 # Comprehensive testing for excellence standards
 bb-test-ui              # WPF UI automation tests
@@ -184,6 +198,7 @@ bb-load-test            # Load testing for large datasets
 ## 🔄 Configuration & Setup
 
 ### Environment Configuration
+
 ```powershell
 # VS Code integration
 bb-vscode               # Open workspace in VS Code
@@ -196,6 +211,7 @@ bb-profile-update       # Update profile with latest commands
 ```
 
 ### Package Management
+
 ```powershell
 # NuGet operations
 bb-packages-update      # Update all packages to latest versions
@@ -206,6 +222,7 @@ bb-validate-syncfusion  # Verify Syncfusion package integrity
 ## 🎯 Quality-Specific Commands
 
 ### Excellence Development Support
+
 ```powershell
 # Clean slate operations for quality focus
 bb-disable-services     # Temporarily disable experimental services
@@ -214,6 +231,7 @@ bb-quality-status       # Check production readiness status
 ```
 
 ### Build Validation
+
 ```powershell
 # Ensure clean builds for excellence
 bb-validate-build      # Comprehensive build validation
@@ -224,28 +242,30 @@ bb-fix-cs0246          # Helper for missing type errors
 ## 💡 Copilot Usage Examples
 
 ### Build Automation
+
 ```powershell
 # Copilot Prompt: "Create PowerShell function for clean BusBuddy build"
 # Result: Uses bb-* pattern with Microsoft-compliant PowerShell standards
 function bb-clean-build {
     [CmdletBinding()]
     param()
-    
+
     Write-Information "Starting clean build process" -InformationAction Continue
     bb-clean
-    bb-restore  
+    bb-restore
     bb-build
 }
 ```
 
 ### Testing Workflow
+
 ```powershell
 # Copilot Prompt: "Add comprehensive testing command with error handling"
 # Result: Follows Microsoft PowerShell error handling patterns
 function bb-test-comprehensive {
     [CmdletBinding()]
     param([switch]$IncludeIntegration)
-    
+
     try {
         bb-test
         if ($IncludeIntegration) {
@@ -264,6 +284,7 @@ function bb-test-comprehensive {
 ## 🛠️ Command Implementation Standards
 
 ### Microsoft PowerShell Compliance
+
 ```powershell
 # Standard function template for bb-* commands
 function bb-[action] {
@@ -272,11 +293,11 @@ function bb-[action] {
         [Parameter(Mandatory=$false)]
         [string]$Option
     )
-    
+
     begin {
         Write-Verbose "Starting bb-[action] operation"
     }
-    
+
     process {
         try {
             # Implementation using Write-Output, not Write-Host
@@ -289,7 +310,7 @@ function bb-[action] {
             throw
         }
     }
-    
+
     end {
         Write-Verbose "bb-[action] operation completed"
     }
@@ -297,6 +318,7 @@ function bb-[action] {
 ```
 
 ### Export Standards
+
 ```powershell
 # Proper module member export
 Export-ModuleMember -Function Get-BusBuddyFunction -Alias "bb-function"
@@ -305,6 +327,7 @@ Export-ModuleMember -Function Get-BusBuddyFunction -Alias "bb-function"
 ## 🔍 Command Discovery
 
 ### Available Commands
+
 ```powershell
 # List all bb-* commands
 Get-Command bb-*
@@ -317,6 +340,7 @@ Get-Help bb-test -Examples
 ```
 
 ### Module Information
+
 ```powershell
 # Module details
 Get-Module BusBuddy -ListAvailable
@@ -326,4 +350,5 @@ Get-Command -Module BusBuddy
 ```
 
 ---
-*Efficient BusBuddy development through standardized PowerShell automation* ⚡
+
+_Efficient BusBuddy development through standardized PowerShell automation_ ⚡

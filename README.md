@@ -1,4 +1,5 @@
 # 🚌[![Build Status](https://img.shields.io/badge/build-✅%20passing-brightgreen)](https://github.com/Bigessfour/BusBuddy-3)
+
 [![.NET](https://img.shields.io/badge/.NET-9.0.304-blue)](https://dotnet.microsoft.com/download/dotnet/9.0)
 [![PowerShell](https://img.shields.io/badge/PowerShell-7.5.2%20✨%20Advanced-blue)](https://github.com/PowerShell/PowerShell)
 [![Syncfusion](https://img.shields.io/badge/Syncfusion-30.1.42%20✅%20Licensed-orange)](https://www.syncfusion.com/wpf-controls)
@@ -38,6 +39,7 @@ BusBuddy streamlines school transportation operations through intelligent route 
 - **Visual Studio Code** (recommended) or Visual Studio 2022
 
 ### **PowerShell 7.5.2 Enhanced Environment**
+
 BusBuddy includes state-of-the-art PowerShell automation with hyperthreading optimization:
 
 ```powershell
@@ -45,7 +47,7 @@ BusBuddy includes state-of-the-art PowerShell automation with hyperthreading opt
 .\Install-BusBuddyCompleteEnvironment.ps1
 
 # Verify hyperthreading optimization
-htinfo                    # Display hyperthreading information  
+htinfo                    # Display hyperthreading information
 sysinfo                   # System performance overview
 perfmetrics              # Real-time performance metrics
 
@@ -65,7 +67,7 @@ cd BusBuddy
 # Enhanced build with hyperthreading optimization
 bb-build                 # State-of-the-art parallel build
 
-# Run with performance monitoring  
+# Run with performance monitoring
 bb-run                   # Run with advanced diagnostics
 
 # Hyperthreading-aware testing

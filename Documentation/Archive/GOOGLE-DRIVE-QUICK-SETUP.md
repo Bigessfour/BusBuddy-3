@@ -5,6 +5,7 @@ Since your BusBuddy folder is synced to Google Drive, setting up on your other l
 ## ⚡ Super Quick Setup (5 minutes)
 
 ### Step 1: Install Prerequisites
+
 ```powershell
 # Download and install these (if not already installed):
 # - PowerShell 7.5.2: https://github.com/PowerShell/PowerShell/releases/tag/v7.5.2
@@ -14,6 +15,7 @@ Since your BusBuddy folder is synced to Google Drive, setting up on your other l
 ```
 
 ### Step 2: Wait for Google Drive Sync
+
 ```powershell
 # Make sure Google Drive has fully synced the BusBuddy folder
 # Check: File Explorer → Google Drive → Look for BusBuddy folder
@@ -21,6 +23,7 @@ Since your BusBuddy folder is synced to Google Drive, setting up on your other l
 ```
 
 ### Step 3: Navigate and Run Setup
+
 ```powershell
 # Open PowerShell and navigate to your synced folder
 cd "C:\Users\[YOUR_USERNAME]\Google Drive\BusBuddy"
@@ -32,12 +35,14 @@ pwsh -ExecutionPolicy Bypass -File "setup-environment.ps1"
 ```
 
 ### Step 4: Open VS Code
+
 ```powershell
 # Open VS Code in the BusBuddy directory
 code .
 ```
 
 ### Step 5: Test Everything Works
+
 ```powershell
 # Open a new VS Code terminal and run:
 bbHealth

@@ -3,7 +3,9 @@
 ## 🔐 **WebAuthn Not Supported Issues**
 
 ### **Problem Description**
+
 When accessing GitHub with two-factor authentication, you may encounter:
+
 - "This browser or device is reporting partial passkey support"
 - "WebAuthn isn't supported. Use a different browser or device to use your passkey"
 - "Authentication failed"
@@ -11,6 +13,7 @@ When accessing GitHub with two-factor authentication, you may encounter:
 ### **Immediate Solutions**
 
 #### **Option 1: Use GitHub Personal Access Token (Recommended)**
+
 ```powershell
 # Configure Git to use Personal Access Token
 git config --global credential.helper manager-core
@@ -21,14 +24,16 @@ git config --global user.email "your.email@example.com"
 ```
 
 **Creating a Personal Access Token:**
+
 1. Go to GitHub.com → Settings → Developer settings → Personal access tokens → Tokens (classic)
 2. Generate new token with these scopes:
-   - `repo` (Full control of private repositories)
-   - `workflow` (Update GitHub Action workflows)
-   - `write:packages` (Upload packages to GitHub Package Registry)
+    - `repo` (Full control of private repositories)
+    - `workflow` (Update GitHub Action workflows)
+    - `write:packages` (Upload packages to GitHub Package Registry)
 3. Copy the token and use it as your password when Git prompts
 
 #### **Option 2: GitHub CLI Authentication**
+
 ```powershell
 # Install GitHub CLI if not already installed
 winget install --id GitHub.cli
@@ -41,6 +46,7 @@ gh auth setup-git
 ```
 
 #### **Option 3: SSH Key Authentication**
+
 ```powershell
 # Generate SSH key
 ssh-keygen -t ed25519 -C "your.email@example.com"
@@ -64,6 +70,7 @@ git remote set-url origin git@github.com:Bigessfour/BusBuddy-3.git
 ### **Browser-Specific Fixes**
 
 #### **Chrome/Edge Issues**
+
 ```powershell
 # Clear browser data for GitHub
 # Chrome: Settings → Privacy and security → Clear browsing data
@@ -75,6 +82,7 @@ git remote set-url origin git@github.com:Bigessfour/BusBuddy-3.git
 ```
 
 #### **Firefox Issues**
+
 ```powershell
 # Enable WebAuthn in Firefox
 # Navigate to: about:config
@@ -87,6 +95,7 @@ git remote set-url origin git@github.com:Bigessfour/BusBuddy-3.git
 ### **VS Code Git Integration**
 
 #### **Configure VS Code for Token Authentication**
+
 ```json
 // .vscode/settings.json
 {
@@ -101,6 +110,7 @@ git remote set-url origin git@github.com:Bigessfour/BusBuddy-3.git
 ```
 
 #### **PowerShell Profile Integration**
+
 ```powershell
 # Add to PowerShell profile for seamless authentication
 function Set-GitCredentials {
@@ -108,26 +118,28 @@ function Set-GitCredentials {
         [string]$Username,
         [string]$Token
     )
-    
+
     git config --global user.name $Username
     git config --global credential.helper manager-core
-    
+
     Write-Information "Git configured for token authentication" -InformationAction Continue
     Write-Warning "Use your Personal Access Token as password when prompted"
 }
 
-# Usage: Set-GitCredentials "YourUsername" 
+# Usage: Set-GitCredentials "YourUsername"
 ```
 
 ### **Security Best Practices**
 
 #### **Token Management**
+
 - **Scope Limitation**: Only grant necessary permissions to tokens
 - **Expiration**: Set reasonable expiration dates (90 days recommended)
 - **Storage**: Never store tokens in code or plain text files
 - **Rotation**: Regularly rotate tokens for security
 
 #### **Environment Variables**
+
 ```powershell
 # Store token securely in environment variable
 [Environment]::SetEnvironmentVariable("GITHUB_TOKEN", "your_token_here", "User")
@@ -140,10 +152,11 @@ git config --global credential.helper "!f() { echo username=token; echo password
 ### **Development Workflow Integration**
 
 #### **PowerShell Commands for BusBuddy**
+
 ```powershell
 function Push-BusBuddyChanges {
     param([string]$CommitMessage)
-    
+
     try {
         git add -A
         git commit -m $CommitMessage
@@ -164,6 +177,7 @@ function Sync-BusBuddyRepo {
 ```
 
 #### **Automated Authentication Check**
+
 ```powershell
 function Test-GitHubAuthentication {
     try {
@@ -194,7 +208,7 @@ function Test-GitHubAuthentication {
 # Quick authentication status check
 function Get-GitAuthStatus {
     Write-Host "🔍 Checking Git authentication..." -ForegroundColor Blue
-    
+
     # Check if GitHub CLI is authenticated
     $ghStatus = gh auth status 2>&1
     if ($LASTEXITCODE -eq 0) {
@@ -203,14 +217,14 @@ function Get-GitAuthStatus {
     else {
         Write-Host "❌ GitHub CLI not authenticated" -ForegroundColor Red
     }
-    
+
     # Check Git config
     $username = git config user.name
     $email = git config user.email
-    
+
     Write-Host "Git User: $username" -ForegroundColor Cyan
     Write-Host "Git Email: $email" -ForegroundColor Cyan
-    
+
     # Test repository access
     Test-GitHubAuthentication
 }
@@ -218,13 +232,13 @@ function Get-GitAuthStatus {
 # Emergency fallback
 function Reset-GitAuthentication {
     Write-Warning "Resetting Git authentication..."
-    
+
     # Clear stored credentials
     git config --global --unset credential.helper
-    
+
     # Reconfigure with manager-core
     git config --global credential.helper manager-core
-    
+
     Write-Host "Run 'gh auth login' or configure Personal Access Token" -ForegroundColor Yellow
 }
 ```
@@ -232,6 +246,7 @@ function Reset-GitAuthentication {
 ## 🚀 **Integration with BusBuddy Development**
 
 ### **PowerShell Profile Integration**
+
 Add these functions to your BusBuddy PowerShell profile:
 
 ```powershell
@@ -245,27 +260,25 @@ function bb-git-test { Test-GitHubAuthentication }
 # Enhanced push with authentication handling
 function bb-push {
     param([string]$Message = "Update: $(Get-Date -Format 'yyyy-MM-dd HH:mm')")
-    
+
     if (-not (Test-GitHubAuthentication)) {
         Write-Warning "Fix authentication first with: bb-git-reset"
         return
     }
-    
+
     Push-BusBuddyChanges $Message
 }
 ```
 
 ### **VS Code Integration**
+
 ```json
 // .vscode/tasks.json - Add authentication check task
 {
     "label": "Check Git Authentication",
     "type": "shell",
     "command": "powershell",
-    "args": [
-        "-Command",
-        "Test-GitHubAuthentication"
-    ],
+    "args": ["-Command", "Test-GitHubAuthentication"],
     "group": "test",
     "presentation": {
         "echo": true,

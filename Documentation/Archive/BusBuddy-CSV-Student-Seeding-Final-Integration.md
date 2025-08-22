@@ -5,6 +5,7 @@
 ## 1. Final Full `SeedDataService.cs` Code
 
 The current `SeedDataService.cs` includes:
+
 - All JSON-based seeding code removed.
 - `SeedStudentsFromCsvAsync` implemented with robust CSV parsing, null safety, and Serilog logging.
 - Integrated into `SeedAllAsync`.
@@ -17,30 +18,36 @@ The current `SeedDataService.cs` includes:
 ## 2. Step-by-Step Integration Guide
 
 ### A. Prepare for Integration
+
 1. Backup `BusBuddy.Core/Services/SeedDataService.cs` and related model files.
 2. Commit or stash any unrelated local changes.
 3. Pull the latest changes from your main branch.
 
 ### B. Apply the Changes
+
 4. Replace the old `SeedDataService.cs` with the new version (already done).
 5. Ensure all model properties referenced in the new code exist and are non-nullable where required.
 6. Remove any deprecated JSON seed files or related code.
 
 ### C. Validate the Codebase
+
 7. Run code formatters and ensure compliance with `.editorconfig` and `BusBuddy-Practical.ruleset`.
 8. Ensure all files end with a single newline.
 
 ### D. Build and Test
+
 9. Run `bb-build` (or `dotnet build`) and ensure zero errors.
 10. Run static analysis and address any warnings.
 11. Run `bb-test` (or `dotnet test`) and confirm all tests pass.
 
 ### E. Manual Validation
+
 12. Run `bb-seed` or start the application to trigger seeding.
 13. Inspect the database for seeded students and families.
 14. Check the application UI for correct display of seeded data.
 
 ### F. Finalize Integration
+
 15. Update documentation (e.g., `GROK-README.md`).
 16. Remove/archive deprecated files and update `.gitignore` as needed.
 17. Stage only relevant files, write a detailed commit message, and push to a feature branch.

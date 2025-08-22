@@ -3,6 +3,7 @@
 The former `docs/` directory has been unified into the central `Documentation/` hub.
 
 Current locations:
+
 - Theming checklist: `Documentation/Theming/Theming-Audit-Checklist.md`
 - Samples: `Documentation/Samples/`
 

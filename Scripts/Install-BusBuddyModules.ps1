@@ -74,7 +74,7 @@ process {
         Write-Information "================================================" -InformationAction Continue
         
         for ($phase = 1; $phase -le 5; $phase++) {
-            $phaseModules = $modulesToInstall | Where-Object Priority -eq $phase
+            $phaseModules = $modulesToInstall | Where-Object Priority -EQ $phase
             if ($phaseModules) {
                 Write-Information "`nPhase $phase:" -InformationAction Continue
                 $phaseModules | ForEach-Object {
@@ -103,7 +103,7 @@ process {
     
     # Install by phases
     for ($phase = 1; $phase -le 5; $phase++) {
-        $phaseModules = $modulesToInstall | Where-Object Priority -eq $phase
+        $phaseModules = $modulesToInstall | Where-Object Priority -EQ $phase
         
         if ($phaseModules) {
             Write-Information "`n📦 Phase $phase Installation:" -InformationAction Continue

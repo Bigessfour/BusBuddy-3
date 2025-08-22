@@ -9,6 +9,7 @@
 ## 🏗️ **Serilog Configuration Patterns**
 
 ### **Startup Configuration (App.xaml.cs)**
+
 ```csharp
 // BusBuddy.WPF/App.xaml.cs
 using Serilog;
@@ -23,10 +24,10 @@ public partial class App : Application
     {
         // Configure Serilog BEFORE any other initialization
         ConfigureSerilog();
-        
+
         // Register Syncfusion license
         RegisterSyncfusionLicense();
-        
+
         // Handle unhandled exceptions
         SetupGlobalExceptionHandling();
     }
@@ -69,7 +70,7 @@ public partial class App : Application
         DispatcherUnhandledException += (sender, e) =>
         {
             Logger.Fatal(e.Exception, "Unhandled exception in UI thread: {ErrorMessage}", e.Exception.Message);
-            
+
             var result = MessageBox.Show(
                 $"An unexpected error occurred:\n\n{e.Exception.Message}\n\nWould you like to continue?",
                 "Application Error",
@@ -84,7 +85,7 @@ public partial class App : Application
         {
             var exception = e.ExceptionObject as Exception;
             Logger.Fatal(exception, "Unhandled exception in background thread: {ErrorMessage}", exception?.Message);
-            
+
             MessageBox.Show(
                 $"A critical error occurred:\n\n{exception?.Message}\n\nThe application will now close.",
                 "Critical Error",
@@ -117,6 +118,7 @@ public partial class App : Application
 ```
 
 ### **Service Layer Error Patterns**
+
 ```csharp
 // BusBuddy.Core/Services/StudentService.cs
 using Serilog;
@@ -142,7 +144,7 @@ public class StudentService : IStudentService
             var validationResult = ValidateCreateStudentRequest(request);
             if (!validationResult.IsSuccess)
             {
-                Logger.Warning("Student creation failed validation: {ValidationErrors}", 
+                Logger.Warning("Student creation failed validation: {ValidationErrors}",
                     string.Join(", ", validationResult.Errors));
                 return ServiceResult<Student>.Failure(validationResult.Errors);
             }
@@ -150,11 +152,11 @@ public class StudentService : IStudentService
             // Check for duplicates
             var exists = await _studentRepository.StudentExistsAsync(
                 request.FirstName, request.LastName, request.DateOfBirth);
-            
+
             if (exists)
             {
                 var errorMessage = $"Student already exists: {request.FirstName} {request.LastName} ({request.DateOfBirth:yyyy-MM-dd})";
-                Logger.Warning("Duplicate student creation attempt: {FirstName} {LastName} {DateOfBirth}", 
+                Logger.Warning("Duplicate student creation attempt: {FirstName} {LastName} {DateOfBirth}",
                     request.FirstName, request.LastName, request.DateOfBirth);
                 return ServiceResult<Student>.Failure(errorMessage);
             }
@@ -176,7 +178,7 @@ public class StudentService : IStudentService
 
             // Save to database with detailed logging
             var savedStudent = await _studentRepository.AddAsync(student);
-            
+
             Logger.Information("Successfully created student {StudentId}: {FullName} in Grade {Grade}",
                 savedStudent.StudentId, savedStudent.FullName, savedStudent.Grade);
 
@@ -210,7 +212,7 @@ public class StudentService : IStudentService
             }
 
             var students = await _studentRepository.GetStudentsByGradeAsync(grade);
-            
+
             Logger.Information("Retrieved {StudentCount} students for grade {Grade}", students.Count, grade);
             return ServiceResult<List<Student>>.Success(students);
         }
@@ -254,6 +256,7 @@ public class StudentService : IStudentService
 ## 🖥️ **ViewModel Error Handling**
 
 ### **Base ViewModel with Error Management**
+
 ```csharp
 // BusBuddy.WPF/ViewModels/BaseViewModel.cs
 using Serilog;
@@ -441,6 +444,7 @@ public abstract class BaseViewModel : INotifyPropertyChanged
 ```
 
 ### **Student Management ViewModel with Error Handling**
+
 ```csharp
 // BusBuddy.WPF/ViewModels/StudentManagementViewModel.cs
 public class StudentManagementViewModel : BaseViewModel
@@ -454,7 +458,7 @@ public class StudentManagementViewModel : BaseViewModel
     public StudentManagementViewModel(IStudentService studentService)
     {
         _studentService = studentService ?? throw new ArgumentNullException(nameof(studentService));
-        
+
         LoadStudentsCommand = new AsyncRelayCommand(LoadStudentsAsync);
         AddStudentCommand = new AsyncRelayCommand(AddStudentAsync);
         EditStudentCommand = new AsyncRelayCommand<Student>(EditStudentAsync, CanEditStudent);
@@ -502,7 +506,7 @@ public class StudentManagementViewModel : BaseViewModel
         await ExecuteWithErrorHandlingAsync(async () =>
         {
             Logger.Information("Loading all students");
-            
+
             var result = await _studentService.GetAllStudentsAsync();
             if (result.IsSuccess)
             {
@@ -511,7 +515,7 @@ public class StudentManagementViewModel : BaseViewModel
                 {
                     Students.Add(student);
                 }
-                
+
                 ShowSuccess($"Loaded {Students.Count} students");
                 Logger.Information("Successfully loaded {StudentCount} students", Students.Count);
             }
@@ -528,7 +532,7 @@ public class StudentManagementViewModel : BaseViewModel
         await ExecuteWithErrorHandlingAsync(async () =>
         {
             Logger.Information("Opening student creation dialog");
-            
+
             var dialog = new StudentEntryDialog();
             if (dialog.ShowDialog() == true && dialog.Student != null)
             {
@@ -551,7 +555,7 @@ public class StudentManagementViewModel : BaseViewModel
                 {
                     Students.Add(result.Data!);
                     ShowSuccess($"Successfully added {result.Data.FullName}");
-                    Logger.Information("Successfully added student {StudentId}: {FullName}", 
+                    Logger.Information("Successfully added student {StudentId}: {FullName}",
                         result.Data.StudentId, result.Data.FullName);
                 }
                 else
@@ -569,9 +573,9 @@ public class StudentManagementViewModel : BaseViewModel
 
         await ExecuteWithErrorHandlingAsync(async () =>
         {
-            Logger.Information("Opening student edit dialog for {StudentId}: {FullName}", 
+            Logger.Information("Opening student edit dialog for {StudentId}: {FullName}",
                 student.StudentId, student.FullName);
-            
+
             var dialog = new StudentEntryDialog(student);
             if (dialog.ShowDialog() == true && dialog.Student != null)
             {
@@ -598,15 +602,15 @@ public class StudentManagementViewModel : BaseViewModel
                     {
                         Students[index] = result.Data!;
                     }
-                    
+
                     ShowSuccess($"Successfully updated {result.Data!.FullName}");
-                    Logger.Information("Successfully updated student {StudentId}: {FullName}", 
+                    Logger.Information("Successfully updated student {StudentId}: {FullName}",
                         result.Data.StudentId, result.Data.FullName);
                 }
                 else
                 {
                     ShowError(string.Join(", ", result.Errors));
-                    Logger.Warning("Failed to update student {StudentId}: {Errors}", 
+                    Logger.Warning("Failed to update student {StudentId}: {Errors}",
                         student.StudentId, string.Join(", ", result.Errors));
                 }
             }
@@ -625,7 +629,7 @@ public class StudentManagementViewModel : BaseViewModel
 
         if (confirmResult != MessageBoxResult.Yes)
         {
-            Logger.Debug("User cancelled deletion of student {StudentId}: {FullName}", 
+            Logger.Debug("User cancelled deletion of student {StudentId}: {FullName}",
                 student.StudentId, student.FullName);
             return;
         }
@@ -633,21 +637,21 @@ public class StudentManagementViewModel : BaseViewModel
         await ExecuteWithErrorHandlingAsync(async () =>
         {
             Logger.Warning("Deleting student {StudentId}: {FullName}", student.StudentId, student.FullName);
-            
+
             var result = await _studentService.DeleteStudentAsync(student.StudentId);
             if (result.IsSuccess)
             {
                 Students.Remove(student);
                 SelectedStudent = null;
-                
+
                 ShowSuccess($"Successfully deleted {student.FullName}");
-                Logger.Information("Successfully deleted student {StudentId}: {FullName}", 
+                Logger.Information("Successfully deleted student {StudentId}: {FullName}",
                     student.StudentId, student.FullName);
             }
             else
             {
                 ShowError(string.Join(", ", result.Errors));
-                Logger.Error("Failed to delete student {StudentId}: {Errors}", 
+                Logger.Error("Failed to delete student {StudentId}: {Errors}",
                     student.StudentId, string.Join(", ", result.Errors));
             }
         }, "DeleteStudent");
@@ -658,7 +662,7 @@ public class StudentManagementViewModel : BaseViewModel
         await ExecuteWithErrorHandlingAsync(async () =>
         {
             Logger.Information("Searching students with term: {SearchText}", SearchText);
-            
+
             var result = await _studentService.SearchStudentsAsync(SearchText);
             if (result.IsSuccess)
             {
@@ -667,15 +671,15 @@ public class StudentManagementViewModel : BaseViewModel
                 {
                     Students.Add(student);
                 }
-                
+
                 ShowSuccess($"Found {Students.Count} students matching '{SearchText}'");
-                Logger.Information("Search returned {StudentCount} students for term: {SearchText}", 
+                Logger.Information("Search returned {StudentCount} students for term: {SearchText}",
                     Students.Count, SearchText);
             }
             else
             {
                 ShowError(string.Join(", ", result.Errors));
-                Logger.Warning("Search failed for term '{SearchText}': {Errors}", 
+                Logger.Warning("Search failed for term '{SearchText}': {Errors}",
                     SearchText, string.Join(", ", result.Errors));
             }
         }, "SearchStudents");
@@ -698,6 +702,7 @@ public class StudentManagementViewModel : BaseViewModel
 ## ⚠️ **Custom Exception Types**
 
 ### **Service Layer Exceptions**
+
 ```csharp
 // BusBuddy.Core/Exceptions/ServiceException.cs
 public class ServiceException : Exception
@@ -747,14 +752,14 @@ public class EntityNotFoundException : ServiceException
     public Type EntityType { get; }
     public object EntityId { get; }
 
-    public EntityNotFoundException(Type entityType, object entityId) 
+    public EntityNotFoundException(Type entityType, object entityId)
         : base($"{entityType.Name} with ID '{entityId}' was not found")
     {
         EntityType = entityType;
         EntityId = entityId;
     }
 
-    public EntityNotFoundException(string entityName, object entityId) 
+    public EntityNotFoundException(string entityName, object entityId)
         : base($"{entityName} with ID '{entityId}' was not found")
     {
         EntityType = typeof(object);
@@ -769,7 +774,7 @@ public class DuplicateEntityException : ServiceException
     public string DuplicateField { get; }
     public object DuplicateValue { get; }
 
-    public DuplicateEntityException(Type entityType, string field, object value) 
+    public DuplicateEntityException(Type entityType, string field, object value)
         : base($"{entityType.Name} with {field} '{value}' already exists")
     {
         EntityType = entityType;
@@ -777,7 +782,7 @@ public class DuplicateEntityException : ServiceException
         DuplicateValue = value;
     }
 
-    public DuplicateEntityException(string entityName, string field, object value) 
+    public DuplicateEntityException(string entityName, string field, object value)
         : base($"{entityName} with {field} '{value}' already exists")
     {
         EntityType = typeof(object);
@@ -792,6 +797,7 @@ public class DuplicateEntityException : ServiceException
 ## 📊 **Result and Response Patterns**
 
 ### **Service Result Pattern**
+
 ```csharp
 // BusBuddy.Core/Models/ServiceResult.cs
 public class ServiceResult
@@ -850,6 +856,7 @@ public class ValidationResult
 ## 🎯 **Error Handling in WPF Views**
 
 ### **Error Display User Control**
+
 ```xml
 <!-- BusBuddy.WPF/Controls/ErrorDisplayControl.xaml -->
 <UserControl x:Class="BusBuddy.WPF.Controls.ErrorDisplayControl"
@@ -857,35 +864,35 @@ public class ValidationResult
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <Grid>
         <!-- Error Message -->
-        <Border Background="#FFEBEE" BorderBrush="#F44336" BorderThickness="1" 
+        <Border Background="#FFEBEE" BorderBrush="#F44336" BorderThickness="1"
                 CornerRadius="4" Padding="12" Margin="0,0,0,8"
                 Visibility="{Binding HasErrors, Converter={StaticResource BooleanToVisibilityConverter}}">
             <StackPanel Orientation="Horizontal">
                 <TextBlock Text="⚠" Foreground="#F44336" FontSize="16" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                <TextBlock Text="{Binding ErrorMessage}" Foreground="#C62828" 
+                <TextBlock Text="{Binding ErrorMessage}" Foreground="#C62828"
                           TextWrapping="Wrap" VerticalAlignment="Center"/>
-                <Button Content="✕" Background="Transparent" BorderThickness="0" 
+                <Button Content="✕" Background="Transparent" BorderThickness="0"
                        Foreground="#F44336" Margin="8,0,0,0" Padding="4,2"
                        Command="{Binding ClearErrorCommand}" VerticalAlignment="Center"/>
             </StackPanel>
         </Border>
 
         <!-- Success Message -->
-        <Border Background="#E8F5E8" BorderBrush="#4CAF50" BorderThickness="1" 
+        <Border Background="#E8F5E8" BorderBrush="#4CAF50" BorderThickness="1"
                 CornerRadius="4" Padding="12" Margin="0,0,0,8"
                 Visibility="{Binding HasSuccess, Converter={StaticResource BooleanToVisibilityConverter}}">
             <StackPanel Orientation="Horizontal">
                 <TextBlock Text="✓" Foreground="#4CAF50" FontSize="16" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                <TextBlock Text="{Binding SuccessMessage}" Foreground="#2E7D32" 
+                <TextBlock Text="{Binding SuccessMessage}" Foreground="#2E7D32"
                           TextWrapping="Wrap" VerticalAlignment="Center"/>
-                <Button Content="✕" Background="Transparent" BorderThickness="0" 
+                <Button Content="✕" Background="Transparent" BorderThickness="0"
                        Foreground="#4CAF50" Margin="8,0,0,0" Padding="4,2"
                        Command="{Binding ClearSuccessCommand}" VerticalAlignment="Center"/>
             </StackPanel>
         </Border>
 
         <!-- Loading Indicator -->
-        <Border Background="#E3F2FD" BorderBrush="#2196F3" BorderThickness="1" 
+        <Border Background="#E3F2FD" BorderBrush="#2196F3" BorderThickness="1"
                 CornerRadius="4" Padding="12" Margin="0,0,0,8"
                 Visibility="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}}">
             <StackPanel Orientation="Horizontal">
@@ -898,6 +905,7 @@ public class ValidationResult
 ```
 
 ### **Error Dialog for Critical Errors**
+
 ```csharp
 // BusBuddy.WPF/Views/Dialogs/ErrorDialog.xaml.cs
 public partial class ErrorDialog : Window
@@ -907,11 +915,11 @@ public partial class ErrorDialog : Window
     public ErrorDialog(string title, string message, Exception? exception = null)
     {
         InitializeComponent();
-        
+
         Title = title;
         ErrorTitleTextBlock.Text = title;
         ErrorMessageTextBlock.Text = message;
-        
+
         if (exception != null)
         {
             DetailsTextBox.Text = FormatException(exception);
@@ -933,14 +941,14 @@ public partial class ErrorDialog : Window
         sb.AppendLine();
         sb.AppendLine("Stack Trace:");
         sb.AppendLine(exception.StackTrace);
-        
+
         if (exception.InnerException != null)
         {
             sb.AppendLine();
             sb.AppendLine("Inner Exception:");
             sb.AppendLine(FormatException(exception.InnerException));
         }
-        
+
         return sb.ToString();
     }
 
@@ -959,7 +967,7 @@ public partial class ErrorDialog : Window
             {
                 errorInfo += $"\n\nDetails:\n{DetailsTextBox.Text}";
             }
-            
+
             Clipboard.SetText(errorInfo);
             Logger.Information("Error details copied to clipboard");
         }
@@ -976,6 +984,7 @@ public partial class ErrorDialog : Window
 ## 🧪 **Testing Error Handling**
 
 ### **Service Error Handling Tests**
+
 ```csharp
 // BusBuddy.Tests/Core/Services/StudentServiceErrorTests.cs
 [TestFixture]
@@ -993,7 +1002,7 @@ public class StudentServiceErrorTests
         _logger = new LoggerConfiguration()
             .WriteTo.Console()
             .CreateLogger();
-        
+
         Log.Logger = _logger;
         _studentService = new StudentService(_mockRepository.Object);
     }
@@ -1111,6 +1120,7 @@ public class StudentServiceErrorTests
 ## 📋 **PowerShell Error Commands**
 
 ### **Error Log Analysis Commands**
+
 ```powershell
 # bb-error-logs: View recent error logs
 function Show-BusBuddyErrorLogs {
@@ -1119,22 +1129,22 @@ function Show-BusBuddyErrorLogs {
         [int]$Hours = 24,
         [string]$Level = "Warning"
     )
-    
+
     $logPath = "logs"
     if (-not (Test-Path $logPath)) {
         Write-Warning "Log directory not found: $logPath"
         return
     }
-    
+
     $cutoffTime = (Get-Date).AddHours(-$Hours)
-    $errorFiles = Get-ChildItem "$logPath\busbuddy-errors-*.log" | 
+    $errorFiles = Get-ChildItem "$logPath\busbuddy-errors-*.log" |
                   Where-Object { $_.LastWriteTime -gt $cutoffTime }
-    
+
     if (-not $errorFiles) {
         Write-Information "No error logs found in the last $Hours hours" -InformationAction Continue
         return
     }
-    
+
     Write-Information "Error logs from the last $Hours hours:" -InformationAction Continue
     foreach ($file in $errorFiles) {
         Write-Information "=== $($file.Name) ===" -InformationAction Continue
@@ -1149,20 +1159,20 @@ function Get-BusBuddyErrorSummary {
     param(
         [int]$Days = 7
     )
-    
+
     $logPath = "logs"
     $cutoffDate = (Get-Date).AddDays(-$Days)
-    
-    $errorFiles = Get-ChildItem "$logPath\busbuddy-errors-*.log" | 
+
+    $errorFiles = Get-ChildItem "$logPath\busbuddy-errors-*.log" |
                   Where-Object { $_.LastWriteTime -gt $cutoffDate }
-    
+
     if (-not $errorFiles) {
         Write-Information "No error logs found in the last $Days days" -InformationAction Continue
         return
     }
-    
+
     $errorSummary = @{}
-    
+
     foreach ($file in $errorFiles) {
         $content = Get-Content $file.FullName
         foreach ($line in $content) {
@@ -1171,7 +1181,7 @@ function Get-BusBuddyErrorSummary {
                 $level = $matches[2]
                 $source = $matches[3]
                 $message = $matches[4]
-                
+
                 $key = "$source - $level"
                 if (-not $errorSummary.ContainsKey($key)) {
                     $errorSummary[$key] = @{
@@ -1185,7 +1195,7 @@ function Get-BusBuddyErrorSummary {
             }
         }
     }
-    
+
     Write-Information "Error Summary (Last $Days days):" -InformationAction Continue
     $errorSummary.GetEnumerator() | Sort-Object { $_.Value.Count } -Descending | ForEach-Object {
         Write-Information "$($_.Key): $($_.Value.Count) occurrences (Last: $($_.Value.LastSeen))" -InformationAction Continue
@@ -1201,27 +1211,27 @@ function Clear-BusBuddyLogs {
         [int]$DaysToKeep = 30,
         [switch]$WhatIf
     )
-    
+
     $logPath = "logs"
     $cutoffDate = (Get-Date).AddDays(-$DaysToKeep)
-    
-    $oldLogFiles = Get-ChildItem "$logPath\*.log" | 
+
+    $oldLogFiles = Get-ChildItem "$logPath\*.log" |
                    Where-Object { $_.LastWriteTime -lt $cutoffDate }
-    
+
     if (-not $oldLogFiles) {
         Write-Information "No log files older than $DaysToKeep days found" -InformationAction Continue
         return
     }
-    
+
     Write-Information "Log files to remove (older than $DaysToKeep days):" -InformationAction Continue
     foreach ($file in $oldLogFiles) {
         Write-Information "  $($file.Name) - $($file.LastWriteTime)" -InformationAction Continue
-        
+
         if (-not $WhatIf) {
             Remove-Item $file.FullName -Force
         }
     }
-    
+
     if ($WhatIf) {
         Write-Information "Use -WhatIf:$false to actually remove files" -InformationAction Continue
     } else {
@@ -1238,6 +1248,7 @@ Export-ModuleMember -Function Show-BusBuddyErrorLogs, Get-BusBuddyErrorSummary, 
 ## 📋 **Quick Reference**
 
 ### **Serilog Log Levels**
+
 - **Verbose**: Detailed trace information (debugging)
 - **Debug**: Debug information (development)
 - **Information**: General application flow (normal operation)
@@ -1246,6 +1257,7 @@ Export-ModuleMember -Function Show-BusBuddyErrorLogs, Get-BusBuddyErrorSummary, 
 - **Fatal**: Critical errors that may cause the application to terminate
 
 ### **Exception Handling Best Practices**
+
 1. **Log at the appropriate level**: Use Warning for expected errors, Error for unexpected
 2. **Include context**: Log relevant data with structured properties
 3. **Don't log and rethrow**: Either log and handle, or rethrow without logging
@@ -1253,6 +1265,7 @@ Export-ModuleMember -Function Show-BusBuddyErrorLogs, Get-BusBuddyErrorSummary, 
 5. **Async patterns**: Use proper async exception handling in ViewModels and Services
 
 ### **PowerShell Error Commands**
+
 ```powershell
 # View recent errors
 bb-error-logs -Hours 24

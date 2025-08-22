@@ -12,12 +12,12 @@
 graph TB
     subgraph "Entity Management"
         A[StudentService]
-        B[DriverService] 
+        B[DriverService]
         C[BusService]
         D[RouteService]
         E[VehicleService]
     end
-    
+
     subgraph "Business Logic"
         F[ActivityService]
         G[ScheduleService]
@@ -25,21 +25,21 @@ graph TB
         I[FuelService]
         J[FamilyService]
     end
-    
+
     subgraph "Infrastructure"
         K[DatabasePerformanceOptimizer]
         L[CachingService]
         M[DataIntegrityService]
         N[SeedDataService]
     end
-    
+
     subgraph "External Integrations"
         O[AddressValidationService]
         P[GeoDataService]
         Q[PdfReportService]
         R[UserContextService]
     end
-    
+
     style A fill:#e3f2fd
     style F fill:#f3e5f5
     style K fill:#e8f5e8
@@ -51,6 +51,7 @@ graph TB
 ## 🎓 **Student Management Services**
 
 ### **IStudentService Interface**
+
 ```csharp
 /// <summary>
 /// Core service for student entity management and operations
@@ -70,6 +71,7 @@ public interface IStudentService
 ```
 
 **Key Features:**
+
 - ✅ **CRUD Operations**: Complete Create, Read, Update, Delete functionality
 - ✅ **Route Integration**: Student-to-route assignment capabilities
 - ✅ **Data Validation**: Built-in validation for student data integrity
@@ -77,6 +79,7 @@ public interface IStudentService
 - ✅ **Async/Await**: Full asynchronous operation support
 
 **Usage Examples:**
+
 ```csharp
 // Get all students
 var studentsResult = await _studentService.GetAllStudentsAsync();
@@ -98,13 +101,16 @@ var newStudentResult = await _studentService.CreateStudentAsync(createRequest);
 ```
 
 ### **StudentService Implementation**
+
 **Location**: `BusBuddy.Core/Services/StudentService.cs`  
-**Dependencies**: 
+**Dependencies**:
+
 - `IDbContextFactory<AppDbContext>`
 - `ILogger<StudentService>`
 - `IValidator<Student>` (optional)
 
 **Key Methods:**
+
 - `GetAllStudentsAsync()` - Retrieves all active students
 - `GetStudentsByRouteIdAsync(int routeId)` - Students on specific route
 - `GetUnassignedStudentsAsync()` - Students without route assignment
@@ -115,6 +121,7 @@ var newStudentResult = await _studentService.CreateStudentAsync(createRequest);
 ## 🚌 **Transportation Management Services**
 
 ### **IRouteService Interface**
+
 ```csharp
 /// <summary>
 /// Advanced route management with assignment and optimization capabilities
@@ -127,13 +134,13 @@ public interface IRouteService
     Task<Result<Route>> CreateRouteAsync(CreateRouteRequest request);
     Task<Result<Route>> UpdateRouteAsync(int routeId, UpdateRouteRequest request);
     Task<Result<bool>> DeleteRouteAsync(int routeId);
-    
+
     // Advanced Route Assignment
     Task<Result<bool>> AssignStudentToRouteAsync(int studentId, int routeId);
     Task<Result<bool>> RemoveStudentFromRouteAsync(int studentId, int routeId);
     Task<Result<List<Student>>> GetUnassignedStudentsAsync();
     Task<Result<List<Route>>> GetRoutesWithCapacityAsync();
-    
+
     // Route Analysis & Optimization
     Task<Result<bool>> ValidateRouteCapacityAsync(int routeId);
     Task<Result<bool>> CanAssignStudentToRouteAsync(int studentId, int routeId);
@@ -143,12 +150,14 @@ public interface IRouteService
 ```
 
 **Advanced Features:**
+
 - 🎯 **Smart Assignment**: Intelligent student-to-route assignment with capacity validation
 - 📊 **Analytics**: Route utilization statistics and optimization suggestions
 - 🔍 **Validation**: Pre-assignment validation to prevent capacity overruns
 - ⚡ **Performance**: Optimized queries with proper EF Core patterns
 
 ### **IBusService Interface**
+
 ```csharp
 /// <summary>
 /// Fleet management service for bus operations and maintenance
@@ -167,6 +176,7 @@ public interface IBusService
 ```
 
 ### **IDriverService Interface**
+
 ```csharp
 /// <summary>
 /// Driver management with scheduling and availability tracking
@@ -189,6 +199,7 @@ public interface IDriverService
 ## 📅 **Scheduling & Activity Services**
 
 ### **IActivityService Interface**
+
 ```csharp
 /// <summary>
 /// Comprehensive activity management for extracurricular transportation
@@ -206,6 +217,7 @@ public interface IActivityService
 ```
 
 ### **IScheduleService Interface**
+
 ```csharp
 /// <summary>
 /// Route scheduling and timing optimization
@@ -222,6 +234,7 @@ public interface IScheduleService
 ```
 
 ### **ISportsSchedulingService Interface**
+
 ```csharp
 /// <summary>
 /// Specialized sports event transportation scheduling
@@ -240,6 +253,7 @@ public interface ISportsSchedulingService
 ## 🛠️ **Maintenance & Fleet Services**
 
 ### **IMaintenanceService Interface**
+
 ```csharp
 /// <summary>
 /// Vehicle maintenance tracking and scheduling
@@ -256,6 +270,7 @@ public interface IMaintenanceService
 ```
 
 ### **IFuelService Interface**
+
 ```csharp
 /// <summary>
 /// Fuel consumption tracking and cost analysis
@@ -275,6 +290,7 @@ public interface IFuelService
 ## 👨‍👩‍👧‍👦 **Family & Guardian Services**
 
 ### **IFamilyService Interface**
+
 ```csharp
 /// <summary>
 /// Family and guardian relationship management
@@ -292,6 +308,7 @@ public interface IFamilyService
 ```
 
 ### **IGuardianService Interface**
+
 ```csharp
 /// <summary>
 /// Guardian contact management and communication
@@ -313,6 +330,7 @@ public interface IGuardianService
 ## 🗺️ **Geographic & Address Services**
 
 ### **IGeoDataService Interface**
+
 ```csharp
 /// <summary>
 /// Geographic data processing and spatial analysis
@@ -328,6 +346,7 @@ public interface IGeoDataService
 ```
 
 ### **IAddressValidationService Interface**
+
 ```csharp
 /// <summary>
 /// Address validation and standardization
@@ -346,6 +365,7 @@ public interface IAddressValidationService
 ## 💾 **Data & Infrastructure Services**
 
 ### **ISeedDataService Interface**
+
 ```csharp
 /// <summary>
 /// Development and testing data seeding
@@ -363,6 +383,7 @@ public interface ISeedDataService
 ```
 
 ### **DatabasePerformanceOptimizer**
+
 ```csharp
 /// <summary>
 /// Database performance monitoring and optimization
@@ -377,6 +398,7 @@ public class DatabasePerformanceOptimizer
 ```
 
 ### **DataIntegrityService**
+
 ```csharp
 /// <summary>
 /// Data validation and integrity checking
@@ -395,6 +417,7 @@ public class DataIntegrityService
 ## 🔧 **Utility & Helper Services**
 
 ### **UserContextService**
+
 ```csharp
 /// <summary>
 /// User session and context management
@@ -409,6 +432,7 @@ public class UserContextService : IUserContextService
 ```
 
 ### **PdfReportService**
+
 ```csharp
 /// <summary>
 /// PDF report generation for various entities
@@ -427,6 +451,7 @@ public class PdfReportService
 ## 🏗️ **Service Registration & Dependency Injection**
 
 ### **Service Container Configuration**
+
 ```csharp
 // Located in: BusBuddy.Core/Services/ServiceContainer.cs
 public static class ServiceContainer
@@ -438,29 +463,30 @@ public static class ServiceContainer
         services.AddScoped<IDriverService, DriverService>();
         services.AddScoped<IBusService, BusService>();
         services.AddScoped<IRouteService, RouteService>();
-        
+
         // Business Logic Services
         services.AddScoped<IActivityService, ActivityService>();
         services.AddScoped<IScheduleService, ScheduleService>();
         services.AddScoped<IMaintenanceService, MaintenanceService>();
         services.AddScoped<IFuelService, FuelService>();
-        
+
         // Infrastructure Services
         services.AddScoped<DatabasePerformanceOptimizer>();
         services.AddScoped<DataIntegrityService>();
         services.AddScoped<ISeedDataService, SeedDataService>();
-        
+
         // External Integration Services
         services.AddScoped<IAddressValidationService, AddressValidationService>();
         services.AddScoped<IGeoDataService, GeoDataService>();
         services.AddScoped<PdfReportService>();
-        
+
         return services;
     }
 }
 ```
 
 ### **Usage in Startup Configuration**
+
 ```csharp
 // In Program.cs or Startup.cs
 services.RegisterCoreServices();
@@ -480,44 +506,46 @@ services.AddLogging(builder =>
 ### **Service Performance Best Practices**
 
 1. **Async/Await Patterns**
-   ```csharp
-   // ✅ Correct async implementation
-   public async Task<Result<List<Student>>> GetStudentsAsync()
-   {
-       var students = await _context.Students
-           .AsNoTracking()
-           .ToListAsync();
-       return Result<List<Student>>.Success(students);
-   }
-   ```
+
+    ```csharp
+    // ✅ Correct async implementation
+    public async Task<Result<List<Student>>> GetStudentsAsync()
+    {
+        var students = await _context.Students
+            .AsNoTracking()
+            .ToListAsync();
+        return Result<List<Student>>.Success(students);
+    }
+    ```
 
 2. **Efficient EF Core Queries**
-   ```csharp
-   // ✅ Optimized query with includes
-   var routes = await _context.Routes
-       .Include(r => r.Students)
-       .Include(r => r.Bus)
-       .Include(r => r.Driver)
-       .AsNoTracking()
-       .ToListAsync();
-   ```
+
+    ```csharp
+    // ✅ Optimized query with includes
+    var routes = await _context.Routes
+        .Include(r => r.Students)
+        .Include(r => r.Bus)
+        .Include(r => r.Driver)
+        .AsNoTracking()
+        .ToListAsync();
+    ```
 
 3. **Result Pattern Usage**
-   ```csharp
-   // ✅ Proper error handling with Result<T>
-   try
-   {
-       var entity = await _repository.GetAsync(id);
-       return entity != null 
-           ? Result<Entity>.Success(entity)
-           : Result<Entity>.Failure("Entity not found");
-   }
-   catch (Exception ex)
-   {
-       _logger.LogError(ex, "Error retrieving entity {Id}", id);
-       return Result<Entity>.Failure($"Database error: {ex.Message}");
-   }
-   ```
+    ```csharp
+    // ✅ Proper error handling with Result<T>
+    try
+    {
+        var entity = await _repository.GetAsync(id);
+        return entity != null
+            ? Result<Entity>.Success(entity)
+            : Result<Entity>.Failure("Entity not found");
+    }
+    catch (Exception ex)
+    {
+        _logger.LogError(ex, "Error retrieving entity {Id}", id);
+        return Result<Entity>.Failure($"Database error: {ex.Message}");
+    }
+    ```
 
 ### **Memory & Performance Considerations**
 
@@ -532,6 +560,7 @@ services.AddLogging(builder =>
 ## 🧪 **Testing Guidelines**
 
 ### **Service Testing Patterns**
+
 ```csharp
 [Test]
 public async Task GetStudentByIdAsync_ValidId_ReturnsStudent()
@@ -552,6 +581,7 @@ public async Task GetStudentByIdAsync_ValidId_ReturnsStudent()
 ```
 
 ### **Integration Testing Setup**
+
 ```csharp
 [TestFixture]
 public class StudentServiceIntegrationTests
@@ -566,7 +596,7 @@ public class StudentServiceIntegrationTests
         services.RegisterCoreServices();
         services.AddDbContext<AppDbContext>(options =>
             options.UseInMemoryDatabase("TestDb"));
-        
+
         _serviceProvider = services.BuildServiceProvider();
         _studentService = _serviceProvider.GetRequiredService<IStudentService>();
     }
@@ -587,10 +617,10 @@ public class StudentServiceIntegrationTests
 
 ## 🔄 **Version History**
 
-| Version | Date | Changes |
-|---------|------|---------|
-| 1.0 | Aug 21, 2025 | Initial comprehensive API reference |
-| 1.1 | Aug 21, 2025 | Added visual diagrams and performance guidelines |
+| Version | Date         | Changes                                          |
+| ------- | ------------ | ------------------------------------------------ |
+| 1.0     | Aug 21, 2025 | Initial comprehensive API reference              |
+| 1.1     | Aug 21, 2025 | Added visual diagrams and performance guidelines |
 
 **Maintained by**: BusBuddy Development Team  
 **Contact**: See CONTRIBUTING.md for contribution guidelines

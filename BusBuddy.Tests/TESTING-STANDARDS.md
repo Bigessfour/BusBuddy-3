@@ -7,6 +7,7 @@ This document establishes the unified testing standards for the BusBuddy project
 ## 🎯 **Testing Architecture**
 
 ### **Test Project Structure**
+
 ```
 BusBuddy.Tests/              # Unit & Integration Tests (NUnit + FluentAssertions)
 ├── Core/                    # Business logic tests
@@ -25,6 +26,7 @@ BusBuddy.UITests/           # UI Automation Tests (NUnit + FluentAssertions + Fl
 ## 🔧 **NUnit Test Framework Standards**
 
 ### **Test Class Structure**
+
 ```csharp
 using NUnit.Framework;
 using FluentAssertions;
@@ -68,6 +70,7 @@ public class ExampleViewModelTests
 ```
 
 ### **Test Attributes (NUnit)**
+
 - `[TestFixture]` - Test class marker
 - `[Test]` - Individual test method
 - `[SetUp]` - Runs before each test
@@ -79,6 +82,7 @@ public class ExampleViewModelTests
 ## 💎 **FluentAssertions Standards**
 
 ### **Assertion Patterns**
+
 ```csharp
 // Collections
 result.Should().NotBeEmpty("because data should be loaded");
@@ -109,7 +113,9 @@ await act.Should().ThrowAsync<InvalidOperationException>();
 ```
 
 ### **Readable Test Messages**
+
 Always include **because** clauses for clarity:
+
 ```csharp
 // ✅ Good - Clear intention
 result.Should().NotBeEmpty("because the dashboard should display driver data");
@@ -121,6 +127,7 @@ result.Should().NotBeEmpty();
 ## 🏗️ **Test Categories & Organization**
 
 ### **Test Categories**
+
 ```csharp
 [Test, Category("Unit")]
 [Test, Category("Integration")]
@@ -129,7 +136,9 @@ result.Should().NotBeEmpty();
 ```
 
 ### **Test Method Naming**
+
 Use **descriptive names** that explain the scenario:
+
 ```csharp
 [Test]
 public async Task LoadDrivers_WithValidDatabase_ShouldReturnDriverList()
@@ -144,6 +153,7 @@ public void Navigate_FromDashboardToDrivers_ShouldUpdateCurrentView()
 ## 🔄 **Test Data Management**
 
 ### **Test Builders Pattern**
+
 ```csharp
 public class DriverTestBuilder
 {
@@ -172,6 +182,7 @@ var driver = new DriverTestBuilder()
 ```
 
 ### **In-Memory Database Testing**
+
 ```csharp
 [SetUp]
 public void SetUp()
@@ -188,6 +199,7 @@ public void SetUp()
 ## 🎭 **Mocking with Moq**
 
 ### **Service Mocking Standards**
+
 ```csharp
 [SetUp]
 public void SetUp()
@@ -214,6 +226,7 @@ public async Task LoadDrivers_ShouldCallServiceOnce()
 ## 🚀 **Performance Testing**
 
 ### **Performance Assertions**
+
 ```csharp
 [Test, Category("Performance")]
 public async Task LoadLargeDataSet_ShouldCompleteWithinTimeLimit()
@@ -234,6 +247,7 @@ public async Task LoadLargeDataSet_ShouldCompleteWithinTimeLimit()
 ## 🔌 **Integration Testing**
 
 ### **Database Integration**
+
 ```csharp
 [TestFixture, Category("Integration")]
 public class DriverServiceIntegrationTests
@@ -254,6 +268,7 @@ public class DriverServiceIntegrationTests
 ## 📱 **UI Testing with FlaUI**
 
 ### **UI Test Structure**
+
 ```csharp
 [TestFixture, Category("UI")]
 public class DashboardUITests
@@ -285,6 +300,7 @@ public class DashboardUITests
 ## 🎯 **Testing Priorities**
 
 Focus on:
+
 1. **MVVM Pattern Validation** - ViewModels, Commands, Data Binding
 2. **Business Logic Testing** - Core services and domain logic
 3. **Data Access Testing** - Repository patterns and Entity Framework
@@ -293,6 +309,7 @@ Focus on:
 6. **Performance Testing** - Load times and responsiveness
 
 Coverage Goals:
+
 - **Unit Tests**: 80%+ coverage on business logic (target)
 - **Integration Tests**: All critical user workflows
 - **UI Tests**: Primary navigation and data entry flows
@@ -301,6 +318,7 @@ Coverage Goals:
 ## 🛠️ **Testing Utilities**
 
 ### **Common Test Helpers**
+
 ```csharp
 public static class TestHelpers
 {
@@ -326,6 +344,7 @@ public static class TestHelpers
 ## 📋 **Test Execution Standards**
 
 ### **Running Tests**
+
 ```bash
 # Run all tests
 dotnet test
@@ -339,6 +358,7 @@ dotnet test --collect:"XPlat Code Coverage"
 ```
 
 ### **Continuous Integration**
+
 - All tests must pass before merge
 - Coverage reports generated on each build
 - Performance regression detection
@@ -349,6 +369,7 @@ dotnet test --collect:"XPlat Code Coverage"
 ## 🔄 **Migration from MSTest**
 
 ### **Attribute Mapping**
+
 ```csharp
 // MSTest → NUnit
 [TestClass]      → [TestFixture]

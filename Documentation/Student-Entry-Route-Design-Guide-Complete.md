@@ -3,7 +3,7 @@
 **🎯 Status**: READY FOR USE - Fully integrated with Azure SQL for persistent data ✅  
 **📅 Updated**: August 08, 2025 07:45:00 MDT  
 **🚀 Health**: Production-ready with clean build (0 errors), Azure SQL operational, all functionality validated  
-**📊 Latest Enhancement**: Student management through WPF UI with Azure SQL integration  
+**📊 Latest Enhancement**: Student management through WPF UI with Azure SQL integration
 
 ---
 
@@ -12,8 +12,9 @@
 This guide walks you through entering students and designing routes in BusBuddy using the WPF UI. Data is persisted to Azure SQL Database (`busbuddy-server-sm2.database.windows.net`) via Entity Framework Core. The process leverages `StudentsView.xaml` for student management and route assignment functionality.
 
 **Key Benefits**:
+
 - 👨‍🎓 **Student Entry**: Add/edit students with route assignments using SfDataGrid UI
-- 🛣️ **Route Design**: Create/optimize routes with stops and assignments via WPF interface  
+- 🛣️ **Route Design**: Create/optimize routes with stops and assignments via WPF interface
 - 🔒 **Persistence**: Real-time saves to Azure SQL with Entity Framework Core
 - 🛠️ **Fetchability**: View code/docs at `https://github.com/Bigessfour/BusBuddy-3`
 
@@ -26,11 +27,13 @@ This guide walks you through entering students and designing routes in BusBuddy 
 Ensure your setup is ready based on the committed repo (`https://github.com/Bigessfour/BusBuddy-3`):
 
 ### **1. Environment Setup**
+
 - ✅ **.NET 9.0 SDK** (via `global.json`)
 - ✅ **Azure AD logged in** (`az login`) for database access
 - ✅ **VS Code** with extensions from `.vscode/extensions.json`
 
 ### **2. Build and Run Setup**
+
 ```bash
 # Clone and setup
 git clone https://github.com/Bigessfour/BusBuddy-3.git
@@ -44,6 +47,7 @@ dotnet run --project BusBuddy.WPF/BusBuddy.WPF.csproj
 ```
 
 ### **3. Database Verification**
+
 - ✅ **Azure SQL** (`busbuddy-server-sm2`) operational
 - ✅ **Database** (`BusBuddyDB`) with migrations applied
 - ✅ **Firewall rules** configured for your IP
@@ -55,6 +59,7 @@ dotnet run --project BusBuddy.WPF/BusBuddy.WPF.csproj
 ## 🏗️ **Complete Step-by-Step Workflow**
 
 ### **Step 1: Launch Application**
+
 Start the BusBuddy WPF application:
 
 ```bash
@@ -64,8 +69,10 @@ cd BusBuddy-3
 # Launch the application
 dotnet run --project BusBuddy.WPF/BusBuddy.WPF.csproj
 ```
+
 # Expected: Shows ready features and system status
-```
+
+````
 
 ### **Step 2: Explore Route Optimization (NEW!)**
 Start with the interactive route demonstration to understand the workflow:
@@ -97,7 +104,7 @@ Once the application launches:
 1. **Add Button**: Click "Add Student" (triggers `StudentsViewModel.AddStudentCommand`)
 2. **Student Form**: Fill required fields:
    - Student Name
-   - Home Address  
+   - Home Address
    - Grade (dropdown)
    - School (dropdown)
    - Parent/Guardian contact
@@ -129,7 +136,7 @@ Once the application launches:
    - Start/End Points
    - Estimated Time
    - Vehicle Assignment
-3. **Add Stops**: 
+3. **Add Stops**:
    - Input addresses using SfDataGrid
    - Geocoding via Google Earth integration
    - Drag-drop reordering for optimization
@@ -145,7 +152,7 @@ Once the application launches:
    - Time efficiency calculations
    - Student pickup/dropoff optimization
    - Driver schedule coordination
-3. **Results Preview**: 
+3. **Results Preview**:
    - Updated route timing
    - Efficiency metrics
    - Map visualization (via `GoogleEarthView.xaml`)
@@ -226,7 +233,7 @@ Once the application launches:
 
 ### **Manual Testing Checklist**
 - [ ] Student entry form works correctly
-- [ ] Route creation and optimization functional  
+- [ ] Route creation and optimization functional
 - [ ] Student-route assignment successful
 - [ ] Data persists to Azure SQL
 - [ ] UI updates reflect database changes
@@ -234,13 +241,15 @@ Once the application launches:
 - [ ] Performance acceptable for expected load
 
 ### **Expected Results**
-```
+````
+
 ✅ Application Build: Clean build with 0 errors
 ✅ Quality Check: Production-ready! All features validated!
 ✅ UI Testing: Student and route workflows functional  
 ✅ Data Persistence: Changes saved to Azure SQL
 ✅ Integration: Complete WPF application with database connectivity
-```
+
+````
 
 ---
 
@@ -298,9 +307,10 @@ Once the application launches:
 # Build and run the application
 dotnet build BusBuddy.sln
 dotnet run --project BusBuddy.WPF/BusBuddy.WPF.csproj
-```
+````
 
 **If Issues Arise**:
+
 - Check application logs for errors and exceptions
 - Verify Azure SQL connectivity via Azure portal
 - Review Entity Framework migration status

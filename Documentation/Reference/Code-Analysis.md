@@ -11,6 +11,7 @@
 ## 🔴 Critical Rules (Errors)
 
 ### Security & Exception Handling
+
 ```xml
 <!-- Reserved exception types - Critical safety -->
 <Rule Id="CA2201" Action="Error" />
@@ -23,6 +24,7 @@
 ## ⚠️ Important Rules (Warnings)
 
 ### Resource Management
+
 ```xml
 <!-- Dispose objects before losing scope -->
 <Rule Id="CA2000" Action="Warning" />
@@ -33,6 +35,7 @@
 ## 🔧 Deferred Rules (Info Level)
 
 ### Phase 2 Optimization Rules
+
 ```xml
 <!-- Exception handling best practices - Phase 2 -->
 <Rule Id="CA1031" Action="Info" />    <!-- General exception catching -->
@@ -58,6 +61,7 @@
 ## 🚫 Disabled Rules
 
 ### Null Parameter Validation
+
 ```xml
 <!-- Disabled during MVP phase for rapid development -->
 <Rule Id="CA1062" Action="None" />    <!-- Null parameter validation -->
@@ -68,10 +72,11 @@
 ## 💡 Copilot Usage Examples
 
 ### Error Prevention
+
 ```csharp
 // Copilot Prompt: "Implement error handling following BusBuddy ruleset"
 // CA2201 - Avoid reserved exceptions
-try 
+try
 {
     // Operation
 }
@@ -83,6 +88,7 @@ catch (SpecificException ex) // ✅ Good - specific exception
 ```
 
 ### Resource Management
+
 ```csharp
 // Copilot Prompt: "Create disposable database connection"
 // CA2000 - Proper disposal
@@ -91,12 +97,13 @@ using var connection = new SqlConnection(connectionString); // ✅ Good
 ```
 
 ### Logic Safety
+
 ```csharp
 // Copilot Prompt: "Fix property assignment logic error"
 // CA2245 - Property self-assignment
-public string Name 
-{ 
-    get => _name; 
+public string Name
+{
+    get => _name;
     set => _name = value; // ✅ Good
     // ❌ Avoid: set => Name = value; // Self-assignment error
 }
@@ -105,11 +112,13 @@ public string Name
 ## 🔄 Phase-Based Strategy
 
 ### Phase 1 (MVP) - Current State
+
 - **Focus**: Critical errors and warnings only
 - **Deferred**: Performance, globalization, style consistency
 - **Goal**: Rapid development with safety guardrails
 
 ### Phase 2 (Post-MVP) - Planned
+
 - **Enable**: All deferred Info rules as Warnings
 - **Add**: Additional performance and style rules
 - **Goal**: Production-ready code quality
@@ -117,6 +126,7 @@ public string Name
 ## 🛠️ Integration with Build Process
 
 ### Directory.Build.props Integration
+
 ```xml
 <!-- Applied solution-wide -->
 <CodeAnalysisRuleSet>$(MSBuildThisFileDirectory)BusBuddy-Practical.ruleset</CodeAnalysisRuleSet>
@@ -125,6 +135,7 @@ public string Name
 ```
 
 ### Suppression Strategy
+
 ```xml
 <!-- Low-impact warnings suppressed in build props -->
 <NoWarn>$(NoWarn);CA1305;CA1860;CA1848;CA1851;CA1304</NoWarn>
@@ -133,22 +144,26 @@ public string Name
 ## 🔍 Rule Categories
 
 ### Security Rules
+
 - **CA2201**: Reserved exception types
 - **CA2245**: Property self-assignment
 - **CA2000**: Resource disposal
 
 ### Performance Rules (Phase 2)
+
 - **CA1822**: Static member opportunities
 - **CA1861**: Constant array optimization
 - **CA1854**: TryGetValue patterns
 - **CA1868**: Unnecessary allocations
 
 ### Globalization Rules (Phase 2)
+
 - **CA1305**: IFormatProvider usage
 - **CA1310**: String comparison culture
 - **CA1311**: Culture-specific operations
 
 ### Modern C# Rules (Phase 2)
+
 - **CA1510**: ArgumentNullException.ThrowIfNull
 - **CA1848**: LoggerMessage delegates
 - **CA1851**: Multiple enumeration prevention
@@ -156,6 +171,7 @@ public string Name
 ## 🚀 Validation Commands
 
 ### Check Rule Compliance
+
 ```powershell
 # Analyze code against ruleset
 dotnet build --verbosity minimal
@@ -168,6 +184,7 @@ bb-health --check-rules
 ```
 
 ### Upgrade Rules for Phase 2
+
 ```powershell
 # Preview Phase 2 rule impact
 bb-upgrade-rules --preview
@@ -177,4 +194,5 @@ bb-upgrade-rules --apply
 ```
 
 ---
-*Practical code quality for rapid MVP development with future-ready standards* 🚀
+
+_Practical code quality for rapid MVP development with future-ready standards_ 🚀
