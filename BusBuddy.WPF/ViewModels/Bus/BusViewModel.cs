@@ -254,7 +254,7 @@ namespace BusBuddy.WPF.ViewModels.BusManagement
         {
             return new BusViewModel
             {
-                VehicleId = bus.VehicleId,
+                BusId = bus.BusId,
                 BusNumber = bus.BusNumber ?? string.Empty,
                 Year = bus.Year,
                 Make = bus.Make ?? string.Empty,
@@ -275,7 +275,7 @@ namespace BusBuddy.WPF.ViewModels.BusManagement
         {
             return new BusBuddy.Core.Models.Bus
             {
-                VehicleId = viewModel.VehicleId,
+                BusId = viewModel.BusId,
                 BusNumber = viewModel.BusNumber,
                 Year = viewModel.Year,
                 Make = viewModel.Make,

@@ -63,7 +63,7 @@ namespace BusBuddy.Core.Services
                                     .AsNoTracking() // Use AsNoTracking for better performance in read operations
                                     .Select(v => new Bus
                                     {
-                                        VehicleId = v.VehicleId,
+                                        BusId = v.BusId,
                                         BusNumber = v.BusNumber ?? string.Empty,
                                         Year = v.Year,
                                         Make = v.Make ?? string.Empty,
@@ -245,7 +245,7 @@ namespace BusBuddy.Core.Services
                                 .Include(v => v.Activities)
                                 .Include(v => v.FuelRecords)
                                 .Include(v => v.MaintenanceRecords)
-                                .FirstOrDefaultAsync(v => v.VehicleId == id);
+                                .FirstOrDefaultAsync(v => v.BusId == id);
                         }
                         finally
                         {
@@ -321,7 +321,7 @@ namespace BusBuddy.Core.Services
                 _cacheService.InvalidateAllBusCache();
 
                 Logger.Information("Successfully added bus: {BusNumber} with ID {BusId}",
-                    bus.BusNumber, bus.VehicleId);
+                    bus.BusNumber, bus.BusId);
 
                 return bus;
             }
@@ -330,18 +330,18 @@ namespace BusBuddy.Core.Services
         public async Task<bool> UpdateBusEntityAsync(Bus bus)
         {
             using (LogContext.PushProperty("OperationType", "UpdateBusEntity"))
-            using (LogContext.PushProperty("BusId", bus.VehicleId))
+            using (LogContext.PushProperty("BusId", bus.BusId))
             using (LogContext.PushProperty("BusNumber", bus.BusNumber))
             {
                 Logger.Information("Updating bus entity with ID: {BusId}, Number: {BusNumber}",
-                    bus.VehicleId, bus.BusNumber);
+                    bus.BusId, bus.BusNumber);
 
                 using var context = _contextFactory.CreateWriteDbContext();
                 context.Buses.Update(bus);
 
                 using (LogContext.PushProperty("OperationName", "UpdateBus"))
                 using (LogContext.PushProperty("DatabaseOperation", true))
-                using (LogContext.PushProperty("BusId", bus.VehicleId))
+                using (LogContext.PushProperty("BusId", bus.BusId))
                 {
                     var stopwatch = Stopwatch.StartNew();
                     Logger.Debug("Starting database operation: UpdateBus");
@@ -362,12 +362,12 @@ namespace BusBuddy.Core.Services
 
                         if (result > 0)
                         {
-                            Logger.Information("Successfully updated bus with ID: {BusId}", bus.VehicleId);
+                            Logger.Information("Successfully updated bus with ID: {BusId}", bus.BusId);
                             return true;
                         }
                         else
                         {
-                            Logger.Warning("No changes detected when updating bus with ID: {BusId}", bus.VehicleId);
+                            Logger.Warning("No changes detected when updating bus with ID: {BusId}", bus.BusId);
                             return false;
                         }
                     }
@@ -651,6 +651,27 @@ namespace BusBuddy.Core.Services
             }
         }
 
+        /// <summary>
+        /// Validates VIN format and uniqueness in the database (migrated from legacy VehicleService)
+        /// </summary>
+        public async Task<bool> ValidateVinAsync(string vin)
+        {
+            if (string.IsNullOrWhiteSpace(vin) || vin.Length != 17)
+            {
+                Logger.Warning("VIN validation failed: invalid length or empty");
+                return false;
+            }
+
+            using var context = _contextFactory.CreateDbContext();
+            var exists = await context.Buses.AnyAsync(v => v.VINNumber == vin);
+            if (exists)
+            {
+                Logger.Warning("VIN validation failed: duplicate VIN {VIN}", vin);
+                return false;
+            }
+            return true;
+        }
+
         #region IBusService Implementation
 
         [DebuggerStepThrough]
@@ -714,7 +735,7 @@ namespace BusBuddy.Core.Services
         {
             using (LogContext.PushProperty("QueryType", "UpdateBus"))
             {
-                Logger.Information("Updating bus with ID: {BusId}", bus.VehicleId);
+                Logger.Information("Updating bus with ID: {BusId}", bus.BusId);
 
                 try
                 {
@@ -722,7 +743,7 @@ namespace BusBuddy.Core.Services
                 }
                 catch (Exception ex)
                 {
-                    Logger.Error(ex, "Failed to update bus with ID: {BusId}", bus.VehicleId);
+                    Logger.Error(ex, "Failed to update bus with ID: {BusId}", bus.BusId);
                     throw;
                 }
             }
@@ -870,7 +891,7 @@ namespace BusBuddy.Core.Services
                                 .AsNoTracking()
                                 .Select(b => new BusInfo
                                 {
-                                    BusId = b.VehicleId,
+                                    BusId = b.BusId,
                                     BusNumber = b.BusNumber,
                                     Model = b.Make + " " + b.Model,
                                     Capacity = b.SeatingCapacity,
@@ -919,10 +940,10 @@ namespace BusBuddy.Core.Services
                     // Use projection to select only the fields we need
                     var bus = await context.Buses
                         .AsNoTracking()
-                        .Where(v => v.VehicleId == busId)
+                        .Where(v => v.BusId == busId)
                         .Select(b => new BusInfo
                         {
-                            BusId = b.VehicleId,
+                            BusId = b.BusId,
                             BusNumber = b.BusNumber,
                             Model = b.Make + " " + b.Model,
                             Capacity = b.SeatingCapacity,
@@ -973,11 +994,13 @@ namespace BusBuddy.Core.Services
                 "GetSchedulesByRouteAsync is deprecated. Use IScheduleService methods instead.");
         }
 
-        public async Task<int> GetAssignedStudentCountAsync(BusBuddyDbContext context, int vehicleId)
+        public async Task<int> GetAssignedStudentCountAsync(BusBuddyDbContext context, int busId)
         {
             return await context.Students.CountAsync(s => s.RouteAssignmentId != null &&
-                context.RouteAssignments.Any(ra => ra.RouteAssignmentId == s.RouteAssignmentId && ra.VehicleId == vehicleId));
+                context.RouteAssignments.Any(ra => ra.RouteAssignmentId == s.RouteAssignmentId && ra.VehicleId == busId));
         }
+
+    // (Removed duplicate legacy ValidateVinAsync implementation)
 
     }
 }

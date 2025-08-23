@@ -282,12 +282,12 @@ public class BusBuddyDbContext : DbContext
         // Configure global NULL handling for better error resilience
         ConfigureNullHandling(modelBuilder);
 
-        // Configure Bus (Vehicle) entity with enhanced audit and indexing
+        // Configure Bus entity (mapped to legacy Vehicles table)
         modelBuilder.Entity<Bus>(entity =>
         {
             entity.ToTable("Vehicles"); // Map Bus entity to existing Vehicles table
-            entity.HasKey(e => e.VehicleId);
-            // Remove the HasColumnName mapping since VehicleId should map to VehicleId column
+            entity.HasKey(e => e.BusId); // New CLR key
+            entity.Property(e => e.BusId).HasColumnName("VehicleId"); // Legacy column name
 
             // Properties with validation and constraints
             entity.Property(e => e.BusNumber).IsRequired().HasMaxLength(20);
@@ -968,7 +968,7 @@ public class BusBuddyDbContext : DbContext
         modelBuilder.Entity<Bus>().HasData(
             new Bus
             {
-                VehicleId = 1,
+                BusId = 1,
                 BusNumber = "001",
                 Year = 2020,
                 Make = "Blue Bird",
@@ -983,7 +983,7 @@ public class BusBuddyDbContext : DbContext
             },
             new Bus
             {
-                VehicleId = 2,
+                BusId = 2,
                 BusNumber = "002",
                 Year = 2019,
                 Make = "Thomas Built",

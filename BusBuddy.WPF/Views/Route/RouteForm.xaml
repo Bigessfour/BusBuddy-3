@@ -48,9 +48,30 @@
         </Border>
         <local:RouteStopsEditor Grid.Row="3" />
         <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,14,0,0">
-            <syncfusion:ButtonAdv Label="Create Route" Command="{Binding CreateRouteCommand}" Padding="14,8" Margin="0,0,8,0" />
-            <syncfusion:ButtonAdv Label="Save Changes" Command="{Binding SaveRouteCommand}" Padding="14,8" Margin="0,0,8,0" />
-            <syncfusion:ButtonAdv Label="Cancel" Command="{Binding CancelRouteBuildingCommand}" Padding="14,8" />
+            <syncfusion:ButtonAdv Label="Create Route" 
+                                  Command="{Binding CreateRouteCommand}" 
+                                  SizeMode="Normal"
+                                  IconHeight="16" IconWidth="16"
+                                  CornerRadius="4"
+                                  Background="{DynamicResource AccentBackgroundBrush}"
+                                  Foreground="{DynamicResource PrimaryTextBrush}"
+                                  Padding="14,8" Margin="0,0,8,0" />
+            <syncfusion:ButtonAdv Label="Save Changes" 
+                                  Command="{Binding SaveRouteCommand}" 
+                                  SizeMode="Normal"
+                                  IconHeight="16" IconWidth="16"
+                                  CornerRadius="4"
+                                  Background="{DynamicResource AccentBackgroundBrush}"
+                                  Foreground="{DynamicResource PrimaryTextBrush}"
+                                  Padding="14,8" Margin="0,0,8,0" />
+            <syncfusion:ButtonAdv Label="Cancel" 
+                                  Command="{Binding CancelRouteBuildingCommand}" 
+                                  SizeMode="Normal"
+                                  IconHeight="16" IconWidth="16"
+                                  CornerRadius="4"
+                                  Background="{DynamicResource SecondaryBackgroundBrush}"
+                                  Foreground="{DynamicResource PrimaryTextBrush}"
+                                  Padding="14,8" />
         </StackPanel>
     </Grid>
 </UserControl>

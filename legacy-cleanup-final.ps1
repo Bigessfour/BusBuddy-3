@@ -2,21 +2,21 @@
 # Generated: August 21, 2025
 # Purpose: Remove legacy files and update index files
 
-Write-Host "🧹 BusBuddy Legacy Cleanup - Final Phase" -ForegroundColor Cyan
-Write-Host "========================================" -ForegroundColor Cyan
+Write-Information "🧹 BusBuddy Legacy Cleanup - Final Phase" -InformationAction Continue
+Write-Information "========================================" -InformationAction Continue
 
 # Update FETCHABILITY-INDEX.json to remove dead references
 if (Test-Path "FETCHABILITY-INDEX.json") {
-    Write-Host "`n📝 Updating FETCHABILITY-INDEX.json..." -ForegroundColor Yellow
-    
+    Write-Information "`n📝 Updating FETCHABILITY-INDEX.json..." -InformationAction Continue
+
     try {
         $indexContent = Get-Content "FETCHABILITY-INDEX.json" -Raw | ConvertFrom-Json
         $originalCount = $indexContent.files.Count
-        
+
         # Remove entries for deleted files
         $deadFilePatterns = @(
             "RAW-LINKS-PINNED.txt",
-            "RAW-LINKS.txt", 
+            "RAW-LINKS.txt",
             "TestApp.cs",
             "TestConnection.cs",
             "TestStudentDbAccess.cs",
@@ -28,8 +28,8 @@ if (Test-Path "FETCHABILITY-INDEX.json") {
             "cleanup-documentation.ps1",
             "LegacyScripts/"
         )
-        
-        $indexContent.files = $indexContent.files | Where-Object { 
+
+        $indexContent.files = $indexContent.files | Where-Object {
             $file = $_
             $shouldKeep = $true
             foreach ($pattern in $deadFilePatterns) {
@@ -40,10 +40,10 @@ if (Test-Path "FETCHABILITY-INDEX.json") {
             }
             $shouldKeep
         }
-        
+
         $newCount = $indexContent.files.Count
         $removedCount = $originalCount - $newCount
-        
+
         # Update metadata
         $indexContent.metadata.last_updated = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
         $indexContent.metadata.total_files = $newCount
@@ -52,22 +52,22 @@ if (Test-Path "FETCHABILITY-INDEX.json") {
         } else {
             $indexContent.metadata | Add-Member -NotePropertyName "cleanup_notes" -NotePropertyValue "Legacy cleanup: removed $removedCount dead references"
         }
-        
+
         # Save updated index
         $indexContent | ConvertTo-Json -Depth 10 | Out-File "FETCHABILITY-INDEX.json" -Encoding UTF8
-        
-        Write-Host "  ✅ Updated FETCHABILITY-INDEX.json" -ForegroundColor Green
-        Write-Host "  📊 Removed $removedCount dead references" -ForegroundColor Cyan
-        Write-Host "  📊 Remaining files: $newCount" -ForegroundColor Cyan
-        
+
+        Write-Information "  ✅ Updated FETCHABILITY-INDEX.json" -InformationAction Continue
+        Write-Information "  📊 Removed $removedCount dead references" -InformationAction Continue
+        Write-Information "  📊 Remaining files: $newCount" -InformationAction Continue
+
     } catch {
-        Write-Host "  ❌ Failed to update FETCHABILITY-INDEX.json: $($_.Exception.Message)" -ForegroundColor Red
+        Write-Information "  ❌ Failed to update FETCHABILITY-INDEX.json: $($_.Exception.Message)" -InformationAction Continue
     }
 }
 
 # Generate cleanup summary
-Write-Host "`n📋 Legacy Cleanup Summary" -ForegroundColor Cyan
-Write-Host "=========================" -ForegroundColor Cyan
+Write-Information "`n📋 Legacy Cleanup Summary" -InformationAction Continue
+Write-Information "=========================" -InformationAction Continue
 
 $cleanupSummary = @"
 # BusBuddy Legacy Cleanup Report
@@ -105,6 +105,8 @@ Generated: $(Get-Date -Format "yyyy-MM-dd HH:mm:ss")
 
 $cleanupSummary | Out-File "LEGACY-CLEANUP-REPORT.md" -Encoding UTF8
 
-Write-Host "📄 Cleanup report saved to: LEGACY-CLEANUP-REPORT.md" -ForegroundColor Green
-Write-Host "`n✅ Legacy cleanup completed successfully!" -ForegroundColor Green
-Write-Host "🎯 Next: Consider reviewing experiments/ directory for future cleanup" -ForegroundColor Yellow
+Write-Information "📄 Cleanup report saved to: LEGACY-CLEANUP-REPORT.md" -InformationAction Continue
+Write-Information "`n✅ Legacy cleanup completed successfully!" -InformationAction Continue
+Write-Information "🎯 Next: Consider reviewing experiments/ directory for future cleanup" -InformationAction Continue
+
+Write-Information "Performing final legacy cleanup tasks" -InformationAction Continue

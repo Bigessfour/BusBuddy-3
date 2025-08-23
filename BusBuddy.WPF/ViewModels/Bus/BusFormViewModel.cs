@@ -31,7 +31,7 @@ namespace BusBuddy.WPF.ViewModels.Bus
         {
             _busService = busService;
             _bus = bus ?? new BusBuddy.Core.Models.Bus();
-            _isEditMode = bus?.VehicleId > 0;
+            _isEditMode = bus?.BusId > 0;
 
             SaveCommand = new RelayCommand(async () => await SaveBusAsync(), CanSave);
             CancelCommand = new RelayCommand(Cancel);
@@ -235,10 +235,10 @@ namespace BusBuddy.WPF.ViewModels.Bus
                     else
                     {
                         var added = await _busService.AddBusAsync(_bus);
-                        _bus.VehicleId = added.VehicleId;
+                        _bus.BusId = added.BusId;
                         _isEditMode = true;
                         OnPropertyChanged(nameof(Title));
-                        Logger.Information("Bus added with ID {BusId}", added.VehicleId);
+                        Logger.Information("Bus added with ID {BusId}", added.BusId);
                     }
                 }
                 else

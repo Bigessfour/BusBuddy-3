@@ -6,12 +6,18 @@
       "type": "process",
       "label": "dotnet build BusBuddy.sln",
       "command": "dotnet",
-      "args": ["build", "BusBuddy.sln"],
+      "args": [
+        "build",
+        "BusBuddy.sln",
+        "--configuration",
+        "${env:BUILD_CONFIGURATION}"
+      ],
       "options": {
         "env": {
           "BUSBUDDY_NO_WELCOME": "1",
           "BUSBUDDY_NO_XAI_WARN": "1",
-          "BUSBUDDY_SILENT": "1"
+          "BUSBUDDY_SILENT": "1",
+          "DOTNET_CLI_TELEMETRY_OPTOUT": "1"
         }
       },
       "problemMatcher": ["$msCompile"],
@@ -26,7 +32,8 @@
         "env": {
           "BUSBUDDY_NO_WELCOME": "1",
           "BUSBUDDY_NO_XAI_WARN": "1",
-          "BUSBUDDY_SILENT": "1"
+          "BUSBUDDY_SILENT": "1",
+          "DOTNET_CLI_TELEMETRY_OPTOUT": "1"
         }
       },
       "problemMatcher": ["$msCompile"],
@@ -49,7 +56,8 @@
         "env": {
           "BUSBUDDY_NO_WELCOME": "1",
           "BUSBUDDY_NO_XAI_WARN": "1",
-          "BUSBUDDY_SILENT": "1"
+          "BUSBUDDY_SILENT": "1",
+          "DOTNET_CLI_TELEMETRY_OPTOUT": "1"
         }
       },
       "problemMatcher": ["$msCompile"],
@@ -119,13 +127,25 @@
         "panel": "shared"
       }
     },
+    {
+      "label": "bb-deps-check",
+      "type": "shell",
+      "command": "pwsh",
+      "args": ["-Command", "bb-deps-check"],
+      "group": "build",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
 
     // === CODE QUALITY & TRUNK TASKS ===
     {
       "label": "Trunk Check All",
       "type": "shell",
       "command": "trunk",
-      "args": ["check", "--all"],
+      "args": ["check", "--all", "--fix"],
+      "dependsOn": ["Restore NuGet Packages"],
       "group": {
         "kind": "test",
         "isDefault": false
@@ -234,10 +254,13 @@
 
     // === AZURE & SQL TASKS ===
     {
-      "label": "Azure Login Check",
+      "label": "Azure PowerShell Login Check",
       "type": "shell",
       "command": "pwsh",
-      "args": ["-Command", "az account show || az login"],
+      "args": [
+        "-Command",
+        "if (Get-AzContext) { Write-Output '✅ Azure PowerShell authenticated' } else { Write-Output '❌ Run Connect-AzAccount to authenticate' }"
+      ],
       "group": "build",
       "presentation": {
         "echo": true,
@@ -267,16 +290,25 @@
       "type": "shell",
       "command": "pwsh",
       "args": [
-        "-Command",
-        "dotnet clean BusBuddy.sln; Remove-Item -Path './*/bin', './*/obj' -Recurse -Force -ErrorAction SilentlyContinue"
+        "-NoProfile",
+  "-Command",
+  "try { dotnet clean BusBuddy.sln --verbosity minimal; Write-Output 'Solution cleaned successfully' } catch { Write-Error 'Clean failed' }; try { Get-ChildItem -Path '.\\*\\bin', '.\\*\\obj' -Recurse -Directory -ErrorAction SilentlyContinue | Remove-Item -Recurse -Force; Write-Output 'Build artifacts removed' } catch { Write-Warning 'Some artifacts could not be removed' }"
       ],
       "group": "build",
+      "options": {
+        "env": {
+          "DOTNET_CLI_TELEMETRY_OPTOUT": "1",
+          "DOTNET_NOLOGO": "1"
+        }
+      },
       "presentation": {
         "echo": true,
         "reveal": "always",
         "focus": false,
-        "panel": "shared"
-      }
+        "panel": "shared",
+        "close": false
+      },
+      "problemMatcher": []
     },
     {
       "label": "Restore NuGet Packages",
@@ -284,12 +316,91 @@
       "command": "dotnet",
       "args": ["restore", "BusBuddy.sln", "--force", "--no-cache"],
       "group": "build",
+      "options": {
+        "env": {
+          "DOTNET_CLI_TELEMETRY_OPTOUT": "1",
+          "DOTNET_NOLOGO": "1"
+        }
+      },
       "presentation": {
         "echo": true,
         "reveal": "always",
         "focus": false,
-        "panel": "shared"
+        "panel": "shared",
+        "close": false
+      },
+      "problemMatcher": [],
+      "runOptions": {
+        "reevaluateOnRerun": true
       }
+    },
+
+    // === FAST TASK VARIANTS (NO PROFILE) ===
+    {
+      "label": "Fast Restore (No Profile)",
+      "type": "process",
+      "command": "dotnet",
+      "args": ["restore", "BusBuddy.sln", "--verbosity", "minimal"],
+      "group": "build",
+      "options": {
+        "env": {
+          "DOTNET_CLI_TELEMETRY_OPTOUT": "1",
+          "DOTNET_NOLOGO": "1"
+        }
+      },
+      "presentation": {
+        "echo": false,
+        "reveal": "silent",
+        "focus": false,
+        "panel": "shared"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Fast Build (No Profile)",
+      "type": "process",
+      "command": "dotnet",
+      "args": [
+        "build",
+        "BusBuddy.sln",
+        "--verbosity",
+        "minimal",
+        "--no-restore"
+      ],
+      "group": "build",
+      "options": {
+        "env": {
+          "DOTNET_CLI_TELEMETRY_OPTOUT": "1",
+          "DOTNET_NOLOGO": "1"
+        }
+      },
+      "presentation": {
+        "echo": false,
+        "reveal": "silent",
+        "focus": false,
+        "panel": "shared"
+      },
+      "problemMatcher": ["$msCompile"]
+    },
+    {
+      "label": "Fast Clean (No Profile)",
+      "type": "process",
+      "command": "dotnet",
+      "args": ["clean", "BusBuddy.sln", "--verbosity", "minimal"],
+      "group": "build",
+      "options": {
+        "env": {
+          "DOTNET_CLI_TELEMETRY_OPTOUT": "1",
+          "DOTNET_NOLOGO": "1"
+        }
+      },
+      "presentation": {
+        "echo": false,
+        "reveal": "silent",
+        "focus": false,
+        "panel": "shared"
+      },
+      "problemMatcher": []
     }
   ]
 }

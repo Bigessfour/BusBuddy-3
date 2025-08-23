@@ -8,28 +8,20 @@
              mc:Ignorable="d"
              d:DesignHeight="200" d:DesignWidth="400">
     <UserControl.Resources>
-        <Style x:Key="QuickActionButtonStyle" TargetType="Button">
+        <!-- Syncfusion ButtonAdv Style with FluentDark Theme Integration -->
+        <Style x:Key="QuickActionButtonStyle" TargetType="syncfusion:ButtonAdv">
             <Setter Property="Margin" Value="5"/>
             <Setter Property="Padding" Value="15,10"/>
             <Setter Property="FontSize" Value="14"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="Background" Value="#FF007ACC"/>
-            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Background" Value="{DynamicResource AccentBackgroundBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border Background="{TemplateBinding Background}"
-                                CornerRadius="4"
-                                BorderThickness="{TemplateBinding BorderThickness}"
-                                BorderBrush="{TemplateBinding BorderBrush}">
-                            <ContentPresenter HorizontalAlignment="Center"
-                                              VerticalAlignment="Center"/>
-                        </Border>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
+            <Setter Property="CornerRadius" Value="4"/>
+            <Setter Property="SizeMode" Value="Normal"/>
+            <Setter Property="IconHeight" Value="16"/>
+            <Setter Property="IconWidth" Value="16"/>
         </Style>
     </UserControl.Resources>
 
@@ -45,15 +37,19 @@
         <StackPanel Grid.Row="1" Orientation="Vertical" HorizontalAlignment="Center">
             <syncfusion:ButtonAdv Label="Add Vehicle"
                     Style="{StaticResource QuickActionButtonStyle}"
+                    SizeMode="Normal"
+                    SmallIcon="pack://application:,,,/Assets/Icons/vehicle-add.png"
                     Click="AddVehicle_Click"/>
             <syncfusion:ButtonAdv Label="Add Driver"
                     Style="{StaticResource QuickActionButtonStyle}"
+                    SizeMode="Normal"
+                    SmallIcon="pack://application:,,,/Assets/Icons/driver-add.png"
                     Click="AddDriver_Click"/>
             <syncfusion:ButtonAdv Label="Schedule Route"
                     Style="{StaticResource QuickActionButtonStyle}"
+                    SizeMode="Normal"
+                    SmallIcon="pack://application:,,,/Assets/Icons/route-schedule.png"
                     Click="ScheduleRoute_Click"/>
         </StackPanel>
     </Grid>
 </UserControl>
-
-

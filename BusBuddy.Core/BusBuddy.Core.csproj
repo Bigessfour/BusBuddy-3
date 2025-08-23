@@ -57,7 +57,7 @@
     <PackageReference Include="System.Net.Http.Json" Version="$(SystemNetHttpJsonVersion)" />
 
     <!-- Azure Authentication (Optional for Azure SQL Managed Identity) -->
-    <PackageReference Include="Azure.Identity" Version="1.14.2" />
+    <PackageReference Include="Azure.Identity" Version="$(AzureIdentityVersion)" />
 
     <!-- Serilog Extensions - Extensions.Logging only, rest in Directory.Build.props -->
     <PackageReference Include="Serilog.Extensions.Logging" Version="$(SerilogExtensionsLoggingVersion)" />

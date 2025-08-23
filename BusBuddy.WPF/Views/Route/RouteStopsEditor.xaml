@@ -25,18 +25,53 @@
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
         <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,6">
-            <syncfusion:ButtonAdv Label="➕ Add Stop" Command="{Binding AddStopCommand}" Padding="10,5" Margin="0,0,6,0"
+            <syncfusion:ButtonAdv Label="➕ Add Stop" 
+                                   Command="{Binding AddStopCommand}" 
+                                   SizeMode="Normal"
+                                   IconHeight="14" IconWidth="14"
+                                   CornerRadius="3"
+                                   Background="{DynamicResource AccentBackgroundBrush}"
+                                   Foreground="{DynamicResource PrimaryTextBrush}"
+                                   Padding="10,5" Margin="0,0,6,0"
                                    AutomationProperties.Name="Add Stop" ToolTip="Add a new stop" />
-            <syncfusion:ButtonAdv Label="🗑️ Remove" Command="{Binding RemoveStopCommand}" Padding="10,5" Margin="0,0,6,0"
+            <syncfusion:ButtonAdv Label="🗑️ Remove" 
+                                   Command="{Binding RemoveStopCommand}" 
+                                   SizeMode="Normal"
+                                   IconHeight="14" IconWidth="14"
+                                   CornerRadius="3"
+                                   Background="{DynamicResource ErrorTextBrush}"
+                                   Foreground="{DynamicResource PrimaryTextBrush}"
+                                   Padding="10,5" Margin="0,0,6,0"
                                    AutomationProperties.Name="Remove Stop" ToolTip="Remove selected stop" />
-            <syncfusion:ButtonAdv Label="⬆️ Up" Command="{Binding MoveStopUpCommand}" Padding="10,5" Margin="0,0,6,0"
+            <syncfusion:ButtonAdv Label="⬆️ Up" 
+                                   Command="{Binding MoveStopUpCommand}" 
+                                   SizeMode="Normal"
+                                   IconHeight="14" IconWidth="14"
+                                   CornerRadius="3"
+                                   Background="{DynamicResource SecondaryBackgroundBrush}"
+                                   Foreground="{DynamicResource PrimaryTextBrush}"
+                                   Padding="10,5" Margin="0,0,6,0"
                                    AutomationProperties.Name="Move Stop Up" ToolTip="Move selected stop up" />
-            <syncfusion:ButtonAdv Label="⬇️ Down" Command="{Binding MoveStopDownCommand}" Padding="10,5" Margin="0,0,12,0"
+            <syncfusion:ButtonAdv Label="⬇️ Down" 
+                                   Command="{Binding MoveStopDownCommand}" 
+                                   SizeMode="Normal"
+                                   IconHeight="14" IconWidth="14"
+                                   CornerRadius="3"
+                                   Background="{DynamicResource SecondaryBackgroundBrush}"
+                                   Foreground="{DynamicResource PrimaryTextBrush}"
+                                   Padding="10,5" Margin="0,0,12,0"
                                    AutomationProperties.Name="Move Stop Down" ToolTip="Move selected stop down" />
             <TextBlock Text="Start Time:" VerticalAlignment="Center" Margin="0,0,4,0" />
             <syncfusion:SfMaskedEdit Width="80" Text="{Binding StartTimeString, Mode=TwoWay}" Margin="0,0,10,0"
                                      AutomationProperties.Name="Route Start Time" />
-            <syncfusion:ButtonAdv Label="⏱️ Time Route" Command="{Binding TimeRouteCommand}" Padding="10,5"
+            <syncfusion:ButtonAdv Label="⏱️ Time Route" 
+                                   Command="{Binding TimeRouteCommand}" 
+                                   SizeMode="Normal"
+                                   IconHeight="14" IconWidth="14"
+                                   CornerRadius="3"
+                                   Background="{DynamicResource WarningTextBrush}"
+                                   Foreground="{DynamicResource PrimaryBackgroundBrush}"
+                                   Padding="10,5"
                                    AutomationProperties.Name="Time Route Stops" ToolTip="Recalculate arrival and departure times" />
         </StackPanel>
     <syncfusion:SfDataGrid Grid.Row="1"

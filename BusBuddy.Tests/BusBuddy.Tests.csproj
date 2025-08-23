@@ -33,9 +33,9 @@
   <ItemGroup>
     <!-- NUnit Testing Framework -->
   <PackageReference Include="Microsoft.NET.Test.Sdk" Version="$(TestSdkVersion)" />
-    <PackageReference Include="Moq.EntityFrameworkCore" Version="6.0.0.6" />
+    <PackageReference Include="Moq.EntityFrameworkCore" Version="$(MoqEntityFrameworkCoreVersion)" />
     <PackageReference Include="NUnit" Version="$(NUnitVersion)" />
-  <PackageReference Include="NUnit3TestAdapter" Version="5.0.0" />
+  <PackageReference Include="NUnit3TestAdapter" Version="$(NUnit3TestAdapterVersion)" />
 
     <!-- FluentAssertions for readable test assertions -->
     <PackageReference Include="FluentAssertions" Version="$(FluentAssertionsVersion)" />

@@ -425,8 +425,13 @@ namespace BusBuddy.Core.Services
 
         private static string Trim(string? value, int max)
         {
-            if (string.IsNullOrEmpty(value)) return "";
-            return value.Length <= max ? value : value.Substring(0, max - 1) + "…";
+            if (string.IsNullOrEmpty(value)) return string.Empty;
+            if (value.Length <= max) return value;
+            ReadOnlySpan<char> span = value.AsSpan(0, max - 1);
+            char[] buffer = new char[span.Length + 1];
+            span.CopyTo(buffer);
+            buffer[^1] = '…';
+            return new string(buffer);
         }
 
         #region Fallback Text Generation (Used when PDF generation fails)

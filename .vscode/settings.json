@@ -1,319 +1,63 @@
 {
-  "cSpell.words": [
-    "Annistyn",
-    "Anonymization",
-    "asmv",
-    "ASPNETCORE",
-    "Axton",
-    "BAANKCL",
-    "badv",
-    "bbtest",
-    "biges",
-    "Blakelynn",
-    "Britaney",
-    "Brookshire",
-    "buildtransitive",
-    "Buren",
-    "busbuddy",
-    "Calzada",
-    "centralus",
-    "Chromeless",
-    "clrstack",
-    "compli",
-    "contentfiles",
-    "costmanagement",
-    "Cphone",
-    "Daniela",
-    "Dedup",
-    "dedupe",
-    "devcontainers",
-    "Econtact",
-    "ecxr",
-    "endlocal",
-    "Entra",
-    "ERRORLEVEL",
-    "Fant",
-    "Fetchability",
-    "finalizer",
-    "fluentdark",
-    "fluentlight",
-    "FQID",
-    "geocoder",
-    "geocodes",
-    "geospatial",
-    "GETDATE",
-    "GETUTCDATE",
-    "globalconfig",
-    "Grasmick",
-    "HGBH",
-    "Hphone",
-    "hyperthread",
-    "hyperthreaded",
-    "Hyperthreading",
-    "IXAI",
-    "Jparent",
-    "JXMN",
-    "Krystie",
-    "LASTEXITCODE",
-    "Licence",
-    "Lindo",
-    "localdb",
-    "LTRIM",
-    "lyrs",
-    "Mauch",
-    "mckitrick",
-    "Mgmt",
-    "mscorlib",
-    "MVVM",
-    "NOCOUNT",
-    "NOLOGO",
-    "nonquery",
-    "nums",
-    "nvarchar",
-    "omnisharp",
-    "openstreetmap",
-    "Parallelizable",
-    "Parmely",
-    "Pbgra",
-    "Prereqs",
-    "projitems",
-    "Prowers",
-    "pscustomobject",
-    "psscriptanalyzer",
-    "pwsh",
-    "rawindex",
-    "realworld",
-    "resx",
-    "retime",
-    "retiming",
-    "rname",
-    "RTRIM",
-    "runsettings",
-    "sarif",
-    "securitypredicate",
-    "SEEDLIC",
-    "SEEDVIN",
-    "Segoe",
-    "semgrep",
-    "Serilog",
-    "setlocal",
-    "Shapefile",
-    "shapefiles",
-    "Sqlcmd",
-    "SQLEXPRESS",
-    "Starlink",
-    "Sutphin",
-    "Swann",
-    "sympath",
-    "syncfusionnavigation",
-    "syncfusionshared",
-    "syncfusionskin",
-    "syncfusiontools",
-    "TCODE",
-    "testhost",
-    "Tixier",
-    "vsct",
-    "vsixmanifest",
-    "WCAG",
-    "Weiton",
-    "WHATIF",
-    "winget",
-    "Wintellect",
-    "xlsz"
-  ],
-  "terminal.integrated.env.windows": {
-    "PSModulePath": "${workspaceFolder}\\PowerShell\\Modules;${env:PSModulePath};${env:USERPROFILE}\\Documents\\PowerShell\\Modules",
-    "BUSBUDDY_WORKSPACE": "${workspaceFolder}",
-    "DOTNET_CLI_TELEMETRY_OPTOUT": "1"
+  "editor.codeActionsOnSave": {
+    "source.fixAll": "explicit"
   },
-  // === TRUNK CODE QUALITY INTEGRATION ===
-  "trunk.enableLinting": true,
-  "trunk.enableFormatting": true,
-  "trunk.formatOnSave": true,
-  "trunk.gitIntegration": true,
-  "trunk.showStatusInExplorer": true,
-  "trunk.autoFormatOnPaste": true,
-  "trunk.enableActions": true,
-  "trunk.inlineDecorators": true,
-  "trunk.inlineDecoratorsForAllExtensions": true,
-
-  // === EDITOR FORMATTING WITH TRUNK ===
-  "editor.formatOnSave": true,
-  "editor.defaultFormatter": "trunk.io",
-  "[powershell]": {
-    "editor.defaultFormatter": "trunk.io"
-  },
-  "[csharp]": {
-    "editor.defaultFormatter": "trunk.io"
-  },
-
-  // === C# AND .NET DEVELOPMENT ===
-  "csharp.suppressDotnetRestoreNotification": true,
-  "dotnetAcquisitionExtension.existingDotnetPath": ["${env:DOTNET_VERSION}"], // Ties to profile's DOTNET_VERSION=9.0.303
-  "omnisharp.enableRoslynAnalyzers": true, // Integrates Roslynator for WPF C# refactoring
-  "omnisharp.enableEditorConfigSupport": true, // Use .editorconfig for style
-  "dotnet.completion.showCompletionItemsFromUnimportedNamespaces": true,
-  "dotnet.inlayHints.enableInlayHintsForParameters": true,
-  "dotnet.inlayHints.enableInlayHintsForLiteralParameters": true,
-  "dotnet.inlayHints.enableInlayHintsForIndexerParameters": true,
-  "dotnet.inlayHints.enableInlayHintsForObjectCreationParameters": true,
-  "dotnet.inlayHints.enableInlayHintsForOtherParameters": true,
-  "dotnet.inlayHints.suppressInlayHintsForParametersThatDifferOnlyBySuffix": true,
-  "dotnet.inlayHints.suppressInlayHintsForParametersThatMatchMethodIntent": true,
-  "dotnet.inlayHints.suppressInlayHintsForParametersThatMatchArgumentName": true,
-
-  // === ROSLYNATOR C# QUALITY ===
-  "roslynator.enableAnalyzersSupport": true,
-  "roslynator.enableRefactoringsSupport": true,
-  "roslynator.enableCodeFixesSupport": true,
-  "roslynator.suppressUnityScriptMethods": false,
-
-  // === XAML DEVELOPMENT ===
-  "[xaml]": {
-    "editor.formatOnSave": true,
-    "editor.defaultFormatter": "trunk.io" // Use Trunk which includes XAML formatting
-  },
-  "xml.format.enabled": true, // For redhat.vscode-xml
-  "xaml.completion.snippets": true,
-  "xaml.format.enable": true,
-  "xaml.format.keepFirstAttributeOnSameLine": false,
-  "xaml.format.maxAttributesPerLine": 1,
-  "xaml.format.putEndingBracketOnNewLine": true,
   "files.autoSave": "afterDelay",
+  "terminal.integrated.defaultProfile.windows": "PowerShell",
+  "editor.formatOnSave": true,
+  "grok.repository": "https://github.com/Bigessfour/BusBuddy-3",
+  "grok.features": {
+    "azureDatabase": true,
+    "cicdIntegration": true,
+    "codeReview": true,
+    "repositorySync": true,
+    "performanceMonitoring": true
+  },
   "files.autoSaveDelay": 1000,
-  "files.hotExit": "onExitAndWindowClose",
-  "workbench.settings.enableNaturalLanguageSearch": false,
-  "extensions.autoUpdate": false,
-  "files.exclude": {
-    "**/*.bak": true,
-    "**/*.(1).*": true,
-    "**/*.(2).*": true,
-    "**/*.backup": true,
-    "**/*.tmp": true,
-    "**/*.temp": true
-  },
-  "yaml.format.enable": true,
-  "yaml.format.singleQuote": false,
-  "yaml.format.bracketSpacing": true,
-  "yaml.validate": true,
-  "yaml.schemaStore.enable": true,
-  "yaml.schemas": {
-    "https://json.schemastore.org/github-workflow.json": ".github/workflows/*.yml"
-  },
-  // === POWERSHELL DEVELOPMENT EXCELLENCE ===
+  "grok.responseMode": "Adaptive",
+  "grok.model": "grok-4-0709",
+  "grok.teamId": "60ab763d-9db8-412f-bd0b-83b2edf06831",
   "powershell.powerShellDefaultVersion": "PowerShell (x64)",
-  "powershell.enableProfileLoading": true, // Ensures profile loads in integrated console
-  "powershell.integratedConsole.suppressStartupBanner": true, // Clean for persistence
-  "powershell.codeFormatting.preset": "OTBS",
-  "powershell.codeFormatting.openBraceOnSameLine": true,
-  "powershell.codeFormatting.newLineAfterOpenBrace": true,
-  "powershell.codeFormatting.newLineAfterCloseBrace": true,
-  "powershell.codeFormatting.whitespaceBeforeOpenBrace": true,
-  "powershell.codeFormatting.whitespaceBeforeOpenParen": true,
-  "powershell.codeFormatting.whitespaceAroundOperator": true,
-  "powershell.codeFormatting.whitespaceAfterSeparator": true,
-  "powershell.codeFormatting.whitespaceBetweenParameters": false,
-  "powershell.codeFormatting.ignoreOneLineBlock": true,
+  
+  // Enhanced C# and .NET settings
+  "dotnet.completion.showCompletionItemsFromUnimportedNamespaces": true,
+  "csharp.semanticHighlighting.enabled": true,
+  "csharp.inlayHints.enableInlayHintsForTypes": true,
+  "csharp.inlayHints.enableInlayHintsForParameters": true,
+  
+  // PowerShell integration
+  "powershell.integratedConsole.showOnStartup": false,
   "powershell.scriptAnalysis.enable": true,
-  "powershell.scriptAnalysis.settingsPath": "./PSScriptAnalyzerSettings.psd1",
-
-  // === SQL SERVER & AZURE SQL INTEGRATION ===
-  "mssql.connections": [
-    {
-      "server": "(localdb)\\MSSQLLocalDB",
-      "database": "BusBuddy",
-      "authenticationType": "Integrated",
-      "profileName": "BusBuddy LocalDB",
-      "password": ""
-    },
-    {
-      "server": "busbuddy-server-sm2.database.windows.net",
-      "database": "BusBuddyDB",
-      "authenticationType": "AzureMFA" // Aligns with profile's Azure auth
-    }
-  ],
-  "mssql.enableObjectExplorer": true, // For WPF data previews
-  "mssql.format.alignColumnDefinitionsInColumns": true,
-  "mssql.format.datatypeCasing": "uppercase",
-  "mssql.format.keywordCasing": "uppercase",
-  "mssql.format.placeCommasBeforeNextStatement": false,
-  "mssql.format.placeSelectStatementReferencesOnNewLine": true,
-
-  // === AZURE TOOLS INTEGRATION ===
-  "azureResourceGroups.enableOutputTimestamps": true,
-  "azureResourceGroups.showHiddenTypes": false,
-  "azureFunctions.showCoreToolsWarning": false,
-  "azureFunctions.requestTimeout": 120,
-  "azure.resourceFilter": ["busbuddy-server-sm2"], // Filter to your Azure SQL server
-  "azure.showSignedInEmail": true,
-  // === XML AND CONFIGURATION FILES ===
-  "prettyxml.settings.enableLogs": true,
-  "prettyxml.settings.formatOnSave": true,
-
-  // === VS CODE UI AND BEHAVIOR ===
-  "window.density.editorTabHeight": "compact",
-
-  // === TERMINAL CONFIGURATION (STABLE POWERSHELL 7.5.2) ===
-  "terminal.integrated.enablePersistentSessions": true,
-  "terminal.integrated.defaultProfile.windows": "BusBuddy PowerShell 7.5.2",
-  "terminal.integrated.profiles.windows": {
-    "BusBuddy PowerShell 7.5.2": {
-      "path": "pwsh.exe",
-      "args": [
-        "-NoExit", // Remove -NoProfile to allow global + BusBuddy sourcing
-        "-Command",
-        "& '${workspaceFolder}\\PowerShell\\Profiles\\Microsoft.PowerShell_profile_optimized.ps1'" // Use optimized profile
-      ],
-      "icon": "terminal-powershell"
-    }
-  },
-  "terminal.integrated.persistentSessionReviveProcess": "onExitAndWindowClose", // Full revive
-  "terminal.integrated.persistentSessionScrollback": 1000, // Restore more history
-  "terminal.integrated.inheritEnv": true, // Inherit env to avoid profile conflicts
-  "terminal.integrated.hideOnStartup": "whenEmpty", // Hide if no sessions restored
-  "terminal.integrated.showExitAlert": false,
-  "terminal.integrated.enableImages": true,
-  "terminal.integrated.gpuAcceleration": "on",
-  "terminal.integrated.confirmOnExit": "hasChildProcesses",
-
-  // === TESTING INTEGRATION ===
-  "dotnetCoreExplorer.showProjectFileInExplorer": true,
-  "dotnetCoreExplorer.enableOutputLogs": true,
-
-  // === TASK EXPLORER INTEGRATION ===
-  "taskExplorer.enableExplorerView": true,
-  "taskExplorer.enableSideBar": true,
-  "taskExplorer.groupMaxLevelsDeteced": 2,
-  "taskExplorer.showLastTasks": true,
-
-  // === CODE RUNNER INTEGRATION ===
-  "code-runner.executorMap": {
-    "powershell": "pwsh -NoProfile -Command '& ${file}'" // Run PS snippets with profile sourced
-  },
-  "code-runner.saveFileBeforeRun": true,
-
-  // === PRODUCTIVITY & QUALITY ===
-  "better-comments.tags": [
-    { "tag": "!", "color": "#FF2D00" }, // For critical notes in PS/C#
-    { "tag": "bb", "color": "#3498DB" } // BusBuddy-specific comments
-  ],
-  "cSpell.enabled": true, // Aligns with streetsidesoftware.code-spell-checker
-
-  // === GIT & COLLABORATION ===
-  "gitlens.codeLens.enabled": true,
-  "gitlens.currentLine.enabled": true, // Track changes in WPF code
-
-  // === GITHUB COPILOT INTEGRATION ===
+  "powershell.codeFormatting.autoCorrectAliases": true,
+  
+  // Azure and database settings
+  "mssql.connections": [],
+  "azure.tenant": "",
+  "azure.cloud": "AzureCloud",
+  
+  // AI assistance settings
   "github.copilot.enable": {
     "*": true,
     "yaml": true,
     "plaintext": true,
     "markdown": true,
     "powershell": true,
-    "xml": true,
-    "xaml": true,
-    "csharp": true,
-    "sql": true
+    "csharp": true
   },
-  "github.copilot.editor.enableAutoCompletions": true
+  
+  // Task Explorer integration
+  "taskExplorer.enableSideBar": true,
+  "taskExplorer.groupWithSeparator": true,
+  
+  // Git and repository settings
+  "git.autofetch": true,
+  "git.enableCommitSigning": false,
+  "git.confirmSync": false,
+  
+  // Editor enhancements
+  "editor.minimap.enabled": true,
+  "editor.bracketPairColorization.enabled": true,
+  "editor.guides.bracketPairs": true,
+  "editor.inlayHints.enabled": "on",
+  "editor.suggest.insertMode": "replace"
 }

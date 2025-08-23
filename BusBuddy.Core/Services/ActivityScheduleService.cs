@@ -394,7 +394,7 @@ namespace BusBuddy.Core.Services
                     .ToListAsync();
 
                 // Filter out busy buses
-                return allBuses.Where(b => !busyBusIds.Contains(b.VehicleId)).ToList();
+                return allBuses.Where(b => !busyBusIds.Contains(b.BusId)).ToList();
             }
             catch (Exception ex)
             {
@@ -615,8 +615,8 @@ namespace BusBuddy.Core.Services
                     .ToListAsync();
 
                 var busNames = await context.Buses
-                    .Where(v => vehicleStats.Select(s => s.VehicleId).Contains(v.VehicleId))
-                    .ToDictionaryAsync(v => v.VehicleId, v => $"{v.Make} {v.Model} ({v.BusNumber})");
+                    .Where(v => vehicleStats.Select(s => s.VehicleId).Contains(v.BusId))
+                    .ToDictionaryAsync(v => v.BusId, v => $"{v.Make} {v.Model} ({v.BusNumber})");
 
                 return vehicleStats.ToDictionary(
                     s => busNames.TryGetValue(s.VehicleId, out var name) ? name : $"Bus {s.VehicleId}",
@@ -829,8 +829,8 @@ namespace BusBuddy.Core.Services
                     .ToListAsync();
 
                 var busDetails = await context.Buses
-                    .Where(v => busUseFrequency.Select(b => b.VehicleId).Contains(v.VehicleId))
-                    .ToDictionaryAsync(v => v.VehicleId, v => $"{v.Make} {v.Model} ({v.BusNumber})");
+                    .Where(v => busUseFrequency.Select(b => b.VehicleId).Contains(v.BusId))
+                    .ToDictionaryAsync(v => v.BusId, v => $"{v.Make} {v.Model} ({v.BusNumber})");
 
                 var topBuses = busUseFrequency
                     .Select(b => new

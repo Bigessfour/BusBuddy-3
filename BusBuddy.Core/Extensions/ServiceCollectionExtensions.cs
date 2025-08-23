@@ -102,6 +102,7 @@ namespace BusBuddy.Core.Extensions
             services.AddScoped<IMaintenanceService, MaintenanceService>();
             services.AddScoped<IScheduleService, ScheduleService>();
             services.AddScoped<IStudentScheduleService, StudentScheduleService>();
+            services.AddScoped<IFleetMonitoringService, FleetMonitoringService>();
             // REMOVED: ITicketService - deprecated module
 
             // Register Address Validation Service

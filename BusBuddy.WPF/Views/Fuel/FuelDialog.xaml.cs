@@ -63,7 +63,7 @@ namespace BusBuddy.WPF.Views.Fuel
                 _selectedBus = value;
                 if (_selectedBus != null)
                 {
-                    Fuel.VehicleFueledId = _selectedBus.VehicleId;
+                    Fuel.VehicleFueledId = _selectedBus.BusId;
                 }
                 OnPropertyChanged();
                 ValidateForm();
@@ -148,7 +148,7 @@ namespace BusBuddy.WPF.Views.Fuel
                 }
 
                 // Select the bus that matches the fuel record
-                _selectedBus = AvailableBuses.FirstOrDefault(b => b.VehicleId == Fuel.VehicleFueledId);
+                _selectedBus = AvailableBuses.FirstOrDefault(b => b.BusId == Fuel.VehicleFueledId);
                 OnPropertyChanged(nameof(SelectedBus));
 
                 using (LogContext.PushProperty("ViewType", "FuelDialog"))

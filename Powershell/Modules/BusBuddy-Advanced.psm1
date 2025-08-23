@@ -1,4 +1,4 @@
-#Requires -Version 7.5
+﻿#Requires -Version 7.5
 
 # BusBuddy Advanced PowerShell Module
 # Purpose: State-of-the-art PowerShell 7.5.2 functions with hyperthreading support
@@ -17,12 +17,89 @@ $script:PerformanceHistory = @()
 
 # Export machine configuration variables
 $global:BusBuddyPhysicalCores = $env:BUSBUDDY_PHYSICAL_CORES
-$global:BusBuddyLogicalCores = $env:BUSBUDDY_LOGICAL_CORES  
+$global:BusBuddyLogicalCores = $env:BUSBUDDY_LOGICAL_CORES
 $global:BusBuddyMemoryGB = $env:BUSBUDDY_MEMORY_GB
 $global:BusBuddyHyperthreadRatio = $env:BUSBUDDY_HYPERTHREAD_RATIO
 $global:BusBuddyOptimalJobs = $env:BUSBUDDY_MAX_PARALLEL_JOBS
 
+# Helper function to avoid CmdletBinding + Parallel warning
+function Invoke-ParallelCpuTest {
+    param(
+        [array]$TestData,
+        [int]$ThreadCount
+    )
+
+    # Use ThreadJob instead of ForEach-Object -Parallel to avoid parameter warnings
+    $jobs = @()
+    $chunkSize = [Math]::Ceiling($TestData.Count / $ThreadCount)
+
+    for ($i = 0; $i -lt $ThreadCount; $i++) {
+        $startIndex = $i * $chunkSize
+        $endIndex = [Math]::Min($startIndex + $chunkSize - 1, $TestData.Count - 1)
+
+        if ($startIndex -le $endIndex) {
+            $chunk = $TestData[$startIndex..$endIndex]
+            $jobs += Start-ThreadJob -ScriptBlock {
+                param($data)
+                foreach ($item in $data) {
+                    $result = 0
+                    for ($j = 0; $j -lt 10000; $j++) {
+                        $result += [Math]::Sqrt($item)
+                    }
+                }
+            } -ArgumentList $chunk
+        }
+    }
+
+    # Wait for all jobs to complete
+    $jobs | Wait-Job | Remove-Job
+}
+
 # Advanced hyperthreading test function
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER TestDuration
+${3:Parameter description}
+
+.PARAMETER WorkloadSize
+${4:Parameter description}
+
+.PARAMETER DetailedOutput
+${5:Parameter description}
+
+.EXAMPLE
+${6:An example}
+
+.NOTES
+${7:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER TestDuration
+${3:Parameter description}
+
+.PARAMETER WorkloadSize
+${4:Parameter description}
+
+.PARAMETER DetailedOutput
+${5:Parameter description}
+
+.EXAMPLE
+${6:An example}
+
+.NOTES
+${7:General notes}
+#>
 function Test-BusBuddyHyperthreading {
     [CmdletBinding()]
     param(
@@ -30,33 +107,27 @@ function Test-BusBuddyHyperthreading {
         [int]$WorkloadSize = 1000,
         [switch]$DetailedOutput
     )
-    
+
     Write-Information "🧪 Testing hyperthreading performance..." -InformationAction Continue
-    
+
     # Create test workload
     $TestData = 1..$WorkloadSize
     $Results = @{}
-    
+
     # Test with different thread counts
     $ThreadCounts = @(1, 2, $global:BusBuddyPhysicalCores, $global:BusBuddyLogicalCores)
-    
+
     foreach ($ThreadCount in $ThreadCounts) {
         Write-Progress -Activity "Hyperthreading Test" -Status "Testing with $ThreadCount threads" -PercentComplete (($ThreadCounts.IndexOf($ThreadCount) / $ThreadCounts.Count) * 100)
-        
+
         $StartTime = Get-Date
-        
-        $TestData | ForEach-Object -Parallel {
-            # CPU-intensive work simulation
-            $result = 0
-            for ($i = 0; $i -lt 10000; $i++) {
-                $result += [Math]::Sqrt($_)
-            }
-            return $result
-        } -ThrottleLimit $ThreadCount | Out-Null
-        
+
+        # Use helper function to avoid CmdletBinding + Parallel warning
+        Invoke-ParallelCpuTest -TestData $TestData -ThreadCount $ThreadCount | Out-Null
+
         $EndTime = Get-Date
         $Duration = ($EndTime - $StartTime).TotalSeconds
-        
+
         $Results[$ThreadCount] = [PSCustomObject]@{
             ThreadCount = $ThreadCount
             Duration = $Duration
@@ -64,13 +135,13 @@ function Test-BusBuddyHyperthreading {
             Efficiency = if ($ThreadCount -eq 1) { 100 } else { [math]::Round((($WorkloadSize / $Duration) / ($Results[1].Throughput)) * 100 / $ThreadCount, 2) }
         }
     }
-    
+
     Write-Progress -Activity "Hyperthreading Test" -Completed
-    
+
     # Analyze results
     $BestThroughput = ($Results.Values | Sort-Object Throughput -Descending | Select-Object -First 1)
     $HyperthreadingBenefit = [math]::Round((($Results[$global:BusBuddyLogicalCores].Throughput / $Results[$global:BusBuddyPhysicalCores].Throughput) - 1) * 100, 2)
-    
+
     $Summary = [PSCustomObject]@{
         TestDate = Get-Date
         WorkloadSize = $WorkloadSize
@@ -81,23 +152,67 @@ function Test-BusBuddyHyperthreading {
         OptimalThroughput = $BestThroughput.Throughput
         Results = if ($DetailedOutput) { $Results.Values } else { $null }
     }
-    
+
     return $Summary
 }
 
 # Optimize parallelism based on workload characteristics
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER WorkloadType
+${3:Parameter description}
+
+.PARAMETER DataSize
+${4:Parameter description}
+
+.PARAMETER SetGlobalDefaults
+${5:Parameter description}
+
+.EXAMPLE
+${6:An example}
+
+.NOTES
+${7:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER WorkloadType
+${3:Parameter description}
+
+.PARAMETER DataSize
+${4:Parameter description}
+
+.PARAMETER SetGlobalDefaults
+${5:Parameter description}
+
+.EXAMPLE
+${6:An example}
+
+.NOTES
+${7:General notes}
+#>
 function Optimize-BusBuddyParallelism {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)]
         [ValidateSet('CPU-Intensive', 'IO-Intensive', 'Memory-Intensive', 'Mixed')]
         [string]$WorkloadType,
-        
+
         [int]$DataSize = 1000,
-        
+
         [switch]$SetGlobalDefaults
     )
-    
+
     # Workload-specific optimization
     $OptimalSettings = switch ($WorkloadType) {
         'CPU-Intensive' {
@@ -129,14 +244,14 @@ function Optimize-BusBuddyParallelism {
             }
         }
     }
-    
+
     if ($SetGlobalDefaults) {
         $env:BUSBUDDY_OPTIMAL_THREADS = $OptimalSettings.ThreadCount
         $env:BUSBUDDY_OPTIMAL_BATCH_SIZE = $OptimalSettings.BatchSize
         $env:BUSBUDDY_MEMORY_LIMIT_GB = $OptimalSettings.MemoryLimit
         Write-Information "✅ Global defaults updated for $WorkloadType workload" -InformationAction Continue
     }
-    
+
     return [PSCustomObject]@{
         WorkloadType = $WorkloadType
         DataSize = $DataSize
@@ -148,16 +263,54 @@ function Optimize-BusBuddyParallelism {
 }
 
 # Performance profile management
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER Profile
+${3:Parameter description}
+
+.PARAMETER Force
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER Profile
+${3:Parameter description}
+
+.PARAMETER Force
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
 function Set-BusBuddyPerformanceProfile {
-    [CmdletBinding()]
+    [CmdletBinding(SupportsShouldProcess)]
     param(
         [Parameter(Mandatory)]
         [ValidateSet('Development', 'Testing', 'Production', 'HighThroughput', 'LowLatency', 'Balanced')]
         [string]$Profile,
-        
+
         [switch]$Force
     )
-    
+
     $ProfileSettings = switch ($Profile) {
         'Development' {
             @{
@@ -226,29 +379,59 @@ function Set-BusBuddyPerformanceProfile {
             }
         }
     }
-    
-    # Apply settings
-    $env:DOTNET_GCServer = $ProfileSettings.GCServer
-    $env:DOTNET_GCConcurrent = $ProfileSettings.GCConcurrent
-    $env:DOTNET_GCRetainVM = $ProfileSettings.GCRetainVM
-    $env:BUSBUDDY_MAX_PARALLEL_JOBS = $ProfileSettings.MaxParallelJobs
-    $env:BUSBUDDY_OPTIMAL_BATCH_SIZE = $ProfileSettings.BatchSize
-    $env:BUSBUDDY_MEMORY_THRESHOLD_PCT = $ProfileSettings.MemoryThreshold
-    $env:BUSBUDDY_VERBOSE_LOGGING = $ProfileSettings.VerboseLogging
-    $env:BUSBUDDY_PERFORMANCE_PROFILE = $Profile
-    
-    Write-Information "✅ Performance profile set to: $Profile" -InformationAction Continue
-    
-    return [PSCustomObject]@{
-        Profile = $Profile
-        AppliedAt = Get-Date
-        Settings = $ProfileSettings
-        Recommendation = "Profile optimized for $Profile scenarios with $($ProfileSettings.MaxParallelJobs) max parallel jobs"
+
+    # Apply settings with ShouldProcess confirmation
+    if ($PSCmdlet.ShouldProcess("Environment Variables", "Set performance profile: $Profile")) {
+        $env:DOTNET_GCServer = $ProfileSettings.GCServer
+        $env:DOTNET_GCConcurrent = $ProfileSettings.GCConcurrent
+        $env:DOTNET_GCRetainVM = $ProfileSettings.GCRetainVM
+        $env:BUSBUDDY_MAX_PARALLEL_JOBS = $ProfileSettings.MaxParallelJobs
+        $env:BUSBUDDY_OPTIMAL_BATCH_SIZE = $ProfileSettings.BatchSize
+        $env:BUSBUDDY_MEMORY_THRESHOLD_PCT = $ProfileSettings.MemoryThreshold
+        $env:BUSBUDDY_VERBOSE_LOGGING = $ProfileSettings.VerboseLogging
+        $env:BUSBUDDY_PERFORMANCE_PROFILE = $Profile
+
+        Write-Information "✅ Performance profile set to: $Profile" -InformationAction Continue
+
+        return [PSCustomObject]@{
+            Profile = $Profile
+            AppliedAt = Get-Date
+            Settings = $ProfileSettings
+            Recommendation = "Profile optimized for $Profile scenarios with $($ProfileSettings.MaxParallelJobs) max parallel jobs"
+        }
+    } else {
+        Write-Information "Operation cancelled by user" -InformationAction Continue
+        return $null
     }
 }
 
 # Advanced memory monitoring
-function Get-BusBuddyMemoryMetrics {
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER IncludeGCStats
+${3:Parameter description}
+
+.PARAMETER IncludeProcessStats
+${4:Parameter description}
+
+.PARAMETER ContinuousMonitoring
+${5:Parameter description}
+
+.PARAMETER MonitoringIntervalSeconds
+${6:Parameter description}
+
+.EXAMPLE
+${7:An example}
+
+.NOTES
+${8:General notes}
+#>
+function Get-BusBuddyMemoryMetric {
     [CmdletBinding()]
     param(
         [switch]$IncludeGCStats,
@@ -256,10 +439,10 @@ function Get-BusBuddyMemoryMetrics {
         [switch]$ContinuousMonitoring,
         [int]$MonitoringIntervalSeconds = 5
     )
-    
+
     if ($ContinuousMonitoring) {
         Write-Information "🔍 Starting continuous memory monitoring (Ctrl+C to stop)..." -InformationAction Continue
-        
+
         try {
             while ($true) {
                 $metrics = Get-BusBuddyMemoryMetrics -IncludeGCStats:$IncludeGCStats -IncludeProcessStats:$IncludeProcessStats
@@ -273,10 +456,10 @@ function Get-BusBuddyMemoryMetrics {
         }
         return
     }
-    
+
     $SystemMemory = Get-CimInstance -ClassName Win32_OperatingSystem
     $Process = Get-Process -Id $PID
-    
+
     $BaseMetrics = [PSCustomObject]@{
         Timestamp = Get-Date
         SystemMemoryGB = [math]::Round($SystemMemory.TotalVisibleMemorySize / 1MB, 2)
@@ -286,7 +469,7 @@ function Get-BusBuddyMemoryMetrics {
         ProcessPrivateMemoryMB = [math]::Round($Process.PrivateMemorySize64 / 1MB, 2)
         ProcessVirtualMemoryMB = [math]::Round($Process.VirtualMemorySize64 / 1MB, 2)
     }
-    
+
     if ($IncludeGCStats) {
         $GCStats = [PSCustomObject]@{
             Gen0Collections = [GC]::CollectionCount(0)
@@ -297,7 +480,7 @@ function Get-BusBuddyMemoryMetrics {
         }
         $BaseMetrics | Add-Member -NotePropertyName GCStatistics -NotePropertyValue $GCStats
     }
-    
+
     if ($IncludeProcessStats) {
         $ProcessStats = [PSCustomObject]@{
             ThreadCount = $Process.Threads.Count
@@ -308,14 +491,14 @@ function Get-BusBuddyMemoryMetrics {
         }
         $BaseMetrics | Add-Member -NotePropertyName ProcessStatistics -NotePropertyValue $ProcessStats
     }
-    
+
     return $BaseMetrics
 }
 
 # Export module functions and aliases
 Export-ModuleMember -Function @(
     'Test-BusBuddyHyperthreading',
-    'Optimize-BusBuddyParallelism', 
+    'Optimize-BusBuddyParallelism',
     'Set-BusBuddyPerformanceProfile',
     'Get-BusBuddyMemoryMetrics'
 ) -Alias @(
@@ -326,7 +509,7 @@ Export-ModuleMember -Function @(
 ) -Variable @(
     'BusBuddyPhysicalCores',
     'BusBuddyLogicalCores',
-    'BusBuddyMemoryGB', 
+    'BusBuddyMemoryGB',
     'BusBuddyHyperthreadRatio',
     'BusBuddyOptimalJobs'
 )

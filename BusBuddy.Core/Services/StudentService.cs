@@ -879,7 +879,7 @@ public class StudentService : IStudentService
             }
 
             // Check bus capacity
-            var assignedCount = await busService.GetAssignedStudentCountAsync(context, bus.VehicleId);
+            var assignedCount = await busService.GetAssignedStudentCountAsync(context, bus.BusId);
             if (assignedCount >= bus.SeatingCapacity)
             {
                 continue;
@@ -889,7 +889,7 @@ public class StudentService : IStudentService
             var assignment = new RouteAssignment
             {
                 RouteId = route.RouteId,
-                VehicleId = bus.VehicleId,
+                VehicleId = bus.BusId,
                 AssignmentDate = System.DateTime.Today
             };
             await context.RouteAssignments.AddAsync(assignment);
