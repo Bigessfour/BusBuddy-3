@@ -203,7 +203,6 @@ function Set-BusBuddySecret {
                     }
                 }
             }
-            }
 
         } catch {
             Write-Error "Failed to store secret '$SecretName': $($_.Exception.Message)"
@@ -961,9 +960,9 @@ function Test-BusBuddyDependabotConfig {
         }
 
         # Summary
-    $statusColor = if ($validation.Issues.Count -eq 0) { "Green" } else { "Yellow" }
-    $status = if ($validation.Issues.Count -eq 0) { "✅ Valid" } else { "⚠️ Issues Found" }
-    Write-Information "`nDependabot Configuration: $status" -InformationAction Continue
+        $statusColor = if ($validation.Issues.Count -eq 0) { "Green" } else { "Yellow" }
+        $status = if ($validation.Issues.Count -eq 0) { "✅ Valid" } else { "⚠️ Issues Found" }
+        Write-Host "`nDependabot Configuration: $status" -ForegroundColor $statusColor
 
         foreach ($issue in $validation.Issues) {
             Write-Warning "  • $issue"

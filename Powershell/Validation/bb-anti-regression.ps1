@@ -131,7 +131,7 @@ function Test-PowerShellCompliance {
                 -Fix "Replace with Write-Output or Write-Information"
         }
 
-        # echo command violations (shell built-in alias)
+        # echo command violations
         if ($content -match '\becho\s') {
             Write-ValidationResult -Category "PowerShell" -File $file.Name `
                 -Violation "echo command usage - use Write-Output" `
@@ -394,34 +394,14 @@ function Invoke-AutoFix {
     foreach ($violation in $fixableViolations) {
         Write-Information "🔧 Attempting to fix: $($violation.File) - $($violation.Violation)" -InformationAction Continue
 
-        # Auto-fix Write-Host violations (robust replacement for string/expressions and optional parameters)
+        # Auto-fix Write-Host violations
         if ($violation.Violation -match "Write-Host") {
             $filePath = Join-Path $Path $violation.File
             if (Test-Path $filePath) {
                 $content = Get-Content $filePath -Raw
-                # Replace common Write-Host patterns with Write-Information preserving argument expression
-                $content = [regex]::Replace($content, "Write-Host\s*\(([^)]+)\)", 'Write-Information($1) -InformationAction Continue')
-                $content = [regex]::Replace($content, "Write-Host\s+(['\"].+?['\"]|\$\w+|\S+)(?:\s+-ForegroundColor\s+\w+)?", 'Write-Information $1 -InformationAction Continue')
+                $content = $content -replace 'Write-Host\s+([^-]+)(?:\s+-ForegroundColor\s+\w+)?', 'Write-Information $1 -InformationAction Continue'
                 Set-Content $filePath -Value $content -Encoding UTF8
                 Write-Information "✅ Fixed Write-Host violation in $($violation.File)" -InformationAction Continue
-            }
-        }
-
-        # Auto-fix Console.WriteLine to Write-Information
-        if ($violation.Violation -match "Console.WriteLine") {
-            $filePath = Join-Path $Path $violation.File
-            if (Test-Path $filePath) {
-                (Get-Content $filePath) -replace 'Console\.WriteLine\(([^)]+)\)', 'Write-Information($1) -InformationAction Continue' | Set-Content $filePath -Encoding UTF8
-                Write-Information "✅ Replaced Console.WriteLine in $($violation.File)" -InformationAction Continue
-            }
-        }
-
-        # Auto-fix 'echo' usages to Write-Output
-        if ($violation.Violation -match "echo command") {
-            $filePath = Join-Path $Path $violation.File
-            if (Test-Path $filePath) {
-                (Get-Content $filePath) -replace '\becho\s+', 'Write-Output ' | Set-Content $filePath -Encoding UTF8
-                Write-Information "✅ Replaced echo with Write-Output in $($violation.File)" -InformationAction Continue
             }
         }
 
