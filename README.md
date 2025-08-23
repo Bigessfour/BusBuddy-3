@@ -408,6 +408,58 @@ dotnet ef migrations add NewMigrationName
 - `ConnectionStrings__DefaultConnection`: Database connection string
 - `GoogleEarthEngine__ApiKey`: Google Earth Engine API key (optional for basic features)
 
+### **🔐 Secure API Key Management**
+
+BusBuddy uses **Microsoft SecretManagement** for secure API key storage, following enterprise security best practices:
+
+#### **Setup Secure API Key Storage**
+
+```powershell
+# Install required modules (if not already installed)
+Install-Module Microsoft.PowerShell.SecretManagement -Scope CurrentUser
+Install-Module Microsoft.PowerShell.SecretStore -Scope CurrentUser
+
+# Import the BusBuddy secure configuration module
+Import-Module ".\PowerShell\Modules\BusBuddy-SecureConfig.psm1"
+
+# Store your xAI API key securely (removes from environment variables)
+Set-SecureApiKey -ApiKey "your-xai-api-key" -RemoveFromEnvironment
+
+# Test secure configuration
+Test-SecureApiKey
+```
+
+#### **Key Benefits**
+
+- ✅ **No plain text exposure**: API keys never visible in environment variables or process lists
+- ✅ **Encrypted storage**: Keys stored using .NET cryptographic APIs with user-specific encryption
+- ✅ **Access control**: Keys only accessible to the current user account
+- ✅ **Automatic cleanup**: Removes insecure environment variables after migration
+- ✅ **Fallback support**: Legacy environment variable support for migration
+
+#### **Available Commands**
+
+```powershell
+# Secure configuration management
+Initialize-SecureGrokConfig    # Setup secure vault (auto-runs on import)
+Set-SecureApiKey              # Store API key securely
+Get-SecureApiKey              # Retrieve key as SecureString
+Test-SecureApiKey             # Validate secure configuration
+ConvertFrom-SecureApiKey      # Convert SecureString for API usage (internal)
+
+# Legacy environment variables (deprecated)
+$env:XAI_API_KEY             # Legacy: Will show migration warning
+$env:GROK_API_KEY            # Legacy: Will show migration warning
+```
+
+#### **Security Features**
+
+- **Vault-based storage**: Uses Microsoft.PowerShell.SecretStore with AES encryption
+- **No environment exposure**: API keys removed from `$env:` variables and process environment
+- **SecureString handling**: Keys handled as SecureString objects in memory
+- **Automatic cleanup**: Memory cleared after API usage to prevent exposure
+- **Audit logging**: Security events logged for compliance
+
 ### **Syncfusion License Setup**
 
 1. **Get License**: Visit [Syncfusion Community License](https://www.syncfusion.com/products/communitylicense)

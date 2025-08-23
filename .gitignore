@@ -1146,3 +1146,5 @@ global.json
 # Local database files
 *.db
 BusBuddy.db
+# Trunk output files that may contain sensitive data
+.trunk/out/*.yaml

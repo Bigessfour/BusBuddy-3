@@ -9,7 +9,7 @@ namespace BusBuddy.WPF.ViewModels.BusManagement
     /// </summary>
     public class BusViewModel : BaseViewModel
     {
-        private int _vehicleId;
+        private int _busId;
         private string _busNumber = string.Empty;
         private int _year;
         private string _make = string.Empty;
@@ -32,10 +32,10 @@ namespace BusBuddy.WPF.ViewModels.BusManagement
         private bool _isUnderWarranty;
 
         [Key]
-        public int VehicleId
+        public int BusId
         {
-            get => _vehicleId;
-            set => SetProperty(ref _vehicleId, value);
+            get => _busId;
+            set => SetProperty(ref _busId, value);
         }
 
         [Required(ErrorMessage = "Bus number is required")]

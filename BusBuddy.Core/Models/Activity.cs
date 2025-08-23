@@ -163,8 +163,18 @@ public class Activity : INotifyPropertyChanged
                 _assignedVehicleId = value;
                 OnPropertyChanged();
                 OnPropertyChanged(nameof(VehicleId));
+                // Backwards-compatible alias used by WPF layer
+                OnPropertyChanged(nameof(AssignedBusId));
             }
         }
+    }
+
+    // Backwards-compatible alias for older WPF property names
+    [NotMapped]
+    public int AssignedBusId
+    {
+        get => AssignedVehicleId;
+        set => AssignedVehicleId = value;
     }
 
     [ForeignKey("Driver")]

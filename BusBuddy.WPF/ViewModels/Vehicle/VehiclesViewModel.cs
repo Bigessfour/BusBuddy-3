@@ -61,7 +61,7 @@ namespace BusBuddy.WPF.ViewModels.Vehicle
                 // Phase 1: Simple add functionality
                 var newVehicle = new BusBuddy.Core.Models.Bus
                 {
-                    VehicleId = Vehicles.Count + 1,
+                    BusId = Vehicles.Count + 1,
                     BusNumber = "NEW",
                     LicenseNumber = "NEW123",
                     Make = "New",
@@ -140,21 +140,21 @@ namespace BusBuddy.WPF.ViewModels.Vehicle
                 // Phase 1: Sample vehicle data for demonstration
                 var sampleData = new BusBuddy.Core.Models.Bus[]
                 {
-                    new BusBuddy.Core.Models.Bus { VehicleId = 1, BusNumber = "Bus-001", LicenseNumber = "SCH-001", Make = "Blue Bird", Model = "Vision", Year = 2019, SeatingCapacity = 72, Status = "Active", CurrentOdometer = 45230 },
-                    new BusBuddy.Core.Models.Bus { VehicleId = 2, BusNumber = "Bus-002", LicenseNumber = "SCH-002", Make = "Thomas Built", Model = "Saf-T-Liner C2", Year = 2020, SeatingCapacity = 71, Status = "Active", CurrentOdometer = 38750 },
-                    new BusBuddy.Core.Models.Bus { VehicleId = 3, BusNumber = "Bus-003", LicenseNumber = "SCH-003", Make = "IC Bus", Model = "CE Series", Year = 2018, SeatingCapacity = 77, Status = "Maintenance", CurrentOdometer = 52100 },
-                    new BusBuddy.Core.Models.Bus { VehicleId = 4, BusNumber = "Bus-004", LicenseNumber = "SCH-004", Make = "Blue Bird", Model = "All American", Year = 2021, SeatingCapacity = 72, Status = "Active", CurrentOdometer = 28900 },
-                    new BusBuddy.Core.Models.Bus { VehicleId = 5, BusNumber = "Bus-005", LicenseNumber = "SCH-005", Make = "Thomas Built", Model = "Saf-T-Liner HDX", Year = 2017, SeatingCapacity = 78, Status = "Active", CurrentOdometer = 67500 },
-                    new BusBuddy.Core.Models.Bus { VehicleId = 6, BusNumber = "Bus-006", LicenseNumber = "SCH-006", Make = "IC Bus", Model = "RE Series", Year = 2022, SeatingCapacity = 77, Status = "Active", CurrentOdometer = 15600 },
-                    new BusBuddy.Core.Models.Bus { VehicleId = 7, BusNumber = "Bus-007", LicenseNumber = "SCH-007", Make = "Blue Bird", Model = "Vision", Year = 2019, SeatingCapacity = 72, Status = "Active", CurrentOdometer = 41200 },
-                    new BusBuddy.Core.Models.Bus { VehicleId = 8, BusNumber = "Bus-008", LicenseNumber = "SCH-008", Make = "Thomas Built", Model = "Saf-T-Liner C2", Year = 2020, SeatingCapacity = 71, Status = "Out of Service", CurrentOdometer = 43800 },
-                    new BusBuddy.Core.Models.Bus { VehicleId = 9, BusNumber = "Bus-009", LicenseNumber = "SCH-009", Make = "IC Bus", Model = "CE Series", Year = 2018, SeatingCapacity = 77, Status = "Active", CurrentOdometer = 49300 },
-                    new BusBuddy.Core.Models.Bus { VehicleId = 10, BusNumber = "Bus-010", LicenseNumber = "SCH-010", Make = "Blue Bird", Model = "All American", Year = 2021, SeatingCapacity = 72, Status = "Active", CurrentOdometer = 31750 },
-                    new BusBuddy.Core.Models.Bus { VehicleId = 11, BusNumber = "Bus-011", LicenseNumber = "SCH-011", Make = "Thomas Built", Model = "Saf-T-Liner HDX", Year = 2016, SeatingCapacity = 78, Status = "Active", CurrentOdometer = 78200 },
-                    new BusBuddy.Core.Models.Bus { VehicleId = 12, BusNumber = "Bus-012", LicenseNumber = "SCH-012", Make = "IC Bus", Model = "RE Series", Year = 2022, SeatingCapacity = 77, Status = "Active", CurrentOdometer = 12400 },
-                    new BusBuddy.Core.Models.Bus { VehicleId = 13, BusNumber = "Bus-013", LicenseNumber = "SCH-013", Make = "Blue Bird", Model = "Vision", Year = 2017, SeatingCapacity = 72, Status = "Maintenance", CurrentOdometer = 58900 },
-                    new BusBuddy.Core.Models.Bus { VehicleId = 14, BusNumber = "Bus-014", LicenseNumber = "SCH-014", Make = "Thomas Built", Model = "Saf-T-Liner C2", Year = 2019, SeatingCapacity = 71, Status = "Active", CurrentOdometer = 36700 },
-                    new BusBuddy.Core.Models.Bus { VehicleId = 15, BusNumber = "Bus-015", LicenseNumber = "SCH-015", Make = "IC Bus", Model = "CE Series", Year = 2023, SeatingCapacity = 77, Status = "Active", CurrentOdometer = 8500 }
+                    new BusBuddy.Core.Models.Bus { BusId = 1, BusNumber = "Bus-001", LicenseNumber = "SCH-001", Make = "Blue Bird", Model = "Vision", Year = 2019, SeatingCapacity = 72, Status = "Active", CurrentOdometer = 45230 },
+                    new BusBuddy.Core.Models.Bus { BusId = 2, BusNumber = "Bus-002", LicenseNumber = "SCH-002", Make = "Thomas Built", Model = "Saf-T-Liner C2", Year = 2020, SeatingCapacity = 71, Status = "Active", CurrentOdometer = 38750 },
+                    new BusBuddy.Core.Models.Bus { BusId = 3, BusNumber = "Bus-003", LicenseNumber = "SCH-003", Make = "IC Bus", Model = "CE Series", Year = 2018, SeatingCapacity = 77, Status = "Maintenance", CurrentOdometer = 52100 },
+                    new BusBuddy.Core.Models.Bus { BusId = 4, BusNumber = "Bus-004", LicenseNumber = "SCH-004", Make = "Blue Bird", Model = "All American", Year = 2021, SeatingCapacity = 72, Status = "Active", CurrentOdometer = 28900 },
+                    new BusBuddy.Core.Models.Bus { BusId = 5, BusNumber = "Bus-005", LicenseNumber = "SCH-005", Make = "Thomas Built", Model = "Saf-T-Liner HDX", Year = 2017, SeatingCapacity = 78, Status = "Active", CurrentOdometer = 67500 },
+                    new BusBuddy.Core.Models.Bus { BusId = 6, BusNumber = "Bus-006", LicenseNumber = "SCH-006", Make = "IC Bus", Model = "RE Series", Year = 2022, SeatingCapacity = 77, Status = "Active", CurrentOdometer = 15600 },
+                    new BusBuddy.Core.Models.Bus { BusId = 7, BusNumber = "Bus-007", LicenseNumber = "SCH-007", Make = "Blue Bird", Model = "Vision", Year = 2019, SeatingCapacity = 72, Status = "Active", CurrentOdometer = 41200 },
+                    new BusBuddy.Core.Models.Bus { BusId = 8, BusNumber = "Bus-008", LicenseNumber = "SCH-008", Make = "Thomas Built", Model = "Saf-T-Liner C2", Year = 2020, SeatingCapacity = 71, Status = "Out of Service", CurrentOdometer = 43800 },
+                    new BusBuddy.Core.Models.Bus { BusId = 9, BusNumber = "Bus-009", LicenseNumber = "SCH-009", Make = "IC Bus", Model = "CE Series", Year = 2018, SeatingCapacity = 77, Status = "Active", CurrentOdometer = 49300 },
+                    new BusBuddy.Core.Models.Bus { BusId = 10, BusNumber = "Bus-010", LicenseNumber = "SCH-010", Make = "Blue Bird", Model = "All American", Year = 2021, SeatingCapacity = 72, Status = "Active", CurrentOdometer = 31750 },
+                    new BusBuddy.Core.Models.Bus { BusId = 11, BusNumber = "Bus-011", LicenseNumber = "SCH-011", Make = "Thomas Built", Model = "Saf-T-Liner HDX", Year = 2016, SeatingCapacity = 78, Status = "Active", CurrentOdometer = 78200 },
+                    new BusBuddy.Core.Models.Bus { BusId = 12, BusNumber = "Bus-012", LicenseNumber = "SCH-012", Make = "IC Bus", Model = "RE Series", Year = 2022, SeatingCapacity = 77, Status = "Active", CurrentOdometer = 12400 },
+                    new BusBuddy.Core.Models.Bus { BusId = 13, BusNumber = "Bus-013", LicenseNumber = "SCH-013", Make = "Blue Bird", Model = "Vision", Year = 2017, SeatingCapacity = 72, Status = "Maintenance", CurrentOdometer = 58900 },
+                    new BusBuddy.Core.Models.Bus { BusId = 14, BusNumber = "Bus-014", LicenseNumber = "SCH-014", Make = "Thomas Built", Model = "Saf-T-Liner C2", Year = 2019, SeatingCapacity = 71, Status = "Active", CurrentOdometer = 36700 },
+                    new BusBuddy.Core.Models.Bus { BusId = 15, BusNumber = "Bus-015", LicenseNumber = "SCH-015", Make = "IC Bus", Model = "CE Series", Year = 2023, SeatingCapacity = 77, Status = "Active", CurrentOdometer = 8500 }
                 };
 
                 Vehicles.Clear();

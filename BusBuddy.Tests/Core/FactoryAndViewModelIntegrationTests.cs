@@ -50,23 +50,24 @@ namespace BusBuddy.Tests.Core
             // Seed a couple of students
             using (var seed = new BusBuddyDbContext(options))
             {
-                await seed.Database.EnsureCreatedAsync();
+                await seed.Database.EnsureCreatedAsync().ConfigureAwait(false);
                 seed.Students.Add(new Student { StudentNumber = "S-001", StudentName = "Alice" });
                 seed.Students.Add(new Student { StudentNumber = "S-002", StudentName = "Bob" });
-                await seed.SaveChangesAsync();
+                await seed.SaveChangesAsync().ConfigureAwait(false);
             }
 
             var factory = new TestFactory(options);
-            var vm = new StudentsViewModel(factory /* other deps are optional in ctor */);
+            using (var vm = new StudentsViewModel(factory /* other deps are optional in ctor */))
+            {
+                // Act
+                await vm.LoadStudentsAsync().ConfigureAwait(false);
 
-            // Act
-            await vm.LoadStudentsAsync();
-
-            // Assert
-            vm.Students.Should().NotBeNull();
-            vm.Students.Count.Should().BeGreaterOrEqualTo(2);
-            vm.Students.Any(s => s.StudentName == "Alice").Should().BeTrue();
-            vm.Students.Any(s => s.StudentName == "Bob").Should().BeTrue();
+                // Assert
+                vm.Students.Should().NotBeNull();
+                Assert.That(vm.Students.Count, Is.GreaterThanOrEqualTo(2));
+                vm.Students.Any(s => s.StudentName == "Alice").Should().BeTrue();
+                vm.Students.Any(s => s.StudentName == "Bob").Should().BeTrue();
+            }
         }
     }
 }

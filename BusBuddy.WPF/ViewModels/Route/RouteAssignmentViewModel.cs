@@ -373,7 +373,7 @@ namespace BusBuddy.WPF.ViewModels.Route
             {
                 if (SelectedRoute == null)
                     return string.Empty;
-                var id = SelectedTimeSlot == BusBuddy.Core.Models.RouteTimeSlot.PM ? SelectedRoute.PMVehicleId : SelectedRoute.AMVehicleId;
+                var id = SelectedTimeSlot == BusBuddy.Core.Models.RouteTimeSlot.PM ? SelectedRoute.PMBusId: SelectedRoute.AMVehicleId;
                 var bus = id.HasValue ? AvailableBuses.FirstOrDefault(b => b.BusId == id.Value) : null;
                 return bus?.BusNumber ?? "(none)";
             }
@@ -957,7 +957,7 @@ namespace BusBuddy.WPF.ViewModels.Route
 
                 if (_routeService != null)
                 {
-                    var result = await _routeService.AssignVehicleToRouteAsync(SelectedRoute.RouteId, SelectedBus.VehicleId, SelectedTimeSlot);
+                    var result = await _routeService.AssignVehicleToRouteAsync(SelectedRoute.RouteId, SelectedBus.BusId, SelectedTimeSlot);
                     if (!result.IsSuccess)
                     {
                         StatusMessage = $"Failed to assign vehicle: {result.Error}";
@@ -970,14 +970,14 @@ namespace BusBuddy.WPF.ViewModels.Route
                 switch (SelectedTimeSlot)
                 {
                     case BusBuddy.Core.Models.RouteTimeSlot.AM:
-                        SelectedRoute.AMVehicleId = SelectedBus.VehicleId;
+                        SelectedRoute.AMBusId = SelectedBus.BusId;
                         break;
                     case BusBuddy.Core.Models.RouteTimeSlot.PM:
-                        SelectedRoute.PMVehicleId = SelectedBus.VehicleId;
+                        SelectedRoute.PMBusId = SelectedBus.BusId;
                         break;
                     case BusBuddy.Core.Models.RouteTimeSlot.Both:
-                        SelectedRoute.AMVehicleId = SelectedBus.VehicleId;
-                        SelectedRoute.PMVehicleId = SelectedBus.VehicleId;
+                        SelectedRoute.AMBusId = SelectedBus.BusId;
+                        SelectedRoute.PMBusId = SelectedBus.BusId;
                         break;
                 }
 
@@ -2013,7 +2013,7 @@ namespace BusBuddy.WPF.ViewModels.Route
                 {
                     AvailableBuses.Add(new BusBuddy.Core.Models.Bus
                     {
-                        VehicleId = i,
+                        BusId = i,
                         BusNumber = $"Bus-{i:000}",
                         Make = "Mock Bus",
                         Model = "School Bus",

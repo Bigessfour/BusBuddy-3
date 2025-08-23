@@ -19,13 +19,13 @@ namespace BusBuddy.WPF.Mapping
                 .ForMember(dest => dest.LastMaintenanceDateFormatted, opt => opt.MapFrom(src =>
                     src.LastServiceDate.HasValue ?
                     src.LastServiceDate.Value.ToString("MM/dd/yyyy") : "Not Available"))
-                .ForMember(dest => dest.BusId, opt => opt.MapFrom(src => src.VehicleId))
+                .ForMember(dest => dest.BusId, opt => opt.MapFrom(src => src.BusId))
                 .ForMember(dest => dest.Capacity, opt => opt.MapFrom(src => src.SeatingCapacity))
                 .ForMember(dest => dest.LicensePlate, opt => opt.MapFrom(src => src.LicenseNumber));
 
             CreateMap<BusViewModel, Bus>()
                 .ForMember(dest => dest.LastServiceDate, opt => opt.Condition(src => src.LastMaintenanceDateFormatted != null))
-                .ForMember(dest => dest.VehicleId, opt => opt.MapFrom(src => src.BusId))
+                .ForMember(dest => dest.BusId, opt => opt.MapFrom(src => src.BusId))
                 .ForMember(dest => dest.SeatingCapacity, opt => opt.MapFrom(src => src.Capacity))
                 .ForMember(dest => dest.LicenseNumber, opt => opt.MapFrom(src => src.LicensePlate));
 

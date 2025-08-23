@@ -330,7 +330,7 @@ namespace BusBuddy.WPF.Services
                     // Validate vehicle assignment
                     if (activity.AssignedVehicleId > 0)
                     {
-                        var assignedVehicle = vehicles.FirstOrDefault(v => v.VehicleId == activity.AssignedVehicleId);
+                        var assignedVehicle = vehicles.FirstOrDefault(v => v.BusId == activity.AssignedBusId);
                         if (assignedVehicle == null)
                         {
                             issues.Add(new DataIntegrityIssue
@@ -338,7 +338,7 @@ namespace BusBuddy.WPF.Services
                                 EntityType = "Activity",
                                 EntityId = activity.ActivityId.ToString(System.Globalization.CultureInfo.InvariantCulture),
                                 IssueType = "Reference Integrity",
-                                Description = $"Assigned vehicle ID {activity.AssignedVehicleId} does not exist",
+                                Description = $"Assigned vehicle ID {activity.AssignedBusId} does not exist",
                                 Severity = "High"
                             });
                         }
@@ -641,7 +641,7 @@ namespace BusBuddy.WPF.Services
                         issues.Add(new DataIntegrityIssue
                         {
                             EntityType = "Vehicle",
-                            EntityId = vehicle.VehicleId.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                            EntityId = vehicle.BusId.ToString(System.Globalization.CultureInfo.InvariantCulture),
                             IssueType = "Missing Required Data",
                             Description = "Bus number is required",
                             Severity = "High"
@@ -654,7 +654,7 @@ namespace BusBuddy.WPF.Services
                         issues.Add(new DataIntegrityIssue
                         {
                             EntityType = "Vehicle",
-                            EntityId = vehicle.VehicleId.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                            EntityId = vehicle.BusId.ToString(System.Globalization.CultureInfo.InvariantCulture),
                             IssueType = "Missing Required Data",
                             Description = "Vehicle status is required",
                             Severity = "Medium"
@@ -667,7 +667,7 @@ namespace BusBuddy.WPF.Services
                         issues.Add(new DataIntegrityIssue
                         {
                             EntityType = "Vehicle",
-                            EntityId = vehicle.VehicleId.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                            EntityId = vehicle.BusId.ToString(System.Globalization.CultureInfo.InvariantCulture),
                             IssueType = "Missing Required Data",
                             Description = "Vehicle make and model information is missing",
                             Severity = "Low"
@@ -738,7 +738,7 @@ namespace BusBuddy.WPF.Services
                 // Check for double-booked vehicles
                 var vehicleConflicts = activities
                     .Where(a => a.AssignedVehicleId > 0 && a.Status == "Scheduled")
-                    .GroupBy(a => new { VehicleId = a.AssignedVehicleId, Date = a.Date.Date })
+                    .GroupBy(a => new { BusId = a.AssignedBusId, Date = a.Date.Date })
                     .Where(g => g.Count() > 1);
 
                 foreach (var conflict in vehicleConflicts)
@@ -757,7 +757,7 @@ namespace BusBuddy.WPF.Services
                                 EntityType = "Activity",
                                 EntityId = activity.ActivityId.ToString(System.Globalization.CultureInfo.InvariantCulture),
                                 IssueType = "Scheduling Conflict",
-                                Description = $"Vehicle {conflict.Key.VehicleId} has overlapping activities",
+                                Description = $"Vehicle {conflict.Key.BusId} has overlapping activities",
                                 Severity = "High"
                             });
                         }

@@ -272,7 +272,7 @@ namespace BusBuddy.Core.Services
                 }
 
                 // Make assignment
-                sportsEvent.VehicleId = busId;
+                sportsEvent.BusId = busId;
                 sportsEvent.DriverId = driverId;
                 sportsEvent.Status = "Assigned";
                 sportsEvent.UpdatedAt = DateTime.UtcNow;

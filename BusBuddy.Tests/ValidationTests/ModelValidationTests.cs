@@ -96,7 +96,7 @@ public class ModelValidationTests
         smallBus.Capacity.Should().BeInRange(1, 200, "Small bus capacity should be reasonable");
         standardBus.Capacity.Should().BeInRange(1, 200, "Standard bus capacity should be reasonable");
         largeBus.Capacity.Should().BeInRange(1, 200, "Large bus capacity should be reasonable");
-        oversizedBus.Capacity.Should().BeLessOrEqualTo(200, "Bus capacity should not exceed reasonable limits");
+    Assert.That(oversizedBus.Capacity, Is.LessThanOrEqualTo(200), "Bus capacity should not exceed reasonable limits");
     }
 
     [Test]

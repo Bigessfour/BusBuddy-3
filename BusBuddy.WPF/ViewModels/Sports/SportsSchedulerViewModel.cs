@@ -333,7 +333,7 @@ namespace BusBuddy.WPF.ViewModels.Sports
             TotalSportsEvents = SportsActivities.Count;
             AwayGames = SportsActivities.Count(a => a.DestinationEntity != null);
             HomeGames = SportsActivities.Count(a => a.DestinationEntity == null || a.Destination.Contains("home", StringComparison.OrdinalIgnoreCase));
-            UnassignedActivities = SportsActivities.Count(a => a.AssignedVehicleId == 0 || a.DriverId == 0);
+            UnassignedActivities = SportsActivities.Count(a => a.AssignedBusId == 0 || a.DriverId == 0);
         }
 
         #endregion
@@ -374,7 +374,7 @@ namespace BusBuddy.WPF.ViewModels.Sports
                     }
 
                     // Update assignment
-                    SelectedActivity.AssignedVehicleId = SelectedBus.VehicleId;
+                    SelectedActivity.AssignedBusId = SelectedBus.BusId;
                     SelectedActivity.AssignedVehicle = SelectedBus;
 
                     await _context.SaveChangesAsync();
@@ -454,7 +454,7 @@ namespace BusBuddy.WPF.ViewModels.Sports
         private async Task<bool> CheckVehicleConflictAsync(BusModel vehicle, ActivityModel activity)
         {
             var conflicts = await _context.Activities
-                .Where(a => a.AssignedVehicleId == vehicle.VehicleId &&
+                .Where(a => a.AssignedBusId == vehicle.BusId &&
                            a.Date == activity.Date &&
                            a.ActivityId != activity.ActivityId &&
                            ((a.LeaveTime <= activity.EventTime && a.EventTime >= activity.LeaveTime)))

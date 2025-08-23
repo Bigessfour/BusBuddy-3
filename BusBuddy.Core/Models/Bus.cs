@@ -52,6 +52,14 @@ public class Bus : INotifyPropertyChanged
         set => BusId = value;
     }
 
+    // Backwards-compatible alias preserved for older code/tests that reference VehicleId
+    [NotMapped]
+    public int VehicleId
+    {
+        get => BusId;
+        set => BusId = value;
+    }
+
     // VehicleId compatibility property removed after refactor completion.
 
     [Required]
