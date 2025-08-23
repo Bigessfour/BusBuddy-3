@@ -5,10 +5,43 @@ suggestionsTimeout: 5000 # ms
 
 # Custom words for BusBuddy project
 words:
+  # Hardware and system terms
   - hyperthreading
+  - hyperthread
+  - HYPERTHREAD
+  
+  # Tools and linters
   - psscriptanalyzer
-  - syncfusion
-  - busbuddy
   - gitleaks
+  - serilog
+  - Serilog
+  - Serilog's
+  - syncfusion
+  - pwsh
+  - appsettings
+  - webapps
+  - sarif
+  - SARIF
+  
+  # Project specific
+  - busbuddy
+  - BusBuddy
+  - themable
+  - ARGB
+  - RRGGBB
+  
+  # Hardware brands
   - Intel
   - i5
+  - Iveco
+  - Ducato
+  - Movano
+  - Proace
+  
+  # Names and technical terms
+  - Petrov
+  - Hassan
+  - Kowalski
+  - Priya
+  - Licence
+  - workflo

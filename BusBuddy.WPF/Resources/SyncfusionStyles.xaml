@@ -26,4 +26,80 @@
     <Style TargetType="{x:Type PasswordBox}">
         <Setter Property="MinHeight" Value="30" />
     </Style>
+
+    <!-- Standard ButtonAdv Styles Following Syncfusion Documentation and FluentDark Theme -->
+    
+    <!-- Default ButtonAdv Style -->
+    <Style TargetType="syncfusion:ButtonAdv">
+        <Setter Property="SizeMode" Value="Normal"/>
+        <Setter Property="IconHeight" Value="16"/>
+        <Setter Property="IconWidth" Value="16"/>
+        <Setter Property="CornerRadius" Value="4"/>
+        <Setter Property="Padding" Value="12,8"/>
+        <Setter Property="Margin" Value="4"/>
+        <Setter Property="FontSize" Value="14"/>
+        <Setter Property="FontWeight" Value="Normal"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="Background" Value="{DynamicResource AccentBackgroundBrush}"/>
+        <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
+    </Style>
+
+    <!-- Primary Action ButtonAdv Style -->
+    <Style x:Key="PrimaryButtonAdvStyle" TargetType="syncfusion:ButtonAdv" BasedOn="{StaticResource {x:Type syncfusion:ButtonAdv}}">
+        <Setter Property="Background" Value="{DynamicResource AccentBackgroundBrush}"/>
+        <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="Padding" Value="16,10"/>
+    </Style>
+
+    <!-- Secondary Action ButtonAdv Style -->
+    <Style x:Key="SecondaryButtonAdvStyle" TargetType="syncfusion:ButtonAdv" BasedOn="{StaticResource {x:Type syncfusion:ButtonAdv}}">
+        <Setter Property="Background" Value="{DynamicResource SecondaryBackgroundBrush}"/>
+        <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+    </Style>
+
+    <!-- Danger/Delete Action ButtonAdv Style -->
+    <Style x:Key="DangerButtonAdvStyle" TargetType="syncfusion:ButtonAdv" BasedOn="{StaticResource {x:Type syncfusion:ButtonAdv}}">
+        <Setter Property="Background" Value="{DynamicResource ErrorTextBrush}"/>
+        <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+    </Style>
+
+    <!-- Success Action ButtonAdv Style -->
+    <Style x:Key="SuccessButtonAdvStyle" TargetType="syncfusion:ButtonAdv" BasedOn="{StaticResource {x:Type syncfusion:ButtonAdv}}">
+        <Setter Property="Background" Value="{DynamicResource SuccessTextBrush}"/>
+        <Setter Property="Foreground" Value="{DynamicResource PrimaryBackgroundBrush}"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+    </Style>
+
+    <!-- Warning Action ButtonAdv Style -->
+    <Style x:Key="WarningButtonAdvStyle" TargetType="syncfusion:ButtonAdv" BasedOn="{StaticResource {x:Type syncfusion:ButtonAdv}}">
+        <Setter Property="Background" Value="{DynamicResource WarningTextBrush}"/>
+        <Setter Property="Foreground" Value="{DynamicResource PrimaryBackgroundBrush}"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+    </Style>
+
+    <!-- Small Icon ButtonAdv Style -->
+    <Style x:Key="SmallIconButtonAdvStyle" TargetType="syncfusion:ButtonAdv" BasedOn="{StaticResource {x:Type syncfusion:ButtonAdv}}">
+        <Setter Property="SizeMode" Value="Small"/>
+        <Setter Property="IconHeight" Value="12"/>
+        <Setter Property="IconWidth" Value="12"/>
+        <Setter Property="Padding" Value="8,6"/>
+        <Setter Property="MinWidth" Value="32"/>
+        <Setter Property="MinHeight" Value="32"/>
+    </Style>
+
+    <!-- Large ButtonAdv Style -->
+    <Style x:Key="LargeButtonAdvStyle" TargetType="syncfusion:ButtonAdv" BasedOn="{StaticResource {x:Type syncfusion:ButtonAdv}}">
+        <Setter Property="SizeMode" Value="Large"/>
+        <Setter Property="IconHeight" Value="24"/>
+        <Setter Property="IconWidth" Value="24"/>
+        <Setter Property="Padding" Value="20,12"/>
+        <Setter Property="FontSize" Value="16"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+    </Style>
 </ResourceDictionary>

@@ -15,54 +15,58 @@ plugins:
 # Runtime versions matching BusBuddy project standards
 runtimes:
   enabled:
-    - node@22.16.0      # For Prettier and other JS-based tools
-    - python@3.10.8     # For SQLFluff and other Python-based tools
+    - node@22.16.0 # For Prettier and other JS-based tools
+    - python@3.10.8 # For SQLFluff and other Python-based tools
 
 # Core linting and formatting configuration
 lint:
-  disabled:
-    - markdownlint       # Using custom markdown standards
   enabled:
     # Security and infrastructure scanning
-    - checkov@3.2.464           # Infrastructure as code security
-    - git-diff-check             # Git hygiene
-    - osv-scanner@2.2.1         # Vulnerability scanning
-    - trufflehog@3.90.5         # Secret detection
-    
+    - codespell@2.4.1
+    - cspell@9.2.0
+    - dotnet-format@7.0.400
+    - markdownlint@0.45.0
+    - checkov@3.2.464 # Infrastructure as code security
+    - git-diff-check # Git hygiene
+    - osv-scanner@2.2.1 # Vulnerability scanning
+    - trufflehog@3.90.5 # Secret detection
+
     # Code formatting and quality
-    - prettier@3.6.2            # JSON, YAML formatting
-    - yamllint@1.37.1           # YAML linting
-    
-    # PowerShell linting (uses PSScriptAnalyzerSettings.psd1)
-    - psscriptanalyzer@1.24.0   # PowerShell best practices
+    - prettier@3.6.2 # JSON, YAML formatting
+    - yamllint@1.37.1 # YAML linting
+
+    # PowerShell linting and formatting
+    - psscriptanalyzer@1.24.0 # PowerShell best practices
 
   # File path ignores for build artifacts and logs
   ignore:
     - linters: [ALL]
       paths:
-        - "**/*.disabled"        # Disabled files for clean builds
-        - "**/bin/**"            # Build outputs
-        - "**/obj/**"            # Build intermediates
-        - "**/TestResults/**"    # Test outputs
-        - "**/logs/**"           # Log files
-        - "**/artifacts/**"      # Build artifacts
-        - "**/Migrations/**"     # EF auto-generated migrations
+        - "**/*.disabled" # Disabled files for clean builds
+        - "**/bin/**" # Build outputs
+        - "**/obj/**" # Build intermediates
+        - "**/TestResults/**" # Test outputs
+        - "**/logs/**" # Log files
+        - "**/artifacts/**" # Build artifacts
+        - "**/Migrations/**" # EF auto-generated migrations
     - linters: [git-diff-check]
       paths:
-        - ".vscode/settings.json"  # VS Code settings have different formatting standards
-        - ".vscode/tasks.json"     # VS Code tasks have different formatting standards
+        - ".vscode/settings.json" # VS Code settings have different formatting standards
+        - ".vscode/tasks.json" # VS Code tasks have different formatting standards
 
 # Git hooks and actions configuration
 actions:
   disabled:
-    - git-lfs                    # Not using Git LFS
-    - trunk-announce             # Reduce noise
+    - git-lfs # Not using Git LFS
+    - trunk-announce # Reduce noise
   enabled:
-    - trunk-upgrade-available    # Version update notifications
-    - trunk-fmt-pre-commit       # Auto-format on commit
-    - trunk-check-pre-push       # Check quality before push
+    - trunk-upgrade-available # Version update notifications
+    - trunk-fmt-pre-commit # Auto-format on commit
+    - trunk-check-pre-push # Check quality before push
 
 # Tools configuration
 tools:
   enabled:
-    - converttosarif@1.0.0       # SARIF conversion for VS Code integration
+    - dotnet@7.0.400
+    - pwsh@7.4.1
+    - converttosarif@1.0.0 # SARIF conversion for VS Code integration

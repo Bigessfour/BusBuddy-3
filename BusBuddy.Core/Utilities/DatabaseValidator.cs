@@ -47,7 +47,7 @@ namespace BusBuddy.Core.Utilities
 
                 if (busesWithNullValues.Any())
                 {
-                    var busIdsWithNulls = string.Join(", ", busesWithNullValues.Select(b => $"{b.VehicleId} ({b.BusNumber ?? "null"})"));
+                    var busIdsWithNulls = string.Join(", ", busesWithNullValues.Select(b => $"{b.BusId} ({b.BusNumber ?? "null"})"));
                     issues.Add($"Found {busesWithNullValues.Count} buses with NULL values in critical fields: {busIdsWithNulls}");
                     Logger.Warning("Found {Count} buses with NULL values in critical fields: {BusIds}",
                         busesWithNullValues.Count, busIdsWithNulls);
@@ -63,8 +63,8 @@ namespace BusBuddy.Core.Utilities
                 // Check for invalid foreign keys in Routes
                 var routesWithInvalidVehicles = await context.Routes
                     .Where(r =>
-                        (r.AMVehicleId.HasValue && !context.Buses.Any(v => v.VehicleId == r.AMVehicleId)) ||
-                        (r.PMVehicleId.HasValue && !context.Buses.Any(v => v.VehicleId == r.PMVehicleId)))
+                        (r.AMVehicleId.HasValue && !context.Buses.Any(v => v.BusId == r.AMVehicleId)) ||
+                        (r.PMVehicleId.HasValue && !context.Buses.Any(v => v.BusId == r.PMVehicleId)))
                     .Select(r => r.RouteId)
                     .ToListAsync();
 
@@ -147,7 +147,7 @@ namespace BusBuddy.Core.Utilities
 
                     if (bus.BusNumber == null)
                     {
-                        bus.BusNumber = $"Bus-{bus.VehicleId}";
+                        bus.BusNumber = $"Bus-{bus.BusId}";
                         changed = true;
                     }
 
@@ -165,13 +165,13 @@ namespace BusBuddy.Core.Utilities
 
                     if (bus.LicenseNumber == null)
                     {
-                        bus.LicenseNumber = $"LIC-{bus.VehicleId}";
+                        bus.LicenseNumber = $"LIC-{bus.BusId}";
                         changed = true;
                     }
 
                     if (bus.VINNumber == null)
                     {
-                        bus.VINNumber = $"VIN-{bus.VehicleId}";
+                        bus.VINNumber = $"VIN-{bus.BusId}";
                         changed = true;
                     }
 
@@ -188,7 +188,7 @@ namespace BusBuddy.Core.Utilities
                         // Break into the debugger for the first fix if requested and in debug mode
                         if (breakOnFix && Debugger.IsAttached && fixCount == 1)
                         {
-                            Logger.Debug("Database fix applied for Bus ID {BusId}", bus.VehicleId);
+                            Logger.Debug("Database fix applied for Bus ID {BusId}", bus.BusId);
                             // Debugger.Break(); // Commented out to prevent unwanted breaks
                         }
                     }

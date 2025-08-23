@@ -306,7 +306,7 @@ namespace BusBuddy.WPF.ViewModels.SportsScheduling
                    SelectedEvent != null &&
                    SelectedBus != null &&
                    SelectedDriver != null &&
-                   SelectedEvent.VehicleId == null &&
+                   SelectedEvent.BusId == null &&
                    SelectedEvent.DriverId == null;
         }
 
@@ -330,7 +330,7 @@ namespace BusBuddy.WPF.ViewModels.SportsScheduling
                 if (success)
                 {
                     // Update the event
-                    SelectedEvent.VehicleId = SelectedBus.Id;
+                    SelectedEvent.BusId = SelectedBus.Id;
                     SelectedEvent.DriverId = SelectedDriver.DriverId;
                     SelectedEvent.Vehicle = SelectedBus;
                     SelectedEvent.Driver = SelectedDriver;

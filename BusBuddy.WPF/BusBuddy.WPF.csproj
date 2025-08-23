@@ -69,7 +69,7 @@
 
   <!-- WPF-Specific Syncfusion Packages (not included in Directory.Build.props) -->
   <ItemGroup>
-    <PackageReference Include="Azure.Identity" Version="1.14.2" />
+    <PackageReference Include="Azure.Identity" Version="$(AzureIdentityVersion)" />
     <PackageReference Include="Microsoft.ApplicationInsights.AspNetCore" Version="2.23.0" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="$(MicrosoftExtensionsVersion)" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="$(MicrosoftExtensionsVersion)" />
@@ -111,7 +111,7 @@
   <!-- Application-Specific Packages -->
   <ItemGroup>
     <PackageReference Include="AutoMapper" Version="$(AutoMapperVersion)" />
-    <PackageReference Include="AutoMapper.Extensions.Microsoft.DependencyInjection" Version="$(AutoMapperVersion)" />
+    <PackageReference Include="AutoMapper.Extensions.Microsoft.DependencyInjection" Version="$(AutoMapperExtensionsDIVersion)" />
     <PackageReference Include="CommunityToolkit.Mvvm" Version="$(CommunityToolkitMvvmVersion)" />
     <PackageReference Include="Microsoft.Web.WebView2" Version="$(WebView2Version)" />
 

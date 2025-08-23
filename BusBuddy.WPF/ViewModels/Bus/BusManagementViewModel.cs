@@ -204,7 +204,7 @@ namespace BusBuddy.WPF.ViewModels.BusManagement
                     await LoadBusesAsync();
 
                     // Select the newly added bus
-                    var busInList = Buses.FirstOrDefault(b => b.VehicleId == addedBus.VehicleId);
+                    var busInList = Buses.FirstOrDefault(b => b.BusId == addedBus.BusId);
                     if (busInList != null)
                     {
                         SelectedBus = busInList;
@@ -270,7 +270,7 @@ namespace BusBuddy.WPF.ViewModels.BusManagement
                     await LoadBusesAsync();
 
                     // Try to re-select the same bus
-                    var updatedBus = Buses.FirstOrDefault(b => b.VehicleId == busToEdit.VehicleId);
+                    var updatedBus = Buses.FirstOrDefault(b => b.BusId == busToEdit.BusId);
                     if (updatedBus != null)
                     {
                         SelectedBus = updatedBus;
@@ -317,7 +317,7 @@ namespace BusBuddy.WPF.ViewModels.BusManagement
 
             // Show confirmation dialog
             var busNumber = SelectedBus.BusNumber;
-            var busId = SelectedBus.VehicleId;
+            var busId = SelectedBus.BusId;
 
             var confirmDialog = new Views.Bus.ConfirmationDialog(
                 $"Are you sure you want to delete Bus #{busNumber}? This action cannot be undone.",
@@ -364,7 +364,7 @@ namespace BusBuddy.WPF.ViewModels.BusManagement
 
         private bool CanUpdateOrDelete()
         {
-            return SelectedBus != null && SelectedBus.VehicleId != 0 && !IsBusy;
+            return SelectedBus != null && SelectedBus.BusId != 0 && !IsBusy;
         }
 
         partial void OnSelectedBusChanged(BusBuddy.Core.Models.Bus value)

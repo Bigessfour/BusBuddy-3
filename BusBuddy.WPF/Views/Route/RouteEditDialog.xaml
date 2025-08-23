@@ -37,6 +37,11 @@
         </StackPanel>
     <syncfusion:ButtonAdv Grid.Row="4"
                          Label="Save"
+                         SizeMode="Normal"
+                         IconHeight="16" IconWidth="16"
+                         CornerRadius="4"
+                         Background="{DynamicResource AccentBackgroundBrush}"
+                         Foreground="{DynamicResource PrimaryTextBrush}"
                          Width="110"
                          Height="36"
                          HorizontalAlignment="Right"

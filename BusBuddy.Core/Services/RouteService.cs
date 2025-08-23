@@ -1144,12 +1144,12 @@ namespace BusBuddy.Core.Services
             var pmCap = 0;
             if (route.AMVehicleId.HasValue)
             {
-                var am = await context.Buses.FirstOrDefaultAsync(b => b.VehicleId == route.AMVehicleId.Value);
+                var am = await context.Buses.FirstOrDefaultAsync(b => b.BusId == route.AMVehicleId.Value);
                 if (am != null) amCap = am.SeatingCapacity;
             }
             if (route.PMVehicleId.HasValue)
             {
-                var pm = await context.Buses.FirstOrDefaultAsync(b => b.VehicleId == route.PMVehicleId.Value);
+                var pm = await context.Buses.FirstOrDefaultAsync(b => b.BusId == route.PMVehicleId.Value);
                 if (pm != null) pmCap = pm.SeatingCapacity;
             }
             return Math.Max(amCap, pmCap);

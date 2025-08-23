@@ -58,40 +58,66 @@
                     <!-- Route Operations -->
             <syncfusion:ButtonAdv Name="AddRouteButton" Label="➕ Add Route"
                 Command="{Binding AddRouteCommand}"
-                Background="{StaticResource BusBuddy.Brush.Primary}" Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}"
+                SizeMode="Normal"
+                IconHeight="16" IconWidth="16"
+                CornerRadius="4"
+                Background="{StaticResource BusBuddy.Brush.Primary}" 
+                Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}"
                 AutomationProperties.Name="Add Route"
                 AutomationProperties.HelpText="Create a new bus route"/>
             <syncfusion:ButtonAdv Name="EditRouteButton" Label="✏️ Edit Route"
                 Command="{Binding EditRouteCommand}"
                 IsEnabled="{Binding IsRouteSelected}"
-                            AutomationProperties.Name="Edit Route"
-                            AutomationProperties.HelpText="Edit the selected route"/>
+                SizeMode="Normal"
+                IconHeight="16" IconWidth="16"
+                CornerRadius="4"
+                Background="{DynamicResource AccentBackgroundBrush}"
+                Foreground="{DynamicResource PrimaryTextBrush}"
+                AutomationProperties.Name="Edit Route"
+                AutomationProperties.HelpText="Edit the selected route"/>
             <syncfusion:ButtonAdv Name="DeleteRouteButton" Label="🗑️ Delete Route"
                 Command="{Binding DeleteRouteCommand}"
                 IsEnabled="{Binding IsRouteSelected}"
-                            AutomationProperties.Name="Delete Route"
-                            AutomationProperties.HelpText="Delete the selected route"/>
+                SizeMode="Normal"
+                IconHeight="16" IconWidth="16"
+                CornerRadius="4"
+                Background="{DynamicResource ErrorTextBrush}"
+                Foreground="{DynamicResource PrimaryTextBrush}"
+                AutomationProperties.Name="Delete Route"
+                AutomationProperties.HelpText="Delete the selected route"/>
                     <Separator Margin="10,0"/>
 
                     <!-- Manage Selected Route (opens full assignment UI) -->
             <syncfusion:ButtonAdv Name="ManageRouteButton" Label="🛠️ Manage Route"
                 Command="{Binding AssignStudentsCommand}"
                 IsEnabled="{Binding IsRouteSelected}"
-                Background="{StaticResource BusBuddy.Brush.Primary}" Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}"
+                SizeMode="Normal"
+                IconHeight="16" IconWidth="16"
+                CornerRadius="4"
+                Background="{StaticResource BusBuddy.Brush.Primary}" 
+                Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}"
                 AutomationProperties.Name="Manage Route"
                 AutomationProperties.HelpText="Open the full route assignment and stops editor"/>
 
                     <!-- Planning Operations -->
             <syncfusion:ButtonAdv Name="GenerateScheduleButton" Label="📅 Generate Schedule (Stub)"
                 Command="{Binding GenerateScheduleCommand}"
-                    Style="{StaticResource StubButtonStyle}"
-                Background="{StaticResource BusBuddy.Brush.FleetGreen}" Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}"
+                Style="{StaticResource StubButtonStyle}"
+                SizeMode="Normal"
+                IconHeight="16" IconWidth="16"
+                CornerRadius="4"
+                Background="{StaticResource BusBuddy.Brush.FleetGreen}" 
+                Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}"
                 AutomationProperties.Name="Generate Schedule"
                 AutomationProperties.HelpText="Placeholder — schedule generation coming post-MVP"/>
             <syncfusion:ButtonAdv Name="ViewMapButton" Label="🗺️ View Map (Stub)"
                 Command="{Binding ViewMapCommand}"
-                    Style="{StaticResource StubButtonStyle}"
-                Background="{StaticResource BusBuddy.Brush.Semantic.Info}" Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}"
+                Style="{StaticResource StubButtonStyle}"
+                SizeMode="Normal"
+                IconHeight="16" IconWidth="16"
+                CornerRadius="4"
+                Background="{StaticResource BusBuddy.Brush.Semantic.Info}" 
+                Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}"
                 AutomationProperties.Name="View Map"
                 AutomationProperties.HelpText="Placeholder — map view coming post-MVP"/>
                     <Separator Margin="10,0"/>
@@ -100,16 +126,24 @@
             <syncfusion:ButtonAdv Name="AssignStudentsButton" Label="👥 Assign Students"
                 Command="{Binding AssignStudentsCommand}"
                 IsEnabled="{Binding IsRouteSelected}"
-                            Background="{StaticResource BusBuddy.Brush.SafetyOrange}" Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}"
-                            AutomationProperties.Name="Assign Students to Route"
-                            AutomationProperties.HelpText="Assign students to the selected route"/>
+                SizeMode="Normal"
+                IconHeight="16" IconWidth="16"
+                CornerRadius="4"
+                Background="{StaticResource BusBuddy.Brush.SafetyOrange}" 
+                Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}"
+                AutomationProperties.Name="Assign Students to Route"
+                AutomationProperties.HelpText="Assign students to the selected route"/>
             <syncfusion:ButtonAdv Name="AssignVehicleButton" Label="🚌 Assign Vehicle (Stub)"
                 Command="{Binding AssignVehicleCommand}"
                 IsEnabled="{Binding IsRouteSelected}"
-                            Style="{StaticResource StubButtonStyle}"
-                            Background="{StaticResource BusBuddy.Brush.Semantic.Warning}" Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}"
-                            AutomationProperties.Name="Assign Vehicle to Route"
-                            AutomationProperties.HelpText="Placeholder — vehicle assignment coming post-MVP"/>
+                Style="{StaticResource StubButtonStyle}"
+                SizeMode="Normal"
+                IconHeight="16" IconWidth="16"
+                CornerRadius="4"
+                Background="{StaticResource BusBuddy.Brush.Semantic.Warning}" 
+                Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}"
+                AutomationProperties.Name="Assign Vehicle to Route"
+                AutomationProperties.HelpText="Placeholder — vehicle assignment coming post-MVP"/>
                 </StackPanel>
 
                 <!-- Export and Print Actions -->
@@ -117,19 +151,31 @@
                     <!-- Export Options -->
             <syncfusion:ButtonAdv Name="ExportCsvButton" Label="📊 Export CSV"
                             Command="{Binding ExportCsvCommand}"
-                Background="{DynamicResource BusBuddy.Brush.Semantic.Success}" Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"
+                            SizeMode="Normal"
+                            IconHeight="16" IconWidth="16"
+                            CornerRadius="4"
+                            Background="{DynamicResource BusBuddy.Brush.Semantic.Success}" 
+                            Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"
                             AutomationProperties.Name="Export to CSV"
                             AutomationProperties.HelpText="Export route data to CSV file"/>
             <syncfusion:ButtonAdv Name="ExportReportButton" Label="📄 Export Report"
                             Command="{Binding ExportReportCommand}"
-                Background="{DynamicResource BusBuddy.Brush.Semantic.Info}" Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"
+                            SizeMode="Normal"
+                            IconHeight="16" IconWidth="16"
+                            CornerRadius="4"
+                            Background="{DynamicResource BusBuddy.Brush.Semantic.Info}" 
+                            Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"
                             AutomationProperties.Name="Export Report"
                             AutomationProperties.HelpText="Export detailed route report"/>
 
                     <!-- Print Options -->
             <syncfusion:ButtonAdv Name="PrintScheduleButton" Label="🖨️ Print Schedule"
                             Command="{Binding PrintScheduleCommand}"
-                Background="{DynamicResource BusBuddy.Brush.Primary}" Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"
+                            SizeMode="Normal"
+                            IconHeight="16" IconWidth="16"
+                            CornerRadius="4"
+                            Background="{DynamicResource BusBuddy.Brush.Primary}" 
+                            Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"
                             AutomationProperties.Name="Print Schedule"
                             AutomationProperties.HelpText="Print route schedules"/>
             <syncfusion:ButtonAdv Name="PrintRouteMapsButton" Label="🗺️ Print Maps (Stub)"

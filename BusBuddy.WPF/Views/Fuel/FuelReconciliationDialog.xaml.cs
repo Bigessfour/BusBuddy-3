@@ -214,7 +214,7 @@ namespace BusBuddy.WPF.Views.Fuel
 
                 // Get buses for reference
                 var buses = await _busService.GetAllBusesAsync();
-                var busLookup = buses.ToDictionary(b => b.VehicleId, b => b.BusNumber);
+                var busLookup = buses.ToDictionary(b => b.BusId, b => b.BusNumber);
 
                 // Calculate totals
                 double bulkTotal = 0;

@@ -59,7 +59,7 @@ namespace BusBuddy.Core.Data.Repositories
 
                 // Use AsSplitQuery to avoid the cartesian explosion problem
                 return await context.Set<Bus>()
-                    .Where(v => v.VehicleId == vehicleId)
+                    .Where(v => v.BusId == vehicleId)
                     .Include(v => v.FuelRecords)
                     .Include(v => v.MaintenanceRecords)
                     .Include(v => v.Activities)

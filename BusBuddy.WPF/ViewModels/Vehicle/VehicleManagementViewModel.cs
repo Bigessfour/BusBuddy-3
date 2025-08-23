@@ -280,10 +280,10 @@ namespace BusBuddy.WPF.ViewModels.Vehicle
                     return;
                 }
 
-                if (SelectedVehicle.VehicleId == 0)
+                if (SelectedVehicle.BusId == 0)
                 {
                     // New vehicle - for MVP Phase 1, just add to collection
-                    SelectedVehicle.VehicleId = Vehicles.Count > 0 ? Vehicles.Max(v => v.VehicleId) + 1 : 1;
+                    SelectedVehicle.BusId = Vehicles.Count > 0 ? Vehicles.Max(v => v.BusId) + 1 : 1;
                     Vehicles.Add(SelectedVehicle);
                     StatusMessage = $"Vehicle {SelectedVehicle.BusNumber} added successfully";
 
@@ -293,7 +293,7 @@ namespace BusBuddy.WPF.ViewModels.Vehicle
                 else
                 {
                     // Update existing vehicle in collection
-                    var index = Vehicles.ToList().FindIndex(v => v.VehicleId == SelectedVehicle.VehicleId);
+                    var index = Vehicles.ToList().FindIndex(v => v.BusId == SelectedVehicle.BusId);
                     if (index >= 0)
                     {
                         Vehicles[index] = SelectedVehicle;
@@ -360,7 +360,7 @@ namespace BusBuddy.WPF.ViewModels.Vehicle
         /// </summary>
         private void CancelEdit()
         {
-            if (SelectedVehicle?.VehicleId == 0)
+            if (SelectedVehicle?.BusId == 0)
             {
                 SelectedVehicle = null;
             }
@@ -398,8 +398,8 @@ namespace BusBuddy.WPF.ViewModels.Vehicle
         /// </summary>
         private bool CanUpdateVehicle()
         {
-            return SelectedVehicle != null &&
-                   SelectedVehicle.VehicleId > 0 &&
+         return SelectedVehicle != null &&
+             SelectedVehicle.BusId > 0 &&
                    !IsBusy;
         }
 
@@ -420,8 +420,8 @@ namespace BusBuddy.WPF.ViewModels.Vehicle
         /// </summary>
         private bool CanDeleteVehicle()
         {
-            return SelectedVehicle != null &&
-                   SelectedVehicle.VehicleId > 0 &&
+         return SelectedVehicle != null &&
+             SelectedVehicle.BusId > 0 &&
                    !IsBusy;
         }
 

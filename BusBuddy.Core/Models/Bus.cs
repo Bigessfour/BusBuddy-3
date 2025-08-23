@@ -1,8 +1,12 @@
+using System;
+using System.Linq;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Diagnostics;
 
+// Reverted namespace back to BusBuddy.Core.Models for compatibility to eliminate 'Bus is a namespace' compile errors
 namespace BusBuddy.Core.Models;
 
 /// <summary>
@@ -12,7 +16,7 @@ namespace BusBuddy.Core.Models;
 /// Enhanced for Syncfusion data binding with INotifyPropertyChanged support and comprehensive NULL handling
 /// </summary>
 [Table("Vehicles")]
-[DebuggerDisplay("Bus {BusNumber} - {Year} {Make} {Model} - ID:{VehicleId}")]
+[DebuggerDisplay("Bus {BusNumber} - {Year} {Make} {Model} - ID:{BusId}")]
 public class Bus : INotifyPropertyChanged
 {
     private string _busNumber = string.Empty;
@@ -33,7 +37,10 @@ public class Bus : INotifyPropertyChanged
     private decimal? _currentLongitude;
 
     [Key]
-    public int VehicleId { get; set; }
+    // Updated column name after migration RenameVehicleIdToBusId (20250822150000)
+    // Database primary key column is now BusId; remove old VehicleId mapping to prevent invalid column errors.
+    [Column("BusId")]
+    public int BusId { get; set; }
 
     /// <summary>
     /// Compatibility property for Id access (maps to VehicleId)
@@ -41,9 +48,11 @@ public class Bus : INotifyPropertyChanged
     [NotMapped]
     public int Id
     {
-        get => VehicleId;
-        set => VehicleId = value;
+        get => BusId;
+        set => BusId = value;
     }
+
+    // VehicleId compatibility property removed after refactor completion.
 
     [Required]
     [StringLength(20)]
@@ -53,7 +62,7 @@ public class Bus : INotifyPropertyChanged
         get => _busNumber;
         set
         {
-            var newValue = string.IsNullOrWhiteSpace(value) ? $"BUS-{VehicleId:000}" : value.Trim();
+            var newValue = string.IsNullOrWhiteSpace(value) ? $"BUS-{BusId:000}" : value.Trim();
             if (_busNumber != newValue)
             {
                 _busNumber = newValue;
@@ -138,7 +147,7 @@ public class Bus : INotifyPropertyChanged
         get => _vinNumber;
         set
         {
-            var newValue = string.IsNullOrWhiteSpace(value) ? $"TEMP-VIN-{VehicleId:00000}" : value.Trim();
+            var newValue = string.IsNullOrWhiteSpace(value) ? $"TEMP-VIN-{BusId:00000}" : value.Trim();
             if (_vinNumber != newValue)
             {
                 _vinNumber = newValue;
@@ -159,7 +168,7 @@ public class Bus : INotifyPropertyChanged
         get => _licenseNumber;
         set
         {
-            var newValue = string.IsNullOrWhiteSpace(value) ? $"TEMP-LIC-{VehicleId:000}" : value.Trim();
+            var newValue = string.IsNullOrWhiteSpace(value) ? $"TEMP-LIC-{BusId:000}" : value.Trim();
             if (_licenseNumber != newValue)
             {
                 _licenseNumber = newValue;
@@ -456,7 +465,7 @@ public class Bus : INotifyPropertyChanged
     public virtual ICollection<Route> AMRoutes { get; set; } = new List<Route>();
     public virtual ICollection<Route> PMRoutes { get; set; } = new List<Route>();
     public virtual ICollection<Schedule> Schedules { get; set; } = new List<Schedule>();
-    public virtual ICollection<Activity> Activities { get; set; } = new List<Activity>();
+    public virtual ICollection<BusBuddy.Core.Models.Activity> Activities { get; set; } = new List<BusBuddy.Core.Models.Activity>();
     public virtual ICollection<ActivitySchedule> ScheduledActivities { get; set; } = new List<ActivitySchedule>();
     public virtual ICollection<Fuel> FuelRecords { get; set; } = new List<Fuel>();
     public virtual ICollection<Maintenance> MaintenanceRecords { get; set; } = new List<Maintenance>();

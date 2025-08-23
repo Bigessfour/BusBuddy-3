@@ -1,6 +1,16 @@
-# 🚌 BusBuddy – VS Code Quick Guide (Concise)
+# 🚌 BusBuddy – VS Code Quick Guide (Conci## ✅ Current snapshot (Aug 22Don't
 
-## 🧭 Source of truth
+- Don't introduce WPF DataGrid (keep SfDataGrid)
+- Don't use Microsoft.Extensions.Logging
+- Don't write DB queries via PowerShell
+- Don't invent Syncfusion APIs; use documented patterns only
+- Don't hardcode secrets in PowerShell scripts; always use environment variables or Azure Key Vault)
+
+- Clean build; EF Core aligned
+- UI buttons/forms validated across Students, Drivers, Vehicles, Activities
+- Syncfusion-only UI policy enforced (no standard WPF DataGrid)
+- Geo stack wired: SfMap + overlays + offline geocoding; eligibility (in district AND not in town)
+- Students "Add" flow works end-to-end; save + list refresh verified## 🧭 Source of truth
 
 - Canonical status and priorities: see `GROK-README.md` (project root).
 - This page is a short, skimmable guide for day-to-day dev in VS Code.
@@ -53,6 +63,7 @@ Active work
 - Migration history sync vs existing schema
 - Persist Student.Latitude/Longitude on plot
 - Route assignment flows leveraging plotted students
+- Optimize CI pipeline for faster runs by caching NuGet packages
 
 ## 🤖 LLM guardrails (do / don’t)
 
@@ -62,6 +73,7 @@ Do
 - Log with Serilog only (structured logging)
 - Query Azure SQL via AZ CLI + `sqlcmd --authentication-method ActiveDirectoryAzCli`
 - Follow official docs (Syncfusion WPF, .NET, EF Core)
+- Use Trunk for all formatting and linting to enforce consistency
 
 Don’t
 
@@ -74,6 +86,8 @@ Don’t
 
 - GROK-README.md (status & priorities)
 - SETUP-GUIDE.md (environment setup)
+- .github/copilot-instructions.md (AI assistant guidance)
 - Syncfusion WPF docs: https://help.syncfusion.com/wpf/welcome-to-syncfusion-essential-wpf
 - Syncfusion API (WPF): https://help.syncfusion.com/cr/wpf/Syncfusion.html
 - EF Core docs: https://learn.microsoft.com/ef/core/
+- Azure SQL docs: https://learn.microsoft.com/en-us/azure/azure-sql/?view=azuresql

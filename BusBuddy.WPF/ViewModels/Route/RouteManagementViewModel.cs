@@ -403,14 +403,14 @@ namespace BusBuddy.WPF.ViewModels.Route
         try
         {
             StatusMessage = $"Assigning bus {SelectedBus.BusNumber} to route '{SelectedRoute.RouteName}'...";
-            var result = await _routeService.AssignVehicleToRouteAsync(SelectedRoute.RouteId, SelectedBus.VehicleId, SelectedTimeSlot);
+            var result = await _routeService.AssignVehicleToRouteAsync(SelectedRoute.RouteId, SelectedBus.BusId, SelectedTimeSlot);
             if (!result.IsSuccess)
             {
                 StatusMessage = string.IsNullOrWhiteSpace(result.Error) ? "Assignment failed" : result.Error;
                 Logger.Warning("Vehicle assignment failed: {Message}", result.Error);
                 return;
             }
-            Logger.Information("Assigned vehicle {VehicleId} to route {RouteId} for {Slot}", SelectedBus.VehicleId, SelectedRoute.RouteId, SelectedTimeSlot);
+            Logger.Information("Assigned vehicle {VehicleId} to route {RouteId} for {Slot}", SelectedBus.BusId, SelectedRoute.RouteId, SelectedTimeSlot);
             // Refresh selected route record to show updated vehicle references
             await LoadSingleRouteAsync(SelectedRoute.RouteId);
             StatusMessage = $"Assigned bus {SelectedBus.BusNumber} ({SelectedTimeSlot})";

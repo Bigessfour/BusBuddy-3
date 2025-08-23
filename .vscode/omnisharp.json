@@ -1,11 +1,12 @@
 {
   "FormattingOptions": {
     "EnableEditorConfigSupport": true,
-    "OrganizeImports": false
+    "OrganizeImports": true
   },
   "RoslynExtensionsOptions": {
     "EnableImportCompletion": true,
-    "EnableAnalyzersSupport": true
+    "EnableAnalyzersSupport": true,
+    "EnableDecompilationSupport": true
   },
   "MsBuild": {
     "LoadProjectsOnDemand": false,
@@ -14,6 +15,9 @@
   },
   "Razor": {
     "Disabled": true
+  },
+  "Sdk": {
+    "IncludePrereleases": false
   },
   "enableMsBuildLoadProjectsOnDemand": false,
   "enableRoslynAnalyzers": true

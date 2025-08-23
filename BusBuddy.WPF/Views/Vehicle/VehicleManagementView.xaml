@@ -159,7 +159,7 @@
 
                 <syncfusion:SfDataGrid.Columns>
                     <syncfusion:GridTextColumn HeaderText="ID"
-                                             MappingName="VehicleId"
+                                             MappingName="BusId"
                                              Width="60"/>
                     <syncfusion:GridTextColumn HeaderText="Bus Number"
                                              MappingName="BusNumber"

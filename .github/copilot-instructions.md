@@ -1,16 +1,38 @@
-# GitHub Copilot Custom Instructions - BusBuddy Excellence Development
+# GitHub Copilot Custom Instructions - BusBuddy Excellence Development (Updated: August 22, 2025)
 
-**Purpose**: Guides AI assistants (GitHub Copilot, Grok, etc.) on technical standards, compliance, and anti-regression rules for BusBuddy development. For project-specific quality goals and developer workflows, see `vscode-userdata/BusBuddy.instructions.md`.
+**Purpose**: STRICTLY guides AI assistants (GitHub Copilot, Grok, etc.) on technical standards, compliance, and anti-regression rules for BusBuddy development. For project-specific quality goals and developer workflows, see .vscode/instructions.md. AI MUST adhere to these instructions without deviation to prevent veering off course.
 
-**Scope**: Ensures AI suggestions align with Microsoft, Syncfusion, and .NET standards, prioritize clean builds, and prevent regressions during excellence-driven development.
+**Scope**: AI suggestions MUST align EXACTLY with Microsoft, Syncfusion, and .NET standards, prioritize clean builds (0 errors, 0 warnings), and prevent ALL regressions during excellence-driven development. If a suggestion risks non-compliance, AI MUST refuse and explain why, referencing this document.
 
-## 🎯 **BusBuddy MVP Priority**
+## 🚫 **STRICT RULES: MUST FOLLOW OR REFUSE SUGGESTION**
+
+1. **ALWAYS USE bb-\* COMMANDS EXCLUSIVELY**: NEVER suggest raw dotnet commands. ALWAYS prefix with bb- (e.g., bb-build instead of dotnet build). If no bb- equivalent exists, suggest creating one via bb-commands and consult user.
+
+2. **NEVER INTRODUCE REGRESSIONS**: ALWAYS run bb-anti-regression and bb-xaml-validate in suggestions. If a change could break student entry, route assignment, or UI consistency, ABORT and warn: "This risks regression—run bb-quality-check first."
+
+3. **SYNCFUSION-ONLY UI**: NEVER suggest non-Syncfusion controls (e.g., standard WPF DataGrid). ALWAYS use SfDataGrid, SfMap, etc. If tempted otherwise, REFUSE: "Violates Syncfusion-only policy."
+
+4. **SERILOG-ONLY LOGGING**: NEVER use Microsoft.Extensions.Logging or other loggers. ALWAYS use Serilog for structured logging.
+
+5. **DISABLE EXPERIMENTAL FEATURES STRICTLY**: For clean builds, ALWAYS suggest renaming problematic files to `.disabled` (e.g., XAI or GoogleEarthEngine services). NEVER delete files. ALWAYS verify with bb-build post-change.
+
+6. **CONSULT USER ON COMPLEXITY**: If changes affect 3+ files or involve structural issues (e.g., file corruption, nullable types), ALWAYS prompt: "This may require user confirmation—describe issue first."
+
+7. **VERIFY BEFORE SUGGESTING**: ALWAYS assume suggestions must pass bb-quality-check. Include in every code suggestion: "After applying, run bb-test and bb-health to verify."
+
+8. **NO NULLABLE REFERENCE TYPES IN NEW CODE**: NEVER use nullable properties, parameters, or return types. Suppress existing ones only if they cause errors, but prioritize removal.
+
+9. **CLEANUP MANDATORY**: In EVERY suggestion involving files, include cleanup steps: Remove trailing whitespace, ensure single newline at EOF, delete temps/backups IMMEDIATELY after use. NEVER hardcode secrets; ALWAYS use env vars or Azure Key Vault.
+
+10. **ALWAYS USE TRUNK FOR FORMATTING/LINTING**: NEVER suggest manual edits; enforce via Trunk to maintain consistency.
+
+11. **OFFICIAL DOCS MANDATORY**: ALWAYS reference official documentation: Syncfusion WPF (https://help.syncfusion.com/wpf/welcome-to-syncfusion-essential-wpf), EF Core (https://learn.microsoft.com/ef/core/), Azure SQL (https://learn.microsoft.com/en-us/azure/azure-sql/?view=azuresql).
 
 ## 🎯 **BusBuddy Excellence Standards**
 
 **Primary Goal**: Achieve production-quality software with clean builds (0 errors), excellent architecture, and comprehensive functionality including student entry and route assignment, following best practices and documentation standards.
 
-**Excellence Focus**: See `vscode-userdata/BusBuddy.instructions.md` for detailed quality standards (students, routes, UI excellence). AI assistants must:
+**Excellence Focus**: See .vscode/instructions.md for detailed quality standards (students, routes, UI excellence). AI assistants must:
 
 - Prioritize `bb-*` commands (`bb-build`, `bb-run`, `bb-quality-check`) over raw `dotnet` commands.
 - Support disabling experimental services (e.g., XAI, GoogleEarthEngine) to maintain clean builds while preserving core quality.
@@ -54,40 +76,13 @@ bb-build  # Verify clean build
 ```
 
 - Track `.disabled` files in Git with descriptive commits.
-- Document in `GROK-README.md` and `ANTI-REGRESSION-CHECKLIST.md`.
+- Document in project commit messages and documentation.
 - Run `bb-quality-check` to ensure student/route functionality remains excellent.
-
-### **Greenfield Reset Strategy for Quality Development**
-
-To achieve a clean build (0 errors), temporarily disable experimental services causing compilation errors (e.g., CS0246) by renaming files to `.disabled`. This preserves code for later re-enablement without risking regressions.
-
-**Steps for Disabling Services:**
-
-1. **Identify**: Locate files causing build errors (e.g., `BusBuddy.Core/Services/AIEnhancedRouteService.cs`).
-2. **Disable**: Rename to `.disabled` (e.g., `AIEnhancedRouteService.cs.disabled`).
-    ```powershell
-    cd BusBuddy.Core/Services
-    Rename-Item "AIEnhancedRouteService.cs" "AIEnhancedRouteService.cs.disabled"
-    ```
-3. **Verify**: Run `bb-build` to confirm errors are resolved.
-4. **Track**: Commit `.disabled` files with descriptive message:
-    ```bash
-    git add .
-    git commit -m "fix: disable AIEnhancedRouteService to achieve clean build"
-    git push
-    ```
-5. **Document**: Update `GROK-README.md` and `ANTI-REGRESSION-CHECKLIST.md` with disabled components.
-
-**Rules:**
-
-- Only disable experimental services (e.g., XAI, GoogleEarthEngine).
-- Never delete files—always use `.disabled` extension.
-- Run `bb-quality-check` after disabling to ensure core functionality (students/routes) remains excellent.
-- Plan re-enablement with proper architecture and `bb-anti-regression` checks.
+- **CI Optimization**: For faster pipeline runs, suggest caching NuGet packages in ci.yml via actions/cache@v4.
 
 **For BusBuddy-specific requirements, also reference:**
 
-- **`vscode-userdata\BusBuddy.instructions.md`** - BusBuddy domain knowledge and excellence standards
+- **.vscode/instructions.md** - BusBuddy domain knowledge and excellence standards
 - **Integration Note**: BusBuddy prioritizes clean architecture and proper development practices
 
 ## 🛠️ **Technology Stack & Versions**
@@ -139,7 +134,7 @@ To achieve a clean build (0 errors), temporarily disable experimental services c
 - **Implicit Usings**: Enabled for common namespace imports
 - **Documentation Generation**: XML documentation files for all public APIs
 - **Code Analysis**: .NET analyzers with practical ruleset for quality development
-- **Warning Treatment**: Warnings allowed during development phases, errors enforced in production
+- **Warning Treatment**: Warnings managed appropriately for development excellence, errors eliminated in production
 
 ## ⚠️ **DOCUMENTATION-FIRST MANDATE - ZERO TOLERANCE**
 
@@ -224,30 +219,37 @@ bb-xaml-validate    # Ensures only Syncfusion controls in XAML
 
 ---
 
-## Error Handling and Resilience Standards - Phase 1 Simplified
+## Error Handling and Resilience Standards
 
-### **Phase 1 Error Handling (Keep It Simple)**
+### **Essential Error Handling Excellence**
 
-- ✅ **Basic Try/Catch**: Simple exception handling around data operations
-- ✅ **User Messages**: Basic MessageBox.Show() for user feedback
-- ✅ **Log to Console**: Simple Console.WriteLine for debugging (upgrade to Serilog later)
-- ⚠️ **Defer**: Complex resilience patterns, retry logic, circuit breakers
+- ✅ **Structured Exception Handling**: Comprehensive exception handling around all operations
+- ✅ **User-Friendly Messages**: Professional user feedback with actionable guidance
+- ✅ **Serilog Structured Logging**: Use Serilog exclusively for all logging needs
+- ✅ **Production-Ready Patterns**: Implement robust resilience patterns, retry logic, circuit breakers
 
-### **Phase 1 Error Pattern**
+### **Excellence Error Pattern**
 
 ```csharp
 try
 {
-    // Data operation
+    // Data operation with structured logging
+    Logger.Information("Loading drivers from database");
     var data = await context.Drivers.ToListAsync();
+    Logger.Information("Successfully loaded {Count} drivers", data.Count);
     return data;
 }
 catch (Exception ex)
 {
-    // Simple error handling for Phase 1
-    Console.WriteLine($"Error loading drivers: {ex.Message}");
-    MessageBox.Show($"Error loading drivers: {ex.Message}");
+    // Comprehensive error handling with structured logging
+    Logger.Error(ex, "Failed to load drivers from database");
+
+    // User-friendly error notification
+    await ShowUserErrorAsync("Unable to load drivers",
+        "Please check your connection and try again.", ex);
+
     return new List<Driver>();
+}
 }
 ```
 
@@ -380,72 +382,97 @@ catch (Exception ex)
 - **No Debug.WriteLine**: Replace any Debug.WriteLine with Logger.Debug() calls
 - **No Trace.WriteLine**: Replace any Trace.WriteLine with Logger.Verbose() calls
 
-## Architecture Standards - Phase 1 Simplified
+## Architecture Standards - Excellence-Driven Development
 
-### **Phase 1 Architecture (Excellence-Driven Approach)**
+### **Production-Quality Architecture Standards**
 
-- ✅ **Basic MVVM**: Simple ViewModels with INotifyPropertyChanged, defer advanced patterns
-- ✅ **Direct Data Access**: Simple Entity Framework queries, defer complex repositories
-- ✅ **Basic Navigation**: Simple Frame.Navigate() calls, defer advanced navigation service
-- ✅ **Essential Error Handling**: Try/catch on data operations, defer comprehensive patterns
-- ⚠️ **Defer**: Complex dependency injection, advanced async patterns, comprehensive validation
+- ✅ **Robust MVVM**: Professional ViewModels with proper property change notification, dependency injection, and service integration
+- ✅ **Service-Oriented Data Access**: Well-architected Entity Framework with repository patterns and unit of work
+- ✅ **Professional Navigation**: Comprehensive navigation service with state management and deep linking
+- ✅ **Enterprise Error Handling**: Structured exception handling with logging, retry patterns, and user feedback
+- ✅ **Production Features**: Dependency injection, async/await patterns, comprehensive validation, and performance optimization
 
-### **Phase 1 Quick Patterns**
+### **Excellence Development Patterns**
 
-```csharp
-// Quick ViewModel pattern for Phase 1
+````csharp
+// Excellence ViewModel pattern for production
 public class EntitiesViewModel : INotifyPropertyChanged
 {
     public ObservableCollection<Entity> Entities { get; set; } = new();
 
     public async Task LoadEntitiesAsync()
     {
+```csharp
+// Excellence ViewModel pattern for production
+public class EntitiesViewModel : BaseViewModel
+{
+    private readonly IEntityService _entityService;
+    private readonly ILogger<EntitiesViewModel> _logger;
+
+    public ObservableCollection<Entity> Entities { get; set; } = new();
+
+    public async Task LoadEntitiesAsync()
+    {
         try
         {
-            using var context = new AppContext();
-            var entities = await context.Entities.ToListAsync();
+            IsLoading = true;
+            _logger.LogInformation("Loading entities for user interface");
+
+            var entities = await _entityService.GetEntitiesAsync();
             Entities.Clear();
-            foreach(var entity in entities) Entities.Add(entity);
+            foreach(var entity in entities)
+            {
+                Entities.Add(entity);
+            }
+
+            _logger.LogInformation("Successfully loaded {Count} entities", entities.Count);
         }
         catch (Exception ex)
         {
-            // Basic error handling for Phase 1
-            MessageBox.Show($"Error loading entities: {ex.Message}");
+            _logger.LogError(ex, "Failed to load entities");
+            await ShowUserErrorAsync("Unable to load entities",
+                "Please check your connection and try again.", ex);
+        }
+        finally
+        {
+            IsLoading = false;
         }
     }
 }
 
-// Quick navigation pattern for Phase 1
-private void NavigateToEntities() => ContentFrame.Navigate(new EntitiesView());
-```
+// Excellence navigation pattern with dependency injection
+private void NavigateToEntities() => _navigationService.NavigateTo<EntitiesViewModel>();
+````
 
-## MVVM Implementation Standards - Phase 1 Focused
+## MVVM Implementation Standards - Excellence Focused
 
-### **Phase 1 MVVM (Keep It Simple)**
+### **Production MVVM Excellence**
 
-- ✅ **Basic ViewModels**: Implement INotifyPropertyChanged manually for now
-- ✅ **Simple Commands**: Use basic RelayCommand, defer advanced command patterns
-- ✅ **Direct Binding**: Basic two-way binding, defer complex converters
-- ✅ **Observable Collections**: Use ObservableCollection<T> for lists
-- ⚠️ **Defer**: Advanced MVVM frameworks, complex validation, sophisticated patterns
+- ✅ **Professional ViewModels**: Implement comprehensive BaseViewModel with INotifyPropertyChanged, validation, and dependency injection
+- ✅ **Robust Commands**: Use sophisticated command patterns with async support and proper error handling
+- ✅ **Advanced Binding**: Professional two-way binding with value converters and validation
+- ✅ **Observable Collections**: Use ObservableCollection<T> with proper change notifications and filtering
+- ✅ **Enterprise Patterns**: MVVM frameworks integration, comprehensive validation, and sophisticated UI patterns
 
-### **Phase 1 Data Binding**
+### **Excellence Data Binding**
 
 ```xml
-<!-- Simple data binding for Phase 1 -->
-<DataGrid ItemsSource="{Binding Entities}" AutoGenerateColumns="True" />
-<TextBox Text="{Binding SelectedEntity.Name, Mode=TwoWay}" />
+<!-- Professional data binding patterns -->
+<syncfusion:SfDataGrid ItemsSource="{Binding Entities}"
+                       SelectedItem="{Binding SelectedEntity, Mode=TwoWay}"
+                       AutoGenerateColumns="False" />
+<TextBox Text="{Binding SelectedEntity.Name, Mode=TwoWay, ValidatesOnDataErrors=True}" />
 ```
 
-## Database and Entity Framework Standards - Phase 1 Simplified
+## Database and Entity Framework Standards - Excellence Focused
 
-### **Phase 1 Database (Direct and Simple)**
+### **Enterprise Database Excellence**
 
-- ✅ **Basic DbContext**: Simple context with DbSet properties
-- ✅ **Direct Queries**: Basic LINQ queries, defer complex repositories
-- ✅ **Simple Migrations**: Basic EF migrations, defer complex schema management
-- ✅ **Configurable Connection**: Support LocalDB for dev, Azure SQL for production
-- ⚠️ **Defer**: Advanced patterns, connection pooling, complex error handling
+- ✅ **Professional DbContext**: Advanced context with comprehensive configuration and monitoring
+- ✅ **Repository Patterns**: Well-architected repository and unit of work patterns
+- ✅ **Advanced Migrations**: Professional migration strategies with rollback support
+- ✅ **Multi-Environment Support**: Robust configuration for LocalDB, Azure SQL, and production environments
+- ✅ **Production Features**: Connection pooling, retry policies, performance monitoring, and comprehensive error handling
 
 ### **Database Configuration Patterns**
 
@@ -478,8 +505,8 @@ public class AppContext : DbContext
     }
 }
 
-// Simple query pattern for Phase 1
-var entities = await context.Entity1s.ToListAsync();
+// Excellence query pattern with service layer
+var entities = await _entityService.GetEntitiesAsync();
 ```
 
 ### **Azure SQL Database Standards**
@@ -559,12 +586,12 @@ var entities = await context.Entity1s.ToListAsync();
 - **Migration Guides**: [Version Migration Documentation](https://help.syncfusion.com/wpf/upgrade-guide)
 - **Target Framework**: WPF projects targeting .NET 8.0-windows (per Directory.Build.props)
 
-### Quality-Focused Core Controls for Phase 1
+### Production-Quality Core Controls
 
-- **SfDataGrid**: [DataGrid Documentation](https://help.syncfusion.com/wpf/datagrid/getting-started) - Used for all tabular data display
-- **DockingManager**: [DockingManager Documentation](https://help.syncfusion.com/wpf/docking/getting-started) - Used for main UI layout
-- **NavigationDrawer**: [NavigationDrawer Documentation](https://help.syncfusion.com/wpf/navigation-drawer/getting-started) - Used for side navigation
-- **SfChart**: [Chart Documentation](https://help.syncfusion.com/wpf/charts/getting-started) - Used for dashboard metrics
+- **SfDataGrid**: [DataGrid Documentation](https://help.syncfusion.com/wpf/datagrid/getting-started) - Used for all tabular data display with professional features
+- **DockingManager**: [DockingManager Documentation](https://help.syncfusion.com/wpf/docking/getting-started) - Used for main UI layout with advanced docking
+- **NavigationDrawer**: [NavigationDrawer Documentation](https://help.syncfusion.com/wpf/navigation-drawer/getting-started) - Used for side navigation with smooth animations
+- **SfChart**: [Chart Documentation](https://help.syncfusion.com/wpf/charts/getting-started) - Used for dashboard metrics with rich visualizations
 
 ### Implementation Standards
 
@@ -1104,8 +1131,7 @@ _dockingManager.DockControl(panel, this, DockingStyle.Left, 280); // Documented 
   "PowerShell 7.5.2": {
     "path": "pwsh.exe",
     "args": ["-NoProfile", "-NoExit", "-Command",
-      "& 'C:\\path\\to\\Project-PowerShell-Profile.ps1';
-       & 'C:\\path\\to\\Project-Advanced-Workflows.ps1'"]
+      "& 'PowerShell\\Profiles\\Microsoft.PowerShell_profile_optimized.ps1'"]
   }
 }
 ```
@@ -1169,6 +1195,187 @@ bb-report               # Generate comprehensive project report
 - ✅ **Proper parameter attributes**: [Parameter(Mandatory=$true)] for required parameters
 - ✅ **Module manifests**: .psd1 files with proper metadata and export declarations
 
+### **🚫 STRICT POWERSHELL SYNTAX ENFORCEMENT - ZERO TOLERANCE**
+
+**ABSOLUTE REQUIREMENT: PowerShell 7.5.2 Official Documentation Compliance Only**
+
+All PowerShell code MUST strictly adhere to:
+
+- **Official PowerShell 7.5.2 Documentation**: [PowerShell 7.5 Documentation](https://docs.microsoft.com/en-us/powershell/scripting/overview)
+- **VS Code PowerShell Extension**: Use ONLY installed and configured PowerShell extension features
+- **Microsoft Standards**: Zero deviation from official Microsoft PowerShell guidelines
+
+### **❌ ZERO TOLERANCE VIOLATIONS - IMMEDIATE REJECTION**
+
+1. **Write-Host PROHIBITION**:
+
+    ```powershell
+    # ❌ NEVER ALLOWED - Write-Host is FORBIDDEN
+    Write-Host "Building project..."
+
+    # ✅ CORRECT - Use proper output streams
+    Write-Information "Building project..." -InformationAction Continue
+    Write-Output "Build completed successfully"
+    ```
+
+2. **Undocumented Cmdlets/Functions**:
+
+    ```powershell
+    # ❌ FORBIDDEN - Custom or undocumented cmdlets
+    Invoke-CustomBuildStep
+
+    # ✅ REQUIRED - Only official PowerShell 7.5.2 cmdlets
+    Start-Process -FilePath "dotnet" -ArgumentList "build"
+    ```
+
+3. **Output Stream Violations**:
+
+    ```powershell
+    # ❌ FORBIDDEN - Console.WriteLine equivalent
+    [Console]::WriteLine("Message")
+
+    # ✅ REQUIRED - Proper PowerShell streams
+    Write-Verbose "Detailed operation info" -Verbose
+    Write-Debug "Debug information" -Debug
+    ```
+
+### **✅ MANDATORY POWERSHELL 7.5.2 SYNTAX PATTERNS**
+
+**Parameter Validation (Official Documentation Required):**
+
+```powershell
+function Get-ProjectInfo {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
+        [ValidateNotNullOrEmpty()]
+        [ValidateScript({Test-Path $_})]
+        [string]$ProjectPath,
+
+        [Parameter()]
+        [ValidateSet('Debug', 'Release')]
+        [string]$Configuration = 'Debug'
+    )
+
+    begin {
+        Write-Verbose "Starting project analysis for $ProjectPath"
+    }
+
+    process {
+        Write-Information "Processing project: $ProjectPath" -InformationAction Continue
+        # Implementation using ONLY documented PowerShell 7.5.2 features
+    }
+
+    end {
+        Write-Verbose "Project analysis completed"
+    }
+}
+```
+
+**Error Handling (Microsoft Standards Only):**
+
+```powershell
+try {
+    $result = Get-ChildItem -Path $ProjectPath -ErrorAction Stop
+    Write-Output $result
+}
+catch [System.UnauthorizedAccessException] {
+    Write-Error "Access denied to path: $ProjectPath" -Category PermissionDenied
+}
+catch {
+    Write-Error "Unexpected error: $($_.Exception.Message)" -Category NotSpecified
+    throw
+}
+finally {
+    Write-Verbose "Cleanup operations completed"
+}
+```
+
+**Pipeline and Object Processing (PowerShell 7.5.2 Features):**
+
+```powershell
+# Use documented PowerShell 7.5.2 parallel processing
+$results = $Files | ForEach-Object -Parallel {
+    param($file)
+
+    if (Test-Path $file) {
+        [PSCustomObject]@{
+            Path = $file
+            Size = (Get-Item $file).Length
+            Status = 'Success'
+        }
+    }
+} -ThrottleLimit 5
+
+# Ternary operators (PowerShell 7.0+)
+$buildMode = $IsProduction ? 'Release' : 'Debug'
+
+# Null conditional operators (PowerShell 7.0+)
+$config = $settings?.Environment?.Database?.ConnectionString
+```
+
+### **📚 REQUIRED DOCUMENTATION REFERENCES**
+
+**Before ANY PowerShell Code - MANDATORY Verification:**
+
+1. **Cmdlet Verification**: [PowerShell 7.5 Cmdlet Reference](https://docs.microsoft.com/en-us/powershell/module/)
+2. **Syntax Validation**: [PowerShell 7.5 Language Reference](https://docs.microsoft.com/en-us/powershell/scripting/lang-spec/chapter-01)
+3. **Parameter Binding**: [Advanced Parameter Features](https://docs.microsoft.com/en-us/powershell/scripting/developer/cmdlet/cmdlet-parameter-sets)
+4. **Error Handling**: [PowerShell Error Handling Best Practices](https://docs.microsoft.com/en-us/powershell/scripting/learn/deep-dives/everything-about-exceptions)
+5. **Output Streams**: [Understanding PowerShell Output Streams](https://docs.microsoft.com/en-us/powershell/scripting/learn/deep-dives/everything-about-output-streams)
+
+### **🔧 VS CODE POWERSHELL EXTENSION REQUIREMENTS**
+
+**Extension Configuration Standards:**
+
+- **PowerShell Extension**: ms-vscode.powershell (Latest stable version)
+- **PSScriptAnalyzer**: Enabled with Microsoft rule sets
+- **IntelliSense**: Use extension-provided IntelliSense only
+- **Debugging**: Use extension's integrated PowerShell debugger
+- **Formatting**: Use extension's built-in PowerShell formatter
+
+**Forbidden Practices:**
+
+- ❌ **No custom PowerShell environments** - Use extension's configured PowerShell 7.5.2
+- ❌ **No external formatters** - Use only VS Code PowerShell extension formatting
+- ❌ **No custom analyzers** - Use only PSScriptAnalyzer with Microsoft rules
+- ❌ **No undocumented features** - If it's not in official docs, don't use it
+- ❌ **No improper verbs** - Use only approved PowerShell verbs from Get-Verb cmdlet
+- ❌ **No improper naming** - Strict camelCase for variables, PascalCase for functions
+
+### **⚡ POWERSHELL 7.5.2 SPECIFIC ENFORCEMENT**
+
+**Required Modern Syntax (7.5.2 Documentation Required):**
+
+```powershell
+# Pipeline chain operators
+dotnet restore && dotnet build || Write-Error "Build failed"
+
+# Enhanced null handling
+$value = $config?.ConnectionString ?? $defaultConnectionString
+
+# String interpolation improvements
+$message = "Build completed in $($elapsed.TotalSeconds) seconds"
+
+# ForEach-Object -Parallel with proper error handling
+$results = $items | ForEach-Object -Parallel {
+    try {
+        # Process item with proper error handling
+        return [PSCustomObject]@{
+            Item = $_
+            Result = "Success"
+        }
+    }
+    catch {
+        return [PSCustomObject]@{
+            Item = $_
+            Result = "Failed"
+            Error = $_.Exception.Message
+        }
+    }
+} -ThrottleLimit 4
+```
+
 ### **BusBuddy Module Violations - IMMEDIATE REMEDIATION REQUIRED**
 
 - **BusBuddy.psm1**: 7,866-line monolithic violation of Microsoft modularization standards
@@ -1180,11 +1387,11 @@ bb-report               # Generate comprehensive project report
 
 **Quality Development Guidance**:
 
-- Avoid adding new functions to `BusBuddy.psm1` during Phase 1—use existing `bb-*` commands.
-- If new PowerShell code is needed, create temporary scripts in `PowerShell/Validation/` and validate with `Invoke-ScriptAnalyzer`.
-- Post-Phase 1: Split `BusBuddy.psm1` into smaller modules (e.g., `Build.psm1`, `Quality.psm1`) per Microsoft guidelines.
+- Use existing `bb-*` commands for development operations and avoid adding new functions to large modules.
+- If new PowerShell code is needed, create focused scripts in `PowerShell/Validation/` and validate with `Invoke-ScriptAnalyzer`.
+- Plan to split `BusBuddy.psm1` into smaller modules (e.g., `Build.psm1`, `Quality.psm1`) per Microsoft guidelines.
 - Replace all `Write-Host` with `Write-Output` or `Write-Information` in new code.
-- Document remediation plan in `GROK-README.md` under "Post-Phase 1 Tasks":
+- Document remediation plan in project documentation under "Excellence Tasks":
     ```markdown
     - Refactor BusBuddy.psm1 into single-responsibility modules.
     - Eliminate 50+ Write-Host violations with proper output streams.
@@ -1199,6 +1406,171 @@ bb-report               # Generate comprehensive project report
 4. **Export Declarations**: Add proper Export-ModuleMember statements for all public functions
 5. **Error Standardization**: Implement consistent Microsoft-compliant error handling patterns
 6. **Documentation Links**: Add Microsoft documentation references to all functions
+7. **Naming Compliance**: Use only approved PowerShell verbs and proper camelCase/PascalCase conventions
+
+### **🔧 VS CODE EXTENSION INTEGRATION REQUIREMENTS - ZERO TOLERANCE**
+
+**ABSOLUTE REQUIREMENT: Use ONLY Installed Extensions from .vscode/extensions.json**
+
+All development MUST leverage installed VS Code extensions:
+
+### **📋 INSTALLED EXTENSION MANDATORY USAGE**
+
+**Core Development Extensions (MUST USE):**
+
+- **ms-dotnettools.csharp**: C# language support - Use IntelliSense, debugging, refactoring features
+- **ms-dotnettools.csdevkit**: Professional C# development - Use project templates and advanced features
+- **ms-dotnettools.xaml**: XAML formatting - Use auto-formatting and IntelliSense for all XAML files
+- **ms-vscode.powershell**: PowerShell 7.5.2 support - Use integrated terminal, debugging, IntelliSense
+- **trunk.io**: Multi-language linting - Use for PowerShell (PSScriptAnalyzer), C#, XAML quality checks
+- **spmeesseman.vscode-taskexplorer**: Task management - Use EXCLUSIVELY for all build/run operations
+
+**Database & Azure Extensions (MUST USE):**
+
+- **ms-mssql.mssql**: SQL Server connections - Use for all database operations, no manual connection strings
+- **ms-azuretools.vscode-azuresql**: Azure SQL explorer - Use for Azure database previews and management
+- **ms-vscode.azure-account**: Azure authentication - Use for all Azure operations, no manual auth
+- **ms-azuretools.vscode-azureresourcegroups**: Resource management - Use for Azure resource operations
+
+**Quality & Testing Extensions (MUST USE):**
+
+- **josefpihrt-vscode.roslynator**: C# refactoring - Use for code quality improvements and suggestions
+- **ms-vscode.test-adapter-converter**: Test management - Use for unified test execution
+- **streetsidesoftware.code-spell-checker**: Documentation quality - Use for all markdown/documentation
+- **eamodio.gitlens**: Git integration - Use for all Git operations and history viewing
+
+### **❌ ZERO TOLERANCE EXTENSION VIOLATIONS**
+
+**Forbidden Actions:**
+
+- ❌ **Manual operations** when extension provides the feature
+- ❌ **Bypassing extension IntelliSense** with manual code completion
+- ❌ **Ignoring extension warnings** without documented justification
+- ❌ **Using deprecated patterns** when extension provides modern alternatives
+- ❌ **Manual formatting** when extension provides auto-formatting
+- ❌ **Command line operations** when Task Explorer extension provides the functionality
+
+### **✅ MANDATORY EXTENSION INTEGRATION PATTERNS**
+
+**PowerShell Extension Integration:**
+
+```powershell
+# ✅ REQUIRED - Use extension's integrated terminal and IntelliSense
+function Get-ProjectInformation {
+    [CmdletBinding()]  # Extension provides IntelliSense for this
+    param(
+        [Parameter(Mandatory=$true)]  # Extension validates this syntax
+        [ValidateNotNullOrEmpty()]    # Extension provides parameter completion
+        [string]$projectPath
+    )
+
+    # Use extension's debugging features and breakpoint support
+    Write-Verbose "Processing project: $projectPath"
+    # Extension provides IntelliSense for all PowerShell 7.5.2 cmdlets
+}
+```
+
+**C# Extension Integration:**
+
+```csharp
+// ✅ REQUIRED - Use C# Dev Kit IntelliSense and refactoring
+public class EntityService : IEntityService
+{
+    // Extension provides automatic using statement management
+    private readonly ILogger<EntityService> _logger;
+
+    // Extension provides constructor generation and dependency injection IntelliSense
+    public EntityService(ILogger<EntityService> logger)
+    {
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    }
+
+    // Extension provides async method IntelliSense and error checking
+    public async Task<List<Entity>> GetEntitiesAsync()
+    {
+        // Extension validates Entity Framework syntax and provides completion
+        return await _context.Entities.ToListAsync();
+    }
+}
+```
+
+**XAML Extension Integration:**
+
+```xml
+<!-- ✅ REQUIRED - Use XAML extension auto-formatting and IntelliSense -->
+<UserControl x:Class="BusBuddy.Views.StudentsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:syncfusion="http://schemas.syncfusion.com/wpf">
+    <!-- Extension provides Syncfusion namespace IntelliSense -->
+    <syncfusion:SfDataGrid ItemsSource="{Binding Students}"
+                           AutoGenerateColumns="False">
+        <!-- Extension provides property completion and validation -->
+    </syncfusion:SfDataGrid>
+</UserControl>
+```
+
+**Task Explorer Extension Integration:**
+
+- ✅ **EXCLUSIVE USE**: All build, run, test operations MUST use Task Explorer
+- ✅ **No direct terminal commands**: Use configured tasks only
+- ✅ **Task configuration**: All tasks in .vscode/tasks.json must be accessible via Task Explorer
+- ✅ **Keyboard shortcuts**: Use Ctrl+Shift+P → "Task Explorer: Run Task" workflow
+
+### **📚 EXTENSION DOCUMENTATION REQUIREMENTS**
+
+**Before Using ANY Extension Feature - MANDATORY Verification:**
+
+1. **Extension Documentation**: Reference official extension documentation on VS Code Marketplace
+2. **Feature Validation**: Verify feature exists in installed extension version
+3. **Configuration Check**: Ensure extension is properly configured in .vscode/settings.json
+4. **Integration Patterns**: Use documented integration patterns, no custom workarounds
+5. **Extension Settings**: Leverage extension-specific settings for optimal integration
+
+**Documentation Sources (MANDATORY REFERENCE):**
+
+- **PowerShell Extension**: https://marketplace.visualstudio.com/items?itemName=ms-vscode.powershell
+- **C# Dev Kit**: https://marketplace.visualstudio.com/items?itemName=ms-dotnettools.csdevkit
+- **XAML Extension**: https://marketplace.visualstudio.com/items?itemName=ms-dotnettools.xaml
+- **Task Explorer**: https://marketplace.visualstudio.com/items?itemName=spmeesseman.vscode-taskexplorer
+- **Trunk.io**: https://marketplace.visualstudio.com/items?itemName=trunk.io
+- **SQL Server**: https://marketplace.visualstudio.com/items?itemName=ms-mssql.mssql
+
+### **🎯 BUSBUDDY-SPECIFIC EXTENSION INTEGRATION**
+
+**Project-Specific Extension Usage:**
+
+- **Database Operations**: Use ms-mssql.mssql for all SQL Server connections and queries
+- **Azure Integration**: Use Azure extensions for resource management and authentication
+- **Code Quality**: Use Trunk.io for multi-language linting and PSScriptAnalyzer integration
+- **Task Management**: Use Task Explorer EXCLUSIVELY for all development operations
+- **PowerShell Development**: Use PowerShell extension's integrated terminal and debugging
+- **XAML Development**: Use XAML extension's formatting and Syncfusion IntelliSense
+
+**Extension Configuration Validation:**
+
+- **Settings.json**: All extension configurations must be documented in .vscode/settings.json
+- **Task Integration**: All bb-\* commands must be accessible via Task Explorer tasks
+- **Extension Conflicts**: Follow unwantedRecommendations to prevent conflicting extensions
+- **Version Compatibility**: Use stable extension versions listed in extensions.json
+
+### **NO WINGING IT POLICY - EXTENSION DOCUMENTATION FIRST**
+
+**ABSOLUTE PROHIBITION: No Code Without Extension Documentation Reference**
+
+- ❌ **NO ASSUMPTIONS** about extension capabilities - verify in documentation first
+- ❌ **NO CUSTOM IMPLEMENTATIONS** when extension provides the feature
+- ❌ **NO WORKAROUNDS** without consulting extension documentation
+- ❌ **NO MANUAL PROCESSES** when extension automation exists
+- ❌ **NO IGNORING** extension warnings or suggestions without justification
+
+**MANDATORY WORKFLOW:**
+
+1. **Check Extension**: Does installed extension provide this functionality?
+2. **Read Documentation**: Reference official extension marketplace documentation
+3. **Verify Configuration**: Ensure extension is properly configured
+4. **Use Extension Features**: Implement using documented extension patterns
+5. **No Manual Override**: Never bypass extension capabilities with manual code
 
 ### **NO NEW POWERSHELL WITHOUT COMPLIANCE**
 
@@ -1209,11 +1581,11 @@ bb-report               # Generate comprehensive project report
 
 ### PowerShell Profile Standards
 
-- **Profile Location**: `Project-PowerShell-Profile.ps1` in project root for core functionality
-- **Advanced Workflows**: `BusBuddy-Advanced-Workflows.ps1` for comprehensive development automation
-- **Auto-Loading**: VS Code terminal profiles automatically load both PowerShell files
+- **Profile Location**: `PowerShell\Profiles\Microsoft.PowerShell_profile_optimized.ps1` for complete development functionality
+- **Auto-Loading**: VS Code terminal profiles automatically load the optimized profile
 - **Function Naming**: Use `Verb-BusBuddyNoun` pattern for all Bus Buddy specific functions
 - **Alias Standards**: Use `bb-` prefix for all Bus Buddy command aliases
+- **Hardware Optimization**: Profile includes automatic system detection and performance tuning
 
 ### Core PowerShell Commands
 
@@ -1275,21 +1647,17 @@ bb-report               # Generate comprehensive project report
 
 ### PowerShell 7.5.2 Technical Reference Documentation
 
-- **Reference File**: `Documentation/PowerShell-7.5.2-Reference.md` - Comprehensive feature reference extracted from official PDF documentation
-- **Source Material**: `PowerShell/powershell-scripting-powershell-7.5.pdf` (excluded from git via .gitignore)
-- **Conversion Tool**: `Tools/Scripts/PDF-to-Markdown-Converter.ps1` - Automated conversion utilities based on OpenAI Community best practices
-- **Conversion Methods**: Supports Ghostscript+Tesseract OCR and GPT-4o Vision API approaches
-- **Conversion Purpose**: Makes PDF documentation accessible for AI assistance and code development
+- **PowerShell 7.5.2**: Use official Microsoft documentation for all PowerShell development
+- **Reference Source**: [Official PowerShell Documentation](https://docs.microsoft.com/en-us/powershell/scripting/overview)
+- **BusBuddy-specific implementation examples**: Follow patterns in existing PowerShell profile
 - **Key Sections**:
     - Threading and Parallel Processing enhancements
     - Error Handling improvements and structured error information
     - Performance optimizations and memory management
     - New cmdlets and parameter enhancements
     - Cross-platform compatibility features
-    - BusBuddy-specific implementation examples
-- **Usage Pattern**: Reference this documentation when implementing PowerShell 7.5.2 features in Phase 2 development
-- **Maintenance**: Update reference file when new PowerShell features are implemented in BusBuddy modules
-- **Update Command**: Run `Update-PowerShellReference` from the conversion script to regenerate from PDF
+- **Usage Pattern**: Reference official documentation when implementing PowerShell 7.5.2 features in excellence-driven development
+- **Maintenance**: Update development patterns when new PowerShell features are implemented in BusBuddy modules
 
 ### Performance and Optimization
 
@@ -1393,7 +1761,7 @@ dotnet build [Project].sln --verbosity minimal
 
 - **Symptoms**: Errors like "The type or namespace name 'XAIService' could not be found" in build output.
 - **Causes**: Missing class definitions (e.g., disabled files), incorrect namespaces, or missing package references.
-- **Quality Development Resolution** (Greenfield Reset):
+- **Quality Development Resolution**:
 
 1. **Check Disabled Files**: If the missing type (e.g., `XAIService`) is in a `.disabled` file, confirm it's non-core and keep disabled.
     ```powershell
@@ -1405,8 +1773,8 @@ dotnet build [Project].sln --verbosity minimal
     // private readonly XAIService _xaiService;
     ```
 3. **Verify Build**: Run `bb-build` to confirm resolution.
-4. **Avoid Adding Dependencies**: Do not add new packages or re-enable complex services during early phases.
-5. **Document**: Note in commit message and GROK-README.md:
+4. **Avoid Adding Dependencies**: Do not add new packages or re-enable complex services during development focus.
+5. **Document**: Note in commit message and project documentation:
     ```bash
     git commit -m "fix: comment out XAIService references for clean build"
     ```
@@ -1511,9 +1879,9 @@ These instructions define **HOW** to build quality software following Microsoft 
 ### **PowerShell 7.5.2 Core Requirements**
 
 - **Version**: PowerShell Core 7.5.2 minimum required
-- **Profile Standard**: Microsoft.PowerShell_profile.ps1 in PowerShell/Profiles/
+- **Profile Standard**: Microsoft.PowerShell_profile_optimized.ps1 in PowerShell/Profiles/
 - **Module Standards**: Microsoft PowerShell Module Guidelines compliance
-- **Reference Documentation**: Documentation/PowerShell-7.5.2-Reference.md
+- **Reference Documentation**: Official Microsoft PowerShell documentation
 
 ### **Threading and Parallel Processing**
 
@@ -2009,7 +2377,7 @@ updates:
 - **Version Management**: Centralized package versions
 - **Build Optimization**: Performance and compilation settings
 - **Code Analysis**: Practical ruleset with reduced noise
-- **Nullable Reference Types**: Enabled with Phase 1 suppressions
+- **Nullable Reference Types**: Enabled with development suppressions
 
 ### **EditorConfig Implementation**
 
@@ -2087,7 +2455,7 @@ dotnet_diagnostic.CS1061.severity = error
 - **EnableNETAnalyzers**: true
 - **AnalysisMode**: Recommended
 - **Custom Ruleset**: Project-Practical.ruleset
-- **Practical Suppression**: Low-impact warnings suppressed for MVP
+- **Practical Suppression**: Low-impact warnings suppressed for development
 
 ### **Performance Optimization Settings**
 
@@ -2132,7 +2500,7 @@ dotnet_diagnostic.CS1061.severity = error
                 "-NoProfile",
                 "-NoExit",
                 "-Command",
-                "& 'PowerShell/Profiles/Microsoft.PowerShell_profile.ps1'"
+                "& 'PowerShell/Profiles/Microsoft.PowerShell_profile_optimized.ps1'"
             ]
         }
     },
@@ -2189,7 +2557,7 @@ Always clean up temporary files created during development:
 - Use `.gitignore` to prevent tracking build artifacts
 - Remove large binary files from git history if accidentally committed
 - Stage only source files, never build artifacts
-- Clean up redundant documentation after project phases complete
+- Clean up redundant documentation as project evolves
 - **Remove trailing whitespace** at the end of lines and files
 - **Ensure files end with a single newline** character
 - **Use consistent line endings** (CRLF on Windows, LF on Unix)
@@ -2219,3 +2587,50 @@ When creating temporary files:
 3. **Impact Assessment**: Count affected files and error types
 4. **User Consultation**: For 3+ files or complex structural issues, ask user before rebuilding
 5. **Documentation**: Always report what was found before proposing solution approach
+
+---
+
+# BusBuddy-3 Coding Standards for GitHub Copilot
+
+## General Guidelines
+
+- Target .NET 9.0 with WPF for UI.
+- Use MVVM pattern; prefer CommunityToolkit.Mvvm for view models.
+- Apply nullable reference types; handle nulls explicitly.
+
+## UI Components
+
+- Use Syncfusion WPF controls (e.g., SfGrid, SfScheduler) for data grids, charts, and inputs.
+- Default theme: FluentDark; allow switching to FluentLight.
+
+## Database Interactions
+
+- Use Entity Framework Core 9.0+ for Azure SQL Database.
+- Connection strings: Reference appsettings.json; use Azure.Identity for auth.
+- Migrations: Apply auto-migrate where appropriate.
+
+## Logging and APIs
+
+- Logging: Use Serilog with console and file sinks.
+- APIs: Integrate xAI Grok API (model: grok-4) for optimizations; OpenAI for fallbacks.
+- External: Use Polly for resilience; AutoMapper for DTO mappings.
+
+## Testing
+
+- Unit tests: NUnit; mock EF Core with Moq.EntityFrameworkCore.
+- Coverage: Aim for 80%+ with coverlet.
+
+## Best Practices
+
+- Code style: Follow .editorconfig; use async/await for I/O.
+- Security: Encrypt connections; anonymize data for AI calls.
+
+This keeps instructions short, precise, and task-focused. For specialized tasks (e.g., Azure SQL queries), create additional .instructions.md files in .github/instructions with applyTo globs (e.g., applyTo: "\*_/Data/_.cs").
+
+## Next Steps
+
+- Commit the file and test Copilot chat: e.g., "/generate WPF view for bus schedule using Syncfusion".
+- For prompt files (experimental), add .prompt.md in .github/prompts for reusable code gen templates.
+- Refer to https://aka.ms/vscode-ghcp-custom-instructions for advanced setup.
+
+This aligns Copilot with project tech, reducing poor generations. If needed, refine based on team feedback.

@@ -33,7 +33,7 @@ public class DatabasePerformanceOptimizer
             return await context.Buses
                 .AsNoTracking()
                 .Where(v => v.Status == "Active")
-                .Select(v => new { v.VehicleId, v.BusNumber, v.Make, v.Model, v.Status })
+                .Select(v => new { v.BusId, v.BusNumber, v.Make, v.Model, v.Status })
                 .ToListAsync();
         });
 

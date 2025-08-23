@@ -15,7 +15,7 @@ param(
 $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
 
-Write-Host "🤖 BusBuddy Dependabot Manager" -ForegroundColor Blue
+Write-Information "🤖 BusBuddy Dependabot Manager" -InformationAction Continue
 
 # Configuration paths
 $DependabotConfigPath = ".github/dependabot.yml"
@@ -28,7 +28,7 @@ $MetricsData = @{
         [CmdletBinding()]
         param()
     
-        Write-Host "`n🔍 Validating Dependabot configuration..." -ForegroundColor Yellow
+    Write-Information "`n🔍 Validating Dependabot configuration..." -InformationAction Continue
     
         $validation = @{
             ConfigExists = $false
@@ -46,7 +46,7 @@ $MetricsData = @{
         }
     
         $validation.ConfigExists = $true
-        Write-Host "✅ Dependabot configuration file found" -ForegroundColor Green
+    Write-Information "✅ Dependabot configuration file found" -InformationAction Continue
     
         try {
             # Read and parse YAML (basic validation)
@@ -55,7 +55,7 @@ $MetricsData = @{
             # Check for required sections
             if ($configContent -match "package-ecosystem:\s*['\"]?nuget['\"]?") {
             $validation.HasNuGetEcosystem = $true
-            Write-Host "✅ NuGet ecosystem configured" -ForegroundColor Green
+            Write-Information "✅ NuGet ecosystem configured" -InformationAction Continue
         } else {
             $validation.Issues += "NuGet package ecosystem not configured"
             Wr   PrMetrics = @{}
@@ -67,7 +67,7 @@ $MetricsData = @{
         
         if ($configContent -match "schedule:\s*\n\s*interval:") {
             $validation.HasProperSchedule = $true
-            Write-Host "✅ Update schedule configured" -ForegroundColor Green
+            Write-Information "✅ Update schedule configured" -InformationAction Continue
         } else {
             $validation.Issues += "Update schedule not properly configured"
             Write-Warning "❌ Update schedule not configured"
@@ -75,7 +75,7 @@ $MetricsData = @{
         
         if ($configContent -match "groups:") {
             $validation.HasGrouping = $true
-            Write-Host "✅ Package grouping configured" -ForegroundColor Green
+            Write-Information "✅ Package grouping configured" -InformationAction Continue
         } else {
             $validation.Issues += "Package grouping not configured"
             Write-Information "💡 Consider adding package grouping for better PR management"
@@ -95,7 +95,7 @@ function Get-DependabotPRMetrics {
     [CmdletBinding()]
     param()
     
-    Write-Host "`n📊 Analyzing Dependabot PR metrics..." -ForegroundColor Yellow
+    Write-Information "`n📊 Analyzing Dependabot PR metrics..." -InformationAction Continue
     
     $metrics = @{
         TotalPRs = 0
@@ -129,7 +129,7 @@ function Get-DependabotPRMetrics {
                 [CmdletBinding()]
                 param()
     
-                Write-Host "`n📋 Generating package update strategy..." -ForegroundColor Yellow
+                Write-Information "`n📋 Generating package update strategy..." -InformationAction Continue
     
                 $strategy = @{
                     CriticalPackages = @(
@@ -148,19 +148,19 @@ function Get-DependabotPRMetrics {
                     )
                 }
     
-                Write-Host "📦 Critical Packages (Manual Review):" -ForegroundColor Red
+                Write-Information "📦 Critical Packages (Manual Review):" -InformationAction Continue
                 foreach ($pkg in $strategy.CriticalPackages) {
-                    Write-Host "  • $($pkg.Name) - $($pkg.Reason)" -ForegroundColor Yellow
+                    Write-Information "  • $($pkg.Name) - $($pkg.Reason)" -InformationAction Continue
                 }
     
-                Write-Host "`n🔄 Auto-Mergeable Packages:" -ForegroundColor Green
+                Write-Information "`n🔄 Auto-Mergeable Packages:" -InformationAction Continue
                 foreach ($pkg in $strategy.AutoMergeablePackages) {
-                    Write-Host "  • $($pkg.Name) - $($pkg.Reason)" -ForegroundColor Gray
+                    Write-Information "  • $($pkg.Name) - $($pkg.Reason)" -InformationAction Continue
                 }
     
-                Write-Host "`n👀 Monitor-Only Packages:" -ForegroundColor Blue
+                Write-Information "`n👀 Monitor-Only Packages:" -InformationAction Continue
                 foreach ($pkg in $strategy.MonitorOnlyPackages) {
-                    Write-Host "  • $($pkg.Name) - $($pkg.Reason)" -ForegroundColor Gray
+                    Write-Information "  • $($pkg.Name) - $($pkg.Reason)" -InformationAction Continue
                 }
     
                 return $strategy
@@ -170,7 +170,7 @@ function Get-DependabotPRMetrics {
                 [CmdletBinding()]
                 param()
     
-                Write-Host "`n🚫 Updating Dependabot ignore list..." -ForegroundColor Yellow
+                Write-Information "`n🚫 Updating Dependabot ignore list..." -InformationAction Continue
     
                 if (-not $UpdateIgnoreList) {
                     Write-Information "Use -UpdateIgnoreList switch to actually update the ignore list"
@@ -195,9 +195,9 @@ function Get-DependabotPRMetrics {
                     }
                 )
     
-                Write-Host "📋 Recommended ignore rules:" -ForegroundColor Yellow
+                Write-Information "📋 Recommended ignore rules:" -InformationAction Continue
                 foreach ($ignore in $recommendedIgnores) {
-                    Write-Host "  • $($ignore.Package): $($ignore.Reason)" -ForegroundColor Gray
+                    Write-Information "  • $($ignore.Package): $($ignore.Reason)" -InformationAction Continue
                 }
     
                 # Here you would update the actual dependabot.yml file
@@ -208,7 +208,7 @@ function Get-DependabotPRMetrics {
                 [CmdletBinding()]
                 param()
     
-                Write-Host "`n📄 Generating Dependabot health report..." -ForegroundColor Yellow
+                Write-Information "`n📄 Generating Dependabot health report..." -InformationAction Continue
     
                 $report = @{
                     Summary = @{
@@ -238,7 +238,7 @@ function Get-DependabotPRMetrics {
 
             # Main execution
             try {
-                Write-Host "🚀 Starting Dependabot analysis..." -ForegroundColor Blue
+                Write-Information "🚀 Starting Dependabot analysis..." -InformationAction Continue
     
                 # Validate configuration
                 if ($ValidateConfig -or $PSCmdlet.ParameterSetName -eq "__AllParameterSets") {
@@ -265,33 +265,33 @@ function Get-DependabotPRMetrics {
         
                     $reportJson = $MetricsData | ConvertTo-Json -Depth 10
                     $reportJson | Out-File -FilePath $OutputPath -Encoding UTF8
-                    Write-Host "📄 Metrics report saved to: $OutputPath" -ForegroundColor Green
+                    Write-Information "📄 Metrics report saved to: $OutputPath" -InformationAction Continue
                 }
     
                 # Summary
-                Write-Host "`n📋 Dependabot Status Summary:" -ForegroundColor Blue
+                Write-Information "`n📋 Dependabot Status Summary:" -InformationAction Continue
     
                 if ($MetricsData.ConfigValidation.ConfigExists) {
                     $configStatus = if ($MetricsData.ConfigValidation.Issues.Count -eq 0) { "✅ Healthy" } else { "⚠️ Issues Found" }
-                    Write-Host "  Configuration: $configStatus" -ForegroundColor $(if ($MetricsData.ConfigValidation.Issues.Count -eq 0) { "Green" } else { "Yellow" })
+                    Write-Information "  Configuration: $configStatus" -InformationAction Continue
         
                     if ($MetricsData.ConfigValidation.Issues.Count -gt 0) {
-                        Write-Host "  Issues:" -ForegroundColor Yellow
+                        Write-Information "  Issues:" -InformationAction Continue
                         foreach ($issue in $MetricsData.ConfigValidation.Issues) {
-                            Write-Host "    • $issue" -ForegroundColor Red
+                            Write-Information "    • $issue" -InformationAction Continue
                         }
                     }
                 }
     
-                Write-Host "`n💡 Next Steps:" -ForegroundColor Yellow
-                Write-Host "  1. Set GITHUB_TOKEN for PR metrics" -ForegroundColor Gray
-                Write-Host "  2. Configure repository secrets for Syncfusion license" -ForegroundColor Gray
-                Write-Host "  3. Enable auto-merge for low-risk updates" -ForegroundColor Gray
-                Write-Host "  4. Schedule regular dependency reviews" -ForegroundColor Gray
+                Write-Information "`n💡 Next Steps:" -InformationAction Continue
+                Write-Information "  1. Set GITHUB_TOKEN for PR metrics" -InformationAction Continue
+                Write-Information "  2. Configure repository secrets for Syncfusion license" -InformationAction Continue
+                Write-Information "  3. Enable auto-merge for low-risk updates" -InformationAction Continue
+                Write-Information "  4. Schedule regular dependency reviews" -InformationAction Continue
     
             } catch {
                 Write-Error "Script execution failed: $($_.Exception.Message)"
                 exit 1
             }
 
-            Write-Host "`n✅ Dependabot analysis completed" -ForegroundColor Green
+            Write-Information "`n✅ Dependabot analysis completed" -InformationAction Continue

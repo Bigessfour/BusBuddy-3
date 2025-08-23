@@ -1,7 +1,7 @@
 # 🚌 BusBuddy Complete FETCHABILITY-INDEX.json Generator
 # Generates comprehensive fetchability index for ALL files in the codebase
 
-Write-Host "🔍 Generating Complete FETCHABILITY-INDEX.json..." -ForegroundColor Cyan
+Write-Information "Generating complete fetchability index..." -InformationAction Continue
 
 # Repository information
 $repoUrl = "https://github.com/Bigessfour/BusBuddy-3"
@@ -24,14 +24,14 @@ $allFiles = Get-ChildItem -Recurse -File | Where-Object {
     $_.Name -ne 'generate-complete-fetchability-index.ps1'
 } | Sort-Object FullName
 
-Write-Host "📊 Processing $($allFiles.Count) files..." -ForegroundColor Yellow
+Write-Information "📊 Processing $($allFiles.Count) files..." -InformationAction Continue
 
 # Function to determine file category
 function Get-FileCategory($file) {
     $ext = $file.Extension.ToLower()
     $name = $file.Name.ToLower()
     $path = $file.FullName.ToLower()
-    
+
     if ($path -match '\\documentation\\|\\docs\\' -or $ext -in @('.md', '.txt') -or $name -like 'readme*' -or $name -like 'changelog*') {
         return "documentation"
     }
@@ -72,7 +72,7 @@ foreach ($file in $allFiles) {
     $relativePath = $file.FullName.Substring($workspaceRoot.Length + 1).Replace('\', '/')
     $category = Get-FileCategory $file
     $type = Get-FileType $file
-    
+
     $fileEntry = @{
         path = $relativePath
         category = $category
@@ -80,7 +80,7 @@ foreach ($file in $allFiles) {
         url_branch = "$baseBranch/$relativePath"
         url_sha = "$baseSha/$relativePath"
     }
-    
+
     $filesArray += $fileEntry
 }
 
@@ -97,7 +97,7 @@ $index = @{
         cleanup_notes = @(
             "Legacy files removed in August 2025 cleanup",
             "PowerShell dependency management module added",
-            "All .vscode and .github files included", 
+            "All .vscode and .github files included",
             "Complete file inventory - ALL FILES INCLUDED"
         )
     }
@@ -108,16 +108,22 @@ $index = @{
 $jsonOutput = $index | ConvertTo-Json -Depth 10
 $jsonOutput | Out-File -FilePath "FETCHABILITY-INDEX-COMPLETE.json" -Encoding UTF8
 
-Write-Host "✅ Complete FETCHABILITY-INDEX generated!" -ForegroundColor Green
-Write-Host "📄 File: FETCHABILITY-INDEX-COMPLETE.json" -ForegroundColor White
-Write-Host "📊 Total files indexed: $($filesArray.Count)" -ForegroundColor White
+Write-Information "✅ Complete FETCHABILITY -InformationAction Continue-INDEX generated!" -ForegroundColor Green
+Write-Information "📄 File: FETCHABILITY -InformationAction Continue-INDEX-COMPLETE.json" -ForegroundColor White
+Write-Information "📊 Total files indexed: $($filesArray.Count)"  -InformationAction Continue-ForegroundColor White
 
 # Show category breakdown
 $categoryBreakdown = $filesArray | Group-Object category | Sort-Object Count -Descending
-Write-Host "`n📁 Files by category:" -ForegroundColor Cyan
+Write-Information "`n📁 Files by category:"  -InformationAction Continue-ForegroundColor Cyan
 foreach ($cat in $categoryBreakdown) {
-    Write-Host "   $($cat.Name): $($cat.Count) files" -ForegroundColor White
+    Write-Information "   $($cat.Name): $($cat.Count) files"  -InformationAction Continue-ForegroundColor White
 }
 
-Write-Host "`n🔄 To replace current index, run:" -ForegroundColor Yellow
-Write-Host "   Move-Item FETCHABILITY-INDEX-COMPLETE.json FETCHABILITY-INDEX.json -Force" -ForegroundColor White
+Write-Information "`n🔄 To replace current index, run:"  -InformationAction Continue-ForegroundColor Yellow
+Write-Information "   Move -InformationAction Continue-Item FETCHABILITY-INDEX-COMPLETE.json FETCHABILITY-INDEX.json -Force" -ForegroundColor White
+
+
+
+
+
+

@@ -481,7 +481,7 @@ public class ActivityService : IActivityService
 
             // Return buses that aren't busy
             return allBuses
-                .Where(v => !busyBusIds.Contains(v.VehicleId))
+                .Where(v => !busyBusIds.Contains(v.BusId))
                 .ToList();
         }
         catch (Exception ex)
