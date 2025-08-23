@@ -6,12 +6,13 @@
 
 # 🚌 BusBuddy – AI Fetch Reference
 
-**Date:** 2025-08-12  
+**Date:** 2025-08-23  
 **Build:** Passing (`dotnet build BusBuddy.sln`)  
 **Focus:** Students, Routes, basic Vehicle listing  
 **Deferred:** Advanced AI optimization, external map integrations, rich analytics dashboards  
 **UI:** Syncfusion WPF (SfDataGrid everywhere)  
 **Data:** EF Core 9 with local dev DB (file-based)  
+**AI:** xAI Grok-4 (model: grok-4-0709) for route optimization and analysis  
 **Guard:** `PowerShell/Validation/PhaseNamingGuard.ps1` (ensures legacy milestone labels absent)  
 
 ---
@@ -21,6 +22,22 @@ dotnet build BusBuddy.sln
 dotnet run --project BusBuddy.WPF/BusBuddy.WPF.csproj
 dotnet test BusBuddy.Tests/BusBuddy.Tests.csproj
 ```
+
+## 🤖 Grok-4 API Configuration (August 2025)
+```powershell
+# Set machine environment variable (required)
+$env:XAI_API_KEY = "your-xai-api-key"  # Length should be 84
+
+# Test configuration
+Import-Module ".\PowerShell\Modules\grok-config.psm1" -Force
+Test-GrokConnection -Verbose  # Should show success with grok-4-0709
+```
+
+**Model Configuration:**
+- **Model ID**: `grok-4-0709` (exact ID required, not "grok-4")
+- **API Base**: `https://api.x.ai/v1`
+- **Context Window**: 256,000 tokens
+- **Release**: July 9, 2025 (flagship reasoning model)
 
 ---
 ## 🤖 Fetchability Spec (Machine Readable)

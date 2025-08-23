@@ -23,10 +23,6 @@ on:
         type: boolean
         description: "Enable debug mode for troubleshooting"
         default: false
-      skip_tests:
-        type: boolean
-        description: "Skip test execution"
-        default: false
 
 env:
   DOTNET_VERSION: "9.0.x"
@@ -131,13 +127,12 @@ jobs:
           dotnet build ${{ env.SOLUTION_FILE }} --configuration ${{ env.BUILD_CONFIGURATION }} --no-restore --verbosity minimal /p:TreatWarningsAsErrors=false /p:WarningLevel=1
 
       - name: "Run Tests"
-        if: ${{ !inputs.skip_tests }}
         shell: pwsh
         run: |
           dotnet test ${{ env.SOLUTION_FILE }} --configuration ${{ env.BUILD_CONFIGURATION }} --no-build --verbosity normal --logger "trx;LogFileName=test-results.trx" --collect:"XPlat Code Coverage" --results-directory ./TestResults
 
       - name: "Upload Test Results"
-        if: ${{ !inputs.skip_tests && always() }}
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: test-results
