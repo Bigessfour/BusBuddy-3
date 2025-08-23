@@ -419,14 +419,18 @@ BusBuddy uses **Microsoft SecretManagement** for secure API key storage, followi
 Install-Module Microsoft.PowerShell.SecretManagement -Scope CurrentUser
 Install-Module Microsoft.PowerShell.SecretStore -Scope CurrentUser
 
-# Import the BusBuddy secure configuration module
+# Method 1: Set machine environment variable (recommended for development)
+$env:XAI_API_KEY = "your-xai-api-key-here"
+[System.Environment]::SetEnvironmentVariable("XAI_API_KEY", "your-xai-api-key-here", "Machine")
+
+# Method 2: Update secure vault directly
 Import-Module ".\PowerShell\Modules\BusBuddy-SecureConfig.psm1"
+Set-Secret -Name "XAI_API_KEY" -Secret "your-xai-api-key-here" -Vault GlobalApiSecrets
 
-# Store your xAI API key securely (removes from environment variables)
-Set-SecureApiKey -ApiKey "your-xai-api-key" -RemoveFromEnvironment
-
-# Test secure configuration
-Test-SecureApiKey
+# Verify configuration
+Import-Module ".\PowerShell\Modules\grok-config.psm1" -Force
+Get-ApiKeySecurely | Measure-Object -Character  # Should show length 84
+Test-GrokConnection -Verbose  # Should show success with grok-4-0709
 ```
 
 #### **Key Benefits**
@@ -440,17 +444,38 @@ Test-SecureApiKey
 #### **Available Commands**
 
 ```powershell
-# Secure configuration management
-Initialize-SecureGrokConfig    # Setup secure vault (auto-runs on import)
-Set-SecureApiKey              # Store API key securely
-Get-SecureApiKey              # Retrieve key as SecureString
-Test-SecureApiKey             # Validate secure configuration
-ConvertFrom-SecureApiKey      # Convert SecureString for API usage (internal)
+# API key retrieval and configuration
+Get-ApiKeySecurely            # Retrieve API key from secure vault or environment
+grok-config                   # Show current Grok configuration (model: grok-4-0709)
+Test-GrokConnection -Verbose  # Test API connection with detailed output
 
-# Legacy environment variables (deprecated)
-$env:XAI_API_KEY             # Legacy: Will show migration warning
-$env:GROK_API_KEY            # Legacy: Will show migration warning
+# Secure vault management
+Set-Secret -Name "XAI_API_KEY" -Secret "key" -Vault GlobalApiSecrets  # Store in vault
+Get-SecretInfo -Vault GlobalApiSecrets  # List stored secrets
+Initialize-SecureGrokConfig   # Setup secure vault (auto-runs on import)
+
+# Legacy support (environment variables are still supported)
+$env:XAI_API_KEY             # Machine environment variable (preferred for development)
+$env:GROK_API_KEY            # Alternative environment variable name
 ```
+
+#### **xAI Grok Model Configuration**
+
+BusBuddy uses **Grok-4** (xAI's flagship reasoning model) for AI-powered features:
+
+```powershell
+# Current model configuration (August 2025)
+DefaultModel = "grok-4-0709"  # Exact model ID required by xAI API
+BaseUrl = "https://api.x.ai/v1"
+Context = 256000  # tokens (256K context window)
+Features = "text + vision, function calling, real-time search"
+```
+
+**Important Notes:**
+- ✅ **Use exact model ID**: `"grok-4-0709"` (not `"grok-4"` or `"grok-4-latest"`)
+- ✅ **API compatibility**: OpenAI-compatible /chat/completions endpoint
+- ✅ **Released**: July 9, 2025 with enhanced reasoning capabilities
+- ❌ **Don't use**: Generic names like `"grok-4"` will return 400 Bad Request errors
 
 #### **Security Features**
 

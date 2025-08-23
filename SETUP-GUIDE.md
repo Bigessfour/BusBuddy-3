@@ -61,6 +61,39 @@ bbCommands
 bbHealth
 ```
 
+### **Step 2.1: AI Configuration (Optional)**
+
+Configure xAI Grok-4 integration for route optimization and intelligent analysis:
+
+```powershell
+# Set xAI API key (required for AI features)
+$env:XAI_API_KEY = "your-xai-api-key-here"
+[System.Environment]::SetEnvironmentVariable("XAI_API_KEY", "your-xai-api-key-here", "Machine")
+
+# Load AI modules
+Import-Module ".\PowerShell\Modules\grok-config.psm1" -Force
+Import-Module ".\PowerShell\Modules\BusBuddy-GrokAssistant.psm1" -Force
+
+# Verify AI configuration
+$apiKey = Get-ApiKeySecurely
+Write-Host "✓ API Key Length: $($apiKey.Length)" -ForegroundColor Green  # Should be 84
+
+$config = grok-config
+Write-Host "✓ Model: $($config.DefaultModel)" -ForegroundColor Green     # Should be "grok-4-0709"
+
+# Test AI connection
+Test-GrokConnection -Verbose
+# Expected: "✅ Grok API connection successful."
+```
+
+**AI Features Available:**
+- **Route Optimization**: AI-powered route efficiency analysis
+- **Maintenance Predictions**: Predictive vehicle maintenance scheduling  
+- **Performance Analytics**: Intelligent performance insights
+- **Cost Analysis**: AI-driven cost optimization recommendations
+
+**Skip AI Setup:** If you don't have an xAI API key, BusBuddy will work normally without AI features.
+
 ### **Step 3: Build and Verify**
 
 ```powershell
