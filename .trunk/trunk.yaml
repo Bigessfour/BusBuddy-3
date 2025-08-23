@@ -20,6 +20,8 @@ runtimes:
 
 # Core linting and formatting configuration
 lint:
+  disabled:
+    - markdownlint # Using custom markdown standards
   enabled:
     # Security and infrastructure scanning
     - codespell@2.4.1

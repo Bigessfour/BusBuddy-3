@@ -1,16 +1,5 @@
 {
   "recommendations": [
-    "ms-dotnettools.csharp",
-    "ms-dotnettools.xaml",
-    "ms-vscode.powershell",
-    "spmeesseman.vscode-taskexplorer",
-    "trunkio.trunk",
-    "eamodio.gitlens",
-    "ms-mssql.mssql"
-  ]
-}
-{
-  "recommendations": [
     // Code Quality & Linting Excellence (Trunk Integration)
     "trunk.io", // Trunk Code Quality: Multi-language linting/formatting for PowerShell (PSScriptAnalyzer), C# (Roslynator integration), XAML, SQL. Repo-wide checks with git hooks.
 
@@ -59,24 +48,54 @@
 
     // Task Management Excellence
     "spmeesseman.vscode-taskexplorer", // Professional task management
-{
-  "recommendations": [
-    "ms-dotnettools.csharp",
-    "ms-dotnettools.xaml",
-    "ms-vscode.powershell",
-    "spmeesseman.vscode-taskexplorer",
-    "trunkio.trunk",
-    "eamodio.gitlens",
-    "ms-mssql.mssql",
-    "josefpihrt-vscode.roslynator",
-    "github.copilot",
-    "github.copilot-chat"
+
+    // Productivity & Quality Tools
+    "ms-vscode.vscode-json", // Enhanced JSON editing
+    "aaron-bond.better-comments", // Professional code documentation
+    "streetsidesoftware.code-spell-checker", // Documentation quality assurance
+    "ms-vscode.hexeditor", // Binary file inspection
+    "ms-vscode.vscode-yaml", // YAML configuration support
+
+    // Git & Collaboration Excellence
+    "eamodio.gitlens", // Advanced Git integration
+    "github.vscode-pull-request-github", // GitHub workflow integration
+    "github.vscode-github-actions", // GitHub Actions workflow editing
+
+    // Language Support Enhancement
+    "ms-vscode.vscode-typescript-next", // Enhanced TypeScript support
+    "bradlc.vscode-tailwindcss" // CSS framework support
   ],
   "unwantedRecommendations": [
+    // Prevent extension conflicts with our quality-focused approach
+
+    // Competing auto-formatting tools (conflicts with XAML Styler excellence and Trunk)
     "formulahendry.auto-close-tag",
     "formulahendry.auto-rename-tag",
-    "ms-vscode.powershell-preview",
+    "DotJoshJohnson.xml",
+
+    // Prevents PowerShell 7.5.2 syntax conflicts with PSScriptAnalyzer via Trunk
+    "ms-vscode.vscode-typescript-tslint-plugin", // Trunk handles TypeScript linting if needed
+
+    // Competing SQL extensions (we use ms-mssql.mssql as primary)
+    "oracle.oracledevtools",
+    "mtxr.sqltools",
+    "ms-ossdata.vscode-postgresql",
+
+    // Competing Azure extensions (we use official Microsoft Azure tools)
+    "bradymholt.pgformatter", // PostgreSQL specific, not needed
+
+    // Node.js tools (not applicable to BusBuddy .NET/WPF architecture)
+    "eg2.vscode-npm-script",
+
+    // Competing test tools (we use built-in .NET test explorer)
+    "hbenl.vscode-test-explorer",
+    "kavod-io.vscode-jest-test-adapter",
+
+    // Competing PowerShell extensions
+    "ms-vscode.powershell-preview", // Avoid duplicate if stable is used (conflicts with stable extension)
+    "ironmansoftware.powershellprotools", // Commercial tool, we use free Microsoft tools
+
+    // Competing XML tools (covered by our quality extension set)
     "ms-vscode.vscode-xml"
   ]
 }
-    // Competing auto-formatting tools (conflicts with XAML Styler excellence and Trunk)

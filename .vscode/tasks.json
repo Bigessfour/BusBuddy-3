@@ -291,8 +291,8 @@
       "command": "pwsh",
       "args": [
         "-NoProfile",
-  "-Command",
-  "try { dotnet clean BusBuddy.sln --verbosity minimal; Write-Output 'Solution cleaned successfully' } catch { Write-Error 'Clean failed' }; try { Get-ChildItem -Path '.\\*\\bin', '.\\*\\obj' -Recurse -Directory -ErrorAction SilentlyContinue | Remove-Item -Recurse -Force; Write-Output 'Build artifacts removed' } catch { Write-Warning 'Some artifacts could not be removed' }"
+        "-Command",
+        "try { dotnet clean BusBuddy.sln --verbosity minimal; Write-Host 'Solution cleaned successfully' -ForegroundColor Green } catch { Write-Error 'Clean failed' }; try { Get-ChildItem -Path '.\\*\\bin', '.\\*\\obj' -Recurse -Directory -ErrorAction SilentlyContinue | Remove-Item -Recurse -Force; Write-Host 'Build artifacts removed' -ForegroundColor Green } catch { Write-Warning 'Some artifacts could not be removed' }"
       ],
       "group": "build",
       "options": {
