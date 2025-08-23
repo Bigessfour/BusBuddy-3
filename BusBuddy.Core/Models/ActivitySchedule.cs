@@ -114,6 +114,14 @@ public class ActivitySchedule
     public virtual Bus ScheduledVehicle { get; set; } = null!;
     public virtual Driver ScheduledDriver { get; set; } = null!;
 
+    // Backwards-compatible alias expected by WPF views
+    [NotMapped]
+    public int ScheduledBusId
+    {
+        get => ScheduledVehicleId;
+        set => ScheduledVehicleId = value;
+    }
+
     // Student assignments for this activity schedule
     public virtual ICollection<StudentSchedule> StudentSchedules { get; set; } = new List<StudentSchedule>();
 

@@ -18,7 +18,7 @@ namespace BusBuddy.Core.Models
         private DateTime _endTime;
         private string _location = string.Empty;
         private int _teamSize;
-        private int? _vehicleId;
+        private int? _busId;
         private int? _driverId;
         private string _status = "Pending";
         private string _safetyNotes = string.Empty;
@@ -118,15 +118,15 @@ namespace BusBuddy.Core.Models
         /// Foreign key to assigned vehicle (nullable)
         /// </summary>
         [ForeignKey("Vehicle")]
-        public int? VehicleId
+        public int? BusId
         {
-            get => _vehicleId;
+            get => _busId;
             set
             {
-                if (_vehicleId != value)
+                if (_busId != value)
                 {
-                    _vehicleId = value;
-                    OnPropertyChanged(nameof(VehicleId));
+                    _busId = value;
+                    OnPropertyChanged(nameof(BusId));
                 }
             }
         }

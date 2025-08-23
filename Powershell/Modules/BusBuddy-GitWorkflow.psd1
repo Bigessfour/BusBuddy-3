@@ -30,7 +30,7 @@
     Copyright = '(c) BusBuddy Development Team. All rights reserved.'
 
     # Description of the functionality provided by this module
-    Description = 'Microsoft-compliant Git workflow automation with fetchability index integration for Grok-4 AI analysis. Provides seamless commit and push operations with automated repository structure updates.'
+    Description = 'Microsoft-compliant Git workflow automation with integrated security scanning and fetchability index integration for Grok-4 AI analysis. Provides secure commit and push operations with mandatory secret detection and automated repository structure updates.'
 
     # Minimum version of the PowerShell engine required by this module
     PowerShellVersion = '7.5'
@@ -71,9 +71,11 @@
     # Functions to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no functions to export.
     FunctionsToExport = @(
         'Update-BusBuddyFetchabilityIndex',
-        'Invoke-BusBuddyCommit', 
+        'Invoke-BusBuddyCommit',
         'Invoke-BusBuddyPush',
-        'Invoke-BusBuddyCommitAndPush'
+        'Invoke-BusBuddyCommitAndPush',
+        'Invoke-BusBuddySecurityScan',
+        'Invoke-BusBuddySecureCommit'
     )
 
     # Cmdlets to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no cmdlets to export.
@@ -103,7 +105,7 @@
         PSData = @{
 
             # Tags applied to this module. These help with module discovery in online galleries.
-            Tags = @('Git', 'Workflow', 'Automation', 'BusBuddy', 'Grok-4', 'AI', 'Microsoft-Compliant')
+            Tags = @('Git', 'Workflow', 'Automation', 'Security', 'SecretDetection', 'BusBuddy', 'Grok-4', 'AI', 'Microsoft-Compliant')
 
             # A URL to the license for this module.
             LicenseUri = 'https://github.com/Bigessfour/BusBuddy-3/blob/master/LICENSE'
@@ -116,24 +118,37 @@
 
             # ReleaseNotes of this module
             ReleaseNotes = @'
-Version 1.0.0 (2025-08-22)
+Version 1.0.0 (2025-08-23)
 ==========================
 
-Initial release of BusBuddy Git Workflow module.
+Enhanced release with integrated security scanning capabilities.
 
 Features:
 - Microsoft PowerShell Standards compliant implementation
 - Automated fetchability index integration for Grok-4 AI analysis
 - Comprehensive Git workflow functions (commit, push, combined operations)
+- **NEW: Mandatory security scanning to prevent secret exposure**
+- **NEW: Enhanced secure commit workflow with pre-commit validation**
 - Structured error handling and informational output
 - Support for WhatIf and Verbose parameters
 - Pre-push validation and safety checks
 
-Functions:
+Security Functions:
+- Invoke-BusBuddySecurityScan: Comprehensive security scan for secrets and API keys
+- Invoke-BusBuddySecureCommit: Enhanced commit with mandatory security validation
+
+Core Functions:
 - Update-BusBuddyFetchabilityIndex: Updates repository structure index
 - Invoke-BusBuddyCommit: Commits with fetchability index automation
 - Invoke-BusBuddyPush: Pushes with pre-push validation
 - Invoke-BusBuddyCommitAndPush: Complete workflow automation
+
+Security Protection:
+- Scans for hardcoded API keys (xAI, OpenAI, Azure, GitHub)
+- Detects unsafe environment variable usage
+- Checks for exposed secrets in filenames
+- Optional Git history scanning for leaked credentials
+- Blocks commits when critical security issues are found
 
 Requirements:
 - PowerShell 7.5+
@@ -144,6 +159,7 @@ Documentation:
 - All functions include comprehensive help documentation
 - Microsoft PowerShell documentation standards followed
 - Examples provided for each function
+- Security best practices integration
 
 For more information, visit: https://github.com/Bigessfour/BusBuddy-3
 '@

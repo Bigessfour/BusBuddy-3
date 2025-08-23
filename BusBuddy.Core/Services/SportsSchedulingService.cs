@@ -176,7 +176,7 @@ namespace BusBuddy.Core.Services
                 }
 
                 // Assign vehicle and driver
-                sportsEvent.VehicleId = vehicleId;
+                sportsEvent.BusId = vehicleId;
                 sportsEvent.DriverId = driverId;
                 sportsEvent.Status = "Assigned";
 
@@ -219,7 +219,7 @@ namespace BusBuddy.Core.Services
                 if (vehicleId.HasValue)
                 {
                     var vehicleConflicts = await _context.SportsEvents
-                        .Where(e => e.VehicleId == vehicleId.Value &&
+                        .Where(e => e.BusId == vehicleId.Value &&
                                    e.StartTime < endTime && e.EndTime > startTime)
                         .CountAsync();
                     conflicts += vehicleConflicts;
@@ -270,9 +270,9 @@ namespace BusBuddy.Core.Services
 
                 // Get assigned vehicle IDs in the time slot
                 var assignedVehicleIds = await _context.SportsEvents
-                    .Where(e => e.VehicleId.HasValue &&
+                    .Where(e => e.BusId.HasValue &&
                                e.StartTime < endTime && e.EndTime > startTime)
-                    .Select(e => e.VehicleId!.Value)
+                    .Select(e => e.BusId!.Value)
                     .Distinct()
                     .ToListAsync();
 

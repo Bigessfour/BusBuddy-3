@@ -207,4 +207,19 @@ public partial class Route : INotifyPropertyChanged
     {
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
     }
+
+    // Backwards-compatible aliases for older WPF naming
+    [NotMapped]
+    public int? AMBusId
+    {
+        get => AMVehicleId;
+        set => AMVehicleId = value;
+    }
+
+    [NotMapped]
+    public int? PMBusId
+    {
+        get => PMVehicleId;
+        set => PMVehicleId = value;
+    }
 }

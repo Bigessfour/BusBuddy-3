@@ -137,7 +137,7 @@ namespace BusBuddy.WPF.ViewModels.Fuel
                     {
                         FuelDate = DateTime.Now,
                         FuelLocation = "Key Pumps",
-                        VehicleFueledId = firstBus.VehicleId,
+                        VehicleFueledId = firstBus.BusId,
                         VehicleOdometerReading = 0,
                         FuelType = "Diesel",
                         Gallons = 0,

@@ -335,11 +335,11 @@ namespace BusBuddy.WPF.Views.Activity
         private void LoadSampleVehicles()
         {
             AvailableVehicles.Clear();
-            AvailableVehicles.Add(new BusBuddy.Core.Models.Bus { VehicleId = 1, Make = "Blue Bird", Model = "Vision", LicenseNumber = "Bus-001", Capacity = 72 });
-            AvailableVehicles.Add(new BusBuddy.Core.Models.Bus { VehicleId = 2, Make = "Blue Bird", Model = "Vision", LicenseNumber = "Bus-002", Capacity = 71 });
-            AvailableVehicles.Add(new BusBuddy.Core.Models.Bus { VehicleId = 3, Make = "Thomas", Model = "C2", LicenseNumber = "Bus-003", Capacity = 77 });
-            AvailableVehicles.Add(new BusBuddy.Core.Models.Bus { VehicleId = 4, Make = "Thomas", Model = "C2", LicenseNumber = "Bus-004", Capacity = 72 });
-            AvailableVehicles.Add(new BusBuddy.Core.Models.Bus { VehicleId = 5, Make = "IC Bus", Model = "CE200", LicenseNumber = "Bus-005", Capacity = 78 });
+            AvailableVehicles.Add(new BusBuddy.Core.Models.Bus { BusId = 1, Make = "Blue Bird", Model = "Vision", LicenseNumber = "Bus-001", Capacity = 72 });
+            AvailableVehicles.Add(new BusBuddy.Core.Models.Bus { BusId = 2, Make = "Blue Bird", Model = "Vision", LicenseNumber = "Bus-002", Capacity = 71 });
+            AvailableVehicles.Add(new BusBuddy.Core.Models.Bus { BusId = 3, Make = "Thomas", Model = "C2", LicenseNumber = "Bus-003", Capacity = 77 });
+            AvailableVehicles.Add(new BusBuddy.Core.Models.Bus { BusId = 4, Make = "Thomas", Model = "C2", LicenseNumber = "Bus-004", Capacity = 72 });
+            AvailableVehicles.Add(new BusBuddy.Core.Models.Bus { BusId = 5, Make = "IC Bus", Model = "CE200", LicenseNumber = "Bus-005", Capacity = 78 });
         }
 
         public bool ValidateActivity()
@@ -503,7 +503,7 @@ namespace BusBuddy.WPF.Views.Activity
             activity.Notes = Notes;
             activity.Status = Status;
             activity.ScheduledDriverId = SelectedDriver?.DriverId ?? 0;
-            activity.ScheduledVehicleId = SelectedVehicle?.Id ?? 0;
+            activity.ScheduledBusId = SelectedVehicle?.Id ?? 0;
             activity.UpdatedDate = DateTime.Now;
             activity.UpdatedBy = Environment.UserName;
 

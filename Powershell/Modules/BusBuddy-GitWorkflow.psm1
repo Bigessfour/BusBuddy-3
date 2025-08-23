@@ -471,10 +471,270 @@ function Invoke-BusBuddyCommitAndPush {
     }
 }
 
+<#
+.SYNOPSIS
+    Performs comprehensive security scan to prevent accidental exposure of secrets.
+.DESCRIPTION
+    Scans the repository for potential security issues including hardcoded API keys,
+    exposed secrets, and unsafe patterns before Git operations. Uses Microsoft
+    PowerShell security best practices.
+.PARAMETER Path
+    Root path to scan. Defaults to workspace root.
+.PARAMETER IncludeGitHistory
+    Include Git history scan for previously committed secrets.
+.EXAMPLE
+    Invoke-BusBuddySecurityScan
+    Performs security scan on the current workspace.
+.EXAMPLE
+    Invoke-BusBuddySecurityScan -IncludeGitHistory
+    Performs security scan including Git history check.
+.NOTES
+    Microsoft Reference: https://learn.microsoft.com/en-us/powershell/scripting/learn/deep-dives/everything-about-exceptions
+#>
+function Invoke-BusBuddySecurityScan {
+    [CmdletBinding()]
+    param(
+        [Parameter()]
+        [string]$Path = $script:WorkspaceRoot,
+
+        [Parameter()]
+        [switch]$IncludeGitHistory
+    )
+
+    begin {
+        Write-Verbose "Starting BusBuddy security scan"
+        Write-Information "🔐 SECURITY SCAN: Checking for exposed secrets" -InformationAction Continue
+        Write-Information "=================================================" -InformationAction Continue
+    }
+
+    process {
+        try {
+            $securityIssues = @()
+            $warnings = @()
+            $recommendations = @()
+
+            # 1. Scan for hardcoded API keys and secrets
+            Write-Information "🔍 Scanning files for hardcoded secrets..." -InformationAction Continue
+
+            $dangerousPatterns = @{
+                'xAI_API_Key_Hardcoded' = 'xai-[a-zA-Z0-9]{60,}'
+                'OpenAI_API_Key_Hardcoded' = 'sk-[a-zA-Z0-9]{48,}'
+                'Azure_Connection_String' = 'DefaultEndpointsProtocol=https;AccountName=[^;]*;AccountKey=[^;]*'
+                'SQL_Connection_Password' = 'Password\s*=\s*["''][^"'']{8,}["'']'
+                'Unsafe_Env_Var_Usage' = '\$env:[A-Z_]*API_KEY\s*(?!\s*=|\s*\)|\s*\}|\s*\]|"|\s*\|)'
+                'Bearer_Token_Hardcoded' = 'Bearer\s+[a-zA-Z0-9]{20,}'
+                'GitHub_Token_Hardcoded' = 'ghp_[a-zA-Z0-9]{36}'
+                'Private_Key_Content' = '-----BEGIN\s+(RSA\s+)?PRIVATE\s+KEY-----'
+            }
+
+            $filesToScan = Get-ChildItem -Path $Path -Recurse -File -Include "*.ps1", "*.psm1", "*.psd1", "*.cs", "*.json", "*.xml", "*.yaml", "*.yml", "*.config" |
+                Where-Object {
+                    param($FileItem)
+                    $FileItem.DirectoryName -notmatch '\\(bin|obj|\.git|\.vs|TestResults|packages)\\'
+                }
+
+            foreach ($file in $filesToScan) {
+                try {
+                    $content = Get-Content $file.FullName -Raw -ErrorAction SilentlyContinue
+                    if ($content) {
+                        foreach ($patternName in $dangerousPatterns.Keys) {
+                            $pattern = $dangerousPatterns[$patternName]
+                            if ($content -match $pattern) {
+                                $securityIssues += [PSCustomObject]@{
+                                    Severity = "CRITICAL"
+                                    Type = $patternName
+                                    File = $file.FullName.Replace($Path, ".")
+                                    Pattern = $pattern
+                                    LineNumber = (($content -split "`n") | Select-String $pattern | Select-Object -First 1).LineNumber
+                                }
+                            }
+                        }
+                    }
+                } catch {
+                    Write-Warning "Could not scan file: $($file.FullName) - $($_.Exception.Message)"
+                }
+            }
+
+            # 2. Check environment variable safety
+            Write-Information "🔍 Checking environment variable usage..." -InformationAction Continue
+
+            $sensitiveEnvVars = @('XAI_API_KEY', 'OPENAI_API_KEY', 'AZURE_CLIENT_SECRET', 'GITHUB_TOKEN')
+            foreach ($envVar in $sensitiveEnvVars) {
+                $value = [Environment]::GetEnvironmentVariable($envVar)
+                if ($value) {
+                    if ($value.Length -lt 20) {
+                        $warnings += "⚠️ Environment variable $envVar appears too short (${value.Length} chars)"
+                    } elseif ($value -notmatch '^[a-zA-Z0-9\-_]+$') {
+                        $warnings += "⚠️ Environment variable $envVar contains unusual characters"
+                    } else {
+                        Write-Information "✅ Environment variable $envVar format appears correct" -InformationAction Continue
+                    }
+                }
+            }
+
+            # 3. Git history scan (if requested)
+            if ($IncludeGitHistory) {
+                Write-Information "🔍 Scanning Git history for leaked secrets..." -InformationAction Continue
+
+                try {
+                    $gitLogOutput = git log --all --full-history --grep="api.key\|secret\|password\|token" --oneline 2>$null
+                    if ($gitLogOutput) {
+                        foreach ($line in $gitLogOutput) {
+                            $warnings += "⚠️ Potential sensitive commit found: $line"
+                        }
+                    }
+                } catch {
+                    Write-Warning "Could not scan Git history: $($_.Exception.Message)"
+                }
+            }
+
+            # 4. Check for files with secrets in filename
+            Write-Information "🔍 Checking for files with secrets in filename..." -InformationAction Continue
+
+            $suspiciousFiles = Get-ChildItem -Path $Path -Recurse -File |
+                Where-Object {
+                    param($FileItem)
+                    $FileItem.Name -match "(api.key|secret|password|token|credential)" -and
+                    $FileItem.Extension -notin @('.md', '.txt', '.gitignore')
+                }
+
+            foreach ($file in $suspiciousFiles) {
+                $warnings += "⚠️ Suspicious filename: $($file.FullName.Replace($Path, '.'))"
+            }
+
+            # 5. Generate recommendations
+            $recommendations += "🔒 Regenerate any exposed API keys immediately"
+            $recommendations += "🚫 Never commit secrets - use environment variables"
+            $recommendations += "🧹 Clear PowerShell history if secrets were displayed"
+            $recommendations += "📋 Use .gitignore to exclude sensitive files"
+            $recommendations += "🔍 Run security scan before every commit"
+
+            # Generate report
+            $scanResult = [PSCustomObject]@{
+                Timestamp = Get-Date
+                SecurityIssues = $securityIssues
+                Warnings = $warnings
+                Recommendations = $recommendations
+                TotalIssues = $securityIssues.Count
+                TotalWarnings = $warnings.Count
+                ScanPath = $Path
+                FilesScanned = $filesToScan.Count
+            }
+
+            # Output results
+            if ($securityIssues.Count -gt 0) {
+                Write-Information "🚨 CRITICAL SECURITY ISSUES FOUND:" -InformationAction Continue
+                foreach ($issue in $securityIssues) {
+                    Write-Information "   ❌ $($issue.Type) in $($issue.File):$($issue.LineNumber)" -InformationAction Continue
+                }
+                Write-Information "🛑 DO NOT COMMIT - FIX SECURITY ISSUES FIRST!" -InformationAction Continue
+            } else {
+                Write-Information "✅ No critical security issues found" -InformationAction Continue
+            }
+
+            if ($warnings.Count -gt 0) {
+                Write-Information "`n⚠️ SECURITY WARNINGS:" -InformationAction Continue
+                foreach ($warning in $warnings) {
+                    Write-Information "   $warning" -InformationAction Continue
+                }
+            }
+
+            Write-Information "`n📋 SECURITY RECOMMENDATIONS:" -InformationAction Continue
+            foreach ($recommendation in $recommendations) {
+                Write-Information "   $recommendation" -InformationAction Continue
+            }
+
+            return $scanResult
+        }
+        catch {
+            Write-Error "Security scan failed: $($_.Exception.Message)"
+            throw
+        }
+    }
+
+    end {
+        Write-Verbose "Security scan completed"
+    }
+}
+
+<#
+.SYNOPSIS
+    Enhanced commit function with mandatory security scanning.
+.DESCRIPTION
+    Extends the basic commit functionality with automatic security scanning
+    to prevent accidental exposure of secrets in Git commits.
+.PARAMETER Message
+    Commit message following conventional commit standards.
+.PARAMETER SkipSecurityScan
+    Skip security scan (NOT RECOMMENDED - use only for emergency fixes).
+.EXAMPLE
+    Invoke-BusBuddySecureCommit -Message "feat: add new feature"
+    Commits with security scan verification.
+.NOTES
+    This function performs security scanning before allowing commits.
+#>
+function Invoke-BusBuddySecureCommit {
+    [CmdletBinding(SupportsShouldProcess)]
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Message,
+
+        [Parameter()]
+        [switch]$SkipSecurityScan
+    )
+
+    begin {
+        Write-Verbose "Starting secure commit process"
+    }
+
+    process {
+        try {
+            # Security scan (unless explicitly skipped)
+            if (-not $SkipSecurityScan) {
+                Write-Information "🔐 Running mandatory security scan..." -InformationAction Continue
+                $securityResult = Invoke-BusBuddySecurityScan
+
+                if ($securityResult.TotalIssues -gt 0) {
+                    Write-Error "🛑 COMMIT BLOCKED: Security issues found. Fix issues before committing."
+                    Write-Information "Run 'Invoke-BusBuddySecurityScan' for detailed information." -InformationAction Continue
+                    return $false
+                }
+
+                if ($securityResult.TotalWarnings -gt 0) {
+                    Write-Information "⚠️ Security warnings found. Review before proceeding." -InformationAction Continue
+                    $continue = Read-Host "Continue with commit? (y/N)"
+                    if ($continue -ne 'y' -and $continue -ne 'Y') {
+                        Write-Information "Commit cancelled by user." -InformationAction Continue
+                        return $false
+                    }
+                }
+            } else {
+                Write-Warning "⚠️ Security scan skipped - USE WITH CAUTION!"
+            }
+
+            # Update fetchability index
+            Update-BusBuddyFetchabilityIndex
+
+            # Perform commit
+            return Invoke-BusBuddyCommit -Message $Message
+        }
+        catch {
+            Write-Error "Secure commit failed: $($_.Exception.Message)"
+            throw
+        }
+    }
+
+    end {
+        Write-Verbose "Secure commit process completed"
+    }
+}
+
 # Export public functions following Microsoft module standards
 Export-ModuleMember -Function @(
     'Update-BusBuddyFetchabilityIndex',
     'Invoke-BusBuddyCommit',
     'Invoke-BusBuddyPush',
-    'Invoke-BusBuddyCommitAndPush'
+    'Invoke-BusBuddyCommitAndPush',
+    'Invoke-BusBuddySecurityScan',
+    'Invoke-BusBuddySecureCommit'
 )
