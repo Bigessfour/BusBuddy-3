@@ -17,21 +17,8 @@ on:
       - "**/*.md"
       - "docs/**"
       - "Documentation/**"
-  workflo      - name: 🔐 Export secrets to env
-        env:
-          SYNCFUSION_LICENSE_KEY: ${{ secrets.SYNCFUSION_LICENSE_KEY }}
-        run: |
-          if ([string]::IsNullOrEmpty($env:SYNCFUSION_LICENSE_KEY)) {
-            Write-Warning "Syncfusion license key is not configured"
-            Write-Output "::notice::Running without Syncfusion license - community license features only"
-          } else {
-            Write-Output "✅ Syncfusion license configured for security analysis"
-            # Set environment variable for security analysis process
-            echo "SYNCFUSION_LICENSE_KEY=$env:SYNCFUSION_LICENSE_KEY" >> $env:GITHUB_ENV
-          }
-        shell: pwsh
-
-      - name: 🔒 Run CodeQL Analysis  inputs:
+  workflow_dispatch:
+    inputs:
       debug_enabled:
         type: boolean
         description: "Enable debug mode for troubleshooting"
