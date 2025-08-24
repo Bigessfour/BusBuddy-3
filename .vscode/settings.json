@@ -249,15 +249,15 @@
   },
   // === POWERSHELL DEVELOPMENT EXCELLENCE ===
   // PowerShell Version Configuration (per Microsoft docs)
-  "powershell.powerShellDefaultVersion": "PowerShell 7.5.2", // Set to match powerShellAdditionalExePaths key
+  "powershell.powerShellDefaultVersion": "BusBuddy PowerShell 7.5.2", // Set to match terminal profile and powerShellAdditionalExePaths key
   "powershell.enableProfileLoading": true, // Ensures profile loads in integrated console
   "powershell.integratedConsole.suppressStartupBanner": false, // Show startup for validation
 
   // PowerShell Additional Executable Paths (per Microsoft documentation)
   "powershell.powerShellAdditionalExePaths": {
-    "PowerShell 7.5.2": "pwsh.exe",
-    "PowerShell 7.5.2 (Preview)": "pwsh-preview.exe",
-    "Windows PowerShell 5.1": "powershell.exe"
+    "PowerShell 7.5.2": "C:\\Program Files\\PowerShell\\7\\pwsh.exe",
+    "PowerShell 7.5.2 (Preview)": "C:\\Program Files\\PowerShell\\7-preview\\pwsh-preview.exe",
+    "Windows PowerShell 5.1": "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe"
   },
 
   // PowerShell Extension Settings (based on official docs)
@@ -370,7 +370,7 @@
   "terminal.integrated.defaultProfile.windows": "BusBuddy PowerShell 7.5.2",
   "terminal.integrated.profiles.windows": {
     "BusBuddy PowerShell 7.5.2": {
-      "path": "pwsh.exe",
+      "path": "C:\\Program Files\\PowerShell\\7\\pwsh.exe",
       "args": [
         "-NoLogo",
         "-ExecutionPolicy",
@@ -383,7 +383,7 @@
       "color": "terminal.ansiCyan"
     },
     "BusBuddy Optimized": {
-      "path": "pwsh.exe",
+      "path": "C:\\Program Files\\PowerShell\\7\\pwsh.exe",
       "args": [
         "-NoLogo",
         "-ExecutionPolicy",
@@ -396,7 +396,7 @@
       "color": "terminal.ansiMagenta"
     },
     "PowerShell 7.5.2 (Clean)": {
-      "path": "pwsh.exe",
+      "path": "C:\\Program Files\\PowerShell\\7\\pwsh.exe",
       "args": ["-NoLogo", "-ExecutionPolicy", "RemoteSigned"],
       "icon": "terminal-powershell",
       "color": "terminal.ansiBlue"
