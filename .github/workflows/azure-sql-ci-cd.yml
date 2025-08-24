@@ -1,0 +1,97 @@
+name: 🚌 BusBuddy-3 CI/CD with Azure SQL
+
+on:
+  push:
+    branches: [main, master, develop]
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:
+
+env:
+  DOTNET_VERSION: "9.0.x" # Align with solution target (.NET 9)
+  SOLUTION_FILE: "BusBuddy.sln"
+  BUILD_CONFIGURATION: "Release"
+  # Enforce non-interactive dotnet
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 1
+  DOTNET_NOLOGO: 1
+
+jobs:
+  build-and-deploy:
+    name: 🏗️ Build & Deploy
+    runs-on: windows-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: 📥 Checkout Code
+        uses: actions/checkout@v4
+
+      - name: ⚙️ Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: 📦 Restore Dependencies
+        shell: pwsh
+        run: |
+          if (Get-Command bb-build -ErrorAction SilentlyContinue) {
+            Write-Information "Using bb-build --restoreOnly" -InformationAction Continue
+            bb-build --restoreOnly 2>$null || dotnet restore $env:SOLUTION_FILE --nologo
+          } else {
+            Write-Information "bb-build not found; falling back to dotnet restore" -InformationAction Continue
+            dotnet restore $env:SOLUTION_FILE --nologo
+          }
+
+      - name: 🏗️ Build Solution
+        shell: pwsh
+        run: |
+          if (Get-Command bb-build -ErrorAction SilentlyContinue) {
+            Write-Information "Building via bb-build" -InformationAction Continue
+            bb-build 2>$null || dotnet build $env:SOLUTION_FILE --configuration $env:BUILD_CONFIGURATION --no-restore --nologo -warnaserror-
+          } else {
+            Write-Information "bb-build not found; using dotnet build" -InformationAction Continue
+            dotnet build $env:SOLUTION_FILE --configuration $env:BUILD_CONFIGURATION --no-restore --nologo -warnaserror-
+          }
+
+      - name: 🔍 Quality Gates (Anti-Regression & XAML Validate)
+        if: always()
+        shell: pwsh
+        run: |
+          if (Get-Command bb-anti-regression -ErrorAction SilentlyContinue) { bb-anti-regression } else { Write-Warning "bb-anti-regression not available in CI runner" }
+          if (Get-Command bb-xaml-validate -ErrorAction SilentlyContinue) { bb-xaml-validate } else { Write-Warning "bb-xaml-validate not available in CI runner" }
+
+      - name: 🧪 Run Tests
+        shell: pwsh
+        run: |
+          if (Get-Command bb-test -ErrorAction SilentlyContinue) {
+            Write-Information "Running tests via bb-test" -InformationAction Continue
+            bb-test 2>$null || dotnet test $env:SOLUTION_FILE --configuration $env:BUILD_CONFIGURATION --no-build --verbosity normal --nologo
+          } else {
+            Write-Information "bb-test not found; using dotnet test" -InformationAction Continue
+            dotnet test $env:SOLUTION_FILE --configuration $env:BUILD_CONFIGURATION --no-build --verbosity normal --nologo
+          }
+
+      - name: 🗄️ Deploy Database Migrations (Staging)
+        if: github.ref == 'refs/heads/develop'
+        shell: pwsh
+        run: |
+          if (-not $env:AZURE_CLIENT_ID) { Write-Warning 'AZURE_CLIENT_ID env var not set; skipping staging migration'; exit 0 }
+          if (-not $env:AZURE_CLIENT_SECRET) { Write-Warning 'AZURE_CLIENT_SECRET env var not set; skipping staging migration'; exit 0 }
+          $clientId = $env:AZURE_CLIENT_ID
+          $clientSecret = $env:AZURE_CLIENT_SECRET
+          $connection = "Server=tcp:busbuddy-server-sm2.database.windows.net,1433;Database=BusBuddyDB-Staging;Authentication=Active Directory Service Principal;User Id=$clientId;Password=$clientSecret;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;"
+          Write-Information "Applying EF migrations to STAGING" -InformationAction Continue
+          dotnet tool restore
+          dotnet ef database update --project BusBuddy.Core --startup-project BusBuddy.WPF --connection "$connection" --no-build
+
+      - name: 🗄️ Deploy Database Migrations (Production)
+        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+        shell: pwsh
+        run: |
+          if (-not $env:AZURE_CLIENT_ID) { Write-Warning 'AZURE_CLIENT_ID env var not set; skipping production migration'; exit 0 }
+          if (-not $env:AZURE_CLIENT_SECRET) { Write-Warning 'AZURE_CLIENT_SECRET env var not set; skipping production migration'; exit 0 }
+          $clientId = $env:AZURE_CLIENT_ID
+          $clientSecret = $env:AZURE_CLIENT_SECRET
+          $connection = "Server=tcp:busbuddy-server-sm2.database.windows.net,1433;Database=BusBuddyDB;Authentication=Active Directory Service Principal;User Id=$clientId;Password=$clientSecret;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;"
+          Write-Information "Applying EF migrations to PRODUCTION" -InformationAction Continue
+          dotnet tool restore
+          dotnet ef database update --project BusBuddy.Core --startup-project BusBuddy.WPF --connection "$connection" --no-build

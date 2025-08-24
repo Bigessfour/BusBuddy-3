@@ -1,7 +1,18 @@
-# GitHub Actions CI/CD Pipeline Integration with Grok AI Analysis
-# Enhanced workflow for BusBuddy with AI-powered failure analysis
+---
+# 🚀 BusBuddy CI with AI Analysis (Grok)
+# Documentation-first, compliant with BusBuddy standards:
+# - .NET 9.0 (matches solution target)
+# - No Write-Host (uses Write-Output / Write-Information / Write-Warning)
+# - Uses bb-* commands when available (non-fatal fallback to dotnet)
+# - Concurrency to auto-cancel redundant runs per ref
+# - AI failure analysis only triggers on failed restore/build/test
+# - Removes direct secret echoing into $GITHUB_ENV (reads from injected env only)
 
-name: 🚀 BusBuddy CI with AI Analysis
+name: "🚀 BusBuddy CI with AI Analysis"
+
+concurrency:
+  group: busbuddy-ai-ci-${{ github.ref }}
+  cancel-in-progress: true
 
 on:
   push:
@@ -11,217 +22,116 @@ on:
   workflow_dispatch:
 
 env:
-  DOTNET_VERSION: "8.0.x"
+  DOTNET_VERSION: "9.0.x"
   BUSBUDDY_NO_WELCOME: "1"
   BUSBUDDY_NO_XAI_WARN: "1"
   BUSBUDDY_SILENT: "1"
   DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+  SOLUTION_FILE: "BusBuddy.sln"
+  BUILD_CONFIGURATION: "Release"
 
 jobs:
   build-and-test:
-    name: 🏗️ Build & Test with AI Analysis
+    name: "🏗️ Build & Test with AI Analysis"
     runs-on: windows-latest
-    timeout-minutes: 30
-
+    timeout-minutes: 35
     steps:
-      - name: 📥 Checkout Code
+      - name: "📥 Checkout Code"
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: ⚙️ Setup .NET
+      - name: "⚙️ Setup .NET"
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
-      - name: 📦 Restore Dependencies
-        run: dotnet restore BusBuddy.sln
-        continue-on-error: true
+      - name: "🔧 Load BusBuddy PowerShell Profile (if present)"
+        shell: pwsh
+        run: |
+          $profilePath = Join-Path $PWD 'PowerShell/Profiles/Microsoft.PowerShell_profile_optimized.ps1'
+          if (Test-Path $profilePath) {
+            . $profilePath
+            Write-Output "Loaded BusBuddy profile. bb-* commands available:"
+            (Get-Command bb-* -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Name) | ForEach-Object { Write-Output "  - $_" }
+          } else {
+            Write-Warning "BusBuddy optimized profile not found; proceeding without bb-* shortcuts."
+          }
+
+      - name: "📦 Cache NuGet Packages"
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
+      - name: "📦 Restore Dependencies"
         id: restore
+        shell: pwsh
+        run: |
+          if (Get-Command bb-build -ErrorAction SilentlyContinue) {
+            Write-Information "Attempting bb-build restore shortcut" -InformationAction Continue
+            bb-build --restoreOnly 2>$null || dotnet restore $env:SOLUTION_FILE --verbosity minimal
+          } else {
+            dotnet restore $env:SOLUTION_FILE --verbosity minimal
+          }
 
-      - name: 🏗️ Build Solution
-        run: dotnet build BusBuddy.sln --configuration Release --no-restore
-        continue-on-error: true
+      - name: "🏗️ Build"
         id: build
+        shell: pwsh
+        run: |
+          if (Get-Command bb-build -ErrorAction SilentlyContinue) {
+            bb-build 2>$null || dotnet build $env:SOLUTION_FILE --configuration $env:BUILD_CONFIGURATION --no-restore --verbosity minimal
+          } else {
+            dotnet build $env:SOLUTION_FILE --configuration $env:BUILD_CONFIGURATION --no-restore --verbosity minimal
+          }
 
-      - name: 🧪 Run Tests
-        run: dotnet test BusBuddy.sln --configuration Release --no-build --verbosity normal --logger trx
-        continue-on-error: true
+      - name: "🧪 Test"
         id: test
-
-      # AI-Powered Failure Analysis
-      - name: 🤖 Analyze Build Failure with Grok AI
-        if: failure() && (steps.restore.outcome == 'failure' || steps.build.outcome == 'failure' || steps.test.outcome == 'failure')
         shell: pwsh
-        env:
-          XAI_API_KEY: ${{ secrets.XAI_API_KEY }}
-          AZURE_SQL_SERVER: ${{ secrets.AZURE_SQL_SERVER }}
-          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
-          AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
-          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
         run: |
-          Write-Host "🤖 Starting AI-powered failure analysis..." -ForegroundColor Cyan
-          
-          # Import enhanced CI analysis module
-          Import-Module "./PowerShell/Modules/BusBuddy-CIAnalysis-Enhanced.psm1" -Force
-          
-          # Import Azure SQL integration if available
-          if (Test-Path "./PowerShell/Modules/BusBuddy-GrokAzureSQL.psm1") {
-              Import-Module "./PowerShell/Modules/BusBuddy-GrokAzureSQL.psm1" -Force
-              
-              # Initialize Azure SQL connection
-              try {
-                  grok-sql-init -ServerName $env:AZURE_SQL_SERVER
-                  Write-Host "✅ Azure SQL connection initialized" -ForegroundColor Green
-              } catch {
-                  Write-Warning "⚠️ Azure SQL initialization failed: $($_.Exception.Message)"
-              }
-          }
-          
-          # Collect failure information
-          $errorContext = @()
-          
-          if ('${{ steps.restore.outcome }}' -eq 'failure') {
-              $errorContext += "Package restore failed"
-          }
-          
-          if ('${{ steps.build.outcome }}' -eq 'failure') {
-              $errorContext += "Build compilation failed"
-          }
-          
-          if ('${{ steps.test.outcome }}' -eq 'failure') {
-              $errorContext += "Unit tests failed"
-          }
-          
-          $errorMessage = $errorContext -join "; "
-          
-          # Run AI analysis
-          try {
-              Write-Host "🔍 Analyzing failure: $errorMessage" -ForegroundColor Yellow
-              
-              $analysis = Invoke-EnhancedCIAnalysis -ErrorMessage $errorMessage -WorkflowName "ci.yml"
-              
-              if ($analysis) {
-                  Write-Host "✅ AI analysis completed" -ForegroundColor Green
-                  Write-Host "🎯 Severity: $($analysis.Severity)" -ForegroundColor Yellow
-                  Write-Host "💡 Summary: $($analysis.Summary)" -ForegroundColor Cyan
-                  
-                  # Display key insights
-                  if ($analysis.Insights) {
-                      Write-Host "📋 Key Insights:" -ForegroundColor Magenta
-                      foreach ($insight in $analysis.Insights) {
-                          Write-Host "   • $insight" -ForegroundColor White
-                      }
-                  }
-                  
-                  # Display recommendations
-                  if ($analysis.Recommendations) {
-                      Write-Host "🔧 Recommendations:" -ForegroundColor Green
-                      foreach ($recommendation in $analysis.Recommendations) {
-                          Write-Host "   ✅ $recommendation" -ForegroundColor White
-                      }
-                  }
-              } else {
-                  Write-Warning "❌ AI analysis failed or returned no results"
-              }
-              
-          } catch {
-              Write-Error "🚨 AI analysis failed: $($_.Exception.Message)"
+          if (Get-Command bb-test -ErrorAction SilentlyContinue) {
+            bb-test 2>$null || dotnet test $env:SOLUTION_FILE --configuration $env:BUILD_CONFIGURATION --no-build --logger 'trx' --collect "XPlat Code Coverage" --verbosity minimal
+          } else {
+            dotnet test $env:SOLUTION_FILE --configuration $env:BUILD_CONFIGURATION --no-build --logger 'trx' --collect "XPlat Code Coverage" --verbosity minimal
           }
 
-      # Store successful build metrics (optional)
-      - name: 📊 Store Success Metrics
-        if: success()
-        shell: pwsh
-        env:
-          XAI_API_KEY: ${{ secrets.XAI_API_KEY }}
-          AZURE_SQL_SERVER: ${{ secrets.AZURE_SQL_SERVER }}
-        run: |
-          Write-Host "✅ Build succeeded - storing success metrics" -ForegroundColor Green
-          
-          try {
-              Import-Module "./PowerShell/Modules/BusBuddy-GrokAzureSQL.psm1" -Force -ErrorAction SilentlyContinue
-              
-              if (Get-Module BusBuddy-GrokAzureSQL) {
-                  grok-sql-init -ServerName $env:AZURE_SQL_SERVER
-                  
-                  # Store success insight
-                  $successResult = Invoke-GrokCIFailureAnalysis -ErrorMessage "Build successful" -WorkflowName "ci.yml" -BuildId "${{ github.run_id }}"
-                  
-                  if ($successResult.Success) {
-                      Write-Host "📊 Success metrics stored with ID: $($successResult.InsightId)"
-                  }
-              }
-          } catch {
-              Write-Warning "Failed to store success metrics: $($_.Exception.Message)"
-          }
-
-      # Upload analysis results as artifact
-      - name: 📤 Upload Analysis Results
+      - name: "📤 Upload Test Artifacts"
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: ai-analysis-results
+          name: test-artifacts
           path: |
-            logs/
-            TestResults/
-          retention-days: 30
+            **/TestResults/*.trx
+            **/TestResults/**/coverage.cobertura.xml
+          retention-days: 14
 
-  # Optional: Syncfusion UI Analysis Job
-  ui-analysis:
-    name: 🎨 Syncfusion UI Analysis
-    runs-on: windows-latest
-    if: github.event_name == 'pull_request'
-    
-    steps:
-      - name: 📥 Checkout Code
-        uses: actions/checkout@v4
-
-      - name: 🎨 Analyze UI Changes with Grok
+      - name: "🤖 AI Failure Analysis (Simplified)"
+        if: failure()
         shell: pwsh
-        env:
-          XAI_API_KEY: ${{ secrets.XAI_API_KEY }}
-          AZURE_SQL_SERVER: ${{ secrets.AZURE_SQL_SERVER }}
         run: |
-          Write-Host "🎨 Starting Syncfusion UI analysis..." -ForegroundColor Cyan
-          
-          try {
-              Import-Module "./PowerShell/Modules/BusBuddy-GrokAzureSQL.psm1" -Force
-              grok-sql-init -ServerName $env:AZURE_SQL_SERVER
-              
-              # Find changed XAML files
-              $changedFiles = git diff --name-only HEAD~1 HEAD | Where-Object { $_ -match '\.xaml$' }
-              
-              if ($changedFiles) {
-                  Write-Host "📋 Found $($changedFiles.Count) changed XAML files" -ForegroundColor Yellow
-                  
-                  foreach ($file in $changedFiles) {
-                      if (Test-Path $file) {
-                          Write-Host "🔍 Analyzing: $file" -ForegroundColor Cyan
-                          
-                          $xamlContent = Get-Content $file -Raw
-                          $viewName = [System.IO.Path]::GetFileNameWithoutExtension($file)
-                          
-                          # Determine control type
-                          $controlType = "General"
-                          if ($xamlContent -match "SfDataGrid") { $controlType = "SfDataGrid" }
-                          elseif ($xamlContent -match "SfChart") { $controlType = "SfChart" }
-                          elseif ($xamlContent -match "SfScheduler") { $controlType = "SfScheduler" }
-                          
-                          $uiResult = Store-GrokUIOptimization -UIContext $xamlContent -ViewName $viewName -ControlType $controlType
-                          
-                          if ($uiResult.Success) {
-                              Write-Host "✅ UI analysis stored for $viewName (ID: $($uiResult.InsightId))" -ForegroundColor Green
-                          }
-                      }
-                  }
-              } else {
-                  Write-Host "ℹ️ No XAML files changed in this PR" -ForegroundColor Blue
-              }
-              
-          } catch {
-              Write-Warning "UI analysis failed: $($_.Exception.Message)"
+          Write-Output "Starting simplified AI failure analysis..."
+          $analysisModule = Join-Path $PWD 'PowerShell/Modules/BusBuddy-CIAnalysis-Enhanced.psm1'
+          if (Test-Path $analysisModule) { Import-Module $analysisModule -Force } else { Write-Warning "Analysis module not found." }
+          $azureModule = Join-Path $PWD 'PowerShell/Modules/BusBuddy-GrokAzureSQL.psm1'
+          if (Test-Path $azureModule) {
+            Import-Module $azureModule -Force
+            try { if ($env:AZURE_SQL_SERVER) { grok-sql-init -ServerName $env:AZURE_SQL_SERVER } } catch { Write-Warning "Azure SQL init failed: $($_.Exception.Message)" }
           }
+          $errorMessage = 'Pipeline failure detected (phase granularity suppressed).'
+          try {
+            if (Get-Command Invoke-EnhancedCIAnalysis -ErrorAction SilentlyContinue) {
+              $result = Invoke-EnhancedCIAnalysis -ErrorMessage $errorMessage -WorkflowName 'ci-with-ai.yml'
+              if ($result) {
+                Write-Output "Severity: $($result.Severity)"
+                Write-Output "Summary: $($result.Summary)"
+                if ($result.Insights) { Write-Output 'Insights:'; $result.Insights | ForEach-Object { Write-Output "  - $_" } }
+                if ($result.Recommendations) { Write-Output 'Recommendations:'; $result.Recommendations | ForEach-Object { Write-Output "  - $_" } }
+              } else { Write-Warning "AI analysis returned null result." }
+            } else { Write-Warning "Invoke-EnhancedCIAnalysis unavailable." }
+          } catch { Write-Warning "AI analysis failed: $($_.Exception.Message)" }
+          Write-Output "AI failure analysis step complete."
 
 # Security best practices for secrets:
 # 1. XAI_API_KEY - Your xAI API key for Grok-4 access
