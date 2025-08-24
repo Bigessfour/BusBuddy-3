@@ -6,13 +6,13 @@ name: "BusBuddy CI Pipeline"
 
 on:
   push:
-    branches: [ main, master, develop ]
+    branches: [main, master, develop]
     paths-ignore:
       - "**/*.md"
       - docs/**
       - Documentation/**
   pull_request:
-    branches: [ main, master ]
+    branches: [main, master]
     paths-ignore:
       - "**/*.md"
       - docs/**
@@ -35,7 +35,7 @@ env:
 jobs:
   validate-dependencies:
     name: "Validate Dependencies & Licenses"
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
     timeout-minutes: 10
     steps:
       - name: "Set Syncfusion license env"
@@ -54,12 +54,12 @@ jobs:
       - name: "Check Syncfusion License Configuration"
         run: |
           echo "Checking Syncfusion license configuration..."
-          if [ -z "$SYNCFUSION_LICENSE_KEY" ]; then
-            echo "SYNCFUSION_LICENSE_KEY secret is not configured"
-            echo "::warning::Syncfusion license key is missing. Add SYNCFUSION_LICENSE_KEY to repository secrets."
+          if (-not $env:SYNCFUSION_LICENSE_KEY) {
+            Write-Output "SYNCFUSION_LICENSE_KEY secret is not configured"
+            Write-Output "::warning::Syncfusion license key is missing. Add SYNCFUSION_LICENSE_KEY to repository secrets."
             exit 1
-          fi
-        shell: bash
+          }
+        shell: pwsh
 
       - name: "Restore Dependencies"
         run: |
@@ -68,9 +68,9 @@ jobs:
 
       - name: "Dependency Security Audit"
         run: |
-          dotnet list package --vulnerable --include-transitive || true
-          dotnet list package --deprecated || true
-        shell: bash
+          try { dotnet list package --vulnerable --include-transitive } catch { Write-Warning "Vulnerability check skipped" }
+          try { dotnet list package --deprecated } catch { Write-Warning "Deprecated check skipped" }
+        shell: pwsh
 
   build-and-test:
     name: "Build & Test"
@@ -84,7 +84,7 @@ jobs:
         shell: pwsh
         run: |
           Write-Output "SYNCFUSION_LICENSE_KEY=${{ secrets.SYNCFUSION_LICENSE_KEY }}" >> $env:GITHUB_ENV
-      
+
       - name: "Checkout Code"
         uses: actions/checkout@v4
 
@@ -146,8 +146,8 @@ jobs:
     timeout-minutes: 20
     steps:
       - name: "Set Syncfusion license env"
-        run: echo "SYNCFUSION_LICENSE_KEY=${{ secrets.SYNCFUSION_LICENSE_KEY }}" >> $GITHUB_ENV
-        shell: bash
+        run: echo "SYNCFUSION_LICENSE_KEY=${{ secrets.SYNCFUSION_LICENSE_KEY }}" >> $env:GITHUB_ENV
+        shell: pwsh
       - name: "Checkout Code"
         uses: actions/checkout@v4
 
@@ -193,13 +193,13 @@ jobs:
 
   security-analysis:
     name: "Security Analysis"
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
     needs: validate-dependencies
     timeout-minutes: 15
     steps:
       - name: "Set Syncfusion license env"
-        run: echo "SYNCFUSION_LICENSE_KEY=${{ secrets.SYNCFUSION_LICENSE_KEY }}" >> $GITHUB_ENV
-        shell: bash
+        run: echo "SYNCFUSION_LICENSE_KEY=${{ secrets.SYNCFUSION_LICENSE_KEY }}" >> $env:GITHUB_ENV
+        shell: pwsh
       - name: "Checkout Code"
         uses: actions/checkout@v4
 
@@ -222,7 +222,7 @@ jobs:
   deployment-readiness:
     name: "Deployment Readiness"
     runs-on: windows-latest
-    needs: [ build-and-test, security-analysis, quality-analysis ]
+    needs: [build-and-test, security-analysis, quality-analysis]
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
     timeout-minutes: 10
     steps:
@@ -259,7 +259,13 @@ jobs:
   notify-completion:
     name: "Notify Completion"
     runs-on: ubuntu-latest
-    needs: [ build-and-test, security-analysis, quality-analysis, deployment-readiness ]
+    needs:
+      [
+        build-and-test,
+        security-analysis,
+        quality-analysis,
+        deployment-readiness,
+      ]
     if: ${{ needs.build-and-test.outputs.build-success == 'true' }}
     steps:
       - name: "Pipeline Summary"
@@ -270,4 +276,3 @@ jobs:
           echo "Quality Analysis: ${{ needs.quality-analysis.result }}"
           echo "Deployment Ready: ${{ needs.deployment-readiness.result }}"
           echo "Timestamp: $(date)"
-
