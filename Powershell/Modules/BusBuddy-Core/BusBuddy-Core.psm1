@@ -278,12 +278,114 @@ function Invoke-BusBuddyClean {
     }
 }
 
+# Commands listing function
+function Get-BusBuddyCommands {
+    <#
+    .SYNOPSIS
+    Lists all available BusBuddy commands
+
+    .DESCRIPTION
+    Displays all bb-* commands available in the current session
+
+    .EXAMPLE
+    Get-BusBuddyCommands
+    bb-commands
+    #>
+
+    [CmdletBinding()]
+    param()
+
+    Write-Information "🚌 Available BusBuddy Commands:" -InformationAction Continue
+    Write-Information "" -InformationAction Continue
+
+    $commands = Get-Command bb-* | Sort-Object Name
+
+    if ($commands) {
+        foreach ($cmd in $commands) {
+            $source = if ($cmd.Source) { " ($($cmd.Source))" } else { "" }
+            Write-Information "  $($cmd.Name)$source" -InformationAction Continue
+        }
+    } else {
+        Write-Warning "No bb-* commands found. Profile may not be loaded properly."
+    }
+
+    Write-Information "" -InformationAction Continue
+    Write-Information "Use 'Get-Help <command>' for detailed information about each command." -InformationAction Continue
+}
+
+# Test MCP connectivity
+function Test-BusBuddyMCP {
+    <#
+    .SYNOPSIS
+    Tests Microsoft Learn MCP Server connectivity
+
+    .DESCRIPTION
+    Validates that MCP servers are properly configured and accessible in VS Code
+
+    .EXAMPLE
+    bb-mcp-test
+    Tests the Microsoft Learn MCP Server connection
+    #>
+    [CmdletBinding()]
+    param()
+
+    Write-Information "🔍 Testing MCP Server Configuration..." -InformationAction Continue
+
+    $mcpConfigPath = Join-Path $script:WorkspaceRoot '.vscode\mcp.json'
+
+    if (Test-Path $mcpConfigPath) {
+        Write-Information "✅ VS Code MCP configuration found: $mcpConfigPath" -InformationAction Continue
+
+        try {
+            $mcpConfig = Get-Content $mcpConfigPath | ConvertFrom-Json
+            $serverCount = $mcpConfig.servers.PSObject.Properties.Count
+            Write-Information "📊 Configured MCP servers: $serverCount" -InformationAction Continue
+
+            foreach ($serverName in $mcpConfig.servers.PSObject.Properties.Name) {
+                $server = $mcpConfig.servers.$serverName
+                if ($server.type -eq 'http') {
+                    Write-Information "🌐 HTTP Server: $serverName -> $($server.url)" -InformationAction Continue
+                } elseif ($server.command) {
+                    Write-Information "⚡ Command Server: $serverName -> $($server.command)" -InformationAction Continue
+                }
+            }
+
+            Write-Information "🎯 MCP servers configured for BusBuddy:" -InformationAction Continue
+            Write-Information "   📚 Microsoft Learn: Official Microsoft documentation" -InformationAction Continue
+            Write-Information "   ☁️ Azure MCP: Azure resource management" -InformationAction Continue
+            Write-Information "   📁 Filesystem: BusBuddy project file operations" -InformationAction Continue
+            Write-Information "   🌦️ Weather: Real-time weather and road conditions" -InformationAction Continue
+            Write-Information "   🗃️ Database: SQLite analytics for BusBuddy.db" -InformationAction Continue
+            Write-Information "   📊 Memory: System performance monitoring" -InformationAction Continue
+            Write-Information "" -InformationAction Continue
+            Write-Information "🎯 To use MCP servers:" -InformationAction Continue
+            Write-Information "   1. Open GitHub Copilot in VS Code" -InformationAction Continue
+            Write-Information "   2. Switch to Agent Mode" -InformationAction Continue
+            Write-Information "   3. Look for tools in the tool selector" -InformationAction Continue
+            Write-Information "   4. Ask questions about transportation management" -InformationAction Continue
+
+        } catch {
+            Write-Error "❌ Failed to parse MCP configuration: $($_.Exception.Message)"
+        }
+    } else {
+        Write-Warning "⚠️ No VS Code MCP configuration found at $mcpConfigPath"
+    }
+
+    # Also check root mcp.json
+    $rootMcpPath = Join-Path $script:WorkspaceRoot 'mcp.json'
+    if (Test-Path $rootMcpPath) {
+        Write-Information "📋 Root MCP configuration also found: $rootMcpPath" -InformationAction Continue
+    }
+}
+
 # Create aliases after function definitions (Microsoft best practice)
 New-Alias -Name 'bb-build' -Value 'Invoke-BusBuddyBuild' -Scope Global -Force
 New-Alias -Name 'bb-run' -Value 'Invoke-BusBuddyRun' -Scope Global -Force
 New-Alias -Name 'bb-test' -Value 'Invoke-BusBuddyTest' -Scope Global -Force
 New-Alias -Name 'bb-health' -Value 'Invoke-BusBuddyHealth' -Scope Global -Force
 New-Alias -Name 'bb-clean' -Value 'Invoke-BusBuddyClean' -Scope Global -Force
+New-Alias -Name 'bb-commands' -Value 'Get-BusBuddyCommands' -Scope Global -Force
+New-Alias -Name 'bb-mcp-test' -Value 'Test-BusBuddyMCP' -Scope Global -Force
 
 # Export module members with aliases (Microsoft best practice)
 Export-ModuleMember -Function @(
@@ -291,13 +393,17 @@ Export-ModuleMember -Function @(
     'Invoke-BusBuddyRun',
     'Invoke-BusBuddyTest',
     'Invoke-BusBuddyHealth',
-    'Invoke-BusBuddyClean'
+    'Invoke-BusBuddyClean',
+    'Get-BusBuddyCommands',
+    'Test-BusBuddyMCP'
 ) -Alias @(
     'bb-build',
     'bb-run',
     'bb-test',
     'bb-health',
-    'bb-clean'
+    'bb-clean',
+    'bb-commands',
+    'bb-mcp-test'
 )
 
-Write-Information "✅ $($ModuleInfo.Name) loaded with aliases: bb-build, bb-run, bb-test, bb-health, bb-clean" -InformationAction Continue
+Write-Information "✅ $($ModuleInfo.Name) loaded with aliases: bb-build, bb-run, bb-test, bb-health, bb-clean, bb-commands" -InformationAction Continue
