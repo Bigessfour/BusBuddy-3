@@ -187,24 +187,24 @@
                                                 - Syncfusion UI framework optimization
                                                 - Database and security configuration
                                                 - Build and deployment automation
-                                                '@
+'@
 
-                                                # Prerelease string of this module
-                                                # Prerelease = ''
+            # Prerelease string of this module
+            # Prerelease = ''
 
-                                                # Flag to indicate whether the module requires explicit user acceptance for install/update/save
-                                                # RequireLicenseAcceptance = $false
+            # Flag to indicate whether the module requires explicit user acceptance for install/update/save
+            # RequireLicenseAcceptance = $false
 
-                                                # External dependent modules of this module
-                                                # ExternalModuleDependencies = @()
+            # External dependent modules of this module
+            # ExternalModuleDependencies = @()
 
-                                            } # End of PSData hashtable
+        } # End of PSData hashtable
 
-                                            } # End of PrivateData hashtable
+    } # End of PrivateData hashtable
 
-                                            # HelpInfo URI of this module
-                                            # HelpInfoURI = ''
+    # HelpInfo URI of this module
+    # HelpInfoURI = ''
 
-                                            # Default prefix for commands exported from this module. Override the default prefix using Import-Module -Prefix.
-                                            # DefaultCommandPrefix = ''
-                                    }
+    # Default prefix for commands exported from this module. Override the default prefix using Import-Module -Prefix.
+    # DefaultCommandPrefix = ''
+}

@@ -5,7 +5,15 @@
 [CmdletBinding()]
 param()
 
-# Module functions will be added here as needed
+# Minimal function to prevent null script errors
+function Start-LazyLoading {
+    [CmdletBinding()]
+    param(
+        [string]$ModuleName
+    )
+    Write-Information "Lazy loading module: $ModuleName" -InformationAction Continue
+    return $true
+}
 
-# Export module members (empty for now, but establishes the pattern)
-Export-ModuleMember -Function @()
+# Export module members
+Export-ModuleMember -Function Start-LazyLoading

@@ -3,6 +3,19 @@
 #requires -Version 7.5
 [CmdletBinding()]
 param()
-# Module functions will be added here as needed
-# Export module members (empty for now, but establishes the pattern)
-Export-ModuleMember -Function @()
+
+# Minimal function to prevent null script errors
+function Get-DebugSession {
+    [CmdletBinding()]
+    param(
+        [string]$Component = "General"
+    )
+
+    Write-Information "Getting debug session for: $Component" -InformationAction Continue
+    return @{
+        SessionId = [System.Guid]::NewGuid()
+        Component = $Component
+        StartTime = Get-Date
+    }
+}# Export module members
+Export-ModuleMember -Function Get-DebugSession

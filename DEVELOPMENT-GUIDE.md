@@ -15,7 +15,7 @@ BusBuddy follows a clean build, MVP-first development strategy:
 ### **Technology Stack**
 
 - **Framework**: .NET 9.0 WPF with C# 12
-- **UI Library**: Syncfusion WPF 30.1.42 (FluentDark theme)
+- **UI Library**: Syncfusion WPF 30.2.6 (FluentDark theme)
 - **Database**: Entity Framework Core 9.0.7 with Azure SQL/LocalDB
 - **Logging**: Serilog with structured logging
 - **Automation**: PowerShell 7.5.2 with custom modules

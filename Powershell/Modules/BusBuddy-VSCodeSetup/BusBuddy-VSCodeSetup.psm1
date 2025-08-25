@@ -6,14 +6,14 @@
 
 #Requires -Version 7.0
 
-[CmdletBinding()]
-param(
-    [switch]$UseInsiders,
-    [switch]$Force,
-    [switch]$ListOnly
-)
+function Install-BusBuddyVSCodeExtensions {
+    [CmdletBinding()]
+    param(
+        [switch]$UseInsiders,
+        [switch]$Force,
+        [switch]$ListOnly
+    )
 
-begin {
     Write-Information "🚌 BusBuddy VS Code Extensions Installer" -InformationAction Continue
 
     # Detect VS Code installation
@@ -53,9 +53,7 @@ begin {
         @{ Id = "streetsidesoftware.code-spell-checker"; Description = "Documentation quality" },
         @{ Id = "eamodio.gitlens"; Description = "Advanced Git integration" }
     )
-}
 
-process {
     if ($ListOnly) {
         Write-Output "`n📋 Extensions to be installed:"
         foreach ($ext in $extensionsForModules) {
@@ -131,8 +129,9 @@ process {
         Failed = $failed
         Total = $extensionsForModules.Count
     }
-}
 
-end {
     Write-Information "🚌 VS Code extensions setup complete!" -InformationAction Continue
 }
+
+# Export the function
+Export-ModuleMember -Function Install-BusBuddyVSCodeExtensions

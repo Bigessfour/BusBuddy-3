@@ -12,7 +12,7 @@ This guide covers the comprehensive dependency management strategy for BusBuddy,
 
 - **.NET 9.0**: Primary target framework with Windows-specific features
 - **Entity Framework Core 9.0.8**: Database access and migrations
-- **Syncfusion WPF 30.1.42**: Premium UI controls with consistent licensing
+- **Syncfusion WPF 30.2.6**: Premium UI controls with consistent licensing
 - **Serilog 4.3.0**: Structured logging throughout application
 
 **UI Framework:**
@@ -36,7 +36,7 @@ All package versions are centrally managed in `Directory.Build.props`:
 ```xml
 <PropertyGroup>
   <!-- Core Framework Versions -->
-  <SyncfusionVersion>30.1.42</SyncfusionVersion>
+  <SyncfusionVersion>30.2.6</SyncfusionVersion>
   <EntityFrameworkVersion>9.0.8</EntityFrameworkVersion>
   <SerilogVersion>4.3.0</SerilogVersion>
 

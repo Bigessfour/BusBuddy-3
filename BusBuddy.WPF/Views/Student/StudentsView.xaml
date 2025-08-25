@@ -127,7 +127,7 @@
             </Grid>
         </Border>
 
-    <!-- Student Data Grid — Enhanced for route building (Syncfusion SfDataGrid per official docs) -->
+    <!-- Student Data Grid — Enhanced with Syncfusion 30.2.6 merged cells and performance optimizations -->
     <syncfusion:SfDataGrid Grid.Row="2"
                                Name="StudentsDataGrid"
                    ItemsSource="{Binding StudentsView}"
@@ -140,7 +140,7 @@
                                AllowGrouping="True"
                                ShowGroupDropArea="True"
                                ShowRowHeader="True"
-                               SelectionMode="Single"
+                               SelectionMode="Extended"
                                SelectionUnit="Row"
                                GridLinesVisibility="Both"
                                HeaderLinesVisibility="Both"
@@ -199,11 +199,13 @@
                                              Width="80"
                                              ItemsSource="{Binding AvailableGrades}"
                                              AllowEditing="True"/>
+
                 <syncfusion:GridComboBoxColumn HeaderText="School"
                                              MappingName="School"
                                              Width="150"
                                              ItemsSource="{Binding AvailableSchools}"
                                              AllowEditing="True"/>
+
                 <syncfusion:GridTextColumn HeaderText="Address"
                                          MappingName="HomeAddress"
                                          Width="200"
@@ -212,6 +214,7 @@
                                          MappingName="City"
                                          Width="120"
                                          AllowEditing="True"/>
+
                 <!-- Phone number uses GridMaskColumn per Syncfusion documentation -->
                 <syncfusion:GridMaskColumn HeaderText="Phone"
                                            MappingName="HomePhone"
@@ -229,12 +232,14 @@
                                              ItemsSource="{Binding AvailableRoutes}"
                                              DisplayMemberPath="RouteName"
                                              AllowEditing="True"/>
+
                 <syncfusion:GridComboBoxColumn HeaderText="PM Route"
                                              MappingName="PMRoute"
                                              Width="120"
                                              ItemsSource="{Binding AvailableRoutes}"
                                              DisplayMemberPath="RouteName"
                                              AllowEditing="True"/>
+
                 <syncfusion:GridCheckBoxColumn HeaderText="Active"
                                              MappingName="Active"
                                              Width="80"/>

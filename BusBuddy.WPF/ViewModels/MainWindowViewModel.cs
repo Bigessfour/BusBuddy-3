@@ -1,11 +1,13 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using System.Windows.Input;
 using BusBuddy.Core.Services;
 using BusBuddy.Core;
 using BusBuddy.Core.Data;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
+using BusBuddy.WPF.Commands;
 
 namespace BusBuddy.WPF.ViewModels
 {
@@ -32,10 +34,33 @@ namespace BusBuddy.WPF.ViewModels
         public ObservableCollection<BusBuddy.Core.Models.Bus> Buses { get; set; } = new();
         public ObservableCollection<BusBuddy.Core.Models.Driver> Drivers { get; set; } = new();
 
+        // MVVM Commands for UI accessibility and Azure SQL operations
+        public ICommand? NavigateToStudentsCommand { get; private set; }
+        public ICommand? NavigateToRoutesCommand { get; private set; }
+        public ICommand? NavigateToBusesCommand { get; private set; }
+        public ICommand? NavigateToDriversCommand { get; private set; }
+        public ICommand? NavigateToMapCommand { get; private set; }
+        public ICommand? NavigateToReportsCommand { get; private set; }
+        public ICommand? GenerateEligibilityPdfCommand { get; private set; }
+        public ICommand? PrintEligibilityPdfCommand { get; private set; }
+        public ICommand? AddStudentCommand { get; private set; }
+        public ICommand? EditStudentCommand { get; private set; }
+        public ICommand? AddBusCommand { get; private set; }
+        public ICommand? AddDriverCommand { get; private set; }
+        public ICommand? OptimizeRoutesCommand { get; private set; }
+        public ICommand? ExportSchedulesCommand { get; private set; }
+        public ICommand? MaintenanceCommand { get; private set; }
+        public ICommand? FleetStatusCommand { get; private set; }
+        public ICommand? AssignBusCommand { get; private set; }
+        public ICommand? ScheduleCommand { get; private set; }
+        public ICommand? SwitchToDarkThemeCommand { get; private set; }
+        public ICommand? SwitchToLightThemeCommand { get; private set; }
+
         // Default constructor - uses sample data (current working approach)
         public MainWindowViewModel()
         {
             Logger.Information("MainWindowViewModel initialized with sample data");
+            InitializeCommands();
             LoadSampleData();
         }
 
@@ -52,7 +77,43 @@ namespace BusBuddy.WPF.ViewModels
             _busService = busService;
 
             Logger.Information("MainWindowViewModel initialized with database services");
+            InitializeCommands();
             LoadDatabaseDataAsync();
+        }
+
+        private void InitializeCommands()
+        {
+            // Navigation Commands
+            NavigateToStudentsCommand = new RelayCommand(() => OnNavigateToStudents());
+            NavigateToRoutesCommand = new RelayCommand(() => OnNavigateToRoutes());
+            NavigateToBusesCommand = new RelayCommand(() => OnNavigateToBuses());
+            NavigateToDriversCommand = new RelayCommand(() => OnNavigateToDrivers());
+            NavigateToMapCommand = new RelayCommand(() => OnNavigateToMap());
+            NavigateToReportsCommand = new RelayCommand(() => OnNavigateToReports());
+
+            // Document Commands
+            GenerateEligibilityPdfCommand = new RelayCommand(() => OnGenerateEligibilityPdf());
+            PrintEligibilityPdfCommand = new RelayCommand(() => OnPrintEligibilityPdf());
+
+            // CRUD Commands for Azure SQL operations
+            AddStudentCommand = new RelayCommand(() => OnAddStudent());
+            EditStudentCommand = new RelayCommand(() => OnEditStudent());
+            AddBusCommand = new RelayCommand(() => OnAddBus());
+            AddDriverCommand = new RelayCommand(() => OnAddDriver());
+
+            // Route Management Commands
+            OptimizeRoutesCommand = new RelayCommand(() => OnOptimizeRoutes());
+            ExportSchedulesCommand = new RelayCommand(() => OnExportSchedules());
+
+            // Fleet Management Commands
+            MaintenanceCommand = new RelayCommand(() => OnMaintenance());
+            FleetStatusCommand = new RelayCommand(() => OnFleetStatus());
+            AssignBusCommand = new RelayCommand(() => OnAssignBus());
+            ScheduleCommand = new RelayCommand(() => OnSchedule());
+
+            // Theme Commands
+            SwitchToDarkThemeCommand = new RelayCommand(() => OnSwitchToDarkTheme());
+            SwitchToLightThemeCommand = new RelayCommand(() => OnSwitchToLightTheme());
         }
 
         private async void LoadDatabaseDataAsync()
@@ -272,5 +333,231 @@ namespace BusBuddy.WPF.ViewModels
                 }
             }
         }
+
+        #region Command Handlers
+
+        // Navigation command handlers - these will be invoked by the View
+        private void OnNavigateToStudents()
+        {
+            Logger.Information("Navigate to Students command executed via ViewModel");
+            // Navigation logic will be handled by the View through events or messaging
+            NavigationRequested?.Invoke("Students");
+        }
+
+        private void OnNavigateToRoutes()
+        {
+            Logger.Information("Navigate to Routes command executed via ViewModel");
+            NavigationRequested?.Invoke("Routes");
+        }
+
+        private void OnNavigateToBuses()
+        {
+            Logger.Information("Navigate to Buses command executed via ViewModel");
+            NavigationRequested?.Invoke("Buses");
+        }
+
+        private void OnNavigateToDrivers()
+        {
+            Logger.Information("Navigate to Drivers command executed via ViewModel");
+            NavigationRequested?.Invoke("Drivers");
+        }
+
+        private void OnNavigateToMap()
+        {
+            Logger.Information("Navigate to Map command executed via ViewModel");
+            NavigationRequested?.Invoke("Map");
+        }
+
+        private void OnNavigateToReports()
+        {
+            Logger.Information("Navigate to Reports command executed via ViewModel");
+            NavigationRequested?.Invoke("Reports");
+        }
+
+        // Document command handlers
+        private void OnGenerateEligibilityPdf()
+        {
+            Logger.Information("Generate Eligibility PDF command executed via ViewModel");
+            DocumentActionRequested?.Invoke("GenerateEligibilityPdf");
+        }
+
+        private void OnPrintEligibilityPdf()
+        {
+            Logger.Information("Print Eligibility PDF command executed via ViewModel");
+            DocumentActionRequested?.Invoke("PrintEligibilityPdf");
+        }
+
+        // CRUD command handlers for Azure SQL operations
+        private async void OnAddStudent()
+        {
+            Logger.Information("Add Student command executed via ViewModel");
+            try
+            {
+                if (_studentService != null)
+                {
+                    // This would normally create a new student via the service
+                    // For now, trigger the UI action
+                    CrudActionRequested?.Invoke("AddStudent");
+                }
+                else
+                {
+                    CrudActionRequested?.Invoke("AddStudent");
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Error in Add Student command");
+            }
+        }
+
+        private async void OnEditStudent()
+        {
+            Logger.Information("Edit Student command executed via ViewModel");
+            try
+            {
+                if (_studentService != null)
+                {
+                    // This would normally edit the selected student via the service
+                    CrudActionRequested?.Invoke("EditStudent");
+                }
+                else
+                {
+                    CrudActionRequested?.Invoke("EditStudent");
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Error in Edit Student command");
+            }
+        }
+
+        private async void OnAddBus()
+        {
+            Logger.Information("Add Bus command executed via ViewModel");
+            try
+            {
+                if (_busService != null)
+                {
+                    // Azure SQL operation for adding bus
+                    CrudActionRequested?.Invoke("AddBus");
+                }
+                else
+                {
+                    CrudActionRequested?.Invoke("AddBus");
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Error in Add Bus command");
+            }
+        }
+
+        private async void OnAddDriver()
+        {
+            Logger.Information("Add Driver command executed via ViewModel");
+            try
+            {
+                if (_driverService != null)
+                {
+                    // Azure SQL operation for adding driver
+                    CrudActionRequested?.Invoke("AddDriver");
+                }
+                else
+                {
+                    CrudActionRequested?.Invoke("AddDriver");
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Error in Add Driver command");
+            }
+        }
+
+        // Route management command handlers
+        private async void OnOptimizeRoutes()
+        {
+            Logger.Information("Optimize Routes command executed via ViewModel");
+            try
+            {
+                if (_routeService != null)
+                {
+                    // Azure SQL operation for route optimization
+                    RouteActionRequested?.Invoke("OptimizeRoutes");
+                }
+                else
+                {
+                    RouteActionRequested?.Invoke("OptimizeRoutes");
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Error in Optimize Routes command");
+            }
+        }
+
+        private async void OnExportSchedules()
+        {
+            Logger.Information("Export Schedules command executed via ViewModel");
+            try
+            {
+                RouteActionRequested?.Invoke("ExportSchedules");
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Error in Export Schedules command");
+            }
+        }
+
+        // Fleet management command handlers
+        private void OnMaintenance()
+        {
+            Logger.Information("Maintenance command executed via ViewModel");
+            FleetActionRequested?.Invoke("Maintenance");
+        }
+
+        private void OnFleetStatus()
+        {
+            Logger.Information("Fleet Status command executed via ViewModel");
+            FleetActionRequested?.Invoke("FleetStatus");
+        }
+
+        private void OnAssignBus()
+        {
+            Logger.Information("Assign Bus command executed via ViewModel");
+            FleetActionRequested?.Invoke("AssignBus");
+        }
+
+        private void OnSchedule()
+        {
+            Logger.Information("Schedule command executed via ViewModel");
+            FleetActionRequested?.Invoke("Schedule");
+        }
+
+        // Theme command handlers
+        private void OnSwitchToDarkTheme()
+        {
+            Logger.Information("Switch to Dark Theme command executed via ViewModel");
+            ThemeChangeRequested?.Invoke("FluentDark");
+        }
+
+        private void OnSwitchToLightTheme()
+        {
+            Logger.Information("Switch to Light Theme command executed via ViewModel");
+            ThemeChangeRequested?.Invoke("FluentLight");
+        }
+
+        #endregion
+
+        #region Events for View Communication
+
+        // Events to communicate with the View while maintaining MVVM separation
+        public event Action<string>? NavigationRequested;
+        public event Action<string>? DocumentActionRequested;
+        public event Action<string>? CrudActionRequested;
+        public event Action<string>? RouteActionRequested;
+        public event Action<string>? FleetActionRequested;
+        public event Action<string>? ThemeChangeRequested;
+
+        #endregion
     }
 }

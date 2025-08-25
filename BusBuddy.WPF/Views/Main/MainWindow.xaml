@@ -47,69 +47,267 @@
                            FontSize="16" Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}" Opacity="0.9"
                            HorizontalAlignment="Center" Margin="0,8,0,0"/>
 
-                <!-- Navigation + Theme Selector -->
+                <!-- Enhanced Navigation + Theme Selector (Syncfusion 30.2.6) -->
                 <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,15,0,0">
+                    <!-- Primary Document Controls -->
                     <syncfusion:ButtonAdv Label="🧾 Eligibility PDF" Margin="0,0,18,0" Padding="15,8"
-                                          Background="{DynamicResource BusBuddy.Brush.Primary}" Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}" BorderThickness="0"
-                                          Click="EligibilityPdfButton_Click" FontSize="14" FontWeight="SemiBold"
+                                          Background="{DynamicResource BusBuddy.Brush.Primary}" 
+                                          Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}" 
+                                          BorderThickness="0"
+                                          Command="{Binding GenerateEligibilityPdfCommand}"
+                                          FontSize="14" FontWeight="SemiBold"
                                           ToolTip="Generate eligibility route PDF (district outside town, excludes Lamar)"
-                                          AutomationProperties.Name="Generate Eligibility PDF"/>
-                    <syncfusion:ButtonAdv Label="Print Last PDF" Margin="0,0,25,0" Padding="15,8"
-                                          Background="{DynamicResource BusBuddy.Brush.Primary}" Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}" BorderThickness="0"
-                                          Click="PrintEligibilityPdfButton_Click" FontSize="14" FontWeight="SemiBold"
-                                          ToolTip="Print the last generated eligibility PDF (opens system print dialog)"
-                                          AutomationProperties.Name="Print Eligibility PDF"/>
-                    <syncfusion:ButtonAdv Label="🌍 Map" Margin="0,0,18,0" Padding="15,8"
-                                          Background="{DynamicResource BusBuddy.Brush.Primary}" Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}" BorderThickness="0"
-                                          Click="MapButton_Click" FontSize="14" FontWeight="SemiBold"
-                                          ToolTip="Show Google Earth / Geospatial Map"
-                                          AutomationProperties.Name="Map View Navigation"/>
-                        <syncfusion:ButtonAdv Label="Students" Margin="0,0,10,0" Padding="15,8"
-                                          Background="{DynamicResource BusBuddy.Brush.Primary}" Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}" BorderThickness="0"
-                                          Click="StudentsButton_Click" FontSize="14" FontWeight="SemiBold"
-                                          ToolTip="Manage student records and information"
-                                          AutomationProperties.Name="Students Management"/>
-                    <syncfusion:ButtonAdv Label="🚌 Routes" Margin="0,0,10,0" Padding="15,8"
-                                          Background="{DynamicResource BusBuddy.Brush.Primary}" Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}" BorderThickness="0"
-                                          Click="RouteManagementButton_Click" FontSize="14" FontWeight="SemiBold"
-                                          ToolTip="Plan and manage transportation routes"
-                                          AutomationProperties.Name="Route Management"/>
-                    <syncfusion:ButtonAdv Label="🚐 Buses" Margin="0,0,10,0" Padding="15,8"
-                                          Background="{DynamicResource BusBuddy.Brush.Primary}" Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}" BorderThickness="0"
-                                          Click="BusesButton_Click" FontSize="14" FontWeight="SemiBold"
-                                          ToolTip="Manage bus fleet and vehicle information"
-                                          AutomationProperties.Name="Bus Management"/>
-                    <syncfusion:ButtonAdv Label="👨‍✈️ Drivers" Margin="0,0,10,0" Padding="15,8"
-                                          Background="{DynamicResource BusBuddy.Brush.Primary}" Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}" BorderThickness="0"
-                                          Click="DriversButton_Click" FontSize="14" FontWeight="SemiBold"
-                                          ToolTip="Manage driver information and schedules"
-                                          AutomationProperties.Name="Driver Management"/>
-                    <syncfusion:ButtonAdv Label="📊 Reports" Padding="15,8"
-                                          Background="{DynamicResource BusBuddy.Brush.Primary}" Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}" BorderThickness="0"
-                                          Click="ReportsButton_Click" FontSize="14" FontWeight="SemiBold"
-                                          ToolTip="Generate and view transportation reports"
-                                          AutomationProperties.Name="Reports and Print Routes"/>
+                                          AutomationProperties.Name="Generate Eligibility PDF"
+                                          SmallIcon="pack://application:,,,/BusBuddy.WPF;component/Resources/pdf-icon.png"
+                                          SizeMode="Large">
+                        <syncfusion:ButtonAdv.Style>
+                            <Style TargetType="syncfusion:ButtonAdv">
+                                <Setter Property="Effect">
+                                    <Setter.Value>
+                                        <DropShadowEffect BlurRadius="3" ShadowDepth="1" Opacity="0.3"/>
+                                    </Setter.Value>
+                                </Setter>
+                                <Style.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter Property="Background" Value="{DynamicResource BusBuddy.Brush.Primary.Hover}"/>
+                                        <Setter Property="Effect">
+                                            <Setter.Value>
+                                                <DropShadowEffect BlurRadius="5" ShadowDepth="2" Opacity="0.5"/>
+                                            </Setter.Value>
+                                        </Setter>
+                                    </Trigger>
+                                    <Trigger Property="IsPressed" Value="True">
+                                        <Setter Property="Background" Value="{DynamicResource BusBuddy.Brush.Primary.Pressed}"/>
+                                    </Trigger>
+                                </Style.Triggers>
+                            </Style>
+                        </syncfusion:ButtonAdv.Style>
+                    </syncfusion:ButtonAdv>
 
-                    <!-- Theme Selector & Quick Toggle -->
-                    <StackPanel Orientation="Horizontal" Margin="20,0,0,0" VerticalAlignment="Center">
-                        <TextBlock Text="Theme:" Foreground="{DynamicResource ButtonForegroundBrush}" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                        <syncfusion:ComboBoxAdv x:Name="ThemeSelector" Width="150" SelectedIndex="0" SelectionChanged="ThemeSelector_SelectionChanged" ToolTip="Select application theme (Syncfusion Fluent themes)">
-                            <syncfusion:ComboBoxItemAdv Content="FluentDark"/>
-                            <syncfusion:ComboBoxItemAdv Content="FluentLight"/>
+                    <syncfusion:ButtonAdv Label="Print Last PDF" Margin="0,0,25,0" Padding="15,8"
+                                          Background="{DynamicResource BusBuddy.Brush.Primary}" 
+                                          Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}" 
+                                          BorderThickness="0"
+                                          Command="{Binding PrintEligibilityPdfCommand}"
+                                          FontSize="14" FontWeight="SemiBold"
+                                          ToolTip="Print the last generated eligibility PDF (opens system print dialog)"
+                                          AutomationProperties.Name="Print Eligibility PDF"
+                                          SmallIcon="pack://application:,,,/BusBuddy.WPF;component/Resources/print-icon.png"
+                                          SizeMode="Large">
+                        <syncfusion:ButtonAdv.Style>
+                            <Style TargetType="syncfusion:ButtonAdv">
+                                <Setter Property="Effect">
+                                    <Setter.Value>
+                                        <DropShadowEffect BlurRadius="3" ShadowDepth="1" Opacity="0.3"/>
+                                    </Setter.Value>
+                                </Setter>
+                                <Style.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter Property="Background" Value="{DynamicResource BusBuddy.Brush.Primary.Hover}"/>
+                                        <Setter Property="Effect">
+                                            <Setter.Value>
+                                                <DropShadowEffect BlurRadius="5" ShadowDepth="2" Opacity="0.5"/>
+                                            </Setter.Value>
+                                        </Setter>
+                                    </Trigger>
+                                    <Trigger Property="IsPressed" Value="True">
+                                        <Setter Property="Background" Value="{DynamicResource BusBuddy.Brush.Primary.Pressed}"/>
+                                    </Trigger>
+                                </Style.Triggers>
+                            </Style>
+                        </syncfusion:ButtonAdv.Style>
+                    </syncfusion:ButtonAdv>
+
+                    <!-- Navigation Controls with Enhanced Visual States -->
+                    <syncfusion:ButtonAdv Label="🌍 Map" Margin="0,0,18,0" Padding="15,8"
+                                          Background="{DynamicResource BusBuddy.Brush.Secondary}" 
+                                          Foreground="{DynamicResource BusBuddy.Brush.Text.Secondary}" 
+                                          BorderThickness="0"
+                                          Command="{Binding NavigateToMapCommand}"
+                                          FontSize="14" FontWeight="SemiBold"
+                                          ToolTip="Show Google Earth / Geospatial Map with route visualization"
+                                          AutomationProperties.Name="Map View Navigation"
+                                          SmallIcon="pack://application:,,,/BusBuddy.WPF;component/Resources/map-icon.png"
+                                          SizeMode="Large">
+
+                        <syncfusion:ButtonAdv.Style>
+                            <Style TargetType="syncfusion:ButtonAdv">
+                                <Setter Property="Effect">
+                                    <Setter.Value>
+                                        <DropShadowEffect BlurRadius="3" ShadowDepth="1" Opacity="0.3"/>
+                                    </Setter.Value>
+                                </Setter>
+                                <Style.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter Property="Background" Value="{DynamicResource BusBuddy.Brush.Secondary.Hover}"/>
+                                        <Setter Property="Effect">
+                                            <Setter.Value>
+                                                <DropShadowEffect BlurRadius="5" ShadowDepth="2" Opacity="0.5"/>
+                                            </Setter.Value>
+                                        </Setter>
+                                    </Trigger>
+                                </Style.Triggers>
+                            </Style>
+                        </syncfusion:ButtonAdv.Style>
+                    </syncfusion:ButtonAdv>
+
+                    <syncfusion:ButtonAdv Label="📚 Students" Margin="0,0,10,0" Padding="15,8"
+                                          Background="{DynamicResource BusBuddy.Brush.Accent}" 
+                                          Foreground="{DynamicResource BusBuddy.Brush.Text.Accent}" 
+                                          BorderThickness="0"
+                                          Command="{Binding NavigateToStudentsCommand}"
+                                          FontSize="14" FontWeight="SemiBold"
+                                          ToolTip="Manage student records and route assignments"
+                                          AutomationProperties.Name="Students Management"
+                                          SmallIcon="pack://application:,,,/BusBuddy.WPF;component/Resources/students-icon.png"
+                                          SizeMode="Large" />
+
+                    <syncfusion:ButtonAdv Label="🚌 Routes" Margin="0,0,10,0" Padding="15,8"
+                                          Background="{DynamicResource BusBuddy.Brush.Accent}" 
+                                          Foreground="{DynamicResource BusBuddy.Brush.Text.Accent}" 
+                                          BorderThickness="0"
+                                          Command="{Binding NavigateToRoutesCommand}"
+                                          FontSize="14" FontWeight="SemiBold"
+                                          ToolTip="Plan and manage transportation routes with optimization"
+                                          AutomationProperties.Name="Route Management"
+                                          SmallIcon="pack://application:,,,/BusBuddy.WPF;component/Resources/routes-icon.png"
+                                          SizeMode="Large" />
+
+                    <syncfusion:ButtonAdv Label="🚐 Buses" Margin="0,0,10,0" Padding="15,8"
+                                          Background="{DynamicResource BusBuddy.Brush.Accent}" 
+                                          Foreground="{DynamicResource BusBuddy.Brush.Text.Accent}" 
+                                          BorderThickness="0"
+                                          Command="{Binding NavigateToBusesCommand}"
+                                          FontSize="14" FontWeight="SemiBold"
+                                          ToolTip="Manage bus fleet and vehicle maintenance information"
+                                          AutomationProperties.Name="Bus Management"
+                                          SmallIcon="pack://application:,,,/BusBuddy.WPF;component/Resources/buses-icon.png"
+                                          SizeMode="Large" />
+
+                    <syncfusion:ButtonAdv Label="👨‍✈️ Drivers" Margin="0,0,10,0" Padding="15,8"
+                                          Background="{DynamicResource BusBuddy.Brush.Accent}" 
+                                          Foreground="{DynamicResource BusBuddy.Brush.Text.Accent}" 
+                                          BorderThickness="0"
+                                          Command="{Binding NavigateToDriversCommand}"
+                                          FontSize="14" FontWeight="SemiBold"
+                                          ToolTip="Manage driver information and route schedules"
+                                          AutomationProperties.Name="Driver Management"
+                                          SmallIcon="pack://application:,,,/BusBuddy.WPF;component/Resources/drivers-icon.png"
+                                          SizeMode="Large" />
+
+                    <syncfusion:ButtonAdv Label="📊 Reports" Padding="15,8"
+                                          Background="{DynamicResource BusBuddy.Brush.Success}" 
+                                          Foreground="{DynamicResource BusBuddy.Brush.Text.Success}" 
+                                          BorderThickness="0"
+                                          Command="{Binding NavigateToReportsCommand}"
+                                          FontSize="14" FontWeight="SemiBold"
+                                          ToolTip="Generate comprehensive transportation reports and analytics"
+                                          AutomationProperties.Name="Reports and Analytics"
+                                          SmallIcon="pack://application:,,,/BusBuddy.WPF;component/Resources/reports-icon.png"
+                                          SizeMode="Large" />
+
+                    <!-- Enhanced Theme Selector with Professional Controls -->
+                    <StackPanel Orientation="Horizontal" Margin="30,0,0,0" VerticalAlignment="Center">
+                        <TextBlock Text="Theme:" 
+                                   Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}" 
+                                   VerticalAlignment="Center" 
+                                   Margin="0,0,10,0" 
+                                   FontSize="14" 
+                                   FontWeight="Medium"/>
+                        
+                        <syncfusion:ComboBoxAdv x:Name="ThemeSelector" 
+                                               Width="160" 
+                                               SelectedIndex="0" 
+                                               SelectionChanged="ThemeSelector_SelectionChanged" 
+                                               ToolTip="Select application theme (Syncfusion Fluent themes)"
+                                               Background="{DynamicResource BusBuddy.Brush.Control.Background}"
+                                               Foreground="{DynamicResource BusBuddy.Brush.Control.Text}"
+                                               BorderBrush="{DynamicResource BusBuddy.Brush.Control.Border}"
+                                               BorderThickness="1"
+                                               Padding="10,8"
+                                               FontSize="14">
+                            <syncfusion:ComboBoxItemAdv Content="🌙 FluentDark" Tag="FluentDark"/>
+                            <syncfusion:ComboBoxItemAdv Content="☀️ FluentLight" Tag="FluentLight"/>
                         </syncfusion:ComboBoxAdv>
-                        <syncfusion:ButtonAdv Label="🌙" Width="38" Margin="8,0,0,0" Padding="4" ToolTip="Switch to FluentDark" Click="DarkThemeButton_Click" Background="{DynamicResource ButtonBackgroundBrush}" Foreground="{DynamicResource ButtonForegroundBrush}"/>
-                        <syncfusion:ButtonAdv Label="☀️" Width="38" Margin="4,0,0,0" Padding="4" ToolTip="Switch to FluentLight" Click="LightThemeButton_Click" Background="{DynamicResource ButtonBackgroundBrush}" Foreground="{DynamicResource ButtonForegroundBrush}"/>
+
+                        <!-- Quick Theme Toggle Buttons with Enhanced Visual States -->
+                        <syncfusion:ButtonAdv Label="🌙" 
+                                             Width="42" Height="38"
+                                             Margin="12,0,0,0" 
+                                             Padding="6" 
+                                             ToolTip="Switch to FluentDark theme" 
+                                             Command="{Binding SwitchToDarkThemeCommand}"
+                                             Background="{DynamicResource BusBuddy.Brush.Control.Background}" 
+                                             Foreground="{DynamicResource BusBuddy.Brush.Control.Text}"
+                                             BorderBrush="{DynamicResource BusBuddy.Brush.Control.Border}"
+                                             BorderThickness="1"
+                                             AutomationProperties.Name="Switch to Dark Theme"
+                                             FontSize="16">
+                            <syncfusion:ButtonAdv.Style>
+                                <Style TargetType="syncfusion:ButtonAdv">
+                                    <Style.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter Property="Background" Value="{DynamicResource BusBuddy.Brush.Control.Hover}"/>
+                                            <Setter Property="BorderBrush" Value="{DynamicResource BusBuddy.Brush.Primary}"/>
+                                        </Trigger>
+                                        <Trigger Property="IsPressed" Value="True">
+                                            <Setter Property="Background" Value="{DynamicResource BusBuddy.Brush.Control.Pressed}"/>
+                                        </Trigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </syncfusion:ButtonAdv.Style>
+                        </syncfusion:ButtonAdv>
+
+                        <syncfusion:ButtonAdv Label="☀️" 
+                                             Width="42" Height="38"
+                                             Margin="6,0,0,0" 
+                                             Padding="6" 
+                                             ToolTip="Switch to FluentLight theme" 
+                                             Command="{Binding SwitchToLightThemeCommand}"
+                                             Background="{DynamicResource BusBuddy.Brush.Control.Background}" 
+                                             Foreground="{DynamicResource BusBuddy.Brush.Control.Text}"
+                                             BorderBrush="{DynamicResource BusBuddy.Brush.Control.Border}"
+                                             BorderThickness="1"
+                                             AutomationProperties.Name="Switch to Light Theme"
+                                             FontSize="16">
+                            <syncfusion:ButtonAdv.Style>
+                                <Style TargetType="syncfusion:ButtonAdv">
+                                    <Style.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter Property="Background" Value="{DynamicResource BusBuddy.Brush.Control.Hover}"/>
+                                            <Setter Property="BorderBrush" Value="{DynamicResource BusBuddy.Brush.Warning}"/>
+                                        </Trigger>
+                                        <Trigger Property="IsPressed" Value="True">
+                                            <Setter Property="Background" Value="{DynamicResource BusBuddy.Brush.Control.Pressed}"/>
+                                        </Trigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </syncfusion:ButtonAdv.Style>
+                        </syncfusion:ButtonAdv>
                     </StackPanel>
                 </StackPanel>
             </Grid>
         </Border>
 
-        <!-- Main Content Area with DockingManager -->
-    <syncfusion:DockingManager Name="MainDockingManager"
-                   UseDocumentContainer="True"
-                   PersistState="True"
-                   UseNativeFloatWindow="True"
-                   Grid.Row="1">
+        <!-- Enhanced Main Content Area with DockingManager (Syncfusion 30.2.6) -->
+        <syncfusion:DockingManager Name="MainDockingManager"
+                                   UseDocumentContainer="True"
+                                   PersistState="True"
+                                   Grid.Row="1">
+
+            <!-- Enhanced DockingManager Resources for Professional Appearance -->
+            <syncfusion:DockingManager.Resources>
+                <!-- Document Header Template with Enhanced Visual Design -->
+                <DataTemplate x:Key="DocumentHeaderTemplate">
+                    <StackPanel Orientation="Horizontal" Margin="8,4">
+                        <TextBlock Text="{Binding}" 
+                                   FontSize="13" 
+                                   FontWeight="Medium"
+                                   Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"
+                                   VerticalAlignment="Center"/>
+                    </StackPanel>
+                </DataTemplate>
+            </syncfusion:DockingManager.Resources>
 
             <!-- Students Panel -->
             <ContentControl x:Name="StudentsPane"
@@ -147,7 +345,7 @@
                     <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,15,0,0">
                         <syncfusion:ButtonAdv Label="➕ Add Student" Margin="0,0,10,0" Padding="12,6"
                                               Background="{DynamicResource ButtonBackgroundBrush}" Foreground="{DynamicResource ButtonForegroundBrush}" BorderThickness="0"
-                                              Click="AddStudent_Click"
+                                              Command="{Binding AddStudentCommand}"
                                               ToolTip="Add a new student to the system"
                                               AutomationProperties.Name="Add New Student"/>
                         <syncfusion:ButtonAdv Label="📝 Edit Student" Padding="12,6"
@@ -195,12 +393,12 @@
                     <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,15,0,0">
                         <syncfusion:ButtonAdv Label="🗺️ Optimize Routes" Margin="0,0,10,0" Padding="12,6"
                                               Background="{DynamicResource ButtonBackgroundBrush}" Foreground="{DynamicResource ButtonForegroundBrush}" BorderThickness="0"
-                                              Click="OptimizeRoutes_Click"
+                                              Command="{Binding OptimizeRoutesCommand}"
                                               ToolTip="Optimize route efficiency and timing"
                                               AutomationProperties.Name="Optimize Transportation Routes"/>
                         <syncfusion:ButtonAdv Label="📄 Export Schedules" Padding="12,6"
                                               Background="{DynamicResource ButtonBackgroundBrush}" Foreground="{DynamicResource ButtonForegroundBrush}" BorderThickness="0"
-                                              Click="ExportSchedules_Click"
+                                              Command="{Binding ExportSchedulesCommand}"
                                               ToolTip="Export route schedules to file"
                                               AutomationProperties.Name="Export Route Schedules"/>
                     </StackPanel>
@@ -242,17 +440,17 @@
                     <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,15,0,0">
                         <syncfusion:ButtonAdv Label="➕ Add Bus" Margin="0,0,10,0" Padding="12,6"
                                               Background="{DynamicResource ButtonBackgroundBrush}" Foreground="{DynamicResource ButtonForegroundBrush}" BorderThickness="0"
-                                              Click="AddBus_Click"
+                                              Command="{Binding AddBusCommand}"
                                               ToolTip="Add a new bus to the fleet"
                                               AutomationProperties.Name="Add New Bus"/>
                         <syncfusion:ButtonAdv Label="🔧 Maintenance" Margin="0,0,10,0" Padding="12,6"
                                               Background="{DynamicResource ButtonBackgroundBrush}" Foreground="{DynamicResource ButtonForegroundBrush}" BorderThickness="0"
-                                              Click="Maintenance_Click"
+                                              Command="{Binding MaintenanceCommand}"
                                               ToolTip="Schedule and track bus maintenance"
                                               AutomationProperties.Name="Bus Maintenance"/>
                         <syncfusion:ButtonAdv Label="📊 Fleet Status" Padding="12,6"
                                               Background="{DynamicResource ButtonBackgroundBrush}" Foreground="{DynamicResource ButtonForegroundBrush}" BorderThickness="0"
-                                              Click="FleetStatus_Click"
+                                              Command="{Binding FleetStatusCommand}"
                                               ToolTip="View current fleet status and availability"
                                               AutomationProperties.Name="Fleet Status Overview"/>
                     </StackPanel>
@@ -292,17 +490,17 @@
                     <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,15,0,0">
                         <syncfusion:ButtonAdv Label="➕ Add Driver" Margin="0,0,10,0" Padding="12,6"
                                               Background="{DynamicResource ButtonBackgroundBrush}" Foreground="{DynamicResource ButtonForegroundBrush}" BorderThickness="0"
-                                              Click="AddDriver_Click"
+                                              Command="{Binding AddDriverCommand}"
                                               ToolTip="Add a new driver to the system"
                                               AutomationProperties.Name="Add New Driver"/>
                         <syncfusion:ButtonAdv Label="🚌 Assign Bus" Margin="0,0,10,0" Padding="12,6"
                                               Background="{DynamicResource ButtonBackgroundBrush}" Foreground="{DynamicResource ButtonForegroundBrush}" BorderThickness="0"
-                                              Click="AssignBus_Click"
+                                              Command="{Binding AssignBusCommand}"
                                               ToolTip="Assign a bus to the selected driver"
                                               AutomationProperties.Name="Assign Bus to Driver"/>
                         <syncfusion:ButtonAdv Label="📅 Schedule" Padding="12,6"
                                               Background="{DynamicResource ButtonBackgroundBrush}" Foreground="{DynamicResource ButtonForegroundBrush}" BorderThickness="0"
-                                              Click="Schedule_Click"
+                                              Command="{Binding ScheduleCommand}"
                                               ToolTip="Manage driver schedules and assignments"
                                               AutomationProperties.Name="Driver Schedule Management"/>
                     </StackPanel>

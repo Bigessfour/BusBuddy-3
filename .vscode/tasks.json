@@ -400,6 +400,183 @@
         "panel": "shared"
       },
       "problemMatcher": []
+    },
+
+    // === OPENSILVER TASKS ===
+    {
+      "label": "OpenSilver: Create New Application",
+      "type": "shell",
+      "command": "dotnet",
+      "args": ["new", "opensilverapp", "-n", "${input:projectName}"],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "OpenSilver: Create Business Application",
+      "type": "shell",
+      "command": "dotnet",
+      "args": ["new", "opensilverbusinessapp", "-n", "${input:projectName}"],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "OpenSilver: Create Class Library",
+      "type": "shell",
+      "command": "dotnet",
+      "args": ["new", "opensilverlib", "-n", "${input:projectName}"],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "OpenSilver: Install Blazor WASM Workload",
+      "type": "shell",
+      "command": "dotnet",
+      "args": ["workload", "install", "wasm-tools"],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "OpenSilver: Update Templates",
+      "type": "shell",
+      "command": "dotnet",
+      "args": ["new", "update"],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "OpenSilver: List Templates",
+      "type": "shell",
+      "command": "dotnet",
+      "args": ["new", "--list", "|", "findstr", "-i", "opensilver"],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      },
+      "problemMatcher": []
+    }
+  ],
+  "inputs": [
+    {
+      "id": "projectName",
+      "description": "Enter project name",
+      "default": "MyOpenSilverProject",
+      "type": "promptString"
+    },
+
+    // === SYNCFUSION WPF DEVELOPMENT TASKS ===
+    {
+      "label": "Syncfusion: Check License",
+      "type": "shell",
+      "command": "pwsh",
+      "args": [
+        "-Command",
+        "if ($env:SYNCFUSION_LICENSE_KEY) { Write-Host '✅ Syncfusion license configured' -ForegroundColor Green } else { Write-Host '❌ SYNCFUSION_LICENSE_KEY not set' -ForegroundColor Red }"
+      ],
+      "group": "test",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Syncfusion: Validate XAML Controls",
+      "type": "shell",
+      "command": "pwsh",
+      "args": [
+        "-Command",
+        "Get-ChildItem -Path '${workspaceFolder}' -Filter '*.xaml' -Recurse | ForEach-Object { $content = Get-Content $_.FullName -Raw; if ($content -match 'syncfusion:') { Write-Host \"✅ Syncfusion controls found in $($_.Name)\" -ForegroundColor Green } else { Write-Host \"ℹ️ No Syncfusion controls in $($_.Name)\" -ForegroundColor Yellow } }"
+      ],
+      "group": "test",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Syncfusion: Format All XAML Files",
+      "type": "shell",
+      "command": "pwsh",
+      "args": [
+        "-Command",
+        "Get-ChildItem -Path '${workspaceFolder}' -Filter '*.xaml' -Recurse | ForEach-Object { Write-Host \"Formatting $($_.Name)\" -ForegroundColor Cyan }"
+      ],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Syncfusion: Generate Documentation",
+      "type": "shell",
+      "command": "pwsh",
+      "args": [
+        "-Command",
+        "$syncfusionControls = @(); Get-ChildItem -Path '${workspaceFolder}' -Filter '*.xaml' -Recurse | ForEach-Object { $content = Get-Content $_.FullName -Raw; $matches = [regex]::Matches($content, 'syncfusion:([A-Za-z0-9]+)'); foreach ($match in $matches) { $syncfusionControls += $match.Groups[1].Value } }; $syncfusionControls | Sort-Object -Unique | ForEach-Object { Write-Host \"Syncfusion Control: $_\" -ForegroundColor Green }"
+      ],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Document Viewer: Open Settings",
+      "type": "shell",
+      "command": "code",
+      "args": [
+        "--command",
+        "workbench.action.openSettings",
+        "@ext:syncfusioninc.document-viewer-vscode-extensions"
+      ],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "silent",
+        "focus": false,
+        "panel": "shared"
+      }
     }
   ]
 }

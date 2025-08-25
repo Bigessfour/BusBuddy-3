@@ -175,7 +175,7 @@
                             Margin="0,0,10,0">
                     <TextBlock Text="Time Slot"
                                FontWeight="SemiBold" />
-                    <ComboBox x:Name="TimeSlotCombo"
+                    <syncfusion:ComboBoxAdv x:Name="TimeSlotCombo"
                               SelectedItem="{Binding SelectedTimeSlot, Mode=TwoWay}"
                               ItemsSource="{Binding Source={StaticResource RouteTimeSlotValues}}"
                               AutomationProperties.Name="Route Time Slot" />

@@ -72,21 +72,21 @@
                                                                 - Structured error handling with proper output streams
                                                                 - Zero Write-Host usage (Microsoft compliant)
                                                                 - Advanced splatting and ternary operator usage
-                                                                '@
+'@
 
-                                                                # External module dependencies
-                                                                ExternalModuleDependencies = @('Az.Accounts', 'Az.Storage', 'Az.KeyVault')
-                                                                }
+            # External module dependencies
+            ExternalModuleDependencies = @('Az.Accounts', 'Az.Storage', 'Az.KeyVault')
+        }
 
-                                                                # Custom configuration for BusBuddy
-                                                                BusBuddyConfig = @{
-                                                                        PSScriptAnalyzerSettings = 'PSScriptAnalyzerSettings.psd1'
-                                                                        RequiredPowerShellVersion = '7.5.2'
-                                                                        EnforceModernSyntax = $true
-                                                                        PreventWriteHost = $true
-                                                                    }
-                                                                }
+        # Custom configuration for BusBuddy
+        BusBuddyConfig = @{
+            PSScriptAnalyzerSettings = 'PSScriptAnalyzerSettings.psd1'
+            RequiredPowerShellVersion = '7.5.2'
+            EnforceModernSyntax = $true
+            PreventWriteHost = $true
+        }
+    }
 
-                                                                # Help information
-                                                                HelpInfoURI = 'https://docs.busbuddy.com/powershell'
-                                                            }
+    # Help information
+    HelpInfoURI = 'https://docs.busbuddy.com/powershell'
+}

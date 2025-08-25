@@ -85,39 +85,42 @@
 
             # Release notes
             ReleaseNotes = @'
-                                            v1.0.0 - Initial Release
-                                            - CI/CD failure analysis using Grok-4 AI
-                                            - Route optimization recommendations
-                                            - Maintenance prediction capabilities
-                                            - Integration with BusBuddy ecosystem
-                                            - PowerShell 7.0+ support
-                                            - Comprehensive configuration system
-                                            '@
+v1.0.0 - Initial Release
+- CI/CD failure analysis using Grok-4 AI
+- Route optimization recommendations
+- Maintenance prediction capabilities
+- Integration with BusBuddy ecosystem
+- PowerShell 7.0+ support
+- Comprehensive configuration system
+'@
 
-                                            # Prerequisites
-                                            ExternalModuleDependencies = @()
+            # Prerequisites
+            ExternalModuleDependencies = @()
 
-                                                # Icon URI
-                                                IconUri = ''
-                                            }
+            # Icon URI
+            IconUri = ''
 
-                                            # BusBuddy specific configuration
-                                            BusBuddy = @{
-                                                    ModuleType = 'AI-Assistant'
-                                                    IntegrationLevel = 'Core'
-                                                    RequiresApiKey = $true
-                                                    SupportedPlatforms = @('Windows', 'Linux', 'macOS')
-                                                        ConfigurationFiles = @(
-                                                                'grok-config.ps1',
-                                                                '.grok-config.json',
-                                                                'grok-assistant.settings.json'
-                                                            )
-                                                        }
-                                                    }
+            # BusBuddy specific configuration
+            BusBuddy = @{
+                ModuleType = 'AI-Assistant'
+                IntegrationLevel = 'Core'
+                RequiresApiKey = $true
+                SupportedPlatforms = @('Windows', 'Linux', 'macOS')
+                ConfigurationFiles = @(
+                    'grok-config.ps1',
+                    '.grok-config.json',
+                    'grok-assistant.settings.json'
+                )
+            }
 
-                                                    # Help Info URI
-                                                    HelpInfoURI = 'https://github.com/yourusername/busbuddy/blob/main/docs/grok-assistant.md'
+        } # End of PSData hashtable
 
-                                                    # Default prefix for commands imported from this module
-                                                    DefaultCommandPrefix = ''
-                                                }
+    } # End of PrivateData hashtable
+
+    # Help Info URI
+    HelpInfoURI = 'https://github.com/yourusername/busbuddy/blob/main/docs/grok-assistant.md'
+
+    # Default prefix for commands imported from this module
+    DefaultCommandPrefix = ''
+
+}

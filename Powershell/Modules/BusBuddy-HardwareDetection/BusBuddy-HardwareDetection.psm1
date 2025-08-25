@@ -5,7 +5,12 @@
 [CmdletBinding()]
 param()
 
-# Module functions will be added here as needed
 
-# Export module members (empty for now, but establishes the pattern)
-Export-ModuleMember -Function @()
+# Minimal function to prevent null script errors
+function Get-HardwareInfo {
+    [CmdletBinding()]
+    param()
+    Get-WmiObject Win32_ComputerSystem
+}
+
+Export-ModuleMember -Function Get-HardwareInfo

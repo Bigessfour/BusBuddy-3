@@ -36,6 +36,7 @@ namespace BusBuddy.WPF.Views.Main
     // Explicit reference placeholder to satisfy analyzer if generated partial field not yet recognized
     // At runtime, the XAML-generated field MainDockingManager will be used.
     private DockingManager? _designTimeDockingManagerAccessor => this.FindName("MainDockingManager") as DockingManager;
+
         private static readonly ILogger Logger = Log.ForContext<MainWindow>();
         private static readonly int DockActivatedWidthBump = 120; // consolidated width bump constant
         private readonly Guid _windowInstanceId = Guid.NewGuid(); // correlation id for structured logs
@@ -75,6 +76,9 @@ namespace BusBuddy.WPF.Views.Main
                 Logger.Debug("Initializing MainWindow components and DataContext");
                 InitializeMainWindow();
 
+                // Wire up ViewModel events for MVVM command handling
+                WireUpViewModelEvents();
+
                 // Wire up lifecycle events once visual tree is ready
                 try
                 {
@@ -107,10 +111,10 @@ namespace BusBuddy.WPF.Views.Main
                 // Wire DockingManager activation events for dynamic sizing
                 try
                 {
-                    if (MainDockingManager != null)
+                    if (this.MainDockingManager is DockingManager dockingManager)
                     {
-                        MainDockingManager.WindowActivated += DockingManager_WindowActivated; // https://help.syncfusion.com/cr/wpf/Syncfusion.Windows.Tools.Controls.DockingManager.html#events
-                        MainDockingManager.WindowDeactivated += DockingManager_WindowDeactivated;
+                        dockingManager.WindowActivated += DockingManager_WindowActivated; // https://help.syncfusion.com/cr/wpf/Syncfusion.Windows.Tools.Controls.DockingManager.html#events
+                        dockingManager.WindowDeactivated += DockingManager_WindowDeactivated;
                         Logger.Information("DockingManager activation events wired (field access)");
                     }
                     else
@@ -591,6 +595,198 @@ namespace BusBuddy.WPF.Views.Main
             this.Content = welcomeText;
         }
 
+        #region ViewModel Event Wiring for MVVM Commands
+
+        private void WireUpViewModelEvents()
+        {
+            if (DataContext is MainWindowViewModel viewModel)
+            {
+                // Wire up navigation events
+                viewModel.NavigationRequested += OnNavigationRequested;
+                viewModel.DocumentActionRequested += OnDocumentActionRequested;
+                viewModel.CrudActionRequested += OnCrudActionRequested;
+                viewModel.RouteActionRequested += OnRouteActionRequested;
+                viewModel.FleetActionRequested += OnFleetActionRequested;
+                viewModel.ThemeChangeRequested += OnThemeChangeRequested;
+                
+                Logger.Information("ViewModel events wired up successfully");
+            }
+            else
+            {
+                Logger.Warning("DataContext is not MainWindowViewModel, cannot wire up events");
+            }
+        }
+
+        private void OnNavigationRequested(string navigationTarget)
+        {
+            Logger.Information("Navigation requested to: {Target}", navigationTarget);
+            try
+            {
+                switch (navigationTarget)
+                {
+                    case "Students":
+                        StudentsButton_Click(this, new RoutedEventArgs());
+                        break;
+                    case "Routes":
+                        RouteManagementButton_Click(this, new RoutedEventArgs());
+                        break;
+                    case "Buses":
+                        BusesButton_Click(this, new RoutedEventArgs());
+                        break;
+                    case "Drivers":
+                        DriversButton_Click(this, new RoutedEventArgs());
+                        break;
+                    case "Map":
+                        MapButton_Click(this, new RoutedEventArgs());
+                        break;
+                    case "Reports":
+                        ReportsButton_Click(this, new RoutedEventArgs());
+                        break;
+                    default:
+                        Logger.Warning("Unknown navigation target: {Target}", navigationTarget);
+                        break;
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Error during navigation to {Target}", navigationTarget);
+            }
+        }
+
+        private void OnDocumentActionRequested(string action)
+        {
+            Logger.Information("Document action requested: {Action}", action);
+            try
+            {
+                switch (action)
+                {
+                    case "GenerateEligibilityPdf":
+                        EligibilityPdfButton_Click(this, new RoutedEventArgs());
+                        break;
+                    case "PrintEligibilityPdf":
+                        PrintEligibilityPdfButton_Click(this, new RoutedEventArgs());
+                        break;
+                    default:
+                        Logger.Warning("Unknown document action: {Action}", action);
+                        break;
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Error during document action {Action}", action);
+            }
+        }
+
+        private void OnCrudActionRequested(string action)
+        {
+            Logger.Information("CRUD action requested: {Action}", action);
+            try
+            {
+                switch (action)
+                {
+                    case "AddStudent":
+                        AddStudent_Click(this, new RoutedEventArgs());
+                        break;
+                    case "EditStudent":
+                        EditStudent_Click(this, new RoutedEventArgs());
+                        break;
+                    case "AddBus":
+                        AddBus_Click(this, new RoutedEventArgs());
+                        break;
+                    case "AddDriver":
+                        AddDriver_Click(this, new RoutedEventArgs());
+                        break;
+                    default:
+                        Logger.Warning("Unknown CRUD action: {Action}", action);
+                        break;
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Error during CRUD action {Action}", action);
+            }
+        }
+
+        private void OnRouteActionRequested(string action)
+        {
+            Logger.Information("Route action requested: {Action}", action);
+            try
+            {
+                switch (action)
+                {
+                    case "OptimizeRoutes":
+                        OptimizeRoutes_Click(this, new RoutedEventArgs());
+                        break;
+                    case "ExportSchedules":
+                        ExportSchedules_Click(this, new RoutedEventArgs());
+                        break;
+                    default:
+                        Logger.Warning("Unknown route action: {Action}", action);
+                        break;
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Error during route action {Action}", action);
+            }
+        }
+
+        private void OnFleetActionRequested(string action)
+        {
+            Logger.Information("Fleet action requested: {Action}", action);
+            try
+            {
+                switch (action)
+                {
+                    case "Maintenance":
+                        Maintenance_Click(this, new RoutedEventArgs());
+                        break;
+                    case "FleetStatus":
+                        FleetStatus_Click(this, new RoutedEventArgs());
+                        break;
+                    case "AssignBus":
+                        AssignBus_Click(this, new RoutedEventArgs());
+                        break;
+                    case "Schedule":
+                        Schedule_Click(this, new RoutedEventArgs());
+                        break;
+                    default:
+                        Logger.Warning("Unknown fleet action: {Action}", action);
+                        break;
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Error during fleet action {Action}", action);
+            }
+        }
+
+        private void OnThemeChangeRequested(string themeName)
+        {
+            Logger.Information("Theme change requested: {ThemeName}", themeName);
+            try
+            {
+                switch (themeName)
+                {
+                    case "FluentDark":
+                        DarkThemeButton_Click(this, new RoutedEventArgs());
+                        break;
+                    case "FluentLight":
+                        LightThemeButton_Click(this, new RoutedEventArgs());
+                        break;
+                    default:
+                        Logger.Warning("Unknown theme: {ThemeName}", themeName);
+                        break;
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Error during theme change to {ThemeName}", themeName);
+            }
+        }
+
+        #endregion
+
         #region Navigation Button Click Handlers
 
         private void DashboardButton_Click(object sender, RoutedEventArgs e)
@@ -645,13 +841,13 @@ namespace BusBuddy.WPF.Views.Main
         {
             try
             {
-                if (ThemeSelector != null)
+                if (ThemeSelector is ComboBoxAdv themeSelectorComboBox)
                 {
-                    for (int i = 0; i < ThemeSelector.Items.Count; i++)
+                    for (int i = 0; i < themeSelectorComboBox.Items.Count; i++)
                     {
-                        if (ThemeSelector.Items[i] is ComboBoxItemAdv item && string.Equals(item.Content?.ToString(), themeName, StringComparison.OrdinalIgnoreCase))
+                        if (themeSelectorComboBox.Items[i] is ComboBoxItemAdv item && string.Equals(item.Content?.ToString(), themeName, StringComparison.OrdinalIgnoreCase))
                         {
-                            ThemeSelector.SelectedIndex = i;
+                            themeSelectorComboBox.SelectedIndex = i;
                             break;
                         }
                     }
@@ -819,7 +1015,7 @@ namespace BusBuddy.WPF.Views.Main
                     try
                     {
                         // Activate by header text (Syncfusion ActivateWindow expects string header in current version build context)
-                        MainDockingManager.ActivateWindow("🌍 Map");
+                        (MainDockingManager as DockingManager)?.ActivateWindow("🌍 Map");
                         Logger.Information("Map pane activation attempted via header lookup");
                     }
                     catch (Exception inner)
@@ -1455,11 +1651,11 @@ namespace BusBuddy.WPF.Views.Main
                     Syncfusion.Windows.Tools.Controls.DockState.Document);
 
                 // Add to DockingManager
-                if (MainDockingManager != null)
+                if (MainDockingManager is DockingManager dockingManager)
                 {
                     try
                     {
-                        MainDockingManager.Children.Add(contentControl);
+                        dockingManager.Children.Add(contentControl);
                     }
                     catch (Exception addEx)
                     {

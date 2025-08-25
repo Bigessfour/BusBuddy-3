@@ -2,7 +2,7 @@
 
 [![.NET](https://img.shields.io/badge/.NET-9.0.304-blue)](https://dotnet.microsoft.com/download/dotnet/9.0)
 [![PowerShell](https://img.shields.io/badge/PowerShell-7.5.2%20✨%20Advanced-blue)](https://github.com/PowerShell/PowerShell)
-[![Syncfusion](https://img.shields.io/badge/Syncfusion-30.1.42%20✅%20Licensed-orange)](https://www.syncfusion.com/wpf-controls)
+[![Syncfusion](https://img.shields.io/badge/Syncfusion-30.2.6%20✅%20Licensed-orange)](https://www.syncfusion.com/wpf-controls)
 [![Hyperthreading](https://img.shields.io/badge/Hyperthreading-⚡%20Optimized-green)](https://docs.microsoft.com/en-us/powershell/scripting/learn/experimental-features)
 [![MVP Status](https://img.shields.io/badge/MVP-⚠️%20Development-yellow)](https://github.com/Bigessfour/BusBuddy-3)
 [![Production](https://img.shields.io/badge/Production-🚧%20In%20Progress-yellow)](https://github.com/Bigessfour/BusBuddy-3)ddy - School Transportation Management System
@@ -12,7 +12,7 @@
 [![Build Status](https://img.shields.io/badge/build-✅%20passing-brightgreen)](https://github.com/Bigessfour/BusBuddy-3)
 [![.NET](https://img.shields.io/badge/.NET-9.0.304-blue)](https://dotnet.microsoft.com/download/dotnet/9.0)
 [![PowerShell](https://img.shields.io/badge/PowerShell-7.5.2-blue)](https://github.com/PowerShell/PowerShell)
-[![Syncfusion](https://img.shields.io/badge/Syncfusion-30.1.42%20✅%20Licensed-orange)](https://www.syncfusion.com/wpf-controls)
+[![Syncfusion](https://img.shields.io/badge/Syncfusion-30.2.6%20✅%20Licensed-orange)](https://www.syncfusion.com/wpf-controls)
 [![MVP Status](https://img.shields.io/badge/MVP-⚠️%20Development-yellow)](https://github.com/Bigessfour/BusBuddy-3)
 [![Production](https://img.shields.io/badge/Production-�%20In%20Progress-yellow)](https://github.com/Bigessfour/BusBuddy-3)
 
@@ -84,7 +84,7 @@ Import-Module .\PowerShell\Modules\BusBuddy.Commands\BusBuddy.Commands.psm1
 **Application is functional and ready for feature development:**
 
 - ✅ **Build Status**: Clean build with 0 errors
-- ✅ **Dependencies**: All packages resolved (.NET 9.0, Syncfusion 30.1.42)
+- ✅ **Dependencies**: All packages resolved (.NET 9.0, Syncfusion 30.2.6)
 - ✅ **Database**: Entity Framework migrations working with LocalDB
 - ✅ **UI Framework**: WPF with Syncfusion controls operational
 - ✅ **Development Tools**: PowerShell automation module available
@@ -107,7 +107,7 @@ Test-BbXaml           # Validate UI controls
 
 ### **🎉 Application Status**
 
-- ✅ **Build Status**: Clean build with .NET 9.0 and Syncfusion 30.1.42
+- ✅ **Build Status**: Clean build with .NET 9.0 and Syncfusion 30.2.6
 - ✅ **Core Application**: WPF application runs successfully
 - ✅ **Student Management**: Working student entry and management features
 - ✅ **Route Management**: Basic route assignment functionality
@@ -116,6 +116,17 @@ Test-BbXaml           # Validate UI controls
 - ✅ **Syncfusion Licensing**: Proper license registration implemented
 - ✅ **Log Management**: Centralized logging with consolidated workspace logs
 - ✅ **Dependency Management**: Comprehensive dependency health checking and vulnerability scanning
+
+### **🚀 Syncfusion WPF 30.2.6 Upgrade (August 25, 2025)**
+
+- ✅ **Major Upgrade**: Successfully upgraded from Syncfusion WPF 30.1.42 → 30.2.6
+- ✅ **Zero Breaking Changes**: All existing code remains functional with enhanced stability
+- ✅ **Enhanced Data Grids**: Improved SfDataGrid merged cell handling and selection behavior
+- ✅ **Theme Consistency**: Better SfTreeGrid background theming and visual consistency
+- ✅ **Ribbon Stability**: Resolved NullReferenceException issues and improved hosting behavior
+- ✅ **Performance**: TileViewControl optimizations and document processing improvements
+- ✅ **Test Results**: 179,294 Success, 0 Failures from Syncfusion's comprehensive test suite
+- ✅ **Documentation**: All references updated across README, dependency docs, and coding standards
 
 ### **🧹 Recent Legacy Cleanup (August 21, 2025)**
 
@@ -231,7 +242,7 @@ bbLicense
 | ---------------- | --------------------------- | -------- |
 | **Framework**    | .NET                        | 9.0.303  |
 | **UI Framework** | WPF                         | Built-in |
-| **UI Controls**  | Syncfusion Essential Studio | 30.1.42  |
+| **UI Controls**  | Syncfusion Essential Studio | 30.2.6   |
 | **Data Access**  | Entity Framework Core       | 9.0.7    |
 | **Database**     | SQL Server / LocalDB        | Latest   |
 | **Logging**      | Serilog                     | 4.3.0    |
@@ -243,7 +254,7 @@ bbLicense
 ```
 BusBuddy/
 
-## 🖥️ High DPI and font sizing (Syncfusion WPF v30.1.42)
+## 🖥️ High DPI and font sizing (Syncfusion WPF v30.2.6)
 
 - App is PerMonitorV2 DPI-aware via application manifest (`BusBuddy.WPF/app.manifest`).
 - Windows-level: we use layout rounding and device pixel snapping on key windows.

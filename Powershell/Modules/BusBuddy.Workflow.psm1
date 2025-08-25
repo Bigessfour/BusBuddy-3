@@ -3,6 +3,21 @@
 #requires -Version 7.5
 [CmdletBinding()]
 param()
-# Module functions will be added here as needed
-# Export module members (empty for now, but establishes the pattern)
-Export-ModuleMember -Function @()
+
+# Minimal function to prevent null script errors
+function Get-WorkflowStatus {
+    [CmdletBinding()]
+    param(
+        [string]$WorkflowName = "Default"
+    )
+
+    Write-Information "Getting status for workflow: $WorkflowName" -InformationAction Continue
+    return @{
+        Name = $WorkflowName
+        Status = "Ready"
+        LastRun = Get-Date
+    }
+}
+
+# Export module members
+Export-ModuleMember -Function Get-WorkflowStatus

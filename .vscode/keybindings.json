@@ -49,6 +49,28 @@
     "key": "ctrl+shift+o",
     "command": "workbench.action.gotoSymbol"
   },
+
+  // Syncfusion WPF XAML Support
+  {
+    "key": "ctrl+alt+d",
+    "command": "xmlTools.formatAsXml",
+    "when": "editorTextFocus && resourceLangId == xaml"
+  },
+  {
+    "key": "ctrl+alt+f",
+    "command": "prettier.forceFormatDocument",
+    "when": "editorTextFocus && resourceLangId == xaml"
+  },
+  {
+    "key": "ctrl+shift+n",
+    "command": "workbench.action.files.newUntitledFile",
+    "when": "explorerViewletVisible"
+  },
+  {
+    "key": "ctrl+alt+s",
+    "command": "syncfusion.showSnippets",
+    "when": "editorTextFocus && resourceLangId == xaml"
+  },
   {
     "key": "ctrl+t",
     "command": "workbench.action.showAllSymbols"

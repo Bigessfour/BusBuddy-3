@@ -88,6 +88,7 @@ actions:
     - trunk-check-pre-push # Check quality before push
 
 # Tools configuration
+# Tools configuration
 tools:
   enabled:
     - dotnet@7.0.400

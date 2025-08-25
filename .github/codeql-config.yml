@@ -1,0 +1,23 @@
+name: "BusBuddy CodeQL Configuration"
+disable-default-path-filters: false
+
+paths:
+  - "**/*.cs"
+  - "!**/*.g.cs"
+  - "!**/obj/**"
+  - "!**/bin/**"
+  - "!**/*.Designer.cs"
+
+queries:
+  - uses: security-and-quality
+
+packs:
+  - codeql/csharp-queries
+
+# Optimize for Syncfusion WPF and Azure SQL patterns
+query-filters:
+  - exclude:
+      id: cs/web/debug-binary
+
+# Configure for .NET 9 and WPF context
+build-mode: manual

@@ -42,6 +42,7 @@
         <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="$(MicrosoftExtensionsVersion)" />
         <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="$(MicrosoftExtensionsVersion)" />
         <PackageReference Include="Microsoft.Identity.Client" Version="4.76.0" />
+        <PackageReference Include="NetTopologySuite.IO.ShapeFile" Version="2.1.0" />
         <!-- xAI Grok API Integration (OpenAI-compatible) -->
         <PackageReference Include="OpenAI" Version="$(OpenAIVersion)" />
         <!-- Resilience and HTTP -->
@@ -57,7 +58,6 @@
         <PackageReference Include="Syncfusion.Pdf.NET" Version="$(SyncfusionVersion)" />
         <!-- Geospatial: NetTopologySuite for point-in-polygon and shapefile IO -->
         <PackageReference Include="NetTopologySuite" Version="2.6.0" />
-        <PackageReference Include="NetTopologySuite.IO.ShapeFile" Version="2.1.0" />
     </ItemGroup>
     <ItemGroup>
         <None Update="appsettings.json">

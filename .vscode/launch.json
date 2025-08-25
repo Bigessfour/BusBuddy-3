@@ -91,6 +91,79 @@
       "script": "${workspaceFolder}\\Scripts\\Test-AzureSqlConnection.ps1",
       "args": [],
       "cwd": "${workspaceFolder}"
+    },
+
+    // === SYNCFUSION WPF XAML DEBUGGING ===
+    {
+      "name": "Syncfusion WPF Debug (XAML Live Preview)",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "Syncfusion: Check License",
+      "program": "${workspaceFolder}/BusBuddy.WPF/bin/Debug/net9.0-windows/BusBuddy.WPF.exe",
+      "args": ["--syncfusion-debug", "--xaml-hot-reload"],
+      "cwd": "${workspaceFolder}",
+      "console": "internalConsole",
+      "stopAtEntry": false,
+      "env": {
+        "BUSBUDDY_DEBUG": "1",
+        "SYNCFUSION_DEBUG": "1",
+        "XAML_HOT_RELOAD": "1",
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "sourceFileMap": {
+        "/Views/": "${workspaceFolder}/BusBuddy.WPF/Views/",
+        "/Controls/": "${workspaceFolder}/BusBuddy.WPF/Controls/"
+      }
+    },
+    {
+      "name": "Document Viewer Debug",
+      "type": "coreclr",
+      "request": "launch",
+      "program": "${workspaceFolder}/BusBuddy.WPF/bin/Debug/net9.0-windows/BusBuddy.WPF.exe",
+      "args": ["--document-viewer-debug"],
+      "cwd": "${workspaceFolder}",
+      "console": "internalConsole",
+      "stopAtEntry": false,
+      "env": {
+        "DOCUMENT_VIEWER_DEBUG": "1",
+        "SYNCFUSION_DOCUMENT_FEATURES": "all"
+      }
+    },
+
+    // === OPENSILVER DEBUGGING ===
+    {
+      "name": "OpenSilver: Debug Browser Application",
+      "type": "blazorwasm",
+      "request": "launch",
+      "hosted": true,
+      "program": "${workspaceFolder}/*/bin/Debug/net*/BusBuddy.Browser.exe",
+      "preLaunchTask": "bb-build (dotnet build BusBuddy.sln)",
+      "url": "https://localhost:5001",
+      "webRoot": "${workspaceFolder}/**/wwwroot",
+      "env": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ASPNETCORE_URLS": "https://localhost:5001;http://localhost:5000"
+      }
+    },
+    {
+      "name": "OpenSilver: Debug Simulator",
+      "type": "coreclr",
+      "request": "launch",
+      "program": "${workspaceFolder}/*/bin/Debug/net*/BusBuddy.Simulator.exe",
+      "preLaunchTask": "bb-build (dotnet build BusBuddy.sln)",
+      "args": [],
+      "cwd": "${workspaceFolder}",
+      "console": "internalConsole",
+      "stopAtEntry": false,
+      "env": {
+        "OPENSILVER_DEBUG": "1"
+      }
+    },
+    {
+      "name": "OpenSilver: Attach to Browser Process",
+      "type": "blazorwasm",
+      "request": "attach",
+      "url": "https://localhost:5001"
     }
   ],
   "compounds": [

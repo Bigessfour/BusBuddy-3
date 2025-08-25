@@ -123,7 +123,23 @@
   "roslynator.suppressUnityScriptMethods": false,
   "[xaml]": {
     "editor.formatOnSave": true,
-    "editor.defaultFormatter": "trunk.io"
+    "editor.defaultFormatter": "trunk.io",
+    "editor.tabSize": 4,
+    "editor.insertSpaces": true,
+    "editor.detectIndentation": false,
+    "editor.wordWrap": "wordWrapColumn",
+    "editor.wordWrapColumn": 120,
+    "editor.rulers": [80, 120],
+    "editor.suggest.showKeywords": true,
+    "editor.suggest.showSnippets": true,
+    "editor.quickSuggestions": {
+      "other": true,
+      "comments": false,
+      "strings": true
+    },
+    "editor.codeActionsOnSave": {
+      "source.fixAll": "explicit"
+    }
   },
   "xml.format.enabled": true,
   "xaml.completion.snippets": true,
@@ -131,6 +147,57 @@
   "xaml.format.keepFirstAttributeOnSameLine": false,
   "xaml.format.maxAttributesPerLine": 1,
   "xaml.format.putEndingBracketOnNewLine": true,
+
+  // Syncfusion WPF XAML Configuration for BusBuddy
+  "xml.completion.enabled": true,
+  "xml.validation.enabled": true,
+  "xml.format.splitAttributes": "splitNewLine",
+  "xml.format.joinContentLines": false,
+  "xml.format.preserveWhitespace": ["text", "comment"],
+  "xml.documentSymbols.enabled": true,
+  "xml.folding.includeClosingTagInFold": false,
+
+  // Enhanced XAML Editing for Syncfusion WPF
+  "xmlTools.enableXmlTreeView": true,
+  "xmlTools.enableXmlFormatterV2": true,
+  "xmlTools.formatAsXmlOnSave": true,
+
+  // Syncfusion CLI Integration
+  "syncfusion.cli.enabled": true,
+  "syncfusion.cli.scriptPath": "${workspaceFolder}/syncfusion-cli.ps1",
+  "syncfusion.cli.autoValidate": true,
+  "syncfusion.cli.showLicenseWarning": true,
+
+  // Syncfusion Document Viewer Configuration
+  "documentViewer.enablePreview": true,
+  "documentViewer.previewFormats": ["pdf", "docx", "xlsx", "md"],
+  "documentViewer.autoOpen": true,
+  "documentViewer.showThumbnails": true,
+  "documentViewer.enableSearch": true,
+  "documentViewer.enableAnnotations": true,
+  "documentViewer.enableBookmarks": true,
+  "documentViewer.enablePrint": true,
+  "documentViewer.enableExport": true,
+  "documentViewer.zoomLevel": "fitToPage",
+  "documentViewer.theme": "dark",
+  "documentViewer.enableTextSelection": true,
+  "documentViewer.enableHyperlinks": true,
+  "documentViewer.enableFormFilling": true,
+
+  // WPF and XAML IntelliSense
+  "xaml.completion.enabled": true,
+  "xaml.validation.enabled": true,
+  "xaml.format.enabled": true,
+  "xaml.intellisense.enabled": true,
+  "xaml.designer.enabled": true,
+  "xaml.preview.enabled": true,
+  "xaml.syncfusion.namespaces": [
+    "http://schemas.syncfusion.com/wpf",
+    "clr-namespace:Syncfusion.UI.Xaml.Grid;assembly=Syncfusion.SfGrid.WPF",
+    "clr-namespace:Syncfusion.UI.Xaml.Controls.Input;assembly=Syncfusion.SfInput.WPF",
+    "clr-namespace:Syncfusion.UI.Xaml.Charts;assembly=Syncfusion.SfChart.WPF"
+  ],
+
   "files.autoSave": "afterDelay",
   "files.autoSaveDelay": 500,
   "files.hotExit": "onExitAndWindowClose",
