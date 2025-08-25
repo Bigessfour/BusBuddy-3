@@ -27,8 +27,6 @@ lint:
       environment:
         - name: DOTNET_ROOT
           value: "C:\\Program Files\\dotnet"
-        - name: PATH
-          list: ["C:\\Program Files\\dotnet", "${PATH}"]
   disabled:
     - markdownlint
     - cspell
