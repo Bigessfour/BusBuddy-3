@@ -9,14 +9,14 @@
 
 <#
 .SYNOPSIS
-    BusBuddy Grok Assistant Module
+BusBuddy Grok Assistant Module
 .DESCRIPTION
-    Provides AI-powered analysis for CI/CD, route optimization, maintenance prediction, and more using xAI's Grok model.
+Provides AI-powered analysis for CI/CD, route optimization, maintenance prediction, and more using xAI's Grok model.
 .NOTES
-    Requires XAI_API_KEY environment variable or secure API key setup.
-    Integrates with BusBuddy WPF application using MVVM, Syncfusion, and Entity Framework Core.
-    Version: 1.0.0
-    Author: BusBuddy Development Team
+Requires XAI_API_KEY environment variable or secure API key setup.
+Integrates with BusBuddy WPF application using MVVM, Syncfusion, and Entity Framework Core.
+Version: 1.0.0
+Author: BusBuddy Development Team
 #>
 
 # Import configuration
@@ -34,10 +34,450 @@ $global:GrokModuleState = @{
 #region Helper Functions
 
 # Helper function for API calls
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER Prompt
+${3:Parameter description}
+
+.PARAMETER Model
+${4:Parameter description}
+
+.PARAMETER SystemPrompt
+${5:Parameter description}
+
+.EXAMPLE
+${6:An example}
+
+.NOTES
+${7:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER Prompt
+${3:Parameter description}
+
+.PARAMETER Model
+${4:Parameter description}
+
+.PARAMETER SystemPrompt
+${5:Parameter description}
+
+.EXAMPLE
+${6:An example}
+
+.NOTES
+${7:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER Prompt
+${3:Parameter description}
+
+.PARAMETER Model
+${4:Parameter description}
+
+.PARAMETER SystemPrompt
+${5:Parameter description}
+
+.EXAMPLE
+${6:An example}
+
+.NOTES
+${7:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER Prompt
+${3:Parameter description}
+
+.PARAMETER Model
+${4:Parameter description}
+
+.PARAMETER SystemPrompt
+${5:Parameter description}
+
+.EXAMPLE
+${6:An example}
+
+.NOTES
+${7:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER Prompt
+${3:Parameter description}
+
+.PARAMETER Model
+${4:Parameter description}
+
+.PARAMETER SystemPrompt
+${5:Parameter description}
+
+.EXAMPLE
+${6:An example}
+
+.NOTES
+${7:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER Prompt
+${3:Parameter description}
+
+.PARAMETER Model
+${4:Parameter description}
+
+.PARAMETER SystemPrompt
+${5:Parameter description}
+
+.EXAMPLE
+${6:An example}
+
+.NOTES
+${7:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER Prompt
+${3:Parameter description}
+
+.PARAMETER Model
+${4:Parameter description}
+
+.PARAMETER SystemPrompt
+${5:Parameter description}
+
+.EXAMPLE
+${6:An example}
+
+.NOTES
+${7:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER Prompt
+${3:Parameter description}
+
+.PARAMETER Model
+${4:Parameter description}
+
+.PARAMETER SystemPrompt
+${5:Parameter description}
+
+.EXAMPLE
+${6:An example}
+
+.NOTES
+${7:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER Prompt
+${3:Parameter description}
+
+.PARAMETER Model
+${4:Parameter description}
+
+.PARAMETER SystemPrompt
+${5:Parameter description}
+
+.EXAMPLE
+${6:An example}
+
+.NOTES
+${7:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER Prompt
+${3:Parameter description}
+
+.PARAMETER Model
+${4:Parameter description}
+
+.PARAMETER SystemPrompt
+${5:Parameter description}
+
+.EXAMPLE
+${6:An example}
+
+.NOTES
+${7:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER Prompt
+${3:Parameter description}
+
+.PARAMETER Model
+${4:Parameter description}
+
+.PARAMETER SystemPrompt
+${5:Parameter description}
+
+.EXAMPLE
+${6:An example}
+
+.NOTES
+${7:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER Prompt
+${3:Parameter description}
+
+.PARAMETER Model
+${4:Parameter description}
+
+.PARAMETER SystemPrompt
+${5:Parameter description}
+
+.EXAMPLE
+${6:An example}
+
+.NOTES
+${7:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER Prompt
+${3:Parameter description}
+
+.PARAMETER Model
+${4:Parameter description}
+
+.PARAMETER SystemPrompt
+${5:Parameter description}
+
+.EXAMPLE
+${6:An example}
+
+.NOTES
+${7:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER Prompt
+${3:Parameter description}
+
+.PARAMETER Model
+${4:Parameter description}
+
+.PARAMETER SystemPrompt
+${5:Parameter description}
+
+.EXAMPLE
+${6:An example}
+
+.NOTES
+${7:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER Prompt
+${3:Parameter description}
+
+.PARAMETER Model
+${4:Parameter description}
+
+.PARAMETER SystemPrompt
+${5:Parameter description}
+
+.EXAMPLE
+${6:An example}
+
+.NOTES
+${7:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER Prompt
+${3:Parameter description}
+
+.PARAMETER Model
+${4:Parameter description}
+
+.PARAMETER SystemPrompt
+${5:Parameter description}
+
+.EXAMPLE
+${6:An example}
+
+.NOTES
+${7:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER Prompt
+${3:Parameter description}
+
+.PARAMETER Model
+${4:Parameter description}
+
+.PARAMETER SystemPrompt
+${5:Parameter description}
+
+.EXAMPLE
+${6:An example}
+
+.NOTES
+${7:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER Prompt
+${3:Parameter description}
+
+.PARAMETER Model
+${4:Parameter description}
+
+.PARAMETER SystemPrompt
+${5:Parameter description}
+
+.EXAMPLE
+${6:An example}
+
+.NOTES
+${7:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER Prompt
+${3:Parameter description}
+
+.PARAMETER Model
+${4:Parameter description}
+
+.PARAMETER SystemPrompt
+${5:Parameter description}
+
+.EXAMPLE
+${6:An example}
+
+.NOTES
+${7:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER Prompt
+${3:Parameter description}
+
+.PARAMETER Model
+${4:Parameter description}
+
+.PARAMETER SystemPrompt
+${5:Parameter description}
+
+.EXAMPLE
+${6:An example}
+
+.NOTES
+${7:General notes}
+#>
 function Invoke-GrokApi {
     [CmdletBinding()]
     param (
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]$Prompt,
 
         [string]$Model = $Global:GrokConfig.DefaultModel,
@@ -69,8 +509,8 @@ function Invoke-GrokApi {
     $body = @{
         model = $Model
         messages = @(
-            @{role = "system"; content = $SystemPrompt}
-            @{role = "user"; content = $Prompt}
+            @{role = "system"; content = $SystemPrompt }
+            @{role = "user"; content = $Prompt }
         )
         max_tokens = $Global:GrokConfig.MaxTokens
         temperature = $Global:GrokConfig.Temperature
@@ -159,6 +599,310 @@ function Invoke-GrokApi {
 }
 
 # Helper for hashing (for cache keys)
+<#
+    .SYNOPSIS
+    ${1:Short description}
+
+    .DESCRIPTION
+    ${2:Long description}
+
+    .PARAMETER InputString
+    ${3:Parameter description}
+
+    .EXAMPLE
+    ${4:An example}
+
+    .NOTES
+    ${5:General notes}
+    #>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER InputString
+${3:Parameter description}
+
+.EXAMPLE
+${4:An example}
+
+.NOTES
+${5:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER InputString
+${3:Parameter description}
+
+.EXAMPLE
+${4:An example}
+
+.NOTES
+${5:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER InputString
+${3:Parameter description}
+
+.EXAMPLE
+${4:An example}
+
+.NOTES
+${5:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER InputString
+${3:Parameter description}
+
+.EXAMPLE
+${4:An example}
+
+.NOTES
+${5:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER InputString
+${3:Parameter description}
+
+.EXAMPLE
+${4:An example}
+
+.NOTES
+${5:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER InputString
+${3:Parameter description}
+
+.EXAMPLE
+${4:An example}
+
+.NOTES
+${5:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER InputString
+${3:Parameter description}
+
+.EXAMPLE
+${4:An example}
+
+.NOTES
+${5:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER InputString
+${3:Parameter description}
+
+.EXAMPLE
+${4:An example}
+
+.NOTES
+${5:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER InputString
+${3:Parameter description}
+
+.EXAMPLE
+${4:An example}
+
+.NOTES
+${5:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER InputString
+${3:Parameter description}
+
+.EXAMPLE
+${4:An example}
+
+.NOTES
+${5:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER InputString
+${3:Parameter description}
+
+.EXAMPLE
+${4:An example}
+
+.NOTES
+${5:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER InputString
+${3:Parameter description}
+
+.EXAMPLE
+${4:An example}
+
+.NOTES
+${5:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER InputString
+${3:Parameter description}
+
+.EXAMPLE
+${4:An example}
+
+.NOTES
+${5:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER InputString
+${3:Parameter description}
+
+.EXAMPLE
+${4:An example}
+
+.NOTES
+${5:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER InputString
+${3:Parameter description}
+
+.EXAMPLE
+${4:An example}
+
+.NOTES
+${5:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER InputString
+${3:Parameter description}
+
+.EXAMPLE
+${4:An example}
+
+.NOTES
+${5:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER InputString
+${3:Parameter description}
+
+.EXAMPLE
+${4:An example}
+
+.NOTES
+${5:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER InputString
+${3:Parameter description}
+
+.EXAMPLE
+${4:An example}
+
+.NOTES
+${5:General notes}
+#>
 function Get-HashFromString {
     [CmdletBinding()]
     param([string]$InputString)
@@ -166,7 +910,7 @@ function Get-HashFromString {
     try {
         $hasher = [System.Security.Cryptography.SHA256]::Create()
         $hashBytes = $hasher.ComputeHash([System.Text.Encoding]::UTF8.GetBytes($InputString))
-        return [BitConverter]::ToString($hashBytes) -replace '-',''
+        return [BitConverter]::ToString($hashBytes) -replace '-', ''
     }
     finally {
         if ($hasher) { $hasher.Dispose() }
@@ -180,14 +924,14 @@ function Get-HashFromString {
 # Command: Test-GrokConnection
 function Test-GrokConnection {
     <#
-    .SYNOPSIS
-        Tests the connection to xAI Grok API
-    .DESCRIPTION
-        Performs a simple API call to verify connectivity and authentication
-    .EXAMPLE
-        Test-GrokConnection
-        grok-test
-    #>
+            .SYNOPSIS
+            Tests the connection to xAI Grok API
+            .DESCRIPTION
+            Performs a simple API call to verify connectivity and authentication
+            .EXAMPLE
+            Test-GrokConnection
+            grok-test
+            #>
     [CmdletBinding()]
     [Alias("grok-test")]
     param()
@@ -219,14 +963,14 @@ function Test-GrokConnection {
 # Command: Get-GrokConfig
 function Get-GrokConfig {
     <#
-    .SYNOPSIS
-        Displays current Grok configuration
-    .DESCRIPTION
-        Shows configuration settings with API key masked for security
-    .EXAMPLE
-        Get-GrokConfig
-        grok-config
-    #>
+            .SYNOPSIS
+            Displays current Grok configuration
+            .DESCRIPTION
+            Shows configuration settings with API key masked for security
+            .EXAMPLE
+            Get-GrokConfig
+            grok-config
+            #>
     [CmdletBinding()]
     [Alias("grok-config")]
     param()
@@ -244,17 +988,17 @@ function Get-GrokConfig {
 # Command: Get-GrokAPILog
 function Get-GrokAPILog {
     <#
-    .SYNOPSIS
-        Shows recent API call history and statistics
-    .DESCRIPTION
-        Displays API usage logs with token consumption and timing information
-    .PARAMETER LastN
-        Number of recent calls to display (default: 10)
-    .EXAMPLE
-        Get-GrokAPILog
-        Get-GrokAPILog -LastN 20
-        grok-log
-    #>
+            .SYNOPSIS
+            Shows recent API call history and statistics
+            .DESCRIPTION
+            Displays API usage logs with token consumption and timing information
+            .PARAMETER LastN
+            Number of recent calls to display (default: 10)
+            .EXAMPLE
+            Get-GrokAPILog
+            Get-GrokAPILog -LastN 20
+            grok-log
+            #>
     [CmdletBinding()]
     [Alias("grok-log")]
     param(
@@ -292,22 +1036,22 @@ function Get-GrokAPILog {
 # Command: Invoke-GrokCIAnalysis
 function Invoke-GrokCIAnalysis {
     <#
-    .SYNOPSIS
-        Analyzes CI/CD failures using Grok
-    .DESCRIPTION
-        Provides intelligent analysis of build failures, test failures, and deployment issues
-    .PARAMETER ErrorMessage
-        The error message or failure description
-    .PARAMETER BuildLog
-        Optional build log content for additional context
-    .EXAMPLE
-        Invoke-GrokCIAnalysis -ErrorMessage "MSBuild failed with error CS0246"
-        grok-ci "Unit tests failed in VehicleServiceTests"
-    #>
+            .SYNOPSIS
+            Analyzes CI/CD failures using Grok
+            .DESCRIPTION
+            Provides intelligent analysis of build failures, test failures, and deployment issues
+            .PARAMETER ErrorMessage
+            The error message or failure description
+            .PARAMETER BuildLog
+            Optional build log content for additional context
+            .EXAMPLE
+            Invoke-GrokCIAnalysis -ErrorMessage "MSBuild failed with error CS0246"
+            grok-ci "Unit tests failed in VehicleServiceTests"
+            #>
     [CmdletBinding()]
     [Alias("grok-ci")]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]$ErrorMessage,
 
         [string]$BuildLog = ""
@@ -328,26 +1072,26 @@ function Invoke-GrokCIAnalysis {
 # Command: Invoke-GrokRouteOptimization
 function Invoke-GrokRouteOptimization {
     <#
-    .SYNOPSIS
-        Optimizes bus routes using Grok AI
-    .DESCRIPTION
-        Analyzes route data and provides optimization recommendations
-    .PARAMETER RouteData
-        JSON or CSV route data including stops, distances, and timing
-    .PARAMETER OptimizeFor
-        Optimization target: FuelEfficiency, Time, Safety, Cost
-    .PARAMETER MaxVehicles
-        Maximum number of vehicles available
-    .PARAMETER Constraints
-        Additional constraints like driver availability, vehicle capacity
-    .EXAMPLE
-        Invoke-GrokRouteOptimization -RouteData $routeJson -OptimizeFor "FuelEfficiency"
-        grok-routes $routeData -MaxVehicles 15
-    #>
+            .SYNOPSIS
+            Optimizes bus routes using Grok AI
+            .DESCRIPTION
+            Analyzes route data and provides optimization recommendations
+            .PARAMETER RouteData
+            JSON or CSV route data including stops, distances, and timing
+            .PARAMETER OptimizeFor
+            Optimization target: FuelEfficiency, Time, Safety, Cost
+            .PARAMETER MaxVehicles
+            Maximum number of vehicles available
+            .PARAMETER Constraints
+            Additional constraints like driver availability, vehicle capacity
+            .EXAMPLE
+            Invoke-GrokRouteOptimization -RouteData $routeJson -OptimizeFor "FuelEfficiency"
+            grok-routes $routeData -MaxVehicles 15
+            #>
     [CmdletBinding()]
     [Alias("grok-routes")]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]$RouteData,
 
         [ValidateSet("FuelEfficiency", "Time", "Safety", "Cost", "Balanced")]
@@ -365,12 +1109,12 @@ function Invoke-GrokRouteOptimization {
     Write-Information "Optimizing routes with Grok AI..." -InformationAction Continue
 
     $fullDetails = @"
-Route Data: $RouteData
+            Route Data: $RouteData
 
-Optimization Parameters:
-- Optimize For: $OptimizeFor
-- Max Vehicles: $(if ($MaxVehicles -gt 0) { $MaxVehicles } else { "No limit" })
-- Constraints: $(if ($Constraints.Count -gt 0) { $Constraints -join ', ' } else { "None" })
+            Optimization Parameters:
+            - Optimize For: $OptimizeFor
+            - Max Vehicles: $(if ($MaxVehicles -gt 0) { $MaxVehicles } else { "No limit" })
+            - Constraints: $(if ($Constraints.Count -gt 0) { $Constraints -join ', ' } else { "None" })
 "@
 
     $prompt = $Global:GrokConfig.Prompts.RouteOptimization -f $fullDetails
@@ -381,24 +1125,24 @@ Optimization Parameters:
 # Command: Invoke-GrokMaintenancePrediction
 function Invoke-GrokMaintenancePrediction {
     <#
-    .SYNOPSIS
-        Predicts vehicle maintenance needs using Grok AI
-    .DESCRIPTION
-        Analyzes vehicle data to predict maintenance requirements and schedule
-    .PARAMETER VehicleData
-        Vehicle information including mileage, age, maintenance history
-    .PARAMETER PredictionWindow
-        Time window for predictions (e.g., "30days", "3months", "1year")
-    .PARAMETER IncludeRiskAssessment
-        Include risk assessment in the analysis
-    .EXAMPLE
-        Invoke-GrokMaintenancePrediction -VehicleData $vehicleJson -PredictionWindow "60days"
-        grok-maintenance $vehicleData -IncludeRiskAssessment
-    #>
+            .SYNOPSIS
+            Predicts vehicle maintenance needs using Grok AI
+            .DESCRIPTION
+            Analyzes vehicle data to predict maintenance requirements and schedule
+            .PARAMETER VehicleData
+            Vehicle information including mileage, age, maintenance history
+            .PARAMETER PredictionWindow
+            Time window for predictions (e.g., "30days", "3months", "1year")
+            .PARAMETER IncludeRiskAssessment
+            Include risk assessment in the analysis
+            .EXAMPLE
+            Invoke-GrokMaintenancePrediction -VehicleData $vehicleJson -PredictionWindow "60days"
+            grok-maintenance $vehicleData -IncludeRiskAssessment
+            #>
     [CmdletBinding()]
     [Alias("grok-maintenance")]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]$VehicleData,
 
         [ValidateSet("7days", "14days", "30days", "60days", "90days", "6months", "1year")]
@@ -414,12 +1158,12 @@ function Invoke-GrokMaintenancePrediction {
     Write-Information "Predicting maintenance needs with Grok AI..." -InformationAction Continue
 
     $fullDetails = @"
-Vehicle Data: $VehicleData
+            Vehicle Data: $VehicleData
 
-Prediction Parameters:
-- Prediction Window: $PredictionWindow
-- Include Risk Assessment: $IncludeRiskAssessment
-- Analysis Date: $(Get-Date -Format "yyyy-MM-dd HH:mm:ss")
+            Prediction Parameters:
+            - Prediction Window: $PredictionWindow
+            - Include Risk Assessment: $IncludeRiskAssessment
+            - Analysis Date: $(Get-Date -Format "yyyy-MM-dd HH:mm:ss")
 "@
 
     $prompt = $Global:GrokConfig.Prompts.MaintenancePrediction -f $fullDetails
@@ -428,25 +1172,25 @@ Prediction Parameters:
 }
 
 # Command: Get-GrokInsights
-function Get-GrokInsights {
+function Get-GrokInsight {
     <#
-    .SYNOPSIS
-        Gets general insights on BusBuddy topics using Grok
-    .DESCRIPTION
-        Provides expert insights on various BusBuddy-related topics
-    .PARAMETER Topic
-        The topic to get insights on
-    .PARAMETER Context
-        Additional context for the topic
-    .EXAMPLE
-        Get-GrokInsights -Topic "WPF performance optimization"
-        Get-GrokInsights -Topic "Entity Framework migrations" -Context "Azure SQL Database"
-        grok-insights "Syncfusion DataGrid best practices"
-    #>
+            .SYNOPSIS
+            Gets general insights on BusBuddy topics using Grok
+            .DESCRIPTION
+            Provides expert insights on various BusBuddy-related topics
+            .PARAMETER Topic
+            The topic to get insights on
+            .PARAMETER Context
+            Additional context for the topic
+            .EXAMPLE
+            Get-GrokInsights -Topic "WPF performance optimization"
+            Get-GrokInsights -Topic "Entity Framework migrations" -Context "Azure SQL Database"
+            grok-insights "Syncfusion DataGrid best practices"
+            #>
     [CmdletBinding()]
     [Alias("grok-insights")]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]$Topic,
 
         [string]$Context = ""
@@ -455,31 +1199,31 @@ function Get-GrokInsights {
     Write-Information "Getting Grok insights on: $Topic" -InformationAction Continue
 
     $systemPrompt = @"
-You are Grok, providing expert insights for the BusBuddy school bus management system project.
+            You are Grok, providing expert insights for the BusBuddy school bus management system project.
 
-Project Context:
-- WPF application using MVVM pattern
-- Syncfusion controls for professional UI
-- Entity Framework Core for data access
-- Azure SQL Database and LocalDB support
-- .NET 8.0 framework
-- PowerShell automation and tooling
-- GitHub repository: https://github.com/Bigessfour/BusBuddy-3
+            Project Context:
+            - WPF application using MVVM pattern
+            - Syncfusion controls for professional UI
+            - Entity Framework Core for data access
+            - Azure SQL Database and LocalDB support
+            - .NET 8.0 framework
+            - PowerShell automation and tooling
+            - GitHub repository: https://github.com/Bigessfour/BusBuddy-3
 
-Provide practical, actionable insights that are specific to this technology stack and domain.
+            Provide practical, actionable insights that are specific to this technology stack and domain.
 "@
 
     $prompt = @"
-Topic: $Topic
+            Topic: $Topic
 
-$(if ($Context) { "Additional Context: $Context" })
+            $(if ($Context) { "Additional Context: $Context" })
 
-Please provide detailed insights including:
-1. Best practices for this topic in the BusBuddy context
-2. Common pitfalls to avoid
-3. Specific recommendations for implementation
-4. Integration considerations with existing technology stack
-5. Performance and maintenance considerations
+            Please provide detailed insights including:
+            1. Best practices for this topic in the BusBuddy context
+            2. Common pitfalls to avoid
+            3. Specific recommendations for implementation
+            4. Integration considerations with existing technology stack
+            5. Performance and maintenance considerations
 "@
 
     return Invoke-GrokApi -Prompt $prompt -SystemPrompt $systemPrompt
@@ -492,18 +1236,18 @@ Please provide detailed insights including:
 # Command: Invoke-GrokCodeReview
 function Invoke-GrokCodeReview {
     <#
-    .SYNOPSIS
-        Performs AI-powered code review using Grok
-    .DESCRIPTION
-        Analyzes code for best practices, potential issues, and improvements
-    .PARAMETER Code
-        The code to review
-    .EXAMPLE
-        Invoke-GrokCodeReview -Code $csharpCode
-    #>
+            .SYNOPSIS
+            Performs AI-powered code review using Grok
+            .DESCRIPTION
+            Analyzes code for best practices, potential issues, and improvements
+            .PARAMETER Code
+            The code to review
+            .EXAMPLE
+            Invoke-GrokCodeReview -Code $csharpCode
+            #>
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]$Code
     )
 
@@ -519,18 +1263,18 @@ function Invoke-GrokCodeReview {
 # Command: Invoke-GrokPerformanceAnalysis
 function Invoke-GrokPerformanceAnalysis {
     <#
-    .SYNOPSIS
-        Analyzes performance data using Grok AI
-    .DESCRIPTION
-        Provides performance optimization recommendations
-    .PARAMETER PerformanceData
-        Performance metrics and profiling data
-    .EXAMPLE
-        Invoke-GrokPerformanceAnalysis -PerformanceData $perfData
-    #>
+            .SYNOPSIS
+            Analyzes performance data using Grok AI
+            .DESCRIPTION
+            Provides performance optimization recommendations
+            .PARAMETER PerformanceData
+            Performance metrics and profiling data
+            .EXAMPLE
+            Invoke-GrokPerformanceAnalysis -PerformanceData $perfData
+            #>
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]$PerformanceData
     )
 
@@ -546,18 +1290,18 @@ function Invoke-GrokPerformanceAnalysis {
 # Command: Invoke-GrokSecurityAudit
 function Invoke-GrokSecurityAudit {
     <#
-    .SYNOPSIS
-        Performs security audit using Grok AI
-    .DESCRIPTION
-        Analyzes security aspects and provides recommendations
-    .PARAMETER SecurityContext
-        Security-related information to audit
-    .EXAMPLE
-        Invoke-GrokSecurityAudit -SecurityContext $securityInfo
-    #>
+            .SYNOPSIS
+            Performs security audit using Grok AI
+            .DESCRIPTION
+            Analyzes security aspects and provides recommendations
+            .PARAMETER SecurityContext
+            Security-related information to audit
+            .EXAMPLE
+            Invoke-GrokSecurityAudit -SecurityContext $securityInfo
+            #>
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]$SecurityContext
     )
 
@@ -573,18 +1317,18 @@ function Invoke-GrokSecurityAudit {
 # Command: Invoke-GrokArchitectureReview
 function Invoke-GrokArchitectureReview {
     <#
-    .SYNOPSIS
-        Reviews software architecture using Grok AI
-    .DESCRIPTION
-        Analyzes architectural decisions and provides recommendations
-    .PARAMETER ArchitectureDetails
-        Architecture documentation or code structure
-    .EXAMPLE
-        Invoke-GrokArchitectureReview -ArchitectureDetails $archInfo
-    #>
+            .SYNOPSIS
+            Reviews software architecture using Grok AI
+            .DESCRIPTION
+            Analyzes architectural decisions and provides recommendations
+            .PARAMETER ArchitectureDetails
+            Architecture documentation or code structure
+            .EXAMPLE
+            Invoke-GrokArchitectureReview -ArchitectureDetails $archInfo
+            #>
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]$ArchitectureDetails
     )
 
@@ -600,18 +1344,18 @@ function Invoke-GrokArchitectureReview {
 # Command: Invoke-GrokTestOptimization
 function Invoke-GrokTestOptimization {
     <#
-    .SYNOPSIS
-        Optimizes testing strategy using Grok AI
-    .DESCRIPTION
-        Analyzes test suite and provides optimization recommendations
-    .PARAMETER TestContext
-        Test suite information and metrics
-    .EXAMPLE
-        Invoke-GrokTestOptimization -TestContext $testInfo
-    #>
+            .SYNOPSIS
+            Optimizes testing strategy using Grok AI
+            .DESCRIPTION
+            Analyzes test suite and provides optimization recommendations
+            .PARAMETER TestContext
+            Test suite information and metrics
+            .EXAMPLE
+            Invoke-GrokTestOptimization -TestContext $testInfo
+            #>
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]$TestContext
     )
 
@@ -627,18 +1371,18 @@ function Invoke-GrokTestOptimization {
 # Command: Invoke-GrokDependencyAnalysis
 function Invoke-GrokDependencyAnalysis {
     <#
-    .SYNOPSIS
-        Analyzes project dependencies using Grok AI
-    .DESCRIPTION
-        Reviews dependencies for security, compatibility, and optimization
-    .PARAMETER DependencyData
-        Dependency information (packages, versions, etc.)
-    .EXAMPLE
-        Invoke-GrokDependencyAnalysis -DependencyData $depData
-    #>
+            .SYNOPSIS
+            Analyzes project dependencies using Grok AI
+            .DESCRIPTION
+            Reviews dependencies for security, compatibility, and optimization
+            .PARAMETER DependencyData
+            Dependency information (packages, versions, etc.)
+            .EXAMPLE
+            Invoke-GrokDependencyAnalysis -DependencyData $depData
+            #>
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]$DependencyData
     )
 
@@ -654,18 +1398,18 @@ function Invoke-GrokDependencyAnalysis {
 # Command: Invoke-GrokDatabaseOptimization
 function Invoke-GrokDatabaseOptimization {
     <#
-    .SYNOPSIS
-        Optimizes database performance using Grok AI
-    .DESCRIPTION
-        Analyzes database queries and structure for optimization opportunities
-    .PARAMETER DatabaseContext
-        Database schema, queries, or performance data
-    .EXAMPLE
-        Invoke-GrokDatabaseOptimization -DatabaseContext $dbInfo
-    #>
+            .SYNOPSIS
+            Optimizes database performance using Grok AI
+            .DESCRIPTION
+            Analyzes database queries and structure for optimization opportunities
+            .PARAMETER DatabaseContext
+            Database schema, queries, or performance data
+            .EXAMPLE
+            Invoke-GrokDatabaseOptimization -DatabaseContext $dbInfo
+            #>
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]$DatabaseContext
     )
 
@@ -677,18 +1421,18 @@ function Invoke-GrokDatabaseOptimization {
 # Command: Invoke-GrokUIUXReview
 function Invoke-GrokUIUXReview {
     <#
-    .SYNOPSIS
-        Reviews UI/UX design using Grok AI
-    .DESCRIPTION
-        Analyzes user interface and experience for improvements
-    .PARAMETER UIUXContext
-        UI/UX descriptions, screenshots, or design documents
-    .EXAMPLE
-        Invoke-GrokUIUXReview -UIUXContext $uiInfo
-    #>
+            .SYNOPSIS
+            Reviews UI/UX design using Grok AI
+            .DESCRIPTION
+            Analyzes user interface and experience for improvements
+            .PARAMETER UIUXContext
+            UI/UX descriptions, screenshots, or design documents
+            .EXAMPLE
+            Invoke-GrokUIUXReview -UIUXContext $uiInfo
+            #>
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]$UIUXContext
     )
 
@@ -704,13 +1448,13 @@ function Invoke-GrokUIUXReview {
 # Command: Clear-GrokCache
 function Clear-GrokCache {
     <#
-    .SYNOPSIS
-        Clears the Grok response cache
-    .DESCRIPTION
-        Removes all cached API responses to force fresh requests
-    .EXAMPLE
-        Clear-GrokCache
-    #>
+            .SYNOPSIS
+            Clears the Grok response cache
+            .DESCRIPTION
+            Removes all cached API responses to force fresh requests
+            .EXAMPLE
+            Clear-GrokCache
+            #>
     [CmdletBinding()]
     param()
 
@@ -722,25 +1466,30 @@ function Clear-GrokCache {
 # Command: Reset-GrokSession
 function Reset-GrokSession {
     <#
-    .SYNOPSIS
-        Resets the Grok session state
-    .DESCRIPTION
-        Clears all logs, cache, and resets session tracking
-    .EXAMPLE
-        Reset-GrokSession
-    #>
-    [CmdletBinding()]
+            .SYNOPSIS
+            Resets the Grok session state
+            .DESCRIPTION
+            Clears all logs, cache, and resets session tracking
+            .EXAMPLE
+            Reset-GrokSession
+            #>
+    [CmdletBinding(SupportsShouldProcess)]
     param()
 
     $callCount = $global:GrokModuleState.ApiCalls.Count
     $cacheCount = $global:GrokModuleState.ResponseCache.Count
 
-    $global:GrokModuleState.ApiCalls = @()
-    $global:GrokModuleState.ResponseCache = @{}
-    $global:GrokModuleState.LastApiCall = $null
-    $global:GrokModuleState.SessionStartTime = Get-Date
+    if ($PSCmdlet.ShouldProcess("Grok Session State", "Reset and clear all data")) {
+        $global:GrokModuleState.ApiCalls = @()
+        $global:GrokModuleState.ResponseCache = @{}
+        $global:GrokModuleState.LastApiCall = $null
+        $global:GrokModuleState.SessionStartTime = Get-Date
 
-    Write-Output "Reset Grok session: Cleared $callCount API calls and $cacheCount cached responses."
+        Write-Output "Reset Grok session: Cleared $callCount API calls and $cacheCount cached responses."
+    }
+    else {
+        Write-Information "❌ Reset operation cancelled by user" -InformationAction Continue
+    }
 }
 
 #endregion

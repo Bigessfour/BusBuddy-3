@@ -1,32 +1,32 @@
 #requires -Version 7.5
 <#
 .SYNOPSIS
-    Configure Terminal Persistence Attributes for BusBuddy Development Environment
+Configure Terminal Persistence Attributes for BusBuddy Development Environment
 
 .DESCRIPTION
-    This script configures advanced terminal persistence features including:
-    - PSReadLine advanced settings
-    - Windows Terminal configuration
-    - VS Code terminal integration
-    - PowerShell history persistence
-    - Custom key bindings and shortcuts
+This script configures advanced terminal persistence features including:
+- PSReadLine advanced settings
+- Windows Terminal configuration
+- VS Code terminal integration
+- PowerShell history persistence
+- Custom key bindings and shortcuts
 
 .PARAMETER EnableAdvancedFeatures
-    Enable advanced terminal features like predictive IntelliSense and enhanced key bindings
+Enable advanced terminal features like predictive IntelliSense and enhanced key bindings
 
 .PARAMETER ConfigureWindowsTerminal
-    Configure Windows Terminal settings for optimal BusBuddy development
+Configure Windows Terminal settings for optimal BusBuddy development
 
 .PARAMETER SetupVSCodeIntegration
-    Configure VS Code terminal integration settings
+Configure VS Code terminal integration settings
 
 .EXAMPLE
-    .\Configure-TerminalPersistence.ps1 -EnableAdvancedFeatures -ConfigureWindowsTerminal
+.\Configure-TerminalPersistence.ps1 -EnableAdvancedFeatures -ConfigureWindowsTerminal
 
 .NOTES
-    Author: BusBuddy Development Team
-    Date: August 21, 2025
-    Requires: PowerShell 7.5+, PSReadLine 2.3+
+Author: BusBuddy Development Team
+Date: August 21, 2025
+Requires: PowerShell 7.5+, PSReadLine 2.3+
 #>
 
 [CmdletBinding()]
@@ -41,51 +41,51 @@ Write-Information "🚌 Configuring Terminal Persistence Attributes for BusBuddy
 # Advanced PSReadLine Configuration
 if ($EnableAdvancedFeatures) {
     Write-Information "⚙️ Enabling advanced PSReadLine features..." -InformationAction Continue
-    
+
     # Predictive IntelliSense (PowerShell 7.2+)
     if ($PSVersionTable.PSVersion -ge [Version]'7.2') {
         Set-PSReadLineOption -PredictionSource HistoryAndPlugin
         Set-PSReadLineOption -PredictionViewStyle ListView
         Write-Information "✅ Predictive IntelliSense enabled" -InformationAction Continue
     }
-    
+
     # Enhanced completion settings
     Set-PSReadLineOption -CompletionQueryItems 50
     Set-PSReadLineOption -MaximumKillRingCount 10
-    
+
     # Advanced key handlers
     Set-PSReadLineKeyHandler -Key Ctrl+Shift+j -Function MenuComplete
     Set-PSReadLineKeyHandler -Key Ctrl+Shift+k -Function TabCompletePrevious
     Set-PSReadLineKeyHandler -Key F1 -Function ShowCommandHelp
     Set-PSReadLineKeyHandler -Key Ctrl+r -Function ReverseSearchHistory
     Set-PSReadLineKeyHandler -Key Ctrl+s -Function ForwardSearchHistory
-    
+
     # Custom function for BusBuddy-specific completions
     Set-PSReadLineKeyHandler -Key Ctrl+Shift+b -ScriptBlock {
         param($key, $arg)
-        
+
         $common_commands = @(
             'bb-build', 'bb-run', 'bb-test', 'bb-deps-check',
             'dbuild', 'dtest', 'sqltest', 'azcheck',
             'dotnet build BusBuddy.sln', 'dotnet run --project BusBuddy.WPF'
         )
-        
+
         [Microsoft.PowerShell.PSConsoleReadLine]::Insert(($common_commands | Out-GridView -PassThru -Title "BusBuddy Commands"))
     }
-    
+
     Write-Information "✅ Advanced PSReadLine features configured" -InformationAction Continue
 }
 
 # Windows Terminal Configuration
 if ($ConfigureWindowsTerminal) {
     Write-Information "⚙️ Configuring Windows Terminal settings..." -InformationAction Continue
-    
+
     $wtSettingsPath = "$env:LOCALAPPDATA\Packages\Microsoft.WindowsTerminal_8wekyb3d8bbwe\LocalState\settings.json"
-    
+
     if (Test-Path $wtSettingsPath) {
         try {
             $wtSettings = Get-Content $wtSettingsPath | ConvertFrom-Json
-            
+
             # BusBuddy-specific profile
             $busBuddyProfile = @{
                 name = "BusBuddy PowerShell"
@@ -98,7 +98,7 @@ if ($ConfigureWindowsTerminal) {
                 cursorShape = "bar"
                 antialiasingMode = "cleartype"
             }
-            
+
             # Add to profiles if not exists
             $existingProfile = $wtSettings.profiles.list | Where-Object { $_.name -eq "BusBuddy PowerShell" }
             if (-not $existingProfile) {
@@ -119,13 +119,13 @@ if ($ConfigureWindowsTerminal) {
 # VS Code Terminal Integration
 if ($SetupVSCodeIntegration) {
     Write-Information "⚙️ Configuring VS Code terminal integration..." -InformationAction Continue
-    
+
     $vscodeSettingsPath = "$PWD\.vscode\settings.json"
-    
+
     if (Test-Path $vscodeSettingsPath) {
         try {
             $vscodeSettings = Get-Content $vscodeSettingsPath | ConvertFrom-Json
-            
+
             # Enhanced terminal settings
             $terminalSettings = @{
                 "terminal.integrated.defaultProfile.windows" = "BusBuddy PowerShell 7.5.2"
@@ -148,12 +148,12 @@ if ($SetupVSCodeIntegration) {
                 "terminal.integrated.enableImages" = $true
                 "terminal.integrated.gpuAcceleration" = "on"
             }
-            
+
             # Merge settings
             $terminalSettings.GetEnumerator() | ForEach-Object {
                 $vscodeSettings | Add-Member -Type NoteProperty -Name $_.Key -Value $_.Value -Force
             }
-            
+
             $vscodeSettings | ConvertTo-Json -Depth 10 | Set-Content $vscodeSettingsPath -Encoding UTF8
             Write-Information "✅ VS Code terminal settings updated" -InformationAction Continue
         } catch {
@@ -161,7 +161,7 @@ if ($SetupVSCodeIntegration) {
         }
     } else {
         Write-Information "⚠️ VS Code settings.json not found, creating with terminal persistence settings..." -InformationAction Continue
-        
+
         $newVSCodeSettings = @{
             "terminal.integrated.defaultProfile.windows" = "BusBuddy PowerShell 7.5.2"
             "terminal.integrated.profiles.windows" = @{
@@ -179,7 +179,7 @@ if ($SetupVSCodeIntegration) {
             "terminal.integrated.enablePersistentSessions" = $true
             "terminal.integrated.persistentSessionReviveProcess" = "onExitAndWindowClose"
         }
-        
+
         New-Item -Path "$PWD\.vscode" -ItemType Directory -Force | Out-Null
         $newVSCodeSettings | ConvertTo-Json -Depth 10 | Set-Content $vscodeSettingsPath -Encoding UTF8
         Write-Information "✅ Created VS Code settings with terminal persistence" -InformationAction Continue

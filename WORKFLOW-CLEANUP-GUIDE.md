@@ -20,6 +20,7 @@ After the major BusBuddy refactoring, the repository has accumulated 116+ workfl
 **Location**: `Scripts/Delete-WorkflowRuns.ps1`
 
 **Features**:
+
 - ✅ Delete failed runs only
 - ✅ Delete runs older than specified days
 - ✅ Target specific workflows
@@ -32,6 +33,7 @@ After the major BusBuddy refactoring, the repository has accumulated 116+ workfl
 **Location**: `cleanup-workflows.bat`
 
 **Features**:
+
 - ✅ Interactive menu
 - ✅ Common cleanup scenarios
 - ✅ Safety checks
@@ -43,9 +45,9 @@ After the major BusBuddy refactoring, the repository has accumulated 116+ workfl
 
 1. **Double-click** `cleanup-workflows.bat`
 2. **Choose** from the menu:
-   - Option 1: Preview failed runs
-   - Option 2: Delete failed runs
-   - Option 3: Delete runs older than 30 days
+    - Option 1: Preview failed runs
+    - Option 2: Delete failed runs
+    - Option 3: Delete runs older than 30 days
 
 ### Option 2: Use PowerShell Directly
 
@@ -111,6 +113,7 @@ gh api repos/Bigessfour/BusBuddy-3/actions/runs --limit 5
 ## 📊 Current Workflow Analysis
 
 ### Active Workflows
+
 - **🚌 BusBuddy CI Pipeline** (179562737) - 116 runs, mostly failed
 - **Dependabot Updates** (179562742) - Automated dependency updates
 - **CI PR Gate** (180851686) - Pull request validation
@@ -121,14 +124,16 @@ gh api repos/Bigessfour/BusBuddy-3/actions/runs --limit 5
 ### Recommended Cleanup Strategy
 
 1. **Phase 1**: Delete all failed runs
-   ```powershell
-   .\Scripts\Delete-WorkflowRuns.ps1 -Repository "Bigessfour/BusBuddy-3" -DeleteFailedOnly
-   ```
+
+    ```powershell
+    .\Scripts\Delete-WorkflowRuns.ps1 -Repository "Bigessfour/BusBuddy-3" -DeleteFailedOnly
+    ```
 
 2. **Phase 2**: Delete old successful runs (older than 30 days)
-   ```powershell
-   .\Scripts\Delete-WorkflowRuns.ps1 -Repository "Bigessfour/BusBuddy-3" -OlderThanDays 30
-   ```
+
+    ```powershell
+    .\Scripts\Delete-WorkflowRuns.ps1 -Repository "Bigessfour/BusBuddy-3" -OlderThanDays 30
+    ```
 
 3. **Phase 3**: Keep only the most recent successful runs for reference
 
@@ -155,6 +160,7 @@ gh api repos/Bigessfour/BusBuddy-3/actions/runs --limit 5
 ### Common Issues
 
 **Problem**: "GitHub CLI not found"
+
 ```bash
 # Solution: Install GitHub CLI
 winget install GitHub.cli
@@ -162,18 +168,21 @@ winget install GitHub.cli
 ```
 
 **Problem**: "Not authenticated"
+
 ```bash
 # Solution: Login to GitHub
 gh auth login
 ```
 
 **Problem**: "API rate limit exceeded"
+
 ```bash
 # Solution: Wait a few minutes, the script has built-in rate limiting
 # Or run with smaller batches using -OlderThanDays with smaller values
 ```
 
 **Problem**: "Permission denied"
+
 ```bash
 # Solution: Ensure you have admin access to the repository
 # Or ask the repository owner to run the cleanup
@@ -199,12 +208,14 @@ After running the cleanup:
 ### Before/After Comparison
 
 **Before Cleanup**:
+
 - 116+ workflow runs
 - Most are failed runs from refactoring phase
 - Cluttered Actions tab
 - Confusing history
 
 **After Cleanup**:
+
 - ~5-10 recent successful runs
 - Clear, relevant history
 - Clean Actions tab
@@ -225,24 +236,24 @@ You can automate this process by:
 ```yaml
 name: Cleanup Old Workflow Runs
 on:
-  schedule:
-    - cron: '0 0 * * 0'  # Every Sunday at midnight
-  workflow_dispatch:
+    schedule:
+        - cron: "0 0 * * 0" # Every Sunday at midnight
+    workflow_dispatch:
 
 jobs:
-  cleanup:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Cleanup old runs
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          # Delete failed runs older than 7 days
-          gh api repos/${{ github.repository }}/actions/runs \
-            --paginate \
-            --jq '.workflow_runs[] | select(.conclusion == "failure" and (.created_at | fromdateiso8601) < (now - 604800)) | .id' \
-            | xargs -I {} gh api repos/${{ github.repository }}/actions/runs/{} -X DELETE
+    cleanup:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+            - name: Cleanup old runs
+              env:
+                  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+              run: |
+                  # Delete failed runs older than 7 days
+                  gh api repos/${{ github.repository }}/actions/runs \
+                    --paginate \
+                    --jq '.workflow_runs[] | select(.conclusion == "failure" and (.created_at | fromdateiso8601) < (now - 604800)) | .id' \
+                    | xargs -I {} gh api repos/${{ github.repository }}/actions/runs/{} -X DELETE
 ```
 
 ## 📞 Support

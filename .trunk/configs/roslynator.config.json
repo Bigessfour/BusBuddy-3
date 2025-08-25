@@ -35,10 +35,7 @@
     }
   },
   "rules": {
-    "suppressedDiagnostics": [
-      "RCS1043",
-      "RCS1110"
-    ]
+    "suppressedDiagnostics": ["RCS1043", "RCS1110"]
   },
   "formatting": {
     "indentationSize": 4,

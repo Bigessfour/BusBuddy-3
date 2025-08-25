@@ -49,6 +49,23 @@ indent_size = 2
 [*.md]
 trim_trailing_whitespace = false
 
+# Microsoft Visual Studio Spell Checker integration
+# Based on Microsoft documentation: https://learn.microsoft.com/en-us/visualstudio/ide/text-spell-checker
+[*.{cs,xaml,sql}]
+spelling_languages = en-us
+spelling_checkable_types = identifiers,comments,strings
+spelling_error_severity = suggestion
+spelling_exclusion_path = ./spelling-exclusions.dic
+spelling_use_default_exclusion_dictionary = true
+
+# PowerShell files - spell check comments and strings only
+[*.{ps1,psm1,psd1}]
+spelling_languages = en-us
+spelling_checkable_types = comments,strings
+spelling_error_severity = suggestion
+spelling_exclusion_path = ./spelling-exclusions.dic
+spelling_use_default_exclusion_dictionary = true
+
 # PowerShell files
 [*.ps1]
 indent_size = 4

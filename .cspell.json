@@ -1,0 +1,41 @@
+{
+  "version": "0.2",
+  "language": "en-US",
+  "allowCompoundWords": true,
+  "dictionaries": ["en-US", "project-dictionary"],
+  "dictionaryDefinitions": [
+    {
+      "name": "project-dictionary",
+      "path": "./project-dictionary.txt"
+    }
+  ],
+  "ignoreWords": [
+    "BAANKCL",
+    "SEEDLIC",
+    "SEEDVIN",
+    "DBATOOLS",
+    "MODULEINFO",
+    "PSSCRIPTANALYZER",
+    "tojson"
+  ],
+  "languageSettings": [
+    {
+      "languageId": "*",
+      "allowCompoundWords": true
+    }
+  ],
+  "overrides": [
+    {
+      "filename": "**/*.cs",
+      "allowCompoundWords": true
+    },
+    {
+      "filename": "**/*.ps1",
+      "allowCompoundWords": true
+    },
+    {
+      "filename": "**/*.psm1",
+      "allowCompoundWords": true
+    }
+  ]
+}

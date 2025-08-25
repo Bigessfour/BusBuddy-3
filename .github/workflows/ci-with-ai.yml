@@ -1,4 +1,3 @@
----
 # 🚀 BusBuddy CI with AI Analysis (Grok)
 # Documentation-first, compliant with BusBuddy standards:
 # - .NET 9.0 (matches solution target)
@@ -46,17 +45,37 @@ jobs:
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
-      - name: "🔧 Load BusBuddy PowerShell Profile (if present)"
+      - name: "� Azure Login (guarded)"
+        if: >-
+          ${{ secrets.AZURE_CLIENT_ID != '' && secrets.AZURE_TENANT_ID != '' &&
+              secrets.AZURE_CLIENT_SECRET != '' && secrets.AZURE_SUBSCRIPTION_ID != '' }}
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: "ℹ️ Azure Login Skipped (no secrets)"
+        if: >-
+          ${{ !(secrets.AZURE_CLIENT_ID != '' && secrets.AZURE_TENANT_ID != '' &&
+              secrets.AZURE_CLIENT_SECRET != '' && secrets.AZURE_SUBSCRIPTION_ID != '') }}
+        shell: pwsh
+        run: |
+          Write-Output "Azure login skipped. Provide AZURE_CLIENT_ID, AZURE_TENANT_ID,"
+          Write-Output "AZURE_CLIENT_SECRET, AZURE_SUBSCRIPTION_ID secrets to enable."
+
+      - name: "�🔧 Load BusBuddy PowerShell Profile (if present)"
         shell: pwsh
         run: |
           $profilePath = Join-Path $PWD 'PowerShell/Profiles/Microsoft.PowerShell_profile_optimized.ps1'
           if (Test-Path $profilePath) {
             . $profilePath
-            Write-Output "Loaded BusBuddy profile. bb-* commands available:"
-            (Get-Command bb-* -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Name) | ForEach-Object { Write-Output "  - $_" }
-          } else {
-            Write-Warning "BusBuddy optimized profile not found; proceeding without bb-* shortcuts."
+            Write-Output "Loaded BusBuddy profile (bb-* available)."
+            Get-Command bb-* -ErrorAction SilentlyContinue |
+              Select-Object -ExpandProperty Name |
+              ForEach-Object { Write-Output "  - $_" }
           }
+          else { Write-Warning "Profile not found; continuing." }
 
       - name: "📦 Cache NuGet Packages"
         uses: actions/cache@v4
@@ -71,31 +90,34 @@ jobs:
         shell: pwsh
         run: |
           if (Get-Command bb-build -ErrorAction SilentlyContinue) {
-            Write-Information "Attempting bb-build restore shortcut" -InformationAction Continue
-            bb-build --restoreOnly 2>$null || dotnet restore $env:SOLUTION_FILE --verbosity minimal
-          } else {
-            dotnet restore $env:SOLUTION_FILE --verbosity minimal
+            Write-Information "bb-build restore shortcut" -InformationAction Continue
+            bb-build --restoreOnly 2>$null | Out-Null
+            if ($LASTEXITCODE -ne 0) { dotnet restore $env:SOLUTION_FILE --verbosity minimal }
           }
+          else { dotnet restore $env:SOLUTION_FILE --verbosity minimal }
 
       - name: "🏗️ Build"
         id: build
         shell: pwsh
         run: |
           if (Get-Command bb-build -ErrorAction SilentlyContinue) {
-            bb-build 2>$null || dotnet build $env:SOLUTION_FILE --configuration $env:BUILD_CONFIGURATION --no-restore --verbosity minimal
-          } else {
-            dotnet build $env:SOLUTION_FILE --configuration $env:BUILD_CONFIGURATION --no-restore --verbosity minimal
+            bb-build 2>$null | Out-Null
+            if ($LASTEXITCODE -ne 0) {
+              dotnet build $env:SOLUTION_FILE --configuration $env:BUILD_CONFIGURATION --no-restore --verbosity minimal
+            }
           }
+          else { dotnet build $env:SOLUTION_FILE --configuration $env:BUILD_CONFIGURATION --no-restore --verbosity minimal }
 
       - name: "🧪 Test"
         id: test
         shell: pwsh
         run: |
+          $testArgs = "test $env:SOLUTION_FILE --configuration $env:BUILD_CONFIGURATION --no-build --logger 'trx' --collect 'XPlat Code Coverage' --verbosity minimal"
           if (Get-Command bb-test -ErrorAction SilentlyContinue) {
-            bb-test 2>$null || dotnet test $env:SOLUTION_FILE --configuration $env:BUILD_CONFIGURATION --no-build --logger 'trx' --collect "XPlat Code Coverage" --verbosity minimal
-          } else {
-            dotnet test $env:SOLUTION_FILE --configuration $env:BUILD_CONFIGURATION --no-build --logger 'trx' --collect "XPlat Code Coverage" --verbosity minimal
+            bb-test 2>$null | Out-Null
+            if ($LASTEXITCODE -ne 0) { dotnet $testArgs }
           }
+          else { dotnet $testArgs }
 
       - name: "📤 Upload Test Artifacts"
         if: always()
@@ -111,27 +133,40 @@ jobs:
         if: failure()
         shell: pwsh
         run: |
-          Write-Output "Starting simplified AI failure analysis..."
+          Write-Output "AI failure analysis starting."
           $analysisModule = Join-Path $PWD 'PowerShell/Modules/BusBuddy-CIAnalysis-Enhanced.psm1'
-          if (Test-Path $analysisModule) { Import-Module $analysisModule -Force } else { Write-Warning "Analysis module not found." }
+          if (Test-Path $analysisModule) { Import-Module $analysisModule -Force }
+          else { Write-Warning "Analysis module not found." }
           $azureModule = Join-Path $PWD 'PowerShell/Modules/BusBuddy-GrokAzureSQL.psm1'
           if (Test-Path $azureModule) {
             Import-Module $azureModule -Force
-            try { if ($env:AZURE_SQL_SERVER) { grok-sql-init -ServerName $env:AZURE_SQL_SERVER } } catch { Write-Warning "Azure SQL init failed: $($_.Exception.Message)" }
+            try {
+              if ($env:AZURE_SQL_SERVER) { grok-sql-init -ServerName $env:AZURE_SQL_SERVER }
+            }
+            catch { Write-Warning "Azure SQL init failed: $($_.Exception.Message)" }
           }
-          $errorMessage = 'Pipeline failure detected (phase granularity suppressed).'
+          $msg = 'Pipeline failure detected.'
           try {
             if (Get-Command Invoke-EnhancedCIAnalysis -ErrorAction SilentlyContinue) {
-              $result = Invoke-EnhancedCIAnalysis -ErrorMessage $errorMessage -WorkflowName 'ci-with-ai.yml'
+              $result = Invoke-EnhancedCIAnalysis -ErrorMessage $msg -WorkflowName 'ci-with-ai.yml'
               if ($result) {
                 Write-Output "Severity: $($result.Severity)"
                 Write-Output "Summary: $($result.Summary)"
-                if ($result.Insights) { Write-Output 'Insights:'; $result.Insights | ForEach-Object { Write-Output "  - $_" } }
-                if ($result.Recommendations) { Write-Output 'Recommendations:'; $result.Recommendations | ForEach-Object { Write-Output "  - $_" } }
-              } else { Write-Warning "AI analysis returned null result." }
-            } else { Write-Warning "Invoke-EnhancedCIAnalysis unavailable." }
-          } catch { Write-Warning "AI analysis failed: $($_.Exception.Message)" }
-          Write-Output "AI failure analysis step complete."
+                if ($result.Insights) {
+                  Write-Output 'Insights:'
+                  $result.Insights | ForEach-Object { Write-Output "  - $_" }
+                }
+                if ($result.Recommendations) {
+                  Write-Output 'Recommendations:'
+                  $result.Recommendations | ForEach-Object { Write-Output "  - $_" }
+                }
+              }
+              else { Write-Warning "AI analysis returned null." }
+            }
+            else { Write-Warning "Invoke-EnhancedCIAnalysis missing." }
+          }
+          catch { Write-Warning "AI analysis failed: $($_.Exception.Message)" }
+          Write-Output "AI failure analysis complete."
 
 # Security best practices for secrets:
 # 1. XAI_API_KEY - Your xAI API key for Grok-4 access

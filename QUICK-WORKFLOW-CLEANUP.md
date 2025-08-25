@@ -5,22 +5,23 @@
 ### 🎯 Recommended Approach (Safest)
 
 1. **Preview what will be deleted**:
-   ```bash
-   .\Scripts\Delete-WorkflowRuns.ps1 -Repository "Bigessfour/BusBuddy-3" -DeleteFailedOnly -WhatIf
-   ```
+
+    ```bash
+    .\Scripts\Delete-WorkflowRuns.ps1 -Repository "Bigessfour/BusBuddy-3" -DeleteFailedOnly -WhatIf
+    ```
 
 2. **Delete all failed runs**:
-   ```bash
-   .\Scripts\Delete-WorkflowRuns.ps1 -Repository "Bigessfour/BusBuddy-3" -DeleteFailedOnly
-   ```
+    ```bash
+    .\Scripts\Delete-WorkflowRuns.ps1 -Repository "Bigessfour/BusBuddy-3" -DeleteFailedOnly
+    ```
 
 ### 🚀 Quick Start Options
 
-| Method | Difficulty | Safety | Speed |
-|--------|------------|--------|-------|
-| `cleanup-workflows.bat` | Easy | High | Medium |
-| PowerShell script | Medium | High | Fast |
-| Manual GitHub CLI | Hard | Medium | Slow |
+| Method                  | Difficulty | Safety | Speed  |
+| ----------------------- | ---------- | ------ | ------ |
+| `cleanup-workflows.bat` | Easy       | High   | Medium |
+| PowerShell script       | Medium     | High   | Fast   |
+| Manual GitHub CLI       | Hard       | Medium | Slow   |
 
 ### 📋 Common Commands
 

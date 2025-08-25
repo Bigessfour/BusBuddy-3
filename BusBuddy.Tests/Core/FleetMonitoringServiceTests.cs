@@ -3,6 +3,7 @@ using BusBuddy.Core.Models;
 using BusBuddy.Core.Services;
 using BusBuddy.Core.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection; // Needed to share InMemory database root
 using Microsoft.Extensions.Caching.Memory;
 using Moq;
 using NUnit.Framework;
@@ -16,21 +17,22 @@ namespace BusBuddy.Tests.Core
     [TestFixture]
     public class FleetMonitoringServiceTests : IDisposable
     {
-        private readonly BusBuddyDbContext _context;
-        private readonly IBusBuddyDbContextFactory _contextFactory;
+    private readonly BusBuddyDbContext _context;
+    private readonly IBusBuddyDbContextFactory _contextFactory;
         private readonly IBusCachingService _cacheService;
         private readonly Mock<IGeoDataService> _mockGeoDataService;
         private readonly FleetMonitoringService _fleetService;
 
         public FleetMonitoringServiceTests()
         {
-            // Create in-memory database for testing
-            var options = new DbContextOptionsBuilder<BusBuddyDbContext>()
-                .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
-                .Options;
-
-            _context = new BusBuddyDbContext(options);
-            _contextFactory = new TestDbContextFactory(_context);
+            // Create in-memory database for testing.
+            // IMPORTANT: Use a single service provider for ALL contexts so writes
+            // performed inside service-created contexts are visible to the test's assertion context.
+            // Previous implementation created an independent DbContext (different provider)
+            // causing updates (e.g., UpdateBusLocationAsync) to be invisible here and tests to fail.
+            var dbName = Guid.NewGuid().ToString();
+            _contextFactory = new TestDbContextFactory(dbName);
+            _context = _contextFactory.CreateDbContext(); // Share same provider/options
 
             // Create real caching service with in-memory cache
             var memoryCache = new MemoryCache(new MemoryCacheOptions());
@@ -177,7 +179,7 @@ namespace BusBuddy.Tests.Core
             Assert.That(result, Is.True);
 
             // Verify location was updated
-            var updatedBus = await _context.Buses.FindAsync(1);
+            var updatedBus = await _context.Buses.AsNoTracking().FirstOrDefaultAsync(b => b.BusId == 1);
             Assert.That(updatedBus!.CurrentLatitude, Is.EqualTo(newLat));
             Assert.That(updatedBus.CurrentLongitude, Is.EqualTo(newLon));
         }
@@ -240,21 +242,30 @@ namespace BusBuddy.Tests.Core
         /// </summary>
         private sealed class TestDbContextFactory : IBusBuddyDbContextFactory
         {
-            private readonly BusBuddyDbContext _context;
+            private readonly string _dbName;
+            private readonly IServiceProvider _serviceProvider;
+            private readonly DbContextOptions<BusBuddyDbContext> _options;
 
-            public TestDbContextFactory(BusBuddyDbContext context)
+            public TestDbContextFactory(string dbName)
             {
-                _context = context;
+                _dbName = dbName ?? throw new ArgumentNullException(nameof(dbName));
+
+                // IMPORTANT: The EF Core InMemory provider scopes the store to the service provider.
+                // Creating options with a new internal service provider each time yields isolated stores
+                // (causing writes in service contexts not to appear in the test's assertion context).
+                // We build a single root provider and reuse the options so all contexts share the same store.
+                var services = new ServiceCollection();
+                services.AddEntityFrameworkInMemoryDatabase();
+                _serviceProvider = services.BuildServiceProvider();
+
+                _options = new DbContextOptionsBuilder<BusBuddyDbContext>()
+                    .UseInMemoryDatabase(_dbName)
+                    .UseInternalServiceProvider(_serviceProvider)
+                    .Options;
             }
 
-            public BusBuddyDbContext CreateDbContext()
-            {
-                return _context;
-            }
-            public BusBuddyDbContext CreateWriteDbContext()
-            {
-                return _context;
-            }
+            public BusBuddyDbContext CreateDbContext() => new BusBuddyDbContext(_options);
+            public BusBuddyDbContext CreateWriteDbContext() => new BusBuddyDbContext(_options);
         }
 
         public void Dispose()

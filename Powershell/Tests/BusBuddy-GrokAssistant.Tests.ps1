@@ -2,11 +2,11 @@
 
 <#
 .SYNOPSIS
-    Pester tests for BusBuddy Grok Assistant CI Analysis modules
+Pester tests for BusBuddy Grok Assistant CI Analysis modules
 
 .DESCRIPTION
-    Comprehensive test suite for validating CI analysis functionality,
-    API integration, and pattern matching capabilities.
+Comprehensive test suite for validating CI analysis functionality,
+API integration, and pattern matching capabilities.
 #>
 
 Describe "BusBuddy Grok Assistant Integration Tests" {

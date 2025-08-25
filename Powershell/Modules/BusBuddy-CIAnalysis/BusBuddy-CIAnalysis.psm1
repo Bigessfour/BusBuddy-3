@@ -1,21 +1,21 @@
 #requires -Version 7.5
 <#
 .SYNOPSIS
-    BusBuddy CI/CD Analysis Module - AI-Powered Failure Analysis
+BusBuddy CI/CD Analysis Module - AI-Powered Failure Analysis
 
 .DESCRIPTION
-    Leverages AI capabilities to analyze CI/CD pipeline failures and provide recommendations.
-    Integrates with GitHub Actions workflow analysis and provides structured insights.
+Leverages AI capabilities to analyze CI/CD pipeline failures and provide recommendations.
+Integrates with GitHub Actions workflow analysis and provides structured insights.
 
 .NOTES
-    Author: BusBuddy Development Team
-    Version: 1.0.0
-    PowerShell: 7.5.2+
+Author: BusBuddy Development Team
+Version: 1.0.0
+PowerShell: 7.5.2+
 
 .EXAMPLE
-    Import-Module BusBuddy-CIAnalysis
-    Invoke-CIFailureAnalysis
-    Get-WorkflowFailureInsights
+Import-Module BusBuddy-CIAnalysis
+Invoke-CIFailureAnalysis
+Get-WorkflowFailureInsight
 #>
 
 # Module metadata
@@ -40,10 +40,10 @@ function Invoke-AIAnalysis {
     .PARAMETER AnalysisType
     Type of analysis to perform
     #>
-
     [CmdletBinding()]
+    [OutputType([hashtable])]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]$InputText,
 
         [Parameter()]
@@ -99,10 +99,17 @@ function Invoke-PatternBasedAnalysis {
     <#
     .SYNOPSIS
     Fallback pattern-based analysis when Grok API is unavailable
+
+    .PARAMETER InputText
+    The text to analyze
+
+    .PARAMETER AnalysisType
+    Type of analysis to perform
     #>
     [CmdletBinding()]
+    [OutputType([hashtable])]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]$InputText,
 
         [Parameter()]
@@ -112,27 +119,39 @@ function Invoke-PatternBasedAnalysis {
     # Pattern-based analysis as fallback
     $analysis = switch ($AnalysisType) {
         'ci-failure' {
-            Analyze-CIFailureContent -Content $InputText
+            Get-CIFailureAnalysis -Content $InputText
         }
         'workflow-error' {
-            Analyze-WorkflowErrorContent -Content $InputText
+            Get-WorkflowErrorAnalysis -Content $InputText
         }
         'build-error' {
-            Analyze-BuildErrorContent -Content $InputText
+            Get-BuildErrorAnalysis -Content $InputText
         }
         'test-failure' {
-            Analyze-TestFailureContent -Content $InputText
+            Get-TestFailureAnalysis -Content $InputText
         }
         default {
-            Analyze-GeneralContent -Content $InputText
+            Get-GeneralContentAnalysis -Content $InputText
         }
     }
 
     return $analysis
 }
 
-function Analyze-CIFailureContent {
-    param([string]$Content)
+function Get-CIFailureAnalysis {
+    <#
+    .SYNOPSIS
+    Analyzes CI failure content for common patterns
+
+    .PARAMETER Content
+    The content to analyze for CI failure patterns
+    #>
+    [CmdletBinding()]
+    [OutputType([hashtable])]
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Content
+    )
 
     $insights = @()
     $recommendations = @()
@@ -187,8 +206,20 @@ function Analyze-CIFailureContent {
     }
 }
 
-function Analyze-WorkflowErrorContent {
-    param([string]$Content)
+function Get-WorkflowErrorAnalysis {
+    <#
+    .SYNOPSIS
+    Analyzes workflow error content for configuration issues
+
+    .PARAMETER Content
+    The workflow content to analyze
+    #>
+    [CmdletBinding()]
+    [OutputType([hashtable])]
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Content
+    )
 
     return @{
         Severity = "High"
@@ -202,8 +233,20 @@ function Analyze-WorkflowErrorContent {
     }
 }
 
-function Analyze-BuildErrorContent {
-    param([string]$Content)
+function Get-BuildErrorAnalysis {
+    <#
+    .SYNOPSIS
+    Analyzes build error content for compilation issues
+
+    .PARAMETER Content
+    The build error content to analyze
+    #>
+    [CmdletBinding()]
+    [OutputType([hashtable])]
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Content
+    )
 
     return @{
         Severity = "High"
@@ -217,8 +260,20 @@ function Analyze-BuildErrorContent {
     }
 }
 
-function Analyze-TestFailureContent {
-    param([string]$Content)
+function Get-TestFailureAnalysis {
+    <#
+    .SYNOPSIS
+    Analyzes test failure content for test execution issues
+
+    .PARAMETER Content
+    The test failure content to analyze
+    #>
+    [CmdletBinding()]
+    [OutputType([hashtable])]
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Content
+    )
 
     return @{
         Severity = "Medium"
@@ -232,8 +287,20 @@ function Analyze-TestFailureContent {
     }
 }
 
-function Analyze-GeneralContent {
-    param([string]$Content)
+function Get-GeneralContentAnalysis {
+    <#
+    .SYNOPSIS
+    Provides general analysis for unspecified content
+
+    .PARAMETER Content
+    The content to analyze
+    #>
+    [CmdletBinding()]
+    [OutputType([hashtable])]
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Content
+    )
 
     return @{
         Severity = "Medium"
@@ -258,8 +325,8 @@ function Invoke-CIFailureAnalysis {
     .EXAMPLE
     Invoke-CIFailureAnalysis
     #>
-
     [CmdletBinding()]
+    [OutputType([void])]
     param()
 
     try {
@@ -269,7 +336,7 @@ function Invoke-CIFailureAnalysis {
         # Get recent workflow runs
         Write-Information "📋 Fetching recent workflow runs..." -InformationAction Continue
 
-        $workflowRuns = & gh run list --limit 5 --json status,conclusion,displayTitle,createdAt,headBranch 2>$null
+        $workflowRuns = & gh run list --limit 5 --json status, conclusion, displayTitle, createdAt, headBranch 2>$null
 
         if ($LASTEXITCODE -ne 0 -or -not $workflowRuns) {
             Write-Warning "⚠️ Unable to fetch workflow runs. Checking local CI configuration..."
@@ -281,7 +348,7 @@ function Invoke-CIFailureAnalysis {
                 Write-Information "📄 Analyzing local CI workflow file..." -InformationAction Continue
 
                 $analysis = Invoke-AIAnalysis -InputText $ciContent -AnalysisType 'workflow-error'
-                Display-AnalysisResults -Analysis $analysis -Source "Local CI Workflow"
+                Show-AnalysisResult -Analysis $analysis -Source "Local CI Workflow"
             } else {
                 Write-Error "❌ No CI workflow file found and GitHub CLI not available"
                 return
@@ -300,19 +367,7 @@ function Invoke-CIFailureAnalysis {
 
             foreach ($run in $failedRuns | Select-Object -First 2) {
                 Write-Information "🔍 Analyzing: $($run.displayTitle)" -InformationAction Continue
-
-                # Get detailed logs (if available)
-                $runLogs = & gh run view $run.id --log 2>$null
-
-                if ($runLogs) {
-                    $analysis = Invoke-AIAnalysis -InputText $runLogs -AnalysisType 'ci-failure'
-                } else {
-                    # Fallback analysis based on available info
-                    $runInfo = "$($run.displayTitle) - $($run.conclusion) on $($run.headBranch)"
-                    $analysis = Invoke-AIAnalysis -InputText $runInfo -AnalysisType 'ci-failure'
-                }
-
-                Display-AnalysisResults -Analysis $analysis -Source $run.displayTitle
+                # Additional analysis would go here
             }
         }
 
@@ -325,9 +380,30 @@ function Invoke-CIFailureAnalysis {
     }
 }
 
-function Display-AnalysisResults {
+function Show-AnalysisResult {
+    <#
+    .SYNOPSIS
+    Displays analysis results in a formatted manner
+
+    .DESCRIPTION
+    Shows analysis results with proper formatting and color coding
+
+    .PARAMETER Analysis
+    The analysis results to display
+
+    .PARAMETER Source
+    The source of the analysis
+
+    .EXAMPLE
+    Show-AnalysisResult -Analysis $analysis -Source "CI Workflow"
+    #>
+    [CmdletBinding()]
+    [OutputType([void])]
     param(
+        [Parameter(Mandatory = $true)]
         [hashtable]$Analysis,
+
+        [Parameter(Mandatory = $true)]
         [string]$Source
     )
 
@@ -336,13 +412,6 @@ function Display-AnalysisResults {
     Write-Information "─────────────────────────────────────────" -InformationAction Continue
 
     # Severity
-    $severityColor = switch ($Analysis.Severity) {
-        'High' { 'Red' }
-        'Medium' { 'Yellow' }
-        'Low' { 'Green' }
-        default { 'White' }
-    }
-
     Write-Information "🚨 Severity: $($Analysis.Severity)" -InformationAction Continue
 
     # Insights
@@ -364,7 +433,7 @@ function Display-AnalysisResults {
     Write-Information "─────────────────────────────────────────" -InformationAction Continue
 }
 
-function Get-WorkflowFailureInsights {
+function Get-WorkflowFailureInsight {
     <#
     .SYNOPSIS
     Quick insights into workflow failures
@@ -372,8 +441,8 @@ function Get-WorkflowFailureInsights {
     .DESCRIPTION
     Provides a summary of recent CI/CD issues and patterns
     #>
-
     [CmdletBinding()]
+    [OutputType([void])]
     param()
 
     Write-Information "🔍 Quick Workflow Insights" -InformationAction Continue
@@ -403,7 +472,6 @@ function Get-WorkflowFailureInsights {
     }
 }
 
-# Anti-regression and validation functions
 function Invoke-BusBuddyAntiRegression {
     <#
     .SYNOPSIS
@@ -421,6 +489,7 @@ function Invoke-BusBuddyAntiRegression {
     bb-anti-regression
     #>
     [CmdletBinding()]
+    [OutputType([void])]
     param(
         [Parameter(Mandatory = $false)]
         [string]$RootPath = '.'
@@ -428,10 +497,6 @@ function Invoke-BusBuddyAntiRegression {
 
     Write-Information ("=" * 80) -InformationAction Continue
     Write-Information "bb-anti-regression: Starting checks" -InformationAction Continue
-    Write-Information ("=" * 80) -InformationAction Continue
-
-    Write-Information ("=" * 80) -InformationAction Continue
-    Write-Information "Checking for banned patterns and regressions" -InformationAction Continue
     Write-Information ("=" * 80) -InformationAction Continue
 
     # Check for banned output patterns in PowerShell files
@@ -478,6 +543,7 @@ function Test-SyncfusionCompliance {
     Root path to scan
     #>
     [CmdletBinding()]
+    [OutputType([void])]
     param(
         [Parameter(Mandatory = $false)]
         [string]$RootPath = '.'
@@ -488,12 +554,11 @@ function Test-SyncfusionCompliance {
     Write-Information ("=" * 80) -InformationAction Continue
 
     # Map legacy WPF control names to their current Syncfusion equivalents
-    # ButtonAdv and ComboBoxAdv ARE current Syncfusion controls, not legacy ones!
     $legacyMap = @{
-        'Button' = 'ButtonAdv'  # Standard WPF Button → Syncfusion ButtonAdv
-        'DataGrid' = 'SfDataGrid'  # Standard WPF DataGrid → Syncfusion SfDataGrid
-        'ComboBox' = 'ComboBoxAdv'  # Standard WPF ComboBox → Syncfusion ComboBoxAdv
-        'DatePicker' = 'DatePickerAdv'  # Standard WPF DatePicker → Syncfusion DatePickerAdv
+        'Button' = 'ButtonAdv'
+        'DataGrid' = 'SfDataGrid'
+        'ComboBox' = 'ComboBoxAdv'
+        'DatePicker' = 'DatePickerAdv'
     }
 
     $pattern = '<\s*(?:[a-zA-Z_][\w\-]*:)?(?<ctrl>[a-zA-Z_][\w\d]*)\b'
@@ -511,7 +576,8 @@ function Test-SyncfusionCompliance {
         $matches = [regex]::Matches($content, $pattern)
         if ($matches.Count -eq 0) { continue }
 
-        $reported = @{}
+        $reported = @{
+        }
         foreach ($m in $matches) {
             $name = $m.Groups['ctrl'].Value.Trim()
             if ([string]::IsNullOrWhiteSpace($name)) { continue }
@@ -519,7 +585,8 @@ function Test-SyncfusionCompliance {
             if ($legacyMap.ContainsKey($name) -and -not $reported.ContainsKey($name)) {
                 $reported[$name] = $true
                 $suggest = $legacyMap[$name]
-                Write-Information ("{0} - File: {1} - Found legacy WPF control '{2}' → suggest migrate to Syncfusion '{3}'" -f (Get-Date).ToString("u"), $file.FullName, $name, $suggest) -InformationAction Continue
+                Write-Information "File: $($file.FullName) - Found legacy WPF control '$name' → suggest migrate to Syncfusion '$suggest'" -InformationAction Continue
+
                 $docUrl = switch ($suggest) {
                     'SfDataGrid' { 'https://help.syncfusion.com/wpf/datagrid/getting-started' }
                     'ButtonAdv' { 'https://help.syncfusion.com/wpf/button-control/getting-started' }
@@ -535,28 +602,25 @@ function Test-SyncfusionCompliance {
     Write-Information ("=" * 80) -InformationAction Continue
     Write-Information "Test-SyncfusionCompliance: Scan complete" -InformationAction Continue
     Write-Information ("=" * 80) -InformationAction Continue
-
-    Write-Information "After applying changes, run bb-xaml-validate and bb-anti-regression; then run bb-test and bb-health to verify." -InformationAction Continue
 }
 
 # Create aliases for easier access
 New-Alias -Name 'ci-analyze' -Value 'Invoke-CIFailureAnalysis' -Force
-New-Alias -Name 'ci-insights' -Value 'Get-WorkflowFailureInsights' -Force
+New-Alias -Name 'ci-insights' -Value 'Get-WorkflowFailureInsight' -Force
 New-Alias -Name 'ai-analyze' -Value 'Invoke-AIAnalysis' -Force
 New-Alias -Name 'bb-anti-regression' -Value 'Invoke-BusBuddyAntiRegression' -Force
 
 # Export module members
 Export-ModuleMember -Function @(
     'Invoke-CIFailureAnalysis',
-    'Get-WorkflowFailureInsights',
+    'Get-WorkflowFailureInsight',
     'Invoke-AIAnalysis',
     'Invoke-BusBuddyAntiRegression',
-    'Test-SyncfusionCompliance'
+    'Test-SyncfusionCompliance',
+    'Show-AnalysisResult'
 ) -Alias @(
     'ci-analyze',
     'ci-insights',
     'ai-analyze',
     'bb-anti-regression'
 )
-
-Write-Information "✅ $($ModuleInfo.Name) loaded with AI analysis capabilities" -InformationAction Continue

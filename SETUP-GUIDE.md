@@ -87,8 +87,9 @@ Test-GrokConnection -Verbose
 ```
 
 **AI Features Available:**
+
 - **Route Optimization**: AI-powered route efficiency analysis
-- **Maintenance Predictions**: Predictive vehicle maintenance scheduling  
+- **Maintenance Predictions**: Predictive vehicle maintenance scheduling
 - **Performance Analytics**: Intelligent performance insights
 - **Cost Analysis**: AI-driven cost optimization recommendations
 

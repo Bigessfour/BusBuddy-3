@@ -1,5 +1,14 @@
 name: 🚌 BusBuddy-3 CI/CD with Azure SQL
 
+# Explicit permissions block to avoid write-all
+permissions:
+  contents: read
+  issues: read
+  pull-requests: write
+  actions: read
+  checks: read
+  deployments: read
+
 on:
   push:
     branches: [main, master, develop]
@@ -46,10 +55,18 @@ jobs:
         run: |
           if (Get-Command bb-build -ErrorAction SilentlyContinue) {
             Write-Information "Building via bb-build" -InformationAction Continue
-            bb-build 2>$null || dotnet build $env:SOLUTION_FILE --configuration $env:BUILD_CONFIGURATION --no-restore --nologo -warnaserror-
+            bb-build 2>$null || dotnet build $env:SOLUTION_FILE \
+              --configuration $env:BUILD_CONFIGURATION \
+              --no-restore \
+              --nologo \
+              -warnaserror-
           } else {
             Write-Information "bb-build not found; using dotnet build" -InformationAction Continue
-            dotnet build $env:SOLUTION_FILE --configuration $env:BUILD_CONFIGURATION --no-restore --nologo -warnaserror-
+            dotnet build $env:SOLUTION_FILE \
+              --configuration $env:BUILD_CONFIGURATION \
+              --no-restore \
+              --nologo \
+              -warnaserror-
           }
 
       - name: 🔍 Quality Gates (Anti-Regression & XAML Validate)

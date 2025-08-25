@@ -1,4 +1,4 @@
-﻿# Reference: Write-Information docs - https://learn.microsoft.com/powershell/module/microsoft.powershell.utility/write-information?view=powershell-7.5.2
+# Reference: Write-Information docs - https://learn.microsoft.com/powershell/module/microsoft.powershell.utility/write-information?view=powershell-7.5.2
 # Syncfusion examples: SfDataGrid/SfButton docs - https://help.syncfusion.com/wpf/datagrid/getting-started  https://help.syncfusion.com/wpf/button/getting-started
 
 # Header start
@@ -98,7 +98,7 @@ function Test-SyncfusionCompliance {
 # Write-Information "Message" -InformationAction Continue
 # Replace echo ... with:
 # Write-Output "some text"
-# Ensure no Write-Host remains; prefer Write-Information/Write-Output as appropriate.
+# Ensure no Write-Information remains; prefer Write -InformationAction Continue-Information/Write-Output as appropriate.
 
 # Confirmed: all separator Write-Information calls use parenthesized expressions
 # Confirmed: [CmdletBinding()] syntax corrected in Test-SyncfusionCompliance

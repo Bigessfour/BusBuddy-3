@@ -13,7 +13,7 @@
             AllowClobber = $true
         }
     }
-    
+
     # Security and Secret Management
     'Microsoft.PowerShell.SecretManagement' = @{
         DependencyType = 'PSGalleryModule'
@@ -24,7 +24,7 @@
             AllowClobber = $true
         }
     }
-    
+
     'Microsoft.PowerShell.SecretStore' = @{
         DependencyType = 'PSGalleryModule'
         Target = 'CurrentUser'
@@ -34,7 +34,7 @@
             AllowClobber = $true
         }
     }
-    
+
     # Azure Integration Modules
     'Az.Storage' = @{
         DependencyType = 'PSGalleryModule'
@@ -45,7 +45,7 @@
             AllowClobber = $true
         }
     }
-    
+
     'Az.KeyVault' = @{
         DependencyType = 'PSGalleryModule'
         Target = 'CurrentUser'
@@ -55,7 +55,7 @@
             AllowClobber = $true
         }
     }
-    
+
     'Az.Monitor' = @{
         DependencyType = 'PSGalleryModule'
         Target = 'CurrentUser'
@@ -65,7 +65,7 @@
             AllowClobber = $true
         }
     }
-    
+
     # Database and Testing
     SqlServer = @{
         DependencyType = 'PSGalleryModule'
@@ -76,7 +76,7 @@
             AllowClobber = $true
         }
     }
-    
+
     Pester = @{
         DependencyType = 'PSGalleryModule'
         Target = 'CurrentUser'
@@ -86,7 +86,7 @@
             AllowClobber = $true
         }
     }
-    
+
     # Development Workflow
     PSDepend = @{
         DependencyType = 'PSGalleryModule'
@@ -97,7 +97,7 @@
             AllowClobber = $true
         }
     }
-    
+
     Plaster = @{
         DependencyType = 'PSGalleryModule'
         Target = 'CurrentUser'
@@ -107,7 +107,7 @@
             AllowClobber = $true
         }
     }
-    
+
     PSFramework = @{
         DependencyType = 'PSGalleryModule'
         Target = 'CurrentUser'
@@ -117,7 +117,7 @@
             AllowClobber = $true
         }
     }
-    
+
     # NuGet Integration
     'NuGet.PackageManagement' = @{
         DependencyType = 'PSGalleryModule'

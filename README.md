@@ -472,6 +472,7 @@ Features = "text + vision, function calling, real-time search"
 ```
 
 **Important Notes:**
+
 - ✅ **Use exact model ID**: `"grok-4-0709"` (not `"grok-4"` or `"grok-4-latest"`)
 - ✅ **API compatibility**: OpenAI-compatible /chat/completions endpoint
 - ✅ **Released**: July 9, 2025 with enhanced reasoning capabilities

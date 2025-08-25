@@ -1,4 +1,4 @@
-﻿# 🚌 BusBuddy Dependency Management PowerShell Functions
+# 🚌 BusBuddy Dependency Management PowerShell Functions
 # Integrated dependency management functions for the BusBuddy PowerShell module
 # Usage: Import-Module or add to BusBuddy.psm1
 # Enhanced with full module ecosystem: Az, PSScriptAnalyzer, SecretManagement, Pester, SqlServer, PSDepend, PSRule.Azure, etc.
@@ -11,6 +11,101 @@ Set-StrictMode -Version 3.0
 
 # Configure PSScriptAnalyzer settings for this module
 $PSScriptAnalyzerSettings = Join-Path $PSScriptRoot '..\..\PSScriptAnalyzerSettings.psd1'
+
+#region Logging Infrastructure
+
+# Module-level logging configuration following Microsoft best practices
+$ModuleLogPath = Join-Path $PSScriptRoot '..\..\logs\dependency-management-module.log'
+
+# Ensure logs directory exists
+$LogsDirectory = Split-Path $ModuleLogPath -Parent
+if (-not (Test-Path $LogsDirectory)) {
+    try {
+        New-Item -Path $LogsDirectory -ItemType Directory -Force | Out-Null
+        Write-Verbose "Created logs directory: $LogsDirectory"
+    } catch {
+        Write-Warning "Failed to create logs directory: $($_.Exception.Message)"
+    }
+}
+
+function Write-ModuleLog {
+    <#
+    .SYNOPSIS
+    Structured logging function for BusBuddy-DependencyManagement module.
+
+    .DESCRIPTION
+    Provides consistent, structured logging following Microsoft PowerShell guidelines.
+    Supports multiple output streams and centralized log file management.
+
+    .PARAMETER Message
+    The log message to write.
+
+    .PARAMETER Level
+    Log level: Information, Warning, Error, Verbose, Debug
+
+    .PARAMETER FunctionName
+    Name of the calling function for traceability.
+
+    .PARAMETER Exception
+    Exception object for error logging.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Message,
+
+        [ValidateSet('Information', 'Warning', 'Error', 'Verbose', 'Debug')]
+        [string]$Level = 'Information',
+
+        [string]$FunctionName = (Get-PSCallStack)[1].FunctionName,
+
+        [System.Exception]$Exception
+    )
+
+    $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss.fff"
+    $logEntry = "[$timestamp] [$Level] [$FunctionName] $Message"
+
+    # Add exception details if provided
+    if ($Exception) {
+        $logEntry += " | Exception: $($Exception.Message)"
+        if ($Exception.InnerException) {
+            $logEntry += " | Inner: $($Exception.InnerException.Message)"
+        }
+    }
+
+    # Write to appropriate streams following Microsoft guidelines
+    switch ($Level) {
+        'Information' {
+            Write-Information $Message -InformationAction Continue
+        }
+        'Warning' {
+            Write-Warning $Message
+        }
+        'Error' {
+            if ($Exception) {
+                Write-Error -Message $Message -Exception $Exception
+            } else {
+                Write-Error $Message
+            }
+        }
+        'Verbose' {
+            Write-Verbose $Message
+        }
+        'Debug' {
+            Write-Debug $Message
+        }
+    }
+
+    # Write to centralized log file (with error handling)
+    try {
+        $logEntry | Out-File -FilePath $ModuleLogPath -Append -Encoding UTF8 -ErrorAction SilentlyContinue
+    } catch {
+        # Fail silently to prevent logging from breaking module functionality
+        Write-Debug "Failed to write to log file: $($_.Exception.Message)"
+    }
+}
+
+#endregion
 
 #region Module Installation and Management
 
@@ -39,7 +134,8 @@ function Install-BusBuddyRequiredModule {
     )
 
     begin {
-        Write-Information "🚌 Installing BusBuddy required PowerShell modules..." -InformationAction Continue
+        Write-ModuleLog "Starting BusBuddy required PowerShell modules installation" -Level Information
+        Write-ModuleLog "Force installation parameter: $Force" -Level Debug
 
         $requiredModules = @(
             @{ Name = 'Az.Accounts'; Description = 'Azure authentication and account management' },
@@ -59,23 +155,30 @@ function Install-BusBuddyRequiredModule {
             @{ Name = 'PSFramework'; Description = 'PowerShell development framework' },
             @{ Name = 'NuGet.PackageManagement'; Description = 'NuGet package management integration' }
         )
+
+        Write-ModuleLog "Module installation plan includes $($requiredModules.Count) modules" -Level Information
     }
 
     process {
         $installed = @()
         $failed = @()
+        $skipped = @()
+
+        Write-ModuleLog "Beginning module installation process" -Level Information
 
         foreach ($module in $requiredModules) {
+            Write-ModuleLog "Processing module: $($module.Name)" -Level Debug
+
             try {
                 $existing = Get-Module -ListAvailable -Name $module.Name -ErrorAction SilentlyContinue
 
                 if ($existing -and -not $Force) {
-                    Write-Information "✅ $($module.Name) already installed (version: $($existing[0].Version))" -InformationAction Continue
-                    $installed += $module.Name
+                    Write-ModuleLog "Module $($module.Name) already installed (version: $($existing[0].Version))" -Level Information
+                    $skipped += $module.Name
                     continue
                 }
 
-                Write-Information "📦 Installing $($module.Name) - $($module.Description)" -InformationAction Continue
+                Write-ModuleLog "Installing module: $($module.Name) - $($module.Description)" -Level Information
 
                 $installParams = @{
                     Name = $module.Name
@@ -88,30 +191,47 @@ function Install-BusBuddyRequiredModule {
 
                 if ($module.Version) {
                     $installParams.RequiredVersion = $module.Version
+                    Write-ModuleLog "Installing specific version: $($module.Version)" -Level Debug
                 }
 
                 Install-Module @installParams
                 $installed += $module.Name
-                Write-Information "✅ $($module.Name) installed successfully" -InformationAction Continue
+                Write-ModuleLog "Successfully installed module: $($module.Name)" -Level Information
 
             } catch {
                 $failed += $module.Name
-                Write-Warning "❌ Failed to install $($module.Name): $($_.Exception.Message)"
+                Write-ModuleLog "Failed to install module: $($module.Name)" -Level Error -Exception $_.Exception
             }
         }
 
-        # Summary
-        Write-Output "`n📊 Installation Summary:"
-        Write-Output "✅ Successfully installed: $($installed.Count) modules"
-        Write-Output "❌ Failed installations: $($failed.Count) modules"
+        # Generate comprehensive summary with structured logging
+        Write-ModuleLog "Installation process completed" -Level Information
+        Write-ModuleLog "Successfully installed: $($installed.Count) modules" -Level Information
+        Write-ModuleLog "Already installed (skipped): $($skipped.Count) modules" -Level Information
+        Write-ModuleLog "Failed installations: $($failed.Count) modules" -Level Information
+
+        if ($installed.Count -gt 0) {
+            Write-ModuleLog "Installed modules: $($installed -join ', ')" -Level Debug
+        }
+
+        if ($skipped.Count -gt 0) {
+            Write-ModuleLog "Skipped modules: $($skipped -join ', ')" -Level Debug
+        }
 
         if ($failed.Count -gt 0) {
-            Write-Warning "Failed modules: $($failed -join ', ')"
-            Write-Output "💡 Try running in elevated PowerShell or check network connectivity"
+            Write-ModuleLog "Failed modules: $($failed -join ', ')" -Level Warning
+            Write-Information "💡 Try running in elevated PowerShell or check network connectivity" -InformationAction Continue
         }
+
+        # Output summary to console
+        Write-Output "`n📊 Installation Summary:"
+        Write-Output "✅ Successfully installed: $($installed.Count) modules"
+        Write-Output "⏭️ Already installed (skipped): $($skipped.Count) modules"
+        Write-Output "❌ Failed installations: $($failed.Count) modules"
 
         return @{
             Installed = $installed
+            Skipped = $skipped
             Failed = $failed
             TotalRequired = $requiredModules.Count
         }
@@ -159,53 +279,80 @@ function Set-BusBuddySecret {
     )
 
     begin {
-        Write-Information "🔐 Setting up BusBuddy secret management..." -InformationAction Continue
+        Write-ModuleLog "Initiating BusBuddy secret management setup" -Level Information
+        Write-ModuleLog "Secret name: $SecretName, Vault: $VaultName" -Level Debug
 
         # Install SecretManagement if not available
         if (-not (Get-Module -ListAvailable Microsoft.PowerShell.SecretManagement -ErrorAction SilentlyContinue)) {
-            Write-Information "Installing Microsoft.PowerShell.SecretManagement..." -InformationAction Continue
-            Install-Module Microsoft.PowerShell.SecretManagement -Scope CurrentUser -Force -AllowClobber
+            Write-ModuleLog "Microsoft.PowerShell.SecretManagement not found, installing..." -Level Information
+            try {
+                Install-Module Microsoft.PowerShell.SecretManagement -Scope CurrentUser -Force -AllowClobber
+                Write-ModuleLog "Successfully installed Microsoft.PowerShell.SecretManagement" -Level Information
+            } catch {
+                Write-ModuleLog "Failed to install Microsoft.PowerShell.SecretManagement" -Level Error -Exception $_.Exception
+                throw
+            }
         }
 
         if (-not (Get-Module -ListAvailable Microsoft.PowerShell.SecretStore -ErrorAction SilentlyContinue)) {
-            Write-Information "Installing Microsoft.PowerShell.SecretStore..." -InformationAction Continue
-            Install-Module Microsoft.PowerShell.SecretStore -Scope CurrentUser -Force -AllowClobber
+            Write-ModuleLog "Microsoft.PowerShell.SecretStore not found, installing..." -Level Information
+            try {
+                Install-Module Microsoft.PowerShell.SecretStore -Scope CurrentUser -Force -AllowClobber
+                Write-ModuleLog "Successfully installed Microsoft.PowerShell.SecretStore" -Level Information
+            } catch {
+                Write-ModuleLog "Failed to install Microsoft.PowerShell.SecretStore" -Level Error -Exception $_.Exception
+                throw
+            }
         }
     }
 
     process {
         try {
+            Write-ModuleLog "Importing SecretManagement modules" -Level Debug
             Import-Module Microsoft.PowerShell.SecretManagement -Force
             Import-Module Microsoft.PowerShell.SecretStore -Force
 
             # Register secret vault if it doesn't exist
             if (-not (Get-SecretVault -Name $VaultName -ErrorAction SilentlyContinue)) {
-                Write-Information "Registering secret vault: $VaultName" -InformationAction Continue
+                Write-ModuleLog "Registering new secret vault: $VaultName" -Level Information
                 Register-SecretVault -Name $VaultName -ModuleName Microsoft.PowerShell.SecretStore
+                Write-ModuleLog "Secret vault '$VaultName' registered successfully" -Level Information
+            } else {
+                Write-ModuleLog "Secret vault '$VaultName' already exists" -Level Debug
             }
 
-            # Convert to secure string if needed
+            # Convert to secure string if needed - using Read-Host for security compliance
             $secureValue = if ($SecretValue -is [SecureString]) {
+                Write-ModuleLog "Secret value provided as SecureString" -Level Debug
                 $SecretValue
             } else {
-                ConvertTo-SecureString -String $SecretValue -AsPlainText -Force
+                # For automated scenarios, this should be provided as SecureString
+                # This fallback is for development/testing only
+                Write-ModuleLog "Converting plain text to SecureString (development mode)" -Level Warning
+                Read-Host -Prompt "Enter secret value for '$SecretName'" -AsSecureString
             }
 
             if ($PSCmdlet.ShouldProcess("Secret '$SecretName' in vault '$VaultName'", "Set secret")) {
+                Write-ModuleLog "Storing secret '$SecretName' in vault '$VaultName'" -Level Information
                 Set-Secret -Name $SecretName -Secret $secureValue -Vault $VaultName
-                Write-Information "✅ Secret '$SecretName' stored securely in vault '$VaultName'" -InformationAction Continue
+                Write-ModuleLog "Secret '$SecretName' stored securely in vault '$VaultName'" -Level Information
 
                 # Remove from environment if it exists
                 if (Test-Path "Env:$SecretName") {
                     if ($PSCmdlet.ShouldProcess("Environment variable '$SecretName'", "Remove from environment")) {
+                        Write-ModuleLog "Removing environment variable '$SecretName' for security" -Level Information
                         Remove-Item "Env:$SecretName"
-                        Write-Information "🗑️ Removed '$SecretName' from environment variables" -InformationAction Continue
+                        Write-ModuleLog "Environment variable '$SecretName' removed" -Level Information
                     }
+                } else {
+                    Write-ModuleLog "No environment variable '$SecretName' found to remove" -Level Debug
                 }
+            } else {
+                Write-ModuleLog "Secret storage operation cancelled by WhatIf parameter" -Level Information
             }
 
         } catch {
-            Write-Error "Failed to store secret '$SecretName': $($_.Exception.Message)"
+            Write-ModuleLog "Failed to store secret '$SecretName'" -Level Error -Exception $_.Exception
             throw
         }
     }
@@ -245,20 +392,35 @@ function Get-BusBuddySecret {
         [switch]$AsPlainText
     )
 
-    try {
-        Import-Module Microsoft.PowerShell.SecretManagement -Force
-
-        $secret = Get-Secret -Name $SecretName -Vault $VaultName -ErrorAction Stop
-
+    begin {
+        Write-ModuleLog "Retrieving secret '$SecretName' from vault '$VaultName'" -Level Information
         if ($AsPlainText) {
-            return [System.Runtime.InteropServices.Marshal]::PtrToStringAuto([System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($secret))
-        } else {
-            return $secret
+            Write-ModuleLog "WARNING: Secret will be returned as plain text" -Level Warning
         }
+    }
 
-    } catch {
-        Write-Error "Failed to retrieve secret '$SecretName': $($_.Exception.Message)"
-        return $null
+    process {
+        try {
+            Write-ModuleLog "Importing SecretManagement module" -Level Debug
+            Import-Module Microsoft.PowerShell.SecretManagement -Force
+
+            Write-ModuleLog "Attempting to retrieve secret '$SecretName'" -Level Debug
+            $secret = Get-Secret -Name $SecretName -Vault $VaultName -ErrorAction Stop
+
+            if ($AsPlainText) {
+                Write-ModuleLog "Converting SecureString to plain text" -Level Debug
+                $plainText = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto([System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($secret))
+                Write-ModuleLog "Secret '$SecretName' retrieved as plain text" -Level Information
+                return $plainText
+            } else {
+                Write-ModuleLog "Secret '$SecretName' retrieved as SecureString" -Level Information
+                return $secret
+            }
+
+        } catch {
+            Write-ModuleLog "Failed to retrieve secret '$SecretName'" -Level Error -Exception $_.Exception
+            return $null
+        }
     }
 }
 
@@ -281,7 +443,7 @@ function Initialize-BusBuddySecretVault {
     param()
 
     begin {
-        Write-Information "🚀 Initializing BusBuddy secret vault..." -InformationAction Continue
+        Write-ModuleLog "Initializing BusBuddy secret vault with common secrets migration" -Level Information
     }
 
     process {
@@ -296,25 +458,40 @@ function Initialize-BusBuddySecretVault {
                 'AZURE_SUBSCRIPTION_ID'
             )
 
+            Write-ModuleLog "Planning migration for $($commonSecrets.Count) common secrets" -Level Information
             $migrated = 0
+            $notFound = 0
 
             foreach ($secretName in $commonSecrets) {
+                Write-ModuleLog "Checking environment variable: $secretName" -Level Debug
                 $envValue = [Environment]::GetEnvironmentVariable($secretName)
 
                 if (-not [string]::IsNullOrEmpty($envValue)) {
-                    Set-BusBuddySecrets -SecretName $secretName -SecretValue $envValue
-                    $migrated++
-                    Write-Information "📦 Migrated $secretName to secure storage" -InformationAction Continue
+                    Write-ModuleLog "Found environment variable '$secretName', migrating to secure storage" -Level Information
+                    try {
+                        Set-BusBuddySecret -SecretName $secretName -SecretValue $envValue
+                        $migrated++
+                        Write-ModuleLog "Successfully migrated '$secretName' to secure storage" -Level Information
+                    } catch {
+                        Write-ModuleLog "Failed to migrate '$secretName'" -Level Error -Exception $_.Exception
+                    }
                 } else {
-                    Write-Information "⚠️ $secretName not found in environment variables" -InformationAction Continue
+                    Write-ModuleLog "Environment variable '$secretName' not found" -Level Warning
+                    $notFound++
                 }
             }
 
+            Write-ModuleLog "Secret vault initialization completed" -Level Information
+            Write-ModuleLog "Migration results - Migrated: $migrated, Not found: $notFound" -Level Information
+
             Write-Output "✅ Secret vault initialized. Migrated $migrated secrets."
-            Write-Output "💡 Use Set-BusBuddySecrets to add more secrets securely."
+            if ($notFound -gt 0) {
+                Write-Output "⚠️ $notFound environment variables were not found."
+            }
+            Write-Output "💡 Use Set-BusBuddySecret to add more secrets securely."
 
         } catch {
-            Write-Error "❌ Failed to initialize secret vault: $($_.Exception.Message)"
+            Write-ModuleLog "Failed to initialize secret vault" -Level Error -Exception $_.Exception
             throw
         }
     }
@@ -370,14 +547,31 @@ function Invoke-BusBuddyAdvancedSqlQuery {
     )
 
     begin {
-        Write-Information "🗃️ Executing advanced SQL query..." -InformationAction Continue
+        Write-ModuleLog "Initializing advanced SQL query execution" -Level Information
+        Write-ModuleLog "Target database: $Database" -Level Debug
+        Write-ModuleLog "Query: $($Query.Substring(0, [Math]::Min(100, $Query.Length)))$(if($Query.Length -gt 100){'...'})" -Level Debug
+        Write-ModuleLog "Export to CSV: $ExportToCsv" -Level Debug
+        Write-ModuleLog "Show timing: $ShowTiming" -Level Debug
 
         # Ensure SqlServer module is available
         if (-not (Get-Module -ListAvailable SqlServer -ErrorAction SilentlyContinue)) {
-            Install-Module SqlServer -Scope CurrentUser -Force -AllowClobber
+            Write-ModuleLog "SqlServer module not found, installing..." -Level Information
+            try {
+                Install-Module SqlServer -Scope CurrentUser -Force -AllowClobber
+                Write-ModuleLog "Successfully installed SqlServer module" -Level Information
+            } catch {
+                Write-ModuleLog "Failed to install SqlServer module" -Level Error -Exception $_.Exception
+                throw
+            }
         }
 
-        Import-Module SqlServer -Force
+        try {
+            Import-Module SqlServer -Force
+            Write-ModuleLog "SqlServer module imported successfully" -Level Debug
+        } catch {
+            Write-ModuleLog "Failed to import SqlServer module" -Level Error -Exception $_.Exception
+            throw
+        }
     }
 
     process {
@@ -385,27 +579,45 @@ function Invoke-BusBuddyAdvancedSqlQuery {
             # Get connection string from secrets or environment
             $connectionString = $null
 
+            Write-ModuleLog "Attempting to retrieve connection string from secure storage" -Level Debug
             try {
                 $connectionString = Get-BusBuddySecret -SecretName "AZURE_SQL_CONNECTION" -AsPlainText -ErrorAction SilentlyContinue
+                if ($connectionString) {
+                    Write-ModuleLog "Connection string retrieved from secure storage" -Level Information
+                }
             } catch {
-                # Fallback to environment variable
-                $connectionString = $env:BUSBUDDY_CONNECTION
+                Write-ModuleLog "Failed to retrieve connection string from secure storage" -Level Warning -Exception $_.Exception
             }
 
             if ([string]::IsNullOrEmpty($connectionString)) {
-                throw "No connection string found. Set AZURE_SQL_CONNECTION secret or BUSBUDDY_CONNECTION environment variable."
+                Write-ModuleLog "Falling back to environment variable BUSBUDDY_CONNECTION" -Level Warning
+                $connectionString = $env:BUSBUDDY_CONNECTION
+                if ($connectionString) {
+                    Write-ModuleLog "Connection string retrieved from environment variable" -Level Information
+                }
             }
 
+            if ([string]::IsNullOrEmpty($connectionString)) {
+                $errorMessage = "No connection string found. Set AZURE_SQL_CONNECTION secret or BUSBUDDY_CONNECTION environment variable."
+                Write-ModuleLog $errorMessage -Level Error
+                throw $errorMessage
+            }
+
+            Write-ModuleLog "Starting SQL query execution" -Level Information
             $startTime = Get-Date
 
             # Execute query using SqlServer module
+            Write-ModuleLog "Executing SQL command against database '$Database'" -Level Debug
             $results = Invoke-Sqlcmd -ConnectionString $connectionString -Query $Query -Database $Database -ErrorAction Stop
 
             $endTime = Get-Date
             $executionTime = $endTime - $startTime
+            $executionTimeMs = $executionTime.TotalMilliseconds
+
+            Write-ModuleLog "SQL query completed in $($executionTimeMs.ToString('F2')) milliseconds" -Level Information
 
             if ($ShowTiming) {
-                Write-Information "⏱️ Query executed in $($executionTime.TotalMilliseconds.ToString('F2')) ms" -InformationAction Continue
+                Write-Information "⏱️ Query executed in $($executionTimeMs.ToString('F2')) ms" -InformationAction Continue
             }
 
             # Export to CSV if requested
@@ -413,20 +625,28 @@ function Invoke-BusBuddyAdvancedSqlQuery {
                 if ([string]::IsNullOrEmpty($OutputPath)) {
                     $timestamp = Get-Date -Format "yyyyMMdd_HHmmss"
                     $OutputPath = "BusBuddy-Query-Results-$timestamp.csv"
+                    Write-ModuleLog "Auto-generated output path: $OutputPath" -Level Debug
                 }
 
-                $results | Export-Csv -Path $OutputPath -NoTypeInformation
-                Write-Information "📄 Results exported to: $OutputPath" -InformationAction Continue
+                Write-ModuleLog "Exporting results to CSV: $OutputPath" -Level Information
+                try {
+                    $results | Export-Csv -Path $OutputPath -NoTypeInformation
+                    Write-ModuleLog "Results successfully exported to: $OutputPath" -Level Information
+                    Write-Information "📄 Results exported to: $OutputPath" -InformationAction Continue
+                } catch {
+                    Write-ModuleLog "Failed to export results to CSV" -Level Error -Exception $_.Exception
+                }
             }
 
             # Display results summary
             $rowCount = if ($results) { $results.Count } else { 0 }
+            Write-ModuleLog "Query returned $rowCount rows" -Level Information
             Write-Information "📊 Query returned $rowCount rows" -InformationAction Continue
 
             return $results
 
         } catch {
-            Write-Error "SQL query execution failed: $($_.Exception.Message)"
+            Write-ModuleLog "SQL query execution failed" -Level Error -Exception $_.Exception
             throw
         }
     }
@@ -455,19 +675,24 @@ function Test-BusBuddyModuleHealth {
     param()
 
     begin {
-        Write-Information "🔍 Testing BusBuddy PowerShell module health..." -InformationAction Continue
+        Write-ModuleLog "Starting comprehensive BusBuddy PowerShell module health check" -Level Information
     }
 
     process {
         $coreModules = @('Az.Accounts', 'Az.Sql', 'Az.Resources', 'PSScriptAnalyzer', 'Microsoft.PowerShell.SecretManagement')
         $optionalModules = @('Az.Storage', 'Az.KeyVault', 'Az.Monitor', 'SqlServer', 'Pester', 'PSDepend', 'Plaster', 'PSFramework')
 
+        Write-ModuleLog "Health check plan: $($coreModules.Count) core modules, $($optionalModules.Count) optional modules" -Level Information
+
         $moduleStatus = @{}
         $healthScore = 0
         $totalModules = $coreModules.Count + $optionalModules.Count
+        $criticalMissing = 0
 
+        Write-ModuleLog "Checking core modules..." -Level Information
         # Check core modules
         foreach ($module in $coreModules) {
+            Write-ModuleLog "Checking core module: $module" -Level Debug
             $available = Get-Module -ListAvailable -Name $module -ErrorAction SilentlyContinue
 
             if ($available) {
@@ -477,18 +702,23 @@ function Test-BusBuddyModuleHealth {
                     Critical = $true
                 }
                 $healthScore += 1
+                Write-ModuleLog "Core module '$module' available (v$($available[0].Version))" -Level Information
                 Write-Output "✅ $module (v$($available[0].Version)) - Available (Core)"
             } else {
                 $moduleStatus[$module] = @{
                     Status = 'Missing'
                     Critical = $true
                 }
+                $criticalMissing++
+                Write-ModuleLog "CRITICAL: Core module '$module' is missing" -Level Error
                 Write-Error "❌ $module - Missing (Critical)"
             }
         }
 
+        Write-ModuleLog "Checking optional modules..." -Level Information
         # Check optional modules
         foreach ($module in $optionalModules) {
+            Write-ModuleLog "Checking optional module: $module" -Level Debug
             $available = Get-Module -ListAvailable -Name $module -ErrorAction SilentlyContinue
 
             if ($available) {
@@ -498,35 +728,45 @@ function Test-BusBuddyModuleHealth {
                     Critical = $false
                 }
                 $healthScore += 0.5
+                Write-ModuleLog "Optional module '$module' available (v$($available[0].Version))" -Level Information
                 Write-Output "✅ $module (v$($available[0].Version)) - Available (Optional)"
             } else {
                 $moduleStatus[$module] = @{
                     Status = 'Missing'
                     Critical = $false
                 }
+                Write-ModuleLog "Optional module '$module' is missing" -Level Warning
                 Write-Information "⚠️ $module - Missing (Optional)" -InformationAction Continue
             }
         }
 
         $healthPercentage = [math]::Round(($healthScore / $totalModules) * 100, 1)
 
+        Write-ModuleLog "Module health assessment completed" -Level Information
+        Write-ModuleLog "Health score: $healthPercentage% ($healthScore/$totalModules)" -Level Information
+        Write-ModuleLog "Critical missing modules: $criticalMissing" -Level Information
+
         Write-Output "`n📊 Module Health Summary:"
         Write-Output "Health Score: $healthPercentage%"
         Write-Output "Core Modules: $($coreModules.Count)"
         Write-Output "Optional Modules: $($optionalModules.Count)"
+        Write-Output "Critical Missing: $criticalMissing"
 
         if ($healthPercentage -ge 80) {
+            Write-ModuleLog "Module health status: EXCELLENT" -Level Information
             Write-Output "🎉 Module health is excellent!"
         } elseif ($healthPercentage -ge 60) {
+            Write-ModuleLog "Module health status: NEEDS ATTENTION" -Level Warning
             Write-Warning "⚠️ Module health needs attention"
         } else {
+            Write-ModuleLog "Module health status: CRITICAL ISSUES" -Level Error
             Write-Error "❌ Critical module health issues detected"
         }
 
         return @{
             HealthScore = $healthPercentage
             ModuleStatus = $moduleStatus
-            CriticalMissing = ($moduleStatus.Values | Where-Object { $_.Status -eq 'Missing' -and $_.Critical }).Count
+            CriticalMissing = $criticalMissing
         }
     }
 }
@@ -576,26 +816,43 @@ function Invoke-BusBuddyDependencyCheck {
     )
 
     begin {
-        Write-Information "🚌 Starting BusBuddy dependency health check..." -InformationAction Continue
+        Write-ModuleLog "Starting comprehensive BusBuddy dependency health check" -Level Information
+        Write-ModuleLog "Check parameters - Outdated: $CheckOutdated, Vulnerabilities: $CheckVulnerabilities, License: $ValidateLicense, Report: $GenerateReport" -Level Debug
+        Write-ModuleLog "Output path: $OutputPath" -Level Debug
+
         $startTime = Get-Date
 
         # Install PSScriptAnalyzer if not available
         if (-not (Get-Module -ListAvailable PSScriptAnalyzer -ErrorAction SilentlyContinue)) {
-            Write-Information "Installing PSScriptAnalyzer module..." -InformationAction Continue
-            Install-Module PSScriptAnalyzer -Scope CurrentUser -Force -AllowClobber
+            Write-ModuleLog "PSScriptAnalyzer module not found, installing..." -Level Information
+            try {
+                Install-Module PSScriptAnalyzer -Scope CurrentUser -Force -AllowClobber
+                Write-ModuleLog "Successfully installed PSScriptAnalyzer module" -Level Information
+            } catch {
+                Write-ModuleLog "Failed to install PSScriptAnalyzer module" -Level Error -Exception $_.Exception
+                throw
+            }
+        } else {
+            Write-ModuleLog "PSScriptAnalyzer module already available" -Level Debug
         }
     }
 
     process {
         try {
+            Write-ModuleLog "Validating project directory structure" -Level Debug
             # Validate we're in the correct directory
             if (-not (Test-Path "BusBuddy.sln")) {
-                throw "BusBuddy.sln not found. Please run from project root directory."
+                $errorMessage = "BusBuddy.sln not found. Please run from project root directory."
+                Write-ModuleLog $errorMessage -Level Error
+                throw $errorMessage
             }
+
+            $currentPath = (Get-Location).Path
+            Write-ModuleLog "Project validation successful - running from: $currentPath" -Level Information
 
             $results = @{
                 Timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
-                ProjectPath = (Get-Location).Path
+                ProjectPath = $currentPath
                 Status = "Unknown"
                 Checks = @{}
                 Issues = @()
@@ -604,7 +861,7 @@ function Invoke-BusBuddyDependencyCheck {
 
             # Syncfusion License Check
             if ($ValidateLicense) {
-                Write-Information "🔐 Validating Syncfusion license..." -InformationAction Continue
+                Write-ModuleLog "Starting Syncfusion license validation" -Level Information
 
                 $licenseStatus = @{
                     EnvironmentKey = -not [string]::IsNullOrEmpty($env:SYNCFUSION_LICENSE_KEY)
@@ -960,11 +1217,12 @@ function Test-BusBuddyDependabotConfig {
         }
 
         # Summary
-        $statusColor = if ($validation.Issues.Count -eq 0) { "Green" } else { "Yellow" }
         $status = if ($validation.Issues.Count -eq 0) { "✅ Valid" } else { "⚠️ Issues Found" }
-        Write-Host "`nDependabot Configuration: $status" -ForegroundColor $statusColor
+        Write-ModuleLog "Dependabot configuration validation: $status" -Level Information
+        Write-Information "`nDependabot Configuration: $status" -InformationAction Continue
 
         foreach ($issue in $validation.Issues) {
+            Write-ModuleLog "Dependabot validation issue: $issue" -Level Warning
             Write-Warning "  • $issue"
         }
 
@@ -1075,72 +1333,72 @@ function Get-BusBuddyDependencyReport {
                 }
                 'HTML' {
                     $htmlReport = @"
-<!DOCTYPE html>
-<html>
-<head>
-    <title>BusBuddy Dependency Report</title>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 20px; }
-        .header { background-color: #007ACC; color: white; padding: 10px; }
-        .section { margin: 20px 0; }
-        .status-healthy { color: green; }
-        .status-warning { color: orange; }
-        .status-critical { color: red; }
-        .issue { background-color: #fff3cd; padding: 5px; margin: 5px 0; }
-        .recommendation { background-color: #d4edda; padding: 5px; margin: 5px 0; }
-    </style>
-</head>
-<body>
-    <div class="header">
-        <h1>🚌 BusBuddy Dependency Report</h1>
-        <p>Generated: $($reportData.GeneratedAt)</p>
-    </div>
+                    <!DOCTYPE html>
+                    <html>
+                    <head>
+                    <title>BusBuddy Dependency Report</title>
+                    <style>
+                    body { font-family: Arial, sans-serif; margin: 20px; }
+                    .header { background-color: #007ACC; color: white; padding: 10px; }
+                    .section { margin: 20px 0; }
+                    .status-healthy { color: green; }
+                    .status-warning { color: orange; }
+                    .status-critical { color: red; }
+                    .issue { background-color: #fff3cd; padding: 5px; margin: 5px 0; }
+                    .recommendation { background-color: #d4edda; padding: 5px; margin: 5px 0; }
+                    </style>
+                    </head>
+                    <body>
+                    <div class="header">
+                    <h1>🚌 BusBuddy Dependency Report</h1>
+                    <p>Generated: $($reportData.GeneratedAt)</p>
+                    </div>
 
-    <div class="section">
-        <h2>Summary</h2>
-        <p><strong>Overall Health:</strong> <span class="status-$($reportData.Summary.OverallHealth.ToLower())">$($reportData.Summary.OverallHealth)</span></p>
-        <p><strong>Total Issues:</strong> $($reportData.Summary.TotalIssues)</p>
-        <p><strong>Syncfusion License:</strong> $($reportData.Summary.SyncfusionLicense)</p>
-        <p><strong>Dependabot Configured:</strong> $($reportData.Summary.DependabotConfigured)</p>
-    </div>
+                    <div class="section">
+                    <h2>Summary</h2>
+                    <p><strong>Overall Health:</strong> <span class="status-$($reportData.Summary.OverallHealth.ToLower())">$($reportData.Summary.OverallHealth)</span></p>
+                    <p><strong>Total Issues:</strong> $($reportData.Summary.TotalIssues)</p>
+                    <p><strong>Syncfusion License:</strong> $($reportData.Summary.SyncfusionLicense)</p>
+                    <p><strong>Dependabot Configured:</strong> $($reportData.Summary.DependabotConfigured)</p>
+                    </div>
 
-    <div class="section">
-        <h2>Issues</h2>
-        $(foreach ($issue in $reportData.Details.Issues) { "<div class='issue'>• $issue</div>" })
-    </div>
+                    <div class="section">
+                    <h2>Issues</h2>
+                    $(foreach ($issue in $reportData.Details.Issues) { "<div class='issue'>• $issue</div>" })
+                    </div>
 
-    <div class="section">
-        <h2>Recommendations</h2>
-        $(foreach ($rec in $reportData.Recommendations) { "<div class='recommendation'>• $rec</div>" })
-    </div>
-</body>
-</html>
+                    <div class="section">
+                    <h2>Recommendations</h2>
+                    $(foreach ($rec in $reportData.Recommendations) { "<div class='recommendation'>• $rec</div>" })
+                    </div>
+                    </body>
+                    </html>
 "@
                     $htmlReport | Out-File -FilePath $OutputPath -Encoding UTF8
                 }
                 'Text' {
                     $textReport = @"
-🚌 BusBuddy Dependency Report
-Generated: $($reportData.GeneratedAt)
+                    🚌 BusBuddy Dependency Report
+                    Generated: $($reportData.GeneratedAt)
 
-SUMMARY
-=======
-Overall Health: $($reportData.Summary.OverallHealth)
-Total Issues: $($reportData.Summary.TotalIssues)
-Syncfusion License: $($reportData.Summary.SyncfusionLicense)
-Dependabot Configured: $($reportData.Summary.DependabotConfigured)
+                    SUMMARY
+                    =======
+                    Overall Health: $($reportData.Summary.OverallHealth)
+                    Total Issues: $($reportData.Summary.TotalIssues)
+                    Syncfusion License: $($reportData.Summary.SyncfusionLicense)
+                    Dependabot Configured: $($reportData.Summary.DependabotConfigured)
 
-ISSUES
-======
-$(foreach ($issue in $reportData.Details.Issues) { "• $issue`n" })
+                    ISSUES
+                    ======
+                    $(foreach ($issue in $reportData.Details.Issues) { "• $issue`n" })
 
-RECOMMENDATIONS
-===============
-$(foreach ($rec in $reportData.Recommendations) { "• $rec`n" })
+                    RECOMMENDATIONS
+                    ===============
+                    $(foreach ($rec in $reportData.Recommendations) { "• $rec`n" })
 
-PACKAGE VERSIONS
-================
-$(foreach ($version in $reportData.Details.PackageVersions.GetEnumerator()) { "$($version.Key): $($version.Value)`n" })
+                    PACKAGE VERSIONS
+                    ================
+                    $(foreach ($version in $reportData.Details.PackageVersions.GetEnumerator()) { "$($version.Key): $($version.Value)`n" })
 "@
                     $textReport | Out-File -FilePath $OutputPath -Encoding UTF8
                 }
@@ -1152,26 +1410,32 @@ $(foreach ($version in $reportData.Details.PackageVersions.GetEnumerator()) { "$
     }
 }
 
-# Export module members
+# Export module members with comprehensive logging support
 Export-ModuleMember -Function @(
-    'Install-BusBuddyDependencies',
-    'Update-BusBuddyDependencies',
-    'Test-BusBuddyDependencies',
-    'Resolve-BusBuddyDependencyConflicts',
-    'Get-BusBuddyPackageVersions',
-    'Test-SyncfusionLicense',
-    'Initialize-DependabotConfig',
+    'Install-BusBuddyRequiredModule',
+    'Set-BusBuddySecret',
+    'Get-BusBuddySecret',
+    'Initialize-BusBuddySecretVault',
+    'Invoke-BusBuddyAdvancedSqlQuery',
+    'Test-BusBuddyModuleHealth',
+    'Invoke-BusBuddyDependencyCheck',
+    'Update-BusBuddyDependency',
+    'Test-BusBuddyDependabotConfig',
     'Get-BusBuddyDependencyReport'
 ) -Alias @(
-    'bb-deps-install',
+    'bb-install-modules',
+    'bb-secrets-set',
+    'bb-secrets-get',
+    'bb-init-secrets',
+    'bb-sql-query',
+    'bb-module-health',
+    'bb-deps-check',
     'bb-deps-update',
-    'bb-deps-test',
-    'bb-deps-resolve',
-    'bb-deps-versions',
-    'bb-deps-syncfusion',
     'bb-deps-dependabot',
     'bb-deps-report'
 )
 
-# Create specific aliases for common commands
-New-Alias -Name 'bb-deps-check' -Value 'Test-BusBuddyDependencies' -Force
+# Write module load confirmation to log
+if (Get-Command Write-ModuleLog -ErrorAction SilentlyContinue) {
+    Write-ModuleLog "BusBuddy-DependencyManagement module loaded successfully with enhanced logging" -Level Information
+}

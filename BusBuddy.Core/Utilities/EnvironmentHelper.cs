@@ -138,21 +138,8 @@ namespace BusBuddy.Core.Utilities
             // Expand any ${ENV_VAR} placeholders
             var expanded = ExpandEnvironmentPlaceholders(raw);
 
-            // If placeholders remain unresolved (common when AZURE_* env vars are not set),
-            // fall back to a reliable LocalDB connection for local/dev usage.
-            if (!string.IsNullOrWhiteSpace(expanded) && expanded.Contains("${"))
-            {
-                try
-                {
-                    Logger?.Warning("Connection string contains unresolved placeholders. Falling back to LocalDB for reliability.");
-                }
-                catch { /* logging is best-effort here */ }
-
-                var localDbFallback = configuration.GetConnectionString("LocalConnection")
-                    ?? "Data Source=(localdb)\\MSSQLLocalDB;Initial Catalog=BusBuddy;Integrated Security=True;MultipleActiveResultSets=True";
-                return localDbFallback;
-            }
-
+            // Preserve unresolved placeholders so callers/tests can detect and decide how to handle them.
+            // This matches test expectations that ${AZURE_SQL_USER} remains when env var not set.
             return expanded;
         }
 

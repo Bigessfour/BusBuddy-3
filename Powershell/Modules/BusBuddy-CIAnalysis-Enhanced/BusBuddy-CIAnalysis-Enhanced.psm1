@@ -1,22 +1,22 @@
 #requires -Version 7.5
 <#
 .SYNOPSIS
-    Enhanced BusBuddy CI/CD Analysis Module - Real AI-Powered Failure Analysis
+Enhanced BusBuddy CI/CD Analysis Module - Real AI-Powered Failure Analysis
 
 .DESCRIPTION
-    Leverages xAI Grok-4 API for intelligent CI/CD pipeline failure analysis.
-    Integrates with GitHub Actions, provides structured insights, and includes async batch processing.
+Leverages xAI Grok-4 API for intelligent CI/CD pipeline failure analysis.
+Integrates with GitHub Actions, provides structured insights, and includes async batch processing.
 
 .NOTES
-    Author: BusBuddy Development Team
-    Version: 2.0.0
-    PowerShell: 7.5.2+
-    Dependencies: BusBuddy-GrokAssistant module, GitHub CLI (optional)
+Author: BusBuddy Development Team
+Version: 2.0.0
+PowerShell: 7.5.2+
+Dependencies: BusBuddy-GrokAssistant module, GitHub CLI (optional)
 
 .EXAMPLE
-    Import-Module BusBuddy-CIAnalysis-Enhanced
-    Invoke-EnhancedCIAnalysis -FetchGitHubLogs
-    Start-BatchCIAnalysis -Async
+Import-Module BusBuddy-CIAnalysis-Enhanced
+Invoke-EnhancedCIAnalysis -FetchGitHubLogs
+Start-BatchCIAnalysis -Async
 #>
 
 # Module metadata
@@ -158,6 +158,22 @@ function Invoke-EnhancedCIAnalysis {
     }
 }
 
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER WorkflowName
+${3:Parameter description}
+
+.EXAMPLE
+${4:An example}
+
+.NOTES
+${5:General notes}
+#>
 function Get-GitHubActionsData {
     [CmdletBinding()]
     param(
@@ -195,12 +211,12 @@ function Get-GitHubActionsData {
                 $logOutput = gh run view $_.databaseId --log-failed 2>$null
                 if ($logOutput) {
                     $analysisData += @"
-GitHub Actions Failure - $($_.workflowName):
-Title: $($_.displayTitle)
-SHA: $($_.headSha)
-Created: $($_.createdAt)
-Logs:
-$logOutput
+                    GitHub Actions Failure - $($_.workflowName):
+                    Title: $($_.displayTitle)
+                    SHA: $($_.headSha)
+                    Created: $($_.createdAt)
+                    Logs:
+                    $logOutput
 "@
                 }
             } catch {
@@ -289,6 +305,25 @@ function Get-LocalBuildArtifact {
     return if ($artifacts.Count -gt 0) { $artifacts -join "`n`n" } else { $null }
 }
 
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER Data
+${3:Parameter description}
+
+.PARAMETER Context
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
 function Invoke-SynchronousCIAnalysis {
     [CmdletBinding()]
     param(
@@ -325,6 +360,25 @@ function Invoke-SynchronousCIAnalysis {
     }
 }
 
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER Data
+${3:Parameter description}
+
+.PARAMETER Context
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
 function Invoke-EnhancedPatternAnalysis {
     [CmdletBinding()]
     param(
@@ -397,6 +451,22 @@ function Invoke-EnhancedPatternAnalysis {
     }
 }
 
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER Analysis
+${3:Parameter description}
+
+.EXAMPLE
+${4:An example}
+
+.NOTES
+${5:General notes}
+#>
 function Show-EnhancedResult {
     [CmdletBinding()]
     param(
@@ -488,6 +558,25 @@ function Show-EnhancedResult {
     Write-Information "=============================" -InformationAction Continue
 }
 
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER Data
+${3:Parameter description}
+
+.PARAMETER Context
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
 function Start-AsyncCIAnalysis {
     [CmdletBinding(SupportsShouldProcess)]
     param(
@@ -536,6 +625,19 @@ function Start-AsyncCIAnalysis {
     }
 }
 
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.EXAMPLE
+${3:An example}
+
+.NOTES
+${4:General notes}
+#>
 function Show-AnalysisHelp {
     [CmdletBinding()]
     param()

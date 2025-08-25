@@ -1,0 +1,40 @@
+{
+  "servers": {
+    "azure-mcp": {
+      "command": "npx",
+      "args": ["-y", "@azure/mcp-server-azure"],
+      "env": {
+        "AZURE_CLIENT_ID": "860af3d3-df7a-4c76-915a-a6f980bd86ed",
+        "AZURE_TENANT_ID": "3ee44d11-b5ae-43a0-9c02-004b04858d9e",
+        "AZURE_SUBSCRIPTION_ID": "57b297a5-44cf-4abc-9ac4-91a5ed147de1"
+      }
+    },
+    "github-mcp": {
+      "command": "npx",
+      "args": ["-y", "@github/mcp-server"],
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "",
+        "GITHUB_API_URL": "https://api.github.com"
+      }
+    },
+    "filesystem": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-filesystem",
+        "c:\\Users\\biges\\Desktop\\BusBuddy"
+      ]
+    },
+    "brave-search": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-brave-search"],
+      "env": {
+        "BRAVE_API_KEY": "${BRAVE_API_KEY}"
+      }
+    },
+    "microsoft-doc": {
+      "command": "npx",
+      "args": ["-y", "@microsoft/mcp-server-docs"]
+    }
+  }
+}

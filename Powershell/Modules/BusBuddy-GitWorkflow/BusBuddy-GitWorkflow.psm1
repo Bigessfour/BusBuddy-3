@@ -1,19 +1,19 @@
-﻿#Requires -Version 7.5
+#Requires -Version 7.5
 
 <#
 .SYNOPSIS
-    BusBuddy Git Workflow Module - Microsoft PowerShell Standards Compliant
+BusBuddy Git Workflow Module - Microsoft PowerShell Standards Compliant
 .DESCRIPTION
-    Provides Microsoft-compliant Git workflow functions with automated fetchability index integration.
-    Ensures Grok-4 always has up-to-date repository structure information before commits.
+Provides Microsoft-compliant Git workflow functions with automated fetchability index integration.
+Ensures Grok-4 always has up-to-date repository structure information before commits.
 .NOTES
-    File Name      : BusBuddy-GitWorkflow.psm1
-    Prerequisite   : PowerShell 7.5+, Git installed
-    Author         : BusBuddy Development Team
-    Version        : 1.0.0
-    Reference      : https://learn.microsoft.com/en-us/powershell/scripting/developer/module/writing-a-windows-powershell-module
+File Name      : BusBuddy-GitWorkflow.psm1
+Prerequisite   : PowerShell 7.5+, Git installed
+Author         : BusBuddy Development Team
+Version        : 1.0.0
+Reference      : https://learn.microsoft.com/en-us/powershell/scripting/developer/module/writing-a-windows-powershell-module
 .LINK
-    https://github.com/Bigessfour/BusBuddy-3
+https://github.com/Bigessfour/BusBuddy-3
 #>
 
 # Module metadata
@@ -27,20 +27,20 @@ $script:FetchabilityIndex = Join-Path $script:WorkspaceRoot "FETCHABILITY-INDEX.
 
 <#
 .SYNOPSIS
-    Updates the fetchability index before Git operations.
+Updates the fetchability index before Git operations.
 .DESCRIPTION
-    Regenerates FETCHABILITY-INDEX.json to ensure Grok-4 has current repository structure.
-    Uses Microsoft PowerShell error handling patterns and structured output.
+Regenerates FETCHABILITY-INDEX.json to ensure Grok-4 has current repository structure.
+Uses Microsoft PowerShell error handling patterns and structured output.
 .PARAMETER Validate
-    Run with validation to check file integrity.
+Run with validation to check file integrity.
 .EXAMPLE
-    Update-BusBuddyFetchabilityIndex
-    Updates the fetchability index with default settings.
+Update-BusBuddyFetchabilityIndex
+Updates the fetchability index with default settings.
 .EXAMPLE
-    Update-BusBuddyFetchabilityIndex -Validate
-    Updates and validates the fetchability index.
+Update-BusBuddyFetchabilityIndex -Validate
+Updates and validates the fetchability index.
 .NOTES
-    Microsoft Reference: https://learn.microsoft.com/en-us/powershell/scripting/learn/deep-dives/everything-about-exceptions
+Microsoft Reference: https://learn.microsoft.com/en-us/powershell/scripting/learn/deep-dives/everything-about-exceptions
 #>
 function Update-BusBuddyFetchabilityIndex {
     [CmdletBinding(SupportsShouldProcess)]
@@ -119,24 +119,24 @@ function Update-BusBuddyFetchabilityIndex {
 
 <#
 .SYNOPSIS
-    Commits changes with automated fetchability index update.
+Commits changes with automated fetchability index update.
 .DESCRIPTION
-    Performs a Git commit with automatic fetchability index regeneration to ensure
-    Grok-4 has current repository information. Follows Microsoft PowerShell standards.
+Performs a Git commit with automatic fetchability index regeneration to ensure
+Grok-4 has current repository information. Follows Microsoft PowerShell standards.
 .PARAMETER Message
-    The commit message (required).
+The commit message (required).
 .PARAMETER IncludeUntracked
-    Include untracked files in the commit (git add .).
+Include untracked files in the commit (git add .).
 .PARAMETER SkipFetchabilityUpdate
-    Skip the fetchability index update (not recommended).
+Skip the fetchability index update (not recommended).
 .EXAMPLE
-    Invoke-BusBuddyCommit -Message "feat: add new student management features"
-    Commits with fetchability index update.
+Invoke-BusBuddyCommit -Message "feat: add new student management features"
+Commits with fetchability index update.
 .EXAMPLE
-    Invoke-BusBuddyCommit -Message "fix: resolve validation errors" -IncludeUntracked
-    Commits all files including untracked ones.
+Invoke-BusBuddyCommit -Message "fix: resolve validation errors" -IncludeUntracked
+Commits all files including untracked ones.
 .NOTES
-    Microsoft Reference: https://learn.microsoft.com/en-us/powershell/scripting/developer/cmdlet/cmdlet-development-guidelines
+Microsoft Reference: https://learn.microsoft.com/en-us/powershell/scripting/developer/cmdlet/cmdlet-development-guidelines
 #>
 function Invoke-BusBuddyCommit {
     [CmdletBinding(SupportsShouldProcess)]
@@ -248,24 +248,24 @@ function Invoke-BusBuddyCommit {
 
 <#
 .SYNOPSIS
-    Pushes commits to remote repository with pre-push validation.
+Pushes commits to remote repository with pre-push validation.
 .DESCRIPTION
-    Pushes commits to the remote repository with optional pre-push checks.
-    Ensures fetchability index is current for Grok-4 analysis.
+Pushes commits to the remote repository with optional pre-push checks.
+Ensures fetchability index is current for Grok-4 analysis.
 .PARAMETER RemoteName
-    The remote name (default: origin).
+The remote name (default: origin).
 .PARAMETER BranchName
-    The branch name (default: current branch).
+The branch name (default: current branch).
 .PARAMETER Force
-    Force push (use with caution).
+Force push (use with caution).
 .EXAMPLE
-    Invoke-BusBuddyPush
-    Pushes current branch to origin.
+Invoke-BusBuddyPush
+Pushes current branch to origin.
 .EXAMPLE
-    Invoke-BusBuddyPush -RemoteName upstream -BranchName feature/new-functionality
-    Pushes specific branch to upstream remote.
+Invoke-BusBuddyPush -RemoteName upstream -BranchName feature/new-functionality
+Pushes specific branch to upstream remote.
 .NOTES
-    Microsoft Reference: https://learn.microsoft.com/en-us/powershell/scripting/developer/cmdlet/cmdlet-development-guidelines
+Microsoft Reference: https://learn.microsoft.com/en-us/powershell/scripting/developer/cmdlet/cmdlet-development-guidelines
 #>
 function Invoke-BusBuddyPush {
     [CmdletBinding(SupportsShouldProcess)]
@@ -374,28 +374,28 @@ function Invoke-BusBuddyPush {
 
 <#
 .SYNOPSIS
-    Complete Git workflow: commit and push with fetchability index integration.
+Complete Git workflow: commit and push with fetchability index integration.
 .DESCRIPTION
-    Combines commit and push operations with automated fetchability index updates
-    to ensure Grok-4 has the most current repository information.
+Combines commit and push operations with automated fetchability index updates
+to ensure Grok-4 has the most current repository information.
 .PARAMETER Message
-    The commit message (required).
+The commit message (required).
 .PARAMETER RemoteName
-    The remote name (default: origin).
+The remote name (default: origin).
 .PARAMETER BranchName
-    The branch name (default: current branch).
+The branch name (default: current branch).
 .PARAMETER IncludeUntracked
-    Include untracked files in the commit.
+Include untracked files in the commit.
 .PARAMETER SkipPush
-    Only commit, don't push to remote.
+Only commit, don't push to remote.
 .EXAMPLE
-    Invoke-BusBuddyCommitAndPush -Message "feat: implement route optimization algorithm"
-    Complete workflow with fetchability index update.
+Invoke-BusBuddyCommitAndPush -Message "feat: implement route optimization algorithm"
+Complete workflow with fetchability index update.
 .EXAMPLE
-    Invoke-BusBuddyCommitAndPush -Message "fix: resolve database connection issues" -IncludeUntracked -SkipPush
-    Commit with untracked files but don't push.
+Invoke-BusBuddyCommitAndPush -Message "fix: resolve database connection issues" -IncludeUntracked -SkipPush
+Commit with untracked files but don't push.
 .NOTES
-    This is the primary function for BusBuddy Git workflows with Grok-4 integration.
+This is the primary function for BusBuddy Git workflows with Grok-4 integration.
 #>
 function Invoke-BusBuddyCommitAndPush {
     [CmdletBinding(SupportsShouldProcess)]
@@ -473,23 +473,23 @@ function Invoke-BusBuddyCommitAndPush {
 
 <#
 .SYNOPSIS
-    Performs comprehensive security scan to prevent accidental exposure of secrets.
+Performs comprehensive security scan to prevent accidental exposure of secrets.
 .DESCRIPTION
-    Scans the repository for potential security issues including hardcoded API keys,
-    exposed secrets, and unsafe patterns before Git operations. Uses Microsoft
-    PowerShell security best practices.
+Scans the repository for potential security issues including hardcoded API keys,
+exposed secrets, and unsafe patterns before Git operations. Uses Microsoft
+PowerShell security best practices.
 .PARAMETER Path
-    Root path to scan. Defaults to workspace root.
+Root path to scan. Defaults to workspace root.
 .PARAMETER IncludeGitHistory
-    Include Git history scan for previously committed secrets.
+Include Git history scan for previously committed secrets.
 .EXAMPLE
-    Invoke-BusBuddySecurityScan
-    Performs security scan on the current workspace.
+Invoke-BusBuddySecurityScan
+Performs security scan on the current workspace.
 .EXAMPLE
-    Invoke-BusBuddySecurityScan -IncludeGitHistory
-    Performs security scan including Git history check.
+Invoke-BusBuddySecurityScan -IncludeGitHistory
+Performs security scan including Git history check.
 .NOTES
-    Microsoft Reference: https://learn.microsoft.com/en-us/powershell/scripting/learn/deep-dives/everything-about-exceptions
+Microsoft Reference: https://learn.microsoft.com/en-us/powershell/scripting/learn/deep-dives/everything-about-exceptions
 #>
 function Invoke-BusBuddySecurityScan {
     [CmdletBinding()]
@@ -659,19 +659,19 @@ function Invoke-BusBuddySecurityScan {
 
 <#
 .SYNOPSIS
-    Enhanced commit function with mandatory security scanning.
+Enhanced commit function with mandatory security scanning.
 .DESCRIPTION
-    Extends the basic commit functionality with automatic security scanning
-    to prevent accidental exposure of secrets in Git commits.
+Extends the basic commit functionality with automatic security scanning
+to prevent accidental exposure of secrets in Git commits.
 .PARAMETER Message
-    Commit message following conventional commit standards.
+Commit message following conventional commit standards.
 .PARAMETER SkipSecurityScan
-    Skip security scan (NOT RECOMMENDED - use only for emergency fixes).
+Skip security scan (NOT RECOMMENDED - use only for emergency fixes).
 .EXAMPLE
-    Invoke-BusBuddySecureCommit -Message "feat: add new feature"
-    Commits with security scan verification.
+Invoke-BusBuddySecureCommit -Message "feat: add new feature"
+Commits with security scan verification.
 .NOTES
-    This function performs security scanning before allowing commits.
+This function performs security scanning before allowing commits.
 #>
 function Invoke-BusBuddySecureCommit {
     [CmdletBinding(SupportsShouldProcess)]

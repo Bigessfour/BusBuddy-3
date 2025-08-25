@@ -16,10 +16,26 @@ Write-Information ("=" * 80) -InformationAction Continue
 Write-Information "bb-anti-regression: Completed checks" -InformationAction Continue
 Write-Information ("=" * 80) -InformationAction Continue
 
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER RootPath
+${3:Parameter description}
+
+.EXAMPLE
+${4:An example}
+
+.NOTES
+${5:General notes}
+#>
 function Test-SyncfusionCompliance {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$false)]
+        [Parameter(Mandatory = $false)]
         [string]$RootPath = '.'
     )
 
@@ -30,10 +46,10 @@ function Test-SyncfusionCompliance {
 
     # Map legacy control names to their current Sf equivalents (extend as needed)
     $legacyMap = @{
-        'ButtonAdv'    = 'SfButton'
-        'DataGrid'     = 'SfDataGrid'
-        'GridControl'  = 'SfDataGrid'
-        'ComboBoxAdv'  = 'SfComboBox'
+        'ButtonAdv' = 'SfButton'
+        'DataGrid' = 'SfDataGrid'
+        'GridControl' = 'SfDataGrid'
+        'ComboBoxAdv' = 'SfComboBox'
         'DatePickerAdv' = 'SfDatePicker'
     }
 

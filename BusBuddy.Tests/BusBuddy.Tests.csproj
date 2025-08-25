@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net9.0-windows;net8.0-windows</TargetFrameworks>
+    <TargetFramework>net9.0-windows</TargetFramework>
   <UseWPF>true</UseWPF>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
@@ -64,8 +64,8 @@
 
   <ItemGroup>
     <!-- Match TargetFramework to avoid cross-TFM reference errors -->
-    <ProjectReference Include="..\BusBuddy.Core\BusBuddy.Core.csproj" Condition=" '$(TargetFramework)' == 'net9.0-windows' or '$(TargetFramework)' == 'net8.0-windows' " />
-    <ProjectReference Include="..\BusBuddy.WPF\BusBuddy.WPF.csproj" Condition=" '$(TargetFramework)' == 'net9.0-windows' or '$(TargetFramework)' == 'net8.0-windows' " />
+    <ProjectReference Include="..\BusBuddy.Core\BusBuddy.Core.csproj" />
+    <ProjectReference Include="..\BusBuddy.WPF\BusBuddy.WPF.csproj" />
   </ItemGroup>
 
   <ItemGroup>

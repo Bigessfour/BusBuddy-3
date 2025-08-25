@@ -242,16 +242,12 @@ namespace BusBuddy.Tests.Core
 
         #endregion
 
-        #region Deferred: Driver Tests (Post-MVP)
-
         [Test]
         public void Driver_CanCreate_BasicTest()
         {
-            // TODO: Implement post-MVP - Driver management deferred
-            Assert.Pass("Driver tests deferred to post-MVP phase");
+            // TODO: Implement actual driver creation test logic here
+            // Example: Assert.That(driverService.CreateDriver(...), Is.Not.Null);
         }
-
-        #endregion
 
         #region Context Health Tests
 

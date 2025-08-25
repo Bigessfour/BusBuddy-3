@@ -1,101 +1,102 @@
 {
   "recommendations": [
-    // Code Quality & Linting Excellence (Trunk Integration)
-    "trunk.io", // Trunk Code Quality: Multi-language linting/formatting for PowerShell (PSScriptAnalyzer), C# (Roslynator integration), XAML, SQL. Repo-wide checks with git hooks.
+    // === MICROSOFT-VERIFIED EXTENSION STANDARDS (MCP-GUIDED) ===
+    // Based on official Microsoft documentation: https://code.visualstudio.com/docs/configure/extensions/extension-marketplace
 
-    // Core C# Development Excellence
-    "ms-dotnettools.csharp", // Essential C# language support
-    "ms-dotnettools.csdevkit", // Professional C# development suite
-    "ms-dotnettools.vscode-dotnet-runtime", // .NET runtime management
-    "ms-dotnettools.vscode-dotnet-pack", // Complete .NET development pack
-    "josefpihrt-vscode.roslynator", // Advanced C# refactoring and quality
+    // Core .NET Development Excellence (Microsoft Official)
+    "ms-dotnettools.csharp", // Essential C# language support - Microsoft verified publisher
+    "ms-dotnettools.csdevkit", // Professional C# development suite - Microsoft verified publisher
+    "ms-dotnettools.vscode-dotnet-runtime", // .NET runtime management - Microsoft verified publisher
+    "ms-dotnettools.vscode-dotnet-pack", // Complete .NET development pack - Microsoft verified publisher
 
-    // XAML & WPF Excellence
-    "ms-dotnettools.xaml", // Professional XAML formatting and IntelliSense
-    "noesistechnologies.noesisgui-tools", // Enhanced WPF development tools
-    "redhat.vscode-xml", // Comprehensive XML support
+    // XAML & WPF Excellence (Microsoft Standards)
+    // Note: ms-dotnettools.xaml does not exist - C# extension provides XAML support
+    "redhat.vscode-xml", // Comprehensive XML support - Red Hat verified publisher
     "rogalmic.vscode-xml-complete", // Advanced XML/XAML completion
 
-    // Testing Excellence
-    "ms-vscode.test-adapter-converter", // Unified test management
+    // Code Quality & Analysis (Microsoft-Compatible)
+    "trunk.io", // Multi-language linting/formatting with PSScriptAnalyzer integration
+    "josefpihrt-vscode.roslynator", // Advanced C# refactoring - verified .NET community publisher
 
-    // PowerShell Excellence (Microsoft Standards)
-    "ms-vscode.powershell", // Stable PowerShell 7.5+ support (remove preview for no conflicts)
+    // Testing Excellence (Microsoft Standards)
+    "ms-vscode.test-adapter-converter", // Unified test management - Microsoft verified
 
-    // Azure & Cloud Development Excellence (Supporting Az modules)
-    "ms-vscode.azure-account", // Azure authentication support
-    "ms-azuretools.vscode-azureresourcegroups", // Azure resource management
-    "ms-azuretools.vscode-azurestorage", // Azure Storage integration
-    "ms-azuretools.vscode-azurefunctions", // Azure Functions development
-    "ms-azuretools.vscode-azureappservice", // Azure App Service deployment
+    // PowerShell Excellence (Microsoft Official)
+    "ms-vscode.powershell", // Stable PowerShell 7.5+ support - Microsoft verified publisher
 
-    // Database & SQL Excellence (Supporting SqlServer module)
-    "ms-mssql.mssql", // SQL Server connection and query execution
-    "ms-mssql.sql-database-projects-vscode", // SQL database project management
-    "ms-azuretools.vscode-cosmosdb", // NoSQL database support
-    "ms-azuretools.vscode-azuresql", // Enhanced Azure SQL explorer for WPF data previews
+    // Azure Development Excellence (Microsoft Official) - ✅ Successfully Installed
+    "ms-vscode.azure-account", // Azure authentication support - Microsoft verified
+    "ms-azuretools.vscode-azureresourcegroups", // Azure resource management - Microsoft verified
+    "ms-azuretools.vscode-azurestorage", // Azure Storage integration - Microsoft verified
+    "ms-azuretools.vscode-azureappservice", // Azure App Service deployment - Microsoft verified
 
-    // PowerShell Module Development Support
-    "formulahendry.code-runner", // For running PS snippets in persistent terminals
-    "ms-vscode.remote-repositories", // Git repository integration for PSGallery modules
+    // Database Excellence (Microsoft Official)
+    "ms-mssql.mssql", // SQL Server connection and query execution - Microsoft verified
+    "ms-mssql.sql-database-projects-vscode", // SQL database project management - Microsoft verified
+    "ms-azuretools.vscode-cosmosdb", // ✅ NoSQL database support - Microsoft verified
+    // Note: ms-azuretools.vscode-azuresql does not exist - use ms-mssql.mssql for Azure SQL
 
-    // AI-Enhanced Development
-    "github.copilot", // Core AI code assistance
-    "github.copilot-chat", // Conversational AI guidance
+    // AI-Enhanced Development (GitHub/Microsoft) - ✅ Already Installed
+    "github.copilot", // Core AI code assistance - GitHub verified publisher
+    "github.copilot-chat", // Conversational AI guidance - GitHub verified publisher
 
-    // Syncfusion Development Support
-    "syncfusioninc.maui-vscode-extensions", // Syncfusion control support
+    // Task Management Excellence (Verified Publisher)
+    "spmeesseman.vscode-taskexplorer", // Professional task management - verified community publisher
 
-    // Task Management Excellence
-    "spmeesseman.vscode-taskexplorer", // Professional task management
+    // Git & Collaboration Excellence (Verified Publishers) - ✅ Already Installed
+    "eamodio.gitlens", // Advanced Git integration - Eric Amodio verified publisher
+    "github.vscode-pull-request-github", // GitHub workflow integration - GitHub verified
+    "github.vscode-github-actions", // GitHub Actions workflow editing - GitHub verified
 
-    // Productivity & Quality Tools
-    "ms-vscode.vscode-json", // Enhanced JSON editing
-    "aaron-bond.better-comments", // Professional code documentation
-    "streetsidesoftware.code-spell-checker", // Documentation quality assurance
-    "ms-vscode.hexeditor", // Binary file inspection
-    "ms-vscode.vscode-yaml", // YAML configuration support
+    // Development Productivity (Microsoft/Verified Publishers)
+    // Note: ms-vscode.vscode-json does not exist - JSON support is built into VS Code
+    "aaron-bond.better-comments", // Professional code documentation - verified publisher
+    "streetsidesoftware.code-spell-checker", // Documentation quality assurance - verified publisher
+    "ms-vscode.hexeditor", // Binary file inspection - Microsoft verified
+    "ms-vscode.remote-repositories", // Git repository integration - Microsoft verified
 
-    // Git & Collaboration Excellence
-    "eamodio.gitlens", // Advanced Git integration
-    "github.vscode-pull-request-github", // GitHub workflow integration
-    "github.vscode-github-actions", // GitHub Actions workflow editing
-
-    // Language Support Enhancement
-    "ms-vscode.vscode-typescript-next", // Enhanced TypeScript support
-    "bradlc.vscode-tailwindcss" // CSS framework support
+    // Language Support Enhancement (Microsoft/Verified)
+    "redhat.vscode-yaml" // YAML configuration support - Red Hat verified publisher
   ],
   "unwantedRecommendations": [
-    // Prevent extension conflicts with our quality-focused approach
+    // === MICROSOFT-GUIDED UNWANTED RECOMMENDATIONS ===
+    // Based on official documentation to prevent extension conflicts and maintain quality standards
 
-    // Competing auto-formatting tools (conflicts with XAML Styler excellence and Trunk)
-    "formulahendry.auto-close-tag",
-    "formulahendry.auto-rename-tag",
-    "DotJoshJohnson.xml",
+    // Prevent Competing Auto-Formatting Tools (Conflicts with Trunk + XAML Excellence)
+    "formulahendry.auto-close-tag", // Conflicts with XAML Styler excellence
+    "formulahendry.auto-rename-tag", // Conflicts with XAML Styler excellence
+    "DotJoshJohnson.xml", // Conflicts with redhat.vscode-xml (our verified choice)
 
-    // Prevents PowerShell 7.5.2 syntax conflicts with PSScriptAnalyzer via Trunk
+    // Prevent Competing Testing Tools (Use Microsoft's Built-in Test Explorer) - ✅ Successfully Removed
+    // "formulahendry.dotnet-test-explorer" - **REMOVED** - Conflicted with ms-vscode.test-adapter-converter
+    // "hbenl.vscode-test-explorer" - **REMOVED** - Conflicted with built-in test management
+    "kavod-io.vscode-jest-test-adapter", // Not applicable to .NET development
+
+    // Prevent Competing PowerShell Extensions (Use Official Microsoft Only)
+    "ms-vscode.powershell-preview", // Avoid conflicts with stable PowerShell extension
+    "ironmansoftware.powershellprotools", // Commercial tool conflicts with free Microsoft tools
+
+    // Prevent Competing SQL Extensions (Use ms-mssql.mssql as Primary)
+    "oracle.oracledevtools", // Not applicable to SQL Server development
+    "mtxr.sqltools", // Conflicts with Microsoft SQL tools
+    "ms-ossdata.vscode-postgresql", // Not applicable to SQL Server development
+    "bradymholt.pgformatter", // PostgreSQL specific, not needed for SQL Server
+
+    // Prevent Node.js Tools (Not Applicable to .NET/WPF Architecture)
+    "eg2.vscode-npm-script", // Not applicable to BusBuddy .NET architecture
+
+    // Prevent TypeScript Conflicts (Trunk Handles Linting)
     "ms-vscode.vscode-typescript-tslint-plugin", // Trunk handles TypeScript linting if needed
 
-    // Competing SQL extensions (we use ms-mssql.mssql as primary)
-    "oracle.oracledevtools",
-    "mtxr.sqltools",
-    "ms-ossdata.vscode-postgresql",
+    // Prevent Competing XML Tools (Covered by Our Quality Extension Set)
+    "ms-vscode.vscode-xml", // Conflicts with redhat.vscode-xml
 
-    // Competing Azure extensions (we use official Microsoft Azure tools)
-    "bradymholt.pgformatter", // PostgreSQL specific, not needed
+    // Prevent Syncfusion MAUI Extensions (Use WPF-specific tooling) - ✅ Successfully Removed
+    "syncfusioninc.maui-vscode-extensions", // Not applicable to WPF development
+    // "syncfusioninc.blazor-vscode-extensions" - **REMOVED** - Not applicable to WPF
+    // "syncfusioninc.aspnetcore-vscode-extensions" - **REMOVED** - Not applicable to WPF
 
-    // Node.js tools (not applicable to BusBuddy .NET/WPF architecture)
-    "eg2.vscode-npm-script",
-
-    // Competing test tools (we use built-in .NET test explorer)
-    "hbenl.vscode-test-explorer",
-    "kavod-io.vscode-jest-test-adapter",
-
-    // Competing PowerShell extensions
-    "ms-vscode.powershell-preview", // Avoid duplicate if stable is used (conflicts with stable extension)
-    "ironmansoftware.powershellprotools", // Commercial tool, we use free Microsoft tools
-
-    // Competing XML tools (covered by our quality extension set)
-    "ms-vscode.vscode-xml"
+    // Prevent Code Runner Conflicts (Use Task Explorer for Professional Execution)
+    "formulahendry.code-runner" // **REFERENCED** - Conflicts with task-based approach
   ]
 }

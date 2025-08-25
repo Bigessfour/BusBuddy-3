@@ -282,7 +282,7 @@ function Test-SecureApiKey {
 
     .EXAMPLE
     if (Test-SecureApiKey) { "API key is ready" }
-    #>
+        #>
     [CmdletBinding()]
     [OutputType([bool])]
     param()
@@ -308,36 +308,42 @@ function Test-SecureApiKey {
 # Legacy compatibility functions - redirect to global security layer
 function Set-AutomatedSecretStoreConfig {
     <#
-    .SYNOPSIS
-    Legacy compatibility function - redirects to global vault automation
+        .SYNOPSIS
+        Legacy compatibility function - redirects to global vault automation
 
-    .DESCRIPTION
-    This function provides backward compatibility by redirecting to the global
-    vault automation configuration.
+        .DESCRIPTION
+        This function provides backward compatibility by redirecting to the global
+        vault automation configuration.
 
-    .EXAMPLE
-    Set-AutomatedSecretStoreConfig
-    #>
-    [CmdletBinding()]
+        .EXAMPLE
+        Set-AutomatedSecretStoreConfig
+        #>
+    [CmdletBinding(SupportsShouldProcess)]
     [OutputType([System.Boolean])]
     param()
 
-    Write-Information "Redirecting to global vault automation configuration..." -InformationAction Continue
-    return Set-GlobalVaultAutomation
+    if ($PSCmdlet.ShouldProcess("Automated Secret Store Config", "Set configuration")) {
+        Write-Information "Redirecting to global vault automation configuration..." -InformationAction Continue
+        return Set-GlobalVaultAutomation
+    }
+    else {
+        Write-Information "❌ Configuration operation cancelled by user" -InformationAction Continue
+        return $false
+    }
 }
 
 function Unlock-AutomatedSecretStore {
     <#
-    .SYNOPSIS
-    Legacy compatibility function - redirects to global vault unlock
+        .SYNOPSIS
+        Legacy compatibility function - redirects to global vault unlock
 
-    .DESCRIPTION
-    This function provides backward compatibility by redirecting to the global
-    vault unlock functionality.
+        .DESCRIPTION
+        This function provides backward compatibility by redirecting to the global
+        vault unlock functionality.
 
-    .EXAMPLE
-    Unlock-AutomatedSecretStore
-    #>
+        .EXAMPLE
+        Unlock-AutomatedSecretStore
+        #>
     [CmdletBinding()]
     [OutputType([System.Boolean])]
     param()
@@ -348,28 +354,28 @@ function Unlock-AutomatedSecretStore {
 
 function Test-GrokApiConnection {
     <#
-    .SYNOPSIS
-    Tests Grok-4-0709 API connection using Global Security Layer
+        .SYNOPSIS
+        Tests Grok-4-0709 API connection using Global Security Layer
 
-    .DESCRIPTION
-    This function tests the Grok-4-0709 API connection using the global security
-    vault for enhanced security and cross-project compatibility.
+        .DESCRIPTION
+        This function tests the Grok-4-0709 API connection using the global security
+        vault for enhanced security and cross-project compatibility.
 
-    .PARAMETER TestMessage
-    Optional test message to send to Grok-4-0709. Defaults to a simple test prompt.
+        .PARAMETER TestMessage
+        Optional test message to send to Grok-4-0709. Defaults to a simple test prompt.
 
-    .PARAMETER TimeoutSeconds
-    Connection timeout in seconds. Defaults to 30 seconds.
+        .PARAMETER TimeoutSeconds
+        Connection timeout in seconds. Defaults to 30 seconds.
 
-    .OUTPUTS
-    PSCustomObject with test results including success status, response, and timing
+        .OUTPUTS
+        PSCustomObject with test results including success status, response, and timing
 
-    .EXAMPLE
-    Test-GrokApiConnection
+        .EXAMPLE
+        Test-GrokApiConnection
 
-    .EXAMPLE
-    Test-GrokApiConnection -TestMessage "Hello Grok, please respond with a brief greeting"
-    #>
+        .EXAMPLE
+        Test-GrokApiConnection -TestMessage "Hello Grok, please respond with a brief greeting"
+        #>
     [CmdletBinding()]
     [OutputType([PSCustomObject])]
     param(

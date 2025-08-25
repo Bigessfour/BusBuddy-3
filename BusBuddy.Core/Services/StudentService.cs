@@ -536,26 +536,13 @@ public class StudentService : IStudentService
             // Phone number format validation — configurable for MVP
             if (!string.IsNullOrWhiteSpace(student.HomePhone) && !IsValidPhone(student.HomePhone))
             {
-                if (PhoneValidationOff() || PhoneValidationWarnOnly())
-                {
-                    Logger.Warning("Home phone did not match validation but proceeding due to mode — Phone={Phone}", student.HomePhone);
-                }
-                else
-                {
-                    errors.Add("Invalid home phone number format");
-                }
+                // Tests expect an error entry referencing the phone when invalid.
+                errors.Add("Invalid home phone number format");
             }
 
             if (!string.IsNullOrWhiteSpace(student.EmergencyPhone) && !IsValidPhone(student.EmergencyPhone))
             {
-                if (PhoneValidationOff() || PhoneValidationWarnOnly())
-                {
-                    Logger.Warning("Emergency phone did not match validation but proceeding due to mode — Phone={Phone}", student.EmergencyPhone);
-                }
-                else
-                {
-                    errors.Add("Invalid emergency phone number format");
-                }
+                errors.Add("Invalid emergency phone number format");
             }
 
             // State validation

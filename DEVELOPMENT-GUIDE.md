@@ -1,6 +1,6 @@
 # 🛠️ BusBuddy Development Guide
 
-**Comprehensive guide for BusBuddy development practices, patterns, and workflows**
+Comprehensive guide for BusBuddy development practices, patterns, and workflows
 
 ## 🎯 **Development Philosophy**
 
@@ -400,6 +400,7 @@ Log.Logger = new LoggerConfiguration()
 BusBuddy integrates with xAI Grok-4 for route optimization and intelligent analysis:
 
 #### **API Key Setup**
+
 ```powershell
 # Set machine environment variable (required for development)
 $env:XAI_API_KEY = "your-xai-api-key-here"
@@ -412,11 +413,12 @@ Write-Information "API Key Length: $($apiKey.Length)"  # Should be 84
 ```
 
 #### **Model Configuration**
+
 ```powershell
 # Current production settings (August 2025)
 $GrokConfig = @{
     DefaultModel = "grok-4-0709"       # Exact model ID required
-    BaseUrl = "https://api.x.ai/v1"    # xAI API endpoint  
+    BaseUrl = "https://api.x.ai/v1"    # xAI API endpoint
     MaxTokens = 4000                   # Response token limit
     Temperature = 0.3                  # Balanced creativity/consistency
     TimeoutSeconds = 60                # Request timeout
@@ -424,6 +426,7 @@ $GrokConfig = @{
 ```
 
 #### **Testing AI Integration**
+
 ```powershell
 # Test API connectivity
 Test-GrokConnection -Verbose
@@ -432,11 +435,12 @@ Test-GrokConnection -Verbose
 # Test route analysis
 grok-route-analysis -RouteData $routeData -OptimizationGoal "minimize-time"
 
-# Test maintenance predictions  
+# Test maintenance predictions
 grok-maintenance-forecast -VehicleData $vehicleData -PredictionWindow "30-days"
 ```
 
 #### **Troubleshooting AI Issues**
+
 ```powershell
 # Diagnostic check for common issues
 $apiKey = Get-ApiKeySecurely

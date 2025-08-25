@@ -37,6 +37,18 @@ namespace BusBuddy.Core.Data
         /// </summary>
         public BusBuddyDbContext CreateDbContext()
         {
+            // Test override: when running tests we may force an EF InMemory provider to avoid
+            // provider-specific DDL (SQLite/SQL Server) during unit tests. Set
+            // BUSBUDDY_USE_INMEMORY=1 in test harness to enable.
+            var testInMemory = Environment.GetEnvironmentVariable("BUSBUDDY_USE_INMEMORY");
+            if (!string.IsNullOrEmpty(testInMemory) && testInMemory == "1")
+            {
+                var optionsBuilder = new DbContextOptionsBuilder<BusBuddyDbContext>();
+                optionsBuilder.UseInMemoryDatabase("BusBuddy_InMemory_Test");
+                var ctx = new BusBuddyDbContext(optionsBuilder.Options);
+                ctx.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
+                return ctx;
+            }
             // Highest precedence: environment override
             var envOverride = Environment.GetEnvironmentVariable("BUSBUDDY_CONNECTION");
             if (!string.IsNullOrWhiteSpace(envOverride))

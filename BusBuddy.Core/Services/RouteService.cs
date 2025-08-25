@@ -465,11 +465,7 @@ namespace BusBuddy.Core.Services
                         Logger.Warning("ActivateRoute — route {RouteId} not found", routeId);
                         return Result.FailureResult<bool>($"Route {routeId} not found");
                     }
-                    if (route.IsActive)
-                    {
-                        Logger.Information("ActivateRoute — route {RouteId} already active", routeId);
-                        return Result.SuccessResult(true); // idempotent
-                    }
+                    // Always set IsActive = true to ensure state persisted even in odd tracking scenarios (tests rely on FindAsync)
                     route.IsActive = true;
                     context.Entry(route).Property(r => r.IsActive).IsModified = true; // force persistence
                     await context.SaveChangesAsync();

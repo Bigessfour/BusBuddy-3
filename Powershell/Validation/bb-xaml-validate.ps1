@@ -83,6 +83,1029 @@ $script:RequiredProperties = @{
 #endregion
 
 #region Utility Functions
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER File
+${3:Parameter description}
+
+.PARAMETER Violation
+${4:Parameter description}
+
+.PARAMETER Line
+${5:Parameter description}
+
+.PARAMETER Severity
+${6:Parameter description}
+
+.PARAMETER Fix
+${7:Parameter description}
+
+.PARAMETER Control
+${8:Parameter description}
+
+.EXAMPLE
+${9:An example}
+
+.NOTES
+${10:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER File
+${3:Parameter description}
+
+.PARAMETER Violation
+${4:Parameter description}
+
+.PARAMETER Line
+${5:Parameter description}
+
+.PARAMETER Severity
+${6:Parameter description}
+
+.PARAMETER Fix
+${7:Parameter description}
+
+.PARAMETER Control
+${8:Parameter description}
+
+.EXAMPLE
+${9:An example}
+
+.NOTES
+${10:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER File
+${3:Parameter description}
+
+.PARAMETER Violation
+${4:Parameter description}
+
+.PARAMETER Line
+${5:Parameter description}
+
+.PARAMETER Severity
+${6:Parameter description}
+
+.PARAMETER Fix
+${7:Parameter description}
+
+.PARAMETER Control
+${8:Parameter description}
+
+.EXAMPLE
+${9:An example}
+
+.NOTES
+${10:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER File
+${3:Parameter description}
+
+.PARAMETER Violation
+${4:Parameter description}
+
+.PARAMETER Line
+${5:Parameter description}
+
+.PARAMETER Severity
+${6:Parameter description}
+
+.PARAMETER Fix
+${7:Parameter description}
+
+.PARAMETER Control
+${8:Parameter description}
+
+.EXAMPLE
+${9:An example}
+
+.NOTES
+${10:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER File
+${3:Parameter description}
+
+.PARAMETER Violation
+${4:Parameter description}
+
+.PARAMETER Line
+${5:Parameter description}
+
+.PARAMETER Severity
+${6:Parameter description}
+
+.PARAMETER Fix
+${7:Parameter description}
+
+.PARAMETER Control
+${8:Parameter description}
+
+.EXAMPLE
+${9:An example}
+
+.NOTES
+${10:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER File
+${3:Parameter description}
+
+.PARAMETER Violation
+${4:Parameter description}
+
+.PARAMETER Line
+${5:Parameter description}
+
+.PARAMETER Severity
+${6:Parameter description}
+
+.PARAMETER Fix
+${7:Parameter description}
+
+.PARAMETER Control
+${8:Parameter description}
+
+.EXAMPLE
+${9:An example}
+
+.NOTES
+${10:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER File
+${3:Parameter description}
+
+.PARAMETER Violation
+${4:Parameter description}
+
+.PARAMETER Line
+${5:Parameter description}
+
+.PARAMETER Severity
+${6:Parameter description}
+
+.PARAMETER Fix
+${7:Parameter description}
+
+.PARAMETER Control
+${8:Parameter description}
+
+.EXAMPLE
+${9:An example}
+
+.NOTES
+${10:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER File
+${3:Parameter description}
+
+.PARAMETER Violation
+${4:Parameter description}
+
+.PARAMETER Line
+${5:Parameter description}
+
+.PARAMETER Severity
+${6:Parameter description}
+
+.PARAMETER Fix
+${7:Parameter description}
+
+.PARAMETER Control
+${8:Parameter description}
+
+.EXAMPLE
+${9:An example}
+
+.NOTES
+${10:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER File
+${3:Parameter description}
+
+.PARAMETER Violation
+${4:Parameter description}
+
+.PARAMETER Line
+${5:Parameter description}
+
+.PARAMETER Severity
+${6:Parameter description}
+
+.PARAMETER Fix
+${7:Parameter description}
+
+.PARAMETER Control
+${8:Parameter description}
+
+.EXAMPLE
+${9:An example}
+
+.NOTES
+${10:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER File
+${3:Parameter description}
+
+.PARAMETER Violation
+${4:Parameter description}
+
+.PARAMETER Line
+${5:Parameter description}
+
+.PARAMETER Severity
+${6:Parameter description}
+
+.PARAMETER Fix
+${7:Parameter description}
+
+.PARAMETER Control
+${8:Parameter description}
+
+.EXAMPLE
+${9:An example}
+
+.NOTES
+${10:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER File
+${3:Parameter description}
+
+.PARAMETER Violation
+${4:Parameter description}
+
+.PARAMETER Line
+${5:Parameter description}
+
+.PARAMETER Severity
+${6:Parameter description}
+
+.PARAMETER Fix
+${7:Parameter description}
+
+.PARAMETER Control
+${8:Parameter description}
+
+.EXAMPLE
+${9:An example}
+
+.NOTES
+${10:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER File
+${3:Parameter description}
+
+.PARAMETER Violation
+${4:Parameter description}
+
+.PARAMETER Line
+${5:Parameter description}
+
+.PARAMETER Severity
+${6:Parameter description}
+
+.PARAMETER Fix
+${7:Parameter description}
+
+.PARAMETER Control
+${8:Parameter description}
+
+.EXAMPLE
+${9:An example}
+
+.NOTES
+${10:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER File
+${3:Parameter description}
+
+.PARAMETER Violation
+${4:Parameter description}
+
+.PARAMETER Line
+${5:Parameter description}
+
+.PARAMETER Severity
+${6:Parameter description}
+
+.PARAMETER Fix
+${7:Parameter description}
+
+.PARAMETER Control
+${8:Parameter description}
+
+.EXAMPLE
+${9:An example}
+
+.NOTES
+${10:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER File
+${3:Parameter description}
+
+.PARAMETER Violation
+${4:Parameter description}
+
+.PARAMETER Line
+${5:Parameter description}
+
+.PARAMETER Severity
+${6:Parameter description}
+
+.PARAMETER Fix
+${7:Parameter description}
+
+.PARAMETER Control
+${8:Parameter description}
+
+.EXAMPLE
+${9:An example}
+
+.NOTES
+${10:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER File
+${3:Parameter description}
+
+.PARAMETER Violation
+${4:Parameter description}
+
+.PARAMETER Line
+${5:Parameter description}
+
+.PARAMETER Severity
+${6:Parameter description}
+
+.PARAMETER Fix
+${7:Parameter description}
+
+.PARAMETER Control
+${8:Parameter description}
+
+.EXAMPLE
+${9:An example}
+
+.NOTES
+${10:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER File
+${3:Parameter description}
+
+.PARAMETER Violation
+${4:Parameter description}
+
+.PARAMETER Line
+${5:Parameter description}
+
+.PARAMETER Severity
+${6:Parameter description}
+
+.PARAMETER Fix
+${7:Parameter description}
+
+.PARAMETER Control
+${8:Parameter description}
+
+.EXAMPLE
+${9:An example}
+
+.NOTES
+${10:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER File
+${3:Parameter description}
+
+.PARAMETER Violation
+${4:Parameter description}
+
+.PARAMETER Line
+${5:Parameter description}
+
+.PARAMETER Severity
+${6:Parameter description}
+
+.PARAMETER Fix
+${7:Parameter description}
+
+.PARAMETER Control
+${8:Parameter description}
+
+.EXAMPLE
+${9:An example}
+
+.NOTES
+${10:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER File
+${3:Parameter description}
+
+.PARAMETER Violation
+${4:Parameter description}
+
+.PARAMETER Line
+${5:Parameter description}
+
+.PARAMETER Severity
+${6:Parameter description}
+
+.PARAMETER Fix
+${7:Parameter description}
+
+.PARAMETER Control
+${8:Parameter description}
+
+.EXAMPLE
+${9:An example}
+
+.NOTES
+${10:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER File
+${3:Parameter description}
+
+.PARAMETER Violation
+${4:Parameter description}
+
+.PARAMETER Line
+${5:Parameter description}
+
+.PARAMETER Severity
+${6:Parameter description}
+
+.PARAMETER Fix
+${7:Parameter description}
+
+.PARAMETER Control
+${8:Parameter description}
+
+.EXAMPLE
+${9:An example}
+
+.NOTES
+${10:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER File
+${3:Parameter description}
+
+.PARAMETER Violation
+${4:Parameter description}
+
+.PARAMETER Line
+${5:Parameter description}
+
+.PARAMETER Severity
+${6:Parameter description}
+
+.PARAMETER Fix
+${7:Parameter description}
+
+.PARAMETER Control
+${8:Parameter description}
+
+.EXAMPLE
+${9:An example}
+
+.NOTES
+${10:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER File
+${3:Parameter description}
+
+.PARAMETER Violation
+${4:Parameter description}
+
+.PARAMETER Line
+${5:Parameter description}
+
+.PARAMETER Severity
+${6:Parameter description}
+
+.PARAMETER Fix
+${7:Parameter description}
+
+.PARAMETER Control
+${8:Parameter description}
+
+.EXAMPLE
+${9:An example}
+
+.NOTES
+${10:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER File
+${3:Parameter description}
+
+.PARAMETER Violation
+${4:Parameter description}
+
+.PARAMETER Line
+${5:Parameter description}
+
+.PARAMETER Severity
+${6:Parameter description}
+
+.PARAMETER Fix
+${7:Parameter description}
+
+.PARAMETER Control
+${8:Parameter description}
+
+.EXAMPLE
+${9:An example}
+
+.NOTES
+${10:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER File
+${3:Parameter description}
+
+.PARAMETER Violation
+${4:Parameter description}
+
+.PARAMETER Line
+${5:Parameter description}
+
+.PARAMETER Severity
+${6:Parameter description}
+
+.PARAMETER Fix
+${7:Parameter description}
+
+.PARAMETER Control
+${8:Parameter description}
+
+.EXAMPLE
+${9:An example}
+
+.NOTES
+${10:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER File
+${3:Parameter description}
+
+.PARAMETER Violation
+${4:Parameter description}
+
+.PARAMETER Line
+${5:Parameter description}
+
+.PARAMETER Severity
+${6:Parameter description}
+
+.PARAMETER Fix
+${7:Parameter description}
+
+.PARAMETER Control
+${8:Parameter description}
+
+.EXAMPLE
+${9:An example}
+
+.NOTES
+${10:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER File
+${3:Parameter description}
+
+.PARAMETER Violation
+${4:Parameter description}
+
+.PARAMETER Line
+${5:Parameter description}
+
+.PARAMETER Severity
+${6:Parameter description}
+
+.PARAMETER Fix
+${7:Parameter description}
+
+.PARAMETER Control
+${8:Parameter description}
+
+.EXAMPLE
+${9:An example}
+
+.NOTES
+${10:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER File
+${3:Parameter description}
+
+.PARAMETER Violation
+${4:Parameter description}
+
+.PARAMETER Line
+${5:Parameter description}
+
+.PARAMETER Severity
+${6:Parameter description}
+
+.PARAMETER Fix
+${7:Parameter description}
+
+.PARAMETER Control
+${8:Parameter description}
+
+.EXAMPLE
+${9:An example}
+
+.NOTES
+${10:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER File
+${3:Parameter description}
+
+.PARAMETER Violation
+${4:Parameter description}
+
+.PARAMETER Line
+${5:Parameter description}
+
+.PARAMETER Severity
+${6:Parameter description}
+
+.PARAMETER Fix
+${7:Parameter description}
+
+.PARAMETER Control
+${8:Parameter description}
+
+.EXAMPLE
+${9:An example}
+
+.NOTES
+${10:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER File
+${3:Parameter description}
+
+.PARAMETER Violation
+${4:Parameter description}
+
+.PARAMETER Line
+${5:Parameter description}
+
+.PARAMETER Severity
+${6:Parameter description}
+
+.PARAMETER Fix
+${7:Parameter description}
+
+.PARAMETER Control
+${8:Parameter description}
+
+.EXAMPLE
+${9:An example}
+
+.NOTES
+${10:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER File
+${3:Parameter description}
+
+.PARAMETER Violation
+${4:Parameter description}
+
+.PARAMETER Line
+${5:Parameter description}
+
+.PARAMETER Severity
+${6:Parameter description}
+
+.PARAMETER Fix
+${7:Parameter description}
+
+.PARAMETER Control
+${8:Parameter description}
+
+.EXAMPLE
+${9:An example}
+
+.NOTES
+${10:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER File
+${3:Parameter description}
+
+.PARAMETER Violation
+${4:Parameter description}
+
+.PARAMETER Line
+${5:Parameter description}
+
+.PARAMETER Severity
+${6:Parameter description}
+
+.PARAMETER Fix
+${7:Parameter description}
+
+.PARAMETER Control
+${8:Parameter description}
+
+.EXAMPLE
+${9:An example}
+
+.NOTES
+${10:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER File
+${3:Parameter description}
+
+.PARAMETER Violation
+${4:Parameter description}
+
+.PARAMETER Line
+${5:Parameter description}
+
+.PARAMETER Severity
+${6:Parameter description}
+
+.PARAMETER Fix
+${7:Parameter description}
+
+.PARAMETER Control
+${8:Parameter description}
+
+.EXAMPLE
+${9:An example}
+
+.NOTES
+${10:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER File
+${3:Parameter description}
+
+.PARAMETER Violation
+${4:Parameter description}
+
+.PARAMETER Line
+${5:Parameter description}
+
+.PARAMETER Severity
+${6:Parameter description}
+
+.PARAMETER Fix
+${7:Parameter description}
+
+.PARAMETER Control
+${8:Parameter description}
+
+.EXAMPLE
+${9:An example}
+
+.NOTES
+${10:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER File
+${3:Parameter description}
+
+.PARAMETER Violation
+${4:Parameter description}
+
+.PARAMETER Line
+${5:Parameter description}
+
+.PARAMETER Severity
+${6:Parameter description}
+
+.PARAMETER Fix
+${7:Parameter description}
+
+.PARAMETER Control
+${8:Parameter description}
+
+.EXAMPLE
+${9:An example}
+
+.NOTES
+${10:General notes}
+#>
 function Write-XAMLValidationResult {
     param(
         [string]$File,
@@ -126,6 +1149,22 @@ function Write-XAMLValidationResult {
     }
 }
 
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER Content
+${3:Parameter description}
+
+.EXAMPLE
+${4:An example}
+
+.NOTES
+${5:General notes}
+#>
 function Test-SyncfusionNamespace {
     param([string]$Content)
 
@@ -137,7 +1176,596 @@ function Test-SyncfusionNamespace {
 #endregion
 
 #region Standard Control Detection
-function Test-StandardControlViolations {
+<#
+        .SYNOPSIS
+        ${1:Short description}
+
+        .DESCRIPTION
+        ${2:Long description}
+
+        .PARAMETER FilePath
+        ${3:Parameter description}
+
+        .PARAMETER Content
+        ${4:Parameter description}
+
+        .EXAMPLE
+        ${5:An example}
+
+        .NOTES
+        ${6:General notes}
+        #>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.PARAMETER Content
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.PARAMETER Content
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.PARAMETER Content
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.PARAMETER Content
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.PARAMETER Content
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.PARAMETER Content
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.PARAMETER Content
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.PARAMETER Content
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.PARAMETER Content
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.PARAMETER Content
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.PARAMETER Content
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.PARAMETER Content
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.PARAMETER Content
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.PARAMETER Content
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.PARAMETER Content
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.PARAMETER Content
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.PARAMETER Content
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.PARAMETER Content
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.PARAMETER Content
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.PARAMETER Content
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.PARAMETER Content
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.PARAMETER Content
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.PARAMETER Content
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.PARAMETER Content
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.PARAMETER Content
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.PARAMETER Content
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.PARAMETER Content
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.PARAMETER Content
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.PARAMETER Content
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.PARAMETER Content
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
+function Test-StandardControlViolation {
     param(
         [string]$FilePath,
         [string]$Content
@@ -168,6 +1796,614 @@ function Test-StandardControlViolations {
 #endregion
 
 #region Syncfusion Control Validation
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.PARAMETER Content
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.PARAMETER Content
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.PARAMETER Content
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.PARAMETER Content
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.PARAMETER Content
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.PARAMETER Content
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.PARAMETER Content
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.PARAMETER Content
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.PARAMETER Content
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.PARAMETER Content
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.PARAMETER Content
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.PARAMETER Content
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.PARAMETER Content
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.PARAMETER Content
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.PARAMETER Content
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.PARAMETER Content
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.PARAMETER Content
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.PARAMETER Content
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.PARAMETER Content
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.PARAMETER Content
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.PARAMETER Content
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.PARAMETER Content
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.PARAMETER Content
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.PARAMETER Content
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.PARAMETER Content
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.PARAMETER Content
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.PARAMETER Content
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.PARAMETER Content
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.PARAMETER Content
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.PARAMETER Content
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.PARAMETER Content
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.PARAMETER Content
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
 function Test-SyncfusionControlCompliance {
     param(
         [string]$FilePath,
@@ -212,6 +2448,614 @@ function Test-SyncfusionControlCompliance {
 #endregion
 
 #region DataGrid Specific Validation
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.PARAMETER Content
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.PARAMETER Content
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.PARAMETER Content
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.PARAMETER Content
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.PARAMETER Content
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.PARAMETER Content
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.PARAMETER Content
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.PARAMETER Content
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.PARAMETER Content
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.PARAMETER Content
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.PARAMETER Content
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.PARAMETER Content
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.PARAMETER Content
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.PARAMETER Content
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.PARAMETER Content
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.PARAMETER Content
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.PARAMETER Content
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.PARAMETER Content
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.PARAMETER Content
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.PARAMETER Content
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.PARAMETER Content
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.PARAMETER Content
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.PARAMETER Content
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.PARAMETER Content
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.PARAMETER Content
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.PARAMETER Content
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.PARAMETER Content
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.PARAMETER Content
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.PARAMETER Content
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.PARAMETER Content
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.PARAMETER Content
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.PARAMETER Content
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
 function Test-DataGridRegression {
     param(
         [string]$FilePath,
@@ -266,6 +3110,614 @@ function Test-DataGridRegression {
 #endregion
 
 #region Namespace Validation
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.PARAMETER Content
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.PARAMETER Content
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.PARAMETER Content
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.PARAMETER Content
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.PARAMETER Content
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.PARAMETER Content
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.PARAMETER Content
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.PARAMETER Content
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.PARAMETER Content
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.PARAMETER Content
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.PARAMETER Content
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.PARAMETER Content
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.PARAMETER Content
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.PARAMETER Content
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.PARAMETER Content
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.PARAMETER Content
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.PARAMETER Content
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.PARAMETER Content
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.PARAMETER Content
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.PARAMETER Content
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.PARAMETER Content
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.PARAMETER Content
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.PARAMETER Content
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.PARAMETER Content
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.PARAMETER Content
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.PARAMETER Content
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.PARAMETER Content
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.PARAMETER Content
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.PARAMETER Content
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.PARAMETER Content
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.PARAMETER Content
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.PARAMETER Content
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
 function Test-NamespaceCompliance {
     param(
         [string]$FilePath,
@@ -293,6 +3745,518 @@ function Test-NamespaceCompliance {
 #endregion
 
 #region Auto-Fix Implementation
+<#
+        .SYNOPSIS
+        ${1:Short description}
+
+        .DESCRIPTION
+        ${2:Long description}
+
+        .PARAMETER FilePath
+        ${3:Parameter description}
+
+        .EXAMPLE
+        ${4:An example}
+
+        .NOTES
+        ${5:General notes}
+        #>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.EXAMPLE
+${4:An example}
+
+.NOTES
+${5:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.EXAMPLE
+${4:An example}
+
+.NOTES
+${5:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.EXAMPLE
+${4:An example}
+
+.NOTES
+${5:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.EXAMPLE
+${4:An example}
+
+.NOTES
+${5:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.EXAMPLE
+${4:An example}
+
+.NOTES
+${5:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.EXAMPLE
+${4:An example}
+
+.NOTES
+${5:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.EXAMPLE
+${4:An example}
+
+.NOTES
+${5:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.EXAMPLE
+${4:An example}
+
+.NOTES
+${5:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.EXAMPLE
+${4:An example}
+
+.NOTES
+${5:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.EXAMPLE
+${4:An example}
+
+.NOTES
+${5:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.EXAMPLE
+${4:An example}
+
+.NOTES
+${5:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.EXAMPLE
+${4:An example}
+
+.NOTES
+${5:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.EXAMPLE
+${4:An example}
+
+.NOTES
+${5:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.EXAMPLE
+${4:An example}
+
+.NOTES
+${5:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.EXAMPLE
+${4:An example}
+
+.NOTES
+${5:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.EXAMPLE
+${4:An example}
+
+.NOTES
+${5:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.EXAMPLE
+${4:An example}
+
+.NOTES
+${5:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.EXAMPLE
+${4:An example}
+
+.NOTES
+${5:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.EXAMPLE
+${4:An example}
+
+.NOTES
+${5:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.EXAMPLE
+${4:An example}
+
+.NOTES
+${5:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.EXAMPLE
+${4:An example}
+
+.NOTES
+${5:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.EXAMPLE
+${4:An example}
+
+.NOTES
+${5:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.EXAMPLE
+${4:An example}
+
+.NOTES
+${5:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.EXAMPLE
+${4:An example}
+
+.NOTES
+${5:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.EXAMPLE
+${4:An example}
+
+.NOTES
+${5:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.EXAMPLE
+${4:An example}
+
+.NOTES
+${5:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.EXAMPLE
+${4:An example}
+
+.NOTES
+${5:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.EXAMPLE
+${4:An example}
+
+.NOTES
+${5:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.EXAMPLE
+${4:An example}
+
+.NOTES
+${5:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.EXAMPLE
+${4:An example}
+
+.NOTES
+${5:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.EXAMPLE
+${4:An example}
+
+.NOTES
+${5:General notes}
+#>
 function Invoke-XAMLAutoFix {
     param([string]$FilePath)
 
@@ -313,7 +4277,7 @@ function Invoke-XAMLAutoFix {
         $syncfusionControl = $script:StandardToSyncfusion[$standardControl]
 
         if ($content -match "<$standardControl(?:\s|>|/>)") {
-            $content = $content -replace "<$standardControl\b", "<syncfusion:$syncfusionControl"
+            $content = $content -replace "<$standardControl\\b", "<syncfusion:$syncfusionControl"
             $content = $content -replace "</$standardControl>", "</syncfusion:$syncfusionControl>"
             $content = $content -replace "<$standardControl\.", "<syncfusion:$syncfusionControl."
 
@@ -338,6 +4302,422 @@ function Invoke-XAMLAutoFix {
 #endregion
 
 #region Main Validation Function
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.EXAMPLE
+${3:An example}
+
+.NOTES
+${4:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.EXAMPLE
+${3:An example}
+
+.NOTES
+${4:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.EXAMPLE
+${3:An example}
+
+.NOTES
+${4:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.EXAMPLE
+${3:An example}
+
+.NOTES
+${4:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.EXAMPLE
+${3:An example}
+
+.NOTES
+${4:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.EXAMPLE
+${3:An example}
+
+.NOTES
+${4:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.EXAMPLE
+${3:An example}
+
+.NOTES
+${4:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.EXAMPLE
+${3:An example}
+
+.NOTES
+${4:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.EXAMPLE
+${3:An example}
+
+.NOTES
+${4:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.EXAMPLE
+${3:An example}
+
+.NOTES
+${4:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.EXAMPLE
+${3:An example}
+
+.NOTES
+${4:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.EXAMPLE
+${3:An example}
+
+.NOTES
+${4:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.EXAMPLE
+${3:An example}
+
+.NOTES
+${4:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.EXAMPLE
+${3:An example}
+
+.NOTES
+${4:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.EXAMPLE
+${3:An example}
+
+.NOTES
+${4:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.EXAMPLE
+${3:An example}
+
+.NOTES
+${4:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.EXAMPLE
+${3:An example}
+
+.NOTES
+${4:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.EXAMPLE
+${3:An example}
+
+.NOTES
+${4:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.EXAMPLE
+${3:An example}
+
+.NOTES
+${4:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.EXAMPLE
+${3:An example}
+
+.NOTES
+${4:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.EXAMPLE
+${3:An example}
+
+.NOTES
+${4:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.EXAMPLE
+${3:An example}
+
+.NOTES
+${4:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.EXAMPLE
+${3:An example}
+
+.NOTES
+${4:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.EXAMPLE
+${3:An example}
+
+.NOTES
+${4:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.EXAMPLE
+${3:An example}
+
+.NOTES
+${4:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.EXAMPLE
+${3:An example}
+
+.NOTES
+${4:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.EXAMPLE
+${3:An example}
+
+.NOTES
+${4:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.EXAMPLE
+${3:An example}
+
+.NOTES
+${4:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.EXAMPLE
+${3:An example}
+
+.NOTES
+${4:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.EXAMPLE
+${3:An example}
+
+.NOTES
+${4:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.EXAMPLE
+${3:An example}
+
+.NOTES
+${4:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.EXAMPLE
+${3:An example}
+
+.NOTES
+${4:General notes}
+#>
 function Invoke-XAMLValidation {
     Write-Information "" -InformationAction Continue
     Write-Information "🚌 BusBuddy XAML Syncfusion-Only Validation" -InformationAction Continue

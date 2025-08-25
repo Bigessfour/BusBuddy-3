@@ -1,32 +1,32 @@
 #!/usr/bin/env pwsh
 <#
 .SYNOPSIS
-    Analyzes pull requests using Grok assistant for actionable insights and recommendations.
+Analyzes pull requests using Grok assistant for actionable insights and recommendations.
 
 .DESCRIPTION
-    This script provides comprehensive pull request analysis using the Grok assistant,
-    offering intelligent insights, code quality assessment, and actionable recommendations
-    for improving the BusBuddy project.
+This script provides comprehensive pull request analysis using the Grok assistant,
+offering intelligent insights, code quality assessment, and actionable recommendations
+for improving the BusBuddy project.
 
 .PARAMETER PullRequestNumber
-    The pull request number to analyze (optional - uses current PR if not specified)
+The pull request number to analyze (optional - uses current PR if not specified)
 
 .PARAMETER DetailLevel
-    Analysis detail level: Basic, Standard, or Comprehensive (default: Standard)
+Analysis detail level: Basic, Standard, or Comprehensive (default: Standard)
 
 .PARAMETER OutputFormat
-    Output format: Console, JSON, or Markdown (default: Console)
+Output format: Console, JSON, or Markdown (default: Console)
 
 .EXAMPLE
-    ./Analyze-PullRequest.ps1 -PullRequestNumber 123 -DetailLevel Comprehensive
+./Analyze-PullRequest.ps1 -PullRequestNumber 123 -DetailLevel Comprehensive
 
 .EXAMPLE
-    ./Analyze-PullRequest.ps1 -OutputFormat Markdown > pr-analysis.md
+./Analyze-PullRequest.ps1 -OutputFormat Markdown > pr-analysis.md
 
 .NOTES
-    Requires: GitHub CLI, Grok API access, BusBuddy-GrokAssistant module
-    Author: BusBuddy Development Team
-    Version: 1.0.0
+Requires: GitHub CLI, Grok API access, BusBuddy-GrokAssistant module
+Author: BusBuddy Development Team
+Version: 1.0.0
 #>
 
 [CmdletBinding()]
@@ -46,6 +46,22 @@ param(
 # Import required modules
 Import-Module "$PSScriptRoot\..\PowerShell\Modules\BusBuddy-GrokAssistant.psm1" -Force
 
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER PRNumber
+${3:Parameter description}
+
+.EXAMPLE
+${4:An example}
+
+.NOTES
+${5:General notes}
+#>
 function Get-PullRequestInfo {
     param([int]$PRNumber)
 
@@ -53,9 +69,9 @@ function Get-PullRequestInfo {
 
     try {
         if ($PRNumber) {
-            $prInfo = gh pr view $PRNumber --json title,body,author,createdAt,headRefName,baseRefName,files,commits
+            $prInfo = gh pr view $PRNumber --json title, body, author, createdAt, headRefName, baseRefName, files, commits
         } else {
-            $prInfo = gh pr view --json title,body,author,createdAt,headRefName,baseRefName,files,commits
+            $prInfo = gh pr view --json title, body, author, createdAt, headRefName, baseRefName, files, commits
         }
 
         if (-not $prInfo) {
@@ -70,7 +86,23 @@ function Get-PullRequestInfo {
     }
 }
 
-function Get-ChangedFiles {
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER PRInfo
+${3:Parameter description}
+
+.EXAMPLE
+${4:An example}
+
+.NOTES
+${5:General notes}
+#>
+function Get-ChangedFile {
     param([object]$PRInfo)
 
     Write-Information "📁 Analyzing changed files..." -InformationAction Continue
@@ -90,6 +122,28 @@ function Get-ChangedFiles {
     return $changedFiles
 }
 
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER PRInfo
+${3:Parameter description}
+
+.PARAMETER ChangedFiles
+${4:Parameter description}
+
+.PARAMETER DetailLevel
+${5:Parameter description}
+
+.EXAMPLE
+${6:An example}
+
+.NOTES
+${7:General notes}
+#>
 function Invoke-GrokPRAnalysis {
     param(
         [object]$PRInfo,
@@ -100,34 +154,34 @@ function Invoke-GrokPRAnalysis {
     Write-Information "🤖 Invoking Grok assistant for PR analysis..." -InformationAction Continue
 
     $analysisPrompt = @"
-Please analyze this pull request for the BusBuddy project and provide actionable insights:
+    Please analyze this pull request for the BusBuddy project and provide actionable insights:
 
-**Pull Request Details:**
-- Title: $($PRInfo.title)
-- Author: $($PRInfo.author.login)
-- Branch: $($PRInfo.headRefName) → $($PRInfo.baseRefName)
-- Created: $($PRInfo.createdAt)
+    **Pull Request Details:**
+    - Title: $($PRInfo.title)
+    - Author: $($PRInfo.author.login)
+    - Branch: $($PRInfo.headRefName) → $($PRInfo.baseRefName)
+    - Created: $($PRInfo.createdAt)
 
-**Description:**
-$($PRInfo.body)
+    **Description:**
+    $($PRInfo.body)
 
-**Changed Files ($($ChangedFiles.Count) files):**
-$($ChangedFiles | ForEach-Object { "- $($_.Path) (+$($_.Additions)/-$($_.Deletions))" } | Out-String)
+    **Changed Files ($($ChangedFiles.Count) files):**
+    $($ChangedFiles | ForEach-Object { "- $($_.Path) (+$($_.Additions)/-$($_.Deletions))" } | Out-String)
 
-**Analysis Level:** $DetailLevel
+    **Analysis Level:** $DetailLevel
 
-Please provide:
-1. **Code Quality Assessment** - Overall quality, potential issues, best practices
-2. **Security Analysis** - Security implications, vulnerabilities, recommendations
-3. **Performance Impact** - Performance considerations, optimizations
-4. **Architecture Review** - Architectural patterns, design decisions
-5. **Testing Coverage** - Test adequacy, missing test scenarios
-6. **Documentation Review** - Documentation quality, completeness
-7. **CI/CD Impact** - Pipeline considerations, deployment implications
-8. **Action Items** - Specific, prioritized recommendations for improvement
+    Please provide:
+    1. **Code Quality Assessment** - Overall quality, potential issues, best practices
+    2. **Security Analysis** - Security implications, vulnerabilities, recommendations
+    3. **Performance Impact** - Performance considerations, optimizations
+    4. **Architecture Review** - Architectural patterns, design decisions
+    5. **Testing Coverage** - Test adequacy, missing test scenarios
+    6. **Documentation Review** - Documentation quality, completeness
+    7. **CI/CD Impact** - Pipeline considerations, deployment implications
+    8. **Action Items** - Specific, prioritized recommendations for improvement
 
-Focus on actionable insights that will improve code quality, security, and maintainability.
-"@
+    Focus on actionable insights that will improve code quality, security, and maintainability.
+    "@
 
     try {
         $grokResponse = Invoke-GrokAssistant -Prompt $analysisPrompt -SystemMessage "You are an expert code reviewer specializing in .NET/WPF applications, CI/CD pipelines, and software architecture. Provide thorough, actionable analysis."
@@ -168,50 +222,50 @@ function Format-AnalysisOutput {
 
         'Markdown' {
             return @"
-# 📊 Pull Request Analysis Report
+            # 📊 Pull Request Analysis Report
 
-**Generated:** $timestamp
+            **Generated:** $timestamp
 
-## 🔍 Pull Request Overview
+            ## 🔍 Pull Request Overview
 
-- **Title:** $($PRInfo.title)
-- **Author:** $($PRInfo.author.login)
-- **Branch:** $($PRInfo.headRefName) → $($PRInfo.baseRefName)
-- **Created:** $($PRInfo.createdAt)
+            - **Title:** $($PRInfo.title)
+            - **Author:** $($PRInfo.author.login)
+            - **Branch:** $($PRInfo.headRefName) → $($PRInfo.baseRefName)
+            - **Created:** $($PRInfo.createdAt)
 
-## 📁 Changed Files ($($ChangedFiles.Count) files)
+            ## 📁 Changed Files ($($ChangedFiles.Count) files)
 
-$($ChangedFiles | ForEach-Object { "- **$($_.Path)** (+$($_.Additions)/-$($_.Deletions)) [$($_.Status)]" } | Out-String)
+            $($ChangedFiles | ForEach-Object { "- **$($_.Path)** (+$($_.Additions)/-$($_.Deletions)) [$($_.Status)]" } | Out-String)
 
-## 🤖 Grok Assistant Analysis
+            ## 🤖 Grok Assistant Analysis
 
-$GrokAnalysis
+            $GrokAnalysis
 
----
-*Analysis generated by BusBuddy Grok Assistant*
-"@
+            ---
+            *Analysis generated by BusBuddy Grok Assistant*
+            "@
         }
 
         default {
             return @"
-🚀 BusBuddy Pull Request Analysis
-================================
+            🚀 BusBuddy Pull Request Analysis
+            ================================
 
-📊 Pull Request: $($PRInfo.title)
-👤 Author: $($PRInfo.author.login)
-🌿 Branch: $($PRInfo.headRefName) → $($PRInfo.baseRefName)
-📅 Created: $($PRInfo.createdAt)
+            📊 Pull Request: $($PRInfo.title)
+            👤 Author: $($PRInfo.author.login)
+            🌿 Branch: $($PRInfo.headRefName) → $($PRInfo.baseRefName)
+            📅 Created: $($PRInfo.createdAt)
 
-📁 Changed Files: $($ChangedFiles.Count)
-$($ChangedFiles | ForEach-Object { "   • $($_.Path) (+$($_.Additions)/-$($_.Deletions))" } | Out-String)
+            📁 Changed Files: $($ChangedFiles.Count)
+            $($ChangedFiles | ForEach-Object { "   • $($_.Path) (+$($_.Additions)/-$($_.Deletions))" } | Out-String)
 
-🤖 Grok Assistant Analysis:
-$('-' * 50)
-$GrokAnalysis
-$('-' * 50)
+            🤖 Grok Assistant Analysis:
+            $('-' * 50)
+            $GrokAnalysis
+            $('-' * 50)
 
-✨ Analysis completed at $timestamp
-"@
+            ✨ Analysis completed at $timestamp
+            "@
         }
     }
 }

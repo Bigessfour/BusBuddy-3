@@ -19,6 +19,25 @@ if (Test-Path $ConfigPath) {
     . $ConfigPath
 }
 
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER Message
+${3:Parameter description}
+
+.PARAMETER Level
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
 function Write-GrokSQLLog {
     [CmdletBinding()]
     param(
@@ -42,8 +61,22 @@ function Write-GrokSQLLog {
     }
 }
 
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.EXAMPLE
+${3:An example}
+
+.NOTES
+${4:General notes}
+#>
 function Get-AzureSQLConnectionString {
     [CmdletBinding()]
+    [OutputType([string])]
     param()
 
     try {
@@ -60,7 +93,7 @@ function Get-AzureSQLConnectionString {
         $connectionString = "Server=tcp:$serverName,1433;Initial Catalog=$databaseName;User ID=$username;Password=$password;MultipleActiveResultSets=True;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;"
 
         Write-GrokSQLLog "Azure SQL connection string configured for database: $databaseName" -Level Verbose
-        return $connectionString
+        $connectionString
     }
     catch {
         Write-GrokSQLLog "Failed to get Azure SQL connection string: $($_.Exception.Message)" -Level Error
@@ -68,6 +101,19 @@ function Get-AzureSQLConnectionString {
     }
 }
 
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.EXAMPLE
+${3:An example}
+
+.NOTES
+${4:General notes}
+#>
 function Test-AzureSQLConnection {
     [CmdletBinding()]
     param()
@@ -104,6 +150,25 @@ function Test-AzureSQLConnection {
     }
 }
 
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER VehicleData
+${3:Parameter description}
+
+.PARAMETER CreatedBy
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
 function Invoke-GrokMaintenancePredictionWithSQL {
     [CmdletBinding()]
     param(
@@ -119,19 +184,19 @@ function Invoke-GrokMaintenancePredictionWithSQL {
 
         # Call Grok API for maintenance prediction
         $maintenancePrompt = @"
-Analyze the following bus maintenance data and predict upcoming maintenance needs:
+        Analyze the following bus maintenance data and predict upcoming maintenance needs:
 
-Vehicle Data: $($VehicleData | ConvertTo-Json -Depth 3)
+        Vehicle Data: $($VehicleData | ConvertTo-Json -Depth 3)
 
-Provide analysis in JSON format with:
-{
-    "summary": "Brief summary of findings",
-    "recommendations": "Specific maintenance recommendations",
-    "priority": "Critical/High/Medium/Low",
-    "predictedIssues": ["issue1", "issue2"],
-    "timeframe": "Estimated timeframe for maintenance",
-    "confidenceScore": 0.85
-}
+        Provide analysis in JSON format with:
+        {
+            "summary": "Brief summary of findings",
+            "recommendations": "Specific maintenance recommendations",
+            "priority": "Critical/High/Medium/Low",
+            "predictedIssues": ["issue1", "issue2"],
+            "timeframe": "Estimated timeframe for maintenance",
+            "confidenceScore": 0.85
+        }
 "@
 
         # Import Grok assistant if not already loaded
@@ -158,38 +223,38 @@ Provide analysis in JSON format with:
         $vehicleId = $VehicleData.VehicleId ?? $VehicleData.BusId ?? 1
 
         $insertQuery = @"
-INSERT INTO AIInsights (
-    InsightType, Priority, EntityReference, VehicleId, InsightDetails,
-    Summary, RecommendedActions, ConfidenceScore, Source, Status,
-    CreatedBy, CreatedDate, ExpiryDate, Tags
-) VALUES (
-    'Maintenance',
-    CASE
-        WHEN @ConfidenceScore >= 0.9 THEN 'Critical'
-        WHEN @ConfidenceScore >= 0.7 THEN 'High'
-        WHEN @ConfidenceScore >= 0.5 THEN 'Medium'
-        ELSE 'Low'
-    END,
-    'Vehicle_' + CAST(@VehicleId AS VARCHAR(10)),
-    @VehicleId,
-    @InsightDetails,
-    CASE
-        WHEN @InsightDetails LIKE '%"summary"%' THEN JSON_VALUE(@InsightDetails, '$.summary')
-        ELSE LEFT(@InsightDetails, 500)
-    END,
-    CASE
-        WHEN @InsightDetails LIKE '%"recommendations"%' THEN JSON_VALUE(@InsightDetails, '$.recommendations')
-        ELSE 'See analysis details for recommendations'
-    END,
-    @ConfidenceScore,
-    'Grok-4',
-    'New',
-    @CreatedBy,
-    GETUTCDATE(),
-    DATEADD(day, 30, GETUTCDATE()),
-    'maintenance,prediction,vehicle'
-)
-SELECT SCOPE_IDENTITY() as InsightId
+        INSERT INTO AIInsights (
+            InsightType, Priority, EntityReference, VehicleId, InsightDetails,
+            Summary, RecommendedActions, ConfidenceScore, Source, Status,
+            CreatedBy, CreatedDate, ExpiryDate, Tags
+        ) VALUES (
+            'Maintenance',
+            CASE
+            WHEN @ConfidenceScore >= 0.9 THEN 'Critical'
+            WHEN @ConfidenceScore >= 0.7 THEN 'High'
+            WHEN @ConfidenceScore >= 0.5 THEN 'Medium'
+            ELSE 'Low'
+            END,
+            'Vehicle_' + CAST(@VehicleId AS VARCHAR(10)),
+            @VehicleId,
+            @InsightDetails,
+            CASE
+            WHEN @InsightDetails LIKE '%"summary"%' THEN JSON_VALUE(@InsightDetails, '$.summary')
+            ELSE LEFT(@InsightDetails, 500)
+            END,
+            CASE
+            WHEN @InsightDetails LIKE '%"recommendations"%' THEN JSON_VALUE(@InsightDetails, '$.recommendations')
+            ELSE 'See analysis details for recommendations'
+            END,
+            @ConfidenceScore,
+            'Grok-4',
+            'New',
+            @CreatedBy,
+            GETUTCDATE(),
+            DATEADD(day, 30, GETUTCDATE()),
+            'maintenance,prediction,vehicle'
+        )
+        SELECT SCOPE_IDENTITY() as InsightId
 "@
 
         $parameters = @{
@@ -229,6 +294,28 @@ SELECT SCOPE_IDENTITY() as InsightId
     }
 }
 
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER RouteData
+${3:Parameter description}
+
+.PARAMETER EstimatedSavings
+${4:Parameter description}
+
+.PARAMETER CreatedBy
+${5:Parameter description}
+
+.EXAMPLE
+${6:An example}
+
+.NOTES
+${7:General notes}
+#>
 function Invoke-GrokRouteOptimizationWithSQL {
     [CmdletBinding()]
     param(
@@ -247,20 +334,20 @@ function Invoke-GrokRouteOptimizationWithSQL {
 
         # Call Grok API for route optimization
         $routePrompt = @"
-Analyze the following bus route data and suggest optimizations:
+        Analyze the following bus route data and suggest optimizations:
 
-Route Data: $($RouteData | ConvertTo-Json -Depth 3)
+        Route Data: $($RouteData | ConvertTo-Json -Depth 3)
 
-Provide analysis in JSON format with:
-{
-    "summary": "Brief summary of optimization opportunities",
-    "recommendations": "Specific route optimization recommendations",
-    "priority": "Critical/High/Medium/Low",
-    "estimatedSavings": 250.00,
-    "fuelSavings": "Estimated fuel cost savings",
-    "timeSavings": "Estimated time savings",
-    "confidenceScore": 0.85
-}
+        Provide analysis in JSON format with:
+        {
+            "summary": "Brief summary of optimization opportunities",
+            "recommendations": "Specific route optimization recommendations",
+            "priority": "Critical/High/Medium/Low",
+            "estimatedSavings": 250.00,
+            "fuelSavings": "Estimated fuel cost savings",
+            "timeSavings": "Estimated time savings",
+            "confidenceScore": 0.85
+        }
 "@
 
         # Import Grok assistant if not already loaded
@@ -292,39 +379,39 @@ Provide analysis in JSON format with:
         $routeId = $RouteData.RouteId ?? 1
 
         $insertQuery = @"
-INSERT INTO AIInsights (
-    InsightType, Priority, EntityReference, RouteId, InsightDetails,
-    Summary, RecommendedActions, ConfidenceScore, Source, Status,
-    CreatedBy, CreatedDate, EstimatedSavings, ExpiryDate, Tags
-) VALUES (
-    'Route',
-    CASE
-        WHEN @ConfidenceScore >= 0.9 THEN 'Critical'
-        WHEN @ConfidenceScore >= 0.7 THEN 'High'
-        WHEN @ConfidenceScore >= 0.5 THEN 'Medium'
-        ELSE 'Low'
-    END,
-    'Route_' + CAST(@RouteId AS VARCHAR(10)),
-    @RouteId,
-    @InsightDetails,
-    CASE
-        WHEN @InsightDetails LIKE '%"summary"%' THEN JSON_VALUE(@InsightDetails, '$.summary')
-        ELSE 'Route optimization analysis completed'
-    END,
-    CASE
-        WHEN @InsightDetails LIKE '%"recommendations"%' THEN JSON_VALUE(@InsightDetails, '$.recommendations')
-        ELSE 'See analysis details for recommendations'
-    END,
-    @ConfidenceScore,
-    'Grok-4',
-    'New',
-    @CreatedBy,
-    GETUTCDATE(),
-    @EstimatedSavings,
-    DATEADD(day, 14, GETUTCDATE()),
-    'route,optimization,efficiency'
-)
-SELECT SCOPE_IDENTITY() as InsightId
+        INSERT INTO AIInsights (
+            InsightType, Priority, EntityReference, RouteId, InsightDetails,
+            Summary, RecommendedActions, ConfidenceScore, Source, Status,
+            CreatedBy, CreatedDate, EstimatedSavings, ExpiryDate, Tags
+        ) VALUES (
+            'Route',
+            CASE
+            WHEN @ConfidenceScore >= 0.9 THEN 'Critical'
+            WHEN @ConfidenceScore >= 0.7 THEN 'High'
+            WHEN @ConfidenceScore >= 0.5 THEN 'Medium'
+            ELSE 'Low'
+            END,
+            'Route_' + CAST(@RouteId AS VARCHAR(10)),
+            @RouteId,
+            @InsightDetails,
+            CASE
+            WHEN @InsightDetails LIKE '%"summary"%' THEN JSON_VALUE(@InsightDetails, '$.summary')
+            ELSE 'Route optimization analysis completed'
+            END,
+            CASE
+            WHEN @InsightDetails LIKE '%"recommendations"%' THEN JSON_VALUE(@InsightDetails, '$.recommendations')
+            ELSE 'See analysis details for recommendations'
+            END,
+            @ConfidenceScore,
+            'Grok-4',
+            'New',
+            @CreatedBy,
+            GETUTCDATE(),
+            @EstimatedSavings,
+            DATEADD(day, 14, GETUTCDATE()),
+            'route,optimization,efficiency'
+        )
+        SELECT SCOPE_IDENTITY() as InsightId
 "@
 
         $parameters = @{
@@ -367,6 +454,25 @@ SELECT SCOPE_IDENTITY() as InsightId
     }
 }
 
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER XAMLContent
+${3:Parameter description}
+
+.PARAMETER CreatedBy
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
 function Invoke-GrokUIAnalysisWithSQL {
     [CmdletBinding()]
     param(
@@ -387,19 +493,19 @@ function Invoke-GrokUIAnalysisWithSQL {
         }
 
         $uiPrompt = @"
-Analyze this Syncfusion WPF XAML for performance optimizations:
+        Analyze this Syncfusion WPF XAML for performance optimizations:
 
-XAML Content: $sanitizedXAML
+        XAML Content: $sanitizedXAML
 
-Focus on Syncfusion-specific optimizations. Provide analysis in JSON format:
-{
-    "summary": "Brief summary of UI optimization opportunities",
-    "recommendations": "Specific Syncfusion control optimizations",
-    "priority": "Critical/High/Medium/Low",
-    "performanceImpact": "High/Medium/Low",
-    "syncfusionOptimizations": ["optimization1", "optimization2"],
-    "confidenceScore": 0.85
-}
+        Focus on Syncfusion-specific optimizations. Provide analysis in JSON format:
+        {
+            "summary": "Brief summary of UI optimization opportunities",
+            "recommendations": "Specific Syncfusion control optimizations",
+            "priority": "Critical/High/Medium/Low",
+            "performanceImpact": "High/Medium/Low",
+            "syncfusionOptimizations": ["optimization1", "optimization2"],
+            "confidenceScore": 0.85
+        }
 "@
 
         # Import Grok assistant if not already loaded
@@ -425,37 +531,37 @@ Focus on Syncfusion-specific optimizations. Provide analysis in JSON format:
         $connectionString = Get-AzureSQLConnectionString
 
         $insertQuery = @"
-INSERT INTO AIInsights (
-    InsightType, Priority, EntityReference, InsightDetails,
-    Summary, RecommendedActions, ConfidenceScore, Source, Status,
-    CreatedBy, CreatedDate, ExpiryDate, Tags
-) VALUES (
-    'UI',
-    CASE
-        WHEN @ConfidenceScore >= 0.9 THEN 'Critical'
-        WHEN @ConfidenceScore >= 0.7 THEN 'High'
-        WHEN @ConfidenceScore >= 0.5 THEN 'Medium'
-        ELSE 'Low'
-    END,
-    'Syncfusion_UI',
-    @InsightDetails,
-    CASE
-        WHEN @InsightDetails LIKE '%"summary"%' THEN JSON_VALUE(@InsightDetails, '$.summary')
-        ELSE 'UI optimization analysis completed'
-    END,
-    CASE
-        WHEN @InsightDetails LIKE '%"recommendations"%' THEN JSON_VALUE(@InsightDetails, '$.recommendations')
-        ELSE 'See analysis details for recommendations'
-    END,
-    @ConfidenceScore,
-    'Grok-4',
-    'New',
-    @CreatedBy,
-    GETUTCDATE(),
-    DATEADD(day, 7, GETUTCDATE()),
-    'ui,syncfusion,xaml,performance'
-)
-SELECT SCOPE_IDENTITY() as InsightId
+        INSERT INTO AIInsights (
+            InsightType, Priority, EntityReference, InsightDetails,
+            Summary, RecommendedActions, ConfidenceScore, Source, Status,
+            CreatedBy, CreatedDate, ExpiryDate, Tags
+        ) VALUES (
+            'UI',
+            CASE
+            WHEN @ConfidenceScore >= 0.9 THEN 'Critical'
+            WHEN @ConfidenceScore >= 0.7 THEN 'High'
+            WHEN @ConfidenceScore >= 0.5 THEN 'Medium'
+            ELSE 'Low'
+            END,
+            'Syncfusion_UI',
+            @InsightDetails,
+            CASE
+            WHEN @InsightDetails LIKE '%"summary"%' THEN JSON_VALUE(@InsightDetails, '$.summary')
+            ELSE 'UI optimization analysis completed'
+            END,
+            CASE
+            WHEN @InsightDetails LIKE '%"recommendations"%' THEN JSON_VALUE(@InsightDetails, '$.recommendations')
+            ELSE 'See analysis details for recommendations'
+            END,
+            @ConfidenceScore,
+            'Grok-4',
+            'New',
+            @CreatedBy,
+            GETUTCDATE(),
+            DATEADD(day, 7, GETUTCDATE()),
+            'ui,syncfusion,xaml,performance'
+        )
+        SELECT SCOPE_IDENTITY() as InsightId
 "@
 
         $parameters = @{
@@ -494,7 +600,26 @@ SELECT SCOPE_IDENTITY() as InsightId
     }
 }
 
-function Get-ActionableInsights {
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER MaxResults
+${3:Parameter description}
+
+.PARAMETER InsightType
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
+function Get-ActionableInsight {
     [CmdletBinding()]
     param(
         [Parameter()]
@@ -511,19 +636,19 @@ function Get-ActionableInsights {
         $connectionString = Get-AzureSQLConnectionString
 
         $query = @"
-SELECT TOP (@MaxResults)
-    InsightId, InsightType, Priority, EntityReference,
-    Summary, RecommendedActions, ConfidenceScore,
-    EstimatedSavings, CreatedDate, Source, Tags
-FROM AIInsights
-WHERE Status = 'New'
-    AND Priority IN ('Critical', 'High')
-    AND (ExpiryDate IS NULL OR ExpiryDate > GETUTCDATE())
-    AND (@InsightType = 'All' OR InsightType = @InsightType)
-ORDER BY
-    CASE Priority WHEN 'Critical' THEN 1 WHEN 'High' THEN 2 ELSE 3 END,
-    ConfidenceScore DESC,
-    CreatedDate DESC
+        SELECT TOP (@MaxResults)
+        InsightId, InsightType, Priority, EntityReference,
+        Summary, RecommendedActions, ConfidenceScore,
+        EstimatedSavings, CreatedDate, Source, Tags
+        FROM AIInsights
+        WHERE Status = 'New'
+        AND Priority IN ('Critical', 'High')
+        AND (ExpiryDate IS NULL OR ExpiryDate > GETUTCDATE())
+        AND (@InsightType = 'All' OR InsightType = @InsightType)
+        ORDER BY
+        CASE Priority WHEN 'Critical' THEN 1 WHEN 'High' THEN 2 ELSE 3 END,
+        ConfidenceScore DESC,
+        CreatedDate DESC
 "@
 
         $parameters = @{
@@ -557,8 +682,31 @@ ORDER BY
     }
 }
 
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER InsightId
+${3:Parameter description}
+
+.PARAMETER NewStatus
+${4:Parameter description}
+
+.PARAMETER UpdatedBy
+${5:Parameter description}
+
+.EXAMPLE
+${6:An example}
+
+.NOTES
+${7:General notes}
+#>
 function Update-InsightStatus {
-    [CmdletBinding()]
+    [CmdletBinding(SupportsShouldProcess)]
+    [OutputType([PSCustomObject])]
     param(
         [Parameter(Mandatory)]
         [int]$InsightId,
@@ -571,41 +719,62 @@ function Update-InsightStatus {
         [string]$UpdatedBy = $env:USERNAME
     )
 
-    try {
-        Write-GrokSQLLog "Updating insight $InsightId status to $NewStatus..." -Level Information
+    if ($PSCmdlet.ShouldProcess("Insight $InsightId", "Update status to $NewStatus")) {
+        try {
+            Write-GrokSQLLog "Updating insight $InsightId status to $NewStatus..." -Level Information
 
-        $connectionString = Get-AzureSQLConnectionString
+            $connectionString = Get-AzureSQLConnectionString
 
-        $query = @"
-UPDATE AIInsights
-SET Status = @NewStatus,
-    UpdatedBy = @UpdatedBy,
-    UpdatedDate = GETUTCDATE()
-WHERE InsightId = @InsightId
+            $query = @"
+        UPDATE AIInsights
+        SET Status = @NewStatus,
+        UpdatedBy = @UpdatedBy,
+        UpdatedDate = GETUTCDATE()
+        WHERE InsightId = @InsightId
 
-SELECT @@ROWCOUNT as RowsAffected
+        SELECT @@ROWCOUNT as RowsAffected
 "@
 
-        $parameters = @{
-            InsightId = $InsightId
-            NewStatus = $NewStatus
-            UpdatedBy = $UpdatedBy
-        }
+            $parameters = @{
+                InsightId = $InsightId
+                NewStatus = $NewStatus
+                UpdatedBy = $UpdatedBy
+            }
 
-        $result = Invoke-Sqlcmd -ConnectionString $connectionString -Query $query -Variable $parameters
+            $result = Invoke-Sqlcmd -ConnectionString $connectionString -Query $query -Variable $parameters
 
-        if ($result.RowsAffected -gt 0) {
-            Write-GrokSQLLog "✅ Insight $InsightId status updated to $NewStatus" -Level Information
-            return $true
+            if ($result.RowsAffected -gt 0) {
+                Write-GrokSQLLog "✅ Insight $InsightId status updated to $NewStatus" -Level Information
+                return [PSCustomObject]@{
+                    Success = $true
+                    InsightId = $InsightId
+                    NewStatus = $NewStatus
+                    Message = "Insight status updated"
+                }
+            }
+            else {
+                Write-GrokSQLLog "⚠️ Insight $InsightId not found" -Level Warning
+                return [PSCustomObject]@{
+                    Success = $false
+                    InsightId = $InsightId
+                    NewStatus = $NewStatus
+                    Message = "Insight not found"
+                }
+            }
         }
-        else {
-            Write-GrokSQLLog "⚠️ Insight $InsightId not found" -Level Warning
-            return $false
+        catch {
+            Write-GrokSQLLog "❌ Failed to update insight status: $($_.Exception.Message)" -Level Error
+            throw
         }
     }
-    catch {
-        Write-GrokSQLLog "❌ Failed to update insight status: $($_.Exception.Message)" -Level Error
-        throw
+    else {
+        Write-Information "❌ Update operation cancelled by user" -InformationAction Continue
+        return [PSCustomObject]@{
+            Success = $false
+            InsightId = $InsightId
+            NewStatus = $NewStatus
+            Message = "Update operation cancelled by user"
+        }
     }
 }
 

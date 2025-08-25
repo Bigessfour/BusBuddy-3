@@ -1,127 +1,22 @@
 {
-  "cSpell.words": [
-    "Annistyn",
-    "Anonymization",
-    "asmv",
-    "ASPNETCORE",
-    "Axton",
-    "BAANKCL",
-    "badv",
-    "bbtest",
-    "biges",
-    "Biodiesel",
-    "Blakelynn",
-    "Britaney",
-    "Brookshire",
-    "buildtransitive",
-    "Buren",
-    "busbuddy",
-    "Calzada",
-    "centralus",
-    "Chromeless",
-    "clrstack",
-    "compli",
-    "contentfiles",
-    "costmanagement",
-    "Cphone",
-    "Daniela",
-    "Dedup",
-    "dedupe",
-    "devcontainers",
-    "Econtact",
-    "ecxr",
-    "endlocal",
-    "Entra",
-    "ERRORLEVEL",
-    "Fant",
-    "Fetchability",
-    "finalizer",
-    "fluentdark",
-    "fluentlight",
-    "FQID",
-    "geocoder",
-    "geocodes",
-    "geospatial",
-    "GETDATE",
-    "GETUTCDATE",
-    "globalconfig",
-    "Grasmick",
-    "HGBH",
-    "Hphone",
-    "hyperthread",
-    "hyperthreaded",
-    "Hyperthreading",
-    "IXAI",
-    "Jparent",
-    "JXMN",
-    "Krystie",
-    "LASTEXITCODE",
-    "Licence",
-    "Lindo",
-    "localdb",
-    "LTRIM",
-    "lyrs",
-    "Mauch",
-    "mckitrick",
-    "Mgmt",
-    "mscorlib",
-    "MVVM",
-    "NOCOUNT",
-    "NOLOGO",
-    "nonquery",
-    "nums",
-    "nvarchar",
-    "omnisharp",
-    "openstreetmap",
-    "Parallelizable",
-    "Parmely",
-    "Pbgra",
-    "Prereqs",
-    "projitems",
-    "Prowers",
-    "pscustomobject",
-    "psscriptanalyzer",
-    "pwsh",
-    "rawindex",
-    "realworld",
-    "resx",
-    "retime",
-    "retiming",
-    "rname",
-    "RTRIM",
-    "runsettings",
-    "sarif",
-    "securitypredicate",
-    "SEEDLIC",
-    "SEEDVIN",
-    "Segoe",
-    "semgrep",
-    "Serilog",
-    "setlocal",
-    "Shapefile",
-    "shapefiles",
-    "Sqlcmd",
-    "SQLEXPRESS",
-    "Starlink",
-    "Sutphin",
-    "Swann",
-    "sympath",
-    "syncfusionnavigation",
-    "syncfusionshared",
-    "syncfusionskin",
-    "syncfusiontools",
-    "TCODE",
-    "testhost",
-    "Tixier",
-    "vsct",
-    "vsixmanifest",
-    "WCAG",
-    "Weiton",
-    "WHATIF",
-    "winget",
-    "Wintellect",
-    "xlsz"
-  ],
+  // Centralized cSpell configuration moved to root cspell.json for Trunk integration
+  "cSpell.configFile": "${workspaceFolder}/cspell.json",
+  "cSpell.enabled": true,
+  "cSpell.enabledFileTypes": {
+    "csharp": true,
+    "powershell": true,
+    "xml": true,
+    "xaml": true,
+    "sql": true,
+    "json": true,
+    "jsonc": true,
+    "yaml": true,
+    "markdown": true,
+    "plaintext": true
+  },
+  "cSpell.diagnosticLevel": "Information",
+  "cSpell.showStatus": true,
+  "cSpell.suggestionMenuType": "quickFix",
   "terminal.integrated.env.windows": {
     "PSModulePath": "${workspaceFolder}\\PowerShell\\Modules;${env:PSModulePath};${env:USERPROFILE}\\Documents\\PowerShell\\Modules",
     "BUSBUDDY_WORKSPACE": "${workspaceFolder}",
@@ -140,9 +35,21 @@
     "BUSBUDDY_ENTRA_ENABLED": "true",
     "BUSBUDDY_CI_MODE": "0",
     "POWERSHELL_TELEMETRY_OPTOUT": "1",
-    "POWERSHELL_DISTRIBUTION_CHANNEL": "VSCode"
+    "POWERSHELL_DISTRIBUTION_CHANNEL": "VSCode",
+    // Copilot model fallback and MCP integration
+    "COPILOT_MODEL_OVERRIDE": "gpt-5",
+    "COPILOT_FALLBACK_MODEL": "gpt-5-mini",
+    "MCP_DOCS_PORT": "5151",
+    "MCP_DOCS_ENABLED": "true",
+    "MCP_FILESYSTEM_PATH": "c:\\Users\\biges\\Desktop\\BusBuddy",
+    // Azure and GitHub integration (env only, no secrets)
+    "AZURE_CLIENT_ID": "860af3d3-df7a-4c76-915a-a6f980bd86ed",
+    "AZURE_TENANT_ID": "3ee44d11-b5ae-43a0-9c02-004b04858d9e",
+    "AZURE_SUBSCRIPTION_ID": "57b297a5-44cf-4abc-9ac4-91a5ed147de1",
+    "GITHUB_PERSONAL_ACCESS_TOKEN": "${env:GITHUB_PERSONAL_ACCESS_TOKEN}",
+    "GITHUB_API_URL": "https://api.github.com",
+    "BRAVE_API_KEY": "${env:BRAVE_API_KEY}"
   },
-  // === TRUNK CODE QUALITY INTEGRATION ===
   "trunk.enableLinting": true,
   "trunk.enableFormatting": true,
   "trunk.formatOnSave": true,
@@ -152,10 +59,18 @@
   "trunk.enableActions": true,
   "trunk.inlineDecorators": true,
   "trunk.inlineDecoratorsForAllExtensions": true,
-
-  // === EDITOR FORMATTING WITH TRUNK ===
-  "editor.formatOnSave": true,
+  "trunk": {
+    "enabled": true,
+    "autoRun": true,
+    "languages": ["csharp", "powershell", "xml", "sql"],
+    "linters": {
+      "PSScriptAnalyzer": true,
+      "Roslynator": true,
+      "XamlStyler": true
+    }
+  },
   "editor.defaultFormatter": "trunk.io",
+  "editor.snippets.codeLens": true,
   "[powershell]": {
     "editor.defaultFormatter": "ms-vscode.powershell",
     "editor.formatOnSave": true,
@@ -180,7 +95,6 @@
       "comments": false,
       "strings": true
     },
-    // File encoding settings for PowerShell 7.5.2 (per Microsoft docs)
     "files.encoding": "utf8bom",
     "files.autoGuessEncoding": true,
     "files.trimTrailingWhitespace": true,
@@ -190,12 +104,10 @@
   "[csharp]": {
     "editor.defaultFormatter": "trunk.io"
   },
-
-  // === C# AND .NET DEVELOPMENT ===
   "csharp.suppressDotnetRestoreNotification": true,
-  "dotnetAcquisitionExtension.existingDotnetPath": ["${env:DOTNET_VERSION}"], // Ties to profile's DOTNET_VERSION=9.0.303
-  "omnisharp.enableRoslynAnalyzers": true, // Integrates Roslynator for WPF C# refactoring
-  "omnisharp.enableEditorConfigSupport": true, // Use .editorconfig for style
+  "dotnetAcquisitionExtension.existingDotnetPath": ["${env:DOTNET_VERSION}"],
+  "omnisharp.enableRoslynAnalyzers": true,
+  "omnisharp.enableEditorConfigSupport": true,
   "dotnet.completion.showCompletionItemsFromUnimportedNamespaces": true,
   "dotnet.inlayHints.enableInlayHintsForParameters": true,
   "dotnet.inlayHints.enableInlayHintsForLiteralParameters": true,
@@ -205,19 +117,15 @@
   "dotnet.inlayHints.suppressInlayHintsForParametersThatDifferOnlyBySuffix": true,
   "dotnet.inlayHints.suppressInlayHintsForParametersThatMatchMethodIntent": true,
   "dotnet.inlayHints.suppressInlayHintsForParametersThatMatchArgumentName": true,
-
-  // === ROSLYNATOR C# QUALITY ===
   "roslynator.enableAnalyzersSupport": true,
   "roslynator.enableRefactoringsSupport": true,
   "roslynator.enableCodeFixesSupport": true,
   "roslynator.suppressUnityScriptMethods": false,
-
-  // === XAML DEVELOPMENT ===
   "[xaml]": {
     "editor.formatOnSave": true,
-    "editor.defaultFormatter": "trunk.io" // Use Trunk which includes XAML formatting
+    "editor.defaultFormatter": "trunk.io"
   },
-  "xml.format.enabled": true, // For redhat.vscode-xml
+  "xml.format.enabled": true,
   "xaml.completion.snippets": true,
   "xaml.format.enable": true,
   "xaml.format.keepFirstAttributeOnSameLine": false,
@@ -247,37 +155,25 @@
   "yaml.schemas": {
     "https://json.schemastore.org/github-workflow.json": ".github/workflows/*.yml"
   },
-  // === POWERSHELL DEVELOPMENT EXCELLENCE ===
-  // PowerShell Version Configuration (per Microsoft docs)
-  "powershell.powerShellDefaultVersion": "BusBuddy PowerShell 7.5.2", // Set to match terminal profile and powerShellAdditionalExePaths key
-  "powershell.enableProfileLoading": true, // Ensures profile loads in integrated console
-  "powershell.integratedConsole.suppressStartupBanner": false, // Show startup for validation
-
-  // PowerShell Additional Executable Paths (per Microsoft documentation)
+  "powershell.powerShellDefaultVersion": "BusBuddy PowerShell 7.5.2",
+  "powershell.enableProfileLoading": true,
+  "powershell.integratedConsole.suppressStartupBanner": false,
   "powershell.powerShellAdditionalExePaths": {
+    "BusBuddy PowerShell 7.5.2": "C:\\Program Files\\PowerShell\\7\\pwsh.exe",
     "PowerShell 7.5.2": "C:\\Program Files\\PowerShell\\7\\pwsh.exe",
-    "PowerShell 7.5.2 (Preview)": "C:\\Program Files\\PowerShell\\7-preview\\pwsh-preview.exe",
     "Windows PowerShell 5.1": "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe"
   },
-
-  // PowerShell Extension Settings (based on official docs)
   "powershell.integratedConsole.startInBackground": false,
   "powershell.integratedConsole.showOnStartup": true,
   "powershell.integratedConsole.focusConsoleOnExecute": true,
   "powershell.integratedConsole.useLegacyReadLine": false,
   "powershell.integratedConsole.forceClearScrollbackBuffer": false,
-
-  // Enhanced PowerShell Extension Integration for BusBuddy
   "powershell.integratedConsole.startupBanner": "🚌 BusBuddy PowerShell Environment",
   "powershell.integratedConsole.executeInCurrentScope": true,
   "powershell.enableAutomaticVariableCompletion": true,
   "powershell.enableBackgroundAnalysis": true,
-
-  // Debugging Configuration (per Microsoft docs)
   "powershell.debugging.createTemporaryIntegratedConsole": false,
   "powershell.debugging.confirmRunningScripts": true,
-
-  // Code Formatting (OTBS style per Microsoft recommendations)
   "powershell.codeFormatting.preset": "OTBS",
   "powershell.codeFormatting.openBraceOnSameLine": true,
   "powershell.codeFormatting.newLineAfterOpenBrace": true,
@@ -291,45 +187,40 @@
   "powershell.codeFormatting.alignPropertyValuePairs": true,
   "powershell.codeFormatting.useConstantStrings": false,
   "powershell.codeFormatting.useCorrectCasing": true,
-
-  // Script Analysis Configuration (PSScriptAnalyzer integration)
   "powershell.scriptAnalysis.enable": true,
   "powershell.scriptAnalysis.settingsPath": "./PSScriptAnalyzerSettings.psd1",
 
-  // IntelliSense and Language Features
+  // === STRICT PowerShell 7.5.2 Syntax & Indentation Settings ===
+  "powershell.parseErrors.enable": true,
+  "powershell.syntaxHighlighting.enable": true,
+  "powershell.bracketMatching.enable": true,
+  "powershell.indentationBasedFolding.enable": true,
+  "powershell.strictMode.enable": true,
+  "powershell.enableErrorMessages": true,
+  "powershell.enableWarningMessages": true,
+  "powershell.codeFormatting.avoidSemicolonsAsLineTerminators": true,
+
   "powershell.enablePipelineHints": true,
   "powershell.enableFoldingHints": true,
   "powershell.helpCompletion": "BlockComment",
   "powershell.enabledLogs": ["debug", "information", "warning", "error"],
-
-  // Developer Features
   "powershell.developer.featureFlags": [],
   "powershell.developer.bundledModulesPath": "",
   "powershell.developer.editorServicesLogLevel": "Information",
   "powershell.developer.editorServicesWaitForDebugger": false,
-
-  // PowerShell ISE Mode Compatibility
-  "powershell.enableISEMode": false, // Keep false for modern experience
-
-  // PowerShell Session Management
+  "powershell.enableISEMode": false,
   "powershell.promptToUpdatePowerShell": true,
   "powershell.codeLens.enable": true,
-
-  // Additional PowerShell 7.5.2 Configuration (per official docs)
   "powershell.buttons.showPanelMovementButtons": true,
   "powershell.buttons.showRunButtons": true,
   "powershell.codeFormatting.addWhitespaceAroundPipe": true,
   "powershell.codeFormatting.trimWhitespaceAroundPipe": true,
-  "powershell.codeFormatting.autoCorrectAliases": false, // Keep false for BusBuddy aliases
+  "powershell.codeFormatting.autoCorrectAliases": true,
   "powershell.startAutomatically": true,
   "powershell.enableReferencesCodeLens": true,
-  "powershell.analyzeOpenDocumentsOnly": false, // Analyze all workspace files
-
-  // Pester Integration (for testing PowerShell modules)
+  "powershell.analyzeOpenDocumentsOnly": false,
   "powershell.pester.useLegacyCodeLens": false,
   "powershell.pester.outputVerbosity": "Diagnostic",
-
-  // === SQL SERVER & AZURE SQL INTEGRATION ===
   "mssql.connections": [
     {
       "server": "(localdb)\\MSSQLLocalDB",
@@ -341,59 +232,41 @@
     {
       "server": "busbuddy-server-sm2.database.windows.net",
       "database": "BusBuddyDB",
-      "authenticationType": "AzureMFA" // Aligns with profile's Azure auth
+      "authenticationType": "AzureMFA"
+    },
+    {
+      "server": "${env:AZURE_SQL_SERVER}",
+      "database": "BusBuddyDB",
+      "authenticationType": "AzureMFA",
+      "profileName": "BusBuddy AzureDB (env)",
+      "password": ""
     }
   ],
-  "mssql.enableObjectExplorer": true, // For WPF data previews
+  "mssql.enableQueryHistory": true,
+  "mssql.enableObjectExplorer": true,
   "mssql.format.alignColumnDefinitionsInColumns": true,
   "mssql.format.datatypeCasing": "uppercase",
   "mssql.format.keywordCasing": "uppercase",
   "mssql.format.placeCommasBeforeNextStatement": false,
   "mssql.format.placeSelectStatementReferencesOnNewLine": true,
-
-  // === AZURE TOOLS INTEGRATION ===
   "azureResourceGroups.enableOutputTimestamps": true,
   "azureResourceGroups.showHiddenTypes": false,
   "azureFunctions.showCoreToolsWarning": false,
   "azureFunctions.requestTimeout": 120,
-  "azure.resourceFilter": ["busbuddy-server-sm2"], // Filter to your Azure SQL server
+  "azure.resourceFilter": ["busbuddy-server-sm2"],
   "azure.showSignedInEmail": true,
-  // === XML AND CONFIGURATION FILES ===
   "prettyxml.settings.enableLogs": true,
   "prettyxml.settings.formatOnSave": true,
-
-  // === VS CODE UI AND BEHAVIOR ===
   "window.density.editorTabHeight": "compact",
-
-  // === TERMINAL CONFIGURATION (STABLE POWERSHELL 7.5.2) ===
-  "terminal.integrated.enablePersistentSessions": true, // Enable for better persistence
-  "terminal.integrated.defaultProfile.windows": "BusBuddy PowerShell 7.5.2",
+  "terminal.integrated.enablePersistentSessions": true,
+  // Use standard PowerShell profile location (Microsoft-recommended approach)
+  "terminal.integrated.defaultProfile.windows": "PowerShell",
   "terminal.integrated.profiles.windows": {
-    "BusBuddy PowerShell 7.5.2": {
+    "PowerShell": {
       "path": "C:\\Program Files\\PowerShell\\7\\pwsh.exe",
-      "args": [
-        "-NoLogo",
-        "-ExecutionPolicy",
-        "RemoteSigned",
-        "-NoExit",
-        "-File",
-        "${workspaceFolder}\\PowerShell\\Profiles\\Microsoft.PowerShell_profile_optimized.ps1"
-      ],
+      "args": ["-NoLogo", "-ExecutionPolicy", "RemoteSigned"],
       "icon": "terminal-powershell",
       "color": "terminal.ansiCyan"
-    },
-    "BusBuddy Optimized": {
-      "path": "C:\\Program Files\\PowerShell\\7\\pwsh.exe",
-      "args": [
-        "-NoLogo",
-        "-ExecutionPolicy",
-        "RemoteSigned",
-        "-NoExit",
-        "-Command",
-        "& '${workspaceFolder}\\PowerShell\\Profiles\\Microsoft.PowerShell_profile_optimized.ps1'; Write-Host '⚡ BusBuddy Optimized Environment Loaded' -ForegroundColor Green"
-      ],
-      "icon": "terminal-powershell",
-      "color": "terminal.ansiMagenta"
     },
     "PowerShell 7.5.2 (Clean)": {
       "path": "C:\\Program Files\\PowerShell\\7\\pwsh.exe",
@@ -408,14 +281,19 @@
       "color": "terminal.ansiWhite"
     }
   },
-  "terminal.integrated.persistentSessionReviveProcess": "onExit", // Allow session revival
-  "terminal.integrated.persistentSessionScrollback": 1000, // Better scrollback for debugging
-  "terminal.integrated.inheritEnv": true, // Allow environment inheritance
-  "terminal.integrated.hideOnStartup": "never", // Show terminals on startup
-  "terminal.integrated.showExitAlert": true, // Show exit alerts to prevent data loss
-  "terminal.integrated.enableImages": false, // Reduce overhead
-  "terminal.integrated.gpuAcceleration": "auto", // Allow GPU acceleration if available
-  "terminal.integrated.confirmOnExit": "hasChildProcesses", // Better exit handling
+  // Skip shell processing for these common MCP npx invocations so they run cleanly
+  "terminal.integrated.commandsToSkipShell": [
+    "npx @azure/mcp-server-azure",
+    "npx @microsoft/mcp-server-docs"
+  ],
+  "terminal.integrated.persistentSessionReviveProcess": "onExit",
+  "terminal.integrated.persistentSessionScrollback": 1000,
+  "terminal.integrated.inheritEnv": true,
+  "terminal.integrated.hideOnStartup": "never",
+  "terminal.integrated.showExitAlert": true,
+  "terminal.integrated.enableImages": false,
+  "terminal.integrated.gpuAcceleration": "auto",
+  "terminal.integrated.confirmOnExit": "hasChildProcesses",
   "terminal.integrated.fontFamily": "'Cascadia Code', 'Fira Code', Consolas, monospace",
   "terminal.integrated.fontSize": 13,
   "terminal.integrated.lineHeight": 1.2,
@@ -426,25 +304,23 @@
   "terminal.integrated.shellIntegration.decorationsEnabled": "both",
   "terminal.integrated.shellIntegration.history": 1000,
   "terminal.integrated.enableMultiLinePasteWarning": "never",
-
-  // === TASK AND PROBLEM MATCHER INTEGRATION ===
   "task.allowAutomaticTasks": "on",
   "task.problemMatchers.neverPrompt": true,
   "task.saveBeforeRun": "prompt",
   "task.slowProviderWarning": false,
-
-  // === DEBUGGING CONFIGURATION ===
   "debug.toolBarLocation": "docked",
   "debug.console.fontSize": 14,
   "debug.console.fontFamily": "'Cascadia Code', 'Fira Code', Consolas, monospace",
+  "editor.codeActionsOnSave": {
+    "source.fixAll": "always",
+    "source.organizeImports": "always"
+  },
   "debug.console.acceptSuggestionOnEnter": "off",
   "debug.terminal.clearBeforeReusing": true,
   "debug.allowBreakpointsEverywhere": true,
-
-  // === INTELLISENSE AND LANGUAGE FEATURES ===
-  "editor.suggest.showWords": false, // Disable word suggestions for PowerShell
+  "editor.suggest.showWords": false,
   "editor.suggest.localityBonus": true,
-  "editor.suggest.shareSuggestSelections": false,
+  "editor.suggest.shareSuggestSelections": true,
   "editor.quickSuggestions": {
     "other": true,
     "comments": false,
@@ -453,8 +329,6 @@
   "editor.wordWrap": "wordWrapColumn",
   "editor.wordWrapColumn": 120,
   "editor.rulers": [80, 120],
-
-  // === POWERSHELL FILE ASSOCIATIONS ===
   "files.associations": {
     "*.ps1": "powershell",
     "*.psm1": "powershell",
@@ -467,8 +341,6 @@
     "Microsoft.PowerShell_profile_optimized.ps1": "powershell",
     "global-profile-fix-optimized.ps1": "powershell"
   },
-
-  // PowerShell XML Schema Support (per Microsoft docs)
   "xml.fileAssociations": [
     {
       "systemId": "https://raw.githubusercontent.com/PowerShell/PowerShell/master/src/Schemas/Format.xsd",
@@ -479,67 +351,166 @@
       "pattern": "**/*.Types.ps1xml"
     }
   ],
-
-  // === CODE RUNNER INTEGRATION ===
   "code-runner.executorMap": {
-    "powershell": "pwsh -NoProfile -Command '& ${file}'" // Run PS snippets with profile sourced
+    // Load optimized profile (idempotent guard inside profile prevents double-load) before executing script so bb-* commands & modules are available
+    "powershell": "pwsh -NoLogo -ExecutionPolicy RemoteSigned -Command '. \"${workspaceFolder}\\PowerShell\\Profiles\\Microsoft.PowerShell_profile_optimized.ps1\"; & ${file}'"
   },
   "code-runner.saveFileBeforeRun": true,
-
-  // === PRODUCTIVITY & QUALITY ===
   "better-comments.tags": [
-    { "tag": "!", "color": "#FF2D00" }, // For critical notes in PS/C#
-    { "tag": "bb", "color": "#3498DB" } // BusBuddy-specific comments
+    {
+      "tag": "!",
+      "color": "#FF2D00"
+    },
+    {
+      "tag": "bb",
+      "color": "#3498DB"
+    },
+    {
+      "tag": "syncfusion",
+      "color": "#FFD700"
+    },
+    {
+      "tag": "azure-sql",
+      "color": "#00BFFF"
+    }
   ],
-  "cSpell.enabled": true, // Aligns with streetsidesoftware.code-spell-checker
-
-  // === DOTNET CORE EXPLORER ===
   "dotnetCoreExplorer.showProjectFileInExplorer": true,
   "dotnetCoreExplorer.enableOutputLogs": true,
-
-  // === TASK EXPLORER INTEGRATION ===
   "taskExplorer.enableExplorerView": true,
   "taskExplorer.enableSideBar": true,
-  "taskExplorer.groupMaxLevelsDeteced": 2,
+  "taskExplorer.groupMaxLevelsDetected": 2,
   "taskExplorer.showLastTasks": true,
-
-  // === GIT & COLLABORATION ===
   "gitlens.codeLens.enabled": true,
-  "gitlens.currentLine.enabled": true, // Track changes in WPF code
-
-  // === GITHUB COPILOT INTEGRATION ===
-  "github.copilot.enable": {
-    "*": true,
-    "yaml": true,
-    "plaintext": true,
-    "markdown": true,
-    "powershell": true,
-    "xml": true,
-    "xaml": true,
-    "csharp": true,
-    "sql": true
+  "gitlens.currentLine.enabled": true,
+  // === GitHub Copilot (GPT-5 mini) Configuration ===
+  "github.copilot": {
+    "enable": {
+      "csharp": true,
+      "powershell": true,
+      "json": true,
+      "xml": true,
+      "xaml": true
+    },
+    "editor": {
+      "enableAutoCompletions": true,
+      "iterativeFixing": true,
+      "enableInlineCompletions": true,
+      "suggest": {
+        "localityBonus": true
+      },
+      "wordWrap": "wordWrapColumn",
+      "wordWrapColumn": 120,
+      "rulers": [80, 120],
+      "inlineSuggest": {
+        "count": 5,
+        "delay": 200
+      }
+    },
+    "advanced": {
+      "length": 800,
+      "temperature": 0.1,
+      "top_p": 0.85,
+      "telemetry": false,
+      "inlineSuggestCount": 5
+    },
+    "suggestionPriorities": {
+      "csharp": {
+        "priorityPatterns": [
+          "Syncfusion",
+          "SfDataGrid",
+          "Syncfusion.UI.Xaml.Grid",
+          "syncfusion:SfDataGrid"
+        ],
+        "preferSnippets": true
+      },
+      "xaml": {
+        "priorityPatterns": [
+          "syncfusion:SfDataGrid",
+          "xmlns:syncfusion",
+          "GridTextColumn",
+          "GridNumericColumn"
+        ],
+        "preferSnippets": true
+      }
+    },
+    "rules": {
+      "csharp": {
+        "preferNamespaces": [
+          "Syncfusion.UI.Xaml.Grid",
+          "Syncfusion",
+          "Microsoft.EntityFrameworkCore", // Prefer EF Core for Azure SQL models
+          "Serilog" // Prefer Serilog for structured logging
+        ]
+      },
+      "xaml": {
+        "preferNamespacePrefixes": ["syncfusion"],
+        "preferredElementPatterns": [
+          "syncfusion:SfDataGrid",
+          "syncfusion:GridTextColumn"
+        ]
+      },
+      "powershell": {
+        "preferCommands": [
+          "sqlcmd", // Align with BusBuddy policy: use sqlcmd for Azure SQL querying
+          "az" // Allow Azure CLI usage where appropriate
+        ]
+      }
+    },
+    "compatibility": {
+      "respectWorkspaceEnv": true,
+      "preserveSettings": [
+        "azure.*",
+        "powershell.*",
+        "trunk.*",
+        "taskExplorer.*"
+      ]
+    },
+    "modelOverride": "gpt-5",
+    "fallbackModel": "gpt-5-mini"
   },
-  "github.copilot.editor.enableAutoCompletions": true,
-
-  // === MICROSOFT ENTRA ID INTEGRATION ===
+  "github.copilot.chat": {
+    "enabled": true,
+    "useProjectTemplates": true,
+    "localeOverride": "en",
+    "enable": true,
+    // New: Enables logging for chat interactions; review in Output panel under "Copilot Chat"
+    "debug": true
+  },
+  "syncfusion": {
+    "wpf": {
+      "theme": "FluentDark",
+      "intelliSense": true
+    }
+  },
   "ms-vscode.azure-repos.azure-active-directory.tenant-id": "${env:BUSBUDDY_ENTRA_TENANT_ID}",
-  "azure.tenant": "${env:BUSBUDDY_ENTRA_TENANT_ID}",
+  "azure.tenant": "3ee44d11-b5ae-43a0-9c02-004b04858d9e",
   "azure.enableAzureActivityLogOutput": true,
   "azure.enableOutputTimestamps": true,
   "azure.ppe": false,
   "azure.resourceGroups.showHidden": false,
   "azure.enableDataPlaneAuth": true,
-
-  // Entra External ID Extension Configuration
   "azureExternalId.signInMethod": "${env:VSCODE_ENTRA_SIGNIN_METHOD}",
   "azureExternalId.userInterfaceAlignment": "${env:VSCODE_ENTRA_UI_LAYOUT}",
   "azureExternalId.enableBranding": "${env:VSCODE_ENTRA_BRANDING_ENABLED}",
   "azureExternalId.sampleApplicationType": "${env:VSCODE_ENTRA_SAMPLE_TYPE}",
   "azureExternalId.enableAutomaticSignIn": "${env:VSCODE_ENTRA_AUTO_SIGNIN}",
   "azureExternalId.trustWorkspace": "${env:VSCODE_ENTRA_WORKSPACE_TRUST}",
-
-  // Authentication Flow Configuration
   "azure.authenticationProvider": "microsoft-entra-id",
   "azure.experimental.authenticate": true,
-  "azure.experimental.enableDataPlaneAuth": true
+  "azure.experimental.enableDataPlaneAuth": true,
+  "azure.cloudShell.defaultShell": "PowerShell",
+  "azure.copilot.enabled": true,
+  "azure.copilot.context": "sql",
+  "azure": {
+    "sql": {
+      "authenticationMethod": "ActiveDirectoryAzCli",
+      "enableSqlProjects": true
+    },
+    "extensions": {
+      "azuresql": {
+        "explorerEnabled": true,
+        "queryOnSave": true
+      }
+    }
+  }
 }
