@@ -3,70 +3,37 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:local="clr-namespace:BusBuddy.WPF">
              <!-- StartupUri removed - handled programmatically in App.xaml.cs OnStartup method -->
-             <!-- xmlns:converters="clr-namespace:BusBuddy.WPF.Converters" Temporarily disabled for MVP -->
     <Application.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
-                <!-- Load custom MenuStyles first -->
-                <ResourceDictionary Source="Resources/MenuStyles.xaml"/>
-
-                <!-- Load Syncfusion V30 Validated Resource Dictionary (colors/brushes only) -->
-                <ResourceDictionary Source="Resources/SyncfusionV30_Validated_ResourceDictionary.xaml"/>
-
-                <!-- Load Syncfusion styles (no duplicate brushes, minimal control styles) -->
-                <ResourceDictionary Source="Resources/SyncfusionStyles.xaml" />
-
-                <!-- Load theme-specific resources -->
-                <!-- Note: Only load one theme at a time to avoid duplicate implicit styles -->
-                <!-- FluentDark is primary theme; FluentLight can be loaded dynamically via SfSkinManager -->
-                <ResourceDictionary Source="Resources/Themes/FluentDarkTheme.xaml"/>
-
-                <!-- Custom brush overrides for enhanced form contrast -->
-                <ResourceDictionary Source="Resources/Themes/CustomBrushes.xaml"/>
-
-                <!-- Phase 1: Basic styling without complex theme conflicts -->
-                <!-- Note: Syncfusion themes are applied programmatically via SfSkinManager in App.xaml.cs -->
-                <ResourceDictionary>
-                    <!-- Enhanced color palette for StudentsView and other components -->
-                    <!-- Note: These complement but don't override the main theme brushes -->
-                    <SolidColorBrush x:Key="PrimaryBrush" Color="#FF007ACC"/>
-                    <SolidColorBrush x:Key="SecondaryBrush" Color="#FFF0F0F0"/>
-                    <SolidColorBrush x:Key="AccentBrush" Color="#FF16A085"/>
-                    <SolidColorBrush x:Key="TertiaryBrush" Color="#FFE8E8E8"/>
-
-                    <!-- Vehicle Form Styles -->
-                    <Style x:Key="VehicleFormContainer" TargetType="Grid">
-                        <Setter Property="Margin" Value="20"/>
-                        <Setter Property="Background" Value="{DynamicResource ContentBackgroundBrush}"/>
-                    </Style>
-
-                    <!-- Driver Form Styles -->
-                    <Style x:Key="DriverFormContainer" TargetType="Grid">
-                        <Setter Property="Margin" Value="20"/>
-                        <Setter Property="Background" Value="{DynamicResource ContentBackgroundBrush}"/>
-                    </Style>
-
-                    <!-- AI Enhancement Button Style -->
-                    <Style x:Key="AIEnhancementButton" TargetType="Button">
-                        <Setter Property="Background" Value="#FF007ACC"/>
-                        <Setter Property="Foreground" Value="White"/>
-                        <Setter Property="Padding" Value="12,6"/>
-                        <Setter Property="Margin" Value="5"/>
-                        <Setter Property="BorderThickness" Value="0"/>
-                        <Setter Property="FontWeight" Value="SemiBold"/>
-                        <Setter Property="Cursor" Value="Hand"/>
-                    </Style>
-                </ResourceDictionary>
+                <!-- Syncfusion FluentDark Theme - Official Theme Only -->
+                <ResourceDictionary Source="pack://application:,,,/Syncfusion.Themes.FluentDark.WPF;component/FluentDarkTheme.xaml"/>
             </ResourceDictionary.MergedDictionaries>
 
-            <!-- Essential Converters for Phase 1 -->
-            <!-- Note: InverseBooleanConverter will be created if it doesn't exist -->
+            <!-- Essential Converters Only -->
             <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
 
-            <!-- Form Navigation Commands (for expansion) -->
-            <x:Static Member="ApplicationCommands.New" x:Key="NewItemCommand"/>
-            <x:Static Member="ApplicationCommands.Save" x:Key="SaveItemCommand"/>
-            <x:Static Member="ApplicationCommands.Delete" x:Key="DeleteItemCommand"/>
+            <!-- BusBuddy Custom Theme Brushes - Missing Resources Fix -->
+            <!-- Header -->
+            <SolidColorBrush x:Key="BusBuddy.Brush.Header.Background">#FF2E2E30</SolidColorBrush>
+
+            <!-- Text Colors -->
+            <SolidColorBrush x:Key="BusBuddy.Brush.Text.Primary">#FFFFFFFF</SolidColorBrush>
+            <SolidColorBrush x:Key="BusBuddy.Brush.Text.Secondary">#FFB0B0B0</SolidColorBrush>
+
+            <!-- Primary Colors -->
+            <SolidColorBrush x:Key="BusBuddy.Brush.Primary">#FF0078D4</SolidColorBrush>
+            <SolidColorBrush x:Key="BusBuddy.Brush.Surface">#FF323233</SolidColorBrush>
+
+            <!-- Surface Colors for Light Mode -->
+            <SolidColorBrush x:Key="BusBuddy.Brush.Surface.LightMode.Accent">#FFF3F2F1</SolidColorBrush>
+            <SolidColorBrush x:Key="BusBuddy.Brush.Surface.LightMode.Border">#FFE1DFDD</SolidColorBrush>
+
+            <!-- Semantic Colors -->
+            <SolidColorBrush x:Key="BusBuddy.Brush.Semantic.Success">#FF107C10</SolidColorBrush>
+            <SolidColorBrush x:Key="BusBuddy.Brush.Semantic.Info">#FF0078D4</SolidColorBrush>
+            <SolidColorBrush x:Key="BusBuddy.Brush.Semantic.Warning">#FFFF8C00</SolidColorBrush>
+            <SolidColorBrush x:Key="BusBuddy.Brush.Semantic.Error">#FFD13438</SolidColorBrush>
         </ResourceDictionary>
     </Application.Resources>
 </Application>

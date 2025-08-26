@@ -13,14 +13,7 @@
         WindowStartupLocation="CenterScreen"
         WindowState="Maximized">
 
-    <!-- Theme resources merged to enable DynamicResource-based theming -->
-    <syncfusion:ChromelessWindow.Resources>
-        <ResourceDictionary>
-            <ResourceDictionary.MergedDictionaries>
-                <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/SyncfusionV30_Validated_ResourceDictionary.xaml"/>
-            </ResourceDictionary.MergedDictionaries>
-        </ResourceDictionary>
-    </syncfusion:ChromelessWindow.Resources>
+    <!-- Removed theme resources - using App.xaml Syncfusion FluentDark theme only -->
 
     <!-- MVP-Ready UI with DockingManager for professional layout -->
     <!-- Trigger language server refresh -->

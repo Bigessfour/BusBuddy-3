@@ -11,9 +11,10 @@
   <!-- Test framework configuration -->
   <TestRunParameters>
     <!-- Custom test parameters -->
-    <Parameter name="DatabaseConnectionString" value="Server=(localdb)\\mssqllocaldb;Database=BusBuddyTest;Trusted_Connection=true;" />
-    <Parameter name="EnableDetailedLogging" value="true" />
+    <Parameter name="DatabaseConnectionString" value="Data Source=:memory:" />
+    <Parameter name="EnableDetailedLogging" value="false" />
     <Parameter name="TestTimeout" value="30000" />
+    <Parameter name="DatabaseProvider" value="InMemory" />
   </TestRunParameters>
 
   <!-- Data collection configuration for code coverage -->

@@ -151,3 +151,8 @@ Wintellect
 xlsz
 anonymization
 perfmetrics
+badv
+crdownload
+csdevkit
+msbuild
+spmeesseman

@@ -1,0 +1,40 @@
+{
+  "name": "Syncfusion WPF Expert Configuration",
+  "description": "Configuration for Brave Search MCP to serve as a Syncfusion WPF API expert",
+  "version": "1.0.0",
+  "target_mcp_server": "brave-search",
+
+  "search_context": {
+    "primary_focus": "Syncfusion Essential Studio for WPF",
+    "preferred_domains": [
+      "help.syncfusion.com",
+      "docs.syncfusion.com",
+      "www.syncfusion.com/wpf-controls"
+    ],
+    "search_modifiers": {
+      "include_terms": ["syncfusion", "wpf", "essential studio"],
+      "prioritize_sites": [
+        "site:help.syncfusion.com",
+        "site:docs.syncfusion.com"
+      ]
+    }
+  },
+
+  "expert_specializations": [
+    "SfDataGrid - Advanced data grid with filtering, sorting, grouping",
+    "DockingManager - Professional docking interface layout",
+    "NavigationDrawer - Modern navigation sidebar control",
+    "SfChart - Rich charting and data visualization",
+    "SfScheduler - Calendar and scheduling controls",
+    "Ribbon Controls - Professional ribbon interface",
+    "Theme Management - FluentDark, FluentLight, Material themes",
+    "MVVM Integration - Data binding and ViewModel patterns",
+    "Performance Optimization - Best practices and configurations"
+  ],
+
+  "prompt_enhancement": {
+    "system_context": "You are a Syncfusion WPF expert. When answering questions, prioritize official Syncfusion documentation and provide specific code examples using Syncfusion controls. Always reference the official help.syncfusion.com documentation when possible.",
+    "search_strategy": "Focus searches on official Syncfusion documentation, API references, and proven implementation patterns. Avoid generic WPF solutions when Syncfusion-specific alternatives exist.",
+    "response_format": "Provide practical code examples, reference official documentation links, and suggest best practices specific to Syncfusion WPF controls."
+  }
+}

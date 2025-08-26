@@ -1,23 +1,28 @@
 #requires -Version 7.5
+
+# Microsoft Best Practice: Enforce highest security and coding standards
+Set-StrictMode -Version Latest
+
 <#
 .SYNOPSIS
-BusBuddy PowerShell Profile - Microsoft Best Practices Edition v6.0
-Enhanced Error Handling, Structured Logging, and Performance Optimization
+BusBuddy PowerShell Profile - Microsoft Hardened Edition v7.0
+Persistent, Secure, and Robust Environment with Graceful Session Exit
 
 .DESCRIPTION
-Microsoft-compliant PowerShell profile implementing official best practices:
-- Structured error handling with try/catch blocks
-- Proper output streams (Write-Information, Write-Debug, Write-Verbose)
-- Enhanced logging patterns for troubleshooting
+Microsoft-compliant, hardened PowerShell profile implementing official best practices:
+- Set-StrictMode for enhanced security and error prevention
+- Persistent module availability via $env:PSModulePath management
+- Graceful session exit handling with Register-EngineEvent
+- Structured error handling and proper output streams (Write-Information, Write-Debug)
 - Optimized for hyperthreading with intelligent ThrottleLimit
 - Zero tolerance for Write-Host violations
 
 .NOTES
-Author: BusBuddy Development Team  
-Version: 6.0.0 (Microsoft Best Practices)
+Author: BusBuddy Development Team
+Version: 7.0.0 (Microsoft Hardened Best Practices)
 PowerShell: 7.5.2+
-Reference: Microsoft PowerShell Development Guidelines
-Compliance: Azure Functions PowerShell developer guide
+Reference: Microsoft PowerShell Development Guidelines, JEA Security
+Code Signing: For enterprise security, this profile should be code-signed and the execution policy set to 'AllSigned'.
 #>
 
 # Microsoft Best Practice: Use preference variables for controlled output
@@ -25,11 +30,13 @@ $ErrorActionPreference = 'Continue'  # Allow error capture without stopping
 $VerbosePreference = 'SilentlyContinue'  # Control verbose output
 $DebugPreference = 'SilentlyContinue'    # Control debug output
 
-# Global Error Tracking with Microsoft-Approved Patterns
-$global:BusBuddyErrorCount = 0
-$global:BusBuddyModuleErrors = [System.Collections.Generic.List[PSObject]]::new()
-$global:BusBuddyProfileStartTime = Get-Date
-$global:BusBuddyDebugLogPath = "$env:TEMP\busbuddy-profile-debug-v6.log"
+# Microsoft Best Practice: Use a script-level variable to manage state
+$script:BusBuddyState = @{
+    ErrorCount = 0
+    ModuleErrors = [System.Collections.Generic.List[PSObject]]::new()
+    ProfileStartTime = Get-Date
+    DebugLogPath = "$env:TEMP\busbuddy-profile-debug-v7.log"
+}
 
 # Microsoft Best Practice: Structured logging function with proper output streams
 function Write-BusBuddyLog {
@@ -37,50 +44,50 @@ function Write-BusBuddyLog {
     param(
         [Parameter(Mandatory = $true)]
         [string]$Message,
-        
+
         [Parameter()]
         [ValidateSet('Error', 'Warning', 'Information', 'Debug', 'Verbose')]
         [string]$Level = 'Information',
-        
+
         [Parameter()]
         [string]$Component = 'Profile'
     )
-    
+
     try {
         $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss.fff"
         $logEntry = "[$timestamp] [$Level] [$Component] $Message"
-        
+
         # Microsoft Pattern: Use appropriate output streams
         switch ($Level) {
             'Error' {
                 Write-Error -Message $logEntry -ErrorAction Continue
-                Add-Content -Path $global:BusBuddyDebugLogPath -Value $logEntry -Force
+                Add-Content -Path $script:BusBuddyState.DebugLogPath -Value $logEntry -Force
             }
             'Warning' {
                 Write-Warning -Message $logEntry -WarningAction Continue
-                Add-Content -Path $global:BusBuddyDebugLogPath -Value $logEntry -Force
+                Add-Content -Path $script:BusBuddyState.DebugLogPath -Value $logEntry -Force
             }
             'Information' {
                 Write-Information -MessageData $logEntry -InformationAction Continue
-                Add-Content -Path $global:BusBuddyDebugLogPath -Value $logEntry -Force
+                Add-Content -Path $script:BusBuddyState.DebugLogPath -Value $logEntry -Force
             }
             'Debug' {
                 Write-Debug -Message $logEntry
                 if ($DebugPreference -ne 'SilentlyContinue') {
-                    Add-Content -Path $global:BusBuddyDebugLogPath -Value $logEntry -Force
+                    Add-Content -Path $script:BusBuddyState.DebugLogPath -Value $logEntry -Force
                 }
             }
             'Verbose' {
                 Write-Verbose -Message $logEntry
                 if ($VerbosePreference -ne 'SilentlyContinue') {
-                    Add-Content -Path $global:BusBuddyDebugLogPath -Value $logEntry -Force
+                    Add-Content -Path $script:BusBuddyState.DebugLogPath -Value $logEntry -Force
                 }
             }
         }
     }
     catch {
         # Fallback logging if structured logging fails
-        Add-Content -Path $global:BusBuddyDebugLogPath -Value "FALLBACK: $Message" -Force -ErrorAction SilentlyContinue
+        Add-Content -Path $script:BusBuddyState.DebugLogPath -Value "FALLBACK: $Message" -Force -ErrorAction SilentlyContinue
     }
 }
 
@@ -90,30 +97,33 @@ function Add-BusBuddyError {
     param(
         [Parameter(Mandatory = $true)]
         [string]$Source,
-        
+
         [Parameter(Mandatory = $true)]
         [string]$Message,
-        
+
         [Parameter()]
         [System.Management.Automation.ErrorRecord]$ErrorRecord
     )
-    
+
     try {
-        $global:BusBuddyErrorCount++
-        
+        $script:BusBuddyState.ErrorCount++
+
+        # Ensure ModuleErrors is initialized as a List if it's null
+        if ($script:BusBuddyState.ModuleErrors -eq $null) {
+            $script:BusBuddyState.ModuleErrors = [System.Collections.Generic.List[PSObject]]::new()
+        }
+
         $errorInfo = [PSCustomObject]@{
             Timestamp = Get-Date
             Source = $Source
             Message = $Message
-            ErrorRecord = $ErrorRecord
-            Exception = $ErrorRecord?.Exception?.Message
-            StackTrace = $ErrorRecord?.Exception?.StackTrace
+            Exception = if ($ErrorRecord) { $ErrorRecord.Exception.Message } else { $null }
         }
-        
-        $global:BusBuddyModuleErrors.Add($errorInfo)
-        
+
+        $script:BusBuddyState.ModuleErrors.Add($errorInfo)
+
         Write-BusBuddyLog -Message "Error in $Source`: $Message" -Level "Error" -Component $Source
-        
+
         if ($ErrorRecord) {
             Write-BusBuddyLog -Message "Exception details: $($ErrorRecord.Exception.Message)" -Level "Debug" -Component $Source
         }
@@ -130,9 +140,9 @@ try {
     $processorInfo = Get-CimInstance -ClassName Win32_Processor -ErrorAction Stop
     $totalCores = ($processorInfo | Measure-Object -Property NumberOfCores -Sum).Sum
     $totalLogicalProcessors = ($processorInfo | Measure-Object -Property NumberOfLogicalProcessors -Sum).Sum
-    
+
     Write-BusBuddyLog -Message "System detected: $totalCores cores, $totalLogicalProcessors logical processors" -Level "Information" -Component "System"
-    
+
     # Microsoft Best Practice: Calculate optimal ThrottleLimit based on system capabilities
     $optimalThrottleLimit = [Math]::Min([Math]::Max([Math]::Floor($totalLogicalProcessors * 0.75), 2), 8)
     Write-BusBuddyLog -Message "Calculated optimal ThrottleLimit: $optimalThrottleLimit" -Level "Debug" -Component "Performance"
@@ -144,22 +154,22 @@ catch {
 }
 
 # Microsoft Best Practice: Module discovery with structured error handling
-function Get-BusBuddyModules {
+function Get-BusBuddyModule {
     [CmdletBinding()]
     param()
-    
+
     try {
         $profileDir = Split-Path -Parent $PSCommandPath
         $moduleBaseDir = Split-Path -Parent $profileDir
-        
+
         Write-BusBuddyLog -Message "Scanning for modules in: $moduleBaseDir" -Level "Debug" -Component "ModuleDiscovery"
-        
+
         $potentialModules = Get-ChildItem -Path $moduleBaseDir -Filter "*.psm1" -Recurse -ErrorAction Continue |
             Where-Object { $_.Directory.Name -ne "Profiles" } |
             Sort-Object Name
-        
+
         Write-BusBuddyLog -Message "Found $($potentialModules.Count) potential modules" -Level "Information" -Component "ModuleDiscovery"
-        
+
         return $potentialModules
     }
     catch {
@@ -174,34 +184,34 @@ function Invoke-BusBuddyModuleAnalysis {
     param(
         [Parameter(Mandatory = $true)]
         [System.IO.FileInfo[]]$Modules,
-        
+
         [Parameter()]
         [int]$ThrottleLimit = 4
     )
-    
+
     try {
         Write-BusBuddyLog -Message "Starting parallel module analysis with ThrottleLimit: $ThrottleLimit" -Level "Information" -Component "ModuleAnalysis"
-        
+
         $moduleAnalysis = $Modules | ForEach-Object -Parallel {
             # Import required functions into parallel runspace
             $VerbosePreference = $using:VerbosePreference
             $DebugPreference = $using:DebugPreference
-            
+
             $module = $_
             $loadStartTime = Get-Date
-            
+
             try {
                 # Test module syntax first
                 $null = [System.Management.Automation.PSParser]::Tokenize((Get-Content -Path $module.FullName -Raw), [ref]$null)
-                
+
                 # Attempt to import module
                 $importResult = Import-Module -Name $module.FullName -PassThru -Force -ErrorAction Stop
-                
+
                 # Count bb-* commands
                 $bbCommands = Get-Command -Module $importResult.Name | Where-Object { $_.Name -like "bb-*" } | Measure-Object | Select-Object -ExpandProperty Count
-                
+
                 $loadTime = (Get-Date) - $loadStartTime
-                
+
                 [PSCustomObject]@{
                     Name = $module.BaseName
                     Path = $module.FullName
@@ -214,7 +224,7 @@ function Invoke-BusBuddyModuleAnalysis {
             }
             catch {
                 $loadTime = (Get-Date) - $loadStartTime
-                
+
                 [PSCustomObject]@{
                     Name = $module.BaseName
                     Path = $module.FullName
@@ -226,7 +236,7 @@ function Invoke-BusBuddyModuleAnalysis {
                 }
             }
         } -ThrottleLimit $ThrottleLimit
-        
+
         return $moduleAnalysis
     }
     catch {
@@ -236,46 +246,56 @@ function Invoke-BusBuddyModuleAnalysis {
 }
 
 # Microsoft Best Practice: Results processing with detailed logging
-function Process-BusBuddyResults {
+<#
+.SYNOPSIS
+Processes and summarizes BusBuddy module analysis results.
+
+.DESCRIPTION
+This function takes the results of BusBuddy module analysis, logs statistics, handles errors,
+and provides a summary of loaded and failed modules, including command counts and average load times.
+#>
+function Format-BusBuddyResult {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory = $true)]
         [PSObject[]]$ModuleAnalysis
     )
-    
+
     try {
         $successfulModules = $ModuleAnalysis | Where-Object { $_.Status -eq 'Loaded' }
         $failedModules = $ModuleAnalysis | Where-Object { $_.Status -ne 'Loaded' }
-        
+
         Write-BusBuddyLog -Message "Module analysis complete - Successful: $($successfulModules.Count), Failed: $($failedModules.Count)" -Level "Information" -Component "Results"
-        
+
         # Log failed modules with structured error handling
         foreach ($failed in $failedModules) {
             Add-BusBuddyError -Source "ModuleLoad" -Message "Module $($failed.Name) failed to load: $($failed.Error)"
         }
-        
+
         # Calculate statistics
         $totalBbCommands = ($successfulModules | Measure-Object -Property BbCommands -Sum).Sum
         $avgLoadTime = if ($successfulModules.Count -gt 0) {
             [Math]::Round(($successfulModules | Measure-Object -Property LoadTime -Average).Average, 2)
         } else { 0 }
-        
+
         # Microsoft Pattern: Use Write-Information for user feedback
         Write-Information "✅ BusBuddy Profile Analysis Complete:" -InformationAction Continue
-        
+
         foreach ($module in $successfulModules) {
             Write-Information "  📦 $($module.Name) v$($module.Version): $($module.BbCommands) bb-commands ($($module.LoadTime)ms)" -InformationAction Continue
         }
-        
+
         Write-Information "🎯 Total: $totalBbCommands bb-* commands, avg load: ${avgLoadTime}ms" -InformationAction Continue
-        
-        if ($global:BusBuddyErrorCount -gt 0) {
-            Write-Information "⚠️  Module Errors: $($global:BusBuddyErrorCount) modules failed to load" -InformationAction Continue
+
+        if ($script:BusBuddyState.ErrorCount -gt 0) {
+            $failedModuleNames = ($failedModules | Select-Object -ExpandProperty Name) -join ', '
+            Write-Information "⚠️ Module Errors: $($script:BusBuddyState.ErrorCount) modules failed to load: $failedModuleNames" -InformationAction Continue
         }
-        
+
         # Enhanced statistics logging
+        Write-BusBuddyLog -Message "Statistics - Total Commands: $totalBbCommands, Avg Load Time: ${avgLoadTime}ms, Failed Modules: $($failedModules.Count)" -Level "Information" -Component "Statistics"
         Write-BusBuddyLog -Message "Statistics - Total Commands: $totalBbCommands, Avg Load Time: ${avgLoadTime}ms" -Level "Information" -Component "Statistics"
-        
+
         return @{
             SuccessfulModules = $successfulModules
             FailedModules = $failedModules
@@ -296,13 +316,13 @@ function Get-BusBuddyProfileDebugLog {
         [Parameter()]
         [int]$Tail = 50
     )
-    
+
     try {
-        if (Test-Path -Path $global:BusBuddyDebugLogPath) {
+        if (Test-Path -Path $script:BusBuddyState.DebugLogPath) {
             Write-Information "📋 BusBuddy Profile Debug Log (last $Tail lines):" -InformationAction Continue
-            Get-Content -Path $global:BusBuddyDebugLogPath -Tail $Tail | Write-Information -InformationAction Continue
+            Get-Content -Path $script:BusBuddyState.DebugLogPath -Tail $Tail | Write-Information -InformationAction Continue
         } else {
-            Write-Information "⚠️  Debug log file not found: $global:BusBuddyDebugLogPath" -InformationAction Continue
+            Write-Information "⚠️  Debug log file not found: $($script:BusBuddyState.DebugLogPath)" -InformationAction Continue
         }
     }
     catch {
@@ -313,18 +333,18 @@ function Get-BusBuddyProfileDebugLog {
 function Clear-BusBuddyProfileDebugLog {
     [CmdletBinding(SupportsShouldProcess)]
     param()
-    
-    if ($PSCmdlet.ShouldProcess($global:BusBuddyDebugLogPath, "Clear debug log")) {
+
+    if ($PSCmdlet.ShouldProcess($script:BusBuddyState.DebugLogPath, "Clear debug log")) {
         try {
-            if (Test-Path -Path $global:BusBuddyDebugLogPath) {
-                Remove-Item -Path $global:BusBuddyDebugLogPath -Force
+            if (Test-Path -Path $script:BusBuddyState.DebugLogPath) {
+                Remove-Item -Path $script:BusBuddyState.DebugLogPath -Force
                 Write-Information "✅ Debug log cleared" -InformationAction Continue
             }
-            
+
             # Reset error counters
-            $global:BusBuddyErrorCount = 0
-            $global:BusBuddyModuleErrors.Clear()
-            
+            $script:BusBuddyState.ErrorCount = 0
+            $script:BusBuddyState.ModuleErrors.Clear()
+
             Write-BusBuddyLog -Message "Debug log and error counters reset" -Level "Information" -Component "Cleanup"
         }
         catch {
@@ -336,14 +356,14 @@ function Clear-BusBuddyProfileDebugLog {
 function Get-BusBuddyErrorSummary {
     [CmdletBinding()]
     param()
-    
+
     try {
         Write-Information "🔍 BusBuddy Error Summary:" -InformationAction Continue
-        Write-Information "Total Errors: $global:BusBuddyErrorCount" -InformationAction Continue
-        
-        if ($global:BusBuddyModuleErrors.Count -gt 0) {
+        Write-Information "Total Errors: $($script:BusBuddyState.ErrorCount)" -InformationAction Continue
+
+        if ($script:BusBuddyState.ModuleErrors.Count -gt 0) {
             Write-Information "Error Details:" -InformationAction Continue
-            foreach ($error in $global:BusBuddyModuleErrors) {
+            foreach ($error in $script:BusBuddyState.ModuleErrors) {
                 Write-Information "  ❌ [$($error.Timestamp.ToString('HH:mm:ss'))] $($error.Source): $($error.Message)" -InformationAction Continue
             }
         } else {
@@ -359,16 +379,16 @@ function Get-BusBuddyErrorSummary {
 function Get-BusBuddyHyperthreadingInfo {
     [CmdletBinding()]
     param()
-    
+
     try {
         $processorInfo = Get-CimInstance -ClassName Win32_Processor -ErrorAction Stop
         $computerInfo = Get-CimInstance -ClassName Win32_ComputerSystem -ErrorAction Stop
-        
+
         $hyperthreadingEnabled = $processorInfo | Where-Object { $_.NumberOfLogicalProcessors -gt $_.NumberOfCores }
         $totalCores = ($processorInfo | Measure-Object -Property NumberOfCores -Sum).Sum
         $totalLogicalProcessors = ($processorInfo | Measure-Object -Property NumberOfLogicalProcessors -Sum).Sum
         $systemMemoryGB = [Math]::Round($computerInfo.TotalPhysicalMemory / 1GB, 2)
-        
+
         Write-Information "🚀 BusBuddy Hyperthreading Analysis:" -InformationAction Continue
         Write-Information "  🖥️  System: $($computerInfo.Manufacturer) $($computerInfo.Model)" -InformationAction Continue
         Write-Information "  ⚡ Processor: $($processorInfo[0].Name)" -InformationAction Continue
@@ -376,7 +396,7 @@ function Get-BusBuddyHyperthreadingInfo {
         Write-Information "  💾 Memory: ${systemMemoryGB} GB" -InformationAction Continue
         Write-Information "  🎯 Hyperthreading: $(if ($hyperthreadingEnabled) { 'Enabled ✅' } else { 'Disabled ❌' })" -InformationAction Continue
         Write-Information "  ⚙️  Optimal ThrottleLimit: $optimalThrottleLimit" -InformationAction Continue
-        
+
         Write-BusBuddyLog -Message "Hyperthreading info displayed - Cores: $totalCores, Logical: $totalLogicalProcessors" -Level "Debug" -Component "SystemInfo"
     }
     catch {
@@ -389,35 +409,35 @@ function Test-BusBuddyHyperthreadedFile {
     param(
         [Parameter()]
         [int]$TestFiles = 100,
-        
+
         [Parameter()]
         [int]$ThrottleLimit = $optimalThrottleLimit
     )
-    
+
     try {
         Write-Information "🧪 Testing hyperthreaded file processing with $TestFiles files, ThrottleLimit: $ThrottleLimit" -InformationAction Continue
-        
+
         $testResults = 1..$TestFiles | ForEach-Object -Parallel {
             $fileNumber = $_
             $startTime = Get-Date
-            
+
             # Simulate file processing
             Start-Sleep -Milliseconds (Get-Random -Minimum 10 -Maximum 100)
-            
+
             $processingTime = (Get-Date) - $startTime
-            
+
             [PSCustomObject]@{
                 FileNumber = $fileNumber
                 ProcessingTime = $processingTime.TotalMilliseconds
                 ThreadId = [System.Threading.Thread]::CurrentThread.ManagedThreadId
             }
         } -ThrottleLimit $ThrottleLimit
-        
+
         $avgTime = [Math]::Round(($testResults | Measure-Object -Property ProcessingTime -Average).Average, 2)
         $uniqueThreads = ($testResults | Select-Object -ExpandProperty ThreadId | Sort-Object -Unique).Count
-        
+
         Write-Information "✅ Test Results: Avg ${avgTime}ms, $uniqueThreads threads used" -InformationAction Continue
-        
+
         Write-BusBuddyLog -Message "Hyperthreading test completed - Avg: ${avgTime}ms, Threads: $uniqueThreads" -Level "Information" -Component "Performance"
     }
     catch {
@@ -425,24 +445,75 @@ function Test-BusBuddyHyperthreadedFile {
     }
 }
 
+# Microsoft Best Practice: Ensure BusBuddy modules are always available
+try {
+    $moduleParentDir = Split-Path -Path $MyInvocation.MyCommand.Path -Parent | Split-Path -Parent
+    $busBuddyModulePath = Join-Path -Path $moduleParentDir -ChildPath "Modules"
+
+    if ($env:PSModulePath -notlike "*$busBuddyModulePath*") {
+        $env:PSModulePath = "$busBuddyModulePath;$($env:PSModulePath)"
+        Write-BusBuddyLog -Message "Added BusBuddy module path to PSModulePath for this session." -Level "Information" -Component "Path"
+    }
+}
+catch {
+    Add-BusBuddyError -Source "PSModulePath" -Message "Failed to update PSModulePath" -ErrorRecord $_
+}
+
+# Microsoft Best Practice: Load environment variables from .env file
+function Import-BusBuddyEnvironment {
+    [CmdletBinding()]
+    param()
+
+    try {
+        $envFilePath = Join-Path -Path $PSScriptRoot -ChildPath ".env"
+        if (-not (Test-Path -Path $envFilePath)) {
+            $envFilePath = Join-Path -Path (Split-Path -Path $PSScriptRoot -Parent) -ChildPath ".env"
+        }
+
+        if (Test-Path -Path $envFilePath) {
+            Write-BusBuddyLog -Message "Found .env file at: $envFilePath. Loading variables." -Level "Information" -Component "Environment"
+            Get-Content $envFilePath | ForEach-Object {
+                $line = $_.Trim()
+                if ($line -and $line -notlike '#*') {
+                    $parts = $line -split '=', 2
+                    if ($parts.Length -eq 2) {
+                        $name = $parts[0].Trim()
+                        $value = $parts[1].Trim()
+                        [System.Environment]::SetEnvironmentVariable($name, $value, 'Process')
+                        Write-BusBuddyLog -Message "Loaded env var: $name" -Level "Debug" -Component "Environment"
+                    }
+                }
+            }
+            Write-BusBuddyLog -Message "Environment variables loaded successfully." -Level "Information" -Component "Environment"
+        } else {
+            Write-BusBuddyLog -Message ".env file not found in profile or parent directory. Skipping." -Level "Warning" -Component "Environment"
+        }
+    }
+    catch {
+        Add-BusBuddyError -Source "LoadEnvironment" -Message "Failed to load .env file" -ErrorRecord $_
+    }
+}
+
 # MAIN EXECUTION with Microsoft Best Practices
 try {
+    # Load environment variables first
+    Import-BusBuddyEnvironment
+
     Write-BusBuddyLog -Message "Starting main profile execution" -Level "Information" -Component "Main"
-    
+
     # Discover modules
-    $modules = Get-BusBuddyModules
-    
+    $modules = Get-BusBuddyModule
     if ($modules.Count -eq 0) {
         Write-BusBuddyLog -Message "No modules found for loading" -Level "Warning" -Component "Main"
     } else {
         # Analyze modules in parallel
         $analysisResults = Invoke-BusBuddyModuleAnalysis -Modules $modules -ThrottleLimit $optimalThrottleLimit
-        
+
         # Process results
-        $summary = Process-BusBuddyResults -ModuleAnalysis $analysisResults
-        
+        $summary = Format-BusBuddyResult -ModuleAnalysis $analysisResults
+
         if ($summary) {
-            $profileLoadTime = ((Get-Date) - $global:BusBuddyProfileStartTime).TotalMilliseconds
+            $profileLoadTime = ((Get-Date) - $script:BusBuddyState.ProfileStartTime).TotalMilliseconds
             Write-BusBuddyLog -Message "Profile loaded successfully in ${profileLoadTime}ms" -Level "Information" -Component "Main"
         }
     }
@@ -453,29 +524,31 @@ catch {
 }
 finally {
     # Final logging
-    $totalLoadTime = ((Get-Date) - $global:BusBuddyProfileStartTime).TotalMilliseconds
-    Write-BusBuddyLog -Message "Profile loading completed in ${totalLoadTime}ms with $global:BusBuddyErrorCount errors" -Level "Information" -Component "Main"
-    
-    if ($global:BusBuddyErrorCount -eq 0) {
+    $totalLoadTime = ((Get-Date) - $script:BusBuddyState.ProfileStartTime).TotalMilliseconds
+    Write-BusBuddyLog -Message "Profile loading completed in ${totalLoadTime}ms with $($script:BusBuddyState.ErrorCount) errors" -Level "Information" -Component "Main"
+
+    if ($script:BusBuddyState.ErrorCount -eq 0) {
         Write-Information "🎉 BusBuddy Profile loaded successfully with zero errors!" -InformationAction Continue
     } else {
-        Write-Information "⚠️  BusBuddy Profile loaded with $global:BusBuddyErrorCount errors. Use Get-BusBuddyErrorSummary for details." -InformationAction Continue
+        Write-Information "⚠️  BusBuddy Profile loaded with $($script:BusBuddyState.ErrorCount) errors. Use Get-BusBuddyErrorSummary for details." -InformationAction Continue
     }
 }
 
 # Microsoft Best Practice: Export only intended functions
-$ModuleMemberExports = @(
-    'Write-BusBuddyLog',
-    'Get-BusBuddyProfileDebugLog', 
-    'Clear-BusBuddyProfileDebugLog',
-    'Get-BusBuddyErrorSummary',
-    'Get-BusBuddyHyperthreadingInfo',
-    'Test-BusBuddyHyperthreadedFile'
-)
+Export-ModuleMember -Function Write-BusBuddyLog,
+Get-BusBuddyProfileDebugLog,
+Clear-BusBuddyProfileDebugLog,
+Get-BusBuddyErrorSummary,
+Get-BusBuddyHyperthreadingInfo,
+Test-BusBuddyHyperthreadedFile,
+Import-BusBuddyEnvironment,
+Get-BusBuddyModule,
+Invoke-BusBuddyModuleAnalysis,
+Format-BusBuddyResult
 
 # Create aliases for common debugging tasks
 Set-Alias -Name 'bb-profile-debug' -Value 'Get-BusBuddyProfileDebugLog' -Scope Global
 Set-Alias -Name 'bb-profile-errors' -Value 'Get-BusBuddyErrorSummary' -Scope Global
 Set-Alias -Name 'bb-hyperthreading' -Value 'Get-BusBuddyHyperthreadingInfo' -Scope Global
 
-Write-BusBuddyLog -Message "Microsoft Best Practices Profile v6.0 initialization complete" -Level "Information" -Component "Main"
+Write-BusBuddyLog -Message "Microsoft Best Practices Profile v7.0 initialization complete" -Level "Information" -Component "Main"

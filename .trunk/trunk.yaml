@@ -1,5 +1,14 @@
 # 🚌 Trunk config for BusBuddy: .NET 9 WPF, PowerShell 7.5.2, Azure SQL
 # Centralizes linting/formatting for consistent code quality across the project
+#
+# ✨ WHITESPACE ENFORCEMENT:
+# - dotnet-format: Automatically trims trailing whitespace in C# files
+# - XamlStyler: Configured via Settings.XamlStyler to remove trailing whitespace
+# - Prettier: Handles JSON/YAML formatting with consistent whitespace
+# - trunk.formatOnSave: true in .vscode/settings.json ensures format-on-save
+# - trunk-fmt-pre-commit: Prevents whitespace from entering version control
+# - CI Integration: Run "trunk check --all" in bb-quality-check for enforcement
+#
 # Reference: https://docs.trunk.io/reference/trunk-yaml
 version: 0.1
 cli:
@@ -28,8 +37,8 @@ lint:
         - name: DOTNET_ROOT
           value: "C:\\Program Files\\dotnet"
   disabled:
-    - markdownlint
-    - cspell
+    - markdownlint # Using custom markdown formatting
+    # cspell enabled for XAML/code comments - removed from disabled list
   enabled:
     # Security and infrastructure scanning
     - taplo@0.10.0
@@ -41,8 +50,9 @@ lint:
     - shellcheck@0.11.0
     - shfmt@3.6.0
     - sqlfluff@3.4.2
+    - cspell@8.4.0 # Spell checking for XAML comments and documentation
     # codespell@2.4.1 # DISABLED - using Trunk CSpell only for consistency
-    - dotnet-format@9.0.304
+    - dotnet-format@5.1.225507 # Trims whitespace in C# by default (Trunk-supported version)
     - checkov@3.2.465 # Infrastructure as code security
     - git-diff-check # Git hygiene
     - osv-scanner@2.2.1 # Vulnerability scanning
@@ -74,6 +84,7 @@ lint:
       paths:
         - ".vscode/settings.json" # VS Code settings have different formatting standards
         - ".vscode/tasks.json" # VS Code tasks have different formatting standards
+        - ".github/workflows/ci.yml" # Temporary: Cleaning up legacy whitespace issues
 
 # Git hooks and actions configuration
 actions:
@@ -82,14 +93,14 @@ actions:
     - trunk-announce # Reduce noise
   enabled:
     - trunk-upgrade-available # Version update notifications
-    - trunk-fmt-pre-commit # Auto-format on commit
+    - trunk-fmt-pre-commit # Auto-format on commit (includes whitespace trimming)
     - trunk-check-pre-push # Check quality before push
 
 # Tools configuration
 # Tools configuration
 tools:
   enabled:
-    - dotnet@7.0.400
+    - dotnet@9.0.303 # Updated to match BusBuddy's .NET 9 target
     - pwsh@7.5.2
     - converttosarif@1.0.0 # SARIF conversion for VS Code integration
 

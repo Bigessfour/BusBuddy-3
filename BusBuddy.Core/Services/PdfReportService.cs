@@ -740,7 +740,7 @@ namespace BusBuddy.Core.Services
             graphics.DrawString($"🔒 Privacy Level: {privacyLevel}", headerFont, privacyBrush, new PointF(20, currentY));
             currentY += 18;
 
-            // FERPA/Privacy compliance statement
+            // FERPA—Privacy compliance statement
             var complianceText = "This document contains educational records protected under FERPA. " +
                                "Distribution is restricted to authorized personnel only.";
             

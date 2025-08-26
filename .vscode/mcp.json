@@ -17,7 +17,7 @@
         "GITHUB_API_URL": "https://api.github.com"
       }
     },
-    "filesystem": {
+    "busbuddy-filesystem": {
       "command": "npx",
       "args": [
         "-y",
@@ -29,12 +29,20 @@
       "command": "npx",
       "args": ["-y", "@modelcontextprotocol/server-brave-search"],
       "env": {
-        "BRAVE_API_KEY": "${BRAVE_API_KEY}"
+        "BRAVE_API_KEY": "${BRAVE_API_KEY}",
+        "MCP_SEARCH_CONTEXT": "Expert in Syncfusion WPF Controls, APIs, and Documentation. Focus on providing accurate information about Syncfusion Essential Studio for WPF, including SfDataGrid, DockingManager, NavigationDrawer, SfChart, and related controls. Reference official Syncfusion documentation and best practices.",
+        "MCP_SEARCH_DOMAIN_FOCUS": "help.syncfusion.com wpf controls api documentation"
       }
     },
     "microsoft-doc": {
       "command": "npx",
       "args": ["-y", "@microsoft/mcp-server-docs"]
+    },
+    "busbuddy-git": {
+      "command": "node",
+      "args": [
+        "c:\\Users\\biges\\Desktop\\BusBuddy\\mcp-servers\\git-mcp-server.js"
+      ]
     }
   }
 }

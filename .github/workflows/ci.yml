@@ -1,4 +1,4 @@
-﻿---
+---
 # 🚌 BusBuddy CI/CD Pipeline - .NET 9 Optimized Edition
 # 🎉 MAJOR UPGRADE: Complete .NET 8→9 Migration with Enhanced Package Stack
 # ✨ LATEST ACHIEVEMENTS (August 25, 2025):
@@ -9,13 +9,10 @@
 # ⚡ Optimized AutoMapper stack (12.0.1) for zero dependency warnings
 # 🧹 Eliminated ALL package version conflicts and build warnings
 # 🎯 Trunk CLI compatibility resolved with .NET SDK 9.0.304
-
 name: "🚌 BusBuddy .NET 9 Excellence Pipeline"
-
 concurrency:
   group: busbuddy-ci-${{ github.ref }}
   cancel-in-progress: true
-
 on:
   push:
     branches: [main, master, develop]
@@ -30,24 +27,20 @@ on:
       - docs/**
       - Documentation/**
   workflow_dispatch:
-
 env:
   # 🚀 .NET 9 Excellence Configuration
   DOTNET_VERSION: "9.0.x"
   SOLUTION_FILE: "BusBuddy.sln"
   BUILD_CONFIGURATION: "Release"
-
   # 🎯 Updated Package Versions (Latest as of Aug 25, 2025)
   # Microsoft.Data.SqlClient: 6.1.1 (Azure SQL optimized)
   # Microsoft.Identity.Client: 4.76.0 (enhanced security)
   # NetTopologySuite: 2.6.0 (improved geospatial)
   # AutoMapper: 12.0.1 (dependency-optimized)
-
   # 🔧 BusBuddy Environment Controls
   BUSBUDDY_NO_WELCOME: "1"
   BUSBUDDY_NO_XAI_WARN: "1"
   BUSBUDDY_SILENT: "1"
-
 jobs:
   validate-dependencies:
     name: "Validate Dependencies & Licenses"
@@ -66,12 +59,10 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
       - name: "Setup .NET"
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
-
       - name: "Check Syncfusion License Configuration"
         shell: pwsh
         run: |
@@ -82,12 +73,10 @@ jobs:
                          "Add SYNCFUSION_LICENSE_KEY to repository secrets."
             exit 1
           }
-
       - name: "Restore Dependencies"
         run: |
           echo "Restoring NuGet packages..."
           dotnet restore ${{ env.SOLUTION_FILE }} --verbosity normal
-
       - name: "Dependency Security Audit"
         shell: pwsh
         run: |
@@ -101,7 +90,6 @@ jobs:
           } catch {
             Write-Warning "Deprecated check skipped"
           }
-
   build-and-test:
     name: "Build & Test"
     runs-on: windows-latest
@@ -113,23 +101,23 @@ jobs:
       - name: "Detect Syncfusion License"
         shell: pwsh
         run: |
-          if ($env:SYNCFUSION_LICENSE_KEY) { Write-Output "Syncfusion license detected in environment." } else { Write-Warning "SYNCFUSION license not present (secret not mapped)." }
-
+          if ($env:SYNCFUSION_LICENSE_KEY) {
+                      Write-Output "Syncfusion license detected in environment."
+                    } else {
+                      Write-Warning "SYNCFUSION license not present (secret not mapped)."
+                    }
       - name: "Checkout Code"
         uses: actions/checkout@v4
-
       - name: "Setup .NET"
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
-
       - name: "Cache NuGet packages"
         uses: actions/cache@v4
         with:
           path: ~/.nuget/packages
           key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
           restore-keys: ${{ runner.os }}-nuget-
-
       - name: "Install PowerShell Modules"
         shell: pwsh
         run: |
@@ -141,7 +129,6 @@ jobs:
               Write-Warning "Failed installing $m"
             }
           }
-
       - name: "Configure Syncfusion License"
         shell: pwsh
         run: |
@@ -150,7 +137,6 @@ jobs:
           } else {
             Write-Warning "Syncfusion license key is not configured"
           }
-
       - name: "Load PowerShell Profile & List bb-* Commands"
         shell: pwsh
         run: |
@@ -162,7 +148,6 @@ jobs:
           } else {
             Write-Host "Profile not found: $profilePath (proceeding without bb-* shortcuts)" -ForegroundColor Yellow
           }
-
       - name: "Quality Validation (Anti-Regression & XAML)"
         shell: pwsh
         run: |
@@ -170,7 +155,6 @@ jobs:
           if (Get-Command bb-anti-regression -ErrorAction SilentlyContinue) { bb-anti-regression; $ran = $true }
           if (Get-Command bb-xaml-validate -ErrorAction SilentlyContinue) { bb-xaml-validate; $ran = $true }
           if (-not $ran) { Write-Host "bb-* validation commands not available; skipping" -ForegroundColor Yellow }
-
       - name: "🔧 Restore Dependencies with Retry Logic"
         shell: pwsh
         run: |
@@ -185,16 +169,15 @@ jobs:
               break
             } catch {
               Write-Output "❌ Restore attempt $i failed: $_"
-              if ($i -eq $attempts) { 
+              if ($i -eq $attempts) {
                 Write-Error "All restore attempts failed"
-                exit 1 
+                exit 1
               }
               Write-Output "⏳ Waiting 5 seconds before retry..."
               Start-Sleep -Seconds 5
             }
           }
           if (-not $success) { exit 1 }
-
       - id: build-step
         name: "Build Solution"
         shell: pwsh
@@ -205,9 +188,17 @@ jobs:
           } else {
             dotnet build ${{ env.SOLUTION_FILE }} --configuration ${{ env.BUILD_CONFIGURATION }} --no-restore --verbosity minimal /p:TreatWarningsAsErrors=false /p:WarningLevel=1
           }
-
       - name: "🧪 Run Tests with Enhanced Error Handling"
         shell: pwsh
+        env:
+          # Override connection strings for CI testing
+          BUSBUDDY_CONNECTION: ""
+          AZURE_SQL_USER: ""
+          AZURE_SQL_PASSWORD: ""
+          # Use LocalDB for CI tests
+          ConnectionStrings__DefaultConnection: "Data Source=(localdb)\\MSSQLLocalDB;Initial Catalog=BusBuddyTest;Integrated Security=True;MultipleActiveResultSets=True"
+          ConnectionStrings__TestConnection: "Data Source=:memory:"
+          DatabaseProvider: "Local"
         run: |
           $attempts = 2
           $success = $false
@@ -219,14 +210,14 @@ jobs:
                 bb-test
               } else {
                 Write-Output "Using dotnet test directly"
-                dotnet test ${{ env.SOLUTION_FILE }} --configuration ${{ env.BUILD_CONFIGURATION }} --no-build --verbosity normal --logger "trx;LogFileName=test-results.trx" --collect "XPlat Code Coverage" --results-directory ./TestResults --timeout 600000
+                dotnet test ${{ env.SOLUTION_FILE }} --configuration ${{ env.BUILD_CONFIGURATION }} --no-build --verbosity normal --logger "trx;LogFileName=test-results.trx" --collect "XPlat Code Coverage" --results-directory ./TestResults --timeout 600000 --settings testsettings.runsettings
               }
               $success = $true
               Write-Output "✅ Tests completed successfully"
               break
             } catch {
               Write-Output "❌ Test attempt $i failed: $_"
-              if ($i -eq $attempts) { 
+              if ($i -eq $attempts) {
                 Write-Warning "Tests failed after $attempts attempts, but continuing pipeline"
                 # Don't exit 1 here to allow artifact upload
               } else {
@@ -235,7 +226,6 @@ jobs:
               }
             }
           }
-
       - name: "Upload Test Results"
         if: always()
         uses: actions/upload-artifact@v4
@@ -243,7 +233,6 @@ jobs:
           name: test-results
           path: ./TestResults
           retention-days: 7
-
   quality-analysis:
     name: "Quality Analysis & Coverage"
     runs-on: ubuntu-latest
@@ -256,22 +245,18 @@ jobs:
           if ($env:SYNCFUSION_LICENSE_KEY) { Write-Output "Syncfusion license detected in environment." } else { Write-Warning "SYNCFUSION license not present (secret not mapped)." }
       - name: "Checkout Code"
         uses: actions/checkout@v4
-
       - name: "Setup .NET"
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
-
       - name: "Export Syncfusion license to env"
         shell: pwsh
         run: |
           if (-not [string]::IsNullOrEmpty($env:SYNCFUSION_LICENSE_KEY)) { Write-Output "SYNCFUSION_LICENSE_KEY=$env:SYNCFUSION_LICENSE_KEY" >> $env:GITHUB_ENV }
-
       - name: "Run Tests with Coverage"
         shell: pwsh
         run: |
           dotnet test ${{ env.SOLUTION_FILE }} --configuration ${{ env.BUILD_CONFIGURATION }} --verbosity normal --logger "trx;LogFileName=quality-test-results.trx" --collect:"XPlat Code Coverage" --results-directory ./QualityTestResults
-
       - name: "Analyze Code Coverage"
         shell: pwsh
         run: |
@@ -284,19 +269,16 @@ jobs:
               if ($coverage -lt 80) { Write-Error "Coverage below threshold"; exit 1 }
             }
           }
-
       - name: "Run Trunk Check"
         run: |
           if ! command -v trunk &> /dev/null; then curl https://get.trunk.io -fsSL | bash; fi
           trunk check --all --ci --output-format=sarif --output-file=trunk-results.sarif || true
-
       - name: "Upload SARIF Results"
         uses: github/codeql-action/upload-sarif@v3
         if: always()
         with:
           sarif_file: trunk-results.sarif
           category: trunk-analysis
-
   security-analysis:
     name: "🔒 Security Analysis"
     runs-on: windows-latest
@@ -311,7 +293,6 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
       - name: "🔐 Export secrets to env"
         shell: pwsh
         env:
@@ -343,19 +324,16 @@ jobs:
               Add-Content -Path $env:GITHUB_ENV -Value "$k=$v"
             }
           }
-
       - name: "🏗️ Setup .NET"
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
-
       - name: "🔍 Initialize CodeQL"
         uses: github/codeql-action/init@v3
         with:
           languages: csharp
           config-file: .github/codeql-config.yml # Use explicit config file
           queries: security-and-quality # Standard query suite
-
       - name: "🔧 Restore and build for analysis"
         shell: pwsh
         run: |
@@ -367,13 +345,11 @@ jobs:
             Write-Error "❌ Build failed: $_"
             exit 1
           }
-
       - name: "🔍 Perform CodeQL Analysis"
         uses: github/codeql-action/analyze@v3
         with:
           output: sarif-results
           upload: true # Ensure SARIF upload
-
       - name: "📊 Create security summary"
         if: always()
         shell: pwsh
@@ -384,7 +360,6 @@ jobs:
           echo "|-----------|--------|" >> $env:GITHUB_STEP_SUMMARY
           echo "| CodeQL Analysis | ${{ job.status }} |" >> $env:GITHUB_STEP_SUMMARY
           echo "| Dependency Scan | ✅ Completed in Validate Dependencies |" >> $env:GITHUB_STEP_SUMMARY
-
   deployment-readiness:
     name: "Deployment Readiness"
     runs-on: windows-latest
@@ -398,30 +373,25 @@ jobs:
           if ($env:SYNCFUSION_LICENSE_KEY) { Write-Output "Syncfusion license detected in environment." } else { Write-Warning "Syncfusion license not present (secret not mapped)." }
       - name: "Checkout Code"
         uses: actions/checkout@v4
-
       - name: "Setup .NET"
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
-
       - name: "Export Syncfusion license to env"
         shell: pwsh
         run: |
           if ([string]::IsNullOrEmpty($env:SYNCFUSION_LICENSE_KEY)) { Write-Error "Syncfusion license required"; exit 1 }
           Write-Output "SYNCFUSION_LICENSE_KEY=$env:SYNCFUSION_LICENSE_KEY" >> $env:GITHUB_ENV
-
       - name: "Create Release Build"
         shell: pwsh
         run: |
           dotnet publish ./BusBuddy.WPF/BusBuddy.WPF.csproj --configuration Release --runtime win-x64 --self-contained true --output ./publish /p:PublishSingleFile=true /p:IncludeNativeLibrariesForSelfExtract=true
-
       - name: "Upload Deployment Artifacts"
         uses: actions/upload-artifact@v4
         with:
           name: deployment-package
           path: ./publish
           retention-days: 30
-
   notify-completion:
     name: "Notify Completion"
     runs-on: ubuntu-latest

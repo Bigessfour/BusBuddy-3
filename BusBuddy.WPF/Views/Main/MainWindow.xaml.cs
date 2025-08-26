@@ -69,21 +69,28 @@ namespace BusBuddy.WPF.Views.Main
                 // Restore normal WPF initialization so x:Name fields (StudentsGrid, MainDockingManager, etc.) are generated
                 // Explicit 'this.' to help certain analyzers/linkers detect generated partial method
                 this.InitializeComponent();
+                Logger.Information("✅ InitializeComponent completed successfully");
 
                 Logger.Debug("Applying Syncfusion theme");
                 ApplySyncfusionTheme();
+                Logger.Information("✅ Syncfusion theme applied successfully");
 
                 Logger.Debug("Initializing MainWindow components and DataContext");
                 InitializeMainWindow();
+                Logger.Information("✅ MainWindow components initialized successfully");
 
                 // Wire up ViewModel events for MVVM command handling
+                Logger.Debug("Wiring up ViewModel events");
                 WireUpViewModelEvents();
+                Logger.Information("✅ ViewModel events wired successfully");
 
                 // Wire up lifecycle events once visual tree is ready
                 try
                 {
+                    Logger.Debug("Wiring lifecycle events");
                     this.Loaded += MainWindow_Loaded;
                     this.Closing += MainWindow_Closing;
+                    Logger.Information("✅ Lifecycle events wired successfully");
                 }
                 catch (Exception hookEx)
                 {
@@ -93,11 +100,12 @@ namespace BusBuddy.WPF.Views.Main
                 // Global button click diagnostics: capture all button clicks in this window
                 try
                 {
+                    Logger.Debug("Setting up global event handlers");
                     AddHandler(ButtonBase.ClickEvent, new System.Windows.RoutedEventHandler(OnAnyButtonClick), true);
                     AddHandler(Selector.SelectionChangedEvent, new System.Windows.Controls.SelectionChangedEventHandler(OnAnySelectionChanged), true);
                     AddHandler(TextBoxBase.TextChangedEvent, new System.Windows.Controls.TextChangedEventHandler(OnAnyTextChanged), true);
                     AddHandler(System.Windows.Controls.Validation.ErrorEvent, new System.EventHandler<System.Windows.Controls.ValidationErrorEventArgs>(OnValidationError), true);
-                    Logger.Information("Global button click diagnostics handler attached");
+                    Logger.Information("✅ Global button click diagnostics handler attached");
                 }
                 catch (Exception btnEx)
                 {
@@ -105,8 +113,16 @@ namespace BusBuddy.WPF.Views.Main
                 }
 
                 // Attach Syncfusion SfDataGrid error hooks for runtime diagnostics
-                Logger.Debug("Attaching Syncfusion event hooks");
-                AttachSyncfusionEventHooks();
+                try
+                {
+                    Logger.Debug("Attaching Syncfusion event hooks");
+                    AttachSyncfusionEventHooks();
+                    Logger.Information("✅ Syncfusion event hooks attached successfully");
+                }
+                catch (Exception sfEx)
+                {
+                    Logger.Warning(sfEx, "Failed attaching Syncfusion event hooks");
+                }
 
                 // Wire DockingManager activation events for dynamic sizing
                 try
@@ -346,7 +362,7 @@ namespace BusBuddy.WPF.Views.Main
                 string? label = null;
 
                 // Try to capture label/content across common button types
-                if (src is Syncfusion.Windows.Tools.Controls.ButtonAdv badv)
+                if (src is Syncfusion.Windows.Tools.Controls.ButtonAdv badv) // cspell:ignore badv
                 {
                     label = badv.Label;
                     bool? canExec = null;
@@ -436,7 +452,7 @@ namespace BusBuddy.WPF.Views.Main
                 int total = 0, adv = 0, missingLabel = 0, missingAuto = 0, noCmd = 0;
                 foreach (var d in Traverse(this))
                 {
-                    if (d is Syncfusion.Windows.Tools.Controls.ButtonAdv badv)
+                    if (d is Syncfusion.Windows.Tools.Controls.ButtonAdv badv) // cspell:ignore badv
                     {
                         total++; adv++;
                         var label = badv.Label; var autoName = System.Windows.Automation.AutomationProperties.GetName(badv);

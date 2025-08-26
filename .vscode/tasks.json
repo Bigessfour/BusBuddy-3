@@ -6,12 +6,7 @@
       "type": "process",
       "label": "dotnet build BusBuddy.sln",
       "command": "dotnet",
-      "args": [
-        "build",
-        "BusBuddy.sln",
-        "--configuration",
-        "Debug" // Use explicit Debug configuration to avoid empty ${env:BUILD_CONFIGURATION}
-      ],
+      "args": ["build", "BusBuddy.sln", "--configuration", "Debug"],
       "options": {
         "env": {
           "BUSBUDDY_NO_WELCOME": "1",
@@ -66,10 +61,10 @@
     {
       "label": "bb-wpf-build (C# WPF via PowerShell)",
       "type": "shell",
-      "command": "bb-build", // From optimized profile
+      "command": "bb-build",
       "problemMatcher": ["$msCompile"],
       "group": "build",
-      "presentation": {
+      "presentationOptions": {
         "echo": true,
         "reveal": "always",
         "focus": false,
@@ -87,7 +82,7 @@
         "kind": "build",
         "isDefault": false
       },
-      "presentation": {
+      "presentationOptions": {
         "echo": true,
         "reveal": "always",
         "focus": false,
@@ -107,7 +102,7 @@
       "command": "pwsh",
       "args": ["-Command", "bb-health"],
       "group": "test",
-      "presentation": {
+      "presentationOptions": {
         "echo": true,
         "reveal": "always",
         "focus": true,
@@ -120,7 +115,7 @@
       "command": "pwsh",
       "args": ["-Command", "bb-sql-test"],
       "group": "test",
-      "presentation": {
+      "presentationOptions": {
         "echo": true,
         "reveal": "always",
         "focus": true,
@@ -133,7 +128,7 @@
       "command": "pwsh",
       "args": ["-Command", "bb-deps-check"],
       "group": "build",
-      "presentation": {
+      "presentationOptions": {
         "reveal": "always",
         "panel": "shared"
       }
@@ -150,7 +145,7 @@
         "kind": "test",
         "isDefault": false
       },
-      "presentation": {
+      "presentationOptions": {
         "echo": true,
         "reveal": "always",
         "focus": true,
@@ -175,7 +170,7 @@
       "command": "trunk",
       "args": ["fmt", "--all"],
       "group": "build",
-      "presentation": {
+      "presentationOptions": {
         "echo": true,
         "reveal": "always",
         "focus": false,
@@ -188,7 +183,7 @@
       "command": "pwsh",
       "args": ["-Command", "& './generate-fetchability-index.ps1' -Validate"],
       "group": "build",
-      "presentation": {
+      "presentationOptions": {
         "echo": true,
         "reveal": "always",
         "focus": true,
@@ -208,7 +203,7 @@
         "Invoke-ScriptAnalyzer -Path '${workspaceFolder}\\PowerShell' -Recurse -Settings '${workspaceFolder}\\PSScriptAnalyzerSettings.psd1'"
       ],
       "group": "test",
-      "presentation": {
+      "presentationOptions": {
         "echo": true,
         "reveal": "always",
         "focus": true,
@@ -243,7 +238,7 @@
         "--collect:\"XPlat Code Coverage\""
       ],
       "group": "test",
-      "presentation": {
+      "presentationOptions": {
         "echo": true,
         "reveal": "always",
         "focus": true,
@@ -262,7 +257,7 @@
         "if (Get-AzContext) { Write-Output '✅ Azure PowerShell authenticated' } else { Write-Output '❌ Run Connect-AzAccount to authenticate' }"
       ],
       "group": "build",
-      "presentation": {
+      "presentationOptions": {
         "echo": true,
         "reveal": "always",
         "focus": true,
@@ -273,9 +268,9 @@
       "label": "bb-azure-sql-query (Azure SQL via PowerShell)",
       "type": "shell",
       "command": "pwsh",
-      "args": ["-Command", "bb-sql-test"], // Uses profile alias for Azure SQL operations
+      "args": ["-Command", "bb-sql-test"],
       "group": "test",
-      "presentation": {
+      "presentationOptions": {
         "echo": true,
         "reveal": "always",
         "focus": true,
@@ -291,7 +286,7 @@
       "command": "pwsh",
       "args": [
         "-Command",
-        ". '${workspaceFolder}/PowerShell/Profiles/Microsoft.PowerShell_profile_optimized.ps1'; try { dotnet clean BusBuddy.sln --verbosity minimal; Write-Information 'Solution cleaned successfully' -InformationAction Continue } catch { Write-Error 'Clean failed' }; try { Get-ChildItem -Path '.\\*\\bin', '.\\*\\obj' -Recurse -Directory -ErrorAction SilentlyContinue | Remove-Item -Recurse -Force; Write-Information 'Build artifacts removed' -InformationAction Continue } catch { Write-Warning 'Some artifacts could not be removed' }"
+        ". '${workspaceFolder}/PowerShell/Profiles/Microsoft.PowerShell_profile_optimized.ps1'; try { dotnet clean BusBuddy.sln --verbosity minimal; Write-Information 'Solution cleaned successfully' -InformationAction Continue } catch { Write-Error -Message 'Clean failed' }; try { Get-ChildItem -Path '.\\*\\bin', '.\\*\\obj' -Recurse -Directory -ErrorAction SilentlyContinue | Remove-Item -Recurse -Force; Write-Information 'Build artifacts removed' -InformationAction Continue } catch { Write-Warning -Message 'Some artifacts could not be removed' }"
       ],
       "group": "build",
       "options": {
@@ -300,7 +295,7 @@
           "DOTNET_NOLOGO": "1"
         }
       },
-      "presentation": {
+      "presentationOptions": {
         "echo": true,
         "reveal": "always",
         "focus": false,
@@ -321,7 +316,7 @@
           "DOTNET_NOLOGO": "1"
         }
       },
-      "presentation": {
+      "presentationOptions": {
         "echo": true,
         "reveal": "always",
         "focus": false,
@@ -347,7 +342,7 @@
           "DOTNET_NOLOGO": "1"
         }
       },
-      "presentation": {
+      "presentationOptions": {
         "echo": false,
         "reveal": "silent",
         "focus": false,
@@ -373,7 +368,7 @@
           "DOTNET_NOLOGO": "1"
         }
       },
-      "presentation": {
+      "presentationOptions": {
         "echo": false,
         "reveal": "silent",
         "focus": false,
@@ -393,7 +388,7 @@
           "DOTNET_NOLOGO": "1"
         }
       },
-      "presentation": {
+      "presentationOptions": {
         "echo": false,
         "reveal": "silent",
         "focus": false,
@@ -409,7 +404,7 @@
       "command": "dotnet",
       "args": ["new", "opensilverapp", "-n", "${input:projectName}"],
       "group": "build",
-      "presentation": {
+      "presentationOptions": {
         "echo": true,
         "reveal": "always",
         "focus": false,
@@ -423,7 +418,7 @@
       "command": "dotnet",
       "args": ["new", "opensilverbusinessapp", "-n", "${input:projectName}"],
       "group": "build",
-      "presentation": {
+      "presentationOptions": {
         "echo": true,
         "reveal": "always",
         "focus": false,
@@ -437,7 +432,7 @@
       "command": "dotnet",
       "args": ["new", "opensilverlib", "-n", "${input:projectName}"],
       "group": "build",
-      "presentation": {
+      "presentationOptions": {
         "echo": true,
         "reveal": "always",
         "focus": false,
@@ -451,7 +446,7 @@
       "command": "dotnet",
       "args": ["workload", "install", "wasm-tools"],
       "group": "build",
-      "presentation": {
+      "presentationOptions": {
         "echo": true,
         "reveal": "always",
         "focus": false,
@@ -465,7 +460,7 @@
       "command": "dotnet",
       "args": ["new", "update"],
       "group": "build",
-      "presentation": {
+      "presentationOptions": {
         "echo": true,
         "reveal": "always",
         "focus": false,
@@ -479,39 +474,24 @@
       "command": "dotnet",
       "args": ["new", "--list", "|", "findstr", "-i", "opensilver"],
       "group": "build",
-      "presentation": {
+      "presentationOptions": {
         "echo": true,
         "reveal": "always",
         "focus": false,
         "panel": "shared"
       },
       "problemMatcher": []
-    }
-  ],
-  "inputs": [
-    {
-      "id": "projectName",
-      "description": "Enter project name",
-      "default": "MyOpenSilverProject",
-      "type": "promptString"
     },
 
     // === SYNCFUSION WPF DEVELOPMENT TASKS ===
     {
-      "label": "Syncfusion: Check License",
       "type": "shell",
+      "label": "Syncfusion: Check License",
       "command": "pwsh",
       "args": [
         "-Command",
         "if ($env:SYNCFUSION_LICENSE_KEY) { Write-Host '✅ Syncfusion license configured' -ForegroundColor Green } else { Write-Host '❌ SYNCFUSION_LICENSE_KEY not set' -ForegroundColor Red }"
-      ],
-      "group": "test",
-      "presentation": {
-        "echo": true,
-        "reveal": "always",
-        "focus": false,
-        "panel": "shared"
-      }
+      ]
     },
     {
       "label": "Syncfusion: Validate XAML Controls",
@@ -522,7 +502,7 @@
         "Get-ChildItem -Path '${workspaceFolder}' -Filter '*.xaml' -Recurse | ForEach-Object { $content = Get-Content $_.FullName -Raw; if ($content -match 'syncfusion:') { Write-Host \"✅ Syncfusion controls found in $($_.Name)\" -ForegroundColor Green } else { Write-Host \"ℹ️ No Syncfusion controls in $($_.Name)\" -ForegroundColor Yellow } }"
       ],
       "group": "test",
-      "presentation": {
+      "presentationOptions": {
         "echo": true,
         "reveal": "always",
         "focus": false,
@@ -538,7 +518,7 @@
         "Get-ChildItem -Path '${workspaceFolder}' -Filter '*.xaml' -Recurse | ForEach-Object { Write-Host \"Formatting $($_.Name)\" -ForegroundColor Cyan }"
       ],
       "group": "build",
-      "presentation": {
+      "presentationOptions": {
         "echo": true,
         "reveal": "always",
         "focus": false,
@@ -554,7 +534,7 @@
         "$syncfusionControls = @(); Get-ChildItem -Path '${workspaceFolder}' -Filter '*.xaml' -Recurse | ForEach-Object { $content = Get-Content $_.FullName -Raw; $matches = [regex]::Matches($content, 'syncfusion:([A-Za-z0-9]+)'); foreach ($match in $matches) { $syncfusionControls += $match.Groups[1].Value } }; $syncfusionControls | Sort-Object -Unique | ForEach-Object { Write-Host \"Syncfusion Control: $_\" -ForegroundColor Green }"
       ],
       "group": "build",
-      "presentation": {
+      "presentationOptions": {
         "echo": true,
         "reveal": "always",
         "focus": false,
@@ -571,12 +551,20 @@
         "@ext:syncfusioninc.document-viewer-vscode-extensions"
       ],
       "group": "build",
-      "presentation": {
+      "presentationOptions": {
         "echo": true,
         "reveal": "silent",
         "focus": false,
         "panel": "shared"
       }
+    }
+  ],
+  "inputs": [
+    {
+      "id": "projectName",
+      "description": "Enter project name",
+      "default": "MyOpenSilverProject",
+      "type": "promptString"
     }
   ]
 }

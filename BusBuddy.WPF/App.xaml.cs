@@ -187,7 +187,7 @@ namespace BusBuddy.WPF
                     return;
                 }
 
-                // Initialize SyncFusion themes according to v30.1.42 API
+                // Initialize SyncFusion themes according to v30.2.6 API
                 InitializeSyncfusionThemes();
 
                 // Create and show the main window for normal GUI operation
@@ -807,8 +807,8 @@ Examples:
                     Syncfusion.Licensing.SyncfusionLicenseProvider.RegisterLicense(licenseKey);
 
                     // Enhanced validation for Syncfusion v30+ (as per 2025 documentation)
-                // Registration successful - v30.1.42 doesn't require explicit platform validation
-                _bootstrapLogger?.Information("✅ Syncfusion license registered successfully for version 30.1.42");                    // Log additional diagnostics to help verify registration
+                // Registration successful - v30.2.6 doesn't require explicit platform validation
+                _bootstrapLogger?.Information("✅ Syncfusion license registered successfully for version 30.2.6");                    // Log additional diagnostics to help verify registration
                     _bootstrapLogger?.Information("🔍 License Key Preview: {Preview}", GetLicenseKeyPreview(licenseKey));
                     _bootstrapLogger?.Information("💡 If you see trial watermarks, verify your license key is valid and current");
                 }
@@ -846,7 +846,7 @@ Examples:
         /// <summary>
         /// Validates Syncfusion license key format and provides diagnostic information
         /// Enhanced to detect common placeholders including REPLACE_WI pattern
-        /// Based on Syncfusion documentation for version 30.1.42
+        /// Based on Syncfusion documentation for version 30.2.6
         /// </summary>
         private static bool ValidateSyncfusionLicenseKey(string licenseKey)
         {
@@ -898,7 +898,7 @@ Examples:
             var logger = _bootstrapLogger ?? Log.Logger;
 
             logger.Information("🔍 Syncfusion Diagnostics:");
-            logger.Information("   Version: 30.1.42 (as defined in Directory.Build.props)");
+            logger.Information("   Version: 30.2.6 (as defined in Directory.Build.props)");
             logger.Information("   Platform: WPF (.NET 9.0-windows)");
             logger.Information("   License Type: Offline validation (no internet required)");
             logger.Information("   Registration Location: App() constructor (before any control initialization)");
@@ -937,16 +937,16 @@ Examples:
         }
 
         /// <summary>
-        /// Initialize SyncFusion themes according to v30.1.42 API guidelines
+        /// Initialize SyncFusion themes according to v30.2.6 API guidelines
         /// Sets up FluentDark as primary theme with FluentLight fallback
         /// </summary>
         private void InitializeSyncfusionThemes()
         {
             try
             {
-                Log.Information("🎨 Initializing SyncFusion themes for v30.1.42...");
+                Log.Information("🎨 Initializing SyncFusion themes for v30.2.6...");
 
-                // Enable theme application as default style (required for v30.1.42)
+                // Enable theme application as default style (required for v30.2.6)
                 SfSkinManager.ApplyStylesOnApplication = true;
 
                 // Register FluentDark theme settings

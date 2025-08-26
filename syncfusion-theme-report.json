@@ -1,0 +1,18 @@
+{
+  "Timestamp": "2025-08-25 15:37:28",
+  "Path": ".\\BusBuddy.WPF\\Views\\Bus\\NotificationWindow.xaml",
+  "Summary": {
+    "FilesProcessed": 1,
+    "ThemeViolations": 0,
+    "ResourceViolations": 0,
+    "ColorViolations": 0,
+    "TotalIssues": 0,
+    "FixedIssues": 0
+  },
+  "Violations": {
+    "ThemeViolations": [],
+    "ResourceViolations": [],
+    "ColorViolations": []
+  },
+  "FixedIssues": []
+}

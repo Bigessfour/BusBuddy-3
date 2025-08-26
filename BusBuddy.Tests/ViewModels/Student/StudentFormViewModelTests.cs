@@ -11,6 +11,7 @@ using BusBuddy.Core.Data;
 using Microsoft.EntityFrameworkCore;
 using System.Windows.Media;
 using FluentAssertions;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace BusBuddy.Tests.ViewModels.Student
 {
@@ -19,21 +20,25 @@ namespace BusBuddy.Tests.ViewModels.Student
     /// Tests validation, commands, and AI integration
     /// </summary>
     [TestFixture]
-    public class StudentFormViewModelTests : IDisposable
+    public class StudentFormViewModelTests : Core.DatabaseTestBase
     {
         // Serilog logger with enrichments for test lifecycle
         private static readonly Serilog.ILogger Logger = Serilog.Log.ForContext<StudentFormViewModelTests>();
-        private Mock<BusBuddyDbContext>? _mockContext;
         private Mock<AddressService>? _mockAddressService;
         private StudentFormViewModel? _viewModel;
-
+        private IStudentService? _studentService;
 
         [SetUp]
-        public void SetUp()
+        public override void SetUp()
         {
             Logger.Information("[SetUp] Initializing test context for {TestClass}", nameof(StudentFormViewModelTests));
-            _mockContext = new Mock<BusBuddyDbContext>();
+            
+            // Call base setup first to initialize database
+            base.SetUp();
+            
             _mockAddressService = new Mock<AddressService>();
+            _studentService = ServiceProvider.GetRequiredService<IStudentService>();
+            
             var testStudent = new BusBuddy.Core.Models.Student
             {
                 StudentId = 1,
@@ -42,17 +47,21 @@ namespace BusBuddy.Tests.ViewModels.Student
                 HomeAddress = "123 Test St",
                 City = "TestCity",
                 State = "IL",
-                Zip = "12345",
-                Active = true
+                Zip = "12345"
+                ,Active = true
             };
-            _viewModel = new StudentFormViewModel(testStudent, enableValidation: true);
+            
+            // Create StudentFormViewModel using a test-specific factory for dependency injection
+            _viewModel = Tests.Helpers.TestViewModelFactory.CreateStudentFormViewModel(
+                Context, _studentService, testStudent, enableValidation: true);
         }
 
         [TearDown]
-        public void TearDown()
+        public override void TearDown()
         {
             Logger.Information("[TearDown] Disposing test context for {TestClass}", nameof(StudentFormViewModelTests));
             _viewModel?.Dispose();
+            base.TearDown();
         }
 
         [Test]
@@ -201,12 +210,7 @@ namespace BusBuddy.Tests.ViewModels.Student
             _viewModel.AvailableBusStops.Should().Contain("Oak & 1st");
         }
 
-        public void Dispose()
-        {
-            Logger.Information("[Dispose] Finalizing test class {TestClass}", nameof(StudentFormViewModelTests));
-            _viewModel?.Dispose();
-            GC.SuppressFinalize(this);
-        }
+
     }
 
     /// <summary>
