@@ -1,20 +1,44 @@
-# 🚀 CI/CD with Grok-4 AI Analysis - Complete Guide
+# 🚀 CI/CD with Grok-4 AI Analysis & GitHub Actions Secrets - Complete Guide
 
-BusBuddy Continuous Integration and Deployment with xAI Grok-4 Intelligent Analysis
+BusBuddy Continuous Integration and Deployment with xAI Grok-4 Intelligent Analysis and fork-safe secret handling
 
 ---
 
 ## 📖 Overview
 
-BusBuddy's CI/CD pipeline integrates xAI's **Grok-4** model (`grok-4-0709`) to provide intelligent analysis of build failures, test results, and deployment issues. This system combines GitHub Actions automation with AI-powered insights to accelerate debugging and improve code quality.
+BusBuddy's CI/CD pipeline integrates xAI's **Grok-4** model (`grok-4-0709`) to provide intelligent analysis of build failures, test results, and deployment issues. The system implements **GitHub's recommended secrets handling patterns** for fork-safe operations and graceful degradation.
 
 ### 🎯 Key Features
 
 - **Automated Failure Analysis**: Grok-4 analyzes build errors, test failures, and deployment issues
+- **Fork-Safe Secret Handling**: Following [GitHub's official documentation](https://docs.github.com/en/actions/reference/workflows-and-actions/contexts#secrets-context)
 - **Smart Token Management**: Optimized prompts and response handling for Grok-4's 256K context window
 - **Azure SQL Integration**: Persistent storage of AI insights and metrics
 - **Pull Request Analysis**: Automated code review and Syncfusion UI optimization suggestions
 - **Cost Optimization**: Intelligent batching and caching to minimize API usage
+
+### 🔐 GitHub Actions Secrets Implementation
+
+Our CI/CD follows GitHub's recommended patterns for handling secrets in fork PRs:
+
+```yaml
+# Global permissions for all jobs
+permissions:
+  contents: read
+  security-events: write
+  actions: read
+
+jobs:
+  security-analysis:
+    if: github.event.repository.name != 'fork-repo' || github.event_name != 'pull_request'
+    steps:
+      # Conditional secret access with graceful degradation
+      - name: Upload SARIF results
+        if: always() && (github.repository_owner == 'original-owner')
+        uses: github/codeql-action/upload-sarif@v3
+```
+
+**Expected Behavior**: Secret context warnings are normal and indicate proper security isolation for fork PRs.
 
 ---
 
@@ -22,32 +46,37 @@ BusBuddy's CI/CD pipeline integrates xAI's **Grok-4** model (`grok-4-0709`) to p
 
 ### GitHub Actions Integration
 
-The CI/CD system uses two primary workflows:
+The CI/CD system uses enhanced workflows with secret-aware conditional logic:
 
-1. **`ci.yml`** - Standard build/test pipeline
-2. **`ci-with-ai.yml`** - Enhanced pipeline with Grok-4 analysis
+1. **`ci.yml`** - Standard build/test pipeline with fork-safe secret handling
+2. **`ci-with-ai.yml`** - Enhanced pipeline with Grok-4 analysis (conditional on secrets)
 
 ```mermaid
 flowchart TD
     A[Pull Request/Push] --> B[GitHub Actions Trigger]
-    B --> C[Build & Test]
-    C --> D{Build Success?}
-    D -->|Yes| E[Store Success Metrics]
-    D -->|No| F[Grok-4 Analysis]
-    F --> G[Azure SQL Storage]
-    F --> H[GitHub Comments]
-    E --> I[Deploy Artifacts]
-    G --> J[Dashboard Updates]
+    B --> C{Secrets Available?}
+    C -->|Yes| D[Full Pipeline + AI]
+    C -->|No| E[Basic Pipeline Only]
+    D --> F[Build & Test with AI]
+    E --> G[Build & Test Standard]
+    F --> H{Build Success?}
+    G --> H
+    H -->|Yes| I[Store Success Metrics]
+    H -->|No| J[Grok-4 Analysis - If Available]
+    J --> K[Azure SQL Storage]
+    J --> L[GitHub Comments]
+    I --> M[Deploy Artifacts]
+    K --> N[Dashboard Updates]
 ```
 
 ### 🤖 Grok-4 Integration Points
 
-| **Stage**         | **Analysis Type** | **Token Budget** | **Purpose**             |
-| ----------------- | ----------------- | ---------------- | ----------------------- |
-| **Build Failure** | Error diagnosis   | 30K tokens       | Identify root causes    |
-| **Test Failure**  | Test analysis     | 25K tokens       | Debug test issues       |
-| **PR Review**     | Code analysis     | 40K tokens       | Syncfusion optimization |
-| **UI Changes**    | XAML analysis     | 20K tokens       | UI/UX improvements      |
+| **Stage**         | **Analysis Type** | **Token Budget** | **Purpose**             | **Secret Required** |
+| ----------------- | ----------------- | ---------------- | ----------------------- | ------------------- |
+| **Build Failure** | Error diagnosis   | 30K tokens       | Identify root causes    | ✅ XAI_API_KEY      |
+| **Test Failure**  | Test analysis     | 25K tokens       | Debug test issues       | ✅ XAI_API_KEY      |
+| **PR Review**     | Code analysis     | 40K tokens       | Syncfusion optimization | ✅ XAI_API_KEY      |
+| **UI Changes**    | XAML analysis     | 20K tokens       | UI/UX improvements      | ✅ XAI_API_KEY      |
 | **Deployment**    | Success metrics   | 10K tokens       | Performance tracking    |
 
 ---

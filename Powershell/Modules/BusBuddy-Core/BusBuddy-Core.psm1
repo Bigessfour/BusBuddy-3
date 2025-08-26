@@ -483,6 +483,19 @@ ${3:An example}
 .NOTES
 ${4:General notes}
 #>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.EXAMPLE
+${3:An example}
+
+.NOTES
+${4:General notes}
+#>
 function Get-BusBuddyWorkspaceRoot {
     if ($PWD.Path -like "*BusBuddy*") {
         return $PWD.Path.Split('BusBuddy')[0] + 'BusBuddy'

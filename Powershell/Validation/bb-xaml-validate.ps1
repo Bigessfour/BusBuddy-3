@@ -1,4 +1,4 @@
-#Requires -Version 7.5
+﻿#Requires -Version 7.5
 <#
 .SYNOPSIS
 BusBuddy XAML Validation Script - Syncfusion-Only Enforcement
@@ -83,6 +83,37 @@ $script:RequiredProperties = @{
 #endregion
 
 #region Utility Functions
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER File
+${3:Parameter description}
+
+.PARAMETER Violation
+${4:Parameter description}
+
+.PARAMETER Line
+${5:Parameter description}
+
+.PARAMETER Severity
+${6:Parameter description}
+
+.PARAMETER Fix
+${7:Parameter description}
+
+.PARAMETER Control
+${8:Parameter description}
+
+.EXAMPLE
+${9:An example}
+
+.NOTES
+${10:General notes}
+#>
 <#
 .SYNOPSIS
 ${1:Short description}
@@ -1765,6 +1796,25 @@ ${5:An example}
 .NOTES
 ${6:General notes}
 #>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.PARAMETER Content
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
 function Test-StandardControlViolation {
     param(
         [string]$FilePath,
@@ -1796,6 +1846,25 @@ function Test-StandardControlViolation {
 #endregion
 
 #region Syncfusion Control Validation
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.PARAMETER Content
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
 <#
 .SYNOPSIS
 ${1:Short description}
@@ -2448,6 +2517,25 @@ function Test-SyncfusionControlCompliance {
 #endregion
 
 #region DataGrid Specific Validation
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.PARAMETER Content
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
 <#
 .SYNOPSIS
 ${1:Short description}
@@ -3718,6 +3806,25 @@ ${5:An example}
 .NOTES
 ${6:General notes}
 #>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.PARAMETER Content
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
 function Test-NamespaceCompliance {
     param(
         [string]$FilePath,
@@ -3761,6 +3868,22 @@ function Test-NamespaceCompliance {
         .NOTES
         ${5:General notes}
         #>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER FilePath
+${3:Parameter description}
+
+.EXAMPLE
+${4:An example}
+
+.NOTES
+${5:General notes}
+#>
 <#
 .SYNOPSIS
 ${1:Short description}
@@ -4302,6 +4425,19 @@ function Invoke-XAMLAutoFix {
 #endregion
 
 #region Main Validation Function
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.EXAMPLE
+${3:An example}
+
+.NOTES
+${4:General notes}
+#>
 <#
 .SYNOPSIS
 ${1:Short description}

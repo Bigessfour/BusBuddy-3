@@ -1,4 +1,4 @@
-# 🚌 BusBuddy Complete FETCHABILITY-INDEX.json Generator
+﻿# 🚌 BusBuddy Complete FETCHABILITY-INDEX.json Generator
 # Generates comprehensive fetchability index for ALL files in the codebase
 
 Write-Information "Generating complete fetchability index..." -InformationAction Continue
@@ -27,6 +27,22 @@ $allFiles = Get-ChildItem -Recurse -File | Where-Object {
 Write-Information "📊 Processing $($allFiles.Count) files..." -InformationAction Continue
 
 # Function to determine file category
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER file
+${3:Parameter description}
+
+.EXAMPLE
+${4:An example}
+
+.NOTES
+${5:General notes}
+#>
 <#
 .SYNOPSIS
 ${1:Short description}
@@ -200,6 +216,22 @@ function Get-FileCategory($file) {
 }
 
 # Function to determine file type
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER file
+${3:Parameter description}
+
+.EXAMPLE
+${4:An example}
+
+.NOTES
+${5:General notes}
+#>
 <#
 .SYNOPSIS
 ${1:Short description}

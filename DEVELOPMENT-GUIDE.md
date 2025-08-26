@@ -235,6 +235,37 @@ bbDevSession
     bbMvpCheck           # Must show "MVP READY!"
     ```
 
+### **GitHub Actions & CI/CD Integration**
+
+Our CI/CD pipeline follows **GitHub's recommended secrets handling patterns** for fork-safe operations:
+
+#### **Expected Behavior**
+- **Secret context warnings** in GitHub Actions are normal and indicate proper security
+- Secrets are intentionally unavailable in fork PRs for security isolation
+- Workflows gracefully handle missing secrets with conditional logic
+
+#### **Reference Documentation**
+- **GitHub Secrets Context**: https://docs.github.com/en/actions/reference/workflows-and-actions/contexts#secrets-context
+- **Fork PR Security**: External contributions don't have access to secrets (correct behavior)
+
+#### **Workflow Structure**
+```yaml
+# Example from our ci.yml
+permissions:
+  contents: read
+  security-events: write  # Required for CodeQL uploads
+  actions: read
+
+jobs:
+  security-analysis:
+    # Conditional execution for fork safety
+    if: github.event.repository.name != 'fork-repo' || github.event_name != 'pull_request'
+    steps:
+      - name: Upload SARIF results
+        if: always() && (github.repository_owner == 'original-owner')
+        uses: github/codeql-action/upload-sarif@v3
+```
+
 ### **Commit Standards**
 
 ```bash

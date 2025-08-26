@@ -1,4 +1,4 @@
-# 🚌 BusBuddy FETCHABILITY-INDEX.json Generator (Git Integrated)
+﻿# 🚌 BusBuddy FETCHABILITY-INDEX.json Generator (Git Integrated)
 # Generates machine-readable fetchability index for AI assistants
 # Optimized for pre-commit hook integration
 
@@ -415,6 +415,22 @@ ${4:An example}
 .NOTES
 ${5:General notes}
 #>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER file
+${3:Parameter description}
+
+.EXAMPLE
+${4:An example}
+
+.NOTES
+${5:General notes}
+#>
 function Get-FileCategory($file) {
     $ext = $file.Extension.ToLower()
     $name = $file.Name.ToLower()
@@ -460,6 +476,22 @@ function Get-FileCategory($file) {
 }
 
 # Enhanced type detection
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER file
+${3:Parameter description}
+
+.EXAMPLE
+${4:An example}
+
+.NOTES
+${5:General notes}
+#>
 <#
 .SYNOPSIS
 ${1:Short description}

@@ -1,4 +1,4 @@
-# Mass Delete GitHub Workflow Runs
+﻿# Mass Delete GitHub Workflow Runs
 # This script helps clean up old workflow runs after repository refactoring
 # Uses GitHub CLI for secure API access
 
@@ -176,6 +176,19 @@ ${3:An example}
 .NOTES
 ${4:General notes}
 #>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.EXAMPLE
+${3:An example}
+
+.NOTES
+${4:General notes}
+#>
 function Test-GitHubCLI {
     try {
         $null = gh --version
@@ -189,6 +202,19 @@ function Test-GitHubCLI {
 }
 
 # Check authentication
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.EXAMPLE
+${3:An example}
+
+.NOTES
+${4:General notes}
+#>
 <#
 .SYNOPSIS
 ${1:Short description}
@@ -485,6 +511,31 @@ ${7:An example}
 .NOTES
 ${8:General notes}
 #>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER RepoName
+${3:Parameter description}
+
+.PARAMETER WorkflowFilter
+${4:Parameter description}
+
+.PARAMETER Status
+${5:Parameter description}
+
+.PARAMETER OlderThan
+${6:Parameter description}
+
+.EXAMPLE
+${7:An example}
+
+.NOTES
+${8:General notes}
+#>
 function Get-WorkflowRun {
     param(
         [string]$RepoName,
@@ -563,6 +614,19 @@ functio Remonve-WorkflowRun {
 }
 
 # Main execution
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.EXAMPLE
+${3:An example}
+
+.NOTES
+${4:General notes}
+#>
 <#
 .SYNOPSIS
 ${1:Short description}

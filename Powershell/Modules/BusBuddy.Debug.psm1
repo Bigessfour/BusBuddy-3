@@ -1,10 +1,26 @@
-# BusBuddy.Debug.psm1
+﻿# BusBuddy.Debug.psm1
 # PowerShell module for debug operations
 #requires -Version 7.5
 [CmdletBinding()]
 param()
 
 # Minimal function to prevent null script errors
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER Component
+${3:Parameter description}
+
+.EXAMPLE
+${4:An example}
+
+.NOTES
+${5:General notes}
+#>
 <#
 .SYNOPSIS
 ${1:Short description}

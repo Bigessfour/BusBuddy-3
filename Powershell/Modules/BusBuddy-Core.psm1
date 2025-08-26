@@ -1,4 +1,4 @@
-#requires -Version 7.5
+﻿#requires -Version 7.5
 <#
 .SYNOPSIS
 BusBuddy Core Module - Essential Development Commands
@@ -24,6 +24,19 @@ $ModuleInfo = @{
 }
 Write-Information "Loading $($ModuleInfo.Name) v$($ModuleInfo.Version)" -InformationAction Continue
 # Determine workspace root path
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.EXAMPLE
+${3:An example}
+
+.NOTES
+${4:General notes}
+#>
 <#
 .SYNOPSIS
 ${1:Short description}

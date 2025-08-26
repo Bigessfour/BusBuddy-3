@@ -114,6 +114,16 @@ namespace BusBuddy.Core.Utilities
         {
             string? raw = null;
 
+            // Check for testing environment - always use in-memory database
+            var environmentName = GetEnvironmentName(configuration);
+            var databaseProvider = configuration["DatabaseProvider"];
+
+            if (environmentName.Equals("Testing", StringComparison.OrdinalIgnoreCase) ||
+                databaseProvider?.Equals("InMemory", StringComparison.OrdinalIgnoreCase) == true)
+            {
+                return "Data Source=:memory:";
+            }
+
             if (IsUsingAzureSql(configuration))
             {
                 // Prefer Azure AD interactive/password auth first, then fallback to SQL auth, then default, then sqlite

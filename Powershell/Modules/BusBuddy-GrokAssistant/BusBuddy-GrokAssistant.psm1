@@ -518,6 +518,28 @@ ${6:An example}
 .NOTES
 ${7:General notes}
 #>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER Prompt
+${3:Parameter description}
+
+.PARAMETER Model
+${4:Parameter description}
+
+.PARAMETER SystemPrompt
+${5:Parameter description}
+
+.EXAMPLE
+${6:An example}
+
+.NOTES
+${7:General notes}
+#>
 function Invoke-GrokApi {
     [CmdletBinding()]
     param (
@@ -659,6 +681,22 @@ function Invoke-GrokApi {
     .NOTES
     ${5:General notes}
     #>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER InputString
+${3:Parameter description}
+
+.EXAMPLE
+${4:An example}
+
+.NOTES
+${5:General notes}
+#>
 <#
 .SYNOPSIS
 ${1:Short description}

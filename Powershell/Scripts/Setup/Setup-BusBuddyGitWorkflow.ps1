@@ -1,4 +1,4 @@
-# Reference: Write-Information docs - https://learn.microsoft.com/powershell/module/microsoft.powershell.utility/write-information?view=powershell-7.5.2
+﻿# Reference: Write-Information docs - https://learn.microsoft.com/powershell/module/microsoft.powershell.utility/write-information?view=powershell-7.5.2
 # Syncfusion examples: SfDataGrid/SfButton docs - https://help.syncfusion.com/wpf/datagrid/getting-started  https://help.syncfusion.com/wpf/button/getting-started
 
 # Header start
@@ -101,6 +101,22 @@ function Test-SyncfusionCompliance {
 # Old:
 # function bb-BusBuddyGitWorkflow { ... }
 # New:
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER Repo
+${3:Parameter description}
+
+.EXAMPLE
+${4:An example}
+
+.NOTES
+${5:General notes}
+#>
 <#
 .SYNOPSIS
 ${1:Short description}

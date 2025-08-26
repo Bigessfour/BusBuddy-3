@@ -53,6 +53,11 @@ namespace BusBuddy.Core.Extensions
                 {
                     optionsBuilder.UseSqlite(connectionString);
                 }
+                else if (databaseProvider.Equals("InMemory", StringComparison.OrdinalIgnoreCase))
+                {
+                    // Explicitly handle InMemory provider
+                    optionsBuilder.UseInMemoryDatabase("BusBuddyDb");
+                }
                 else
                 {
                     // Default to in-memory for unknown providers or testing
