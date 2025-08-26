@@ -22,6 +22,22 @@ ${4:An example}
 .NOTES
 ${5:General notes}
 #>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER ModuleName
+${3:Parameter description}
+
+.EXAMPLE
+${4:An example}
+
+.NOTES
+${5:General notes}
+#>
 function Start-LazyLoading {
     [CmdletBinding()]
     param(

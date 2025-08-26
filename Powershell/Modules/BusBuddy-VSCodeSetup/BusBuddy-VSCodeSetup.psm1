@@ -6,7 +6,29 @@
 
 #Requires -Version 7.0
 
-function Install-BusBuddyVSCodeExtensions {
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER UseInsiders
+${3:Parameter description}
+
+.PARAMETER Force
+${4:Parameter description}
+
+.PARAMETER ListOnly
+${5:Parameter description}
+
+.EXAMPLE
+${6:An example}
+
+.NOTES
+${7:General notes}
+#>
+function Install-BusBuddyVSCodeExtension {
     [CmdletBinding()]
     param(
         [switch]$UseInsiders,

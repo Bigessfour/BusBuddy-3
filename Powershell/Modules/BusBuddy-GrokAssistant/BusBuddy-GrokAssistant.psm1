@@ -1,4 +1,4 @@
-# BusBuddy-GrokAssistant.psm1
+﻿# BusBuddy-GrokAssistant.psm1
 # PowerShell Module for xAI Grok Integration in BusBuddy Project
 # References:
 # - GitHub Repository: https://github.com/Bigessfour/BusBuddy-3
@@ -34,6 +34,28 @@ $global:GrokModuleState = @{
 #region Helper Functions
 
 # Helper function for API calls
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER Prompt
+${3:Parameter description}
+
+.PARAMETER Model
+${4:Parameter description}
+
+.PARAMETER SystemPrompt
+${5:Parameter description}
+
+.EXAMPLE
+${6:An example}
+
+.NOTES
+${7:General notes}
+#>
 <#
 .SYNOPSIS
 ${1:Short description}
@@ -637,6 +659,22 @@ function Invoke-GrokApi {
     .NOTES
     ${5:General notes}
     #>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER InputString
+${3:Parameter description}
+
+.EXAMPLE
+${4:An example}
+
+.NOTES
+${5:General notes}
+#>
 <#
 .SYNOPSIS
 ${1:Short description}

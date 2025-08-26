@@ -1,4 +1,4 @@
-#requires -Version 7.5
+﻿#requires -Version 7.5
 <#
 .SYNOPSIS
 BusBuddy Core Module - Essential Development Commands
@@ -9,20 +9,14 @@ Provides bb-* aliases for common development tasks.
 
 .NOTES
 Author: BusBuddy Development Team
-Version: 1.0.0
+Version: 1.0.1
 PowerShell: 7.5.2+
-
-.EXAMPLE
-Import-Module BusBuddy-Core
-bb-build
-bb-run
-bb-test
 #>
 
 # Module metadata
 $ModuleInfo = @{
     Name = 'BusBuddy-Core'
-    Version = '1.0.0'
+    Version = '1.0.1'
     Description = 'Essential BusBuddy development commands'
     Author = 'BusBuddy Development Team'
 }
@@ -30,11 +24,288 @@ $ModuleInfo = @{
 Write-Information "Loading $($ModuleInfo.Name) v$($ModuleInfo.Version)" -InformationAction Continue
 
 # Determine workspace root path
+$WorkspaceRoot = if ($env:BUSBUDDY_WORKSPACE) {
+    $env:BUSBUDDY_WORKSPACE
+} elseif (Test-Path "$PSScriptRoot\..\..\BusBuddy.sln") {
+    Split-Path $PSScriptRoot -Parent | Split-Path -Parent
+} else {
+    $PWD.Path
+}
+
 <#
 .SYNOPSIS
-${1:Short description}
+Build the BusBuddy solution
 
 .DESCRIPTION
+Builds the BusBuddy solution using dotnet build with optimized settings
+
+.EXAMPLE
+bb-build
+#>
+function Invoke-BusBuddyBuild {
+    [CmdletBinding()]
+    param()
+
+    try {
+        Write-Information "Building BusBuddy solution..." -InformationAction Continue
+        Set-Location $WorkspaceRoot
+        $result = dotnet build BusBuddy.sln --configuration Debug --verbosity minimal
+        if ($LASTEXITCODE -eq 0) {
+            Write-Information "✅ Build completed successfully" -InformationAction Continue
+        } else {
+            Write-Error "❌ Build failed with exit code $LASTEXITCODE"
+        }
+        return $result
+    }
+    catch {
+        Write-Error "Build error: $($_.Exception.Message)"
+    }
+}
+
+<#
+.SYNOPSIS
+Run the BusBuddy application
+
+.DESCRIPTION
+Runs the BusBuddy WPF application using dotnet run
+
+.EXAMPLE
+bb-run
+#>
+function Invoke-BusBuddyRun {
+    [CmdletBinding()]
+    param()
+
+    try {
+        Write-Information "Starting BusBuddy application..." -InformationAction Continue
+        Set-Location $WorkspaceRoot
+        dotnet run --project BusBuddy.WPF\BusBuddy.WPF.csproj
+    }
+    catch {
+        Write-Error "Run error: $($_.Exception.Message)"
+    }
+}
+
+<#
+.SYNOPSIS
+Run tests for the BusBuddy solution
+
+.DESCRIPTION
+Runs all tests in the BusBuddy solution using dotnet test
+
+.EXAMPLE
+bb-test
+#>
+function Invoke-BusBuddyTest {
+    [CmdletBinding()]
+    param()
+
+    try {
+        Write-Information "Running BusBuddy tests..." -InformationAction Continue
+        Set-Location $WorkspaceRoot
+        dotnet test BusBuddy.sln --configuration Debug --verbosity minimal
+    }
+    catch {
+        Write-Error "Test error: $($_.Exception.Message)"
+    }
+}
+
+<#
+.SYNOPSIS
+Perform health check on the BusBuddy environment
+
+.DESCRIPTION
+Checks the health of the BusBuddy development environment
+
+.EXAMPLE
+bb-health
+#>
+function Invoke-BusBuddyHealth {
+    [CmdletBinding()]
+    param()
+
+    try {
+        Write-Information "Performing BusBuddy health check..." -InformationAction Continue
+
+        # Check .NET version
+        $dotnetVersion = dotnet --version
+        Write-Information "✅ .NET Version: $dotnetVersion" -InformationAction Continue
+
+        # Check solution file
+        if (Test-Path "$WorkspaceRoot\BusBuddy.sln") {
+            Write-Information "✅ Solution file found" -InformationAction Continue
+        } else {
+            Write-Warning "❌ Solution file not found"
+        }
+
+        # Check Azure authentication
+        if (Get-Command Get-AzContext -ErrorAction SilentlyContinue) {
+            $azContext = Get-AzContext
+            if ($azContext) {
+                Write-Information "✅ Azure PowerShell authenticated" -InformationAction Continue
+            } else {
+                Write-Warning "❌ Azure PowerShell not authenticated"
+            }
+        }
+
+        # Check Syncfusion license
+        if ($env:SYNCFUSION_LICENSE_KEY) {
+            Write-Information "✅ Syncfusion license configured" -InformationAction Continue
+        } else {
+            Write-Warning "❌ Syncfusion license not configured"
+        }
+
+    }
+    catch {
+        Write-Error "Health check error: $($_.Exception.Message)"
+    }
+}
+
+<#
+.SYNOPSIS
+Clean the BusBuddy solution
+
+.DESCRIPTION
+Cleans the BusBuddy solution using dotnet clean
+
+.EXAMPLE
+bb-clean
+#>
+function Invoke-BusBuddyClean {
+    [CmdletBinding()]
+    param()
+
+    try {
+        Write-Information "Cleaning BusBuddy solution..." -InformationAction Continue
+        Set-Location $WorkspaceRoot
+        dotnet clean BusBuddy.sln --verbosity minimal
+        Write-Information "✅ Clean completed" -InformationAction Continue
+    }
+    catch {
+        Write-Error "Clean error: $($_.Exception.Message)"
+    }
+}
+
+<#
+.SYNOPSIS
+Show available BusBuddy commands
+
+.DESCRIPTION
+Lists all available bb-* commands in the BusBuddy-Core module
+
+.EXAMPLE
+bb-commands
+#>
+function Get-BusBuddyCommand {
+    [CmdletBinding()]
+    param()
+
+    Write-Information "BusBuddy Core Commands:" -InformationAction Continue
+    Write-Information "  bb-build    - Build the solution" -InformationAction Continue
+    Write-Information "  bb-run      - Run the application" -InformationAction Continue
+    Write-Information "  bb-test     - Run tests" -InformationAction Continue
+    Write-Information "  bb-health   - Health check" -InformationAction Continue
+    Write-Information "  bb-clean    - Clean solution" -InformationAction Continue
+    Write-Information "  bb-commands - Show this help" -InformationAction Continue
+    Write-Information "  bb-sql-test - Test SQL connections" -InformationAction Continue
+}
+
+<#
+.SYNOPSIS
+Test SQL database connections
+
+.DESCRIPTION
+Tests both LocalDB and Azure SQL connections
+
+.EXAMPLE
+bb-sql-test
+#>
+function Test-BusBuddySqlConnection {
+    [CmdletBinding()]
+    param()
+
+    Write-Information "Testing BusBuddy SQL connections..." -InformationAction Continue
+
+    # Test LocalDB
+    try {
+        # Check if LocalDB is installed
+        $localDbInstances = & "C:\Program Files\Microsoft SQL Server\*\Tools\Binn\SqlLocalDB.exe" info 2>$null
+        if (-not $localDbInstances) {
+            Write-Warning "❌ LocalDB not installed. Install SQL Server Express with LocalDB feature."
+            Write-Information "   Download: https://www.microsoft.com/en-us/sql-server/sql-server-downloads" -InformationAction Continue
+        } else {
+            $localDbResult = Invoke-Sqlcmd -ServerInstance "(localdb)\MSSQLLocalDB" -Database "BusBuddy" -Query "SELECT @@VERSION" -ErrorAction Stop
+            Write-Information "✅ LocalDB connection successful" -InformationAction Continue
+        }
+    }
+    catch {
+        Write-Warning "❌ LocalDB connection failed: $($_.Exception.Message)"
+        Write-Information "   Try: sqllocaldb start MSSQLLocalDB" -InformationAction Continue
+    }
+
+    # Test Azure SQL if authenticated
+    try {
+        if (Get-Command Get-AzAccessToken -ErrorAction SilentlyContinue) {
+            # Check if we have a valid Azure context
+            $azContext = Get-AzContext
+            if (-not $azContext) {
+                Write-Warning "❌ Azure PowerShell not authenticated. Run: Connect-AzAccount -AuthScope https://database.windows.net/"
+                return
+            }
+
+            # Try to get database-scoped token
+            try {
+                $token = Get-AzAccessToken -ResourceUrl "https://database.windows.net/" -ErrorAction Stop
+                if ($token -and $token.Token) {
+                    $azureSqlResult = Invoke-Sqlcmd -ServerInstance "busbuddy-server-sm2.database.windows.net" -Database "BusBuddyDB" -Query "SELECT @@VERSION AS 'Azure SQL Version'" -AccessToken $token.Token -ErrorAction Stop
+                    Write-Information "✅ Azure SQL connection successful" -InformationAction Continue
+                    Write-Information "   Azure SQL Version: $($azureSqlResult.'Azure SQL Version')" -InformationAction Continue
+                } else {
+                    Write-Warning "❌ Failed to get Azure SQL access token"
+                }
+            }
+            catch {
+                Write-Warning "❌ Azure SQL authentication failed. Run: Connect-AzAccount -AuthScope https://database.windows.net/"
+                Write-Information "   Or try: az login --scope https://database.windows.net//.default" -InformationAction Continue
+            }
+        } else {
+            Write-Warning "❌ Azure PowerShell module not available. Install: Install-Module Az"
+        }
+    }
+    catch {
+        Write-Warning "❌ Azure SQL connection failed: $($_.Exception.Message)"
+    }
+}
+
+# Create aliases
+New-Alias -Name "bb-build" -Value "Invoke-BusBuddyBuild" -Force
+New-Alias -Name "bb-run" -Value "Invoke-BusBuddyRun" -Force
+New-Alias -Name "bb-test" -Value "Invoke-BusBuddyTest" -Force
+New-Alias -Name "bb-health" -Value "Invoke-BusBuddyHealth" -Force
+New-Alias -Name "bb-clean" -Value "Invoke-BusBuddyClean" -Force
+New-Alias -Name "bb-commands" -Value "Get-BusBuddyCommands" -Force
+New-Alias -Name "bb-sql-test" -Value "Test-BusBuddySqlConnection" -Force
+
+# Export functions and aliases
+Export-ModuleMember -Function @(
+    'Invoke-BusBuddyBuild',
+    'Invoke-BusBuddyRun',
+    'Invoke-BusBuddyTest',
+    'Invoke-BusBuddyHealth',
+    'Invoke-BusBuddyClean',
+    'Get-BusBuddyCommands',
+    'Test-BusBuddySqlConnection'
+) -Alias @(
+    'bb-build',
+    'bb-run',
+    'bb-test',
+    'bb-health',
+    'bb-clean',
+    'bb-commands',
+    'bb-sql-test'
+)
+
+Write-Information "✅ BusBuddy-Core loaded with aliases: bb-build, bb-run, bb-test, bb-health, bb-clean, bb-commands, bb-sql-test" -InformationAction Continue
 ${2:Long description}
 
 .EXAMPLE

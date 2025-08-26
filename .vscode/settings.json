@@ -290,6 +290,7 @@
   "powershell.pester.outputVerbosity": "Diagnostic",
   "mssql.connections": [
     {
+      "id": "busbuddy-localdb",
       "server": "(localdb)\\MSSQLLocalDB",
       "database": "BusBuddy",
       "authenticationType": "Integrated",
@@ -297,11 +298,14 @@
       "password": ""
     },
     {
+      "id": "busbuddy-azure-direct",
       "server": "busbuddy-server-sm2.database.windows.net",
       "database": "BusBuddyDB",
-      "authenticationType": "AzureMFA"
+      "authenticationType": "AzureMFA",
+      "profileName": "BusBuddy Azure Direct"
     },
     {
+      "id": "busbuddy-azure-env",
       "server": "${env:AZURE_SQL_SERVER}",
       "database": "BusBuddyDB",
       "authenticationType": "AzureMFA",

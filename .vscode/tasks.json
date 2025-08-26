@@ -397,92 +397,6 @@
       "problemMatcher": []
     },
 
-    // === OPENSILVER TASKS ===
-    {
-      "label": "OpenSilver: Create New Application",
-      "type": "shell",
-      "command": "dotnet",
-      "args": ["new", "opensilverapp", "-n", "${input:projectName}"],
-      "group": "build",
-      "presentationOptions": {
-        "echo": true,
-        "reveal": "always",
-        "focus": false,
-        "panel": "shared"
-      },
-      "problemMatcher": []
-    },
-    {
-      "label": "OpenSilver: Create Business Application",
-      "type": "shell",
-      "command": "dotnet",
-      "args": ["new", "opensilverbusinessapp", "-n", "${input:projectName}"],
-      "group": "build",
-      "presentationOptions": {
-        "echo": true,
-        "reveal": "always",
-        "focus": false,
-        "panel": "shared"
-      },
-      "problemMatcher": []
-    },
-    {
-      "label": "OpenSilver: Create Class Library",
-      "type": "shell",
-      "command": "dotnet",
-      "args": ["new", "opensilverlib", "-n", "${input:projectName}"],
-      "group": "build",
-      "presentationOptions": {
-        "echo": true,
-        "reveal": "always",
-        "focus": false,
-        "panel": "shared"
-      },
-      "problemMatcher": []
-    },
-    {
-      "label": "OpenSilver: Install Blazor WASM Workload",
-      "type": "shell",
-      "command": "dotnet",
-      "args": ["workload", "install", "wasm-tools"],
-      "group": "build",
-      "presentationOptions": {
-        "echo": true,
-        "reveal": "always",
-        "focus": false,
-        "panel": "shared"
-      },
-      "problemMatcher": []
-    },
-    {
-      "label": "OpenSilver: Update Templates",
-      "type": "shell",
-      "command": "dotnet",
-      "args": ["new", "update"],
-      "group": "build",
-      "presentationOptions": {
-        "echo": true,
-        "reveal": "always",
-        "focus": false,
-        "panel": "shared"
-      },
-      "problemMatcher": []
-    },
-    {
-      "label": "OpenSilver: List Templates",
-      "type": "shell",
-      "command": "dotnet",
-      "args": ["new", "--list", "|", "findstr", "-i", "opensilver"],
-      "group": "build",
-      "presentationOptions": {
-        "echo": true,
-        "reveal": "always",
-        "focus": false,
-        "panel": "shared"
-      },
-      "problemMatcher": []
-    },
-
     // === SYNCFUSION WPF DEVELOPMENT TASKS ===
     {
       "type": "shell",
@@ -557,14 +471,6 @@
         "focus": false,
         "panel": "shared"
       }
-    }
-  ],
-  "inputs": [
-    {
-      "id": "projectName",
-      "description": "Enter project name",
-      "default": "MyOpenSilverProject",
-      "type": "promptString"
     }
   ]
 }

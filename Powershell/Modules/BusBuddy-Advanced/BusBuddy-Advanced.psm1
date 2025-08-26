@@ -1,4 +1,4 @@
-#Requires -Version 7.5
+﻿#Requires -Version 7.5
 
 # BusBuddy Advanced PowerShell Module
 # Purpose: State-of-the-art PowerShell 7.5.2 functions with hyperthreading support
@@ -23,6 +23,25 @@ $global:BusBuddyHyperthreadRatio = $env:BUSBUDDY_HYPERTHREAD_RATIO
 $global:BusBuddyOptimalJobs = $env:BUSBUDDY_MAX_PARALLEL_JOBS
 
 # Helper function to avoid CmdletBinding + Parallel warning
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER TestData
+${3:Parameter description}
+
+.PARAMETER ThreadCount
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
 <#
 .SYNOPSIS
 ${1:Short description}
@@ -208,6 +227,28 @@ function Invoke-ParallelCpuTest {
 }
 
 # Advanced hyperthreading test function
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER TestDuration
+${3:Parameter description}
+
+.PARAMETER WorkloadSize
+${4:Parameter description}
+
+.PARAMETER DetailedOutput
+${5:Parameter description}
+
+.EXAMPLE
+${6:An example}
+
+.NOTES
+${7:General notes}
+#>
 <#
 .SYNOPSIS
 ${1:Short description}
@@ -705,6 +746,28 @@ ${6:An example}
 .NOTES
 ${7:General notes}
 #>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER WorkloadType
+${3:Parameter description}
+
+.PARAMETER DataSize
+${4:Parameter description}
+
+.PARAMETER SetGlobalDefaults
+${5:Parameter description}
+
+.EXAMPLE
+${6:An example}
+
+.NOTES
+${7:General notes}
+#>
 function Optimize-BusBuddyParallelism {
     [CmdletBinding()]
     param(
@@ -767,6 +830,25 @@ function Optimize-BusBuddyParallelism {
 }
 
 # Performance profile management
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER Profile
+${3:Parameter description}
+
+.PARAMETER Force
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
 <#
 .SYNOPSIS
 ${1:Short description}
@@ -1062,6 +1144,31 @@ function Set-BusBuddyPerformanceProfile {
 }
 
 # Advanced memory monitoring
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER IncludeGCStats
+${3:Parameter description}
+
+.PARAMETER IncludeProcessStats
+${4:Parameter description}
+
+.PARAMETER ContinuousMonitoring
+${5:Parameter description}
+
+.PARAMETER MonitoringIntervalSeconds
+${6:Parameter description}
+
+.EXAMPLE
+${7:An example}
+
+.NOTES
+${8:General notes}
+#>
 <#
 .SYNOPSIS
 ${1:Short description}
