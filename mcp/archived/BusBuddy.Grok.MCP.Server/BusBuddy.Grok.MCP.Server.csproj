@@ -1,0 +1,34 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <RollForward>Major</RollForward>
+    <OutputType>Exe</OutputType>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+
+    <!-- Set up the NuGet package to be an MCP server -->
+    <PackAsTool>true</PackAsTool>
+    <PackageType>McpServer</PackageType>
+
+    <!-- Set recommended package metadata -->
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageId>BusBuddy.Grok.MCP.Server</PackageId>
+    <PackageVersion>1.0.0-beta</PackageVersion>
+    <PackageTags>BusBuddy; AI; MCP; Grok-4; xAI; fleet-management; server; stdio</PackageTags>
+    <Description>BusBuddy MCP server with Grok-4 AI integration for intelligent fleet management and route optimization.</Description>
+  </PropertyGroup>
+
+  <!-- Include additional files for browsing the MCP server. -->
+  <ItemGroup>
+    <None Include=".mcp\server.json" Pack="true" PackagePath="/.mcp/" />
+    <None Include="README.md" Pack="true" PackagePath="/" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.0-preview.6.25358.103" />
+    <PackageReference Include="Microsoft.Extensions.Http" Version="8.0.0" />
+    <PackageReference Include="ModelContextProtocol" Version="0.3.0-preview.2" />
+  </ItemGroup>
+
+</Project>

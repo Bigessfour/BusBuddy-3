@@ -1,0 +1,70 @@
+{
+  "name": "BusBuddy MCP Server with Grok-4 AI",
+  "description": "Intelligent school bus fleet management with xAI Grok-4 integration for route optimization and performance analysis",
+  "version": "1.0.0",
+  "packages": [
+    {
+      "registry_name": "nuget",
+      "package_name": "BusBuddy.MCP.Server",
+      "download_command": "dnx BusBuddy.MCP.Server@{version} --yes",
+      "environment_variables": [
+        {
+          "name": "XAI_API_KEY",
+          "description": "xAI API key for Grok-4 integration",
+          "required": true
+        },
+        {
+          "name": "BUSBUDDY_PROJECT_ROOT",
+          "description": "Path to BusBuddy project root directory",
+          "required": false,
+          "default": "."
+        },
+        {
+          "name": "BUSBUDDY_DB_PATH",
+          "description": "Path to BusBuddy database file",
+          "required": false
+        }
+      ],
+      "package_arguments": [
+        {
+          "name": "--model",
+          "description": "Grok model to use (grok-4-latest, grok-4-0709)",
+          "required": false,
+          "default": "grok-4-0709"
+        },
+        {
+          "name": "--temperature",
+          "description": "AI temperature setting (0.0-2.0)",
+          "required": false,
+          "default": "0.3"
+        }
+      ]
+    }
+  ],
+  "tools": [
+    {
+      "name": "optimize-routes",
+      "description": "Use Grok-4 AI to optimize BusBuddy routes with intelligent analysis",
+      "category": "optimization"
+    },
+    {
+      "name": "analyze-fleet-performance", 
+      "description": "Get Grok-4 AI insights on fleet performance and operational recommendations",
+      "category": "analysis"
+    },
+    {
+      "name": "get-grok-status",
+      "description": "Check Grok-4 AI service status and configuration",
+      "category": "diagnostics"
+    }
+  ],
+  "categories": [
+    "fleet-management",
+    "ai-optimization", 
+    "transportation",
+    "analytics"
+  ],
+  "license": "MIT",
+  "homepage": "https://github.com/Bigessfour/BusBuddy-3",
+  "repository": "https://github.com/Bigessfour/BusBuddy-3"
+}

@@ -1,0 +1,63 @@
+{
+  "servers": {
+    "grok4-mcp-server": {
+      "name": "BusBuddy Grok-4 AI Server",
+      "description": "Enhanced xAI Grok-4 server with structured outputs",
+      "version": "2.0.0",
+      "enhanced_features": {
+        "structured_outputs": true,
+        "response_modes": ["quick", "expert"],
+        "json_schema_validation": true,
+        "temperature_control": true,
+        "token_optimization": true
+      },
+      "tools": [
+        "grok-analyze-problem",
+        "grok-code-review", 
+        "grok-syncfusion-guidance",
+        "grok-azure-sql-optimize",
+        "grok-architecture-review"
+      ],
+      "environment_variables": [
+        "XAI_API_KEY"
+      ],
+      "response_formats": {
+        "quick": {
+          "max_tokens": 400,
+          "temperature": 0.2,
+          "expected_items": "1-2 actionable items"
+        },
+        "expert": {
+          "max_tokens": 1200,
+          "temperature": 0.6,
+          "expected_items": "2-3 detailed recommendations"
+        }
+      }
+    },
+    "busbuddy-mcp-server": {
+      "name": "BusBuddy Core Operations Server",
+      "description": "Core BusBuddy operations with PowerShell integration",
+      "version": "1.5.0",
+      "tools": [
+        "bb-health",
+        "bb-build",
+        "bb-run",
+        "bb-test"
+      ],
+      "integration": "PowerShell automation tools"
+    },
+    "git-mcp-server": {
+      "name": "Git Operations Server", 
+      "description": "Git repository management and operations",
+      "version": "1.0.0",
+      "tools": [
+        "git-status",
+        "git-commit",
+        "git-branch",
+        "git-log"
+      ]
+    }
+  },
+  "mcp_version": "1.0.0",
+  "last_updated": "2025-08-26"
+}

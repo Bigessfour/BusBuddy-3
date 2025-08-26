@@ -1,0 +1,39 @@
+{
+  "name": "busbuddy-mcp-workspace",
+  "version": "1.0.0",
+  "description": "BusBuddy Model Context Protocol workspace with enhanced AI capabilities",
+  "type": "module",
+  "main": "index.js",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.17.4",
+    "node-fetch": "^3.3.2"
+  },
+  "scripts": {
+    "start:grok": "node servers/grok4-mcp-server.js",
+    "start:busbuddy": "node servers/busbuddy-mcp-server.js",
+    "start:git": "node servers/git-mcp-server.js",
+    "manager": "node tools/server-manager.js",
+    "health": "node tools/server-manager.js health",
+    "stop:all": "node tools/server-manager.js stop-all",
+    "test:grok": "node archived/test-enhanced-mcp-evaluation.mjs",
+    "demo:grok": "node archived/demo-enhanced-mcp.mjs",
+    "validate:config": "node tools/validate-config.js",
+    "install-global": "npm install -g @modelcontextprotocol/sdk"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "ai",
+    "grok",
+    "busbuddy",
+    "transportation",
+    "wpf",
+    "syncfusion",
+    "azure-sql"
+  ],
+  "author": "BusBuddy Team",
+  "license": "MIT"
+}
