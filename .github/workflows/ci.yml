@@ -31,6 +31,12 @@ on:
       - docs/**
       - Documentation/**
   workflow_dispatch:
+
+permissions:
+  contents: read
+  security-events: write
+  actions: read
+
 env:
   # 🚀 .NET 9 Excellence Configuration
   DOTNET_VERSION: "9.0.x"
@@ -239,6 +245,8 @@ jobs:
       - id: build-step
         name: "Build Solution"
         shell: pwsh
+        env:
+          SYNCFUSION_LICENSE_KEY: ${{ secrets.SYNCFUSION_LICENSE_KEY }}
         run: |
           if (Get-Command bb-build -ErrorAction SilentlyContinue) {
             Write-Host "Using bb-build" -ForegroundColor Cyan
@@ -249,14 +257,18 @@ jobs:
       - name: "🧪 Run Tests with Enhanced Error Handling"
         shell: pwsh
         env:
-          # Override connection strings for CI testing
+          # Force in-memory database for ALL tests - prevent SQL Server access
           BUSBUDDY_CONNECTION: ""
           AZURE_SQL_USER: ""
           AZURE_SQL_PASSWORD: ""
-          # Use LocalDB for CI tests
-          ConnectionStrings__DefaultConnection: "Data Source=(localdb)\\MSSQLLocalDB;Initial Catalog=BusBuddyTest;Integrated Security=True;MultipleActiveResultSets=True"
+          AZURE_SQL_SERVER: ""
+          # Use in-memory database exclusively for tests
+          ConnectionStrings__DefaultConnection: "Data Source=:memory:"
           ConnectionStrings__TestConnection: "Data Source=:memory:"
-          DatabaseProvider: "Local"
+          DatabaseProvider: "InMemory"
+          # Test-specific environment
+          ASPNETCORE_ENVIRONMENT: "Testing"
+          DOTNET_ENVIRONMENT: "Testing"
         run: |
           $attempts = 2
           $success = $false

@@ -45,24 +45,13 @@ jobs:
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
-      - name: "� Azure Login (guarded)"
-        if: >-
-          ${{ secrets.AZURE_CLIENT_ID != '' && secrets.AZURE_TENANT_ID != '' &&
-              secrets.AZURE_CLIENT_SECRET != '' && secrets.AZURE_SUBSCRIPTION_ID != '' }}
+      - name: "🔐 Azure Login (optional)"
         uses: azure/login@v2
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-
-      - name: "ℹ️ Azure Login Skipped (no secrets)"
-        if: >-
-          ${{ !(secrets.AZURE_CLIENT_ID != '' && secrets.AZURE_TENANT_ID != '' &&
-              secrets.AZURE_CLIENT_SECRET != '' && secrets.AZURE_SUBSCRIPTION_ID != '') }}
-        shell: pwsh
-        run: |
-          Write-Output "Azure login skipped. Provide AZURE_CLIENT_ID, AZURE_TENANT_ID,"
-          Write-Output "AZURE_CLIENT_SECRET, AZURE_SUBSCRIPTION_ID secrets to enable."
+        continue-on-error: true
 
       - name: "�🔧 Load BusBuddy PowerShell Profile (if present)"
         shell: pwsh
