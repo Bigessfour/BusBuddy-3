@@ -104,37 +104,9 @@ lint:
   # (Removed unsupported 'where' filter for actionlint; if filtering needed, migrate to tool-supported suppression mechanism.)
 
 # ------------------------------------------------------------------
-# Project spell-check dictionary (cspell) — added to reduce false positives
+# Project spell-check dictionary (cspell) — configured in .cspell.json
 # Reference (cspell config): https://github.com/streetsidesoftware/cspell
-# If this grows large, consider migrating to a dedicated cspell.json.
 # ------------------------------------------------------------------
-cspell:
-  words:
-    - AutoHide
-    - AutoHidden
-    - BusBuddy
-    - ChromelessWindow
-    - DockingManager
-    - Fleet
-    - FleetManagement
-    - FleetReport
-    - FluentDark
-    - FluentLight
-    - GeoMap
-    - Geospatial
-    - Hyperthreading
-    - MVVM
-    - PDF
-    - RouteAssignment
-    - RouteAssignments
-    - Serilog
-    - Syncfusion
-    - ToolTip
-    - ToolTips
-    - Trunkio
-    - ViewModel
-    - ViewModels
-    - Xaml
 
 # Git hooks and actions configuration
 actions:

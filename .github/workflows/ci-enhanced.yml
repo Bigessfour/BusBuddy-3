@@ -326,14 +326,15 @@ jobs:
           for ($attempt = 1; $attempt -le $maxAttempts; $attempt++) {
             Write-Host "🧪 Test attempt $attempt of $maxAttempts" -ForegroundColor Cyan
             try {
-              dotnet test $solution `
+              dotnet test `
+                --timeout 900000 `
                 --configuration ${{ env.BUILD_CONFIGURATION }} `
                 --no-build `
                 --verbosity normal `
                 --logger "trx;LogFileName=test-results-$attempt.trx" `
                 --collect "XPlat Code Coverage" `
                 --results-directory ./TestResults `
-                --timeout 900000
+                $solution
               
               Write-Host "✅ Tests completed successfully" -ForegroundColor Green
               break
