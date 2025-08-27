@@ -37,12 +37,12 @@
       "command": "npx",
       "args": ["-y", "@microsoft/mcp-server-docs"]
     },
-    "busbuddy-git": {
-      "command": "node",
-      "args": [
-        "c:\\Users\\biges\\Desktop\\BusBuddy\\mcp\\servers\\git-mcp-server.js"
-      ]
-    },
+    // "busbuddy-git": {
+    //   "command": "node",
+    //   "args": [
+    //     "c:\\Users\\biges\\Desktop\\BusBuddy\\mcp\\servers\\git-mcp-server.js"
+    //   ]
+    // },
     "busbuddy-project": {
       "command": "node",
       "args": [
