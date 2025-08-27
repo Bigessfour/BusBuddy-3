@@ -46,8 +46,22 @@
     "when": "editorHasReferenceProvider && editorTextFocus"
   },
   {
-    "key": "ctrl+shift+o",
-    "command": "workbench.action.gotoSymbol"
+    "key": "ctrl+shift+t",
+    "command": "workbench.action.tasks.runTask",
+    "args": "bb-quality-check (BusBuddy Quality Gate)",
+    "when": "workspaceFolderCount != 0"
+  },
+  {
+    "key": "ctrl+shift+f",
+    "command": "workbench.action.tasks.runTask",
+    "args": "bb-format-code (BusBuddy Code Formatting)",
+    "when": "workspaceFolderCount != 0"
+  },
+  {
+    "key": "ctrl+shift+s",
+    "command": "workbench.action.tasks.runTask",
+    "args": "bb-security-scan (BusBuddy Security Analysis)",
+    "when": "workspaceFolderCount != 0"
   },
 
   // Syncfusion WPF XAML Support

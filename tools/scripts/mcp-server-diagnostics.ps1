@@ -365,6 +365,50 @@ ${6:An example}
 .NOTES
 ${7:General notes}
 #>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER ServerName
+${3:Parameter description}
+
+.PARAMETER Command
+${4:Parameter description}
+
+.PARAMETER Args
+${5:Parameter description}
+
+.EXAMPLE
+${6:An example}
+
+.NOTES
+${7:General notes}
+#>
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER ServerName
+${3:Parameter description}
+
+.PARAMETER Command
+${4:Parameter description}
+
+.PARAMETER Args
+${5:Parameter description}
+
+.EXAMPLE
+${6:An example}
+
+.NOTES
+${7:General notes}
+#>
 function Test-MCPServer {
     param(
         [string]$ServerName,

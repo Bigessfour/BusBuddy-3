@@ -4,6 +4,11 @@
 
 This document establishes the unified testing standards for the BusBuddy project using **NUnit** and **FluentAssertions** exclusively.
 
+**Official Documentation References:**
+- NUnit Framework: https://docs.nunit.org/
+- .NET Testing: https://learn.microsoft.com/en-us/dotnet/core/testing/
+- FluentAssertions: https://fluentassertions.com/
+
 ## 🎯 **Testing Architecture**
 
 ### **Test Project Structure**
@@ -412,9 +417,236 @@ dotnet test --collect:"XPlat Code Coverage"
 - UI test execution in headless mode
 
 ### **Parallel Testing Guidelines**
+
 - Use `[NonParallelizable]` on tests with shared state (e.g., file-based SQLite).
 - Monitor for flakiness in Syncfusion UI tests; fallback to sequential if needed.
 - In ci.yml, add `--blame` for diagnostics.
+
+## 🔄 **Flaky Test Handling**
+
+### **Flaky Test Definition**
+
+Flaky tests are tests that **pass and fail intermittently** without code changes, often due to:
+
+- Race conditions
+- Timing issues
+- External dependencies
+- Resource contention
+- Non-deterministic behavior
+
+### **Flaky Test Detection**
+
+#### **Test Configuration**
+
+```xml
+<!-- testsettings.runsettings -->
+<FlakyTestSettings>
+  <Enabled>true</Enabled>
+  <MaxRetries>3</MaxRetries>
+  <RetryDelay>1000</RetryDelay>
+  <DetectPatterns>
+    <Pattern>TimeoutException</Pattern>
+    <Pattern>ThreadAbortException</Pattern>
+    <Pattern>IOException</Pattern>
+    <Pattern>WebException</Pattern>
+  </DetectPatterns>
+  <ExcludeCategories>
+    <Category>IntegrationTest</Category>
+    <Category>DatabaseTest</Category>
+  </ExcludeCategories>
+</FlakyTestSettings>
+```
+
+#### **Retry Attributes**
+
+```csharp
+[Test]
+[Retry(3)] // NUnit Retry attribute
+public async Task UnstableNetworkCall_ShouldRetryOnFailure()
+{
+    // Test that might be flaky due to network issues
+}
+
+[Test]
+[NonParallelizable] // Prevent parallel execution
+[Category("Flaky")]
+public void DatabaseOperation_ShouldNotInterfereWithOtherTests()
+{
+    // Test that modifies shared database state
+}
+```
+
+### **Flaky Test Mitigation Strategies**
+
+#### **1. Stabilize Test Environment**
+
+```csharp
+[SetUp]
+public void SetUp()
+{
+    // Ensure clean state for each test
+    ResetDatabase();
+    ClearCache();
+    ResetMocks();
+}
+
+[TearDown]
+public void TearDown()
+{
+    // Clean up after each test
+    DisposeResources();
+    ResetGlobalState();
+}
+```
+
+#### **2. Handle Timing Issues**
+
+```csharp
+[Test]
+public async Task AsyncOperation_ShouldCompleteWithinTimeout()
+{
+    // Use proper timeouts
+    var timeout = TimeSpan.FromSeconds(30);
+    var result = await _service.ProcessAsync()
+        .WaitAsync(timeout);
+
+    result.Should().NotBeNull();
+}
+
+[Test]
+public void UIUpdate_ShouldEventuallyReflectChanges()
+{
+    // Wait for UI to update
+    var maxAttempts = 10;
+    for (int i = 0; i < maxAttempts; i++)
+    {
+        if (_viewModel.IsLoading == false) break;
+        Thread.Sleep(100);
+    }
+
+    _viewModel.IsLoading.Should().BeFalse();
+}
+```
+
+#### **3. Isolate External Dependencies**
+
+```csharp
+[Test]
+public async Task ExternalServiceCall_ShouldHandleNetworkFailures()
+{
+    // Mock external services
+    _mockHttpMessageHandler
+        .Protected()
+        .Setup<Task<HttpResponseMessage>>(
+            "SendAsync",
+            ItExpr.IsAny<HttpRequestMessage>(),
+            ItExpr.IsAny<CancellationToken>())
+        .ThrowsAsync(new HttpRequestException("Network error"))
+        .ReturnsAsync(new HttpResponseMessage(HttpStatusCode.OK));
+
+    // Test retry logic
+    await _service.CallExternalServiceAsync();
+}
+```
+
+#### **4. Database Test Isolation**
+
+```csharp
+[Test]
+[NonParallelizable]
+public async Task DatabaseOperation_ShouldNotAffectOtherTests()
+{
+    using var transaction = await _context.Database.BeginTransactionAsync();
+
+    try
+    {
+        // Perform database operations
+        var driver = new Driver { Name = "Test Driver" };
+        _context.Drivers.Add(driver);
+        await _context.SaveChangesAsync();
+
+        // Assert
+        driver.Id.Should().BeGreaterThan(0);
+    }
+    finally
+    {
+        await transaction.RollbackAsync();
+    }
+}
+```
+
+### **CI/CD Flaky Test Handling**
+
+#### **Retry Configuration in CI**
+
+```yaml
+- name: Run Tests with Retry
+  run: |
+      $attempts = 2
+      $success = $false
+      for ($i = 1; $i -le $attempts; $i++) {
+        Write-Output "Test attempt $i of $attempts"
+        dotnet test --logger "trx;LogFileName=test-results.trx"
+        if ($LASTEXITCODE -eq 0) {
+          $success = $true
+          break
+        }
+        Start-Sleep -Seconds 10
+      }
+```
+
+#### **Flaky Test Reporting**
+
+```yaml
+- name: Analyze Test Flakiness
+  if: always()
+  run: |
+      # Parse test results for patterns
+      $testResults = Get-ChildItem -Recurse "*.trx"
+      foreach ($result in $testResults) {
+        $content = Get-Content $result.FullName -Raw
+        $failedTests = [regex]::Matches($content, 'testName="([^"]*)"[^>]*outcome="Failed"')
+        if ($failedTests.Count -gt 0) {
+          Write-Host "⚠️ Failed tests detected - potential flakiness"
+          foreach ($match in $failedTests) {
+            Write-Host "  - $($match.Groups[1].Value)"
+          }
+        }
+      }
+```
+
+### **Flaky Test Best Practices**
+
+#### **Avoid Common Causes**
+
+- **Race Conditions**: Use proper synchronization
+- **Timing Dependencies**: Use event-driven approaches
+- **Shared State**: Isolate test data and resources
+- **External Services**: Mock or stub external dependencies
+- **UI Timing**: Wait for UI elements properly
+
+#### **Test Categories for Flakiness**
+
+```csharp
+[Test, Category("Flaky")]
+public void NetworkDependentTest_ShouldRetryOnFailure()
+{
+    // Tests that may be flaky due to network issues
+}
+
+[Test, Category("Stable")]
+public void PureLogicTest_ShouldAlwaysPass()
+{
+    // Tests that should never be flaky
+}
+```
+
+#### **Monitoring and Alerting**
+
+- Track flaky test frequency
+- Set up alerts for increased flakiness
+- Review flaky tests regularly
+- Consider quarantining consistently flaky tests
 
 ---
 

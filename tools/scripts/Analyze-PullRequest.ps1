@@ -24,9 +24,9 @@ Output format: Console, JSON, or Markdown (default: Console)
 ./Analyze-PullRequest.ps1 -OutputFormat Markdown > pr-analysis.md
 
 .NOTES
-Requires: GitHub CLI, Grok API access, BusBuddy-GrokAssistant module
+Requires: GitHub CLI (Grok integration removed)
 Author: BusBuddy Development Team
-Version: 1.0.0
+Version: 1.1.0
 #>
 
 [CmdletBinding()]
@@ -44,7 +44,8 @@ param(
 )
 
 # Import required modules
-Import-Module "$PSScriptRoot\..\PowerShell\Modules\BusBuddy-GrokAssistant.psm1" -Force
+# Note: BusBuddy-GrokAssistant module removed - using pattern-based analysis
+# Import-Module "$PSScriptRoot\..\PowerShell\Modules\BusBuddy-GrokAssistant.psm1" -Force
 
 <#
 .SYNOPSIS

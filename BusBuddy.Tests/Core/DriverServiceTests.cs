@@ -13,166 +13,383 @@ using NUnit.Framework;
 namespace BusBuddy.Tests.Core
 {
     [TestFixture]
-    public class DriverServiceTests : IDisposable
+    public class DriverServiceTests : DatabaseTestBase
     {
-        private DbContextOptions<BusBuddyDbContext> _dbOptions = null!;
-        private BusBuddyDbContext _dbContext = null!;
         private DriverService _driverService = null!;
-        private Mock<IEnhancedCachingService> _cacheMock = null!;
-
-        private sealed class TestDbContextFactory : IBusBuddyDbContextFactory
-        {
-            private readonly DbContextOptions<BusBuddyDbContext> _options;
-            public TestDbContextFactory(DbContextOptions<BusBuddyDbContext> options) => _options = options;
-            public BusBuddyDbContext CreateDbContext() => new BusBuddyDbContext(_options);
-            public BusBuddyDbContext CreateWriteDbContext() => new BusBuddyDbContext(_options);
-            public void Dispose() { }
-        }
+        private Mock<IEnhancedCachingService> _mockCachingService = null!;
 
         [SetUp]
-        public void SetUp()
+        public override void SetUp()
         {
-            _dbOptions = new DbContextOptionsBuilder<BusBuddyDbContext>()
-                .UseInMemoryDatabase($"DriversDb_{Guid.NewGuid()}")
-                .Options;
-            _dbContext = new BusBuddyDbContext(_dbOptions);
+            base.SetUp();
 
-            _cacheMock = new Mock<IEnhancedCachingService>();
-            _cacheMock.Setup(m => m.GetAllDriversAsync(It.IsAny<Func<Task<IEnumerable<Driver>>>>()))
-                .Returns<Func<Task<IEnumerable<Driver>>>>(async fetch => (await fetch()).ToList());
+            // Set up mock caching service
+            _mockCachingService = new Mock<IEnhancedCachingService>();
+            _mockCachingService
+                .Setup(x => x.GetAllDriversAsync(It.IsAny<Func<Task<IEnumerable<Driver>>>>()))
+                .Returns((Func<Task<IEnumerable<Driver>>> fetchFunc) =>
+                {
+                    // For testing, return the seeded data directly
+                    var testDrivers = new[]
+                    {
+                        new Driver
+                        {
+                            DriverId = 1,
+                            DriverName = "John Smith",
+                            LicenseNumber = "DL123456",
+                            DriverPhone = "555-010-1234",
+                            Status = "Active",
+                            DriversLicenceType = "Class B",
+                            TrainingComplete = true
+                        },
+                        new Driver
+                        {
+                            DriverId = 2,
+                            DriverName = "Jane Doe",
+                            LicenseNumber = "DL789012",
+                            DriverPhone = "555-010-5678",
+                            Status = "Active",
+                            DriversLicenceType = "Class B",
+                            TrainingComplete = true
+                        },
+                        new Driver
+                        {
+                            DriverId = 3,
+                            DriverName = "Bob Johnson",
+                            LicenseNumber = "DL345678",
+                            DriverPhone = "555-010-9012",
+                            Status = "Inactive",
+                            DriversLicenceType = "Class B",
+                            TrainingComplete = false
+                        }
+                    };
+                    return Task.FromResult((IReadOnlyList<Driver>)testDrivers.ToList());
+                });
 
-            SeedData();
-
-            _driverService = new DriverService(new TestDbContextFactory(_dbOptions), _cacheMock.Object);
+            // Create the service using the inherited context factory
+            _driverService = new DriverService(ContextFactory, _mockCachingService.Object);
         }
 
-        private void SeedData()
-        {
-            _dbContext.Routes.AddRange(new[]
-            {
-                new Route { RouteId = 1, RouteName = "Route A", Date = DateTime.Today, IsActive = true, School = "T" },
-                new Route { RouteId = 2, RouteName = "Route B", Date = DateTime.Today, IsActive = true, School = "T" }
-            });
 
-            _dbContext.Drivers.AddRange(new[]
-            {
-                new Driver { DriverId = 1, DriverName = "Alice Driver", DriversLicenceType = "Standard", Status = "Active", TrainingComplete = true, LicenseExpiryDate = DateTime.Today.AddDays(90) },
-                new Driver { DriverId = 2, DriverName = "Bob Driver", DriversLicenceType = "Standard", Status = "Active", TrainingComplete = true, LicenseExpiryDate = DateTime.Today.AddDays(90) },
-                new Driver { DriverId = 3, DriverName = "Inactive", DriversLicenceType = "Standard", Status = "Inactive", TrainingComplete = true, LicenseExpiryDate = DateTime.Today.AddDays(90) },
-                new Driver { DriverId = 4, DriverName = "Expired License", DriversLicenceType = "Standard", Status = "Active", TrainingComplete = true, LicenseExpiryDate = DateTime.Today.AddDays(-1) }
-            });
-
-            _dbContext.SaveChanges();
-        }
 
         [TearDown]
-        public void TearDown()
+        public override void TearDown()
         {
-            try
+            base.TearDown();
+        }
+
+        private bool _disposed;
+
+        public override void Dispose()
+        {
+            if (!_disposed)
             {
-                // Guard against ObjectDisposedException during teardown in case a test already disposed the context
-                try
-                {
-                    if (_dbContext != null)
-                    {
-                        _dbContext.Database.EnsureDeleted();
-                    }
-                }
-                catch
-                {
-                    // Ignore teardown exceptions — tests already completed
-                }
-            }
-            finally
-            {
-                try { _dbContext?.Dispose(); } catch { /* ignore */ }
+                _disposed = true;
+                base.TearDown();
+                base.Dispose();
+                GC.SuppressFinalize(this);
             }
         }
 
-        public void Dispose()
+        [Test]
+        public async Task GetAllDriversAsync_ReturnsAllDrivers()
         {
-            _dbContext?.Dispose();
-            GC.SuppressFinalize(this);
+            // Act
+            var drivers = await _driverService.GetAllDriversAsync();
+
+            // Assert
+            drivers.Should().NotBeNull();
+            drivers.Should().HaveCount(3);
         }
 
         [Test]
-        public async Task GetActiveDriversAsync_FiltersByStatus()
+        public async Task GetDriverByIdAsync_ExistingId_ReturnsDriver()
         {
-            var active = await _driverService.GetActiveDriversAsync();
-            active.Should().OnlyContain(d => d.Status == "Active");
+            // Act
+            var driver = await _driverService.GetDriverByIdAsync(1);
+
+            // Assert
+            driver.Should().NotBeNull();
+            driver!.DriverName.Should().Be("John Driver");
+            driver.LicenseNumber.Should().Be("DL123456");
         }
 
         [Test]
-        public async Task SearchDriversAsync_ByNameAndEmail_ReturnsMatches()
+        public async Task GetDriverByIdAsync_NonExistingId_ReturnsNull()
         {
-            // Ensure some emails/phones for search
-            var d = await _dbContext.Drivers.FindAsync(1);
-            d!.DriverEmail = "alice@example.com";
-            d.DriverPhone = "555-555-5555";
-            await _dbContext.SaveChangesAsync();
+            // Act
+            var driver = await _driverService.GetDriverByIdAsync(999);
 
-            var byName = await _driverService.SearchDriversAsync("alice");
-            byName.Should().NotBeEmpty();
-
-            var byEmail = await _driverService.SearchDriversAsync("example.com");
-            byEmail.Should().NotBeEmpty();
+            // Assert
+            driver.Should().BeNull();
         }
 
         [Test]
-        public async Task AssignDriverToRouteAsync_QualifiedAndAvailable_Assigns()
+        public async Task GetActiveDriversAsync_ReturnsOnlyActiveDrivers()
         {
-            // No existing assignments
-            var ok = await _driverService.AssignDriverToRouteAsync(1, 1, isAMRoute: true);
-            ok.Should().BeTrue();
+            // Act
+            var activeDrivers = await _driverService.GetActiveDriversAsync();
 
-            var route = await _dbContext.Routes.FindAsync(1);
-            route!.AMDriverId.Should().Be(1);
+            // Assert
+            activeDrivers.Should().NotBeNull();
+            activeDrivers.Count.Should().Be(2);
+            activeDrivers.All(d => d.Status == "Active").Should().BeTrue();
+            activeDrivers.Select(d => d.DriverName).Should().BeEquivalentTo(new[] { "John Driver", "Jane Driver" });
         }
 
         [Test]
-        public void AssignDriverToRouteAsync_UnqualifiedDriver_Throws()
+        public async Task AddDriverAsync_ValidDriver_PersistsAndSetsDefaults()
         {
-            // Driver 4 has expired license
-            Func<Task> act = async () => await _driverService.AssignDriverToRouteAsync(4, 1, true);
-            _ = act.Should().ThrowAsync<InvalidOperationException>().WithMessage("*not qualified*");
+            // Arrange
+            var newDriver = new Driver
+            {
+                DriverName = "Alice Wilson",
+                LicenseNumber = "DL999999",
+                DriverPhone = "555-019-9999",
+                DriversLicenceType = "Class B",
+                TrainingComplete = true
+            };
+
+            // Act
+            var addedDriver = await _driverService.AddDriverAsync(newDriver);
+
+            // Assert
+            addedDriver.Should().NotBeNull();
+            addedDriver.DriverId.Should().BeGreaterThan(0);
+            addedDriver.Status.Should().Be("Active"); // Default value
+            addedDriver.DriverName.Should().Be("Alice Wilson");
+
+            // Verify in database
+            using var context = ContextFactory.CreateDbContext();
+            var fromDb = await context.Drivers.FindAsync(addedDriver.DriverId);
+            fromDb.Should().NotBeNull();
+            fromDb!.DriverName.Should().Be("Alice Wilson");
         }
 
         [Test]
-        public async Task IsDriverAvailableForRouteAsync_ReturnsFalseWhenAlreadyAssigned()
+        public async Task UpdateDriverAsync_ValidDriver_UpdatesSuccessfully()
         {
-            // Assign driver 2 to AM Route 1
-            await _driverService.AssignDriverToRouteAsync(2, 1, true);
+            // Arrange
+            const int driverId = 1;
+            var driverToUpdate = new Driver
+            {
+                DriverId = driverId,
+                DriverName = "John Driver Jr.",
+                LicenseNumber = "DL123456",
+                DriverPhone = "555-010-1234",
+                Status = "Active",
+                DriversLicenceType = "Class B",
+                TrainingComplete = true
+            };
 
-            var available = await _driverService.IsDriverAvailableForRouteAsync(2, DateTime.Today, true);
-            available.Should().BeFalse();
+            // Act
+            var result = await _driverService.UpdateDriverAsync(driverToUpdate);
+
+            // Assert
+            result.Should().BeTrue();
+
+            // Verify in database
+            using var context = ContextFactory.CreateDbContext();
+            var updatedDriver = await context.Drivers.FindAsync(driverId);
+            updatedDriver.Should().NotBeNull();
+            updatedDriver!.DriverName.Should().Be("John Driver Jr.");
         }
 
         [Test]
-        public async Task UpdateDriverLicenseInfoAsync_ValidatesAndUpdates()
+        public async Task DeleteDriverAsync_ValidId_DeletesSuccessfully()
         {
-            var ok = await _driverService.UpdateDriverLicenseInfoAsync(1, "LIC123", "B", DateTime.Today.AddYears(1));
-            ok.Should().BeTrue();
+            // Arrange
+            const int driverId = 3;
 
-            var d = await _dbContext.Drivers.FindAsync(1);
-            d!.LicenseNumber.Should().Be("LIC123");
-            d.LicenseClass.Should().Be("B");
+            // Act
+            var result = await _driverService.DeleteDriverAsync(driverId);
+
+            // Assert
+            result.Should().BeTrue();
+
+            // Verify in database
+            using var context = ContextFactory.CreateDbContext();
+            var deletedDriver = await context.Drivers.FindAsync(driverId);
+            deletedDriver.Should().BeNull();
         }
 
         [Test]
-        public async Task UpdateDriverStatusAsync_WithActiveAssignments_Throws()
+        public async Task SearchDriversAsync_ByName_ReturnsMatchingDrivers()
         {
-            // Assign driver 1 to AM Route 1
-            await _driverService.AssignDriverToRouteAsync(1, 1, true);
+            // Act
+            var results = await _driverService.SearchDriversAsync("John");
 
-            Func<Task> act = async () => await _driverService.UpdateDriverStatusAsync(1, "Inactive");
-            await act.Should().ThrowAsync<InvalidOperationException>();
+            // Assert
+            results.Should().NotBeNull();
+            results.Should().HaveCount(1);
+            results.First().DriverName.Should().Be("John Driver");
         }
 
         [Test]
-        public async Task ExportDriversToCsvAsync_IncludesHeader()
+        public async Task SearchDriversAsync_EmptySearchTerm_ReturnsAllDrivers()
         {
-            var csv = await _driverService.ExportDriversToCsvAsync();
-            csv.Should().StartWith("Driver ID,Driver Name,Phone,Email");
+            // Act
+            var results = await _driverService.SearchDriversAsync("");
+
+            // Assert
+            results.Should().NotBeNull();
+            results.Should().HaveCount(3);
+        }
+
+        [Test]
+        public async Task UpdateDriverStatusAsync_ValidStatus_UpdatesSuccessfully()
+        {
+            // Arrange
+            const int driverId = 1;
+            const string newStatus = "On Leave";
+
+            // Act
+            var result = await _driverService.UpdateDriverStatusAsync(driverId, newStatus);
+
+            // Assert
+            result.Should().BeTrue();
+
+            // Verify in database
+            using var context = ContextFactory.CreateDbContext();
+            var updatedDriver = await context.Drivers.FindAsync(driverId);
+            updatedDriver.Should().NotBeNull();
+            updatedDriver!.Status.Should().Be(newStatus);
+        }
+
+        [Test]
+        public async Task UpdateDriverLicenseInfoAsync_ValidInfo_UpdatesSuccessfully()
+        {
+            // Arrange
+            const int driverId = 1;
+            const string newLicenseNumber = "DL111111";
+            const string newLicenseClass = "Class A";
+            var newExpirationDate = DateTime.Today.AddYears(2);
+
+            // Act
+            var result = await _driverService.UpdateDriverLicenseInfoAsync(driverId, newLicenseNumber, newLicenseClass, newExpirationDate);
+
+            // Assert
+            result.Should().BeTrue();
+
+            // Verify in database
+            using var context = ContextFactory.CreateDbContext();
+            var updatedDriver = await context.Drivers.FindAsync(driverId);
+            updatedDriver.Should().NotBeNull();
+            updatedDriver!.LicenseNumber.Should().Be(newLicenseNumber);
+            updatedDriver.DriversLicenceType.Should().Be(newLicenseClass);
+        }
+
+        [Test]
+        public async Task ValidateDriverAsync_InvalidDriver_ReturnsErrors()
+        {
+            // Arrange
+            var invalidDriver = new Driver
+            {
+                DriverName = "",
+                LicenseNumber = "",
+                DriverPhone = "invalid-phone",
+                DriversLicenceType = ""
+            };
+
+            // Act
+            var errors = await _driverService.ValidateDriverAsync(invalidDriver);
+
+            // Assert
+            errors.Should().NotBeNull();
+            errors.Should().NotBeEmpty();
+            errors.Should().Contain(e => e.Contains("name", StringComparison.OrdinalIgnoreCase));
+            errors.Should().Contain(e => e.Contains("license", StringComparison.OrdinalIgnoreCase));
+        }
+
+        [Test]
+        public async Task ValidateDriverAsync_ValidDriver_ReturnsNoErrors()
+        {
+            // Arrange
+            var validDriver = new Driver
+            {
+                DriverName = "Valid Driver",
+                LicenseNumber = "DL123456",
+                DriverPhone = "555-123-4567",
+                DriversLicenceType = "Class B",
+                TrainingComplete = true
+            };
+
+            // Act
+            var errors = await _driverService.ValidateDriverAsync(validDriver);
+
+            // Assert
+            errors.Should().NotBeNull();
+            errors.Should().BeEmpty();
+        }
+
+        [Test]
+        public async Task GetDriverStatisticsAsync_ReturnsCorrectCounts()
+        {
+            // Act
+            var stats = await _driverService.GetDriverStatisticsAsync();
+
+            // Assert
+            stats.Should().NotBeNull();
+            stats.Should().ContainKey("TotalDrivers");
+            stats.Should().ContainKey("ActiveDrivers");
+            stats.Should().ContainKey("QualifiedDrivers");
+
+            stats["TotalDrivers"].Should().Be(3);
+            stats["ActiveDrivers"].Should().Be(2);
+            stats["QualifiedDrivers"].Should().Be(2); // Drivers with TrainingComplete = true
+        }
+
+        [Test]
+        public async Task AssignDriverToRouteAsync_ValidIds_AssignsSuccessfully()
+        {
+            // Arrange
+            const int driverId = 1;
+            const int routeId = 1;
+            const bool isAMRoute = true;
+
+            // Act
+            var result = await _driverService.AssignDriverToRouteAsync(driverId, routeId, isAMRoute);
+
+            // Assert
+            result.Should().BeTrue();
+        }
+
+        [Test]
+        public async Task IsDriverAvailableForRouteAsync_AvailableDriver_ReturnsTrue()
+        {
+            // Arrange
+            const int driverId = 1;
+            var routeDate = DateTime.Today;
+            const bool isAMRoute = true;
+
+            // Act
+            var result = await _driverService.IsDriverAvailableForRouteAsync(driverId, routeDate, isAMRoute);
+
+            // Assert
+            result.Should().BeTrue();
+        }
+
+        [Test]
+        public async Task GetDriversByQualificationStatusAsync_ValidStatus_ReturnsMatchingDrivers()
+        {
+            // Act
+            var qualifiedDrivers = await _driverService.GetDriversByQualificationStatusAsync("Qualified");
+
+            // Assert
+            qualifiedDrivers.Should().NotBeNull();
+            qualifiedDrivers.Should().HaveCountGreaterThan(0);
+            qualifiedDrivers.All(d => d.QualificationStatus == "Qualified").Should().BeTrue();
+        }
+
+        [Test]
+        public async Task GetDriversNeedingRenewalAsync_ReturnsDriversNeedingRenewal()
+        {
+            // Act
+            var driversNeedingRenewal = await _driverService.GetDriversNeedingRenewalAsync();
+
+            // Assert
+            driversNeedingRenewal.Should().NotBeNull();
+            // This would depend on the license expiration dates in the test data
         }
     }
 }

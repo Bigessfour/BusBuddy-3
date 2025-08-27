@@ -16,6 +16,10 @@ namespace BusBuddy.Core.Data
         private readonly IConfiguration? _configuration;
         private static readonly ILogger Logger = Log.ForContext<BusBuddyDbContextFactory>();
 
+        // Shared in-memory database instance for tests to ensure data consistency across contexts
+        private static readonly object _inMemoryDatabaseLock = new object();
+        private static Microsoft.EntityFrameworkCore.Storage.InMemoryDatabaseRoot? _sharedInMemoryDatabase;
+
         private const string DefaultConnectionString =
             "Data Source=(localdb)\\MSSQLLocalDB;Initial Catalog=BusBuddy;Integrated Security=True;MultipleActiveResultSets=True";
 
@@ -44,7 +48,17 @@ namespace BusBuddy.Core.Data
             if (!string.IsNullOrEmpty(testInMemory) && testInMemory == "1")
             {
                 var optionsBuilder = new DbContextOptionsBuilder<BusBuddyDbContext>();
-                optionsBuilder.UseInMemoryDatabase("BusBuddy_InMemory_Test");
+
+                // Use shared in-memory database instance to ensure data consistency across test contexts
+                lock (_inMemoryDatabaseLock)
+                {
+                    if (_sharedInMemoryDatabase == null)
+                    {
+                        _sharedInMemoryDatabase = new Microsoft.EntityFrameworkCore.Storage.InMemoryDatabaseRoot();
+                    }
+                    optionsBuilder.UseInMemoryDatabase("BusBuddy_InMemory_Test", _sharedInMemoryDatabase);
+                }
+
                 var ctx = new BusBuddyDbContext(optionsBuilder.Options);
                 ctx.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
                 return ctx;
@@ -82,6 +96,27 @@ namespace BusBuddy.Core.Data
         /// </summary>
         public BusBuddyDbContext CreateWriteDbContext()
         {
+            // Test override: use shared in-memory database for consistency
+            var testInMemory = Environment.GetEnvironmentVariable("BUSBUDDY_USE_INMEMORY");
+            if (!string.IsNullOrEmpty(testInMemory) && testInMemory == "1")
+            {
+                var optionsBuilder = new DbContextOptionsBuilder<BusBuddyDbContext>();
+
+                // Use shared in-memory database instance to ensure data consistency across test contexts
+                lock (_inMemoryDatabaseLock)
+                {
+                    if (_sharedInMemoryDatabase == null)
+                    {
+                        _sharedInMemoryDatabase = new Microsoft.EntityFrameworkCore.Storage.InMemoryDatabaseRoot();
+                    }
+                    optionsBuilder.UseInMemoryDatabase("BusBuddy_InMemory_Test", _sharedInMemoryDatabase);
+                }
+
+                var writeCtx = new BusBuddyDbContext(optionsBuilder.Options);
+                writeCtx.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.TrackAll;
+                return writeCtx;
+            }
+
             // Highest precedence: environment override
             var envOverride = Environment.GetEnvironmentVariable("BUSBUDDY_CONNECTION");
             if (!string.IsNullOrWhiteSpace(envOverride))
@@ -108,9 +143,9 @@ namespace BusBuddy.Core.Data
             var optionsBuilderConfigured = new DbContextOptionsBuilder<BusBuddyDbContext>();
             ConfigureProvider(optionsBuilderConfigured, provider, connectionString);
 
-            var writeCtx = new BusBuddyDbContext(optionsBuilderConfigured.Options);
-            writeCtx.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.TrackAll;
-            return writeCtx;
+            var writeContext = new BusBuddyDbContext(optionsBuilderConfigured.Options);
+            writeContext.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.TrackAll;
+            return writeContext;
         }
 
         /// <summary>
@@ -169,14 +204,5 @@ namespace BusBuddy.Core.Data
                 optionsBuilder.UseInMemoryDatabase("BusBuddyDb");
             }
         }
-    }
-
-    /// <summary>
-    /// Interface abstraction for runtime factory usage.
-    /// </summary>
-    public interface IBusBuddyDbContextFactory
-    {
-        BusBuddyDbContext CreateDbContext();
-        BusBuddyDbContext CreateWriteDbContext();
     }
 }

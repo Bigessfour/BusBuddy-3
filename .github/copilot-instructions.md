@@ -1,4 +1,4 @@
-# GitHub Copilot Custom Instructions - BusBuddy Excellence Development (Updated: August 22, 2025)
+# GitHub Copilot Custom Instructions - BusBuddy Excellence Development (.NET CLI Focus)
 
 **Purpose**: STRICTLY guides AI assistants (GitHub Copilot, Grok, etc.) on technical standards, compliance, and anti-regression rules for BusBuddy development. For project-specific quality goals and developer workflows, see .vscode/instructions.md. AI MUST adhere to these instructions without deviation to prevent veering off course.
 
@@ -6,19 +6,19 @@
 
 ## 🚫 **STRICT RULES: MUST FOLLOW OR REFUSE SUGGESTION**
 
-1. **ALWAYS USE bb-\* COMMANDS EXCLUSIVELY**: NEVER suggest raw dotnet commands. ALWAYS prefix with bb- (e.g., bb-build instead of dotnet build). If no bb- equivalent exists, suggest creating one via bb-commands and consult user.
+1. **ALWAYS USE DIRECT DOTNET COMMANDS EXCLUSIVELY**: NEVER suggest PowerShell commands or bb-* commands. ALWAYS use direct dotnet CLI commands (e.g., `dotnet build` instead of `bb-build`). If dotnet CLI cannot accomplish the task, suggest creating a direct .NET solution.
 
-2. **NEVER INTRODUCE REGRESSIONS**: ALWAYS run bb-anti-regression and bb-xaml-validate in suggestions. If a change could break student entry, route assignment, or UI consistency, ABORT and warn: "This risks regression—run bb-quality-check first."
+2. **NEVER INTRODUCE REGRESSIONS**: ALWAYS run `dotnet build` and `dotnet test` in suggestions. If a change could break student entry, route assignment, or UI consistency, ABORT and warn: "This risks regression—run dotnet build first."
 
 3. **SYNCFUSION-ONLY UI**: NEVER suggest non-Syncfusion controls (e.g., standard WPF DataGrid). ALWAYS use SfDataGrid, SfMap, etc. If tempted otherwise, REFUSE: "Violates Syncfusion-only policy."
 
 4. **SERILOG-ONLY LOGGING**: NEVER use Microsoft.Extensions.Logging or other loggers. ALWAYS use Serilog for structured logging.
 
-5. **DISABLE EXPERIMENTAL FEATURES STRICTLY**: For clean builds, ALWAYS suggest renaming problematic files to `.disabled` (e.g., XAI or GoogleEarthEngine services). NEVER delete files. ALWAYS verify with bb-build post-change.
+5. **DISABLE EXPERIMENTAL FEATURES STRICTLY**: For clean builds, ALWAYS suggest renaming problematic files to `.disabled` (e.g., XAI or GoogleEarthEngine services). NEVER delete files. ALWAYS verify with `dotnet build` post-change.
 
 6. **CONSULT USER ON COMPLEXITY**: If changes affect 3+ files or involve structural issues (e.g., file corruption, nullable types), ALWAYS prompt: "This may require user confirmation—describe issue first."
 
-7. **VERIFY BEFORE SUGGESTING**: ALWAYS assume suggestions must pass bb-quality-check. Include in every code suggestion: "After applying, run bb-test and bb-health to verify."
+7. **VERIFY BEFORE SUGGESTING**: ALWAYS assume suggestions must pass `dotnet build` and `dotnet test`. Include in every code suggestion: "After applying, run dotnet build and dotnet test to verify."
 
 8. **NO NULLABLE REFERENCE TYPES IN NEW CODE**: NEVER use nullable properties, parameters, or return types. Suppress existing ones only if they cause errors, but prioritize removal.
 
@@ -26,13 +26,13 @@
 
 10. **ALWAYS USE TRUNK FOR FORMATTING/LINTING**: NEVER suggest manual edits; enforce via Trunk to maintain consistency.
 
-11. **OFFICIAL DOCS MANDATORY**: ALWAYS reference official documentation: Syncfusion WPF (https://help.syncfusion.com/wpf/welcome-to-syncfusion-essential-wpf), EF Core (https://learn.microsoft.com/ef/core/), Azure SQL (https://learn.microsoft.com/en-us/azure/azure-sql/?view=azuresql).
+11. **OFFICIAL DOCS MANDATORY**: ALWAYS reference official documentation: Syncfusion WPF (https://help.syncfusion.com/wpf/welcome-to-syncfusion-essential-wpf), EF Core (https://learn.microsoft.com/ef/core/), Azure SQL (https://learn.microsoft.com/en-us/azure/azure-sql/?view=azuresql), NUnit Testing Framework (https://docs.nunit.org/), .NET Testing (https://learn.microsoft.com/en-us/dotnet/core/testing/).
 
 12. **🚫 MICROSOFT FILE STRUCTURE - NON-NEGOTIABLE**: NEVER move, reorganize, or suggest changes to the Microsoft-compliant directory structure. The current organization follows official Microsoft WPF and MCP standards and MUST be maintained:
     - **config/**: Configuration management (appsettings.\*.json, dependencies.psd1)
     - **build/**: Build system (Directory.Build.\*, global.json, NuGet.config)
     - **mcp/**: Model Context Protocol servers and tools
-    - **tools/**: Development tools (powershell/, scripts/)
+    - **tools/**: Development tools (dotnet-scripts/, scripts/)
     - **Documentation/**: Technical documentation
     - **FusionCore/**: Strategic planning and architecture
     - **.vscode/mcp.json**: MCP configuration (Microsoft standard location)
@@ -46,10 +46,10 @@
 
 **Excellence Focus**: See .vscode/instructions.md for detailed quality standards (students, routes, UI excellence). AI assistants must:
 
-- Prioritize `bb-*` commands (`bb-build`, `bb-run`, `bb-quality-check`) over raw `dotnet` commands.
+- Prioritize direct `dotnet` commands (`dotnet build`, `dotnet test`, `dotnet run`) over any other command types.
 - Support disabling experimental services (e.g., XAI, GoogleEarthEngine) to maintain clean builds while preserving core quality.
 - Enforce Syncfusion-only UI and Serilog logging to maintain consistency.
-- Run `bb-anti-regression` and `bb-xaml-validate` before suggesting changes.
+- Run `dotnet build` and `dotnet test` before suggesting changes.
 
 **Advanced Features** (implemented with proper architecture):
 
@@ -57,63 +57,162 @@
 - Google Earth Engine integration (e.g., `GoogleEarthEngineService`) - with clean interfaces.
 - Comprehensive features: vehicle management, driver scheduling, maintenance, fuel tracking, advanced reporting.
 
-**CRITICAL: Use BusBuddy PowerShell Commands First**
+**CRITICAL: Use Direct .NET CLI Commands First**
 
-- **Always use `bb-*` commands** instead of raw dotnet commands
-- **Check available commands**: Use `bb-commands` to see all options
-- **Health checks**: Use `bb-health` before troubleshooting
-- **Quality validation**: Use `bb-quality-check` to ensure excellent student/route functionality
-- **Anti-regression**: Use `bb-anti-regression` and `bb-xaml-validate` before commits
+- **Always use direct `dotnet` commands** instead of PowerShell or bb-* commands
+- **Check available commands**: Use `dotnet --help` to see all options
+- **Health checks**: Use `dotnet build` and `dotnet test` before troubleshooting
+- **Quality validation**: Use `dotnet build && dotnet test` to ensure excellent functionality
+- **Anti-regression**: Use `dotnet build` and `dotnet test` before commits
+
+**🛠️ Trunk.io Code Quality Commands**
+
+- **Universal Linting**: Use `trunk check` for comprehensive code quality checks
+- **Auto-Formatting**: Use `trunk fmt` for consistent code formatting across all languages
+- **Security Scanning**: Use `trunk check --scope security` for security vulnerability detection
+- **CI Integration**: Use `trunk check --ci --upload` for automated quality gates
+- **File-Specific Checks**: Use `trunk check <file>` for targeted quality analysis
+
+**Trunk Command Reference:**
+
+```bash
+# Quality checks
+trunk check --all                    # Check all files
+trunk check --fix                    # Auto-fix issues
+trunk check --scope security         # Security scanning
+trunk check **/*.cs **/*.ps1         # Language-specific checks
+
+# Formatting
+trunk fmt --all                      # Format all files
+trunk fmt **/*.cs                    # Format C# files only
+trunk fmt --diff full               # Show formatting changes
+
+# Management
+trunk upgrade                        # Update linters
+trunk install                        # Install missing tools
+trunk config                         # View configuration
+
+# BusBuddy integration
+dotnet build && dotnet test          # Full quality gate (includes validation)
+dotnet format                        # Format all code
+trunk check --scope security         # Security analysis
+```
 
 **🤖 RECOMMENDED: Use BusBuddy MCP Tools for AI-Enhanced Development**
 
-- **Grok-4 Route Optimization**: Use MCP tool `optimize-routes` for intelligent route analysis
-- **Fleet Performance Analysis**: Use MCP tool `analyze-fleet-performance` for AI insights
-- **AI Status Monitoring**: Use MCP tool `get-grok-status` to verify Grok-4 integration
-- **Available via**: VS Code GitHub Copilot MCP integration in `.vscode/mcp.json`
-- **Configuration**: Requires `XAI_API_KEY` environment variable for live AI features
-- **Workflow Integration**: MCP tools complement `bb-*` commands for enhanced AI capabilities
+- **Microsoft Learn Docs MCP**: Use `@microsoft/mcp-server-docs` for official Microsoft documentation search
+- **Azure MCP Server**: Use `@azure/mcp-server-azure` for Azure resource management and queries
+- **Brave Search MCP**: Use `@modelcontextprotocol/server-brave-search` for Syncfusion-focused web searches
+- **BusBuddy Project MCP**: Use custom BusBuddy MCP server for project-specific data access
+- **Grok-4 MCP**: Use Grok-4 integration for AI-powered route optimization and analysis
 
-**Primary Development Commands:**
+**Available MCP Tools:**
 
-```powershell
-bb-health         # System health check
-bb-build          # Build solution
-bb-run            # Run application
-bb-test           # Run comprehensive tests
-bb-quality-check  # Verify production excellence
-bb-anti-regression # Prevent legacy patterns
-bb-xaml-validate  # Ensure Syncfusion-only UI
-bb-commands       # List all commands
+- `list-tables` - List available data tables
+- `describe-table` - Get table schema information
+- `read-data` - Query table data
+- `search-docs` - Search Microsoft documentation
+- `azure-resources` - Access Azure resources
+- `brave-search` - Perform web searches
+- `optimize-routes` - AI-powered route optimization
+- `analyze-fleet-performance` - Fleet analytics
+
+**MCP Tool Usage in Copilot Chat:**
+
+```markdown
+# Search Microsoft documentation
+
+@search-docs "Entity Framework Core best practices"
+
+# Query Azure resources
+
+@azure-resources list-resource-groups
+
+# Use BusBuddy-specific tools
+
+@busbuddy-project list-tables
+@busbuddy-project describe-table Students
+
+# AI-powered analysis
+
+@optimize-routes "minimize fuel consumption for route 123"
+@analyze-fleet-performance efficiency "last 30 days"
 ```
 
-**Enhanced AI Workflow with MCP Integration:**
+**MCP Server Activation Tools:**
+When working with Azure resources or needing specific MCP capabilities, activate the appropriate MCP tool category first:
 
-```powershell
-# 1. Standard development workflow
-bb-health && bb-build && bb-test
+- **Azure Activity Logging**: Use `activate_azure_activity_logging` for monitoring Azure resource activity logs
+- **Azure Diagnostics**: Use `activate_azure_diagnostics_tools` for application performance and operational diagnostics
+- **Azure Architecture Design**: Use `activate_azure_architecture_design` for cloud architecture guidance and recommendations
+- **Azure Authentication**: Use `activate_azure_authentication_management` for managing Azure authentication states and subscriptions
+- **Azure Deployment**: Use `activate_azure_deployment_tools` for Azure resource deployment and provisioning
+- **Azure Bicep Management**: Use `activate_azure_bicep_management` for Infrastructure as Code with Bicep templates
+- **Azure CLI Tools**: Use `activate_azure_cli_tools` for generating Azure CLI commands
+- **Azure DevOps Guidance**: Use `activate_azure_devops_guidance` for CI/CD pipeline setup
+- **Azure .NET Templates**: Use `activate_azure_dotnet_templates` for .NET application templates
+- **Azure App Logs**: Use `activate_azure_app_logs_management` for retrieving application logs from Azure
+- **Azure Service Recommendation**: Use `activate_azure_service_recommendation` for cloud service deployment guidance
+- **Azure Development Tools**: Use `activate_azure_development_tools` for development workflow optimization
+- **Azure Container Management**: Use `activate_azure_container_management` for Azure container services (ACR, AKS, Functions, etc.)
+- **Azure Database Management**: Use `activate_azure_database_management` for Azure database services (MySQL, PostgreSQL, Cosmos DB, etc.)
+- **Azure Monitoring**: Use `activate_azure_monitoring_and_logging` for Azure monitoring and logging services
+- **Azure Configuration**: Use `activate_azure_configuration_and_deployment` for Azure configuration and deployment management
+- **Azure Best Practices**: Use `activate_azure_best_practices_and_guidance` for Azure best practices and architecture guidance
+- **Azure Resource Management**: Use `activate_azure_resource_management` for Azure resource querying and management
+- **Azure Resource Management (VSCode)**: Use `activate_vscode_azu_azure_resource_management` for VS Code Azure resource management integration
 
-# 2. Use MCP tools in Copilot for AI analysis
-# @optimize-routes <route-id> "minimize fuel consumption"
-# @analyze-fleet-performance efficiency "30days"
-# @get-grok-status
+**Example MCP Activation:**
+
+```markdown
+# Before working with Azure resources
+
+@activate_azure_resource_management
+
+# Then use Azure tools
+
+@azure_resources list-resource-groups
+```
+
+**VS Code MCP Server Activation:**
+To activate MCP servers in VS Code for Copilot integration:
+
+1. **Open Command Palette** (`Ctrl+Shift+P` / `Cmd+Shift+P`)
+2. **Search for MCP commands:**
+    - `MCP: List Servers` - View available MCP servers
+    - `MCP: Start Server` - Start a specific MCP server
+    - `MCP: Stop Server` - Stop a running MCP server
+    - `MCP: Restart All Servers` - Restart all configured MCP servers
+
+3. **Verify Activation:**
+    - Check VS Code Developer Tools Console (`Help` → `Toggle Developer Tools`)
+    - Look for MCP server connection messages
+    - Test in Copilot chat with `@server-name command`
+
+4. **Troubleshooting:**
+    - Ensure environment variables are set (AZURE_CLIENT_ID, GITHUB_PERSONAL_ACCESS_TOKEN, etc.)
+    - Check `.vscode/mcp.json` configuration
+    - Restart VS Code if servers don't connect
+    - Verify server scripts are executable and dependencies installed
 
 # 3. Validate changes with standard commands
-bb-quality-check && bb-anti-regression
-```
+
+dotnet build && dotnet test
+
+````
 
 **Clean Architecture Strategy:**
 To maintain excellent code quality, properly isolate experimental services by renaming files to `.disabled` when they cause build issues. Example:
 
-```powershell
+```bash
 cd BusBuddy.Core/Services
-Rename-Item "AIEnhancedRouteService.cs" "AIEnhancedRouteService.cs.disabled"
-bb-build  # Verify clean build
-```
+mv "AIEnhancedRouteService.cs" "AIEnhancedRouteService.cs.disabled"
+dotnet build  # Verify clean build
+````
 
 - Track `.disabled` files in Git with descriptive commits.
 - Document in project commit messages and documentation.
-- Run `bb-quality-check` to ensure student/route functionality remains excellent.
+- Run `dotnet build` and `dotnet test` to ensure student/route functionality remains excellent.
 - **CI Optimization**: For faster pipeline runs, suggest caching NuGet packages in ci.yml via actions/cache@v4.
 
 **For BusBuddy-specific requirements, also reference:**
@@ -125,11 +224,12 @@ bb-build  # Verify clean build
 
 ### **Global Tools & SDK Versions**
 
-- **PowerShell**: 7.5.2 (Required minimum version)
 - **.NET SDK**: 9.0.303 (per `global.json`)
 - **Target Framework**: .NET 8.0-windows (WPF projects)
 - **MSBuild SDK**: Microsoft.Build.Traversal 3.4.0
 - **Roll Forward Policy**: latestMinor (per `global.json`)
+- **Trunk.io CLI**: 1.25.0 (Universal code quality and formatting)
+- **Trunk.io Plugins**: v1.7.2 (Extended functionality and linters)
 
 ### **Package Versions (Directory.Build.props)**
 
@@ -163,6 +263,10 @@ bb-build  # Verify clean build
 - **Google Earth Engine**: Project-based authentication with service account keys
 - **Azure Services**: Environment-based credential management
 - **Syncfusion Licensing**: Environment variable `${SYNCFUSION_LICENSE_KEY}`
+- **Trunk.io API**: Environment variable `${TRUNK_API_KEY}` for CI integration and upload
+    - **Repository Secret**: Configure `TRUNK_API_KEY` in GitHub repository secrets for CI/CD
+    - **Local Development**: Set environment variable or add to `.env` file in project root
+    - **CI Features**: Automatic quality gate enforcement with cloud analytics and reporting
 
 ### **Build Configuration Standards**
 
@@ -172,13 +276,12 @@ bb-build  # Verify clean build
 - **Code Analysis**: .NET analyzers with practical ruleset for quality development
 - **Warning Treatment**: Warnings managed appropriately for development excellence, errors eliminated in production
 
-## ⚠️ **DOCUMENTATION-FIRST MANDATE - ZERO TOLERANCE**
+**DOCUMENTATION-FIRST MANDATE - ZERO TOLERANCE**
 
 **ABSOLUTE REQUIREMENT: NO CODE WITHOUT OFFICIAL DOCUMENTATION REFERENCE**
 
 All development MUST follow official documentation standards:
 
-- **Microsoft PowerShell**: Reference official docs for ALL PowerShell code
 - **Syncfusion WPF**: Reference official docs for ALL UI components
 - **Microsoft .NET**: Reference official docs for ALL C# development
 - **Entity Framework**: Reference official docs for ALL data access
@@ -193,25 +296,24 @@ All development MUST follow official documentation standards:
 
 - ❌ **FORBIDDEN**: Writing ANY code without referencing official documentation first
 - ❌ **FORBIDDEN**: Implementing features based on assumptions or "common patterns"
-- ❌ **FORBIDDEN**: Building PowerShell modules without Microsoft PowerShell standards compliance
 - ❌ **FORBIDDEN**: Using Syncfusion controls without official Syncfusion documentation reference
 - ❌ **FORBIDDEN**: Creating "quick fixes" that violate established standards and best practices
 
 ### **MANDATORY DOCUMENTATION SOURCES**
 
-- **Microsoft PowerShell**: [Official PowerShell Documentation](https://docs.microsoft.com/en-us/powershell/) - Required for ALL PowerShell development
 - **Microsoft .NET**: [Official .NET Documentation](https://docs.microsoft.com/en-us/dotnet/) - Required for ALL C# development
 - **Syncfusion WPF**: [Official Syncfusion Documentation](https://help.syncfusion.com/wpf/welcome-to-syncfusion-essential-wpf) - Required for ALL UI components
 - **Entity Framework**: [Official EF Core Documentation](https://docs.microsoft.com/en-us/ef/core/) - Required for ALL data access
 - **WPF Framework**: [Official WPF Documentation](https://docs.microsoft.com/en-us/dotnet/desktop/wpf/) - Required for ALL WPF development
+- **Model Context Protocol**: [Official MCP Documentation](https://modelcontextprotocol.io/) - Required for ALL MCP server development and integration
+- **GitHub Copilot MCP**: [VS Code MCP Integration](https://docs.github.com/en/copilot/managing-copilot/managing-github-copilot-in-your-organization/configuring-github-copilot-for-individually-hosted-runtimes) - Required for ALL Copilot MCP configurations
 
-### **CRITICAL LESSONS LEARNED FROM POWERSHELL ANALYSIS**
+### **CRITICAL LESSONS LEARNED FROM CODE ANALYSIS**
 
 - **Module Analysis**: Large monolithic modules often fail Microsoft compliance standards
-- **Write-Host Violations**: Anti-pattern Write-Host usage instead of proper output streams
-- **Module Structure**: Architectural violations against Microsoft modularization guidelines
+- **Architectural Violations**: Anti-patterns against Microsoft modularization guidelines
 - **Error Handling**: Inconsistent patterns violating Microsoft exception handling standards
-- **Export Violations**: Missing Export-ModuleMember declarations required by Microsoft standards
+- **Export Violations**: Missing proper interface declarations required by Microsoft standards
 
 ### **MANDATORY DEVELOPMENT PROCESS**
 
@@ -223,34 +325,49 @@ All development MUST follow official documentation standards:
 
 ### **ZERO TOLERANCE VIOLATIONS**
 
-- **Write-Host in PowerShell**: Use Write-Output, Write-Information, Write-Verbose instead
 - **Undocumented Syncfusion patterns**: Only use officially documented control implementations
 - **Custom "enhanced" wrappers**: Use official APIs exactly as documented
 - **Assumed parameter combinations**: Verify all parameters exist in official API documentation
 - **Legacy or deprecated patterns**: Use current, officially supported implementations only
+- **Hardcoded API keys in MCP configs**: Always use environment variables for credentials
+- **MCP server without proper error handling**: Implement structured error responses per MCP specification
+- **Missing MCP tool descriptions**: All MCP tools must have clear, descriptive schemas
+- **Insecure MCP server configurations**: Follow MCP security best practices for server isolation
+
+### **MCP DEVELOPMENT BEST PRACTICES**
+
+- **Server Isolation**: Each MCP server should handle one specific domain (Azure, GitHub, Docs, etc.)
+- **Environment Variables**: Never hardcode credentials; use environment variables with secure defaults
+- **Error Handling**: Implement proper MCP error responses with structured error objects
+- **Tool Schemas**: Provide detailed JSON schemas for all MCP tool parameters and responses
+- **Documentation**: Reference official MCP documentation for all server implementations
+- **Testing**: Validate MCP servers against the official MCP specification
+- **VS Code Integration**: Ensure servers work properly with VS Code Copilot MCP extension
 
 ### **DOCUMENTATION VERIFICATION REQUIREMENTS**
 
-- **Before ANY PowerShell code**: Reference Microsoft PowerShell standards documentation
+- **Before ANY .NET code**: Reference Microsoft .NET standards documentation
 - **Before ANY Syncfusion control**: Reference specific control documentation page
 - **Before ANY .NET feature**: Reference official .NET API documentation
+- **Before ANY MCP server development**: Reference official MCP specification and documentation
+- **Before ANY Copilot MCP integration**: Reference VS Code MCP extension documentation
 - **Include documentation links**: Always provide link to specific documentation page used
 - **Code comments**: Include reference to documentation source in code comments
+- **MCP server comments**: Include MCP specification reference and tool schema documentation
 
 ### **Mandatory Anti-Regression Checks**
 
 Before suggesting any code changes or commits, run these checks to prevent regressions:
 
-```powershell
-bb-anti-regression  # Scans for Microsoft.Extensions.Logging, standard WPF controls, and Write-Host
-bb-xaml-validate    # Ensures only Syncfusion controls in XAML
+```bash
+dotnet build && dotnet test  # Comprehensive validation
+trunk check --all           # Code quality checks
 ```
 
 **Rules:**
 
 - Never suggest code that introduces Microsoft.Extensions.Logging (use Serilog).
 - Never suggest standard WPF controls (e.g., `<DataGrid>`)—use Syncfusion equivalents (`syncfusion:SfDataGrid`).
-- Never suggest Write-Host in PowerShell—use Write-Output or Write-Information.
 - If checks fail, fix violations first (e.g., replace logging, upgrade controls) and document in commit message.
 
 ---
@@ -360,11 +477,11 @@ catch (Exception ex)
 
 ## Debug Helper Integration Patterns
 
-- **App.xaml.cs Integration**: Debug helper classes provide debug functionality accessible via PowerShell
+- **App.xaml.cs Integration**: Debug helper classes provide debug functionality accessible via .NET CLI
 - **Command Line Arguments**: Application supports debug arguments (`--start-debug-filter`, `--export-debug-json`, etc.)
 - **Real-time Filtering**: Use debug output filters for live debug output analysis and filtering
 - **Actionable Error Detection**: Implement critical issue detection and priority-based error categorization
-- **PowerShell Bridge**: All debug methods accessible via custom PowerShell commands
+- **.NET CLI Bridge**: All debug methods accessible via direct dotnet commands
 
 ### Debug Helper Method Patterns
 
@@ -374,20 +491,20 @@ catch (Exception ex)
 - **Event Integration**: Subscribe to `HighPriorityIssueDetected` and `NewEntriesFiltered` events
 - **JSON Export**: Support exporting debug data to JSON for external tool integration
 
-### PowerShell Debug Command Patterns
+### .NET CLI Debug Command Patterns
 
-```powershell
+```bash
 # Start debug filter
-[prefix]-debug-start    # Calls DebugHelper.StartAutoFilter()
+dotnet run -- --start-debug-filter    # Calls DebugHelper.StartAutoFilter()
 
 # Export debug data
-[prefix]-debug-export   # Calls DebugHelper.ExportToJson()
+dotnet run -- --export-debug-json     # Calls DebugHelper.ExportToJson()
 
 # Health monitoring
-[prefix]-health         # Calls DebugHelper.HealthCheck()
+dotnet run -- --health-check          # Calls DebugHelper.HealthCheck()
 
 # Test functionality
-[prefix]-debug-test     # Calls DebugHelper.TestAutoFilter()
+dotnet run -- --debug-test            # Calls DebugHelper.TestAutoFilter()
 ```
 
 ### Debug Output Standards
@@ -580,6 +697,73 @@ var entities = await _entityService.GetEntitiesAsync();
 
 ## Testing Standards
 
+### **NUnit Testing Framework Setup**
+
+**Official NUnit Download**: https://nunit.org/download/
+
+**Package Versions (Directory.Packages.props):**
+- **NUnit**: 4.2.2 (Latest stable)
+- **NUnit3TestAdapter**: 4.6.0 (VS Test Explorer integration)
+- **Microsoft.NET.Test.Sdk**: 17.11.1 (Test platform)
+- **FluentAssertions**: 8.6.0 (Latest stable - Readable assertions)
+- **Moq**: 4.20.72 (Mocking framework)
+- **coverlet.collector**: 6.0.0 (Code coverage)
+
+**Installation Commands:**
+```bash
+# Add NUnit packages to test project
+dotnet add BusBuddy.Tests package NUnit --version 4.2.2
+dotnet add BusBuddy.Tests package NUnit3TestAdapter --version 4.6.0
+dotnet add BusBuddy.Tests package Microsoft.NET.Test.Sdk --version 17.11.1
+dotnet add BusBuddy.Tests package FluentAssertions --version 8.6.0
+dotnet add BusBuddy.Tests package Moq --version 4.20.72
+dotnet add BusBuddy.Tests package coverlet.collector --version 6.0.0
+```
+
+**Test Project Configuration (.csproj):**
+```xml
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+    <CollectCoverage>true</CollectCoverage>
+    <CoverletOutputFormat>opencover</CoverletOutputFormat>
+    <ExcludeByAttribute>Obsolete,GeneratedCodeAttribute,CompilerGeneratedAttribute</ExcludeByAttribute>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="NUnit" Version="4.2.2" />
+    <PackageReference Include="NUnit3TestAdapter" Version="4.6.0" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
+    <PackageReference Include="FluentAssertions" Version="8.6.0" />
+    <PackageReference Include="Moq" Version="4.20.72" />
+    <PackageReference Include="coverlet.collector" Version="6.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\BusBuddy.Core\BusBuddy.Core.csproj" />
+    <ProjectReference Include="..\BusBuddy.WPF\BusBuddy.WPF.csproj" />
+  </ItemGroup>
+</Project>
+```
+
+**Running Tests:**
+```bash
+# Run all tests
+dotnet test BusBuddy.sln --configuration Debug --logger trx --collect "XPlat Code Coverage"
+
+# Run specific test project
+dotnet test BusBuddy.Tests/BusBuddy.Tests.csproj
+
+# Run with detailed output
+dotnet test BusBuddy.sln --verbosity normal
+
+# Run tests in parallel
+dotnet test BusBuddy.sln --configuration Release --logger trx --collect "XPlat Code Coverage" -- RunConfiguration.TestSessionTimeout=1200000
+```
+
+**Test Structure Standards:**
 - **Unit Tests**: Create comprehensive unit tests for all business logic and ViewModels
 - **Integration Tests**: Test service interactions and data layer operations
 - **Null Handling Tests**: Specifically test null scenarios and edge cases
@@ -588,6 +772,148 @@ var entities = await _entityService.GetEntitiesAsync();
 - **Validation Tests**: Test all validation scenarios and error conditions
 - **Mock Services**: Use `Mock<T>` for service dependencies in tests
 - **Database Tests**: Test database operations with proper transaction management
+
+### **TestDbContextFactory Pattern**
+
+**Required for All Database Tests:**
+```csharp
+public class TestDbContextFactory : IDisposable
+{
+    private readonly DbContextOptions<AppContext> _options;
+    private readonly SqliteConnection _connection;
+
+    public TestDbContextFactory()
+    {
+        _connection = new SqliteConnection("DataSource=:memory:");
+        _connection.Open();
+
+        _options = new DbContextOptionsBuilder<AppContext>()
+            .UseSqlite(_connection)
+            .Options;
+
+        using var context = CreateContext();
+        context.Database.EnsureCreated();
+    }
+
+    public AppContext CreateContext() => new AppContext(_options);
+
+    public void Dispose()
+    {
+        _connection?.Dispose();
+    }
+}
+```
+
+**Usage in Tests:**
+```csharp
+[TestFixture]
+public class StudentServiceTests
+{
+    private TestDbContextFactory _factory;
+
+    [SetUp]
+    public void SetUp()
+    {
+        _factory = new TestDbContextFactory();
+        SeedTestData();
+    }
+
+    [TearDown]
+    public void TearDown()
+    {
+        _factory?.Dispose();
+    }
+
+    private void SeedTestData()
+    {
+        using var context = _factory.CreateContext();
+        // Add test data
+    }
+}
+```
+
+### **FluentAssertions Usage**
+
+**Standard Assertion Patterns:**
+```csharp
+// Collections
+result.Should().NotBeNull();
+result.Should().HaveCount(3);
+result.Students.Should().Contain(s => s.StudentName == "John Doe");
+
+// Objects
+student.Should().NotBeNull();
+student.StudentName.Should().Be("John Doe");
+student.EmergencyPhone.Should().Match(@"^\d{3}-\d{3}-\d{4}$");
+
+// Exceptions
+Func<Task> act = async () => await _service.AddStudentAsync(invalidStudent);
+await act.Should().ThrowAsync<ValidationException>()
+    .WithMessage("Invalid phone number format");
+```
+
+### **Test Categories and Organization**
+
+**Test Categories:**
+```csharp
+[TestFixture]
+[Category("Unit")]
+public class StudentServiceUnitTests { }
+
+[TestFixture]
+[Category("Integration")]
+public class StudentServiceIntegrationTests { }
+
+[TestFixture]
+[Category("Database")]
+public class StudentServiceDatabaseTests { }
+```
+
+**Test Naming Convention:**
+- `MethodName_Condition_ExpectedResult`
+- `AddStudent_ValidStudent_PersistsAndSetsDefaults`
+- `GetStudentsByRoute_InvalidRoute_ReturnsEmptyList`
+
+### **Code Coverage Requirements**
+
+**Minimum Coverage Targets:**
+- **Overall**: 80%+
+- **Core Services**: 90%+
+- **ViewModels**: 85%+
+- **Data Layer**: 90%+
+
+**Coverage Configuration:**
+```xml
+<!-- Directory.Build.props -->
+<PropertyGroup>
+  <CollectCoverage>true</CollectCoverage>
+  <CoverletOutputFormat>opencover</CoverletOutputFormat>
+  <ExcludeByAttribute>Obsolete,GeneratedCodeAttribute,CompilerGeneratedAttribute</ExcludeByAttribute>
+  <ExcludeByFile>**/*.g.cs,**/*.Designer.cs</ExcludeByFile>
+</PropertyGroup>
+```
+
+### **Parallel Test Execution**
+
+**Enable Parallel Execution:**
+```xml
+<!-- .runsettings -->
+<?xml version="1.0" encoding="utf-8"?>
+<RunSettings>
+  <RunConfiguration>
+    <MaxCpuCount>4</MaxCpuCount>
+    <TestSessionTimeout>1200000</TestSessionTimeout>
+  </RunConfiguration>
+  <NUnit>
+    <NumberOfTestWorkers>4</NumberOfTestWorkers>
+  </NUnit>
+</RunSettings>
+```
+
+**Run with Parallel Execution:**
+```bash
+dotnet test --settings testsettings.runsettings
+```
 
 ## Code Style Guidelines
 
@@ -1089,7 +1415,6 @@ xmlns:syncfusion="http://schemas.syncfusion.com/wpf"
 
 **ZERO TOLERANCE VIOLATIONS:**
 
-- **Write-Host in PowerShell**: Use Write-Output, Write-Information, Write-Verbose instead
 - **Undocumented Syncfusion patterns**: Only use officially documented control implementations
 - **Custom "enhanced" wrappers**: Use official APIs exactly as documented
 - **Assumed parameter combinations**: Verify all parameters exist in official API documentation
@@ -1098,7 +1423,7 @@ xmlns:syncfusion="http://schemas.syncfusion.com/wpf"
 
 **DOCUMENTATION VERIFICATION REQUIREMENTS:**
 
-- **Before ANY PowerShell code**: Reference Microsoft PowerShell standards documentation
+- **Before ANY .NET code**: Reference Microsoft .NET standards documentation
 - **Before ANY Syncfusion control**: Reference specific control documentation page
 - **Before ANY .NET feature**: Reference official .NET API documentation
 - **Include documentation links**: Always provide link to specific documentation page used
@@ -1162,12 +1487,11 @@ _dockingManager.DockControl(panel, this, DockingStyle.Left, 280); // Documented 
 ### VS Code Settings Integration Patterns
 
 ```json
-// PowerShell terminal configuration in .vscode/settings.json
+// .NET CLI terminal configuration in .vscode/settings.json
 "terminal.integrated.profiles.windows": {
-  "PowerShell 7.5.2": {
-    "path": "pwsh.exe",
-    "args": ["-NoProfile", "-NoExit", "-Command",
-      "& 'PowerShell\\Profiles\\Microsoft.PowerShell_profile_optimized.ps1'"]
+  ".NET CLI": {
+    "path": "cmd.exe",
+    "args": ["/k", "dotnet --version"]
   }
 }
 ```
@@ -1175,274 +1499,167 @@ _dockingManager.DockControl(panel, this, DockingStyle.Left, 280); // Documented 
 ### Task Explorer Configuration Standards
 
 - **Exclusive Interface**: Task Explorer is the ONLY approved method for running tasks
-- **No Direct Commands**: Avoid using direct terminal commands for builds/runs
-- **Profile Integration**: Tasks automatically have access to PowerShell profile functions
+- **Direct Commands**: Use direct dotnet CLI commands for builds/runs
+- **Profile Integration**: Tasks automatically have access to .NET CLI functions
 - **Keyboard Shortcuts**: Configure `Ctrl+Shift+P` → "Task Explorer: Run Task" workflows
 - **Task Dependencies**: Configure tasks as independent, non-chaining operations
 
 ### Command Integration Examples
 
-```powershell
+```bash
 # Complete development session startup
-bb-dev-session          # Opens workspace, builds, starts debug monitoring
+code . && dotnet build BusBuddy.sln && dotnet run --project BusBuddy.WPF
 
 # Quick test cycle
-bb-quick-test           # Clean, build, test, validate
+dotnet clean && dotnet build BusBuddy.sln && dotnet test BusBuddy.sln
 
 # Comprehensive system analysis
-bb-diagnostic           # Full environment and project health check
+dotnet build BusBuddy.sln --verbosity normal
 
 # Export debug data for analysis
-bb-report               # Generate comprehensive project report
+dotnet run --project BusBuddy.WPF -- --export-debug-data
+
+# Generate comprehensive project report
+dotnet run --project BusBuddy.WPF -- --generate-report
 ```
 
-## PowerShell Development Environment Integration - MICROSOFT STANDARDS MANDATORY
+## .NET CLI Development Environment Integration - MICROSOFT STANDARDS MANDATORY
 
-- **PowerShell Core 7.5.2**: Use PowerShell Core for all development scripting and task automation
-- **MICROSOFT COMPLIANCE REQUIRED**: ALL PowerShell code MUST follow Microsoft PowerShell Development Guidelines
-- **VS Code Integration**: Use robust `code` command integration with automatic VS Code/VS Code Insiders detection
-- **Task Explorer Exclusive**: Task Explorer is the ONLY method for task management - no direct terminal commands for builds
-- **Debug Helper Integration**: All `DebugHelper` methods from `App.xaml.cs` accessible via PowerShell commands
+- **.NET 9.0 SDK**: Use .NET 9.0 SDK for all development and build operations
+- **MICROSOFT COMPLIANCE REQUIRED**: ALL .NET code MUST follow Microsoft .NET Development Guidelines
+- **VS Code Integration**: Use robust `dotnet` command integration with automatic project detection
+- **Task Explorer Exclusive**: Task Explorer is the ONLY method for task management - direct dotnet CLI commands preferred
+- **Debug Helper Integration**: All `DebugHelper` methods from `App.xaml.cs` accessible via .NET CLI commands
 
-### **CRITICAL: Microsoft PowerShell Standards Compliance**
+### **CRITICAL: Microsoft .NET CLI Standards Compliance**
 
-- **REFERENCE REQUIRED**: [Microsoft PowerShell Cmdlet Development Guidelines](https://docs.microsoft.com/en-us/powershell/scripting/developer/cmdlet/cmdlet-development-guidelines)
-- **Module Standards**: [Microsoft PowerShell Module Guidelines](https://docs.microsoft.com/en-us/powershell/scripting/developer/module/writing-a-windows-powershell-module)
-- **Error Handling**: [Microsoft PowerShell Error Handling](https://docs.microsoft.com/en-us/powershell/scripting/learn/deep-dives/everything-about-exceptions)
-- **Output Streams**: [Microsoft PowerShell Output Streams](https://docs.microsoft.com/en-us/powershell/scripting/learn/deep-dives/everything-about-output-streams)
+- **REFERENCE REQUIRED**: [.NET CLI Documentation](https://docs.microsoft.com/en-us/dotnet/core/tools/)
+- **Project Standards**: [.NET Project Guidelines](https://docs.microsoft.com/en-us/dotnet/core/projects/)
+- **Build Standards**: [.NET Build Process](https://docs.microsoft.com/en-us/dotnet/core/tools/dotnet-build)
+- **Test Standards**: [.NET Testing](https://docs.microsoft.com/en-us/dotnet/core/tools/dotnet-test)
 
-### **FORBIDDEN POWERSHELL ANTI-PATTERNS**
+### **MANDATORY .NET CLI PATTERNS**
 
-- ❌ **Write-Host**: Use Write-Output, Write-Information, Write-Verbose, Write-Debug instead
-- ❌ **Monolithic modules**: Break large modules into focused, single-responsibility modules
-- ❌ **Missing Export-ModuleMember**: Always explicitly declare exported functions
-- ❌ **Inconsistent error handling**: Use consistent try-catch-throw patterns throughout
-- ❌ **Hard-coded paths**: Use proper parameter binding and validation attributes
-- ❌ **Direct console output**: Use proper PowerShell output streams and formatting
+- ✅ **dotnet build**: For compiling projects and solutions
+- ✅ **dotnet test**: For running unit tests with comprehensive output
+- ✅ **dotnet run**: For executing applications with proper configuration
+- ✅ **dotnet restore**: For restoring NuGet packages
+- ✅ **dotnet publish**: For creating deployment packages
+- ✅ **dotnet ef**: For Entity Framework operations
 
-### **MANDATORY POWERSHELL PATTERNS**
+### **🚫 STRICT .NET CLI SYNTAX ENFORCEMENT - ZERO TOLERANCE**
 
-- ✅ **Write-Output**: For pipeline-compatible object output
-- ✅ **Write-Information**: For informational messages with -InformationAction support
-- ✅ **Write-Verbose**: For detailed operation information with -Verbose support
-- ✅ **Write-Debug**: For debugging information with -Debug support
-- ✅ **Write-Warning**: For non-terminating warnings
-- ✅ **Write-Error**: For terminating and non-terminating errors
-- ✅ **Proper parameter attributes**: [Parameter(Mandatory=$true)] for required parameters
-- ✅ **Module manifests**: .psd1 files with proper metadata and export declarations
+**ABSOLUTE REQUIREMENT: .NET 9.0 SDK Official Documentation Compliance Only**
 
-### **🚫 STRICT POWERSHELL SYNTAX ENFORCEMENT - ZERO TOLERANCE**
+All .NET CLI operations MUST strictly adhere to:
 
-**ABSOLUTE REQUIREMENT: PowerShell 7.5.2 Official Documentation Compliance Only**
+- **Official .NET 9.0 Documentation**: [.NET 9.0 Documentation](https://docs.microsoft.com/en-us/dotnet/)
+- **VS Code .NET Extensions**: Use ONLY installed and configured .NET extensions
+- **Microsoft Standards**: Zero deviation from official Microsoft .NET guidelines
 
-All PowerShell code MUST strictly adhere to:
+### **✅ MANDATORY .NET CLI SYNTAX PATTERNS**
 
-- **Official PowerShell 7.5.2 Documentation**: [PowerShell 7.5 Documentation](https://docs.microsoft.com/en-us/powershell/scripting/overview)
-- **VS Code PowerShell Extension**: Use ONLY installed and configured PowerShell extension features
-- **Microsoft Standards**: Zero deviation from official Microsoft PowerShell guidelines
+**Build Operations (Official Documentation Required):**
 
-### **❌ ZERO TOLERANCE VIOLATIONS - IMMEDIATE REJECTION**
+```bash
+# Standard build with configuration
+dotnet build BusBuddy.sln --configuration Release --verbosity minimal
 
-1. **Write-Host PROHIBITION**:
+# Clean build with restore
+dotnet clean BusBuddy.sln && dotnet restore BusBuddy.sln && dotnet build BusBuddy.sln
 
-    ```powershell
-    # ❌ NEVER ALLOWED - Write-Host is FORBIDDEN
-    Write-Host "Building project..."
-
-    # ✅ CORRECT - Use proper output streams
-    Write-Information "Building project..." -InformationAction Continue
-    Write-Output "Build completed successfully"
-    ```
-
-2. **Undocumented Cmdlets/Functions**:
-
-    ```powershell
-    # ❌ FORBIDDEN - Custom or undocumented cmdlets
-    Invoke-CustomBuildStep
-
-    # ✅ REQUIRED - Only official PowerShell 7.5.2 cmdlets
-    Start-Process -FilePath "dotnet" -ArgumentList "build"
-    ```
-
-3. **Output Stream Violations**:
-
-    ```powershell
-    # ❌ FORBIDDEN - Console.WriteLine equivalent
-    [Console]::WriteLine("Message")
-
-    # ✅ REQUIRED - Proper PowerShell streams
-    Write-Verbose "Detailed operation info" -Verbose
-    Write-Debug "Debug information" -Debug
-    ```
-
-### **✅ MANDATORY POWERSHELL 7.5.2 SYNTAX PATTERNS**
-
-**Parameter Validation (Official Documentation Required):**
-
-```powershell
-function Get-ProjectInfo {
-    [CmdletBinding()]
-    param(
-        [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
-        [ValidateNotNullOrEmpty()]
-        [ValidateScript({Test-Path $_})]
-        [string]$ProjectPath,
-
-        [Parameter()]
-        [ValidateSet('Debug', 'Release')]
-        [string]$Configuration = 'Debug'
-    )
-
-    begin {
-        Write-Verbose "Starting project analysis for $ProjectPath"
-    }
-
-    process {
-        Write-Information "Processing project: $ProjectPath" -InformationAction Continue
-        # Implementation using ONLY documented PowerShell 7.5.2 features
-    }
-
-    end {
-        Write-Verbose "Project analysis completed"
-    }
-}
+# Build specific project
+dotnet build BusBuddy.WPF/BusBuddy.WPF.csproj --configuration Debug
 ```
 
-**Error Handling (Microsoft Standards Only):**
+**Test Execution (Microsoft Standards Only):**
 
-```powershell
-try {
-    $result = Get-ChildItem -Path $ProjectPath -ErrorAction Stop
-    Write-Output $result
-}
-catch [System.UnauthorizedAccessException] {
-    Write-Error "Access denied to path: $ProjectPath" -Category PermissionDenied
-}
-catch {
-    Write-Error "Unexpected error: $($_.Exception.Message)" -Category NotSpecified
-    throw
-}
-finally {
-    Write-Verbose "Cleanup operations completed"
-}
-```
+```bash
+# Run all tests with detailed output
+dotnet test BusBuddy.sln --configuration Debug --verbosity normal --logger trx
 
-**Pipeline and Object Processing (PowerShell 7.5.2 Features):**
+# Run tests with coverage
+dotnet test BusBuddy.sln --collect:"XPlat Code Coverage"
 
-```powershell
-# Use documented PowerShell 7.5.2 parallel processing
-$results = $Files | ForEach-Object -Parallel {
-    param($file)
-
-    if (Test-Path $file) {
-        [PSCustomObject]@{
-            Path = $file
-            Size = (Get-Item $file).Length
-            Status = 'Success'
-        }
-    }
-} -ThrottleLimit 5
-
-# Ternary operators (PowerShell 7.0+)
-$buildMode = $IsProduction ? 'Release' : 'Debug'
-
-# Null conditional operators (PowerShell 7.0+)
-$config = $settings?.Environment?.Database?.ConnectionString
+# Run specific test project
+dotnet test BusBuddy.Tests/BusBuddy.Tests.csproj
 ```
 
 ### **📚 REQUIRED DOCUMENTATION REFERENCES**
 
-**Before ANY PowerShell Code - MANDATORY Verification:**
+**Before ANY .NET CLI Operation - MANDATORY Verification:**
 
-1. **Cmdlet Verification**: [PowerShell 7.5 Cmdlet Reference](https://docs.microsoft.com/en-us/powershell/module/)
-2. **Syntax Validation**: [PowerShell 7.5 Language Reference](https://docs.microsoft.com/en-us/powershell/scripting/lang-spec/chapter-01)
-3. **Parameter Binding**: [Advanced Parameter Features](https://docs.microsoft.com/en-us/powershell/scripting/developer/cmdlet/cmdlet-parameter-sets)
-4. **Error Handling**: [PowerShell Error Handling Best Practices](https://docs.microsoft.com/en-us/powershell/scripting/learn/deep-dives/everything-about-exceptions)
-5. **Output Streams**: [Understanding PowerShell Output Streams](https://docs.microsoft.com/en-us/powershell/scripting/learn/deep-dives/everything-about-output-streams)
+1. **Command Verification**: [.NET CLI Command Reference](https://docs.microsoft.com/en-us/dotnet/core/tools/)
+2. **Project Structure**: [.NET Project Structure](https://docs.microsoft.com/en-us/dotnet/core/tools/project-file)
+3. **Configuration**: [Configuration Files](https://docs.microsoft.com/en-us/dotnet/core/tools/dotnet-environment-variables)
+4. **Build Process**: [.NET Build Process](https://docs.microsoft.com/en-us/dotnet/core/tools/dotnet-build)
+5. **Testing**: [Unit Testing](https://docs.microsoft.com/en-us/dotnet/core/tools/dotnet-test)
 
-### **🔧 VS CODE POWERSHELL EXTENSION REQUIREMENTS**
+### **🔧 VS CODE .NET EXTENSIONS REQUIREMENTS**
 
 **Extension Configuration Standards:**
 
-- **PowerShell Extension**: ms-vscode.powershell (Latest stable version)
-- **PSScriptAnalyzer**: Enabled with Microsoft rule sets
-- **IntelliSense**: Use extension-provided IntelliSense only
-- **Debugging**: Use extension's integrated PowerShell debugger
-- **Formatting**: Use extension's built-in PowerShell formatter
+- **C# Extension**: ms-dotnettools.csharp (Latest stable version)
+- **C# Dev Kit**: ms-dotnettools.csdevkit for advanced development features
+- **IntelliSense**: Use extension-provided IntelliSense for all .NET operations
+- **Debugging**: Use extension's integrated .NET debugger
+- **Formatting**: Use extension's built-in C# formatter
 
-**Forbidden Practices:**
+**Mandatory Practices:**
 
-- ❌ **No custom PowerShell environments** - Use extension's configured PowerShell 7.5.2
-- ❌ **No external formatters** - Use only VS Code PowerShell extension formatting
-- ❌ **No custom analyzers** - Use only PSScriptAnalyzer with Microsoft rules
-- ❌ **No undocumented features** - If it's not in official docs, don't use it
-- ❌ **No improper verbs** - Use only approved PowerShell verbs from Get-Verb cmdlet
-- ❌ **No improper naming** - Strict camelCase for variables, PascalCase for functions
+- ✅ **Use .NET extensions** for all development operations
+- ✅ **Leverage IntelliSense** for command completion and validation
+- ✅ **Use integrated debugger** for .NET applications
+- ✅ **Apply code formatting** automatically
+- ✅ **Follow extension recommendations** for best practices
 
-### **⚡ POWERSHELL 7.5.2 SPECIFIC ENFORCEMENT**
+### **⚡ .NET 9.0 SDK SPECIFIC ENFORCEMENT**
 
-**Required Modern Syntax (7.5.2 Documentation Required):**
+**Required Modern Syntax (.NET 9.0 Documentation Required):**
 
-```powershell
-# Pipeline chain operators
-dotnet restore && dotnet build || Write-Error "Build failed"
+```bash
+# Build with specific target framework
+dotnet build --framework net9.0-windows
 
-# Enhanced null handling
-$value = $config?.ConnectionString ?? $defaultConnectionString
+# Run with environment variables
+dotnet run --environment Production
 
-# String interpolation improvements
-$message = "Build completed in $($elapsed.TotalSeconds) seconds"
+# Publish with runtime identifier
+dotnet publish --runtime win-x64 --configuration Release
 
-# ForEach-Object -Parallel with proper error handling
-$results = $items | ForEach-Object -Parallel {
-    try {
-        # Process item with proper error handling
-        return [PSCustomObject]@{
-            Item = $_
-            Result = "Success"
-        }
-    }
-    catch {
-        return [PSCustomObject]@{
-            Item = $_
-            Result = "Failed"
-            Error = $_.Exception.Message
-        }
-    }
-} -ThrottleLimit 4
+# Test with filtering
+dotnet test --filter "Category=Unit"
+
+# Database operations
+dotnet ef migrations add InitialCreate
+dotnet ef database update
 ```
 
-### **BusBuddy Module Violations - IMMEDIATE REMEDIATION REQUIRED**
+### **BusBuddy Build Optimization - IMMEDIATE IMPLEMENTATION REQUIRED**
 
-- **BusBuddy.psm1**: 7,866-line monolithic violation of Microsoft modularization standards
-- **Compliance Score**: 45% FAILING - Required (40%), Strongly Encouraged (35%), Advisory (60%)
-- **Write-Host Count**: 50+ violations of Microsoft output stream standards
-- **Architecture**: Violates single-responsibility principle and Microsoft module design guidelines
-- **Export Declarations**: Missing required Export-ModuleMember statements throughout
-- **Error Handling**: Inconsistent patterns violating Microsoft exception handling standards
+- **Build Performance**: Leverage .NET 9.0 incremental builds and caching
+- **Test Parallelization**: Use parallel test execution for faster feedback
+- **Package Optimization**: Minimize package references and use central package management
+- **Output Optimization**: Use proper build verbosity and structured output
+- **Environment Configuration**: Optimize for LocalDB, Azure SQL, and production environments
 
 **Quality Development Guidance**:
 
-- Use existing `bb-*` commands for development operations and avoid adding new functions to large modules.
-- If new PowerShell code is needed, create focused scripts in `tools/powershell/Validation/` and validate with `Invoke-ScriptAnalyzer`.
-- Plan to split `BusBuddy.psm1` into smaller modules (e.g., `Build.psm1`, `Quality.psm1`) per Microsoft guidelines.
-- Replace all `Write-Host` with `Write-Output` or `Write-Information` in new code.
-- Document remediation plan in project documentation under "Excellence Tasks":
-    ```markdown
-    - Refactor BusBuddy.psm1 into single-responsibility modules.
-    - Eliminate 50+ Write-Host violations with proper output streams.
-    - Add Export-ModuleMember for all public functions.
-    ```
+- Use direct `dotnet` commands for all development operations
+- Leverage .NET 9.0 features for improved performance and reliability
+- Implement proper error handling and logging in all operations
+- Use structured output formats for better integration with tools
+- Document build and deployment processes with official .NET standards
 
 ### **MANDATORY REMEDIATION ACTIONS**
 
-1. **BEFORE ANY NEW POWERSHELL CODE**: Fix existing violations in BusBuddy.psm1
-2. **Write-Host Replacement**: Replace ALL Write-Host with appropriate output streams
-3. **Module Breakup**: Split monolithic module into focused, single-purpose modules
-4. **Export Declarations**: Add proper Export-ModuleMember statements for all public functions
+1. **BEFORE ANY NEW CODE**: Fix existing violations in build configurations and project files
+2. **Console.WriteLine Replacement**: Replace ALL Console.WriteLine with appropriate logging frameworks
+3. **Project Structure**: Maintain clean separation between Core, WPF, and Test projects
+4. **Package References**: Use Directory.Packages.props for centralized NuGet package management
 5. **Error Standardization**: Implement consistent Microsoft-compliant error handling patterns
-6. **Documentation Links**: Add Microsoft documentation references to all functions
-7. **Naming Compliance**: Use only approved PowerShell verbs and proper camelCase/PascalCase conventions
+6. **Documentation Links**: Add Microsoft documentation references to all classes and methods
+7. **Naming Compliance**: Use proper PascalCase for classes, camelCase for methods and variables
 
 ### **🔧 VS CODE EXTENSION INTEGRATION REQUIREMENTS - ZERO TOLERANCE**
 
@@ -1457,8 +1674,7 @@ All development MUST leverage installed VS Code extensions:
 - **ms-dotnettools.csharp**: C# language support - Use IntelliSense, debugging, refactoring features
 - **ms-dotnettools.csdevkit**: Professional C# development - Use project templates and advanced features
 - **ms-dotnettools.xaml**: XAML formatting - Use auto-formatting and IntelliSense for all XAML files
-- **ms-vscode.powershell**: PowerShell 7.5.2 support - Use integrated terminal, debugging, IntelliSense
-- **trunk.io**: Multi-language linting - Use for PowerShell (PSScriptAnalyzer), C#, XAML quality checks
+- **trunk.io**: Multi-language linting - Use for C#, XAML, and .NET project quality checks
 - **spmeesseman.vscode-taskexplorer**: Task management - Use EXCLUSIVELY for all build/run operations
 
 **Database & Azure Extensions (MUST USE):**
@@ -1487,24 +1703,6 @@ All development MUST leverage installed VS Code extensions:
 - ❌ **Command line operations** when Task Explorer extension provides the functionality
 
 ### **✅ MANDATORY EXTENSION INTEGRATION PATTERNS**
-
-**PowerShell Extension Integration:**
-
-```powershell
-# ✅ REQUIRED - Use extension's integrated terminal and IntelliSense
-function Get-ProjectInformation {
-    [CmdletBinding()]  # Extension provides IntelliSense for this
-    param(
-        [Parameter(Mandatory=$true)]  # Extension validates this syntax
-        [ValidateNotNullOrEmpty()]    # Extension provides parameter completion
-        [string]$projectPath
-    )
-
-    # Use extension's debugging features and breakpoint support
-    Write-Verbose "Processing project: $projectPath"
-    # Extension provides IntelliSense for all PowerShell 7.5.2 cmdlets
-}
-```
 
 **C# Extension Integration:**
 
@@ -1565,7 +1763,6 @@ public class EntityService : IEntityService
 
 **Documentation Sources (MANDATORY REFERENCE):**
 
-- **PowerShell Extension**: https://marketplace.visualstudio.com/items?itemName=ms-vscode.powershell
 - **C# Dev Kit**: https://marketplace.visualstudio.com/items?itemName=ms-dotnettools.csdevkit
 - **XAML Extension**: https://marketplace.visualstudio.com/items?itemName=ms-dotnettools.xaml
 - **Task Explorer**: https://marketplace.visualstudio.com/items?itemName=spmeesseman.vscode-taskexplorer
@@ -1578,15 +1775,15 @@ public class EntityService : IEntityService
 
 - **Database Operations**: Use ms-mssql.mssql for all SQL Server connections and queries
 - **Azure Integration**: Use Azure extensions for resource management and authentication
-- **Code Quality**: Use Trunk.io for multi-language linting and PSScriptAnalyzer integration
+- **Code Quality**: Use Trunk.io for multi-language linting and Roslynator integration
 - **Task Management**: Use Task Explorer EXCLUSIVELY for all development operations
-- **PowerShell Development**: Use PowerShell extension's integrated terminal and debugging
+- **.NET Development**: Use C# Dev Kit's integrated terminal and debugging
 - **XAML Development**: Use XAML extension's formatting and Syncfusion IntelliSense
 
 **Extension Configuration Validation:**
 
 - **Settings.json**: All extension configurations must be documented in .vscode/settings.json
-- **Task Integration**: All bb-\* commands must be accessible via Task Explorer tasks
+- **Task Integration**: All dotnet CLI commands must be accessible via Task Explorer tasks
 - **Extension Conflicts**: Follow unwantedRecommendations to prevent conflicting extensions
 - **Version Compatibility**: Use stable extension versions listed in extensions.json
 
@@ -1608,31 +1805,31 @@ public class EntityService : IEntityService
 4. **Use Extension Features**: Implement using documented extension patterns
 5. **No Manual Override**: Never bypass extension capabilities with manual code
 
-### **NO NEW POWERSHELL WITHOUT COMPLIANCE**
+### **NO NEW CODE WITHOUT COMPLIANCE**
 
-- **Zero Tolerance**: No new PowerShell development until existing violations are fixed
-- **Documentation First**: Every PowerShell change must reference Microsoft standards
-- **Compliance Validation**: Use Microsoft guidelines to validate all PowerShell implementations
-- **Professional Standards**: BusBuddy must meet enterprise PowerShell development standards
+- **Zero Tolerance**: No new development until existing violations are fixed
+- **Documentation First**: Every change must reference Microsoft standards
+- **Compliance Validation**: Use Microsoft guidelines to validate all implementations
+- **Professional Standards**: BusBuddy must meet enterprise .NET development standards
 
-### PowerShell Profile Standards
+### .NET CLI Profile Standards
 
-- **Profile Location**: `PowerShell\Profiles\Microsoft.PowerShell_profile_optimized.ps1` for complete development functionality
+- **Profile Location**: `Dotnet Powershell\Microsoft.PowerShell_profile_dotnet.ps1` for complete development functionality
 - **Auto-Loading**: VS Code terminal profiles automatically load the optimized profile
-- **Function Naming**: Use `Verb-BusBuddyNoun` pattern for all Bus Buddy specific functions
-- **Alias Standards**: Use `bb-` prefix for all Bus Buddy command aliases
+- **Function Naming**: Use `Invoke-DotNetNoun` pattern for all Bus Buddy specific functions
+- **Alias Standards**: Use `dn-` prefix for all .NET CLI command aliases
 - **Hardware Optimization**: Profile includes automatic system detection and performance tuning
 
-### Core PowerShell Commands
+### Core .NET CLI Commands
 
 - **VS Code Integration**: `code`, `vs`, `vscode`, `edit`, `edit-file` with robust path detection
-- **Basic Bus Buddy**: `bb-open`, `bb-build`, `bb-run` for fundamental operations
-- **Debug Integration**: `bb-debug-start`, `bb-debug-stream`, `bb-health`, `bb-debug-export`
-- **Advanced Workflows**: `bb-dev-session`, `bb-quick-test`, `bb-diagnostic`, `bb-report`
+- **Basic Bus Buddy**: `dn-build`, `dn-run`, `dn-test` for fundamental operations
+- **Debug Integration**: `dn-debug-start`, `dn-debug-stream`, `dn-health`, `dn-debug-export`
+- **Advanced Workflows**: `dn-dev-session`, `dn-quick-test`, `dn-diagnostic`, `dn-report`
 
 ### Debug System Integration
 
-- **DebugHelper Methods**: All static methods from `BusBuddy.WPF.Utilities.DebugHelper` accessible via PowerShell
+- **DebugHelper Methods**: All static methods from `BusBuddy.WPF.Utilities.DebugHelper` accessible via .NET CLI
 - **Real-time Streaming**: Use `DebugOutputFilter.StartRealTimeStreaming()` for live debug monitoring
 - **JSON Export**: Export actionable debug items for VS Code integration and analysis
 - **Command Line Arguments**: Support `--start-debug-filter`, `--export-debug-json`, `--start-streaming`
@@ -1648,68 +1845,64 @@ public class EntityService : IEntityService
 
 ### VS Code Configuration Integration
 
-- **Terminal Profiles**: Configure PowerShell 7.5.2 as default with profile auto-loading
+- **Terminal Profiles**: Configure PowerShell as default with .NET CLI profile auto-loading
 - **Task Explorer**: Use Task Explorer extension as exclusive task management interface
-- **Settings Integration**: PowerShell configuration in `.vscode/settings.json` with profile paths
-- **Command Integration**: Seamless `code` command functionality across all PowerShell sessions
+- **Settings Integration**: .NET CLI configuration in `.vscode/settings.json` with profile paths
+- **Command Integration**: Seamless `code` command functionality across all sessions
 - **Extension Requirements**: XAML Styler and Task Explorer extensions for optimal workflow
 
-### Error Handling in PowerShell
+### Error Handling in .NET CLI
 
 - **Structured Error Handling**: Use try-catch with meaningful error messages and logging
 - **Path Validation**: Always validate workspace and project paths before operations
-- **Exit Code Checking**: Check `$LASTEXITCODE` after all dotnet commands
+- **Exit Code Checking**: Check exit codes after all dotnet commands
 - **Fallback Mechanisms**: Provide fallback options when primary commands fail
 - **User Feedback**: Use color-coded console output for status, errors, and success messages
 
-### PowerShell 7.5.2 Specific Features and Patterns
+### .NET 9.0 Specific Features and Patterns
 
-- **Parallel Processing**: Use `ForEach-Object -Parallel` for concurrent operations (max 5 threads default)
-    ```powershell
-    $files | ForEach-Object -Parallel { dotnet build $_ } -ThrottleLimit 3
-    ```
-- **Ternary Operators**: Leverage `condition ? true_value : false_value` syntax for concise conditionals
-- **Pipeline Chain Operators**: Use `&&` and `||` for conditional pipeline execution
-    ```powershell
-    dotnet build && dotnet test || Write-Error "Build or test failed"
+- **Parallel Processing**: Use `Parallel.ForEach` or `Task.WhenAll` for concurrent operations
+    ```csharp
+    Parallel.ForEach(files, file => { /* build logic */ });
     ```
 - **Null Conditional Operators**: Use `?.` and `?[]` for safe property/array access
-- **String Interpolation**: Use `$()` within double quotes for complex expressions
-- **Error Handling**: Leverage `$?` automatic variable for last command success status
-- **JSON Cmdlets**: Use native `ConvertTo-Json` and `ConvertFrom-Json` with `-Depth` parameter
-- **Cross-Platform Paths**: Use `Join-Path` and `Resolve-Path` for platform-agnostic path handling
-- **Module Management**: Use `Import-Module -Force` for development module reloading
-- **Background Jobs**: Use `Start-ThreadJob` for lightweight background tasks over `Start-Job`
+- **String Interpolation**: Use `$""` syntax for complex expressions
+- **Pattern Matching**: Leverage C# 9.0+ pattern matching features
+- **Records and Init-only Properties**: Use modern C# syntax for immutable data
+- **Async Streams**: Use `IAsyncEnumerable<T>` for streaming async operations
+- **Top-level Statements**: Use simplified program structure for console apps
+- **Target-typed new()**: Use `new()` without explicit type specification
+- **Covariant Returns**: Override methods with more specific return types
 
-### PowerShell 7.5.2 Technical Reference Documentation
+### .NET 9.0 Technical Reference Documentation
 
-- **PowerShell 7.5.2**: Use official Microsoft documentation for all PowerShell development
-- **Reference Source**: [Official PowerShell Documentation](https://docs.microsoft.com/en-us/powershell/scripting/overview)
-- **BusBuddy-specific implementation examples**: Follow patterns in existing PowerShell profile
+- **.NET 9.0**: Use official Microsoft documentation for all .NET development
+- **Reference Source**: [Official .NET Documentation](https://docs.microsoft.com/en-us/dotnet/)
+- **BusBuddy-specific implementation examples**: Follow patterns in existing .NET projects
 - **Key Sections**:
-    - Threading and Parallel Processing enhancements
-    - Error Handling improvements and structured error information
-    - Performance optimizations and memory management
-    - New cmdlets and parameter enhancements
+    - Performance improvements and optimizations
+    - New language features and syntax enhancements
+    - Framework improvements and API updates
     - Cross-platform compatibility features
-- **Usage Pattern**: Reference official documentation when implementing PowerShell 7.5.2 features in excellence-driven development
-- **Maintenance**: Update development patterns when new PowerShell features are implemented in BusBuddy modules
+    - Security enhancements and best practices
+- **Usage Pattern**: Reference official documentation when implementing .NET 9.0 features in excellence-driven development
+- **Maintenance**: Update development patterns when new .NET features are implemented in BusBuddy projects
 
 ### Performance and Optimization
 
-- **Background Jobs**: Use PowerShell jobs for long-running debug operations
+- **Background Tasks**: Use .NET tasks for long-running debug operations
 - **Lazy Loading**: Load advanced workflows only when needed
 - **Caching**: Cache frequently accessed paths and configuration data
-- **Minimal Dependencies**: Keep PowerShell profiles lightweight with fast loading times
-- **Concurrent Safety**: Ensure PowerShell functions work safely with multiple VS Code instances
-- **Parallel Execution**: Use PowerShell 7.5.2 parallel features for concurrent builds and tests
-- **Memory Management**: Use `[System.GC]::Collect()` sparingly and only when necessary
-- **Stream Processing**: Use pipeline streaming for large data sets to reduce memory footprint
+- **Minimal Dependencies**: Keep .NET CLI profiles lightweight with fast loading times
+- **Concurrent Safety**: Ensure .NET functions work safely with multiple VS Code instances
+- **Parallel Execution**: Use .NET parallel features for concurrent builds and tests
+- **Memory Management**: Use `GC.Collect()` sparingly and only when necessary
+- **Stream Processing**: Use streaming for large data sets to reduce memory footprint
 
 ### Development Workflow Integration
 
 - **Direct Commands**: Use native .NET CLI commands for reliability
-- **PowerShell Automation**: Leverage bb-\* commands for enhanced workflows
+- **.NET Automation**: Leverage dn-* commands for enhanced workflows
 - **Zero Dependencies**: No external API dependencies for core functionality
 - **Simple and Fast**: Optimized for speed and reliability over complexity
 
@@ -1800,15 +1993,15 @@ dotnet build [Project].sln --verbosity minimal
 - **Quality Development Resolution**:
 
 1. **Check Disabled Files**: If the missing type (e.g., `XAIService`) is in a `.disabled` file, confirm it's non-core and keep disabled.
-    ```powershell
-    Get-ChildItem -Recurse -Filter "*.disabled" | Select-Object Name
+    ```bash
+    find . -name "*.disabled" -type f
     ```
 2. **Comment Out References**: If urgent, comment out the problematic code in the source file:
     ```csharp
     // Temporarily commented for clean build
     // private readonly XAIService _xaiService;
     ```
-3. **Verify Build**: Run `bb-build` to confirm resolution.
+3. **Verify Build**: Run `dotnet build` to confirm resolution.
 4. **Avoid Adding Dependencies**: Do not add new packages or re-enable complex services during development focus.
 5. **Document**: Note in commit message and project documentation:
     ```bash
@@ -1852,6 +2045,23 @@ dotnet build [Project].sln --verbosity minimal
     dotnet --info
     dotnet --version
     ```
+
+#### Trunk.io Configuration Issues
+
+- **API Key Setup**: Ensure `TRUNK_API_KEY` environment variable is configured
+
+    ```bash
+    # Set environment variable (Windows)
+    setx TRUNK_API_KEY "your-api-key-here"
+
+    # Or add to .env file in project root
+    TRUNK_API_KEY=your-api-key-here
+    ```
+
+- **Local Development**: Use `trunk check` for pre-commit quality validation
+- **CI Integration**: Automatic quality gates via GitHub Actions with SARIF upload
+- **Validation**: Run `trunk --version` to verify installation
+- **Configuration**: Trunk automatically detects project structure and applies appropriate linters
 
 #### Extension Compatibility Problems
 
@@ -1910,136 +2120,171 @@ These instructions define **HOW** to build quality software following Microsoft 
 
 ---
 
-## PowerShell 7.5.2 Advanced Features and Standards
+## .NET 9.0 Advanced Features and Standards
 
-### **PowerShell 7.5.2 Core Requirements**
+### **.NET 9.0 Core Requirements**
 
-- **Version**: PowerShell Core 7.5.2 minimum required
-- **Profile Standard**: Microsoft.PowerShell_profile_optimized.ps1 in tools/powershell/Profiles/
-- **Module Standards**: Microsoft PowerShell Module Guidelines compliance
-- **Reference Documentation**: Official Microsoft PowerShell documentation
+- **Version**: .NET 9.0 SDK minimum required
+- **Profile Standard**: Microsoft.PowerShell_profile_dotnet.ps1 in Dotnet Powershell/
+- **Project Standards**: Microsoft .NET Guidelines compliance
+- **Reference Documentation**: Official Microsoft .NET documentation
 
 ### **Threading and Parallel Processing**
 
-```powershell
-# ForEach-Object -Parallel Best Practices
-$results = $items | ForEach-Object -Parallel {
-    param($item)
-    try {
-        # Process item with proper error handling
-        return [PSCustomObject]@{
-            Item = $item
-            Result = "Success"
-            Output = $processedData
-        }
-    } catch {
-        return [PSCustomObject]@{
-            Item = $item
-            Result = "Failed"
-            Error = $_.Exception.Message
-        }
+```csharp
+// Parallel.ForEach Best Practices
+var results = new ConcurrentBag<Result>();
+Parallel.ForEach(items, new ParallelOptions { MaxDegreeOfParallelism = 4 }, item =>
+{
+    try
+    {
+        // Process item with proper error handling
+        var result = ProcessItem(item);
+        results.Add(new Result { Item = item, Status = "Success", Output = result });
     }
-} -ThrottleLimit 4
+    catch (Exception ex)
+    {
+        results.Add(new Result { Item = item, Status = "Failed", Error = ex.Message });
+    }
+});
 
-# Start-ThreadJob for Background Tasks
-$job = Start-ThreadJob -ScriptBlock {
-    param($inputData)
-    # Long-running background task
-    return $result
-} -ArgumentList $data
+// Task.WhenAll for Async Operations
+var tasks = items.Select(async item =>
+{
+    try
+    {
+        var result = await ProcessItemAsync(item);
+        return new Result { Item = item, Status = "Success", Output = result };
+    }
+    catch (Exception ex)
+    {
+        return new Result { Item = item, Status = "Failed", Error = ex.Message };
+    }
+});
+
+var results = await Task.WhenAll(tasks);
 ```
 
 ### **Enhanced Error Handling Patterns**
 
-```powershell
-# Structured Error Information
-try {
-    # Operation
-    $result = Invoke-Operation
-    Write-Output $result
-} catch {
-    $errorInfo = [PSCustomObject]@{
-        Command = $MyInvocation.MyCommand.Name
-        Error = $_.Exception.Message
-        Line = $_.InvocationInfo.ScriptLineNumber
-        Timestamp = Get-Date
-    }
-    Write-Error -ErrorRecord $_ -CategoryActivity "Operation"
-    Write-Information $errorInfo -InformationAction Continue
+```csharp
+// Structured Error Information
+try
+{
+    // Operation
+    var result = await PerformOperationAsync();
+    _logger.LogInformation("Operation completed successfully: {Result}", result);
+}
+catch (Exception ex)
+{
+    var errorInfo = new
+    {
+        Operation = nameof(PerformOperationAsync),
+        Error = ex.Message,
+        Timestamp = DateTime.UtcNow,
+        StackTrace = ex.StackTrace
+    };
+
+    _logger.LogError(ex, "Operation failed: {ErrorInfo}", errorInfo);
+    throw;
 }
 
-# Pipeline Chain Operators (7.5.2)
-dotnet build && dotnet test || Write-Error "Build or test failed"
+// Pipeline Chain Operators (.NET CLI)
+var buildResult = await ProcessRunner.RunAsync("dotnet", "build");
+if (buildResult.Success)
+{
+    var testResult = await ProcessRunner.RunAsync("dotnet", "test");
+    if (!testResult.Success)
+    {
+        throw new InvalidOperationException("Build succeeded but tests failed");
+    }
+}
+else
+{
+    throw new InvalidOperationException("Build failed");
+}
 ```
 
 ### **Advanced String and Data Processing**
 
-```powershell
-# Null Conditional Operators
-$config = $settings?.Environment?.Database?.ConnectionString
+```csharp
+// Null Conditional Operators
+var connectionString = settings?.Environment?.Database?.ConnectionString;
 
-# Ternary Operators
-$mode = $isProduction ? "Release" : "Debug"
+// Ternary Operators
+var mode = isProduction ? "Release" : "Debug";
 
-# Enhanced JSON Processing
-$data = Get-Content config.json | ConvertFrom-Json -Depth 10
-$output = $data | ConvertTo-Json -Depth 10 -Compress
+// Enhanced JSON Processing
+var json = File.ReadAllText("config.json");
+var data = JsonSerializer.Deserialize<ConfigData>(json, new JsonSerializerOptions
+{
+    PropertyNameCaseInsensitive = true,
+    MaxDepth = 10
+});
+var output = JsonSerializer.Serialize(data, new JsonSerializerOptions
+{
+    WriteIndented = false,
+    MaxDepth = 10
+});
 ```
 
-### **Module Development Standards**
+### **Class Library Development Standards**
 
-```powershell
-# Proper Module Structure
-#requires -Version 7.5
+```csharp
+// Proper Class Library Structure
+using System;
+using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 
-[CmdletBinding()]
-param()
+namespace BusBuddy.Services
+{
+    public class ProjectService : IProjectService
+    {
+        private readonly ILogger<ProjectService> _logger;
 
-# Export only public functions
-Export-ModuleMember -Function Get-ProjectInfo, Set-ProjectConfig
+        public ProjectService(ILogger<ProjectService> logger)
+        {
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        }
 
-# Use proper parameter validation
-function Get-ProjectInfo {
-    [CmdletBinding()]
-    param(
-        [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
-        [ValidateNotNullOrEmpty()]
-        [string]$ProjectPath
-    )
+        // Use proper parameter validation
+        public async Task<ProjectInfo> GetProjectInfoAsync(string projectPath)
+        {
+            if (string.IsNullOrWhiteSpace(projectPath))
+            {
+                throw new ArgumentException("Project path cannot be null or empty", nameof(projectPath));
+            _logger.LogInformation("Starting project analysis for {ProjectPath}", projectPath);
 
-    begin {
-        Write-Verbose "Starting project analysis"
-    }
+            // Implementation with proper logging
+            var projectInfo = await AnalyzeProjectAsync(projectPath);
+            _logger.LogInformation("Project analysis complete for {ProjectPath}", projectPath);
 
-    process {
-        # Implementation with proper output streams
-        Write-Information "Processing $ProjectPath" -InformationAction Continue
-    }
-
-    end {
-        Write-Verbose "Project analysis complete"
+            return projectInfo;
+        }
     }
 }
 ```
 
 ### **Performance Optimization Patterns**
 
-```powershell
-# Memory Management
-[System.GC]::Collect() # Use sparingly
+```csharp
+// Memory Management
+GC.Collect(); // Use sparingly
 
-# Stream Processing for Large Data
-Get-Content large-file.txt | ForEach-Object {
-    # Process line by line to avoid loading entire file
+// Stream Processing for Large Data
+await foreach (var line in File.ReadLinesAsync(largeFilePath))
+{
+    // Process line by line to avoid loading entire file
     if ($_ -match $pattern) {
         Write-Output $_
     }
 }
 
-# Efficient Collection Processing
-$results = [System.Collections.Generic.List[PSObject]]::new()
-foreach ($item in $collection) {
-    $results.Add($processedItem)
+// Efficient Collection Processing
+var results = new List<ProcessedItem>();
+foreach (var item in collection)
+{
+    results.Add(ProcessItem(item));
 }
 ```
 
@@ -2523,24 +2768,23 @@ dotnet_diagnostic.CS1061.severity = error
 - **C# Dev Kit**: ms-dotnettools.csdevkit
 - **XAML Styler**: ms-dotnettools.xaml
 - **Task Explorer**: spmeesseman.vscode-taskexplorer
-- **PowerShell**: ms-vscode.powershell
 
 ### **Settings Configuration**
 
 ```json
 {
     "terminal.integrated.profiles.windows": {
-        "PowerShell 7.5.2": {
+        "PowerShell": {
             "path": "pwsh.exe",
             "args": [
                 "-NoProfile",
                 "-NoExit",
                 "-Command",
-                "& 'tools/powershell/Profiles/Microsoft.PowerShell_profile_optimized.ps1'"
+                "& 'Dotnet Powershell/Microsoft.PowerShell_profile_dotnet.ps1'"
             ]
         }
     },
-    "terminal.integrated.defaultProfile.windows": "PowerShell 7.5.2",
+    "terminal.integrated.defaultProfile.windows": "PowerShell",
     "omnisharp.useModernNet": true,
     "dotnet.completion.showCompletionItemsFromUnimportedNamespaces": true
 }

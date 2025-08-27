@@ -1,0 +1,162 @@
+# BusBuddy-Specific Trunk Configuration
+# This file extends the main .trunk/trunk.yaml with BusBuddy-specific settings
+# Reference: https://docs.trunk.io/reference/trunk-yaml
+
+version: 0.1
+
+# BusBuddy-specific linting rules and overrides
+lint:
+  definitions:
+    # Custom dotnet-format configuration for BusBuddy
+    - name: dotnet-format
+      environment:
+        - name: DOTNET_ROOT
+          value: "C:\\Program Files\\dotnet"
+        - name: DOTNET_CLI_TELEMETRY_OPTOUT
+          value: "1"
+        - name: DOTNET_FORMAT_STYLE
+          value: "file"
+      files: ["**/*.cs", "**/*.csproj", "**/*.sln"]
+      commands:
+        - name: format
+          output: rewrite
+          run_when: [ci, cli]
+          formatter: true
+
+    # PowerShell Script Analyzer for BusBuddy modules
+    - name: psscriptanalyzer
+      environment:
+        - name: PSModulePath
+          list:
+            [
+              "${workspaceFolder}\\tools\\powershell\\Modules",
+              "${env:PSModulePath:-}",
+            ]
+      files: ["**/*.ps1", "**/*.psm1"]
+      commands:
+        - name: analyze
+          output: sarif
+          run_when: [ci, cli]
+          formatter: true
+          success_codes: [0, 1] # Allow warnings
+
+    # XAML Styler for WPF XAML files
+    - name: xaml-styler
+      files: ["**/*.xaml"]
+      commands:
+        - name: format
+          output: rewrite
+          run_when: [ci, cli]
+          formatter: true
+
+  # BusBuddy-specific file ignores
+  ignore:
+    - linters: [ALL]
+      paths:
+        - "**/BusBuddy.db*" # SQLite database files
+        - "**/appsettings.*.json" # Environment-specific settings
+        - "**/launchSettings.json" # Launch settings
+        - "**/*.user" # User-specific files
+        - "**/*.suo" # Solution user options
+        - "**/.vs/**" # Visual Studio settings
+        - "**/TestResults/**" # Test results
+        - "**/*.tmp" # Temporary files
+        - "**/*.log" # Log files
+        - "**/node_modules/**" # Node.js dependencies
+        - "**/packages/**" # NuGet package cache
+        - "**/bin/**" # Build outputs
+        - "**/obj/**" # Build intermediates
+        - "**/Migrations/**" # EF auto-generated migrations
+        - "**/*.disabled" # Disabled files for clean builds
+
+    # Specific linter ignores
+    - linters: [cspell]
+      paths:
+        - "**/project-dictionary.txt" # Dictionary file
+        - "**/*.md" # Markdown may contain technical terms
+
+    - linters: [psscriptanalyzer]
+      paths:
+        - "**/tools/powershell/Profiles/**" # Profile scripts may need special handling
+
+# BusBuddy-specific actions
+actions:
+  enabled:
+    - trunk-fmt-pre-commit
+    - trunk-check-pre-push
+    - trunk-upgrade-available
+
+# BusBuddy-specific tools configuration
+tools:
+  enabled:
+    - dotnet@9.0.303
+    - pwsh@7.5.2
+    - git@2.40.0
+
+# Quality gates for BusBuddy production
+quality_gates:
+  - name: "busbuddy-production-ready"
+    description: "Ensures BusBuddy code meets production quality standards"
+    linters:
+      - dotnet-format
+      - psscriptanalyzer
+      - cspell
+      - trufflehog
+    severity: "error"
+    files:
+      - "**/*.cs"
+      - "**/*.ps1"
+      - "**/*.psm1"
+      - "**/*.xaml"
+
+  - name: "busbuddy-security-gate"
+    description: "Security scanning for BusBuddy"
+    linters:
+      - trufflehog
+      - osv-scanner
+    severity: "error"
+    files: ["**/*"]
+
+# BusBuddy-specific file type associations
+file_associations:
+  - extensions: [".cs"]
+    linters: ["dotnet-format", "roslynator", "cspell"]
+    formatters: ["dotnet-format"]
+
+  - extensions: [".ps1", ".psm1"]
+    linters: ["psscriptanalyzer", "cspell"]
+    formatters: ["psscriptanalyzer"]
+
+  - extensions: [".xaml"]
+    linters: ["xaml-styler", "cspell"]
+    formatters: ["xaml-styler"]
+
+  - extensions: [".sql"]
+    linters: ["sqlfluff", "cspell"]
+    formatters: ["sqlfluff"]
+
+  - extensions: [".json", ".yaml", ".yml"]
+    linters: ["prettier", "yamllint"]
+    formatters: ["prettier"]
+
+# CI/CD configuration for BusBuddy
+ci:
+  enabled: true
+  fail_on_warnings: false
+  sarif_output: true
+  max_issues: 1000
+  upload_sarif: true
+
+# Git integration settings
+git:
+  hooks:
+    pre-commit:
+      - trunk-fmt-pre-commit
+    pre-push:
+      - trunk-check-pre-push
+  ignore:
+    - "**/bin/**"
+    - "**/obj/**"
+    - "**/TestResults/**"
+    - "**/*.log"
+    - "**/BusBuddy.db*"

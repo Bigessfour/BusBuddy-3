@@ -30,7 +30,7 @@ namespace BusBuddy.Core.Services
         }
 
         /// <summary>
-        /// Gets a Family by its ID, including Students and Guardians.
+        /// Gets a Family by its ID, including Students.
         /// </summary>
         /// <param name="familyId">Family ID</param>
         /// <returns>Family or null</returns>
@@ -40,7 +40,6 @@ namespace BusBuddy.Core.Services
             {
                 return await _context.Families
                     .Include(f => f.Students)
-                    .Include(f => f.Guardians)
                     .FirstOrDefaultAsync(f => f.FamilyId == familyId);
             }
             catch (Exception ex)
@@ -51,7 +50,7 @@ namespace BusBuddy.Core.Services
         }
 
         /// <summary>
-        /// Gets all Families, including Students and Guardians.
+        /// Gets all Families, including Students.
         /// </summary>
         /// <returns>List of Families</returns>
         public async Task<List<Family>> GetAllFamiliesAsync()
@@ -60,7 +59,6 @@ namespace BusBuddy.Core.Services
             {
                 return await _context.Families
                     .Include(f => f.Students)
-                    .Include(f => f.Guardians)
                     .ToListAsync();
             }
             catch (Exception ex)

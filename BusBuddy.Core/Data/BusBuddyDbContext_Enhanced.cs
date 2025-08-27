@@ -43,7 +43,6 @@ public class BusBuddyDbContextEnhanced : DbContext
     #region Student Management
     public DbSet<Student> Students { get; set; } = null!;
     public DbSet<Family> Families { get; set; } = null!;
-    public DbSet<Guardian> Guardians { get; set; } = null!;
     public DbSet<StudentSchedule> StudentSchedules { get; set; } = null!;
     #endregion
 

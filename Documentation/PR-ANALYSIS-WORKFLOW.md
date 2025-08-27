@@ -19,13 +19,12 @@ The PR analysis workflow provides:
 ### Core Scripts
 
 - `Scripts/Analyze-PullRequest.ps1` - Main PR analysis script
-- `PowerShell/Modules/BusBuddy-GrokAssistant.psm1` - Grok integration module
+- `PowerShell/Modules/BusBuddy-PullRequestAnalysis.psm1` - Pattern-based analysis module
 
 ### Prerequisites
 
 - GitHub CLI (`gh`) installed and authenticated
-- Grok API access configured
-- BusBuddy development environment setup
+- BusBuddy development environment setup (no external API keys required)
 
 ## 🚀 Usage Examples
 

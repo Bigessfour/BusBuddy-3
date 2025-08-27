@@ -37,7 +37,4 @@ public class RouteAssignment
         Saturday = 32,
         Sunday = 64
     }
-
-    public int? GuardianId { get; set; }
-    public Guardian? Guardian { get; set; }
 }

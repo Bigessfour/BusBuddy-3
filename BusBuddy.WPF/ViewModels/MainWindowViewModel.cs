@@ -249,14 +249,14 @@ namespace BusBuddy.WPF.ViewModels
             Drivers.Add(new BusBuddy.Core.Domain.Driver
             {
                 DriverName = "Mike Johnson",
-                DriverPhone = "555-0123",
+                DriverPhone = "555-012-3456",
                 DriverEmail = "mike@busbuddy.com",
                 DriversLicenceType = "CDL"
             });
             Drivers.Add(new BusBuddy.Core.Domain.Driver
             {
                 DriverName = "Sarah Wilson",
-                DriverPhone = "555-0124",
+                DriverPhone = "555-012-4567",
                 DriverEmail = "sarah@busbuddy.com",
                 DriversLicenceType = "CDL"
             });

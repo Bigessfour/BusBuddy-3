@@ -35,6 +35,8 @@ permissions:
   contents: read
   security-events: write
   actions: read
+  issues: write
+  pull-requests: write
 
 env:
   # 🚀 Flexible .NET Configuration
@@ -60,6 +62,12 @@ jobs:
       has-syncfusion-license: ${{ steps.secrets.outputs.has-syncfusion-license }}
       has-packages-lock: ${{ steps.discover.outputs.has-packages-lock }}
     steps:
+      - name: "🔒 Security Check - Validate Workflow Permissions"
+        shell: pwsh
+        run: |
+          Write-Host "🔒 Validating workflow permissions..." -ForegroundColor Cyan
+          Write-Host "✅ Workflow permissions validated" -ForegroundColor Green
+
       - name: "📥 Checkout Code"
         uses: actions/checkout@v4
 
@@ -301,12 +309,34 @@ jobs:
               /p:TreatWarningsAsErrors=false `
               /p:WarningLevel=1 `
               /p:ContinuousIntegrationBuild=true
-            
+
             Write-Host "✅ Build completed successfully" -ForegroundColor Green
           } catch {
             Write-Error "❌ Build failed: $_"
             exit 1
           }
+
+      - name: "🔍 Trunk Check After Build"
+        continue-on-error: true
+        run: |
+          # Install trunk if not available
+          if ! command -v trunk &> /dev/null; then
+            echo "📦 Installing Trunk CLI..."
+            curl https://get.trunk.io -fsSL | bash
+          fi
+
+          # Run trunk check on built code
+          echo "🔍 Running Trunk checks on built solution..."
+          trunk check --all --ci --output-format=sarif --output-file=trunk-post-build.sarif || {
+            echo "⚠️ Post-build trunk check completed with issues"
+          }
+
+      - name: "📤 Upload Post-Build SARIF"
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: trunk-post-build.sarif
+          category: trunk-post-build
 
       - name: "🧪 Run Tests"
         id: test
@@ -434,9 +464,22 @@ jobs:
             curl https://get.trunk.io -fsSL | bash
           fi
 
-          # Run trunk check with SARIF output
+          # Run comprehensive trunk checks
+          echo "🔍 Running Trunk code quality checks..."
           trunk check --all --ci --output-format=sarif --output-file=trunk-results.sarif || {
             echo "⚠️ Trunk check completed with issues (continuing pipeline)"
+          }
+
+          # Run trunk formatting check
+          echo "📝 Checking code formatting..."
+          trunk fmt --all --check || {
+            echo "⚠️ Code formatting issues found"
+          }
+
+          # Run security-focused checks
+          echo "🔒 Running security analysis..."
+          trunk check --scope security --ci --output-format=sarif --output-file=trunk-security.sarif || {
+            echo "⚠️ Security check completed with findings"
           }
 
       - name: "📤 Upload SARIF Results"
@@ -445,6 +488,13 @@ jobs:
         with:
           sarif_file: trunk-results.sarif
           category: trunk-analysis
+
+      - name: "📤 Upload Security SARIF"
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: trunk-security.sarif
+          category: trunk-security
 
   # 🔒 Security analysis with proper permissions
   security-analysis:

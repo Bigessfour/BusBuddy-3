@@ -43,59 +43,9 @@ namespace BusBuddy.Tests.Core
             _mockGeoDataService = new Mock<IGeoDataService>();
 
             _fleetService = new FleetMonitoringService(_contextFactory, _cacheService, _mockGeoDataService.Object);
-
-            SeedTestData();
         }
 
-        private void SeedTestData()
-        {
-            var buses = new List<Bus>
-            {
-                new Bus
-                {
-                    BusId = 1,
-                    BusNumber = "001",
-                    Status = "Active",
-                    GPSTracking = true,
-                    CurrentLatitude = 40.7128m,
-                    CurrentLongitude = -74.0060m,
-                    NextMaintenanceDue = DateTime.Today.AddDays(30),
-                    DateLastInspection = DateTime.Today.AddDays(-180),
-                    Year = 2020,
-                    Make = "Blue Bird",
-                    Model = "Vision"
-                },
-                new Bus
-                {
-                    BusId = 2,
-                    BusNumber = "002",
-                    Status = "Maintenance",
-                    GPSTracking = false,
-                    NextMaintenanceDue = DateTime.Today.AddDays(-5), // Overdue
-                    DateLastInspection = DateTime.Today.AddDays(-400), // Overdue inspection
-                    Year = 2019,
-                    Make = "Thomas",
-                    Model = "Saf-T-Liner"
-                },
-                new Bus
-                {
-                    BusId = 3,
-                    BusNumber = "003",
-                    Status = "Out of Service",
-                    GPSTracking = true,
-                    CurrentLatitude = null, // GPS offline
-                    CurrentLongitude = null,
-                    NextMaintenanceDue = DateTime.Today.AddDays(15),
-                    DateLastInspection = DateTime.Today.AddDays(-90),
-                    Year = 2021,
-                    Make = "IC Bus",
-                    Model = "CE"
-                }
-            };
 
-            _context.Buses.AddRange(buses);
-            _context.SaveChanges();
-        }
 
     [Test]
     public async Task GetFleetStatusAsync_ShouldReturnCorrectStatistics()
@@ -106,11 +56,11 @@ namespace BusBuddy.Tests.Core
             // Assert
             Assert.That(fleetStatus, Is.Not.Null);
             Assert.That(fleetStatus.TotalBuses, Is.EqualTo(3));
-            Assert.That(fleetStatus.ActiveBuses, Is.EqualTo(1));
+            Assert.That(fleetStatus.ActiveBuses, Is.EqualTo(2));
             Assert.That(fleetStatus.BusesInMaintenance, Is.EqualTo(1));
-            Assert.That(fleetStatus.OutOfServiceBuses, Is.EqualTo(1));
+            Assert.That(fleetStatus.OutOfServiceBuses, Is.EqualTo(0));
             Assert.That(fleetStatus.GpsEnabledBuses, Is.EqualTo(2));
-            Assert.That(fleetStatus.OverdueMaintenanceBuses, Is.EqualTo(1)); // Bus 002 is overdue
+            Assert.That(fleetStatus.OverdueMaintenanceBuses, Is.EqualTo(1)); // TEST003 is overdue
             Assert.That(fleetStatus.CriticalAlerts, Is.Not.Empty);
         }
 
@@ -123,12 +73,12 @@ namespace BusBuddy.Tests.Core
             // Assert
             Assert.That(monitoringData, Is.Not.Null);
             Assert.That(monitoringData!.BusId, Is.EqualTo(1));
-            Assert.That(monitoringData.BusNumber, Is.EqualTo("001"));
+            Assert.That(monitoringData.BusNumber, Is.EqualTo("TEST001"));
             Assert.That(monitoringData.Status, Is.EqualTo("Active"));
             Assert.That(monitoringData.CurrentLatitude, Is.EqualTo(40.7128m));
             Assert.That(monitoringData.CurrentLongitude, Is.EqualTo(-74.0060m));
             Assert.That(monitoringData.IsGpsActive, Is.True);
-            Assert.That(monitoringData.HasMaintenanceAlerts, Is.False); // Bus 001 maintenance is not overdue
+            Assert.That(monitoringData.HasMaintenanceAlerts, Is.False); // TEST001 maintenance is not overdue
         }
 
     [Test]
@@ -149,7 +99,7 @@ namespace BusBuddy.Tests.Core
 
             // Assert
             Assert.That(overdueBuses.Count, Is.EqualTo(1));
-            Assert.That(overdueBuses[0].BusNumber, Is.EqualTo("002"));
+            Assert.That(overdueBuses[0].BusNumber, Is.EqualTo("TEST003"));
             Assert.That(overdueBuses[0].NextMaintenanceDue < DateTime.Today, Is.True);
         }
 

@@ -63,7 +63,6 @@ public class Family
 
     // Navigation properties
     public virtual ICollection<Student> Students { get; set; } = new List<Student>();
-    public virtual ICollection<Guardian> Guardians { get; set; } = new List<Guardian>();
 
     public bool ContactName()
     {

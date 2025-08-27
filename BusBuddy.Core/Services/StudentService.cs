@@ -211,12 +211,21 @@ public class StudentService : IStudentService
         try
         {
             Logger.Information("Retrieving students on route: {RouteName}", routeName);
-            // Don't dispose the context here as it might be needed after the method returns
-            var context = _contextFactory.CreateDbContext();
-            return await context.Students
-                .Where(s => s.AMRoute == routeName || s.PMRoute == routeName)
-                .OrderBy(s => s.StudentName)
-                .ToListAsync();
+            var (context, dispose) = GetReadContext();
+            try
+            {
+                return await context.Students
+                    .Where(s => s.AMRoute == routeName || s.PMRoute == routeName)
+                    .OrderBy(s => s.StudentName)
+                    .ToListAsync();
+            }
+            finally
+            {
+                if (dispose)
+                {
+                    await context.DisposeAsync();
+                }
+            }
         }
         catch (Exception ex)
         {
@@ -230,12 +239,21 @@ public class StudentService : IStudentService
         try
         {
             Logger.Information("Retrieving active students");
-            // Don't dispose the context here as it might be needed after the method returns
-            var context = _contextFactory.CreateDbContext();
-            return await context.Students
-                .Where(s => s.Active)
-                .OrderBy(s => s.StudentName)
-                .ToListAsync();
+            var (context, dispose) = GetReadContext();
+            try
+            {
+                return await context.Students
+                    .Where(s => s.Active)
+                    .OrderBy(s => s.StudentName)
+                    .ToListAsync();
+            }
+            finally
+            {
+                if (dispose)
+                {
+                    await context.DisposeAsync();
+                }
+            }
         }
         catch (Exception ex)
         {
@@ -249,12 +267,21 @@ public class StudentService : IStudentService
         try
         {
             Logger.Information("Retrieving students from school: {School}", school);
-            // Don't dispose the context here as it might be needed after the method returns
-            var context = _contextFactory.CreateDbContext();
-            return await context.Students
-                .Where(s => s.School == school)
-                .OrderBy(s => s.StudentName)
-                .ToListAsync();
+            var (context, dispose) = GetReadContext();
+            try
+            {
+                return await context.Students
+                    .Where(s => s.School == school)
+                    .OrderBy(s => s.StudentName)
+                    .ToListAsync();
+            }
+            finally
+            {
+                if (dispose)
+                {
+                    await context.DisposeAsync();
+                }
+            }
         }
         catch (Exception ex)
         {

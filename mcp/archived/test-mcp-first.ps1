@@ -152,6 +152,44 @@ param(
 ).NOTES
 )${6:General notes}
 )#>
+)<#
+).SYNOPSIS
+)${1:Short description}
+)
+).DESCRIPTION
+)${2:Long description}
+)
+).PARAMETER Message
+)${3:Parameter description}
+)
+).PARAMETER Level
+)${4:Parameter description}
+)
+).EXAMPLE
+)${5:An example}
+)
+).NOTES
+)${6:General notes}
+)#>
+)<#
+).SYNOPSIS
+)${1:Short description}
+)
+).DESCRIPTION
+)${2:Long description}
+)
+).PARAMETER Message
+)${3:Parameter description}
+)
+).PARAMETER Level
+)${4:Parameter description}
+)
+).EXAMPLE
+)${5:An example}
+)
+).NOTES
+)${6:General notes}
+)#>
 )function Write-TestLog {
     param([string]$Message, [string]$Level = "INFO")
     $timestamp = Get-Date -Format "HH:mm:ss"

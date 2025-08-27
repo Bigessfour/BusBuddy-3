@@ -64,7 +64,7 @@
       "command": "bb-build",
       "problemMatcher": ["$msCompile"],
       "group": "build",
-      "presentationOptions": {
+      "presentation": {
         "echo": true,
         "reveal": "always",
         "focus": false,
@@ -82,7 +82,7 @@
         "kind": "build",
         "isDefault": false
       },
-      "presentationOptions": {
+      "presentation": {
         "echo": true,
         "reveal": "always",
         "focus": false,
@@ -102,7 +102,7 @@
       "command": "pwsh",
       "args": ["-Command", "bb-health"],
       "group": "test",
-      "presentationOptions": {
+      "presentation": {
         "echo": true,
         "reveal": "always",
         "focus": true,
@@ -115,7 +115,7 @@
       "command": "pwsh",
       "args": ["-Command", "bb-sql-test"],
       "group": "test",
-      "presentationOptions": {
+      "presentation": {
         "echo": true,
         "reveal": "always",
         "focus": true,
@@ -128,7 +128,7 @@
       "command": "pwsh",
       "args": ["-Command", "bb-deps-check"],
       "group": "build",
-      "presentationOptions": {
+      "presentation": {
         "reveal": "always",
         "panel": "shared"
       }
@@ -145,7 +145,7 @@
         "kind": "test",
         "isDefault": false
       },
-      "presentationOptions": {
+      "presentation": {
         "echo": true,
         "reveal": "always",
         "focus": true,
@@ -170,7 +170,142 @@
       "command": "trunk",
       "args": ["fmt", "--all"],
       "group": "build",
-      "presentationOptions": {
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "bb-quality-check (BusBuddy Quality Gate)",
+      "type": "shell",
+      "command": "pwsh",
+      "args": ["-Command", "bb-quality-check"],
+      "group": {
+        "kind": "test",
+        "isDefault": false
+      },
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": true,
+        "panel": "shared"
+      },
+      "problemMatcher": {
+        "owner": "trunk",
+        "fileLocation": ["relative", "${workspaceFolder}"],
+        "pattern": {
+          "regexp": "^(.*):(\\d+):(\\d+):\\s+(warning|error|info):\\s+(.*)$",
+          "file": 1,
+          "line": 2,
+          "column": 3,
+          "severity": 4,
+          "message": 5
+        }
+      }
+    },
+    {
+      "label": "bb-format-code (BusBuddy Code Formatting)",
+      "type": "shell",
+      "command": "pwsh",
+      "args": ["-Command", "bb-format-code"],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "bb-security-scan (BusBuddy Security Analysis)",
+      "type": "shell",
+      "command": "pwsh",
+      "args": ["-Command", "bb-security-scan"],
+      "group": {
+        "kind": "test",
+        "isDefault": false
+      },
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": true,
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Trunk Check C# Files Only",
+      "type": "shell",
+      "command": "trunk",
+      "args": ["check", "**/*.cs", "**/*.csproj"],
+      "group": "test",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Trunk Check PowerShell Files Only",
+      "type": "shell",
+      "command": "trunk",
+      "args": ["check", "**/*.ps1", "**/*.psm1"],
+      "group": "test",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Trunk Check XAML Files Only",
+      "type": "shell",
+      "command": "trunk",
+      "args": ["check", "**/*.xaml"],
+      "group": "test",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Trunk Format C# Files Only",
+      "type": "shell",
+      "command": "trunk",
+      "args": ["fmt", "**/*.cs"],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Trunk Format PowerShell Files Only",
+      "type": "shell",
+      "command": "trunk",
+      "args": ["fmt", "**/*.ps1", "**/*.psm1"],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Trunk Format XAML Files Only",
+      "type": "shell",
+      "command": "trunk",
+      "args": ["fmt", "**/*.xaml"],
+      "group": "build",
+      "presentation": {
         "echo": true,
         "reveal": "always",
         "focus": false,
@@ -183,7 +318,7 @@
       "command": "pwsh",
       "args": ["-Command", "& './generate-fetchability-index.ps1' -Validate"],
       "group": "build",
-      "presentationOptions": {
+      "presentation": {
         "echo": true,
         "reveal": "always",
         "focus": true,
@@ -203,7 +338,7 @@
         "Invoke-ScriptAnalyzer -Path '${workspaceFolder}\\tools\\powershell' -Recurse -Settings '${workspaceFolder}\\tools\\powershell\\PSScriptAnalyzerSettings.psd1'"
       ],
       "group": "test",
-      "presentationOptions": {
+      "presentation": {
         "echo": true,
         "reveal": "always",
         "focus": true,
@@ -235,16 +370,17 @@
         "Debug",
         "--logger",
         "trx",
-        "--collect:\"XPlat Code Coverage\""
+        "--collect",
+        "XPlat Code Coverage"
       ],
       "group": "test",
-      "presentationOptions": {
+      "presentation": {
         "echo": true,
         "reveal": "always",
         "focus": true,
         "panel": "shared"
       },
-      "problemMatcher": "$msCompile"
+      "problemMatcher": ["$msCompile"]
     },
 
     // === AZURE & SQL TASKS ===
@@ -257,7 +393,7 @@
         "if (Get-AzContext) { Write-Output '✅ Azure PowerShell authenticated' } else { Write-Output '❌ Run Connect-AzAccount to authenticate' }"
       ],
       "group": "build",
-      "presentationOptions": {
+      "presentation": {
         "echo": true,
         "reveal": "always",
         "focus": true,
@@ -270,7 +406,7 @@
       "command": "pwsh",
       "args": ["-Command", "bb-sql-test"],
       "group": "test",
-      "presentationOptions": {
+      "presentation": {
         "echo": true,
         "reveal": "always",
         "focus": true,
@@ -285,8 +421,8 @@
       "type": "shell",
       "command": "pwsh",
       "args": [
-        "-Command",
-        "try { dotnet clean BusBuddy.sln --verbosity minimal; Write-Information 'Solution cleaned successfully' -InformationAction Continue } catch { Write-Error 'Clean failed' -ErrorAction Continue }; try { Get-ChildItem -Path '.\\*\\bin', '.\\*\\obj' -Recurse -Directory -ErrorAction SilentlyContinue | Remove-Item -Recurse -Force; Write-Information 'Build artifacts removed' -InformationAction Continue } catch { Write-Warning 'Some artifacts could not be removed' }"
+        "-File",
+        "tools/clean-all.ps1"
       ],
       "group": "build",
       "options": {
@@ -295,7 +431,7 @@
           "DOTNET_NOLOGO": "1"
         }
       },
-      "presentationOptions": {
+      "presentation": {
         "echo": true,
         "reveal": "always",
         "focus": false,
@@ -316,7 +452,7 @@
           "DOTNET_NOLOGO": "1"
         }
       },
-      "presentationOptions": {
+      "presentation": {
         "echo": true,
         "reveal": "always",
         "focus": false,
@@ -342,7 +478,7 @@
           "DOTNET_NOLOGO": "1"
         }
       },
-      "presentationOptions": {
+      "presentation": {
         "echo": false,
         "reveal": "silent",
         "focus": false,
@@ -368,7 +504,7 @@
           "DOTNET_NOLOGO": "1"
         }
       },
-      "presentationOptions": {
+      "presentation": {
         "echo": false,
         "reveal": "silent",
         "focus": false,
@@ -388,7 +524,7 @@
           "DOTNET_NOLOGO": "1"
         }
       },
-      "presentationOptions": {
+      "presentation": {
         "echo": false,
         "reveal": "silent",
         "focus": false,
@@ -416,7 +552,7 @@
         "Get-ChildItem -Path '${workspaceFolder}' -Filter '*.xaml' -Recurse | ForEach-Object { $content = Get-Content $_.FullName -Raw; if ($content -match 'syncfusion:') { Write-Host \"✅ Syncfusion controls found in $($_.Name)\" -ForegroundColor Green } else { Write-Host \"ℹ️ No Syncfusion controls in $($_.Name)\" -ForegroundColor Yellow } }"
       ],
       "group": "test",
-      "presentationOptions": {
+      "presentation": {
         "echo": true,
         "reveal": "always",
         "focus": false,
@@ -432,7 +568,7 @@
         "Get-ChildItem -Path '${workspaceFolder}' -Filter '*.xaml' -Recurse | ForEach-Object { Write-Host \"Formatting $($_.Name)\" -ForegroundColor Cyan }"
       ],
       "group": "build",
-      "presentationOptions": {
+      "presentation": {
         "echo": true,
         "reveal": "always",
         "focus": false,
@@ -448,7 +584,7 @@
         "$syncfusionControls = @(); Get-ChildItem -Path '${workspaceFolder}' -Filter '*.xaml' -Recurse | ForEach-Object { $content = Get-Content $_.FullName -Raw; $matches = [regex]::Matches($content, 'syncfusion:([A-Za-z0-9]+)'); foreach ($match in $matches) { $syncfusionControls += $match.Groups[1].Value } }; $syncfusionControls | Sort-Object -Unique | ForEach-Object { Write-Host \"Syncfusion Control: $_\" -ForegroundColor Green }"
       ],
       "group": "build",
-      "presentationOptions": {
+      "presentation": {
         "echo": true,
         "reveal": "always",
         "focus": false,
@@ -465,7 +601,7 @@
         "@ext:syncfusioninc.document-viewer-vscode-extensions"
       ],
       "group": "build",
-      "presentationOptions": {
+      "presentation": {
         "echo": true,
         "reveal": "silent",
         "focus": false,

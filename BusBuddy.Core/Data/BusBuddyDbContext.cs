@@ -8,14 +8,15 @@ using Microsoft.Extensions.Configuration;
 using Serilog;
 using Serilog.Context;
 
-namespace BusBuddy.Core.Data;
-/// <summary>
-/// Enhanced Entity Framework DbContext for BusBuddy application
-/// Supports agile schema evolution with audit fields, soft deletes, and JSON columns
-/// Optimized for Syncfusion Windows Forms with comprehensive indexing and performance features
-/// </summary>
-public class BusBuddyDbContext : DbContext
+namespace BusBuddy.Core.Data
 {
+    /// <summary>
+    /// Enhanced Entity Framework DbContext for BusBuddy application
+    /// Supports agile schema evolution with audit fields, soft deletes, and JSON columns
+    /// Optimized for Syncfusion Windows Forms with comprehensive indexing and performance features
+    /// </summary>
+    public class BusBuddyDbContext : DbContext
+    {
     /// <summary>
     /// Helper for test code: seed minimal data for a test scenario
     /// </summary>
@@ -39,7 +40,16 @@ public class BusBuddyDbContext : DbContext
     public BusBuddyDbContext(DbContextOptions<BusBuddyDbContext> options) : base(options)
     {
         // Configure EF Core tracking behavior for better performance
-        ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
+        // Use default tracking for test scenarios to avoid issues with seeding
+        if (options.Extensions.Any(e => e.GetType().Name.Contains("InMemory")))
+        {
+            ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.TrackAll;
+            SkipGlobalSeedData = true; // Skip global seeding for in-memory databases
+        }
+        else
+        {
+            ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
+        }
     }
 
     /// <summary>
@@ -65,7 +75,6 @@ public class BusBuddyDbContext : DbContext
     public virtual DbSet<Maintenance> MaintenanceRecords { get; set; } = null!;
     public virtual DbSet<Student> Students { get; set; } = null!;
     public virtual DbSet<Family> Families { get; set; } = null!;
-    public virtual DbSet<Guardian> Guardians { get; set; } = null!;
     public virtual DbSet<Schedule> Schedules { get; set; } = null!;
     public virtual DbSet<StudentSchedule> StudentSchedules { get; set; } = null!;
     public virtual DbSet<TripEvent> TripEvents { get; set; } = null!;
@@ -168,11 +177,38 @@ public class BusBuddyDbContext : DbContext
 
     private static void ConfigureDatabase(DbContextOptionsBuilder optionsBuilder, string connectionString, ILogger logger)
     {
-        _ = optionsBuilder.UseSqlServer(connectionString, sqlOptions =>
+        // Check database provider from configuration
+        var config = new ConfigurationBuilder()
+            .SetBasePath(Directory.GetCurrentDirectory())
+            .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
+            .AddJsonFile($"appsettings.{Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production"}.json", optional: true)
+            .AddEnvironmentVariables()
+            .Build();
+
+        var databaseProvider = config["DatabaseProvider"] ?? config["AppSettings:DatabaseProvider"] ?? "Azure";
+        var useInMemorySqlite = bool.Parse(config["AppSettings:UseInMemorySqlite"] ?? "false");
+
+        logger.Information("Configuring database with provider: {Provider}, UseInMemorySqlite: {UseInMemory}", databaseProvider, useInMemorySqlite);
+
+        if (useInMemorySqlite || databaseProvider == "Sqlite" || databaseProvider == "InMemory")
         {
-            _ = sqlOptions.CommandTimeout(60);
-            // Note: EnableRetryOnFailure removed for EF Core 9 compatibility - will be re-added after research
-        });
+            // Use SQLite for testing and in-memory scenarios
+            optionsBuilder.UseSqlite(connectionString, sqliteOptions =>
+            {
+                sqliteOptions.CommandTimeout(60);
+            });
+            logger.Information("Using SQLite database provider");
+        }
+        else
+        {
+            // Use SQL Server for production
+            optionsBuilder.UseSqlServer(connectionString, sqlOptions =>
+            {
+                sqlOptions.CommandTimeout(60);
+                // Note: EnableRetryOnFailure removed for EF Core 9 compatibility - will be re-added after research
+            });
+            logger.Information("Using SQL Server database provider");
+        }
 
         // Seeding temporarily disabled for fresh start
         // ConfigureSeedingIfNeeded(optionsBuilder);
@@ -206,10 +242,6 @@ public class BusBuddyDbContext : DbContext
             _ = entity.HasIndex(e => e.Timestamp)
                 .IsDescending();
         });
-
-        // DEBUG: Output the value of SkipGlobalSeedData to verify test isolation
-        System.Diagnostics.Debug.WriteLine($"[BusBuddyDbContext] SkipGlobalSeedData: {SkipGlobalSeedData}");
-        base.OnModelCreating(modelBuilder);
 
         // Configure global query filters for soft deletes
         ConfigureGlobalQueryFilters(modelBuilder);
@@ -552,34 +584,12 @@ public class BusBuddyDbContext : DbContext
             _ = entity.HasIndex(e => new { e.ParentGuardian, e.Address }).HasDatabaseName("IX_Families_ParentAddress");
             _ = entity.HasIndex(e => e.City).HasDatabaseName("IX_Families_City");
 
-            // Relationships - One Family has many Guardians
-            _ = entity.HasMany(f => f.Guardians)
-                  .WithOne(g => g.Family)
-                  .HasForeignKey(g => g.FamilyId)
-                  .OnDelete(DeleteBehavior.Cascade)
-                  .HasConstraintName("FK_Guardians_Family");
-
             // Relationships - One Family has many Students
             _ = entity.HasMany(f => f.Students)
                   .WithOne(s => s.Family)
                   .HasForeignKey(s => s.FamilyId)
                   .OnDelete(DeleteBehavior.Cascade)
                   .HasConstraintName("FK_Students_Family");
-        });
-
-        // Configure Guardian entity
-        _ = modelBuilder.Entity<Guardian>(entity =>
-        {
-            _ = entity.ToTable("Guardians");
-            _ = entity.HasKey(e => e.Id);
-            _ = entity.Property(e => e.FirstName).IsRequired().HasMaxLength(50);
-            _ = entity.Property(e => e.LastName).IsRequired().HasMaxLength(50);
-            _ = entity.Property(e => e.Address).IsRequired().HasMaxLength(200);
-            _ = entity.Property(e => e.Phone).IsRequired().HasMaxLength(20);
-            _ = entity.Property(e => e.Email).HasMaxLength(100);
-            _ = entity.Property(e => e.Notes).HasMaxLength(500);
-            _ = entity.Property(e => e.Latitude).HasColumnType("float");
-            _ = entity.Property(e => e.Longitude).HasColumnType("float");
         });
 
         // Configure Schedule entity
@@ -999,7 +1009,7 @@ public class BusBuddyDbContext : DbContext
             {
                 DriverId = 1,
                 DriverName = "John Smith",
-                DriverPhone = "555-0123",
+                DriverPhone = "555-012-3456",
                 DriverEmail = "john.smith@school.edu",
                 DriversLicenceType = "CDL",
                 TrainingComplete = true,
@@ -1009,7 +1019,7 @@ public class BusBuddyDbContext : DbContext
             {
                 DriverId = 2,
                 DriverName = "Mary Johnson",
-                DriverPhone = "555-0456",
+                DriverPhone = "555-045-6789",
                 DriverEmail = "mary.johnson@school.edu",
                 DriversLicenceType = "CDL",
                 TrainingComplete = true,
@@ -1163,4 +1173,5 @@ public class BusBuddyDbContext : DbContext
             _ = optionsBuilder.EnableDetailedErrors();
         }
     }
+}
 }

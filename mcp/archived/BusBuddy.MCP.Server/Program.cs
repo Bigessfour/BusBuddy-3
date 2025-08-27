@@ -189,7 +189,7 @@ public class GrokAITools
         {
             var isConfigured = _grokApi.IsConfigured;
             var apiKeySet = !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("XAI_API_KEY"));
-            
+
             return $"🤖 **Grok-4 AI Status**\n\n" +
                    $"✅ **Service Status:** {(isConfigured ? "Ready" : "Mock Mode")}\n" +
                    $"🔑 **API Key:** {(apiKeySet ? "Configured" : "Missing")}\n" +

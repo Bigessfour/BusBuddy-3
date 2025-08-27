@@ -11,9 +11,10 @@
     },
     "github-mcp": {
       "command": "npx",
-      "args": ["-y", "@github/mcp-server"],
+      "args": ["-y", "@modelcontextprotocol/server-github"],
       "env": {
-        "GITHUB_API_URL": "https://api.github.com"
+        "GITHUB_API_URL": "https://api.github.com",
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "${env:GITHUB_PERSONAL_ACCESS_TOKEN}"
       }
     },
     "busbuddy-filesystem": {
@@ -28,21 +29,19 @@
       "command": "npx",
       "args": ["-y", "@modelcontextprotocol/server-brave-search"],
       "env": {
-        "BRAVE_API_KEY": "BSAKWu26BLu4KPdKvzX_QjMqL87KtHr",
+        "BRAVE_API_KEY": "${env:BRAVE_API_KEY}",
         "MCP_SEARCH_CONTEXT": "Expert in Syncfusion WPF Controls, APIs, and Documentation. Focus on providing accurate information about Syncfusion Essential Studio for WPF, including SfDataGrid, DockingManager, NavigationDrawer, SfChart, and related controls. Reference official Syncfusion documentation and best practices.",
         "MCP_SEARCH_DOMAIN_FOCUS": "help.syncfusion.com wpf controls api documentation"
       }
     },
     "microsoft-doc": {
       "command": "npx",
-      "args": ["-y", "@microsoft/mcp-server-docs"]
+      "args": ["-y", "@microsoft/mcp-server-docs"],
+      "env": {
+        "MCP_DOCS_PORT": "5151",
+        "MCP_DOCS_ENABLED": "true"
+      }
     },
-    // "busbuddy-git": {
-    //   "command": "node",
-    //   "args": [
-    //     "c:\\Users\\biges\\Desktop\\BusBuddy\\mcp\\servers\\git-mcp-server.js"
-    //   ]
-    // },
     "busbuddy-project": {
       "command": "node",
       "args": [
@@ -50,7 +49,8 @@
       ],
       "env": {
         "BUSBUDDY_PROJECT_ROOT": "c:\\Users\\biges\\Desktop\\BusBuddy",
-        "BUSBUDDY_DB_PATH": "c:\\Users\\biges\\Desktop\\BusBuddy\\BusBuddy.db"
+        "BUSBUDDY_DB_PATH": "c:\\Users\\biges\\Desktop\\BusBuddy\\BusBuddy.db",
+        "NODE_ENV": "production"
       }
     },
     "busbuddy-grok-ai": {
@@ -62,11 +62,11 @@
         "c:\\Users\\biges\\Desktop\\BusBuddy\\mcp\\servers\\BusBuddy.Grok.MCP.Server"
       ],
       "env": {
-        "XAI_API_KEY": "${XAI_API_KEY}",
+        "XAI_API_KEY": "${env:XAI_API_KEY}",
         "BUSBUDDY_PROJECT_ROOT": "c:\\Users\\biges\\Desktop\\BusBuddy",
-        "XAI:DefaultModel": "grok-4-0709",
-        "XAI:Temperature": "0.3",
-        "XAI:UseLiveAPI": "true"
+        "XAI_DEFAULT_MODEL": "grok-4-0709",
+        "XAI_Temperature": "0.3",
+        "XAI_USE_LIVE_API": "true"
       }
     },
     "busbuddy-grok4-mcp": {
@@ -75,7 +75,7 @@
         "c:\\Users\\biges\\Desktop\\BusBuddy\\mcp\\servers\\grok4-mcp-server.js"
       ],
       "env": {
-        "XAI_API_KEY": "${XAI_API_KEY}",
+        "XAI_API_KEY": "${env:XAI_API_KEY}",
         "BUSBUDDY_PROJECT_ROOT": "c:\\Users\\biges\\Desktop\\BusBuddy",
         "NODE_ENV": "production"
       }

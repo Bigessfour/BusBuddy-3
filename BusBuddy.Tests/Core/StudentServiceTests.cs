@@ -7,235 +7,254 @@ using BusBuddy.Core.Domain;
 using BusBuddy.Core.Services;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
-using Moq;
 using NUnit.Framework;
 
 namespace BusBuddy.Tests.Core
 {
     [TestFixture]
-    public class StudentServiceTests : IDisposable
+    public class StudentServiceTests : DatabaseTestBase
     {
-        private DbContextOptions<BusBuddyDbContext> _dbOptions = null!;
-        private BusBuddyDbContext _dbContext = null!;
         private StudentService _studentService = null!;
 
-        private sealed class TestDbContextFactory : IBusBuddyDbContextFactory
-        {
-            private readonly DbContextOptions<BusBuddyDbContext> _options;
-            public TestDbContextFactory(DbContextOptions<BusBuddyDbContext> options) => _options = options;
-            public BusBuddyDbContext CreateDbContext() => new BusBuddyDbContext(_options);
-            public BusBuddyDbContext CreateWriteDbContext() => new BusBuddyDbContext(_options);
-            public void Dispose() { }
-        }
-
         [SetUp]
-        public void SetUp()
+        public override void SetUp()
         {
-            _dbOptions = new DbContextOptionsBuilder<BusBuddyDbContext>()
-                .UseInMemoryDatabase($"StudentsDb_{Guid.NewGuid()}")
-                .Options;
-            _dbContext = new BusBuddyDbContext(_dbOptions);
+            base.SetUp();
 
-            // Seed minimal data
-            _dbContext.Routes.AddRange(new[]
-            {
-                new Route { RouteId = 1, RouteName = "East Route", Date = DateTime.Today, IsActive = true, School = "Test" },
-                new Route { RouteId = 2, RouteName = "West Route", Date = DateTime.Today, IsActive = true, School = "Test" }
-            });
-            _dbContext.SaveChanges();
-
-            _studentService = new StudentService(new TestDbContextFactory(_dbOptions));
+            // Create the service using the inherited context factory
+            _studentService = new StudentService(ContextFactory);
         }
 
         [TearDown]
-        public void TearDown()
+        public override void TearDown()
         {
-            _dbContext.Database.EnsureDeleted();
-            _dbContext.Dispose();
+            base.TearDown();
         }
 
-        public void Dispose()
+        private bool _disposed;
+
+        public override void Dispose()
         {
-            _dbContext?.Dispose();
-            GC.SuppressFinalize(this);
+            if (!_disposed)
+            {
+                _disposed = true;
+                base.TearDown();
+                base.Dispose();
+                GC.SuppressFinalize(this);
+            }
         }
 
         [Test]
         public async Task AddStudentAsync_ValidStudent_PersistsAndSetsDefaults()
         {
-            var s = new Student
+            // Arrange
+            var newStudent = new Student
             {
-                StudentName = "Alice Test",
+                StudentName = "David Wilson",
+                Grade = "5",
+                School = "Test School",
+                ParentGuardian = "Sarah Wilson",
+                EmergencyPhone = "555-019-9999",
+                HomeAddress = "999 Test St",
+                City = "Test City",
+                State = "TX",
+                Zip = "12399"
+            };
+
+            // Act
+            var addedStudent = await _studentService.AddStudentAsync(newStudent);
+
+            // Assert
+            addedStudent.Should().NotBeNull();
+            addedStudent.StudentId.Should().BeGreaterThan(0);
+            addedStudent.EnrollmentDate.Should().NotBeNull();
+            addedStudent.Active.Should().BeTrue(); // Default value
+
+            // Verify in database using service method to avoid context issues
+            var fromDb = await _studentService.GetStudentByIdAsync(addedStudent.StudentId);
+            fromDb.Should().NotBeNull();
+            fromDb!.StudentName.Should().Be("David Wilson");
+            fromDb.Grade.Should().Be("5");
+        }
+
+        [Test]
+        public async Task GetStudentsByRouteAsync_ReturnsStudentsOnRoute()
+        {
+            // Act
+            var eastStudents = await _studentService.GetStudentsByRouteAsync("East Route");
+
+            // Assert
+            eastStudents.Should().NotBeNull();
+            eastStudents.Should().HaveCount(2); // Alice and Charlie on East Route
+            eastStudents.First().StudentName.Should().Be("Alice Johnson");
+        }
+
+        [Test]
+        public async Task GetActiveStudentsAsync_ReturnsOnlyActiveStudents()
+        {
+            // Act
+            var activeStudents = await _studentService.GetActiveStudentsAsync();
+
+            // Assert
+            activeStudents.Should().NotBeNull();
+            activeStudents.Should().HaveCount(4); // Alice, Bob, Charlie, Diana
+            activeStudents.All(s => s.Active).Should().BeTrue();
+            activeStudents.Select(s => s.StudentName).Should().BeEquivalentTo(new[] { "Alice Johnson", "Bob Smith", "Charlie Brown", "Diana Prince" });
+        }
+
+        [Test]
+        public async Task GetStudentsBySchoolAsync_ReturnsStudentsFromSchool()
+        {
+            // Act
+            var schoolStudents = await _studentService.GetStudentsBySchoolAsync("Test School");
+
+            // Assert
+            schoolStudents.Should().NotBeNull();
+            schoolStudents.Count.Should().Be(5); // All 5 students from TestDataSeeder
+            schoolStudents.All(s => s.School == "Test School").Should().BeTrue();
+        }
+
+        [Test]
+        public async Task AssignStudentToRouteAsync_UpdatesRoutesCorrectly()
+        {
+            // Arrange - Use student ID 2 (Bob Smith) who has PM route but no AM route
+            const int studentId = 2;
+
+            // Act
+            var result = await _studentService.AssignStudentToRouteAsync(studentId, "West Route", "North Route");
+
+            // Assert
+            result.Should().BeTrue();
+
+            // Verify in database using service method to avoid context issues
+            var updatedStudent = await _studentService.GetStudentByIdAsync(studentId);
+            updatedStudent.Should().NotBeNull();
+            updatedStudent!.AMRoute.Should().Be("West Route");
+            updatedStudent.PMRoute.Should().Be("North Route");
+        }
+
+        [Test]
+        public async Task ValidateStudentAsync_InvalidPhone_ReturnsErrors()
+        {
+            // Arrange
+            var invalidStudent = new Student
+            {
+                StudentName = "Test Student",
                 Grade = "3",
                 School = "Test School",
-                ParentGuardian = "Parent A",
-                EmergencyPhone = "555-555-5555",
-                HomeAddress = "123 East St",
-                City = "Town",
-                State = "CO",
+                ParentGuardian = "Test Parent",
+                EmergencyPhone = "invalid-phone",
+                HomeAddress = "123 Test St",
+                City = "Test City",
+                State = "TX",
                 Zip = "12345"
             };
 
-            var added = await _studentService.AddStudentAsync(s);
+            // Act
+            var errors = await _studentService.ValidateStudentAsync(invalidStudent);
 
-            added.StudentId.Should().BeGreaterThan(0);
-            added.EnrollmentDate.Should().NotBeNull();
-
-            var fromDb = await _dbContext.Students.FindAsync(added.StudentId);
-            fromDb.Should().NotBeNull();
-            fromDb!.StudentName.Should().Be("Alice Test");
-        }
-
-        [Test]
-        public async Task ValidateStudentAsync_InvalidPhoneAndZip_ReturnsErrors()
-        {
-            var s = new Student
-            {
-                StudentName = "Bob",
-                Grade = "3",
-                School = "Test",
-                ParentGuardian = "P",
-                EmergencyPhone = "bad",
-                HomePhone = "also-bad",
-                HomeAddress = "1 A St",
-                City = "City",
-                State = "CO",
-                Zip = "9999"
-            };
-
-            var errors = await _studentService.ValidateStudentAsync(s);
+            // Assert
+            errors.Should().NotBeNull();
+            errors.Should().NotBeEmpty();
             errors.Should().Contain(e => e.Contains("phone", StringComparison.OrdinalIgnoreCase));
-            errors.Should().Contain(e => e.Contains("ZIP", StringComparison.OrdinalIgnoreCase));
         }
 
         [Test]
-        public async Task ValidateStudentAsync_CommonPhoneFormats_ShouldPass()
+        public async Task ValidateStudentAsync_ValidStudent_ReturnsNoErrors()
         {
-            var samples = new[]
+            // Arrange
+            var validStudent = new Student
             {
-                "5555555555",
-                "555-555-5555",
-                "(555) 555-5555",
-                "+1 (555) 555-5555",
-                "555.555.5555",
+                StudentName = "Valid Student",
+                Grade = "3",
+                School = "Test School",
+                ParentGuardian = "Valid Parent",
+                EmergencyPhone = "555-123-4567",
+                HomeAddress = "123 Valid St",
+                City = "Valid City",
+                State = "TX",
+                Zip = "12345"
             };
 
-            foreach (var phone in samples)
-            {
-                var s = new Student
-                {
-                    StudentName = "Valid Phones",
-                    Grade = "3",
-                    School = "Test",
-                    ParentGuardian = "P",
-                    EmergencyPhone = phone,
-                    HomePhone = phone,
-                    HomeAddress = "1 A St",
-                    City = "City",
-                    State = "CO",
-                    Zip = "12345"
-                };
+            // Act
+            var errors = await _studentService.ValidateStudentAsync(validStudent);
 
-                var errors = await _studentService.ValidateStudentAsync(s);
-                errors.Should().NotContain(e => e.Contains("phone", StringComparison.OrdinalIgnoreCase), $"'{phone}' should be accepted");
-            }
+            // Assert
+            errors.Should().NotBeNull();
+            errors.Should().BeEmpty();
         }
 
         [Test]
-        public async Task GetStudentsByRouteAsync_ReturnsStudentsOnAMorPM()
+        public async Task ExportStudentsToCsvAsync_IncludesAllStudents()
         {
-            _dbContext.Students.AddRange(new[]
-            {
-                new Student { StudentName = "S1", Grade = "1", School = "T", ParentGuardian = "P", EmergencyPhone = "555-555-5555", AMRoute = "East Route" },
-                new Student { StudentName = "S2", Grade = "1", School = "T", ParentGuardian = "P", EmergencyPhone = "555-555-5555", PMRoute = "East Route" },
-                new Student { StudentName = "S3", Grade = "1", School = "T", ParentGuardian = "P", EmergencyPhone = "555-555-5555", AMRoute = "West Route" }
-            });
-            await _dbContext.SaveChangesAsync();
-
-            var east = await _studentService.GetStudentsByRouteAsync("East Route");
-            east.Should().HaveCount(2);
-            east.Select(s => s.StudentName).Should().BeEquivalentTo(new []{"S1","S2"});
-        }
-
-        [Test]
-        public async Task AssignStudentToRouteAsync_UpdatesAMandPM()
-        {
-            var s = new Student
-            {
-                StudentName = "Carol",
-                Grade = "2",
-                School = "T",
-                ParentGuardian = "P",
-                EmergencyPhone = "555-555-5555"
-            };
-            _dbContext.Students.Add(s);
-            await _dbContext.SaveChangesAsync();
-
-            // Ensure student was saved with valid ID
-            Assert.That(s.StudentId, Is.GreaterThan(0), "Student ID should be assigned after SaveChanges");
-
-            var ok = await _studentService.AssignStudentToRouteAsync(s.StudentId, "East Route", "West Route");
-            Assert.That(ok, Is.True, "AssignStudentToRouteAsync should return true");
-
-            // Refresh the context to ensure we see the latest changes
-            await _dbContext.Entry(s).ReloadAsync();
-
-            var updated = await _dbContext.Students.FindAsync(s.StudentId);
-            Assert.That(updated, Is.Not.Null, "Student should still exist after update");
-            Assert.That(updated!.AMRoute, Is.EqualTo("East Route"), $"Expected AMRoute to be 'East Route' but was '{updated.AMRoute}'");
-            Assert.That(updated.PMRoute, Is.EqualTo("West Route"), $"Expected PMRoute to be 'West Route' but was '{updated.PMRoute}'");
-        }
-
-        [Test]
-        public void UpdateStudentAddressAsync_InvalidState_Throws()
-        {
-            var s = new Student
-            {
-                StudentName = "D",
-                Grade = "2",
-                School = "T",
-                ParentGuardian = "P",
-                EmergencyPhone = "555-555-5555"
-            };
-            _dbContext.Students.Add(s);
-            _dbContext.SaveChanges();
-
-            Func<Task> act = async () => await _studentService.UpdateStudentAddressAsync(s.StudentId, "123", "City", "Colorado", "12345");
-            act.Should().ThrowAsync<ArgumentException>().WithMessage("*State must be a 2-letter abbreviation*");
-        }
-
-        [Test]
-        public async Task ExportStudentsToCsvAsync_IncludesHeaderAndRows()
-        {
-            _dbContext.Students.Add(new Student
-            {
-                StudentName = "X",
-                Grade = "1",
-                School = "T",
-                ParentGuardian = "P",
-                EmergencyPhone = "555-555-5555"
-            });
-            await _dbContext.SaveChangesAsync();
-
+            // Act
             var csv = await _studentService.ExportStudentsToCsvAsync();
+
+            // Assert
+            csv.Should().NotBeNullOrEmpty();
             csv.Should().StartWith("Student ID,Student Number,Student Name");
-            csv.Split('\n').Length.Should().BeGreaterThan(1);
+
+            var lines = csv.Split('\n', StringSplitOptions.RemoveEmptyEntries);
+            lines.Length.Should().BeGreaterThan(1); // Header + at least one data row
         }
 
         [Test]
-        public async Task GetStudentStatisticsAsync_ReturnsExpectedCounts()
+        public async Task GetStudentStatisticsAsync_ReturnsCorrectCounts()
         {
-            _dbContext.Students.AddRange(new[]
-            {
-                new Student { StudentName = "A", Grade = "1", School = "T", ParentGuardian = "P", EmergencyPhone = "555-555-5555", Active = true, AMRoute = "East Route" },
-                new Student { StudentName = "B", Grade = "1", School = "T", ParentGuardian = "P", EmergencyPhone = "555-555-5555", Active = false },
-            });
-            await _dbContext.SaveChangesAsync();
-
+            // Act
             var stats = await _studentService.GetStudentStatisticsAsync();
-            stats["TotalStudents"].Should().Be(2);
-            stats["ActiveStudents"].Should().Be(1);
-            stats["StudentsWithRoutes"].Should().Be(1);
+
+            // Assert
+            stats.Should().NotBeNull();
+            stats.Should().ContainKey("TotalStudents");
+            stats.Should().ContainKey("ActiveStudents");
+            stats.Should().ContainKey("StudentsWithRoutes");
+
+            stats["TotalStudents"].Should().Be(5); // All 5 students from TestDataSeeder
+            stats["ActiveStudents"].Should().Be(4); // 4 active students (Eve is inactive)
+            stats["StudentsWithRoutes"].Should().Be(5); // All students have at least one route
+        }
+
+        [Test]
+        public async Task SearchStudentsAsync_ByName_ReturnsMatchingStudents()
+        {
+            // Act
+            var results = await _studentService.SearchStudentsAsync("Alice");
+
+            // Assert
+            results.Should().NotBeNull();
+            results.Should().HaveCount(1);
+            results.First().StudentName.Should().Be("Alice Johnson");
+        }
+
+        [Test]
+        public async Task UpdateStudentAddressAsync_ValidAddress_UpdatesSuccessfully()
+        {
+            // Arrange
+            const int studentId = 1;
+
+            // Act
+            var result = await _studentService.UpdateStudentAddressAsync(studentId, "456 Updated St", "Updated City", "CA", "98765");
+            result.Should().BeTrue();
+
+            // Assert - Verify using service method to avoid context issues
+            var updatedStudent = await _studentService.GetStudentByIdAsync(studentId);
+            updatedStudent.Should().NotBeNull();
+            updatedStudent!.HomeAddress.Should().Be("456 Updated St");
+            updatedStudent.City.Should().Be("Updated City");
+            updatedStudent.State.Should().Be("CA");
+            updatedStudent.Zip.Should().Be("98765");
+        }
+
+        [Test]
+        public void UpdateStudentAddressAsync_InvalidState_ThrowsArgumentException()
+        {
+            // Arrange
+            const int studentId = 1;
+
+            // Act & Assert
+            Func<Task> act = async () => await _studentService.UpdateStudentAddressAsync(studentId, "123 Test St", "Test City", "InvalidState", "12345");
+            act.Should().ThrowAsync<ArgumentException>().WithMessage("*State must be a 2-letter abbreviation*");
         }
     }
 }

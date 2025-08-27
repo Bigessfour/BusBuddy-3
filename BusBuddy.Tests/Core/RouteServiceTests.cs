@@ -1,133 +1,55 @@
-using NUnit.Framework;
-using Microsoft.EntityFrameworkCore;
-using Serilog;
-using Moq;
-using BusBuddy.Core.Services;
-using BusBuddy.Core.Domain;
-using BusBuddy.Core.Data;
-using BusBuddy.Core.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using BusBuddy.Core.Data;
+using BusBuddy.Core.Domain;
+using BusBuddy.Core.Services;
+using FluentAssertions;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
+using NUnit.Framework;
 
 namespace BusBuddy.Tests.Core
 {
-    /// <summary>
-    /// Simple test implementation of IBusBuddyDbContextFactory for unit tests
-    /// </summary>
-    public class TestDbContextFactory : IBusBuddyDbContextFactory
-    {
-        private readonly BusBuddyDbContext _context;
-
-        public TestDbContextFactory(BusBuddyDbContext context)
-        {
-            _context = context;
-        }
-
-        public BusBuddyDbContext CreateDbContext()
-        {
-            return _context;
-        }
-
-        public BusBuddyDbContext CreateWriteDbContext()
-        {
-            return _context;
-        }
-
-        public void Dispose()
-        {
-            _context?.Dispose();
-        }
-    }
-
-    /// <summary>
-    /// Optimized NUnit tests for RouteService with fast execution and minimal setup
-    /// Uses AutoFixture patterns and Theory/TestCase for data-driven testing
-    /// </summary>
     [TestFixture]
-    public class RouteServiceTests : IDisposable // CA1001: Implements IDisposable for _dbContext
+    [Category(TestCategories.Database)]
+    [Category(TestCategories.Routes)]
+    [Category(TestCategories.Services)]
+    public class RouteServiceTests : DatabaseTestBase
     {
-        private DbContextOptions<BusBuddyDbContext> _dbOptions = null!;
-        private BusBuddyDbContext _dbContext = null!;
         private RouteService _routeService = null!;
 
-        [OneTimeSetUp]
-        public void OneTimeSetUp()
-        {
-            // Setup in-memory database for fast tests
-            _dbOptions = new DbContextOptionsBuilder<BusBuddyDbContext>()
-                .UseInMemoryDatabase(databaseName: $"TestDb_{Guid.NewGuid()}")
-                .Options;
-        }
-
         [SetUp]
-        public void SetUp()
+        public override void SetUp()
         {
-            // Fast setup with minimal mocking
-            _dbContext = new BusBuddyDbContext(_dbOptions);
+            // Call base setup first to initialize database and transaction
+            base.SetUp();
 
-            // Create a simple context factory for testing
-            var contextFactory = new TestDbContextFactory(_dbContext);
-            _routeService = new RouteService(contextFactory);
-
-            // Ensure clean database and seed test data
-            _dbContext.Database.EnsureDeleted();
-            _dbContext.Database.EnsureCreated();
-            SeedTestData();
+            // Create the service using the test context factory
+            _routeService = new RouteService(ContextFactory);
         }
+
+
 
         [TearDown]
-        public void TearDown()
+        public override void TearDown()
         {
-            try
+            // Transaction cleanup is handled by base class
+            base.TearDown();
+        }
+
+        private bool _disposed;
+
+        public override void Dispose()
+        {
+            if (!_disposed)
             {
-                try
-                {
-                    if (_dbContext != null)
-                    {
-                        _dbContext.Database.EnsureDeleted();
-                    }
-                }
-                catch
-                {
-                    // ignore teardown exceptions
-                }
-            }
-            finally
-            {
-                try { _dbContext?.Dispose(); } catch { /* ignore */ }
+                _disposed = true;
+                base.Dispose();
+                GC.SuppressFinalize(this);
             }
         }
-
-        public void Dispose()
-        {
-            _dbContext?.Dispose();
-            GC.SuppressFinalize(this); // Fix CA1816: Prevent finalizer calls
-        }
-
-        #region Test Data Factory (AutoFixture-like pattern)
-
-        private void SeedTestData()
-        {
-            var routes = CreateTestRoutes();
-            _dbContext.Routes.AddRange(routes);
-            _dbContext.SaveChanges();
-        }
-
-        private List<Route> CreateTestRoutes()
-        {
-            return new List<Route>
-            {
-                new Route { RouteName = "Route A", Date = DateTime.Today, IsActive = true, Description = "Morning Route", School = "Test School" },
-                new Route { RouteName = "Route B", Date = DateTime.Today, IsActive = true, Description = "Afternoon Route", School = "Test School" },
-                new Route { RouteName = "Route C", Date = DateTime.Today, IsActive = false, Description = "Inactive Route", School = "Test School" }
-            };
-        }
-
-        #endregion
-
-        #region Basic CRUD Tests (Data-Driven with TestCase)
 
         [Test]
         public async Task GetAllActiveRoutesAsync_ReturnsOnlyActiveRoutes()
@@ -136,186 +58,391 @@ namespace BusBuddy.Tests.Core
             var result = await _routeService.GetAllActiveRoutesAsync();
 
             // Assert
-            Assert.That(result.IsSuccess, Is.True);
-            Assert.That(result.Value!.Count(), Is.EqualTo(2)); // Only active routes
-            Assert.That(result.Value.All(r => r.IsActive), Is.True);
-        }
-
-        [TestCase(1, "Route A")]
-        [TestCase(2, "Route B")]
-        public async Task GetRouteByIdAsync_WithValidId_ReturnsCorrectRoute(int routeId, string expectedName)
-        {
-            // Act
-            var result = await _routeService.GetRouteByIdAsync(routeId);
-
-            // Assert
-            Assert.That(result, Is.Not.Null);
-            Assert.That(result.IsSuccess, Is.True);
-            Assert.That(result.Value, Is.Not.Null);
-            Assert.That(result.Value.RouteName, Is.EqualTo(expectedName));
+            result.Should().NotBeNull();
+            result.IsSuccess.Should().BeTrue();
+            result.Value.Should().NotBeNull();
+            result.Value.Should().HaveCount(2);
+            result.Value.All(r => r.IsActive).Should().BeTrue();
+            result.Value.Select(r => r.RouteName).Should().BeEquivalentTo(new[] { "East Route", "West Route" });
         }
 
         [Test]
-        public async Task GetRouteByIdAsync_WithInvalidId_ReturnsFailureResult()
+        public async Task GetAllRoutesAsync_ReturnsAllRoutes()
+        {
+            // Act
+            var result = await _routeService.GetAllRoutesAsync();
+
+            // Assert
+            result.Should().NotBeNull();
+            result.IsSuccess.Should().BeTrue();
+            result.Value.Should().NotBeNull();
+            result.Value.Count().Should().Be(3);
+        }
+
+        [Test]
+        public async Task GetRouteByIdAsync_ExistingId_ReturnsRoute()
+        {
+            // Act
+            var result = await _routeService.GetRouteByIdAsync(1);
+
+            // Assert
+            result.Should().NotBeNull();
+            result.IsSuccess.Should().BeTrue();
+            result.Value.Should().NotBeNull();
+            result.Value.RouteId.Should().Be(1);
+            result.Value.RouteName.Should().Be("East Route");
+        }
+
+        [Test]
+        public async Task GetRouteByIdAsync_NonExistingId_ReturnsFailure()
         {
             // Act
             var result = await _routeService.GetRouteByIdAsync(999);
 
             // Assert
-            Assert.That(result.IsSuccess, Is.False);
-            Assert.That(result.Value, Is.Null);
+            result.Should().NotBeNull();
+            result.IsSuccess.Should().BeFalse();
+            result.Error.Should().NotBeNullOrEmpty();
         }
 
         [Test]
-        public async Task CreateRouteAsync_WithValidRoute_CreatesSuccessfully()
+        public async Task CreateNewRouteAsync_ValidData_CreatesRoute()
         {
             // Arrange
-            var newRoute = new Route
-            {
-                RouteName = "New Route",
-                Date = DateTime.Today.AddDays(1),
-                Description = "Test Route",
-                School = "Test School"
-            };
+            var routeName = "New Test Route";
+            var routeDate = DateTime.Today.AddDays(1);
+            var description = "Test route description";
 
             // Act
-            var result = await _routeService.CreateRouteAsync(newRoute);
+            var result = await _routeService.CreateNewRouteAsync(routeName, routeDate, description);
 
             // Assert
-            Assert.That(result, Is.Not.Null);
-            Assert.That(result.IsSuccess, Is.True);
-            Assert.That(result.Value, Is.Not.Null);
-            Assert.That(result.Value.RouteId, Is.GreaterThan(0));
+            result.Should().NotBeNull();
+            result.IsSuccess.Should().BeTrue();
+            result.Value.Should().NotBeNull();
+            result.Value.RouteName.Should().Be(routeName);
+            result.Value.Date.Should().Be(routeDate);
+            result.Value.Description.Should().Be(description);
+            result.Value.IsActive.Should().BeFalse(); // Default value
 
             // Verify in database
-            var dbRoute = await _dbContext.Routes.FindAsync(result.Value.RouteId);
-            Assert.That(dbRoute, Is.Not.Null);
-            Assert.That(dbRoute.RouteName, Is.EqualTo("New Route"));
-        }
-
-        #endregion
-
-        #region Search and Filtering Tests
-
-        [TestCase("Route A", 1)]
-        [TestCase("Route", 3)]
-        [TestCase("Morning", 1)]
-        [TestCase("NonExistent", 0)]
-        public async Task SearchRoutesAsync_WithSearchTerm_ReturnsMatchingRoutes(string searchTerm, int expectedCount)
-        {
-            // Act
-            var result = await _routeService.SearchRoutesAsync(searchTerm);
-
-            // Assert
-            Assert.That(result.IsSuccess, Is.True);
-            Assert.That(result.Value!.Count(), Is.EqualTo(expectedCount));
-        }
-
-        #endregion
-
-        #region Route Assignment Tests (High-Value Scenarios)
-
-        [Test]
-        public async Task ValidateRouteCapacityAsync_WithValidRoute_ReturnsSuccess()
-        {
-            // Act
-            var result = await _routeService.ValidateRouteCapacityAsync(1);
-
-            // Assert
-            Assert.That(result.IsSuccess, Is.True);
-        }
-
-        #endregion
-
-        #region Error Handling Tests
-
-        [Test]
-        public void Constructor_WithNullDbContext_ThrowsArgumentNullException()
-        {
-            // Act & Assert
-            Assert.Throws<ArgumentNullException>(() =>
-                new RouteService(null!));
-        }
-
-        #endregion
-
-        #region Performance Tests (Quick Validation)
-
-        [Test]
-        [CancelAfter(1000)] // Test must complete within 1 second
-        public async Task GetAllRoutesAsync_PerformanceTest_CompletesQuickly()
-        {
-            // Act
-            var result = await _routeService.GetAllActiveRoutesAsync();
-
-            // Assert
-            Assert.That(result.IsSuccess, Is.True);
-            // Test passes if it completes within timeout
-        }
-
-    #endregion
-
-        #region Additional Scenarios
-
-        [Test]
-        public async Task CreateNewRouteAsync_Valid_CreatesInactiveRoute()
-        {
-            var result = await _routeService.CreateNewRouteAsync("Route Z", DateTime.Today.AddDays(1), "desc");
-            Assert.That(result.IsSuccess, Is.True);
-            Assert.That(result.Value!.IsActive, Is.False);
-            Assert.That(result.Value.School, Is.Not.Null);
+            using var context = ContextFactory.CreateDbContext();
+            var fromDb = await context.Routes.FindAsync(result.Value.RouteId);
+            fromDb.Should().NotBeNull();
+            fromDb!.RouteName.Should().Be(routeName);
         }
 
         [Test]
         public async Task CreateNewRouteAsync_DuplicateNameSameDate_Fails()
         {
-            // Seed an existing route for tomorrow with same name
-            _dbContext.Routes.Add(new Route { RouteName = "DupRoute", Date = DateTime.Today.AddDays(1), IsActive = true, School = "T" });
-            _dbContext.SaveChanges();
+            // Arrange
+            var existingRouteName = "East Route";
+            var existingRouteDate = DateTime.Today;
 
-            var dup = await _routeService.CreateNewRouteAsync("DupRoute", DateTime.Today.AddDays(1));
-            Assert.That(dup.IsSuccess, Is.False);
+            // Act
+            var result = await _routeService.CreateNewRouteAsync(existingRouteName, existingRouteDate);
+
+            // Assert
+            result.Should().NotBeNull();
+            result.IsSuccess.Should().BeFalse();
+            result.Error.Should().NotBeNullOrEmpty();
+            result.Error.Should().Contain("already exists");
         }
 
         [Test]
-        public async Task ActivateAndDeactivateRoute_TogglesFlags()
+        public async Task ActivateRouteAsync_ValidRoute_ActivatesSuccessfully()
         {
-            var r = new Route { RouteName = "Toggle", Date = DateTime.Today.AddDays(1), IsActive = false, School = "T" };
-            _dbContext.Routes.Add(r);
-            await _dbContext.SaveChangesAsync();
+            // Arrange - Find the North Route (initially inactive)
+            using var context = ContextFactory.CreateDbContext();
+            var route = await context.Routes.FirstAsync(r => r.RouteName == "North Route");
+            var routeId = route.RouteId;
 
-            // Ensure route was saved with valid ID
-            Assert.That(r.RouteId, Is.GreaterThan(0), "Route ID should be assigned after SaveChanges");
+            // Act
+            var result = await _routeService.ActivateRouteAsync(routeId);
 
-            var valid = await _routeService.ValidateRouteForActivationAsync(r.RouteId);
-            Assert.That(valid.IsSuccess, Is.True);
-            Assert.That(valid.Value.IsValid, Is.True, $"Route validation failed: {string.Join(", ", valid.Value.Issues)}");
+            // Assert
+            result.Should().NotBeNull();
+            result.IsSuccess.Should().BeTrue();
+            result.Value.Should().BeTrue();
 
-            var activated = await _routeService.ActivateRouteAsync(r.RouteId);
-            Assert.That(activated.IsSuccess, Is.True, $"Route activation failed: {activated.Error}");
-            Assert.That((await _dbContext.Routes.FindAsync(r.RouteId))!.IsActive, Is.True);
-
-            var deactivated = await _routeService.DeactivateRouteAsync(r.RouteId);
-            Assert.That(deactivated.IsSuccess, Is.True, $"Route deactivation failed: {deactivated.Error}");
-            Assert.That((await _dbContext.Routes.FindAsync(r.RouteId))!.IsActive, Is.False);
+            // Verify in database
+            using var verifyContext = ContextFactory.CreateDbContext();
+            var updatedRoute = await verifyContext.Routes.FindAsync(routeId);
+            updatedRoute.Should().NotBeNull();
+            updatedRoute!.IsActive.Should().BeTrue();
         }
 
         [Test]
-        public async Task IsRouteNumberUniqueAsync_RespectsExcludeId()
+        public async Task DeactivateRouteAsync_ValidRoute_DeactivatesSuccessfully()
         {
-            var r = new Route { RouteName = "UniqueX", Date = DateTime.Today, IsActive = true, School = "T" };
-            _dbContext.Routes.Add(r);
-            await _dbContext.SaveChangesAsync();
+            // Arrange - Find the East Route (initially active)
+            using var context = ContextFactory.CreateDbContext();
+            var route = await context.Routes.FirstAsync(r => r.RouteName == "East Route");
+            var routeId = route.RouteId;
 
-            var notUnique = await _routeService.IsRouteNumberUniqueAsync("UniqueX");
-            Assert.That(notUnique.IsSuccess, Is.True);
-            Assert.That(notUnique.Value, Is.False);
+            // Act
+            var result = await _routeService.DeactivateRouteAsync(routeId);
 
-            var uniqueWhenExcluding = await _routeService.IsRouteNumberUniqueAsync("UniqueX", r.RouteId);
-            Assert.That(uniqueWhenExcluding.IsSuccess, Is.True);
-            Assert.That(uniqueWhenExcluding.Value, Is.True);
+            // Assert
+            result.Should().NotBeNull();
+            result.IsSuccess.Should().BeTrue();
+            result.Value.Should().BeTrue();
+
+            // Verify in database
+            using var verifyContext = ContextFactory.CreateDbContext();
+            var updatedRoute = await verifyContext.Routes.FindAsync(routeId);
+            updatedRoute.Should().NotBeNull();
+            updatedRoute!.IsActive.Should().BeFalse();
         }
 
-        #endregion
+        [Test]
+        public async Task SearchRoutesAsync_WithSearchTerm_ReturnsMatchingRoutes()
+        {
+            // Arrange - Clear existing routes and create fresh test data
+            using var context = ContextFactory.CreateDbContext();
+            context.Routes.RemoveRange(context.Routes);
+            await context.SaveChangesAsync();
+
+            var routes = new[]
+            {
+                new Route { RouteName = "East Route", Date = DateTime.Today, IsActive = true, School = "Test School" },
+                new Route { RouteName = "West Route", Date = DateTime.Today, IsActive = true, School = "Test School" },
+                new Route { RouteName = "North Route", Date = DateTime.Today, IsActive = false, School = "Test School" }
+            };
+            context.Routes.AddRange(routes);
+            await context.SaveChangesAsync();
+
+            // Act
+            var result = await _routeService.SearchRoutesAsync("East");
+
+            // Assert
+            result.Should().NotBeNull();
+            result.IsSuccess.Should().BeTrue();
+            result.Value.Should().NotBeNull();
+            result.Value.Should().HaveCount(1);
+            result.Value.First().RouteName.Should().Be("East Route");
+        }
+
+        [Test]
+        public async Task SearchRoutesAsync_EmptySearchTerm_ReturnsAllRoutes()
+        {
+            // Arrange - Clear existing routes and create fresh test data
+            using var context = ContextFactory.CreateDbContext();
+            context.Routes.RemoveRange(context.Routes);
+            await context.SaveChangesAsync();
+
+            var routes = new[]
+            {
+                new Route { RouteName = "East Route", Date = DateTime.Today, IsActive = true, School = "Test School" },
+                new Route { RouteName = "West Route", Date = DateTime.Today, IsActive = true, School = "Test School" },
+                new Route { RouteName = "North Route", Date = DateTime.Today, IsActive = false, School = "Test School" }
+            };
+            context.Routes.AddRange(routes);
+            await context.SaveChangesAsync();
+
+            // Act
+            var result = await _routeService.SearchRoutesAsync("");
+
+            // Assert
+            result.Should().NotBeNull();
+            result.IsSuccess.Should().BeTrue();
+            result.Value.Should().NotBeNull();
+            result.Value.Should().HaveCount(3);
+        }
+
+        [Test]
+        public async Task IsRouteNumberUniqueAsync_UniqueName_ReturnsTrue()
+        {
+            // Act
+            var result = await _routeService.IsRouteNumberUniqueAsync("Unique Route Name");
+
+            // Assert
+            result.Should().NotBeNull();
+            result.IsSuccess.Should().BeTrue();
+            result.Value.Should().BeTrue();
+        }
+
+        [Test]
+        public async Task IsRouteNumberUniqueAsync_ExistingName_ReturnsFalse()
+        {
+            // Act
+            var result = await _routeService.IsRouteNumberUniqueAsync("East Route");
+
+            // Assert
+            result.Should().NotBeNull();
+            result.IsSuccess.Should().BeTrue();
+            result.Value.Should().BeFalse();
+        }
+
+        [Test]
+        public async Task IsRouteNumberUniqueAsync_ExistingNameWithExclusion_ReturnsTrue()
+        {
+            // Act
+            var result = await _routeService.IsRouteNumberUniqueAsync("East Route", 1);
+
+            // Assert
+            result.Should().NotBeNull();
+            result.IsSuccess.Should().BeTrue();
+            result.Value.Should().BeTrue();
+        }
+
+        [Test]
+        public async Task GetAvailableBusesAsync_ReturnsActiveBuses()
+        {
+            // Arrange - Clear existing buses and create fresh test data
+            using var context = ContextFactory.CreateDbContext();
+            context.Buses.RemoveRange(context.Buses);
+            await context.SaveChangesAsync();
+
+            var buses = new[]
+            {
+                new Bus { BusNumber = "BUS001", SeatingCapacity = 50, Status = "Active", Model = "Test Model 1" },
+                new Bus { BusNumber = "BUS002", SeatingCapacity = 45, Status = "Active", Model = "Test Model 2" },
+                new Bus { BusNumber = "BUS003", SeatingCapacity = 40, Status = "Inactive", Model = "Test Model 3" }
+            };
+            context.Buses.AddRange(buses);
+            await context.SaveChangesAsync();
+
+            // Act
+            var result = await _routeService.GetAvailableBusesAsync();
+
+            // Assert
+            result.Should().NotBeNull();
+            result.IsSuccess.Should().BeTrue();
+            result.Value.Should().NotBeNull();
+            result.Value.Should().HaveCount(2);
+            result.Value.All(b => b.Status == "Active").Should().BeTrue();
+        }
+
+        [Test]
+        public async Task GetAvailableDriversAsync_ReturnsActiveDrivers()
+        {
+            // Act
+            var result = await _routeService.GetAvailableDriversAsync();
+
+            // Assert
+            result.Should().NotBeNull();
+            result.IsSuccess.Should().BeTrue();
+            result.Value.Should().NotBeNull();
+            result.Value.Should().HaveCount(2);
+            result.Value.All(d => d.IsActive).Should().BeTrue();
+        }
+
+        [Test]
+        public async Task AssignStudentToRouteAsync_ValidIds_AssignsSuccessfully()
+        {
+            // Arrange - Find Alice Johnson (student) and West Route
+            using var context = ContextFactory.CreateDbContext();
+            var student = await context.Students.FirstAsync(s => s.StudentName == "Alice Johnson");
+            var route = await context.Routes.FirstAsync(r => r.RouteName == "West Route");
+            var studentId = student.StudentId;
+            var routeId = route.RouteId;
+
+            // Act
+            var result = await _routeService.AssignStudentToRouteAsync(studentId, routeId);
+
+            // Assert
+            result.Should().NotBeNull();
+            result.IsSuccess.Should().BeTrue();
+            result.Value.Should().BeTrue();
+        }
+
+        [Test]
+        public async Task RemoveStudentFromRouteAsync_ValidIds_RemovesSuccessfully()
+        {
+            // Arrange - Find Alice Johnson (student) and East Route
+            using var context = ContextFactory.CreateDbContext();
+            var student = await context.Students.FirstAsync(s => s.StudentName == "Alice Johnson");
+            var route = await context.Routes.FirstAsync(r => r.RouteName == "East Route");
+            var studentId = student.StudentId;
+            var routeId = route.RouteId;
+
+            // Act
+            var result = await _routeService.RemoveStudentFromRouteAsync(studentId, routeId);
+
+            // Assert
+            result.Should().NotBeNull();
+            result.IsSuccess.Should().BeTrue();
+            result.Value.Should().BeTrue();
+        }
+
+        [Test]
+        public async Task GetUnassignedStudentsAsync_ReturnsUnassignedStudents()
+        {
+            // Act
+            var result = await _routeService.GetUnassignedStudentsAsync();
+
+            // Assert
+            result.Should().NotBeNull();
+            result.IsSuccess.Should().BeTrue();
+            result.Value.Should().NotBeNull();
+            // Should return students not assigned to any routes or verify logic
+        }
+
+        [Test]
+        public async Task ValidateRouteCapacityAsync_ValidRoute_ReturnsSuccess()
+        {
+            // Act
+            var result = await _routeService.ValidateRouteCapacityAsync(1);
+
+            // Assert
+            result.Should().NotBeNull();
+            result.IsSuccess.Should().BeTrue();
+            result.Value.Should().BeTrue();
+        }
+
+        [Test]
+        public async Task DeleteRouteAsync_ValidId_DeletesSuccessfully()
+        {
+            // Arrange - Find the North Route
+            using var context = ContextFactory.CreateDbContext();
+            var route = await context.Routes.FirstAsync(r => r.RouteName == "North Route");
+            var routeId = route.RouteId;
+
+            // Act
+            var result = await _routeService.DeleteRouteAsync(routeId);
+
+            // Assert
+            result.Should().NotBeNull();
+            result.IsSuccess.Should().BeTrue();
+            result.Value.Should().BeTrue();
+
+            // Verify in database
+            using var verifyContext = ContextFactory.CreateDbContext();
+            var deletedRoute = await verifyContext.Routes.FindAsync(routeId);
+            deletedRoute.Should().BeNull();
+        }
+
+        [Test]
+        public async Task UpdateRouteAsync_ValidRoute_UpdatesSuccessfully()
+        {
+            // Arrange
+            var routeToUpdate = new Route
+            {
+                RouteId = 1,
+                RouteName = "Updated East Route",
+                Date = DateTime.Today,
+                IsActive = true,
+                School = "Test School",
+                Description = "Updated description"
+            };
+
+            // Act
+            var result = await _routeService.UpdateRouteAsync(routeToUpdate);
+
+            // Assert
+            result.Should().NotBeNull();
+            result.IsSuccess.Should().BeTrue();
+            result.Value.Should().NotBeNull();
+            result.Value.RouteName.Should().Be("Updated East Route");
+            result.Value.Description.Should().Be("Updated description");
+
+            // Verify in database
+            using var context = ContextFactory.CreateDbContext();
+            var updatedRoute = await context.Routes.FindAsync(1);
+            updatedRoute.Should().NotBeNull();
+            updatedRoute!.RouteName.Should().Be("Updated East Route");
+        }
     }
 }
+

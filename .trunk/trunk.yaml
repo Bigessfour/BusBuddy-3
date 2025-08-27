@@ -1,6 +1,12 @@
 # 🚌 Trunk config for BusBuddy: .NET 9 WPF, PowerShell 7.5.2, Azure SQL
 # Centralizes linting/formatting for consistent code quality across the project
 #
+# ✨ WINDOWS COMPATIBILITY FIXES:
+# - shellcheck@0.10.0: Updated from 0.11.0 for Windows compatibility
+# - Added Windows-specific environment variables and exclusions
+# - PowerShell tools use system PowerShell 7.5.2 (not managed by Trunk runtimes)
+# - Added shell script formatting options for Windows
+#
 # ✨ WHITESPACE ENFORCEMENT:
 # - dotnet-format: Automatically trims trailing whitespace in C# files
 # - XamlStyler: Configured via Settings.XamlStyler to remove trailing whitespace
@@ -42,6 +48,8 @@ lint:
       environment:
         - name: DOTNET_ROOT
           value: "C:\\Program Files\\dotnet"
+        - name: DOTNET_CLI_TELEMETRY_OPTOUT
+          value: "1"
     # Override actionlint to handle GitHub Actions secrets gracefully
     - name: actionlint
       environment:
@@ -51,6 +59,57 @@ lint:
       commands:
         - output: sarif
           success_codes: [0, 1] # Allow warnings for secret context issues
+          formatter: true
+    # Override shfmt for Windows compatibility
+    - name: shfmt
+      environment:
+        - name: SHFMT_OPTS
+          value: "-i 4 -ci" # 4-space indentation, consistent indentation
+      run_when: [ci, cli]
+      commands:
+        - name: check
+          run: shfmt -d $PATH
+          output: sarif
+          success_codes: [0, 1]
+          formatter: true
+        - name: format
+          run: shfmt -w $PATH
+          output: sarif
+          success_codes: [0]
+          formatter: true
+    # Override roslynator for .NET projects
+    - name: roslynator
+      environment:
+        - name: DOTNET_ROOT
+          value: "C:\\Program Files\\dotnet"
+        - name: ROSLYNATOR_CONFIG
+          value: ".roslynator.config"
+      run_when: [ci, cli]
+      commands:
+        - name: check
+          run: roslynator analyze $PATH --output $OUTPUT --format sarif
+          output: sarif
+          success_codes: [0, 1]
+          formatter: true
+    # Override stylecop for .NET projects
+    - name: stylecop
+      environment:
+        - name: DOTNET_ROOT
+          value: "C:\\Program Files\\dotnet"
+      run_when: [ci, cli]
+      commands:
+        - output: sarif
+          success_codes: [0, 1]
+          formatter: true
+    # Override security-code-scan for .NET security
+    - name: security-code-scan
+      environment:
+        - name: DOTNET_ROOT
+          value: "C:\\Program Files\\dotnet"
+      run_when: [ci, cli]
+      commands:
+        - output: sarif
+          success_codes: [0, 1]
           formatter: true
   disabled:
     - markdownlint # Using custom markdown formatting
@@ -63,15 +122,15 @@ lint:
     - black@25.1.0
     - isort@6.0.1
     - ruff@0.12.10
-    - shellcheck@0.11.0
+    - shellcheck@0.10.0
     - shfmt@3.6.0
     - sqlfluff@3.4.2
     - cspell@9.2.0 # Spell checking for XAML comments and documentation
     # codespell@2.4.1 # DISABLED - using Trunk CSpell only for consistency
     - dotnet-format@7.0.400 # Trims whitespace in C# by default (Trunk-supported version)
-    - checkov@3.2.466 # Infrastructure as code security
+    - checkov@3.2.467 # Infrastructure as code security
     - git-diff-check # Git hygiene
-    - osv-scanner@2.2.1 # Vulnerability scanning
+    - osv-scanner@2.2.2 # Vulnerability scanning
     - trufflehog@3.90.5 # Secret detection
 
     # Code formatting and quality
@@ -81,12 +140,63 @@ lint:
     # PowerShell linting and formatting
     - psscriptanalyzer@1.24.0 # PowerShell best practices
 
+    # Additional .NET tools
+    - roslynator@4.12.4 # Advanced C# code analysis and refactoring
+    - stylecop@1.2.0 # C# style and consistency checking
+    - security-code-scan@5.6.7 # .NET security vulnerability scanner
+    - gitleaks@8.18.0 # Additional secret detection
+    - editorconfig-checker@3.0.3 # Validates EditorConfig compliance
+    - misspell@0.3.4 # Fast spell checker
+
+    # Infrastructure and container tools
+    - hadolint@2.12.0 # Dockerfile linting
+    - kubeconform@0.6.7 # Kubernetes YAML validation
+    - terraform@1.9.5 # Infrastructure as code validation
+    - tflint@0.53.0 # Terraform linting
+    - tfsec@1.28.4 # Terraform security scanner
+
   # File path ignores for build artifacts and logs
   ignore:
     # Disable codespell - using Trunk CSpell only for consistency
     - linters: [codespell]
       paths:
         - "**/*"
+    - linters: [roslynator]
+      paths:
+        - "**/*.vb" # Roslynator is C# specific
+        - "**/*.fs" # Roslynator is C# specific
+    - linters: [stylecop]
+      paths:
+        - "**/*.vb" # StyleCop is C# specific
+        - "**/*.fs" # StyleCop is C# specific
+    - linters: [security-code-scan]
+      paths:
+        - "**/*.vb" # Security Code Scan is C# specific
+        - "**/*.fs" # Security Code Scan is C# specific
+    - linters: [bandit]
+      paths:
+        - "**/*" # Python security scanner - only run on Python files
+    - linters: [ruff]
+      paths:
+        - "**/*" # Python linter - only run on Python files
+    - linters: [shellcheck]
+      paths:
+        - "**/*" # Shell script linter - only run on shell scripts
+    - linters: [hadolint]
+      paths:
+        - "**/*" # Dockerfile linter - only run on Dockerfiles
+    - linters: [kubeconform]
+      paths:
+        - "**/*" # Kubernetes YAML validation - only run on K8s files
+    - linters: [terraform]
+      paths:
+        - "**/*" # Terraform validation - only run on .tf files
+    - linters: [tflint]
+      paths:
+        - "**/*" # Terraform linting - only run on .tf files
+    - linters: [tfsec]
+      paths:
+        - "**/*" # Terraform security - only run on .tf files
     - linters: [ALL]
       paths:
         - "**/*.disabled" # Disabled files for clean builds
@@ -96,19 +206,34 @@ lint:
         - "**/logs/**" # Log files
         - "**/artifacts/**" # Build artifacts
         - "**/Migrations/**" # EF auto-generated migrations
+        - "**/.trunk/logs/**" # Trunk internal logs
+        - "**/.trunk/out/**" # Trunk output files
+        - "**/.trunk/tools/**" # Trunk tool cache
+        - "**/node_modules/**" # Node.js dependencies
+        - "**/packages/**" # NuGet package cache
+        - "**/*.user" # User-specific files
+        - "**/*.suo" # Solution user options
+        - "**/.vs/**" # Visual Studio settings
+        - "**/TestResults/**" # Test results
+        - "**/*.tmp" # Temporary files
+        - "**/*.log" # Log files
+        - "**/BusBuddy.db*" # SQLite database files
+        - "**/appsettings.*.json" # Environment-specific settings
     - linters: [git-diff-check]
       paths:
         - ".vscode/settings.json" # VS Code settings have different formatting standards
         - ".vscode/tasks.json" # VS Code tasks have different formatting standards
+        - ".env" # Environment variables file
+        - "**/*.md" # Markdown files may have different standards
     # GitHub Actions secrets handling - allow context warnings per GitHub docs
-  # (Removed unsupported 'where' filter for actionlint; if filtering needed, migrate to tool-supported suppression mechanism.)
+    # (Removed unsupported 'where' filter for actionlint; if filtering needed, migrate to tool-supported suppression mechanism.)
 
 # ------------------------------------------------------------------
 # Project spell-check dictionary (cspell) — configured in .cspell.json
 # Reference (cspell config): https://github.com/streetsidesoftware/cspell
 # ------------------------------------------------------------------
 
-# Git hooks and actions configuration
+# Actions and hooks configuration for BusBuddy production workflow
 actions:
   disabled:
     - git-lfs # Not using Git LFS
@@ -118,11 +243,7 @@ actions:
     - trunk-fmt-pre-commit # Auto-format on commit (includes whitespace trimming)
     - trunk-check-pre-push # Check quality before push
 
-# Tools configuration
-# Tools configuration
+# BusBuddy-specific configuration
 tools:
   enabled:
-    - dotnet@9.0.303 # Updated to match BusBuddy's .NET 9 target
-    - pwsh@7.5.2
-    - converttosarif@1.0.0 # SARIF conversion for VS Code integration
-
+    - converttosarif@1.0.0

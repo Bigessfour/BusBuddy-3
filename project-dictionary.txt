@@ -36,6 +36,7 @@ dedupe
 devcontainers
 dpapi
 DPAPI
+DRBTAAN
 dtest
 eamodio
 Econtact
@@ -133,6 +134,7 @@ spmeesseman
 sqlcmd
 Sqlcmd
 SQLEXPRESS
+sqllocaldb
 Starlink
 Sutphin
 Swann

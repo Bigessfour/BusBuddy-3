@@ -61,32 +61,24 @@ bbCommands
 bbHealth
 ```
 
-### **Step 2.1: AI Configuration (Optional)**
+### **Step 2.1: Analysis Configuration (Pattern-Based)**
 
-Configure xAI Grok-4 integration for route optimization and intelligent analysis:
+The BusBuddy project now uses pattern-based analysis instead of AI integration:
 
 ```powershell
-# Set xAI API key (required for AI features)
-$env:XAI_API_KEY = "your-xai-api-key-here"
-[System.Environment]::SetEnvironmentVariable("XAI_API_KEY", "your-xai-api-key-here", "Machine")
+# Load analysis modules (no API keys required)
+Import-Module ".\PowerShell\Modules\BusBuddy-CIAnalysis.psm1" -Force
+Import-Module ".\PowerShell\Modules\BusBuddy-PullRequestAnalysis.psm1" -Force
+Import-Module ".\PowerShell\Modules\BusBuddy-CIAnalysis-Enhanced.psm1" -Force
 
-# Load AI modules
-Import-Module ".\PowerShell\Modules\grok-config.psm1" -Force
-Import-Module ".\PowerShell\Modules\BusBuddy-GrokAssistant.psm1" -Force
+# Verify analysis modules are loaded
+Get-Module BusBuddy-CIAnalysis, BusBuddy-PullRequestAnalysis, BusBuddy-CIAnalysis-Enhanced
 
-# Verify AI configuration
-$apiKey = Get-ApiKeySecurely
-Write-Host "✓ API Key Length: $($apiKey.Length)" -ForegroundColor Green  # Should be 84
-
-$config = grok-config
-Write-Host "✓ Model: $($config.DefaultModel)" -ForegroundColor Green     # Should be "grok-4-0709"
-
-# Test AI connection
-Test-GrokConnection -Verbose
-# Expected: "✅ Grok API connection successful."
+# Test pattern-based analysis
+Invoke-CIFailureAnalysis -InputText "Sample error message" -AnalysisType "ci-failure"
 ```
 
-**AI Features Available:**
+**Analysis Features Available:**
 
 - **Route Optimization**: AI-powered route efficiency analysis
 - **Maintenance Predictions**: Predictive vehicle maintenance scheduling

@@ -138,7 +138,7 @@ namespace BusBuddy.Core.Services
                 var (context, dispose) = GetReadContext();
                 try
                 {
-                    var route = await context.Routes.FindAsync(id);
+                    var route = await context.Routes.AsNoTracking().FirstOrDefaultAsync(r => r.RouteId == id);
                     if (route == null)
                     {
                         return Result.FailureResult<Route>($"Route with ID {id} not found");

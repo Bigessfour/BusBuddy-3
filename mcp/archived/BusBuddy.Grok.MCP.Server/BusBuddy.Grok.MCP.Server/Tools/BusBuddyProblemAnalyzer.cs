@@ -279,7 +279,7 @@ public static class BusBuddyProblemAnalyzer
                         PriorityPackages = new[]
                         {
                             "Google.Apis.Auth: 1.8.1 → 1.68.0",
-                            "Google.Apis.Core: 1.8.1 → 1.68.0", 
+                            "Google.Apis.Core: 1.8.1 → 1.68.0",
                             "NUnit: 2.5.7 → 4.2.2",
                             "NUnit3TestAdapter: 3.0.10 → 4.6.0",
                             "Polly: 1.0.0 → 8.4.1"
@@ -423,7 +423,7 @@ public static class BusBuddyProblemAnalyzer
                 NewTools = new[]
                 {
                     "package-vulnerability-scan",
-                    "dependency-conflict-resolver", 
+                    "dependency-conflict-resolver",
                     "package-update-automation",
                     "build-health-monitor"
                 },
@@ -450,7 +450,7 @@ public static class BusBuddyProblemAnalyzer
             Recommendations = new[]
             {
                 "🚨 Immediate: Fix NU1107 version conflicts to restore build capability",
-                "🔒 Security: Update Azure.Identity to address high-severity vulnerabilities", 
+                "🔒 Security: Update Azure.Identity to address high-severity vulnerabilities",
                 "🧪 Testing: Update FluentAssertions for .NET 9 compatibility",
                 "📦 Maintenance: Plan systematic package modernization"
             },

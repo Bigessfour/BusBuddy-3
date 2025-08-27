@@ -59,16 +59,30 @@
   "trunk.enableActions": true,
   "trunk.inlineDecorators": true,
   "trunk.inlineDecoratorsForAllExtensions": true,
-  "trunk": {
-    "enabled": true,
-    "autoRun": true,
-    "languages": ["csharp", "powershell", "xml", "sql"],
-    "linters": {
-      "PSScriptAnalyzer": true,
-      "Roslynator": true,
-      "XamlStyler": true
-    }
-  },
+  "trunk.formatOnSaveTimeout": 5000,
+  "trunk.lintOnSaveTimeout": 10000,
+  "trunk.checkOnSaveTimeout": 15000,
+  "dotnet-test-explorer.testProjectPath": "**/*.Tests.csproj",
+  "dotnet-test-explorer.testArguments": "--configuration Debug --logger trx",
+  "dotnet-test-explorer.testSettingsPath": "${workspaceFolder}/testsettings.runsettings",
+  "dotnet-test-explorer.enableTelemetry": false,
+  "dotnet-test-explorer.showCodeCoverage": true,
+  "dotnet-test-explorer.codeCoverageTool": "coverlet",
+  "dotnet-test-explorer.runInParallel": false,
+  "dotnet-test-explorer.autoWatch": true,
+  "dotnet-test-explorer.addProblems": true,
+  "nunitTestExplorer.testProjectPath": "**/*.Tests.csproj",
+  "nunitTestExplorer.testArguments": "--configuration Debug --logger trx",
+  "nunitTestExplorer.testSettingsPath": "${workspaceFolder}/testsettings.runsettings",
+  "nunitTestExplorer.enableTelemetry": false,
+  "nunitTestExplorer.showCodeCoverage": true,
+  "nunitTestExplorer.codeCoverageTool": "coverlet",
+  "nunitTestExplorer.runInParallel": false,
+  "nunitTestExplorer.autoWatch": true,
+  "nunitTestExplorer.addProblems": true,
+  "nunitTestExplorer.dotNetCliPaths": [
+    "dotnet"
+  ],
   "editor.defaultFormatter": "trunk.io",
   "editor.snippets.codeLens": true,
   "[powershell]": {
@@ -105,7 +119,20 @@
     "editor.defaultFormatter": "trunk.io"
   },
   "csharp.suppressDotnetRestoreNotification": true,
-  "dotnetAcquisitionExtension.existingDotnetPath": ["${env:DOTNET_VERSION}"],
+  "dotnetAcquisitionExtension.existingDotnetPath": [
+    {
+      "extensionId": "ms-dotnettools.csharp",
+      "path": "C:\\Program Files\\dotnet\\dotnet.exe"
+    },
+    {
+      "extensionId": "ms-dotnettools.csdevkit",
+      "path": "C:\\Program Files\\dotnet\\dotnet.exe"
+    },
+    {
+      "extensionId": "ms-dotnettools.vscode-dotnet-runtime",
+      "path": "C:\\Program Files\\dotnet\\dotnet.exe"
+    }
+  ],
   "omnisharp.enableRoslynAnalyzers": true,
   "omnisharp.enableEditorConfigSupport": true,
   "dotnet.completion.showCompletionItemsFromUnimportedNamespaces": true,
@@ -223,7 +250,7 @@
     "https://json.schemastore.org/github-workflow.json": ".github/workflows/*.yml"
   },
   "powershell.powerShellDefaultVersion": "BusBuddy PowerShell 7.5.2",
-  "powershell.enableProfileLoading": true,
+  "powershell.enableProfileLoading": false,
   "powershell.integratedConsole.suppressStartupBanner": false,
   "powershell.powerShellAdditionalExePaths": {
     "BusBuddy PowerShell 7.5.2": "C:\\Program Files\\PowerShell\\7\\pwsh.exe",
@@ -239,7 +266,7 @@
   "powershell.integratedConsole.executeInCurrentScope": true,
   "powershell.enableAutomaticVariableCompletion": true,
   "powershell.enableBackgroundAnalysis": true,
-  "powershell.debugging.createTemporaryIntegratedConsole": false,
+  "powershell.debugging.createTemporaryIntegratedConsole": true,
   "powershell.debugging.confirmRunningScripts": true,
   "powershell.codeFormatting.preset": "OTBS",
   "powershell.codeFormatting.openBraceOnSameLine": true,
@@ -274,7 +301,7 @@
   "powershell.developer.featureFlags": [],
   "powershell.developer.bundledModulesPath": "",
   "powershell.developer.editorServicesLogLevel": "Information",
-  "powershell.developer.editorServicesWaitForDebugger": false,
+  "powershell.developer.editorServicesWaitForDebugger": true,
   "powershell.enableISEMode": false,
   "powershell.promptToUpdatePowerShell": true,
   "powershell.codeLens.enable": true,
@@ -331,13 +358,22 @@
   "window.density.editorTabHeight": "compact",
   "terminal.integrated.enablePersistentSessions": true,
   // Use standard PowerShell profile location (Microsoft-recommended approach)
-  "terminal.integrated.defaultProfile.windows": "PowerShell",
+  "terminal.integrated.defaultProfile.windows": "BusBuddy PowerShell",
   "terminal.integrated.profiles.windows": {
     "PowerShell": {
       "path": "C:\\Program Files\\PowerShell\\7\\pwsh.exe",
       "args": ["-NoLogo", "-ExecutionPolicy", "RemoteSigned"],
       "icon": "terminal-powershell",
       "color": "terminal.ansiCyan"
+    },
+    "BusBuddy PowerShell": {
+      "path": "C:\\Program Files\\PowerShell\\7\\pwsh.exe",
+      "args": ["-NoLogo", "-ExecutionPolicy", "RemoteSigned"],
+      "icon": "terminal-powershell",
+      "color": "terminal.ansiGreen",
+      "env": {
+        "BUSBUDDY_PROFILE_LOADED": "1"
+      }
     },
     "PowerShell 7.5.2 (Clean)": {
       "path": "C:\\Program Files\\PowerShell\\7\\pwsh.exe",
@@ -396,192 +432,5 @@
     "other": true,
     "comments": false,
     "strings": true
-  },
-  "editor.wordWrap": "wordWrapColumn",
-  "editor.wordWrapColumn": 120,
-  "editor.rulers": [80, 120],
-  "files.associations": {
-    "*.ps1": "powershell",
-    "*.psm1": "powershell",
-    "*.psd1": "powershell",
-    "*.ps1xml": "xml",
-    "*.pssc": "powershell",
-    "*.psrc": "powershell",
-    "profile.ps1": "powershell",
-    "Microsoft.PowerShell_profile.ps1": "powershell",
-    "Microsoft.PowerShell_profile_optimized.ps1": "powershell",
-    "global-profile-fix-optimized.ps1": "powershell"
-  },
-  "xml.fileAssociations": [
-    {
-      "systemId": "https://raw.githubusercontent.com/PowerShell/PowerShell/master/src/Schemas/Format.xsd",
-      "pattern": "**/*.Format.ps1xml"
-    },
-    {
-      "systemId": "https://raw.githubusercontent.com/PowerShell/PowerShell/master/src/Schemas/Types.xsd",
-      "pattern": "**/*.Types.ps1xml"
-    }
-  ],
-  "code-runner.executorMap": {
-    // Load optimized profile (idempotent guard inside profile prevents double-load) before executing script so bb-* commands & modules are available
-    "powershell": "pwsh -NoLogo -ExecutionPolicy RemoteSigned -Command '. \"${workspaceFolder}\\PowerShell\\Profiles\\Microsoft.PowerShell_profile_optimized.ps1\"; & ${file}'"
-  },
-  "code-runner.saveFileBeforeRun": true,
-  "better-comments.tags": [
-    {
-      "tag": "!",
-      "color": "#FF2D00"
-    },
-    {
-      "tag": "bb",
-      "color": "#3498DB"
-    },
-    {
-      "tag": "syncfusion",
-      "color": "#FFD700"
-    },
-    {
-      "tag": "azure-sql",
-      "color": "#00BFFF"
-    }
-  ],
-  "dotnetCoreExplorer.showProjectFileInExplorer": true,
-  "dotnetCoreExplorer.enableOutputLogs": true,
-  "taskExplorer.enableExplorerView": true,
-  "taskExplorer.enableSideBar": true,
-  "taskExplorer.groupMaxLevelsDetected": 2,
-  "taskExplorer.showLastTasks": true,
-  "gitlens.codeLens.enabled": true,
-  "gitlens.currentLine.enabled": true,
-  // === GitHub Copilot (GPT-5 mini) Configuration ===
-  "github.copilot": {
-    "enable": {
-      "csharp": true,
-      "powershell": true,
-      "json": true,
-      "xml": true,
-      "xaml": true
-    },
-    "editor": {
-      "enableAutoCompletions": true,
-      "iterativeFixing": true,
-      "enableInlineCompletions": true,
-      "suggest": {
-        "localityBonus": true
-      },
-      "wordWrap": "wordWrapColumn",
-      "wordWrapColumn": 120,
-      "rulers": [80, 120],
-      "inlineSuggest": {
-        "count": 5,
-        "delay": 200
-      }
-    },
-    "advanced": {
-      "length": 800,
-      "temperature": 0.1,
-      "top_p": 0.85,
-      "telemetry": false,
-      "inlineSuggestCount": 5
-    },
-    "suggestionPriorities": {
-      "csharp": {
-        "priorityPatterns": [
-          "Syncfusion",
-          "SfDataGrid",
-          "Syncfusion.UI.Xaml.Grid",
-          "syncfusion:SfDataGrid"
-        ],
-        "preferSnippets": true
-      },
-      "xaml": {
-        "priorityPatterns": [
-          "syncfusion:SfDataGrid",
-          "xmlns:syncfusion",
-          "GridTextColumn",
-          "GridNumericColumn"
-        ],
-        "preferSnippets": true
-      }
-    },
-    "rules": {
-      "csharp": {
-        "preferNamespaces": [
-          "Syncfusion.UI.Xaml.Grid",
-          "Syncfusion",
-          "Microsoft.EntityFrameworkCore", // Prefer EF Core for Azure SQL models
-          "Serilog" // Prefer Serilog for structured logging
-        ]
-      },
-      "xaml": {
-        "preferNamespacePrefixes": ["syncfusion"],
-        "preferredElementPatterns": [
-          "syncfusion:SfDataGrid",
-          "syncfusion:GridTextColumn"
-        ]
-      },
-      "powershell": {
-        "preferCommands": [
-          "sqlcmd", // Align with BusBuddy policy: use sqlcmd for Azure SQL querying
-          "az" // Allow Azure CLI usage where appropriate
-        ]
-      }
-    },
-    "compatibility": {
-      "respectWorkspaceEnv": true,
-      "preserveSettings": [
-        "azure.*",
-        "powershell.*",
-        "trunk.*",
-        "taskExplorer.*"
-      ]
-    },
-    "modelOverride": "gpt-5",
-    "fallbackModel": "gpt-5-mini"
-  },
-  "github.copilot.chat": {
-    "enabled": true,
-    "useProjectTemplates": true,
-    "localeOverride": "en",
-    "enable": true,
-    // New: Enables logging for chat interactions; review in Output panel under "Copilot Chat"
-    "debug": true
-  },
-  "syncfusion": {
-    "wpf": {
-      "theme": "FluentDark",
-      "intelliSense": true
-    }
-  },
-  "ms-vscode.azure-repos.azure-active-directory.tenant-id": "${env:BUSBUDDY_ENTRA_TENANT_ID}",
-  "azure.tenant": "3ee44d11-b5ae-43a0-9c02-004b04858d9e",
-  "azure.enableAzureActivityLogOutput": true,
-  "azure.enableOutputTimestamps": true,
-  "azure.ppe": false,
-  "azure.resourceGroups.showHidden": false,
-  "azure.enableDataPlaneAuth": true,
-  "azureExternalId.signInMethod": "${env:VSCODE_ENTRA_SIGNIN_METHOD}",
-  "azureExternalId.userInterfaceAlignment": "${env:VSCODE_ENTRA_UI_LAYOUT}",
-  "azureExternalId.enableBranding": "${env:VSCODE_ENTRA_BRANDING_ENABLED}",
-  "azureExternalId.sampleApplicationType": "${env:VSCODE_ENTRA_SAMPLE_TYPE}",
-  "azureExternalId.enableAutomaticSignIn": "${env:VSCODE_ENTRA_AUTO_SIGNIN}",
-  "azureExternalId.trustWorkspace": "${env:VSCODE_ENTRA_WORKSPACE_TRUST}",
-  "azure.authenticationProvider": "microsoft-entra-id",
-  "azure.experimental.authenticate": true,
-  "azure.experimental.enableDataPlaneAuth": true,
-  "azure.cloudShell.defaultShell": "PowerShell",
-  "azure.copilot.enabled": true,
-  "azure.copilot.context": "sql",
-  "azure": {
-    "sql": {
-      "authenticationMethod": "ActiveDirectoryAzCli",
-      "enableSqlProjects": true
-    },
-    "extensions": {
-      "azuresql": {
-        "explorerEnabled": true,
-        "queryOnSave": true
-      }
-    }
   }
 }

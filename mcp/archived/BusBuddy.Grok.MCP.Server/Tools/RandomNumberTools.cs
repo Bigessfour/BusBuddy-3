@@ -17,7 +17,7 @@ internal class GrokAITools
     {
         _configuration = configuration;
         _httpClient = httpClient;
-        
+
         var apiKey = _configuration["XAI_API_KEY"] ?? Environment.GetEnvironmentVariable("XAI_API_KEY") ?? string.Empty;
         _isConfigured = !string.IsNullOrEmpty(apiKey) && !apiKey.Contains("${XAI_API_KEY}");
     }
