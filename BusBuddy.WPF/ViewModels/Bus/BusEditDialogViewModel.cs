@@ -2,7 +2,7 @@ using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows.Input;
 using BusBuddy.WPF.Commands;
-using BusBuddy.Core.Models;
+using BusBuddy.Core.Domain;
 
 namespace BusBuddy.WPF.ViewModels.BusManagement
 {

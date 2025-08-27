@@ -47,9 +47,7 @@
         TitleTextAlignment="Center"
         IconAlignment="Left"
         ResizeBorderBrush="{DynamicResource BusBuddy.Brush.Primary}"
-        UseNativeChrome="False"
-        ShowMaximizeButton="True"
-        ShowMinimizeButton="True">
+    UseNativeChrome="False">
 
     <!-- Theme resources are managed in App.xaml using Syncfusion FluentDark/FluentLight themes -->
 
@@ -451,19 +449,13 @@
             - DocumentContainerStyle: Professional document tab styling
             - AnimationController: Smooth transitions and animations
         -->
-        <syncfusion:DockingManager Name="MainDockingManager"
-                                   UseDocumentContainer="True"
-                                   PersistState="True"
-                                   ContainerMode="TDI"
-                                   DocumentContainerStyle="VS2010"
-                                   AnimationEnabled="True"
-                                   AutoHideAnimationMode="Slide"
-                                   DockFill="True"
-                                   ShowAutoHideButton="True"
-                                   ShowMaximizeButton="True"
-                                   ShowMinimizeButton="True"
-                                   ShowPinButton="True"
-                                   Grid.Row="1">
+    <syncfusion:DockingManager Name="MainDockingManager"
+                   UseDocumentContainer="True"
+                   PersistState="True"
+                   ContainerMode="TDI"
+                   AutoHideAnimationMode="Slide"
+                   DockFill="True"
+                   Grid.Row="1">
 
             <!-- DockingManager Resources: Custom templates and enhanced styling -->
             <syncfusion:DockingManager.Resources>
@@ -491,7 +483,6 @@
                 
                 <!-- AutoHidden Tab Style: Professional appearance for auto-hidden tabs -->
                 <Style x:Key="AutoHiddenTabStyle" TargetType="ContentPresenter">
-                    <Setter Property="Background" Value="{DynamicResource BusBuddy.Brush.Control.Background}"/>
                     <Setter Property="TextBlock.Foreground" Value="{DynamicResource BusBuddy.Brush.Control.Text}"/>
                 </Style>
             </syncfusion:DockingManager.Resources>
@@ -513,7 +504,7 @@
                             syncfusion:DockingManager.SideInDockedMode="Left"
                             syncfusion:DockingManager.DesiredWidthInDockedMode="350"
                             syncfusion:DockingManager.DesiredHeightInDockedMode="400"
-                            syncfusion:DockingManager.SizetoContentInDock="True"
+                            
                             syncfusion:DockingManager.CanAutoHide="True"
                             syncfusion:DockingManager.CanClose="False"
                             syncfusion:DockingManager.CanFloat="True"
@@ -611,7 +602,7 @@
                             syncfusion:DockingManager.SideInDockedMode="Right"
                             syncfusion:DockingManager.DesiredWidthInDockedMode="420"
                             syncfusion:DockingManager.DesiredHeightInDockedMode="500"
-                            syncfusion:DockingManager.SizetoContentInDock="False"
+                            
                             syncfusion:DockingManager.CanAutoHide="True"
                             syncfusion:DockingManager.CanClose="False"
                             syncfusion:DockingManager.CanFloat="True"
@@ -836,51 +827,57 @@
 
                     <!-- Enhanced Fleet Management Action Buttons -->
                     <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,15,0,0">
-                        <syncfusion:ButtonAdv Label="➕ Add Bus" 
-                                              Margin="0,0,10,0" 
+                        <syncfusion:ButtonAdv Label="➕ Add Bus"
+                                              Margin="0,0,10,0"
                                               Padding="14,8"
-                                              Background="{DynamicResource BusBuddy.Brush.Primary}" 
-                                              Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}" 
+                                              Background="{DynamicResource BusBuddy.Brush.Primary}"
+                                              Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"
                                               BorderThickness="0"
                                               CornerRadius="4"
                                               Command="{Binding AddBusCommand}"
-                                              FontSize="13" 
+                                              FontSize="13"
                                               FontWeight="SemiBold"
                                               ToolTip="Add a new bus to the fleet with detailed specifications"
                                               AutomationProperties.Name="Add New Bus"
                                               SmallIcon="pack://application:,,,/BusBuddy.WPF;component/Resources/bus-add-icon.png"
                                               SizeMode="Normal"/>
-                        <syncfusion:ButtonAdv Label="🔧 Maintenance" 
-                                              Margin="0,0,10,0" 
+                        <syncfusion:ButtonAdv Label="🔧 Maintenance"
+                                              Margin="0,0,10,0"
                                               Padding="14,8"
-                                              Background="{DynamicResource BusBuddy.Brush.Warning}" 
-                                              Foreground="{DynamicResource BusBuddy.Brush.Text.Warning}" 
+                                              Background="{DynamicResource BusBuddy.Brush.Warning}"
+                                              Foreground="{DynamicResource BusBuddy.Brush.Text.Warning}"
                                               BorderThickness="0"
                                               CornerRadius="4"
                                               Command="{Binding MaintenanceCommand}"
-                                              FontSize="13" 
+                                              FontSize="13"
                                               FontWeight="SemiBold"
                                               ToolTip="Schedule and track comprehensive bus maintenance operations"
                                               AutomationProperties.Name="Bus Maintenance"
                                               SmallIcon="pack://application:,,,/BusBuddy.WPF;component/Resources/maintenance-icon.png"
                                               SizeMode="Normal"/>
-                        <syncfusion:ButtonAdv Label="📊 Fleet Report" 
+                        <syncfusion:ButtonAdv Label="📊 Fleet Report"
+                                              Margin="0,0,10,0"
                                               Padding="14,8"
-                                              Background="{DynamicResource BusBuddy.Brush.Success}" 
-                                              Foreground="{DynamicResource BusBuddy.Brush.Text.Success}" 
+                                              Background="{DynamicResource BusBuddy.Brush.Success}"
+                                              Foreground="{DynamicResource BusBuddy.Brush.Text.Success}"
                                               BorderThickness="0"
                                               CornerRadius="4"
                                               Command="{Binding FleetReportCommand}"
-                                              FontSize="13" 
+                                              FontSize="13"
                                               FontWeight="SemiBold"
                                               ToolTip="Generate comprehensive fleet performance and utilization reports"
                                               AutomationProperties.Name="Generate Fleet Report"
                                               SmallIcon="pack://application:,,,/BusBuddy.WPF;component/Resources/report-icon.png"
                                               SizeMode="Normal"/>
-                    </StackPanel>
-                        <syncfusion:ButtonAdv Label="📊 Fleet Status" Padding="12,6"
-                                              Background="{DynamicResource ButtonBackgroundBrush}" Foreground="{DynamicResource ButtonForegroundBrush}" BorderThickness="0"
+                        <syncfusion:ButtonAdv Label="📊 Fleet Status"
+                                              Padding="14,8"
+                                              Background="{DynamicResource ButtonBackgroundBrush}"
+                                              Foreground="{DynamicResource ButtonForegroundBrush}"
+                                              BorderThickness="0"
+                                              CornerRadius="4"
                                               Command="{Binding FleetStatusCommand}"
+                                              FontSize="13"
+                                              FontWeight="SemiBold"
                                               ToolTip="View current fleet status and availability"
                                               AutomationProperties.Name="Fleet Status Overview"/>
                     </StackPanel>

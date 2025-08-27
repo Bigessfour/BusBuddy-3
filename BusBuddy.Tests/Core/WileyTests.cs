@@ -9,7 +9,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using NUnit.Framework;
 using BusBuddy.Core.Data;
-using BusBuddy.Core.Models;
+using BusBuddy.Core.Domain;
 using BusBuddy.Core.Services;
 
 namespace BusBuddy.Tests.Core
@@ -77,7 +77,7 @@ namespace BusBuddy.Tests.Core
 
             var bus = Context.Buses.FirstOrDefault(v => v.BusNumber == "17");
             Assert.That(bus, Is.Not.Null, "Bus #17 must exist");
-            var assignedCount = await _busService!.GetAssignedStudentCountAsync(Context, bus!.VehicleId);
+            var assignedCount = await _busService!.GetAssignedStudentCountAsync(Context, bus!.BusId);
 
             Assert.That(assignedCount, Is.LessThanOrEqualTo(bus.SeatingCapacity));
         }

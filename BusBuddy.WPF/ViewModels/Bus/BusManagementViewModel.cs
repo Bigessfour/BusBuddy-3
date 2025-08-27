@@ -1,4 +1,4 @@
-using BusBuddy.Core.Models;
+using BusBuddy.Core.Domain;
 using BusBuddy.Core.Services;
 using BusBuddy.Core.Services.Interfaces;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -18,10 +18,10 @@ namespace BusBuddy.WPF.ViewModels.BusManagement
 
 
         [ObservableProperty]
-        private ObservableCollection<BusBuddy.Core.Models.Bus> _buses;
+        private ObservableCollection<BusBuddy.Core.Domain.Bus> _buses;
 
         [ObservableProperty]
-        private BusBuddy.Core.Models.Bus _selectedBus;
+        private BusBuddy.Core.Domain.Bus _selectedBus;
 
         [ObservableProperty]
         private int _currentPage = 1;
@@ -57,8 +57,8 @@ namespace BusBuddy.WPF.ViewModels.BusManagement
         public BusManagementViewModel(IBusService busService)
         {
             _busService = busService;
-            _buses = new ObservableCollection<BusBuddy.Core.Models.Bus>();
-            _selectedBus = new BusBuddy.Core.Models.Bus();
+            _buses = new ObservableCollection<BusBuddy.Core.Domain.Bus>();
+            _selectedBus = new BusBuddy.Core.Domain.Bus();
 
             LoadBusesCommand = new AsyncRelayCommand(LoadBusesAsync);
             AddBusCommand = new AsyncRelayCommand(AddBusAsync);
@@ -183,7 +183,7 @@ namespace BusBuddy.WPF.ViewModels.BusManagement
             try
             {
                 // Create a new bus instance
-                var newBus = new BusBuddy.Core.Models.Bus
+                var newBus = new BusBuddy.Core.Domain.Bus
                 {
                     Status = "Active",
                     Year = DateTime.Now.Year
@@ -367,7 +367,7 @@ namespace BusBuddy.WPF.ViewModels.BusManagement
             return SelectedBus != null && SelectedBus.BusId != 0 && !IsBusy;
         }
 
-        partial void OnSelectedBusChanged(BusBuddy.Core.Models.Bus value)
+        partial void OnSelectedBusChanged(BusBuddy.Core.Domain.Bus value)
         {
             (UpdateBusCommand as IRelayCommand)?.NotifyCanExecuteChanged();
             (DeleteBusCommand as IRelayCommand)?.NotifyCanExecuteChanged();

@@ -1,6 +1,6 @@
 using System.Net.Http;
 using System.Net.Http.Headers;
-using BusBuddy.Core.Models;
+using BusBuddy.Core.Domain;
 using BusBuddy.Core.Services.Interfaces;
 
 namespace BusBuddy.Core.Services

@@ -1,4 +1,4 @@
-#Requires -Version 7.5
+﻿#Requires -Version 7.5
 #Requires -Modules Global-SecureApiManager
 
 [CmdletBinding(SupportsShouldProcess)]
@@ -52,6 +52,19 @@ function Write-ColorOutput {
     }
 }
 
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.EXAMPLE
+${3:An example}
+
+.NOTES
+${4:General notes}
+#>
 function Test-GrokEnvironment {
     Write-ColorOutput "🔍 Validating Grok-4 Environment..." "Cyan"
 
@@ -70,7 +83,7 @@ function Test-GrokEnvironment {
 
     # Check Node.js
     try {
-        $nodeVersion = node --version 2>$null
+        $nodeVersion = Node --version 2>$null
         Write-ColorOutput "✅ Node.js: $nodeVersion" "Green"
     } catch {
         Write-ColorOutput "❌ Node.js not found" "Red"
@@ -89,6 +102,22 @@ function Test-GrokEnvironment {
     return $true
 }
 
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER TestQuery
+${3:Parameter description}
+
+.EXAMPLE
+${4:An example}
+
+.NOTES
+${5:General notes}
+#>
 function Start-GrokInteractiveTest {
     [CmdletBinding(SupportsShouldProcess)]
     param(
@@ -166,6 +195,19 @@ function Start-GrokInteractiveTest {
     }
 }
 
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.EXAMPLE
+${3:An example}
+
+.NOTES
+${4:General notes}
+#>
 function Show-GrokRecommendation {
     Write-ColorOutput "`n🎯 Grok-4 Integration Recommendations:" "Magenta"
     Write-ColorOutput "=====================================" "Magenta"
@@ -208,7 +250,7 @@ try {
 
     if ($TestOnly) {
         Write-ColorOutput "✅ Environment validation passed - Grok-4 MCP ready!" "Green"
-    Show-GrokRecommendation
+        Show-GrokRecommendation
         exit 0
     }
 

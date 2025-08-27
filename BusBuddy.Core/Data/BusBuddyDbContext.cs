@@ -1,13 +1,12 @@
-using System.Linq.Expressions;
 using System.IO;
-using BusBuddy.Core.Models;
-using BusBuddy.Core.Models.Trips;
+using System.Text.RegularExpressions;
+using BusBuddy.Core.Domain;
+using BusBuddy.Core.Domain.Trips;
+using BusBuddy.Core.Utilities;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Serilog;
 using Serilog.Context;
-using Microsoft.Extensions.Configuration; // Added for dynamic configuration
-using BusBuddy.Core.Utilities; // For JsonDataImporter in seeding (deprecated for MVP)
-using System.Text.RegularExpressions;
 
 namespace BusBuddy.Core.Data;
 /// <summary>
@@ -25,7 +24,7 @@ public class BusBuddyDbContext : DbContext
         ArgumentNullException.ThrowIfNull(context);
         ArgumentNullException.ThrowIfNull(seedAction);
         seedAction(context);
-        context.SaveChanges();
+        _ = context.SaveChanges();
     }
 
     /// <summary>
@@ -39,12 +38,8 @@ public class BusBuddyDbContext : DbContext
 
     public BusBuddyDbContext(DbContextOptions<BusBuddyDbContext> options) : base(options)
     {
-        // Configure EF Core to detect and report threading issues
-        this.ChangeTracker.LazyLoadingEnabled = false;
-        this.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
-
-    // Keep automatic change detection enabled to ensure reliability across providers and tests
-    // (Perf tuning can reintroduce targeted optimizations post-MVP.)
+        // Configure EF Core tracking behavior for better performance
+        ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
     }
 
     /// <summary>
@@ -95,162 +90,102 @@ public class BusBuddyDbContext : DbContext
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
         ArgumentNullException.ThrowIfNull(optionsBuilder);
-        if (!optionsBuilder.IsConfigured)
+
+        if (optionsBuilder.IsConfigured)
+            return;
+
+        var logger = Log.ForContext<BusBuddyDbContext>();
+        logger.Information("Starting DbContext configuration");
+
+        try
         {
-            var logger = Log.ForContext<BusBuddyDbContext>();
-            logger.Information("Starting DbContext configuration (dynamic)");
-
-            // 1. Environment variable hard override (preferred)
-            var envOverride = Environment.GetEnvironmentVariable("BUSBUDDY_CONNECTION");
-            if (!string.IsNullOrWhiteSpace(envOverride))
-            {
-                logger.Information("Using BUSBUDDY_CONNECTION environment override");
-                optionsBuilder
-                    .UseSqlServer(envOverride, sql =>
-                    {
-                        sql.CommandTimeout(60);
-                        sql.EnableRetryOnFailure();
-                    })
-                    // EF Core 9 seeding: seed only when DB is empty
-                    .UseSeeding((ctx, _) =>
-                    {
-                        try
-                        {
-                            // Deprecated (MVP): Disable JSON seeding path
-                            // JsonDataImporter.SeedDatabaseIfEmptyAsync((BusBuddyDbContext)ctx).GetAwaiter().GetResult();
-                        }
-                        catch (Exception ex)
-                        {
-                            Log.ForContext<BusBuddyDbContext>().Warning(ex, "Seeding (UseSeeding) failed");
-                        }
-                    })
-                    .UseAsyncSeeding(async (ctx, _, token) =>
-                    {
-                        // JSON seeding disabled for MVP; avoid warning for empty async lambda
-                        await Task.CompletedTask;
-                        try
-                        {
-                            // Deprecated (MVP): Disable JSON seeding path
-                            // await JsonDataImporter.SeedDatabaseIfEmptyAsync((BusBuddyDbContext)ctx);
-                        }
-                        catch (Exception ex)
-                        {
-                            Log.ForContext<BusBuddyDbContext>().Warning(ex, "Async seeding (UseAsyncSeeding) failed");
-                        }
-                    });
-                ConfigureEfLogging(optionsBuilder);
-                return;
-            }
-
-            // 2. Try to get connection from appsettings (try BusBuddyDb first, then DefaultConnection)
-            try
-            {
-                var environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production";
-                var configBuilder = new ConfigurationBuilder()
-                    .SetBasePath(Directory.GetCurrentDirectory())
-                    .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
-                    .AddJsonFile($"appsettings.{environment}.json", optional: true)
-                    .AddEnvironmentVariables();
-                var config = configBuilder.Build();
-
-                // Try BusBuddyDb first, then DefaultConnection
-                var connString = config.GetConnectionString("BusBuddyDb") ?? config.GetConnectionString("DefaultConnection");
-                // Expand placeholders like ${VAR} and %VAR%
-                string ExpandPlaceholders(string? cs)
-                {
-                    if (string.IsNullOrWhiteSpace(cs)) return string.Empty;
-                    // First expand %VAR% style
-                    var expanded = Environment.ExpandEnvironmentVariables(cs);
-                    // Then expand ${VAR} style
-                    expanded = Regex.Replace(expanded, @"\$\{(?<name>[A-Za-z0-9_]+)\}", match =>
-                    {
-                        var name = match.Groups["name"].Value;
-                        var value = Environment.GetEnvironmentVariable(name);
-                        return value ?? match.Value; // leave placeholder if not found
-                    });
-                    return expanded;
-                }
-
-                var expandedConn = ExpandPlaceholders(connString);
-                if (!string.IsNullOrWhiteSpace(connString))
-                {
-                    logger.Information("Using connection string from appsettings: {ConnectionName}",
-                        config.GetConnectionString("BusBuddyDb") != null ? "BusBuddyDb" : "DefaultConnection");
-                    if (!string.Equals(connString, expandedConn, StringComparison.Ordinal))
-                    {
-                        logger.Information("Expanded environment variables in connection string");
-                    }
-                    optionsBuilder
-                        .UseSqlServer(expandedConn, sqlOptions =>
-                        {
-                            sqlOptions.EnableRetryOnFailure(5, TimeSpan.FromSeconds(10), new[] { 40613, 40501, 40197, 10928, 10929, 10060, 10054, 10053 });
-                            sqlOptions.CommandTimeout(60);
-                        })
-                        .UseSeeding((ctx, _) =>
-                        {
-                            try
-                            {
-                                // Deprecated (MVP): Disable JSON seeding path
-                                // JsonDataImporter.SeedDatabaseIfEmptyAsync((BusBuddyDbContext)ctx).GetAwaiter().GetResult();
-                            }
-                            catch (Exception ex)
-                            {
-                                Log.ForContext<BusBuddyDbContext>().Warning(ex, "Seeding (UseSeeding) failed");
-                            }
-                        })
-                        .UseAsyncSeeding(async (ctx, _, token) =>
-                        {
-                            await Task.CompletedTask; // MVP: disabled JSON seeding
-                            try
-                            {
-                                // Deprecated (MVP): Disable JSON seeding path
-                                // await JsonDataImporter.SeedDatabaseIfEmptyAsync((BusBuddyDbContext)ctx);
-                            }
-                            catch (Exception ex)
-                            {
-                                Log.ForContext<BusBuddyDbContext>().Warning(ex, "Async seeding (UseAsyncSeeding) failed");
-                            }
-                        });
-                    ConfigureEfLogging(optionsBuilder);
-                    return;
-                }
-            }
-            catch (Exception ex)
-            {
-                logger.Warning(ex, "Failed to load connection string from appsettings");
-            }
-
-            // Fallback to LocalDB (EF Core config guidance)
-            UseLocalDbFallback(optionsBuilder, logger);
-            // Attach seeding for LocalDB fallback as well
-            optionsBuilder
-                .UseSeeding((ctx, _) =>
-                {
-                    try
-                    {
-                        // Deprecated (MVP): Disable JSON seeding path
-                        // JsonDataImporter.SeedDatabaseIfEmptyAsync((BusBuddyDbContext)ctx).GetAwaiter().GetResult();
-                    }
-                    catch (Exception ex)
-                    {
-                        Log.ForContext<BusBuddyDbContext>().Warning(ex, "Seeding (UseSeeding) failed");
-                    }
-                })
-                .UseAsyncSeeding(async (ctx, _, token) =>
-                {
-                    await Task.CompletedTask; // MVP: disabled JSON seeding
-                    try
-                    {
-                        // Deprecated (MVP): Disable JSON seeding path
-                        // await JsonDataImporter.SeedDatabaseIfEmptyAsync((BusBuddyDbContext)ctx);
-                    }
-                    catch (Exception ex)
-                    {
-                        Log.ForContext<BusBuddyDbContext>().Warning(ex, "Async seeding (UseAsyncSeeding) failed");
-                    }
-                });
-            ConfigureEfLogging(optionsBuilder);
+            var connectionString = GetConnectionString(logger);
+            ConfigureDatabase(optionsBuilder, connectionString, logger);
         }
+        catch (Exception ex)
+        {
+            logger.Warning(ex, "Failed to configure database connection, falling back to LocalDB");
+            UseLocalDbFallback(optionsBuilder, logger);
+        }
+    }
+
+    private static string GetConnectionString(ILogger logger)
+    {
+        // 1. Environment variable override (highest priority) — simple and fast escape path
+        var envOverride = Environment.GetEnvironmentVariable("BUSBUDDY_CONNECTION");
+        if (!string.IsNullOrWhiteSpace(envOverride))
+        {
+            logger.Information("Using BUSBUDDY_CONNECTION environment override");
+            return ExpandEnvironmentVariables(envOverride, logger);
+        }
+
+        // 2. Load configuration (base + environment specific + environment variables)
+        var environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production";
+        var config = new ConfigurationBuilder()
+            .SetBasePath(Directory.GetCurrentDirectory())
+            .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
+            .AddJsonFile($"appsettings.{environment}.json", optional: true)
+            .AddEnvironmentVariables()
+            .Build();
+
+    var raw = config.GetConnectionString("BusBuddyDb") ?? config.GetConnectionString("DefaultConnection");
+        if (!string.IsNullOrWhiteSpace(raw))
+        {
+            var chosen = config.GetConnectionString("BusBuddyDb") != null ? "BusBuddyDb" : "DefaultConnection";
+            logger.Information("Using connection string from configuration: {ConnectionName}", chosen);
+            return ExpandEnvironmentVariables(raw, logger);
+    }
+
+        // Nothing found — log diagnostic details then throw
+        var busBuddyDb = config.GetConnectionString("BusBuddyDb");
+        var defaultConn = config.GetConnectionString("DefaultConnection");
+        logger.Warning("Missing connection strings: BusBuddyDb={BusBuddyDb}, DefaultConnection={DefaultConnection}", busBuddyDb, defaultConn);
+        throw new InvalidOperationException("No valid connection string found in configuration");
+    }
+
+    private static string ExpandEnvironmentVariables(string connectionString, ILogger logger)
+    {
+        if (string.IsNullOrWhiteSpace(connectionString))
+            return string.Empty;
+
+    var expanded = Environment.ExpandEnvironmentVariables(connectionString); // expand %VAR% style
+
+        // Expand ${VAR} style variables
+        expanded = Regex.Replace(expanded, @"\$\{(?<name>[A-Za-z0-9_]+)\}", match =>
+        {
+            var name = match.Groups["name"].Value;
+            var value = Environment.GetEnvironmentVariable(name);
+            return value ?? match.Value;
+        });
+
+        if (!string.Equals(connectionString, expanded, StringComparison.Ordinal))
+        {
+            logger.Information("Expanded environment variables in connection string");
+        }
+
+        return expanded;
+    }
+
+    private static void ConfigureDatabase(DbContextOptionsBuilder optionsBuilder, string connectionString, ILogger logger)
+    {
+        _ = optionsBuilder.UseSqlServer(connectionString, sqlOptions =>
+        {
+            _ = sqlOptions.CommandTimeout(60);
+            // Note: EnableRetryOnFailure removed for EF Core 9 compatibility - will be re-added after research
+        });
+
+        // Seeding temporarily disabled for fresh start
+        // ConfigureSeedingIfNeeded(optionsBuilder);
+        ConfigureEfLogging(optionsBuilder);
+    }
+
+    private static void ConfigureSeedingIfNeeded(DbContextOptionsBuilder optionsBuilder)
+    {
+        if (SkipGlobalSeedData)
+            return;
+
+        // Seeding configuration will be implemented after EF Core 9 compatibility is resolved
+        // For now, focusing on clean migration setup
     }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -258,18 +193,17 @@ public class BusBuddyDbContext : DbContext
         ArgumentNullException.ThrowIfNull(modelBuilder);
 
         // ActivityLog entity
-        modelBuilder.Entity<ActivityLog>(entity =>
+        _ = modelBuilder.Entity<ActivityLog>(entity =>
         {
-            entity.ToTable("ActivityLogs");
-            entity.HasKey(e => e.Id);
-            entity.Property(e => e.Timestamp).IsRequired();
-            entity.Property(e => e.Action).IsRequired().HasMaxLength(200);
-            entity.Property(e => e.User).IsRequired().HasMaxLength(100);
-            entity.Property(e => e.Details).HasMaxLength(1000);
+            _ = entity.ToTable("ActivityLogs");
+            _ = entity.HasKey(e => e.Id);
+            _ = entity.Property(e => e.Timestamp).IsRequired();
+            _ = entity.Property(e => e.Action).IsRequired().HasMaxLength(200);
+            _ = entity.Property(e => e.User).IsRequired().HasMaxLength(100);
+            _ = entity.Property(e => e.Details).HasMaxLength(1000);
 
             // Add index on Timestamp for better query performance
-            entity.HasIndex(e => e.Timestamp)
-                .HasDatabaseName("IX_ActivityLogs_Timestamp")
+            _ = entity.HasIndex(e => e.Timestamp)
                 .IsDescending();
         });
 
@@ -283,348 +217,350 @@ public class BusBuddyDbContext : DbContext
         // Configure global NULL handling for better error resilience
         ConfigureNullHandling(modelBuilder);
 
-        // Configure Bus entity (mapped to legacy Vehicles table)
-        modelBuilder.Entity<Bus>(entity =>
+        // Configure Bus entity with proper table name
+        _ = modelBuilder.Entity<Bus>(entity =>
         {
-            entity.ToTable("Vehicles"); // Map Bus entity to existing Vehicles table
-            entity.HasKey(e => e.BusId); // New CLR key
-            entity.Property(e => e.BusId).HasColumnName("VehicleId"); // Legacy column name
+            _ = entity.ToTable("Buses"); // Use proper Buses table name
+            _ = entity.HasKey(e => e.BusId); // Primary key
 
             // Properties with validation and constraints
-            entity.Property(e => e.BusNumber).IsRequired().HasMaxLength(20);
-            entity.Property(e => e.VINNumber).IsRequired().HasMaxLength(17).HasColumnName("VIN");
-            entity.Property(e => e.LicenseNumber).IsRequired().HasMaxLength(20);
-            entity.Property(e => e.Make).IsRequired().HasMaxLength(50);
-            entity.Property(e => e.Model).IsRequired().HasMaxLength(50);
-            entity.Property(e => e.Status).HasMaxLength(20).HasDefaultValue("Active");
-            entity.Property(e => e.FleetType).HasMaxLength(20);
-            entity.Property(e => e.FuelType).HasMaxLength(20);
-            entity.Property(e => e.Department).HasMaxLength(50);
-            entity.Property(e => e.GPSDeviceId).HasMaxLength(100);
+            _ = entity.Property(e => e.BusNumber).IsRequired().HasMaxLength(20);
+            _ = entity.Property(e => e.VINNumber).IsRequired().HasMaxLength(17);
+            _ = entity.Property(e => e.LicenseNumber).IsRequired().HasMaxLength(20);
+            _ = entity.Property(e => e.Make).IsRequired().HasMaxLength(50);
+            _ = entity.Property(e => e.Model).IsRequired().HasMaxLength(50);
+            _ = entity.Property(e => e.Status).HasMaxLength(20).HasDefaultValue("Active");
+            _ = entity.Property(e => e.FleetType).HasMaxLength(20);
+            _ = entity.Property(e => e.FuelType).HasMaxLength(20);
+            _ = entity.Property(e => e.Department).HasMaxLength(50);
+            _ = entity.Property(e => e.GPSDeviceId).HasMaxLength(100);
 
             // Decimal properties with precision
-            entity.Property(e => e.PurchasePrice).HasColumnType("decimal(10,2)");
-            entity.Property(e => e.FuelCapacity).HasColumnType("decimal(8,2)");
-            entity.Property(e => e.MilesPerGallon).HasColumnType("decimal(6,2)");
+            _ = entity.Property(e => e.PurchasePrice).HasColumnType("decimal(10,2)");
+            _ = entity.Property(e => e.FuelCapacity).HasColumnType("decimal(8,2)");
+            _ = entity.Property(e => e.MilesPerGallon).HasColumnType("decimal(6,2)");
 
             // Text properties
-            entity.Property(e => e.InsurancePolicyNumber).HasMaxLength(100);
-            entity.Property(e => e.SpecialEquipment).HasMaxLength(1000);
-            entity.Property(e => e.Notes).HasMaxLength(1000);
+            _ = entity.Property(e => e.InsurancePolicyNumber).HasMaxLength(100);
+            _ = entity.Property(e => e.SpecialEquipment).HasMaxLength(1000);
+            _ = entity.Property(e => e.Notes).HasMaxLength(1000);
 
             // Audit fields
-            entity.Property(e => e.CreatedBy).HasMaxLength(100);
-            entity.Property(e => e.UpdatedBy).HasMaxLength(100);
-            entity.Property(e => e.CreatedDate).HasDefaultValueSql("GETUTCDATE()");
+            _ = entity.Property(e => e.CreatedBy).HasMaxLength(100);
+            _ = entity.Property(e => e.UpdatedBy).HasMaxLength(100);
+            _ = entity.Property(e => e.CreatedDate).HasDefaultValueSql("GETUTCDATE()");
 
-            // Unique constraints
-            entity.HasIndex(e => e.BusNumber).IsUnique().HasDatabaseName("IX_Vehicles_BusNumber");
-            entity.HasIndex(e => e.VINNumber).IsUnique().HasDatabaseName("IX_Vehicles_VINNumber");
-            entity.HasIndex(e => e.LicenseNumber).IsUnique().HasDatabaseName("IX_Vehicles_LicenseNumber");
+            // Unique constraints (indexes enforcing uniqueness)
+            _ = entity.HasIndex(e => e.BusNumber).IsUnique(); // IX_Buses_BusNumber
+            _ = entity.HasIndex(e => e.VINNumber).IsUnique(); // IX_Buses_VINNumber
+            _ = entity.HasIndex(e => e.LicenseNumber).IsUnique(); // IX_Buses_LicenseNumber
 
             // Performance indexes
-            entity.HasIndex(e => e.Status).HasDatabaseName("IX_Vehicles_Status");
-            entity.HasIndex(e => e.DateLastInspection).HasDatabaseName("IX_Vehicles_DateLastInspection");
-            entity.HasIndex(e => e.InsuranceExpiryDate).HasDatabaseName("IX_Vehicles_InsuranceExpiryDate");
-            entity.HasIndex(e => e.FleetType).HasDatabaseName("IX_Vehicles_FleetType");
-            entity.HasIndex(e => new { e.Make, e.Model, e.Year }).HasDatabaseName("IX_Vehicles_MakeModelYear");
+            _ = entity.HasIndex(e => e.Status); // IX_Buses_Status
+            _ = entity.HasIndex(e => e.DateLastInspection); // IX_Buses_DateLastInspection
+            _ = entity.HasIndex(e => e.InsuranceExpiryDate); // IX_Buses_InsuranceExpiryDate
+            _ = entity.HasIndex(e => e.FleetType); // IX_Buses_FleetType
+            _ = entity.HasIndex(e => new { e.Make, e.Model, e.Year }); // IX_Buses_MakeModelYear
+            // EF Core index additions (post-refactor) — documentation pattern: https://learn.microsoft.com/ef/core/modeling/indexes
+            _ = entity.HasIndex(e => e.Department); // IX_Buses_Department
+            _ = entity.HasIndex(e => new { e.Status, e.Department }); // IX_Buses_StatusDepartment composite for filtered queries
 
             // Geo columns
-            entity.Property(e => e.CurrentLatitude).HasColumnType("decimal(10,8)");
-            entity.Property(e => e.CurrentLongitude).HasColumnType("decimal(11,8)");
-            entity.HasIndex(e => new { e.CurrentLatitude, e.CurrentLongitude }).HasDatabaseName("IX_Vehicles_CurrentLocation");
+            _ = entity.Property(e => e.CurrentLatitude).HasColumnType("decimal(10,8)");
+            _ = entity.Property(e => e.CurrentLongitude).HasColumnType("decimal(11,8)");
+            _ = entity.HasIndex(e => new { e.CurrentLatitude, e.CurrentLongitude }); // IX_Buses_CurrentLocation
         });
 
         // Configure Driver entity with enhanced features
-        modelBuilder.Entity<Driver>(entity =>
+        _ = modelBuilder.Entity<Driver>(entity =>
         {
-            entity.ToTable("Drivers");
-            entity.HasKey(e => e.DriverId);
-            entity.Property(e => e.DriverId).HasColumnName("DriverID");
+            _ = entity.ToTable("Drivers");
+            _ = entity.HasKey(e => e.DriverId);
+            _ = entity.Property(e => e.DriverId).HasColumnName("DriverID");
 
             // Properties
-            entity.Property(e => e.DriverName).IsRequired().HasMaxLength(100);
-            entity.Property(e => e.DriverPhone).HasMaxLength(20);
-            entity.Property(e => e.DriverEmail).HasMaxLength(100);
-            entity.Property(e => e.DriversLicenceType).HasMaxLength(20).HasColumnName("DriversLicenseType");
-            entity.Property(e => e.Address).HasMaxLength(200);
-            entity.Property(e => e.City).HasMaxLength(50);
-            entity.Property(e => e.State).HasMaxLength(20);
-            entity.Property(e => e.Zip).HasMaxLength(10);
-            entity.Property(e => e.EmergencyContactName).HasMaxLength(100);
-            entity.Property(e => e.EmergencyContactPhone).HasMaxLength(20);
-            entity.Property(e => e.Notes).HasMaxLength(1000);
+            _ = entity.Property(e => e.DriverName).IsRequired().HasMaxLength(100);
+            _ = entity.Property(e => e.DriverPhone).HasMaxLength(20);
+            _ = entity.Property(e => e.DriverEmail).HasMaxLength(100);
+            _ = entity.Property(e => e.DriversLicenceType).HasMaxLength(20).HasColumnName("DriversLicenseType");
+            _ = entity.Property(e => e.Address).HasMaxLength(200);
+            _ = entity.Property(e => e.City).HasMaxLength(50);
+            _ = entity.Property(e => e.State).HasMaxLength(20);
+            _ = entity.Property(e => e.Zip).HasMaxLength(10);
+            _ = entity.Property(e => e.EmergencyContactName).HasMaxLength(100);
+            _ = entity.Property(e => e.EmergencyContactPhone).HasMaxLength(20);
+            _ = entity.Property(e => e.Notes).HasMaxLength(1000);
 
             // Audit fields
-            entity.Property(e => e.CreatedBy).HasMaxLength(100);
-            entity.Property(e => e.UpdatedBy).HasMaxLength(100);
-            entity.Property(e => e.CreatedDate).HasDefaultValueSql("GETUTCDATE()");
+            _ = entity.Property(e => e.CreatedBy).HasMaxLength(100);
+            _ = entity.Property(e => e.UpdatedBy).HasMaxLength(100);
+            _ = entity.Property(e => e.CreatedDate).HasDefaultValueSql("GETUTCDATE()");
 
             // Indexes
-            entity.HasIndex(e => e.DriverEmail).HasDatabaseName("IX_Drivers_Email");
-            entity.HasIndex(e => e.DriverPhone).HasDatabaseName("IX_Drivers_Phone");
-            entity.HasIndex(e => e.DriversLicenceType).HasDatabaseName("IX_Drivers_LicenseType");
-            entity.HasIndex(e => e.LicenseExpiryDate).HasDatabaseName("IX_Drivers_LicenseExpiration");
-            entity.HasIndex(e => e.TrainingComplete).HasDatabaseName("IX_Drivers_TrainingComplete");
+            _ = entity.HasIndex(e => e.DriverEmail).HasDatabaseName("IX_Drivers_Email");
+            _ = entity.HasIndex(e => e.DriverPhone).HasDatabaseName("IX_Drivers_Phone");
+            _ = entity.HasIndex(e => e.DriversLicenceType).HasDatabaseName("IX_Drivers_LicenseType");
+            _ = entity.HasIndex(e => e.LicenseExpiryDate).HasDatabaseName("IX_Drivers_LicenseExpiration");
+            _ = entity.HasIndex(e => e.TrainingComplete).HasDatabaseName("IX_Drivers_TrainingComplete");
 
             // Geo columns
-            entity.Property(e => e.HomeLatitude).HasColumnType("decimal(10,8)");
-            entity.Property(e => e.HomeLongitude).HasColumnType("decimal(11,8)");
-            entity.HasIndex(e => new { e.HomeLatitude, e.HomeLongitude }).HasDatabaseName("IX_Drivers_HomeLocation");
+            _ = entity.Property(e => e.HomeLatitude).HasColumnType("decimal(10,8)");
+            _ = entity.Property(e => e.HomeLongitude).HasColumnType("decimal(11,8)");
+            _ = entity.HasIndex(e => new { e.HomeLatitude, e.HomeLongitude }).HasDatabaseName("IX_Drivers_HomeLocation");
         });
 
         // Configure Route entity with enhanced relationships and indexing
-        modelBuilder.Entity<Route>(entity =>
+        _ = modelBuilder.Entity<Route>(entity =>
         {
-            entity.ToTable("Routes");
-            entity.HasKey(e => e.RouteId);
-            entity.Property(e => e.RouteId).HasColumnName("RouteID");
+            _ = entity.ToTable("Routes");
+            _ = entity.HasKey(e => e.RouteId);
+            _ = entity.Property(e => e.RouteId).HasColumnName("RouteID");
 
             // Properties
-            entity.Property(e => e.RouteName).IsRequired().HasMaxLength(50);
-            entity.Property(e => e.Description).HasMaxLength(500);
+            _ = entity.Property(e => e.RouteName).IsRequired().HasMaxLength(50);
+            _ = entity.Property(e => e.Description).HasMaxLength(500);
 
             // Foreign key column mappings
-            entity.Property(e => e.AMVehicleId).HasColumnName("AMVehicleID");
-            entity.Property(e => e.AMDriverId).HasColumnName("AMDriverID");
-            entity.Property(e => e.PMVehicleId).HasColumnName("PMVehicleID");
-            entity.Property(e => e.PMDriverId).HasColumnName("PMDriverID");
+            _ = entity.Property(e => e.AMVehicleId).HasColumnName("AMVehicleID");
+            _ = entity.Property(e => e.AMDriverId).HasColumnName("AMDriverID");
+            _ = entity.Property(e => e.PMVehicleId).HasColumnName("PMVehicleID");
+            _ = entity.Property(e => e.PMDriverId).HasColumnName("PMDriverID");
 
             // Decimal properties
-            entity.Property(e => e.AMBeginMiles).HasColumnType("decimal(10,2)");
-            entity.Property(e => e.AMEndMiles).HasColumnType("decimal(10,2)");
-            entity.Property(e => e.PMBeginMiles).HasColumnType("decimal(10,2)");
-            entity.Property(e => e.PMEndMiles).HasColumnType("decimal(10,2)");
+            _ = entity.Property(e => e.AMBeginMiles).HasColumnType("decimal(10,2)");
+            _ = entity.Property(e => e.AMEndMiles).HasColumnType("decimal(10,2)");
+            _ = entity.Property(e => e.PMBeginMiles).HasColumnType("decimal(10,2)");
+            _ = entity.Property(e => e.PMEndMiles).HasColumnType("decimal(10,2)");
 
             // Configure AM relationships
-            entity.HasOne(r => r.AMVehicle)
+            _ = entity.HasOne(r => r.AMVehicle)
                   .WithMany(v => v.AMRoutes)
                   .HasForeignKey(r => r.AMVehicleId)
-                  .OnDelete(DeleteBehavior.Restrict)
+                  .OnDelete(Microsoft.EntityFrameworkCore.DeleteBehavior.Restrict)
                   .HasConstraintName("FK_Routes_AMVehicle");
 
-            entity.HasOne(r => r.AMDriver)
+            _ = entity.HasOne(r => r.AMDriver)
                   .WithMany(d => d.AMRoutes)
                   .HasForeignKey(r => r.AMDriverId)
-                  .OnDelete(DeleteBehavior.Restrict)
+                  .OnDelete(Microsoft.EntityFrameworkCore.DeleteBehavior.Restrict)
                   .HasConstraintName("FK_Routes_AMDriver");
 
             // Configure PM relationships
-            entity.HasOne(r => r.PMVehicle)
+            _ = entity.HasOne(r => r.PMVehicle)
                   .WithMany(v => v.PMRoutes)
                   .HasForeignKey(r => r.PMVehicleId)
                   .OnDelete(DeleteBehavior.Restrict)
                   .HasConstraintName("FK_Routes_PMVehicle");
 
-            entity.HasOne(r => r.PMDriver)
+            _ = entity.HasOne(r => r.PMDriver)
                   .WithMany(d => d.PMRoutes)
                   .HasForeignKey(r => r.PMDriverId)
                   .OnDelete(DeleteBehavior.Restrict)
                   .HasConstraintName("FK_Routes_PMDriver");
 
             // Indexes for performance
-            entity.HasIndex(e => e.Date).HasDatabaseName("IX_Routes_Date");
-            entity.HasIndex(e => e.RouteName).HasDatabaseName("IX_Routes_RouteName");
-            entity.HasIndex(e => new { e.Date, e.RouteName }).IsUnique().HasDatabaseName("IX_Routes_DateRouteName");
-            entity.HasIndex(e => e.AMVehicleId).HasDatabaseName("IX_Routes_AMVehicleId");
-            entity.HasIndex(e => e.PMVehicleId).HasDatabaseName("IX_Routes_PMVehicleId");
-            entity.HasIndex(e => e.AMDriverId).HasDatabaseName("IX_Routes_AMDriverId");
-            entity.HasIndex(e => e.PMDriverId).HasDatabaseName("IX_Routes_PMDriverId");
+            _ = entity.HasIndex(e => e.Date).HasDatabaseName("IX_Routes_Date");
+            _ = entity.HasIndex(e => e.RouteName).HasDatabaseName("IX_Routes_RouteName");
+            _ = entity.HasIndex(e => new { e.Date, e.RouteName }).IsUnique().HasDatabaseName("IX_Routes_DateRouteName");
+            _ = entity.HasIndex(e => e.AMVehicleId).HasDatabaseName("IX_Routes_AMVehicleId");
+            _ = entity.HasIndex(e => e.PMVehicleId).HasDatabaseName("IX_Routes_PMVehicleId");
+            _ = entity.HasIndex(e => e.AMDriverId).HasDatabaseName("IX_Routes_AMDriverId");
+            _ = entity.HasIndex(e => e.PMDriverId).HasDatabaseName("IX_Routes_PMDriverId");
 
             // Geo metadata
-            entity.Property(e => e.WaypointsJson).HasMaxLength(4000);
-            entity.Property(e => e.DistrictBoundaryShapefilePath).HasMaxLength(500);
-            entity.Property(e => e.TownBoundaryShapefilePath).HasMaxLength(500);
+            _ = entity.Property(e => e.WaypointsJson).HasMaxLength(4000);
+            _ = entity.Property(e => e.DistrictBoundaryShapefilePath).HasMaxLength(500);
+            _ = entity.Property(e => e.TownBoundaryShapefilePath).HasMaxLength(500);
         });
 
         // Configure Activity entity with comprehensive indexing
-        modelBuilder.Entity<Activity>(entity =>
+        _ = modelBuilder.Entity<Activity>(entity =>
         {
-            entity.ToTable("Activities");
-            entity.HasKey(e => e.ActivityId);
+            _ = entity.ToTable("Activities");
+            _ = entity.HasKey(e => e.ActivityId);
 
             // Properties
-            entity.Property(e => e.ActivityType).IsRequired().HasMaxLength(50);
-            entity.Property(e => e.Destination).IsRequired().HasMaxLength(200);
-            entity.Property(e => e.RequestedBy).IsRequired().HasMaxLength(100);
-            entity.Property(e => e.Status).HasMaxLength(20).HasDefaultValue("Scheduled");
-            entity.Property(e => e.Notes).HasMaxLength(500);
-            entity.Property(e => e.ActivityCategory).HasMaxLength(100);
-            entity.Property(e => e.ApprovedBy).HasMaxLength(100);
+            _ = entity.Property(e => e.ActivityType).IsRequired().HasMaxLength(50);
+            _ = entity.Property(e => e.Destination).IsRequired().HasMaxLength(200);
+            _ = entity.Property(e => e.RequestedBy).IsRequired().HasMaxLength(100);
+            _ = entity.Property(e => e.Status).HasMaxLength(20).HasDefaultValue("Scheduled");
+            _ = entity.Property(e => e.Notes).HasMaxLength(500);
+            _ = entity.Property(e => e.ActivityCategory).HasMaxLength(100);
+            _ = entity.Property(e => e.ApprovedBy).HasMaxLength(100);
 
             // Decimal properties
-            entity.Property(e => e.EstimatedCost).HasColumnType("decimal(10,2)");
-            entity.Property(e => e.ActualCost).HasColumnType("decimal(10,2)");
+            _ = entity.Property(e => e.EstimatedCost).HasColumnType("decimal(10,2)");
+            _ = entity.Property(e => e.ActualCost).HasColumnType("decimal(10,2)");
 
             // Audit fields
-            entity.Property(e => e.CreatedBy).HasMaxLength(100);
-            entity.Property(e => e.UpdatedBy).HasMaxLength(100);
-            entity.Property(e => e.CreatedDate).HasDefaultValueSql("GETUTCDATE()");
+            _ = entity.Property(e => e.CreatedBy).HasMaxLength(100);
+            _ = entity.Property(e => e.UpdatedBy).HasMaxLength(100);
+            _ = entity.Property(e => e.CreatedDate).HasDefaultValueSql("GETUTCDATE()");
 
             // Relationships
-            entity.HasOne(a => a.AssignedVehicle)
+            _ = entity.HasOne(a => a.AssignedVehicle)
                   .WithMany(v => v.Activities)
                   .HasForeignKey(a => a.AssignedVehicleId)
                   .OnDelete(DeleteBehavior.Restrict)
                   .HasConstraintName("FK_Activities_Vehicle");
 
-            entity.HasOne(a => a.Driver)
+            _ = entity.HasOne(a => a.Driver)
                   .WithMany(d => d.Activities)
                   .HasForeignKey(a => a.DriverId)
                   .OnDelete(DeleteBehavior.Restrict)
                   .HasConstraintName("FK_Activities_Driver");
 
-            entity.HasOne(a => a.Route)
+            _ = entity.HasOne(a => a.Route)
                   .WithMany()
                   .HasForeignKey(a => a.RouteId)
                   .OnDelete(DeleteBehavior.SetNull)
                   .HasConstraintName("FK_Activities_Route");
 
             // Indexes for scheduling and performance
-            entity.HasIndex(e => e.Date).HasDatabaseName("IX_Activities_Date");
-            entity.HasIndex(e => e.ActivityType).HasDatabaseName("IX_Activities_ActivityType");
-            entity.HasIndex(e => e.Status).HasDatabaseName("IX_Activities_Status");
-            entity.HasIndex(e => e.AssignedVehicleId).HasDatabaseName("IX_Activities_VehicleId");
-            entity.HasIndex(e => e.DriverId).HasDatabaseName("IX_Activities_DriverId");
-            entity.HasIndex(e => e.RouteId).HasDatabaseName("IX_Activities_RouteId");
-            entity.HasIndex(e => new { e.Date, e.LeaveTime, e.EventTime }).HasDatabaseName("IX_Activities_DateTimeRange");
-            entity.HasIndex(e => new { e.AssignedVehicleId, e.Date, e.LeaveTime }).HasDatabaseName("IX_Activities_BusSchedule");
-            entity.HasIndex(e => new { e.DriverId, e.Date, e.LeaveTime }).HasDatabaseName("IX_Activities_DriverSchedule");
-            entity.HasIndex(e => e.ApprovalRequired).HasDatabaseName("IX_Activities_ApprovalRequired");
+            _ = entity.HasIndex(e => e.Date).HasDatabaseName("IX_Activities_Date");
+            _ = entity.HasIndex(e => e.ActivityType).HasDatabaseName("IX_Activities_ActivityType");
+            _ = entity.HasIndex(e => e.Status).HasDatabaseName("IX_Activities_Status");
+            _ = entity.HasIndex(e => e.AssignedVehicleId).HasDatabaseName("IX_Activities_VehicleId");
+            _ = entity.HasIndex(e => e.DriverId).HasDatabaseName("IX_Activities_DriverId");
+            _ = entity.HasIndex(e => e.RouteId).HasDatabaseName("IX_Activities_RouteId");
+            _ = entity.HasIndex(e => new { e.Date, e.LeaveTime, e.EventTime }).HasDatabaseName("IX_Activities_DateTimeRange");
+            _ = entity.HasIndex(e => new { e.AssignedVehicleId, e.Date, e.LeaveTime }).HasDatabaseName("IX_Activities_BusSchedule");
+            _ = entity.HasIndex(e => new { e.DriverId, e.Date, e.LeaveTime }).HasDatabaseName("IX_Activities_DriverSchedule");
+            _ = entity.HasIndex(e => e.ApprovalRequired).HasDatabaseName("IX_Activities_ApprovalRequired");
         });
 
         // Configure Fuel entity
-        modelBuilder.Entity<Fuel>(entity =>
+        _ = modelBuilder.Entity<Fuel>(entity =>
         {
-            entity.ToTable("Fuel");
-            entity.HasKey(e => e.FuelId);
+            _ = entity.ToTable("Fuel");
+            _ = entity.HasKey(e => e.FuelId);
 
             // Properties
-            entity.Property(e => e.FuelLocation).HasMaxLength(100);
-            entity.Property(e => e.FuelType).HasMaxLength(20).HasDefaultValue("Gasoline");
-            entity.Property(e => e.Notes).HasMaxLength(500);
+            _ = entity.Property(e => e.FuelLocation).HasMaxLength(100);
+            _ = entity.Property(e => e.FuelType).HasMaxLength(20).HasDefaultValue("Gasoline");
+            _ = entity.Property(e => e.Notes).HasMaxLength(500);
 
             // Decimal properties with precision
-            entity.Property(e => e.Gallons).HasColumnType("decimal(8,3)");
-            entity.Property(e => e.PricePerGallon).HasColumnType("decimal(8,3)");
-            entity.Property(e => e.TotalCost).HasColumnType("decimal(10,2)");
+            _ = entity.Property(e => e.Gallons).HasColumnType("decimal(8,3)");
+            _ = entity.Property(e => e.PricePerGallon).HasColumnType("decimal(8,3)");
+            _ = entity.Property(e => e.TotalCost).HasColumnType("decimal(10,2)");
 
             // Relationships
-            entity.HasOne(f => f.Vehicle)
+            _ = entity.HasOne(f => f.Vehicle)
                   .WithMany(v => v.FuelRecords)
                   .HasForeignKey(f => f.VehicleFueledId)
                   .OnDelete(DeleteBehavior.Restrict)
                   .HasConstraintName("FK_Fuel_Vehicle");
 
             // Indexes
-            entity.HasIndex(e => e.FuelDate).HasDatabaseName("IX_Fuel_FuelDate");
-            entity.HasIndex(e => e.VehicleFueledId).HasDatabaseName("IX_Fuel_VehicleId");
-            entity.HasIndex(e => new { e.VehicleFueledId, e.FuelDate }).HasDatabaseName("IX_Fuel_VehicleDate");
-            entity.HasIndex(e => e.FuelLocation).HasDatabaseName("IX_Fuel_Location");
-            entity.HasIndex(e => e.FuelType).HasDatabaseName("IX_Fuel_Type");
+            _ = entity.HasIndex(e => e.FuelDate).HasDatabaseName("IX_Fuel_FuelDate");
+            _ = entity.HasIndex(e => e.VehicleFueledId).HasDatabaseName("IX_Fuel_VehicleId");
+            _ = entity.HasIndex(e => new { e.VehicleFueledId, e.FuelDate }).HasDatabaseName("IX_Fuel_VehicleDate");
+            _ = entity.HasIndex(e => e.FuelLocation).HasDatabaseName("IX_Fuel_Location");
+            _ = entity.HasIndex(e => e.FuelType).HasDatabaseName("IX_Fuel_Type");
         });
 
         // Configure Maintenance entity
-        modelBuilder.Entity<Maintenance>(entity =>
+        _ = modelBuilder.Entity<Maintenance>(entity =>
         {
-            entity.ToTable("Maintenance");
-            entity.HasKey(e => e.MaintenanceId);
+            _ = entity.ToTable("Maintenance");
+            _ = entity.HasKey(e => e.MaintenanceId);
 
             // Properties
-            entity.Property(e => e.MaintenanceCompleted).HasMaxLength(100);
-            entity.Property(e => e.Vendor).HasMaxLength(100);
-            entity.Property(e => e.Description).HasMaxLength(500);
-            entity.Property(e => e.Notes).HasMaxLength(1000);
-            entity.Property(e => e.Priority).HasMaxLength(20).HasDefaultValue("Normal");
+            _ = entity.Property(e => e.MaintenanceCompleted).HasMaxLength(100);
+            _ = entity.Property(e => e.Vendor).HasMaxLength(100);
+            _ = entity.Property(e => e.Description).HasMaxLength(500);
+            _ = entity.Property(e => e.Notes).HasMaxLength(1000);
+            _ = entity.Property(e => e.Priority).HasMaxLength(20).HasDefaultValue("Normal");
 
             // Decimal properties
-            entity.Property(e => e.RepairCost).HasColumnType("decimal(10,2)");
+            _ = entity.Property(e => e.RepairCost).HasColumnType("decimal(10,2)");
 
             // Audit fields
-            entity.Property(e => e.CreatedBy).HasMaxLength(100);
-            entity.Property(e => e.UpdatedBy).HasMaxLength(100);
-            entity.Property(e => e.CreatedDate).HasDefaultValueSql("GETUTCDATE()");
+            _ = entity.Property(e => e.CreatedBy).HasMaxLength(100);
+            _ = entity.Property(e => e.UpdatedBy).HasMaxLength(100);
+            _ = entity.Property(e => e.CreatedDate).HasDefaultValueSql("GETUTCDATE()");
 
             // Relationships
-            entity.HasOne(m => m.Vehicle)
+            _ = entity.HasOne(m => m.Vehicle)
                   .WithMany(v => v.MaintenanceRecords)
                   .HasForeignKey(m => m.VehicleId)
                   .OnDelete(DeleteBehavior.Restrict)
                   .HasConstraintName("FK_Maintenance_Vehicle");
 
             // Indexes
-            entity.HasIndex(e => e.Date).HasDatabaseName("IX_Maintenance_Date");
-            entity.HasIndex(e => e.VehicleId).HasDatabaseName("IX_Maintenance_VehicleId");
-            entity.HasIndex(e => e.MaintenanceCompleted).HasDatabaseName("IX_Maintenance_Type");
-            entity.HasIndex(e => new { e.VehicleId, e.Date }).HasDatabaseName("IX_Maintenance_VehicleDate");
-            entity.HasIndex(e => e.Priority).HasDatabaseName("IX_Maintenance_Priority");
+            _ = entity.HasIndex(e => e.Date).HasDatabaseName("IX_Maintenance_Date");
+            _ = entity.HasIndex(e => e.VehicleId).HasDatabaseName("IX_Maintenance_VehicleId");
+            _ = entity.HasIndex(e => e.MaintenanceCompleted).HasDatabaseName("IX_Maintenance_Type");
+            _ = entity.HasIndex(e => new { e.VehicleId, e.Date }).HasDatabaseName("IX_Maintenance_VehicleDate");
+            _ = entity.HasIndex(e => e.Priority).HasDatabaseName("IX_Maintenance_Priority");
         });
 
         // Configure Student entity
-        modelBuilder.Entity<Student>(entity =>
+        _ = modelBuilder.Entity<Student>(entity =>
         {
-            entity.ToTable("Students");
-            entity.HasKey(e => e.StudentId);
+            _ = entity.ToTable("Students");
+            _ = entity.HasKey(e => e.StudentId);
 
             // Properties
-            entity.Property(e => e.StudentName).IsRequired().HasMaxLength(100);
-            entity.Property(e => e.Grade).HasMaxLength(20);
-            entity.Property(e => e.MedicalNotes).HasMaxLength(1000);
-            entity.Property(e => e.TransportationNotes).HasMaxLength(1000);
-            entity.Property(e => e.EmergencyPhone).HasMaxLength(20);
-            entity.Property(e => e.School).HasMaxLength(100);
-            entity.Property(e => e.ParentGuardian).HasMaxLength(100);
-            entity.Property(e => e.HomeAddress).HasMaxLength(200);
-            entity.Property(e => e.City).HasMaxLength(50);
-            entity.Property(e => e.State).HasMaxLength(2);
-            entity.Property(e => e.Zip).HasMaxLength(10);
+            _ = entity.Property(e => e.StudentName).IsRequired().HasMaxLength(100);
+            _ = entity.Property(e => e.Grade).HasMaxLength(20);
+            _ = entity.Property(e => e.MedicalNotes).HasMaxLength(1000);
+            _ = entity.Property(e => e.TransportationNotes).HasMaxLength(1000);
+            _ = entity.Property(e => e.EmergencyPhone).HasMaxLength(20);
+            _ = entity.Property(e => e.School).HasMaxLength(100);
+            _ = entity.Property(e => e.ParentGuardian).HasMaxLength(100);
+            _ = entity.Property(e => e.HomeAddress).HasMaxLength(200);
+            _ = entity.Property(e => e.City).HasMaxLength(50);
+            _ = entity.Property(e => e.State).HasMaxLength(2);
+            _ = entity.Property(e => e.Zip).HasMaxLength(10);
 
             // Audit fields
-            entity.Property(e => e.CreatedBy).HasMaxLength(100);
-            entity.Property(e => e.UpdatedBy).HasMaxLength(100);
-            entity.Property(e => e.CreatedDate).HasDefaultValueSql("GETUTCDATE()");
+            _ = entity.Property(e => e.CreatedBy).HasMaxLength(100);
+            _ = entity.Property(e => e.UpdatedBy).HasMaxLength(100);
+            _ = entity.Property(e => e.CreatedDate).HasDefaultValueSql("GETUTCDATE()");
 
             // Indexes
-            entity.HasIndex(e => e.StudentName).HasDatabaseName("IX_Students_Name");
-            entity.HasIndex(e => e.Grade).HasDatabaseName("IX_Students_Grade");
-            entity.HasIndex(e => e.School).HasDatabaseName("IX_Students_School");
-            entity.HasIndex(e => e.Active).HasDatabaseName("IX_Students_Active");
+            _ = entity.HasIndex(e => e.StudentName).HasDatabaseName("IX_Students_Name");
+            _ = entity.HasIndex(e => e.Grade).HasDatabaseName("IX_Students_Grade");
+            _ = entity.HasIndex(e => e.School).HasDatabaseName("IX_Students_School");
+            _ = entity.HasIndex(e => e.Active).HasDatabaseName("IX_Students_Active");
         });
 
         // Configure Family entity for JSON import
-        modelBuilder.Entity<Family>(entity =>
+        _ = modelBuilder.Entity<Family>(entity =>
         {
-            entity.ToTable("Families");
-            entity.HasKey(e => e.FamilyId);
+            _ = entity.ToTable("Families");
+            _ = entity.HasKey(e => e.FamilyId);
 
             // Properties
-            entity.Property(e => e.ParentGuardian).IsRequired().HasMaxLength(100);
-            entity.Property(e => e.Address).IsRequired().HasMaxLength(200);
-            entity.Property(e => e.City).IsRequired().HasMaxLength(50);
-            entity.Property(e => e.County).HasMaxLength(50);
-            entity.Property(e => e.HomePhone).HasMaxLength(20);
-            entity.Property(e => e.CellPhone).HasMaxLength(20);
-            entity.Property(e => e.EmergencyContact).HasMaxLength(100);
-            entity.Property(e => e.JointParent).HasMaxLength(100);
+            _ = entity.Property(e => e.ParentGuardian).IsRequired().HasMaxLength(100);
+            _ = entity.Property(e => e.Address).IsRequired().HasMaxLength(200);
+            _ = entity.Property(e => e.City).IsRequired().HasMaxLength(50);
+            _ = entity.Property(e => e.County).HasMaxLength(50);
+            _ = entity.Property(e => e.HomePhone).HasMaxLength(20);
+            _ = entity.Property(e => e.CellPhone).HasMaxLength(20);
+            _ = entity.Property(e => e.EmergencyContact).HasMaxLength(100);
+            _ = entity.Property(e => e.JointParent).HasMaxLength(100);
 
             // Audit fields
-            entity.Property(e => e.CreatedBy).HasMaxLength(100);
-            entity.Property(e => e.UpdatedBy).HasMaxLength(100);
-            entity.Property(e => e.CreatedDate).HasDefaultValueSql("GETUTCDATE()");
+            _ = entity.Property(e => e.CreatedBy).HasMaxLength(100);
+            _ = entity.Property(e => e.UpdatedBy).HasMaxLength(100);
+            _ = entity.Property(e => e.CreatedDate).HasDefaultValueSql("GETUTCDATE()");
 
             // Indexes
-            entity.HasIndex(e => new { e.ParentGuardian, e.Address }).HasDatabaseName("IX_Families_ParentAddress");
-            entity.HasIndex(e => e.City).HasDatabaseName("IX_Families_City");
+            _ = entity.HasIndex(e => new { e.ParentGuardian, e.Address }).HasDatabaseName("IX_Families_ParentAddress");
+            _ = entity.HasIndex(e => e.City).HasDatabaseName("IX_Families_City");
 
             // Relationships - One Family has many Guardians
-            entity.HasMany(f => f.Guardians)
+            _ = entity.HasMany(f => f.Guardians)
                   .WithOne(g => g.Family)
                   .HasForeignKey(g => g.FamilyId)
                   .OnDelete(DeleteBehavior.Cascade)
                   .HasConstraintName("FK_Guardians_Family");
 
             // Relationships - One Family has many Students
-            entity.HasMany(f => f.Students)
+            _ = entity.HasMany(f => f.Students)
                   .WithOne(s => s.Family)
                   .HasForeignKey(s => s.FamilyId)
                   .OnDelete(DeleteBehavior.Cascade)
@@ -632,275 +568,275 @@ public class BusBuddyDbContext : DbContext
         });
 
         // Configure Guardian entity
-        modelBuilder.Entity<Guardian>(entity =>
+        _ = modelBuilder.Entity<Guardian>(entity =>
         {
-            entity.ToTable("Guardians");
-            entity.HasKey(e => e.Id);
-            entity.Property(e => e.FirstName).IsRequired().HasMaxLength(50);
-            entity.Property(e => e.LastName).IsRequired().HasMaxLength(50);
-            entity.Property(e => e.Address).IsRequired().HasMaxLength(200);
-            entity.Property(e => e.Phone).IsRequired().HasMaxLength(20);
-            entity.Property(e => e.Email).HasMaxLength(100);
-            entity.Property(e => e.Notes).HasMaxLength(500);
-            entity.Property(e => e.Latitude).HasColumnType("float");
-            entity.Property(e => e.Longitude).HasColumnType("float");
+            _ = entity.ToTable("Guardians");
+            _ = entity.HasKey(e => e.Id);
+            _ = entity.Property(e => e.FirstName).IsRequired().HasMaxLength(50);
+            _ = entity.Property(e => e.LastName).IsRequired().HasMaxLength(50);
+            _ = entity.Property(e => e.Address).IsRequired().HasMaxLength(200);
+            _ = entity.Property(e => e.Phone).IsRequired().HasMaxLength(20);
+            _ = entity.Property(e => e.Email).HasMaxLength(100);
+            _ = entity.Property(e => e.Notes).HasMaxLength(500);
+            _ = entity.Property(e => e.Latitude).HasColumnType("float");
+            _ = entity.Property(e => e.Longitude).HasColumnType("float");
         });
 
         // Configure Schedule entity
-        modelBuilder.Entity<Schedule>(entity =>
+        _ = modelBuilder.Entity<Schedule>(entity =>
         {
-            entity.ToTable("Schedules");
-            entity.HasKey(e => e.ScheduleId);
+            _ = entity.ToTable("Schedules");
+            _ = entity.HasKey(e => e.ScheduleId);
 
-            // Explicitly map BusId to VehicleId column to fix schema mismatch
-            entity.Property(e => e.BusId).HasColumnName("VehicleId");
+            // BusId properly references the Buses table
+            _ = entity.Property(e => e.BusId).IsRequired();
 
             // Relationships
-            entity.HasOne(s => s.Bus)
+            _ = entity.HasOne(s => s.Bus)
                   .WithMany(b => b.Schedules)
                   .HasForeignKey(s => s.BusId)
                   .OnDelete(DeleteBehavior.Restrict)
                   .HasConstraintName("FK_Schedules_Bus");
 
-            entity.HasOne(s => s.Route)
+            _ = entity.HasOne(s => s.Route)
                   .WithMany(r => r.Schedules)
                   .HasForeignKey(s => s.RouteId)
                   .OnDelete(DeleteBehavior.Restrict)
                   .HasConstraintName("FK_Schedules_Route");
 
-            entity.HasOne(s => s.Driver)
+            _ = entity.HasOne(s => s.Driver)
                   .WithMany(d => d.Schedules)
                   .HasForeignKey(s => s.DriverId)
                   .OnDelete(DeleteBehavior.Restrict)
                   .HasConstraintName("FK_Schedules_Driver");
 
             // Indexes
-            entity.HasIndex(e => new { e.RouteId, e.BusId, e.DepartureTime }).IsUnique().HasDatabaseName("IX_Schedules_RouteBusDeparture");
-            entity.HasIndex(e => e.ScheduleDate).HasDatabaseName("IX_Schedules_Date");
-            entity.HasIndex(e => e.BusId).HasDatabaseName("IX_Schedules_BusId");
-            entity.HasIndex(e => e.DriverId).HasDatabaseName("IX_Schedules_DriverId");
-            entity.HasIndex(e => e.RouteId).HasDatabaseName("IX_Schedules_RouteId");
+            _ = entity.HasIndex(e => new { e.RouteId, e.BusId, e.DepartureTime }).IsUnique().HasDatabaseName("IX_Schedules_RouteBusDeparture");
+            _ = entity.HasIndex(e => e.ScheduleDate).HasDatabaseName("IX_Schedules_Date");
+            _ = entity.HasIndex(e => e.BusId).HasDatabaseName("IX_Schedules_BusId");
+            _ = entity.HasIndex(e => e.DriverId).HasDatabaseName("IX_Schedules_DriverId");
+            _ = entity.HasIndex(e => e.RouteId).HasDatabaseName("IX_Schedules_RouteId");
         });
 
         // Configure StudentSchedule entity
-        modelBuilder.Entity<StudentSchedule>(entity =>
+        _ = modelBuilder.Entity<StudentSchedule>(entity =>
         {
-            entity.ToTable("StudentSchedules");
-            entity.HasKey(e => e.StudentScheduleId);
+            _ = entity.ToTable("StudentSchedules");
+            _ = entity.HasKey(e => e.StudentScheduleId);
 
             // Properties
-            entity.Property(e => e.AssignmentType).IsRequired().HasMaxLength(20);
-            entity.Property(e => e.PickupLocation).HasMaxLength(100);
-            entity.Property(e => e.DropoffLocation).HasMaxLength(100);
-            entity.Property(e => e.Notes).HasMaxLength(500);
-            entity.Property(e => e.CreatedBy).HasMaxLength(100);
-            entity.Property(e => e.UpdatedBy).HasMaxLength(100);
+            _ = entity.Property(e => e.AssignmentType).IsRequired().HasMaxLength(20);
+            _ = entity.Property(e => e.PickupLocation).HasMaxLength(100);
+            _ = entity.Property(e => e.DropoffLocation).HasMaxLength(100);
+            _ = entity.Property(e => e.Notes).HasMaxLength(500);
+            _ = entity.Property(e => e.CreatedBy).HasMaxLength(100);
+            _ = entity.Property(e => e.UpdatedBy).HasMaxLength(100);
 
             // Relationships
-            entity.HasOne(ss => ss.Student)
+            _ = entity.HasOne(ss => ss.Student)
                   .WithMany(s => s.StudentSchedules)
                   .HasForeignKey(ss => ss.StudentId)
                   .OnDelete(DeleteBehavior.Cascade)
                   .HasConstraintName("FK_StudentSchedules_Student");
 
-            entity.HasOne(ss => ss.Schedule)
+            _ = entity.HasOne(ss => ss.Schedule)
                   .WithMany(s => s.StudentSchedules)
                   .HasForeignKey(ss => ss.ScheduleId)
                   .OnDelete(DeleteBehavior.Cascade)
                   .HasConstraintName("FK_StudentSchedules_Schedule");
 
-            entity.HasOne(ss => ss.ActivitySchedule)
+            _ = entity.HasOne(ss => ss.ActivitySchedule)
                   .WithMany(a => a.StudentSchedules)
                   .HasForeignKey(ss => ss.ActivityScheduleId)
                   .OnDelete(DeleteBehavior.Cascade)
                   .HasConstraintName("FK_StudentSchedules_ActivitySchedule");
 
             // Indexes for performance
-            entity.HasIndex(e => e.StudentId).HasDatabaseName("IX_StudentSchedules_StudentId");
-            entity.HasIndex(e => e.ScheduleId).HasDatabaseName("IX_StudentSchedules_ScheduleId");
-            entity.HasIndex(e => e.ActivityScheduleId).HasDatabaseName("IX_StudentSchedules_ActivityScheduleId");
-            entity.HasIndex(e => e.AssignmentType).HasDatabaseName("IX_StudentSchedules_AssignmentType");
-            entity.HasIndex(e => new { e.StudentId, e.ScheduleId }).IsUnique().HasDatabaseName("IX_StudentSchedules_StudentSchedule");
+            _ = entity.HasIndex(e => e.StudentId).HasDatabaseName("IX_StudentSchedules_StudentId");
+            _ = entity.HasIndex(e => e.ScheduleId).HasDatabaseName("IX_StudentSchedules_ScheduleId");
+            _ = entity.HasIndex(e => e.ActivityScheduleId).HasDatabaseName("IX_StudentSchedules_ActivityScheduleId");
+            _ = entity.HasIndex(e => e.AssignmentType).HasDatabaseName("IX_StudentSchedules_AssignmentType");
+            _ = entity.HasIndex(e => new { e.StudentId, e.ScheduleId }).IsUnique().HasDatabaseName("IX_StudentSchedules_StudentSchedule");
         });
 
         // Configure TripEvent entity
-        modelBuilder.Entity<TripEvent>(entity =>
+        _ = modelBuilder.Entity<TripEvent>(entity =>
         {
-            entity.ToTable("TripEvents");
-            entity.HasKey(e => e.TripEventId);
+            _ = entity.ToTable("TripEvents");
+            _ = entity.HasKey(e => e.TripEventId);
 
             // Properties
-            entity.Property(e => e.Type).IsRequired();
-            entity.Property(e => e.CustomType).HasMaxLength(100);
-            entity.Property(e => e.POCName).IsRequired().HasMaxLength(100);
-            entity.Property(e => e.POCPhone).HasMaxLength(20);
-            entity.Property(e => e.POCEmail).HasMaxLength(100);
-            entity.Property(e => e.Destination).HasMaxLength(200);
-            entity.Property(e => e.SpecialRequirements).HasMaxLength(500);
-            entity.Property(e => e.TripNotes).HasMaxLength(1000);
-            entity.Property(e => e.Status).HasMaxLength(20).HasDefaultValue("Scheduled");
-            entity.Property(e => e.ApprovedBy).HasMaxLength(100);
-            entity.Property(e => e.CreatedBy).HasMaxLength(100);
-            entity.Property(e => e.UpdatedBy).HasMaxLength(100);
-            entity.Property(e => e.CreatedDate).HasDefaultValueSql("GETUTCDATE()");
+            _ = entity.Property(e => e.Type).IsRequired();
+            _ = entity.Property(e => e.CustomType).HasMaxLength(100);
+            _ = entity.Property(e => e.POCName).IsRequired().HasMaxLength(100);
+            _ = entity.Property(e => e.POCPhone).HasMaxLength(20);
+            _ = entity.Property(e => e.POCEmail).HasMaxLength(100);
+            _ = entity.Property(e => e.Destination).HasMaxLength(200);
+            _ = entity.Property(e => e.SpecialRequirements).HasMaxLength(500);
+            _ = entity.Property(e => e.TripNotes).HasMaxLength(1000);
+            _ = entity.Property(e => e.Status).HasMaxLength(20).HasDefaultValue("Scheduled");
+            _ = entity.Property(e => e.ApprovedBy).HasMaxLength(100);
+            _ = entity.Property(e => e.CreatedBy).HasMaxLength(100);
+            _ = entity.Property(e => e.UpdatedBy).HasMaxLength(100);
+            _ = entity.Property(e => e.CreatedDate).HasDefaultValueSql("GETUTCDATE()");
 
             // Relationships - TripEvents are now only related through ActivitySchedule
-            entity.HasOne(te => te.Vehicle)
+            _ = entity.HasOne(te => te.Vehicle)
                   .WithMany()  // No back-reference from Vehicle to TripEvents
                   .HasForeignKey(te => te.VehicleId)
                   .OnDelete(DeleteBehavior.Restrict)
                   .HasConstraintName("FK_TripEvents_Vehicle");
 
-            entity.HasOne(te => te.Driver)
+            _ = entity.HasOne(te => te.Driver)
                   .WithMany()  // No back-reference from Driver to TripEvents
                   .HasForeignKey(te => te.DriverId)
                   .OnDelete(DeleteBehavior.Restrict)
                   .HasConstraintName("FK_TripEvents_Driver");
 
-            entity.HasOne(te => te.Route)
+            _ = entity.HasOne(te => te.Route)
                   .WithMany()  // No back-reference from Route to TripEvents
                   .HasForeignKey(te => te.RouteId)
                   .OnDelete(DeleteBehavior.SetNull)
                   .HasConstraintName("FK_TripEvents_Route");
 
             // Indexes
-            entity.HasIndex(e => e.LeaveTime).HasDatabaseName("IX_TripEvents_LeaveTime");
-            entity.HasIndex(e => e.Type).HasDatabaseName("IX_TripEvents_Type");
-            entity.HasIndex(e => e.Status).HasDatabaseName("IX_TripEvents_Status");
-            entity.HasIndex(e => e.VehicleId).HasDatabaseName("IX_TripEvents_VehicleId");
-            entity.HasIndex(e => e.DriverId).HasDatabaseName("IX_TripEvents_DriverId");
-            entity.HasIndex(e => e.RouteId).HasDatabaseName("IX_TripEvents_RouteId");
-            entity.HasIndex(e => new { e.VehicleId, e.LeaveTime }).HasDatabaseName("IX_TripEvents_BusSchedule");
-            entity.HasIndex(e => new { e.DriverId, e.LeaveTime }).HasDatabaseName("IX_TripEvents_DriverSchedule");
-            entity.HasIndex(e => e.ApprovalRequired).HasDatabaseName("IX_TripEvents_ApprovalRequired");
+            _ = entity.HasIndex(e => e.LeaveTime).HasDatabaseName("IX_TripEvents_LeaveTime");
+            _ = entity.HasIndex(e => e.Type).HasDatabaseName("IX_TripEvents_Type");
+            _ = entity.HasIndex(e => e.Status).HasDatabaseName("IX_TripEvents_Status");
+            _ = entity.HasIndex(e => e.VehicleId).HasDatabaseName("IX_TripEvents_VehicleId");
+            _ = entity.HasIndex(e => e.DriverId).HasDatabaseName("IX_TripEvents_DriverId");
+            _ = entity.HasIndex(e => e.RouteId).HasDatabaseName("IX_TripEvents_RouteId");
+            _ = entity.HasIndex(e => new { e.VehicleId, e.LeaveTime }).HasDatabaseName("IX_TripEvents_BusSchedule");
+            _ = entity.HasIndex(e => new { e.DriverId, e.LeaveTime }).HasDatabaseName("IX_TripEvents_DriverSchedule");
+            _ = entity.HasIndex(e => e.ApprovalRequired).HasDatabaseName("IX_TripEvents_ApprovalRequired");
         });
 
         // Configure RouteStop entity
-        modelBuilder.Entity<RouteStop>(entity =>
+        _ = modelBuilder.Entity<RouteStop>(entity =>
         {
-            entity.ToTable("RouteStops");
-            entity.HasKey(e => e.RouteStopId);
+            _ = entity.ToTable("RouteStops");
+            _ = entity.HasKey(e => e.RouteStopId);
 
             // Properties
-            entity.Property(e => e.StopName).IsRequired().HasMaxLength(100);
-            entity.Property(e => e.StopAddress).HasMaxLength(200);
-            entity.Property(e => e.Notes).HasMaxLength(500);
+            _ = entity.Property(e => e.StopName).IsRequired().HasMaxLength(100);
+            _ = entity.Property(e => e.StopAddress).HasMaxLength(200);
+            _ = entity.Property(e => e.Notes).HasMaxLength(500);
 
             // Relationships
-            entity.HasOne(rs => rs.Route)
+            _ = entity.HasOne(rs => rs.Route)
                   .WithMany()
                   .HasForeignKey(rs => rs.RouteId)
                   .OnDelete(DeleteBehavior.Cascade)
                   .HasConstraintName("FK_RouteStops_Route");
 
             // Indexes
-            entity.HasIndex(e => e.RouteId).HasDatabaseName("IX_RouteStops_RouteId");
-            entity.HasIndex(e => new { e.RouteId, e.StopOrder }).HasDatabaseName("IX_RouteStops_RouteOrder");
+            _ = entity.HasIndex(e => e.RouteId).HasDatabaseName("IX_RouteStops_RouteId");
+            _ = entity.HasIndex(e => new { e.RouteId, e.StopOrder }).HasDatabaseName("IX_RouteStops_RouteOrder");
         });
 
         // Configure SchoolCalendar entity
-        modelBuilder.Entity<SchoolCalendar>(entity =>
+        _ = modelBuilder.Entity<SchoolCalendar>(entity =>
         {
-            entity.ToTable("SchoolCalendar");
-            entity.HasKey(e => e.CalendarId);
+            _ = entity.ToTable("SchoolCalendar");
+            _ = entity.HasKey(e => e.CalendarId);
 
             // Properties
-            entity.Property(e => e.EventType).IsRequired().HasMaxLength(50);
-            entity.Property(e => e.EventName).IsRequired().HasMaxLength(100);
-            entity.Property(e => e.SchoolYear).IsRequired().HasMaxLength(10);
-            entity.Property(e => e.Description).HasMaxLength(200);
-            entity.Property(e => e.Notes).HasMaxLength(500);
+            _ = entity.Property(e => e.EventType).IsRequired().HasMaxLength(50);
+            _ = entity.Property(e => e.EventName).IsRequired().HasMaxLength(100);
+            _ = entity.Property(e => e.SchoolYear).IsRequired().HasMaxLength(10);
+            _ = entity.Property(e => e.Description).HasMaxLength(200);
+            _ = entity.Property(e => e.Notes).HasMaxLength(500);
 
             // Indexes
-            entity.HasIndex(e => e.Date).HasDatabaseName("IX_SchoolCalendar_Date");
-            entity.HasIndex(e => e.EventType).HasDatabaseName("IX_SchoolCalendar_EventType");
-            entity.HasIndex(e => e.SchoolYear).HasDatabaseName("IX_SchoolCalendar_SchoolYear");
-            entity.HasIndex(e => e.RoutesRequired).HasDatabaseName("IX_SchoolCalendar_RoutesRequired");
+            _ = entity.HasIndex(e => e.Date).HasDatabaseName("IX_SchoolCalendar_Date");
+            _ = entity.HasIndex(e => e.EventType).HasDatabaseName("IX_SchoolCalendar_EventType");
+            _ = entity.HasIndex(e => e.SchoolYear).HasDatabaseName("IX_SchoolCalendar_SchoolYear");
+            _ = entity.HasIndex(e => e.RoutesRequired).HasDatabaseName("IX_SchoolCalendar_RoutesRequired");
         });
 
         // Configure ActivitySchedule entity
-        modelBuilder.Entity<ActivitySchedule>(entity =>
+        _ = modelBuilder.Entity<ActivitySchedule>(entity =>
         {
-            entity.ToTable("ActivitySchedule");
-            entity.HasKey(e => e.ActivityScheduleId);
+            _ = entity.ToTable("ActivitySchedule");
+            _ = entity.HasKey(e => e.ActivityScheduleId);
 
             // Properties
-            entity.Property(e => e.TripType).IsRequired().HasMaxLength(50);
-            entity.Property(e => e.ScheduledDestination).IsRequired().HasMaxLength(200);
-            entity.Property(e => e.Notes).HasMaxLength(500);
+            _ = entity.Property(e => e.TripType).IsRequired().HasMaxLength(50);
+            _ = entity.Property(e => e.ScheduledDestination).IsRequired().HasMaxLength(200);
+            _ = entity.Property(e => e.Notes).HasMaxLength(500);
 
             // Relationships
-            entity.HasOne(ash => ash.ScheduledVehicle)
+            _ = entity.HasOne(ash => ash.ScheduledVehicle)
                   .WithMany(v => v.ScheduledActivities)
                   .HasForeignKey(ash => ash.ScheduledVehicleId)
                   .OnDelete(DeleteBehavior.Restrict)
                   .HasConstraintName("FK_ActivitySchedule_Vehicle");
 
-            entity.HasOne(ash => ash.ScheduledDriver)
+            _ = entity.HasOne(ash => ash.ScheduledDriver)
                   .WithMany(d => d.ScheduledActivities)
                   .HasForeignKey(ash => ash.ScheduledDriverId)
                   .OnDelete(DeleteBehavior.Restrict)
                   .HasConstraintName("FK_ActivitySchedule_Driver");
 
             // Indexes
-            entity.HasIndex(e => e.ScheduledDate).HasDatabaseName("IX_ActivitySchedule_Date");
-            entity.HasIndex(e => e.TripType).HasDatabaseName("IX_ActivitySchedule_TripType");
-            entity.HasIndex(e => e.ScheduledVehicleId).HasDatabaseName("IX_ActivitySchedule_VehicleId");
-            entity.HasIndex(e => e.ScheduledDriverId).HasDatabaseName("IX_ActivitySchedule_DriverId");
+            _ = entity.HasIndex(e => e.ScheduledDate).HasDatabaseName("IX_ActivitySchedule_Date");
+            _ = entity.HasIndex(e => e.TripType).HasDatabaseName("IX_ActivitySchedule_TripType");
+            _ = entity.HasIndex(e => e.ScheduledVehicleId).HasDatabaseName("IX_ActivitySchedule_VehicleId");
+            _ = entity.HasIndex(e => e.ScheduledDriverId).HasDatabaseName("IX_ActivitySchedule_DriverId");
         });
 
         // Configure AIInsight entity for Grok analysis results
-        modelBuilder.Entity<AIInsight>(entity =>
+        _ = modelBuilder.Entity<AIInsight>(entity =>
         {
-            entity.ToTable("AIInsights");
-            entity.HasKey(e => e.InsightId);
+            _ = entity.ToTable("AIInsights");
+            _ = entity.HasKey(e => e.InsightId);
 
             // Properties
-            entity.Property(e => e.InsightType).IsRequired().HasMaxLength(50);
-            entity.Property(e => e.Priority).HasMaxLength(20).HasDefaultValue("Medium");
-            entity.Property(e => e.EntityReference).HasMaxLength(100);
-            entity.Property(e => e.InsightDetails).HasColumnType("nvarchar(max)");
-            entity.Property(e => e.Summary).IsRequired().HasMaxLength(500);
-            entity.Property(e => e.RecommendedActions).HasMaxLength(1000);
-            entity.Property(e => e.ConfidenceScore).HasColumnType("decimal(4,3)");
-            entity.Property(e => e.Source).HasMaxLength(50).HasDefaultValue("Grok-4");
-            entity.Property(e => e.Status).HasMaxLength(20).HasDefaultValue("New");
-            entity.Property(e => e.CreatedDate).HasDefaultValueSql("GETUTCDATE()");
-            entity.Property(e => e.CreatedBy).HasMaxLength(100);
-            entity.Property(e => e.UpdatedBy).HasMaxLength(100);
-            entity.Property(e => e.EstimatedSavings).HasColumnType("decimal(10,2)");
-            entity.Property(e => e.Tags).HasMaxLength(500);
+            _ = entity.Property(e => e.InsightType).IsRequired().HasMaxLength(50);
+            _ = entity.Property(e => e.Priority).HasMaxLength(20).HasDefaultValue("Medium");
+            _ = entity.Property(e => e.EntityReference).HasMaxLength(100);
+            _ = entity.Property(e => e.InsightDetails).HasColumnType("nvarchar(max)");
+            _ = entity.Property(e => e.Summary).IsRequired().HasMaxLength(500);
+            _ = entity.Property(e => e.RecommendedActions).HasMaxLength(1000);
+            _ = entity.Property(e => e.ConfidenceScore).HasColumnType("decimal(4,3)");
+            _ = entity.Property(e => e.Source).HasMaxLength(50).HasDefaultValue("Grok-4");
+            _ = entity.Property(e => e.Status).HasMaxLength(20).HasDefaultValue("New");
+            _ = entity.Property(e => e.CreatedDate).HasDefaultValueSql("GETUTCDATE()");
+            _ = entity.Property(e => e.CreatedBy).HasMaxLength(100);
+            _ = entity.Property(e => e.UpdatedBy).HasMaxLength(100);
+            _ = entity.Property(e => e.EstimatedSavings).HasColumnType("decimal(10,2)");
+            _ = entity.Property(e => e.Tags).HasMaxLength(500);
 
             // Relationships
-            entity.HasOne(ai => ai.Vehicle)
+            _ = entity.HasOne(ai => ai.Vehicle)
                   .WithMany()
                   .HasForeignKey(ai => ai.VehicleId)
                   .OnDelete(DeleteBehavior.SetNull)
                   .HasConstraintName("FK_AIInsights_Vehicle");
 
-            entity.HasOne(ai => ai.Route)
+            _ = entity.HasOne(ai => ai.Route)
                   .WithMany()
                   .HasForeignKey(ai => ai.RouteId)
                   .OnDelete(DeleteBehavior.SetNull)
                   .HasConstraintName("FK_AIInsights_Route");
 
-            entity.HasOne(ai => ai.Driver)
+            _ = entity.HasOne(ai => ai.Driver)
                   .WithMany()
                   .HasForeignKey(ai => ai.DriverId)
                   .OnDelete(DeleteBehavior.SetNull)
                   .HasConstraintName("FK_AIInsights_Driver");
 
             // Indexes for performance and querying
-            entity.HasIndex(e => e.InsightType).HasDatabaseName("IX_AIInsights_Type");
-            entity.HasIndex(e => e.Priority).HasDatabaseName("IX_AIInsights_Priority");
-            entity.HasIndex(e => e.Status).HasDatabaseName("IX_AIInsights_Status");
-            entity.HasIndex(e => e.CreatedDate).HasDatabaseName("IX_AIInsights_CreatedDate");
-            entity.HasIndex(e => e.ConfidenceScore).HasDatabaseName("IX_AIInsights_ConfidenceScore");
-            entity.HasIndex(e => new { e.InsightType, e.Status }).HasDatabaseName("IX_AIInsights_TypeStatus");
-            entity.HasIndex(e => new { e.VehicleId, e.InsightType }).HasDatabaseName("IX_AIInsights_VehicleType");
-            entity.HasIndex(e => new { e.RouteId, e.InsightType }).HasDatabaseName("IX_AIInsights_RouteType");
-            entity.HasIndex(e => new { e.DriverId, e.InsightType }).HasDatabaseName("IX_AIInsights_DriverType");
-            entity.HasIndex(e => e.ExpiryDate).HasDatabaseName("IX_AIInsights_ExpiryDate");
+            _ = entity.HasIndex(e => e.InsightType).HasDatabaseName("IX_AIInsights_Type");
+            _ = entity.HasIndex(e => e.Priority).HasDatabaseName("IX_AIInsights_Priority");
+            _ = entity.HasIndex(e => e.Status).HasDatabaseName("IX_AIInsights_Status");
+            _ = entity.HasIndex(e => e.CreatedDate).HasDatabaseName("IX_AIInsights_CreatedDate");
+            _ = entity.HasIndex(e => e.ConfidenceScore).HasDatabaseName("IX_AIInsights_ConfidenceScore");
+            _ = entity.HasIndex(e => new { e.InsightType, e.Status }).HasDatabaseName("IX_AIInsights_TypeStatus");
+            _ = entity.HasIndex(e => new { e.VehicleId, e.InsightType }).HasDatabaseName("IX_AIInsights_VehicleType");
+            _ = entity.HasIndex(e => new { e.RouteId, e.InsightType }).HasDatabaseName("IX_AIInsights_RouteType");
+            _ = entity.HasIndex(e => new { e.DriverId, e.InsightType }).HasDatabaseName("IX_AIInsights_DriverType");
+            _ = entity.HasIndex(e => e.ExpiryDate).HasDatabaseName("IX_AIInsights_ExpiryDate");
         });
 
         // REMOVED: Ticket entity configuration - deprecated module
@@ -942,49 +878,49 @@ public class BusBuddyDbContext : DbContext
     private static void ConfigureNullHandling(ModelBuilder modelBuilder)
     {
         // Configure specific entities with NULL-safe defaults to prevent SqlNullValueException
-        modelBuilder.Entity<Driver>(entity =>
+        _ = modelBuilder.Entity<Driver>(entity =>
         {
-            entity.Property(e => e.DriverName)
+            _ = entity.Property(e => e.DriverName)
                 .HasDefaultValue("Unknown Driver");
 
-            entity.Property(e => e.Status)
+            _ = entity.Property(e => e.Status)
                 .HasDefaultValue("Active");
 
-            entity.Property(e => e.DriversLicenceType)
+            _ = entity.Property(e => e.DriversLicenceType)
                 .HasDefaultValue("Standard");
         });
 
-        modelBuilder.Entity<Route>(entity =>
+        _ = modelBuilder.Entity<Route>(entity =>
         {
-            entity.Property(e => e.RouteName)
+            _ = entity.Property(e => e.RouteName)
                 .HasDefaultValue("Route");
         });
 
-        modelBuilder.Entity<Bus>(entity =>
+        _ = modelBuilder.Entity<Bus>(entity =>
         {
-            entity.Property(e => e.Make)
+            _ = entity.Property(e => e.Make)
                 .HasDefaultValue("Unknown");
 
-            entity.Property(e => e.Model)
+            _ = entity.Property(e => e.Model)
                 .HasDefaultValue("Unknown");
 
-            entity.Property(e => e.Status)
+            _ = entity.Property(e => e.Status)
                 .HasDefaultValue("Active");
         });
 
-        modelBuilder.Entity<Activity>(entity =>
+        _ = modelBuilder.Entity<Activity>(entity =>
         {
-            entity.Property(e => e.Description)
+            _ = entity.Property(e => e.Description)
                 .HasDefaultValue("Activity");
         });
 
         // Add NULL handling for Schedule entity to prevent InvalidCastException
-        modelBuilder.Entity<Schedule>(entity =>
+        _ = modelBuilder.Entity<Schedule>(entity =>
         {
-            entity.Property(e => e.Status)
+            _ = entity.Property(e => e.Status)
                 .HasDefaultValue("Scheduled");
 
-            entity.Property(e => e.CreatedDate)
+            _ = entity.Property(e => e.CreatedDate)
                 .HasDefaultValueSql("GETUTCDATE()");
         });
 
@@ -1020,7 +956,7 @@ public class BusBuddyDbContext : DbContext
         var seedDate = new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc);
 
         // Seed sample buses
-        modelBuilder.Entity<Bus>().HasData(
+        _ = modelBuilder.Entity<Bus>().HasData(
             new Bus
             {
                 BusId = 1,
@@ -1032,6 +968,8 @@ public class BusBuddyDbContext : DbContext
                 VINNumber = "1BAANKCL7LF123456",
                 LicenseNumber = "TX123456",
                 Status = "Active",
+                FuelCapacity = 60m, // Added post-refactor static seed for fuel analytics
+                MilesPerGallon = 8.5m, // Added post-refactor static seed for efficiency metrics
                 PurchaseDate = new DateTime(2020, 8, 15),
                 PurchasePrice = 85000.00m,
                 CreatedDate = seedDate
@@ -1047,6 +985,8 @@ public class BusBuddyDbContext : DbContext
                 VINNumber = "4DRBTAAN7KB654321",
                 LicenseNumber = "TX654321",
                 Status = "Active",
+                FuelCapacity = 55m,
+                MilesPerGallon = 8.2m,
                 PurchaseDate = new DateTime(2019, 7, 10),
                 PurchasePrice = 82000.00m,
                 CreatedDate = seedDate
@@ -1054,7 +994,7 @@ public class BusBuddyDbContext : DbContext
         );
 
         // Seed sample drivers
-        modelBuilder.Entity<Driver>().HasData(
+        _ = modelBuilder.Entity<Driver>().HasData(
             new Driver
             {
                 DriverId = 1,
@@ -1128,7 +1068,7 @@ public class BusBuddyDbContext : DbContext
 
             var propNames = proposedValues.Properties.Select(p => p.Name).ToList();
             var conflictDetails = new System.Text.StringBuilder();
-            conflictDetails.AppendLine($"Concurrency conflict for entity: {entry.Entity.GetType().Name}");
+            _ = conflictDetails.AppendLine($"Concurrency conflict for entity: {entry.Entity.GetType().Name}");
 
             foreach (var propName in propNames)
             {
@@ -1137,7 +1077,7 @@ public class BusBuddyDbContext : DbContext
 
                 if (proposedValue != databaseValue)
                 {
-                    conflictDetails.AppendLine($"Property: {propName}, Proposed: {proposedValue}, Database: {databaseValue}");
+                    _ = conflictDetails.AppendLine($"Property: {propName}, Proposed: {proposedValue}, Database: {databaseValue}");
                 }
             }
 
@@ -1186,17 +1126,17 @@ public class BusBuddyDbContext : DbContext
     {
         const string fallback = "Data Source=(localdb)\\MSSQLLocalDB;Initial Catalog=BusBuddy;Integrated Security=True;MultipleActiveResultSets=True";
         logger.Information("Using LocalDB fallback connection");
-        optionsBuilder.UseSqlServer(fallback, sql =>
+        _ = optionsBuilder.UseSqlServer(fallback, sql =>
         {
-            sql.CommandTimeout(60);
-            sql.EnableRetryOnFailure(5, TimeSpan.FromSeconds(10), new[] { 40613, 40501, 40197, 10928, 10929, 10060, 10054, 10053 });
+            _ = sql.CommandTimeout(60);
+            _ = sql.EnableRetryOnFailure(5, TimeSpan.FromSeconds(10), new[] { 40613, 40501, 40197, 10928, 10929, 10060, 10054, 10053 });
         });
     }
 
     // Centralized EF Core logging configuration (same logic as earlier implementation)
     private static void ConfigureEfLogging(DbContextOptionsBuilder optionsBuilder)
     {
-        optionsBuilder.LogTo(message =>
+        _ = optionsBuilder.LogTo(message =>
         {
             using (LogContext.PushProperty("DatabaseContext", "BusBuddyDbContext"))
             using (LogContext.PushProperty("SourceContext", "EntityFramework"))
@@ -1219,8 +1159,8 @@ public class BusBuddyDbContext : DbContext
 
         if (System.Diagnostics.Debugger.IsAttached)
         {
-            optionsBuilder.EnableSensitiveDataLogging();
-            optionsBuilder.EnableDetailedErrors();
+            _ = optionsBuilder.EnableSensitiveDataLogging();
+            _ = optionsBuilder.EnableDetailedErrors();
         }
     }
 }

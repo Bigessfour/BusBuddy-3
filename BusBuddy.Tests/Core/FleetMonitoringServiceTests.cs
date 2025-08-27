@@ -1,5 +1,5 @@
 using BusBuddy.Core.Data;
-using BusBuddy.Core.Models;
+using BusBuddy.Core.Domain;
 using BusBuddy.Core.Services;
 using BusBuddy.Core.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
@@ -18,8 +18,9 @@ namespace BusBuddy.Tests.Core
     public class FleetMonitoringServiceTests : IDisposable
     {
     private readonly BusBuddyDbContext _context;
-    private readonly IBusBuddyDbContextFactory _contextFactory;
+    private readonly TestDbContextFactory _contextFactory;
         private readonly IBusCachingService _cacheService;
+        private readonly MemoryCache _memoryCache;
         private readonly Mock<IGeoDataService> _mockGeoDataService;
         private readonly FleetMonitoringService _fleetService;
 
@@ -35,8 +36,8 @@ namespace BusBuddy.Tests.Core
             _context = _contextFactory.CreateDbContext(); // Share same provider/options
 
             // Create real caching service with in-memory cache
-            var memoryCache = new MemoryCache(new MemoryCacheOptions());
-            _cacheService = new BusCachingService(memoryCache);
+            _memoryCache = new MemoryCache(new MemoryCacheOptions());
+            _cacheService = new BusCachingService(_memoryCache);
 
             // Mock geo data service
             _mockGeoDataService = new Mock<IGeoDataService>();
@@ -52,7 +53,7 @@ namespace BusBuddy.Tests.Core
             {
                 new Bus
                 {
-                    VehicleId = 1,
+                    BusId = 1,
                     BusNumber = "001",
                     Status = "Active",
                     GPSTracking = true,
@@ -66,7 +67,7 @@ namespace BusBuddy.Tests.Core
                 },
                 new Bus
                 {
-                    VehicleId = 2,
+                    BusId = 2,
                     BusNumber = "002",
                     Status = "Maintenance",
                     GPSTracking = false,
@@ -78,7 +79,7 @@ namespace BusBuddy.Tests.Core
                 },
                 new Bus
                 {
-                    VehicleId = 3,
+                    BusId = 3,
                     BusNumber = "003",
                     Status = "Out of Service",
                     GPSTracking = true,
@@ -271,6 +272,8 @@ namespace BusBuddy.Tests.Core
         public void Dispose()
         {
             _context?.Dispose();
+            _memoryCache?.Dispose();
+            GC.SuppressFinalize(this);
         }
     }
 }

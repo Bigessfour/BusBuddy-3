@@ -1,4 +1,4 @@
-using BusBuddy.Core.Models;
+using BusBuddy.Core.Domain;
 using BusBuddy.Core.Services;
 using Syncfusion.UI.Xaml.Scheduler;
 using System;

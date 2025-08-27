@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using BusBuddy.Core.Models;
+using BusBuddy.Core.Domain;
 
 namespace BusBuddy.Core.Services
 {

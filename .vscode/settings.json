@@ -255,7 +255,7 @@
   "powershell.codeFormatting.useConstantStrings": false,
   "powershell.codeFormatting.useCorrectCasing": true,
   "powershell.scriptAnalysis.enable": true,
-  "powershell.scriptAnalysis.settingsPath": "./PSScriptAnalyzerSettings.psd1",
+  "powershell.scriptAnalysis.settingsPath": "./tools/powershell/PSScriptAnalyzerSettings.psd1",
 
   // === STRICT PowerShell 7.5.2 Syntax & Indentation Settings ===
   "powershell.parseErrors.enable": true,

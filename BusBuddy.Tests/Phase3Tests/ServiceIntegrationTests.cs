@@ -1,7 +1,7 @@
 using NUnit.Framework;
 using FluentAssertions;
 using BusBuddy.Core.Data;
-using BusBuddy.Core.Models;
+using BusBuddy.Core.Domain;
 using BusBuddy.Core.Services.Interfaces;
 using BusBuddy.Core.Services;
 using BusBuddy.WPF.Services; // Add missing WPF service namespace

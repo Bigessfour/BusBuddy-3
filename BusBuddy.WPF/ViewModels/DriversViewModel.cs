@@ -8,7 +8,7 @@ using System.Windows;
 using System.Windows.Input;
 using Serilog;
 using System.Linq;
-using BusBuddy.Core.Models;
+using BusBuddy.Core.Domain;
 using CommunityToolkit.Mvvm.Input;
 
 namespace BusBuddy.WPF.ViewModels
@@ -36,8 +36,8 @@ namespace BusBuddy.WPF.ViewModels
         }
 
         // 👤 Phase 2+ Enhancement: Selected driver for details/editing
-        private BusBuddy.Core.Models.Driver? _selectedDriver;
-        public BusBuddy.Core.Models.Driver? SelectedDriver
+        private BusBuddy.Core.Domain.Driver? _selectedDriver;
+        public BusBuddy.Core.Domain.Driver? SelectedDriver
         {
             get => _selectedDriver;
             set
@@ -51,13 +51,13 @@ namespace BusBuddy.WPF.ViewModels
         }
 
         // 📊 Collections for data binding
-        private ObservableCollection<BusBuddy.Core.Models.Driver> _drivers = new();
-        public ObservableCollection<BusBuddy.Core.Models.Driver> Drivers
+        private ObservableCollection<BusBuddy.Core.Domain.Driver> _drivers = new();
+        public ObservableCollection<BusBuddy.Core.Domain.Driver> Drivers
         {
             get => _drivers;
             set => SetProperty(ref _drivers, value);
         }
-        public ObservableCollection<BusBuddy.Core.Models.Driver> FilteredDrivers { get; } = new();
+        public ObservableCollection<BusBuddy.Core.Domain.Driver> FilteredDrivers { get; } = new();
 
         // 🎯 Phase 2+ Enhancement: Command Pattern Implementation
         public ICommand LoadDriversCommand { get; }

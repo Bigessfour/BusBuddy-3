@@ -1,4 +1,4 @@
-using BusBuddy.Core.Models.Trips;
+using BusBuddy.Core.Domain.Trips;
 
 namespace BusBuddy.Core.Services.Interfaces
 {

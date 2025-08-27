@@ -50,6 +50,12 @@ public class AddressService
             return (false, "Street address is required");
         }
 
+        // Check that street contains a number (like ValidateAddress does)
+        if (!ContainsNumber(street))
+        {
+            return (false, "Street address must include a street number");
+        }
+
         if (string.IsNullOrWhiteSpace(city))
         {
             return (false, "City is required");

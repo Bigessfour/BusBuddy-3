@@ -3,7 +3,8 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Input;
-using BusBuddy.Core.Models;
+using BusBuddy.Core.Domain;
+using DomainDriver = BusBuddy.Core.Domain.Driver;
 using BusBuddy.Core.Services;
 using BusBuddy.Core.Data;
 using BusBuddy.WPF.ViewModels;
@@ -24,7 +25,7 @@ namespace BusBuddy.WPF.ViewModels.Driver
         private readonly IBusBuddyDbContextFactory _contextFactory;
         private readonly IDriverService? _driverService;
 
-    private Core.Models.Driver? _selectedDriver;
+    private DomainDriver? _selectedDriver;
         private string _searchText = string.Empty;
     private string _selectedStatusFilter = "All Status";
     private DateTime _lastUpdated = DateTime.Now;
@@ -35,12 +36,12 @@ namespace BusBuddy.WPF.ViewModels.Driver
     /// <summary>
     /// Collection of all drivers loaded from the database
     /// </summary>
-    public ObservableCollection<Core.Models.Driver> Drivers { get; } = new();
+    public ObservableCollection<DomainDriver> Drivers { get; } = new();
 
     /// <summary>
     /// Filtered view of drivers for binding to the UI grid
     /// </summary>
-    public ObservableCollection<Core.Models.Driver> FilteredDrivers { get; } = new();
+    public ObservableCollection<DomainDriver> FilteredDrivers { get; } = new();
 
     /// <summary>
     /// Chart source for driver status distribution (Status/Count)
@@ -50,7 +51,7 @@ namespace BusBuddy.WPF.ViewModels.Driver
         /// <summary>
         /// Currently selected driver in the data grid
         /// </summary>
-        public Core.Models.Driver? SelectedDriver
+        public DomainDriver? SelectedDriver
         {
             get => _selectedDriver;
             set
@@ -484,7 +485,7 @@ namespace BusBuddy.WPF.ViewModels.Driver
         /// <summary>
         /// Delete a driver from the database
         /// </summary>
-        private async Task DeleteDriverAsync(Core.Models.Driver driver)
+        private async Task DeleteDriverAsync(DomainDriver driver)
         {
             try
             {

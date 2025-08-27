@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using BusBuddy.Core.Data;
-using BusBuddy.Core.Models;
+using BusBuddy.Core.Domain;
 using BusBuddy.Core.Services;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
@@ -171,12 +171,19 @@ namespace BusBuddy.Tests.Core
             _dbContext.Students.Add(s);
             await _dbContext.SaveChangesAsync();
 
+            // Ensure student was saved with valid ID
+            Assert.That(s.StudentId, Is.GreaterThan(0), "Student ID should be assigned after SaveChanges");
+
             var ok = await _studentService.AssignStudentToRouteAsync(s.StudentId, "East Route", "West Route");
-            ok.Should().BeTrue();
+            Assert.That(ok, Is.True, "AssignStudentToRouteAsync should return true");
+
+            // Refresh the context to ensure we see the latest changes
+            await _dbContext.Entry(s).ReloadAsync();
 
             var updated = await _dbContext.Students.FindAsync(s.StudentId);
-            updated!.AMRoute.Should().Be("East Route");
-            updated.PMRoute.Should().Be("West Route");
+            Assert.That(updated, Is.Not.Null, "Student should still exist after update");
+            Assert.That(updated!.AMRoute, Is.EqualTo("East Route"), $"Expected AMRoute to be 'East Route' but was '{updated.AMRoute}'");
+            Assert.That(updated.PMRoute, Is.EqualTo("West Route"), $"Expected PMRoute to be 'West Route' but was '{updated.PMRoute}'");
         }
 
         [Test]

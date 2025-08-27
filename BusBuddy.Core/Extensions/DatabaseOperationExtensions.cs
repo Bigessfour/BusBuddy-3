@@ -1,5 +1,6 @@
 using BusBuddy.Core.Data;
 using BusBuddy.Core.Utilities;
+using BusBuddy.Core.Domain;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -157,7 +158,7 @@ public class SafeDatabaseOperations
     /// <summary>
     /// Safely retrieves buses with enhanced error handling
     /// </summary>
-    public async Task<List<Models.Bus>> GetBusesAsync(BusBuddy.Core.Data.BusBuddyDbContext context)
+    public async Task<List<Bus>> GetBusesAsync(BusBuddy.Core.Data.BusBuddyDbContext context)
     {
         ArgumentNullException.ThrowIfNull(context);
         return await _resilienceService.ExecuteWithResilienceAsync(async () =>
@@ -171,7 +172,7 @@ public class SafeDatabaseOperations
     /// <summary>
     /// Safely retrieves drivers with enhanced error handling
     /// </summary>
-    public async Task<List<Models.Driver>> GetDriversAsync(BusBuddyDbContext context)
+    public async Task<List<Driver>> GetDriversAsync(BusBuddyDbContext context)
     {
         ArgumentNullException.ThrowIfNull(context);
         return await _resilienceService.ExecuteWithResilienceAsync(async () =>
@@ -185,7 +186,7 @@ public class SafeDatabaseOperations
     /// <summary>
     /// Safely retrieves routes with enhanced error handling
     /// </summary>
-    public async Task<List<Models.Route>> GetRoutesAsync(BusBuddyDbContext context)
+    public async Task<List<Route>> GetRoutesAsync(BusBuddyDbContext context)
     {
         ArgumentNullException.ThrowIfNull(context);
         return await _resilienceService.ExecuteWithResilienceAsync(async () =>

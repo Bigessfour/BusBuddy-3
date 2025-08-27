@@ -51,9 +51,7 @@ lint:
       commands:
         - output: sarif
           success_codes: [0, 1] # Allow warnings for secret context issues
-          parse_regex: "::warning file=(.*),line=(\\d+),col=(\\d+)::(.*)"
           formatter: true
-          in_process: false
   disabled:
     - markdownlint # Using custom markdown formatting
     # cspell enabled for XAML/code comments - removed from disabled list
@@ -68,10 +66,10 @@ lint:
     - shellcheck@0.11.0
     - shfmt@3.6.0
     - sqlfluff@3.4.2
-    - cspell@8.4.0 # Spell checking for XAML comments and documentation
+    - cspell@9.2.0 # Spell checking for XAML comments and documentation
     # codespell@2.4.1 # DISABLED - using Trunk CSpell only for consistency
-    - dotnet-format@5.1.225507 # Trims whitespace in C# by default (Trunk-supported version)
-    - checkov@3.2.465 # Infrastructure as code security
+    - dotnet-format@7.0.400 # Trims whitespace in C# by default (Trunk-supported version)
+    - checkov@3.2.466 # Infrastructure as code security
     - git-diff-check # Git hygiene
     - osv-scanner@2.2.1 # Vulnerability scanning
     - trufflehog@3.90.5 # Secret detection
@@ -103,13 +101,40 @@ lint:
         - ".vscode/settings.json" # VS Code settings have different formatting standards
         - ".vscode/tasks.json" # VS Code tasks have different formatting standards
     # GitHub Actions secrets handling - allow context warnings per GitHub docs
-    - linters: [actionlint]
-      paths:
-        - ".github/workflows/*.yml"
-      where: |
-        # Allow GitHub Actions context warnings for secrets - this is expected behavior
-        # per GitHub's documentation on fork-safe workflows
-        message.contains("Context access might be invalid")
+  # (Removed unsupported 'where' filter for actionlint; if filtering needed, migrate to tool-supported suppression mechanism.)
+
+# ------------------------------------------------------------------
+# Project spell-check dictionary (cspell) — added to reduce false positives
+# Reference (cspell config): https://github.com/streetsidesoftware/cspell
+# If this grows large, consider migrating to a dedicated cspell.json.
+# ------------------------------------------------------------------
+cspell:
+  words:
+    - AutoHide
+    - AutoHidden
+    - BusBuddy
+    - ChromelessWindow
+    - DockingManager
+    - Fleet
+    - FleetManagement
+    - FleetReport
+    - FluentDark
+    - FluentLight
+    - GeoMap
+    - Geospatial
+    - Hyperthreading
+    - MVVM
+    - PDF
+    - RouteAssignment
+    - RouteAssignments
+    - Serilog
+    - Syncfusion
+    - ToolTip
+    - ToolTips
+    - Trunkio
+    - ViewModel
+    - ViewModels
+    - Xaml
 
 # Git hooks and actions configuration
 actions:

@@ -3,11 +3,11 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Input;
-using BusBuddy.Core.Models;
+using BusBuddy.Core.Domain;
 using BusBuddy.Core.Services;
 using CommunityToolkit.Mvvm.Input;
 using Serilog;
-using DriverModel = BusBuddy.Core.Models.Driver;
+using DriverModel = BusBuddy.Core.Domain.Driver;
 
 namespace BusBuddy.WPF.ViewModels.Driver
 {

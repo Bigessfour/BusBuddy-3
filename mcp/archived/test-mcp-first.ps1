@@ -1,4 +1,4 @@
-#Requires -Version 7.5
+﻿#Requires -Version 7.5
 
 <#
 .SYNOPSIS
@@ -19,6 +19,139 @@ param(
 
     [Parameter()]
     [switch]$Detailed
+)<#
+).SYNOPSIS
+)${1:Short description}
+)
+).DESCRIPTION
+)${2:Long description}
+)
+).PARAMETER Message
+)${3:Parameter description}
+)
+).PARAMETER Level
+)${4:Parameter description}
+)
+).EXAMPLE
+)${5:An example}
+)
+).NOTES
+)${6:General notes}
+)#>
+)<#
+).SYNOPSIS
+)${1:Short description}
+)
+).DESCRIPTION
+)${2:Long description}
+)
+).PARAMETER Message
+)${3:Parameter description}
+)
+).PARAMETER Level
+)${4:Parameter description}
+)
+).EXAMPLE
+)${5:An example}
+)
+).NOTES
+)${6:General notes}
+)#>
+)<#
+).SYNOPSIS
+)${1:Short description}
+)
+).DESCRIPTION
+)${2:Long description}
+)
+).PARAMETER Message
+)${3:Parameter description}
+)
+).PARAMETER Level
+)${4:Parameter description}
+)
+).EXAMPLE
+)${5:An example}
+)
+).NOTES
+)${6:General notes}
+)#>
+)<#
+).SYNOPSIS
+)${1:Short description}
+)
+).DESCRIPTION
+)${2:Long description}
+)
+).PARAMETER Message
+)${3:Parameter description}
+)
+).PARAMETER Level
+)${4:Parameter description}
+)
+).EXAMPLE
+)${5:An example}
+)
+).NOTES
+)${6:General notes}
+)#>
+)<#
+).SYNOPSIS
+)${1:Short description}
+)
+).DESCRIPTION
+)${2:Long description}
+)
+).PARAMETER Message
+)${3:Parameter description}
+)
+).PARAMETER Level
+)${4:Parameter description}
+)
+).EXAMPLE
+)${5:An example}
+)
+).NOTES
+)${6:General notes}
+)#>
+)<#
+).SYNOPSIS
+)${1:Short description}
+)
+).DESCRIPTION
+)${2:Long description}
+)
+).PARAMETER Message
+)${3:Parameter description}
+)
+).PARAMETER Level
+)${4:Parameter description}
+)
+).EXAMPLE
+)${5:An example}
+)
+).NOTES
+)${6:General notes}
+)#>
+)<#
+).SYNOPSIS
+)${1:Short description}
+)
+).DESCRIPTION
+)${2:Long description}
+)
+).PARAMETER Message
+)${3:Parameter description}
+)
+).PARAMETER Level
+)${4:Parameter description}
+)
+).EXAMPLE
+)${5:An example}
+)
+).NOTES
+)${6:General notes}
+)#>
 )function Write-TestLog {
     param([string]$Message, [string]$Level = "INFO")
     $timestamp = Get-Date -Format "HH:mm:ss"
@@ -32,6 +165,19 @@ param(
     }
 }
 
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.EXAMPLE
+${3:An example}
+
+.NOTES
+${4:General notes}
+#>
 function Test-MCPEnvironment {
     Write-TestLog "🔍 Testing MCP Environment Setup" "INFO"
 
@@ -77,6 +223,22 @@ function Test-MCPEnvironment {
     return $true
 }
 
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER ServerName
+${3:Parameter description}
+
+.EXAMPLE
+${4:An example}
+
+.NOTES
+${5:General notes}
+#>
 function Test-MCPServerStart {
     param([string]$ServerName)
 
@@ -112,6 +274,19 @@ function Test-MCPServerStart {
     }
 }
 
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.EXAMPLE
+${3:An example}
+
+.NOTES
+${4:General notes}
+#>
 function Test-MCPBasicInteraction {
     Write-TestLog "💬 Testing Basic MCP Interaction" "INFO"
 

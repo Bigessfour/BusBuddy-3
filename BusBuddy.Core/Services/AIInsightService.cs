@@ -1,6 +1,6 @@
 using System.Text.Json;
 using BusBuddy.Core.Data;
-using BusBuddy.Core.Models;
+using BusBuddy.Core.Domain;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Serilog;

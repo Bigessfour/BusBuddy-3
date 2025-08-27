@@ -48,7 +48,7 @@
       "category": "optimization"
     },
     {
-      "name": "analyze-fleet-performance", 
+      "name": "analyze-fleet-performance",
       "description": "Get Grok-4 AI insights on fleet performance and operational recommendations",
       "category": "analysis"
     },
@@ -60,7 +60,7 @@
   ],
   "categories": [
     "fleet-management",
-    "ai-optimization", 
+    "ai-optimization",
     "transportation",
     "analytics"
   ],

@@ -1,5 +1,5 @@
 using System.IO;
-using BusBuddy.Core.Models;
+using BusBuddy.Core.Domain;
 using Serilog;
 using System.Text;
 using Syncfusion.Pdf;
@@ -213,7 +213,7 @@ namespace BusBuddy.Core.Services
             IEnumerable<Student> students,
             Bus? assignedBus,
             Driver? assignedDriver,
-            BusBuddy.Core.Models.RouteTimeSlot timeSlot)
+            BusBuddy.Core.Domain.RouteTimeSlot timeSlot)
         {
             // Delegate to core implementation without map image
             return GenerateRouteSummaryReportInternal(route, stops, students, assignedBus, assignedDriver, timeSlot, null);
@@ -230,7 +230,7 @@ namespace BusBuddy.Core.Services
             IEnumerable<Student> students,
             Bus? assignedBus,
             Driver? assignedDriver,
-            BusBuddy.Core.Models.RouteTimeSlot timeSlot,
+            BusBuddy.Core.Domain.RouteTimeSlot timeSlot,
             byte[]? mapImagePng)
         {
             return GenerateRouteSummaryReportInternal(route, stops, students, assignedBus, assignedDriver, timeSlot, mapImagePng);
@@ -242,7 +242,7 @@ namespace BusBuddy.Core.Services
             IEnumerable<Student> students,
             Bus? assignedBus,
             Driver? assignedDriver,
-            BusBuddy.Core.Models.RouteTimeSlot timeSlot,
+            BusBuddy.Core.Domain.RouteTimeSlot timeSlot,
             byte[]? mapImagePng)
         {
             ArgumentNullException.ThrowIfNull(route);

@@ -1,5 +1,5 @@
 using BusBuddy.Core.Data.Interfaces;
-using BusBuddy.Core.Models;
+using BusBuddy.Core.Domain;
 using BusBuddy.Core.Services;
 using Microsoft.EntityFrameworkCore;
 
@@ -21,22 +21,29 @@ namespace BusBuddy.Core.Data.Repositories
     /// </summary>
     public class BusRepository : Repository<Bus>, IBusRepository
     {
+        // Prefer enhanced context when available; current signature keeps backward compatibility
         public BusRepository(BusBuddy.Core.Data.BusBuddyDbContext context, IUserContextService userContextService) : base(context, userContextService)
         {
         }
 
-        public async Task<IEnumerable<Bus>> GetVehiclesByStatusAsync(string status)
+        [Obsolete("Use GetBusesByStatusAsync for clearer domain semantics.")]
+        public async Task<IEnumerable<Bus>> GetVehiclesByStatusAsync(string status) => await GetBusesByStatusAsync(status);
+
+        public async Task<IEnumerable<Bus>> GetBusesByStatusAsync(string status)
         {
-            return await Query()
+            return await QueryNoTracking()
                 .Where(v => v.Status == status)
                 .OrderBy(v => v.BusNumber)
                 .ToListAsync();
         }
 
         #region Async Vehicle-Specific Operations
-        public async Task<IEnumerable<Bus>> GetActiveVehiclesAsync()
+        [Obsolete("Use GetActiveBusesAsync")]
+        public async Task<IEnumerable<Bus>> GetActiveVehiclesAsync() => await GetActiveBusesAsync();
+
+        public async Task<IEnumerable<Bus>> GetActiveBusesAsync()
         {
-            return await Query()
+            return await QueryNoTracking()
                 .Where(v => v.Status == "Active")
                 .OrderBy(v => v.BusNumber)
                 .ToListAsync();
@@ -44,7 +51,7 @@ namespace BusBuddy.Core.Data.Repositories
 
         public async Task<IEnumerable<Bus>> GetAvailableVehiclesAsync(DateTime availabilityDate, TimeSpan? startTime = null, TimeSpan? endTime = null)
         {
-            var activeVehicles = await GetActiveVehiclesAsync();
+            var activeVehicles = await GetActiveBusesAsync();
 
             if (!startTime.HasValue || !endTime.HasValue)
             {
@@ -63,38 +70,53 @@ namespace BusBuddy.Core.Data.Repositories
             return activeVehicles.Where(v => !conflictingVehicleIds.Contains(v.BusId));
         }
 
-        public async Task<IEnumerable<Bus>> GetVehiclesByStatusAsync(VehicleStatus status)
+        [Obsolete("Use GetBusesByStatusAsync(VehicleStatus)")]
+        public async Task<IEnumerable<Bus>> GetVehiclesByStatusAsync(VehicleStatus status) => await GetBusesByStatusAsync(status);
+
+        public async Task<IEnumerable<Bus>> GetBusesByStatusAsync(VehicleStatus status)
         {
-            return await Query()
+            return await QueryNoTracking()
                 .Where(v => v.Status == status.ToString())
                 .OrderBy(v => v.BusNumber)
                 .ToListAsync()
                 .ConfigureAwait(false);
         }
 
-        public async Task<IEnumerable<Bus>> GetVehiclesByFleetTypeAsync(string fleetType)
+        [Obsolete("Use GetBusesByFleetTypeAsync")]
+        public async Task<IEnumerable<Bus>> GetVehiclesByFleetTypeAsync(string fleetType) => await GetBusesByFleetTypeAsync(fleetType);
+
+        public async Task<IEnumerable<Bus>> GetBusesByFleetTypeAsync(string fleetType)
         {
-            return await Query()
+            return await QueryNoTracking()
                 .Where(v => v.FleetType == fleetType)
                 .OrderBy(v => v.BusNumber)
                 .ToListAsync();
         }
 
-        public async Task<Bus?> GetVehicleByBusNumberAsync(string busNumber)
+        [Obsolete("Use GetBusByBusNumberAsync")]
+        public async Task<Bus?> GetVehicleByBusNumberAsync(string busNumber) => await GetBusByBusNumberAsync(busNumber);
+
+        public async Task<Bus?> GetBusByBusNumberAsync(string busNumber)
         {
-            return await Query()
+            return await QueryNoTracking()
                 .FirstOrDefaultAsync(v => v.BusNumber == busNumber);
         }
 
-        public async Task<Bus?> GetVehicleByVINAsync(string vin)
+        [Obsolete("Use GetBusByVINAsync")]
+        public async Task<Bus?> GetVehicleByVINAsync(string vin) => await GetBusByVINAsync(vin);
+
+        public async Task<Bus?> GetBusByVINAsync(string vin)
         {
-            return await Query()
+            return await QueryNoTracking()
                 .FirstOrDefaultAsync(v => v.VINNumber == vin);
         }
 
-        public async Task<Bus?> GetVehicleByLicenseNumberAsync(string licenseNumber)
+        [Obsolete("Use GetBusByLicenseNumberAsync")]
+        public async Task<Bus?> GetVehicleByLicenseNumberAsync(string licenseNumber) => await GetBusByLicenseNumberAsync(licenseNumber);
+
+        public async Task<Bus?> GetBusByLicenseNumberAsync(string licenseNumber)
         {
-            return await Query()
+            return await QueryNoTracking()
                 .FirstOrDefaultAsync(v => v.LicenseNumber == licenseNumber);
         }
         #endregion
@@ -103,7 +125,7 @@ namespace BusBuddy.Core.Data.Repositories
         public async Task<IEnumerable<Bus>> GetVehiclesDueForInspectionAsync(int withinDays = 30)
         {
             var cutoffDate = DateTime.Today.AddDays(-365 + withinDays); // Due within specified days of 1-year mark
-            return await Query()
+            return await QueryNoTracking()
                 .Where(v => !v.DateLastInspection.HasValue || v.DateLastInspection <= cutoffDate)
                 .OrderBy(v => v.DateLastInspection ?? DateTime.MinValue)
                 .ToListAsync();
@@ -112,7 +134,7 @@ namespace BusBuddy.Core.Data.Repositories
         public async Task<IEnumerable<Bus>> GetVehiclesWithExpiredInspectionAsync()
         {
             var oneYearAgo = DateTime.Today.AddYears(-1);
-            return await Query()
+            return await QueryNoTracking()
                 .Where(v => !v.DateLastInspection.HasValue || v.DateLastInspection <= oneYearAgo)
                 .OrderBy(v => v.DateLastInspection ?? DateTime.MinValue)
                 .ToListAsync();
@@ -120,7 +142,7 @@ namespace BusBuddy.Core.Data.Repositories
 
         public async Task<IEnumerable<Bus>> GetVehiclesDueForMaintenanceAsync()
         {
-            return await Query()
+            return await QueryNoTracking()
                 .Where(v => v.NextMaintenanceDue.HasValue && v.NextMaintenanceDue <= DateTime.Today.AddDays(30))
                 .OrderBy(v => v.NextMaintenanceDue)
                 .ToListAsync();
@@ -128,7 +150,7 @@ namespace BusBuddy.Core.Data.Repositories
 
         public async Task<IEnumerable<Bus>> GetVehiclesWithExpiredInsuranceAsync()
         {
-            return await Query()
+            return await QueryNoTracking()
                 .Where(v => v.InsuranceExpiryDate.HasValue && v.InsuranceExpiryDate < DateTime.Today)
                 .OrderBy(v => v.InsuranceExpiryDate)
                 .ToListAsync();
@@ -137,7 +159,7 @@ namespace BusBuddy.Core.Data.Repositories
         public async Task<IEnumerable<Bus>> GetVehiclesWithExpiringInsuranceAsync(int withinDays = 30)
         {
             var expiryDate = DateTime.Today.AddDays(withinDays);
-            return await Query()
+            return await QueryNoTracking()
                 .Where(v => v.InsuranceExpiryDate.HasValue &&
                            v.InsuranceExpiryDate >= DateTime.Today &&
                            v.InsuranceExpiryDate <= expiryDate)
@@ -149,7 +171,7 @@ namespace BusBuddy.Core.Data.Repositories
         #region Capacity and Features
         public async Task<IEnumerable<Bus>> GetVehiclesBySeatingCapacityAsync(int minCapacity, int? maxCapacity = null)
         {
-            var query = Query().Where(v => v.SeatingCapacity >= minCapacity);
+            var query = QueryNoTracking().Where(v => v.SeatingCapacity >= minCapacity);
 
             if (maxCapacity.HasValue)
             {
@@ -161,7 +183,7 @@ namespace BusBuddy.Core.Data.Repositories
 
         public async Task<IEnumerable<Bus>> GetVehiclesWithSpecialEquipmentAsync(string equipment)
         {
-            return await Query()
+            return await QueryNoTracking()
                 .Where(v => v.SpecialEquipment != null && v.SpecialEquipment.Contains(equipment))
                 .OrderBy(v => v.BusNumber)
                 .ToListAsync();
@@ -169,7 +191,7 @@ namespace BusBuddy.Core.Data.Repositories
 
         public async Task<IEnumerable<Bus>> GetVehiclesWithGPSAsync()
         {
-            return await Query()
+            return await QueryNoTracking()
                 .Where(v => v.GPSTracking)
                 .OrderBy(v => v.BusNumber)
                 .ToListAsync();
@@ -190,7 +212,7 @@ namespace BusBuddy.Core.Data.Repositories
         public async Task<int> GetAverageVehicleAgeAsync()
         {
             var currentYear = DateTime.Now.Year;
-            var averageYear = await Query()
+            var averageYear = await QueryNoTracking()
                 .AverageAsync(v => v.Year);
 
             return currentYear - (int)averageYear;
@@ -198,14 +220,14 @@ namespace BusBuddy.Core.Data.Repositories
 
         public async Task<decimal> GetTotalFleetValueAsync()
         {
-            return await Query()
+            return await QueryNoTracking()
                 .Where(v => v.PurchasePrice.HasValue)
                 .SumAsync(v => v.PurchasePrice ?? 0);
         }
 
         public async Task<Dictionary<string, int>> GetVehicleCountByStatusAsync()
         {
-            return await Query()
+            return await QueryNoTracking()
                 .GroupBy(v => v.Status)
                 .Select(g => new { Status = g.Key, Count = g.Count() })
                 .ToDictionaryAsync(x => x.Status, x => x.Count);
@@ -213,7 +235,7 @@ namespace BusBuddy.Core.Data.Repositories
 
         public async Task<Dictionary<string, int>> GetVehicleCountByMakeAsync()
         {
-            return await Query()
+            return await QueryNoTracking()
                 .GroupBy(v => v.Make)
                 .Select(g => new { Make = g.Key, Count = g.Count() })
                 .ToDictionaryAsync(x => x.Make, x => x.Count);
@@ -221,7 +243,7 @@ namespace BusBuddy.Core.Data.Repositories
 
         public async Task<Dictionary<int, int>> GetVehicleCountByYearAsync()
         {
-            return await Query()
+            return await QueryNoTracking()
                 .GroupBy(v => v.Year)
                 .Select(g => new { Year = g.Key, Count = g.Count() })
                 .ToDictionaryAsync(x => x.Year, x => x.Count);

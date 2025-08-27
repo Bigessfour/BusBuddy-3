@@ -9,7 +9,7 @@
     },
     "production": {
       "XAI_API_KEY": "${XAI_API_KEY}",
-      "GROK_MODEL": "grok-4-0709", 
+      "GROK_MODEL": "grok-4-0709",
       "GROK_MAX_TOKENS": 800,
       "GROK_TEMPERATURE": 0.4,
       "LOG_LEVEL": "info"
@@ -27,7 +27,7 @@
   },
   "server_ports": {
     "grok4_mcp": "stdio",
-    "busbuddy_mcp": "stdio", 
+    "busbuddy_mcp": "stdio",
     "git_mcp": "stdio"
   }
 }

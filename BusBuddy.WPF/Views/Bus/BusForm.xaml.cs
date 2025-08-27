@@ -33,7 +33,7 @@ namespace BusBuddy.WPF.Views.Bus
                 }
         }
 
-        public BusForm(BusBuddy.Core.Models.Bus bus)
+        public BusForm(BusBuddy.Core.Domain.Bus bus)
         {
             InitializeComponent();
             ApplySyncfusionTheme();

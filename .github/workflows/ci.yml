@@ -119,10 +119,10 @@ jobs:
         shell: pwsh
         run: |
           if ($env:SYNCFUSION_LICENSE_KEY) {
-                      Write-Output "Syncfusion license detected in environment."
-                    } else {
-                      Write-Warning "SYNCFUSION license not present (secret not mapped)."
-                    }
+            Write-Output "Syncfusion license detected in environment."
+          } else {
+            Write-Warning "SYNCFUSION license not present (secret not mapped)."
+          }
       - name: "Checkout Code"
         uses: actions/checkout@v4
       - name: "Setup .NET"
@@ -253,7 +253,7 @@ jobs:
           } else {
             Write-Warning "Building without Syncfusion license - some features may be limited"
           }
-          
+
           if (Get-Command bb-build -ErrorAction SilentlyContinue) {
             Write-Host "Using bb-build" -ForegroundColor Cyan
             bb-build

@@ -6,7 +6,7 @@ using BusBuddy.Core;
 using BusBuddy.Core.Data;
 using Microsoft.EntityFrameworkCore;
 using BusBuddy.Core.Services;
-using BusBuddy.Core.Models;
+using BusBuddy.Core.Domain;
 using Serilog;
 using System.Windows.Input;
 using CommunityToolkit.Mvvm.Input;
@@ -26,7 +26,7 @@ namespace BusBuddy.WPF.ViewModels.Route
         /// <summary>
         /// Backing collection of routes displayed in the grid. Bound to <see cref="RoutesView"/> for filtering.
         /// </summary>
-        public ObservableCollection<BusBuddy.Core.Models.Route> Routes { get; set; } = new();
+        public ObservableCollection<BusBuddy.Core.Domain.Route> Routes { get; set; } = new();
 
         /// <summary>
         /// CollectionView wrapper that provides filtering and view operations for <see cref="Routes"/>.
@@ -40,13 +40,13 @@ namespace BusBuddy.WPF.ViewModels.Route
         /// <summary>
         /// Buses available for assignment (Active only) — loaded lazily when first needed.
         /// </summary>
-    public ObservableCollection<BusBuddy.Core.Models.Bus> AvailableBuses { get; } = new();
+    public ObservableCollection<BusBuddy.Core.Domain.Bus> AvailableBuses { get; } = new();
 
-    private BusBuddy.Core.Models.Bus? _selectedBus;
+    private BusBuddy.Core.Domain.Bus? _selectedBus;
         /// <summary>
         /// Currently selected bus to assign to the selected route.
         /// </summary>
-    public BusBuddy.Core.Models.Bus? SelectedBus
+    public BusBuddy.Core.Domain.Bus? SelectedBus
         {
             get => _selectedBus;
             set { _selectedBus = value; OnPropertyChanged(); CommandManager.InvalidateRequerySuggested(); }
@@ -62,11 +62,11 @@ namespace BusBuddy.WPF.ViewModels.Route
             set { _selectedTimeSlot = value; OnPropertyChanged(); }
         }
 
-        private BusBuddy.Core.Models.Route? _selectedRoute;
+        private BusBuddy.Core.Domain.Route? _selectedRoute;
     /// <summary>
     /// Currently selected route in the grid.
     /// </summary>
-    public BusBuddy.Core.Models.Route? SelectedRoute
+    public BusBuddy.Core.Domain.Route? SelectedRoute
         {
             get => _selectedRoute;
             set
@@ -216,7 +216,7 @@ namespace BusBuddy.WPF.ViewModels.Route
         /// </summary>
         private bool FilterRoutes(object obj)
         {
-            if (obj is not BusBuddy.Core.Models.Route r)
+            if (obj is not BusBuddy.Core.Domain.Route r)
             {
                 return false;
             }
@@ -238,7 +238,7 @@ namespace BusBuddy.WPF.ViewModels.Route
                 {
                     using var context = _contextFactory.CreateWriteDbContext();
                     var baseName = $"Route {DateTime.Now:HHmmss}";
-                    var newRoute = new BusBuddy.Core.Models.Route
+                    var newRoute = new BusBuddy.Core.Domain.Route
                     {
                         RouteName = baseName,
                         School = SelectedRoute?.School ?? "Wiley School District",
@@ -269,7 +269,7 @@ namespace BusBuddy.WPF.ViewModels.Route
         {
             if (SelectedRoute is not null)
             {
-                var copiedRoute = new BusBuddy.Core.Models.Route
+                var copiedRoute = new BusBuddy.Core.Domain.Route
                 {
                     RouteName = $"Copy of {SelectedRoute.RouteName}",
                     School = SelectedRoute.School

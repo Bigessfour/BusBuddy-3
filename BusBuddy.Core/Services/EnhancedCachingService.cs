@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
-using BusBuddy.Core.Models;
+using BusBuddy.Core.Domain;
 using Microsoft.Extensions.Caching.Memory;
 using Serilog;
 

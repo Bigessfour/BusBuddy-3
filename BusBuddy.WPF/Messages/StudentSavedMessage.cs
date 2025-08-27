@@ -6,8 +6,8 @@ namespace BusBuddy.WPF.Messages
     /// Message published when a student has been successfully saved.
     /// Carries the saved student instance as payload.
     /// </summary>
-    public sealed class StudentSavedMessage : ValueChangedMessage<BusBuddy.Core.Models.Student>
+    public sealed class StudentSavedMessage : ValueChangedMessage<BusBuddy.Core.Domain.Student>
     {
-        public StudentSavedMessage(BusBuddy.Core.Models.Student value) : base(value) { }
+        public StudentSavedMessage(BusBuddy.Core.Domain.Student value) : base(value) { }
     }
 }

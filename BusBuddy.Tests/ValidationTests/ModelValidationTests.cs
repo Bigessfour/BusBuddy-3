@@ -1,6 +1,6 @@
 using NUnit.Framework;
 using FluentAssertions;
-using BusBuddy.Core.Models;
+using BusBuddy.Core.Domain;
 using System.ComponentModel.DataAnnotations;
 
 namespace BusBuddy.Tests.ValidationTests;

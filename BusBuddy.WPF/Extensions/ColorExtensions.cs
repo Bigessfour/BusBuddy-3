@@ -1,7 +1,7 @@
-using BusBuddy.Core.Models;
+using BusBuddy.Core.Domain;
 using System.Windows.Media;
 using WpfColor = System.Windows.Media.Color;
-using CoreColor = BusBuddy.Core.Models.Color;
+using CoreColor = BusBuddy.Core.Domain.Color;
 
 namespace BusBuddy.WPF.Extensions
 {

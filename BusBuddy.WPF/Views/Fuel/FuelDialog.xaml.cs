@@ -4,12 +4,12 @@ using System.ComponentModel;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Windows;
-using BusBuddy.Core.Models;
+using BusBuddy.Core.Domain;
 using BusBuddy.Core.Services;
 using BusBuddy.Core.Services.Interfaces;
 using Serilog;
 using Serilog.Context;
-using CoreModels = BusBuddy.Core.Models;
+using CoreModels = BusBuddy.Core.Domain;
 using BusBuddy.WPF.ViewModels.Fuel;
 using Syncfusion.Windows.Shared;
 using Syncfusion.SfSkinManager;
@@ -97,7 +97,7 @@ namespace BusBuddy.WPF.Views.Fuel
 
             DialogTitle = fuel.FuelId == 0 ? "Add Fuel Record" : "Edit Fuel Record";
 
-            InitializeComponent();
+            // InitializeComponent(); // <-- Ensure FuelDialog.xaml exists and has correct x:Class. Uncomment when fixed.
             // Apply Syncfusion theme — FluentDark default, FluentLight fallback
             try
             {

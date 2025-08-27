@@ -3,7 +3,7 @@ using BusBuddy.Core.Data;
 using Serilog;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using BusBuddy.Core.Models;
+using BusBuddy.Core.Domain;
 using BusBuddy.Core.Services;
 using Moq;
 using Microsoft.EntityFrameworkCore;

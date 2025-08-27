@@ -5,7 +5,9 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using System.Windows.Input;
-using BusBuddy.Core.Models;
+using BusBuddy.Core.Domain;
+using DomainStudent = BusBuddy.Core.Domain.Student;
+using DomainRoute = BusBuddy.Core.Domain.Route;
 using System.Windows.Data;
 using BusBuddy.Core.Services;
 using BusBuddy.Core;
@@ -34,7 +36,7 @@ namespace BusBuddy.WPF.ViewModels.Student
 
         private readonly IBusBuddyDbContextFactory _contextFactory;
         private readonly AddressService _addressService;
-        private Core.Models.Student? _selectedStudent;
+        private DomainStudent? _selectedStudent;
         private bool _isLoading;
         private string _statusMessage = string.Empty;
         private string _quickSearchText = string.Empty;
@@ -42,7 +44,7 @@ namespace BusBuddy.WPF.ViewModels.Student
         // New properties for enhanced features
         private ObservableCollection<string> _availableGrades = new();
         private ObservableCollection<string> _availableSchools = new();
-        private ObservableCollection<Core.Models.Route> _availableRoutes = new();
+        private ObservableCollection<DomainRoute> _availableRoutes = new();
         /// <summary>
         /// Default constructor for production use
         /// </summary>
@@ -55,7 +57,7 @@ namespace BusBuddy.WPF.ViewModels.Student
             // Fallback for XAML new StudentsViewModel(); prefer DI constructor below.
             _contextFactory = new BusBuddyDbContextFactory();
             _addressService = new AddressService();
-            Students = new ObservableCollection<Core.Models.Student>();
+            Students = new ObservableCollection<DomainStudent>();
             StudentsView = CollectionViewSource.GetDefaultView(Students);
             StudentsView.Filter = StudentFilter;
 
@@ -73,7 +75,7 @@ namespace BusBuddy.WPF.ViewModels.Student
         {
             _contextFactory = contextFactory;
             _addressService = addressService ?? new AddressService();
-            Students = new ObservableCollection<Core.Models.Student>();
+            Students = new ObservableCollection<DomainStudent>();
             StudentsView = CollectionViewSource.GetDefaultView(Students);
             StudentsView.Filter = StudentFilter;
 
@@ -95,7 +97,7 @@ namespace BusBuddy.WPF.ViewModels.Student
             // Wrap provided context in a simple factory that returns the same instance without disposing in tests
             _contextFactory = new TestContextFactory(context);
             _addressService = addressService;
-            Students = new ObservableCollection<Core.Models.Student>();
+            Students = new ObservableCollection<DomainStudent>();
             StudentsView = CollectionViewSource.GetDefaultView(Students);
             StudentsView.Filter = StudentFilter;
 
@@ -135,7 +137,7 @@ namespace BusBuddy.WPF.ViewModels.Student
         /// <summary>
         /// Collection of all students for display in the data grid
         /// </summary>
-        public ObservableCollection<Core.Models.Student> Students { get; }
+        public ObservableCollection<DomainStudent> Students { get; }
 
     /// <summary>
     /// View over Students that supports filtering/sorting/grouping for UI binding
@@ -148,7 +150,7 @@ namespace BusBuddy.WPF.ViewModels.Student
     /// <summary>
     /// Currently selected student in the grid. Updates selection-dependent command CanExecute states.
     /// </summary>
-    public Core.Models.Student? SelectedStudent
+    public DomainStudent? SelectedStudent
         {
             get => _selectedStudent;
             set
@@ -238,7 +240,7 @@ namespace BusBuddy.WPF.ViewModels.Student
         /// <summary>
         /// Available routes for assignment
         /// </summary>
-        public ObservableCollection<Core.Models.Route> AvailableRoutes
+        public ObservableCollection<DomainRoute> AvailableRoutes
         {
             get => _availableRoutes;
             set => SetProperty(ref _availableRoutes, value);
@@ -332,8 +334,8 @@ namespace BusBuddy.WPF.ViewModels.Student
             BulkAssignRouteCommand = _bulkAssignRouteRelay;
             OptimizeRoutesCommand = new AsyncRelayCommand(ExecuteOptimizeRoutes);
             ViewMapCommand = new RelayCommand(ExecuteViewMap);
-            ViewOnMapCommand = new RelayCommand<Core.Models.Student>(ExecuteViewOnMap);
-            SuggestRouteCommand = new RelayCommand<Core.Models.Student>(ExecuteSuggestRoute);
+            ViewOnMapCommand = new RelayCommand<DomainStudent>(ExecuteViewOnMap);
+            SuggestRouteCommand = new RelayCommand<DomainStudent>(ExecuteSuggestRoute);
             ShowSummaryCommand = new RelayCommand(ExecuteShowSummary);
             ShowQuickActionsCommand = new RelayCommand(ExecuteShowQuickActions);
             PlotStudentsCommand = new RelayCommand(ExecutePlotStudents);
@@ -481,7 +483,7 @@ namespace BusBuddy.WPF.ViewModels.Student
                     var fullPath = Path.Combine(exportDir, fileName);
 
                     // Export only currently visible (filtered) items
-                    var rows = StudentsView.Cast<Core.Models.Student>().ToList();
+                    var rows = StudentsView.Cast<DomainStudent>().ToList();
                     using var sw = new StreamWriter(fullPath, false, System.Text.Encoding.UTF8);
                     sw.WriteLine("StudentId,StudentName,StudentNumber,Grade,AMRoute,PMRoute,School,Active");
                     foreach (var s in rows)
@@ -551,7 +553,7 @@ namespace BusBuddy.WPF.ViewModels.Student
     /// <summary>
     /// Plots the provided student on the map via GoogleEarthViewModel.
     /// </summary>
-    private async void ExecuteViewOnMap(Core.Models.Student? student)
+    private async void ExecuteViewOnMap(DomainStudent? student)
         {
             try
             {
@@ -771,7 +773,7 @@ namespace BusBuddy.WPF.ViewModels.Student
     /// <summary>
     /// Removes the specified student from the database and updates the UI collections.
     /// </summary>
-    private async Task DeleteStudentAsync(Core.Models.Student student)
+    private async Task DeleteStudentAsync(DomainStudent student)
         {
             try
             {
@@ -815,7 +817,7 @@ namespace BusBuddy.WPF.ViewModels.Student
 
         private bool StudentFilter(object obj)
         {
-            if (obj is not Core.Models.Student s)
+            if (obj is not DomainStudent s)
             {
                 return false;
             }
@@ -872,9 +874,9 @@ namespace BusBuddy.WPF.ViewModels.Student
                     // Gather target students:
                     // If a student is selected, treat that as a single-target bulk (user intent is explicit)
                     // Otherwise assign all currently filtered students that lack BOTH AM & PM routes.
-                    var visibleStudents = StudentsView.Cast<Core.Models.Student>().ToList();
+                    var visibleStudents = StudentsView.Cast<DomainStudent>().ToList();
                     var candidates = SelectedStudent != null
-                        ? new List<Core.Models.Student> { SelectedStudent }
+                        ? new List<DomainStudent> { SelectedStudent }
                         : visibleStudents.Where(s => string.IsNullOrWhiteSpace(s.AMRoute) || string.IsNullOrWhiteSpace(s.PMRoute)).ToList();
 
                     if (candidates.Count == 0)
@@ -1102,7 +1104,7 @@ namespace BusBuddy.WPF.ViewModels.Student
     /// <summary>
     /// Placeholder for AI route suggestion for a single student.
     /// </summary>
-    private void ExecuteSuggestRoute(Core.Models.Student? student)
+    private void ExecuteSuggestRoute(DomainStudent? student)
         {
             try
             {

@@ -1,5 +1,5 @@
 using BusBuddy.Core.Data.Interfaces;
-using BusBuddy.Core.Models.Base;
+using BusBuddy.Core.Domain.Base;
 using BusBuddy.Core.Services;
 using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;

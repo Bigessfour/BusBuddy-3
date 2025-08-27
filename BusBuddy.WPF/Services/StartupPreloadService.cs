@@ -102,7 +102,7 @@ namespace BusBuddy.WPF.Services
                 var driversTask = _cachingService.GetAllDriversAsync(async () => await _driverService.GetAllDriversAsync());
                 var routesTask = _cachingService.GetAllRoutesAsync(async () => {
                     var result = await _routeService.GetAllActiveRoutesAsync();
-                    return result.IsSuccess ? result.Value : Enumerable.Empty<BusBuddy.Core.Models.Route>();
+                    return result.IsSuccess ? result.Value : Enumerable.Empty<BusBuddy.Core.Domain.Route>();
                 });
                 var studentsTask = _cachingService.GetAllStudentsAsync(async () => await _studentService.GetAllStudentsAsync());
 
@@ -129,11 +129,11 @@ namespace BusBuddy.WPF.Services
                 var drivers = await _cachingService.GetAllDriversAsync(async () => await _driverService.GetAllDriversAsync());
                 var routes = await _cachingService.GetAllRoutesAsync(async () => {
                     var result = await _routeService.GetAllActiveRoutesAsync();
-                    return result.IsSuccess ? result.Value : Enumerable.Empty<BusBuddy.Core.Models.Route>();
+                    return result.IsSuccess ? result.Value : Enumerable.Empty<BusBuddy.Core.Domain.Route>();
                 });
                 var students = await _cachingService.GetAllStudentsAsync(async () => await _studentService.GetAllStudentsAsync());
 
-                var routeList = routes as IList<BusBuddy.Core.Models.Route> ?? routes.ToList();
+                var routeList = routes as IList<BusBuddy.Core.Domain.Route> ?? routes.ToList();
                 stats.BusCount = buses.Count;
                 stats.DriverCount = drivers.Count;
                 stats.RouteCount = routeList.Count;

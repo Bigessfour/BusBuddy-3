@@ -1,5 +1,5 @@
 using AutoMapper;
-using BusBuddy.Core.Models;
+using BusBuddy.Core.Domain;
 using BusBuddy.WPF.Models;
 using System;
 

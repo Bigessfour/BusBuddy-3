@@ -1,4 +1,4 @@
-using BusBuddy.Core.Models;
+using BusBuddy.Core.Domain;
 using BusBuddy.Core.Services;
 using BusBuddy.Core.Utilities;
 using Microsoft.Extensions.DependencyInjection;

@@ -133,6 +133,7 @@ result.Should().NotBeEmpty();
 [Test, Category("Integration")]
 [Test, Category("UI")]
 [Test, Category("Performance")]
+[Test, Category("AzureIntegration")]
 ```
 
 ### **Test Method Naming**
@@ -181,20 +182,31 @@ var driver = new DriverTestBuilder()
     .Build();
 ```
 
-### **In-Memory Database Testing**
+### **SQLite Database Testing** (Replaces InMemory for Integration)
 
-```csharp
-[SetUp]
-public void SetUp()
-{
-    var options = new DbContextOptionsBuilder<BusBuddyDbContext>()
-        .UseInMemoryDatabase($"TestDb_{Guid.NewGuid()}")
-        .Options;
+     ```csharp
+     [SetUp]
+     public void SetUp()
+     {
+         var options = new DbContextOptionsBuilder<BusBuddyDbContext>()
+             .UseSqlite("Filename=:memory:")  // Or "Filename=test.db" for file-based
+             .Options;
 
-    _context = new BusBuddyDbContext(options);
-    SeedTestData();
-}
-```
+         _context = new BusBuddyDbContext(options);
+         _context.Database.OpenConnection();  // Required for in-memory SQLite transactions
+         _context.Database.EnsureCreated();   // Create schema
+         SeedTestData();
+     }
+
+     [TearDown]
+     public void TearDown()
+     {
+         _context.Database.CloseConnection();  // Clean up
+         _context.Dispose();
+     }
+     ```
+     - **Why SQLite?**: Supports transactions (e.g., `using var transaction = _context.Database.BeginTransaction();`), relationships, and raw SQL—removing InMemory restrictions. For Azure SQL-specific tests, add a conditional to use a real connection string via secrets.
+     ```
 
 ## 🎭 **Mocking with Moq**
 
@@ -261,6 +273,40 @@ public class DriverServiceIntegrationTests
         // Use real database or containerized test database
         _context = CreateTestContext();
         _service = new DriverService(_context);
+    }
+}
+```
+
+### **Azure SQL Integration**
+
+```csharp
+[TestFixture, Category("AzureIntegration")]
+public class AzureSqlIntegrationTests
+{
+    private BusBuddyDbContext _context;
+    private SqlConnection _connection;
+
+    [OneTimeSetUp]
+    public void OneTimeSetUp()
+    {
+        // Use Azure SQL Database for integration tests
+        var connectionString = "Your Azure SQL connection string here";
+        _connection = new SqlConnection(connectionString);
+        _connection.Open();
+
+        var options = new DbContextOptionsBuilder<BusBuddyDbContext>()
+            .UseSqlServer(_connection)
+            .Options;
+
+        _context = new BusBuddyDbContext(options);
+        _context.Database.EnsureCreated();
+    }
+
+    [OneTimeTearDown]
+    public void OneTimeTearDown()
+    {
+        _context.Database.EnsureDeleted();
+        _connection.Close();
     }
 }
 ```
@@ -352,6 +398,7 @@ dotnet test
 # Run specific categories
 dotnet test --filter Category=Unit
 dotnet test --filter Category=Integration
+dotnet test --filter Category=AzureIntegration
 
 # Generate coverage report
 dotnet test --collect:"XPlat Code Coverage"
@@ -363,6 +410,11 @@ dotnet test --collect:"XPlat Code Coverage"
 - Coverage reports generated on each build
 - Performance regression detection
 - UI test execution in headless mode
+
+### **Parallel Testing Guidelines**
+- Use `[NonParallelizable]` on tests with shared state (e.g., file-based SQLite).
+- Monitor for flakiness in Syncfusion UI tests; fallback to sequential if needed.
+- In ci.yml, add `--blame` for diagnostics.
 
 ---
 

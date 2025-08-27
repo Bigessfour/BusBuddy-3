@@ -13,6 +13,8 @@ using BusBuddy.WPF.Utilities; // SyncfusionThemeManager
 using Serilog;
 using Microsoft.Extensions.DependencyInjection;
 using BusBuddy.Core.Services;
+using BusBuddy.Core.Domain;
+using DomainStudent = BusBuddy.Core.Domain.Student;
 
 namespace BusBuddy.WPF.Views.Student
 {
@@ -133,7 +135,7 @@ namespace BusBuddy.WPF.Views.Student
         /// <summary>
         /// Overload: initializes with an existing student for editing.
         /// </summary>
-        public StudentForm(Core.Models.Student student) : this()
+        public StudentForm(DomainStudent student) : this()
         {
             try
             {

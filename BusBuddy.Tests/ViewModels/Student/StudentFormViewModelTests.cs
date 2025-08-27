@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 using NUnit.Framework;
 using Moq;
 using BusBuddy.WPF.ViewModels.Student;
-using BusBuddy.Core.Models;
+using BusBuddy.Core.Domain;
 using BusBuddy.Core.Services;
 using BusBuddy.Core;
 using BusBuddy.Core.Data;
@@ -39,7 +39,7 @@ namespace BusBuddy.Tests.ViewModels.Student
             _mockAddressService = new Mock<AddressService>();
             _studentService = ServiceProvider.GetRequiredService<IStudentService>();
             
-            var testStudent = new BusBuddy.Core.Models.Student
+            var testStudent = new BusBuddy.Core.Domain.Student
             {
                 StudentId = 1,
                 StudentName = "Test Student",
@@ -67,7 +67,7 @@ namespace BusBuddy.Tests.ViewModels.Student
         [Test]
         public void Constructor_WithStudent_SetsEditMode()
         {
-            var student = new BusBuddy.Core.Models.Student { StudentId = 1, StudentName = "Test" };
+            var student = new BusBuddy.Core.Domain.Student { StudentId = 1, StudentName = "Test" };
             var viewModel = new StudentFormViewModel(student, enableValidation: true);
             viewModel.IsEditMode.Should().BeTrue();
             viewModel.FormTitle.Should().Be("Edit Student");

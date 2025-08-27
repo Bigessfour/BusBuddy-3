@@ -29,10 +29,10 @@ namespace BusBuddy.WPF.ViewModels
         }
 
         // Collections for the main grids - using fully qualified names to avoid namespace conflicts
-        public ObservableCollection<BusBuddy.Core.Models.Student> Students { get; set; } = new();
-        public ObservableCollection<BusBuddy.Core.Models.Route> Routes { get; set; } = new();
-        public ObservableCollection<BusBuddy.Core.Models.Bus> Buses { get; set; } = new();
-        public ObservableCollection<BusBuddy.Core.Models.Driver> Drivers { get; set; } = new();
+        public ObservableCollection<BusBuddy.Core.Domain.Student> Students { get; set; } = new();
+        public ObservableCollection<BusBuddy.Core.Domain.Route> Routes { get; set; } = new();
+        public ObservableCollection<BusBuddy.Core.Domain.Bus> Buses { get; set; } = new();
+        public ObservableCollection<BusBuddy.Core.Domain.Driver> Drivers { get; set; } = new();
 
         // MVVM Commands for UI accessibility and Azure SQL operations
         public ICommand? NavigateToStudentsCommand { get; private set; }
@@ -194,14 +194,14 @@ namespace BusBuddy.WPF.ViewModels
         private void LoadSampleData()
         {
             // Add sample students
-            Students.Add(new BusBuddy.Core.Models.Student
+            Students.Add(new BusBuddy.Core.Domain.Student
             {
                 StudentNumber = "12345",
                 StudentName = "John Doe",
                 Grade = "5th",
                 HomeAddress = "123 Main St"
             });
-            Students.Add(new BusBuddy.Core.Models.Student
+            Students.Add(new BusBuddy.Core.Domain.Student
             {
                 StudentNumber = "12346",
                 StudentName = "Jane Smith",
@@ -210,14 +210,14 @@ namespace BusBuddy.WPF.ViewModels
             });
 
             // Add sample routes
-            Routes.Add(new BusBuddy.Core.Models.Route
+            Routes.Add(new BusBuddy.Core.Domain.Route
             {
                 RouteName = "Route 1",
                 Date = System.DateTime.Today,
                 Description = "Elementary School Route",
                 School = "Riverside Elementary"
             });
-            Routes.Add(new BusBuddy.Core.Models.Route
+            Routes.Add(new BusBuddy.Core.Domain.Route
             {
                 RouteName = "Route 2",
                 Date = System.DateTime.Today,
@@ -226,7 +226,7 @@ namespace BusBuddy.WPF.ViewModels
             });
 
             // Add sample buses
-            Buses.Add(new BusBuddy.Core.Models.Bus
+            Buses.Add(new BusBuddy.Core.Domain.Bus
             {
                 BusNumber = "Bus 001",
                 LicenseNumber = "ABC123",
@@ -235,7 +235,7 @@ namespace BusBuddy.WPF.ViewModels
                 Year = 2020,
                 SeatingCapacity = 35
             });
-            Buses.Add(new BusBuddy.Core.Models.Bus
+            Buses.Add(new BusBuddy.Core.Domain.Bus
             {
                 BusNumber = "Bus 002",
                 LicenseNumber = "DEF456",
@@ -246,14 +246,14 @@ namespace BusBuddy.WPF.ViewModels
             });
 
             // Add sample drivers
-            Drivers.Add(new BusBuddy.Core.Models.Driver
+            Drivers.Add(new BusBuddy.Core.Domain.Driver
             {
                 DriverName = "Mike Johnson",
                 DriverPhone = "555-0123",
                 DriverEmail = "mike@busbuddy.com",
                 DriversLicenceType = "CDL"
             });
-            Drivers.Add(new BusBuddy.Core.Models.Driver
+            Drivers.Add(new BusBuddy.Core.Domain.Driver
             {
                 DriverName = "Sarah Wilson",
                 DriverPhone = "555-0124",

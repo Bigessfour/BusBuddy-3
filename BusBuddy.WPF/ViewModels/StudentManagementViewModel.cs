@@ -3,7 +3,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using BusBuddy.Core.Data;
-using BusBuddy.Core.Models;
+using BusBuddy.Core.Domain;
 using BusBuddy.Core.Services;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.EntityFrameworkCore;
@@ -16,11 +16,11 @@ public class StudentManagementViewModel : NotificationObject
     private readonly StudentService _studentService;
     private readonly IBusBuddyDbContextFactory _contextFactory;
 
-    public ObservableCollection<BusBuddy.Core.Models.Student> Students { get; set; } = new();
+    public ObservableCollection<BusBuddy.Core.Domain.Student> Students { get; set; } = new();
     public ObservableCollection<string> AvailableRoutes { get; set; } = new() { "Truck Plaza Route", "Big Bend Route", "East Route" };
     public string SelectedRoute { get; set; } = "";
     public string RuralStopInput { get; set; } = "";
-    public BusBuddy.Core.Models.Student? SelectedStudent { get; set; }
+    public BusBuddy.Core.Domain.Student? SelectedStudent { get; set; }
     public ICommand SaveAssignmentCommand { get; }
 
     public StudentManagementViewModel(StudentService studentService, IBusBuddyDbContextFactory contextFactory)

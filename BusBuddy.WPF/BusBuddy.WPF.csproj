@@ -8,6 +8,8 @@
     <ProjectName>BusBuddy.WPF</ProjectName>
     <IntermediateOutputPath>$(MSBuildProjectDirectory)\obj\Debug\</IntermediateOutputPath>
   <ApplicationManifest>app.manifest</ApplicationManifest>
+  <!-- Ensure central package version management is honored -->
+  <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
 
     <!-- Force executable generation for WPF application -->
     <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
@@ -69,69 +71,71 @@
 
   <!-- WPF-Specific Syncfusion Packages (not included in Directory.Build.props) -->
   <ItemGroup>
-    <PackageReference Include="Azure.Identity" Version="$(AzureIdentityVersion)" />
-    <PackageReference Include="Microsoft.ApplicationInsights.AspNetCore" Version="2.23.0" />
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="$(MicrosoftExtensionsVersion)" />
-    <PackageReference Include="Microsoft.Extensions.Hosting" Version="$(MicrosoftExtensionsVersion)" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="$(EntityFrameworkVersion)" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="$(EntityFrameworkVersion)" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="$(EntityFrameworkVersion)">
+    <PackageReference Include="Azure.Identity" />
+    <PackageReference Include="Microsoft.ApplicationInsights.AspNetCore" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="$(EntityFrameworkVersion)">
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
-    <PackageReference Include="Microsoft.Identity.Client" Version="4.76.0" />
-    <PackageReference Include="Serilog.Settings.Configuration" Version="9.0.0" />
-    <PackageReference Include="Syncfusion.SfGrid.WPF" Version="$(SyncfusionVersion)" />
-    <PackageReference Include="Syncfusion.SfChart.WPF" Version="$(SyncfusionVersion)" />
-    <PackageReference Include="Syncfusion.SfInput.WPF" Version="$(SyncfusionVersion)" />
-    <PackageReference Include="Syncfusion.SfTextInputLayout.WPF" Version="$(SyncfusionVersion)" />
-  <PackageReference Include="Syncfusion.SfSkinManager.WPF" Version="$(SyncfusionVersion)" />
-    <PackageReference Include="Syncfusion.Shared.WPF" Version="$(SyncfusionVersion)" />
-    <PackageReference Include="Syncfusion.Tools.WPF" Version="$(SyncfusionVersion)" />
-  <PackageReference Include="Syncfusion.SfBusyIndicator.WPF" Version="$(SyncfusionVersion)" />
-    <PackageReference Include="Syncfusion.SfNavigationDrawer.WPF" Version="$(SyncfusionVersion)" />
-    <PackageReference Include="Syncfusion.SfTreeView.WPF" Version="$(SyncfusionVersion)" />
-    <PackageReference Include="Syncfusion.SfChat.WPF" Version="$(SyncfusionVersion)" />
-    <PackageReference Include="Syncfusion.SfRichTextBoxAdv.WPF" Version="$(SyncfusionVersion)" />
-    <PackageReference Include="Syncfusion.SfScheduler.WPF" Version="$(SyncfusionVersion)" />
-    <PackageReference Include="Syncfusion.SfGauge.WPF" Version="$(SyncfusionVersion)" />
-    <PackageReference Include="Syncfusion.SfAccordion.WPF" Version="$(SyncfusionVersion)" />
-    <PackageReference Include="Syncfusion.SfMaps.WPF" Version="$(SyncfusionVersion)" />
-    <PackageReference Include="Syncfusion.PdfViewer.WPF" Version="$(SyncfusionVersion)" />
-    <PackageReference Include="Syncfusion.SfSpreadsheet.WPF" Version="$(SyncfusionVersion)" />
-    <PackageReference Include="Syncfusion.Themes.FluentDark.WPF" Version="$(SyncfusionVersion)" />
-  <PackageReference Include="Syncfusion.Themes.FluentLight.WPF" Version="$(SyncfusionVersion)" />
+    <PackageReference Include="Microsoft.Identity.Client" />
+    <!-- Add explicit Configuration.Binder reference to resolve NU1107 conflict -->
+    <PackageReference Include="Microsoft.Extensions.Configuration.Binder" />
+    <PackageReference Include="Serilog.Settings.Configuration" />
+    <PackageReference Include="Syncfusion.SfGrid.WPF" />
+    <PackageReference Include="Syncfusion.SfChart.WPF" />
+    <PackageReference Include="Syncfusion.SfInput.WPF" />
+    <PackageReference Include="Syncfusion.SfTextInputLayout.WPF" />
+  <PackageReference Include="Syncfusion.SfSkinManager.WPF" />
+    <PackageReference Include="Syncfusion.Shared.WPF" />
+    <PackageReference Include="Syncfusion.Tools.WPF" />
+  <PackageReference Include="Syncfusion.SfBusyIndicator.WPF" />
+    <PackageReference Include="Syncfusion.SfNavigationDrawer.WPF" />
+    <PackageReference Include="Syncfusion.SfTreeView.WPF" />
+    <PackageReference Include="Syncfusion.SfChat.WPF" />
+    <PackageReference Include="Syncfusion.SfRichTextBoxAdv.WPF" />
+    <PackageReference Include="Syncfusion.SfScheduler.WPF" />
+    <PackageReference Include="Syncfusion.SfGauge.WPF" />
+    <PackageReference Include="Syncfusion.SfAccordion.WPF" />
+    <PackageReference Include="Syncfusion.SfMaps.WPF" />
+    <PackageReference Include="Syncfusion.PdfViewer.WPF" />
+    <PackageReference Include="Syncfusion.SfSpreadsheet.WPF" />
+    <PackageReference Include="Syncfusion.Themes.FluentDark.WPF" />
+  <PackageReference Include="Syncfusion.Themes.FluentLight.WPF" />
     <!-- Added essential Syncfusion packages for MVP: SfGrid, SfChart, SfInput, Tools.WPF for DockingManager and CardView -->
   </ItemGroup>
 
   <!-- Application-Specific Packages -->
   <ItemGroup>
-    <PackageReference Include="AutoMapper" Version="12.0.1" />
-    <PackageReference Include="AutoMapper.Extensions.Microsoft.DependencyInjection" Version="12.0.1" />
-    <PackageReference Include="CommunityToolkit.Mvvm" Version="$(CommunityToolkitMvvmVersion)" />
-    <PackageReference Include="Microsoft.Web.WebView2" Version="$(WebView2Version)" />
+  <PackageReference Include="AutoMapper" />
+  <PackageReference Include="AutoMapper.Extensions.Microsoft.DependencyInjection" />
+  <PackageReference Include="CommunityToolkit.Mvvm" />
+  <PackageReference Include="Microsoft.Web.WebView2" />
 
     <!-- Microsoft.Extensions packages for dependency injection and hosting -->
-    <PackageReference Include="Microsoft.Extensions.Configuration" Version="$(MicrosoftExtensionsVersion)" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="$(MicrosoftExtensionsVersion)" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="$(MicrosoftExtensionsVersion)" />
+  <PackageReference Include="Microsoft.Extensions.Configuration" />
+  <PackageReference Include="Microsoft.Extensions.Configuration.Json" />
+  <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" />
 
     <!-- SQLite Entity Framework packages -->
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="$(EntityFrameworkVersion)" />
+  <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" />
 
     <!-- Serilog packages for complete logging functionality -->
-    <PackageReference Include="Serilog" Version="$(SerilogVersion)" />
-    <PackageReference Include="Serilog.Sinks.Console" Version="$(SerilogSinksConsoleVersion)" />
-    <PackageReference Include="Serilog.Sinks.File" Version="$(SerilogSinksFileVersion)" />
-    <PackageReference Include="Serilog.Sinks.Debug" Version="$(SerilogSinksDebugVersion)" />
-    <PackageReference Include="Serilog.Extensions.Logging" Version="$(SerilogExtensionsLoggingVersion)" />
-    <PackageReference Include="Serilog.Enrichers.Environment" Version="3.0.1" />
-    <PackageReference Include="Serilog.Enrichers.Process" Version="3.0.0" />
-    <PackageReference Include="Serilog.Enrichers.Thread" Version="4.0.0" />
+  <PackageReference Include="Serilog" />
+  <PackageReference Include="Serilog.Sinks.Console" />
+  <PackageReference Include="Serilog.Sinks.File" />
+  <PackageReference Include="Serilog.Sinks.Debug" />
+  <PackageReference Include="Serilog.Extensions.Logging" />
+  <PackageReference Include="Serilog.Enrichers.Environment" />
+  <PackageReference Include="Serilog.Enrichers.Process" />
+  <PackageReference Include="Serilog.Enrichers.Thread" />
   </ItemGroup>
 
   <!-- Application Configuration -->

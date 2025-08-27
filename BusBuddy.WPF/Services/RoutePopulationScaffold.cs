@@ -2,7 +2,7 @@ using System.Threading.Tasks;
 using BusBuddy.Core.Services;
 using BusBuddy.Core.Services.Interfaces;
 using System.Collections.Generic;
-using BusBuddy.Core.Models;
+using BusBuddy.Core.Domain;
 using Microsoft.EntityFrameworkCore;
 using System.Linq;
 using Serilog;
@@ -14,7 +14,7 @@ namespace BusBuddy.WPF.Services
         private readonly BusBuddy.Core.Services.IRouteService _routeService;
         private static readonly ILogger Logger = Log.ForContext<RoutePopulationScaffold>();
         private static readonly object _cacheLock = new object();
-        private static List<BusBuddy.Core.Models.Route>? _cachedRoutes;
+        private static List<BusBuddy.Core.Domain.Route>? _cachedRoutes;
         private static DateTime _lastCacheUpdate = DateTime.MinValue;
         private static readonly TimeSpan _cacheExpiry = TimeSpan.FromMinutes(5); // Cache for 5 minutes
 
@@ -23,7 +23,7 @@ namespace BusBuddy.WPF.Services
             _routeService = routeService;
         }
 
-        public async Task<System.Collections.Generic.List<BusBuddy.Core.Models.Route>> GetOptimizedRoutesAsync()
+        public async Task<System.Collections.Generic.List<BusBuddy.Core.Domain.Route>> GetOptimizedRoutesAsync()
         {
             var stopwatch = System.Diagnostics.Stopwatch.StartNew();
             Logger.Debug("RoutePopulationScaffold.GetOptimizedRoutesAsync START");
@@ -37,7 +37,7 @@ namespace BusBuddy.WPF.Services
                     {
                         Logger.Debug("Returning cached routes ({Count} routes) in {ElapsedMs}ms",
                             _cachedRoutes.Count, stopwatch.ElapsedMilliseconds);
-                        return new List<BusBuddy.Core.Models.Route>(_cachedRoutes);
+                        return new List<BusBuddy.Core.Domain.Route>(_cachedRoutes);
                     }
                 }
 
@@ -45,12 +45,12 @@ namespace BusBuddy.WPF.Services
                 var result = await _routeService.GetAllActiveRoutesAsync();
                 var routeList = result.IsSuccess && result.Value != null
                     ? result.Value.ToList()
-                    : new List<BusBuddy.Core.Models.Route>();
+                    : new List<BusBuddy.Core.Domain.Route>();
 
                 // Update cache
                 lock (_cacheLock)
                 {
-                    _cachedRoutes = new List<BusBuddy.Core.Models.Route>(routeList);
+                    _cachedRoutes = new List<BusBuddy.Core.Domain.Route>(routeList);
                     _lastCacheUpdate = DateTime.Now;
                 }
 
@@ -63,7 +63,7 @@ namespace BusBuddy.WPF.Services
             catch (Exception ex)
             {
                 Logger.Error(ex, "Error in GetOptimizedRoutesAsync after {ElapsedMs}ms", stopwatch.ElapsedMilliseconds);
-                return new List<BusBuddy.Core.Models.Route>();
+                return new List<BusBuddy.Core.Domain.Route>();
             }
         }
 

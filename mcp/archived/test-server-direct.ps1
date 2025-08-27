@@ -1,4 +1,4 @@
-#Requires -Version 7.5
+﻿#Requires -Version 7.5
 
 <#
 .SYNOPSIS
@@ -11,6 +11,25 @@
 [CmdletBinding()]
 param()
 
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER Message
+${3:Parameter description}
+
+.PARAMETER Level
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
 function Write-TestLog {
     param([string]$Message, [string]$Level = "INFO")
     $timestamp = Get-Date -Format "HH:mm:ss"
@@ -40,7 +59,7 @@ Write-TestLog "🚀 Starting MCP server directly..." "INFO"
 
 try {
     # Run server with timeout and capture output
-    $output = & node $serverScript --timeout 10 2>&1
+    $output = & Node $serverScript --timeout 10 2>&1
     Write-TestLog "📤 Server output:" "INFO"
     $output | ForEach-Object { Write-TestLog "   $_" "INFO" }
 }

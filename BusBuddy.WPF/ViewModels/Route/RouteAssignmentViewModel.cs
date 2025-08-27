@@ -3,7 +3,7 @@ using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Input;
-using BusBuddy.Core.Models;
+using BusBuddy.Core.Domain;
 using BusBuddy.Core.Services;
 using BusBuddy.Core.Utilities;
 using BusBuddy.WPF.Commands;
@@ -27,22 +27,22 @@ namespace BusBuddy.WPF.ViewModels.Route
     public class RouteAssignmentViewModel : INotifyPropertyChanged, IDisposable
     {
         // Backing fields for all properties (restored for CS0103 fix)
-        private ObservableCollection<BusBuddy.Core.Models.Route> _availableRoutes = new();
-        private ObservableCollection<BusBuddy.Core.Models.Bus> _availableBuses = new();
-        private ObservableCollection<BusBuddy.Core.Models.Driver> _availableDrivers = new();
+        private ObservableCollection<BusBuddy.Core.Domain.Route> _availableRoutes = new();
+        private ObservableCollection<BusBuddy.Core.Domain.Bus> _availableBuses = new();
+        private ObservableCollection<BusBuddy.Core.Domain.Driver> _availableDrivers = new();
         private ObservableCollection<RouteStop> _routeStops = new();
-        private ObservableCollection<BusBuddy.Core.Models.Student> _assignedStudentsForSelectedRoute = new();
-        private ObservableCollection<BusBuddy.Core.Models.Student> _unassignedStudents = new();
-        private BusBuddy.Core.Models.Student? _selectedStudent;
-        private BusBuddy.Core.Models.Student? _selectedAssignedStudent;
-        private BusBuddy.Core.Models.Route? _selectedRoute;
-        private BusBuddy.Core.Models.Bus? _selectedBus;
-        private BusBuddy.Core.Models.Driver? _selectedDriver;
+        private ObservableCollection<BusBuddy.Core.Domain.Student> _assignedStudentsForSelectedRoute = new();
+        private ObservableCollection<BusBuddy.Core.Domain.Student> _unassignedStudents = new();
+        private BusBuddy.Core.Domain.Student? _selectedStudent;
+        private BusBuddy.Core.Domain.Student? _selectedAssignedStudent;
+        private BusBuddy.Core.Domain.Route? _selectedRoute;
+        private BusBuddy.Core.Domain.Bus? _selectedBus;
+        private BusBuddy.Core.Domain.Driver? _selectedDriver;
         private RouteStop? _selectedRouteStop;
         private string _newRouteName = string.Empty;
         private DateTime _newRouteDate = DateTime.Today;
         private string _newRouteDescription = string.Empty;
-        private BusBuddy.Core.Models.RouteTimeSlot _selectedTimeSlot = BusBuddy.Core.Models.RouteTimeSlot.AM;
+        private BusBuddy.Core.Domain.RouteTimeSlot _selectedTimeSlot = BusBuddy.Core.Domain.RouteTimeSlot.AM;
         private bool _isRouteBeingBuilt;
         private bool _isRouteActive;
         private bool _isLoading;
@@ -72,7 +72,7 @@ namespace BusBuddy.WPF.ViewModels.Route
         }
 
         // Compact helpers for robust display names in logs/status
-        private static string GetStudentDisplayName(BusBuddy.Core.Models.Student? s)
+        private static string GetStudentDisplayName(BusBuddy.Core.Domain.Student? s)
         {
             if (s is null) return "(unknown student)";
             if (!string.IsNullOrWhiteSpace(s.StudentName)) return s.StudentName!;
@@ -80,7 +80,7 @@ namespace BusBuddy.WPF.ViewModels.Route
             return $"StudentId {s.StudentId}";
         }
 
-        private static string GetRouteDisplayName(BusBuddy.Core.Models.Route? r)
+        private static string GetRouteDisplayName(BusBuddy.Core.Domain.Route? r)
         {
             if (r is null) return "(route)";
             return string.IsNullOrWhiteSpace(r.RouteName) ? $"RouteId {r.RouteId}" : r.RouteName!;
@@ -92,7 +92,7 @@ namespace BusBuddy.WPF.ViewModels.Route
             Initialize();
         }
 
-        public RouteAssignmentViewModel(IRouteService? routeService, BusBuddy.Core.Models.Route preselectedRoute)
+        public RouteAssignmentViewModel(IRouteService? routeService, BusBuddy.Core.Domain.Route preselectedRoute)
         {
             _routeService = routeService;
             _preselectedRouteId = preselectedRoute?.RouteId;
@@ -130,28 +130,28 @@ namespace BusBuddy.WPF.ViewModels.Route
         }
 
         /// <summary>Unassigned students for assignment.</summary>
-        public ObservableCollection<BusBuddy.Core.Models.Student> UnassignedStudents
+        public ObservableCollection<BusBuddy.Core.Domain.Student> UnassignedStudents
         {
             get => _unassignedStudents;
             set => SetProperty(ref _unassignedStudents, value);
         }
 
         /// <summary>Available routes to assign to.</summary>
-        public ObservableCollection<BusBuddy.Core.Models.Route> AvailableRoutes
+        public ObservableCollection<BusBuddy.Core.Domain.Route> AvailableRoutes
         {
             get => _availableRoutes;
             set => SetProperty(ref _availableRoutes, value);
         }
 
         /// <summary>Available buses for assignment.</summary>
-        public ObservableCollection<BusBuddy.Core.Models.Bus> AvailableBuses
+        public ObservableCollection<BusBuddy.Core.Domain.Bus> AvailableBuses
         {
             get => _availableBuses;
             set => SetProperty(ref _availableBuses, value);
         }
 
         /// <summary>Available drivers for assignment.</summary>
-        public ObservableCollection<BusBuddy.Core.Models.Driver> AvailableDrivers
+        public ObservableCollection<BusBuddy.Core.Domain.Driver> AvailableDrivers
         {
             get => _availableDrivers;
             set => SetProperty(ref _availableDrivers, value);
@@ -188,14 +188,14 @@ namespace BusBuddy.WPF.ViewModels.Route
         public bool IsStartTimeValid => StartTimeRegex.IsMatch(_startTimeString);
 
         // Students currently assigned to the SelectedRoute (MVP-local collection)
-        public ObservableCollection<BusBuddy.Core.Models.Student> AssignedStudentsForSelectedRoute
+        public ObservableCollection<BusBuddy.Core.Domain.Student> AssignedStudentsForSelectedRoute
         {
             get => _assignedStudentsForSelectedRoute;
             set => SetProperty(ref _assignedStudentsForSelectedRoute, value);
         }
 
         // Selection Properties
-        public BusBuddy.Core.Models.Student? SelectedStudent
+        public BusBuddy.Core.Domain.Student? SelectedStudent
         {
             get => _selectedStudent;
             set
@@ -208,7 +208,7 @@ namespace BusBuddy.WPF.ViewModels.Route
             }
         }
 
-        public BusBuddy.Core.Models.Student? SelectedAssignedStudent
+        public BusBuddy.Core.Domain.Student? SelectedAssignedStudent
         {
             get => _selectedAssignedStudent;
             set
@@ -221,7 +221,7 @@ namespace BusBuddy.WPF.ViewModels.Route
             }
         }
 
-        public BusBuddy.Core.Models.Route? SelectedRoute
+        public BusBuddy.Core.Domain.Route? SelectedRoute
         {
             get => _selectedRoute;
             set
@@ -243,7 +243,7 @@ namespace BusBuddy.WPF.ViewModels.Route
             }
         }
 
-        public BusBuddy.Core.Models.Bus? SelectedBus
+        public BusBuddy.Core.Domain.Bus? SelectedBus
         {
             get => _selectedBus;
             set
@@ -257,7 +257,7 @@ namespace BusBuddy.WPF.ViewModels.Route
             }
         }
 
-        public BusBuddy.Core.Models.Driver? SelectedDriver
+        public BusBuddy.Core.Domain.Driver? SelectedDriver
         {
             get => _selectedDriver;
             set
@@ -316,7 +316,7 @@ namespace BusBuddy.WPF.ViewModels.Route
             set => SetProperty(ref _newRouteDescription, value);
         }
 
-        public BusBuddy.Core.Models.RouteTimeSlot SelectedTimeSlot
+        public BusBuddy.Core.Domain.RouteTimeSlot SelectedTimeSlot
         {
             get => _selectedTimeSlot;
             set => SetProperty(ref _selectedTimeSlot, value);
@@ -373,7 +373,7 @@ namespace BusBuddy.WPF.ViewModels.Route
             {
                 if (SelectedRoute == null)
                     return string.Empty;
-                var id = SelectedTimeSlot == BusBuddy.Core.Models.RouteTimeSlot.PM ? SelectedRoute.PMBusId: SelectedRoute.AMVehicleId;
+                var id = SelectedTimeSlot == BusBuddy.Core.Domain.RouteTimeSlot.PM ? SelectedRoute.PMBusId: SelectedRoute.AMVehicleId;
                 var bus = id.HasValue ? AvailableBuses.FirstOrDefault(b => b.BusId == id.Value) : null;
                 return bus?.BusNumber ?? "(none)";
             }
@@ -385,7 +385,7 @@ namespace BusBuddy.WPF.ViewModels.Route
             {
                 if (SelectedRoute == null)
                     return string.Empty;
-                var id = SelectedTimeSlot == BusBuddy.Core.Models.RouteTimeSlot.PM ? SelectedRoute.PMDriverId : SelectedRoute.AMDriverId;
+                var id = SelectedTimeSlot == BusBuddy.Core.Domain.RouteTimeSlot.PM ? SelectedRoute.PMDriverId : SelectedRoute.AMDriverId;
                 var d = id.HasValue ? AvailableDrivers.FirstOrDefault(x => x.DriverId == id.Value) : null;
                 return d?.DriverName ?? "(none)";
             }
@@ -414,7 +414,7 @@ namespace BusBuddy.WPF.ViewModels.Route
         public bool CanValidateRoute => SelectedRoute != null && !IsLoading;
 
         // Available TimeSlots for ComboBox binding
-        public Array TimeSlots => Enum.GetValues<BusBuddy.Core.Models.RouteTimeSlot>();
+        public Array TimeSlots => Enum.GetValues<BusBuddy.Core.Domain.RouteTimeSlot>();
 
 
 
@@ -544,17 +544,17 @@ namespace BusBuddy.WPF.ViewModels.Route
                 catch { /* Non-fatal if map VM unavailable */ }
 
                 // Determine assigned bus/driver for current time slot
-                BusBuddy.Core.Models.Bus? bus = null;
-                BusBuddy.Core.Models.Driver? driver = null;
+                BusBuddy.Core.Domain.Bus? bus = null;
+                BusBuddy.Core.Domain.Driver? driver = null;
                 if (SelectedRoute != null)
                 {
-                    if (SelectedTimeSlot == BusBuddy.Core.Models.RouteTimeSlot.AM && SelectedRoute.AMVehicleId.HasValue)
+                    if (SelectedTimeSlot == BusBuddy.Core.Domain.RouteTimeSlot.AM && SelectedRoute.AMVehicleId.HasValue)
                         bus = AvailableBuses.FirstOrDefault(b => b.BusId == SelectedRoute.AMVehicleId.Value);
-                    if (SelectedTimeSlot == BusBuddy.Core.Models.RouteTimeSlot.PM && SelectedRoute.PMVehicleId.HasValue)
+                    if (SelectedTimeSlot == BusBuddy.Core.Domain.RouteTimeSlot.PM && SelectedRoute.PMVehicleId.HasValue)
                         bus = AvailableBuses.FirstOrDefault(b => b.BusId == SelectedRoute.PMVehicleId.Value);
-                    if (SelectedTimeSlot == BusBuddy.Core.Models.RouteTimeSlot.AM && SelectedRoute.AMDriverId.HasValue)
+                    if (SelectedTimeSlot == BusBuddy.Core.Domain.RouteTimeSlot.AM && SelectedRoute.AMDriverId.HasValue)
                         driver = AvailableDrivers.FirstOrDefault(d => d.DriverId == SelectedRoute.AMDriverId.Value);
-                    if (SelectedTimeSlot == BusBuddy.Core.Models.RouteTimeSlot.PM && SelectedRoute.PMDriverId.HasValue)
+                    if (SelectedTimeSlot == BusBuddy.Core.Domain.RouteTimeSlot.PM && SelectedRoute.PMDriverId.HasValue)
                         driver = AvailableDrivers.FirstOrDefault(d => d.DriverId == SelectedRoute.PMDriverId.Value);
                 }
 
@@ -564,7 +564,7 @@ namespace BusBuddy.WPF.ViewModels.Route
                     AssignedStudentsForSelectedRoute.ToList(),
                     bus,
                     driver,
-                    (BusBuddy.Core.Models.RouteTimeSlot)SelectedTimeSlot,
+                    (BusBuddy.Core.Domain.RouteTimeSlot)SelectedTimeSlot,
                     mapPng);
 
                 if (pdfBytes.Length == 0)
@@ -790,7 +790,7 @@ namespace BusBuddy.WPF.ViewModels.Route
         /// <summary>
         /// Lightweight helper to keep SelectedRoute.StudentCount in sync during MVP without full reload.
         /// </summary>
-        private void IncrementRouteStudentCount(BusBuddy.Core.Models.Route route, int delta)
+        private void IncrementRouteStudentCount(BusBuddy.Core.Domain.Route route, int delta)
         {
             try
             {
@@ -891,7 +891,7 @@ namespace BusBuddy.WPF.ViewModels.Route
                 else
                 {
                     // MVP fallback - create mock route
-                    var mockRoute = new BusBuddy.Core.Models.Route
+                    var mockRoute = new BusBuddy.Core.Domain.Route
                     {
                         RouteId = AvailableRoutes.Count + 1,
                         RouteName = NewRouteName,
@@ -969,13 +969,13 @@ namespace BusBuddy.WPF.ViewModels.Route
                 // Update route properties based on time slot
                 switch (SelectedTimeSlot)
                 {
-                    case BusBuddy.Core.Models.RouteTimeSlot.AM:
+                    case BusBuddy.Core.Domain.RouteTimeSlot.AM:
                         SelectedRoute.AMBusId = SelectedBus.BusId;
                         break;
-                    case BusBuddy.Core.Models.RouteTimeSlot.PM:
+                    case BusBuddy.Core.Domain.RouteTimeSlot.PM:
                         SelectedRoute.PMBusId = SelectedBus.BusId;
                         break;
-                    case BusBuddy.Core.Models.RouteTimeSlot.Both:
+                    case BusBuddy.Core.Domain.RouteTimeSlot.Both:
                         SelectedRoute.AMBusId = SelectedBus.BusId;
                         SelectedRoute.PMBusId = SelectedBus.BusId;
                         break;
@@ -1027,13 +1027,13 @@ namespace BusBuddy.WPF.ViewModels.Route
                 // Update route properties based on time slot
                 switch (SelectedTimeSlot)
                 {
-                    case BusBuddy.Core.Models.RouteTimeSlot.AM:
+                    case BusBuddy.Core.Domain.RouteTimeSlot.AM:
                         SelectedRoute.AMDriverId = SelectedDriver.DriverId;
                         break;
-                    case BusBuddy.Core.Models.RouteTimeSlot.PM:
+                    case BusBuddy.Core.Domain.RouteTimeSlot.PM:
                         SelectedRoute.PMDriverId = SelectedDriver.DriverId;
                         break;
-                    case BusBuddy.Core.Models.RouteTimeSlot.Both:
+                    case BusBuddy.Core.Domain.RouteTimeSlot.Both:
                         SelectedRoute.AMDriverId = SelectedDriver.DriverId;
                         SelectedRoute.PMDriverId = SelectedDriver.DriverId;
                         break;
@@ -1544,7 +1544,7 @@ namespace BusBuddy.WPF.ViewModels.Route
                 else
                 {
                     // MVP fallback
-                    var clonedRoute = new BusBuddy.Core.Models.Route
+                    var clonedRoute = new BusBuddy.Core.Domain.Route
                     {
                         RouteId = AvailableRoutes.Count + 1,
                         RouteName = newName,
@@ -1771,7 +1771,7 @@ namespace BusBuddy.WPF.ViewModels.Route
             try
             {
                 var routeName = $"Route {AvailableRoutes.Count + 1}";
-                var newRoute = new BusBuddy.Core.Models.Route
+                var newRoute = new BusBuddy.Core.Domain.Route
                 {
                     RouteName = routeName,
                     Date = DateTime.Today,
@@ -1982,7 +1982,7 @@ namespace BusBuddy.WPF.ViewModels.Route
                 UnassignedStudents.Clear();
                 for (int i = 1; i <= 25; i++)
                 {
-                    UnassignedStudents.Add(new BusBuddy.Core.Models.Student
+                    UnassignedStudents.Add(new BusBuddy.Core.Domain.Student
                     {
                         StudentId = i,
                         StudentNumber = $"STU{i:000}",
@@ -1997,7 +1997,7 @@ namespace BusBuddy.WPF.ViewModels.Route
                 AvailableRoutes.Clear();
                 for (int i = 1; i <= 5; i++)
                 {
-                    AvailableRoutes.Add(new BusBuddy.Core.Models.Route
+                    AvailableRoutes.Add(new BusBuddy.Core.Domain.Route
                     {
                         RouteId = i,
                         RouteName = $"Route {i}",
@@ -2011,7 +2011,7 @@ namespace BusBuddy.WPF.ViewModels.Route
                 AvailableBuses.Clear();
                 for (int i = 1; i <= 10; i++)
                 {
-                    AvailableBuses.Add(new BusBuddy.Core.Models.Bus
+                    AvailableBuses.Add(new BusBuddy.Core.Domain.Bus
                     {
                         BusId = i,
                         BusNumber = $"Bus-{i:000}",
@@ -2026,7 +2026,7 @@ namespace BusBuddy.WPF.ViewModels.Route
                 AvailableDrivers.Clear();
                 for (int i = 1; i <= 8; i++)
                 {
-                    AvailableDrivers.Add(new BusBuddy.Core.Models.Driver
+                    AvailableDrivers.Add(new BusBuddy.Core.Domain.Driver
                     {
                         DriverId = i,
                         DriverName = $"Driver {i}",

@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using BusBuddy.Core.Models;
+using BusBuddy.Core.Domain;
 using BusBuddy.Core.Services;
 using BusBuddy.Core.Services.Interfaces;
 using BusBuddy.WPF.Models;
@@ -95,7 +95,7 @@ namespace BusBuddy.WPF.Services
                 var result = await _routeService.GetAllActiveRoutesAsync();
                 var routes = result.IsSuccess && result.Value != null
                     ? result.Value
-                    : Enumerable.Empty<BusBuddy.Core.Models.Route>();
+                    : Enumerable.Empty<BusBuddy.Core.Domain.Route>();
 
                 foreach (var route in routes)
                 {
@@ -207,7 +207,7 @@ namespace BusBuddy.WPF.Services
                 var result2 = await _routeService.GetAllActiveRoutesAsync();
                 var routes2 = result2.IsSuccess && result2.Value != null
                     ? result2.Value
-                    : Enumerable.Empty<BusBuddy.Core.Models.Route>();
+                    : Enumerable.Empty<BusBuddy.Core.Domain.Route>();
 
                 var duplicateRouteNames = routes2
                     .GroupBy(r => new { r.RouteName, r.Date.Date })

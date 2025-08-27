@@ -13,14 +13,12 @@
       },
       "tools": [
         "grok-analyze-problem",
-        "grok-code-review", 
+        "grok-code-review",
         "grok-syncfusion-guidance",
         "grok-azure-sql-optimize",
         "grok-architecture-review"
       ],
-      "environment_variables": [
-        "XAI_API_KEY"
-      ],
+      "environment_variables": ["XAI_API_KEY"],
       "response_formats": {
         "quick": {
           "max_tokens": 400,
@@ -38,24 +36,14 @@
       "name": "BusBuddy Core Operations Server",
       "description": "Core BusBuddy operations with PowerShell integration",
       "version": "1.5.0",
-      "tools": [
-        "bb-health",
-        "bb-build",
-        "bb-run",
-        "bb-test"
-      ],
+      "tools": ["bb-health", "bb-build", "bb-run", "bb-test"],
       "integration": "PowerShell automation tools"
     },
     "git-mcp-server": {
-      "name": "Git Operations Server", 
+      "name": "Git Operations Server",
       "description": "Git repository management and operations",
       "version": "1.0.0",
-      "tools": [
-        "git-status",
-        "git-commit",
-        "git-branch",
-        "git-log"
-      ]
+      "tools": ["git-status", "git-commit", "git-branch", "git-log"]
     }
   },
   "mcp_version": "1.0.0",

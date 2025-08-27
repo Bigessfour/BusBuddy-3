@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Serilog;
 using Moq;
 using BusBuddy.Core.Services;
-using BusBuddy.Core.Models;
+using BusBuddy.Core.Domain;
 using BusBuddy.Core.Data;
 using BusBuddy.Core.Utilities;
 using System;
@@ -284,15 +284,19 @@ namespace BusBuddy.Tests.Core
             _dbContext.Routes.Add(r);
             await _dbContext.SaveChangesAsync();
 
+            // Ensure route was saved with valid ID
+            Assert.That(r.RouteId, Is.GreaterThan(0), "Route ID should be assigned after SaveChanges");
+
             var valid = await _routeService.ValidateRouteForActivationAsync(r.RouteId);
             Assert.That(valid.IsSuccess, Is.True);
+            Assert.That(valid.Value.IsValid, Is.True, $"Route validation failed: {string.Join(", ", valid.Value.Issues)}");
 
             var activated = await _routeService.ActivateRouteAsync(r.RouteId);
-            Assert.That(activated.IsSuccess, Is.True);
+            Assert.That(activated.IsSuccess, Is.True, $"Route activation failed: {activated.Error}");
             Assert.That((await _dbContext.Routes.FindAsync(r.RouteId))!.IsActive, Is.True);
 
             var deactivated = await _routeService.DeactivateRouteAsync(r.RouteId);
-            Assert.That(deactivated.IsSuccess, Is.True);
+            Assert.That(deactivated.IsSuccess, Is.True, $"Route deactivation failed: {deactivated.Error}");
             Assert.That((await _dbContext.Routes.FindAsync(r.RouteId))!.IsActive, Is.False);
         }
 

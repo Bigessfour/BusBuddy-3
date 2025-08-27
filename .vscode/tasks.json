@@ -200,7 +200,7 @@
       "command": "pwsh",
       "args": [
         "-Command",
-        "Invoke-ScriptAnalyzer -Path '${workspaceFolder}\\PowerShell' -Recurse -Settings '${workspaceFolder}\\PSScriptAnalyzerSettings.psd1'"
+        "Invoke-ScriptAnalyzer -Path '${workspaceFolder}\\tools\\powershell' -Recurse -Settings '${workspaceFolder}\\tools\\powershell\\PSScriptAnalyzerSettings.psd1'"
       ],
       "group": "test",
       "presentationOptions": {
@@ -286,7 +286,7 @@
       "command": "pwsh",
       "args": [
         "-Command",
-        ". '${workspaceFolder}/PowerShell/Profiles/Microsoft.PowerShell_profile_optimized.ps1'; try { dotnet clean BusBuddy.sln --verbosity minimal; Write-Information 'Solution cleaned successfully' -InformationAction Continue } catch { Write-Error -Message 'Clean failed' }; try { Get-ChildItem -Path '.\\*\\bin', '.\\*\\obj' -Recurse -Directory -ErrorAction SilentlyContinue | Remove-Item -Recurse -Force; Write-Information 'Build artifacts removed' -InformationAction Continue } catch { Write-Warning -Message 'Some artifacts could not be removed' }"
+        "try { dotnet clean BusBuddy.sln --verbosity minimal; Write-Information 'Solution cleaned successfully' -InformationAction Continue } catch { Write-Error 'Clean failed' -ErrorAction Continue }; try { Get-ChildItem -Path '.\\*\\bin', '.\\*\\obj' -Recurse -Directory -ErrorAction SilentlyContinue | Remove-Item -Recurse -Force; Write-Information 'Build artifacts removed' -InformationAction Continue } catch { Write-Warning 'Some artifacts could not be removed' }"
       ],
       "group": "build",
       "options": {

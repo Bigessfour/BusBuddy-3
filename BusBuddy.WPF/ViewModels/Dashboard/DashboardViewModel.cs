@@ -2,7 +2,7 @@ using System;
 using System.Collections.ObjectModel;
 using System.Threading.Tasks;
 using System.Windows.Input;
-using BusBuddy.Core.Models;
+using BusBuddy.Core.Domain;
 using BusBuddy.Core.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -27,9 +27,9 @@ namespace BusBuddy.WPF.ViewModels.Dashboard
             GenerateReportCommand = new RelayCommand(async () => await GenerateReportAsync());
 
             // Initialize collections
-            Routes = new ObservableCollection<BusBuddy.Core.Models.Route>();
-            Buses = new ObservableCollection<BusBuddy.Core.Models.Bus>();
-            Drivers = new ObservableCollection<BusBuddy.Core.Models.Driver>();
+            Routes = new ObservableCollection<BusBuddy.Core.Domain.Route>();
+            Buses = new ObservableCollection<BusBuddy.Core.Domain.Bus>();
+            Drivers = new ObservableCollection<BusBuddy.Core.Domain.Driver>();
 
             // Load initial data
             _ = Task.Run(async () => await RefreshDataAsync());
@@ -38,13 +38,13 @@ namespace BusBuddy.WPF.ViewModels.Dashboard
         #region Properties
 
         [ObservableProperty]
-        private ObservableCollection<BusBuddy.Core.Models.Route> routes = new();
+        private ObservableCollection<BusBuddy.Core.Domain.Route> routes = new();
 
         [ObservableProperty]
-        private ObservableCollection<BusBuddy.Core.Models.Bus> buses = new();
+        private ObservableCollection<BusBuddy.Core.Domain.Bus> buses = new();
 
         [ObservableProperty]
-        private ObservableCollection<BusBuddy.Core.Models.Driver> drivers = new();
+        private ObservableCollection<BusBuddy.Core.Domain.Driver> drivers = new();
 
         [ObservableProperty]
         private int totalRoutes;

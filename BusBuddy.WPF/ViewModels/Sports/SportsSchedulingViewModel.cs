@@ -5,7 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
-using BusBuddy.Core.Models;
+using BusBuddy.Core.Domain;
 using BusBuddy.Core.Services;
 using BusBuddy.WPF.ViewModels;
 using CommunityToolkit.Mvvm.Input;
@@ -24,13 +24,13 @@ namespace BusBuddy.WPF.ViewModels.SportsScheduling
 
         // Collections
         private ObservableCollection<SportsEvent> _sportsEvents = new();
-        private ObservableCollection<BusBuddy.Core.Models.Bus> _availableBuses = new();
-        private ObservableCollection<BusBuddy.Core.Models.Driver> _availableDrivers = new();
+        private ObservableCollection<BusBuddy.Core.Domain.Bus> _availableBuses = new();
+        private ObservableCollection<BusBuddy.Core.Domain.Driver> _availableDrivers = new();
 
         // Selected items
         private SportsEvent? _selectedEvent;
-        private BusBuddy.Core.Models.Bus? _selectedBus;
-        private BusBuddy.Core.Models.Driver? _selectedDriver;
+        private BusBuddy.Core.Domain.Bus? _selectedBus;
+        private BusBuddy.Core.Domain.Driver? _selectedDriver;
 
         // UI state properties
         private bool _isLoading;
@@ -72,13 +72,13 @@ namespace BusBuddy.WPF.ViewModels.SportsScheduling
             set => SetProperty(ref _sportsEvents, value);
         }
 
-        public ObservableCollection<BusBuddy.Core.Models.Bus> AvailableBuses
+        public ObservableCollection<BusBuddy.Core.Domain.Bus> AvailableBuses
         {
             get => _availableBuses;
             set => SetProperty(ref _availableBuses, value);
         }
 
-        public ObservableCollection<BusBuddy.Core.Models.Driver> AvailableDrivers
+        public ObservableCollection<BusBuddy.Core.Domain.Driver> AvailableDrivers
         {
             get => _availableDrivers;
             set => SetProperty(ref _availableDrivers, value);
@@ -101,7 +101,7 @@ namespace BusBuddy.WPF.ViewModels.SportsScheduling
             }
         }
 
-        public BusBuddy.Core.Models.Bus? SelectedBus
+        public BusBuddy.Core.Domain.Bus? SelectedBus
         {
             get => _selectedBus;
             set
@@ -114,7 +114,7 @@ namespace BusBuddy.WPF.ViewModels.SportsScheduling
             }
         }
 
-        public BusBuddy.Core.Models.Driver? SelectedDriver
+        public BusBuddy.Core.Domain.Driver? SelectedDriver
         {
             get => _selectedDriver;
             set

@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
 using BusBuddy.Core.Data;
-using BusBuddy.Core.Models;
+using BusBuddy.Core.Domain;
 using Microsoft.Extensions.Configuration;
 
 namespace BusBuddy.Core.Services
@@ -307,6 +307,8 @@ namespace BusBuddy.Core.Services
                         DateLastInspection = DateTime.UtcNow.AddDays(-random.Next(1, 180)),
                         PurchaseDate = new DateTime(year, random.Next(1, 13), random.Next(1, 28)),
                         PurchasePrice = random.Next(80000, 150000),
+                        FuelCapacity = Math.Round((decimal)(random.Next(50, 100) + random.NextDouble()), 2),
+                        MilesPerGallon = Math.Round((decimal)(6.0 + random.NextDouble() * 4.0), 2),
                         CreatedDate = DateTime.UtcNow,
                         CreatedBy = "SeedDataService"
                     });

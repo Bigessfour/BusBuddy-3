@@ -6,9 +6,9 @@ using System.Threading.Tasks;
 using System.Windows.Input;
 using BusBuddy.WPF.Commands; // Use local RelayCommand instead
 using BusBuddy.Core.Services.Interfaces;
-using BusBuddy.Core.Models;
+using BusBuddy.Core.Domain;
 using Serilog;
-using RouteModel = BusBuddy.Core.Models.Route;
+using RouteModel = BusBuddy.Core.Domain.Route;
 using System.Text.Json; // Microsoft .NET docs: System.Text.Json for JSON serialization/deserialization
 using System.Windows; // For System.Windows.Point used by Syncfusion MapPolyline
 using System.Collections.Generic; // For generic collections
@@ -42,8 +42,8 @@ namespace BusBuddy.WPF.ViewModels.GoogleEarth
         private bool _isMapLoading;
         private string _statusMessage = "Ready";
     private bool _isLiveTrackingEnabled;
-    private ObservableCollection<BusBuddy.Core.Models.Bus> _activeBuses = new();
-    private BusBuddy.Core.Models.Bus? _selectedBus;
+    private ObservableCollection<BusBuddy.Core.Domain.Bus> _activeBuses = new();
+    private BusBuddy.Core.Domain.Bus? _selectedBus;
     private bool _districtBoundaryVisible;
     private bool _townBoundaryVisible;
     private byte[]? _latestMapSnapshotPng; // Holds last captured map snapshot (PNG bytes) for PDF embedding
@@ -206,7 +206,7 @@ namespace BusBuddy.WPF.ViewModels.GoogleEarth
         /// <summary>
         /// Active buses list shown in SfDataGrid
         /// </summary>
-        public ObservableCollection<BusBuddy.Core.Models.Bus> ActiveBuses
+        public ObservableCollection<BusBuddy.Core.Domain.Bus> ActiveBuses
         {
             get => _activeBuses;
             set => SetProperty(ref _activeBuses, value);
@@ -231,7 +231,7 @@ namespace BusBuddy.WPF.ViewModels.GoogleEarth
         /// <summary>
         /// Currently selected bus in the grid
         /// </summary>
-        public BusBuddy.Core.Models.Bus? SelectedBus
+        public BusBuddy.Core.Domain.Bus? SelectedBus
         {
             get => _selectedBus;
             set => SetProperty(ref _selectedBus, value);
@@ -429,7 +429,7 @@ namespace BusBuddy.WPF.ViewModels.GoogleEarth
                 return;
             }
             StatusMessage = "Loading students...";
-            List<BusBuddy.Core.Models.Student> students;
+            List<BusBuddy.Core.Domain.Student> students;
             try
             {
                 students = await _studentService.GetAllStudentsAsync();
@@ -826,9 +826,9 @@ namespace BusBuddy.WPF.ViewModels.GoogleEarth
         /// For each student: create a RouteStop sequentially ordered. Bus is fixed to #17 (84 passenger) per requirement (placeholder bus object).
         /// Returns tuple(pdfBytes, countEligible, totalConsidered).
         /// </summary>
-        public async Task<(byte[] Pdf, int EligibleCount, int Total)> GenerateEligibilityRoutePdfAsync(BusBuddy.Core.Models.RouteTimeSlot slot = BusBuddy.Core.Models.RouteTimeSlot.AM)
+        public async Task<(byte[] Pdf, int EligibleCount, int Total)> GenerateEligibilityRoutePdfAsync(BusBuddy.Core.Domain.RouteTimeSlot slot = BusBuddy.Core.Domain.RouteTimeSlot.AM)
         {
-            var allStudents = new List<BusBuddy.Core.Models.Student>();
+            var allStudents = new List<BusBuddy.Core.Domain.Student>();
             try
             {
                 if (_studentService is null)
@@ -840,7 +840,7 @@ namespace BusBuddy.WPF.ViewModels.GoogleEarth
                 var method = _studentService.GetType().GetMethod("GetAllStudentsAsync");
                 if (method is not null)
                 {
-                    var taskObj = method.Invoke(_studentService, null) as Task<System.Collections.Generic.List<BusBuddy.Core.Models.Student>>;
+                    var taskObj = method.Invoke(_studentService, null) as Task<System.Collections.Generic.List<BusBuddy.Core.Domain.Student>>;
                     if (taskObj != null)
                     {
                         var result = await taskObj.ConfigureAwait(false);
@@ -861,7 +861,7 @@ namespace BusBuddy.WPF.ViewModels.GoogleEarth
             // Filter out Lamar addresses early (case-insensitive contains)
             var considered = allStudents.Where(s => string.IsNullOrWhiteSpace(s.HomeAddress) || !s.HomeAddress.Contains("Lamar", StringComparison.OrdinalIgnoreCase)).ToList();
 
-            var eligibleStudents = new List<BusBuddy.Core.Models.Student>();
+            var eligibleStudents = new List<BusBuddy.Core.Domain.Student>();
             if (_eligibilityService != null)
             {
                 foreach (var stu in considered)
@@ -894,11 +894,11 @@ namespace BusBuddy.WPF.ViewModels.GoogleEarth
             const double schoolLat = 38.1527; // Wiley School anchor
             const double schoolLon = -102.7204;
             var remaining = eligibleStudents.Where(s => s.Latitude.HasValue && s.Longitude.HasValue).ToList();
-            var ordered = new List<BusBuddy.Core.Models.Student>();
+            var ordered = new List<BusBuddy.Core.Domain.Student>();
             double currentLat = schoolLat, currentLon = schoolLon;
             while (remaining.Count > 0)
             {
-                BusBuddy.Core.Models.Student? nearest = null;
+                BusBuddy.Core.Domain.Student? nearest = null;
                 double nearestDist = double.MaxValue;
                 foreach (var s in remaining)
                 {
@@ -928,7 +928,7 @@ namespace BusBuddy.WPF.ViewModels.GoogleEarth
             var departTimeOfDay = new TimeSpan(6, 50, 0); // 6:50 AM
             var cumulative = TimeSpan.Zero; // travel + dwell elapsed since departure
             double totalMiles = 0.0;
-            var stops = new List<BusBuddy.Core.Models.RouteStop>();
+            var stops = new List<BusBuddy.Core.Domain.RouteStop>();
             int order = 1;
             currentLat = schoolLat; currentLon = schoolLon;
             foreach (var stu in ordered)
@@ -940,7 +940,7 @@ namespace BusBuddy.WPF.ViewModels.GoogleEarth
                 var arrival = departTimeOfDay + cumulative;
                 var departure = arrival + dwellPerStop;
                 cumulative += dwellPerStop;
-                stops.Add(new BusBuddy.Core.Models.RouteStop
+                stops.Add(new BusBuddy.Core.Domain.RouteStop
                 {
                     RouteId = -1,
                     StopOrder = order++,
@@ -974,7 +974,7 @@ namespace BusBuddy.WPF.ViewModels.GoogleEarth
             };
 
             // Placeholder bus & driver per requirement (bus #17 84 passenger). Driver left null.
-            var bus = new BusBuddy.Core.Models.Bus
+            var bus = new BusBuddy.Core.Domain.Bus
             {
                 BusNumber = "17",
                 SeatingCapacity = 84,
@@ -1197,7 +1197,7 @@ namespace BusBuddy.WPF.ViewModels.GoogleEarth
         /// <summary>
         /// Serialize ordered student coordinates to a compact JSON array [[lat,lon], ...] for persistence in Route.WaypointsJson.
         /// </summary>
-        private static string BuildWaypointsJson(System.Collections.Generic.IEnumerable<BusBuddy.Core.Models.Student> ordered)
+        private static string BuildWaypointsJson(System.Collections.Generic.IEnumerable<BusBuddy.Core.Domain.Student> ordered)
         {
             var sb = new System.Text.StringBuilder();
             sb.Append('[');

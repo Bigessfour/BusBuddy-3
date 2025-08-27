@@ -4,7 +4,7 @@ using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Input;
 using BusBuddy.WPF.Commands;
-using BusBuddy.Core.Models;
+using BusBuddy.Core.Domain;
 using BusBuddy.Core.Services.Interfaces; // Use core IBusService
 using Serilog;
 
@@ -16,21 +16,21 @@ namespace BusBuddy.WPF.ViewModels.Bus
     /// </summary>
     public class BusFormViewModel : INotifyPropertyChanged
     {
-        private BusBuddy.Core.Models.Bus _bus;
+        private BusBuddy.Core.Domain.Bus _bus;
         private bool _isEditMode;
         private readonly IBusService? _busService; // optional during MVP if DI not configured
         private static readonly ILogger Logger = Log.ForContext<BusFormViewModel>();
 
         public event EventHandler<bool?>? RequestClose; // mimic DriverForm pattern
 
-        public BusFormViewModel() : this(null, new BusBuddy.Core.Models.Bus()) {}
+        public BusFormViewModel() : this(null, new BusBuddy.Core.Domain.Bus()) {}
 
-        public BusFormViewModel(IBusService? busService) : this(busService, new BusBuddy.Core.Models.Bus()) {}
+        public BusFormViewModel(IBusService? busService) : this(busService, new BusBuddy.Core.Domain.Bus()) {}
 
-        public BusFormViewModel(IBusService? busService, BusBuddy.Core.Models.Bus bus)
+        public BusFormViewModel(IBusService? busService, BusBuddy.Core.Domain.Bus bus)
         {
             _busService = busService;
-            _bus = bus ?? new BusBuddy.Core.Models.Bus();
+            _bus = bus ?? new BusBuddy.Core.Domain.Bus();
             _isEditMode = bus?.BusId > 0;
 
             SaveCommand = new RelayCommand(async () => await SaveBusAsync(), CanSave);

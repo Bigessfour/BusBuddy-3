@@ -5,7 +5,7 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Serilog;
 using BusBuddy.Core.Data.UnitOfWork;
-using BusBuddy.Core.Models;
+using BusBuddy.Core.Domain;
 
 namespace BusBuddy.Core.Services
 {

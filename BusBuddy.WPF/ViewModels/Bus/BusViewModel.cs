@@ -1,4 +1,4 @@
-using BusBuddy.Core.Models;
+using BusBuddy.Core.Domain;
 using System;
 using System.ComponentModel.DataAnnotations;
 
@@ -250,7 +250,7 @@ namespace BusBuddy.WPF.ViewModels.BusManagement
         }
 
         // Conversion methods
-        public static BusViewModel FromBus(BusBuddy.Core.Models.Bus bus)
+        public static BusViewModel FromBus(BusBuddy.Core.Domain.Bus bus)
         {
             return new BusViewModel
             {
@@ -271,9 +271,9 @@ namespace BusBuddy.WPF.ViewModels.BusManagement
             };
         }
 
-        public static BusBuddy.Core.Models.Bus ToModel(BusViewModel viewModel)
+        public static BusBuddy.Core.Domain.Bus ToModel(BusViewModel viewModel)
         {
-            return new BusBuddy.Core.Models.Bus
+            return new BusBuddy.Core.Domain.Bus
             {
                 BusId = viewModel.BusId,
                 BusNumber = viewModel.BusNumber,

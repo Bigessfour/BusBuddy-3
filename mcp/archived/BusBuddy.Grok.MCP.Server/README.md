@@ -11,7 +11,7 @@ Please note that this template is currently in an early preview stage. If you ha
 - Test the MCP server locally using the steps below.
 - Update the package metadata in the .csproj file, in particular the `<PackageId>`.
 - Update `.mcp/server.json` to declare your MCP server's inputs.
-  - See [configuring inputs](https://aka.ms/nuget/mcp/guide/configuring-inputs) for more details.
+    - See [configuring inputs](https://aka.ms/nuget/mcp/guide/configuring-inputs) for more details.
 - Pack the project using `dotnet pack`.
 
 The `bin/Release` directory will contain the package file (.nupkg), which can be [published to NuGet.org](https://learn.microsoft.com/nuget/nuget-org/publish-a-package).
@@ -22,17 +22,13 @@ To test this MCP server from source code (locally) without using a built MCP ser
 
 ```json
 {
-  "servers": {
-    "BusBuddy.Grok.MCP.Server": {
-      "type": "stdio",
-      "command": "dotnet",
-      "args": [
-        "run",
-        "--project",
-        "<PATH TO PROJECT DIRECTORY>"
-      ]
+    "servers": {
+        "BusBuddy.Grok.MCP.Server": {
+            "type": "stdio",
+            "command": "dotnet",
+            "args": ["run", "--project", "<PATH TO PROJECT DIRECTORY>"]
+        }
     }
-  }
 }
 ```
 
@@ -56,18 +52,18 @@ For both VS Code and Visual Studio, the configuration file uses the following se
 
 ```json
 {
-  "servers": {
-    "BusBuddy.Grok.MCP.Server": {
-      "type": "stdio",
-      "command": "dnx",
-      "args": [
-        "<your package ID here>",
-        "--version",
-        "<your package version here>",
-        "--yes"
-      ]
+    "servers": {
+        "BusBuddy.Grok.MCP.Server": {
+            "type": "stdio",
+            "command": "dnx",
+            "args": [
+                "<your package ID here>",
+                "--version",
+                "<your package version here>",
+                "--yes"
+            ]
+        }
     }
-  }
 }
 ```
 

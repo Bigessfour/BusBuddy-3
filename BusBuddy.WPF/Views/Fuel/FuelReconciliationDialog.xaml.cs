@@ -8,7 +8,7 @@ using System.Windows;
 using System.Windows.Media;
 using Syncfusion.Windows.Shared;
 using Syncfusion.SfSkinManager;
-using BusBuddy.Core.Models;
+using BusBuddy.Core.Domain;
 using BusBuddy.Core.Services;
 using BusBuddy.Core.Services.Interfaces;
 using Serilog;

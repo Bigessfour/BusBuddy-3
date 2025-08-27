@@ -1,5 +1,5 @@
 
-using BusBuddy.Core.Models;
+using BusBuddy.Core.Domain;
 using BusBuddy.Core.Data;
 
 namespace BusBuddy.Core.Services;

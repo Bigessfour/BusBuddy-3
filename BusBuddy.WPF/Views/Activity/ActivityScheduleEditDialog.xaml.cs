@@ -1,4 +1,4 @@
-using BusBuddy.Core.Models;
+using BusBuddy.Core.Domain;
 using BusBuddy.WPF.ViewModels;
 using System;
 using System.Collections.ObjectModel;
@@ -88,12 +88,12 @@ namespace BusBuddy.WPF.Views.Activity
         private string _status = "Scheduled";
 
         // Dropdown selections
-        private BusBuddy.Core.Models.Driver? _selectedDriver;
-        private BusBuddy.Core.Models.Bus? _selectedVehicle;
+        private BusBuddy.Core.Domain.Driver? _selectedDriver;
+        private BusBuddy.Core.Domain.Bus? _selectedVehicle;
 
         // Collections for dropdowns
-        public ObservableCollection<BusBuddy.Core.Models.Driver> AvailableDrivers { get; } = new();
-        public ObservableCollection<BusBuddy.Core.Models.Bus> AvailableVehicles { get; } = new();
+        public ObservableCollection<BusBuddy.Core.Domain.Driver> AvailableDrivers { get; } = new();
+        public ObservableCollection<BusBuddy.Core.Domain.Bus> AvailableVehicles { get; } = new();
         public ObservableCollection<string> TripTypes { get; } = new();
         public ObservableCollection<string> StatusOptions { get; } = new();
 
@@ -227,7 +227,7 @@ namespace BusBuddy.WPF.Views.Activity
             }
         }
 
-        public BusBuddy.Core.Models.Driver? SelectedDriver
+        public BusBuddy.Core.Domain.Driver? SelectedDriver
         {
             get => _selectedDriver;
             set
@@ -237,7 +237,7 @@ namespace BusBuddy.WPF.Views.Activity
             }
         }
 
-        public BusBuddy.Core.Models.Bus? SelectedVehicle
+        public BusBuddy.Core.Domain.Bus? SelectedVehicle
         {
             get => _selectedVehicle;
             set
@@ -325,21 +325,21 @@ namespace BusBuddy.WPF.Views.Activity
         private void LoadSampleDrivers()
         {
             AvailableDrivers.Clear();
-            AvailableDrivers.Add(new BusBuddy.Core.Models.Driver { DriverId = 1, DriverName = "John Smith", Status = "Active" });
-            AvailableDrivers.Add(new BusBuddy.Core.Models.Driver { DriverId = 2, DriverName = "Sarah Johnson", Status = "Active" });
-            AvailableDrivers.Add(new BusBuddy.Core.Models.Driver { DriverId = 3, DriverName = "Mike Wilson", Status = "Active" });
-            AvailableDrivers.Add(new BusBuddy.Core.Models.Driver { DriverId = 4, DriverName = "Lisa Brown", Status = "Active" });
-            AvailableDrivers.Add(new BusBuddy.Core.Models.Driver { DriverId = 5, DriverName = "Tom Davis", Status = "Active" });
+            AvailableDrivers.Add(new BusBuddy.Core.Domain.Driver { DriverId = 1, DriverName = "John Smith", Status = "Active" });
+            AvailableDrivers.Add(new BusBuddy.Core.Domain.Driver { DriverId = 2, DriverName = "Sarah Johnson", Status = "Active" });
+            AvailableDrivers.Add(new BusBuddy.Core.Domain.Driver { DriverId = 3, DriverName = "Mike Wilson", Status = "Active" });
+            AvailableDrivers.Add(new BusBuddy.Core.Domain.Driver { DriverId = 4, DriverName = "Lisa Brown", Status = "Active" });
+            AvailableDrivers.Add(new BusBuddy.Core.Domain.Driver { DriverId = 5, DriverName = "Tom Davis", Status = "Active" });
         }
 
         private void LoadSampleVehicles()
         {
             AvailableVehicles.Clear();
-            AvailableVehicles.Add(new BusBuddy.Core.Models.Bus { BusId = 1, Make = "Blue Bird", Model = "Vision", LicenseNumber = "Bus-001", Capacity = 72 });
-            AvailableVehicles.Add(new BusBuddy.Core.Models.Bus { BusId = 2, Make = "Blue Bird", Model = "Vision", LicenseNumber = "Bus-002", Capacity = 71 });
-            AvailableVehicles.Add(new BusBuddy.Core.Models.Bus { BusId = 3, Make = "Thomas", Model = "C2", LicenseNumber = "Bus-003", Capacity = 77 });
-            AvailableVehicles.Add(new BusBuddy.Core.Models.Bus { BusId = 4, Make = "Thomas", Model = "C2", LicenseNumber = "Bus-004", Capacity = 72 });
-            AvailableVehicles.Add(new BusBuddy.Core.Models.Bus { BusId = 5, Make = "IC Bus", Model = "CE200", LicenseNumber = "Bus-005", Capacity = 78 });
+            AvailableVehicles.Add(new BusBuddy.Core.Domain.Bus { BusId = 1, Make = "Blue Bird", Model = "Vision", LicenseNumber = "Bus-001", Capacity = 72 });
+            AvailableVehicles.Add(new BusBuddy.Core.Domain.Bus { BusId = 2, Make = "Blue Bird", Model = "Vision", LicenseNumber = "Bus-002", Capacity = 71 });
+            AvailableVehicles.Add(new BusBuddy.Core.Domain.Bus { BusId = 3, Make = "Thomas", Model = "C2", LicenseNumber = "Bus-003", Capacity = 77 });
+            AvailableVehicles.Add(new BusBuddy.Core.Domain.Bus { BusId = 4, Make = "Thomas", Model = "C2", LicenseNumber = "Bus-004", Capacity = 72 });
+            AvailableVehicles.Add(new BusBuddy.Core.Domain.Bus { BusId = 5, Make = "IC Bus", Model = "CE200", LicenseNumber = "Bus-005", Capacity = 78 });
         }
 
         public bool ValidateActivity()

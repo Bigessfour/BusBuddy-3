@@ -28,6 +28,18 @@
 
 11. **OFFICIAL DOCS MANDATORY**: ALWAYS reference official documentation: Syncfusion WPF (https://help.syncfusion.com/wpf/welcome-to-syncfusion-essential-wpf), EF Core (https://learn.microsoft.com/ef/core/), Azure SQL (https://learn.microsoft.com/en-us/azure/azure-sql/?view=azuresql).
 
+12. **🚫 MICROSOFT FILE STRUCTURE - NON-NEGOTIABLE**: NEVER move, reorganize, or suggest changes to the Microsoft-compliant directory structure. The current organization follows official Microsoft WPF and MCP standards and MUST be maintained:
+    - **config/**: Configuration management (appsettings.\*.json, dependencies.psd1)
+    - **build/**: Build system (Directory.Build.\*, global.json, NuGet.config)
+    - **mcp/**: Model Context Protocol servers and tools
+    - **tools/**: Development tools (powershell/, scripts/)
+    - **Documentation/**: Technical documentation
+    - **FusionCore/**: Strategic planning and architecture
+    - **.vscode/mcp.json**: MCP configuration (Microsoft standard location)
+      If file structure changes are suggested, REFUSE and state: "File structure follows Microsoft standards and cannot be modified. Reference STRUCTURE-INDEX.md."
+
+13. **📋 DESTRUCTION AUTHORITY FOR OUTDATED DOCUMENTS**: ALWAYS remove outdated, confusing, or redundant documentation immediately. If documentation exists but is massively outdated and causes confusion, it MUST be deleted rather than archived. Only preserve documents that can be easily refreshed to remain current. NEVER maintain obsolete references that mislead development. Prioritize current, accurate documentation over historical preservation. When identifying outdated content, DELETE it and update any references pointing to it.
+
 ## 🎯 **BusBuddy Excellence Standards**
 
 **Primary Goal**: Achieve production-quality software with clean builds (0 errors), excellent architecture, and comprehensive functionality including student entry and route assignment, following best practices and documentation standards.
@@ -53,6 +65,15 @@
 - **Quality validation**: Use `bb-quality-check` to ensure excellent student/route functionality
 - **Anti-regression**: Use `bb-anti-regression` and `bb-xaml-validate` before commits
 
+**🤖 RECOMMENDED: Use BusBuddy MCP Tools for AI-Enhanced Development**
+
+- **Grok-4 Route Optimization**: Use MCP tool `optimize-routes` for intelligent route analysis
+- **Fleet Performance Analysis**: Use MCP tool `analyze-fleet-performance` for AI insights
+- **AI Status Monitoring**: Use MCP tool `get-grok-status` to verify Grok-4 integration
+- **Available via**: VS Code GitHub Copilot MCP integration in `.vscode/mcp.json`
+- **Configuration**: Requires `XAI_API_KEY` environment variable for live AI features
+- **Workflow Integration**: MCP tools complement `bb-*` commands for enhanced AI capabilities
+
 **Primary Development Commands:**
 
 ```powershell
@@ -64,6 +85,21 @@ bb-quality-check  # Verify production excellence
 bb-anti-regression # Prevent legacy patterns
 bb-xaml-validate  # Ensure Syncfusion-only UI
 bb-commands       # List all commands
+```
+
+**Enhanced AI Workflow with MCP Integration:**
+
+```powershell
+# 1. Standard development workflow
+bb-health && bb-build && bb-test
+
+# 2. Use MCP tools in Copilot for AI analysis
+# @optimize-routes <route-id> "minimize fuel consumption"
+# @analyze-fleet-performance efficiency "30days"
+# @get-grok-status
+
+# 3. Validate changes with standard commands
+bb-quality-check && bb-anti-regression
 ```
 
 **Clean Architecture Strategy:**
@@ -1388,7 +1424,7 @@ $results = $items | ForEach-Object -Parallel {
 **Quality Development Guidance**:
 
 - Use existing `bb-*` commands for development operations and avoid adding new functions to large modules.
-- If new PowerShell code is needed, create focused scripts in `PowerShell/Validation/` and validate with `Invoke-ScriptAnalyzer`.
+- If new PowerShell code is needed, create focused scripts in `tools/powershell/Validation/` and validate with `Invoke-ScriptAnalyzer`.
 - Plan to split `BusBuddy.psm1` into smaller modules (e.g., `Build.psm1`, `Quality.psm1`) per Microsoft guidelines.
 - Replace all `Write-Host` with `Write-Output` or `Write-Information` in new code.
 - Document remediation plan in project documentation under "Excellence Tasks":
@@ -1879,7 +1915,7 @@ These instructions define **HOW** to build quality software following Microsoft 
 ### **PowerShell 7.5.2 Core Requirements**
 
 - **Version**: PowerShell Core 7.5.2 minimum required
-- **Profile Standard**: Microsoft.PowerShell_profile_optimized.ps1 in PowerShell/Profiles/
+- **Profile Standard**: Microsoft.PowerShell_profile_optimized.ps1 in tools/powershell/Profiles/
 - **Module Standards**: Microsoft PowerShell Module Guidelines compliance
 - **Reference Documentation**: Official Microsoft PowerShell documentation
 
@@ -2500,7 +2536,7 @@ dotnet_diagnostic.CS1061.severity = error
                 "-NoProfile",
                 "-NoExit",
                 "-Command",
-                "& 'PowerShell/Profiles/Microsoft.PowerShell_profile_optimized.ps1'"
+                "& 'tools/powershell/Profiles/Microsoft.PowerShell_profile_optimized.ps1'"
             ]
         }
     },

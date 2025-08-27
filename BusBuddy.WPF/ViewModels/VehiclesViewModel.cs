@@ -6,7 +6,7 @@ using BusBuddy.Core;
 using BusBuddy.Core.Data;
 using Microsoft.EntityFrameworkCore;
 using System.Windows;
-using BusBuddy.Core.Models;
+using BusBuddy.Core.Domain;
 
 namespace BusBuddy.WPF.ViewModels
 {
@@ -15,9 +15,9 @@ namespace BusBuddy.WPF.ViewModels
     /// </summary>
     public class VehiclesViewModel : BaseViewModel
     {
-        private ObservableCollection<BusBuddy.Core.Models.Bus> _vehicles = new();
+        private ObservableCollection<BusBuddy.Core.Domain.Bus> _vehicles = new();
 
-        public ObservableCollection<BusBuddy.Core.Models.Bus> Vehicles
+        public ObservableCollection<BusBuddy.Core.Domain.Bus> Vehicles
         {
             get => _vehicles;
             set => SetProperty(ref _vehicles, value);

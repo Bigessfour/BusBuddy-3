@@ -6,7 +6,7 @@ using System.Windows.Input;
 using System.Linq;
 using BusBuddy.Core;
 using BusBuddy.Core.Data;
-using BusBuddy.Core.Models;
+using BusBuddy.Core.Domain;
 using Microsoft.EntityFrameworkCore;
 using System.Windows;
 using Serilog;

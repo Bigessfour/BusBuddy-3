@@ -1,4 +1,4 @@
-#Requires -Version 7.5
+﻿#Requires -Version 7.5
 
 <#
 .SYNOPSIS
@@ -30,6 +30,25 @@ param(
     [int]$TimeoutSeconds = 30
 )
 
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER Message
+${3:Parameter description}
+
+.PARAMETER Level
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
 function Write-TestLog {
     param([string]$Message, [string]$Level = "INFO")
     $timestamp = Get-Date -Format "HH:mm:ss"
@@ -76,6 +95,22 @@ function Test-SecureApiKey {
     return $true
 }
 
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER ServerName
+${3:Parameter description}
+
+.EXAMPLE
+${4:An example}
+
+.NOTES
+${5:General notes}
+#>
 function Start-MCPServer {
     [CmdletBinding(SupportsShouldProcess)]
     param([string]$ServerName)
@@ -129,6 +164,22 @@ function Start-MCPServer {
     }
 }
 
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER ServerProcess
+${3:Parameter description}
+
+.EXAMPLE
+${4:An example}
+
+.NOTES
+${5:General notes}
+#>
 function Test-MCPTool {
     param([System.Diagnostics.Process]$ServerProcess)
 
@@ -204,6 +255,25 @@ function Test-MCPTool {
     }
 }
 
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER ServerProcess
+${3:Parameter description}
+
+.PARAMETER ToolName
+${4:Parameter description}
+
+.EXAMPLE
+${5:An example}
+
+.NOTES
+${6:General notes}
+#>
 function Test-MCPToolCall {
     param(
         [System.Diagnostics.Process]$ServerProcess,
@@ -278,6 +348,22 @@ function Test-MCPToolCall {
     }
 }
 
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.PARAMETER ServerProcess
+${3:Parameter description}
+
+.EXAMPLE
+${4:An example}
+
+.NOTES
+${5:General notes}
+#>
 function Stop-MCPServer {
     [CmdletBinding(SupportsShouldProcess)]
     param([System.Diagnostics.Process]$ServerProcess)

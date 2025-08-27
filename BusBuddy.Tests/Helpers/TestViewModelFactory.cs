@@ -4,7 +4,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using BusBuddy.Core.Data;
 using BusBuddy.Core.Services;
-using BusBuddy.Core.Models;
+using BusBuddy.Core.Domain;
 using BusBuddy.WPF.ViewModels.Student;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Data.Sqlite;

@@ -80,7 +80,7 @@ namespace BusBuddy.WPF.Views.Route
         /// Overload allowing caller to provide a pre-selected route (used when invoked from RouteManagementView)
         /// </summary>
         /// <param name="preselectedRoute">Route to preselect in assignment UI</param>
-        public RouteAssignmentView(BusBuddy.Core.Models.Route preselectedRoute) : this()
+        public RouteAssignmentView(BusBuddy.Core.Domain.Route preselectedRoute) : this()
         {
             try
             {

@@ -1,4 +1,4 @@
-using BusBuddy.Core.Models;
+using BusBuddy.Core.Domain;
 using Microsoft.Extensions.Caching.Memory;
 using Serilog;
 

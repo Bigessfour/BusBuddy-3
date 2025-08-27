@@ -1,6 +1,6 @@
 using BusBuddy.Core.Data;
 using BusBuddy.Core.Extensions;
-using BusBuddy.Core.Models;
+using BusBuddy.Core.Domain;
 using BusBuddy.Core.Services.Interfaces;
 using BusBuddy.Core.Utilities;
 using Microsoft.EntityFrameworkCore;
@@ -8,7 +8,7 @@ using Serilog;
 using Serilog.Context;
 using System.Diagnostics;
 using System.Globalization;
-using ActivityType = BusBuddy.Core.Models.Activity;
+using ActivityType = BusBuddy.Core.Domain.Activity;
 
 namespace BusBuddy.Core.Services
 {

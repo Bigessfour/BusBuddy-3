@@ -2,7 +2,7 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.Windows.Input;
-using BusBuddy.Core.Models;
+using BusBuddy.Core.Domain;
 using BusBuddy.Core.Services.Interfaces;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -16,16 +16,16 @@ namespace BusBuddy.WPF.ViewModels.Vehicle
     public partial class VehicleManagementViewModel : BaseViewModel
     {
         private readonly IBusService _busService;
-    private BusBuddy.Core.Models.Bus? _lastSelectedVehicle;
+    private BusBuddy.Core.Domain.Bus? _lastSelectedVehicle;
 
         [ObservableProperty]
-        private ObservableCollection<BusBuddy.Core.Models.Bus> _vehicles = new();
+        private ObservableCollection<BusBuddy.Core.Domain.Bus> _vehicles = new();
 
         [ObservableProperty]
-        private ObservableCollection<BusBuddy.Core.Models.Bus> _filteredVehicles = new();
+        private ObservableCollection<BusBuddy.Core.Domain.Bus> _filteredVehicles = new();
 
         [ObservableProperty]
-        private BusBuddy.Core.Models.Bus? _selectedVehicle;
+        private BusBuddy.Core.Domain.Bus? _selectedVehicle;
 
         [ObservableProperty]
         private string _searchText = string.Empty;
@@ -137,7 +137,7 @@ namespace BusBuddy.WPF.ViewModels.Vehicle
         /// </summary>
         private void LoadSampleData()
         {
-            var sampleVehicles = new List<BusBuddy.Core.Models.Bus>
+            var sampleVehicles = new List<BusBuddy.Core.Domain.Bus>
             {
                 new() { BusId = 1, BusNumber = "BUS001", Make = "Ford", Model = "Transit", LicenseNumber = "ABC-123", SeatingCapacity = 40, Status = "Active", Year = 2020 },
                 new() { BusId = 2, BusNumber = "BUS002", Make = "Chevrolet", Model = "Express", LicenseNumber = "DEF-456", SeatingCapacity = 35, Status = "InService", Year = 2019 },
@@ -217,7 +217,7 @@ namespace BusBuddy.WPF.ViewModels.Vehicle
                 IsBusy = true;
                 StatusMessage = "Adding new vehicle...";
 
-                var newVehicle = new BusBuddy.Core.Models.Bus
+                var newVehicle = new BusBuddy.Core.Domain.Bus
                 {
                     BusNumber = $"BUS{(Vehicles.Count + 1):000}",
                     Make = "",
@@ -428,7 +428,7 @@ namespace BusBuddy.WPF.ViewModels.Vehicle
         /// <summary>
         /// Property change notification for selected vehicle
         /// </summary>
-        partial void OnSelectedVehicleChanged(BusBuddy.Core.Models.Bus? value)
+        partial void OnSelectedVehicleChanged(BusBuddy.Core.Domain.Bus? value)
         {
             // Unsubscribe from previous selection changes
             if (_lastSelectedVehicle is not null)

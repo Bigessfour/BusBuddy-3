@@ -1,7 +1,7 @@
 using System.Text;
 using System.Text.RegularExpressions;
 using BusBuddy.Core.Data;
-using BusBuddy.Core.Models;
+using BusBuddy.Core.Domain;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
 
@@ -783,12 +783,16 @@ namespace BusBuddy.Core.Services
             {
                 Logger.Information("Updating license info for driver {DriverId}", driverId);
 
-                using var context = _contextFactory.CreateWriteDbContext();
+                var (context, dispose) = GetWriteContext();
 
                 var driver = await context.Drivers.FindAsync(driverId);
                 if (driver == null)
                 {
                     Logger.Warning("Driver with ID {DriverId} not found", driverId);
+                    if (dispose)
+                    {
+                        await context.DisposeAsync();
+                    }
                     return false;
                 }
 
@@ -816,6 +820,10 @@ namespace BusBuddy.Core.Services
                 driver.UpdatedDate = DateTime.UtcNow;
 
                 await context.SaveChangesAsync();
+                if (dispose)
+                {
+                    await context.DisposeAsync();
+                }
                 Logger.Information("Successfully updated license info for driver {DriverId}", driverId);
                 return true;
             }

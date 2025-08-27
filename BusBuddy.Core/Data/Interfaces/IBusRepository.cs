@@ -1,4 +1,4 @@
-using BusBuddy.Core.Models;
+using BusBuddy.Core.Domain;
 
 namespace BusBuddy.Core.Data.Interfaces;
 
@@ -16,6 +16,14 @@ public interface IBusRepository : IRepository<Bus>
     Task<Bus?> GetVehicleByBusNumberAsync(string busNumber);
     Task<Bus?> GetVehicleByVINAsync(string vin);
     Task<Bus?> GetVehicleByLicenseNumberAsync(string licenseNumber);
+
+    // New Bus-prefixed equivalents (post-refactor preferred API)
+    Task<IEnumerable<Bus>> GetActiveBusesAsync();
+    Task<IEnumerable<Bus>> GetBusesByStatusAsync(string status);
+    Task<IEnumerable<Bus>> GetBusesByFleetTypeAsync(string fleetType);
+    Task<Bus?> GetBusByBusNumberAsync(string busNumber);
+    Task<Bus?> GetBusByVINAsync(string vin);
+    Task<Bus?> GetBusByLicenseNumberAsync(string licenseNumber);
 
     // Maintenance and inspection queries
     Task<IEnumerable<Bus>> GetVehiclesDueForInspectionAsync(int withinDays = 30);

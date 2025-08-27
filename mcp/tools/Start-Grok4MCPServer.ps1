@@ -1,4 +1,4 @@
-#requires -Version 7.5
+﻿#requires -Version 7.5
 
 <#
 .SYNOPSIS
@@ -47,6 +47,19 @@ if (Test-Path $globalSecurityModule) {
     }
 }
 
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.EXAMPLE
+${3:An example}
+
+.NOTES
+${4:General notes}
+#>
 function Test-GrokEnvironment {
     [CmdletBinding()]
     [OutputType([System.Boolean])]
@@ -84,7 +97,7 @@ function Test-GrokEnvironment {
 
     # Test 2: Node.js availability
     try {
-        $nodeVersion = node --version 2>$null
+        $nodeVersion = Node --version 2>$null
         if ($nodeVersion) {
             Write-Information "✅ Node.js available: $nodeVersion" -InformationAction Continue
         }
@@ -111,6 +124,19 @@ function Test-GrokEnvironment {
     return $apiKeyAvailable
 }
 
+<#
+.SYNOPSIS
+${1:Short description}
+
+.DESCRIPTION
+${2:Long description}
+
+.EXAMPLE
+${3:An example}
+
+.NOTES
+${4:General notes}
+#>
 function Start-Grok4Server {
     [CmdletBinding(SupportsShouldProcess = $true)]
     param()
@@ -133,11 +159,11 @@ function Start-Grok4Server {
 
         if ($Port) {
             Write-Information "🔧 Development mode: Port $Port" -InformationAction Continue
-            & node $serverPath --port $Port
+            & Node $serverPath --port $Port
         }
         else {
             Write-Information "🔗 MCP stdio mode (for VS Code integration)" -InformationAction Continue
-            & node $serverPath
+            & Node $serverPath
         }
     }
     catch {

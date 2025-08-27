@@ -3,7 +3,7 @@ using BusBuddy.Core.Data;
 using Serilog;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using BusBuddy.Core.Models;
+using BusBuddy.Core.Domain;
 using BusBuddy.Core.Services;
 using Moq;
 using Microsoft.EntityFrameworkCore;
@@ -61,8 +61,8 @@ namespace BusBuddy.Tests.Core
             };
             // Seed family and student to satisfy query include/any predicate
             var family = new Family { FamilyId = 2, ParentGuardian = "Doe" };
-            var student = new BusBuddy.Core.Models.Student { StudentId = 100, Family = family, FamilyId = family.FamilyId, StudentName = "Test" };
-            family.Students = new List<BusBuddy.Core.Models.Student> { student };
+            var student = new BusBuddy.Core.Domain.Student { StudentId = 100, Family = family, FamilyId = family.FamilyId, StudentName = "Test" };
+            family.Students = new List<BusBuddy.Core.Domain.Student> { student };
             _dbContext.Families.Add(family);
             _dbContext.Students.Add(student);
             guardian.Family = family;

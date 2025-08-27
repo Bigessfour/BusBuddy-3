@@ -1,5 +1,5 @@
 using BusBuddy.Core.Utilities;
-using BusBuddy.Core.Models;
+using BusBuddy.Core.Domain;
 using BusBuddy.Core.Data;
 using Microsoft.EntityFrameworkCore;
 using Serilog;

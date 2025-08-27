@@ -67,6 +67,16 @@ namespace BusBuddy.Core.Extensions
                 return new BusBuddyDbContext(optionsBuilder.Options);
             });
 
+            // Optional: register enhanced context for future migration of repositories/services
+            services.AddTransient<BusBuddyDbContextEnhanced>(provider =>
+            {
+                var configuration = provider.GetRequiredService<IConfiguration>();
+                var optionsBuilder = new DbContextOptionsBuilder<BusBuddyDbContextEnhanced>();
+                var connectionString = BusBuddy.Core.Utilities.EnvironmentHelper.GetConnectionString(configuration);
+                optionsBuilder.UseSqlServer(connectionString);
+                return new BusBuddyDbContextEnhanced(optionsBuilder.Options, configuration);
+            });
+
             // Register DbContext Factory for thread-safe context creation with access to IConfiguration via IServiceProvider
             services.AddSingleton<IBusBuddyDbContextFactory>(sp => new BusBuddyDbContextFactory(sp));
 
@@ -127,6 +137,9 @@ namespace BusBuddy.Core.Extensions
             // Documentation reference: Microsoft .NET DI patterns (HostBuilder/IServiceCollection)
             // https://learn.microsoft.com/dotnet/core/extensions/dependency-injection
             services.AddSingleton<IGeocodingService, OfflineGeocodingService>();
+
+            // Data seeding service (idempotent, dev-only invocation in App startup)
+            services.AddScoped<ISeedDataService, SeedDataService>();
 
             // Register Phase 2 Data Seeding Service
             // services.AddScoped<IPhase2DataSeederService, Phase2DataSeederService>();

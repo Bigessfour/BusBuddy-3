@@ -1,11 +1,11 @@
-using BusBuddy.Core.Models;
+using BusBuddy.Core.Domain;
 using BusBuddy.Core.Utilities;
 
 namespace BusBuddy.Core.Services
 {
     // NOTE (RTD-01): Duplicate RouteTimeSlot enum & RouteValidationResult class removed.
     // Canonical definitions live in Models/Route.Extensions.cs (RouteTimeSlot and RouteValidationResult).
-    // Service now consumes BusBuddy.Core.Models.RouteTimeSlot directly to eliminate casts.
+    // Service now consumes BusBuddy.Core.Domain.RouteTimeSlot directly to eliminate casts.
 
     public interface IRouteService
     {
@@ -43,8 +43,8 @@ namespace BusBuddy.Core.Services
 
         // Route Building Methods
         Task<Result<Route>> CreateNewRouteAsync(string routeName, DateTime routeDate, string? description = null);
-        Task<Result<bool>> AssignVehicleToRouteAsync(int routeId, int vehicleId, BusBuddy.Core.Models.RouteTimeSlot timeSlot);
-    Task<Result<bool>> AssignDriverToRouteAsync(int routeId, int driverId, BusBuddy.Core.Models.RouteTimeSlot timeSlot);
+        Task<Result<bool>> AssignVehicleToRouteAsync(int routeId, int vehicleId, BusBuddy.Core.Domain.RouteTimeSlot timeSlot);
+    Task<Result<bool>> AssignDriverToRouteAsync(int routeId, int driverId, BusBuddy.Core.Domain.RouteTimeSlot timeSlot);
     Task<Result<RouteStop>> AddStopToRouteAsync(int routeId, RouteStop routeStop);
         Task<Result<bool>> RemoveStopFromRouteAsync(int routeId, int stopId);
         Task<Result<bool>> ReorderRouteStopsAsync(int routeId, List<int> orderedStopIds);

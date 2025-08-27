@@ -4,13 +4,13 @@ using System.Runtime.CompilerServices;
 using System.Windows.Input;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.EntityFrameworkCore;
-using BusBuddy.Core.Models;
+using BusBuddy.Core.Domain;
 using BusBuddy.Core.Services;
 using BusBuddy.WPF.Services;
 using BusBuddy.Core;
 using BusBuddy.Core.Data;
 using BusBuddy.WPF;
-using CoreStudent = BusBuddy.Core.Models.Student;
+using CoreStudent = BusBuddy.Core.Domain.Student;
 
 namespace BusBuddy.WPF.ViewModels;
 

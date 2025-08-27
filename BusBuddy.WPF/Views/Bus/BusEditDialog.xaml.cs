@@ -1,6 +1,6 @@
 using System;
 using System.Windows;
-using BusBuddy.Core.Models;
+using BusBuddy.Core.Domain;
 using Syncfusion.SfSkinManager;
 
 namespace BusBuddy.WPF.Views.Bus
@@ -10,12 +10,12 @@ namespace BusBuddy.WPF.Views.Bus
     /// </summary>
     public partial class BusEditDialog : Window
     {
-        public BusBuddy.Core.Models.Bus Bus { get; set; }
+        public BusBuddy.Core.Domain.Bus Bus { get; set; }
 
-        public BusEditDialog(BusBuddy.Core.Models.Bus? bus = null)
+        public BusEditDialog(BusBuddy.Core.Domain.Bus? bus = null)
         {
             InitializeComponent();
-            Bus = bus != null ? bus : new BusBuddy.Core.Models.Bus();
+            Bus = bus != null ? bus : new BusBuddy.Core.Domain.Bus();
             // Apply Syncfusion theme — FluentDark default, FluentLight fallback
             try
             {
@@ -46,7 +46,7 @@ namespace BusBuddy.WPF.Views.Bus
         public BusEditDialog()
         {
             InitializeComponent();
-            Bus = new BusBuddy.Core.Models.Bus(); // Initialize Bus property to fix CS8618
+            Bus = new BusBuddy.Core.Domain.Bus(); // Initialize Bus property to fix CS8618
             // Apply Syncfusion theme — FluentDark default, FluentLight fallback
             try
             {

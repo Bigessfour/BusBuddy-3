@@ -194,6 +194,25 @@ namespace BusBuddy.WPF
                 var mainWindow = CreateMainWindow();
                 mainWindow.Show();
 
+                // Development-only idempotent seed (post-migration). Safe: checks existing counts.
+                try
+                {
+                    var env = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production";
+                    if (string.Equals(env, "Development", StringComparison.OrdinalIgnoreCase))
+                    {
+                        using var scope = ServiceProvider!.CreateScope();
+                        var seeder = scope.ServiceProvider.GetService<ISeedDataService>();
+                        if (seeder != null)
+                        {
+                            await seeder.SeedBusesAsync(12); // includes FuelCapacity & MPG now
+                        }
+                    }
+                }
+                catch (Exception seedEx)
+                {
+                    Log.Warning(seedEx, "Development seeding failed (non-fatal)");
+                }
+
                 Log.Information("🚌 BusBuddy MVP application started successfully");
             }
             catch (Exception ex)

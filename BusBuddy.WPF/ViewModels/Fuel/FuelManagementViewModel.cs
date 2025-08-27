@@ -3,14 +3,14 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
-using BusBuddy.Core.Models;
+using BusBuddy.Core.Domain;
 using BusBuddy.Core.Services;
 using BusBuddy.Core.Services.Interfaces;
 using BusBuddy.WPF.Views.Fuel;
 using Serilog;
 using Serilog.Context;
 using BusBuddy.WPF.Commands;
-using FuelModel = BusBuddy.Core.Models.Fuel;
+using FuelModel = BusBuddy.Core.Domain.Fuel;
 
 // Disable async method without await operator warnings
 #pragma warning disable CS1998 // Async method lacks 'await' operators and will run synchronously

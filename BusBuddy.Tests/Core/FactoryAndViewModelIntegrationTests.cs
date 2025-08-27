@@ -6,7 +6,7 @@ using FluentAssertions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.EntityFrameworkCore;
 using BusBuddy.Core.Data;
-using BusBuddy.Core.Models;
+using BusBuddy.Core.Domain;
 using BusBuddy.WPF.ViewModels.Student;
 
 namespace BusBuddy.Tests.Core
@@ -14,7 +14,7 @@ namespace BusBuddy.Tests.Core
     [TestFixture]
     public class FactoryAndViewModelIntegrationTests
     {
-        private class TestFactory : IBusBuddyDbContextFactory
+        private sealed class TestFactory : IBusBuddyDbContextFactory
         {
             private readonly DbContextOptions<BusBuddyDbContext> _options;
 

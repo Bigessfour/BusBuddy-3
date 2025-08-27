@@ -1,6 +1,6 @@
 using BusBuddy.Core.Data.Interfaces;
 using BusBuddy.Core.Data.Repositories;
-using BusBuddy.Core.Models;
+using BusBuddy.Core.Domain;
 using BusBuddy.Core.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
@@ -370,7 +370,7 @@ public class UnitOfWork : IUnitOfWork
             var currentUser = _currentAuditUser ?? "System";
 
             // Handle BaseEntity pattern
-            if (entry.Entity is Models.Base.BaseEntity baseEntity)
+            if (entry.Entity is BusBuddy.Core.Domain.Base.BaseEntity baseEntity)
             {
                 if (entry.State == EntityState.Added)
                 {

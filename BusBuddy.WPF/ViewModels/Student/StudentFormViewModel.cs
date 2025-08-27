@@ -8,7 +8,8 @@ using System.Threading.Tasks;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Text.RegularExpressions;
-using BusBuddy.Core.Models;
+using BusBuddy.Core.Domain;
+using DomainStudent = BusBuddy.Core.Domain.Student;
 using BusBuddy.Core.Services;
 using BusBuddy.Core;
 using BusBuddy.Core.Data;
@@ -34,7 +35,7 @@ namespace BusBuddy.WPF.ViewModels.Student
         private readonly BusBuddyDbContext _context;
         private readonly AddressService _addressService;
         private readonly IStudentService? _studentService; // Prefer service for persistence
-        private Core.Models.Student _student;
+        private DomainStudent _student;
         private string _formTitle = "Add New Student";
         private string _addressValidationMessage = string.Empty;
         private Brush _addressValidationColor = Brushes.Gray;
@@ -43,19 +44,19 @@ namespace BusBuddy.WPF.ViewModels.Student
         // Event to request the form to close
         public event EventHandler<bool?>? RequestClose;
 
-        public StudentFormViewModel() : this(new Core.Models.Student())
+        public StudentFormViewModel() : this(new DomainStudent())
         {
         }
 
         // Primary constructor for DI usage
-        public StudentFormViewModel(IStudentService studentService, Core.Models.Student? student = null, bool enableValidation = false)
+        public StudentFormViewModel(IStudentService studentService, DomainStudent? student = null, bool enableValidation = false)
         {
             _studentService = studentService;
             _context = TryCreateDbContextViaDi() ?? new BusBuddyDbContext();
             _addressService = new AddressService();
             DisableAddressValidation = !enableValidation; // Allow tests to enable validation
 
-            _student = student ?? new Core.Models.Student
+            _student = student ?? new DomainStudent
             {
                 Active = true,
                 EnrollmentDate = DateTime.Today,
@@ -83,7 +84,7 @@ namespace BusBuddy.WPF.ViewModels.Student
         }
 
         // Fallback constructor when DI is unavailable
-        public StudentFormViewModel(Core.Models.Student? student = null, bool enableValidation = false)
+        public StudentFormViewModel(DomainStudent? student = null, bool enableValidation = false)
         {
             _context = TryCreateDbContextViaDi() ?? new BusBuddyDbContext();
             _addressService = new AddressService();
@@ -91,7 +92,7 @@ namespace BusBuddy.WPF.ViewModels.Student
             // For MVP, we'll do simple validation directly in the ViewModel
             // TODO: Inject AddressValidationService when UnitOfWork is available
 
-            _student = student ?? new Core.Models.Student
+            _student = student ?? new DomainStudent
             {
                 Active = true,
                 EnrollmentDate = DateTime.Today,
@@ -121,7 +122,7 @@ namespace BusBuddy.WPF.ViewModels.Student
         /// <summary>
         /// Student being edited or added
         /// </summary>
-        public Core.Models.Student Student
+        public DomainStudent Student
         {
             get => _student;
             set
@@ -548,12 +549,12 @@ namespace BusBuddy.WPF.ViewModels.Student
         private void OnStudentPropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
             // Re-evaluate save when key fields change; keep UI IsEnabled and command CanExecute aligned
-            if (e.PropertyName == nameof(Core.Models.Student.StudentName) ||
-                e.PropertyName == nameof(Core.Models.Student.Grade) ||
-                e.PropertyName == nameof(Core.Models.Student.HomeAddress) ||
-                e.PropertyName == nameof(Core.Models.Student.City) ||
-                e.PropertyName == nameof(Core.Models.Student.State) ||
-                e.PropertyName == nameof(Core.Models.Student.Zip))
+            if (e.PropertyName == nameof(DomainStudent.StudentName) ||
+                e.PropertyName == nameof(DomainStudent.Grade) ||
+                e.PropertyName == nameof(DomainStudent.HomeAddress) ||
+                e.PropertyName == nameof(DomainStudent.City) ||
+                e.PropertyName == nameof(DomainStudent.State) ||
+                e.PropertyName == nameof(DomainStudent.Zip))
             {
                 _saveRelay?.NotifyCanExecuteChanged();
                 CanSave = CanSaveStudent();

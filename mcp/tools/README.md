@@ -21,6 +21,7 @@ node tools/server-manager.js stop-all
 ## Commands
 
 ### `start <server-name>`
+
 Starts a specific MCP server with proper process monitoring.
 
 ```bash
@@ -29,6 +30,7 @@ node tools/server-manager.js start busbuddy-mcp-server
 ```
 
 ### `stop <server-name>`
+
 Gracefully stops a running MCP server.
 
 ```bash
@@ -36,20 +38,25 @@ node tools/server-manager.js stop grok4-mcp-server
 ```
 
 ### `list`
+
 Displays all available servers with their status and descriptions.
 
 ### `health`
+
 Performs comprehensive health check including:
+
 - Server running status
 - Environment variable validation
 - Configuration file integrity
 
 ### `stop-all`
+
 Stops all running MCP servers for clean shutdown.
 
 ## Server Configuration
 
 The manager reads from `config/server-configs.json` to understand:
+
 - Available servers and their metadata
 - Required environment variables
 - Tool capabilities
@@ -65,6 +72,7 @@ The manager reads from `config/server-configs.json` to understand:
 ## Environment Integration
 
 Works with VS Code MCP configuration by:
+
 1. Reading from centralized config files
 2. Validating environment variables
 3. Providing server status information
@@ -80,6 +88,7 @@ Works with VS Code MCP configuration by:
 ## Development Workflow
 
 Ideal for:
+
 - Testing MCP server changes
 - Managing multiple server environments
 - Debugging server integration issues

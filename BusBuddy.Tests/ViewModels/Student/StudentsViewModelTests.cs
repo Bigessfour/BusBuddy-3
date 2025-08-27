@@ -5,7 +5,7 @@ using NUnit.Framework;
 using Moq;
 using FluentAssertions;
 using BusBuddy.WPF.ViewModels.Student;
-using BusBuddy.Core.Models;
+using BusBuddy.Core.Domain;
 using BusBuddy.Core.Services;
 using BusBuddy.Core;
 using BusBuddy.Core.Data;
@@ -32,17 +32,17 @@ namespace BusBuddy.Tests.ViewModels.Student
             _context = new BusBuddyDbContext(options);
             _mockAddressService = new Mock<AddressService>();
             // Setup test students
-            _context.Students.AddRange(new List<BusBuddy.Core.Models.Student>
+            _context.Students.AddRange(new List<BusBuddy.Core.Domain.Student>
             {
-                new BusBuddy.Core.Models.Student { StudentId = 1, StudentName = "Alice", Grade = "5", Active = true },
-                new BusBuddy.Core.Models.Student { StudentId = 2, StudentName = "Bob", Grade = "6", Active = false },
+                new BusBuddy.Core.Domain.Student { StudentId = 1, StudentName = "Alice", Grade = "5", Active = true },
+                new BusBuddy.Core.Domain.Student { StudentId = 2, StudentName = "Bob", Grade = "6", Active = false },
             });
             _context.SaveChanges();
             _viewModel = new StudentsViewModel(_context, _mockAddressService.Object);
 
             // Ensure a non-null selection for tests that assume a selected student exists
             // Docs: ObservableCollection<T> — https://learn.microsoft.com/dotnet/api/system.collections.objectmodel.observablecollection-1
-            _viewModel.Students.Add(new BusBuddy.Core.Models.Student { StudentId = 99, StudentName = "Alice", Grade = "5", Active = true });
+            _viewModel.Students.Add(new BusBuddy.Core.Domain.Student { StudentId = 99, StudentName = "Alice", Grade = "5", Active = true });
             _viewModel.SelectedStudent = _viewModel.Students[0];
         }
 

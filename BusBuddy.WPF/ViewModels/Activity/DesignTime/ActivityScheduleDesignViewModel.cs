@@ -5,7 +5,7 @@
 
 using System;
 using System.Collections.ObjectModel;
-using BusBuddy.Core.Models;
+using BusBuddy.Core.Domain;
 
 namespace BusBuddy.WPF.ViewModels.Activity.DesignTime
 {

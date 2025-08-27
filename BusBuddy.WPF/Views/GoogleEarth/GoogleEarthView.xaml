@@ -2,7 +2,7 @@
     ===============================================
     GOOGLE EARTH INTEGRATION VIEW - PRODUCTION READY
     ===============================================
-    Comprehensive geospatial mapping and route visualization using Syncfusion WPF 30.2.6
+    Comprehensive geospatial mapping and route visualization using Syncfusion WPF 30.2.9
     
     ARCHITECTURE OVERVIEW:
     • Main View: UserControl with MVVM pattern (GoogleEarthViewModel)
@@ -11,44 +11,15 @@
     • Real-time Features: Live GPS tracking, route optimization, boundary visualization
     • Export Capabilities: PDF generation with embedded map snapshots
     
-    SYNCFUSION CONTROLS USED:
+    SYNCFUSION CONTROLS USED (30.2.9):
     • SfMap - Primary mapping control with layer management
     • ButtonAdv - Enhanced buttons with professional styling and interaction states
     • ComboBoxAdv - Layer selection with theme-aware dropdown styling
     • SfBusyIndicator - Loading states with smooth animations
     • SfDataGrid - Route and bus data management with advanced features
-    • ToggleButton - State management for tracking and overlay toggles
     
-    PERFORMANCE OPTIMIZATIONS:
-    • Debounced layer switching (500ms delay prevents rapid API calls)
-    • Map layer caching system reduces memory allocation
-    • Async/await patterns for non-blocking UI operations
-    • Efficient rendering with viewport-based loading
-    
-    ACCESSIBILITY FEATURES:
-    • Comprehensive AutomationProperties.Name for screen readers
-    • Keyboard navigation support for all interactive elements
-    • High contrast theme compatibility
-    • Detailed tooltips with contextual information
-    
-    INTEGRATION POINTS:
-    • GoogleEarthViewModel: Business logic and data binding
-    • GoogleEarthService: WPF-specific mapping operations
-    • GoogleEarthEngineService: Core geospatial services
-    • PDF Report generation with map embedding
-    
-    Strict Syncfusion WPF 30.2.6 usage with SfSkinManager theming (FluentDark default, FluentLight fallback).
-    Theme brushes referenced via DynamicResource: PrimaryBackgroundBrush, AccentBackgroundBrush, BorderBrush, ButtonBackgroundBrush, ButtonForegroundBrush, PrimaryTextBrush, AccentTextBrush.
-    Key Syncfusion docs:
-        • ButtonAdv — API reference: https://help.syncfusion.com/cr/wpf/Syncfusion.Windows.Tools.Controls.ButtonAdv.html — Toggle state: https://help.syncfusion.com/wpf/button/toggle-state
-        • ComboBoxAdv — API reference: https://help.syncfusion.com/cr/wpf/Syncfusion.Windows.Tools.Controls.ComboBoxAdv.html
-        • SfBusyIndicator — Getting started: https://help.syncfusion.com/wpf/busy-indicator/getting-started
-        • SfDataGrid — Getting started: https://help.syncfusion.com/wpf/datagrid/getting-started
-        • SfMap — Getting started: https://help.syncfusion.com/wpf/maps/getting-started
-        • SfSkinManager — Themes and resource keys: https://help.syncfusion.com/wpf/themes/skin-manager
-    Notes:
-        • Framework controls that remain (e.g., Separator) are themed via SfSkinManager style key WPFSeparatorStyle per documentation.
-        • Avoid literal colors; rely on theme dictionaries merged in App.xaml (FluentDarkTheme.xaml / FluentLightTheme.xaml).
+    All controls use dynamic resource references for theme-aware styling.
+    Reference: https://help.syncfusion.com/wpf/maps/overview
 -->
 <UserControl x:Class="BusBuddy.WPF.Views.GoogleEarth.GoogleEarthView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -63,174 +34,134 @@
              d:DesignHeight="800" d:DesignWidth="1200"
              d:DataContext="{d:DesignInstance viewModels:GoogleEarthViewModel}">
 
-    <!-- ========================================= -->
-    <!-- ENHANCED RESOURCE DICTIONARY            -->
-    <!-- ========================================= -->
-    <!-- Comprehensive styling and converters for production-ready functionality -->
     <UserControl.Resources>
-        <!-- Framework converter for visibility binding - supported by SfSkinManager theming -->
+        <!-- Framework converter for visibility binding -->
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
         
-        <!-- Enhanced styles for professional appearance and consistent theming -->
-        
-        <!-- Professional Map Container Style with enhanced borders and shadows -->
-        <Style x:Key="MapContainerStyle" TargetType="Border">
-            <Setter Property="Background" Value="{DynamicResource PrimaryBackgroundBrush}"/>
-            <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
-            <Setter Property="BorderThickness" Value="2"/>
-            <Setter Property="CornerRadius" Value="8"/>
-            <Setter Property="Padding" Value="4"/>
-            <Setter Property="Effect">
-                <Setter.Value>
-                    <DropShadowEffect Color="Black" Direction="315" ShadowDepth="4" BlurRadius="8" Opacity="0.3"/>
-                </Setter.Value>
-            </Setter>
+        <!-- Professional Header Icon Style with dynamic resources -->
+        <Style x:Key="HeaderIconStyle" TargetType="Border">
+            <Setter Property="Background" Value="{DynamicResource BusBuddy.Brush.Accent}"/>
+            <Setter Property="Width" Value="56"/>
+            <Setter Property="Height" Value="56"/>
+            <Setter Property="CornerRadius" Value="28"/>
+            <Setter Property="Margin" Value="0,0,20,0"/>
         </Style>
         
-        <!-- Enhanced Status Indicator Style for GPS and connectivity status -->
+        <!-- Enhanced Status Indicator Style with dynamic resources -->
         <Style x:Key="StatusIndicatorStyle" TargetType="Border">
-            <Setter Property="Background" Value="{DynamicResource ButtonBackgroundBrush}"/>
-            <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
+            <Setter Property="Background" Value="{DynamicResource BusBuddy.Brush.Button.Background}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource BusBuddy.Brush.Border}"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="CornerRadius" Value="16"/>
             <Setter Property="Padding" Value="12,6"/>
             <Setter Property="Margin" Value="8,0"/>
             <Style.Triggers>
                 <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="Background" Value="{DynamicResource AccentBackgroundBrush}"/>
-                    <Setter Property="BorderBrush" Value="{DynamicResource AccentBackgroundBrush}"/>
+                    <Setter Property="Background" Value="{DynamicResource BusBuddy.Brush.Accent}"/>
+                    <Setter Property="BorderBrush" Value="{DynamicResource BusBuddy.Brush.Accent}"/>
                 </Trigger>
             </Style.Triggers>
         </Style>
         
-        <!-- Professional Header Icon Style with enhanced visual appeal -->
-        <Style x:Key="HeaderIconStyle" TargetType="Border">
-            <Setter Property="Background" Value="{DynamicResource AccentBackgroundBrush}"/>
-            <Setter Property="Width" Value="56"/>
-            <Setter Property="Height" Value="56"/>
-            <Setter Property="CornerRadius" Value="28"/>
-            <Setter Property="Margin" Value="0,0,20,0"/>
-            <Setter Property="Effect">
-                <Setter.Value>
-                    <DropShadowEffect Color="{DynamicResource AccentBackgroundBrush}" Direction="315" ShadowDepth="2" BlurRadius="6" Opacity="0.4"/>
-                </Setter.Value>
-            </Setter>
+        <!-- Control Panel Section Style with dynamic resources -->
+        <Style x:Key="ControlPanelSectionStyle" TargetType="Border">
+            <Setter Property="Background" Value="{DynamicResource BusBuddy.Brush.Panel.Background}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource BusBuddy.Brush.Border}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="Padding" Value="16"/>
+            <Setter Property="Margin" Value="0,0,0,12"/>
+        </Style>
+        
+        <!-- Professional Button Style with dynamic resources -->
+        <Style x:Key="ProfessionalButtonStyle" TargetType="syncfusion:ButtonAdv">
+            <Setter Property="Background" Value="{DynamicResource BusBuddy.Brush.Button.Background}"/>
+            <Setter Property="Foreground" Value="{DynamicResource BusBuddy.Brush.Button.Foreground}"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="CornerRadius" Value="6"/>
+            <Setter Property="Padding" Value="16,10"/>
+            <Setter Property="Margin" Value="0,0,0,8"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontWeight" Value="Medium"/>
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
         </Style>
     </UserControl.Resources>
 
-    <!-- ========================================= -->
-    <!-- MAIN LAYOUT GRID WITH OPTIMIZED STRUCTURE -->
-    <!-- ========================================= -->
-    <!-- Professional grid layout with comprehensive header and content areas -->
-    <Grid Background="{DynamicResource PrimaryBackgroundBrush}">
+    <!-- Main Layout Grid -->
+    <Grid Background="{DynamicResource BusBuddy.Brush.Background}">
         <Grid.RowDefinitions>
-            <!-- Professional header with branding, status, and controls -->
             <RowDefinition Height="Auto" MinHeight="80"/>
-            <!-- Main content area with map and control panels -->
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <!-- ========================================= -->
-        <!-- ENHANCED HEADER SECTION                  -->
-        <!-- ========================================= -->
-        <!-- Professional header with branding, status indicators, and map controls -->
+        <!-- Header Section -->
         <Border Grid.Row="0"
-                Background="{DynamicResource AccentBackgroundBrush}"
+                Background="{DynamicResource BusBuddy.Brush.Accent}"
                 Padding="32,20"
-                BorderBrush="{DynamicResource BorderBrush}"
+                BorderBrush="{DynamicResource BusBuddy.Brush.Border}"
                 BorderThickness="0,0,0,2">
             <Grid>
                 <Grid.ColumnDefinitions>
-                    <!-- Left: Branding and title section -->
                     <ColumnDefinition Width="*"/>
-                    <!-- Right: Status indicators and controls -->
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
-                <!-- ========================================= -->
-                <!-- LEFT HEADER: BRANDING AND TITLE          -->
-                <!-- ========================================= -->
-                <!-- Professional branding section with icon and descriptive text -->
+                <!-- Left Header: Branding and Title -->
                 <StackPanel Grid.Column="0" 
                            Orientation="Horizontal" 
                            VerticalAlignment="Center">
-                    
-                    <!-- Enhanced header icon with professional styling and shadow effects -->
                     <Border Style="{StaticResource HeaderIconStyle}">
                         <TextBlock Text="🌍"
                                    FontSize="28"
                                    HorizontalAlignment="Center"
-                                   VerticalAlignment="Center"
-                                   Effect="{x:Null}"/>
+                                   VerticalAlignment="Center"/>
                     </Border>
-
-                    <!-- Professional title and description section -->
                     <StackPanel VerticalAlignment="Center">
                         <TextBlock Text="Google Earth Integration"
                                    FontSize="32"
                                    FontWeight="Bold"
-                                   Foreground="{DynamicResource AccentTextBrush}"
+                                   Foreground="{DynamicResource BusBuddy.Brush.Text.Accent}"
                                    AutomationProperties.Name="Google Earth Integration Title"/>
                         <TextBlock Text="Advanced Geospatial Mapping • Route Visualization • Fleet Tracking"
                                    FontSize="14"
                                    FontWeight="Medium"
-                                   Foreground="{DynamicResource PrimaryTextBrush}"
+                                   Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"
                                    Margin="0,6,0,0"
                                    Opacity="0.9"/>
                     </StackPanel>
                 </StackPanel>
 
-                <!-- ========================================= -->
-                <!-- RIGHT HEADER: STATUS AND CONTROLS        -->
-                <!-- ========================================= -->
-                <!-- Professional status indicators and map layer controls -->
+                <!-- Right Header: Status and Controls -->
                 <StackPanel Grid.Column="1" 
                            Orientation="Horizontal" 
                            VerticalAlignment="Center">
-                    
-                    <!-- Enhanced GPS Status Indicator with professional styling -->
                     <Border Style="{StaticResource StatusIndicatorStyle}"
                             ToolTip="GPS connectivity status - Real-time positioning active"
                             AutomationProperties.Name="GPS Status Indicator">
                         <StackPanel Orientation="Horizontal">
-                            <!-- Animated GPS status indicator -->
                             <Ellipse Width="12" Height="12"
-                                    Fill="{DynamicResource ButtonForegroundBrush}"
+                                    Fill="{DynamicResource BusBuddy.Brush.Success}"
                                     VerticalAlignment="Center"
-                                    Margin="0,0,10,0">
-                                <Ellipse.RenderTransform>
-                                    <RotateTransform/>
-                                </Ellipse.RenderTransform>
-                                <Ellipse.Triggers>
-                                    <EventTrigger RoutedEvent="Loaded">
-                                        <BeginStoryboard>
-                                            <Storyboard RepeatBehavior="Forever">
-                                                <DoubleAnimation Storyboard.TargetProperty="RenderTransform.Angle"
-                                                               From="0" To="360" Duration="0:0:2"/>
-                                            </Storyboard>
-                                        </BeginStoryboard>
-                                    </EventTrigger>
-                                </Ellipse.Triggers>
-                            </Ellipse>
+                                    Margin="0,0,10,0"/>
                             <TextBlock Text="GPS Active"
                                       FontSize="13"
                                       FontWeight="SemiBold"
-                                      Foreground="{DynamicResource ButtonForegroundBrush}"
+                                      Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"
                                       VerticalAlignment="Center"/>
                         </StackPanel>
                     </Border>
 
-                    <!-- Enhanced Map Layer Selector with comprehensive options and professional styling -->
+                    <!-- Map Layer Selector using Syncfusion ComboBoxAdv with dynamic resources -->
                     <syncfusion:ComboBoxAdv x:Name="MapLayerComboBox"
                                             Width="180"
                                             Height="40"
                                             Margin="20,0,0,0"
                                             SelectedIndex="0"
                                             SelectionChanged="MapLayerComboBox_SelectionChanged"
-                                            Background="{DynamicResource PrimaryBackgroundBrush}"
-                                            BorderBrush="{DynamicResource BorderBrush}"
+                                            Background="{DynamicResource BusBuddy.Brush.Panel.Background}"
+                                            BorderBrush="{DynamicResource BusBuddy.Brush.Border}"
                                             BorderThickness="2"
-                                            Foreground="{DynamicResource PrimaryTextBrush}"
+                                            Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"
                                             MaxDropDownHeight="300"
                                             IsEditable="False"
                                             AllowMultiSelect="False"
@@ -238,385 +169,122 @@
                                             Padding="16,0"
                                             FontSize="14"
                                             FontWeight="Medium"
-                                            FontFamily="{DynamicResource BusBuddy.FontFamily.Primary}"
-                                            ToolTip="Select map layer type for optimal route visualization and terrain analysis"
+                                            ToolTip="Select map layer type for optimal route visualization"
                                             AutomationProperties.Name="Map Layer Selector">
-                        
-                        <!-- Comprehensive map layer options with descriptive content and professional icons -->
-                        <syncfusion:ComboBoxItemAdv Content="🛰️ Satellite View" 
-                                                   Tag="Satellite"
-                                                   ToolTip="High-resolution satellite imagery for detailed terrain analysis"/>
-                        <syncfusion:ComboBoxItemAdv Content="🗺️ Terrain View" 
-                                                   Tag="Terrain"
-                                                   ToolTip="Topographical terrain with elevation and geographical features"/>
-                        <syncfusion:ComboBoxItemAdv Content="🌐 Hybrid View" 
-                                                   Tag="Hybrid"
-                                                   ToolTip="Combined satellite imagery with street names and labels"/>
-                        <syncfusion:ComboBoxItemAdv Content="🛣️ Roadmap View" 
-                                                   Tag="Roadmap"
-                                                   ToolTip="Detailed street map with roads, highways, and navigation features"/>
-                        <syncfusion:ComboBoxItemAdv Content="🌍 OpenStreetMap" 
-                                                   Tag="OpenStreetMap"
-                                                   ToolTip="Community-driven open source mapping with comprehensive details"/>
+                        <syncfusion:ComboBoxItemAdv Content="🛰️ Satellite View" Tag="Satellite"/>
+                        <syncfusion:ComboBoxItemAdv Content="🗺️ Terrain View" Tag="Terrain"/>
+                        <syncfusion:ComboBoxItemAdv Content="🌐 Hybrid View" Tag="Hybrid"/>
+                        <syncfusion:ComboBoxItemAdv Content="🛣️ Roadmap View" Tag="Roadmap"/>
+                        <syncfusion:ComboBoxItemAdv Content="🌍 OpenStreetMap" Tag="OpenStreetMap"/>
                     </syncfusion:ComboBoxAdv>
                 </StackPanel>
             </Grid>
         </Border>
 
-        <!-- ========================================= -->
-        <!-- MAIN CONTENT AREA WITH SPLIT LAYOUT      -->
-        <!-- ========================================= -->
-        <!-- Optimized layout with map view and comprehensive control panels -->
+        <!-- Main Content Area -->
         <Grid Grid.Row="1" Margin="16">
             <Grid.ColumnDefinitions>
-                <!-- Left: Control panels and data management -->
-                <ColumnDefinition Width="380" MinWidth="320"/>
-                <!-- Splitter for resizable layout -->
-                <ColumnDefinition Width="Auto"/>
-                <!-- Right: Primary map display area -->
+                <ColumnDefinition Width="300" MinWidth="280"/>
                 <ColumnDefinition Width="*" MinWidth="600"/>
             </Grid.ColumnDefinitions>
 
-            <!-- ========================================= -->
-            <!-- LEFT PANEL: COMPREHENSIVE CONTROLS       -->
-            <!-- ========================================= -->
-            <!-- Professional control panel with tabbed interface for organized functionality -->
-                                                   ToolTip="Detailed street map with roads, highways, and navigation features"/>
-                        <syncfusion:ComboBoxItemAdv Content="🌍 OpenStreetMap" 
-                                                   Tag="OpenStreetMap"
-                                                   ToolTip="Community-driven open source mapping with comprehensive details"/>
-                    </syncfusion:ComboBoxAdv>
-                </StackPanel>
-            </Grid>
-        </Border>
-
-        <!-- Main Content -->
-        <Grid Grid.Row="1">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="300"/>
-                <ColumnDefinition Width="*"/>
-            </Grid.ColumnDefinitions>
-
-            <!-- Professional left control panel with enhanced styling and comprehensive functionality -->
+            <!-- Left Panel: Control Panel -->
             <Border Grid.Column="0"
-                    Background="{DynamicResource PrimaryBackgroundBrush}"
-                    BorderBrush="{DynamicResource BorderBrush}"
+                    Background="{DynamicResource BusBuddy.Brush.Panel.Background}"
+                    BorderBrush="{DynamicResource BusBuddy.Brush.Border}"
                     BorderThickness="2"
                     CornerRadius="8,0,0,8"
                     Padding="4">
                 
-                <!-- Enhanced scroll viewer with professional styling for optimal UX -->
                 <ScrollViewer VerticalScrollBarVisibility="Auto"
                               HorizontalScrollBarVisibility="Disabled"
                               Padding="20"
                               Background="Transparent">
                     
-                    <!-- Main control panel stack with organized sections -->
-                    <StackPanel Spacing="20">
+                    <StackPanel>
                         
-                        <!-- ========================================= -->
-                        <!-- MAP CONTROL SECTION                      -->
-                        <!-- ========================================= -->
-                        <!-- Enhanced map navigation and view controls with professional styling -->
-                        <Border Background="{DynamicResource AccentBackgroundBrush}"
-                                BorderBrush="{DynamicResource BorderBrush}"
-                                BorderThickness="1"
-                                CornerRadius="10"
-                                Padding="20">
-                            
+                        <!-- Map Control Section -->
+                        <Border Style="{StaticResource ControlPanelSectionStyle}">
                             <StackPanel>
-                                <!-- Section header with professional typography -->
                                 <TextBlock Text="🗺️ Map Navigation"
                                            FontSize="18"
                                            FontWeight="Bold"
-                                           Foreground="{DynamicResource AccentTextBrush}"
+                                           Foreground="{DynamicResource BusBuddy.Brush.Text.Accent}"
                                            Margin="0,0,0,16"
                                            AutomationProperties.Name="Map Navigation Controls Section"/>
 
-                                <!-- Enhanced map control buttons with professional styling and comprehensive functionality -->
                                 <syncfusion:ButtonAdv Label="📍 Center on Fleet"
                                                       Command="{Binding CenterOnFleetCommand}"
-                                                      Background="{DynamicResource ButtonBackgroundBrush}"
-                                                      Foreground="{DynamicResource ButtonForegroundBrush}"
-                                                      BorderThickness="0"
-                                                      CornerRadius="6"
-                                                      Padding="16,10"
-                                                      Margin="0,0,0,8"
-                                                      FontSize="14"
-                                                      FontWeight="Medium"
-                                                      HorizontalAlignment="Stretch"
-                                                      ToolTip="Center map view on entire fleet location with optimal zoom level"
+                                                      Style="{StaticResource ProfessionalButtonStyle}"
+                                                      ToolTip="Center map view on entire fleet location"
                                                       AutomationProperties.Name="Center Map on Fleet"/>
 
                                 <syncfusion:ButtonAdv Label="🚌 Show All Buses"
                                                       Command="{Binding ShowAllBusesCommand}"
-                                                      Background="{DynamicResource ButtonBackgroundBrush}"
-                                                      Foreground="{DynamicResource ButtonForegroundBrush}"
-                                                      BorderThickness="0"
-                                                      CornerRadius="6"
-                                                      Padding="16,10"
-                                                      Margin="0,0,0,8"
-                                                      FontSize="14"
-                                                      FontWeight="Medium"
-                                                      HorizontalAlignment="Stretch"
-                                                      ToolTip="Display all active buses with real-time positioning and status indicators"
+                                                      Style="{StaticResource ProfessionalButtonStyle}"
+                                                      ToolTip="Display all active buses with real-time positioning"
                                                       AutomationProperties.Name="Show All Active Buses"/>
 
                                 <syncfusion:ButtonAdv Label="🛣️ Show Routes"
                                                       Command="{Binding ShowRoutesCommand}"
-                                                      Background="{DynamicResource ButtonBackgroundBrush}"
-                                                      Foreground="{DynamicResource ButtonForegroundBrush}"
-                                                      BorderThickness="0"
-                                                      CornerRadius="6"
-                                                      Padding="16,10"
-                                                      Margin="0,0,0,8"
-                                                      FontSize="14"
-                                                      FontWeight="Medium"
-                                                      HorizontalAlignment="Stretch"
-                                                      ToolTip="Overlay all transportation routes with detailed path visualization and stop markers"
+                                                      Style="{StaticResource ProfessionalButtonStyle}"
+                                                      ToolTip="Overlay all transportation routes with detailed paths"
                                                       AutomationProperties.Name="Show All Transportation Routes"/>
 
                                 <syncfusion:ButtonAdv Label="🏫 Show Schools"
                                                       Command="{Binding ShowSchoolsCommand}"
-                                                      Background="{DynamicResource ButtonBackgroundBrush}"
-                                                      Foreground="{DynamicResource ButtonForegroundBrush}"
-                                                      BorderThickness="0"
-                                                      CornerRadius="6"
-                                                      Padding="16,10"
-                                                      Margin="0,0,0,8"
-                                                      FontSize="14"
-                                                      FontWeight="Medium"
-                                                      HorizontalAlignment="Stretch"
-                                                      ToolTip="Display all school locations with zone boundaries and pickup points"
+                                                      Style="{StaticResource ProfessionalButtonStyle}"
+                                                      ToolTip="Display all school locations with zone boundaries"
                                                       AutomationProperties.Name="Show All School Locations"/>
                             </StackPanel>
                         </Border>
 
-                        <!-- ========================================= -->
-                        <!-- OVERLAY CONTROLS SECTION                 -->
-                        <!-- ========================================= -->
-                        <!-- Advanced overlay and boundary visualization controls -->
-                        <Border Background="{DynamicResource AccentBackgroundBrush}"
-                                BorderBrush="{DynamicResource BorderBrush}"
-                                BorderThickness="1"
-                                CornerRadius="10"
-                                Padding="20">
-                            
+                        <!-- Overlay Controls Section -->
+                        <Border Style="{StaticResource ControlPanelSectionStyle}">
                             <StackPanel>
-                                <!-- Section header for overlay controls -->
                                 <TextBlock Text="🎯 Map Overlays"
                                            FontSize="18"
                                            FontWeight="Bold"
-                                           Foreground="{DynamicResource AccentTextBrush}"
+                                           Foreground="{DynamicResource BusBuddy.Brush.Text.Accent}"
                                            Margin="0,0,0,16"
                                            AutomationProperties.Name="Map Overlay Controls Section"/>
 
-                                <!-- District boundary toggle with enhanced styling -->
                                 <CheckBox x:Name="DistrictBoundaryToggle" 
                                           Content="🏛️ District Boundaries"
                                           IsChecked="{Binding IsDistrictBoundaryVisible, Mode=TwoWay}"
                                           Margin="0,0,0,12"
                                           FontSize="14"
                                           FontWeight="Medium"
-                                          Foreground="{DynamicResource PrimaryTextBrush}"
-                                          ToolTip="Toggle school district boundary overlay for administrative visualization"
+                                          Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"
+                                          ToolTip="Toggle school district boundary overlay"
                                           AutomationProperties.Name="District Boundary Toggle"/>
 
-                                <!-- Town boundary toggle with enhanced styling -->
                                 <CheckBox x:Name="TownBoundaryToggle" 
                                           Content="🏘️ Town Limits"
                                           IsChecked="{Binding IsTownBoundaryVisible, Mode=TwoWay}"
                                           Margin="0,0,0,12"
                                           FontSize="14"
                                           FontWeight="Medium"
-                                          Foreground="{DynamicResource PrimaryTextBrush}"
-                                          ToolTip="Toggle town/city boundary overlay for municipal area visualization"
+                                          Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"
+                                          ToolTip="Toggle town/city boundary overlay"
                                           AutomationProperties.Name="Town Boundary Toggle"/>
 
-                                <!-- Enhanced marker management section -->
-                                <TextBlock Text="📍 Markers & Points"
-                                           FontSize="16"
-                                           FontWeight="SemiBold"
-                                           Foreground="{DynamicResource AccentTextBrush}"
-                                           Margin="0,16,0,12"/>
-
-                                <!-- MVP demo: Add a stop marker with enhanced functionality -->
                                 <syncfusion:ButtonAdv Label="➕ Add Demo Stop"
                                                       Command="{Binding AddMarkerCommand}"
                                                       CommandParameter="38.1530,-102.7200,Demo Stop"
-                                                      Background="{DynamicResource ButtonBackgroundBrush}"
-                                                      Foreground="{DynamicResource ButtonForegroundBrush}"
-                                                      BorderThickness="0"
-                                                      CornerRadius="6"
-                                                      Padding="16,10"
-                                                      Margin="0,0,0,8"
-                                                      FontSize="14"
-                                                      FontWeight="Medium"
-                                                      HorizontalAlignment="Stretch"
-                                                      ToolTip="Add demonstration stop marker near Wiley (38.153°N, 102.720°W)"
+                                                      Style="{StaticResource ProfessionalButtonStyle}"
+                                                      ToolTip="Add demonstration stop marker near Wiley"
                                                       AutomationProperties.Name="Add Demonstration Stop Marker"/>
                             </StackPanel>
                         </Border>
 
-                <TextBlock Text="Eligibility" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryTextBrush}" Margin="0,12,0,4"/>
-                <syncfusion:ButtonAdv Content="✅ Check Eligibility (Demo)"
-                              Command="{Binding CheckEligibilityCommand}"
-                              Background="{DynamicResource ButtonBackgroundBrush}"
-                              Foreground="{DynamicResource ButtonForegroundBrush}"
-                              Padding="10,8"
-                              Margin="0,8,0,0"
-                              HorizontalAlignment="Stretch"/>
-
-                    <!-- Bulk plot rural eligible students (auto geocode + eligibility filter) -->
-                    <syncfusion:ButtonAdv Content="🗺️ Bulk Plot Eligible Students"
-                                          ToolTip="Auto-geocode + plot all rural (non-Lamar, out-of-town) eligible students"
-                                          Command="{Binding BulkPlotEligibleStudentsCommand}"
-                                          Background="{DynamicResource ButtonBackgroundBrush}"
-                                          Foreground="{DynamicResource ButtonForegroundBrush}"
-                                          Padding="10,8"
-                                          Margin="0,4,0,0"
-                                          HorizontalAlignment="Stretch"/>
-
-                <!-- Generate Eligibility Route PDF (auto-build pseudo route) -->
-                <syncfusion:ButtonAdv Content="🧾 Generate Eligibility PDF"
-                              Command="{Binding GenerateEligibilityRoutePdfCommand}"
-                              Background="{DynamicResource ButtonBackgroundBrush}"
-                              Foreground="{DynamicResource ButtonForegroundBrush}"
-                              Padding="10,8"
-                              Margin="0,4,0,0"
-                              HorizontalAlignment="Stretch"/>
-                            </StackPanel>
-                        </Border>
-
-                        <!-- Live Tracking — ButtonAdv toggle documented here: https://help.syncfusion.com/wpf/button/toggle-state -->
-            <Border Background="{DynamicResource PrimaryBackgroundBrush}"
-                BorderBrush="{DynamicResource BorderBrush}"
-                                BorderThickness="1"
-                                CornerRadius="8"
-                                Padding="16"
-                                Margin="0,0,0,16">
-                            <StackPanel>
-                                <TextBlock Text="Live Tracking"
-                                           FontSize="16"
-                                           FontWeight="SemiBold"
-                       Foreground="{DynamicResource PrimaryTextBrush}"
-                                           Margin="0,0,0,12"/>
-
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="Auto"/>
-                                    </Grid.ColumnDefinitions>
-
-                                    <TextBlock Grid.Column="0"
-                                               Text="Real-time Updates"
-                                               FontSize="14"
-                                               Foreground="{DynamicResource PrimaryTextBrush}"
-                                               VerticalAlignment="Center"/>
-
-                                    <!-- Use documented ButtonAdv toggle: https://help.syncfusion.com/wpf/button/toggle-state -->
-                                    <syncfusion:ButtonAdv Grid.Column="1"
-                                                          Width="80"
-                                                          Height="28"
-                                                          HorizontalAlignment="Right"
-                                                          Background="{DynamicResource ButtonBackgroundBrush}"
-                                                          Foreground="{DynamicResource ButtonForegroundBrush}"
-                                                          IsCheckable="True"
-                                                          IsChecked="{Binding IsLiveTrackingEnabled, Mode=TwoWay}"
-                                                          Label="Live"/>
-                                </Grid>
-
-                                <!-- Theme standard Separator via SfSkinManager key -->
-                                <Separator Margin="0,8" Style="{DynamicResource WPFSeparatorStyle}"/>
-
-                                <TextBlock Text="Update Frequency"
-                                           FontSize="12"
-                                           Foreground="{DynamicResource PrimaryTextBrush}"
-                                           Margin="0,0,0,4"/>
-
-                                <syncfusion:ComboBoxAdv SelectedIndex="1">
-                                    <syncfusion:ComboBoxItemAdv Content="5 seconds"/>
-                                    <syncfusion:ComboBoxItemAdv Content="10 seconds"/>
-                                    <syncfusion:ComboBoxItemAdv Content="30 seconds"/>
-                                    <syncfusion:ComboBoxItemAdv Content="1 minute"/>
-                                </syncfusion:ComboBoxAdv>
-                            </StackPanel>
-                        </Border>
-
-                        <!-- District Boundary Overlay Toggle — uses Syncfusion ButtonAdv toggle per docs: https://help.syncfusion.com/wpf/button/toggle-state -->
-            <Border Background="{DynamicResource PrimaryBackgroundBrush}"
-                BorderBrush="{DynamicResource BorderBrush}"
-                                BorderThickness="1"
-                                CornerRadius="8"
-                                Padding="16"
-                                Margin="0,16,0,0">
-                            <StackPanel>
-                                <TextBlock Text="Overlays"
-                                           FontSize="16"
-                                           FontWeight="SemiBold"
-                       Foreground="{DynamicResource PrimaryTextBrush}"
-                                           Margin="0,0,0,12"/>
-
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="Auto"/>
-                                    </Grid.ColumnDefinitions>
-
-                                    <TextBlock Grid.Column="0"
-                                               Text="School District Boundary"
-                                               FontSize="14"
-                                               Foreground="{DynamicResource PrimaryTextBrush}"
-                                               VerticalAlignment="Center"/>
-
-                                    <syncfusion:ButtonAdv Grid.Column="1"
-                                                          Width="100"
-                                                          Height="28"
-                                                          HorizontalAlignment="Right"
-                                                          Background="{DynamicResource ButtonBackgroundBrush}"
-                                                          Foreground="{DynamicResource ButtonForegroundBrush}"
-                                                          IsCheckable="True"
-                                                          IsChecked="{Binding DistrictBoundaryVisible, Mode=TwoWay}"
-                                                          Label="Show"/>
-                                </Grid>
-
-                                <!-- Wiley Town Boundary Toggle — to visualize exclusion zone inside district for eligibility -->
-                                <Grid Margin="0,8,0,0">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="Auto"/>
-                                    </Grid.ColumnDefinitions>
-
-                                    <TextBlock Grid.Column="0"
-                                               Text="Wiley Town Boundary"
-                                               FontSize="14"
-                                               Foreground="{DynamicResource PrimaryTextBrush}"
-                                               VerticalAlignment="Center"/>
-
-                                    <syncfusion:ButtonAdv Grid.Column="1"
-                                                          Width="100"
-                                                          Height="28"
-                                                          HorizontalAlignment="Right"
-                                                          Background="{DynamicResource ButtonBackgroundBrush}"
-                                                          Foreground="{DynamicResource ButtonForegroundBrush}"
-                                                          IsCheckable="True"
-                                                          IsChecked="{Binding TownBoundaryVisible, Mode=TwoWay}"
-                                                          Label="Show"/>
-                                </Grid>
-                            </StackPanel>
-                        </Border>
-
-                        <!-- Bus List — SfDataGrid usage follows Getting Started: https://help.syncfusion.com/wpf/datagrid/getting-started -->
-            <Border Background="{DynamicResource PrimaryBackgroundBrush}"
-                BorderBrush="{DynamicResource BorderBrush}"
-                                BorderThickness="1"
-                                CornerRadius="8"
-                                Padding="16">
+                        <!-- Active Buses Section using SfDataGrid -->
+                        <Border Style="{StaticResource ControlPanelSectionStyle}">
                             <StackPanel>
                                 <TextBlock Text="Active Buses"
                                            FontSize="16"
                                            FontWeight="SemiBold"
-                       Foreground="{DynamicResource PrimaryTextBrush}"
+                                           Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"
                                            Margin="0,0,0,12"/>
 
                                 <syncfusion:SfDataGrid x:Name="BusListGrid"
@@ -629,7 +297,8 @@
                                                        AllowFiltering="False"
                                                        SelectionMode="Single"
                                                        GridLinesVisibility="Both"
-                                                          HeaderLinesVisibility="Both">
+                                                       HeaderLinesVisibility="Both"
+                                                       Background="{DynamicResource BusBuddy.Brush.DataGrid.Background}">
                                     <syncfusion:SfDataGrid.Columns>
                                         <syncfusion:GridTextColumn HeaderText="Bus #"
                                                                    MappingName="BusNumber"
@@ -645,49 +314,39 @@
 
                                 <syncfusion:ButtonAdv Content="📍 Track Selected"
                                                       Command="{Binding TrackSelectedBusCommand}"
-                                                      Background="{DynamicResource ButtonBackgroundBrush}"
-                                                      Foreground="{DynamicResource ButtonForegroundBrush}"
-                                                      Padding="10,8"
-                                                      Margin="0,8,0,0"
-                                                      HorizontalAlignment="Stretch"/>
+                                                      Style="{StaticResource ProfessionalButtonStyle}"
+                                                      Margin="0,8,0,0"/>
                             </StackPanel>
                         </Border>
+
                     </StackPanel>
                 </ScrollViewer>
             </Border>
 
-            <!-- Map Display Area -->
-    <Border Grid.Column="1"
-            Background="{DynamicResource PrimaryBackgroundBrush}"
-            BorderBrush="{DynamicResource BorderBrush}"
+            <!-- Right Panel: Map Display Area -->
+            <Border Grid.Column="1"
+                    Background="{DynamicResource BusBuddy.Brush.Panel.Background}"
+                    BorderBrush="{DynamicResource BusBuddy.Brush.Border}"
                     BorderThickness="1"
                     Margin="0"
                     MinHeight="400">
                 <Grid>
-                    <!-- Map Container — Main SfMap host with zoom/pan enabled per docs: https://help.syncfusion.com/wpf/maps/getting-started -->
-            <Border x:Name="MapContainer"
-                Background="{DynamicResource ContentBackgroundBrush}"
+                    <!-- SfMap Control using Syncfusion Maps 30.2.9 -->
+                    <Border x:Name="MapContainer"
+                            Background="{DynamicResource BusBuddy.Brush.Content.Background}"
                             CornerRadius="8"
                             Margin="16"
                             MinHeight="400">
                         <Grid>
-                            <Grid.Resources>
-                                <!-- Simple marker template (pin image could be added later) -->
-                                <DataTemplate x:Key="StudentMarkerTemplate">
-                                    <StackPanel Orientation="Vertical" Margin="-8,-24,0,0">
-                                        <Ellipse Width="12" Height="12" Fill="{DynamicResource BusBuddy.Brush.Semantic.Error}" Stroke="{DynamicResource BusBuddy.Brush.Text.Primary}" StrokeThickness="1"/>
-                                        <TextBlock Text="{Binding Label}" FontSize="11" Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}" Background="#AA2B2B2B" Padding="4,1" Margin="-12,2,0,0"/>
-                                    </StackPanel>
-                                </DataTemplate>
-                            </Grid.Resources>
-                            <!-- SfMap — per official docs: https://help.syncfusion.com/wpf/maps/getting-started -->
+                            <!-- SfMap - Primary mapping control per Syncfusion docs -->
                             <maps:SfMap x:Name="GeoMap"
                                         EnableZoom="True"
-                                        EnablePan="True" />
+                                        EnablePan="True"
+                                        Background="{DynamicResource BusBuddy.Brush.Content.Background}"/>
 
-                            <!-- Map Loading — SfBusyIndicator pattern per docs: https://help.syncfusion.com/wpf/busy-indicator/getting-started -->
+                            <!-- Map Loading Indicator using SfBusyIndicator -->
                             <Border x:Name="MapLoadingIndicator"
-                                    Background="{DynamicResource AccentBackgroundBrush}"
+                                    Background="{DynamicResource BusBuddy.Brush.Accent}"
                                     Opacity="0.95"
                                     Visibility="{Binding IsMapLoading, Converter={StaticResource BooleanToVisibilityConverter}}">
                                 <Grid>
@@ -704,65 +363,45 @@
                                                Text="Loading Map..."
                                                Margin="0,12,0,0"
                                                FontSize="16"
-                                               Foreground="{DynamicResource AccentTextBrush}"
+                                               Foreground="{DynamicResource BusBuddy.Brush.Text.Accent}"
                                                HorizontalAlignment="Center"/>
                                 </Grid>
                             </Border>
                         </Grid>
                     </Border>
 
-                    <!-- Map Overlay Controls — Zoom and Reset buttons bound to ViewModel commands -->
+                    <!-- Map Overlay Controls with dynamic resources -->
                     <StackPanel Orientation="Horizontal"
                                 HorizontalAlignment="Right"
                                 VerticalAlignment="Top"
                                 Margin="32,32,32,0">
                         <syncfusion:ButtonAdv Content="+"
                                               Command="{Binding ZoomInCommand}"
-                                              Background="{DynamicResource ButtonBackgroundBrush}"
-                                              Foreground="{DynamicResource ButtonForegroundBrush}"
+                                              Background="{DynamicResource BusBuddy.Brush.Button.Background}"
+                                              Foreground="{DynamicResource BusBuddy.Brush.Button.Foreground}"
                                               Width="40" Height="40"
                                               FontSize="20"
                                               FontWeight="Bold"
                                               Margin="4,0"/>
                         <syncfusion:ButtonAdv Content="-"
                                               Command="{Binding ZoomOutCommand}"
-                                              Background="{DynamicResource ButtonBackgroundBrush}"
-                                              Foreground="{DynamicResource ButtonForegroundBrush}"
+                                              Background="{DynamicResource BusBuddy.Brush.Button.Background}"
+                                              Foreground="{DynamicResource BusBuddy.Brush.Button.Foreground}"
                                               Width="40" Height="40"
                                               FontSize="20"
                                               FontWeight="Bold"
                                               Margin="4,0"/>
                         <syncfusion:ButtonAdv Content="🏠"
                                               Command="{Binding ResetViewCommand}"
-                                              Background="{DynamicResource ButtonBackgroundBrush}"
-                                              Foreground="{DynamicResource ButtonForegroundBrush}"
+                                              Background="{DynamicResource BusBuddy.Brush.Button.Background}"
+                                              Foreground="{DynamicResource BusBuddy.Brush.Button.Foreground}"
                                               Width="40" Height="40"
                                               Margin="4,0"/>
-                        <!-- Refresh map (re-renders layers/route polyline) -->
-                        <syncfusion:ButtonAdv Content="⟳"
-                                              ToolTip="Refresh Map"
-                                              Command="{Binding RefreshMapCommand}"
-                                              Background="{DynamicResource ButtonBackgroundBrush}"
-                                              Foreground="{DynamicResource ButtonForegroundBrush}"
-                                              Width="40" Height="40"
-                                              FontSize="16"
-                                              FontWeight="Bold"
-                                              Margin="8,0,0,0"/>
-                        <!-- Print current route map -->
-                        <syncfusion:ButtonAdv Content="🖨"
-                                              ToolTip="Print Route Map"
-                                              Command="{Binding PrintRouteMapsCommand}"
-                                              Background="{DynamicResource ButtonBackgroundBrush}"
-                                              Foreground="{DynamicResource ButtonForegroundBrush}"
-                                              Width="40" Height="40"
-                                              FontSize="16"
-                                              FontWeight="Bold"
-                                              Margin="8,0,0,0"/>
                     </StackPanel>
 
-                    <!-- OSM Attribution — Visibility toggled from code-behind (ToggleOsmAttribution) when OpenStreetMap is active -->
+                    <!-- OSM Attribution -->
                     <Border x:Name="OsmAttribution"
-                            Background="{DynamicResource AccentBackgroundBrush}"
+                            Background="{DynamicResource BusBuddy.Brush.Accent}"
                             Opacity="0.85"
                             CornerRadius="4"
                             Padding="6,2"
@@ -772,7 +411,7 @@
                             Visibility="Collapsed">
                         <TextBlock Text="© OpenStreetMap contributors"
                                    FontSize="11"
-                                   Foreground="{DynamicResource AccentTextBrush}"/>
+                                   Foreground="{DynamicResource BusBuddy.Brush.Text.Accent}"/>
                     </Border>
                 </Grid>
             </Border>

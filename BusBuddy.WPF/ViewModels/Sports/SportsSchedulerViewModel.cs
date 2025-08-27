@@ -6,10 +6,10 @@ using System.Windows.Input;
 using System.Linq;
 using BusBuddy.Core;
 using BusBuddy.Core.Data;
-using ActivityModel = BusBuddy.Core.Models.Activity;
-using BusModel = BusBuddy.Core.Models.Bus;
-using DriverModel = BusBuddy.Core.Models.Driver;
-using DestinationModel = BusBuddy.Core.Models.Destination;
+using ActivityModel = BusBuddy.Core.Domain.Activity;
+using BusModel = BusBuddy.Core.Domain.Bus;
+using DriverModel = BusBuddy.Core.Domain.Driver;
+using DestinationModel = BusBuddy.Core.Domain.Destination;
 using Microsoft.EntityFrameworkCore;
 using System.Windows;
 using Serilog;
@@ -17,7 +17,7 @@ using Serilog.Context;
 using CommunityToolkit.Mvvm.Input;
 using System;
 using BusBuddy.WPF.ViewModels;
-using static BusBuddy.Core.Models.DestinationTypes;
+using static BusBuddy.Core.Domain.DestinationTypes;
 
 namespace BusBuddy.WPF.ViewModels.Sports
 {
@@ -251,7 +251,7 @@ namespace BusBuddy.WPF.ViewModels.Sports
 
                     // Load sports destinations
                     var destinations = await _context.Destinations
-                        .Where(d => d.IsActive && d.DestinationType == BusBuddy.Core.Models.DestinationTypes.SportsEvent)
+                        .Where(d => d.IsActive && d.DestinationType == BusBuddy.Core.Domain.DestinationTypes.SportsEvent)
                         .OrderBy(d => d.Name)
                         .ToListAsync();
 

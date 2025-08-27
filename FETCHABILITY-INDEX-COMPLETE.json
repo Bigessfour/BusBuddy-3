@@ -1,20 +1,6 @@
 {
   "files": [
     {
-      "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/7f9dc1b9a7fd6733198abf11320082bca121a94c/-la",
-      "type": "unknown",
-      "path": "-la",
-      "url_branch": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/-la",
-      "category": "other"
-    },
-    {
-      "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/7f9dc1b9a7fd6733198abf11320082bca121a94c/-Validate",
-      "type": "unknown",
-      "path": "-Validate",
-      "url_branch": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/-Validate",
-      "category": "other"
-    },
-    {
       "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/7f9dc1b9a7fd6733198abf11320082bca121a94c/.devcontainer/devcontainer.json",
       "type": "json",
       "path": ".devcontainer/devcontainer.json",
@@ -3725,13 +3711,6 @@
       "category": "documentation"
     },
     {
-      "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/7f9dc1b9a7fd6733198abf11320082bca121a94c/Documentation-Audit-Report.md",
-      "type": "md",
-      "path": "Documentation-Audit-Report.md",
-      "url_branch": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/Documentation-Audit-Report.md",
-      "category": "documentation"
-    },
-    {
       "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/7f9dc1b9a7fd6733198abf11320082bca121a94c/Documentation/ACCESSIBILITY-STANDARDS.md",
       "type": "md",
       "path": "Documentation/ACCESSIBILITY-STANDARDS.md",
@@ -3837,13 +3816,6 @@
       "category": "documentation"
     },
     {
-      "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/7f9dc1b9a7fd6733198abf11320082bca121a94c/Documentation/CONSOLIDATION-PLAN.md",
-      "type": "md",
-      "path": "Documentation/CONSOLIDATION-PLAN.md",
-      "url_branch": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/Documentation/CONSOLIDATION-PLAN.md",
-      "category": "documentation"
-    },
-    {
       "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/7f9dc1b9a7fd6733198abf11320082bca121a94c/Documentation/DATABASE-CONFIGURATION.md",
       "type": "md",
       "path": "Documentation/DATABASE-CONFIGURATION.md",
@@ -3932,13 +3904,6 @@
       "type": "md",
       "path": "Documentation/Learning/PowerShell-Learning-Path.md",
       "url_branch": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/Documentation/Learning/PowerShell-Learning-Path.md",
-      "category": "documentation"
-    },
-    {
-      "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/7f9dc1b9a7fd6733198abf11320082bca121a94c/Documentation/Legacy-Cleanup-August-21-2025.md",
-      "type": "md",
-      "path": "Documentation/Legacy-Cleanup-August-21-2025.md",
-      "url_branch": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/Documentation/Legacy-Cleanup-August-21-2025.md",
       "category": "documentation"
     },
     {
@@ -4201,13 +4166,6 @@
       "category": "documentation"
     },
     {
-      "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/7f9dc1b9a7fd6733198abf11320082bca121a94c/Documentation/VALIDATION-COMPLETE-Student-Entry-Route-Design.md",
-      "type": "md",
-      "path": "Documentation/VALIDATION-COMPLETE-Student-Entry-Route-Design.md",
-      "url_branch": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/Documentation/VALIDATION-COMPLETE-Student-Entry-Route-Design.md",
-      "category": "documentation"
-    },
-    {
       "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/7f9dc1b9a7fd6733198abf11320082bca121a94c/Examples/RouteAssignmentExample.cs",
       "type": "cs",
       "path": "Examples/RouteAssignmentExample.cs",
@@ -4268,20 +4226,6 @@
       "type": "md",
       "path": "GROK-README.md",
       "url_branch": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/GROK-README.md",
-      "category": "documentation"
-    },
-    {
-      "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/7f9dc1b9a7fd6733198abf11320082bca121a94c/legacy-cleanup-final.ps1",
-      "type": "ps1",
-      "path": "legacy-cleanup-final.ps1",
-      "url_branch": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/legacy-cleanup-final.ps1",
-      "category": "other"
-    },
-    {
-      "url_sha": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/7f9dc1b9a7fd6733198abf11320082bca121a94c/LEGACY-CLEANUP-REPORT.md",
-      "type": "md",
-      "path": "LEGACY-CLEANUP-REPORT.md",
-      "url_branch": "https://raw.githubusercontent.com/Bigessfour/BusBuddy-3/master/LEGACY-CLEANUP-REPORT.md",
       "category": "documentation"
     },
     {

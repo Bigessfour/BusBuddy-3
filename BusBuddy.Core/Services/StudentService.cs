@@ -1,5 +1,5 @@
 using BusBuddy.Core.Data;
-using BusBuddy.Core.Models;
+using BusBuddy.Core.Domain;
 using System.IO;
 using BusBuddy.Core.Utilities;
 using Microsoft.EntityFrameworkCore;

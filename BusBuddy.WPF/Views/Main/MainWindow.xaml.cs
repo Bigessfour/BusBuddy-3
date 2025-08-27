@@ -1204,7 +1204,7 @@ namespace BusBuddy.WPF.Views.Main
                 }
 
                 // Use grid's selected item if available, with fallback to ViewModel
-                BusBuddy.Core.Models.Student? selectedStudent = null;
+                BusBuddy.Core.Domain.Student? selectedStudent = null;
 
                 try
                 {
@@ -1230,7 +1230,7 @@ namespace BusBuddy.WPF.Views.Main
                             var studentsEnumerable = studentsCollection as System.Collections.IEnumerable;
                             foreach (var student in studentsEnumerable)
                             {
-                                selectedStudent = student as BusBuddy.Core.Models.Student;
+                                selectedStudent = student as BusBuddy.Core.Domain.Student;
                                 if (selectedStudent != null)
                                 {
                                     Logger.Information("No student selected, using first student as fallback: {StudentName}",

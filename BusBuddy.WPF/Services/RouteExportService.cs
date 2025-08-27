@@ -1,7 +1,7 @@
 using System.IO;
 using System.Text;
 using BusBuddy.Core.Services;
-using BusBuddy.Core.Models;
+using BusBuddy.Core.Domain;
 using Serilog;
 
 namespace BusBuddy.WPF.Services
