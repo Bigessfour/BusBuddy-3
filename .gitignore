@@ -1148,3 +1148,4 @@ global.json
 BusBuddy.db
 # Trunk output files that may contain sensitive data
 .trunk/out/*.yaml
+BusBuddy.Core/Data/BusBuddyDbContext_Enhanced.cs
