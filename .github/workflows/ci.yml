@@ -65,6 +65,8 @@ jobs:
     name: "Validate Dependencies & Licenses"
     runs-on: windows-latest
     timeout-minutes: 10
+    env:
+      SYNCFUSION_LICENSE_KEY: ${{ secrets.SYNCFUSION_LICENSE_KEY }}
     steps:
       - name: "🔒 Security Check - Validate Workflow Permissions"
         shell: pwsh
@@ -121,6 +123,8 @@ jobs:
     runs-on: windows-latest
     needs: validate-dependencies
     timeout-minutes: 30
+    env:
+      SYNCFUSION_LICENSE_KEY: ${{ secrets.SYNCFUSION_LICENSE_KEY }}
     outputs:
       build-success: ${{ steps.build-step.outcome == 'success' }}
     steps:
@@ -359,6 +363,8 @@ jobs:
     runs-on: ubuntu-latest
     needs: build-and-test
     timeout-minutes: 20
+    env:
+      SYNCFUSION_LICENSE_KEY: ${{ secrets.SYNCFUSION_LICENSE_KEY }}
     steps:
       - name: "Detect Syncfusion License"
         shell: pwsh
@@ -473,6 +479,8 @@ jobs:
     timeout-minutes: 15
     # Only run security analysis on main repo (not forks) where secrets are available
     if: github.repository_owner == 'biges' || github.event_name == 'push'
+    env:
+      SYNCFUSION_LICENSE_KEY: ${{ secrets.SYNCFUSION_LICENSE_KEY }}
     permissions:
       actions: read
       contents: read
@@ -531,6 +539,8 @@ jobs:
     needs: [build-and-test, security-analysis, quality-analysis]
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
     timeout-minutes: 10
+    env:
+      SYNCFUSION_LICENSE_KEY: ${{ secrets.SYNCFUSION_LICENSE_KEY }}
     steps:
       - name: "Detect Syncfusion License"
         shell: pwsh
