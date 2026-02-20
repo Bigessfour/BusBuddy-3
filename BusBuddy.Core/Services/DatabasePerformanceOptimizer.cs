@@ -50,8 +50,8 @@ public class DatabasePerformanceOptimizer
         {
             return await context.Routes
                 .AsNoTracking()
-                .Include(r => r.AMVehicle)
-                .Include(r => r.PMVehicle)
+                .Include(r => r.AMBus)
+                .Include(r => r.PMBus)
                 .Include(r => r.AMDriver)
                 .Include(r => r.PMDriver)
                 .Where(r => r.Date >= DateTime.Today.AddDays(-30))

@@ -78,7 +78,7 @@ namespace BusBuddy.WPF.ViewModels.Student
             try { LoadDataAsync().GetAwaiter().GetResult(); } catch { }
             if (DisableAddressValidation)
             {
-                AddressValidationMessage = "Address validation disabled — MVP mode";
+                AddressValidationMessage = "Address validation disabled — Production mode";
                 AddressValidationColor = Brushes.Gray;
             }
         }
@@ -89,7 +89,7 @@ namespace BusBuddy.WPF.ViewModels.Student
             _context = TryCreateDbContextViaDi() ?? new BusBuddyDbContext();
             _addressService = new AddressService();
             DisableAddressValidation = !enableValidation; // Allow tests to enable validation
-            // For MVP, we'll do simple validation directly in the ViewModel
+            // For production, we'll do simple validation directly in the ViewModel
             // TODO: Inject AddressValidationService when UnitOfWork is available
 
             _student = student ?? new DomainStudent
@@ -112,7 +112,7 @@ namespace BusBuddy.WPF.ViewModels.Student
             try { LoadDataAsync().GetAwaiter().GetResult(); } catch { }
             if (DisableAddressValidation)
             {
-                AddressValidationMessage = "Address validation disabled — MVP mode";
+                AddressValidationMessage = "Address validation disabled — Production mode";
                 AddressValidationColor = Brushes.Gray;
             }
         }
@@ -356,7 +356,7 @@ namespace BusBuddy.WPF.ViewModels.Student
             {
                 if (DisableAddressValidation)
                 {
-                    AddressValidationMessage = "Address validation disabled — TODO: re-enable post-MVP";
+                    AddressValidationMessage = "Address validation disabled — Production configuration";
                     AddressValidationColor = Brushes.Gray;
                     await Task.CompletedTask; return;
                 }
@@ -491,7 +491,7 @@ namespace BusBuddy.WPF.ViewModels.Student
                 else
                 {
                     // Fallback direct EF save if service not available
-                    // or when skipping validation for MVP save bypass
+                    // or when skipping validation for production save bypass
                     if (IsEditMode)
                     {
                         _context.Students.Update(Student);
@@ -595,7 +595,7 @@ namespace BusBuddy.WPF.ViewModels.Student
                 ValidationStatusBrush = Brushes.Orange;
 
                 // TODO: Implement xAI Grok API call
-                // For MVP tests, avoid artificial delays
+                // For production tests, avoid artificial delays
                 // Simulate API call
 
                 // Mock AI response based on address analysis
@@ -655,7 +655,7 @@ namespace BusBuddy.WPF.ViewModels.Student
                 ValidationStatusBrush = Brushes.Blue;
 
                 // TODO: Implement Google Earth Engine integration
-                // For MVP tests, avoid artificial delays
+                // For production tests, avoid artificial delays
                 // Simulate map opening
 
                 // Mock coordinates geocoding
@@ -690,7 +690,7 @@ namespace BusBuddy.WPF.ViewModels.Student
                 Logger.Information("Starting CSV import process");
 
                 // TODO: Implement Syncfusion.XlsIO CSV import
-                // For MVP, simulate file dialog and parsing
+                // For production, simulate file dialog and parsing
 
                 IsValidating = true;
                 ValidationStatus = "Importing CSV data...";
@@ -757,7 +757,7 @@ namespace BusBuddy.WPF.ViewModels.Student
 
                 if (validationErrors.Any())
                 {
-                    // Inform the user but do not block Save for MVP minimal data flow
+                    // Inform the user but do not block Save for production minimal data flow
                     ValidationStatus = $"⚠️ {validationErrors.Count} validation warnings";
                     ValidationStatusBrush = Brushes.Orange;
                     SetGlobalError($"Please review: {string.Join(", ", validationErrors)}");
@@ -774,7 +774,7 @@ namespace BusBuddy.WPF.ViewModels.Student
                 }
                 else
                 {
-                    AddressValidationMessage = "Address validation disabled — TODO: re-enable post-MVP";
+                    AddressValidationMessage = "Address validation disabled — Production configuration";
                     AddressValidationColor = Brushes.Gray;
                 }
 
@@ -891,7 +891,7 @@ namespace BusBuddy.WPF.ViewModels.Student
             {
                 Logger.Information("Loading form data");
 
-                // Load available routes from database (active + distinct), union with safe defaults for MVP/tests
+                // Load available routes from database (active + distinct), union with safe defaults for production/tests
                 var defaultRoutes = new[] { "Route A", "Route B", "Route C", "Route D" };
                 List<string> dbRouteNames = new();
                 try

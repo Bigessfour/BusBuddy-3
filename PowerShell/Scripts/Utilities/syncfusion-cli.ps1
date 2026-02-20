@@ -99,8 +99,8 @@ function Find-SyncfusionControl {
             Write-Host "  📄 $($file.Name)" -ForegroundColor Green
 
             # Extract control names
-            $matches = [regex]::Matches($content, 'syncfusion:([A-Za-z0-9]+)')
-            foreach ($match in $matches) {
+            $syncfusionMatches = [regex]::Matches($content, 'syncfusion:([A-Za-z0-9]+)')
+            foreach ($match in $syncfusionMatches) {
                 $controlName = $match.Groups[1].Value
                 if ($controls.ContainsKey($controlName)) {
                     $controls[$controlName]++
@@ -174,7 +174,7 @@ ${3:An example}
 .NOTES
 ${4:General notes}
 #>
-function Generate-SyncfusionDoc {
+function New-SyncfusionDocumentation {
     Write-Host "📚 Generating Syncfusion documentation..." -ForegroundColor Yellow
 
     $docsPath = Join-Path $Path "docs\syncfusion-controls.md"
@@ -202,8 +202,8 @@ This document lists all Syncfusion controls used in the BusBuddy application.
 
     foreach ($file in $xamlFiles) {
         $content = Get-Content $file.FullName -Raw
-        $matches = [regex]::Matches($content, 'syncfusion:([A-Za-z0-9]+)')
-        foreach ($match in $matches) {
+        $syncfusionMatches = [regex]::Matches($content, 'syncfusion:([A-Za-z0-9]+)')
+        foreach ($match in $syncfusionMatches) {
             $controlName = $match.Groups[1].Value
             if (!$controls.ContainsKey($controlName)) {
                 $controls[$controlName] = @()
@@ -284,7 +284,7 @@ switch ($Command.ToLower()) {
     }
     "generate-docs" {
         Write-SyncfusionBanner
-        Generate-SyncfusionDocs
+        New-SyncfusionDocumentation
     }
     "help" {
         Show-Help

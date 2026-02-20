@@ -15,17 +15,14 @@ namespace BusBuddy.Core.Services
     {
         private readonly IBusBuddyDbContextFactory _contextFactory;
         private static readonly ILogger Logger = Log.ForContext<DriverService>();
-        private readonly IEnhancedCachingService _cachingService;
         private static readonly SemaphoreSlim _semaphore = new(1, 1);
         private static bool _nullValuesFixed;
 
-        public DriverService(IBusBuddyDbContextFactory contextFactory, IEnhancedCachingService cachingService)
+        public DriverService(IBusBuddyDbContextFactory contextFactory)
         {
             ArgumentNullException.ThrowIfNull(contextFactory);
-            ArgumentNullException.ThrowIfNull(cachingService);
 
             _contextFactory = contextFactory;
-            _cachingService = cachingService;
         }
 
         // Context helpers: only dispose when using the concrete runtime factory
@@ -48,82 +45,79 @@ namespace BusBuddy.Core.Services
 
         public async Task<List<Driver>> GetAllDriversAsync()
         {
-            return (await _cachingService.GetAllDriversAsync(async () =>
+            await _semaphore.WaitAsync();
+            try
             {
-                await _semaphore.WaitAsync();
+                Logger.Information("Retrieving all drivers from database");
+                var (context, dispose) = GetReadContext();
+
+                // Fix any NULL values before attempting to read drivers
+                await FixNullDriverValuesIfNeeded(context);
+
                 try
                 {
-                    Logger.Information("Retrieving all drivers from database (cache miss)");
-                    var (context, dispose) = GetReadContext();
+                    return await context.Drivers
+                        .AsNoTracking()
+                        .ToListAsync();
+                }
+                finally
+                {
+                    if (dispose)
+                    {
+                        await context.DisposeAsync();
+                    }
+                }
+            }
+            catch (System.Data.SqlTypes.SqlNullValueException ex)
+            {
+                Logger.Warning(ex, "SQL NULL value error when retrieving drivers. Attempting to fix NULL values and retry.");
 
-                    // Fix any NULL values before attempting to read drivers
-                    await FixNullDriverValuesIfNeeded(context);
-
+                // Try to fix NULL values and retry once
+                try
+                {
+                    var (fixContext, disposeFix) = GetWriteContext();
                     try
                     {
-                        return await context.Drivers
+                        await FixNullDriverValuesIfNeeded(fixContext);
+                    }
+                    finally
+                    {
+                        if (disposeFix)
+                        {
+                            await fixContext.DisposeAsync();
+                        }
+                    }
+
+                    var (retryContext, disposeRetry) = GetReadContext();
+                    try
+                    {
+                        return await retryContext.Drivers
                             .AsNoTracking()
                             .ToListAsync();
                     }
                     finally
                     {
-                        if (dispose)
+                        if (disposeRetry)
                         {
-                            await context.DisposeAsync();
+                            await retryContext.DisposeAsync();
                         }
                     }
                 }
-                catch (System.Data.SqlTypes.SqlNullValueException ex)
+                catch (Exception retryEx)
                 {
-                    Logger.Warning(ex, "SQL NULL value error when retrieving drivers. Attempting to fix NULL values and retry.");
-
-                    // Try to fix NULL values and retry once
-                    try
-                    {
-                        var (fixContext, disposeFix) = GetWriteContext();
-                        try
-                        {
-                            await FixNullDriverValuesIfNeeded(fixContext);
-                        }
-                        finally
-                        {
-                            if (disposeFix)
-                            {
-                                await fixContext.DisposeAsync();
-                            }
-                        }
-
-                        var (retryContext, disposeRetry) = GetReadContext();
-                        try
-                        {
-                            return await retryContext.Drivers
-                                .AsNoTracking()
-                                .ToListAsync();
-                        }
-                        finally
-                        {
-                            if (disposeRetry)
-                            {
-                                await retryContext.DisposeAsync();
-                            }
-                        }
-                    }
-                    catch (Exception retryEx)
-                    {
-                        Logger.Error(retryEx, "Failed to fix NULL values and retry. Returning empty list to avoid application failure.");
-                        return new List<Driver>();
-                    }
+                    Logger.Error(retryEx, "Failed to fix NULL values and retry. Returning empty list to avoid application failure.");
+                    return new List<Driver>();
                 }
-                catch (Exception ex)
-                {
-                    Logger.Error(ex, "Error retrieving all drivers");
-                    throw;
-                }
-                finally
-                {
-                    _semaphore.Release();
-                }
-            })).ToList();
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Error retrieving all drivers");
+                throw;
+            }
+            finally
+            {
+                _semaphore.Release();
+            }
         }
 
         public async Task<Driver?> GetDriverByIdAsync(int driverId)
@@ -195,9 +189,6 @@ namespace BusBuddy.Core.Services
                     }
                 }
 
-                // Invalidate cache after adding driver
-                _cachingService.InvalidateCache("AllDrivers");
-
                 Logger.Information("Successfully added driver with ID: {DriverId}", driver.DriverId);
                 return driver;
             }
@@ -210,75 +201,23 @@ namespace BusBuddy.Core.Services
 
         public async Task<bool> UpdateDriverAsync(Driver driver)
         {
-            ArgumentNullException.ThrowIfNull(driver);
-
             try
             {
-                Logger.Information("Updating driver with ID: {DriverId}", driver.DriverId);
+                Logger.Information("Updating driver {DriverId} - {DriverName}", driver.DriverId, driver.DriverName);
 
-                // Validate driver data
-                var validationErrors = await ValidateDriverAsync(driver);
-                if (validationErrors.Count > 0)
-                {
-                    throw new ArgumentException($"Driver validation failed: {string.Join(", ", validationErrors)}");
-                }
+                using var context = _contextFactory.CreateDbContext();
 
-                // Update modification timestamp
-                driver.UpdatedDate = DateTime.UtcNow;
+                // Attach the entity and mark it as modified to ensure all changes are persisted
+                context.Drivers.Update(driver);
+                await context.SaveChangesAsync();
 
-                var (context, dispose) = GetWriteContext();
-                context.Entry(driver).State = EntityState.Modified;
-
-                // Don't modify relationships here - use specific methods for that
-                context.Entry(driver).Collection(d => d.AMRoutes).IsModified = false;
-                context.Entry(driver).Collection(d => d.PMRoutes).IsModified = false;
-                context.Entry(driver).Collection(d => d.Schedules).IsModified = false;
-                context.Entry(driver).Collection(d => d.Activities).IsModified = false;
-                context.Entry(driver).Collection(d => d.ScheduledActivities).IsModified = false;
-
-                try
-                {
-                    var result = await context.SaveChangesAsync();
-                    var success = result > 0;
-
-                    if (success)
-                    {
-                        // Invalidate cache after updating driver
-                        _cachingService.InvalidateCache("AllDrivers");
-                        Logger.Information("Successfully updated driver: {DriverName}", driver.DriverName);
-                    }
-                    else
-                    {
-                        Logger.Warning("No changes were made when updating driver: {DriverId}", driver.DriverId);
-                    }
-
-                    return success;
-                }
-                catch (DbUpdateConcurrencyException ex)
-                {
-                    if (!await context.Drivers.AnyAsync(e => e.DriverId == driver.DriverId))
-                    {
-                        Logger.Warning("Driver with ID {DriverId} not found for update", driver.DriverId);
-                        return false;
-                    }
-                    else
-                    {
-                        Logger.Error(ex, "Concurrency error updating driver: {DriverId}", driver.DriverId);
-                        throw;
-                    }
-                }
-                finally
-                {
-                    if (dispose)
-                    {
-                        await context.DisposeAsync();
-                    }
-                }
+                Logger.Information("Successfully updated driver {DriverId}", driver.DriverId);
+                return true;
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Error updating driver with ID: {DriverId}", driver.DriverId);
-                throw;
+                Logger.Error(ex, "Failed to update driver {DriverId}", driver.DriverId);
+                return false;
             }
         }
 
@@ -329,9 +268,6 @@ namespace BusBuddy.Core.Services
                 {
                     await context.DisposeAsync();
                 }
-
-                // Invalidate cache after deleting driver
-                _cachingService.InvalidateCache("AllDrivers");
 
                 Logger.Information("Successfully deleted driver: {DriverName}", driver.DriverName);
                 return true;
@@ -722,8 +658,8 @@ namespace BusBuddy.Core.Services
 
                 // Include vehicle information
                 return await query
-                    .Include(r => r.AMVehicle)
-                    .Include(r => r.PMVehicle)
+                    .Include(r => r.AMBus)
+                    .Include(r => r.PMBus)
                     .OrderBy(r => r.Date)
                     .ToListAsync();
             }
@@ -1603,11 +1539,11 @@ namespace BusBuddy.Core.Services
         {
             if (route.AMDriverId == driverId)
             {
-                return route.AMVehicle != null ? route.AMVehicle.BusNumber ?? "Unknown" : "Unknown";
+                return route.AMBus != null ? route.AMBus.BusNumber ?? "Unknown" : "Unknown";
             }
             else
             {
-                return route.PMVehicle != null ? route.PMVehicle.BusNumber ?? "Unknown" : "Unknown";
+                return route.PMBus != null ? route.PMBus.BusNumber ?? "Unknown" : "Unknown";
             }
         }
 

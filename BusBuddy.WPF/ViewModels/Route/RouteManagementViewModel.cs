@@ -459,8 +459,8 @@ namespace BusBuddy.WPF.ViewModels.Route
                 if (existing != null)
                 {
                     // Copy over mutable fields we care about displaying
-                    existing.AMVehicleId = updated.AMVehicleId;
-                    existing.PMVehicleId = updated.PMVehicleId;
+                    existing.AMBusId = updated.AMBusId;
+                    existing.PMBusId = updated.PMBusId;
                 }
             }
         }

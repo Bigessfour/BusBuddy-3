@@ -12,3 +12,92 @@ words:
   - gitleaks
   - Intel
   - i5
+  - Amodio
+  - Annistyn
+  - anonymization
+  - argb
+  - Argb
+  - ARGB
+  - Axton
+  - azcheck
+  - BAANKCL
+  - badv
+  - bbtest
+  - bbwe
+  - biges
+  - Biodiesel
+  - Blakelynn
+  - blazor
+  - blazorwasm
+  - bradymholt
+  - Britaney
+  - Brookshire
+  - BSAK
+  - bstr
+  - BSTR
+  - buildtransitive
+  - Buren
+  - busbuddy
+  - Calzada
+  - Cascadia
+  - centralus
+  - Chromeless
+  - CICD
+  - clrstack
+  - compli
+  - Consolas
+  - contentfiles
+  - coreclr
+  - costmanagement
+  - Cphone
+  - crdownload
+  - creat
+  - csdevkit
+  - Daniela
+  - DARPA
+  - dbatools
+  - dbuild
+  - Dedup
+  - dedupe
+  - delet
+  - devcontainers
+  - docuwriter
+
+# Import the main cspell configuration
+import: ["../../.cspell.json"]
+
+# File-specific overrides
+overrides:
+  - filename: "**/*.cs"
+    words:
+      - dotnet
+      - async
+      - await
+      - IEnumerable
+      - Task
+      - CancellationToken
+  - filename: "**/*.ps1"
+    words:
+      - pwsh
+      - PowerShell
+      - cmdlet
+      - param
+  - filename: "**/*.xaml"
+    words:
+      - xmlns
+      - xaml
+      - Grid
+      - StackPanel
+      - TextBlock
+      - Button
+  - filename: "**/*.json"
+    words:
+      - appsettings
+      - connectionstring
+      - serilog
+  - filename: "**/*.yaml"
+    words:
+      - trunk
+      - linter
+      - formatter
+      - sarif

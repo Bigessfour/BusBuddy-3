@@ -60,7 +60,7 @@ public class RouteRepository : Repository<Route>, IRouteRepository
     public async Task<IEnumerable<Route>> GetRoutesByVehicleAsync(int vehicleId, DateTime? targetDate = null)
     {
         var query = Query()
-            .Where(r => r.AMVehicleId == vehicleId || r.PMVehicleId == vehicleId);
+            .Where(r => r.AMBusId == vehicleId || r.PMBusId == vehicleId);
 
         if (targetDate.HasValue)
         {
@@ -92,7 +92,7 @@ public class RouteRepository : Repository<Route>, IRouteRepository
         return await Query()
             .Where(r => r.Date.Date == targetDate.Date &&
                        r.IsActive &&
-                       (r.AMVehicleId == null || r.PMVehicleId == null))
+                       (r.AMBusId == null || r.PMBusId == null))
             .OrderBy(r => r.RouteName)
             .ToListAsync();
     }
@@ -191,7 +191,7 @@ public class RouteRepository : Repository<Route>, IRouteRepository
 
         foreach (var route in routes.Where(r => r.IsActive))
         {
-            if (!route.AMVehicleId.HasValue && !route.PMVehicleId.HasValue)
+            if (!route.AMBusId.HasValue && !route.PMBusId.HasValue)
             {
                 errors.Add($"Route '{route.RouteName}' has no vehicle assignments");
             }
@@ -309,7 +309,7 @@ public class RouteRepository : Repository<Route>, IRouteRepository
     public IEnumerable<Route> GetRoutesByVehicle(int vehicleId, DateTime? targetDate = null)
     {
         var query = Query()
-            .Where(r => r.AMVehicleId == vehicleId || r.PMVehicleId == vehicleId);
+            .Where(r => r.AMBusId == vehicleId || r.PMBusId == vehicleId);
 
         if (targetDate.HasValue)
         {

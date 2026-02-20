@@ -86,9 +86,9 @@ public partial class Route : INotifyPropertyChanged
     }
 
     // AM Route Information
-    [ForeignKey("AMVehicle")]
-    [Display(Name = "AM Vehicle")]
-    public int? AMVehicleId { get; set; }
+    [ForeignKey("AMBus")]
+    [Display(Name = "AM Bus")]
+    public int? AMBusId { get; set; }
 
     [Column(TypeName = "decimal(10,2)")]
     [Display(Name = "AM Begin Miles")]
@@ -107,9 +107,9 @@ public partial class Route : INotifyPropertyChanged
     public int? AMDriverId { get; set; }
 
     // PM Route Information
-    [ForeignKey("PMVehicle")]
-    [Display(Name = "PM Vehicle")]
-    public int? PMVehicleId { get; set; }
+    [ForeignKey("PMBus")]
+    [Display(Name = "PM Bus")]
+    public int? PMBusId { get; set; }
 
     [Column(TypeName = "decimal(10,2)")]
     [Display(Name = "PM Begin Miles")]
@@ -156,8 +156,8 @@ public partial class Route : INotifyPropertyChanged
     public string? BusNumber { get; set; }
 
     // Navigation properties
-    public virtual Bus? AMVehicle { get; set; }
-    public virtual Bus? PMVehicle { get; set; }
+    public virtual Bus? AMBus { get; set; }
+    public virtual Bus? PMBus { get; set; }
     public virtual Driver? AMDriver { get; set; }
     public virtual Driver? PMDriver { get; set; }
     public virtual ICollection<Schedule> Schedules { get; set; } = new List<Schedule>();
@@ -165,8 +165,8 @@ public partial class Route : INotifyPropertyChanged
     // Computed properties with null safety
     public string SafeRouteName => string.IsNullOrWhiteSpace(RouteName) ? $"Route-{RouteId}" : RouteName;
     public string DateFormatted => Date.ToString("yyyy-MM-dd");
-    public bool HasAMAssignment => AMVehicleId.HasValue && AMDriverId.HasValue;
-    public bool HasPMAssignment => PMVehicleId.HasValue && PMDriverId.HasValue;
+    public bool HasAMAssignment => AMBusId.HasValue && AMDriverId.HasValue;
+    public bool HasPMAssignment => PMBusId.HasValue && PMDriverId.HasValue;
     public decimal TotalMiles => (AMEndMiles - AMBeginMiles ?? 0) + (PMEndMiles - PMBeginMiles ?? 0);
 
     [StringLength(100)]
@@ -206,20 +206,5 @@ public partial class Route : INotifyPropertyChanged
     protected virtual void OnPropertyChanged([CallerMemberName] string? propertyName = null)
     {
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-    }
-
-    // Backwards-compatible aliases for older WPF naming
-    [NotMapped]
-    public int? AMBusId
-    {
-        get => AMVehicleId;
-        set => AMVehicleId = value;
-    }
-
-    [NotMapped]
-    public int? PMBusId
-    {
-        get => PMVehicleId;
-        set => PMVehicleId = value;
     }
 }

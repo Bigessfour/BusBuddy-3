@@ -1,0 +1,126 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <EnableNETAnalyzers>false</EnableNETAnalyzers>
+    <RunAnalyzers>false</RunAnalyzers>
+    <RunAnalyzersDuringBuild>false</RunAnalyzersDuringBuild>
+    <RunAnalyzersDuringLiveAnalysis>false</RunAnalyzersDuringLiveAnalysis>
+    <TargetFramework>net9.0-windows10.0.26100.0</TargetFramework>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <GenerateWinMD>false</GenerateWinMD>
+
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <UseWindowsForms>true</UseWindowsForms>
+    <NoWarn>
+      $(NoWarn);NETSDK1206;NU1605;NU1008;CS7022;CS8600;CS8601;CS8602;CS8603;CS8604;CS8618;CS8620;CS8622;CS8625;CS8632;CS8613;CS1061;CS1929;CA1416;NU1902;NU1903;NU1701;NU1603</NoWarn>
+    <WarningsNotAsErrors>NU1008</WarningsNotAsErrors>
+    <ProduceReferenceAssembly>true</ProduceReferenceAssembly>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- Package versions managed centrally in Directory.Packages.props -->
+    <!-- BoldReports package for report functionality -->
+    <PackageReference Include="Microsoft.ApplicationInsights" />
+    <!-- MSAL extensions removed (archived). -->
+    <!-- Specific package removed for WinForms compatibility -->
+    <PackageReference Include="OpenTelemetry.Instrumentation.Runtime" />
+    <!-- Additional OpenTelemetry packages for SigNoz integration -->
+    <PackageReference Include="OpenTelemetry" />
+    <!-- EntityFrameworkCore instrumentation removed - package not available as stable -->
+    <!-- <PackageReference Include="OpenTelemetry.Instrumentation.EntityFrameworkCore" /> -->
+    <!-- SqlClient instrumentation removed - package not available as stable -->
+    <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" />
+    <PackageReference Include="OpenTelemetry.Extensions.Hosting" />
+    <PackageReference Include="Polly.RateLimiting" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.Data.SqlClient" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.UserSecrets" />
+    <PackageReference Include="DotNetEnv" />
+    <PackageReference Include="Microsoft.Extensions.Caching.Memory" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+    <PackageReference Include="Microsoft.Extensions.Http" />
+    <PackageReference Include="Microsoft.Extensions.Logging" />
+    <PackageReference Include="Serilog" />
+    <PackageReference Include="Serilog.Enrichers.Environment" />
+    <PackageReference Include="Serilog.Enrichers.Process" />
+    <PackageReference Include="Serilog.Enrichers.Thread" />
+    <PackageReference Include="Serilog.Settings.Configuration" />
+    <PackageReference Include="Serilog.Sinks.Async" />
+    <PackageReference Include="Serilog.Sinks.Email" />
+    <PackageReference Include="Serilog.Sinks.File" />
+    <PackageReference Include="FluentValidation" />
+
+    <!-- Open-source alternatives to Syncfusion -->
+    <PackageReference Include="CsvHelper" />
+    <PackageReference Include="ExcelDataReader" />
+    <PackageReference Include="ExcelDataReader.DataSet" />
+
+    <PackageReference Include="Syncfusion.Pdf.WinForms" />
+    <PackageReference Include="Syncfusion.XlsIO.WinForms" />
+
+    <!-- BoldReports.WPF only - WinForms and Syncfusion.ReportViewer packages don't exist on nuget.org -->
+    <!-- FastReport Open Source packages -->
+    <PackageReference Include="FastReport.OpenSource" />
+
+    <PackageReference Include="Microsoft.CodeAnalysis.NetAnalyzers" PrivateAssets="all" />
+    <!-- Force Microsoft.CodeAnalysis.Common to 4.8.0 to resolve version conflict -->
+    <PackageReference Include="Microsoft.CodeAnalysis.Common" />
+    <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks.ResourceUtilization" />
+    <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks.Common" />
+    <PackageReference Include="System.Management" />
+    <!-- Pin BCL packages to patched versions to address known vulnerabilities -->
+    <PackageReference Include="Polly" />
+    <!-- AI Integration packages removed from Services project - register per-module when needed -->
+
+    <PackageReference Include="IppDotNetSdkForQuickBooksApiV3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\WileyWidget.Business\WileyWidget.Business.csproj" />
+    <ProjectReference Include="..\WileyWidget.Data\WileyWidget.Data.csproj" />
+    <ProjectReference Include="..\WileyWidget.Models\WileyWidget.Models.csproj" />
+    <ProjectReference Include="..\WileyWidget.Abstractions\WileyWidget.Abstractions.csproj" />
+    <ProjectReference Include="..\WileyWidget.Services.Abstractions\WileyWidget.Services.Abstractions.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Remove interface source files since they are now in the Abstractions project -->
+    <Compile Remove="IAILoggingService.cs" />
+    <Compile Remove="IAIService.cs" />
+    <Compile Remove="IAuditService.cs" />
+    <Compile Remove="IBoldReportService.cs" />
+    <Compile Remove="IBudgetImporter.cs" />
+    <Compile Remove="IChargeCalculatorService.cs" />
+    <Compile Remove="IDataAnonymizerService.cs" />
+    <Compile Remove="IDispatcherHelper.cs" />
+    <Compile Remove="IGrokSupercomputer.cs" />
+    <Compile Remove="IMemoryProfiler.cs" />
+    <Compile Remove="Interfaces\IQuickBooksService.cs" />
+    <Compile Remove="Interfaces\IReportExportService.cs" />
+    <Compile Remove="Interfaces\ISecretVaultService.cs" />
+    <Compile Remove="Interfaces\ISettingsService.cs" />
+    <Compile Remove="Interfaces\ISyncfusionLicenseService.cs" />
+    <Compile Remove="Interfaces\IUserContext.cs" />
+    <Compile Remove="Interfaces\IWhatIfScenarioEngine.cs" />
+    <Compile Remove="Interfaces\IWileyWidgetContextService.cs" />
+
+    <!-- Exclude specific files when building for .NET 9.0 -->
+    <Compile Remove="PasswordBoxHelper.cs" Condition="'$(TargetFramework)' == 'net9.0'" />
+    <Compile Remove="DialogTrackingService.cs" Condition="'$(TargetFramework)' == 'net9.0'" />
+    <Compile Remove="SafeResourceDictionaryLoader.cs" Condition="'$(TargetFramework)' == 'net9.0'" />
+    <Compile Remove="ErrorReportingService.cs" Condition="'$(TargetFramework)' == 'net9.0'" />
+    <Compile Remove="Threading\DispatcherExtensions.cs" Condition="'$(TargetFramework)' == 'net9.0'" />
+  </ItemGroup>
+
+  <!-- Removed linked files - now using local copies in WileyWidget.Services/ -->
+
+</Project>

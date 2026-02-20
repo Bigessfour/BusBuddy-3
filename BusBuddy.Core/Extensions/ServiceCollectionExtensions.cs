@@ -67,21 +67,10 @@ namespace BusBuddy.Core.Extensions
                 return new BusBuddyDbContext(optionsBuilder.Options);
             });
 
-            // Optional: register enhanced context for future migration of repositories/services
-            services.AddTransient<BusBuddyDbContextEnhanced>(provider =>
-            {
-                var configuration = provider.GetRequiredService<IConfiguration>();
-                var optionsBuilder = new DbContextOptionsBuilder<BusBuddyDbContextEnhanced>();
-                var connectionString = BusBuddy.Core.Utilities.EnvironmentHelper.GetConnectionString(configuration);
-                optionsBuilder.UseSqlServer(connectionString);
-                return new BusBuddyDbContextEnhanced(optionsBuilder.Options, configuration);
-            });
-
             // Register DbContext Factory for thread-safe context creation with access to IConfiguration via IServiceProvider
             services.AddSingleton<IBusBuddyDbContextFactory>(sp => new BusBuddyDbContextFactory(sp));
 
             // Register repositories - use fully qualified names to avoid ambiguity
-            services.AddScoped<IVehicleRepository, BusBuddy.Core.Data.Repositories.VehicleRepository>();
             services.AddScoped<IActivityRepository, BusBuddy.Core.Data.Repositories.ActivityRepository>();
             services.AddScoped<IBusRepository, BusBuddy.Core.Data.Repositories.BusRepository>();
             services.AddScoped<IDriverRepository, BusBuddy.Core.Data.Repositories.DriverRepository>();
@@ -102,10 +91,12 @@ namespace BusBuddy.Core.Extensions
             // Register User Context Service
             services.AddScoped<IUserContextService, UserContextService>();
 
+            // Register User Settings Service
+            services.AddScoped<IUserSettingsService, UserSettingsService>();
+
             // Register memory caching services - CRITICAL for BusCachingService
             services.AddMemoryCache();
             services.AddSingleton<IBusCachingService, BusCachingService>();
-            services.AddSingleton<IEnhancedCachingService, EnhancedCachingService>();
 
             // Register Business Services
             services.AddScoped<IBusService, BusService>();

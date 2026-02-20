@@ -1,7 +1,7 @@
 {
   // Centralized cSpell configuration moved to root cspell.json for Trunk integration
-  "cSpell.configFile": "${workspaceFolder}/cspell.json",
-  "cSpell.enabled": true,
+  "cSpell.configFile": "${workspaceFolder}/.cspell.json",
+  "cSpell.enabled": false, // Disabled to avoid duplication with Trunk cspell
   "cSpell.enabledFileTypes": {
     "csharp": true,
     "powershell": true,
@@ -17,6 +17,7 @@
   "cSpell.diagnosticLevel": "Information",
   "cSpell.showStatus": true,
   "cSpell.suggestionMenuType": "quickFix",
+  "python.terminal.activateEnvironment": false,
   "terminal.integrated.env.windows": {
     "PSModulePath": "${workspaceFolder}\\PowerShell\\Modules;${env:PSModulePath};${env:USERPROFILE}\\Documents\\PowerShell\\Modules",
     "BUSBUDDY_WORKSPACE": "${workspaceFolder}",
@@ -42,13 +43,12 @@
     "MCP_DOCS_PORT": "5151",
     "MCP_DOCS_ENABLED": "true",
     "MCP_FILESYSTEM_PATH": "c:\\Users\\biges\\Desktop\\BusBuddy",
-    // Azure and GitHub integration (env only, no secrets)
-    "AZURE_CLIENT_ID": "860af3d3-df7a-4c76-915a-a6f980bd86ed",
-    "AZURE_TENANT_ID": "3ee44d11-b5ae-43a0-9c02-004b04858d9e",
-    "AZURE_SUBSCRIPTION_ID": "57b297a5-44cf-4abc-9ac4-91a5ed147de1",
+    // Load environment variables from .env file
     "GITHUB_PERSONAL_ACCESS_TOKEN": "${env:GITHUB_PERSONAL_ACCESS_TOKEN}",
     "GITHUB_API_URL": "https://api.github.com",
-    "BRAVE_API_KEY": "${env:BRAVE_API_KEY}"
+    "BRAVE_API_KEY": "${env:BRAVE_API_KEY}",
+    "XAI_API_KEY": "${env:XAI_API_KEY}",
+    "SYNCFUSION_LICENSE_KEY": "${env:SYNCFUSION_LICENSE_KEY}"
   },
   "trunk.enableLinting": true,
   "trunk.enableFormatting": true,
@@ -80,9 +80,7 @@
   "nunitTestExplorer.runInParallel": false,
   "nunitTestExplorer.autoWatch": true,
   "nunitTestExplorer.addProblems": true,
-  "nunitTestExplorer.dotNetCliPaths": [
-    "dotnet"
-  ],
+  "nunitTestExplorer.dotNetCliPaths": ["dotnet"],
   "editor.defaultFormatter": "trunk.io",
   "editor.snippets.codeLens": true,
   "[powershell]": {
@@ -432,5 +430,18 @@
     "other": true,
     "comments": false,
     "strings": true
-  }
+  },
+
+  // GitHub Copilot Configuration
+  "github.copilot.chat.codeGeneration.instructions": [
+    {
+      "text": "Follow the BusBuddy development standards and guidelines from .github/copilot-instructions.md"
+    }
+  ],
+  "github.copilot.chat.codeGeneration.useInstructionFiles": true,
+  "github.copilot.enable": {
+    "*": true
+  },
+  "github.copilot.editor.enableCodeActions": true,
+  "github.copilot.editor.enableAutoCompletions": true
 }

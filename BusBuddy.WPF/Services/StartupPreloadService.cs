@@ -5,6 +5,7 @@ using BusBuddy.Core.Utilities;
 using System;
 using System.Diagnostics;
 using System.Threading.Tasks;
+using System.Linq;
 
 namespace BusBuddy.WPF.Services
 {
@@ -13,7 +14,6 @@ namespace BusBuddy.WPF.Services
     /// </summary>
     public class StartupPreloadService : IStartupPreloadService
     {
-        private readonly IEnhancedCachingService _cachingService;
         private readonly IBusService _busService;
         private readonly IDriverService _driverService;
         private readonly IRouteService _routeService;
@@ -21,13 +21,11 @@ namespace BusBuddy.WPF.Services
         private static readonly ILogger Logger = Log.ForContext<StartupPreloadService>();
 
         public StartupPreloadService(
-            IEnhancedCachingService cachingService,
             IBusService busService,
             IDriverService driverService,
             IRouteService routeService,
             IStudentService studentService)
         {
-            _cachingService = cachingService;
             _busService = busService;
             _driverService = driverService;
             _routeService = routeService;
@@ -91,29 +89,13 @@ namespace BusBuddy.WPF.Services
         }
 
         /// <summary>
-        /// Check if essential data is already cached
+        /// Indicates whether essential data is available after preload.
+        /// This method always returns false since caching has been removed and data is loaded on demand.
         /// </summary>
         public bool IsEssentialDataCached()
         {
-            // This is a simple check - in a real implementation, you might want to be more sophisticated
-            try
-            {
-                var busesTask = _cachingService.GetAllBusesAsync(async () => await _busService.GetAllBusesAsync());
-                var driversTask = _cachingService.GetAllDriversAsync(async () => await _driverService.GetAllDriversAsync());
-                var routesTask = _cachingService.GetAllRoutesAsync(async () => {
-                    var result = await _routeService.GetAllActiveRoutesAsync();
-                    return result.IsSuccess ? result.Value : Enumerable.Empty<BusBuddy.Core.Domain.Route>();
-                });
-                var studentsTask = _cachingService.GetAllStudentsAsync(async () => await _studentService.GetAllStudentsAsync());
-
-                // Check if any of these complete immediately (indicating cached data)
-                return busesTask.IsCompletedSuccessfully || driversTask.IsCompletedSuccessfully ||
-                       routesTask.IsCompletedSuccessfully || studentsTask.IsCompletedSuccessfully;
-            }
-            catch
-            {
-                return false;
-            }
+            // Since we removed caching, this always returns false to indicate data needs to be loaded
+            return false;
         }
 
         /// <summary>
@@ -125,25 +107,30 @@ namespace BusBuddy.WPF.Services
 
             try
             {
-                var buses = await _cachingService.GetAllBusesAsync(async () => await _busService.GetAllBusesAsync());
-                var drivers = await _cachingService.GetAllDriversAsync(async () => await _driverService.GetAllDriversAsync());
-                var routes = await _cachingService.GetAllRoutesAsync(async () => {
-                    var result = await _routeService.GetAllActiveRoutesAsync();
-                    return result.IsSuccess ? result.Value : Enumerable.Empty<BusBuddy.Core.Domain.Route>();
-                });
-                var students = await _cachingService.GetAllStudentsAsync(async () => await _studentService.GetAllStudentsAsync());
+                var busesTask = _busService.GetAllBusesAsync();
+                var driversTask = _driverService.GetAllDriversAsync();
+                var routesResultTask = _routeService.GetAllActiveRoutesAsync();
+                var studentsTask = _studentService.GetAllStudentsAsync();
 
-                var routeList = routes as IList<BusBuddy.Core.Domain.Route> ?? routes.ToList();
-                stats.BusCount = buses.Count;
+                await Task.WhenAll(busesTask, driversTask, routesResultTask, studentsTask);
+
+                var buses = await busesTask.ConfigureAwait(false);
+                var drivers = await driversTask.ConfigureAwait(false);
+                var routesResult = await routesResultTask.ConfigureAwait(false);
+                var students = await studentsTask.ConfigureAwait(false);
+
+                var routes = routesResult.IsSuccess ? routesResult.Value : Enumerable.Empty<Core.Domain.Route>();
+                var routeList = routes.ToList();
+                stats.BusCount = buses.Count();
                 stats.DriverCount = drivers.Count;
                 stats.RouteCount = routeList.Count;
-                stats.StudentCount = students.Count;
-                stats.IsDataCached = true;
+                stats.StudentCount = students.Count;  // Changed from students.Count() to students.Count for better performance
+                stats.IsDataAvailable = true;
             }
             catch (Exception ex)
             {
                 Logger.Error(ex, "Error getting preload statistics");
-                stats.IsDataCached = false;
+                stats.IsDataAvailable = false;
             }
 
             return stats;
@@ -154,7 +141,7 @@ namespace BusBuddy.WPF.Services
             try
             {
                 var stopwatch = Stopwatch.StartNew();
-                await _cachingService.GetAllBusesAsync(async () => await _busService.GetAllBusesAsync());
+                await _busService.GetAllBusesAsync();
                 stopwatch.Stop();
                 Logger.Debug("Preloaded buses in {ElapsedMs}ms", stopwatch.ElapsedMilliseconds);
             }
@@ -169,7 +156,7 @@ namespace BusBuddy.WPF.Services
             try
             {
                 var stopwatch = Stopwatch.StartNew();
-                await _cachingService.GetAllDriversAsync(async () => await _driverService.GetAllDriversAsync());
+                await _driverService.GetAllDriversAsync();
                 stopwatch.Stop();
                 Logger.Debug("Preloaded drivers in {ElapsedMs}ms", stopwatch.ElapsedMilliseconds);
             }
@@ -184,10 +171,7 @@ namespace BusBuddy.WPF.Services
             try
             {
                 var stopwatch = Stopwatch.StartNew();
-                await _cachingService.GetAllRoutesAsync(async () => {
-                    var result = await _routeService.GetAllActiveRoutesAsync();
-                    return result.Value;
-                });
+                await _routeService.GetAllActiveRoutesAsync();
                 stopwatch.Stop();
                 Logger.Debug("Preloaded routes in {ElapsedMs}ms", stopwatch.ElapsedMilliseconds);
             }
@@ -202,7 +186,7 @@ namespace BusBuddy.WPF.Services
             try
             {
                 var stopwatch = Stopwatch.StartNew();
-                await _cachingService.GetAllStudentsAsync(async () => await _studentService.GetAllStudentsAsync());
+                await _studentService.GetAllStudentsAsync();
                 stopwatch.Stop();
                 Logger.Debug("Preloaded students in {ElapsedMs}ms", stopwatch.ElapsedMilliseconds);
             }
@@ -225,7 +209,8 @@ namespace BusBuddy.WPF.Services
     }
 
     /// <summary>
-    /// Statistics about preloaded data
+    /// Statistics about preloaded data.
+    /// The IsDataAvailable property indicates whether the preload operation successfully retrieved data.
     /// </summary>
     public class PreloadStatistics
     {
@@ -233,6 +218,9 @@ namespace BusBuddy.WPF.Services
         public int DriverCount { get; set; }
         public int RouteCount { get; set; }
         public int StudentCount { get; set; }
-        public bool IsDataCached { get; set; }
+        /// <summary>
+        /// Indicates whether the preload operation successfully retrieved data.
+        /// </summary>
+        public bool IsDataAvailable { get; set; }
     }
 }

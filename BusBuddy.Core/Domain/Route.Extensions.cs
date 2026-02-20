@@ -36,8 +36,8 @@ public partial class Route
     {
         get
         {
-            var amCapacity = AMVehicle?.Capacity ?? 0;
-            var pmCapacity = PMVehicle?.Capacity ?? 0;
+            var amCapacity = AMBus?.Capacity ?? 0;
+            var pmCapacity = PMBus?.Capacity ?? 0;
             return Math.Max(amCapacity, pmCapacity);
         }
     }

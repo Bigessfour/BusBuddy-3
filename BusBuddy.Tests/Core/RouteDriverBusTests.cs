@@ -46,7 +46,7 @@ namespace BusBuddy.Tests.Core
                 await ctx.SaveChangesAsync();
             }
 
-            var driverService = new DriverService(factory, new NoOpCache());
+            var driverService = new DriverService(factory);
             var all = await driverService.GetAllDriversAsync();
             all.Should().NotBeEmpty();
             all.Any(d => d.DriverName == "Jane Doe").Should().BeTrue();
@@ -96,9 +96,9 @@ namespace BusBuddy.Tests.Core
                 await seed.SaveChangesAsync();
 
                 route.AMDriverId = amDriver.DriverId;
-                route.AMVehicleId = amBus.VehicleId;
+                route.AMBusId = amBus.BusId;
                 route.PMDriverId = pmDriver.DriverId;
-                route.PMVehicleId = pmBus.VehicleId;
+                route.PMBusId = pmBus.BusId;
                 await seed.SaveChangesAsync();
             }
 
@@ -110,53 +110,9 @@ namespace BusBuddy.Tests.Core
             routes.Should().HaveCount(1);
             var r = routes[0];
             r.AMDriverId.Should().NotBeNull();
-            r.AMVehicleId.Should().NotBeNull();
+            r.AMBusId.Should().NotBeNull();
             r.PMDriverId.Should().NotBeNull();
-            r.PMVehicleId.Should().NotBeNull();
-        }
-
-        private sealed class NoOpCache : BusBuddy.Core.Services.IEnhancedCachingService
-        {
-            public Task<IReadOnlyList<BusBuddy.Core.Domain.Bus>> GetAllBusesAsync(Func<Task<IEnumerable<BusBuddy.Core.Domain.Bus>>> fetchFunc)
-            {
-                return Wrap(fetchFunc);
-            }
-
-            public Task<IReadOnlyList<BusBuddy.Core.Domain.Driver>> GetAllDriversAsync(Func<Task<IEnumerable<BusBuddy.Core.Domain.Driver>>> fetchFunc)
-            {
-                return Wrap(fetchFunc);
-            }
-
-            public Task<IReadOnlyList<BusBuddy.Core.Domain.Route>> GetAllRoutesAsync(Func<Task<IEnumerable<BusBuddy.Core.Domain.Route>>> fetchFunc)
-            {
-                return Wrap(fetchFunc);
-            }
-
-            public Task<IReadOnlyList<BusBuddy.Core.Domain.Student>> GetAllStudentsAsync(Func<Task<IEnumerable<BusBuddy.Core.Domain.Student>>> fetchFunc)
-            {
-                return Wrap(fetchFunc);
-            }
-
-            public Task<IReadOnlyDictionary<string, int>> GetDashboardMetricsAsync(Func<Task<Dictionary<string, int>>> fetchFunc)
-            {
-                return Task.FromResult((IReadOnlyDictionary<string, int>)new Dictionary<string, int>());
-            }
-
-            public Task<Dictionary<string, int>> GetCachedDashboardMetricsAsync()
-            {
-                return Task.FromResult(new Dictionary<string, int>());
-            }
-
-            public void SetDashboardMetricsDirectly(Dictionary<string, int> metrics) { }
-
-            public void InvalidateCache(string key) { }
-
-            public void InvalidateAllCaches() { }
-
-            private static async Task<IReadOnlyList<T>> Wrap<T>(Func<Task<IEnumerable<T>>> fetch)
-            {
-                return (await fetch()).ToList();
-            }
+            r.PMBusId.Should().NotBeNull();
         }
     }
 }

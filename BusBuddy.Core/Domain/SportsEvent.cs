@@ -251,6 +251,17 @@ namespace BusBuddy.Core.Domain
             }
         }
 
+        /// <summary>
+        /// Whether GPS tracking is required for this event
+        /// </summary>
+        public bool RequiresGPSTracking { get; set; } = false;
+
+        /// <summary>
+        /// Special equipment required for the event (e.g., wheelchair lift, air conditioning)
+        /// </summary>
+        [StringLength(500)]
+        public string? RequiredEquipment { get; set; }
+
         // Navigation properties
         /// <summary>
         /// Navigation property to assigned bus (was Vehicle, now Bus after merge)

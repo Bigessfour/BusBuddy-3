@@ -34,7 +34,7 @@
         xmlns:route="clr-namespace:BusBuddy.WPF.Views.Route"
         xmlns:viewsGE="clr-namespace:BusBuddy.WPF.Views.GoogleEarth"
         mc:Ignorable="d"
-        Title="🚌 BusBuddy MVP - Student Route Management"
+        Title="🚌 BusBuddy - Student Route Management"
         Height="900"
         Width="1400"
         MinHeight="600"
@@ -228,7 +228,7 @@
                                           BorderThickness="0"
                                           Command="{Binding NavigateToBusesCommand}"
                                           FontSize="14" FontWeight="SemiBold"
-                                          ToolTip="Manage bus fleet and vehicle maintenance information"
+                                          ToolTip="Manage bus fleet and bus maintenance information"
                                           AutomationProperties.Name="Bus Management"
                                           SmallIcon="pack://application:,,,/BusBuddy.WPF;component/Resources/buses-icon.png"
                                           SizeMode="Large" />
@@ -339,8 +339,7 @@
                                     <Setter Property="Template">
                                         <Setter.Value>
                                             <ControlTemplate TargetType="syncfusion:ButtonAdv">
-                                                <Border x:Name="Border"
-                                                       Background="{TemplateBinding Background}"
+                                                <Border Background="{TemplateBinding Background}"
                                                        BorderBrush="{TemplateBinding BorderBrush}"
                                                        BorderThickness="{TemplateBinding BorderThickness}"
                                                        CornerRadius="{TemplateBinding CornerRadius}"
@@ -354,13 +353,13 @@
                                                 </Border>
                                                 <ControlTemplate.Triggers>
                                                     <Trigger Property="IsMouseOver" Value="True">
-                                                        <Setter TargetName="Border" Property="Background" Value="{DynamicResource BusBuddy.Brush.Control.Hover}"/>
-                                                        <Setter TargetName="Border" Property="BorderBrush" Value="{DynamicResource BusBuddy.Brush.Primary}"/>
-                                                        <Setter TargetName="Border" Property="BorderThickness" Value="2"/>
+                                                        <Setter Property="Background" Value="{DynamicResource BusBuddy.Brush.Control.Hover}"/>
+                                                        <Setter Property="BorderBrush" Value="{DynamicResource BusBuddy.Brush.Primary}"/>
+                                                        <Setter Property="BorderThickness" Value="2"/>
                                                     </Trigger>
                                                     <Trigger Property="IsPressed" Value="True">
-                                                        <Setter TargetName="Border" Property="Background" Value="{DynamicResource BusBuddy.Brush.Control.Pressed}"/>
-                                                        <Setter TargetName="Border" Property="BorderBrush" Value="{DynamicResource BusBuddy.Brush.Primary}"/>
+                                                        <Setter Property="Background" Value="{DynamicResource BusBuddy.Brush.Control.Pressed}"/>
+                                                        <Setter Property="BorderBrush" Value="{DynamicResource BusBuddy.Brush.Primary}"/>
                                                     </Trigger>
                                                 </ControlTemplate.Triggers>
                                             </ControlTemplate>
@@ -396,8 +395,7 @@
                                     <Setter Property="Template">
                                         <Setter.Value>
                                             <ControlTemplate TargetType="syncfusion:ButtonAdv">
-                                                <Border x:Name="Border"
-                                                       Background="{TemplateBinding Background}"
+                                                <Border Background="{TemplateBinding Background}"
                                                        BorderBrush="{TemplateBinding BorderBrush}"
                                                        BorderThickness="{TemplateBinding BorderThickness}"
                                                        CornerRadius="{TemplateBinding CornerRadius}"
@@ -411,13 +409,13 @@
                                                 </Border>
                                                 <ControlTemplate.Triggers>
                                                     <Trigger Property="IsMouseOver" Value="True">
-                                                        <Setter TargetName="Border" Property="Background" Value="{DynamicResource BusBuddy.Brush.Control.Hover}"/>
-                                                        <Setter TargetName="Border" Property="BorderBrush" Value="{DynamicResource BusBuddy.Brush.Warning}"/>
-                                                        <Setter TargetName="Border" Property="BorderThickness" Value="2"/>
+                                                        <Setter Property="Background" Value="{DynamicResource BusBuddy.Brush.Control.Hover}"/>
+                                                        <Setter Property="BorderBrush" Value="{DynamicResource BusBuddy.Brush.Warning}"/>
+                                                        <Setter Property="BorderThickness" Value="2"/>
                                                     </Trigger>
                                                     <Trigger Property="IsPressed" Value="True">
-                                                        <Setter TargetName="Border" Property="Background" Value="{DynamicResource BusBuddy.Brush.Control.Pressed}"/>
-                                                        <Setter TargetName="Border" Property="BorderBrush" Value="{DynamicResource BusBuddy.Brush.Warning}"/>
+                                                        <Setter Property="Background" Value="{DynamicResource BusBuddy.Brush.Control.Pressed}"/>
+                                                        <Setter Property="BorderBrush" Value="{DynamicResource BusBuddy.Brush.Warning}"/>
                                                     </Trigger>
                                                 </ControlTemplate.Triggers>
                                             </ControlTemplate>
@@ -449,7 +447,7 @@
             - DocumentContainerStyle: Professional document tab styling
             - AnimationController: Smooth transitions and animations
         -->
-    <syncfusion:DockingManager Name="MainDockingManager"
+    <syncfusion:DockingManager x:Name="MainDockingManager"
                    UseDocumentContainer="True"
                    PersistState="True"
                    ContainerMode="TDI"
@@ -732,7 +730,7 @@
                             syncfusion:DockingManager.CanClose="False"
                             syncfusion:DockingManager.CanFloat="True"
                             syncfusion:DockingManager.CanDock="True"
-                            syncfusion:DockingManager.CaptionToolTip="Bus Fleet Management - Monitor, maintain, and manage all vehicles"
+                            syncfusion:DockingManager.CaptionToolTip="Bus Fleet Management - Monitor, maintain, and manage all buses"
                             Background="{DynamicResource BusBuddy.Brush.Panel.Background}">
                 <Grid Margin="15" Background="{DynamicResource BusBuddy.Brush.Panel.Content}">
                     <Grid.RowDefinitions>

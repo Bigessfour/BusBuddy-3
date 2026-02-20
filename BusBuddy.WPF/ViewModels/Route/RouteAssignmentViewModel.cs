@@ -373,7 +373,7 @@ namespace BusBuddy.WPF.ViewModels.Route
             {
                 if (SelectedRoute == null)
                     return string.Empty;
-                var id = SelectedTimeSlot == BusBuddy.Core.Domain.RouteTimeSlot.PM ? SelectedRoute.PMBusId: SelectedRoute.AMVehicleId;
+                var id = SelectedTimeSlot == BusBuddy.Core.Domain.RouteTimeSlot.PM ? SelectedRoute.PMBusId: SelectedRoute.AMBusId;
                 var bus = id.HasValue ? AvailableBuses.FirstOrDefault(b => b.BusId == id.Value) : null;
                 return bus?.BusNumber ?? "(none)";
             }
@@ -548,10 +548,10 @@ namespace BusBuddy.WPF.ViewModels.Route
                 BusBuddy.Core.Domain.Driver? driver = null;
                 if (SelectedRoute != null)
                 {
-                    if (SelectedTimeSlot == BusBuddy.Core.Domain.RouteTimeSlot.AM && SelectedRoute.AMVehicleId.HasValue)
-                        bus = AvailableBuses.FirstOrDefault(b => b.BusId == SelectedRoute.AMVehicleId.Value);
-                    if (SelectedTimeSlot == BusBuddy.Core.Domain.RouteTimeSlot.PM && SelectedRoute.PMVehicleId.HasValue)
-                        bus = AvailableBuses.FirstOrDefault(b => b.BusId == SelectedRoute.PMVehicleId.Value);
+                    if (SelectedTimeSlot == BusBuddy.Core.Domain.RouteTimeSlot.AM && SelectedRoute.AMBusId.HasValue)
+                        bus = AvailableBuses.FirstOrDefault(b => b.BusId == SelectedRoute.AMBusId.Value);
+                    if (SelectedTimeSlot == BusBuddy.Core.Domain.RouteTimeSlot.PM && SelectedRoute.PMBusId.HasValue)
+                        bus = AvailableBuses.FirstOrDefault(b => b.BusId == SelectedRoute.PMBusId.Value);
                     if (SelectedTimeSlot == BusBuddy.Core.Domain.RouteTimeSlot.AM && SelectedRoute.AMDriverId.HasValue)
                         driver = AvailableDrivers.FirstOrDefault(d => d.DriverId == SelectedRoute.AMDriverId.Value);
                     if (SelectedTimeSlot == BusBuddy.Core.Domain.RouteTimeSlot.PM && SelectedRoute.PMDriverId.HasValue)
@@ -1407,7 +1407,7 @@ namespace BusBuddy.WPF.ViewModels.Route
             var missing = new List<string>();
             if (!AssignedStudentsForSelectedRoute.Any()) missing.Add("at least one student");
             if (!RouteStops.Any()) missing.Add("at least one stop");
-            var hasVehicle = SelectedRoute.AMVehicleId.HasValue || SelectedRoute.PMVehicleId.HasValue;
+            var hasVehicle = SelectedRoute.AMBusId.HasValue || SelectedRoute.PMBusId.HasValue;
             if (!hasVehicle) missing.Add("vehicle");
             var hasDriver = SelectedRoute.AMDriverId.HasValue || SelectedRoute.PMDriverId.HasValue;
             if (!hasDriver) missing.Add("driver");

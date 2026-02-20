@@ -1,6 +1,31 @@
 {
   "version": "2.0.0",
   "tasks": [
+    // === ENVIRONMENT SETUP ===
+    {
+      "label": "Load Environment Variables",
+      "type": "shell",
+      "command": "pwsh",
+      "args": [
+        "-File",
+        "${workspaceFolder}/tools/scripts/Load-MCPEnvironment.ps1"
+      ],
+      "options": {
+        "env": {
+          "DOTNET_CLI_TELEMETRY_OPTOUT": "1"
+        }
+      },
+      "presentation": {
+        "echo": true,
+        "reveal": "silent",
+        "focus": false,
+        "panel": "shared",
+        "showReuseMessage": false,
+        "clear": false
+      },
+      "problemMatcher": [],
+      "group": "build"
+    },
     // === BUILD TASKS ===
     {
       "type": "process",
@@ -420,10 +445,7 @@
       "label": "Clean All (dotnet clean + bin/obj)",
       "type": "shell",
       "command": "pwsh",
-      "args": [
-        "-File",
-        "tools/clean-all.ps1"
-      ],
+      "args": ["-File", "tools/clean-all.ps1"],
       "group": "build",
       "options": {
         "env": {

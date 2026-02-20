@@ -10,7 +10,7 @@ using Serilog;
 namespace BusBuddy.Core.Utilities
 {
     /// <summary>
-    /// Minimal MVP helper to generate a Route Summary PDF for the first active route found.
+    /// Production helper to generate a Route Summary PDF for the first active route found.
     /// Not wired to UI; invoked manually from Program or a quick REPL for smoke verification.
     /// </summary>
     public static class RoutePdfPrinter

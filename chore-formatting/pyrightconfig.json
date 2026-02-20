@@ -1,0 +1,15 @@
+{
+  "typeCheckingMode": "basic",
+  "exclude": [
+    "**/.venv/**",
+    "**/node_modules/**",
+    "**/%APPDATA%/**",
+    "**/.trunk/**"
+  ],
+  "useLibraryCodeForTypes": false,
+  "autoSearchPaths": false,
+  "reportUnusedVariable": "none",
+  "reportUnusedImport": "warning",
+  "reportGeneralTypeIssues": "warning",
+  "reportOperatorIssue": "none"
+}

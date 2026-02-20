@@ -587,7 +587,7 @@ namespace BusBuddy.Core.Services
                         School = r.School ?? string.Empty,
 
                         // AM details
-                        AMVehicleId = r.AMVehicleId,
+                        AMBusId = r.AMBusId,
                         AMDriverId = r.AMDriverId,
                         AMBeginMiles = r.AMBeginMiles,
                         AMEndMiles = r.AMEndMiles,
@@ -595,7 +595,7 @@ namespace BusBuddy.Core.Services
                         AMBeginTime = r.AMBeginTime,
 
                         // PM details
-                        PMVehicleId = r.PMVehicleId,
+                        PMBusId = r.PMBusId,
                         PMDriverId = r.PMDriverId,
                         PMBeginMiles = r.PMBeginMiles,
                         PMEndMiles = r.PMEndMiles,
@@ -632,11 +632,10 @@ namespace BusBuddy.Core.Services
 
                     using var context = _contextFactory.CreateDbContext();
                     var result = await context.Activities
-                        .Include(a => a.Vehicle)
-                        .Include(a => a.Driver)
+                        // .Include(a => a.Bus) // Activity does not have a Bus navigation property; ensure future schema changes reflect this if needed
                         .Include(a => a.Route)
                         .Where(a => a.ActivityDate.Date == date.Date)
-                        .ToListAsync();
+                        .ToListAsync().ConfigureAwait(false);
 
                     stopwatch.Stop();
                     Logger.Information("GetActivitiesByDate completed in {Duration}ms", stopwatch.ElapsedMilliseconds);
@@ -997,7 +996,7 @@ namespace BusBuddy.Core.Services
         public async Task<int> GetAssignedStudentCountAsync(BusBuddyDbContext context, int busId)
         {
             return await context.Students.CountAsync(s => s.RouteAssignmentId != null &&
-                context.RouteAssignments.Any(ra => ra.RouteAssignmentId == s.RouteAssignmentId && ra.VehicleId == busId));
+                context.RouteAssignments.Any(ra => ra.RouteAssignmentId == s.RouteAssignmentId && ra.BusId == busId));
         }
 
     // (Removed duplicate legacy ValidateVinAsync implementation)

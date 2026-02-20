@@ -86,7 +86,7 @@ Following [Syncfusion WPF Installation Guide](https://help.syncfusion.com/window
 
 ### Current Syncfusion Configuration
 
-- **Version**: `30.1.40` (pinned in Directory.Build.props)
+- **Version**: `30.2.4` (pinned in Directory.Packages.props)
 - **Source**: `nuget.org` (official public feed)
 - **License**: Community/Commercial (configured via environment variable)
 - **Controls Used**: DockingManager, NavigationDrawer, SfDataGrid, Charts
@@ -94,10 +94,13 @@ Following [Syncfusion WPF Installation Guide](https://help.syncfusion.com/window
 ### Syncfusion Package References
 
 ```xml
-<!-- Centralized in Directory.Build.props -->
-<PropertyGroup>
-  <SyncfusionVersion>30.1.40</SyncfusionVersion>
-</PropertyGroup>
+<!-- Centralized in Directory.Packages.props -->
+<ItemGroup Label="Syncfusion WPF 30.2.4">
+  <PackageVersion Include="Syncfusion.SfGrid.WPF" Version="30.2.4" />
+  <PackageVersion Include="Syncfusion.SfChart.WPF" Version="30.2.4" />
+  <!-- Other Syncfusion packages -->
+</ItemGroup>
+```
 
 <!-- Individual project references -->
 <PackageReference Include="Syncfusion.SfChart.WPF" Version="$(SyncfusionVersion)" />

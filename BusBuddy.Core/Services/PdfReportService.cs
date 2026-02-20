@@ -67,7 +67,7 @@ namespace BusBuddy.Core.Services
 
                 var totalActivities = activities.Count;
                 var activeDrivers = activities.Where(a => a.DriverId.HasValue).Select(a => a.DriverId).Distinct().Count();
-                var activeVehicles = activities.Where(a => a.AssignedVehicleId > 0).Select(a => a.AssignedVehicleId).Distinct().Count();
+                var activeBuses = activities.Where(a => a.AssignedVehicleId > 0).Select(a => a.AssignedVehicleId).Distinct().Count();
 
                 graphics.DrawString($"Total Activities: {totalActivities}", bodyFont,
                     new PdfSolidBrush(textColor), new PointF(30, currentY));
@@ -77,7 +77,7 @@ namespace BusBuddy.Core.Services
                     new PdfSolidBrush(textColor), new PointF(30, currentY));
                 currentY += 15f;
 
-                graphics.DrawString($"Active Vehicles: {activeVehicles}", bodyFont,
+                graphics.DrawString($"Active Buses: {activeBuses}", bodyFont,
                     new PdfSolidBrush(textColor), new PointF(30, currentY));
                 currentY += 30f;
 
@@ -201,7 +201,7 @@ namespace BusBuddy.Core.Services
         }
 
         /// <summary>
-        /// Generates a concise PDF summary for a route (MVP route assignment export).
+        /// Generates a comprehensive PDF summary for a route (production route assignment export).
         /// Includes: Header (route name/date/time slot), assignment summary, stop list, student roster.
         /// Documentation references:
         /// - Syncfusion PDF Getting Started / API (PdfDocument, PdfStandardFont, PdfBrushes)

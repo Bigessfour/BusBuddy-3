@@ -1,6 +1,7 @@
 using BusBuddy.Core.Domain;
 using System;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace BusBuddy.WPF.ViewModels.BusManagement
 {
@@ -289,5 +290,25 @@ namespace BusBuddy.WPF.ViewModels.BusManagement
                 InsuranceExpiryDate = viewModel.InsuranceExpiryDate
             };
         }
+
+        /// <summary>
+        /// Compatibility property for Id access (maps to BusId)
+        /// </summary>
+        [NotMapped]
+        public int Id
+        {
+            get => BusId;
+            set => BusId = value;
+        }
+
+        // Backwards-compatible alias preserved for older code/tests that reference BusId
+        [NotMapped]
+        public int BusIdAlias
+        {
+            get => BusId;
+            set => BusId = value;
+        }
+
+        // BusId compatibility property maintained for consistency
     }
 }

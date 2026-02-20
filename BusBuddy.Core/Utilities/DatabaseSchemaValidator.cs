@@ -81,7 +81,7 @@ namespace BusBuddy.Core.Utilities
                 { "IsActive", "bit" },
 
                 // AM information
-                { "AMVehicleId", "int" },
+                { "AMBusId", "int" },
                 { "AMDriverId", "int" },
                 { "AMBeginMiles", "decimal(10,2)" },
                 { "AMEndMiles", "decimal(10,2)" },
@@ -89,7 +89,7 @@ namespace BusBuddy.Core.Utilities
                 { "AMBeginTime", "time" },
 
                 // PM information
-                { "PMVehicleId", "int" },
+                { "PMBusId", "int" },
                 { "PMDriverId", "int" },
                 { "PMBeginMiles", "decimal(10,2)" },
                 { "PMEndMiles", "decimal(10,2)" },

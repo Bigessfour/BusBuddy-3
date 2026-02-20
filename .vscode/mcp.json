@@ -53,22 +53,6 @@
         "NODE_ENV": "production"
       }
     },
-    "busbuddy-grok-ai": {
-      "type": "stdio",
-      "command": "dotnet",
-      "args": [
-        "run",
-        "--project",
-        "c:\\Users\\biges\\Desktop\\BusBuddy\\mcp\\servers\\BusBuddy.Grok.MCP.Server"
-      ],
-      "env": {
-        "XAI_API_KEY": "${env:XAI_API_KEY}",
-        "BUSBUDDY_PROJECT_ROOT": "c:\\Users\\biges\\Desktop\\BusBuddy",
-        "XAI_DEFAULT_MODEL": "grok-4-0709",
-        "XAI_Temperature": "0.3",
-        "XAI_USE_LIVE_API": "true"
-      }
-    },
     "busbuddy-grok4-mcp": {
       "command": "node",
       "args": [

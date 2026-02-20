@@ -5,13 +5,37 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:syncfusion="http://schemas.syncfusion.com/wpf"
              xmlns:syncfusionskin="clr-namespace:Syncfusion.SfSkinManager;assembly=Syncfusion.SfSkinManager.WPF"
+             xmlns:syncfusionchart="clr-namespace:Syncfusion.UI.Xaml.Charts;assembly=Syncfusion.SfChart.WPF"
+             xmlns:syncfusionGauge="clr-namespace:Syncfusion.UI.Xaml.Gauges;assembly=Syncfusion.SfGauge.WPF"
              mc:Ignorable="d"
              d:DesignHeight="600" d:DesignWidth="1000"
              syncfusionskin:SfSkinManager.Theme="{syncfusionskin:SkinManagerExtension ThemeName=FluentDark}">
 
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
-        <!-- Standard converters only - rely on SfSkinManager theming -->
+        <!-- Dashboard-specific resources -->
+        <SolidColorBrush x:Key="BusBuddy.Brush.Tile.Header" Color="#2D3748"/>
+        <SolidColorBrush x:Key="BusBuddy.Brush.Text.Muted" Color="#718096"/>
+        <SolidColorBrush x:Key="BusBuddy.Brush.Control.Text" Color="#4A5568"/>
+        <SolidColorBrush x:Key="BusBuddy.Brush.Status.Loading" Color="#3182CE"/>
+        <SolidColorBrush x:Key="BusBuddy.Brush.Semantic.Success" Color="#38A169"/>
+        <SolidColorBrush x:Key="BusBuddy.Brush.Semantic.Error" Color="#E53E3E"/>
+        <SolidColorBrush x:Key="BusBuddy.Brush.Priority.Critical" Color="#E53E3E"/>
+        <SolidColorBrush x:Key="BusBuddy.Brush.Priority.High" Color="#DD6B20"/>
+        <SolidColorBrush x:Key="BusBuddy.Brush.Priority.Medium" Color="#D69E2E"/>
+        <SolidColorBrush x:Key="BusBuddy.Brush.Priority.Low" Color="#38A169"/>
+        <SolidColorBrush x:Key="ContentBackgroundBrush" Color="#F7FAFC"/>
+        <SolidColorBrush x:Key="SecondaryTextBrush" Color="#4A5568"/>
+        <SolidColorBrush x:Key="PrimaryTextBrush" Color="#2D3748"/>
+        <SolidColorBrush x:Key="AccentTextBrush" Color="#3182CE"/>
+
+        <!-- Tile content template -->
+        <DataTemplate x:Key="TileContentTemplate">
+            <TextBlock Text="{Binding}"
+                      FontSize="24" FontWeight="Bold"
+                      HorizontalAlignment="Center" VerticalAlignment="Center"
+                      Foreground="{DynamicResource BusBuddy.Brush.Tile.Header}"/>
+        </DataTemplate>
     </UserControl.Resources>
 
     <Grid Margin="20">
@@ -123,7 +147,7 @@
                 </Grid>
             </Border>
 
-            <!-- System Status Card -->
+            <!-- System Status Gauge Card -->
             <Border Grid.Column="3" Margin="10,0,0,0" CornerRadius="8" Padding="20">
                 <Grid>
                     <Grid.RowDefinitions>
@@ -132,11 +156,37 @@
                         <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
 
-                    <TextBlock Grid.Row="0" Text="📊" FontSize="24"
+                    <TextBlock Grid.Row="0" Text="📊 System Health"
+                               FontSize="14" FontWeight="SemiBold"
                                HorizontalAlignment="Center" Margin="0,0,0,10"/>
-                    <Ellipse Grid.Row="1" Width="20" Height="20" HorizontalAlignment="Center"/>
-                    <TextBlock Grid.Row="2" Text="System Online"
-                               FontSize="12" 
+                    <syncfusionGauge:SfCircularGauge Grid.Row="1" 
+                                                     x:Name="SystemHealthGauge"
+                                                     Height="60" Width="60">
+                        <syncfusionGauge:SfCircularGauge.Scales>
+                            <syncfusionGauge:CircularScale StartAngle="180" 
+                                                          SweepAngle="180"
+                                                          StartValue="0" 
+                                                          EndValue="100"
+                                                          Interval="20"
+                                                          ShowLabels="False"
+                                                          ShowTicks="False">
+                                <syncfusionGauge:CircularScale.Pointers>
+                                    <syncfusionGauge:CircularPointer Value="{Binding FleetUtilization}" 
+                                                                   PointerType="NeedlePointer"/>
+                                </syncfusionGauge:CircularScale.Pointers>
+                                <syncfusionGauge:CircularScale.Ranges>
+                                    <syncfusionGauge:CircularRange StartValue="0" EndValue="60" 
+                                                                  Background="#FFE53E3E"/>
+                                    <syncfusionGauge:CircularRange StartValue="60" EndValue="80" 
+                                                                  Background="#FFFF9800"/>
+                                    <syncfusionGauge:CircularRange StartValue="80" EndValue="100" 
+                                                                  Background="#FF4CAF50"/>
+                                </syncfusionGauge:CircularScale.Ranges>
+                            </syncfusionGauge:CircularScale>
+                        </syncfusionGauge:SfCircularGauge.Scales>
+                    </syncfusionGauge:SfCircularGauge>
+                    <TextBlock Grid.Row="2" Text="{Binding FleetUtilization, StringFormat='Fleet: {0:F0}%'}"
+                               FontSize="10" 
                                HorizontalAlignment="Center" Margin="0,5,0,0"/>
                 </Grid>
             </Border>
@@ -165,8 +215,8 @@
 
                         <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
                             <StackPanel>
-                                <TextBlock Text="📋 Route Data Loading..."
-                                           FontSize="14" 
+                                <TextBlock Text="📋 Recent Routes"
+                                           FontSize="14" FontWeight="SemiBold"
                                            Margin="0,10" HorizontalAlignment="Center"/>
                                 <TextBlock Text="{Binding Routes.Count, StringFormat='Total Routes: {0}'}"
                                            FontSize="12" 
@@ -199,6 +249,9 @@
                                            FontSize="14" 
                                            Margin="0,10" HorizontalAlignment="Center"/>
                                 <TextBlock Text="{Binding Buses.Count, StringFormat='Total Buses: {0}'}"
+                                           FontSize="12" 
+                                           HorizontalAlignment="Center"/>
+                                <TextBlock Text="{Binding ActiveBuses, StringFormat='Active: {0}'}"
                                            FontSize="12" 
                                            HorizontalAlignment="Center"/>
                             </StackPanel>
@@ -237,14 +290,14 @@
 
                             <StackPanel Grid.Column="1" Orientation="Horizontal">
                                 <syncfusion:ButtonAdv Label="🔄 Refresh All"
-                                                     Command="{Binding RefreshAllTilesCommand}"
+                                                     Command="{Binding RefreshCommand}"
                                                      Padding="10,6"
                                                      Margin="0,0,8,0"
                                                      FontSize="12"
                                                      ToolTip="Refresh all dashboard tiles"/>
                                 
                                 <syncfusion:ButtonAdv Label="⚙️ Layout"
-                                                     Command="{Binding ResetTileLayoutCommand}"
+                                                     Command="{Binding RefreshCommand}"
                                                      Padding="10,6"
                                                      FontSize="12"
                                                      ToolTip="Reset tile layout to default"/>
@@ -294,14 +347,11 @@
                                                     <Style TargetType="Border">
                                                         <Setter Property="Background" Value="{DynamicResource BusBuddy.Brush.Priority.Low}"/>
                                                         <Style.Triggers>
-                                                            <DataTrigger Binding="{Binding Priority}" Value="1">
-                                                                <Setter Property="Background" Value="{DynamicResource BusBuddy.Brush.Priority.Critical}"/>
-                                                            </DataTrigger>
                                                             <DataTrigger Binding="{Binding Priority}" Value="2">
                                                                 <Setter Property="Background" Value="{DynamicResource BusBuddy.Brush.Priority.High}"/>
                                                             </DataTrigger>
                                                             <DataTrigger Binding="{Binding Priority}" Value="3">
-                                                                <Setter Property="Background" Value="{DynamicResource BusBuddy.Brush.Priority.Medium}"/>
+                                                                <Setter Property="Background" Value="{DynamicResource BusBuddy.Brush.Priority.Critical}"/>
                                                             </DataTrigger>
                                                         </Style.Triggers>
                                                     </Style>
@@ -309,14 +359,14 @@
                                             </Border>
                                         </Grid>
 
-                                        <!-- Tile Content with Virtualization Support -->
+                                        <!-- Tile Content -->
                                         <ContentPresenter Grid.Row="1"
                                                          Content="{Binding Content}"
-                                                         ContentTemplate="{DynamicResource TileContentTemplate}"
+                                                         ContentTemplate="{StaticResource TileContentTemplate}"
                                                          VerticalAlignment="Stretch"
                                                          HorizontalAlignment="Stretch"/>
 
-                                        <!-- Tile Footer with Performance Status -->
+                                        <!-- Tile Footer -->
                                         <Grid Grid.Row="2" Margin="0,8,0,0">
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="*"/>
@@ -329,41 +379,16 @@
                                                       Foreground="{DynamicResource BusBuddy.Brush.Text.Muted}"
                                                       VerticalAlignment="Center"/>
 
-                                            <StackPanel Grid.Column="1" Orientation="Horizontal">
-                                                <!-- Refresh Indicator -->
-                                                <Border Width="12" Height="12"
-                                                       Background="{DynamicResource BusBuddy.Brush.Status.Loading}"
-                                                       CornerRadius="6"
-                                                       Margin="0,0,4,0"
-                                                       VerticalAlignment="Center"
-                                                       Visibility="{Binding IsRefreshing, Converter={StaticResource BooleanToVisibilityConverter}}">
-                                                    <Border.RenderTransform>
-                                                        <RotateTransform/>
-                                                    </Border.RenderTransform>
-                                                    <Border.Triggers>
-                                                        <EventTrigger RoutedEvent="Border.Loaded">
-                                                            <BeginStoryboard>
-                                                                <Storyboard RepeatBehavior="Forever">
-                                                                    <DoubleAnimation Storyboard.TargetProperty="RenderTransform.Angle"
-                                                                                   From="0" To="360" Duration="0:0:1"/>
-                                                                </Storyboard>
-                                                            </BeginStoryboard>
-                                                        </EventTrigger>
-                                                    </Border.Triggers>
-                                                </Border>
-
-                                                <!-- Quick Action Buttons -->
-                                                <syncfusion:ButtonAdv Label="↻"
-                                                                     Command="{Binding RefreshCommand}"
-                                                                     Width="20" Height="20"
-                                                                     Padding="2"
-                                                                     Background="Transparent"
-                                                                     Foreground="{DynamicResource BusBuddy.Brush.Control.Text}"
-                                                                     BorderThickness="0"
-                                                                     FontSize="10"
-                                                                     ToolTip="Refresh tile data"
-                                                                     Visibility="{Binding IsRefreshing, Converter={StaticResource InverseBooleanToVisibilityConverter}}"/>
-                                            </StackPanel>
+                                            <syncfusion:ButtonAdv Grid.Column="1"
+                                                                 Label="↻"
+                                                                 Command="{Binding RefreshCommand}"
+                                                                 Width="20" Height="20"
+                                                                 Padding="2"
+                                                                 Background="Transparent"
+                                                                 Foreground="{DynamicResource BusBuddy.Brush.Control.Text}"
+                                                                 BorderThickness="0"
+                                                                 FontSize="10"
+                                                                 ToolTip="Refresh tile data"/>
                                         </Grid>
                                     </Grid>
                                 </Border>
@@ -371,6 +396,100 @@
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
                 </Grid>
+            </ContentControl>
+
+            <!-- Route Capacity Chart - docked on the bottom -->
+            <ContentControl x:Name="RouteChartPane"
+                            syncfusion:DockingManager.Header="📊 Route Capacity Chart"
+                            syncfusion:DockingManager.State="Dock"
+                            syncfusion:DockingManager.SideInDockedMode="Bottom"
+                            syncfusion:DockingManager.DesiredHeightInDockedMode="300">
+                <Border CornerRadius="8" Margin="0,10,0,0">
+                    <Grid Margin="20">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <TextBlock Grid.Row="0" Text="📊 Route Capacity Analysis"
+                                   FontSize="18" FontWeight="SemiBold" Margin="0,0,0,15"/>
+
+                        <syncfusionchart:SfChart Grid.Row="1"
+                                                 x:Name="RouteCapacityChart"
+                                                 AreaBorderThickness="0,1,0,0">
+                            <syncfusionchart:SfChart.PrimaryAxis>
+                                <syncfusionchart:CategoryAxis Header="Routes"
+                                                              FontSize="12"
+                                                              LabelRotationAngle="-45"/>
+                            </syncfusionchart:SfChart.PrimaryAxis>
+                            <syncfusionchart:SfChart.SecondaryAxis>
+                                <syncfusionchart:NumericalAxis Header="Capacity/Assigned"
+                                                               FontSize="12"/>
+                            </syncfusionchart:SfChart.SecondaryAxis>
+                            <syncfusionchart:ColumnSeries x:Name="CapacitySeries"
+                                                          ItemsSource="{Binding RouteCapacities}"
+                                                          XBindingPath="RouteName"
+                                                          YBindingPath="Capacity"
+                                                          Label="Capacity">
+                                <syncfusionchart:ColumnSeries.AdornmentsInfo>
+                                    <syncfusionchart:ChartAdornmentInfo ShowLabel="True"/>
+                                </syncfusionchart:ColumnSeries.AdornmentsInfo>
+                            </syncfusionchart:ColumnSeries>
+                            <syncfusionchart:ColumnSeries x:Name="AssignedSeries"
+                                                          ItemsSource="{Binding RouteCapacities}"
+                                                          XBindingPath="RouteName"
+                                                          YBindingPath="Assigned"
+                                                          Label="Assigned">
+                                <syncfusionchart:ColumnSeries.AdornmentsInfo>
+                                    <syncfusionchart:ChartAdornmentInfo ShowLabel="True"/>
+                                </syncfusionchart:ColumnSeries.AdornmentsInfo>
+                            </syncfusionchart:ColumnSeries>
+                        </syncfusionchart:SfChart>
+                    </Grid>
+                </Border>
+            </ContentControl>
+
+            <!-- Upcoming Events Scheduler - document tab -->
+            <ContentControl x:Name="SchedulerDocument"
+                            syncfusion:DockingManager.Header="📅 Upcoming Events"
+                            syncfusion:DockingManager.State="Document">
+                <Border CornerRadius="8" Margin="15">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <TextBlock Grid.Row="0" Text="📅 Event Schedule"
+                                  FontSize="16" FontWeight="SemiBold"
+                                  Margin="0,0,0,15"/>
+
+                        <ListView Grid.Row="1" 
+                                  ItemsSource="{Binding UpcomingEvents}"
+                                  Background="Transparent"
+                                  BorderThickness="0">
+                            <ListView.ItemTemplate>
+                                <DataTemplate>
+                                    <Border CornerRadius="4" Padding="10" Margin="0,2" Background="{DynamicResource ContentBackgroundBrush}">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            <StackPanel Grid.Column="0">
+                                                <TextBlock Text="{Binding EventName}" FontWeight="SemiBold"/>
+                                                <TextBlock Text="{Binding StartTime, StringFormat='{}{0:MMM dd, yyyy HH:mm}'}" FontSize="12" Foreground="{DynamicResource SecondaryTextBrush}"/>
+                                                <TextBlock Text="{Binding Location}" FontSize="12" Foreground="{DynamicResource SecondaryTextBrush}"/>
+                                            </StackPanel>
+                                            <TextBlock Grid.Column="1" Text="{Binding Status}" 
+                                                      FontSize="12" VerticalAlignment="Center"/>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ListView.ItemTemplate>
+                        </ListView>
+                    </Grid>
+                </Border>
             </ContentControl>
         </syncfusion:DockingManager>
 

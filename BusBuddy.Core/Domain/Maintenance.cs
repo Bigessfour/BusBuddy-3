@@ -136,6 +136,7 @@ public class Maintenance : INotifyPropertyChanged
             _ => "Major"
         };
     }
+    public object Bus { get; internal set; }
 
     // INotifyPropertyChanged implementation for Syncfusion data binding
     public event PropertyChangedEventHandler? PropertyChanged;

@@ -19,12 +19,14 @@ public class RouteAssignment
     public Route? Route { get; set; }
 
     [Required]
-    public int VehicleId { get; set; }
-    [ForeignKey("VehicleId")]
-    public Bus? Vehicle { get; set; }
+    [Column("BusId")]
+    public int BusId { get; set; }
+    [ForeignKey("BusId")]
+    public Bus? Bus { get; set; }
 
     [Required]
     public DateTime AssignmentDate { get; set; } = DateTime.Today;
+
     [Flags]
     public enum DaysOfWeek
     {
@@ -37,4 +39,7 @@ public class RouteAssignment
         Saturday = 32,
         Sunday = 64
     }
+
+    // Navigation property back to Students assigned to this route
+    public virtual ICollection<Student> Students { get; set; } = new List<Student>();
 }

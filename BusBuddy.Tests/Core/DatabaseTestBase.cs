@@ -11,6 +11,7 @@ using BusBuddy.Core.Domain;
 using BusBuddy.Core.Services;
 using System.Linq;
 using BusBuddy.Core.Services.Interfaces;
+using Syncfusion.Licensing;
 
 namespace BusBuddy.Tests.Core
 {
@@ -33,6 +34,13 @@ namespace BusBuddy.Tests.Core
         [OneTimeSetUp]
         public virtual void OneTimeSetUp()
         {
+            // Register Syncfusion license for tests
+            var licenseKey = Environment.GetEnvironmentVariable("SYNCFUSION_LICENSE_KEY");
+            if (!string.IsNullOrEmpty(licenseKey))
+            {
+                SyncfusionLicenseProvider.RegisterLicense(licenseKey);
+            }
+
             // Set environment variable to force in-memory database for tests
             Environment.SetEnvironmentVariable("BUSBUDDY_USE_INMEMORY", "1");
 
@@ -54,8 +62,7 @@ namespace BusBuddy.Tests.Core
 
             var services = new ServiceCollection();
             services.AddSingleton<IConfiguration>(configuration);
-            services.AddMemoryCache(); // Add memory cache for IEnhancedCachingService
-            services.AddSingleton<IEnhancedCachingService, EnhancedCachingService>();
+            services.AddMemoryCache(); // Keep memory cache for other services
             
             // Register the factory - it will handle DbContext creation with shared in-memory database
             services.AddScoped<IBusBuddyDbContextFactory, BusBuddyDbContextFactory>();

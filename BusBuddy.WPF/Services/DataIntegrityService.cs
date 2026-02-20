@@ -13,7 +13,7 @@ namespace BusBuddy.WPF.Services
 {
     /// <summary>
     /// Service for validating data integrity across all transportation entities
-    /// Provides comprehensive validation for routes, activities, students, drivers, and vehicles
+    /// Provides comprehensive validation for routes, activities, students, drivers, and buses
     /// </summary>
     public class DataIntegrityService : IDataIntegrityService
     {
@@ -53,7 +53,7 @@ namespace BusBuddy.WPF.Services
                 var activityValidation = await ValidateActivitiesAsync();
                 var studentValidation = await ValidateStudentsAsync();
                 var driverValidation = await ValidateDriversAsync();
-                var vehicleValidation = await ValidateVehiclesAsync();
+                var busValidation = await ValidateBusesAsync();
                 var crossValidation = await ValidateCrossEntityRelationshipsAsync();
 
                 // Combine all validation results
@@ -61,7 +61,7 @@ namespace BusBuddy.WPF.Services
                 report.ActivityIssues = activityValidation;
                 report.StudentIssues = studentValidation;
                 report.DriverIssues = driverValidation;
-                report.VehicleIssues = vehicleValidation;
+                report.VehicleIssues = busValidation;
                 report.CrossEntityIssues = crossValidation;
 
                 report.TotalIssuesFound =
@@ -69,7 +69,7 @@ namespace BusBuddy.WPF.Services
                     activityValidation.Count +
                     studentValidation.Count +
                     driverValidation.Count +
-                    vehicleValidation.Count +
+                    busValidation.Count +
                     crossValidation.Count;
 
                 Logger.Information("Data integrity validation completed. Total issues found: {IssueCount}", report.TotalIssuesFound);
@@ -126,19 +126,19 @@ namespace BusBuddy.WPF.Services
                     }
 
                     // Validate vehicle assignments
-                    if (route.AMVehicleId.HasValue && route.AMVehicleId <= 0)
+                    if (route.AMBusId.HasValue && route.AMBusId <= 0)
                     {
                         issues.Add(new DataIntegrityIssue
                         {
                             EntityType = "Route",
                             EntityId = route.RouteId.ToString(System.Globalization.CultureInfo.InvariantCulture),
                             IssueType = "Invalid Data Format",
-                            Description = "AM Vehicle ID must be greater than 0 if assigned",
+                            Description = "AM Bus ID must be greater than 0 if assigned",
                             Severity = "High"
                         });
                     }
 
-                    if (route.PMVehicleId.HasValue && route.PMVehicleId <= 0)
+                    if (route.PMBusId.HasValue && route.PMBusId <= 0)
                     {
                         issues.Add(new DataIntegrityIssue
                         {
@@ -623,69 +623,69 @@ namespace BusBuddy.WPF.Services
         }
 
         /// <summary>
-        /// Validate vehicle data integrity
+        /// Validate bus data integrity
         /// </summary>
-        public async Task<List<DataIntegrityIssue>> ValidateVehiclesAsync()
+        public async Task<List<DataIntegrityIssue>> ValidateBusesAsync()
         {
             var issues = new List<DataIntegrityIssue>();
 
             try
             {
-                var vehicles = await _busService.GetAllBusesAsync();
+                var buses = await _busService.GetAllBusesAsync();
 
-                foreach (var vehicle in vehicles)
+                foreach (var bus in buses)
                 {
-                    // Validate vehicle number/bus number
-                    if (string.IsNullOrWhiteSpace(vehicle.BusNumber))
+                    // Validate bus number/bus number
+                    if (string.IsNullOrWhiteSpace(bus.BusNumber))
                     {
                         issues.Add(new DataIntegrityIssue
                         {
-                            EntityType = "Vehicle",
-                            EntityId = vehicle.BusId.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                            EntityType = "Bus",
+                            EntityId = bus.BusId.ToString(System.Globalization.CultureInfo.InvariantCulture),
                             IssueType = "Missing Required Data",
                             Description = "Bus number is required",
                             Severity = "High"
                         });
                     }
 
-                    // Validate vehicle status
-                    if (string.IsNullOrWhiteSpace(vehicle.Status))
+                    // Validate bus status
+                    if (string.IsNullOrWhiteSpace(bus.Status))
                     {
                         issues.Add(new DataIntegrityIssue
                         {
-                            EntityType = "Vehicle",
-                            EntityId = vehicle.BusId.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                            EntityType = "Bus",
+                            EntityId = bus.BusId.ToString(System.Globalization.CultureInfo.InvariantCulture),
                             IssueType = "Missing Required Data",
-                            Description = "Vehicle status is required",
+                            Description = "Bus status is required",
                             Severity = "Medium"
                         });
                     }
 
                     // Validate make and model for better tracking
-                    if (string.IsNullOrWhiteSpace(vehicle.Make) && string.IsNullOrWhiteSpace(vehicle.Model))
+                    if (string.IsNullOrWhiteSpace(bus.Make) && string.IsNullOrWhiteSpace(bus.Model))
                     {
                         issues.Add(new DataIntegrityIssue
                         {
-                            EntityType = "Vehicle",
-                            EntityId = vehicle.BusId.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                            EntityType = "Bus",
+                            EntityId = bus.BusId.ToString(System.Globalization.CultureInfo.InvariantCulture),
                             IssueType = "Missing Required Data",
-                            Description = "Vehicle make and model information is missing",
+                            Description = "Bus make and model information is missing",
                             Severity = "Low"
                         });
                     }
                 }
 
-                Logger.Information("Vehicle validation completed. Found {IssueCount} issues", issues.Count);
+                Logger.Information("Bus validation completed. Found {IssueCount} issues", issues.Count);
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Error during vehicle validation");
+                Logger.Error(ex, "Error during bus validation");
                 issues.Add(new DataIntegrityIssue
                 {
-                    EntityType = "Vehicle",
+                    EntityType = "Bus",
                     EntityId = "System",
                     IssueType = "Validation Error",
-                    Description = $"Vehicle validation failed: {ex.Message}",
+                    Description = $"Bus validation failed: {ex.Message}",
                     Severity = "Critical"
                 });
             }
@@ -813,9 +813,9 @@ namespace BusBuddy.WPF.Services
                         issues.AddRange(driverIssues.Where(i => i.EntityId == entityId.ToString(System.Globalization.CultureInfo.InvariantCulture)));
                         break;
 
-                    case "vehicle":
-                        var vehicleIssues = await ValidateVehiclesAsync();
-                        issues.AddRange(vehicleIssues.Where(i => i.EntityId == entityId.ToString(System.Globalization.CultureInfo.InvariantCulture)));
+                    case "bus":
+                        var busIssues = await ValidateBusesAsync();
+                        issues.AddRange(busIssues.Where(i => i.EntityId == entityId.ToString(System.Globalization.CultureInfo.InvariantCulture)));
                         break;
 
                     default:
@@ -847,6 +847,11 @@ namespace BusBuddy.WPF.Services
             }
 
             return issues;
+        }
+
+        public Task<List<DataIntegrityIssue>> ValidateVehiclesAsync()
+        {
+            throw new NotImplementedException();
         }
     }
 }

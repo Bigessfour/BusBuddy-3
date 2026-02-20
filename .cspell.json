@@ -2,11 +2,17 @@
   "version": "0.2",
   "language": "en-US",
   "allowCompoundWords": true,
-  "dictionaries": ["en-US", "project-dictionary"],
+  "dictionaries": ["en-US", "project-dictionary", "spelling-exclusions"],
   "dictionaryDefinitions": [
     {
       "name": "project-dictionary",
-      "path": "./project-dictionary.txt"
+      "path": "./project-dictionary.txt",
+      "description": "BusBuddy project-specific terms and technical vocabulary"
+    },
+    {
+      "name": "spelling-exclusions",
+      "path": "./spelling-exclusions.dic",
+      "description": "Words to exclude from spell checking"
     }
   ],
   "ignoreWords": [
@@ -16,7 +22,12 @@
     "DBATOOLS",
     "MODULEINFO",
     "PSSCRIPTANALYZER",
-    "tojson"
+    "tojson",
+    "nunit",
+    "OTBS",
+    "Fira",
+    "Exif",
+    "cref"
   ],
   "languageSettings": [
     {
@@ -36,6 +47,37 @@
     {
       "filename": "**/*.psm1",
       "allowCompoundWords": true
+    },
+    {
+      "filename": "**/*.xaml",
+      "allowCompoundWords": true
+    },
+    {
+      "filename": "**/*.json",
+      "allowCompoundWords": true
+    },
+    {
+      "filename": "**/*.yaml",
+      "allowCompoundWords": true
+    },
+    {
+      "filename": "**/*.yml",
+      "allowCompoundWords": true
     }
+  ],
+  "ignorePaths": [
+    "**/bin/**",
+    "**/obj/**",
+    "**/TestResults/**",
+    "**/.trunk/**",
+    "**/node_modules/**",
+    "**/packages/**",
+    "**/*.log",
+    "**/*.tmp",
+    "**/BusBuddy.db*",
+    "**/appsettings.*.json",
+    "**/*.user",
+    "**/*.suo",
+    "**/.vs/**"
   ]
 }

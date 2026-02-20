@@ -26,8 +26,8 @@ public class Fuel : INotifyPropertyChanged
     public string FuelLocation { get; set; } = string.Empty; // Key Pumps or Gas Station
 
     [Required]
-    [ForeignKey("Vehicle")]
-    [Display(Name = "Vehicle Fueled")]
+    [ForeignKey("Bus")]
+    [Display(Name = "Bus Fueled")]
     public int VehicleFueledId { get; set; }
 
     [Required]
@@ -57,7 +57,11 @@ public class Fuel : INotifyPropertyChanged
     public string? Notes { get; set; }
 
     // Navigation properties
-    public virtual Bus Vehicle { get; set; } = null!;
+    public virtual Bus Bus { get; set; } = null!;
+
+    // Backwards-compatible alias
+    [NotMapped]
+    public virtual Bus Vehicle => Bus;
 
     // INotifyPropertyChanged implementation for Syncfusion data binding
     public event PropertyChangedEventHandler? PropertyChanged;

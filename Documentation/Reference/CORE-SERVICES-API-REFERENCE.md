@@ -256,14 +256,14 @@ public interface ISportsSchedulingService
 
 ```csharp
 /// <summary>
-/// Vehicle maintenance tracking and scheduling
+/// Bus maintenance tracking and scheduling
 /// </summary>
 public interface IMaintenanceService
 {
-    Task<Result<List<MaintenanceRecord>>> GetMaintenanceHistoryAsync(int vehicleId);
+    Task<Result<List<MaintenanceRecord>>> GetMaintenanceHistoryAsync(int busId);
     Task<Result<MaintenanceRecord>> CreateMaintenanceRecordAsync(CreateMaintenanceRequest request);
     Task<Result<List<MaintenanceReminder>>> GetUpcomingMaintenanceAsync();
-    Task<Result<List<Vehicle>>> GetVehiclesDueForMaintenanceAsync();
+    Task<Result<List<Bus>>> GetBusesDueForMaintenanceAsync();
     Task<Result<MaintenanceSchedule>> ScheduleMaintenanceAsync(ScheduleMaintenanceRequest request);
     Task<Result<bool>> CompleteMaintenanceAsync(int recordId, CompleteMaintenanceRequest request);
 }

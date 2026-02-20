@@ -353,9 +353,9 @@ namespace BusBuddy.Core.Data
             _ = entity.Property(e => e.Description).HasMaxLength(500);
 
             // Foreign key column mappings
-            _ = entity.Property(e => e.AMVehicleId).HasColumnName("AMVehicleID");
+            _ = entity.Property(e => e.AMBusId).HasColumnName("AMBusID");
             _ = entity.Property(e => e.AMDriverId).HasColumnName("AMDriverID");
-            _ = entity.Property(e => e.PMVehicleId).HasColumnName("PMVehicleID");
+            _ = entity.Property(e => e.PMBusId).HasColumnName("PMBusID");
             _ = entity.Property(e => e.PMDriverId).HasColumnName("PMDriverID");
 
             // Decimal properties
@@ -365,11 +365,11 @@ namespace BusBuddy.Core.Data
             _ = entity.Property(e => e.PMEndMiles).HasColumnType("decimal(10,2)");
 
             // Configure AM relationships
-            _ = entity.HasOne(r => r.AMVehicle)
-                  .WithMany(v => v.AMRoutes)
-                  .HasForeignKey(r => r.AMVehicleId)
+            _ = entity.HasOne(r => r.AMBus)
+                  .WithMany(b => b.AMRoutes)
+                  .HasForeignKey(r => r.AMBusId)
                   .OnDelete(Microsoft.EntityFrameworkCore.DeleteBehavior.Restrict)
-                  .HasConstraintName("FK_Routes_AMVehicle");
+                  .HasConstraintName("FK_Routes_AMBus");
 
             _ = entity.HasOne(r => r.AMDriver)
                   .WithMany(d => d.AMRoutes)
@@ -378,11 +378,11 @@ namespace BusBuddy.Core.Data
                   .HasConstraintName("FK_Routes_AMDriver");
 
             // Configure PM relationships
-            _ = entity.HasOne(r => r.PMVehicle)
-                  .WithMany(v => v.PMRoutes)
-                  .HasForeignKey(r => r.PMVehicleId)
+            _ = entity.HasOne(r => r.PMBus)
+                  .WithMany(b => b.PMRoutes)
+                  .HasForeignKey(r => r.PMBusId)
                   .OnDelete(DeleteBehavior.Restrict)
-                  .HasConstraintName("FK_Routes_PMVehicle");
+                  .HasConstraintName("FK_Routes_PMDriver");
 
             _ = entity.HasOne(r => r.PMDriver)
                   .WithMany(d => d.PMRoutes)
@@ -394,8 +394,8 @@ namespace BusBuddy.Core.Data
             _ = entity.HasIndex(e => e.Date).HasDatabaseName("IX_Routes_Date");
             _ = entity.HasIndex(e => e.RouteName).HasDatabaseName("IX_Routes_RouteName");
             _ = entity.HasIndex(e => new { e.Date, e.RouteName }).IsUnique().HasDatabaseName("IX_Routes_DateRouteName");
-            _ = entity.HasIndex(e => e.AMVehicleId).HasDatabaseName("IX_Routes_AMVehicleId");
-            _ = entity.HasIndex(e => e.PMVehicleId).HasDatabaseName("IX_Routes_PMVehicleId");
+            _ = entity.HasIndex(e => e.AMBusId).HasDatabaseName("IX_Routes_AMBusId");
+            _ = entity.HasIndex(e => e.PMBusId).HasDatabaseName("IX_Routes_PMBusId");
             _ = entity.HasIndex(e => e.AMDriverId).HasDatabaseName("IX_Routes_AMDriverId");
             _ = entity.HasIndex(e => e.PMDriverId).HasDatabaseName("IX_Routes_PMDriverId");
 
@@ -430,11 +430,11 @@ namespace BusBuddy.Core.Data
             _ = entity.Property(e => e.CreatedDate).HasDefaultValueSql("GETUTCDATE()");
 
             // Relationships
-            _ = entity.HasOne(a => a.AssignedVehicle)
-                  .WithMany(v => v.Activities)
-                  .HasForeignKey(a => a.AssignedVehicleId)
+            _ = entity.HasOne(a => a.AssignedBus)
+                  .WithMany(b => b.Activities)
+                  .HasForeignKey(a => a.AssignedBusId)
                   .OnDelete(DeleteBehavior.Restrict)
-                  .HasConstraintName("FK_Activities_Vehicle");
+                  .HasConstraintName("FK_Activities_Bus");
 
             _ = entity.HasOne(a => a.Driver)
                   .WithMany(d => d.Activities)
@@ -452,11 +452,11 @@ namespace BusBuddy.Core.Data
             _ = entity.HasIndex(e => e.Date).HasDatabaseName("IX_Activities_Date");
             _ = entity.HasIndex(e => e.ActivityType).HasDatabaseName("IX_Activities_ActivityType");
             _ = entity.HasIndex(e => e.Status).HasDatabaseName("IX_Activities_Status");
-            _ = entity.HasIndex(e => e.AssignedVehicleId).HasDatabaseName("IX_Activities_VehicleId");
+            _ = entity.HasIndex(e => e.AssignedBusId).HasDatabaseName("IX_Activities_BusId");
             _ = entity.HasIndex(e => e.DriverId).HasDatabaseName("IX_Activities_DriverId");
             _ = entity.HasIndex(e => e.RouteId).HasDatabaseName("IX_Activities_RouteId");
             _ = entity.HasIndex(e => new { e.Date, e.LeaveTime, e.EventTime }).HasDatabaseName("IX_Activities_DateTimeRange");
-            _ = entity.HasIndex(e => new { e.AssignedVehicleId, e.Date, e.LeaveTime }).HasDatabaseName("IX_Activities_BusSchedule");
+            _ = entity.HasIndex(e => new { e.AssignedBusId, e.Date, e.LeaveTime }).HasDatabaseName("IX_Activities_BusSchedule");
             _ = entity.HasIndex(e => new { e.DriverId, e.Date, e.LeaveTime }).HasDatabaseName("IX_Activities_DriverSchedule");
             _ = entity.HasIndex(e => e.ApprovalRequired).HasDatabaseName("IX_Activities_ApprovalRequired");
         });
@@ -478,16 +478,16 @@ namespace BusBuddy.Core.Data
             _ = entity.Property(e => e.TotalCost).HasColumnType("decimal(10,2)");
 
             // Relationships
-            _ = entity.HasOne(f => f.Vehicle)
-                  .WithMany(v => v.FuelRecords)
+            _ = entity.HasOne(f => f.Bus)
+                  .WithMany(b => b.FuelRecords)
                   .HasForeignKey(f => f.VehicleFueledId)
                   .OnDelete(DeleteBehavior.Restrict)
-                  .HasConstraintName("FK_Fuel_Vehicle");
+                  .HasConstraintName("FK_Fuel_Bus");
 
             // Indexes
             _ = entity.HasIndex(e => e.FuelDate).HasDatabaseName("IX_Fuel_FuelDate");
-            _ = entity.HasIndex(e => e.VehicleFueledId).HasDatabaseName("IX_Fuel_VehicleId");
-            _ = entity.HasIndex(e => new { e.VehicleFueledId, e.FuelDate }).HasDatabaseName("IX_Fuel_VehicleDate");
+            _ = entity.HasIndex(e => e.VehicleFueledId).HasDatabaseName("IX_Fuel_BusId");
+            _ = entity.HasIndex(e => new { e.VehicleFueledId, e.FuelDate }).HasDatabaseName("IX_Fuel_BusDate");
             _ = entity.HasIndex(e => e.FuelLocation).HasDatabaseName("IX_Fuel_Location");
             _ = entity.HasIndex(e => e.FuelType).HasDatabaseName("IX_Fuel_Type");
         });
@@ -518,13 +518,13 @@ namespace BusBuddy.Core.Data
                   .WithMany(v => v.MaintenanceRecords)
                   .HasForeignKey(m => m.VehicleId)
                   .OnDelete(DeleteBehavior.Restrict)
-                  .HasConstraintName("FK_Maintenance_Vehicle");
+                  .HasConstraintName("FK_Maintenance_Bus");
 
             // Indexes
             _ = entity.HasIndex(e => e.Date).HasDatabaseName("IX_Maintenance_Date");
-            _ = entity.HasIndex(e => e.VehicleId).HasDatabaseName("IX_Maintenance_VehicleId");
+            _ = entity.HasIndex(e => e.VehicleId).HasDatabaseName("IX_Maintenance_BusId");
             _ = entity.HasIndex(e => e.MaintenanceCompleted).HasDatabaseName("IX_Maintenance_Type");
-            _ = entity.HasIndex(e => new { e.VehicleId, e.Date }).HasDatabaseName("IX_Maintenance_VehicleDate");
+            _ = entity.HasIndex(e => new { e.VehicleId, e.Date }).HasDatabaseName("IX_Maintenance_BusDate");
             _ = entity.HasIndex(e => e.Priority).HasDatabaseName("IX_Maintenance_Priority");
         });
 
@@ -692,10 +692,10 @@ namespace BusBuddy.Core.Data
 
             // Relationships - TripEvents are now only related through ActivitySchedule
             _ = entity.HasOne(te => te.Vehicle)
-                  .WithMany()  // No back-reference from Vehicle to TripEvents
+                  .WithMany()  // No back-reference from Bus to TripEvents
                   .HasForeignKey(te => te.VehicleId)
                   .OnDelete(DeleteBehavior.Restrict)
-                  .HasConstraintName("FK_TripEvents_Vehicle");
+                  .HasConstraintName("FK_TripEvents_Bus");
 
             _ = entity.HasOne(te => te.Driver)
                   .WithMany()  // No back-reference from Driver to TripEvents
@@ -713,7 +713,7 @@ namespace BusBuddy.Core.Data
             _ = entity.HasIndex(e => e.LeaveTime).HasDatabaseName("IX_TripEvents_LeaveTime");
             _ = entity.HasIndex(e => e.Type).HasDatabaseName("IX_TripEvents_Type");
             _ = entity.HasIndex(e => e.Status).HasDatabaseName("IX_TripEvents_Status");
-            _ = entity.HasIndex(e => e.VehicleId).HasDatabaseName("IX_TripEvents_VehicleId");
+            _ = entity.HasIndex(e => e.VehicleId).HasDatabaseName("IX_TripEvents_BusId");
             _ = entity.HasIndex(e => e.DriverId).HasDatabaseName("IX_TripEvents_DriverId");
             _ = entity.HasIndex(e => e.RouteId).HasDatabaseName("IX_TripEvents_RouteId");
             _ = entity.HasIndex(e => new { e.VehicleId, e.LeaveTime }).HasDatabaseName("IX_TripEvents_BusSchedule");
@@ -780,7 +780,7 @@ namespace BusBuddy.Core.Data
                   .WithMany(v => v.ScheduledActivities)
                   .HasForeignKey(ash => ash.ScheduledVehicleId)
                   .OnDelete(DeleteBehavior.Restrict)
-                  .HasConstraintName("FK_ActivitySchedule_Vehicle");
+                  .HasConstraintName("FK_ActivitySchedule_Bus");
 
             _ = entity.HasOne(ash => ash.ScheduledDriver)
                   .WithMany(d => d.ScheduledActivities)
@@ -791,7 +791,7 @@ namespace BusBuddy.Core.Data
             // Indexes
             _ = entity.HasIndex(e => e.ScheduledDate).HasDatabaseName("IX_ActivitySchedule_Date");
             _ = entity.HasIndex(e => e.TripType).HasDatabaseName("IX_ActivitySchedule_TripType");
-            _ = entity.HasIndex(e => e.ScheduledVehicleId).HasDatabaseName("IX_ActivitySchedule_VehicleId");
+            _ = entity.HasIndex(e => e.ScheduledVehicleId).HasDatabaseName("IX_ActivitySchedule_BusId");
             _ = entity.HasIndex(e => e.ScheduledDriverId).HasDatabaseName("IX_ActivitySchedule_DriverId");
         });
 
@@ -817,12 +817,12 @@ namespace BusBuddy.Core.Data
             _ = entity.Property(e => e.EstimatedSavings).HasColumnType("decimal(10,2)");
             _ = entity.Property(e => e.Tags).HasMaxLength(500);
 
-            // Relationships
+            // Relationships - AI Insights can be linked to Bus and Route
             _ = entity.HasOne(ai => ai.Vehicle)
                   .WithMany()
                   .HasForeignKey(ai => ai.VehicleId)
                   .OnDelete(DeleteBehavior.SetNull)
-                  .HasConstraintName("FK_AIInsights_Vehicle");
+                  .HasConstraintName("FK_AIInsights_Bus");
 
             _ = entity.HasOne(ai => ai.Route)
                   .WithMany()
@@ -843,7 +843,7 @@ namespace BusBuddy.Core.Data
             _ = entity.HasIndex(e => e.CreatedDate).HasDatabaseName("IX_AIInsights_CreatedDate");
             _ = entity.HasIndex(e => e.ConfidenceScore).HasDatabaseName("IX_AIInsights_ConfidenceScore");
             _ = entity.HasIndex(e => new { e.InsightType, e.Status }).HasDatabaseName("IX_AIInsights_TypeStatus");
-            _ = entity.HasIndex(e => new { e.VehicleId, e.InsightType }).HasDatabaseName("IX_AIInsights_VehicleType");
+            _ = entity.HasIndex(e => new { e.VehicleId, e.InsightType }).HasDatabaseName("IX_AIInsights_BusType");
             _ = entity.HasIndex(e => new { e.RouteId, e.InsightType }).HasDatabaseName("IX_AIInsights_RouteType");
             _ = entity.HasIndex(e => new { e.DriverId, e.InsightType }).HasDatabaseName("IX_AIInsights_DriverType");
             _ = entity.HasIndex(e => e.ExpiryDate).HasDatabaseName("IX_AIInsights_ExpiryDate");
@@ -958,6 +958,43 @@ namespace BusBuddy.Core.Data
                 }
             }
         }
+
+        // Configure RouteAssignment entity with proper relationships
+        _ = modelBuilder.Entity<RouteAssignment>(entity =>
+        {
+            _ = entity.ToTable("RouteAssignments");
+            _ = entity.HasKey(e => e.RouteAssignmentId);
+
+            // Properties
+            _ = entity.Property(e => e.AssignmentDate).IsRequired();
+            _ = entity.Property(e => e.RouteId).IsRequired();
+            _ = entity.Property(e => e.BusId).IsRequired().HasColumnName("BusId");
+
+            // Relationships
+            _ = entity.HasOne(ra => ra.Route)
+                  .WithMany()  // Route doesn't have a collection of RouteAssignments
+                  .HasForeignKey(ra => ra.RouteId)
+                  .OnDelete(DeleteBehavior.Restrict)
+                  .HasConstraintName("FK_RouteAssignments_Route");
+
+            _ = entity.HasOne(ra => ra.Bus)
+                  .WithMany()  // Bus doesn't have a collection of RouteAssignments
+                  .HasForeignKey(ra => ra.BusId)
+                  .OnDelete(DeleteBehavior.Restrict)
+                  .HasConstraintName("FK_RouteAssignments_Bus");
+
+            // One-to-many relationship with Students
+            _ = entity.HasMany(ra => ra.Students)
+                  .WithOne(s => s.RouteAssignment)
+                  .HasForeignKey(s => s.RouteAssignmentId)
+                  .OnDelete(DeleteBehavior.SetNull)
+                  .HasConstraintName("FK_Students_RouteAssignment");
+
+            // Indexes for performance
+            _ = entity.HasIndex(e => e.RouteId).HasDatabaseName("IX_RouteAssignments_RouteId");
+            _ = entity.HasIndex(e => e.BusId).HasDatabaseName("IX_RouteAssignments_BusId");
+            _ = entity.HasIndex(e => new { e.RouteId, e.AssignmentDate }).HasDatabaseName("IX_RouteAssignments_RouteDate");
+        });
     }
 
     private static void SeedData(ModelBuilder modelBuilder)

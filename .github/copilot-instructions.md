@@ -6,7 +6,7 @@
 
 ## 🚫 **STRICT RULES: MUST FOLLOW OR REFUSE SUGGESTION**
 
-1. **ALWAYS USE DIRECT DOTNET COMMANDS EXCLUSIVELY**: NEVER suggest PowerShell commands or bb-* commands. ALWAYS use direct dotnet CLI commands (e.g., `dotnet build` instead of `bb-build`). If dotnet CLI cannot accomplish the task, suggest creating a direct .NET solution.
+1. **ALWAYS USE DIRECT DOTNET COMMANDS EXCLUSIVELY**: NEVER suggest PowerShell commands or bb-\* commands. ALWAYS use direct dotnet CLI commands (e.g., `dotnet build` instead of `bb-build`). If dotnet CLI cannot accomplish the task, suggest creating a direct .NET solution.
 
 2. **NEVER INTRODUCE REGRESSIONS**: ALWAYS run `dotnet build` and `dotnet test` in suggestions. If a change could break student entry, route assignment, or UI consistency, ABORT and warn: "This risks regression—run dotnet build first."
 
@@ -59,7 +59,7 @@
 
 **CRITICAL: Use Direct .NET CLI Commands First**
 
-- **Always use direct `dotnet` commands** instead of PowerShell or bb-* commands
+- **Always use direct `dotnet` commands** instead of PowerShell or bb-\* commands
 - **Check available commands**: Use `dotnet --help` to see all options
 - **Health checks**: Use `dotnet build` and `dotnet test` before troubleshooting
 - **Quality validation**: Use `dotnet build && dotnet test` to ensure excellent functionality
@@ -139,39 +139,26 @@ trunk check --scope security         # Security analysis
 @analyze-fleet-performance efficiency "last 30 days"
 ```
 
-**MCP Server Activation Tools:**
-When working with Azure resources or needing specific MCP capabilities, activate the appropriate MCP tool category first:
-
-- **Azure Activity Logging**: Use `activate_azure_activity_logging` for monitoring Azure resource activity logs
-- **Azure Diagnostics**: Use `activate_azure_diagnostics_tools` for application performance and operational diagnostics
-- **Azure Architecture Design**: Use `activate_azure_architecture_design` for cloud architecture guidance and recommendations
-- **Azure Authentication**: Use `activate_azure_authentication_management` for managing Azure authentication states and subscriptions
-- **Azure Deployment**: Use `activate_azure_deployment_tools` for Azure resource deployment and provisioning
-- **Azure Bicep Management**: Use `activate_azure_bicep_management` for Infrastructure as Code with Bicep templates
-- **Azure CLI Tools**: Use `activate_azure_cli_tools` for generating Azure CLI commands
-- **Azure DevOps Guidance**: Use `activate_azure_devops_guidance` for CI/CD pipeline setup
-- **Azure .NET Templates**: Use `activate_azure_dotnet_templates` for .NET application templates
-- **Azure App Logs**: Use `activate_azure_app_logs_management` for retrieving application logs from Azure
-- **Azure Service Recommendation**: Use `activate_azure_service_recommendation` for cloud service deployment guidance
-- **Azure Development Tools**: Use `activate_azure_development_tools` for development workflow optimization
-- **Azure Container Management**: Use `activate_azure_container_management` for Azure container services (ACR, AKS, Functions, etc.)
-- **Azure Database Management**: Use `activate_azure_database_management` for Azure database services (MySQL, PostgreSQL, Cosmos DB, etc.)
-- **Azure Monitoring**: Use `activate_azure_monitoring_and_logging` for Azure monitoring and logging services
-- **Azure Configuration**: Use `activate_azure_configuration_and_deployment` for Azure configuration and deployment management
-- **Azure Best Practices**: Use `activate_azure_best_practices_and_guidance` for Azure best practices and architecture guidance
-- **Azure Resource Management**: Use `activate_azure_resource_management` for Azure resource querying and management
-- **Azure Resource Management (VSCode)**: Use `activate_vscode_azu_azure_resource_management` for VS Code Azure resource management integration
-
-**Example MCP Activation:**
+**MCP Tool Usage in Copilot Chat:**
 
 ```markdown
-# Before working with Azure resources
+# Search Microsoft documentation
 
-@activate_azure_resource_management
+@search-docs "Entity Framework Core best practices"
 
-# Then use Azure tools
+# Query Azure resources
 
-@azure_resources list-resource-groups
+@azure-resources list-resource-groups
+
+# Use BusBuddy-specific tools
+
+@busbuddy-project list-tables
+@busbuddy-project describe-table Students
+
+# AI-powered analysis
+
+@optimize-routes "minimize fuel consumption for route 123"
+@analyze-fleet-performance efficiency "last 30 days"
 ```
 
 **VS Code MCP Server Activation:**
@@ -702,6 +689,7 @@ var entities = await _entityService.GetEntitiesAsync();
 **Official NUnit Download**: https://nunit.org/download/
 
 **Package Versions (Directory.Packages.props):**
+
 - **NUnit**: 4.2.2 (Latest stable)
 - **NUnit3TestAdapter**: 4.6.0 (VS Test Explorer integration)
 - **Microsoft.NET.Test.Sdk**: 17.11.1 (Test platform)
@@ -710,6 +698,7 @@ var entities = await _entityService.GetEntitiesAsync();
 - **coverlet.collector**: 6.0.0 (Code coverage)
 
 **Installation Commands:**
+
 ```bash
 # Add NUnit packages to test project
 dotnet add BusBuddy.Tests package NUnit --version 4.2.2
@@ -721,6 +710,7 @@ dotnet add BusBuddy.Tests package coverlet.collector --version 6.0.0
 ```
 
 **Test Project Configuration (.csproj):**
+
 ```xml
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
@@ -749,6 +739,7 @@ dotnet add BusBuddy.Tests package coverlet.collector --version 6.0.0
 ```
 
 **Running Tests:**
+
 ```bash
 # Run all tests
 dotnet test BusBuddy.sln --configuration Debug --logger trx --collect "XPlat Code Coverage"
@@ -764,6 +755,7 @@ dotnet test BusBuddy.sln --configuration Release --logger trx --collect "XPlat C
 ```
 
 **Test Structure Standards:**
+
 - **Unit Tests**: Create comprehensive unit tests for all business logic and ViewModels
 - **Integration Tests**: Test service interactions and data layer operations
 - **Null Handling Tests**: Specifically test null scenarios and edge cases
@@ -776,6 +768,7 @@ dotnet test BusBuddy.sln --configuration Release --logger trx --collect "XPlat C
 ### **TestDbContextFactory Pattern**
 
 **Required for All Database Tests:**
+
 ```csharp
 public class TestDbContextFactory : IDisposable
 {
@@ -805,6 +798,7 @@ public class TestDbContextFactory : IDisposable
 ```
 
 **Usage in Tests:**
+
 ```csharp
 [TestFixture]
 public class StudentServiceTests
@@ -835,6 +829,7 @@ public class StudentServiceTests
 ### **FluentAssertions Usage**
 
 **Standard Assertion Patterns:**
+
 ```csharp
 // Collections
 result.Should().NotBeNull();
@@ -855,6 +850,7 @@ await act.Should().ThrowAsync<ValidationException>()
 ### **Test Categories and Organization**
 
 **Test Categories:**
+
 ```csharp
 [TestFixture]
 [Category("Unit")]
@@ -870,6 +866,7 @@ public class StudentServiceDatabaseTests { }
 ```
 
 **Test Naming Convention:**
+
 - `MethodName_Condition_ExpectedResult`
 - `AddStudent_ValidStudent_PersistsAndSetsDefaults`
 - `GetStudentsByRoute_InvalidRoute_ReturnsEmptyList`
@@ -877,12 +874,14 @@ public class StudentServiceDatabaseTests { }
 ### **Code Coverage Requirements**
 
 **Minimum Coverage Targets:**
+
 - **Overall**: 80%+
 - **Core Services**: 90%+
 - **ViewModels**: 85%+
 - **Data Layer**: 90%+
 
 **Coverage Configuration:**
+
 ```xml
 <!-- Directory.Build.props -->
 <PropertyGroup>
@@ -896,6 +895,7 @@ public class StudentServiceDatabaseTests { }
 ### **Parallel Test Execution**
 
 **Enable Parallel Execution:**
+
 ```xml
 <!-- .runsettings -->
 <?xml version="1.0" encoding="utf-8"?>
@@ -911,6 +911,7 @@ public class StudentServiceDatabaseTests { }
 ```
 
 **Run with Parallel Execution:**
+
 ```bash
 dotnet test --settings testsettings.runsettings
 ```
@@ -1902,7 +1903,7 @@ public class EntityService : IEntityService
 ### Development Workflow Integration
 
 - **Direct Commands**: Use native .NET CLI commands for reliability
-- **.NET Automation**: Leverage dn-* commands for enhanced workflows
+- **.NET Automation**: Leverage dn-\* commands for enhanced workflows
 - **Zero Dependencies**: No external API dependencies for core functionality
 - **Simple and Fast**: Optimized for speed and reliability over complexity
 

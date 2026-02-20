@@ -1,10 +1,10 @@
-# 🚀 Syncfusion WPF Upgrade to 30.2.6 - Complete Guide
+# 🚀 Syncfusion WPF Upgrade to 30.2.4 - Complete Guide
 
 ## **Upgrade Summary**
 
-**Date**: August 25, 2025  
+**Date**: August 28, 2025  
 **From**: Syncfusion WPF 30.1.42  
-**To**: Syncfusion WPF 30.2.6  
+**To**: Syncfusion WPF 30.2.4  
 **Status**: ✅ **COMPLETED SUCCESSFULLY**
 
 ## **📊 Upgrade Results**
@@ -19,15 +19,15 @@
 ### **Package Updates**
 
 ```powershell
-# All Syncfusion packages upgraded from 30.1.42 → 30.2.6
-Syncfusion.PdfViewer.WPF                     30.2.6
-Syncfusion.SfGrid.WPF                        30.2.6
-Syncfusion.SfChart.WPF                       30.2.6
-Syncfusion.SfScheduler.WPF                   30.2.6
-Syncfusion.SfMaps.WPF                        30.2.6
-Syncfusion.Shared.WPF                        30.2.6
-Syncfusion.Tools.WPF                         30.2.6
-Syncfusion.Themes.FluentDark.WPF             30.2.6
+# All Syncfusion packages upgraded from 30.1.42 → 30.2.4
+Syncfusion.PdfViewer.WPF                     30.2.4
+Syncfusion.SfGrid.WPF                        30.2.4
+Syncfusion.SfChart.WPF                       30.2.4
+Syncfusion.SfScheduler.WPF                   30.2.4
+Syncfusion.SfMaps.WPF                        30.2.4
+Syncfusion.Shared.WPF                        30.2.4
+Syncfusion.Tools.WPF                         30.2.4
+Syncfusion.Themes.FluentDark.WPF             30.2.4
 Syncfusion.Themes.FluentLight.WPF            30.2.6
 # ... and 15+ additional packages
 ```

@@ -151,9 +151,9 @@ public class Activity : INotifyPropertyChanged
     }
 
     [Required]
-    [ForeignKey("AssignedVehicle")]
-    [Display(Name = "Assigned Vehicle")]
-    public int AssignedVehicleId
+    [ForeignKey("AssignedBus")]
+    [Display(Name = "Assigned Bus")]
+    public int AssignedBusId
     {
         get => _assignedVehicleId;
         set
@@ -164,17 +164,17 @@ public class Activity : INotifyPropertyChanged
                 OnPropertyChanged();
                 OnPropertyChanged(nameof(VehicleId));
                 // Backwards-compatible alias used by WPF layer
-                OnPropertyChanged(nameof(AssignedBusId));
+                OnPropertyChanged(nameof(AssignedVehicleId));
             }
         }
     }
 
     // Backwards-compatible alias for older WPF property names
     [NotMapped]
-    public int AssignedBusId
+    public int AssignedVehicleId
     {
-        get => AssignedVehicleId;
-        set => AssignedVehicleId = value;
+        get => AssignedBusId;
+        set => AssignedBusId = value;
     }
 
     [ForeignKey("Driver")]
@@ -465,11 +465,13 @@ public class Activity : INotifyPropertyChanged
     public bool IsAllDay => Duration.TotalHours >= 23;
 
     // Navigation properties
-    public virtual Bus AssignedVehicle { get; set; } = null!;
+    public virtual Bus AssignedBus { get; set; } = null!;
 
     // Legacy navigation for backward compatibility
     [NotMapped]
-    public virtual Bus Vehicle => AssignedVehicle;
+    public virtual Bus AssignedVehicle => AssignedBus;
+    [NotMapped]
+    public virtual Bus Vehicle => AssignedBus;
 
     public virtual Driver? Driver { get; set; }
 

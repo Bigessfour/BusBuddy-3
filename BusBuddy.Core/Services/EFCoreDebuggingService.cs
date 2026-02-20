@@ -145,7 +145,7 @@ public class EFCoreDebuggingService
 
             await TestQueryPattern(context, debugInfo, "Complex Join", async () =>
                 await context.Routes
-                    .Include(r => r.AMVehicle)
+                    .Include(r => r.AMBus)
                     .Include(r => r.AMDriver)
                     .Where(r => r.Date >= DateTime.Today.AddDays(-7))
                     .Take(10)

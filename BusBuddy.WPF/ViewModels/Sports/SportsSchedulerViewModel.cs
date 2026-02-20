@@ -375,7 +375,7 @@ namespace BusBuddy.WPF.ViewModels.Sports
 
                     // Update assignment
                     SelectedActivity.AssignedBusId = SelectedBus.BusId;
-                    SelectedActivity.AssignedVehicle = SelectedBus;
+                    // Note: AssignedVehicle is read-only, navigation property is handled by EF Core
 
                     await _context.SaveChangesAsync();
 

@@ -195,8 +195,8 @@ public class SafeDatabaseOperations
             {
                 // Use explicit joins to avoid lazy loading issues
                 var routes = await context.Routes
-                    .Include(r => r.AMVehicle)
-                    .Include(r => r.PMVehicle)
+                    .Include(r => r.AMBus)
+                    .Include(r => r.PMBus)
                     .Include(r => r.AMDriver)
                     .Include(r => r.PMDriver)
                     .AsNoTracking()

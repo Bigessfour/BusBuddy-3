@@ -110,12 +110,41 @@ namespace BusBuddy.WPF.Services
         }
 
         /// <summary>
-        /// Clear the ViewModel cache
+        /// Invalidate cache for a specific ViewModel type
+        /// </summary>
+        public void InvalidateViewModelCache<T>() where T : class
+        {
+            var type = typeof(T);
+            Logger.Information("Invalidating cache for ViewModel {ViewModelType}", type.Name);
+            _viewModelCache.TryRemove(type, out _);
+            _initializationTasks.TryRemove(type, out _);
+        }
+
+        /// <summary>
+        /// Clear cache and dispose of cached ViewModels if they implement IDisposable
         /// </summary>
         public void ClearCache()
         {
-            Logger.Information("Clearing ViewModel cache");
+            Logger.Information("Clearing ViewModel cache with proper disposal");
+
+            foreach (var kvp in _viewModelCache)
+            {
+                if (kvp.Value is IDisposable disposable)
+                {
+                    try
+                    {
+                        disposable.Dispose();
+                        Logger.Debug("Disposed ViewModel {ViewModelType}", kvp.Key.Name);
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.Warning(ex, "Error disposing ViewModel {ViewModelType}", kvp.Key.Name);
+                    }
+                }
+            }
+
             _viewModelCache.Clear();
+            _initializationTasks.Clear();
         }
 
         /// <summary>
@@ -161,6 +190,7 @@ namespace BusBuddy.WPF.Services
         T GetViewModel<T>() where T : class;
         Task PreloadEssentialViewModelsAsync();
         void ClearCache();
+        void InvalidateViewModelCache<T>() where T : class;
         (int CachedCount, int InitializingCount) GetCacheStats();
     }
 }

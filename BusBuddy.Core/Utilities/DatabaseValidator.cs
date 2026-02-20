@@ -63,8 +63,8 @@ namespace BusBuddy.Core.Utilities
                 // Check for invalid foreign keys in Routes
                 var routesWithInvalidVehicles = await context.Routes
                     .Where(r =>
-                        (r.AMVehicleId.HasValue && !context.Buses.Any(v => v.BusId == r.AMVehicleId)) ||
-                        (r.PMVehicleId.HasValue && !context.Buses.Any(v => v.BusId == r.PMVehicleId)))
+                        (r.AMBusId.HasValue && !context.Buses.Any(v => v.BusId == r.AMBusId)) ||
+                        (r.PMBusId.HasValue && !context.Buses.Any(v => v.BusId == r.PMBusId)))
                     .Select(r => r.RouteId)
                     .ToListAsync();
 

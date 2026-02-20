@@ -140,37 +140,37 @@ public class WeatherAwarePlanningService
 **AI-powered vehicle assignment:**
 
 ```csharp
-public class SmartVehicleAssignmentService
+public class SmartBusAssignmentService
 {
     private readonly GrokGlobalAPI _grokAPI;
-    private readonly VehicleService _vehicleService;
+    private readonly BusService _busService;
 
-    public async Task<VehicleRecommendation> GetOptimalVehicleAsync(
+    public async Task<BusRecommendation> GetOptimalBusAsync(
         TripEvent tripEvent,
         RouteIntelligence routeIntelligence,
         WeatherImpactAnalysis weatherAnalysis)
     {
-        // Get available vehicles
-        var availableVehicles = await _vehicleService.GetAvailableVehiclesAsync(
+        // Get available buses
+        var availableBuses = await _busService.GetAvailableBusesAsync(
             tripEvent.LeaveTime, tripEvent.ReturnTime);
 
-        // Analyze each vehicle's suitability
-        var vehicleAnalyses = new List<VehicleAnalysis>();
+        // Analyze each bus's suitability
+        var busAnalyses = new List<BusAnalysis>();
 
-        foreach (var vehicle in availableVehicles)
+        foreach (var bus in availableBuses)
         {
-            var analysis = await AnalyzeVehicleSuitabilityAsync(
-                vehicle, tripEvent, routeIntelligence, weatherAnalysis);
-            vehicleAnalyses.Add(analysis);
+            var analysis = await AnalyzeBusSuitabilityAsync(
+                bus, tripEvent, routeIntelligence, weatherAnalysis);
+            busAnalyses.Add(analysis);
         }
 
         // AI-powered final recommendation
-        var aiPrompt = BuildVehicleSelectionPrompt(tripEvent, vehicleAnalyses);
-        var aiRecommendation = await _grokAPI.GetVehicleRecommendationAsync(aiPrompt);
+        var aiPrompt = BuildBusSelectionPrompt(tripEvent, busAnalyses);
+        var aiRecommendation = await _grokAPI.GetBusRecommendationAsync(aiPrompt);
 
-        return new VehicleRecommendation
+        return new BusRecommendation
         {
-            RecommendedVehicle = aiRecommendation.PrimaryChoice,
+            RecommendedBus = aiRecommendation.PrimaryChoice,
             ConfidenceScore = aiRecommendation.Confidence,
             ReasoningExplanation = aiRecommendation.Reasoning,
             BackupOptions = aiRecommendation.Alternatives,
@@ -178,20 +178,20 @@ public class SmartVehicleAssignmentService
         };
     }
 
-    private async Task<VehicleAnalysis> AnalyzeVehicleSuitabilityAsync(
-        Vehicle vehicle,
+    private async Task<BusAnalysis> AnalyzeBusSuitabilityAsync(
+        Bus bus,
         TripEvent tripEvent,
         RouteIntelligence routeIntelligence,
         WeatherImpactAnalysis weatherAnalysis)
     {
-        return new VehicleAnalysis
+        return new BusAnalysis
         {
-            Vehicle = vehicle,
-            CapacityMatch = CalculateCapacityMatch(vehicle, tripEvent),
-            TerrainCompatibility = AssessTerrainCompatibility(vehicle, routeIntelligence),
-            WeatherReadiness = AssessWeatherReadiness(vehicle, weatherAnalysis),
-            FuelEfficiency = CalculateRouteEfficiency(vehicle, routeIntelligence),
-            MaintenanceStatus = await GetMaintenanceStatusAsync(vehicle),
+            Bus = bus,
+            CapacityMatch = CalculateCapacityMatch(bus, tripEvent),
+            TerrainCompatibility = AssessTerrainCompatibility(bus, routeIntelligence),
+            WeatherReadiness = AssessWeatherReadiness(bus, weatherAnalysis),
+            FuelEfficiency = CalculateRouteEfficiency(bus, routeIntelligence),
+            MaintenanceStatus = await GetMaintenanceStatusAsync(bus),
             OverallSuitabilityScore = 0 // Calculated from above factors
         };
     }
@@ -200,11 +200,11 @@ public class SmartVehicleAssignmentService
 
 **Deliverables:**
 
-- [ ] Vehicle suitability analysis algorithm
+- [ ] Bus suitability analysis algorithm
 - [ ] Capacity optimization calculations
 - [ ] Terrain compatibility assessment
 - [ ] Weather readiness evaluation
-- [ ] AI-powered vehicle recommendation system
+- [ ] AI-powered bus recommendation system
 
 #### **Step 2.4: Predictive Analytics Engine** ⏱️ 2-3 days
 
@@ -220,7 +220,7 @@ public class TripSuccessPredictionService
         TripEvent tripEvent,
         RouteIntelligence routeIntelligence,
         WeatherImpactAnalysis weatherAnalysis,
-        VehicleRecommendation vehicleRecommendation)
+        BusRecommendation busRecommendation)
     {
         // Gather historical data
         var historicalTrips = await _historicalData.GetSimilarTripsAsync(tripEvent);
@@ -229,7 +229,7 @@ public class TripSuccessPredictionService
         // AI prediction analysis
         var predictionPrompt = BuildPredictionPrompt(
             tripEvent, routeIntelligence, weatherAnalysis,
-            vehicleRecommendation, historicalTrips, seasonalPatterns);
+            busRecommendation, historicalTrips, seasonalPatterns);
 
         var aiPrediction = await _grokAPI.GetTripSuccessPredictionAsync(predictionPrompt);
 
@@ -274,11 +274,11 @@ public class LiveTripMonitoringService
         // Real-time data collection
         var currentWeather = await _weatherAPI.GetCurrentWeatherAsync(trip.CurrentLocation);
         var trafficConditions = await _geeService.GetTrafficConditionsAsync(trip.Route);
-        var vehicleStatus = await _vehicleService.GetRealTimeStatusAsync(trip.VehicleId);
+        var busStatus = await _busService.GetRealTimeStatusAsync(trip.BusId);
 
         // AI-powered real-time analysis
         var monitoringPrompt = BuildLiveMonitoringPrompt(
-            trip, currentWeather, trafficConditions, vehicleStatus);
+            trip, currentWeather, trafficConditions, busStatus);
 
         var aiAnalysis = await _grokAPI.GetLiveAnalysisAsync(monitoringPrompt);
 
@@ -291,7 +291,7 @@ public class LiveTripMonitoringService
             AIAnalysis = aiAnalysis,
             WeatherUpdate = currentWeather,
             TrafficConditions = trafficConditions,
-            VehicleHealth = vehicleStatus,
+            BusHealth = busStatus,
             Alerts = alerts,
             RecommendedActions = aiAnalysis.ImmediateActions,
             EstimatedArrival = CalculateUpdatedArrival(trip, trafficConditions)
@@ -305,7 +305,7 @@ public class LiveTripMonitoringService
 - [ ] Real-time location tracking
 - [ ] Live weather monitoring
 - [ ] Traffic condition analysis
-- [ ] Vehicle health monitoring
+- [ ] Bus health monitoring
 - [ ] Automated alert system
 
 #### **Step 2.6: Intelligent Dashboard** ⏱️ 2-3 days
@@ -460,7 +460,7 @@ public class IntelligentTripPlanningOrchestrator
 
         // Now run weather and vehicle assignment in parallel
         var weatherAnalysis = await weatherTask;
-        var vehicleTask = _vehicleService.GetOptimalVehicleAsync(
+        var vehicleTask = _busService.GetOptimalBusAsync(
             tripEvent, routeIntelligence, weatherAnalysis);
         var predictionTask = _predictionService.PredictTripSuccessAsync(
             tripEvent, routeIntelligence, weatherAnalysis, null);
@@ -530,7 +530,7 @@ public class Phase2IntelligenceTests
 
         Assert.IsNotNull(liveStatus.AIAnalysis);
         Assert.IsNotNull(liveStatus.WeatherUpdate);
-        Assert.IsNotNull(liveStatus.VehicleHealth);
+        Assert.IsNotNull(liveStatus.BusHealth);
     }
 }
 ```
@@ -562,7 +562,7 @@ public class Phase2IntelligenceTests
     - Weather-based safety recommendations
 
 3. **✅ Smart Vehicle Assignment**
-    - AI analyzes vehicle suitability for specific trips
+    - AI analyzes bus suitability for specific trips
     - Considers capacity, terrain compatibility, weather readiness
     - Provides detailed reasoning for recommendations
     - Suggests required preparations

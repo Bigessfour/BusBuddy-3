@@ -37,7 +37,7 @@ namespace BusBuddy.Core.Data.Repositories
                 .ToListAsync();
         }
 
-        #region Async Vehicle-Specific Operations
+        #region Async Bus-Specific Operations
         [Obsolete("Use GetActiveBusesAsync")]
         public async Task<IEnumerable<Bus>> GetActiveVehiclesAsync() => await GetActiveBusesAsync();
 
@@ -49,17 +49,17 @@ namespace BusBuddy.Core.Data.Repositories
                 .ToListAsync();
         }
 
-        public async Task<IEnumerable<Bus>> GetAvailableVehiclesAsync(DateTime availabilityDate, TimeSpan? startTime = null, TimeSpan? endTime = null)
+        public async Task<IEnumerable<Bus>> GetAvailableBusesAsync(DateTime availabilityDate, TimeSpan? startTime = null, TimeSpan? endTime = null)
         {
-            var activeVehicles = await GetActiveBusesAsync();
+            var activeBuses = await GetActiveBusesAsync();
 
             if (!startTime.HasValue || !endTime.HasValue)
             {
-                return activeVehicles;
+                return activeBuses;
             }
 
-            // Get vehicles that don't have conflicting activities
-            var conflictingVehicleIds = await Context.Activities
+            // Get buses that don't have conflicting activities
+            var conflictingBusIds = await Context.Activities
                 .Where(a => a.Date.Date == availabilityDate.Date &&
                            ((a.LeaveTime >= startTime && a.LeaveTime < endTime) ||
                             (a.EventTime > startTime && a.EventTime <= endTime) ||
@@ -67,7 +67,7 @@ namespace BusBuddy.Core.Data.Repositories
                 .Select(a => a.AssignedVehicleId)
                 .ToListAsync();
 
-            return activeVehicles.Where(v => !conflictingVehicleIds.Contains(v.BusId));
+            return activeBuses.Where(v => !conflictingBusIds.Contains(v.BusId));
         }
 
         [Obsolete("Use GetBusesByStatusAsync(VehicleStatus)")]
@@ -122,7 +122,7 @@ namespace BusBuddy.Core.Data.Repositories
         #endregion
 
         #region Maintenance and Inspection
-        public async Task<IEnumerable<Bus>> GetVehiclesDueForInspectionAsync(int withinDays = 30)
+        public async Task<IEnumerable<Bus>> GetBusesDueForInspectionAsync(int withinDays = 30)
         {
             var cutoffDate = DateTime.Today.AddDays(-365 + withinDays); // Due within specified days of 1-year mark
             return await QueryNoTracking()
@@ -131,7 +131,7 @@ namespace BusBuddy.Core.Data.Repositories
                 .ToListAsync();
         }
 
-        public async Task<IEnumerable<Bus>> GetVehiclesWithExpiredInspectionAsync()
+        public async Task<IEnumerable<Bus>> GetBusesWithExpiredInspectionAsync()
         {
             var oneYearAgo = DateTime.Today.AddYears(-1);
             return await QueryNoTracking()
@@ -140,7 +140,7 @@ namespace BusBuddy.Core.Data.Repositories
                 .ToListAsync();
         }
 
-        public async Task<IEnumerable<Bus>> GetVehiclesDueForMaintenanceAsync()
+        public async Task<IEnumerable<Bus>> GetBusesDueForMaintenanceAsync()
         {
             return await QueryNoTracking()
                 .Where(v => v.NextMaintenanceDue.HasValue && v.NextMaintenanceDue <= DateTime.Today.AddDays(30))
@@ -148,7 +148,7 @@ namespace BusBuddy.Core.Data.Repositories
                 .ToListAsync();
         }
 
-        public async Task<IEnumerable<Bus>> GetVehiclesWithExpiredInsuranceAsync()
+        public async Task<IEnumerable<Bus>> GetBusesWithExpiredInsuranceAsync()
         {
             return await QueryNoTracking()
                 .Where(v => v.InsuranceExpiryDate.HasValue && v.InsuranceExpiryDate < DateTime.Today)
@@ -156,7 +156,7 @@ namespace BusBuddy.Core.Data.Repositories
                 .ToListAsync();
         }
 
-        public async Task<IEnumerable<Bus>> GetVehiclesWithExpiringInsuranceAsync(int withinDays = 30)
+        public async Task<IEnumerable<Bus>> GetBusesWithExpiringInsuranceAsync(int withinDays = 30)
         {
             var expiryDate = DateTime.Today.AddDays(withinDays);
             return await QueryNoTracking()
@@ -169,7 +169,7 @@ namespace BusBuddy.Core.Data.Repositories
         #endregion
 
         #region Capacity and Features
-        public async Task<IEnumerable<Bus>> GetVehiclesBySeatingCapacityAsync(int minCapacity, int? maxCapacity = null)
+        public async Task<IEnumerable<Bus>> GetBusesBySeatingCapacityAsync(int minCapacity, int? maxCapacity = null)
         {
             var query = QueryNoTracking().Where(v => v.SeatingCapacity >= minCapacity);
 
@@ -181,7 +181,7 @@ namespace BusBuddy.Core.Data.Repositories
             return await query.OrderBy(v => v.SeatingCapacity).ToListAsync();
         }
 
-        public async Task<IEnumerable<Bus>> GetVehiclesWithSpecialEquipmentAsync(string equipment)
+        public async Task<IEnumerable<Bus>> GetBusesWithSpecialEquipmentAsync(string equipment)
         {
             return await QueryNoTracking()
                 .Where(v => v.SpecialEquipment != null && v.SpecialEquipment.Contains(equipment))
@@ -189,7 +189,7 @@ namespace BusBuddy.Core.Data.Repositories
                 .ToListAsync();
         }
 
-        public async Task<IEnumerable<Bus>> GetVehiclesWithGPSAsync()
+        public async Task<IEnumerable<Bus>> GetBusesWithGPSAsync()
         {
             return await QueryNoTracking()
                 .Where(v => v.GPSTracking)
@@ -199,17 +199,17 @@ namespace BusBuddy.Core.Data.Repositories
         #endregion
 
         #region Statistics and Reporting
-        public async Task<int> GetTotalVehicleCountAsync()
+        public async Task<int> GetTotalBusCountAsync()
         {
             return await CountAsync();
         }
 
-        public async Task<int> GetActiveVehicleCountAsync()
+        public async Task<int> GetActiveBusCountAsync()
         {
             return await CountAsync(v => v.Status == "Active");
         }
 
-        public async Task<int> GetAverageVehicleAgeAsync()
+        public async Task<int> GetAverageBusAgeAsync()
         {
             var currentYear = DateTime.Now.Year;
             var averageYear = await QueryNoTracking()
@@ -225,7 +225,7 @@ namespace BusBuddy.Core.Data.Repositories
                 .SumAsync(v => v.PurchasePrice ?? 0);
         }
 
-        public async Task<Dictionary<string, int>> GetVehicleCountByStatusAsync()
+        public async Task<Dictionary<string, int>> GetBusCountByStatusAsync()
         {
             return await QueryNoTracking()
                 .GroupBy(v => v.Status)
@@ -233,7 +233,7 @@ namespace BusBuddy.Core.Data.Repositories
                 .ToDictionaryAsync(x => x.Status, x => x.Count);
         }
 
-        public async Task<Dictionary<string, int>> GetVehicleCountByMakeAsync()
+        public async Task<Dictionary<string, int>> GetBusCountByMakeAsync()
         {
             return await QueryNoTracking()
                 .GroupBy(v => v.Make)
@@ -241,7 +241,7 @@ namespace BusBuddy.Core.Data.Repositories
                 .ToDictionaryAsync(x => x.Make, x => x.Count);
         }
 
-        public async Task<Dictionary<int, int>> GetVehicleCountByYearAsync()
+        public async Task<Dictionary<int, int>> GetBusCountByYearAsync()
         {
             return await QueryNoTracking()
                 .GroupBy(v => v.Year)
@@ -251,7 +251,7 @@ namespace BusBuddy.Core.Data.Repositories
         #endregion
 
         #region Synchronous Methods for Syncfusion
-        public IEnumerable<Bus> GetActiveVehicles()
+        public IEnumerable<Bus> GetActiveBuses()
         {
             return Query()
                 .Where(v => v.Status == "Active")
@@ -259,17 +259,17 @@ namespace BusBuddy.Core.Data.Repositories
                 .ToList();
         }
 
-        public IEnumerable<Bus> GetAvailableVehicles(DateTime availabilityDate, TimeSpan? startTime = null, TimeSpan? endTime = null)
+        public IEnumerable<Bus> GetAvailableBuses(DateTime availabilityDate, TimeSpan? startTime = null, TimeSpan? endTime = null)
         {
-            var activeVehicles = GetActiveVehicles();
+            var activeBuses = GetActiveBuses();
 
             if (!startTime.HasValue || !endTime.HasValue)
             {
-                return activeVehicles;
+                return activeBuses;
             }
 
-            // Get vehicles that don't have conflicting activities
-            var conflictingVehicleIds = Context.Activities
+            // Get buses that don't have conflicting activities
+            var conflictingBusIds = Context.Activities
                 .Where(a => a.Date.Date == availabilityDate.Date &&
                            ((a.LeaveTime >= startTime && a.LeaveTime < endTime) ||
                             (a.EventTime > startTime && a.EventTime <= endTime) ||
@@ -277,10 +277,10 @@ namespace BusBuddy.Core.Data.Repositories
                 .Select(a => a.AssignedVehicleId)
                 .ToList();
 
-            return activeVehicles.Where(v => !conflictingVehicleIds.Contains(v.BusId));
+            return activeBuses.Where(v => !conflictingBusIds.Contains(v.BusId));
         }
 
-        public IEnumerable<Bus> GetVehiclesByStatus(string status)
+        public IEnumerable<Bus> GetBusesByStatus(string status)
         {
             return Query()
                 .Where(v => v.Status == status)
@@ -288,13 +288,13 @@ namespace BusBuddy.Core.Data.Repositories
                 .ToList();
         }
 
-        public Bus? GetVehicleByBusNumber(string busNumber)
+        public Bus? GetBusByBusNumber(string busNumber)
         {
             return Query()
                 .FirstOrDefault(v => v.BusNumber == busNumber);
         }
 
-        public IEnumerable<Bus> GetVehiclesDueForInspection(int withinDays = 30)
+        public IEnumerable<Bus> GetBusesDueForInspection(int withinDays = 30)
         {
             var cutoffDate = DateTime.Today.AddDays(-365 + withinDays);
             return Query()

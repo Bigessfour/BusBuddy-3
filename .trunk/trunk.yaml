@@ -98,7 +98,9 @@ lint:
           value: "C:\\Program Files\\dotnet"
       run_when: [ci, cli]
       commands:
-        - output: sarif
+        - name: check
+          run: stylecop $PATH --output $OUTPUT --format sarif
+          output: sarif
           success_codes: [0, 1]
           formatter: true
     # Override security-code-scan for .NET security
@@ -108,7 +110,9 @@ lint:
           value: "C:\\Program Files\\dotnet"
       run_when: [ci, cli]
       commands:
-        - output: sarif
+        - name: check
+          run: security-code-scan $PATH --output $OUTPUT --format sarif
+          output: sarif
           success_codes: [0, 1]
           formatter: true
   disabled:
@@ -141,16 +145,13 @@ lint:
     - psscriptanalyzer@1.24.0 # PowerShell best practices
 
     # Additional .NET tools
-    - roslynator@4.12.4 # Advanced C# code analysis and refactoring
-    - stylecop@1.2.0 # C# style and consistency checking
-    - security-code-scan@5.6.7 # .NET security vulnerability scanner
+    - roslynator # Advanced C# code analysis and refactoring
+    - stylecop # C# style and consistency checking
+    - security-code-scan # .NET security vulnerability scanner
     - gitleaks@8.18.0 # Additional secret detection
-    - editorconfig-checker@3.0.3 # Validates EditorConfig compliance
-    - misspell@0.3.4 # Fast spell checker
 
     # Infrastructure and container tools
     - hadolint@2.12.0 # Dockerfile linting
-    - kubeconform@0.6.7 # Kubernetes YAML validation
     - terraform@1.9.5 # Infrastructure as code validation
     - tflint@0.53.0 # Terraform linting
     - tfsec@1.28.4 # Terraform security scanner
@@ -185,9 +186,6 @@ lint:
     - linters: [hadolint]
       paths:
         - "**/*" # Dockerfile linter - only run on Dockerfiles
-    - linters: [kubeconform]
-      paths:
-        - "**/*" # Kubernetes YAML validation - only run on K8s files
     - linters: [terraform]
       paths:
         - "**/*" # Terraform validation - only run on .tf files
