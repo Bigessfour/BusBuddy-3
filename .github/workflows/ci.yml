@@ -57,7 +57,7 @@ jobs:
       - name: "Restore (with flag for Linux Core focus + Windows TFM)"
         run: dotnet restore ${{ env.SOLUTION_FILE }} -p:EnableWindowsTargeting=true --verbosity minimal
       - name: "Build Solution (clean, regression-aware)"
-        run: dotnet build ${{ env.SOLUTION_FILE }} --configuration ${{ env.BUILD_CONFIGURATION }} --no-restore --verbosity minimal /p:TreatWarningsAsErrors=false /p:WarningLevel=1
+        run: dotnet build ${{ env.SOLUTION_FILE }} --configuration ${{ env.BUILD_CONFIGURATION }} --no-restore --verbosity minimal -p:EnableWindowsTargeting=true /p:TreatWarningsAsErrors=false /p:WarningLevel=1
       - name: "Run Core Tests (with Coverage, filter for speed/regression; full on Windows deploy)"
         run: |
           dotnet test ${{ env.SOLUTION_FILE }} --configuration ${{ env.BUILD_CONFIGURATION }} --no-build --verbosity normal --logger "trx;LogFileName=test-results.trx" --collect:"XPlat Code Coverage" --results-directory ./TestResults --filter "FullyQualifiedName~Core|Seed|Student|Route|Maintenance|PdfReport|Fleet|Gaps"  # Regression filters + new gaps
