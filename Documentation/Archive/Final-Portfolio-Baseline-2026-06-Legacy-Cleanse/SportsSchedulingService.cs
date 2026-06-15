@@ -34,12 +34,9 @@ namespace BusBuddy.Core.Services
         /// Creates a new sports event asynchronously
         /// </summary>
         /// <param name="sportsEvent">The sports event details to create</param>
-        /// <returns>The created SportsEvent object</returns>
-        public async Task<SportsEvent> CreateSportsEventAsync(SportsEvent sportsEvent)
         {
             if (sportsEvent == null)
             {
-                Logger.Warning("Attempted to create a null SportsEvent");
                 throw new ArgumentNullException(nameof(sportsEvent));
             }
 
@@ -67,10 +64,8 @@ namespace BusBuddy.Core.Services
                     throw new InvalidOperationException("Sports event does not meet safety requirements.");
                 }
 
-                await _context.SportsEvents.AddAsync(sportsEvent);
                 await _context.SaveChangesAsync();
 
-                Logger.Information("SportsEvent {EventName} created with ID: {EventId}",
                     sportsEvent.EventName, sportsEvent.Id);
 
                 return sportsEvent;
@@ -89,11 +84,9 @@ namespace BusBuddy.Core.Services
         /// <param name="startDate">Start date filter (optional)</param>
         /// <param name="endDate">End date filter (optional)</param>
         /// <returns>List of sports events</returns>
-        public async Task<List<SportsEvent>> GetSportsEventsAsync(DateTime? startDate = null, DateTime? endDate = null)
         {
             try
             {
-                var query = _context.SportsEvents
                     .Include(e => e.Vehicle)
                     .Include(e => e.Driver)
                     .AsQueryable();
@@ -120,7 +113,6 @@ namespace BusBuddy.Core.Services
             catch (Exception ex)
             {
                 Logger.Error(ex, "Error retrieving sports events");
-                return new List<SportsEvent>();
             }
         }
 
@@ -135,10 +127,8 @@ namespace BusBuddy.Core.Services
         {
             try
             {
-                var sportsEvent = await _context.SportsEvents.FindAsync(eventId);
                 if (sportsEvent == null)
                 {
-                    Logger.Warning("SportsEvent with ID {EventId} not found", eventId);
                     return false;
                 }
 
@@ -218,7 +208,6 @@ namespace BusBuddy.Core.Services
                 // Check for vehicle conflicts
                 if (vehicleId.HasValue)
                 {
-                    var vehicleConflicts = await _context.SportsEvents
                         .Where(e => e.BusId == vehicleId.Value &&
                                    e.StartTime < endTime && e.EndTime > startTime)
                         .CountAsync();
@@ -228,7 +217,6 @@ namespace BusBuddy.Core.Services
                 // Check for driver conflicts
                 if (driverId.HasValue)
                 {
-                    var driverConflicts = await _context.SportsEvents
                         .Where(e => e.DriverId == driverId.Value &&
                                    e.StartTime < endTime && e.EndTime > startTime)
                         .CountAsync();
@@ -269,7 +257,6 @@ namespace BusBuddy.Core.Services
                 }
 
                 // Get assigned vehicle IDs in the time slot
-                var assignedVehicleIds = await _context.SportsEvents
                     .Where(e => e.BusId.HasValue &&
                                e.StartTime < endTime && e.EndTime > startTime)
                     .Select(e => e.BusId!.Value)
@@ -312,7 +299,6 @@ namespace BusBuddy.Core.Services
                 }
 
                 // Get assigned driver IDs in the time slot
-                var assignedDriverIds = await _context.SportsEvents
                     .Where(e => e.DriverId.HasValue &&
                                e.StartTime < endTime && e.EndTime > startTime)
                     .Select(e => e.DriverId!.Value)
@@ -347,10 +333,8 @@ namespace BusBuddy.Core.Services
         {
             try
             {
-                var sportsEvent = await _context.SportsEvents.FindAsync(eventId);
                 if (sportsEvent == null)
                 {
-                    Logger.Warning("SportsEvent with ID {EventId} not found for status update", eventId);
                     return false;
                 }
 
@@ -376,14 +360,12 @@ namespace BusBuddy.Core.Services
         /// </summary>
         /// <param name="days">Number of days to look ahead</param>
         /// <returns>List of upcoming sports events</returns>
-        public async Task<List<SportsEvent>> GetUpcomingSportsEventsAsync(int days = 7)
         {
             try
             {
                 var startDate = DateTime.Now;
                 var endDate = startDate.AddDays(days);
 
-                var upcomingEvents = await _context.SportsEvents
                     .Include(e => e.Vehicle)
                     .Include(e => e.Driver)
                     .Where(e => e.StartTime >= startDate && e.StartTime <= endDate)
@@ -398,7 +380,6 @@ namespace BusBuddy.Core.Services
             catch (Exception ex)
             {
                 Logger.Error(ex, "Error retrieving upcoming sports events");
-                return new List<SportsEvent>();
             }
         }
     }

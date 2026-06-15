@@ -47,7 +47,7 @@
     </PackageReference>
 
     <!-- Mocking Framework -->
-    <PackageReference Include="Moq" Version="4.20.72" />
+    <PackageReference Include="Moq" Version="$(MoqVersion)" /> <!-- resolved hardcode to central props -->
 
     <!-- Entity Framework In-Memory Database for testing -->
     <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="$(EntityFrameworkVersion)" />

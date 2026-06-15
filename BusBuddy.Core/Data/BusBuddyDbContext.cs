@@ -77,11 +77,9 @@ public class BusBuddyDbContext : DbContext
     public virtual DbSet<RouteStop> RouteStops { get; set; } = null!;
     public virtual DbSet<SchoolCalendar> SchoolCalendar { get; set; } = null!;
     public virtual DbSet<ActivitySchedule> ActivitySchedule { get; set; } = null!;
-    // Removed legacy SportsEvents DbSet; use canonical DbContext only
     public virtual DbSet<Destination> Destinations { get; set; } = null!;
     public virtual DbSet<RouteAssignment> RouteAssignments { get; set; } = null!;
 
-    public virtual DbSet<SportsEvent> SportsEvents { get; set; } = null!;
     public virtual DbSet<AIInsight> AIInsights { get; set; } = null!;
 
     // Compatibility aliases for legacy code
@@ -105,13 +103,30 @@ public class BusBuddyDbContext : DbContext
             if (!string.IsNullOrWhiteSpace(envOverride))
             {
                 logger.Information("Using BUSBUDDY_CONNECTION environment override");
-                optionsBuilder
-                    .UseSqlServer(envOverride, sql =>
+
+                // Docker / Postgres path: detect Postgres connection string (Host= or postgres in it)
+                if (envOverride.Contains("Host=", StringComparison.OrdinalIgnoreCase) ||
+                    envOverride.Contains("postgres", StringComparison.OrdinalIgnoreCase))
+                {
+                    logger.Information("Detected Postgres connection in BUSBUDDY_CONNECTION - using Npgsql provider");
+                    optionsBuilder.UseNpgsql(envOverride, npgsql =>
                     {
-                        sql.CommandTimeout(60);
-                        sql.EnableRetryOnFailure();
-                    })
-                    // EF Core 9 seeding: seed only when DB is empty
+                        npgsql.CommandTimeout(60);
+                        npgsql.EnableRetryOnFailure();
+                    });
+                }
+                else
+                {
+                    optionsBuilder
+                        .UseSqlServer(envOverride, sql =>
+                        {
+                            sql.CommandTimeout(60);
+                            sql.EnableRetryOnFailure();
+                        });
+                }
+
+                // EF Core 9 seeding: seed only when DB is empty
+                optionsBuilder
                     .UseSeeding((ctx, _) =>
                     {
                         try
@@ -180,12 +195,28 @@ public class BusBuddyDbContext : DbContext
                     {
                         logger.Information("Expanded environment variables in connection string");
                     }
+
+                    // Support Postgres from appsettings / Docker-injected config (when DatabaseProvider or connection indicates it)
+                    var dbProvider = config["DatabaseProvider"] ?? "";
+                    if (dbProvider.Equals("Postgres", StringComparison.OrdinalIgnoreCase) ||
+                        dbProvider.Equals("PostgreSQL", StringComparison.OrdinalIgnoreCase) ||
+                        expandedConn.Contains("Host=", StringComparison.OrdinalIgnoreCase) ||
+                        expandedConn.Contains("postgres", StringComparison.OrdinalIgnoreCase))
+                    {
+                        logger.Information("Using Postgres provider from appsettings/config");
+                        optionsBuilder.UseNpgsql(expandedConn);
+                    }
+                    else
+                    {
+                        optionsBuilder
+                            .UseSqlServer(expandedConn, sqlOptions =>
+                            {
+                                sqlOptions.EnableRetryOnFailure(5, TimeSpan.FromSeconds(10), new[] { 40613, 40501, 40197, 10928, 10929, 10060, 10054, 10053 });
+                                sqlOptions.CommandTimeout(60);
+                            });
+                    }
+
                     optionsBuilder
-                        .UseSqlServer(expandedConn, sqlOptions =>
-                        {
-                            sqlOptions.EnableRetryOnFailure(5, TimeSpan.FromSeconds(10), new[] { 40613, 40501, 40197, 10928, 10929, 10060, 10054, 10053 });
-                            sqlOptions.CommandTimeout(60);
-                        })
                         .UseSeeding((ctx, _) =>
                         {
                             try
@@ -315,7 +346,7 @@ public class BusBuddyDbContext : DbContext
             // Audit fields
             entity.Property(e => e.CreatedBy).HasMaxLength(100);
             entity.Property(e => e.UpdatedBy).HasMaxLength(100);
-            entity.Property(e => e.CreatedDate).HasDefaultValueSql("GETUTCDATE()");
+            entity.Property(e => e.CreatedDate).HasDefaultValueSql("CURRENT_TIMESTAMP");
 
             // Unique constraints
             entity.HasIndex(e => e.BusNumber).IsUnique().HasDatabaseName("IX_Vehicles_BusNumber");
@@ -358,7 +389,7 @@ public class BusBuddyDbContext : DbContext
             // Audit fields
             entity.Property(e => e.CreatedBy).HasMaxLength(100);
             entity.Property(e => e.UpdatedBy).HasMaxLength(100);
-            entity.Property(e => e.CreatedDate).HasDefaultValueSql("GETUTCDATE()");
+            entity.Property(e => e.CreatedDate).HasDefaultValueSql("CURRENT_TIMESTAMP");
 
             // Indexes
             entity.HasIndex(e => e.DriverEmail).HasDatabaseName("IX_Drivers_Email");
@@ -459,7 +490,7 @@ public class BusBuddyDbContext : DbContext
             // Audit fields
             entity.Property(e => e.CreatedBy).HasMaxLength(100);
             entity.Property(e => e.UpdatedBy).HasMaxLength(100);
-            entity.Property(e => e.CreatedDate).HasDefaultValueSql("GETUTCDATE()");
+            entity.Property(e => e.CreatedDate).HasDefaultValueSql("CURRENT_TIMESTAMP");
 
             // Relationships
             entity.HasOne(a => a.AssignedVehicle)
@@ -543,7 +574,7 @@ public class BusBuddyDbContext : DbContext
             // Audit fields
             entity.Property(e => e.CreatedBy).HasMaxLength(100);
             entity.Property(e => e.UpdatedBy).HasMaxLength(100);
-            entity.Property(e => e.CreatedDate).HasDefaultValueSql("GETUTCDATE()");
+            entity.Property(e => e.CreatedDate).HasDefaultValueSql("CURRENT_TIMESTAMP");
 
             // Relationships
             entity.HasOne(m => m.Vehicle)
@@ -582,7 +613,7 @@ public class BusBuddyDbContext : DbContext
             // Audit fields
             entity.Property(e => e.CreatedBy).HasMaxLength(100);
             entity.Property(e => e.UpdatedBy).HasMaxLength(100);
-            entity.Property(e => e.CreatedDate).HasDefaultValueSql("GETUTCDATE()");
+            entity.Property(e => e.CreatedDate).HasDefaultValueSql("CURRENT_TIMESTAMP");
 
             // Indexes
             entity.HasIndex(e => e.StudentName).HasDatabaseName("IX_Students_Name");
@@ -610,7 +641,7 @@ public class BusBuddyDbContext : DbContext
             // Audit fields
             entity.Property(e => e.CreatedBy).HasMaxLength(100);
             entity.Property(e => e.UpdatedBy).HasMaxLength(100);
-            entity.Property(e => e.CreatedDate).HasDefaultValueSql("GETUTCDATE()");
+            entity.Property(e => e.CreatedDate).HasDefaultValueSql("CURRENT_TIMESTAMP");
 
             // Indexes
             entity.HasIndex(e => new { e.ParentGuardian, e.Address }).HasDatabaseName("IX_Families_ParentAddress");
@@ -742,7 +773,7 @@ public class BusBuddyDbContext : DbContext
             entity.Property(e => e.ApprovedBy).HasMaxLength(100);
             entity.Property(e => e.CreatedBy).HasMaxLength(100);
             entity.Property(e => e.UpdatedBy).HasMaxLength(100);
-            entity.Property(e => e.CreatedDate).HasDefaultValueSql("GETUTCDATE()");
+            entity.Property(e => e.CreatedDate).HasDefaultValueSql("CURRENT_TIMESTAMP");
 
             // Relationships - TripEvents are now only related through ActivitySchedule
             entity.HasOne(te => te.Vehicle)
@@ -865,7 +896,7 @@ public class BusBuddyDbContext : DbContext
             entity.Property(e => e.ConfidenceScore).HasColumnType("decimal(4,3)");
             entity.Property(e => e.Source).HasMaxLength(50).HasDefaultValue("Grok-4");
             entity.Property(e => e.Status).HasMaxLength(20).HasDefaultValue("New");
-            entity.Property(e => e.CreatedDate).HasDefaultValueSql("GETUTCDATE()");
+            entity.Property(e => e.CreatedDate).HasDefaultValueSql("CURRENT_TIMESTAMP");
             entity.Property(e => e.CreatedBy).HasMaxLength(100);
             entity.Property(e => e.UpdatedBy).HasMaxLength(100);
             entity.Property(e => e.EstimatedSavings).HasColumnType("decimal(10,2)");
@@ -985,7 +1016,7 @@ public class BusBuddyDbContext : DbContext
                 .HasDefaultValue("Scheduled");
 
             entity.Property(e => e.CreatedDate)
-                .HasDefaultValueSql("GETUTCDATE()");
+                .HasDefaultValueSql("CURRENT_TIMESTAMP");
         });
 
         // Configure all string properties to handle NULL values gracefully

@@ -16,8 +16,6 @@ namespace BusBuddy.Core.Services
         /// Creates a new sports event asynchronously
         /// </summary>
         /// <param name="sportsEvent">The sports event details to create</param>
-        /// <returns>The created SportsEvent object</returns>
-        Task<SportsEvent> CreateSportsEventAsync(SportsEvent sportsEvent);
 
         /// <summary>
         /// Gets sports events within a date range
@@ -25,7 +23,6 @@ namespace BusBuddy.Core.Services
         /// <param name="startDate">Start date filter (optional)</param>
         /// <param name="endDate">End date filter (optional)</param>
         /// <returns>List of sports events</returns>
-        Task<List<SportsEvent>> GetSportsEventsAsync(DateTime? startDate = null, DateTime? endDate = null);
 
         /// <summary>
         /// Assigns a vehicle and driver to a sports event asynchronously
@@ -76,6 +73,5 @@ namespace BusBuddy.Core.Services
         /// </summary>
         /// <param name="days">Number of days to look ahead</param>
         /// <returns>List of upcoming sports events</returns>
-        Task<List<SportsEvent>> GetUpcomingSportsEventsAsync(int days = 7);
     }
 }

@@ -7,8 +7,9 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <UseWPF>true</UseWPF>
         <!-- Syncfusion / EF / Serilog Versions (single definitions) -->
-        <SyncfusionVersion>30.2.6</SyncfusionVersion>
+        <SyncfusionVersion>33.2.10</SyncfusionVersion> <!-- bumped per 2026 package update plan; see STEADY-STATE-AND-FINISH-ROADMAP.md for Syncfusion 33.x upgrade notes (license + control patterns) -->
         <EntityFrameworkVersion>9.0.8</EntityFrameworkVersion>
+    <NpgsqlVersion>9.0.3</NpgsqlVersion> <!-- for Postgres in docker-compose test/dev profiles -->
         <SerilogVersion>4.3.0</SerilogVersion>
         <SerilogSinksFileVersion>7.0.0</SerilogSinksFileVersion>
         <SerilogSinksConsoleVersion>6.0.0</SerilogSinksConsoleVersion>
@@ -17,7 +18,7 @@
         <!-- WPF/UI Package Versions (.NET 9 Compatible) -->
         <AutoMapperVersion>12.0.1</AutoMapperVersion>
         <AutoMapperExtensionsDIVersion>12.0.1</AutoMapperExtensionsDIVersion>
-        <CommunityToolkitMvvmVersion>8.4.0</CommunityToolkitMvvmVersion>
+        <CommunityToolkitMvvmVersion>8.4.2</CommunityToolkitMvvmVersion> <!-- patch update -->
         <WebView2Version>1.0.3405.78</WebView2Version>
         <XamlBehaviorsVersion>1.1.135</XamlBehaviorsVersion>
         <!-- Testing Package Versions (.NET 9 Compatible) -->
@@ -36,6 +37,8 @@
         <SystemNetHttpJsonVersion>9.0.8</SystemNetHttpJsonVersion>
         <NetTopologySuiteVersion>2.6.0</NetTopologySuiteVersion>
         <MicrosoftIdentityClientVersion>4.76.0</MicrosoftIdentityClientVersion>
+        <ApplicationInsightsVersion>2.23.0</ApplicationInsightsVersion>
+        <SerilogSettingsConfigurationVersion>9.0.0</SerilogSettingsConfigurationVersion>
         <NUnit3TestAdapterVersion>5.1.0</NUnit3TestAdapterVersion>
         <MoqEntityFrameworkCoreVersion>9.0.0.5</MoqEntityFrameworkCoreVersion>
         <!-- Microsoft.Extensions Package Versions — Consistent versioning -->
@@ -47,7 +50,7 @@
         <!-- INDUSTRY STANDARD: Practical Code Quality -->
         <EnableNETAnalyzers>true</EnableNETAnalyzers>
         <AnalysisMode>Recommended</AnalysisMode>
-        <CodeAnalysisRuleSet>$(MSBuildThisFileDirectory)BusBuddy-Practical.ruleset</CodeAnalysisRuleSet>
+        <CodeAnalysisRuleSet><!-- archived non-participating 2026-06 hygiene round; removed reference --></CodeAnalysisRuleSet>
         <!-- INDUSTRY STANDARD: Single-user desktop app settings -->
         <!-- Documentation file generation enabled for public APIs — MVP compliance -->
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
@@ -60,7 +63,7 @@
         <InvariantGlobalization>false</InvariantGlobalization>
         <SatelliteResourceLanguages>en-US</SatelliteResourceLanguages>
         <!-- Code analysis configuration -->
-        <CodeAnalysisRuleSet>$(MSBuildThisFileDirectory)BusBuddy-Practical.ruleset</CodeAnalysisRuleSet>
+        <CodeAnalysisRuleSet><!-- archived non-participating 2026-06 hygiene round; removed reference --></CodeAnalysisRuleSet>
         <EnableNETAnalyzers>true</EnableNETAnalyzers>
         <AnalysisLevel>latest</AnalysisLevel>
         <!-- Consolidated NoWarn list (low-impact + nullable MVP suppressions) -->

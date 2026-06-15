@@ -1,0 +1,23 @@
+# .dockerignore for BusBuddy - speeds up Docker builds by excluding unnecessary files
+bin/
+obj/
+*.user
+*.suo
+.vs/
+.vscode/
+.git/
+.gitignore
+*.md
+Dockerfile
+docker-compose.yml
+.devcontainer/
+Powershell/
+Scripts/
+Documentation/
+experiments/
+*.ps1
+*.psm1
+*.psd1
+logs/
+TestResults/
+*.trx

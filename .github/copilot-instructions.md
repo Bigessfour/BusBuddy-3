@@ -1,14 +1,31 @@
-# GitHub Copilot Custom Instructions - BusBuddy Excellence Development (Updated: August 22, 2025)
+# GitHub Copilot Custom Instructions - BusBuddy Excellence Development (Updated: 2026-06 - Final Portfolio Baseline + RAG)
 
-**Purpose**: STRICTLY guides AI assistants (GitHub Copilot, Grok, etc.) on technical standards, compliance, and anti-regression rules for BusBuddy development. For project-specific quality goals and developer workflows, see .vscode/instructions.md. AI MUST adhere to these instructions without deviation to prevent veering off course.
+**Purpose**: STRICTLY guides AI assistants (GitHub Copilot, Grok, Claude, Cursor, etc.) on technical standards, compliance, anti-regression rules, **and mandatory full-project context retrieval** for BusBuddy development. For project-specific quality goals and developer workflows, see .vscode/instructions.md. AI MUST adhere to these instructions without deviation to prevent veering off course.
+
+**CRITICAL NEW RULE — RAG CONTEXT IS MANDATORY**:
+Before **ANY** code change, edit, refactor, new feature, bug fix, or architectural decision (no matter how small), you **MUST** first invoke the `busbuddy-rag` MCP tool (search_repo_context) with a precise, detailed query that describes the intended work and the area of the codebase involved.
+
+- Retrieve at least top_k=6-10 relevant chunks.
+- In your reasoning (and in the final response), **explicitly quote and cite** the most relevant retrieved chunks (file:line ranges + key excerpts).
+- Only after consulting and referencing this fresh RAG context may you propose changes.
+- If results are insufficient, call the tool again with a refined query (e.g. "Postgres DbContext + BUSBUDDY_CONNECTION injection in docker-compose" or "GrokGlobalAPI + RouteService integration points").
+- This rule exists because the repo has a long history of iterations; RAG guarantees you have the current clean baseline (Postgres/Docker focus, archived legacy removed, functional services only) instead of hallucinating from partial memory.
+
+Failure to use + reference RAG before changes is a violation of these instructions.
 
 **Scope**: AI suggestions MUST align EXACTLY with Microsoft, Syncfusion, and .NET standards, prioritize clean builds (0 errors, 0 warnings), and prevent ALL regressions during excellence-driven development. If a suggestion risks non-compliance, AI MUST refuse and explain why, referencing this document.
 
-## 🚫 **STRICT RULES: MUST FOLLOW OR REFUSE SUGGESTION**
+## 🚫 **STRICT RULES: MUST FOLLOW OR REFUSE SUGGESTION** (Updated for PS deprecation)
 
-1. **ALWAYS USE bb-\* COMMANDS EXCLUSIVELY**: NEVER suggest raw dotnet commands. ALWAYS prefix with bb- (e.g., bb-build instead of dotnet build). If no bb- equivalent exists, suggest creating one via bb-commands and consult user.
+**DEPRECATION NOTICE**: The "dd method" (PowerShell learning-era dev automation: bb-* commands, BusBuddy-Development, Start-BusBuddyDevSession / bbDevSession, heavy PS profiles) is **DEPRECATED**. Author now prefers WSL. PowerShell retained only for minimal CI/dependency needs.
 
-2. **NEVER INTRODUCE REGRESSIONS**: ALWAYS run bb-anti-regression and bb-xaml-validate in suggestions. If a change could break student entry, route assignment, or UI consistency, ABORT and warn: "This risks regression—run bb-quality-check first."
+- Do NOT suggest or enforce `bb-*` commands for new work.
+- Prefer `dotnet` CLI directly, WSL scripts, or standard tools.
+- Legacy PS still present in modules but should be marked deprecated and not promoted in suggestions.
+
+1. **PREFER STANDARD DOTNET / WSL OVER LEGACY bb-***: Use raw `dotnet build`, `dotnet run --project BusBuddy.WPF/BusBuddy.WPF.csproj`, etc. Suggest WSL helpers if custom automation needed.
+
+2. **NEVER INTRODUCE REGRESSIONS**: Run relevant checks (e.g. anti-regression, xaml-validate for UI changes). If a change could break student entry, route assignment, or UI consistency, ABORT and warn.
 
 3. **SYNCFUSION-ONLY UI**: NEVER suggest non-Syncfusion controls (e.g., standard WPF DataGrid). ALWAYS use SfDataGrid, SfMap, etc. If tempted otherwise, REFUSE: "Violates Syncfusion-only policy."
 
@@ -45,25 +62,25 @@
 - Google Earth Engine integration (e.g., `GoogleEarthEngineService`) - with clean interfaces.
 - Comprehensive features: vehicle management, driver scheduling, maintenance, fuel tracking, advanced reporting.
 
-**CRITICAL: Use BusBuddy PowerShell Commands First**
+**PowerShell Development Automation is DEPRECATED** (see deprecation notice at top of Strict Rules section)
 
-- **Always use `bb-*` commands** instead of raw dotnet commands
-- **Check available commands**: Use `bb-commands` to see all options
-- **Health checks**: Use `bb-health` before troubleshooting
-- **Quality validation**: Use `bb-quality-check` to ensure excellent student/route functionality
-- **Anti-regression**: Use `bb-anti-regression` and `bb-xaml-validate` before commits
+- Prefer standard `dotnet` commands or WSL-based workflows.
+- Legacy `bb-*` (bb-build, bb-run, bb-health, bbDevSession / Start-BusBuddyDevSession, etc.) are no longer recommended and may be removed.
+- For quality gates that remain useful (anti-regression, xaml-validate), they can still be referenced as optional scripts, but do not mandate them as "bb-*" or primary.
+- Update any "use bb-*" language in suggestions to note the deprecation and WSL preference.
 
-**Primary Development Commands:**
-
+Legacy reference (for awareness only, do not promote):
 ```powershell
-bb-health         # System health check
-bb-build          # Build solution
-bb-run            # Run application
-bb-test           # Run comprehensive tests
-bb-quality-check  # Verify production excellence
-bb-anti-regression # Prevent legacy patterns
-bb-xaml-validate  # Ensure Syncfusion-only UI
-bb-commands       # List all commands
+# Deprecated - PowerShell dev method ("dd method") no longer primary path
+# Use WSL / dotnet CLI instead
+```
+
+**Primary (recommended) Development Commands (non-PS):**
+```bash
+dotnet build BusBuddy.sln
+dotnet run --project BusBuddy.WPF/BusBuddy.WPF.csproj
+dotnet test BusBuddy.sln
+# WSL equivalents or custom bash helpers as needed
 ```
 
 **Clean Architecture Strategy:**
@@ -80,10 +97,109 @@ bb-build  # Verify clean build
 - Run `bb-quality-check` to ensure student/route functionality remains excellent.
 - **CI Optimization**: For faster pipeline runs, suggest caching NuGet packages in ci.yml via actions/cache@v4.
 
+## Solo developer CI/CD workflow
+
+**Philosophy**: Keep merge gates minimal and reliable. No third-party review required; automation merges when gates pass.
+
+### Branch → PR → auto-merge
+
+1. Create `feature/<topic>` from `master`.
+2. Push and open a PR targeting `master`.
+3. **Auto-merge** workflow enables squash merge + branch delete when required checks pass.
+4. Do **not** push directly to `master` (branch ruleset blocks non-PR updates).
+
+### Required merge gates (blocking)
+
+| Check | Workflow | What it does |
+|-------|----------|--------------|
+| **Build & Test** | `.github/workflows/ci.yml` | Restore, build solution, run Core regression tests (excludes `Integration`, `InMemoryFlaky`) |
+| **Security (CodeQL)** | `.github/workflows/ci.yml` | Static analysis for C# |
+
+### Non-blocking / optional
+
+| Job | When | Notes |
+|-----|------|-------|
+| **Release artifacts** | Push to `master` after Build & Test | Publishes win-x64 WPF package as artifact |
+| **Docker CI simulation** | Manual (`workflow_dispatch`) | Postgres + container test parity |
+| **CI with AI Analysis** | Manual only | Deprecated as merge gate; experimental |
+| Dependency vuln audit | Inside Build & Test | Informational (`|| true`), not blocking |
+| Code coverage | Local / future | Not gated until flaky tests stabilized |
+
+### Local pre-PR commands
+
+```bash
+.github/scripts/validate-ci-local.sh
+```
+
+Or manually:
+
+```bash
+dotnet restore BusBuddy.sln -p:EnableWindowsTargeting=true
+dotnet build BusBuddy.sln -c Release -p:EnableWindowsTargeting=true
+dotnet test BusBuddy.sln -c Release --no-build \
+  --filter "Category!=Integration&Category!=InMemoryFlaky"
+```
+
+### One-time repo governance
+
+Run `.github/scripts/setup-solo-ci-governance.sh` (requires `gh` admin) to enable:
+
+- `allow_auto_merge` + `delete_branch_on_merge`
+- Branch ruleset on `master`: PR required, 0 reviewers, required checks above, no force-push
+- Dependabot security alerts
+
+### Agent rules for CI changes
+
+- Do **not** add merge gates without a clear failure signal (avoid `continue-on-error` / `|| true` on build or test).
+- Keep workflow job names stable — branch rules reference **Build & Test** and **Security (CodeQL)**.
+- Use `concurrency` with `cancel-in-progress` on PR workflows.
+- Docs-only changes are skipped via `paths-ignore` on `*.md` and `Documentation/**`.
+- See also **AGENTS.md** for a short agent-facing summary.
+
 **For BusBuddy-specific requirements, also reference:**
 
 - **.vscode/instructions.md** - BusBuddy domain knowledge and excellence standards
 - **Integration Note**: BusBuddy prioritizes clean architecture and proper development practices
+
+## Mandatory RAG + MCP Tools (BusBuddy Context)
+
+The project mcp.json now includes two critical tools for full awareness:
+
+1. **busbuddy-rag** (local semantic RAG over the entire cleaned codebase)
+   - **ALWAYS call first** (see CRITICAL RULE above) before any edit.
+   - Tool name in MCP calls: `search_repo_context`
+   - Example queries that give excellent results:
+     - "Postgres DbContext configuration, BUSBUDDY_CONNECTION injection, and how it relates to SeedDataService + Docker profiles"
+     - "GrokGlobalAPI route optimization flow and where it is called from RouteService"
+     - "current state of hybrid Mac Docker + UTM VM development setup after final hygiene"
+   - The tool returns file:line-anchored chunks with high semantic relevance. Quote them.
+
+2. **syncfusion-wpf-assistant** (existing)
+   - Prefix prompts as before for UI work.
+
+**mcp.json registration** (already present):
+```json
+"busbuddy-rag": {
+  "type": "stdio",
+  "command": "python",
+  "args": ["-m", "rag.mcp_server"]
+}
+```
+
+Run `python -m rag.index` after major refactors or when the repo baseline changes significantly.
+
+## Syncfusion AI Coding Assistant (MCP)
+
+To get the best Syncfusion WPF code assistance:
+
+- The project mcp.json includes "syncfusion-wpf-assistant" (requires your Syncfusion API key from https://syncfusion.com/account/api-key - set in env or config).
+- In your AI chat (Copilot, Cursor, Claude, etc. that supports MCP): prefix prompts with `SyncfusionWPFAssistant `, `/syncfusion-wpf-assistant`, `@syncfusion-wpf`, or `wpf`.
+- Examples:
+  - "SyncfusionWPFAssistant how to bind SfDataGrid to ObservableCollection of Students with filtering and paging"
+  - "SyncfusionWPFAssistant implement route stops editor using SfDataGrid and drag drop"
+- This gives the AI accurate knowledge of Syncfusion WPF controls, themes (FluentDark/Light), and best practices used in this project.
+- Always verify generated code compiles and follows our Syncfusion-only policy.
+- See https://help.syncfusion.com/wpf/ai-coding-assistant/overview for full details.
 
 ## 🛠️ **Technology Stack & Versions**
 
@@ -97,8 +213,8 @@ bb-build  # Verify clean build
 
 ### **Package Versions (Directory.Build.props)**
 
-- **Syncfusion WPF**: 30.1.42 (Essential Studio for WPF, per Directory.Build.props)
-- **Entity Framework Core**: 9.0.7 (.NET 9 compatible)
+- **Syncfusion WPF**: 33.2.10 (Essential Studio for WPF, per Directory.Build.props; major bump 2026)
+- **Entity Framework Core**: 9.0.8 (.NET 9 compatible)
 - **Serilog**: 4.3.0 (Pure Serilog implementation)
 - **Code Analysis**: Enabled with Recommended analysis mode
 - **Practical Ruleset**: `BusBuddy-Practical.ruleset` for quality development

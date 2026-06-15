@@ -1,6 +1,5 @@
 namespace BusBuddy.Core.Models
 {
-    // Stub for IScheduleAppointment
     public interface IScheduleAppointment
     {
         DateTime StartTime { get; set; }

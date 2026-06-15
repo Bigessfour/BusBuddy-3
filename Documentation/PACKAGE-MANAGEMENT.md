@@ -86,7 +86,7 @@ Following [Syncfusion WPF Installation Guide](https://help.syncfusion.com/window
 
 ### Current Syncfusion Configuration
 
-- **Version**: `30.1.40` (pinned in Directory.Build.props)
+- **Version**: `33.2.10` (pinned in Directory.Build.props; updated 2026 per package plan)
 - **Source**: `nuget.org` (official public feed)
 - **License**: Community/Commercial (configured via environment variable)
 - **Controls Used**: DockingManager, NavigationDrawer, SfDataGrid, Charts

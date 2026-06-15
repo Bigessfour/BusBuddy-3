@@ -17,7 +17,7 @@ using FuelModel = BusBuddy.Core.Models.Fuel;
 
 namespace BusBuddy.WPF.ViewModels.Fuel
 {
-    public class FuelManagementViewModel : BaseInDevelopmentViewModel
+    public class FuelManagementViewModel : BaseViewModel
     {
         private readonly IFuelService _fuelService;
         private readonly IBusService _busService;
@@ -75,9 +75,6 @@ namespace BusBuddy.WPF.ViewModels.Fuel
                 ExportCommand = new RelayCommand(_ => { _ = ExportFuelDataAsync(); });
                 ReportCommand = new RelayCommand(_ => { _ = ShowFuelReportAsync(); });
                 ReconciliationCommand = new RelayCommand(_ => { _ = ShowFuelReconciliationAsync(); });
-
-                // Set as ready for development
-                IsInDevelopment = false;
 
                 Logger.Information("FuelManagementViewModel constructor completed, initiating LoadFuelRecordsAsync");
                 _ = LoadFuelRecordsAsync();

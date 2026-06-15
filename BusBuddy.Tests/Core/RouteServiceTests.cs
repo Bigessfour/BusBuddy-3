@@ -18,27 +18,16 @@ namespace BusBuddy.Tests.Core
     /// </summary>
     public class TestDbContextFactory : IBusBuddyDbContextFactory
     {
-        private readonly BusBuddyDbContext _context;
+        private readonly DbContextOptions<BusBuddyDbContext> _options;
 
-        public TestDbContextFactory(BusBuddyDbContext context)
+        public TestDbContextFactory(DbContextOptions<BusBuddyDbContext> options)
         {
-            _context = context;
+            _options = options;
         }
 
-        public BusBuddyDbContext CreateDbContext()
-        {
-            return _context;
-        }
+        public BusBuddyDbContext CreateDbContext() => new BusBuddyDbContext(_options);
 
-        public BusBuddyDbContext CreateWriteDbContext()
-        {
-            return _context;
-        }
-
-        public void Dispose()
-        {
-            _context?.Dispose();
-        }
+        public BusBuddyDbContext CreateWriteDbContext() => new BusBuddyDbContext(_options);
     }
 
     /// <summary>
@@ -67,8 +56,7 @@ namespace BusBuddy.Tests.Core
             // Fast setup with minimal mocking
             _dbContext = new BusBuddyDbContext(_dbOptions);
 
-            // Create a simple context factory for testing
-            var contextFactory = new TestDbContextFactory(_dbContext);
+            var contextFactory = new TestDbContextFactory(_dbOptions);
             _routeService = new RouteService(contextFactory);
 
             // Ensure clean database and seed test data
@@ -289,10 +277,12 @@ namespace BusBuddy.Tests.Core
 
             var activated = await _routeService.ActivateRouteAsync(r.RouteId);
             Assert.That(activated.IsSuccess, Is.True);
+            _dbContext.ChangeTracker.Clear();
             Assert.That((await _dbContext.Routes.FindAsync(r.RouteId))!.IsActive, Is.True);
 
             var deactivated = await _routeService.DeactivateRouteAsync(r.RouteId);
             Assert.That(deactivated.IsSuccess, Is.True);
+            _dbContext.ChangeTracker.Clear();
             Assert.That((await _dbContext.Routes.FindAsync(r.RouteId))!.IsActive, Is.False);
         }
 

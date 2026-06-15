@@ -20,7 +20,7 @@ Re-enable Process:
 2. Ensure namespace still matches target folder structure.
 3. Add to `.csproj` if not using wildcard includes (current project uses SDK-style implicit includes; normally no change needed).
 4. Resolve any dependency / interface references that may have drifted.
-5. Run `bb-build` then `bb-quality-check` to confirm no regressions.
+5. Run `dotnet build BusBuddy.sln` then quality checks (bb- equivalents deprecated; see main docs for current WSL/dotnet flow).
 
 Notes:
 

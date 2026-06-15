@@ -198,7 +198,7 @@ function Bad-Example {
 
 ```powershell
 # Start development environment
-bbDevSession
+[DEPRECATED - see WSL note] bbDevSession (legacy)
 
 # This automatically:
 # 1. Loads PowerShell modules
@@ -509,6 +509,20 @@ function Invoke-MvpCheck {
 }
 ```
 
+## MacBook Pro + Windows VM Development (with Docker)
+The project was originally Windows-only (WPF). On macOS:
+- **Core/.NET dev & tests**: Use VS Code + this project's `.devcontainer` (runs Linux .NET container via Docker Desktop). Always include `-p:EnableWindowsTargeting=true` for builds (handles Windows TFMs cross-platform).
+- **Full WPF app (UI/debug)**: Use your Windows 11 VM (Parallels/UTM recommended on Apple Silicon).
+  - Share the folder bidirectionally (Parallels Tools).
+  - In VM: Use full Visual Studio 2022, open the shared folder, build/run `BusBuddy.WPF` normally.
+- **Docker/Postgres**: `docker compose --profile db up -d` for real Postgres (better than InMemory for `SeedDataService`, EF tests with Wiley data). 
+  - Host (Mac): localhost:5432
+  - From VM: Mac host IP (e.g. `10.211.55.2`; check `ipconfig getifaddr en0` on Mac).
+  - Compose also has test profile: `docker compose --profile test up --build`
+- **Keys**: Auto-loaded from macOS Passwords (see `App.xaml.cs` `LoadApiKeysFromMacPasswords()` using `security` CLI).
+- **Packages**: `dotnet restore -p:EnableWindowsTargeting=true`
+- See also the updated README and `.devcontainer/devcontainer.json` (includes Postgres port forward).
+
 ## 🚦 **Error Handling Patterns**
 
 ### **Service Layer Errors**
@@ -572,7 +586,7 @@ public async Task<Result<Student>> CreateStudentAsync(CreateStudentRequest reque
 
 ### **Advanced Workflows**
 
-- `bbDevSession` - Complete dev environment setup
+- `[DEPRECATED - see WSL note] bbDevSession (legacy)` - Complete dev environment setup
 - `bbQuickTest` - Rapid build-test cycle
 - `bbDiagnostic` - Comprehensive system analysis
 - `bbReport` - Generate project status report

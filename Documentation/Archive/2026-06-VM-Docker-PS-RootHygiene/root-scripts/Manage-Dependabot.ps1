@@ -78,7 +78,7 @@ function Test-SyncfusionCompliance {
     Write-Information ("=" * 80) -InformationAction Continue
 
     # Verification reminder
-    Write-Information "After applying changes, run bb-xaml-validate and bb-anti-regression; then run bb-test and bb-health to verify." -InformationAction Continue
+    Write-Information "After applying changes, run relevant quality validation (bb-anti-regression / xaml-validate equivalents are legacy; use dotnet test + manual review per current WSL guidelines in STEADY-STATE-AND-FINISH-ROADMAP.md)." -InformationAction Continue
 }
 
 Write-Information "Managing Dependabot updates for repository $Repo" -InformationAction Continue

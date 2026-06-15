@@ -3,15 +3,12 @@
 
 name: 🚀 BusBuddy CI with AI Analysis
 
+# Deprecated as a merge gate — manual only. Use CI workflow for PR gates.
 on:
-  push:
-    branches: [main, develop]
-  pull_request:
-    branches: [main]
   workflow_dispatch:
 
 env:
-  DOTNET_VERSION: "8.0.x"
+  DOTNET_VERSION: "9.0.x"  # aligned with ci.yml + global.json (skew fixed per package update plan)
   BUSBUDDY_NO_WELCOME: "1"
   BUSBUDDY_NO_XAI_WARN: "1"
   BUSBUDDY_SILENT: "1"

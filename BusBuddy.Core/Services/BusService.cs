@@ -694,24 +694,9 @@ namespace BusBuddy.Core.Services
             }
         }
 
-        [DebuggerStepThrough]
-        public async Task<Bus?> GetBusByIdAsync(int busId)
-        {
-            using (LogContext.PushProperty("QueryType", "GetBusById"))
-            {
-                Logger.Information("Retrieving bus with ID: {BusId}", busId);
+        public Task<Bus?> GetBusByIdAsync(int busId) => GetBusEntityByIdAsync(busId);
 
-                try
-                {
-                    return await GetBusEntityByIdAsync(busId);
-                }
-                catch (Exception ex)
-                {
-                    Logger.Error(ex, "Failed to retrieve bus with ID: {BusId}", busId);
-                    throw;
-                }
-            }
-        }
+        [DebuggerStepThrough]
 
         public async Task<Bus> AddBusAsync(Bus bus)
         {
@@ -870,9 +855,9 @@ namespace BusBuddy.Core.Services
         // These methods are kept for backward compatibility
         // They should be deprecated in favor of the new interface methods
 
-        public async Task<List<BusInfo>> GetBusInfoListAsync()
+        public async Task<List<Bus>> GetBusListAsync()
         {
-            using (LogContext.PushProperty("QueryType", "GetBusInfoList"))
+            using (LogContext.PushProperty("QueryType", "GetBusList"))
             using (LogContext.PushProperty("LegacyMethod", true))
             {
                 var stopwatch = Stopwatch.StartNew();
@@ -889,21 +874,21 @@ namespace BusBuddy.Core.Services
                             // Use projection to select only the fields we need
                             var result = await context.Buses
                                 .AsNoTracking()
-                                .Select(b => new BusInfo
+                                .Select(b => new Bus
                                 {
                                     BusId = b.BusId,
                                     BusNumber = b.BusNumber,
                                     Model = b.Make + " " + b.Model,
                                     Capacity = b.SeatingCapacity,
                                     Status = b.Status,
-                                    LastMaintenance = b.DateLastInspection ?? DateTime.MinValue
+                                    DateLastInspection = b.DateLastInspection
                                 })
                                 .ToListAsync();
 
                             Logger.Information("Retrieved {BusCount} buses using projection", result.Count);
 
                             stopwatch.Stop();
-                            Logger.Information("GetBusInfoList_Legacy completed in {Duration}ms", stopwatch.ElapsedMilliseconds);
+                            Logger.Information("GetBusList_Legacy completed in {Duration}ms", stopwatch.ElapsedMilliseconds);
                             return result;
                         }
                         finally
@@ -921,60 +906,16 @@ namespace BusBuddy.Core.Services
                 catch (Exception ex)
                 {
                     stopwatch.Stop();
-                    Logger.Error(ex, "GetBusInfoList_Legacy failed after {Duration}ms", stopwatch.ElapsedMilliseconds);
+                    Logger.Error(ex, "GetBusList_Legacy failed after {Duration}ms", stopwatch.ElapsedMilliseconds);
                     throw;
                 }
             }
         }
 
-        public async Task<BusInfo?> GetBusInfoByIdAsync(int busId)
-        {
-            try
-            {
-                Logger.Information("Retrieving bus info with ID: {BusId}", busId);
-
-                // Create a fresh context for this operation
-                var context = _contextFactory.CreateDbContext();
-                try
-                {
-                    // Use projection to select only the fields we need
-                    var bus = await context.Buses
-                        .AsNoTracking()
-                        .Where(v => v.BusId == busId)
-                        .Select(b => new BusInfo
-                        {
-                            BusId = b.BusId,
-                            BusNumber = b.BusNumber,
-                            Model = b.Make + " " + b.Model,
-                            Capacity = b.SeatingCapacity,
-                            Status = b.Status,
-                            LastMaintenance = b.DateLastInspection ?? DateTime.MinValue
-                        })
-                        .FirstOrDefaultAsync();
-
-                    if (bus == null)
-                    {
-                        Logger.Warning("Bus with ID: {BusId} not found", busId);
-                    }
-
-                    return bus;
-                }
-                finally
-                {
-                    // Properly dispose the context when done
-                    await context.DisposeAsync();
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger.Error(ex, "Failed to retrieve bus with ID: {BusId}", busId);
-                throw; // Propagate exception to caller - no fallback to sample data
-            }
-        }
 
         #endregion
 
-        public Task<List<RouteInfo>> GetAllRoutesAsync()
+        public Task<List<Route>> GetAllRoutesAsync()
         {
             Logger.Information("Retrieving all routes (legacy method - deprecated)");
 
@@ -984,7 +925,7 @@ namespace BusBuddy.Core.Services
                 "GetAllRoutesAsync is deprecated. Use IRouteService.GetAllActiveRoutesAsync() instead.");
         }
 
-        public Task<List<ScheduleInfo>> GetSchedulesByRouteAsync(int routeId)
+        public Task<List<Schedule>> GetSchedulesByRouteAsync(int routeId)
         {
             Logger.Information("Retrieving schedules for route ID: {RouteId} (legacy method - deprecated)", routeId);
 

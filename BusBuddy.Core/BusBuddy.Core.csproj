@@ -25,7 +25,7 @@
   <!-- Core Business Logic Packages -->
   <ItemGroup>
     <!-- Database and EF Core (Versions managed by Directory.Build.props) -->
-    <PackageReference Include="Microsoft.Data.SqlClient" Version="5.2.1" />
+    <PackageReference Include="Microsoft.Data.SqlClient" Version="$(SqlClientVersion)" /> <!-- resolved hardcode to central props (was 5.2.1) -->
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="$(EntityFrameworkVersion)" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="$(EntityFrameworkVersion)">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -34,6 +34,8 @@
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="$(EntityFrameworkVersion)" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="$(EntityFrameworkVersion)" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="$(EntityFrameworkVersion)" />
+    <!-- Postgres support for Docker-based testing (replaces SqlServer for the dev/test profiles) -->
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="$(NpgsqlVersion)" />
 
     <!-- Google Earth Engine Integration -->
     <PackageReference Include="Google.Apis.Auth" Version="$(GoogleApisVersion)" />
@@ -47,7 +49,7 @@
     <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="$(MicrosoftExtensionsVersion)" />
     <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="$(MicrosoftExtensionsVersion)" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="$(MicrosoftExtensionsVersion)" />
-    <PackageReference Include="Microsoft.Identity.Client" Version="4.74.1" />
+    <PackageReference Include="Microsoft.Identity.Client" Version="$(MicrosoftIdentityClientVersion)" /> <!-- resolved hardcode (was 4.74.1) -->
 
     <!-- xAI Grok API Integration (OpenAI-compatible) -->
     <PackageReference Include="OpenAI" Version="$(OpenAIVersion)" />
@@ -63,13 +65,13 @@
     <PackageReference Include="Serilog.Extensions.Logging" Version="$(SerilogExtensionsLoggingVersion)" />
 
     <!-- Application Insights for Production Monitoring -->
-    <PackageReference Include="Microsoft.ApplicationInsights.AspNetCore" Version="2.23.0" />
+    <PackageReference Include="Microsoft.ApplicationInsights.AspNetCore" Version="$(ApplicationInsightsVersion)" /> <!-- resolved hardcode to central props -->
 
     <!-- 📄 Syncfusion PDF Generation for Core Services -->
     <PackageReference Include="Syncfusion.Pdf.NET" Version="$(SyncfusionVersion)" />
   <!-- Geospatial: NetTopologySuite for point-in-polygon and shapefile IO -->
-  <PackageReference Include="NetTopologySuite" Version="2.5.0" />
-  <PackageReference Include="NetTopologySuite.IO.ShapeFile" Version="2.1.0" />
+  <PackageReference Include="NetTopologySuite" Version="$(NetTopologySuiteVersion)" /> <!-- NTS main @2.6; resolved hardcode -->
+  <PackageReference Include="NetTopologySuite.IO.ShapeFile" Version="2.1.0" /> <!-- pinned compatible (IO.ShapeFile lags main NTS); was hard 2.1.0 -->
   </ItemGroup>
 
   <ItemGroup>
