@@ -9,6 +9,7 @@
         <!-- Syncfusion / EF / Serilog Versions (single definitions) -->
         <SyncfusionVersion>33.2.10</SyncfusionVersion> <!-- bumped per 2026 package update plan; see STEADY-STATE-AND-FINISH-ROADMAP.md for Syncfusion 33.x upgrade notes (license + control patterns) -->
         <EntityFrameworkVersion>9.0.8</EntityFrameworkVersion>
+    <NpgsqlVersion>9.0.3</NpgsqlVersion> <!-- for Postgres in docker-compose test/dev profiles -->
         <SerilogVersion>4.3.0</SerilogVersion>
         <SerilogSinksFileVersion>7.0.0</SerilogSinksFileVersion>
         <SerilogSinksConsoleVersion>6.0.0</SerilogSinksConsoleVersion>
@@ -49,7 +50,7 @@
         <!-- INDUSTRY STANDARD: Practical Code Quality -->
         <EnableNETAnalyzers>true</EnableNETAnalyzers>
         <AnalysisMode>Recommended</AnalysisMode>
-        <CodeAnalysisRuleSet>$(MSBuildThisFileDirectory)BusBuddy-Practical.ruleset</CodeAnalysisRuleSet>
+        <CodeAnalysisRuleSet><!-- archived non-participating 2026-06 hygiene round; removed reference --></CodeAnalysisRuleSet>
         <!-- INDUSTRY STANDARD: Single-user desktop app settings -->
         <!-- Documentation file generation enabled for public APIs — MVP compliance -->
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
@@ -62,7 +63,7 @@
         <InvariantGlobalization>false</InvariantGlobalization>
         <SatelliteResourceLanguages>en-US</SatelliteResourceLanguages>
         <!-- Code analysis configuration -->
-        <CodeAnalysisRuleSet>$(MSBuildThisFileDirectory)BusBuddy-Practical.ruleset</CodeAnalysisRuleSet>
+        <CodeAnalysisRuleSet><!-- archived non-participating 2026-06 hygiene round; removed reference --></CodeAnalysisRuleSet>
         <EnableNETAnalyzers>true</EnableNETAnalyzers>
         <AnalysisLevel>latest</AnalysisLevel>
         <!-- Consolidated NoWarn list (low-impact + nullable MVP suppressions) -->

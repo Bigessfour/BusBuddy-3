@@ -114,17 +114,12 @@ namespace BusBuddy.Core.Extensions
             // Register Dashboard Metrics Service
             services.AddScoped<IDashboardMetricsService, DashboardMetricsService>();
 
-            // Register Database NULL Fix Service
-            services.AddScoped<BusBuddy.Core.Services.DatabaseNullFixService>();
-
-            // Geospatial helpers (MVP-ready)
+            // Geospatial helpers (core, offline fallback)
             // OfflineGeocodingService provides deterministic lat/long without external keys.
-            // Documentation reference: Microsoft .NET DI patterns (HostBuilder/IServiceCollection)
-            // https://learn.microsoft.com/dotnet/core/extensions/dependency-injection
             services.AddSingleton<IGeocodingService, OfflineGeocodingService>();
 
-            // Register Phase 2 Data Seeding Service
-            // services.AddScoped<IPhase2DataSeederService, Phase2DataSeederService>();
+            // Note: Legacy Phase seeders, DataIntegrity, DatabaseNullFix etc. archived in Final-Portfolio-Baseline-2026-06-Legacy-Cleanse.
+            // Core seeding is via SeedDataService (Postgres/Docker primary for testing).
 
             return services;
         }

@@ -1,0 +1,13 @@
+{
+  "TotalWarnings": 1,
+  "Timestamp": "2025-07-25T21:24:00.0135196-06:00",
+  "NullSafetyCount": 0,
+  "TopCategories": null,
+  "Recommendations": [
+    "Focus on CS860x null safety warnings first",
+    "Configure ruleset to suppress non-critical analyzer warnings",
+    "Aim for <100 total warnings by Phase 2 completion",
+    "Use dotnet build /p:ReportAnalyzer=true for detailed analysis"
+  ],
+  "Categories": {}
+}

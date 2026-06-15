@@ -1,0 +1,75 @@
+services:
+  # Dev service (optional for advanced compose-based devcontainer).
+  # Provides Linux .NET env + Postgres for Mac dev.
+  # See .devcontainer for current image-based setup (recommended for simplicity).
+  dev:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - .:/app:cached
+    command: sleep infinity
+    environment:
+      - DOTNET_ENVIRONMENT=Development
+      # Force Postgres for this Docker dev profile (overrides any SQL Server appsettings inside the image)
+      - BUSBUDDY_CONNECTION=Host=postgres;Database=busbuddy_test;Username=busbuddy;Password=busbuddy_dev;Include Error Detail=true
+      - DatabaseProvider=Postgres
+    depends_on:
+      postgres:
+        condition: service_healthy
+    profiles:
+      - dev
+
+  # Test service: Builds and runs the BusBuddy test image (Core + tests in Linux container)
+  # On Mac: Provides isolated .NET env for building/testing non-WPF parts.
+  # Use with --profile test
+  busbuddy-test:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - DOTNET_ENVIRONMENT=Development
+      # Force Postgres for this Docker test profile (the app inside the image will pick BUSBUDDY_CONNECTION first)
+      - BUSBUDDY_CONNECTION=Host=postgres;Database=busbuddy_test;Username=busbuddy;Password=busbuddy_dev;Include Error Detail=true
+      - DatabaseProvider=Postgres
+      # Pass keys from host (or use .env file + env_file)
+      # - XAI_API_KEY=${XAI_API_KEY}
+      # - SYNCFUSION_LICENSE_KEY=${SYNCFUSION_LICENSE_KEY}
+    # Note: bring postgres with --profile db when using --profile test for full DB integration tests.
+    # Example: docker compose --profile db --profile test up -d busbuddy-test
+    depends_on:
+      postgres:
+        condition: service_healthy
+        # Use required: false in very new Compose if you want to allow isolated profile test builds
+    profiles:
+      - test
+
+  # Postgres service for real DB integration testing / dev (instead of always InMemory)
+  # Useful for testing SeedDataService, EF Core, migrations with real Wiley data.
+  # Connection from host (Mac): Host=localhost;Port=5432;Database=busbuddy_test;Username=busbuddy;Password=busbuddy_dev
+  # From other containers (like dev or test): Host=postgres;...
+  # On Mac with Win11 VM (Parallels recommended): From inside the VM, connect using the Mac host IP
+  #   (e.g. Host=10.211.55.2 or similar for Parallels; check with `ipconfig getifaddr en0` or Parallels network settings on Mac).
+  #   Docker Desktop on Mac makes containers accessible via the host IP from the VM.
+  # Use with --profile db (or compose up -d --profile db)
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: busbuddy
+      POSTGRES_PASSWORD: busbuddy_dev
+      POSTGRES_DB: busbuddy_test
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_test_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U busbuddy"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    profiles:
+      - db
+
+volumes:
+  postgres_test_data:

@@ -34,6 +34,8 @@
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="$(EntityFrameworkVersion)" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="$(EntityFrameworkVersion)" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="$(EntityFrameworkVersion)" />
+    <!-- Postgres support for Docker-based testing (replaces SqlServer for the dev/test profiles) -->
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="$(NpgsqlVersion)" />
 
     <!-- Google Earth Engine Integration -->
     <PackageReference Include="Google.Apis.Auth" Version="$(GoogleApisVersion)" />

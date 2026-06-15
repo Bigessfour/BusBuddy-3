@@ -1,1 +1,0 @@
-macOS limitation note (per plan-01 + execution): Full Syncfusion WPF UI + app run + XAML validation requires Windows (or VM/CI). All package/Core source changes + build analysis done here with EnableWindowsTargeting. User to run full smoke + bb-xaml-validate + app on Windows post-pull. See plan.md for Windows-specific verification steps.

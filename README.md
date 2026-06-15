@@ -38,14 +38,28 @@ BusBuddy streamlines school transportation operations through intelligent route 
 - **PowerShell 7.5.2+** (with state-of-the-art features)
 - **Visual Studio Code** (recommended) or Visual Studio 2022
 
-### **Development Environment (PowerShell Deprecated)**
+### **Development Environment (PowerShell Deprecated; Mac + Windows VM Support)**
 
-**NOTE (2026)**: The original PowerShell development automation ("dd method" / bb-* commands, hyperthreading profiles, BusBuddy-Development) is **DEPRECATED**. It was created while learning PowerShell. The author now prefers **WSL**.
+**NOTE (2026)**: The original PowerShell development automation ("dd method" / bb-* commands, hyperthreading profiles, BusBuddy-Development) is **DEPRECATED**. It was created while learning PowerShell. The author now prefers **WSL / Docker / standard dotnet**.
+
+### On MacBook Pro (with Windows 11 VM via Parallels/UTM)
+- **Mac side (recommended for .NET Core, tests, services, editing)**: Use VS Code + Dev Containers extension + the `.devcontainer` (Linux .NET 9 container via Docker Desktop).
+  - Open folder → "Reopen in Container".
+  - Builds use `-p:EnableWindowsTargeting=true` (for net*-windows TFMs in Core/Tests).
+  - Run Core tests, use Docker Compose for Postgres (real DB for seeding/EF tests instead of InMemory).
+  - WPF UI **cannot** run natively on macOS.
+- **Windows 11 VM side (for full WPF app)**: 
+  - Share the project folder from Mac (Parallels Tools folder sharing is excellent; or use git clone inside VM or cloud sync).
+  - In VM: Install .NET 9 SDK (ARM64 if Apple Silicon), open in Visual Studio 2022 or VS Code.
+  - Build/run the full `BusBuddy.WPF` project normally for UI/debug.
+  - Changes sync via shared folder/git.
+- **Docker on Mac**: Use `docker compose` (see below) for Postgres and test isolation. Accessible from VM via Mac host IP (e.g. 10.211.55.2 for Parallels default; check with `ipconfig getifaddr en0` on Mac).
+- **Keys**: Loaded automatically from macOS Passwords app via the code in `App.xaml.cs` (uses `security` CLI). See `LoadApiKeysFromMacPasswords()`.
 
 Use standard tools:
-- `dotnet build BusBuddy.sln`
-- `dotnet run --project BusBuddy.WPF/BusBuddy.WPF.csproj`
-- WSL bash scripts or native equivalents for any custom automation.
+- `dotnet build BusBuddy.sln -p:EnableWindowsTargeting=true` (Mac/container)
+- `dotnet run --project BusBuddy.WPF/BusBuddy.WPF.csproj` (in VM)
+- Docker for services/tests.
 
 Legacy PS modules are in `Documentation/Archive/PowerShell-Legacy/` and `Powershell/` (retained for CI/dependency scripts only). See STEADY-STATE-AND-FINISH-ROADMAP.md.
 

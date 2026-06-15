@@ -62,6 +62,15 @@ namespace BusBuddy.Core.Data
 
             var configuredCtx = new BusBuddyDbContext(configuredOptionsBuilder.Options);
             configuredCtx.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
+
+            // For Postgres in Docker profiles: ensure the database and schema exist (bypasses SQL-Server-only migrations)
+            if (provider.Equals("Postgres", StringComparison.OrdinalIgnoreCase) ||
+                provider.Equals("PostgreSQL", StringComparison.OrdinalIgnoreCase) ||
+                connectionString.Contains("Host=", StringComparison.OrdinalIgnoreCase))
+            {
+                configuredCtx.Database.EnsureCreated();
+            }
+
             return configuredCtx;
         }
 
@@ -118,7 +127,16 @@ namespace BusBuddy.Core.Data
             if (!string.IsNullOrWhiteSpace(envOverride))
             {
                 Logger.Information("Using BUSBUDDY_CONNECTION environment override");
-                optionsBuilder.UseSqlServer(envOverride, sql => sql.EnableRetryOnFailure());
+                if (envOverride.Contains("Host=", StringComparison.OrdinalIgnoreCase) ||
+                    envOverride.Contains("postgres", StringComparison.OrdinalIgnoreCase))
+                {
+                    Logger.Information("Design-time: using Npgsql for Postgres connection");
+                    optionsBuilder.UseNpgsql(envOverride);
+                }
+                else
+                {
+                    optionsBuilder.UseSqlServer(envOverride, sql => sql.EnableRetryOnFailure());
+                }
                 return new BusBuddyDbContext(optionsBuilder.Options);
             }
 
@@ -151,6 +169,12 @@ namespace BusBuddy.Core.Data
             else if (provider.Equals("Local", StringComparison.OrdinalIgnoreCase))
             {
                 optionsBuilder.UseSqlite(connection);
+            }
+            else if (provider.Equals("Postgres", StringComparison.OrdinalIgnoreCase) ||
+                     provider.Equals("PostgreSQL", StringComparison.OrdinalIgnoreCase))
+            {
+                // Docker / test profile path
+                optionsBuilder.UseNpgsql(connection);
             }
             else
             {

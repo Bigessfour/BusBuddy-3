@@ -1,6 +1,17 @@
-# GitHub Copilot Custom Instructions - BusBuddy Excellence Development (Updated: August 22, 2025)
+# GitHub Copilot Custom Instructions - BusBuddy Excellence Development (Updated: 2026-06 - Final Portfolio Baseline + RAG)
 
-**Purpose**: STRICTLY guides AI assistants (GitHub Copilot, Grok, etc.) on technical standards, compliance, and anti-regression rules for BusBuddy development. For project-specific quality goals and developer workflows, see .vscode/instructions.md. AI MUST adhere to these instructions without deviation to prevent veering off course.
+**Purpose**: STRICTLY guides AI assistants (GitHub Copilot, Grok, Claude, Cursor, etc.) on technical standards, compliance, anti-regression rules, **and mandatory full-project context retrieval** for BusBuddy development. For project-specific quality goals and developer workflows, see .vscode/instructions.md. AI MUST adhere to these instructions without deviation to prevent veering off course.
+
+**CRITICAL NEW RULE — RAG CONTEXT IS MANDATORY**:
+Before **ANY** code change, edit, refactor, new feature, bug fix, or architectural decision (no matter how small), you **MUST** first invoke the `busbuddy-rag` MCP tool (search_repo_context) with a precise, detailed query that describes the intended work and the area of the codebase involved.
+
+- Retrieve at least top_k=6-10 relevant chunks.
+- In your reasoning (and in the final response), **explicitly quote and cite** the most relevant retrieved chunks (file:line ranges + key excerpts).
+- Only after consulting and referencing this fresh RAG context may you propose changes.
+- If results are insufficient, call the tool again with a refined query (e.g. "Postgres DbContext + BUSBUDDY_CONNECTION injection in docker-compose" or "GrokGlobalAPI + RouteService integration points").
+- This rule exists because the repo has a long history of iterations; RAG guarantees you have the current clean baseline (Postgres/Docker focus, archived legacy removed, functional services only) instead of hallucinating from partial memory.
+
+Failure to use + reference RAG before changes is a violation of these instructions.
 
 **Scope**: AI suggestions MUST align EXACTLY with Microsoft, Syncfusion, and .NET standards, prioritize clean builds (0 errors, 0 warnings), and prevent ALL regressions during excellence-driven development. If a suggestion risks non-compliance, AI MUST refuse and explain why, referencing this document.
 
@@ -90,6 +101,33 @@ bb-build  # Verify clean build
 
 - **.vscode/instructions.md** - BusBuddy domain knowledge and excellence standards
 - **Integration Note**: BusBuddy prioritizes clean architecture and proper development practices
+
+## Mandatory RAG + MCP Tools (BusBuddy Context)
+
+The project mcp.json now includes two critical tools for full awareness:
+
+1. **busbuddy-rag** (local semantic RAG over the entire cleaned codebase)
+   - **ALWAYS call first** (see CRITICAL RULE above) before any edit.
+   - Tool name in MCP calls: `search_repo_context`
+   - Example queries that give excellent results:
+     - "Postgres DbContext configuration, BUSBUDDY_CONNECTION injection, and how it relates to SeedDataService + Docker profiles"
+     - "GrokGlobalAPI route optimization flow and where it is called from RouteService"
+     - "current state of hybrid Mac Docker + UTM VM development setup after final hygiene"
+   - The tool returns file:line-anchored chunks with high semantic relevance. Quote them.
+
+2. **syncfusion-wpf-assistant** (existing)
+   - Prefix prompts as before for UI work.
+
+**mcp.json registration** (already present):
+```json
+"busbuddy-rag": {
+  "type": "stdio",
+  "command": "python",
+  "args": ["-m", "rag.mcp_server"]
+}
+```
+
+Run `python -m rag.index` after major refactors or when the repo baseline changes significantly.
 
 ## Syncfusion AI Coding Assistant (MCP)
 
