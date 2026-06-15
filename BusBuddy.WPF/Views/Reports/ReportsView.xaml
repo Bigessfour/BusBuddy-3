@@ -28,6 +28,7 @@
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
         <!-- Header -->
@@ -238,8 +239,29 @@
             </Grid>
         </ScrollViewer>
 
+        <!-- Recent Generated Reports - SfDataGrid (Finish UI element per roadmap + RAG: Syncfusion key components) -->
+        <Border Grid.Row="2" Background="{DynamicResource BusBuddy.Brush.Surface.LightMode.Accent}" CornerRadius="4" Padding="8" Margin="0,6,0,4">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <TextBlock Grid.Row="0" Text="📋 Recent Reports (SfDataGrid)" FontWeight="SemiBold" Margin="4,0,0,4" Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"/>
+                <syncfusion:SfDataGrid Grid.Row="1" ItemsSource="{Binding GeneratedReports}" AutoGenerateColumns="False" Height="110"
+                                       AllowFiltering="True" AllowSorting="True" ColumnSizer="Star">
+                    <syncfusion:SfDataGrid.Columns>
+                        <syncfusion:GridTextColumn HeaderText="Report" MappingName="Name" Width="180"/>
+                        <syncfusion:GridTextColumn HeaderText="Time" MappingName="GeneratedAt" Width="80"/>
+                        <syncfusion:GridTextColumn HeaderText="Result / AI Note" MappingName="Result" Width="*"/>
+                    </syncfusion:SfDataGrid.Columns>
+                </syncfusion:SfDataGrid>
+                <TextBlock Grid.Row="2" Text="{Binding AIReportSummary}" FontSize="11" Foreground="{DynamicResource BusBuddy.Brush.Text.Secondary}" Margin="4,4,0,0" TextWrapping="Wrap"/>
+            </Grid>
+        </Border>
+
         <!-- Status Bar -->
-    <Border Grid.Row="2" Background="{DynamicResource BusBuddy.Brush.Surface.LightMode.Surface}" CornerRadius="3" Padding="10" Margin="0,10,0,0">
+    <Border Grid.Row="3" Background="{DynamicResource BusBuddy.Brush.Surface.LightMode.Surface}" CornerRadius="3" Padding="10" Margin="0,10,0,0">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
