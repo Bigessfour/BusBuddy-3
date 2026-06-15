@@ -2,7 +2,7 @@
 
 [![.NET](https://img.shields.io/badge/.NET-9.0.304-blue)](https://dotnet.microsoft.com/download/dotnet/9.0)
 [![PowerShell](https://img.shields.io/badge/PowerShell-7.5.2%20✨%20Advanced-blue)](https://github.com/PowerShell/PowerShell)
-[![Syncfusion](https://img.shields.io/badge/Syncfusion-30.1.42%20✅%20Licensed-orange)](https://www.syncfusion.com/wpf-controls)
+[![Syncfusion](https://img.shields.io/badge/Syncfusion-33.2.10%20✅%20Licensed-orange)](https://www.syncfusion.com/wpf-controls)
 [![Hyperthreading](https://img.shields.io/badge/Hyperthreading-⚡%20Optimized-green)](https://docs.microsoft.com/en-us/powershell/scripting/learn/experimental-features)
 [![MVP Status](https://img.shields.io/badge/MVP-⚠️%20Development-yellow)](https://github.com/Bigessfour/BusBuddy-3)
 [![Production](https://img.shields.io/badge/Production-🚧%20In%20Progress-yellow)](https://github.com/Bigessfour/BusBuddy-3)ddy - School Transportation Management System
@@ -12,7 +12,7 @@
 [![Build Status](https://img.shields.io/badge/build-✅%20passing-brightgreen)](https://github.com/Bigessfour/BusBuddy-3)
 [![.NET](https://img.shields.io/badge/.NET-9.0.304-blue)](https://dotnet.microsoft.com/download/dotnet/9.0)
 [![PowerShell](https://img.shields.io/badge/PowerShell-7.5.2-blue)](https://github.com/PowerShell/PowerShell)
-[![Syncfusion](https://img.shields.io/badge/Syncfusion-30.1.42%20✅%20Licensed-orange)](https://www.syncfusion.com/wpf-controls)
+[![Syncfusion](https://img.shields.io/badge/Syncfusion-33.2.10%20✅%20Licensed-orange)](https://www.syncfusion.com/wpf-controls)
 [![MVP Status](https://img.shields.io/badge/MVP-⚠️%20Development-yellow)](https://github.com/Bigessfour/BusBuddy-3)
 [![Production](https://img.shields.io/badge/Production-�%20In%20Progress-yellow)](https://github.com/Bigessfour/BusBuddy-3)
 
@@ -231,7 +231,7 @@ bbLicense
 | ---------------- | --------------------------- | -------- |
 | **Framework**    | .NET                        | 9.0.303  |
 | **UI Framework** | WPF                         | Built-in |
-| **UI Controls**  | Syncfusion Essential Studio | 30.1.42  |
+| **UI Controls**  | Syncfusion Essential Studio | 33.2.10 (see Directory.Build.props) |
 | **Data Access**  | Entity Framework Core       | 9.0.7    |
 | **Database**     | SQL Server / LocalDB        | Latest   |
 | **Logging**      | Serilog                     | 4.3.0    |

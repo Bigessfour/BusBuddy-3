@@ -7,7 +7,7 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <UseWPF>true</UseWPF>
         <!-- Syncfusion / EF / Serilog Versions (single definitions) -->
-        <SyncfusionVersion>30.2.6</SyncfusionVersion>
+        <SyncfusionVersion>33.2.10</SyncfusionVersion> <!-- bumped per 2026 package update plan; see STEADY-STATE-AND-FINISH-ROADMAP.md for Syncfusion 33.x upgrade notes (license + control patterns) -->
         <EntityFrameworkVersion>9.0.8</EntityFrameworkVersion>
         <SerilogVersion>4.3.0</SerilogVersion>
         <SerilogSinksFileVersion>7.0.0</SerilogSinksFileVersion>
@@ -17,7 +17,7 @@
         <!-- WPF/UI Package Versions (.NET 9 Compatible) -->
         <AutoMapperVersion>12.0.1</AutoMapperVersion>
         <AutoMapperExtensionsDIVersion>12.0.1</AutoMapperExtensionsDIVersion>
-        <CommunityToolkitMvvmVersion>8.4.0</CommunityToolkitMvvmVersion>
+        <CommunityToolkitMvvmVersion>8.4.2</CommunityToolkitMvvmVersion> <!-- patch update -->
         <WebView2Version>1.0.3405.78</WebView2Version>
         <XamlBehaviorsVersion>1.1.135</XamlBehaviorsVersion>
         <!-- Testing Package Versions (.NET 9 Compatible) -->
@@ -36,6 +36,8 @@
         <SystemNetHttpJsonVersion>9.0.8</SystemNetHttpJsonVersion>
         <NetTopologySuiteVersion>2.6.0</NetTopologySuiteVersion>
         <MicrosoftIdentityClientVersion>4.76.0</MicrosoftIdentityClientVersion>
+        <ApplicationInsightsVersion>2.23.0</ApplicationInsightsVersion>
+        <SerilogSettingsConfigurationVersion>9.0.0</SerilogSettingsConfigurationVersion>
         <NUnit3TestAdapterVersion>5.1.0</NUnit3TestAdapterVersion>
         <MoqEntityFrameworkCoreVersion>9.0.0.5</MoqEntityFrameworkCoreVersion>
         <!-- Microsoft.Extensions Package Versions — Consistent versioning -->

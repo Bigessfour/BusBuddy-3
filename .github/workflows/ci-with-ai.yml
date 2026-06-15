@@ -11,7 +11,7 @@ on:
   workflow_dispatch:
 
 env:
-  DOTNET_VERSION: "8.0.x"
+  DOTNET_VERSION: "9.0.x"  # aligned with ci.yml + global.json (skew fixed per package update plan)
   BUSBUDDY_NO_WELCOME: "1"
   BUSBUDDY_NO_XAI_WARN: "1"
   BUSBUDDY_SILENT: "1"

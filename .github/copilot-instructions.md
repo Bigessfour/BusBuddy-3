@@ -97,8 +97,8 @@ bb-build  # Verify clean build
 
 ### **Package Versions (Directory.Build.props)**
 
-- **Syncfusion WPF**: 30.1.42 (Essential Studio for WPF, per Directory.Build.props)
-- **Entity Framework Core**: 9.0.7 (.NET 9 compatible)
+- **Syncfusion WPF**: 33.2.10 (Essential Studio for WPF, per Directory.Build.props; major bump 2026)
+- **Entity Framework Core**: 9.0.8 (.NET 9 compatible)
 - **Serilog**: 4.3.0 (Pure Serilog implementation)
 - **Code Analysis**: Enabled with Recommended analysis mode
 - **Practical Ruleset**: `BusBuddy-Practical.ruleset` for quality development
