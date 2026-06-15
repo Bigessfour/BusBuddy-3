@@ -1,6 +1,7 @@
 using System;
 using System.Windows;
 using System.Windows.Controls;
+using BusBuddy.WPF.ViewModels.Driver; // VM dedup - using subfolder version
 using System.Windows.Controls.Primitives;
 using System.Windows.Automation;
 using System.Windows.Media;
@@ -25,7 +26,7 @@ namespace BusBuddy.WPF.Views.Driver
                 InitializeComponent();
 
                 // Set the ViewModel for data binding (simple instantiation Phase 1)
-                DataContext = new DriversViewModel();
+                DataContext = new DriversViewModel(); // now from Driver subfolder after dedup
 
                 // Apply Syncfusion theme
                 SyncfusionThemeManager.ApplyTheme(this);

@@ -198,7 +198,7 @@ function Bad-Example {
 
 ```powershell
 # Start development environment
-bbDevSession
+[DEPRECATED - see WSL note] bbDevSession (legacy)
 
 # This automatically:
 # 1. Loads PowerShell modules
@@ -572,7 +572,7 @@ public async Task<Result<Student>> CreateStudentAsync(CreateStudentRequest reque
 
 ### **Advanced Workflows**
 
-- `bbDevSession` - Complete dev environment setup
+- `[DEPRECATED - see WSL note] bbDevSession (legacy)` - Complete dev environment setup
 - `bbQuickTest` - Rapid build-test cycle
 - `bbDiagnostic` - Comprehensive system analysis
 - `bbReport` - Generate project status report

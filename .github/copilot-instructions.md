@@ -4,11 +4,17 @@
 
 **Scope**: AI suggestions MUST align EXACTLY with Microsoft, Syncfusion, and .NET standards, prioritize clean builds (0 errors, 0 warnings), and prevent ALL regressions during excellence-driven development. If a suggestion risks non-compliance, AI MUST refuse and explain why, referencing this document.
 
-## 🚫 **STRICT RULES: MUST FOLLOW OR REFUSE SUGGESTION**
+## 🚫 **STRICT RULES: MUST FOLLOW OR REFUSE SUGGESTION** (Updated for PS deprecation)
 
-1. **ALWAYS USE bb-\* COMMANDS EXCLUSIVELY**: NEVER suggest raw dotnet commands. ALWAYS prefix with bb- (e.g., bb-build instead of dotnet build). If no bb- equivalent exists, suggest creating one via bb-commands and consult user.
+**DEPRECATION NOTICE**: The "dd method" (PowerShell learning-era dev automation: bb-* commands, BusBuddy-Development, Start-BusBuddyDevSession / bbDevSession, heavy PS profiles) is **DEPRECATED**. Author now prefers WSL. PowerShell retained only for minimal CI/dependency needs.
 
-2. **NEVER INTRODUCE REGRESSIONS**: ALWAYS run bb-anti-regression and bb-xaml-validate in suggestions. If a change could break student entry, route assignment, or UI consistency, ABORT and warn: "This risks regression—run bb-quality-check first."
+- Do NOT suggest or enforce `bb-*` commands for new work.
+- Prefer `dotnet` CLI directly, WSL scripts, or standard tools.
+- Legacy PS still present in modules but should be marked deprecated and not promoted in suggestions.
+
+1. **PREFER STANDARD DOTNET / WSL OVER LEGACY bb-***: Use raw `dotnet build`, `dotnet run --project BusBuddy.WPF/BusBuddy.WPF.csproj`, etc. Suggest WSL helpers if custom automation needed.
+
+2. **NEVER INTRODUCE REGRESSIONS**: Run relevant checks (e.g. anti-regression, xaml-validate for UI changes). If a change could break student entry, route assignment, or UI consistency, ABORT and warn.
 
 3. **SYNCFUSION-ONLY UI**: NEVER suggest non-Syncfusion controls (e.g., standard WPF DataGrid). ALWAYS use SfDataGrid, SfMap, etc. If tempted otherwise, REFUSE: "Violates Syncfusion-only policy."
 
@@ -45,25 +51,25 @@
 - Google Earth Engine integration (e.g., `GoogleEarthEngineService`) - with clean interfaces.
 - Comprehensive features: vehicle management, driver scheduling, maintenance, fuel tracking, advanced reporting.
 
-**CRITICAL: Use BusBuddy PowerShell Commands First**
+**PowerShell Development Automation is DEPRECATED** (see deprecation notice at top of Strict Rules section)
 
-- **Always use `bb-*` commands** instead of raw dotnet commands
-- **Check available commands**: Use `bb-commands` to see all options
-- **Health checks**: Use `bb-health` before troubleshooting
-- **Quality validation**: Use `bb-quality-check` to ensure excellent student/route functionality
-- **Anti-regression**: Use `bb-anti-regression` and `bb-xaml-validate` before commits
+- Prefer standard `dotnet` commands or WSL-based workflows.
+- Legacy `bb-*` (bb-build, bb-run, bb-health, bbDevSession / Start-BusBuddyDevSession, etc.) are no longer recommended and may be removed.
+- For quality gates that remain useful (anti-regression, xaml-validate), they can still be referenced as optional scripts, but do not mandate them as "bb-*" or primary.
+- Update any "use bb-*" language in suggestions to note the deprecation and WSL preference.
 
-**Primary Development Commands:**
-
+Legacy reference (for awareness only, do not promote):
 ```powershell
-bb-health         # System health check
-bb-build          # Build solution
-bb-run            # Run application
-bb-test           # Run comprehensive tests
-bb-quality-check  # Verify production excellence
-bb-anti-regression # Prevent legacy patterns
-bb-xaml-validate  # Ensure Syncfusion-only UI
-bb-commands       # List all commands
+# Deprecated - PowerShell dev method ("dd method") no longer primary path
+# Use WSL / dotnet CLI instead
+```
+
+**Primary (recommended) Development Commands (non-PS):**
+```bash
+dotnet build BusBuddy.sln
+dotnet run --project BusBuddy.WPF/BusBuddy.WPF.csproj
+dotnet test BusBuddy.sln
+# WSL equivalents or custom bash helpers as needed
 ```
 
 **Clean Architecture Strategy:**
@@ -84,6 +90,19 @@ bb-build  # Verify clean build
 
 - **.vscode/instructions.md** - BusBuddy domain knowledge and excellence standards
 - **Integration Note**: BusBuddy prioritizes clean architecture and proper development practices
+
+## Syncfusion AI Coding Assistant (MCP)
+
+To get the best Syncfusion WPF code assistance:
+
+- The project mcp.json includes "syncfusion-wpf-assistant" (requires your Syncfusion API key from https://syncfusion.com/account/api-key - set in env or config).
+- In your AI chat (Copilot, Cursor, Claude, etc. that supports MCP): prefix prompts with `SyncfusionWPFAssistant `, `/syncfusion-wpf-assistant`, `@syncfusion-wpf`, or `wpf`.
+- Examples:
+  - "SyncfusionWPFAssistant how to bind SfDataGrid to ObservableCollection of Students with filtering and paging"
+  - "SyncfusionWPFAssistant implement route stops editor using SfDataGrid and drag drop"
+- This gives the AI accurate knowledge of Syncfusion WPF controls, themes (FluentDark/Light), and best practices used in this project.
+- Always verify generated code compiles and follows our Syncfusion-only policy.
+- See https://help.syncfusion.com/wpf/ai-coding-assistant/overview for full details.
 
 ## 🛠️ **Technology Stack & Versions**
 

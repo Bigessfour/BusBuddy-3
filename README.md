@@ -38,24 +38,16 @@ BusBuddy streamlines school transportation operations through intelligent route 
 - **PowerShell 7.5.2+** (with state-of-the-art features)
 - **Visual Studio Code** (recommended) or Visual Studio 2022
 
-### **PowerShell 7.5.2 Enhanced Environment**
+### **Development Environment (PowerShell Deprecated)**
 
-BusBuddy includes state-of-the-art PowerShell automation with hyperthreading optimization:
+**NOTE (2026)**: The original PowerShell development automation ("dd method" / bb-* commands, hyperthreading profiles, BusBuddy-Development) is **DEPRECATED**. It was created while learning PowerShell. The author now prefers **WSL**.
 
-```powershell
-# Quick installation with hyperthreading detection
-.\Install-BusBuddyCompleteEnvironment.ps1
+Use standard tools:
+- `dotnet build BusBuddy.sln`
+- `dotnet run --project BusBuddy.WPF/BusBuddy.WPF.csproj`
+- WSL bash scripts or native equivalents for any custom automation.
 
-# Verify hyperthreading optimization
-htinfo                    # Display hyperthreading information
-sysinfo                   # System performance overview
-perfmetrics              # Real-time performance metrics
-
-# Advanced parallel processing
-bb-parallel-build        # Hyperthreading-optimized build
-bb-perf-profile          # Performance profiling with machine tuning
-bb-health-advanced       # Comprehensive system health check
-```
+Legacy PS modules are in `Documentation/Archive/PowerShell-Legacy/` and `Powershell/` (retained for CI/dependency scripts only). See STEADY-STATE-AND-FINISH-ROADMAP.md.
 
 ### **Installation & Setup**
 
@@ -77,7 +69,11 @@ bb-test                  # Optimized test execution
 Import-Module .\PowerShell\Modules\BusBuddy.Commands\BusBuddy.Commands.psm1
 ```
 
-**✅ Current Status**: Application builds and runs successfully with modern UI.
+**✅ Current Status**: Application builds and runs successfully with modern UI. 
+
+**Development Environment**: WSL recommended for terminal/build. Use plain `dotnet` commands (PS bb-* modules removed/deprecated). 
+
+**Syncfusion AI Assist**: MCP server @syncfusion/wpf-assistant configured in mcp.json. Prefix AI prompts with `SyncfusionWPFAssistant ` for accurate WPF + Syncfusion code gen (requires your Syncfusion API key). See .github/copilot-instructions.md and https://help.syncfusion.com/wpf/ai-coding-assistant/overview .
 
 ### **📋 Current Build Status**
 

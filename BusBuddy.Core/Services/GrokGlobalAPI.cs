@@ -34,7 +34,11 @@ namespace BusBuddy.Core.Services
             _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
             _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
 
-            // Load xAI configuration from environment and appsettings
+            // Load xAI configuration from environment and appsettings.
+            // On macOS, the WPF App startup calls LoadApiKeysFromMacPasswords() which pulls
+            // XAI_API_KEY (and others) from the Passwords app (Keychain) into the process env
+            // before DI / this constructor runs. This satisfies the "documented entry point"
+            // requirement without changing this class.
             _apiKey = _configuration["XAI:ApiKey"] ?? Environment.GetEnvironmentVariable("XAI_API_KEY") ?? string.Empty;
             _baseUrl = _configuration["XAI:BaseUrl"] ?? API_BASE_URL;
             var useLiveAPIString = _configuration["XAI:UseLiveAPI"] ?? "true";

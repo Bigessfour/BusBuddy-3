@@ -1,7 +1,10 @@
 // For format details, see https://aka.ms/devcontainer.json. For config options, see the
 // README at: https://github.com/devcontainers/templates/tree/main/src/dotnet
 {
-  "name": "C# (.NET)",
+  "name": "C# (.NET) - WSL preferred for BusBuddy (WPF on host Windows/Parallels)",
+  // WSL env recommended: use this container in WSL2 for dotnet, terminal cmds.
+  // WPF UI run on Windows host (dotnet run from Windows terminal or VS).
+  // Syncfusion MCP AI Assistant configured via root mcp.json (npx @syncfusion/wpf-assistant).
   // Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
   "image": "mcr.microsoft.com/devcontainers/dotnet:1-9.0-bookworm",
   "features": {

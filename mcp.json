@@ -4,7 +4,7 @@
       "args": [
         "-y",
         "@modelcontextprotocol/server-filesystem",
-        "C:\\Users\\biges\\Desktop\\BusBuddy\\BusBuddy"
+        "/Users/stephenmckitrick/BusBuddy/BusBuddy-3"
       ],
       "command": "npx"
     },
@@ -14,6 +14,21 @@
         "BRAVE_API_KEY": ""
       },
       "command": "npx"
+    },
+    "syncfusion-wpf-assistant": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@syncfusion/wpf-assistant@latest"
+      ],
+      "env": {
+        // This key is also loaded from macOS Passwords (via app startup loader) if you run
+        // MCP clients that inherit the process environment. For most IDE MCP hosts (VS Code, Cursor, etc.)
+        // it's better to keep the value here or let the host prompt. The app's LoadApiKeysFromMacPasswords()
+        // ensures the .NET registration methods (Syncfusion license + Grok) see the keys from Passwords.
+        "Syncfusion_API_Key": "YOUR_SYNCFUSION_API_KEY_HERE"
+      }
     }
   }
 }

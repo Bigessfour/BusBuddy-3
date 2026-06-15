@@ -240,7 +240,7 @@ graph LR
 bb-build          # Build solution
 bb-test           # Run tests
 bb-docs-serve     # Serve documentation locally
-bb-health         # System health check
+# bb-health (DEPRECATED)
 ```
 
 ### **Documentation Shortcuts**

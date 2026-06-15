@@ -98,7 +98,7 @@ namespace BusBuddy.WPF.Services
             // Preload only essential ViewModels that are likely to be used immediately
             var preloadTasks = new[]
             {
-                GetViewModelAsync<ViewModels.DashboardViewModel>(),
+                GetViewModelAsync<BusBuddy.WPF.ViewModels.Dashboard.DashboardViewModel>(), // fixed post VM dedup to subfolder version
                 // Add other essential ViewModels here as needed
             };
 

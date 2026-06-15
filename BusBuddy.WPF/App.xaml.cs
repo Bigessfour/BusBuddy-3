@@ -44,6 +44,13 @@ namespace BusBuddy.WPF
 
             _bootstrapLogger?.Information("🚌 BusBuddy bootstrap starting...");
 
+            // Load API keys from macOS Passwords (Keychain) into process environment variables
+            // so that documented entry points (EnsureSyncfusionLicenseRegistered, GrokGlobalAPI ctor, etc.)
+            // can find them via the standard Environment.GetEnvironmentVariable paths.
+            // This bridges Passwords app -> runtime env on macOS.
+            // On non-mac, falls back to existing env / machine vars.
+            LoadApiKeysFromMacPasswords();
+
             // Register Syncfusion license before any UI initialization
             EnsureSyncfusionLicenseRegistered();
 
@@ -99,6 +106,90 @@ namespace BusBuddy.WPF
                 Console.WriteLine($"Warning: Failed to initialize bootstrap logger: {ex.Message}");
                 Console.WriteLine("Continuing with console-only logging for bootstrap phase");
             }
+        }
+
+        /// <summary>
+        /// Loads sensitive API keys from macOS Passwords app (iCloud Keychain / local keychain)
+        /// into the current process environment variables.
+        /// This makes them available to the documented entry points:
+        /// - EnsureSyncfusionLicenseRegistered()  (looks for SYNCFUSION_LICENSE_KEY)
+        /// - GrokGlobalAPI constructor / XaiService paths (looks for XAI_API_KEY)
+        /// - mcp.json consumers for Syncfusion_API_Key (if the MCP client inherits process env)
+        ///
+        /// Uses the standard `security` CLI (no extra dependencies).
+        /// Safe on non-macOS (no-op).
+        /// Assumes entries in Passwords app have "Name" matching the env var name (e.g. "XAI_API_KEY").
+        /// If not found or on error, existing env vars are used (graceful fallback).
+        /// </summary>
+        private static void LoadApiKeysFromMacPasswords()
+        {
+            if (!System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.OSX))
+            {
+                _bootstrapLogger?.Information("Non-macOS platform - skipping Passwords keychain load (rely on system env vars)");
+                return;
+            }
+
+            _bootstrapLogger?.Information("🔐 Loading API keys from macOS Passwords (Keychain) into process environment...");
+
+            // Keys we care about for the documented registration paths
+            var keysToLoad = new[]
+            {
+                "XAI_API_KEY",           // xAI / Grok API key
+                "GROK_API_KEY",          // Alternative name used in some docs
+                "SYNCFUSION_LICENSE_KEY",// Syncfusion WPF controls license key
+                "Syncfusion_API_Key"     // For Syncfusion AI Coding Assistant MCP server
+            };
+
+            foreach (var keyName in keysToLoad)
+            {
+                try
+                {
+                    if (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable(keyName)))
+                    {
+                        _bootstrapLogger?.Information("  {Key} already present in environment - skipping keychain lookup", keyName);
+                        continue;
+                    }
+
+                    // Use macOS security CLI to retrieve the generic password (the secret value)
+                    // -s = service / name in Passwords app. User should name the entry the same as the env var.
+                    var psi = new System.Diagnostics.ProcessStartInfo
+                    {
+                        FileName = "/usr/bin/security",
+                        Arguments = $"find-generic-password -s {keyName} -w",
+                        RedirectStandardOutput = true,
+                        RedirectStandardError = true,
+                        UseShellExecute = false,
+                        CreateNoWindow = true
+                    };
+
+                    using var process = System.Diagnostics.Process.Start(psi);
+                    if (process == null)
+                    {
+                        _bootstrapLogger?.Warning("  Could not start security process for {Key}", keyName);
+                        continue;
+                    }
+
+                    string secret = process.StandardOutput.ReadToEnd().Trim();
+                    process.WaitForExit();
+
+                    if (process.ExitCode == 0 && !string.IsNullOrEmpty(secret))
+                    {
+                        Environment.SetEnvironmentVariable(keyName, secret);
+                        _bootstrapLogger?.Information("  ✅ Loaded {Key} from macOS Passwords into process env", keyName);
+                    }
+                    else
+                    {
+                        // Not found or error - this is normal if user hasn't added the entry yet
+                        _bootstrapLogger?.Information("  ℹ️ {Key} not found in Passwords (or access denied). Will use other sources / placeholders.", keyName);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _bootstrapLogger?.Warning(ex, "  ⚠️ Failed to load {Key} from macOS Passwords: {Message}", keyName, ex.Message);
+                }
+            }
+
+            _bootstrapLogger?.Information("🔐 macOS Passwords keychain load complete. Keys are now available to registration methods.");
         }
 
         /// <summary>
@@ -280,9 +371,9 @@ namespace BusBuddy.WPF
                 services.AddTransient<BusBuddy.WPF.Services.RouteExportService>();
                 services.AddSingleton<BusBuddy.WPF.Services.ISkinManagerService, BusBuddy.WPF.Services.SkinManagerService>();
 
-                // Register ViewModels for dependency injection
+                // Register ViewModels for dependency injection (standardized on subfolder organization for dedup)
                 services.AddTransient<BusBuddy.WPF.ViewModels.MainWindowViewModel>();
-                services.AddTransient<BusBuddy.WPF.ViewModels.DashboardViewModel>();
+                services.AddTransient<BusBuddy.WPF.ViewModels.Dashboard.DashboardViewModel>();
                 services.AddTransient<BusBuddy.WPF.ViewModels.Student.StudentsViewModel>();
                 services.AddTransient<BusBuddy.WPF.ViewModels.Route.RouteManagementViewModel>();
                 services.AddTransient<BusBuddy.WPF.ViewModels.Driver.DriverFormViewModel>();
@@ -291,14 +382,14 @@ namespace BusBuddy.WPF
 
                 ServiceProvider = services.BuildServiceProvider();
 
-                            // Register ViewModels for dependency injection
+                            // Register ViewModels for dependency injection (cleaned duplicate block during VM dedup)
                             services.AddTransient<BusBuddy.WPF.ViewModels.MainWindowViewModel>();
-                            services.AddTransient<BusBuddy.WPF.ViewModels.DashboardViewModel>();
+                            services.AddTransient<BusBuddy.WPF.ViewModels.Dashboard.DashboardViewModel>();
                             services.AddTransient<BusBuddy.WPF.ViewModels.Student.StudentsViewModel>();
                             services.AddTransient<BusBuddy.WPF.ViewModels.Route.RouteManagementViewModel>();
                             services.AddTransient<BusBuddy.WPF.ViewModels.Driver.DriverFormViewModel>();
-                            services.AddTransient<ViewModels.Bus.BusFormViewModel>();
-                            services.AddTransient<Views.Bus.BusForm>();
+                            services.AddTransient<BusBuddy.WPF.ViewModels.Bus.BusFormViewModel>();
+                            services.AddTransient<BusBuddy.WPF.Views.Bus.BusForm>();
                 // Seed database with JSON data if empty
                 Task.Run(async () =>
                 {
