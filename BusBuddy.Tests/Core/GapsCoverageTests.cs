@@ -1,70 +1,69 @@
 using System;
+using System.Net.Http;
 using System.Threading.Tasks;
-using BusBuddy.Core.Services;
 using BusBuddy.Core.Data;
+using BusBuddy.Core.Data.UnitOfWork;
 using BusBuddy.Core.Models;
+using BusBuddy.Core.Services;
 using Microsoft.EntityFrameworkCore;
-using Xunit;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Moq;
+using NUnit.Framework;
 
 namespace BusBuddy.Tests.Core
 {
+    [TestFixture]
     public class GapsCoverageTests
     {
-        private readonly BusBuddyDbContext _context;
-
-        public GapsCoverageTests()
-        {
-            var options = new DbContextOptionsBuilder<BusBuddyDbContext>()
-                .UseInMemoryDatabase(databaseName: "GapsTestDb_" + Guid.NewGuid())
-                .Options;
-            _context = new BusBuddyDbContext(options);
-        }
-
-        [Fact]
+        [Test]
         public async Task DashboardMetricsService_GetMetrics_ReturnsData()
         {
-            // Arrange - seed minimal data for coverage
-            _context.Students.Add(new Student { StudentId = 1, StudentName = "Test" });
-            _context.Routes.Add(new Route { RouteId = 1, RouteName = "Test Route" });
-            await _context.SaveChangesAsync();
-            var service = new DashboardMetricsService(_context);
+            var services = new ServiceCollection();
+            services.AddDbContext<BusBuddyDbContext>(options =>
+                options.UseInMemoryDatabase("GapsTestDb_" + Guid.NewGuid()));
+            var serviceProvider = services.BuildServiceProvider();
 
-            // Act
+            await using var scope = serviceProvider.CreateAsyncScope();
+            var context = scope.ServiceProvider.GetRequiredService<BusBuddyDbContext>();
+            context.Students.Add(new Student { StudentId = 1, StudentName = "Test" });
+            context.Routes.Add(new Route { RouteId = 1, RouteName = "Test Route" });
+            await context.SaveChangesAsync();
+
+            var service = new DashboardMetricsService(serviceProvider);
             var result = await service.GetDashboardMetricsAsync();
 
-            // Assert - basic to cover lines
-            Assert.NotNull(result);
-            Assert.True(result.TotalStudents >= 0); // Covers computation paths
+            Assert.That(result, Is.Not.Null);
+            Assert.That(result.Count, Is.GreaterThanOrEqualTo(0));
         }
 
-        [Fact]
+        [Test]
         public void GrokGlobalAPI_CanBeInstantiated_WithMockConfig()
         {
-            // Arrange / Act - covers GrokGlobalAPI constructor and basic members for coverage
-            var mockConfig = new Mock<Microsoft.Extensions.Configuration.IConfiguration>();
-            var api = new GrokGlobalAPI(mockConfig.Object);
+            var mockConfig = new Mock<IConfiguration>();
+            using var httpClient = new HttpClient();
+            var api = new GrokGlobalAPI(httpClient, mockConfig.Object);
 
-            // Assert - simple to hit lines without real API call (use mock responses if needed)
-            Assert.NotNull(api);
-            // Note: Full OptimizeRoutes would require further mocking; this hits instantiation/config load
+            Assert.That(api, Is.Not.Null);
         }
 
-        [Fact]
-        public async Task UserContextService_GetCurrentUser_ReturnsDefault()
+        [Test]
+        public void UserContextService_ProvidesDefaultUser()
         {
             var service = new UserContextService();
-            var user = await service.GetCurrentUserAsync();
-            Assert.NotNull(user);
-            Assert.Equal("System", user); // Covers default path
+
+            Assert.That(service.CurrentUserName, Is.Not.Null.And.Not.Empty);
+            Assert.That(service.IsAuthenticated, Is.True);
         }
 
-        [Fact]
+        [Test]
         public async Task AddressValidationService_ValidateAddress_Basic()
         {
-            var service = new AddressValidationService();
+            var mockUnitOfWork = new Mock<IUnitOfWork>();
+            var service = new AddressValidationService(mockUnitOfWork.Object);
             var result = await service.ValidateAddressAsync("123 Test St");
-            Assert.NotNull(result); // Covers basic execution path
+
+            Assert.That(result.IsValid, Is.False);
         }
     }
 }

@@ -694,6 +694,8 @@ namespace BusBuddy.Core.Services
             }
         }
 
+        public Task<Bus?> GetBusByIdAsync(int busId) => GetBusEntityByIdAsync(busId);
+
         [DebuggerStepThrough]
 
         public async Task<Bus> AddBusAsync(Bus bus)
@@ -879,7 +881,7 @@ namespace BusBuddy.Core.Services
                                     Model = b.Make + " " + b.Model,
                                     Capacity = b.SeatingCapacity,
                                     Status = b.Status,
-                                    LastMaintenance = b.DateLastInspection ?? DateTime.MinValue
+                                    DateLastInspection = b.DateLastInspection
                                 })
                                 .ToListAsync();
 
