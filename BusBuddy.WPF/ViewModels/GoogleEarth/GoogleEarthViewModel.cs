@@ -23,7 +23,7 @@ namespace BusBuddy.WPF.ViewModels.GoogleEarth
     /// ViewModel for Google Earth integration view
     /// Manages map layers, route visualization, and geographic data
     /// </summary>
-    public class GoogleEarthViewModel : BaseViewModelMvp
+    public class GoogleEarthViewModel : BaseViewModel // VM dedup: BaseViewModelMvp removed (legacy MVP base); inheriting standard BaseViewModel now
     {
     private readonly IGeoDataService _geoDataService;
     private readonly IEligibilityService? _eligibilityService;

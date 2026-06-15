@@ -70,7 +70,7 @@
   <!-- WPF-Specific Syncfusion Packages (not included in Directory.Build.props) -->
   <ItemGroup>
     <PackageReference Include="Azure.Identity" Version="$(AzureIdentityVersion)" />
-    <PackageReference Include="Microsoft.ApplicationInsights.AspNetCore" Version="2.23.0" />
+    <PackageReference Include="Microsoft.ApplicationInsights.AspNetCore" Version="$(ApplicationInsightsVersion)" /> <!-- resolved hardcode to central props -->
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="$(MicrosoftExtensionsVersion)" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="$(MicrosoftExtensionsVersion)" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="$(EntityFrameworkVersion)" />
@@ -83,8 +83,8 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
-    <PackageReference Include="Microsoft.Identity.Client" Version="4.74.1" />
-    <PackageReference Include="Serilog.Settings.Configuration" Version="9.0.0" />
+    <PackageReference Include="Microsoft.Identity.Client" Version="$(MicrosoftIdentityClientVersion)" /> <!-- resolved hardcode (was 4.74.1) -->
+    <PackageReference Include="Serilog.Settings.Configuration" Version="$(SerilogSettingsConfigurationVersion)" /> <!-- resolved to central (added var in props) -->
     <PackageReference Include="Syncfusion.SfGrid.WPF" Version="$(SyncfusionVersion)" />
     <PackageReference Include="Syncfusion.SfChart.WPF" Version="$(SyncfusionVersion)" />
     <PackageReference Include="Syncfusion.SfInput.WPF" Version="$(SyncfusionVersion)" />
@@ -131,7 +131,7 @@
     <PackageReference Include="Serilog.Extensions.Logging" Version="$(SerilogExtensionsLoggingVersion)" />
     <PackageReference Include="Serilog.Enrichers.Environment" Version="3.0.1" />
     <PackageReference Include="Serilog.Enrichers.Process" Version="3.0.0" />
-    <PackageReference Include="Serilog.Enrichers.Thread" Version="4.0.0" />
+    <PackageReference Include="Serilog.Enrichers.Thread" Version="4.0.0" /> <!-- TODO post-package: move these to props vars like other Serilog* for full centralization (per plan hygiene) -->
   </ItemGroup>
 
   <!-- Application Configuration -->

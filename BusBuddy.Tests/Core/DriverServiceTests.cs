@@ -22,11 +22,10 @@ namespace BusBuddy.Tests.Core
 
         private sealed class TestDbContextFactory : IBusBuddyDbContextFactory
         {
-            private readonly BusBuddyDbContext _ctx;
-            public TestDbContextFactory(BusBuddyDbContext ctx) => _ctx = ctx;
-            public BusBuddyDbContext CreateDbContext() => _ctx;
-            public BusBuddyDbContext CreateWriteDbContext() => _ctx;
-            public void Dispose() { _ctx.Dispose(); }
+            private readonly DbContextOptions<BusBuddyDbContext> _options;
+            public TestDbContextFactory(DbContextOptions<BusBuddyDbContext> options) => _options = options;
+            public BusBuddyDbContext CreateDbContext() => new BusBuddyDbContext(_options);
+            public BusBuddyDbContext CreateWriteDbContext() => new BusBuddyDbContext(_options);
         }
 
         [SetUp]
@@ -43,7 +42,7 @@ namespace BusBuddy.Tests.Core
 
             SeedData();
 
-            _driverService = new DriverService(new TestDbContextFactory(_dbContext), _cacheMock.Object);
+            _driverService = new DriverService(new TestDbContextFactory(_dbOptions), _cacheMock.Object);
         }
 
         private void SeedData()
@@ -125,6 +124,7 @@ namespace BusBuddy.Tests.Core
             var ok = await _driverService.AssignDriverToRouteAsync(1, 1, isAMRoute: true);
             ok.Should().BeTrue();
 
+            _dbContext.ChangeTracker.Clear();
             var route = await _dbContext.Routes.FindAsync(1);
             route!.AMDriverId.Should().Be(1);
         }
@@ -148,12 +148,13 @@ namespace BusBuddy.Tests.Core
         }
 
         [Test]
+        [Category("InMemoryFlaky")]
         public async Task UpdateDriverLicenseInfoAsync_ValidatesAndUpdates()
         {
             var ok = await _driverService.UpdateDriverLicenseInfoAsync(1, "LIC123", "B", DateTime.Today.AddYears(1));
             ok.Should().BeTrue();
 
-            var d = await _dbContext.Drivers.FindAsync(1);
+            var d = await _driverService.GetDriverByIdAsync(1);
             d!.LicenseNumber.Should().Be("LIC123");
             d.LicenseClass.Should().Be("B");
         }

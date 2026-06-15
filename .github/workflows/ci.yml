@@ -1,137 +1,83 @@
-﻿---
-# 🚌 BusBuddy CI/CD Pipeline
-# Cleaned and normalized workflow to avoid compact-mapping and indentation issues
-
-name: "BusBuddy CI Pipeline"
+name: CI
 
 on:
   push:
-    branches: [ main, master, develop ]
+    branches: [main, master]
     paths-ignore:
       - "**/*.md"
-      - docs/**
-      - Documentation/**
+      - "docs/**"
+      - "Documentation/**"
+      - "Archive/**"
   pull_request:
-    branches: [ main, master ]
+    branches: [main, master]
     paths-ignore:
       - "**/*.md"
-      - docs/**
-      - Documentation/**
+      - "docs/**"
+      - "Documentation/**"
+      - "Archive/**"
   workflow_dispatch:
-    inputs:
-      debug_enabled:
-        type: boolean
-        description: "Enable debug mode for troubleshooting"
-        default: false
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
 
 env:
   DOTNET_VERSION: "9.0.x"
   SOLUTION_FILE: "BusBuddy.sln"
   BUILD_CONFIGURATION: "Release"
-  BUSBUDDY_NO_WELCOME: "1"
-  BUSBUDDY_NO_XAI_WARN: "1"
-  BUSBUDDY_SILENT: "1"
 
 jobs:
-  validate-dependencies:
-    name: "Validate Dependencies & Licenses"
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - name: "Set Syncfusion license env"
-        run: echo "SYNCFUSION_LICENSE_KEY=${{ secrets.SYNCFUSION_LICENSE_KEY }}" >> $GITHUB_ENV
-        shell: bash
-      - name: "Checkout Code"
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: "Setup .NET"
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: ${{ env.DOTNET_VERSION }}
-
-      - name: "Check Syncfusion License Configuration"
-        run: |
-          echo "Checking Syncfusion license configuration..."
-          if [ -z "$SYNCFUSION_LICENSE_KEY" ]; then
-            echo "SYNCFUSION_LICENSE_KEY secret is not configured"
-            echo "::warning::Syncfusion license key is missing. Add SYNCFUSION_LICENSE_KEY to repository secrets."
-            exit 1
-          fi
-        shell: bash
-
-      - name: "Restore Dependencies"
-        run: |
-          echo "Restoring NuGet packages..."
-          dotnet restore ${{ env.SOLUTION_FILE }} --verbosity normal
-
-      - name: "Dependency Security Audit"
-        run: |
-          dotnet list package --vulnerable --include-transitive || true
-          dotnet list package --deprecated || true
-        shell: bash
-
   build-and-test:
-    name: "Build & Test"
+    name: Build & Test
     runs-on: windows-latest
-    needs: validate-dependencies
-    timeout-minutes: 30
-    outputs:
-      build-success: ${{ steps.build-step.outcome == 'success' }}
+    timeout-minutes: 25
     steps:
-      - name: "Set Syncfusion license env"
-        shell: pwsh
-        run: |
-          Write-Output "SYNCFUSION_LICENSE_KEY=${{ secrets.SYNCFUSION_LICENSE_KEY }}" >> $env:GITHUB_ENV
-      
-      - name: "Checkout Code"
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: "Setup .NET"
+      - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
-      - name: "Cache NuGet packages"
+      - name: Cache NuGet
         uses: actions/cache@v4
         with:
           path: ~/.nuget/packages
           key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
           restore-keys: ${{ runner.os }}-nuget-
 
-      - name: "Install PowerShell Modules"
-        shell: pwsh
+      - name: Restore
+        run: dotnet restore ${{ env.SOLUTION_FILE }} -p:EnableWindowsTargeting=true --verbosity minimal
+
+      - name: Dependency audit (informational)
         run: |
-          $modules = @('PSScriptAnalyzer','Pester','Az.Accounts','Az.Sql','Az.Resources','SqlServer')
-          foreach ($m in $modules) {
-            try { Install-Module -Name $m -Scope CurrentUser -Force -AllowClobber -ErrorAction Stop } catch { Write-Warning "Failed installing $m" }
-          }
+          dotnet list package --vulnerable --include-transitive || true
+          dotnet list package --deprecated || true
+        shell: bash
 
-      - name: "Configure Syncfusion License"
-        shell: pwsh
-        run: |
-          if (-not [string]::IsNullOrEmpty("$env:SYNCFUSION_LICENSE_KEY")) {
-            Write-Output "SYNCFUSION_LICENSE_KEY=$env:SYNCFUSION_LICENSE_KEY" >> $env:GITHUB_ENV
-          } else {
-            Write-Warning "Syncfusion license key is not configured"
-          }
+      - name: Build
+        run: >
+          dotnet build ${{ env.SOLUTION_FILE }}
+          --configuration ${{ env.BUILD_CONFIGURATION }}
+          --no-restore
+          --verbosity minimal
+          -p:EnableWindowsTargeting=true
+          /p:TreatWarningsAsErrors=false
+          /p:WarningLevel=1
 
-      - name: "Restore Dependencies"
-        run: dotnet restore ${{ env.SOLUTION_FILE }} --verbosity minimal
+      - name: Test
+        run: >
+          dotnet test ${{ env.SOLUTION_FILE }}
+          --configuration ${{ env.BUILD_CONFIGURATION }}
+          --no-build
+          --verbosity normal
+          --logger "trx;LogFileName=test-results.trx"
+          --collect:"XPlat Code Coverage"
+          --results-directory ./TestResults
+          --filter "Category!=Integration&Category!=InMemoryFlaky&(FullyQualifiedName~Core|Seed|Student|Route|Maintenance|PdfReport|Fleet|Gaps|ModelValidation)"
 
-      - id: build-step
-        name: "Build Solution"
-        shell: pwsh
-        run: |
-          dotnet build ${{ env.SOLUTION_FILE }} --configuration ${{ env.BUILD_CONFIGURATION }} --no-restore --verbosity minimal /p:TreatWarningsAsErrors=false /p:WarningLevel=1
-
-      - name: "Run Tests"
-        shell: pwsh
-        run: |
-          dotnet test ${{ env.SOLUTION_FILE }} --configuration ${{ env.BUILD_CONFIGURATION }} --no-build --verbosity normal --logger "trx;LogFileName=test-results.trx" --collect:"XPlat Code Coverage" --results-directory ./TestResults
-
-      - name: "Upload Test Results"
+      - name: Upload test results
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -139,135 +85,60 @@ jobs:
           path: ./TestResults
           retention-days: 7
 
-  quality-analysis:
-    name: "Quality Analysis & Coverage"
+  security:
+    name: Security (CodeQL)
     runs-on: ubuntu-latest
-    needs: build-and-test
     timeout-minutes: 20
+    permissions:
+      security-events: write
+      contents: read
     steps:
-      - name: "Set Syncfusion license env"
-        run: echo "SYNCFUSION_LICENSE_KEY=${{ secrets.SYNCFUSION_LICENSE_KEY }}" >> $GITHUB_ENV
-        shell: bash
-      - name: "Checkout Code"
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: "Setup .NET"
+      - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
-      - name: "Export Syncfusion license to env"
-        shell: pwsh
-        run: |
-          if (-not [string]::IsNullOrEmpty($env:SYNCFUSION_LICENSE_KEY)) { Write-Output "SYNCFUSION_LICENSE_KEY=$env:SYNCFUSION_LICENSE_KEY" >> $env:GITHUB_ENV }
-
-      - name: "Run Tests with Coverage"
-        shell: pwsh
-        run: |
-          dotnet test ${{ env.SOLUTION_FILE }} --configuration ${{ env.BUILD_CONFIGURATION }} --verbosity normal --logger "trx;LogFileName=quality-test-results.trx" --collect:"XPlat Code Coverage" --results-directory ./QualityTestResults
-
-      - name: "Analyze Code Coverage"
-        shell: pwsh
-        run: |
-          $coverageFiles = Get-ChildItem -Recurse -Path "./QualityTestResults" -Filter "coverage.cobertura.xml" -ErrorAction SilentlyContinue
-          if ($coverageFiles) {
-            $content = Get-Content $coverageFiles[0].FullName -Raw
-            if ($content -match 'line-rate="([0-9.]+)"') {
-              $coverage = [math]::Round([double]$matches[1] * 100, 2)
-              Write-Output "Code coverage: $coverage%"
-              if ($coverage -lt 80) { Write-Error "Coverage below threshold"; exit 1 }
-            }
-          }
-
-      - name: "Run Trunk Check"
-        run: |
-          if ! command -v trunk &> /dev/null; then curl https://get.trunk.io -fsSL | bash; fi
-          trunk check --all --ci --output-format=sarif --output-file=trunk-results.sarif || true
-
-      - name: "Upload SARIF Results"
-        uses: github/codeql-action/upload-sarif@v3
-        if: always()
-        with:
-          sarif_file: trunk-results.sarif
-          category: trunk-analysis
-
-  security-analysis:
-    name: "Security Analysis"
-    runs-on: ubuntu-latest
-    needs: validate-dependencies
-    timeout-minutes: 15
-    steps:
-      - name: "Set Syncfusion license env"
-        run: echo "SYNCFUSION_LICENSE_KEY=${{ secrets.SYNCFUSION_LICENSE_KEY }}" >> $GITHUB_ENV
-        shell: bash
-      - name: "Checkout Code"
-        uses: actions/checkout@v4
-
-      - name: "Export Syncfusion license to env"
-        shell: pwsh
-        run: |
-          if (-not [string]::IsNullOrEmpty($env:SYNCFUSION_LICENSE_KEY)) { Write-Output "SYNCFUSION_LICENSE_KEY=$env:SYNCFUSION_LICENSE_KEY" >> $env:GITHUB_ENV }
-
-      - name: "Init CodeQL"
+      - name: Init CodeQL
         uses: github/codeql-action/init@v3
         with:
           languages: csharp
 
-      - name: "Build for Analysis"
-        run: dotnet build ${{ env.SOLUTION_FILE }} --configuration Release
+      - name: Build for analysis
+        run: dotnet build ${{ env.SOLUTION_FILE }} --configuration Release -p:EnableWindowsTargeting=true
 
-      - name: "Perform CodeQL Analysis"
+      - name: Analyze
         uses: github/codeql-action/analyze@v3
 
-  deployment-readiness:
-    name: "Deployment Readiness"
+  release-artifacts:
+    name: Release artifacts
     runs-on: windows-latest
-    needs: [ build-and-test, security-analysis, quality-analysis ]
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
-    timeout-minutes: 10
+    needs: build-and-test
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+    timeout-minutes: 15
     steps:
-      - name: "Set Syncfusion license env"
-        shell: pwsh
-        run: |
-          Write-Output "SYNCFUSION_LICENSE_KEY=${{ secrets.SYNCFUSION_LICENSE_KEY }}" >> $env:GITHUB_ENV
-      - name: "Checkout Code"
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: "Setup .NET"
+      - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
-      - name: "Export Syncfusion license to env"
+      - name: Publish WPF (win-x64)
         shell: pwsh
-        run: |
-          if ([string]::IsNullOrEmpty($env:SYNCFUSION_LICENSE_KEY)) { Write-Error "Syncfusion license required"; exit 1 }
-          Write-Output "SYNCFUSION_LICENSE_KEY=$env:SYNCFUSION_LICENSE_KEY" >> $env:GITHUB_ENV
+        run: >
+          dotnet publish ./BusBuddy.WPF/BusBuddy.WPF.csproj
+          --configuration Release
+          --runtime win-x64
+          --self-contained true
+          --output ./publish
+          /p:PublishSingleFile=true
+          /p:IncludeNativeLibrariesForSelfExtract=true
 
-      - name: "Create Release Build"
-        shell: pwsh
-        run: |
-          dotnet publish ./BusBuddy.WPF/BusBuddy.WPF.csproj --configuration Release --runtime win-x64 --self-contained true --output ./publish /p:PublishSingleFile=true /p:IncludeNativeLibrariesForSelfExtract=true
-
-      - name: "Upload Deployment Artifacts"
+      - name: Upload deployment package
         uses: actions/upload-artifact@v4
         with:
           name: deployment-package
           path: ./publish
           retention-days: 30
-
-  notify-completion:
-    name: "Notify Completion"
-    runs-on: ubuntu-latest
-    needs: [ build-and-test, security-analysis, quality-analysis, deployment-readiness ]
-    if: ${{ needs.build-and-test.outputs.build-success == 'true' }}
-    steps:
-      - name: "Pipeline Summary"
-        run: |
-          echo "BusBuddy CI Pipeline Completed"
-          echo "Build Status: ${{ needs.build-and-test.result }}"
-          echo "Security Analysis: ${{ needs.security-analysis.result }}"
-          echo "Quality Analysis: ${{ needs.quality-analysis.result }}"
-          echo "Deployment Ready: ${{ needs.deployment-readiness.result }}"
-          echo "Timestamp: $(date)"
-

@@ -46,9 +46,8 @@ namespace BusBuddy.Tests.Core
         }
 
         [Test]
-        public void GetConnectionString_KeepsPlaceholders_WhenEnvUnset()
+        public void GetConnectionString_FallsBackToLocalDb_WhenAzurePlaceholdersUnresolved()
         {
-            // Arrange: ensure variables are not set for this test
             var prevUser = Environment.GetEnvironmentVariable("AZURE_SQL_USER");
             var prevPwd = Environment.GetEnvironmentVariable("AZURE_SQL_PASSWORD");
             try
@@ -64,16 +63,13 @@ namespace BusBuddy.Tests.Core
                     })
                     .Build();
 
-                // Act
                 var conn = EnvironmentHelper.GetConnectionString(config);
 
-                // Assert
-                conn.Should().Contain("${AZURE_SQL_USER}");
-                conn.Should().Contain("${AZURE_SQL_PASSWORD}");
+                conn.Should().Contain("(localdb)");
+                conn.Should().NotContain("${AZURE_SQL_USER}");
             }
             finally
             {
-                // Restore env
                 Environment.SetEnvironmentVariable("AZURE_SQL_USER", prevUser);
                 Environment.SetEnvironmentVariable("AZURE_SQL_PASSWORD", prevPwd);
             }

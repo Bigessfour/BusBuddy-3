@@ -1,6 +1,7 @@
 using System;
 using System.Windows;
 using System.Windows.Controls;
+using BusBuddy.WPF.ViewModels.Vehicle; // VM dedup - using subfolder version
 using System.Windows.Controls.Primitives;
 using System.Windows.Automation;
 using System.Windows.Media;
@@ -23,7 +24,7 @@ namespace BusBuddy.WPF.Views.Vehicle
             try
             {
                 InitializeComponent();
-                DataContext = new VehiclesViewModel();
+                DataContext = new VehiclesViewModel(); // resolves to Vehicle subfolder version after dedup removal of flat
 
                 Loaded += OnLoaded;
                 Unloaded += OnUnloaded;

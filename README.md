@@ -2,7 +2,7 @@
 
 [![.NET](https://img.shields.io/badge/.NET-9.0.304-blue)](https://dotnet.microsoft.com/download/dotnet/9.0)
 [![PowerShell](https://img.shields.io/badge/PowerShell-7.5.2%20✨%20Advanced-blue)](https://github.com/PowerShell/PowerShell)
-[![Syncfusion](https://img.shields.io/badge/Syncfusion-30.1.42%20✅%20Licensed-orange)](https://www.syncfusion.com/wpf-controls)
+[![Syncfusion](https://img.shields.io/badge/Syncfusion-33.2.10%20✅%20Licensed-orange)](https://www.syncfusion.com/wpf-controls)
 [![Hyperthreading](https://img.shields.io/badge/Hyperthreading-⚡%20Optimized-green)](https://docs.microsoft.com/en-us/powershell/scripting/learn/experimental-features)
 [![MVP Status](https://img.shields.io/badge/MVP-⚠️%20Development-yellow)](https://github.com/Bigessfour/BusBuddy-3)
 [![Production](https://img.shields.io/badge/Production-🚧%20In%20Progress-yellow)](https://github.com/Bigessfour/BusBuddy-3)ddy - School Transportation Management System
@@ -12,7 +12,7 @@
 [![Build Status](https://img.shields.io/badge/build-✅%20passing-brightgreen)](https://github.com/Bigessfour/BusBuddy-3)
 [![.NET](https://img.shields.io/badge/.NET-9.0.304-blue)](https://dotnet.microsoft.com/download/dotnet/9.0)
 [![PowerShell](https://img.shields.io/badge/PowerShell-7.5.2-blue)](https://github.com/PowerShell/PowerShell)
-[![Syncfusion](https://img.shields.io/badge/Syncfusion-30.1.42%20✅%20Licensed-orange)](https://www.syncfusion.com/wpf-controls)
+[![Syncfusion](https://img.shields.io/badge/Syncfusion-33.2.10%20✅%20Licensed-orange)](https://www.syncfusion.com/wpf-controls)
 [![MVP Status](https://img.shields.io/badge/MVP-⚠️%20Development-yellow)](https://github.com/Bigessfour/BusBuddy-3)
 [![Production](https://img.shields.io/badge/Production-�%20In%20Progress-yellow)](https://github.com/Bigessfour/BusBuddy-3)
 
@@ -38,24 +38,30 @@ BusBuddy streamlines school transportation operations through intelligent route 
 - **PowerShell 7.5.2+** (with state-of-the-art features)
 - **Visual Studio Code** (recommended) or Visual Studio 2022
 
-### **PowerShell 7.5.2 Enhanced Environment**
+### **Development Environment (PowerShell Deprecated; Mac + Windows VM Support)**
 
-BusBuddy includes state-of-the-art PowerShell automation with hyperthreading optimization:
+**NOTE (2026)**: The original PowerShell development automation ("dd method" / bb-* commands, hyperthreading profiles, BusBuddy-Development) is **DEPRECATED**. It was created while learning PowerShell. The author now prefers **WSL / Docker / standard dotnet**.
 
-```powershell
-# Quick installation with hyperthreading detection
-.\Install-BusBuddyCompleteEnvironment.ps1
+### On MacBook Pro (with Windows 11 VM via Parallels/UTM)
+- **Mac side (recommended for .NET Core, tests, services, editing)**: Use VS Code + Dev Containers extension + the `.devcontainer` (Linux .NET 9 container via Docker Desktop).
+  - Open folder → "Reopen in Container".
+  - Builds use `-p:EnableWindowsTargeting=true` (for net*-windows TFMs in Core/Tests).
+  - Run Core tests, use Docker Compose for Postgres (real DB for seeding/EF tests instead of InMemory).
+  - WPF UI **cannot** run natively on macOS.
+- **Windows 11 VM side (for full WPF app)**: 
+  - Share the project folder from Mac (Parallels Tools folder sharing is excellent; or use git clone inside VM or cloud sync).
+  - In VM: Install .NET 9 SDK (ARM64 if Apple Silicon), open in Visual Studio 2022 or VS Code.
+  - Build/run the full `BusBuddy.WPF` project normally for UI/debug.
+  - Changes sync via shared folder/git.
+- **Docker on Mac**: Use `docker compose` (see below) for Postgres and test isolation. Accessible from VM via Mac host IP (e.g. 10.211.55.2 for Parallels default; check with `ipconfig getifaddr en0` on Mac).
+- **Keys**: Loaded automatically from macOS Passwords app via the code in `App.xaml.cs` (uses `security` CLI). See `LoadApiKeysFromMacPasswords()`.
 
-# Verify hyperthreading optimization
-htinfo                    # Display hyperthreading information
-sysinfo                   # System performance overview
-perfmetrics              # Real-time performance metrics
+Use standard tools:
+- `dotnet build BusBuddy.sln -p:EnableWindowsTargeting=true` (Mac/container)
+- `dotnet run --project BusBuddy.WPF/BusBuddy.WPF.csproj` (in VM)
+- Docker for services/tests.
 
-# Advanced parallel processing
-bb-parallel-build        # Hyperthreading-optimized build
-bb-perf-profile          # Performance profiling with machine tuning
-bb-health-advanced       # Comprehensive system health check
-```
+Legacy PS modules are in `Documentation/Archive/PowerShell-Legacy/` and `Powershell/` (retained for CI/dependency scripts only). See STEADY-STATE-AND-FINISH-ROADMAP.md.
 
 ### **Installation & Setup**
 
@@ -77,7 +83,11 @@ bb-test                  # Optimized test execution
 Import-Module .\PowerShell\Modules\BusBuddy.Commands\BusBuddy.Commands.psm1
 ```
 
-**✅ Current Status**: Application builds and runs successfully with modern UI.
+**✅ Current Status**: Application builds and runs successfully with modern UI. 
+
+**Development Environment**: WSL recommended for terminal/build. Use plain `dotnet` commands (PS bb-* modules removed/deprecated). 
+
+**Syncfusion AI Assist**: MCP server @syncfusion/wpf-assistant configured in mcp.json. Prefix AI prompts with `SyncfusionWPFAssistant ` for accurate WPF + Syncfusion code gen (requires your Syncfusion API key). See .github/copilot-instructions.md and https://help.syncfusion.com/wpf/ai-coding-assistant/overview .
 
 ### **📋 Current Build Status**
 
@@ -231,7 +241,7 @@ bbLicense
 | ---------------- | --------------------------- | -------- |
 | **Framework**    | .NET                        | 9.0.303  |
 | **UI Framework** | WPF                         | Built-in |
-| **UI Controls**  | Syncfusion Essential Studio | 30.1.42  |
+| **UI Controls**  | Syncfusion Essential Studio | 33.2.10 (see Directory.Build.props) |
 | **Data Access**  | Entity Framework Core       | 9.0.7    |
 | **Database**     | SQL Server / LocalDB        | Latest   |
 | **Logging**      | Serilog                     | 4.3.0    |

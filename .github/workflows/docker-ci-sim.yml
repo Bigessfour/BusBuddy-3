@@ -1,0 +1,35 @@
+name: Docker CI simulation
+
+# Optional manual check: Linux Core image build + Postgres (Windows tests run on CI).
+on:
+  workflow_dispatch:
+
+jobs:
+  docker-ci-sim:
+    name: Docker CI simulation
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build test image (Core on Linux)
+        run: docker compose --profile db --profile test build busbuddy-test
+
+      - name: Start Postgres
+        run: docker compose --profile db up -d postgres
+
+      - name: Verify Core build in container
+        run: >
+          docker compose --profile db --profile test run --rm busbuddy-test
+          dotnet build BusBuddy.Core/BusBuddy.Core.csproj
+          -c Release
+          --no-restore
+          -p:EnableWindowsTargeting=true
+          -v minimal
+
+      - name: Postgres health check
+        run: docker compose exec -T postgres pg_isready -U busbuddy
+
+      - name: Stop Postgres
+        if: always()
+        run: docker compose --profile db down

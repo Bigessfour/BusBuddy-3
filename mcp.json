@@ -4,7 +4,7 @@
       "args": [
         "-y",
         "@modelcontextprotocol/server-filesystem",
-        "C:\\Users\\biges\\Desktop\\BusBuddy\\BusBuddy"
+        "/Users/stephenmckitrick/BusBuddy/BusBuddy-3"
       ],
       "command": "npx"
     },
@@ -14,6 +14,23 @@
         "BRAVE_API_KEY": ""
       },
       "command": "npx"
+    },
+    "syncfusion-wpf-assistant": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@syncfusion/wpf-assistant@latest"
+      ],
+      "env": {
+        "Syncfusion_API_Key": "YOUR_SYNCFUSION_API_KEY_HERE"
+      }
+    },
+    "busbuddy-rag": {
+      "type": "stdio",
+      "command": "python",
+      "args": ["-m", "rag.mcp_server"],
+      "env": {}
     }
   }
 }

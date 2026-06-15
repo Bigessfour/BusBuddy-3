@@ -163,7 +163,7 @@ dotnet ef database update --project BusBuddy.Core
 
 ```powershell
 # Start complete development session
-bbDevSession
+[DEPRECATED - PS dev method retired in favor of WSL] bbDevSession (legacy)
 
 # This will:
 # - Load all PowerShell modules
@@ -279,7 +279,7 @@ After setup, verify everything works:
 
 1. **Explore the Application**: Use `bbRun` to launch and explore features
 2. **Review Documentation**: Check `GROK-README.md` for current development status
-3. **Start Development**: Use `bbDevSession` for full development environment
+3. **Start Development**: Use `[DEPRECATED - PS dev method retired in favor of WSL] bbDevSession (legacy)` for full development environment
 4. **Run Tests**: Use `bbTest` to verify functionality
 5. **Check Commands**: Use `bbCommands` to see all available automation
 

@@ -37,6 +37,7 @@ logs/
 # Local DB files
 *.db
 # Workspace/editor noise
+.DS_Store
 vscode-userdata/
 .tmp.driveupload/
 Analysis-Results/
@@ -1115,6 +1116,8 @@ phd-mentor-error.log
 # Ignore build artifacts and intermediates
 *.xml
 *.props
+!Directory.Build.props
+!*.csproj  # ensure project files always tracked (props exceptions already handled)
 *.log
 
 # Ignore test and environment config

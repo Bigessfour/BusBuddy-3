@@ -1,35 +1,32 @@
 // For format details, see https://aka.ms/devcontainer.json. For config options, see the
 // README at: https://github.com/devcontainers/templates/tree/main/src/dotnet
 {
-  "name": "C# (.NET)",
+  "name": "C# (.NET) - WSL preferred for BusBuddy (WPF on host Windows/Parallels)",
+  // WSL env recommended: use this container in WSL2 for dotnet, terminal cmds.
+  // WPF UI run on Windows host (dotnet run from Windows terminal or VS).
+  // Syncfusion MCP AI Assistant configured via root mcp.json (npx @syncfusion/wpf-assistant).
   // Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
   "image": "mcr.microsoft.com/devcontainers/dotnet:1-9.0-bookworm",
   "features": {
-    "ghcr.io/devcontainers/features/dotnet:2": {}
+    "ghcr.io/devcontainers/features/dotnet:2": {},
+    "ghcr.io/devcontainers/features/github-cli:1": {}
   },
   "customizations": {
     "vscode": {
       "extensions": ["github.vscode-github-actions"]
     }
-  }
+  },
+  "postCreateCommand": "dotnet restore BusBuddy.sln -p:EnableWindowsTargeting=true --verbosity minimal",
 
-  // Features to add to the dev container. More info: https://containers.dev/features.
-  // "features": {},
+  // Forward common ports (e.g. for future API or Postgres if exposed)
+  "forwardPorts": [5432, 5000, 5001],
+  "portsAttributes": {
+    "5432": {
+      "label": "Postgres (Docker)",
+      "onAutoForward": "notify"
+    }
+  },
 
-  // Use 'forwardPorts' to make a list of ports inside the container available locally.
-  // "forwardPorts": [5000, 5001],
-  // "portsAttributes": {
-  //		"5001": {
-  //			"protocol": "https"
-  //		}
-  // }
-
-  // Use 'postCreateCommand' to run commands after the container is created.
-  // "postCreateCommand": "dotnet restore",
-
-  // Configure tool-specific properties.
-  // "customizations": {},
-
-  // Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.
+  // Use 'remoteUser': 'root' if needed for some tools.
   // "remoteUser": "root"
 }
