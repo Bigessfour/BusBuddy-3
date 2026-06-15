@@ -32,6 +32,20 @@ namespace BusBuddy.Core.Services
             _geoDataService = geoDataService ?? throw new ArgumentNullException(nameof(geoDataService));
         }
 
+        private (BusBuddyDbContext Ctx, bool Dispose) GetReadContext()
+        {
+            var ctx = _contextFactory.CreateDbContext();
+            var shouldDispose = _contextFactory is BusBuddyDbContextFactory;
+            return (ctx, shouldDispose);
+        }
+
+        private (BusBuddyDbContext Ctx, bool Dispose) GetWriteContext()
+        {
+            var ctx = _contextFactory.CreateWriteDbContext();
+            var shouldDispose = _contextFactory is BusBuddyDbContextFactory;
+            return (ctx, shouldDispose);
+        }
+
         /// <summary>
         /// Get comprehensive fleet status including active buses and their locations
         /// </summary>
@@ -254,8 +268,9 @@ namespace BusBuddy.Core.Services
 
                 try
                 {
-                    using var context = _contextFactory.CreateDbContext();
-
+                    var (context, dispose) = GetWriteContext();
+                    try
+                    {
                     var bus = await context.Buses
                         .Where(b => b.BusId == busId)
                         .FirstOrDefaultAsync();
@@ -284,6 +299,14 @@ namespace BusBuddy.Core.Services
 
                     Logger.Information("Bus location updated successfully for {BusNumber}", bus.BusNumber);
                     return true;
+                    }
+                    finally
+                    {
+                        if (dispose)
+                        {
+                            await context.DisposeAsync();
+                        }
+                    }
                 }
                 catch (Exception ex)
                 {

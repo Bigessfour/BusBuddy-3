@@ -783,8 +783,9 @@ namespace BusBuddy.Core.Services
             {
                 Logger.Information("Updating license info for driver {DriverId}", driverId);
 
-                using var context = _contextFactory.CreateWriteDbContext();
-
+                var (context, dispose) = GetWriteContext();
+                try
+                {
                 var driver = await context.Drivers.FindAsync(driverId);
                 if (driver == null)
                 {
@@ -818,6 +819,14 @@ namespace BusBuddy.Core.Services
                 await context.SaveChangesAsync();
                 Logger.Information("Successfully updated license info for driver {DriverId}", driverId);
                 return true;
+                }
+                finally
+                {
+                    if (dispose)
+                    {
+                        await context.DisposeAsync();
+                    }
+                }
             }
             catch (ArgumentException)
             {
