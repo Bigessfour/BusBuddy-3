@@ -2,7 +2,6 @@ using BusBuddy.Core.Data;
 using BusBuddy.Core.Models;
 using BusBuddy.Core.Services;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
 using NUnit.Framework;
 using System;
 using System.Linq;
@@ -13,27 +12,32 @@ namespace BusBuddy.Tests.Core
     [TestFixture]
     public class MaintenanceServiceTests : IDisposable
     {
-        private BusBuddyDbContext _context = null!;
-        private IServiceProvider _serviceProvider = null!;
-        private MaintenanceService _service;
+        private DbContextOptions<BusBuddyDbContext> _options = null!;
+        private MaintenanceService _service = null!;
         private bool _disposed;
 
         [SetUp]
         public void Setup()
         {
-            var dbName = Guid.NewGuid().ToString();
-            var options = new DbContextOptionsBuilder<BusBuddyDbContext>()
-                .UseInMemoryDatabase(databaseName: dbName)
+            _options = new DbContextOptionsBuilder<BusBuddyDbContext>()
+                .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
                 .Options;
 
-            var services = new ServiceCollection();
-            services.AddDbContext<BusBuddyDbContext>(o => o.UseInMemoryDatabase(dbName));
-            services.AddLogging();
-            _serviceProvider = services.BuildServiceProvider();
-            _context = _serviceProvider.GetRequiredService<BusBuddyDbContext>();
-            _context.Database.EnsureCreated();
+            using var seed = new BusBuddyDbContext(_options);
+            seed.Buses.Add(new Bus
+            {
+                BusId = 1,
+                BusNumber = "001",
+                Year = 2020,
+                Make = "Test",
+                Model = "Bus",
+                SeatingCapacity = 50,
+                Status = "Active"
+            });
+            seed.Database.EnsureCreated();
+            seed.SaveChanges();
 
-            _service = new MaintenanceService(new InMemoryContextFactory(options));
+            _service = new MaintenanceService(new InMemoryContextFactory(_options));
         }
 
         [TearDown]
@@ -45,8 +49,7 @@ namespace BusBuddy.Tests.Core
         [Test]
         public async Task GetAllMaintenanceRecordsAsync_ReturnsRecords()
         {
-            // Arrange - proves the maintenance flow item (core "works")
-            _context.MaintenanceRecords.Add(new Maintenance
+            await _service.CreateMaintenanceRecordAsync(new Maintenance
             {
                 VehicleId = 1,
                 Description = "Oil change",
@@ -56,12 +59,9 @@ namespace BusBuddy.Tests.Core
                 OdometerReading = 10000,
                 RepairCost = 50m
             });
-            await _context.SaveChangesAsync();
 
-            // Act
             var records = (await _service.GetAllMaintenanceRecordsAsync()).ToList();
 
-            // Assert
             Assert.That(records, Is.Not.Empty);
             Assert.That(records[0].Description, Does.Contain("Oil"));
         }
@@ -69,7 +69,6 @@ namespace BusBuddy.Tests.Core
         [Test]
         public async Task CreateMaintenanceRecordAsync_PersistsAndReturnsWithTimestamp()
         {
-            // Arrange
             var record = new Maintenance
             {
                 VehicleId = 1,
@@ -81,10 +80,8 @@ namespace BusBuddy.Tests.Core
                 RepairCost = 150m
             };
 
-            // Act
             var created = await _service.CreateMaintenanceRecordAsync(record);
 
-            // Assert - proves create + timestamp + query
             Assert.That(created.MaintenanceId, Is.GreaterThan(0));
             Assert.That(created.CreatedDate, Is.Not.EqualTo(default(DateTime)));
             var all = await _service.GetAllMaintenanceRecordsAsync();
@@ -94,13 +91,10 @@ namespace BusBuddy.Tests.Core
         public void Dispose()
         {
             if (_disposed) return;
-            _context?.Dispose();
-            (_serviceProvider as IDisposable)?.Dispose();
             _disposed = true;
         }
     }
 
-    // Lightweight in-memory factory for service (avoids duplicate type conflict with RouteServiceTests)
     internal class InMemoryContextFactory : IBusBuddyDbContextFactory
     {
         private readonly DbContextOptions<BusBuddyDbContext> _options;

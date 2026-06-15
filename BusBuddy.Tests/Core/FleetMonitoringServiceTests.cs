@@ -173,9 +173,8 @@ namespace BusBuddy.Tests.Core
             // Assert
             Assert.That(result, Is.True);
 
-            // Verify location was updated
             await using var verifyContext = new BusBuddyDbContext(_options);
-            var updatedBus = await verifyContext.Buses.FindAsync(1);
+            var updatedBus = await verifyContext.Buses.AsNoTracking().FirstAsync(b => b.BusId == 1);
             Assert.That(updatedBus!.CurrentLatitude, Is.EqualTo(newLat));
             Assert.That(updatedBus.CurrentLongitude, Is.EqualTo(newLon));
         }

@@ -124,6 +124,7 @@ namespace BusBuddy.Tests.Core
             var ok = await _driverService.AssignDriverToRouteAsync(1, 1, isAMRoute: true);
             ok.Should().BeTrue();
 
+            _dbContext.ChangeTracker.Clear();
             var route = await _dbContext.Routes.FindAsync(1);
             route!.AMDriverId.Should().Be(1);
         }
@@ -152,6 +153,7 @@ namespace BusBuddy.Tests.Core
             var ok = await _driverService.UpdateDriverLicenseInfoAsync(1, "LIC123", "B", DateTime.Today.AddYears(1));
             ok.Should().BeTrue();
 
+            _dbContext.ChangeTracker.Clear();
             var d = await _dbContext.Drivers.FindAsync(1);
             d!.LicenseNumber.Should().Be("LIC123");
             d.LicenseClass.Should().Be("B");

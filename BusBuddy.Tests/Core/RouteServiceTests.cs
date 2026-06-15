@@ -277,10 +277,12 @@ namespace BusBuddy.Tests.Core
 
             var activated = await _routeService.ActivateRouteAsync(r.RouteId);
             Assert.That(activated.IsSuccess, Is.True);
+            _dbContext.ChangeTracker.Clear();
             Assert.That((await _dbContext.Routes.FindAsync(r.RouteId))!.IsActive, Is.True);
 
             var deactivated = await _routeService.DeactivateRouteAsync(r.RouteId);
             Assert.That(deactivated.IsSuccess, Is.True);
+            _dbContext.ChangeTracker.Clear();
             Assert.That((await _dbContext.Routes.FindAsync(r.RouteId))!.IsActive, Is.False);
         }
 

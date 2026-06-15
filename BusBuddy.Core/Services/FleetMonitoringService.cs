@@ -132,7 +132,7 @@ namespace BusBuddy.Core.Services
 
                     // Get assigned driver (simplified - would need proper driver assignment logic)
                     var assignedDriver = await context.Drivers
-                        .Where(d => d.IsActive)
+                        .Where(d => d.Status == "Active")
                         .FirstOrDefaultAsync(); // Placeholder - implement proper driver assignment
 
                     // Check for maintenance alerts
@@ -362,7 +362,7 @@ namespace BusBuddy.Core.Services
 
                     // GPS offline alerts
                     var offlineGpsBuses = await context.Buses
-                        .Where(b => b.GPSTracking && !b.CurrentLatitude.HasValue && b.Status == "Active")
+                        .Where(b => b.GPSTracking && !b.CurrentLatitude.HasValue)
                         .ToListAsync();
 
                     foreach (var bus in offlineGpsBuses)

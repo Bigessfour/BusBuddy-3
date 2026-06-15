@@ -182,6 +182,7 @@ namespace BusBuddy.Tests.Core
             var ok = await _studentService.AssignStudentToRouteAsync(s.StudentId, "East Route", "West Route");
             ok.Should().BeTrue();
 
+            _dbContext.ChangeTracker.Clear();
             var updated = await _dbContext.Students.FindAsync(s.StudentId);
             updated!.AMRoute.Should().Be("East Route");
             updated.PMRoute.Should().Be("West Route");
