@@ -3,11 +3,8 @@
 
 name: 🚀 BusBuddy CI with AI Analysis
 
+# Deprecated as a merge gate — manual only. Use CI workflow for PR gates.
 on:
-  push:
-    branches: [main, develop]
-  pull_request:
-    branches: [main]
   workflow_dispatch:
 
 env:

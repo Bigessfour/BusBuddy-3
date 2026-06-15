@@ -1,0 +1,31 @@
+name: Docker CI simulation
+
+# Optional: run manually to validate docker-compose + Postgres parity (not a merge gate).
+on:
+  workflow_dispatch:
+
+jobs:
+  docker-ci-sim:
+    name: Docker CI simulation
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build test image
+        run: docker compose --profile db --profile test build busbuddy-test
+
+      - name: Start Postgres
+        run: docker compose --profile db up -d postgres
+
+      - name: Run Core tests in container
+        run: >
+          docker compose --profile db --profile test run --rm busbuddy-test
+          dotnet test BusBuddy.Tests/BusBuddy.Tests.csproj
+          -c Release
+          --no-build
+          --filter "FullyQualifiedName~Core|Seed"
+          --logger "console;verbosity=minimal"
+
+      - name: Postgres health check
+        run: docker compose exec -T postgres pg_isready -U busbuddy

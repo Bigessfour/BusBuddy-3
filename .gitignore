@@ -37,6 +37,7 @@ logs/
 # Local DB files
 *.db
 # Workspace/editor noise
+.DS_Store
 vscode-userdata/
 .tmp.driveupload/
 Analysis-Results/

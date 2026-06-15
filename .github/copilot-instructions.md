@@ -97,6 +97,59 @@ bb-build  # Verify clean build
 - Run `bb-quality-check` to ensure student/route functionality remains excellent.
 - **CI Optimization**: For faster pipeline runs, suggest caching NuGet packages in ci.yml via actions/cache@v4.
 
+## Solo developer CI/CD workflow
+
+**Philosophy**: Keep merge gates minimal and reliable. No third-party review required; automation merges when gates pass.
+
+### Branch → PR → auto-merge
+
+1. Create `feature/<topic>` from `master`.
+2. Push and open a PR targeting `master`.
+3. **Auto-merge** workflow enables squash merge + branch delete when required checks pass.
+4. Do **not** push directly to `master` (branch ruleset blocks non-PR updates).
+
+### Required merge gates (blocking)
+
+| Check | Workflow | What it does |
+|-------|----------|--------------|
+| **Build & Test** | `.github/workflows/ci.yml` | Restore, build solution, run Core regression tests (excludes `Integration`, `InMemoryFlaky`) |
+| **Security (CodeQL)** | `.github/workflows/ci.yml` | Static analysis for C# |
+
+### Non-blocking / optional
+
+| Job | When | Notes |
+|-----|------|-------|
+| **Release artifacts** | Push to `master` after Build & Test | Publishes win-x64 WPF package as artifact |
+| **Docker CI simulation** | Manual (`workflow_dispatch`) | Postgres + container test parity |
+| **CI with AI Analysis** | Manual only | Deprecated as merge gate; experimental |
+| Dependency vuln audit | Inside Build & Test | Informational (`|| true`), not blocking |
+| Code coverage | Local / future | Not gated until flaky tests stabilized |
+
+### Local pre-PR commands
+
+```bash
+dotnet restore BusBuddy.sln -p:EnableWindowsTargeting=true
+dotnet build BusBuddy.sln -c Release -p:EnableWindowsTargeting=true
+dotnet test BusBuddy.sln -c Release --no-build \
+  --filter "Category!=Integration&Category!=InMemoryFlaky"
+```
+
+### One-time repo governance
+
+Run `.github/scripts/setup-solo-ci-governance.sh` (requires `gh` admin) to enable:
+
+- `allow_auto_merge` + `delete_branch_on_merge`
+- Branch ruleset on `master`: PR required, 0 reviewers, required checks above, no force-push
+- Dependabot security alerts
+
+### Agent rules for CI changes
+
+- Do **not** add merge gates without a clear failure signal (avoid `continue-on-error` / `|| true` on build or test).
+- Keep workflow job names stable — branch rules reference **Build & Test** and **Security (CodeQL)**.
+- Use `concurrency` with `cancel-in-progress` on PR workflows.
+- Docs-only changes are skipped via `paths-ignore` on `*.md` and `Documentation/**`.
+- See also **AGENTS.md** for a short agent-facing summary.
+
 **For BusBuddy-specific requirements, also reference:**
 
 - **.vscode/instructions.md** - BusBuddy domain knowledge and excellence standards
