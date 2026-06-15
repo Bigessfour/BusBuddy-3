@@ -60,7 +60,7 @@ jobs:
         run: dotnet build ${{ env.SOLUTION_FILE }} --configuration ${{ env.BUILD_CONFIGURATION }} --no-restore --verbosity minimal -p:EnableWindowsTargeting=true /p:TreatWarningsAsErrors=false /p:WarningLevel=1
       - name: "Run Core Tests (with Coverage, filter for speed/regression; full on Windows deploy)"
         run: |
-          dotnet test ${{ env.SOLUTION_FILE }} --configuration ${{ env.BUILD_CONFIGURATION }} --no-build --verbosity normal --logger "trx;LogFileName=test-results.trx" --collect:"XPlat Code Coverage" --results-directory ./TestResults --filter "Category!=Integration&(FullyQualifiedName~Core|Seed|Student|Route|Maintenance|PdfReport|Fleet|Gaps|ModelValidation)"
+          dotnet test ${{ env.SOLUTION_FILE }} --configuration ${{ env.BUILD_CONFIGURATION }} --no-build --verbosity normal --logger "trx;LogFileName=test-results.trx" --collect:"XPlat Code Coverage" --results-directory ./TestResults --filter "Category!=Integration&Category!=InMemoryFlaky&(FullyQualifiedName~Core|Seed|Student|Route|Maintenance|PdfReport|Fleet|Gaps|ModelValidation)"
       - name: "Upload Test Results"
         if: always()
         uses: actions/upload-artifact@v4

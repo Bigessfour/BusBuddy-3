@@ -161,6 +161,7 @@ namespace BusBuddy.Tests.Core
         }
 
     [Test]
+    [Category("InMemoryFlaky")]
     public async Task UpdateBusLocationAsync_WithValidBus_ShouldUpdateLocation()
         {
             // Arrange

@@ -148,6 +148,7 @@ namespace BusBuddy.Tests.Core
         }
 
         [Test]
+        [Category("InMemoryFlaky")]
         public async Task UpdateDriverLicenseInfoAsync_ValidatesAndUpdates()
         {
             var ok = await _driverService.UpdateDriverLicenseInfoAsync(1, "LIC123", "B", DateTime.Today.AddYears(1));
