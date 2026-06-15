@@ -1,9 +1,12 @@
 name: Auto-merge
 
-# Solo-dev flow: open PR → CI gates pass → squash merge + delete branch (no human review required).
+# Solo-dev: enable auto-merge on PR open; squash merge when CI completes.
 on:
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review]
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
 
 permissions:
   contents: write
@@ -11,18 +14,75 @@ permissions:
 
 jobs:
   enable-auto-merge:
-    if: github.event.pull_request.draft == false && github.event.pull_request.base.ref == 'master'
+    if: >
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.draft == false &&
+      github.event.pull_request.base.ref == 'master'
     runs-on: ubuntu-latest
     steps:
       - name: Enable squash auto-merge when required checks pass
         uses: actions/github-script@v7
         with:
           script: |
-            const { owner, repo } = context.repo;
-            const pull_number = context.payload.pull_request.number;
-            await github.rest.pulls.enableAutoMerge({
+            const pullRequestId = context.payload.pull_request.node_id;
+            try {
+              await github.graphql(
+                `mutation($pullRequestId: ID!) {
+                  enablePullRequestAutoMerge(input: {
+                    pullRequestId: $pullRequestId,
+                    mergeMethod: SQUASH
+                  }) {
+                    pullRequest { number autoMergeRequest { enabledAt } }
+                  }
+                }`,
+                { pullRequestId }
+              );
+              core.info('Auto-merge enabled');
+            } catch (error) {
+              if (String(error).includes('already enabled')) {
+                core.info('Auto-merge already enabled');
+                return;
+              }
+              throw error;
+            }
+
+  merge-on-green:
+    if: >
+      github.event_name == 'workflow_run' &&
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Squash merge when CI gates pass
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const branch = context.payload.workflow_run.head_branch;
+
+            const { data: pulls } = await github.rest.pulls.list({
               owner,
               repo,
-              pull_number,
+              head: `${owner}:${branch}`,
+              state: 'open',
+            });
+
+            const pr = pulls.find((p) => p.base.ref === 'master');
+            if (!pr) {
+              core.info(`No open PR to master for branch ${branch}`);
+              return;
+            }
+
+            if (pr.merged) {
+              core.info(`PR #${pr.number} already merged`);
+              return;
+            }
+
+            core.info(`Merging PR #${pr.number} (${branch} → master)`);
+            await github.rest.pulls.merge({
+              owner,
+              repo,
+              pull_number: pr.number,
               merge_method: 'squash',
             });

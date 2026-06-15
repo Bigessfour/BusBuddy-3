@@ -22,6 +22,12 @@ AI agents (Cursor, Copilot, Claude, etc.) working in this repo should follow the
 ## Local checks before PR
 
 ```bash
+.github/scripts/validate-ci-local.sh
+```
+
+Or manually:
+
+```bash
 dotnet restore BusBuddy.sln -p:EnableWindowsTargeting=true
 dotnet build BusBuddy.sln -c Release -p:EnableWindowsTargeting=true
 dotnet test BusBuddy.sln -c Release --no-build \

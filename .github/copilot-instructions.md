@@ -128,6 +128,12 @@ bb-build  # Verify clean build
 ### Local pre-PR commands
 
 ```bash
+.github/scripts/validate-ci-local.sh
+```
+
+Or manually:
+
+```bash
 dotnet restore BusBuddy.sln -p:EnableWindowsTargeting=true
 dotnet build BusBuddy.sln -c Release -p:EnableWindowsTargeting=true
 dotnet test BusBuddy.sln -c Release --no-build \
