@@ -38,7 +38,7 @@ jobs:
 
   build-and-test:
     name: "Build & Test (Core + Regression, Docker Sim Compatible)"
-    runs-on: ubuntu-latest  # Changed to ubuntu for Docker local parity + speed; Windows for full WPF in deployment job
+    runs-on: windows-latest  # Windows for full TFM support (WPF); ubuntu docker sim separate for local parity
     needs: validate-dependencies
     timeout-minutes: 20
     steps:
