@@ -16,7 +16,7 @@ namespace BusBuddy.Tests.Core
     [TestFixture]
     public class FleetMonitoringServiceTests : IDisposable
     {
-        private readonly BusBuddyDbContext _context;
+        private readonly DbContextOptions<BusBuddyDbContext> _options;
         private readonly IBusBuddyDbContextFactory _contextFactory;
         private readonly IBusCachingService _cacheService;
         private readonly Mock<IGeoDataService> _mockGeoDataService;
@@ -24,27 +24,25 @@ namespace BusBuddy.Tests.Core
 
         public FleetMonitoringServiceTests()
         {
-            // Create in-memory database for testing
-            var options = new DbContextOptionsBuilder<BusBuddyDbContext>()
+            _options = new DbContextOptionsBuilder<BusBuddyDbContext>()
                 .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
                 .Options;
 
-            _context = new BusBuddyDbContext(options);
-            _contextFactory = new TestDbContextFactory(_context);
+            _contextFactory = new TestDbContextFactory(_options);
 
-            // Create real caching service with in-memory cache
             var memoryCache = new MemoryCache(new MemoryCacheOptions());
             _cacheService = new BusCachingService(memoryCache);
-
-            // Mock geo data service
             _mockGeoDataService = new Mock<IGeoDataService>();
-
             _fleetService = new FleetMonitoringService(_contextFactory, _cacheService, _mockGeoDataService.Object);
 
-            SeedTestData();
+            using (var seedContext = new BusBuddyDbContext(_options))
+            {
+                SeedTestData(seedContext);
+                seedContext.SaveChanges();
+            }
         }
 
-        private void SeedTestData()
+        private static void SeedTestData(BusBuddyDbContext context)
         {
             var buses = new List<Bus>
             {
@@ -90,8 +88,7 @@ namespace BusBuddy.Tests.Core
                 }
             };
 
-            _context.Buses.AddRange(buses);
-            _context.SaveChanges();
+            context.Buses.AddRange(buses);
         }
 
     [Test]
@@ -177,7 +174,8 @@ namespace BusBuddy.Tests.Core
             Assert.That(result, Is.True);
 
             // Verify location was updated
-            var updatedBus = await _context.Buses.FindAsync(1);
+            await using var verifyContext = new BusBuddyDbContext(_options);
+            var updatedBus = await verifyContext.Buses.FindAsync(1);
             Assert.That(updatedBus!.CurrentLatitude, Is.EqualTo(newLat));
             Assert.That(updatedBus.CurrentLongitude, Is.EqualTo(newLon));
         }
@@ -240,26 +238,19 @@ namespace BusBuddy.Tests.Core
         /// </summary>
         private sealed class TestDbContextFactory : IBusBuddyDbContextFactory
         {
-            private readonly BusBuddyDbContext _context;
+            private readonly DbContextOptions<BusBuddyDbContext> _options;
 
-            public TestDbContextFactory(BusBuddyDbContext context)
+            public TestDbContextFactory(DbContextOptions<BusBuddyDbContext> options)
             {
-                _context = context;
+                _options = options;
             }
 
-            public BusBuddyDbContext CreateDbContext()
-            {
-                return _context;
-            }
-            public BusBuddyDbContext CreateWriteDbContext()
-            {
-                return _context;
-            }
+            public BusBuddyDbContext CreateDbContext() => new BusBuddyDbContext(_options);
+            public BusBuddyDbContext CreateWriteDbContext() => new BusBuddyDbContext(_options);
         }
 
         public void Dispose()
         {
-            _context?.Dispose();
         }
     }
 }

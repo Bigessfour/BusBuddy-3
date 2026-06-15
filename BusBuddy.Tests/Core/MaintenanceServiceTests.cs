@@ -21,18 +21,19 @@ namespace BusBuddy.Tests.Core
         [SetUp]
         public void Setup()
         {
-            // Simple in-memory setup (matches DataLayerTests pattern) - proves MaintenanceService "works"
+            var dbName = Guid.NewGuid().ToString();
+            var options = new DbContextOptionsBuilder<BusBuddyDbContext>()
+                .UseInMemoryDatabase(databaseName: dbName)
+                .Options;
+
             var services = new ServiceCollection();
-            services.AddDbContext<BusBuddyDbContext>(options =>
-                options.UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString()));
+            services.AddDbContext<BusBuddyDbContext>(o => o.UseInMemoryDatabase(dbName));
             services.AddLogging();
             _serviceProvider = services.BuildServiceProvider();
             _context = _serviceProvider.GetRequiredService<BusBuddyDbContext>();
             _context.Database.EnsureCreated();
 
-            // Use a simple factory wrapper over the context for the service (common test pattern)
-            var factory = new InMemoryContextFactory(_context);
-            _service = new MaintenanceService(factory);
+            _service = new MaintenanceService(new InMemoryContextFactory(options));
         }
 
         [TearDown]
@@ -45,7 +46,16 @@ namespace BusBuddy.Tests.Core
         public async Task GetAllMaintenanceRecordsAsync_ReturnsRecords()
         {
             // Arrange - proves the maintenance flow item (core "works")
-            _context.MaintenanceRecords.Add(new Maintenance { VehicleId = 1, Description = "Oil change", Date = DateTime.UtcNow });
+            _context.MaintenanceRecords.Add(new Maintenance
+            {
+                VehicleId = 1,
+                Description = "Oil change",
+                Date = DateTime.UtcNow,
+                MaintenanceCompleted = "Oil change",
+                Vendor = "Test Vendor",
+                OdometerReading = 10000,
+                RepairCost = 50m
+            });
             await _context.SaveChangesAsync();
 
             // Act
@@ -60,7 +70,16 @@ namespace BusBuddy.Tests.Core
         public async Task CreateMaintenanceRecordAsync_PersistsAndReturnsWithTimestamp()
         {
             // Arrange
-            var record = new Maintenance { VehicleId = 1, Description = "Brake service", Date = DateTime.UtcNow };
+            var record = new Maintenance
+            {
+                VehicleId = 1,
+                Description = "Brake service",
+                Date = DateTime.UtcNow,
+                MaintenanceCompleted = "Brake service",
+                Vendor = "Test Vendor",
+                OdometerReading = 12000,
+                RepairCost = 150m
+            };
 
             // Act
             var created = await _service.CreateMaintenanceRecordAsync(record);
@@ -84,9 +103,9 @@ namespace BusBuddy.Tests.Core
     // Lightweight in-memory factory for service (avoids duplicate type conflict with RouteServiceTests)
     internal class InMemoryContextFactory : IBusBuddyDbContextFactory
     {
-        private readonly BusBuddyDbContext _ctx;
-        public InMemoryContextFactory(BusBuddyDbContext ctx) => _ctx = ctx;
-        public BusBuddyDbContext CreateDbContext() => _ctx;
-        public BusBuddyDbContext CreateWriteDbContext() => _ctx;
+        private readonly DbContextOptions<BusBuddyDbContext> _options;
+        public InMemoryContextFactory(DbContextOptions<BusBuddyDbContext> options) => _options = options;
+        public BusBuddyDbContext CreateDbContext() => new BusBuddyDbContext(_options);
+        public BusBuddyDbContext CreateWriteDbContext() => new BusBuddyDbContext(_options);
     }
 }

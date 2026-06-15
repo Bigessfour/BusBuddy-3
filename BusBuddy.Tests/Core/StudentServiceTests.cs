@@ -21,11 +21,10 @@ namespace BusBuddy.Tests.Core
 
         private sealed class TestDbContextFactory : IBusBuddyDbContextFactory
         {
-            private readonly BusBuddyDbContext _ctx;
-            public TestDbContextFactory(BusBuddyDbContext ctx) => _ctx = ctx;
-            public BusBuddyDbContext CreateDbContext() => _ctx;
-            public BusBuddyDbContext CreateWriteDbContext() => _ctx;
-            public void Dispose() { _ctx.Dispose(); }
+            private readonly DbContextOptions<BusBuddyDbContext> _options;
+            public TestDbContextFactory(DbContextOptions<BusBuddyDbContext> options) => _options = options;
+            public BusBuddyDbContext CreateDbContext() => new BusBuddyDbContext(_options);
+            public BusBuddyDbContext CreateWriteDbContext() => new BusBuddyDbContext(_options);
         }
 
         [SetUp]
@@ -44,7 +43,7 @@ namespace BusBuddy.Tests.Core
             });
             _dbContext.SaveChanges();
 
-            _studentService = new StudentService(new TestDbContextFactory(_dbContext));
+            _studentService = new StudentService(new TestDbContextFactory(_dbOptions));
         }
 
         [TearDown]
@@ -89,6 +88,10 @@ namespace BusBuddy.Tests.Core
         [Test]
         public async Task ValidateStudentAsync_InvalidPhoneAndZip_ReturnsErrors()
         {
+            var prevMode = Environment.GetEnvironmentVariable("BUSBUDDY_PHONE_VALIDATION_MODE");
+            Environment.SetEnvironmentVariable("BUSBUDDY_PHONE_VALIDATION_MODE", "strict");
+            try
+            {
             var s = new Student
             {
                 StudentName = "Bob",
@@ -106,6 +109,11 @@ namespace BusBuddy.Tests.Core
             var errors = await _studentService.ValidateStudentAsync(s);
             errors.Should().Contain(e => e.Contains("phone", StringComparison.OrdinalIgnoreCase));
             errors.Should().Contain(e => e.Contains("ZIP", StringComparison.OrdinalIgnoreCase));
+            }
+            finally
+            {
+                Environment.SetEnvironmentVariable("BUSBUDDY_PHONE_VALIDATION_MODE", prevMode);
+            }
         }
 
         [Test]

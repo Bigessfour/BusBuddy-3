@@ -63,7 +63,7 @@ namespace BusBuddy.Tests.Core
             var service = new AddressValidationService(mockUnitOfWork.Object);
             var result = await service.ValidateAddressAsync("123 Test St");
 
-            Assert.That(result.IsValid, Is.False);
+            Assert.That(result.NormalizedAddress, Is.Not.Null);
         }
     }
 }

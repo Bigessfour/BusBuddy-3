@@ -22,11 +22,10 @@ namespace BusBuddy.Tests.Core
 
         private sealed class TestDbContextFactory : IBusBuddyDbContextFactory
         {
-            private readonly BusBuddyDbContext _ctx;
-            public TestDbContextFactory(BusBuddyDbContext ctx) => _ctx = ctx;
-            public BusBuddyDbContext CreateDbContext() => _ctx;
-            public BusBuddyDbContext CreateWriteDbContext() => _ctx;
-            public void Dispose() { _ctx.Dispose(); }
+            private readonly DbContextOptions<BusBuddyDbContext> _options;
+            public TestDbContextFactory(DbContextOptions<BusBuddyDbContext> options) => _options = options;
+            public BusBuddyDbContext CreateDbContext() => new BusBuddyDbContext(_options);
+            public BusBuddyDbContext CreateWriteDbContext() => new BusBuddyDbContext(_options);
         }
 
         [SetUp]
@@ -43,7 +42,7 @@ namespace BusBuddy.Tests.Core
 
             SeedData();
 
-            _driverService = new DriverService(new TestDbContextFactory(_dbContext), _cacheMock.Object);
+            _driverService = new DriverService(new TestDbContextFactory(_dbOptions), _cacheMock.Object);
         }
 
         private void SeedData()
