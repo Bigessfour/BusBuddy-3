@@ -712,6 +712,8 @@ public class AlternativeRoute
 
 ## 🎯 **Route Assignment UI Patterns**
 
+**Implemented (2026-06, `feature/student-to-route`)**: [RouteAssignmentView.xaml](../../BusBuddy.WPF/Views/Route/RouteAssignmentView.xaml) uses WPF `DragDrop` between Unassigned and Assigned `SfDataGrid` panels. [RouteAssignmentViewModel.cs](../../BusBuddy.WPF/ViewModels/Route/RouteAssignmentViewModel.cs) calls slot-aware `IRouteService` methods (`AssignStudentToRouteAsync`, `GetStudentsForRouteAsync`, `GetUnassignedStudentsAsync`, `AutoAssignStudentsAsync`). Toolbar: Auto-Assign, Report (PDF via `PdfReportService.GenerateRouteSummaryReport`).
+
 ### **Route Assignment View (XAML)**
 
 ```xml

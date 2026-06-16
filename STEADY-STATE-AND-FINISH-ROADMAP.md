@@ -217,4 +217,6 @@ This advances "Finish" + "tests for proof" + "CI effectiveness" from the plan. C
 This is the baseline. Future work (finish stubs per roadmap, more tests, deploy) will build only on this clean foundation.
 
 ## Tests/CI/PR (TL;DR)
+- PR `feature/student-to-route`: Student-to-Route drag-and-drop assignment (AM/PM slot-aware `RouteService`, DnD grids, auto-assign, search filter, route PDF report). Core proof: extended `RouteServiceTests` + `RouteAssignmentFlowTests` (student → assign → PDF).
+- Finish item **route schedule/assign** (student assignment portion): **done** in Route Assignment panel. Roadmap proof **#4** (RouteService assign/remove/capacity) and **#12** (Core integration test) addressed in this PR.
 Build clean (legacy archived). Docker local CI sim green (PG+Core/gaps tests). Cov ~70% Core (+new for 80%+). CI+docker job. PR#16 staged/local ready (secret=GH). No push. Next: Finish e.g. student import/optimize + test (use RAG MCP).

@@ -759,71 +759,16 @@ namespace BusBuddy.Core.Services
 
         public async Task<Result<bool>> AssignStudentToRouteAsync(int studentId, int routeId)
         {
-            try
+            var amResult = await AssignStudentToRouteAsync(studentId, routeId, RouteTimeSlot.AM);
+            if (amResult.IsSuccess)
             {
-                if (studentId <= 0 || routeId <= 0)
-                {
-                    return Result.FailureResult<bool>("Invalid studentId or routeId");
-                }
-
-                var (context, dispose) = GetWriteContext();
-                try
-                {
-                    var student = await context.Students.FirstOrDefaultAsync(s => s.StudentId == studentId);
-                    if (student is null)
-                    {
-                        return Result.FailureResult<bool>($"Student with ID {studentId} not found");
-                    }
-
-                    var route = await context.Routes.FirstOrDefaultAsync(r => r.RouteId == routeId);
-                    if (route is null)
-                    {
-                        return Result.FailureResult<bool>($"Route with ID {routeId} not found");
-                    }
-
-                    // Capacity check
-                    var capacity = await GetRouteCapacityAsync(context, route);
-                    var assignedCount = await context.Students.CountAsync(s => s.AMRoute == route.RouteName || s.PMRoute == route.RouteName);
-                    if (capacity > 0 && assignedCount >= capacity)
-                    {
-                        return Result.FailureResult<bool>($"Route '{route.RouteName}' is at capacity");
-                    }
-
-                    // Assign to AM if free; else PM if free; else fail
-                    if (string.IsNullOrWhiteSpace(student.AMRoute))
-                    {
-                        student.AMRoute = route.RouteName;
-                    }
-                    else if (string.IsNullOrWhiteSpace(student.PMRoute))
-                    {
-                        student.PMRoute = route.RouteName;
-                    }
-                    else
-                    {
-                        return Result.FailureResult<bool>("Student already has both AM and PM routes assigned");
-                    }
-
-                    context.Entry(student).State = EntityState.Modified;
-                    await context.SaveChangesAsync();
-                    Logger.Information("Assigned student {StudentId} to route {RouteName}", studentId, route.RouteName);
-                    return Result.SuccessResult(true);
-                }
-                finally
-                {
-                    if (dispose)
-                    {
-                        await context.DisposeAsync();
-                    }
-                }
+                return amResult;
             }
-            catch (Exception ex)
-            {
-                Logger.Error(ex, "Error assigning student {StudentId} to route {RouteId}", studentId, routeId);
-                return Result.FailureResult<bool>($"Error assigning student to route: {ex.Message}");
-            }
+
+            return await AssignStudentToRouteAsync(studentId, routeId, RouteTimeSlot.PM);
         }
 
-        public async Task<Result<bool>> RemoveStudentFromRouteAsync(int studentId, int routeId)
+        public async Task<Result<bool>> AssignStudentToRouteAsync(int studentId, int routeId, RouteTimeSlot timeSlot)
         {
             try
             {
@@ -832,6 +777,11 @@ namespace BusBuddy.Core.Services
                     return Result.FailureResult<bool>("Invalid studentId or routeId");
                 }
 
+                if (timeSlot == RouteTimeSlot.Both)
+                {
+                    return Result.FailureResult<bool>("Specify AM or PM time slot for assignment");
+                }
+
                 var (context, dispose) = GetWriteContext();
                 try
                 {
@@ -847,26 +797,28 @@ namespace BusBuddy.Core.Services
                         return Result.FailureResult<bool>($"Route with ID {routeId} not found");
                     }
 
-                    var changed = false;
-                    if (string.Equals(student.AMRoute, route.RouteName, StringComparison.OrdinalIgnoreCase))
+                    var currentSlotRoute = GetStudentRouteForSlot(student, timeSlot);
+                    if (!string.IsNullOrWhiteSpace(currentSlotRoute))
                     {
-                        student.AMRoute = null;
-                        changed = true;
-                    }
-                    if (string.Equals(student.PMRoute, route.RouteName, StringComparison.OrdinalIgnoreCase))
-                    {
-                        student.PMRoute = null;
-                        changed = true;
+                        if (string.Equals(currentSlotRoute, route.RouteName, StringComparison.OrdinalIgnoreCase))
+                        {
+                            return Result.SuccessResult(true);
+                        }
+                        return Result.FailureResult<bool>($"Student already has a {timeSlot} route assigned: {currentSlotRoute}");
                     }
 
-                    if (!changed)
+                    var capacity = await GetCapacityForSlotAsync(context, route, timeSlot);
+                    var assignedCount = await GetAssignedCountForSlotAsync(context, route, timeSlot);
+                    if (capacity > 0 && assignedCount >= capacity)
                     {
-                        return Result.FailureResult<bool>("Student is not assigned to the specified route");
+                        return Result.FailureResult<bool>($"Route '{route.RouteName}' is at {timeSlot} capacity");
                     }
+
+                    SetStudentRouteForSlot(student, timeSlot, route.RouteName);
 
                     context.Entry(student).State = EntityState.Modified;
                     await context.SaveChangesAsync();
-                    Logger.Information("Removed student {StudentId} from route {RouteName}", studentId, route.RouteName);
+                    Logger.Information("Assigned student {StudentId} to route {RouteName} ({Slot})", studentId, route.RouteName, timeSlot);
                     return Result.SuccessResult(true);
                 }
                 finally
@@ -879,7 +831,75 @@ namespace BusBuddy.Core.Services
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Error removing student {StudentId} from route {RouteId}", studentId, routeId);
+                Logger.Error(ex, "Error assigning student {StudentId} to route {RouteId} ({Slot})", studentId, routeId, timeSlot);
+                return Result.FailureResult<bool>($"Error assigning student to route: {ex.Message}");
+            }
+        }
+
+        public async Task<Result<bool>> RemoveStudentFromRouteAsync(int studentId, int routeId)
+        {
+            var amResult = await RemoveStudentFromRouteAsync(studentId, routeId, RouteTimeSlot.AM);
+            if (amResult.IsSuccess)
+            {
+                return amResult;
+            }
+
+            return await RemoveStudentFromRouteAsync(studentId, routeId, RouteTimeSlot.PM);
+        }
+
+        public async Task<Result<bool>> RemoveStudentFromRouteAsync(int studentId, int routeId, RouteTimeSlot timeSlot)
+        {
+            try
+            {
+                if (studentId <= 0 || routeId <= 0)
+                {
+                    return Result.FailureResult<bool>("Invalid studentId or routeId");
+                }
+
+                if (timeSlot == RouteTimeSlot.Both)
+                {
+                    return Result.FailureResult<bool>("Specify AM or PM time slot for removal");
+                }
+
+                var (context, dispose) = GetWriteContext();
+                try
+                {
+                    var student = await context.Students.FirstOrDefaultAsync(s => s.StudentId == studentId);
+                    if (student is null)
+                    {
+                        return Result.FailureResult<bool>($"Student with ID {studentId} not found");
+                    }
+
+                    var route = await context.Routes.FirstOrDefaultAsync(r => r.RouteId == routeId);
+                    if (route is null)
+                    {
+                        return Result.FailureResult<bool>($"Route with ID {routeId} not found");
+                    }
+
+                    var slotRoute = GetStudentRouteForSlot(student, timeSlot);
+                    if (!string.Equals(slotRoute, route.RouteName, StringComparison.OrdinalIgnoreCase))
+                    {
+                        return Result.FailureResult<bool>($"Student is not assigned to the specified route for {timeSlot}");
+                    }
+
+                    SetStudentRouteForSlot(student, timeSlot, null);
+
+                    context.Entry(student).State = EntityState.Modified;
+                    await context.SaveChangesAsync();
+                    Logger.Information("Removed student {StudentId} from route {RouteName} ({Slot})", studentId, route.RouteName, timeSlot);
+                    return Result.SuccessResult(true);
+                }
+                finally
+                {
+                    if (dispose)
+                    {
+                        await context.DisposeAsync();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Error removing student {StudentId} from route {RouteId} ({Slot})", studentId, routeId, timeSlot);
                 return Result.FailureResult<bool>($"Error removing student from route: {ex.Message}");
             }
         }
@@ -909,6 +929,142 @@ namespace BusBuddy.Core.Services
             {
                 Logger.Error(ex, "Error retrieving unassigned students");
                 return Result.FailureResult<List<Student>>($"Error retrieving students: {ex.Message}");
+            }
+        }
+
+        public async Task<Result<List<Student>>> GetUnassignedStudentsAsync(RouteTimeSlot timeSlot)
+        {
+            try
+            {
+                if (timeSlot == RouteTimeSlot.Both)
+                {
+                    return await GetUnassignedStudentsAsync();
+                }
+
+                var (context, dispose) = GetReadContext();
+                try
+                {
+                    var students = timeSlot == RouteTimeSlot.AM
+                        ? await context.Students
+                            .Where(s => s.Active && (s.AMRoute == null || s.AMRoute == ""))
+                            .OrderBy(s => s.StudentName)
+                            .ThenBy(s => s.StudentId)
+                            .ToListAsync()
+                        : await context.Students
+                            .Where(s => s.Active && (s.PMRoute == null || s.PMRoute == ""))
+                            .OrderBy(s => s.StudentName)
+                            .ThenBy(s => s.StudentId)
+                            .ToListAsync();
+                    return Result.SuccessResult(students);
+                }
+                finally
+                {
+                    if (dispose)
+                    {
+                        await context.DisposeAsync();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Error retrieving unassigned students for slot {Slot}", timeSlot);
+                return Result.FailureResult<List<Student>>($"Error retrieving students: {ex.Message}");
+            }
+        }
+
+        public async Task<Result<List<Student>>> GetStudentsForRouteAsync(int routeId, RouteTimeSlot timeSlot)
+        {
+            try
+            {
+                if (routeId <= 0)
+                {
+                    return Result.FailureResult<List<Student>>("Invalid routeId");
+                }
+
+                if (timeSlot == RouteTimeSlot.Both)
+                {
+                    return Result.FailureResult<List<Student>>("Specify AM or PM time slot");
+                }
+
+                var (context, dispose) = GetReadContext();
+                try
+                {
+                    var route = await context.Routes.FirstOrDefaultAsync(r => r.RouteId == routeId);
+                    if (route is null || string.IsNullOrEmpty(route.RouteName))
+                    {
+                        return Result.SuccessResult(new List<Student>());
+                    }
+
+                    var students = timeSlot == RouteTimeSlot.AM
+                        ? await context.Students
+                            .Where(s => s.AMRoute == route.RouteName)
+                            .OrderBy(s => s.StudentName)
+                            .ToListAsync()
+                        : await context.Students
+                            .Where(s => s.PMRoute == route.RouteName)
+                            .OrderBy(s => s.StudentName)
+                            .ToListAsync();
+                    return Result.SuccessResult(students);
+                }
+                finally
+                {
+                    if (dispose)
+                    {
+                        await context.DisposeAsync();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Error retrieving students for route {RouteId} ({Slot})", routeId, timeSlot);
+                return Result.FailureResult<List<Student>>($"Error retrieving students: {ex.Message}");
+            }
+        }
+
+        public async Task<Result<List<Student>>> AutoAssignStudentsAsync(int routeId, RouteTimeSlot timeSlot)
+        {
+            try
+            {
+                if (routeId <= 0)
+                {
+                    return Result.FailureResult<List<Student>>("Invalid routeId");
+                }
+
+                if (timeSlot == RouteTimeSlot.Both)
+                {
+                    return Result.FailureResult<List<Student>>("Specify AM or PM time slot for auto-assign");
+                }
+
+                var unassignedResult = await GetUnassignedStudentsAsync(timeSlot);
+                if (!unassignedResult.IsSuccess || unassignedResult.Value is null)
+                {
+                    return Result.FailureResult<List<Student>>(unassignedResult.Error ?? "Failed to load unassigned students");
+                }
+
+                var assigned = new List<Student>();
+                foreach (var student in unassignedResult.Value)
+                {
+                    var canAssign = await CanAssignStudentToRouteAsync(student.StudentId, routeId, timeSlot);
+                    if (!canAssign.IsSuccess)
+                    {
+                        break;
+                    }
+
+                    var assignResult = await AssignStudentToRouteAsync(student.StudentId, routeId, timeSlot);
+                    if (!assignResult.IsSuccess)
+                    {
+                        break;
+                    }
+
+                    assigned.Add(student);
+                }
+
+                return Result.SuccessResult(assigned);
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Error auto-assigning students to route {RouteId} ({Slot})", routeId, timeSlot);
+                return Result.FailureResult<List<Student>>($"Error auto-assigning students: {ex.Message}");
             }
         }
 
@@ -1088,10 +1244,20 @@ namespace BusBuddy.Core.Services
             }
         }
 
-        public async Task<Result<bool>> CanAssignStudentToRouteAsync(int studentId, int routeId)
+        public Task<Result<bool>> CanAssignStudentToRouteAsync(int studentId, int routeId)
+        {
+            return CanAssignStudentToRouteAsync(studentId, routeId, RouteTimeSlot.AM);
+        }
+
+        public async Task<Result<bool>> CanAssignStudentToRouteAsync(int studentId, int routeId, RouteTimeSlot timeSlot)
         {
             try
             {
+                if (timeSlot == RouteTimeSlot.Both)
+                {
+                    return Result.FailureResult<bool>("Specify AM or PM time slot");
+                }
+
                 var (context, dispose) = GetReadContext();
                 try
                 {
@@ -1107,17 +1273,22 @@ namespace BusBuddy.Core.Services
                         return Result.FailureResult<bool>($"Route with ID {routeId} not found");
                     }
 
-                    if (!string.IsNullOrWhiteSpace(student.AMRoute) && !string.IsNullOrWhiteSpace(student.PMRoute))
+                    var currentSlotRoute = GetStudentRouteForSlot(student, timeSlot);
+                    if (!string.IsNullOrWhiteSpace(currentSlotRoute))
                     {
-                        return Result.FailureResult<bool>("Student already has AM and PM routes");
+                        if (string.Equals(currentSlotRoute, route.RouteName, StringComparison.OrdinalIgnoreCase))
+                        {
+                            return Result.SuccessResult(true);
+                        }
+                        return Result.FailureResult<bool>($"Student already has a {timeSlot} route assigned");
                     }
 
-                    var capacity = await GetRouteCapacityAsync(context, route);
+                    var capacity = await GetCapacityForSlotAsync(context, route, timeSlot);
                     if (capacity <= 0) capacity = 30;
-                    var assigned = await context.Students.CountAsync(s => s.AMRoute == route.RouteName || s.PMRoute == route.RouteName);
+                    var assigned = await GetAssignedCountForSlotAsync(context, route, timeSlot);
                     if (assigned >= capacity)
                     {
-                        return Result.FailureResult<bool>($"Route '{route.RouteName}' is at capacity");
+                        return Result.FailureResult<bool>($"Route '{route.RouteName}' is at {timeSlot} capacity");
                     }
 
                     return Result.SuccessResult(true);
@@ -1132,9 +1303,56 @@ namespace BusBuddy.Core.Services
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Error validating assignment of student {StudentId} to route {RouteId}", studentId, routeId);
+                Logger.Error(ex, "Error validating assignment of student {StudentId} to route {RouteId} ({Slot})", studentId, routeId, timeSlot);
                 return Result.FailureResult<bool>($"Error validating assignment: {ex.Message}");
             }
+        }
+
+        private static string? GetStudentRouteForSlot(Student student, RouteTimeSlot timeSlot)
+        {
+            return timeSlot == RouteTimeSlot.AM ? student.AMRoute : student.PMRoute;
+        }
+
+        private static void SetStudentRouteForSlot(Student student, RouteTimeSlot timeSlot, string? routeName)
+        {
+            if (timeSlot == RouteTimeSlot.AM)
+            {
+                student.AMRoute = routeName;
+            }
+            else
+            {
+                student.PMRoute = routeName;
+            }
+        }
+
+        private static async Task<int> GetAssignedCountForSlotAsync(BusBuddyDbContext context, Route route, RouteTimeSlot timeSlot)
+        {
+            return timeSlot == RouteTimeSlot.AM
+                ? await context.Students.CountAsync(s => s.AMRoute == route.RouteName)
+                : await context.Students.CountAsync(s => s.PMRoute == route.RouteName);
+        }
+
+        private static async Task<int> GetCapacityForSlotAsync(BusBuddyDbContext context, Route route, RouteTimeSlot timeSlot)
+        {
+            if (timeSlot == RouteTimeSlot.AM && route.AMVehicleId.HasValue)
+            {
+                var am = await context.Buses.FirstOrDefaultAsync(b => b.BusId == route.AMVehicleId.Value);
+                if (am != null && am.SeatingCapacity > 0)
+                {
+                    return am.SeatingCapacity;
+                }
+            }
+
+            if (timeSlot == RouteTimeSlot.PM && route.PMVehicleId.HasValue)
+            {
+                var pm = await context.Buses.FirstOrDefaultAsync(b => b.BusId == route.PMVehicleId.Value);
+                if (pm != null && pm.SeatingCapacity > 0)
+                {
+                    return pm.SeatingCapacity;
+                }
+            }
+
+            return 30;
         }
 
         // Helper to compute route capacity from assigned buses
