@@ -15,7 +15,7 @@ namespace BusBuddy.Tests.Core
             var prevPwd = Environment.GetEnvironmentVariable("BUSBUDDY_PG_PASSWORD");
             try
             {
-                Environment.SetEnvironmentVariable("BUSBUDDY_PG_PASSWORD", "test_password");
+                Environment.SetEnvironmentVariable("BUSBUDDY_PG_PASSWORD", "pg_ci_placeholder");
 
                 var config = new ConfigurationBuilder()
                     .AddInMemoryCollection(new KeyValuePair<string, string?>[]
@@ -27,7 +27,7 @@ namespace BusBuddy.Tests.Core
 
                 var conn = EnvironmentHelper.GetConnectionString(config);
 
-                conn.Should().Contain("Password=test_password");
+                conn.Should().Contain("Password=pg_ci_placeholder");
                 conn.Should().NotContain("${BUSBUDDY_PG_PASSWORD}");
             }
             finally

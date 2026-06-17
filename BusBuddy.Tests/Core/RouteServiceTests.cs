@@ -1,5 +1,6 @@
 using NUnit.Framework;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Serilog;
 using Moq;
 using BusBuddy.Core.Services;
@@ -47,6 +48,7 @@ namespace BusBuddy.Tests.Core
             // Setup in-memory database for fast tests
             _dbOptions = new DbContextOptionsBuilder<BusBuddyDbContext>()
                 .UseInMemoryDatabase(databaseName: $"TestDb_{Guid.NewGuid()}")
+                .ConfigureWarnings(w => w.Ignore(InMemoryEventId.TransactionIgnoredWarning))
                 .Options;
         }
 

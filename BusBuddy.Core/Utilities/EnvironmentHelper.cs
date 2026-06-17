@@ -118,7 +118,7 @@ namespace BusBuddy.Core.Utilities
             {
                 raw = configuration.GetConnectionString("PostgresConnection") ??
                       configuration.GetConnectionString("DefaultConnection") ??
-                      "Host=localhost;Port=5432;Database=busbuddy_test;Username=busbuddy;Password=busbuddy_dev";
+                      "Host=localhost;Port=5432;Database=busbuddy_test;Username=busbuddy;Password=${BUSBUDDY_PG_PASSWORD}";
             }
             else if (IsUsingLocalDb(configuration))
             {

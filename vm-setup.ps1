@@ -14,7 +14,7 @@
 #
 # Database: BusBuddy hybrid dev uses Postgres in Docker on the Mac host.
 #   Start on Mac:  docker compose --profile db up -d
-#   Then in VM:    $env:BUSBUDDY_CONNECTION = "Host=<mac-ip>;Port=5432;Database=busbuddy_test;Username=busbuddy;Password=busbuddy_dev"
+#   Then in VM:    $env:BUSBUDDY_CONNECTION = "Host=<mac-ip>;Port=5432;Database=busbuddy_test;Username=busbuddy;Password=${BUSBUDDY_PG_PASSWORD}"
 #   (run ./run-wpf.sh on Mac to print your host IP)
 #
 # After setup, close and reopen PowerShell, then:
@@ -235,7 +235,7 @@ Write-Host @"
 
   # Postgres on Mac Docker (replace <mac-ip> — run ./run-wpf.sh on Mac for the IP):
   [Environment]::SetEnvironmentVariable('BUSBUDDY_CONNECTION',
-    'Host=<mac-ip>;Port=5432;Database=busbuddy_test;Username=busbuddy;Password=busbuddy_dev', 'User')
+    'Host=<mac-ip>;Port=5432;Database=busbuddy_test;Username=busbuddy;Password=${BUSBUDDY_PG_PASSWORD}', 'User')
 
   # Or drop keys\SYNCFUSION_LICENSE_KEY.txt and keys\bus-buddy-gee-key.json on the Mac side;
   # they sync via the UTM shared folder and utm_run_in_vm.ps1 picks them up per session.

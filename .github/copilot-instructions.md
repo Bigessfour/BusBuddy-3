@@ -233,7 +233,7 @@ To get the best Syncfusion WPF code assistance:
 {
     "ConnectionStrings": {
         "DefaultConnection": "Data Source=(localdb)\\MSSQLLocalDB;Initial Catalog=BusBuddy;Integrated Security=True;MultipleActiveResultSets=True",
-        "PostgresConnection": "Host=localhost;Port=5432;Database=busbuddy_test;Username=busbuddy;Password=busbuddy_dev"
+        "PostgresConnection": "Host=localhost;Port=5432;Database=busbuddy_test;Username=busbuddy;Password=${BUSBUDDY_PG_PASSWORD}"
     },
     "DatabaseProvider": "LocalDB"
 }
