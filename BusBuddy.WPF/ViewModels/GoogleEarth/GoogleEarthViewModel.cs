@@ -98,6 +98,8 @@ namespace BusBuddy.WPF.ViewModels.GoogleEarth
             ShowSchoolsCommand = new RelayCommand(_ => ShowSchools());
             TrackSelectedBusCommand = new RelayCommand(_ => TrackSelectedBus(), _ => SelectedBus != null);
             ResetViewCommand = new RelayCommand(_ => ResetView());
+
+            // Demo data omitted (Bus model props vary; SfDataGrid element added for Finish UI - populates at runtime via services)
             CheckEligibilityCommand = new RelayCommand(async _ => await CheckEligibilityAsync(), _ => _eligibilityService != null);
 
             // Print current route map/directions

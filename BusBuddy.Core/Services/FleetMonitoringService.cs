@@ -10,7 +10,7 @@ namespace BusBuddy.Core.Services
 {
     /// <summary>
     /// Fleet monitoring service for real-time bus tracking and status management
-    /// Integrates with Azure SQL Database for data persistence and GPS tracking
+    /// Integrates with the database for data persistence and GPS tracking
     /// Uses Serilog for structured logging and follows BusBuddy service patterns
     /// </summary>
     [DebuggerDisplay("FleetMonitoringService - Cache: {_cacheService != null}")]

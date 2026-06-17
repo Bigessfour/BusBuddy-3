@@ -261,6 +261,18 @@
                                           Command="{Binding PrintMapCommand}"
                                           Style="{StaticResource PrimaryButtonAdv}"
                                           AutomationProperties.Name="Print Route Map" />
+                    <syncfusion:ButtonAdv x:Name="AutoAssignButton"
+                                          Label="⚡ Auto-Assign"
+                                          Command="{Binding AutoAssignCommand}"
+                                          Style="{StaticResource SuccessButtonAdv}"
+                                          AutomationProperties.Name="Auto Assign Students"
+                                          ToolTip="Assign unassigned students up to route capacity for the selected time slot" />
+                    <syncfusion:ButtonAdv x:Name="ReportButton"
+                                          Label="📄 Report"
+                                          Command="{Binding GenerateReportCommand}"
+                                          Style="{StaticResource InfoButtonAdv}"
+                                          AutomationProperties.Name="Generate Route Assignment Report"
+                                          ToolTip="Export route assignment summary PDF" />
                 </StackPanel>
             </Grid>
         </Border>
@@ -300,6 +312,13 @@
                                            SelectionMode="Single"
                                            GridLinesVisibility="Both"
                                            ColumnSizer="Star"
+                                           AllowDrop="True"
+                                           PreviewMouseLeftButtonDown="UnassignedGrid_PreviewMouseLeftButtonDown"
+                                           PreviewMouseMove="Grid_PreviewMouseMove"
+                                           DragOver="UnassignedGrid_DragOver"
+                                           Drop="UnassignedGrid_Drop"
+                                           DragEnter="UnassignedGrid_DragEnter"
+                                           DragLeave="UnassignedGrid_DragLeave"
                                            AutomationProperties.Name="Unassigned Students Grid"
                                            AutomationProperties.HelpText="Students not yet assigned to the selected route">
                         <syncfusion:SfDataGrid.Columns>
@@ -358,6 +377,13 @@
                                            SelectionMode="Single"
                                            GridLinesVisibility="Both"
                                            ColumnSizer="Star"
+                                           AllowDrop="True"
+                                           PreviewMouseLeftButtonDown="AssignedGrid_PreviewMouseLeftButtonDown"
+                                           PreviewMouseMove="Grid_PreviewMouseMove"
+                                           DragOver="AssignedGrid_DragOver"
+                                           Drop="AssignedGrid_Drop"
+                                           DragEnter="AssignedGrid_DragEnter"
+                                           DragLeave="AssignedGrid_DragLeave"
                                            AutomationProperties.Name="Assigned Students Grid"
                                            AutomationProperties.HelpText="Students assigned to the selected route">
                         <syncfusion:SfDataGrid.Columns>

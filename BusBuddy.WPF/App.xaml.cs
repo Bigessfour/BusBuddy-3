@@ -12,6 +12,7 @@ using BusBuddy.Core.Services;
 using BusBuddy.Core.Services.Interfaces;
 // Phase-based extension removed; direct registrations used instead
 using BusBuddy.Core.Extensions; // Needed for AddDataServices extension
+using BusBuddy.Core.Configuration;
 using BusBuddy.WPF.ViewModels;
 using Microsoft.EntityFrameworkCore;
 using System.Threading;
@@ -50,6 +51,7 @@ namespace BusBuddy.WPF
             // This bridges Passwords app -> runtime env on macOS.
             // On non-mac, falls back to existing env / machine vars.
             LoadApiKeysFromMacPasswords();
+            BootstrapGcpCredentialsForProduction();
 
             // Register Syncfusion license before any UI initialization
             EnsureSyncfusionLicenseRegistered();
@@ -131,13 +133,19 @@ namespace BusBuddy.WPF
 
             _bootstrapLogger?.Information("🔐 Loading API keys from macOS Passwords (Keychain) into process environment...");
 
-            // Keys we care about for the documented registration paths
+            // Keys loaded from macOS Passwords (Name = env var) into process environment.
             var keysToLoad = new[]
             {
-                "XAI_API_KEY",           // xAI / Grok API key
-                "GROK_API_KEY",          // Alternative name used in some docs
-                "SYNCFUSION_LICENSE_KEY",// Syncfusion WPF controls license key
-                "Syncfusion_API_Key"     // For Syncfusion AI Coding Assistant MCP server
+                "XAI_API_KEY",
+                "GROK_API_KEY",
+                "SYNCFUSION_LICENSE_KEY",
+                "Syncfusion_API_Key",
+                "GEE_PROJECT_ID",
+                "GEE_SERVICE_ACCOUNT_EMAIL",
+                "GCP_BILLING_PROJECT",
+                "GOOGLE_CLOUD_PROJECT",
+                "GOOGLE_APPLICATION_CREDENTIALS",
+                "GEE_SERVICE_ACCOUNT_JSON"
             };
 
             foreach (var keyName in keysToLoad)
@@ -193,6 +201,30 @@ namespace BusBuddy.WPF
         }
 
         /// <summary>
+        /// Materializes GCP service account credentials and sets GoogleEarthEngine__* env overrides.
+        /// Runs on all platforms so Production can use GEE_SERVICE_ACCOUNT_JSON / GOOGLE_APPLICATION_CREDENTIALS.
+        /// </summary>
+        private static void BootstrapGcpCredentialsForProduction()
+        {
+            try
+            {
+                var path = GcpCredentialBootstrap.MaterializeServiceAccountFromEnvironment();
+                if (!string.IsNullOrEmpty(path))
+                {
+                    _bootstrapLogger?.Information("GCP credentials ready for production (key path: {Path})", path);
+                }
+                else
+                {
+                    _bootstrapLogger?.Information("GCP credentials not materialized; GEE will use placeholders until configured.");
+                }
+            }
+            catch (Exception ex)
+            {
+                _bootstrapLogger?.Warning(ex, "GCP credential bootstrap failed: {Message}", ex.Message);
+            }
+        }
+
+        /// <summary>
         /// Centralized configuration builder used across App for consistent loading.
         /// Reads appsettings.json, environment-specific JSON, optional azure settings,
         /// and environment variables. Uses AppDomain base directory as base path.
@@ -206,7 +238,6 @@ namespace BusBuddy.WPF
                     .SetBasePath(AppDomain.CurrentDomain.BaseDirectory)
                     .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
                     .AddJsonFile($"appsettings.{env}.json", optional: true, reloadOnChange: true)
-                    .AddJsonFile("appsettings.azure.json", optional: true, reloadOnChange: true)
                     .AddEnvironmentVariables()
                     .Build();
 
@@ -335,7 +366,6 @@ namespace BusBuddy.WPF
                     .SetBasePath(AppDomain.CurrentDomain.BaseDirectory)
                     .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
                     .AddJsonFile($"appsettings.{env2}.json", optional: true, reloadOnChange: true)
-                    .AddJsonFile("appsettings.azure.json", optional: true, reloadOnChange: true)
                     .AddEnvironmentVariables()
                     .Build();
 
@@ -345,12 +375,24 @@ namespace BusBuddy.WPF
                 // Use the proper extension method that registers IBusBuddyDbContextFactory
                 services.AddDataServices(configuration);
 
-                // Core geo/eligibility services (previously in phase extension)
+                // Core geo/eligibility + Google Earth Engine (production auth via Passwords/env)
+                services.AddSingleton<GoogleEarthEngineService>();
                 services.AddScoped<IGeoDataService>(sp =>
                 {
-                    var geeApiBaseUrl = "https://earthengine.googleapis.com";
-                    var geeAccessToken = Environment.GetEnvironmentVariable("GEE_ACCESS_TOKEN") ?? "placeholder_token";
-                    return new GeoDataService(geeApiBaseUrl, geeAccessToken);
+                    var config = sp.GetRequiredService<IConfiguration>();
+                    var baseUrl = config["GoogleEarthEngine:BaseUrl"] ?? "https://earthengine.googleapis.com";
+                    if (baseUrl.EndsWith("/v1alpha", StringComparison.OrdinalIgnoreCase))
+                    {
+                        baseUrl = "https://earthengine.googleapis.com";
+                    }
+
+                    var token = GcpCredentialBootstrap.TryGetEarthEngineAccessTokenAsync()
+                        .GetAwaiter()
+                        .GetResult()
+                        ?? Environment.GetEnvironmentVariable("GEE_ACCESS_TOKEN")
+                        ?? "placeholder_token";
+
+                    return new GeoDataService(baseUrl, token);
                 });
                 services.AddSingleton<IEligibilityService>(_ =>
                 {
@@ -431,7 +473,6 @@ namespace BusBuddy.WPF
                     var configuration = new ConfigurationBuilder()
                         .SetBasePath(AppDomain.CurrentDomain.BaseDirectory)
                         .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
-                        .AddJsonFile("appsettings.azure.json", optional: true, reloadOnChange: true)
                         .AddEnvironmentVariables()
                         .Build();
 

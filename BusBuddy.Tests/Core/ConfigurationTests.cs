@@ -10,69 +10,47 @@ namespace BusBuddy.Tests.Core
     public class ConfigurationTests
     {
         [Test]
-        public void GetConnectionString_ExpandsEnvPlaceholders_ForAzure()
+        public void GetConnectionString_ExpandsEnvPlaceholders_ForPostgres()
         {
-            // Arrange: set temporary environment variables
-            var prevUser = Environment.GetEnvironmentVariable("AZURE_SQL_USER");
-            var prevPwd = Environment.GetEnvironmentVariable("AZURE_SQL_PASSWORD");
+            var prevPwd = Environment.GetEnvironmentVariable("BUSBUDDY_PG_PASSWORD");
             try
             {
-                Environment.SetEnvironmentVariable("AZURE_SQL_USER", "test_user");
-                Environment.SetEnvironmentVariable("AZURE_SQL_PASSWORD", "test_password");
+                Environment.SetEnvironmentVariable("BUSBUDDY_PG_PASSWORD", "pg_ci_placeholder");
 
                 var config = new ConfigurationBuilder()
                     .AddInMemoryCollection(new KeyValuePair<string, string?>[]
                     {
-                        new("DatabaseProvider", "Azure"),
-                        new("ConnectionStrings:AzureConnection", "Server=tcp:server;User ID=${AZURE_SQL_USER};Password=${AZURE_SQL_PASSWORD};")
+                        new("DatabaseProvider", "Postgres"),
+                        new("ConnectionStrings:PostgresConnection", "Host=localhost;Port=5432;Database=busbuddy_test;Username=busbuddy;Password=${BUSBUDDY_PG_PASSWORD}")
                     })
                     .Build();
 
-                // Act
                 var conn = EnvironmentHelper.GetConnectionString(config);
 
-                // Assert
-                conn.Should().Contain("User ID=test_user");
-                conn.Should().Contain("Password=test_password");
-                conn.Should().NotContain("${AZURE_SQL_USER}");
-                conn.Should().NotContain("${AZURE_SQL_PASSWORD}");
+                conn.Should().Contain("Password=pg_ci_placeholder");
+                conn.Should().NotContain("${BUSBUDDY_PG_PASSWORD}");
             }
             finally
             {
-                // Restore env
-                Environment.SetEnvironmentVariable("AZURE_SQL_USER", prevUser);
-                Environment.SetEnvironmentVariable("AZURE_SQL_PASSWORD", prevPwd);
+                Environment.SetEnvironmentVariable("BUSBUDDY_PG_PASSWORD", prevPwd);
             }
         }
 
         [Test]
-        public void GetConnectionString_FallsBackToLocalDb_WhenAzurePlaceholdersUnresolved()
+        public void GetConnectionString_FallsBackToLocalDb_WhenPlaceholdersUnresolved()
         {
-            var prevUser = Environment.GetEnvironmentVariable("AZURE_SQL_USER");
-            var prevPwd = Environment.GetEnvironmentVariable("AZURE_SQL_PASSWORD");
-            try
-            {
-                Environment.SetEnvironmentVariable("AZURE_SQL_USER", null);
-                Environment.SetEnvironmentVariable("AZURE_SQL_PASSWORD", null);
+            var config = new ConfigurationBuilder()
+                .AddInMemoryCollection(new KeyValuePair<string, string?>[]
+                {
+                    new("DatabaseProvider", "LocalDB"),
+                    new("ConnectionStrings:DefaultConnection", "Server=tcp:server;User ID=${MISSING_USER};Password=${MISSING_PASSWORD};")
+                })
+                .Build();
 
-                var config = new ConfigurationBuilder()
-                    .AddInMemoryCollection(new KeyValuePair<string, string?>[]
-                    {
-                        new("DatabaseProvider", "Azure"),
-                        new("ConnectionStrings:AzureConnection", "Server=tcp:server;User ID=${AZURE_SQL_USER};Password=${AZURE_SQL_PASSWORD};")
-                    })
-                    .Build();
+            var conn = EnvironmentHelper.GetConnectionString(config);
 
-                var conn = EnvironmentHelper.GetConnectionString(config);
-
-                conn.Should().Contain("(localdb)");
-                conn.Should().NotContain("${AZURE_SQL_USER}");
-            }
-            finally
-            {
-                Environment.SetEnvironmentVariable("AZURE_SQL_USER", prevUser);
-                Environment.SetEnvironmentVariable("AZURE_SQL_PASSWORD", prevPwd);
-            }
+            conn.Should().Contain("(localdb)");
+            conn.Should().NotContain("${MISSING_USER}");
         }
     }
 }
