@@ -5,6 +5,7 @@ AI agents (Cursor, Copilot, Claude, Grok, etc.) working in this repo should foll
 ## Primary standards
 
 - **Full technical rules**: [.github/copilot-instructions.md](.github/copilot-instructions.md) — architecture, Syncfusion, Serilog, RAG/MCP, anti-regression.
+- **Syncfusion WPF skills**: [.cursor/skills/syncfusion-wpf-busbuddy/SKILL.md](.cursor/skills/syncfusion-wpf-busbuddy/SKILL.md) — BusBuddy overlay; vendor skills in `.agents/skills/` (gitignored, install via [.github/scripts/setup-syncfusion-skills.sh](.github/scripts/setup-syncfusion-skills.sh)).
 - **CI/CD workflow (solo developer)**: same file, section **Solo developer CI/CD workflow** — branch → PR → gates → auto-merge.
 - **GCP / GEE / secrets**: [Documentation/GCP-GEE-SECRETS-AND-AUTH.md](Documentation/GCP-GEE-SECRETS-AND-AUTH.md) — canonical auth reference.
 - **Architecture map**: [STEADY-STATE-AND-FINISH-ROADMAP.md](STEADY-STATE-AND-FINISH-ROADMAP.md) (BusBuddy-3 Architecture Map section).

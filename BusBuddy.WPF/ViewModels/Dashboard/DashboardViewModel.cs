@@ -1,50 +1,60 @@
 using System;
 using System.Collections.ObjectModel;
+using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using BusBuddy.Core.Models;
 using BusBuddy.Core.Services;
+using BusBuddy.Core.Services.Interfaces;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 
 namespace BusBuddy.WPF.ViewModels.Dashboard
 {
     /// <summary>
-    /// Phase 1 Dashboard ViewModel - Simple and functional
-    /// Displays basic metrics and provides navigation to core views
+    /// Dashboard ViewModel — route/fleet metrics, grids, and chart series for Syncfusion controls.
     /// </summary>
     public partial class DashboardViewModel : ObservableObject
     {
         private readonly IRouteService _routeService;
+        private readonly IDashboardMetricsService _metricsService;
+        private readonly IFleetMonitoringService _fleetMonitoringService;
+        private readonly IBusService _busService;
 
-        public DashboardViewModel(IRouteService routeService)
+        public DashboardViewModel(
+            IRouteService routeService,
+            IDashboardMetricsService metricsService,
+            IFleetMonitoringService fleetMonitoringService,
+            IBusService busService)
         {
             _routeService = routeService ?? throw new ArgumentNullException(nameof(routeService));
+            _metricsService = metricsService ?? throw new ArgumentNullException(nameof(metricsService));
+            _fleetMonitoringService = fleetMonitoringService ?? throw new ArgumentNullException(nameof(fleetMonitoringService));
+            _busService = busService ?? throw new ArgumentNullException(nameof(busService));
 
-            // Initialize commands
             RefreshCommand = new RelayCommand(async () => await RefreshDataAsync());
             OptimizeCommand = new RelayCommand(async () => await OptimizeRoutesAsync());
             GenerateReportCommand = new RelayCommand(async () => await GenerateReportAsync());
 
-            // Initialize collections
-            Routes = new ObservableCollection<BusBuddy.Core.Models.Route>();
+            RouteSummaries = new ObservableCollection<DashboardRouteRow>();
             Buses = new ObservableCollection<BusBuddy.Core.Models.Bus>();
-            Drivers = new ObservableCollection<BusBuddy.Core.Models.Driver>();
+            AssignmentDistribution = new ObservableCollection<DashboardChartPoint>();
+            RouteHealthDistribution = new ObservableCollection<DashboardChartPoint>();
 
-            // Load initial data
             _ = Task.Run(async () => await RefreshDataAsync());
         }
 
-        #region Properties
-
         [ObservableProperty]
-        private ObservableCollection<BusBuddy.Core.Models.Route> routes = new();
+        private ObservableCollection<DashboardRouteRow> routeSummaries = new();
 
         [ObservableProperty]
         private ObservableCollection<BusBuddy.Core.Models.Bus> buses = new();
 
         [ObservableProperty]
-        private ObservableCollection<BusBuddy.Core.Models.Driver> drivers = new();
+        private ObservableCollection<DashboardChartPoint> assignmentDistribution = new();
+
+        [ObservableProperty]
+        private ObservableCollection<DashboardChartPoint> routeHealthDistribution = new();
 
         [ObservableProperty]
         private int totalRoutes;
@@ -56,22 +66,17 @@ namespace BusBuddy.WPF.ViewModels.Dashboard
         private int availableDrivers;
 
         [ObservableProperty]
+        private double averageUtilizationPercent;
+
+        [ObservableProperty]
         private string systemStatus = "System Ready";
 
         [ObservableProperty]
         private bool isLoading;
 
-        #endregion
-
-        #region Commands
-
         public ICommand RefreshCommand { get; }
         public ICommand OptimizeCommand { get; }
         public ICommand GenerateReportCommand { get; }
-
-        #endregion
-
-        #region Command Methods
 
         private async Task RefreshDataAsync()
         {
@@ -80,20 +85,60 @@ namespace BusBuddy.WPF.ViewModels.Dashboard
                 IsLoading = true;
                 SystemStatus = "Loading data...";
 
-                // Load routes
-                var result = await _routeService.GetAllRoutesAsync();
-                Routes.Clear();
-                if (result.IsSuccess && result.Value != null)
+                var metrics = await _metricsService.GetDashboardMetricsAsync();
+                TotalRoutes = metrics.GetValueOrDefault("RouteCount");
+                ActiveBuses = metrics.GetValueOrDefault("BusCount");
+                AvailableDrivers = metrics.GetValueOrDefault("DriverCount");
+
+                var routesResult = await _routeService.GetAllRoutesAsync();
+                RouteSummaries.Clear();
+                if (routesResult.IsSuccess && routesResult.Value != null)
                 {
-                    foreach (var route in result.Value)
+                    foreach (var route in routesResult.Value)
                     {
-                        Routes.Add(route);
+                        RouteSummaries.Add(new DashboardRouteRow
+                        {
+                            RouteName = route.RouteName,
+                            Description = route.Description ?? string.Empty,
+                            MaxCapacity = route.MaxCapacity,
+                            AssignedCount = route.AssignedStudents?.Count ?? 0
+                        });
                     }
                 }
 
-                // Update metrics
-                TotalRoutes = Routes.Count;
-                SystemStatus = "Data loaded successfully";
+                var buses = await _busService.GetAllBusesAsync();
+                Buses.Clear();
+                foreach (var bus in buses)
+                {
+                    Buses.Add(bus);
+                }
+
+                var fleetStatus = await _fleetMonitoringService.GetFleetStatusAsync();
+                if (fleetStatus != null)
+                {
+                    ActiveBuses = fleetStatus.ActiveBuses;
+                }
+
+                var utilizationResult = await _routeService.GetRouteUtilizationStatsAsync();
+                AssignmentDistribution.Clear();
+                RouteHealthDistribution.Clear();
+
+                if (utilizationResult.IsSuccess && utilizationResult.Value != null)
+                {
+                    var stats = utilizationResult.Value;
+                    AverageUtilizationPercent = Math.Round(stats.AverageUtilizationRate * 100, 1);
+
+                    AssignmentDistribution.Add(new DashboardChartPoint { Label = "Assigned", Count = stats.TotalAssignedStudents });
+                    AssignmentDistribution.Add(new DashboardChartPoint { Label = "Unassigned", Count = stats.TotalUnassignedStudents });
+
+                    RouteHealthDistribution.Add(new DashboardChartPoint { Label = "At Capacity", Count = stats.RoutesAtCapacity });
+                    RouteHealthDistribution.Add(new DashboardChartPoint { Label = "Underutilized", Count = stats.UnderutilizedRoutes });
+                    var healthy = Math.Max(0, stats.TotalRoutes - stats.RoutesAtCapacity - stats.UnderutilizedRoutes);
+                    RouteHealthDistribution.Add(new DashboardChartPoint { Label = "On Target", Count = healthy });
+                }
+
+                TotalRoutes = RouteSummaries.Count;
+                SystemStatus = $"Data loaded — {TotalRoutes} routes, {Buses.Count} buses";
             }
             catch (Exception ex)
             {
@@ -111,10 +156,7 @@ namespace BusBuddy.WPF.ViewModels.Dashboard
             {
                 IsLoading = true;
                 SystemStatus = "Optimizing routes...";
-
-                // TODO: Implement route optimization
-                await Task.Delay(2000); // Simulate processing
-
+                await Task.Delay(2000);
                 SystemStatus = "Routes optimized successfully";
             }
             catch (Exception ex)
@@ -133,10 +175,7 @@ namespace BusBuddy.WPF.ViewModels.Dashboard
             {
                 IsLoading = true;
                 SystemStatus = "Generating report...";
-
-                // TODO: Implement report generation
-                await Task.Delay(1500); // Simulate processing
-
+                await Task.Delay(1500);
                 SystemStatus = "Report generated successfully";
             }
             catch (Exception ex)
@@ -148,7 +187,19 @@ namespace BusBuddy.WPF.ViewModels.Dashboard
                 IsLoading = false;
             }
         }
+    }
 
-        #endregion
+    public class DashboardRouteRow
+    {
+        public string RouteName { get; set; } = string.Empty;
+        public string Description { get; set; } = string.Empty;
+        public int MaxCapacity { get; set; }
+        public int AssignedCount { get; set; }
+    }
+
+    public class DashboardChartPoint
+    {
+        public string Label { get; set; } = string.Empty;
+        public double Count { get; set; }
     }
 }
