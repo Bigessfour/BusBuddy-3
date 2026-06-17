@@ -4,7 +4,7 @@ namespace BusBuddy.Core.Configuration;
 
 /// <summary>
 /// Application-specific configuration options.
-/// Maps to the AppSettings section in appsettings.azure.json.
+/// Maps to the AppSettings section in appsettings.json.
 /// </summary>
 public class AppSettingsOptions
 {

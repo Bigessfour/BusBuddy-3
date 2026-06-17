@@ -1,5 +1,6 @@
 using NUnit.Framework;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Serilog;
 using Moq;
 using BusBuddy.Core.Services;
@@ -47,6 +48,7 @@ namespace BusBuddy.Tests.Core
             // Setup in-memory database for fast tests
             _dbOptions = new DbContextOptionsBuilder<BusBuddyDbContext>()
                 .UseInMemoryDatabase(databaseName: $"TestDb_{Guid.NewGuid()}")
+                .ConfigureWarnings(w => w.Ignore(InMemoryEventId.TransactionIgnoredWarning))
                 .Options;
         }
 
@@ -199,6 +201,12 @@ namespace BusBuddy.Tests.Core
             Assert.That(result.Value!.Count(), Is.EqualTo(expectedCount));
         }
 
+        private async Task<Student> ReloadStudentAsync(int studentId)
+        {
+            _dbContext.ChangeTracker.Clear();
+            return await _dbContext.Students.AsNoTracking().FirstAsync(s => s.StudentId == studentId);
+        }
+
         #endregion
 
         #region Route Assignment Tests (High-Value Scenarios)
@@ -211,6 +219,193 @@ namespace BusBuddy.Tests.Core
 
             // Assert
             Assert.That(result.IsSuccess, Is.True);
+        }
+
+        [Test]
+        public async Task AssignStudentToRouteAsync_AM_SetsAMRouteOnly()
+        {
+            var student = new Student
+            {
+                StudentName = "Alice",
+                Grade = "3",
+                School = "Test",
+                ParentGuardian = "Parent",
+                EmergencyPhone = "555-0001",
+                Active = true
+            };
+            _dbContext.Students.Add(student);
+            await _dbContext.SaveChangesAsync();
+
+            var route = await _dbContext.Routes.FirstAsync(r => r.RouteName == "Route A");
+
+            var result = await _routeService.AssignStudentToRouteAsync(student.StudentId, route.RouteId, RouteTimeSlot.AM);
+
+            Assert.That(result.IsSuccess, Is.True);
+            var updated = await ReloadStudentAsync(student.StudentId);
+            Assert.That(updated.AMRoute, Is.EqualTo("Route A"));
+            Assert.That(updated.PMRoute, Is.Null.Or.Empty);
+        }
+
+        [Test]
+        public async Task AssignStudentToRouteAsync_PM_SetsPMRouteOnly()
+        {
+            var student = new Student
+            {
+                StudentName = "Bob",
+                Grade = "4",
+                School = "Test",
+                ParentGuardian = "Parent",
+                EmergencyPhone = "555-0002",
+                Active = true
+            };
+            _dbContext.Students.Add(student);
+            await _dbContext.SaveChangesAsync();
+
+            var route = await _dbContext.Routes.FirstAsync(r => r.RouteName == "Route B");
+
+            var result = await _routeService.AssignStudentToRouteAsync(student.StudentId, route.RouteId, RouteTimeSlot.PM);
+
+            Assert.That(result.IsSuccess, Is.True);
+            var updated = await ReloadStudentAsync(student.StudentId);
+            Assert.That(updated.PMRoute, Is.EqualTo("Route B"));
+            Assert.That(updated.AMRoute, Is.Null.Or.Empty);
+        }
+
+        [Test]
+        public async Task AssignStudentToRouteAsync_RejectsWhenSlotAlreadyAssigned()
+        {
+            var student = new Student
+            {
+                StudentName = "Carol",
+                Grade = "5",
+                School = "Test",
+                ParentGuardian = "Parent",
+                EmergencyPhone = "555-0003",
+                Active = true,
+                AMRoute = "Route B"
+            };
+            _dbContext.Students.Add(student);
+            await _dbContext.SaveChangesAsync();
+
+            var route = await _dbContext.Routes.FirstAsync(r => r.RouteName == "Route A");
+            var result = await _routeService.AssignStudentToRouteAsync(student.StudentId, route.RouteId, RouteTimeSlot.AM);
+
+            Assert.That(result.IsSuccess, Is.False);
+        }
+
+        [Test]
+        public async Task RemoveStudentFromRouteAsync_AM_ClearsSlotOnly()
+        {
+            var route = await _dbContext.Routes.FirstAsync(r => r.RouteName == "Route A");
+            var student = new Student
+            {
+                StudentName = "Dan",
+                Grade = "2",
+                School = "Test",
+                ParentGuardian = "Parent",
+                EmergencyPhone = "555-0004",
+                Active = true,
+                AMRoute = "Route A",
+                PMRoute = "Route B"
+            };
+            _dbContext.Students.Add(student);
+            await _dbContext.SaveChangesAsync();
+
+            var result = await _routeService.RemoveStudentFromRouteAsync(student.StudentId, route.RouteId, RouteTimeSlot.AM);
+
+            Assert.That(result.IsSuccess, Is.True);
+            var updated = await ReloadStudentAsync(student.StudentId);
+            Assert.That(updated.AMRoute, Is.Null.Or.Empty);
+            Assert.That(updated.PMRoute, Is.EqualTo("Route B"));
+        }
+
+        [Test]
+        public async Task GetUnassignedStudentsAsync_AM_IncludesStudentWithPMOnly()
+        {
+            _dbContext.Students.Add(new Student
+            {
+                StudentName = "Eve",
+                Grade = "1",
+                School = "Test",
+                ParentGuardian = "Parent",
+                EmergencyPhone = "555-0005",
+                Active = true,
+                PMRoute = "Route B"
+            });
+            _dbContext.Students.Add(new Student
+            {
+                StudentName = "Frank",
+                Grade = "1",
+                School = "Test",
+                ParentGuardian = "Parent",
+                EmergencyPhone = "555-0006",
+                Active = true,
+                AMRoute = "Route A"
+            });
+            await _dbContext.SaveChangesAsync();
+
+            var result = await _routeService.GetUnassignedStudentsAsync(RouteTimeSlot.AM);
+
+            Assert.That(result.IsSuccess, Is.True);
+            Assert.That(result.Value!.Select(s => s.StudentName), Does.Contain("Eve"));
+            Assert.That(result.Value.Select(s => s.StudentName), Does.Not.Contain("Frank"));
+        }
+
+        [Test]
+        public async Task GetStudentsForRouteAsync_ReturnsSlotSubset()
+        {
+            var route = await _dbContext.Routes.FirstAsync(r => r.RouteName == "Route A");
+            _dbContext.Students.AddRange(
+                new Student { StudentName = "G1", Grade = "1", School = "T", ParentGuardian = "P", EmergencyPhone = "555-1", AMRoute = "Route A" },
+                new Student { StudentName = "G2", Grade = "1", School = "T", ParentGuardian = "P", EmergencyPhone = "555-2", PMRoute = "Route A" });
+            await _dbContext.SaveChangesAsync();
+
+            var amResult = await _routeService.GetStudentsForRouteAsync(route.RouteId, RouteTimeSlot.AM);
+            var pmResult = await _routeService.GetStudentsForRouteAsync(route.RouteId, RouteTimeSlot.PM);
+
+            Assert.That(amResult.Value!.Select(s => s.StudentName), Is.EquivalentTo(new[] { "G1" }));
+            Assert.That(pmResult.Value!.Select(s => s.StudentName), Is.EquivalentTo(new[] { "G2" }));
+        }
+
+        [Test]
+        public async Task AutoAssignStudentsAsync_StopsAtCapacity()
+        {
+            var bus = new Bus { BusNumber = "B1", Year = 2020, Make = "Test", Model = "M", SeatingCapacity = 2, VINNumber = "VIN1", LicenseNumber = "L1", Status = "Active" };
+            _dbContext.Buses.Add(bus);
+            await _dbContext.SaveChangesAsync();
+
+            var route = await _dbContext.Routes.AsNoTracking().FirstAsync(r => r.RouteName == "Route A");
+            route.AMVehicleId = bus.BusId;
+            var updateRoute = await _routeService.UpdateRouteAsync(route);
+            Assert.That(updateRoute.IsSuccess, Is.True, updateRoute.Error);
+
+            var routeCheck = await _routeService.GetRouteByIdAsync(route.RouteId);
+            Assert.That(routeCheck.IsSuccess, Is.True);
+            Assert.That(routeCheck.Value!.AMVehicleId, Is.EqualTo(bus.BusId));
+
+            for (int i = 0; i < 5; i++)
+            {
+                _dbContext.Students.Add(new Student
+                {
+                    StudentName = $"Student{i}",
+                    Grade = "1",
+                    School = "T",
+                    ParentGuardian = "P",
+                    EmergencyPhone = $"555-{i}",
+                    Active = true
+                });
+            }
+            await _dbContext.SaveChangesAsync();
+            _dbContext.ChangeTracker.Clear();
+
+            var result = await _routeService.AutoAssignStudentsAsync(route.RouteId, RouteTimeSlot.AM);
+
+            Assert.That(result.IsSuccess, Is.True);
+            Assert.That(result.Value!.Count, Is.EqualTo(2));
+
+            _dbContext.ChangeTracker.Clear();
+            var assignedCount = await _dbContext.Students.CountAsync(s => s.AMRoute == "Route A");
+            Assert.That(assignedCount, Is.EqualTo(2));
         }
 
         #endregion

@@ -4,7 +4,7 @@ namespace BusBuddy.Core.Configuration;
 
 /// <summary>
 /// Configuration options for xAI Grok API integration.
-/// Maps to the XAI section in appsettings.azure.json.
+/// Maps to the XAI section in appsettings.json.
 /// </summary>
 public class XaiOptions
 {

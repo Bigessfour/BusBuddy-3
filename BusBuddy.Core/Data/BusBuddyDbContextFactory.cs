@@ -42,7 +42,15 @@ namespace BusBuddy.Core.Data
             if (!string.IsNullOrWhiteSpace(envOverride))
             {
                 var optionsBuilder = new DbContextOptionsBuilder<BusBuddyDbContext>();
-                optionsBuilder.UseSqlServer(envOverride);
+                if (envOverride.Contains("Host=", StringComparison.OrdinalIgnoreCase) ||
+                    envOverride.Contains("postgres", StringComparison.OrdinalIgnoreCase))
+                {
+                    optionsBuilder.UseNpgsql(envOverride);
+                }
+                else
+                {
+                    optionsBuilder.UseSqlServer(envOverride);
+                }
                 var ctx = new BusBuddyDbContext(optionsBuilder.Options);
                 ctx.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
                 return ctx;
@@ -84,7 +92,15 @@ namespace BusBuddy.Core.Data
             if (!string.IsNullOrWhiteSpace(envOverride))
             {
                 var optionsBuilder = new DbContextOptionsBuilder<BusBuddyDbContext>();
-                optionsBuilder.UseSqlServer(envOverride);
+                if (envOverride.Contains("Host=", StringComparison.OrdinalIgnoreCase) ||
+                    envOverride.Contains("postgres", StringComparison.OrdinalIgnoreCase))
+                {
+                    optionsBuilder.UseNpgsql(envOverride);
+                }
+                else
+                {
+                    optionsBuilder.UseSqlServer(envOverride);
+                }
                 var writeCtxOverride = new BusBuddyDbContext(optionsBuilder.Options)
                 {
                     ChangeTracker = { QueryTrackingBehavior = QueryTrackingBehavior.TrackAll }
@@ -113,8 +129,7 @@ namespace BusBuddy.Core.Data
         /// <summary>
         /// Design-time creation (migrations / scaffolding). Fallback order:
         /// 1) BUSBUDDY_CONNECTION env override
-        /// 2) AZURE_SQL_USER / AZURE_SQL_PASSWORD
-        /// 3) LocalDB default
+        /// 2) LocalDB default
         /// </summary>
         public BusBuddyDbContext CreateDbContext(string[] args)
         {
@@ -140,19 +155,7 @@ namespace BusBuddy.Core.Data
                 return new BusBuddyDbContext(optionsBuilder.Options);
             }
 
-            // 2. Azure user/password fallback
-            var azureUser = Environment.GetEnvironmentVariable("AZURE_SQL_USER");
-            var azurePassword = Environment.GetEnvironmentVariable("AZURE_SQL_PASSWORD");
-            if (!string.IsNullOrEmpty(azureUser) && !string.IsNullOrEmpty(azurePassword))
-            {
-                var azureConnectionString =
-                    $"Server=tcp:busbuddy-server-sm2.database.windows.net,1433;Initial Catalog=BusBuddyDB;Persist Security Info=False;User ID={azureUser};Password={azurePassword};MultipleActiveResultSets=True;Encrypt=True;TrustServerCertificate=False;Connection Timeout=60;";
-                Logger.Information("Using Azure SQL credential fallback for design-time context");
-                optionsBuilder.UseSqlServer(azureConnectionString, sql => sql.EnableRetryOnFailure());
-                return new BusBuddyDbContext(optionsBuilder.Options);
-            }
-
-            // 3. LocalDB final fallback
+            // 2. LocalDB final fallback
             Logger.Information("Using LocalDB default fallback for design-time context");
             optionsBuilder.UseSqlServer(DefaultConnectionString, sql => sql.EnableRetryOnFailure());
             return new BusBuddyDbContext(optionsBuilder.Options);
@@ -162,7 +165,7 @@ namespace BusBuddy.Core.Data
         {
             // Provider selection (doc pattern: https://learn.microsoft.com/ef/core/dbcontext-configuration/)
             if (provider.Equals("LocalDB", StringComparison.OrdinalIgnoreCase) ||
-                provider.Equals("Azure", StringComparison.OrdinalIgnoreCase))
+                provider.Equals("SqlServer", StringComparison.OrdinalIgnoreCase))
             {
                 optionsBuilder.UseSqlServer(connection);
             }

@@ -15,7 +15,7 @@ Snapshot Reference:
 2. PowerShell 7.5.2 (https://github.com/PowerShell/PowerShell)
 3. Git (https://git-scm.com)
 4. .NET SDK 9.x per `global.json` (9.0.303) — verify: `dotnet --version`
-5. SQL Server LocalDB (installed with Visual Studio Build Tools or SQL Express) OR access to Azure SQL BusBuddyDB
+5. SQL Server LocalDB (installed with Visual Studio Build Tools or SQL Express) OR Postgres via Docker on Mac
 6. (Optional) Visual Studio Code + required extensions:
     - ms-dotnettools.csdevkit
     - ms-vscode.powershell
@@ -27,8 +27,6 @@ Environment Variables (User or System scope):
 
 ```
 SYNCFUSION_LICENSE_KEY=<your_key>
-AZURE_SQL_USER=<azure_sql_user>           (only if using Azure SQL)
-AZURE_SQL_PASSWORD=<azure_sql_password>   (only if using Azure SQL)
 ```
 
 ---
@@ -99,10 +97,9 @@ dotnet tool install --global dotnet-ef --version 9.*
 dotnet ef database update --project BusBuddy.Core/BusBuddy.Core.csproj --startup-project BusBuddy.WPF/BusBuddy.WPF.csproj
 ```
 
-### Azure SQL (Optional)
+### Postgres (optional — Mac Docker)
 
-Ensure firewall / AAD access. Set env vars (`AZURE_SQL_USER`, `AZURE_SQL_PASSWORD`) or use AAD interactive.
-Update `DatabaseProvider` in WPF/Core `appsettings.*` if required.
+Set `BUSBUDDY_CONNECTION` to the Mac host Postgres instance. See [Documentation/DATABASE-CONFIGURATION.md](Documentation/DATABASE-CONFIGURATION.md).
 
 ---
 

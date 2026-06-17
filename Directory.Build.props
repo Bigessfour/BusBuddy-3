@@ -5,7 +5,7 @@
         <TargetFramework Condition="'$(TargetFrameworks)' == '' and '$(TargetFramework)' == ''">net9.0-windows</TargetFramework>
         <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
-        <UseWPF>true</UseWPF>
+        <!-- UseWPF only in BusBuddy.WPF / test projects — not globally (breaks Core + WebDAV builds) -->
         <!-- Syncfusion / EF / Serilog Versions (single definitions) -->
         <SyncfusionVersion>33.2.10</SyncfusionVersion> <!-- bumped per 2026 package update plan; see STEADY-STATE-AND-FINISH-ROADMAP.md for Syncfusion 33.x upgrade notes (license + control patterns) -->
         <EntityFrameworkVersion>9.0.8</EntityFrameworkVersion>
@@ -37,7 +37,6 @@
         <SystemNetHttpJsonVersion>9.0.8</SystemNetHttpJsonVersion>
         <NetTopologySuiteVersion>2.6.0</NetTopologySuiteVersion>
         <MicrosoftIdentityClientVersion>4.76.0</MicrosoftIdentityClientVersion>
-        <ApplicationInsightsVersion>2.23.0</ApplicationInsightsVersion>
         <SerilogSettingsConfigurationVersion>9.0.0</SerilogSettingsConfigurationVersion>
         <NUnit3TestAdapterVersion>5.1.0</NUnit3TestAdapterVersion>
         <MoqEntityFrameworkCoreVersion>9.0.0.5</MoqEntityFrameworkCoreVersion>
@@ -46,7 +45,6 @@
         <MicrosoftExtensionsDependencyInjectionVersion>9.0.8</MicrosoftExtensionsDependencyInjectionVersion>
         <MicrosoftExtensionsHostingVersion>9.0.8</MicrosoftExtensionsHostingVersion>
         <MicrosoftExtensionsLoggingVersion>9.0.8</MicrosoftExtensionsLoggingVersion>
-        <AzureIdentityVersion>1.15.0</AzureIdentityVersion>
         <!-- INDUSTRY STANDARD: Practical Code Quality -->
         <EnableNETAnalyzers>true</EnableNETAnalyzers>
         <AnalysisMode>Recommended</AnalysisMode>

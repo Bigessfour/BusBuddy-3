@@ -69,8 +69,6 @@
 
   <!-- WPF-Specific Syncfusion Packages (not included in Directory.Build.props) -->
   <ItemGroup>
-    <PackageReference Include="Azure.Identity" Version="$(AzureIdentityVersion)" />
-    <PackageReference Include="Microsoft.ApplicationInsights.AspNetCore" Version="$(ApplicationInsightsVersion)" /> <!-- resolved hardcode to central props -->
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="$(MicrosoftExtensionsVersion)" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="$(MicrosoftExtensionsVersion)" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="$(EntityFrameworkVersion)" />

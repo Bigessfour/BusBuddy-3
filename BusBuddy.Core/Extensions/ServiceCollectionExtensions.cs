@@ -32,7 +32,15 @@ namespace BusBuddy.Core.Extensions
                 var envOverride = Environment.GetEnvironmentVariable("BUSBUDDY_CONNECTION");
                 if (!string.IsNullOrWhiteSpace(envOverride))
                 {
-                    optionsBuilder.UseSqlServer(envOverride);
+                    if (envOverride.Contains("Host=", StringComparison.OrdinalIgnoreCase) ||
+                        envOverride.Contains("postgres", StringComparison.OrdinalIgnoreCase))
+                    {
+                        optionsBuilder.UseNpgsql(envOverride);
+                    }
+                    else
+                    {
+                        optionsBuilder.UseSqlServer(envOverride);
+                    }
                     return new BusBuddyDbContext(optionsBuilder.Options);
                 }
 
@@ -41,13 +49,15 @@ namespace BusBuddy.Core.Extensions
                 var databaseProvider = configuration["DatabaseProvider"] ?? "LocalDB";
 
                 // Configure based on database provider
-                if (databaseProvider.Equals("LocalDB", StringComparison.OrdinalIgnoreCase))
+                if (databaseProvider.Equals("LocalDB", StringComparison.OrdinalIgnoreCase) ||
+                    databaseProvider.Equals("SqlServer", StringComparison.OrdinalIgnoreCase))
                 {
                     optionsBuilder.UseSqlServer(connectionString);
                 }
-                else if (databaseProvider.Equals("Azure", StringComparison.OrdinalIgnoreCase))
+                else if (databaseProvider.Equals("Postgres", StringComparison.OrdinalIgnoreCase) ||
+                         databaseProvider.Equals("PostgreSQL", StringComparison.OrdinalIgnoreCase))
                 {
-                    optionsBuilder.UseSqlServer(connectionString);
+                    optionsBuilder.UseNpgsql(connectionString);
                 }
                 else if (databaseProvider.Equals("Local", StringComparison.OrdinalIgnoreCase))
                 {

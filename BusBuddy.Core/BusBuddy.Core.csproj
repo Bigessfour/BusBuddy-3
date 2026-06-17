@@ -8,8 +8,8 @@
     <!-- Suppress MSBuild warning about locked DLLs during clean -->
     <NoWarn>MSB3061</NoWarn>
 
-    <!-- Core Project Identification -->
-    <ProjectName>BusBuddy.Core</ProjectName>
+    <!-- Core is class library — no WPF/XAML (global Directory.Build.props must not set UseWPF) -->
+    <UseWPF>false</UseWPF>
     <IsBusinessLogicLayer>true</IsBusinessLogicLayer>
 
     <!-- MSB3027/MSB3021 File Lock Prevention -->
@@ -58,20 +58,13 @@
     <PackageReference Include="Polly" Version="$(PollyVersion)" />
     <PackageReference Include="System.Net.Http.Json" Version="$(SystemNetHttpJsonVersion)" />
 
-    <!-- Azure Authentication (Optional for Azure SQL Managed Identity) -->
-    <PackageReference Include="Azure.Identity" Version="$(AzureIdentityVersion)" />
-
-    <!-- Serilog Extensions - Extensions.Logging only, rest in Directory.Build.props -->
+    <!-- Serilog -->
     <PackageReference Include="Serilog.Extensions.Logging" Version="$(SerilogExtensionsLoggingVersion)" />
 
-    <!-- Application Insights for Production Monitoring -->
-    <PackageReference Include="Microsoft.ApplicationInsights.AspNetCore" Version="$(ApplicationInsightsVersion)" /> <!-- resolved hardcode to central props -->
-
-    <!-- 📄 Syncfusion PDF Generation for Core Services -->
+    <!-- Syncfusion PDF + geospatial -->
     <PackageReference Include="Syncfusion.Pdf.NET" Version="$(SyncfusionVersion)" />
-  <!-- Geospatial: NetTopologySuite for point-in-polygon and shapefile IO -->
-  <PackageReference Include="NetTopologySuite" Version="$(NetTopologySuiteVersion)" /> <!-- NTS main @2.6; resolved hardcode -->
-  <PackageReference Include="NetTopologySuite.IO.ShapeFile" Version="2.1.0" /> <!-- pinned compatible (IO.ShapeFile lags main NTS); was hard 2.1.0 -->
+    <PackageReference Include="NetTopologySuite" Version="$(NetTopologySuiteVersion)" />
+    <PackageReference Include="NetTopologySuite.IO.ShapeFile" Version="2.1.0" />
   </ItemGroup>
 
   <ItemGroup>

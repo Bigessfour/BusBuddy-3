@@ -32,14 +32,20 @@ namespace BusBuddy.Core.Services
         Task<Result<List<Bus>>> GetAvailableBusesAsync();
         Task<Result<List<Driver>>> GetAvailableDriversAsync();
         Task<Result<bool>> AssignStudentToRouteAsync(int studentId, int routeId);
+        Task<Result<bool>> AssignStudentToRouteAsync(int studentId, int routeId, RouteTimeSlot timeSlot);
         Task<Result<bool>> RemoveStudentFromRouteAsync(int studentId, int routeId);
+        Task<Result<bool>> RemoveStudentFromRouteAsync(int studentId, int routeId, RouteTimeSlot timeSlot);
         Task<Result<List<Student>>> GetUnassignedStudentsAsync();
+        Task<Result<List<Student>>> GetUnassignedStudentsAsync(RouteTimeSlot timeSlot);
+        Task<Result<List<Student>>> GetStudentsForRouteAsync(int routeId, RouteTimeSlot timeSlot);
+        Task<Result<List<Student>>> AutoAssignStudentsAsync(int routeId, RouteTimeSlot timeSlot);
         Task<Result<List<Route>>> GetRoutesWithCapacityAsync();
 
         // Route Validation and Analysis
         Task<Result<bool>> ValidateRouteCapacityAsync(int routeId);
         Task<Result<RouteUtilizationStats>> GetRouteUtilizationStatsAsync();
         Task<Result<bool>> CanAssignStudentToRouteAsync(int studentId, int routeId);
+        Task<Result<bool>> CanAssignStudentToRouteAsync(int studentId, int routeId, RouteTimeSlot timeSlot);
 
         // Route Building Methods
         Task<Result<Route>> CreateNewRouteAsync(string routeName, DateTime routeDate, string? description = null);

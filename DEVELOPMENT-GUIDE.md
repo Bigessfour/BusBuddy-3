@@ -16,7 +16,7 @@ BusBuddy follows a clean build, MVP-first development strategy:
 
 - **Framework**: .NET 9.0 WPF with C# 12
 - **UI Library**: Syncfusion WPF 30.1.42 (FluentDark theme)
-- **Database**: Entity Framework Core 9.0.7 with Azure SQL/LocalDB
+- **Database**: Entity Framework Core 9.0.8 with LocalDB / Postgres (Docker)
 - **Logging**: Serilog with structured logging
 - **Automation**: PowerShell 7.5.2 with custom modules
 
@@ -512,14 +512,35 @@ function Invoke-MvpCheck {
 ## MacBook Pro + Windows VM Development (with Docker)
 The project was originally Windows-only (WPF). On macOS:
 - **Core/.NET dev & tests**: Use VS Code + this project's `.devcontainer` (runs Linux .NET container via Docker Desktop). Always include `-p:EnableWindowsTargeting=true` for builds (handles Windows TFMs cross-platform).
-- **Full WPF app (UI/debug)**: Use your Windows 11 VM (Parallels/UTM recommended on Apple Silicon).
-  - Share the folder bidirectionally (Parallels Tools).
-  - In VM: Use full Visual Studio 2022, open the shared folder, build/run `BusBuddy.WPF` normally.
+- **Full WPF app (UI/debug)**: Use your Windows 11 VM (UTM recommended on Apple Silicon; Parallels also works).
+  - Share the BusBuddy-3 folder bidirectionally into the VM (UTM Directory Sharing; you can label the share "Shared with Windows").
+  - The tree is live — edits on Mac appear immediately inside the guest.
+  - In VM: .NET 9 SDK + Visual Studio 2022 (or VS Code + C# Dev Kit). Open the shared folder and run normally, **or** use the one-command launcher from your Mac terminal (see below).
+- **From your Mac terminal — the closest thing to `dotnet run` for the WPF UI**:
+
+  ```bash
+  ./run-wpf.sh
+  ```
+
+  - Does a fast preflight build on the Mac using the required flag (targets the WPF app so you get immediate feedback).
+  - Starts (or re-uses) the UTM VM named "Windows".
+  - Attempts to auto-launch the app inside the guest via `utmctl exec` so the main window (Dashboard, Reports, Map, etc.) appears on the VM desktop.
+  - If auto-launch can't connect yet (VM still booting / logging in / guest agent), it prints precise copy-paste commands.
+  - The script prints your current Mac host IP (for reaching Docker Postgres from inside the VM).
+
+  When you are already sitting in a PowerShell prompt *inside the VM* (and the shared folder is visible):
+
+  ```powershell
+  .\utm_run_in_vm.ps1
+  ```
+
+  That script has robust discovery for whatever drive letter or "Shared with Windows" folder your UTM share got mounted as, pulls GEE credentials from the shared `keys/` artifacts, supports dropping `SYNCFUSION_LICENSE_KEY.txt` for a real (non-trial) license, and then does the build + `Start-Process` launch of the WPF app.
+
 - **Docker/Postgres**: `docker compose --profile db up -d` for real Postgres (better than InMemory for `SeedDataService`, EF tests with Wiley data). 
   - Host (Mac): localhost:5432
-  - From VM: Mac host IP (e.g. `10.211.55.2`; check `ipconfig getifaddr en0` on Mac).
+  - From VM: Mac host IP (e.g. `192.168.x.x` or the Parallels default; the `run-wpf.sh` prints the value for you; also `ipconfig getifaddr en0` on Mac).
   - Compose also has test profile: `docker compose --profile test up --build`
-- **Keys**: Auto-loaded from macOS Passwords (see `App.xaml.cs` `LoadApiKeysFromMacPasswords()` using `security` CLI).
+- **Keys**: Auto-loaded from macOS Passwords (see `App.xaml.cs` `LoadApiKeysFromMacPasswords()` using `security` CLI). On the Windows side rely on env vars or the shared keys/ drop-ins.
 - **Packages**: `dotnet restore -p:EnableWindowsTargeting=true`
 - See also the updated README and `.devcontainer/devcontainer.json` (includes Postgres port forward).
 

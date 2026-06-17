@@ -8,8 +8,7 @@ using Serilog;
 namespace BusBuddy.Core.Services;
 
 /// <summary>
-/// Service for managing AI insights from Grok analysis and storing them in Azure SQL Database
-/// Follows Azure best practices for secure data storage and retrieval
+/// Service for managing AI insights from Grok analysis and storing them in the database.
 /// </summary>
 public class AIInsightService
 {

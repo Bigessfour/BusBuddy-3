@@ -40,7 +40,20 @@ Always quote the best results when explaining your change.
 Run `python -m rag.index` whenever:
 - Major features are added
 - Large refactors or hygiene passes complete
+- **Auth, CI/CD, GCP/GEE, or agent docs change** (`AGENTS.md`, `Documentation/GCP-GEE-SECRETS-AND-AUTH.md`, `README.md`)
 - You want the absolute latest baseline for the agent
+
+Always-included files for RAG (see `ALWAYS_INCLUDE` in `index.py`):
+- `README.md`, `AGENTS.md`, `STEADY-STATE-AND-FINISH-ROADMAP.md`
+- `Documentation/GCP-GEE-SECRETS-AND-AUTH.md`
+- `.github/copilot-instructions.md`, `mcp.json`
+
+Example queries for GCP/GEE context:
+
+```
+search_repo_context query="Google Earth Engine GcpCredentialBootstrap macOS Passwords production" top_k=8
+search_repo_context query="solo developer CI auto-merge workflow gates" top_k=6
+```
 
 The index is fast enough for a repo of this size (~480 files → ~3k chunks).
 

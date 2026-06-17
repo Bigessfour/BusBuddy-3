@@ -690,10 +690,10 @@ namespace BusBuddy.WPF.ViewModels.Student
                     }
                     Logger.Debug("EF Provider: {Provider}; Connection: {Connection}", provider, masked);
 
-                    // Warn if unresolved placeholders exist (common cause: missing env vars for Azure)
+                    // Warn if unresolved placeholders exist (missing env vars)
                     if (!string.IsNullOrEmpty(rawConn) && rawConn.Contains("${"))
                     {
-                        Logger.Warning("Connection string contains unresolved placeholders (e.g., ${AZURE_SQL_USER}). Check appsettings and environment variables.");
+                        Logger.Warning("Connection string contains unresolved placeholders. Check appsettings and environment variables.");
                     }
                 }
                 catch { /* non-fatal diagnostics */ }

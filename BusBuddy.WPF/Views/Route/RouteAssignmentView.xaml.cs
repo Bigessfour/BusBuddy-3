@@ -7,8 +7,11 @@ using BusBuddy.WPF.ViewModels.Route;
 using Serilog;
 using Syncfusion.SfSkinManager;
 using System.Windows;
+using System.Windows.Input;
 using Microsoft.Extensions.DependencyInjection;
 using BusBuddy.Core.Services;
+using Syncfusion.UI.Xaml.Grid;
+using CoreStudent = BusBuddy.Core.Models.Student;
 
 namespace BusBuddy.WPF.Views.Route
 {
@@ -20,6 +23,10 @@ namespace BusBuddy.WPF.Views.Route
     public partial class RouteAssignmentView : UserControl
     {
         private static readonly ILogger Logger = Log.ForContext<RouteAssignmentView>();
+        private const string StudentDragFormat = "BusBuddy.Student";
+        private Point _dragStartPoint;
+        private CoreStudent? _dragStudent;
+        private bool _isDraggingFromAssigned;
 
     public RouteAssignmentView()
         {
@@ -193,7 +200,7 @@ namespace BusBuddy.WPF.Views.Route
             }
         }
 
-        private void OnAnySelectionChanged(object? sender, SelectionChangedEventArgs e)
+        private void OnAnySelectionChanged(object? sender, System.Windows.Controls.SelectionChangedEventArgs e)
         {
             try
             {
@@ -283,5 +290,157 @@ namespace BusBuddy.WPF.Views.Route
                 foreach (var g in Traverse(child)) yield return g;
             }
         }
+
+        #region Drag-and-Drop (Student ↔ Route assignment)
+
+        private RouteAssignmentViewModel? ViewModel => DataContext as RouteAssignmentViewModel;
+
+        private void UnassignedGrid_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            _isDraggingFromAssigned = false;
+            _dragStartPoint = e.GetPosition(null);
+            _dragStudent = UnassignedStudentsGrid.SelectedItem as CoreStudent;
+        }
+
+        private void AssignedGrid_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            _isDraggingFromAssigned = true;
+            _dragStartPoint = e.GetPosition(null);
+            _dragStudent = AssignedStudentsGrid.SelectedItem as CoreStudent;
+        }
+
+        private void Grid_PreviewMouseMove(object sender, MouseEventArgs e)
+        {
+            var student = _dragStudent;
+            if (e.LeftButton != MouseButtonState.Pressed || student == null)
+            {
+                return;
+            }
+
+            var vm = ViewModel;
+            if (vm == null || !vm.CanDragAssign)
+            {
+                return;
+            }
+
+            var position = e.GetPosition(null);
+            if (Math.Abs(position.X - _dragStartPoint.X) < SystemParameters.MinimumHorizontalDragDistance &&
+                Math.Abs(position.Y - _dragStartPoint.Y) < SystemParameters.MinimumVerticalDragDistance)
+            {
+                return;
+            }
+
+            var data = new DataObject(StudentDragFormat, _dragStudent);
+            try
+            {
+                DragDrop.DoDragDrop((DependencyObject)sender, data, DragDropEffects.Move);
+            }
+            catch (Exception ex)
+            {
+                Logger.Warning(ex, "Student drag-drop failed to start");
+            }
+            finally
+            {
+                _dragStudent = null;
+            }
+        }
+
+        private static CoreStudent? ExtractStudentFromDrag(DragEventArgs e)
+        {
+            if (e.Data.GetDataPresent(StudentDragFormat))
+            {
+                return e.Data.GetData(StudentDragFormat) as CoreStudent;
+            }
+
+            return null;
+        }
+
+        private void AssignedGrid_DragOver(object sender, DragEventArgs e)
+        {
+            var student = ExtractStudentFromDrag(e);
+            e.Effects = student != null && ViewModel?.CanDragAssign == true ? DragDropEffects.Move : DragDropEffects.None;
+            e.Handled = true;
+        }
+
+        private void UnassignedGrid_DragOver(object sender, DragEventArgs e)
+        {
+            var student = ExtractStudentFromDrag(e);
+            e.Effects = student != null && ViewModel?.CanDragAssign == true ? DragDropEffects.Move : DragDropEffects.None;
+            e.Handled = true;
+        }
+
+        private async void AssignedGrid_Drop(object sender, DragEventArgs e)
+        {
+            ResetDropHighlight(sender as SfDataGrid);
+            var student = ExtractStudentFromDrag(e);
+            var vm = ViewModel;
+            if (student == null || vm == null)
+            {
+                return;
+            }
+
+            e.Handled = true;
+            await vm.TryAssignStudentViaDrag(student);
+        }
+
+        private async void UnassignedGrid_Drop(object sender, DragEventArgs e)
+        {
+            ResetDropHighlight(sender as SfDataGrid);
+            var student = ExtractStudentFromDrag(e);
+            var vm = ViewModel;
+            if (student == null || vm == null)
+            {
+                return;
+            }
+
+            e.Handled = true;
+            await vm.TryRemoveStudentViaDrag(student);
+        }
+
+        private void AssignedGrid_DragEnter(object sender, DragEventArgs e)
+        {
+            HighlightDropTarget(sender as SfDataGrid, ExtractStudentFromDrag(e) != null);
+        }
+
+        private void AssignedGrid_DragLeave(object sender, DragEventArgs e)
+        {
+            ResetDropHighlight(sender as SfDataGrid);
+        }
+
+        private void UnassignedGrid_DragEnter(object sender, DragEventArgs e)
+        {
+            HighlightDropTarget(sender as SfDataGrid, ExtractStudentFromDrag(e) != null);
+        }
+
+        private void UnassignedGrid_DragLeave(object sender, DragEventArgs e)
+        {
+            ResetDropHighlight(sender as SfDataGrid);
+        }
+
+        private static void HighlightDropTarget(SfDataGrid? grid, bool canDrop)
+        {
+            if (grid == null)
+            {
+                return;
+            }
+
+            grid.Opacity = canDrop ? 0.85 : 1.0;
+            grid.BorderBrush = canDrop ? Brushes.DodgerBlue : Brushes.Transparent;
+            grid.BorderThickness = canDrop ? new Thickness(2) : new Thickness(0);
+        }
+
+        private static void ResetDropHighlight(SfDataGrid? grid)
+        {
+            if (grid == null)
+            {
+                return;
+            }
+
+            grid.Opacity = 1.0;
+            grid.BorderBrush = Brushes.Transparent;
+            grid.BorderThickness = new Thickness(0);
+        }
+
+        #endregion
     }
 }

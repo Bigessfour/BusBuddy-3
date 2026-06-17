@@ -119,7 +119,7 @@ graph LR
 | [Database Configuration](./DATABASE-CONFIGURATION.md) | EF Core, migrations, connection strings     | Data layer setup      |
 | [NuGet Config Reference](./NUGET-CONFIG-REFERENCE.md) | Package management and Syncfusion licensing | Build configuration   |
 | [Package Management](./PACKAGE-MANAGEMENT.md)         | Dependency management best practices        | Project maintenance   |
-| [Azure Setup Guide](./AzureSetupGuide.md)             | Cloud deployment configuration              | Production deployment |
+| [Database Configuration](./DATABASE-CONFIGURATION.md) | LocalDB, Postgres, Docker   | Development setup     |
 
 ---
 

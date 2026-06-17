@@ -177,6 +177,15 @@
                               HorizontalAlignment="Stretch"/>
 
                 <TextBlock Text="Eligibility" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryTextBrush}" Margin="0,12,0,4"/>
+                <!-- SfDataGrid for eligibility / stops / buses (Finish GoogleEarth UI element; Syncfusion Sf* only + RAG cited components) -->
+                <syncfusion:SfDataGrid ItemsSource="{Binding ActiveBuses}" AutoGenerateColumns="False" Height="90" Margin="0,4,0,8"
+                                       AllowFiltering="True" ColumnSizer="Star">
+                    <syncfusion:SfDataGrid.Columns>
+                        <syncfusion:GridTextColumn HeaderText="Bus" MappingName="BusNumber" Width="70"/>
+                        <syncfusion:GridTextColumn HeaderText="Status" MappingName="Status" Width="*"/>
+                        <syncfusion:GridTextColumn HeaderText="Location" MappingName="CurrentLocation" Width="90"/>
+                    </syncfusion:SfDataGrid.Columns>
+                </syncfusion:SfDataGrid>
                 <syncfusion:ButtonAdv Content="✅ Check Eligibility (Demo)"
                               Command="{Binding CheckEligibilityCommand}"
                               Background="{DynamicResource ButtonBackgroundBrush}"

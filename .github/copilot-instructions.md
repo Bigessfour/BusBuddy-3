@@ -155,6 +155,7 @@ Run `.github/scripts/setup-solo-ci-governance.sh` (requires `gh` admin) to enabl
 - Use `concurrency` with `cancel-in-progress` on PR workflows.
 - Docs-only changes are skipped via `paths-ignore` on `*.md` and `Documentation/**`.
 - See also **AGENTS.md** for a short agent-facing summary.
+- **GCP / GEE / secrets**: [Documentation/GCP-GEE-SECRETS-AND-AUTH.md](../Documentation/GCP-GEE-SECRETS-AND-AUTH.md) — Passwords, `GcpCredentialBootstrap`, project IDs (`ee-bigessfour`, `new-coursera-490518`).
 
 **For BusBuddy-specific requirements, also reference:**
 
@@ -221,8 +222,8 @@ To get the best Syncfusion WPF code assistance:
 
 ### **Database Configuration Standards**
 
-- **Development**: LocalDB with SQL Server LocalDB instance
-- **Production**: Azure SQL Database with secure connection strings
+- **Development**: LocalDB / SQL Express (Windows VM) or Postgres via Docker (Mac hybrid)
+- **Production**: Postgres or SQL Server — configure via `BUSBUDDY_CONNECTION` or appsettings
 - **Connection Strings**: Environment variable substitution for credentials
 - **Database Provider**: Configurable via `appsettings.json` DatabaseProvider setting
 
@@ -231,8 +232,8 @@ To get the best Syncfusion WPF code assistance:
 ```json
 {
     "ConnectionStrings": {
-        "DefaultConnection": "Data Source=(localdb)\\MSSQLLocalDB;Initial Catalog=[Project];Integrated Security=True;MultipleActiveResultSets=True",
-        "AzureConnection": "Server=tcp:[server].database.windows.net,1433;Initial Catalog=[database];Persist Security Info=False;User ID=${AZURE_SQL_USER};Password=${AZURE_SQL_PASSWORD};MultipleActiveResultSets=True;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;"
+        "DefaultConnection": "Data Source=(localdb)\\MSSQLLocalDB;Initial Catalog=BusBuddy;Integrated Security=True;MultipleActiveResultSets=True",
+        "PostgresConnection": "Host=localhost;Port=5432;Database=busbuddy_test;Username=busbuddy;Password=${BUSBUDDY_PG_PASSWORD}"
     },
     "DatabaseProvider": "LocalDB"
 }
@@ -241,7 +242,6 @@ To get the best Syncfusion WPF code assistance:
 ### **External Service Integrations**
 
 - **Google Earth Engine**: Project-based authentication with service account keys
-- **Azure Services**: Environment-based credential management
 - **Syncfusion Licensing**: Environment variable `${SYNCFUSION_LICENSE_KEY}`
 
 ### **Build Configuration Standards**
@@ -625,14 +625,12 @@ public class AppContext : DbContext
 var entities = await _entityService.GetEntitiesAsync();
 ```
 
-### **Azure SQL Database Standards**
+### **Database Connection Standards**
 
-- **Connection String Format**: Use environment variables for sensitive data
-- **Security**: Enable encryption and certificate validation
-- **Connection Timeout**: Set appropriate timeout values (30 seconds)
-- **Environment Variables**: `${AZURE_SQL_USER}` and `${AZURE_SQL_PASSWORD}`
-- **Multi-Active Result Sets**: Enable for complex operations
-- **Connection Pooling**: Leverage EF Core default pooling for production
+- **Connection String Format**: Use environment variables for sensitive data (`BUSBUDDY_CONNECTION`)
+- **Providers**: LocalDB/SqlServer, Postgres (Npgsql), SQLite
+- **Multi-Active Result Sets**: Enable for SQL Server complex operations
+- **Connection Pooling**: Leverage EF Core default pooling
 
 ## Error Handling and Resilience Standards
 
