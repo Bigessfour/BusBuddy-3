@@ -7,7 +7,7 @@ Exposes semantic search over the entire indexed BusBuddy codebase as an MCP tool
 This gives any MCP-capable agent (Grok, Copilot, Cursor, Claude Desktop, etc.)
 instant, high-quality project context.
 
-Add to your mcp.json:
+Add to your `.cursor/mcp.json` (Cursor) or project MCP config:
   "busbuddy-rag": {
     "command": "python",
     "args": ["-m", "rag.mcp_server"],

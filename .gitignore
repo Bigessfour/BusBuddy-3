@@ -946,6 +946,14 @@ FolderProfile.pubxml.user
 Syncfusion*/
 syncfusion*/
 
+# Syncfusion WPF Agent Skills (vendor — install locally; see .github/scripts/setup-syncfusion-skills.sh)
+.agents/skills/
+
+# BusBuddy Syncfusion overlay skill stays in the repo (un-ignore after syncfusion*/ above)
+!.cursor/skills/
+!.cursor/skills/syncfusion-wpf-busbuddy/
+!.cursor/skills/syncfusion-wpf-busbuddy/**
+
 # .NET runtime and framework files
 **/Microsoft.*.dll
 **/System.*.dll

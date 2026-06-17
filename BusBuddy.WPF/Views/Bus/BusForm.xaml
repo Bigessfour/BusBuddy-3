@@ -133,7 +133,7 @@
             <!-- Status selector -->
             <StackPanel Grid.Row="8" Margin="0,0,0,10">
                 <TextBlock Text="Status:" Margin="0,0,0,5" />
-                <ComboBox Height="34" Padding="4" ItemsSource="{Binding AvailableStatuses}" SelectedItem="{Binding Status, Mode=TwoWay}" />
+                <syncfusion:ComboBoxAdv Height="34" Padding="4" ItemsSource="{Binding AvailableStatuses}" SelectedItem="{Binding Status, Mode=TwoWay}" />
             </StackPanel>
             <!-- Action Buttons -->
             <StackPanel Grid.Row="9"

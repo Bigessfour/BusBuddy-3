@@ -164,7 +164,7 @@ Run `.github/scripts/setup-solo-ci-governance.sh` (requires `gh` admin) to enabl
 
 ## Mandatory RAG + MCP Tools (BusBuddy Context)
 
-The project mcp.json now includes two critical tools for full awareness:
+The project [`.cursor/mcp.json`](.cursor/mcp.json) includes two critical tools for full awareness:
 
 1. **busbuddy-rag** (local semantic RAG over the entire cleaned codebase)
    - **ALWAYS call first** (see CRITICAL RULE above) before any edit.
@@ -178,7 +178,7 @@ The project mcp.json now includes two critical tools for full awareness:
 2. **syncfusion-wpf-assistant** (existing)
    - Prefix prompts as before for UI work.
 
-**mcp.json registration** (already present):
+**MCP registration** (in `.cursor/mcp.json`):
 ```json
 "busbuddy-rag": {
   "type": "stdio",
@@ -193,7 +193,7 @@ Run `python -m rag.index` after major refactors or when the repo baseline change
 
 To get the best Syncfusion WPF code assistance:
 
-- The project mcp.json includes "syncfusion-wpf-assistant" (requires your Syncfusion API key from https://syncfusion.com/account/api-key - set in env or config).
+- The project `.cursor/mcp.json` includes "syncfusion-wpf-assistant" (requires your Syncfusion API key from https://syncfusion.com/account/api-key - set in env or config).
 - In your AI chat (Copilot, Cursor, Claude, etc. that supports MCP): prefix prompts with `SyncfusionWPFAssistant `, `/syncfusion-wpf-assistant`, `@syncfusion-wpf`, or `wpf`.
 - Examples:
   - "SyncfusionWPFAssistant how to bind SfDataGrid to ObservableCollection of Students with filtering and paging"

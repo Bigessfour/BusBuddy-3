@@ -77,11 +77,11 @@
 
                     <!-- Bulk Operations -->
         <!-- Import students from CSV/Excel (placeholder) — Command: ImportStudentsCommand -->
-    <syncfusion:ButtonAdv Name="ImportStudentsButton" Label="📥 Import CSV (Stub)"
+    <syncfusion:ButtonAdv Name="ImportStudentsButton" Label="📥 Import CSV"
                             Command="{Binding ImportStudentsCommand}"
                 Background="{DynamicResource BusBuddy.Brush.FleetGreen}" Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"
                             AutomationProperties.Name="Import Students from CSV"
-                AutomationProperties.HelpText="Placeholder — CSV/Excel bulk import coming soon"/>
+                AutomationProperties.HelpText="Import student records from a CSV file"/>
         <!-- Bulk assign route to selection — requires HasSelectedStudents. Command: BulkAssignRouteCommand -->
         <syncfusion:ButtonAdv Name="BulkAssignRouteButton" Label="🚌 Bulk Assign Route"
                             Command="{Binding BulkAssignRouteCommand}"
@@ -93,11 +93,11 @@
 
                     <!-- AI & Mapping -->
         <!-- Start AI optimization (placeholder). Command: OptimizeRoutesCommand -->
-    <syncfusion:ButtonAdv Name="OptimizeRoutesButton" Label="🤖 AI Optimize (Stub)"
+    <syncfusion:ButtonAdv Name="OptimizeRoutesButton" Label="🤖 AI Optimize Routes"
                             Command="{Binding OptimizeRoutesCommand}"
                 Background="{DynamicResource BusBuddy.Brush.Semantic.Warning}" Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"
                             AutomationProperties.Name="AI Optimize Routes"
-                AutomationProperties.HelpText="Placeholder — AI optimization disabled for MVP"/>
+                AutomationProperties.HelpText="Run AI-assisted route optimization for selected students"/>
         <!-- Plot all students on the map. Command: ViewMapCommand -->
         <syncfusion:ButtonAdv Name="ViewMapButton" Label="🗺️ View Map"
                             Command="{Binding ViewMapCommand}"

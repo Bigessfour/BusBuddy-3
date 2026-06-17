@@ -26,12 +26,13 @@ COLLECTION_NAME = "busbuddy_codebase"
 EMBED_MODEL = "all-MiniLM-L6-v2"
 MAX_CHUNK_LINES = 45
 OVERLAP_LINES = 8
+CHROMA_BATCH_SIZE = 5000  # ChromaDB default max batch ~5461
 
 # Directories and patterns to completely ignore (first-attempt legacy + build artifacts)
 IGNORE_DIRS = {
     "Archive", "bin", "obj", ".git", "__pycache__", ".vs", "TestResults",
     "Documentation/Archive", "node_modules", "rag/chroma_db", ".rag_db",
-    "experiments", "Powershell", "Scripts/legacy"
+    "experiments", "Powershell", "Scripts/legacy", ".agents/skills"
 }
 
 # File extensions worth indexing for project context
@@ -47,7 +48,7 @@ ALWAYS_INCLUDE = {
     "STEADY-STATE-AND-FINISH-ROADMAP.md",
     "DEVELOPMENT-GUIDE.md",
     "Documentation/GCP-GEE-SECRETS-AND-AUTH.md",
-    "mcp.json",
+    ".cursor/mcp.json",
     ".github/copilot-instructions.md",
 }
 
@@ -149,19 +150,19 @@ def main():
 
     print(f"Generated {len(all_chunks)} chunks. Embedding + storing in Chroma...")
 
-    texts = [c["text"] for c in all_chunks]
-    metadatas = [c["metadata"] for c in all_chunks]
-    ids = [c["id"] for c in all_chunks]
-
-    # Batch embed
-    embeddings = model.encode(texts, show_progress_bar=True, convert_to_numpy=True).tolist()
-
-    collection.add(
-        ids=ids,
-        documents=texts,
-        embeddings=embeddings,
-        metadatas=metadatas
-    )
+    for start in range(0, len(all_chunks), CHROMA_BATCH_SIZE):
+        batch = all_chunks[start : start + CHROMA_BATCH_SIZE]
+        texts = [c["text"] for c in batch]
+        metadatas = [c["metadata"] for c in batch]
+        ids = [c["id"] for c in batch]
+        embeddings = model.encode(texts, show_progress_bar=True, convert_to_numpy=True).tolist()
+        collection.add(
+            ids=ids,
+            documents=texts,
+            embeddings=embeddings,
+            metadatas=metadatas,
+        )
+        print(f"  Stored batch {start // CHROMA_BATCH_SIZE + 1} ({len(batch)} chunks)")
 
     print(f"✅ RAG index complete. Collection now has {collection.count()} chunks.")
     print(f"   DB location: {DB_PATH}")

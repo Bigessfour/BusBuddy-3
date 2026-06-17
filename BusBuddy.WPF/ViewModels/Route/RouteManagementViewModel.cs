@@ -354,8 +354,18 @@ namespace BusBuddy.WPF.ViewModels.Route
                 StatusMessage = $"Error deleting route: {ex.Message}";
             }
         }
-    private void GenerateSchedule() { StatusMessage = "Generated schedule (stub)"; }
-    private void OpenMapView() { StatusMessage = "Opening map (stub)"; }
+    private void GenerateSchedule() => PrintSchedule();
+    private void OpenMapView() => AssignStudents();
+    private void PrintMaps()
+    {
+        if (SelectedRoute == null)
+        {
+            StatusMessage = "Select a route first";
+            return;
+        }
+        AssignStudents();
+        StatusMessage = $"Open assignment/map for '{SelectedRoute.RouteName}' to review route geography";
+    }
     private void AssignStudents()
     {
         if (SelectedRoute == null)
@@ -561,7 +571,6 @@ namespace BusBuddy.WPF.ViewModels.Route
             StatusMessage = "Error printing schedule";
         }
     }
-    private void PrintMaps() { StatusMessage = "Printed maps (stub)"; }
 
         public void Dispose()
         {

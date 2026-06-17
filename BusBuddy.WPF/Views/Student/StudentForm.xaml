@@ -13,6 +13,7 @@
                              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
                              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
                              xmlns:syncfusion="http://schemas.syncfusion.com/wpf"
+                             xmlns:syncfusiontools="clr-namespace:Syncfusion.Windows.Tools.Controls;assembly=Syncfusion.Tools.WPF"
                              xmlns:syncfusionshared="clr-namespace:Syncfusion.Windows.Shared;assembly=Syncfusion.Shared.Wpf"
                              xmlns:validation="clr-namespace:BusBuddy.WPF.Validation"
                              xmlns:sys="clr-namespace:System;assembly=mscorlib"
@@ -46,16 +47,7 @@
                 </DockPanel>
             </ControlTemplate>
 
-            <!-- Show red border when has validation error (WPF validation pattern) -->
-            <Style x:Key="ValidatedTextBoxStyle" TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
-                <Style.Triggers>
-                    <Trigger Property="Validation.HasError" Value="True">
-                        <Setter Property="BorderBrush" Value="{StaticResource BusBuddy.Brush.Semantic.Error}"/>
-                        <Setter Property="BorderThickness" Value="2"/>
-                        <Setter Property="ToolTip" Value="{Binding (Validation.Errors)[0].ErrorContent, RelativeSource={RelativeSource Self}}"/>
-                    </Trigger>
-                </Style.Triggers>
-            </Style>
+            <!-- Show red border when has validation error (Syncfusion SfTextBoxExt) -->
             <Style x:Key="ValidatedSfTextBoxStyle" TargetType="syncfusion:SfTextBoxExt" BasedOn="{StaticResource {x:Type syncfusion:SfTextBoxExt}}">
                 <Style.Triggers>
                     <Trigger Property="Validation.HasError" Value="True">
@@ -131,26 +123,9 @@
                 <Setter Property="Foreground" Value="{StaticResource BusBuddy.Brush.Text.Primary}"/>
                 <Setter Property="Background" Value="{StaticResource BusBuddy.Brush.Surface.Light}"/>
             </Style>
-            <Style TargetType="DatePicker" BasedOn="{StaticResource {x:Type DatePicker}}">
+            <Style TargetType="syncfusion:SfDatePicker" BasedOn="{StaticResource {x:Type syncfusion:SfDatePicker}}">
                 <Setter Property="Height" Value="40"/>
-                <Setter Property="Padding" Value="8,0"/>
                 <Setter Property="Margin" Value="0,0,0,10"/>
-                <Setter Property="Foreground" Value="{StaticResource BusBuddy.Brush.Text.Primary}"/>
-                <Setter Property="Background" Value="{StaticResource BusBuddy.Brush.Surface.Light}"/>
-            </Style>
-            <Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
-                <Setter Property="Margin" Value="0,0,0,10"/>
-                <Setter Property="Padding" Value="8"/>
-                <Setter Property="Height" Value="40"/>
-                <Setter Property="Foreground" Value="{StaticResource BusBuddy.Brush.Text.Primary}"/>
-                <Setter Property="Background" Value="{StaticResource BusBuddy.Brush.Surface.Light}"/>
-            </Style>
-            <Style TargetType="ComboBox" BasedOn="{StaticResource {x:Type ComboBox}}">
-                <Setter Property="Margin" Value="0,0,0,10"/>
-                <Setter Property="Padding" Value="8"/>
-                <Setter Property="Height" Value="40"/>
-                <Setter Property="Foreground" Value="{StaticResource BusBuddy.Brush.Text.Primary}"/>
-                <Setter Property="Background" Value="{StaticResource BusBuddy.Brush.Surface.Light}"/>
             </Style>
             <!-- High-contrast styles for Syncfusion inputs used on this form -->
             <Style TargetType="syncfusion:ComboBoxAdv" BasedOn="{StaticResource {x:Type syncfusion:ComboBoxAdv}}">
@@ -177,12 +152,6 @@
                 <Setter Property="Margin" Value="0,0,0,5"/>
                 <Setter Property="FontWeight" Value="SemiBold"/>
                 <Setter Property="Foreground" Value="{StaticResource BusBuddy.Brush.Text.Primary}"/>
-            </Style>
-            <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
-                <Setter Property="Margin" Value="5"/>
-                <Setter Property="Padding" Value="15,8"/>
-                <Setter Property="MinWidth" Value="100"/>
-                <Setter Property="Height" Value="40"/>
             </Style>
         </ResourceDictionary>
     </syncfusion:ChromelessWindow.Resources>
@@ -326,7 +295,7 @@
                         </StackPanel>
 
                         <StackPanel Grid.Row="3" Grid.ColumnSpan="2">
-                            <CheckBox Name="ActiveCheckBox"
+                            <syncfusiontools:ToggleButtonExt Name="ActiveCheckBox"
                                       Content="Active Student"
                                       IsChecked="{Binding Student.Active, Mode=TwoWay}"
                                       Margin="0,10,0,0"
@@ -577,19 +546,19 @@
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
 
-                            <CheckBox Grid.Column="0" Name="RequiresWheelchairCheckBox"
+                            <syncfusiontools:ToggleButtonExt Grid.Column="0" Name="RequiresWheelchairCheckBox"
                                     Content="Wheelchair Accessible"
                                     IsChecked="{Binding Student.RequiresWheelchair, Mode=TwoWay}"
                                     VerticalAlignment="Center"/>
-                            <CheckBox Grid.Column="1" Name="RequiresSeatBeltCheckBox"
+                            <syncfusiontools:ToggleButtonExt Grid.Column="1" Name="RequiresSeatBeltCheckBox"
                                     Content="Seat Belt Required"
                                     IsChecked="{Binding Student.RequiresSeatBelt, Mode=TwoWay}"
                                     VerticalAlignment="Center"/>
-                            <CheckBox Grid.Column="2" Name="RequiresAideCheckBox"
+                            <syncfusiontools:ToggleButtonExt Grid.Column="2" Name="RequiresAideCheckBox"
                                     Content="Aide Required"
                                     IsChecked="{Binding Student.RequiresAide, Mode=TwoWay}"
                                     VerticalAlignment="Center"/>
-                            <CheckBox Grid.Column="3" Name="HasMedicalNeedsCheckBox"
+                            <syncfusiontools:ToggleButtonExt Grid.Column="3" Name="HasMedicalNeedsCheckBox"
                                     Content="Medical Needs"
                                     IsChecked="{Binding Student.HasMedicalNeeds, Mode=TwoWay}"
                                     VerticalAlignment="Center"/>

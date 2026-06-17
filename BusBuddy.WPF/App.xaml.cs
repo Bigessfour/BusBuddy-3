@@ -139,6 +139,7 @@ namespace BusBuddy.WPF
                 "XAI_API_KEY",
                 "GROK_API_KEY",
                 "SYNCFUSION_LICENSE_KEY",
+                "SYNCFUSION_API_KEY",
                 "Syncfusion_API_Key",
                 "GEE_PROJECT_ID",
                 "GEE_SERVICE_ACCOUNT_EMAIL",
@@ -197,7 +198,77 @@ namespace BusBuddy.WPF
                 }
             }
 
+            // Aliases: Passwords may store SYNCFUSION_API_KEY while MCP expects Syncfusion_API_Key
+            PromoteEnvIfEmpty("SYNCFUSION_API_KEY", "Syncfusion_API_Key");
+            PromoteEnvIfEmpty("Syncfusion_API_Key", "SYNCFUSION_API_KEY");
+
+            // Alternate keychain service names used by Syncfusion tooling
+            TryLoadKeychainSecret("com.wileyco.syncfusion.license", "SYNCFUSION_LICENSE_KEY");
+            TryLoadKeychainSecret("Syncfusion License Key", "SYNCFUSION_LICENSE_KEY");
+
             _bootstrapLogger?.Information("🔐 macOS Passwords keychain load complete. Keys are now available to registration methods.");
+        }
+
+        private static void PromoteEnvIfEmpty(string sourceVar, string targetVar)
+        {
+            if (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable(targetVar)))
+            {
+                return;
+            }
+
+            var value = Environment.GetEnvironmentVariable(sourceVar);
+            if (!string.IsNullOrEmpty(value))
+            {
+                Environment.SetEnvironmentVariable(targetVar, value);
+                _bootstrapLogger?.Information("  ✅ Promoted {Source} → {Target} in process env", sourceVar, targetVar);
+            }
+        }
+
+        private static bool TryLoadKeychainSecret(string serviceName, string envVarName)
+        {
+            if (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable(envVarName)))
+            {
+                return true;
+            }
+
+            if (!System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.OSX))
+            {
+                return false;
+            }
+
+            try
+            {
+                var psi = new System.Diagnostics.ProcessStartInfo
+                {
+                    FileName = "/usr/bin/security",
+                    Arguments = $"find-generic-password -s \"{serviceName}\" -w",
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    UseShellExecute = false,
+                    CreateNoWindow = true
+                };
+
+                using var process = System.Diagnostics.Process.Start(psi);
+                if (process == null)
+                {
+                    return false;
+                }
+
+                var secret = process.StandardOutput.ReadToEnd().Trim();
+                process.WaitForExit();
+                if (process.ExitCode == 0 && !string.IsNullOrEmpty(secret))
+                {
+                    Environment.SetEnvironmentVariable(envVarName, secret);
+                    _bootstrapLogger?.Information("  ✅ Loaded {EnvVar} from keychain service '{Service}'", envVarName, serviceName);
+                    return true;
+                }
+            }
+            catch (Exception ex)
+            {
+                _bootstrapLogger?.Warning(ex, "  ⚠️ Keychain lookup failed for service {Service}", serviceName);
+            }
+
+            return false;
         }
 
         /// <summary>
@@ -413,9 +484,17 @@ namespace BusBuddy.WPF
                 services.AddTransient<BusBuddy.WPF.Services.RouteExportService>();
                 services.AddSingleton<BusBuddy.WPF.Services.ISkinManagerService, BusBuddy.WPF.Services.SkinManagerService>();
 
+                services.AddScoped<IUserSettingsService, UserSettingsService>();
+                services.AddScoped<IFuelService, FuelService>();
+                services.AddScoped<IMaintenanceService, MaintenanceService>();
+
                 // Register ViewModels for dependency injection (standardized on subfolder organization for dedup)
                 services.AddTransient<BusBuddy.WPF.ViewModels.MainWindowViewModel>();
                 services.AddTransient<BusBuddy.WPF.ViewModels.Dashboard.DashboardViewModel>();
+                services.AddTransient<BusBuddy.WPF.ViewModels.Activity.ActivityTimelineViewModel>();
+                services.AddTransient<BusBuddy.WPF.ViewModels.Settings.SettingsViewModel>();
+                services.AddTransient<BusBuddy.WPF.ViewModels.Analytics.AnalyticsDashboardViewModel>();
+                services.AddTransient<BusBuddy.WPF.ViewModels.Fuel.FuelManagementViewModel>();
                 services.AddTransient<BusBuddy.WPF.ViewModels.Student.StudentsViewModel>();
                 services.AddTransient<BusBuddy.WPF.ViewModels.Route.RouteManagementViewModel>();
                 services.AddTransient<BusBuddy.WPF.ViewModels.Driver.DriverFormViewModel>();
@@ -920,6 +999,10 @@ Examples:
             _syncfusionLicenseChecked = true;
             try
             {
+                // Ensure license key is in env (Passwords / alternate keychain services)
+                TryLoadKeychainSecret("SYNCFUSION_LICENSE_KEY", "SYNCFUSION_LICENSE_KEY");
+                TryLoadKeychainSecret("com.wileyco.syncfusion.license", "SYNCFUSION_LICENSE_KEY");
+
                 // Check Process level first, then User level, then Machine level
                 var licenseKey = Environment.GetEnvironmentVariable("SYNCFUSION_LICENSE_KEY") ??
                                Environment.GetEnvironmentVariable("SYNCFUSION_LICENSE_KEY", EnvironmentVariableTarget.User) ??

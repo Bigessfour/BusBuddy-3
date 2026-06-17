@@ -130,7 +130,16 @@ Import-Module .\PowerShell\Modules\BusBuddy.Commands\BusBuddy.Commands.psm1
 
 **Development Environment**: WSL recommended for terminal/build. Use plain `dotnet` commands (PS bb-* modules removed/deprecated). 
 
-**Syncfusion AI Assist**: MCP server @syncfusion/wpf-assistant configured in mcp.json. Prefix AI prompts with `SyncfusionWPFAssistant ` for accurate WPF + Syncfusion code gen (requires your Syncfusion API key). See .github/copilot-instructions.md and https://help.syncfusion.com/wpf/ai-coding-assistant/overview .
+**Syncfusion AI Assist**: MCP server @syncfusion/wpf-assistant configured in [`.cursor/mcp.json`](.cursor/mcp.json). Prefix AI prompts with `SyncfusionWPFAssistant ` for accurate WPF + Syncfusion code gen (requires your Syncfusion API key). See .github/copilot-instructions.md and https://help.syncfusion.com/wpf/ai-coding-assistant/overview .
+
+**Syncfusion WPF Agent Skills** (Cursor): Official component skills install locally into `.agents/skills/` (not committed). BusBuddy-specific rules live in [`.cursor/skills/syncfusion-wpf-busbuddy/`](.cursor/skills/syncfusion-wpf-busbuddy/). One-time setup:
+
+```bash
+.github/scripts/setup-syncfusion-skills.sh          # all 96 components
+.github/scripts/setup-syncfusion-skills.sh minimal  # interactive subset
+```
+
+See https://help.syncfusion.com/wpf/skills/component-skills .
 
 ### **📋 Current Build Status**
 
@@ -227,7 +236,7 @@ trunk check --force     # Format and lint files with trunk
 ### **Known Development Items**
 
 - **PowerShell Module**: Recently fixed merge conflicts and improved compliance
-- **UI Consistency**: Ongoing migration to Syncfusion controls throughout application
+- **UI Consistency**: Syncfusion-only controls in Views (MCP config: `.cursor/mcp.json`)
 - **Testing**: Unit test coverage being expanded as features are added
 - **Documentation**: Keeping docs current with active development
 
@@ -665,7 +674,7 @@ Test coverage reports are generated in `TestResults/` directory with detailed TR
 - ✅ **Foundation**: Complete (.NET 9, Syncfusion, EF Core)
 - ✅ **Testing Infrastructure**: Operational (NUnit, coverage reporting)
 - ✅ **PowerShell Automation**: Core functionality stable (compliance improvements needed)
-- 🟡 **UI Migration**: Completing Syncfusion control migration (some inconsistencies remain)
+- 🟢 **UI Migration**: Syncfusion-only controls across Views (see `bb-xaml-validate` on Windows)
 - 🟡 **Student Management**: Core features functional (production hardening in progress)
 - 🔄 **Production Readiness**: Requires addressing known risks listed above
 - 🎯 **Route Optimization**: Next major milestone

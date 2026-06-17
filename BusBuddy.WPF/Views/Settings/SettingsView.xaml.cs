@@ -1,16 +1,19 @@
 using System.Windows.Controls;
+using BusBuddy.WPF.ViewModels.Settings;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace BusBuddy.WPF.Views.Settings
 {
-    /// <summary>
-    /// Interaction logic for SettingsView.xaml
-    /// Settings functionality - Coming in Phase 2
-    /// </summary>
     public partial class SettingsView : UserControl
     {
         public SettingsView()
         {
             InitializeComponent();
+            if (DataContext == null && App.ServiceProvider != null)
+            {
+                DataContext = App.ServiceProvider.GetService<SettingsViewModel>()
+                    ?? App.ServiceProvider.GetRequiredService<SettingsViewModel>();
+            }
         }
     }
 }

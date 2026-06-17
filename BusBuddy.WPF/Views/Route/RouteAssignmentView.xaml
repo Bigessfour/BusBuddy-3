@@ -63,44 +63,7 @@
                 <Setter Property="Foreground"
                         Value="{DynamicResource BusBuddy.Brush.Text.Primary}" />
             </Style>
-            <!-- Watermark TextBox template (for search inputs) -->
-            <Style x:Key="WatermarkTextBox"
-                   TargetType="TextBox"
-                   BasedOn="{StaticResource {x:Type TextBox}}">
-                <Setter Property="Template">
-                    <Setter.Value>
-                        <ControlTemplate TargetType="TextBox">
-                            <Border Background="{TemplateBinding Background}"
-                                    BorderBrush="{TemplateBinding BorderBrush}"
-                                    BorderThickness="{TemplateBinding BorderThickness}"
-                                    CornerRadius="3">
-                                <Grid>
-                                    <ScrollViewer x:Name="PART_ContentHost" />
-                                    <TextBlock Text="🔍 Search..."
-                                               Foreground="Gray"
-                                               IsHitTestVisible="False"
-                                               Margin="5,0,0,0"
-                                               VerticalAlignment="Center">
-                                        <TextBlock.Style>
-                                            <Style TargetType="TextBlock">
-                                                <Setter Property="Visibility"
-                                                        Value="Collapsed" />
-                                                <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding Text, RelativeSource={RelativeSource AncestorType=TextBox}}"
-                                                                 Value="">
-                                                        <Setter Property="Visibility"
-                                                                Value="Visible" />
-                                                    </DataTrigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </TextBlock.Style>
-                                    </TextBlock>
-                                </Grid>
-                            </Border>
-                        </ControlTemplate>
-                    </Setter.Value>
-                </Setter>
-            </Style>
+            <!-- Watermark search uses SfTextBoxExt (Syncfusion only) -->
         </ResourceDictionary>
     </UserControl.Resources>
     <Grid Margin="20">
@@ -165,9 +128,9 @@
                             Margin="0,0,10,0">
                     <TextBlock Text="Date"
                                FontWeight="SemiBold" />
-                    <DatePicker x:Name="RouteDatePicker"
-                                SelectedDate="{Binding SelectedRoute.Date, Mode=TwoWay}"
-                                AutomationProperties.Name="Route Date" />
+                    <syncfusion:SfDatePicker x:Name="RouteDatePicker"
+                                             Value="{Binding SelectedRoute.Date, Mode=TwoWay}"
+                                             AutomationProperties.Name="Route Date" />
                 </StackPanel>
                 <!-- Time Slot -->
                 <StackPanel Grid.Column="2"
@@ -175,10 +138,10 @@
                             Margin="0,0,10,0">
                     <TextBlock Text="Time Slot"
                                FontWeight="SemiBold" />
-                    <ComboBox x:Name="TimeSlotCombo"
-                              SelectedItem="{Binding SelectedTimeSlot, Mode=TwoWay}"
-                              ItemsSource="{Binding Source={StaticResource RouteTimeSlotValues}}"
-                              AutomationProperties.Name="Route Time Slot" />
+                    <syncfusion:ComboBoxAdv x:Name="TimeSlotCombo"
+                                            SelectedItem="{Binding SelectedTimeSlot, Mode=TwoWay}"
+                                            ItemsSource="{Binding Source={StaticResource RouteTimeSlotValues}}"
+                                            AutomationProperties.Name="Route Time Slot" />
                 </StackPanel>
                 <!-- Bus -->
                 <StackPanel Grid.Column="3"
@@ -293,13 +256,13 @@
                         <RowDefinition Height="*" />
                         <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
-                    <TextBox x:Name="UnassignedSearchBox"
-                             Grid.Row="0"
-                             Margin="0,0,0,8"
-                             Style="{StaticResource WatermarkTextBox}"
-                             Text="{Binding StudentSearchText, UpdateSourceTrigger=PropertyChanged}"
-                             AutomationProperties.Name="Unassigned Student Search"
-                             ToolTip="Search unassigned students" />
+                    <syncfusion:SfTextBoxExt x:Name="UnassignedSearchBox"
+                                             Grid.Row="0"
+                                             Margin="0,0,0,8"
+                                             Watermark="🔍 Search unassigned students..."
+                                             Text="{Binding StudentSearchText, UpdateSourceTrigger=PropertyChanged}"
+                                             AutomationProperties.Name="Unassigned Student Search"
+                                             ToolTip="Search unassigned students" />
                     <syncfusion:SfDataGrid Grid.Row="1"
                                            x:Name="UnassignedStudentsGrid"
                                            ItemsSource="{Binding UnassignedStudents}"

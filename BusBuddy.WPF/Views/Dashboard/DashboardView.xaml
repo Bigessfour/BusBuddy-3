@@ -174,17 +174,21 @@
                                    FontSize="18" FontWeight="SemiBold"
                                    Foreground="{DynamicResource PrimaryTextBrush}" Margin="0,0,0,15"/>
 
-                        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
-                            <!-- Real SfDataGrid bound to Routes (Dashboard Finish UI element; Syncfusion only per rules + RAG) -->
-                            <syncfusion:SfDataGrid ItemsSource="{Binding Routes}" AutoGenerateColumns="False"
-                                                   AllowFiltering="True" AllowSorting="True" ColumnSizer="Star" Height="140">
-                                <syncfusion:SfDataGrid.Columns>
-                                    <syncfusion:GridTextColumn HeaderText="Route" MappingName="Name" Width="140"/>
-                                    <syncfusion:GridTextColumn HeaderText="Description" MappingName="Description" Width="*"/>
-                                    <syncfusion:GridNumericColumn HeaderText="Cap" MappingName="Capacity" Width="55"/>
-                                </syncfusion:SfDataGrid.Columns>
-                            </syncfusion:SfDataGrid>
-                        </ScrollViewer>
+                        <syncfusion:SfDataGrid Grid.Row="1"
+                                               ItemsSource="{Binding RouteSummaries}"
+                                               AutoGenerateColumns="False"
+                                               AllowFiltering="True"
+                                               AllowSorting="True"
+                                               ColumnSizer="Star"
+                                               GridLinesVisibility="Horizontal"
+                                               HeaderLinesVisibility="Horizontal">
+                            <syncfusion:SfDataGrid.Columns>
+                                <syncfusion:GridTextColumn HeaderText="Route" MappingName="RouteName" Width="140"/>
+                                <syncfusion:GridTextColumn HeaderText="Description" MappingName="Description" Width="*"/>
+                                <syncfusion:GridNumericColumn HeaderText="Assigned" MappingName="AssignedCount" Width="70"/>
+                                <syncfusion:GridNumericColumn HeaderText="Cap" MappingName="MaxCapacity" Width="55"/>
+                            </syncfusion:SfDataGrid.Columns>
+                        </syncfusion:SfDataGrid>
                     </Grid>
                 </Border>
             </ContentControl>
@@ -206,16 +210,21 @@
                                    FontSize="18" FontWeight="SemiBold"
                                    Foreground="{DynamicResource PrimaryTextBrush}" Margin="0,0,0,15"/>
 
-                        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
-                            <StackPanel>
-                                <TextBlock Text="🚌 Fleet Data Loading..."
-                                           FontSize="14" Foreground="{DynamicResource SecondaryTextBrush}"
-                                           Margin="0,10" HorizontalAlignment="Center"/>
-                                <TextBlock Text="{Binding Buses.Count, StringFormat='Total Buses: {0}'}"
-                                           FontSize="12" Foreground="{DynamicResource PrimaryTextBrush}"
-                                           HorizontalAlignment="Center"/>
-                            </StackPanel>
-                        </ScrollViewer>
+                        <syncfusion:SfDataGrid Grid.Row="1"
+                                               ItemsSource="{Binding Buses}"
+                                               AutoGenerateColumns="False"
+                                               AllowFiltering="True"
+                                               AllowSorting="True"
+                                               ColumnSizer="Star"
+                                               GridLinesVisibility="Horizontal"
+                                               HeaderLinesVisibility="Horizontal">
+                            <syncfusion:SfDataGrid.Columns>
+                                <syncfusion:GridTextColumn HeaderText="Bus #" MappingName="BusNumber" Width="80"/>
+                                <syncfusion:GridTextColumn HeaderText="Status" MappingName="Status" Width="100"/>
+                                <syncfusion:GridNumericColumn HeaderText="Seats" MappingName="SeatingCapacity" Width="65"/>
+                                <syncfusion:GridCheckBoxColumn HeaderText="GPS" MappingName="GPSTracking" Width="50"/>
+                            </syncfusion:SfDataGrid.Columns>
+                        </syncfusion:SfDataGrid>
                     </Grid>
                 </Border>
             </ContentControl>
@@ -224,10 +233,68 @@
             <ContentControl x:Name="DashboardDocument"
                             syncfusion:DockingManager.Header="📈 Overview"
                             syncfusion:DockingManager.State="Document">
-                <Grid Margin="20">
-                    <TextBlock Text="Dashboard Overview"
-                               FontSize="18" Foreground="{DynamicResource SecondaryTextBrush}"
-                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                <Grid Margin="12">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <TextBlock Grid.Row="0"
+                               Text="{Binding AverageUtilizationPercent, StringFormat=Route utilization: {0}%}"
+                               FontSize="14" FontWeight="SemiBold"
+                               Foreground="{DynamicResource PrimaryTextBrush}"
+                               Margin="0,0,0,12"/>
+                    <Grid Grid.Row="1">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Border Grid.Column="0"
+                                Background="{DynamicResource ContentBackgroundBrush}"
+                                BorderBrush="{DynamicResource BorderBrush}"
+                                BorderThickness="1" CornerRadius="8" Padding="10" Margin="0,0,6,0">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="*"/>
+                                </Grid.RowDefinitions>
+                                <TextBlock Grid.Row="0" Text="Student Assignments"
+                                           FontWeight="SemiBold" Margin="0,0,0,8"
+                                           Foreground="{DynamicResource PrimaryTextBrush}"/>
+                                <syncfusion:SfChart Grid.Row="1">
+                                    <syncfusion:SfChart.PrimaryAxis>
+                                        <syncfusion:CategoryAxis Header="Status"/>
+                                    </syncfusion:SfChart.PrimaryAxis>
+                                    <syncfusion:SfChart.SecondaryAxis>
+                                        <syncfusion:NumericalAxis Header="Students"/>
+                                    </syncfusion:SfChart.SecondaryAxis>
+                                    <syncfusion:ColumnSeries ItemsSource="{Binding AssignmentDistribution}"
+                                                             XBindingPath="Label"
+                                                             YBindingPath="Count"
+                                                             EnableAnimation="True"/>
+                                </syncfusion:SfChart>
+                            </Grid>
+                        </Border>
+                        <Border Grid.Column="1"
+                                Background="{DynamicResource ContentBackgroundBrush}"
+                                BorderBrush="{DynamicResource BorderBrush}"
+                                BorderThickness="1" CornerRadius="8" Padding="10" Margin="6,0,0,0">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="*"/>
+                                </Grid.RowDefinitions>
+                                <TextBlock Grid.Row="0" Text="Route Health"
+                                           FontWeight="SemiBold" Margin="0,0,0,8"
+                                           Foreground="{DynamicResource PrimaryTextBrush}"/>
+                                <syncfusion:SfChart Grid.Row="1">
+                                    <syncfusion:PieSeries ItemsSource="{Binding RouteHealthDistribution}"
+                                                          XBindingPath="Label"
+                                                          YBindingPath="Count"
+                                                          EnableAnimation="True"/>
+                                </syncfusion:SfChart>
+                            </Grid>
+                        </Border>
+                    </Grid>
                 </Grid>
             </ContentControl>
         </syncfusion:DockingManager>

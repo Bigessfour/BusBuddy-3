@@ -87,38 +87,8 @@
                     Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
                     Padding="10"
                     FontSize="14"
-                    Margin="0,0,15,0">
-                <TextBox.Style>
-                    <Style TargetType="TextBox">
-                        <Setter Property="Template">
-                            <Setter.Value>
-                                <ControlTemplate TargetType="TextBox">
-                     <Border Background="{DynamicResource ContentBackgroundBrush}"
-                         BorderBrush="{DynamicResource BorderBrush}"
-                                           BorderThickness="1"
-                                           CornerRadius="4">
-                                        <ScrollViewer Margin="8,0,0,0" x:Name="PART_ContentHost"/>
-                                    </Border>
-                                </ControlTemplate>
-                            </Setter.Value>
-                        </Setter>
-                        <Style.Triggers>
-                            <Trigger Property="Text" Value="">
-                                <Setter Property="Background">
-                                    <Setter.Value>
-                                        <VisualBrush AlignmentX="Left" AlignmentY="Center" Stretch="None">
-                                            <VisualBrush.Visual>
-                                                <Label Content="Search buses by make, model, or plate number..."
-                                                      Foreground="Gray" Background="Transparent"/>
-                                            </VisualBrush.Visual>
-                                        </VisualBrush>
-                                    </Setter.Value>
-                                </Setter>
-                            </Trigger>
-                        </Style.Triggers>
-                    </Style>
-                </TextBox.Style>
-            </syncfusion:SfMaskedEdit>
+                    Watermark="Search buses by make, model, or plate number..."
+                    Margin="0,0,15,0"/>
 
             <syncfusion:ComboBoxAdv Grid.Column="1"
                      ItemsSource="{Binding StatusFilterOptions}"
