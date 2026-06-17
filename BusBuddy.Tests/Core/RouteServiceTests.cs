@@ -199,6 +199,12 @@ namespace BusBuddy.Tests.Core
             Assert.That(result.Value!.Count(), Is.EqualTo(expectedCount));
         }
 
+        private async Task<Student> ReloadStudentAsync(int studentId)
+        {
+            _dbContext.ChangeTracker.Clear();
+            return await _dbContext.Students.AsNoTracking().FirstAsync(s => s.StudentId == studentId);
+        }
+
         #endregion
 
         #region Route Assignment Tests (High-Value Scenarios)
@@ -233,8 +239,8 @@ namespace BusBuddy.Tests.Core
             var result = await _routeService.AssignStudentToRouteAsync(student.StudentId, route.RouteId, RouteTimeSlot.AM);
 
             Assert.That(result.IsSuccess, Is.True);
-            var updated = await _dbContext.Students.FindAsync(student.StudentId);
-            Assert.That(updated!.AMRoute, Is.EqualTo("Route A"));
+            var updated = await ReloadStudentAsync(student.StudentId);
+            Assert.That(updated.AMRoute, Is.EqualTo("Route A"));
             Assert.That(updated.PMRoute, Is.Null.Or.Empty);
         }
 
@@ -258,8 +264,8 @@ namespace BusBuddy.Tests.Core
             var result = await _routeService.AssignStudentToRouteAsync(student.StudentId, route.RouteId, RouteTimeSlot.PM);
 
             Assert.That(result.IsSuccess, Is.True);
-            var updated = await _dbContext.Students.FindAsync(student.StudentId);
-            Assert.That(updated!.PMRoute, Is.EqualTo("Route B"));
+            var updated = await ReloadStudentAsync(student.StudentId);
+            Assert.That(updated.PMRoute, Is.EqualTo("Route B"));
             Assert.That(updated.AMRoute, Is.Null.Or.Empty);
         }
 
@@ -306,8 +312,8 @@ namespace BusBuddy.Tests.Core
             var result = await _routeService.RemoveStudentFromRouteAsync(student.StudentId, route.RouteId, RouteTimeSlot.AM);
 
             Assert.That(result.IsSuccess, Is.True);
-            var updated = await _dbContext.Students.FindAsync(student.StudentId);
-            Assert.That(updated!.AMRoute, Is.Null.Or.Empty);
+            var updated = await ReloadStudentAsync(student.StudentId);
+            Assert.That(updated.AMRoute, Is.Null.Or.Empty);
             Assert.That(updated.PMRoute, Is.EqualTo("Route B"));
         }
 
@@ -362,13 +368,13 @@ namespace BusBuddy.Tests.Core
         [Test]
         public async Task AutoAssignStudentsAsync_StopsAtCapacity()
         {
-            var bus = new Bus { BusNumber = "B1", Year = 2020, Make = "Test", Model = "M", SeatingCapacity = 2, VINNumber = "VIN1", LicenseNumber = "L1" };
+            var bus = new Bus { BusNumber = "B1", Year = 2020, Make = "Test", Model = "M", SeatingCapacity = 2, VINNumber = "VIN1", LicenseNumber = "L1", Status = "Active" };
             _dbContext.Buses.Add(bus);
             await _dbContext.SaveChangesAsync();
 
             var route = await _dbContext.Routes.FirstAsync(r => r.RouteName == "Route A");
-            route.AMVehicleId = bus.BusId;
-            await _dbContext.SaveChangesAsync();
+            var assignVehicle = await _routeService.AssignVehicleToRouteAsync(route.RouteId, bus.BusId, RouteTimeSlot.AM);
+            Assert.That(assignVehicle.IsSuccess, Is.True, assignVehicle.Error);
 
             for (int i = 0; i < 5; i++)
             {
@@ -383,11 +389,16 @@ namespace BusBuddy.Tests.Core
                 });
             }
             await _dbContext.SaveChangesAsync();
+            _dbContext.ChangeTracker.Clear();
 
             var result = await _routeService.AutoAssignStudentsAsync(route.RouteId, RouteTimeSlot.AM);
 
             Assert.That(result.IsSuccess, Is.True);
             Assert.That(result.Value!.Count, Is.EqualTo(2));
+
+            _dbContext.ChangeTracker.Clear();
+            var assignedCount = await _dbContext.Students.CountAsync(s => s.AMRoute == "Route A");
+            Assert.That(assignedCount, Is.EqualTo(2));
         }
 
         #endregion
