@@ -20,14 +20,14 @@ The BusBuddy repo went through many iterations (first programming project). Even
 # 1. (Re)build the index after significant changes
 python -m rag.index
 
-# 2. The MCP server is already registered in mcp.json as "busbuddy-rag"
+# 2. The MCP server is registered in .cursor/mcp.json as "busbuddy-rag" (Cursor project MCP config)
 ```
 
 ## For Agents (Copilot, Grok, Claude, etc.)
 
 See the top of `.github/copilot-instructions.md` — the **CRITICAL RAG RULE** is now the very first thing.
 
-When the MCP host loads `mcp.json`, it will discover the `busbuddy-rag` tool automatically.
+When the MCP host loads `.cursor/mcp.json`, it will discover the `busbuddy-rag` tool automatically.
 
 Example tool call an agent should make:
 
@@ -46,7 +46,7 @@ Run `python -m rag.index` whenever:
 Always-included files for RAG (see `ALWAYS_INCLUDE` in `index.py`):
 - `README.md`, `AGENTS.md`, `STEADY-STATE-AND-FINISH-ROADMAP.md`
 - `Documentation/GCP-GEE-SECRETS-AND-AUTH.md`
-- `.github/copilot-instructions.md`, `mcp.json`
+- `.github/copilot-instructions.md`, `.cursor/mcp.json`
 
 Example queries for GCP/GEE context:
 

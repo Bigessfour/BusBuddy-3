@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using BusBuddy.WPF.ViewModels.Dashboard;
+using Microsoft.Extensions.DependencyInjection;
 using Serilog;
 
 namespace BusBuddy.WPF.Views.Dashboard
@@ -52,10 +53,13 @@ namespace BusBuddy.WPF.Views.Dashboard
                 // Only set DataContext if not already provided by DI
                 if (this.DataContext == null)
                 {
-                    Logger.Debug("No DataContext found, creating DashboardViewModel with basic RouteService");
-                    // For MVP, create a basic ViewModel
-                    // In production, this should be injected via DI
-                    Logger.Information("DashboardView DataContext initialized with basic ViewModel");
+                    var sp = App.ServiceProvider;
+                    if (sp != null)
+                    {
+                        DataContext = sp.GetService<DashboardViewModel>()
+                            ?? sp.GetRequiredService<DashboardViewModel>();
+                    }
+                    Logger.Information("DashboardView DataContext initialized from DI");
                 }
                 else
                 {

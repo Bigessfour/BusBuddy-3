@@ -4,7 +4,7 @@
                              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
                              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
                              xmlns:syncfusion="http://schemas.syncfusion.com/wpf"
-                             xmlns:syncfusionshared="clr-namespace:Syncfusion.Windows.Shared;assembly=Syncfusion.Shared.Wpf"
+                             xmlns:syncfusiontools="clr-namespace:Syncfusion.Windows.Tools.Controls;assembly=Syncfusion.Tools.WPF"
                              mc:Ignorable="d"
                              Title="{Binding FormTitle}"
                              Height="600"
@@ -242,7 +242,7 @@
                     </Grid.RowDefinitions>
                     <StackPanel Grid.Row="0"
                                 Grid.Column="0">
-                        <CheckBox Content="Training Complete"
+                        <syncfusiontools:ToggleButtonExt Content="Training Complete"
                                   IsChecked="{Binding Driver.TrainingComplete, Mode=TwoWay}"
                                   Margin="0,5,0,10"
                                   AutomationProperties.Name="Training Complete"

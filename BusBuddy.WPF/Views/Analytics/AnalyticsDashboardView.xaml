@@ -7,20 +7,31 @@
              mc:Ignorable="d"
              d:DesignHeight="450" d:DesignWidth="800">
 
-    <Grid>
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+    </UserControl.Resources>
+
+    <Grid Background="{DynamicResource PrimaryBackgroundBrush}">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <!-- Header -->
-        <TextBlock Grid.Row="0"
-                   Text="Analytics Dashboard"
-                   FontSize="24"
-                   FontWeight="Bold"
-                   Margin="20,10"/>
+        <Border Grid.Row="0" Margin="20,10,20,0" Padding="12"
+                Background="{DynamicResource ContentBackgroundBrush}" CornerRadius="8">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock Text="Analytics Dashboard" FontSize="24" FontWeight="Bold"
+                           Foreground="{DynamicResource PrimaryTextBrush}"/>
+                <syncfusion:ButtonAdv Grid.Column="1" Label="🔄 Refresh"
+                                      Command="{Binding RefreshCommand}"/>
+            </Grid>
+        </Border>
 
-        <!-- Dashboard Content -->
         <Grid Grid.Row="1" Margin="20">
             <Grid.RowDefinitions>
                 <RowDefinition Height="*"/>
@@ -31,42 +42,83 @@
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
 
-            <!-- Placeholder for charts -->
-            <Border Grid.Row="0" Grid.Column="0"
-                    BorderBrush="Gray"
-                    BorderThickness="1"
-                    Margin="5">
-                <TextBlock Text="Fleet Performance Chart"
-                           HorizontalAlignment="Center"
-                           VerticalAlignment="Center"/>
+            <Border Grid.Row="0" Grid.Column="0" Margin="5"
+                    Background="{DynamicResource ContentBackgroundBrush}"
+                    BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="8" Padding="10">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <TextBlock Text="Fleet Performance" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                    <syncfusion:SfChart Grid.Row="1">
+                        <syncfusion:SfChart.PrimaryAxis>
+                            <syncfusion:CategoryAxis/>
+                        </syncfusion:SfChart.PrimaryAxis>
+                        <syncfusion:SfChart.SecondaryAxis>
+                            <syncfusion:NumericalAxis/>
+                        </syncfusion:SfChart.SecondaryAxis>
+                        <syncfusion:ColumnSeries ItemsSource="{Binding FleetPerformance}"
+                                                 XBindingPath="Label" YBindingPath="Value" EnableAnimation="True"/>
+                    </syncfusion:SfChart>
+                </Grid>
             </Border>
 
-            <Border Grid.Row="0" Grid.Column="1"
-                    BorderBrush="Gray"
-                    BorderThickness="1"
-                    Margin="5">
-                <TextBlock Text="Route Efficiency Chart"
-                           HorizontalAlignment="Center"
-                           VerticalAlignment="Center"/>
+            <Border Grid.Row="0" Grid.Column="1" Margin="5"
+                    Background="{DynamicResource ContentBackgroundBrush}"
+                    BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="8" Padding="10">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <TextBlock Text="Route Efficiency" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                    <syncfusion:SfChart Grid.Row="1">
+                        <syncfusion:ColumnSeries ItemsSource="{Binding RouteEfficiency}"
+                                                 XBindingPath="Label" YBindingPath="Value" EnableAnimation="True"/>
+                    </syncfusion:SfChart>
+                </Grid>
             </Border>
 
-            <Border Grid.Row="1" Grid.Column="0"
-                    BorderBrush="Gray"
-                    BorderThickness="1"
-                    Margin="5">
-                <TextBlock Text="Maintenance Metrics"
-                           HorizontalAlignment="Center"
-                           VerticalAlignment="Center"/>
+            <Border Grid.Row="1" Grid.Column="0" Margin="5"
+                    Background="{DynamicResource ContentBackgroundBrush}"
+                    BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="8" Padding="10">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <TextBlock Text="Maintenance Metrics" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                    <syncfusion:SfChart Grid.Row="1">
+                        <syncfusion:PieSeries ItemsSource="{Binding MaintenanceMetrics}"
+                                              XBindingPath="Label" YBindingPath="Value" EnableAnimation="True"/>
+                    </syncfusion:SfChart>
+                </Grid>
             </Border>
 
-            <Border Grid.Row="1" Grid.Column="1"
-                    BorderBrush="Gray"
-                    BorderThickness="1"
-                    Margin="5">
-                <TextBlock Text="Fuel Analytics"
-                           HorizontalAlignment="Center"
-                           VerticalAlignment="Center"/>
+            <Border Grid.Row="1" Grid.Column="1" Margin="5"
+                    Background="{DynamicResource ContentBackgroundBrush}"
+                    BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="8" Padding="10">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <TextBlock Text="Fuel Analytics (30 days)" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                    <syncfusion:SfChart Grid.Row="1">
+                        <syncfusion:ColumnSeries ItemsSource="{Binding FuelAnalytics}"
+                                                 XBindingPath="Label" YBindingPath="Value" EnableAnimation="True"/>
+                    </syncfusion:SfChart>
+                </Grid>
             </Border>
         </Grid>
+
+        <TextBlock Grid.Row="2" Margin="20,0,20,12" Text="{Binding StatusMessage}"
+                   Foreground="{DynamicResource SecondaryTextBrush}"/>
+
+        <Border Grid.RowSpan="3" Background="#80000000"
+                Visibility="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}}">
+            <syncfusion:SfBusyIndicator IsBusy="True" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+        </Border>
     </Grid>
 </UserControl>

@@ -13,15 +13,6 @@
                 <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/SyncfusionV30_Validated_ResourceDictionary.xaml"/>
             </ResourceDictionary.MergedDictionaries>
             <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
-            <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
-                <Setter Property="Margin" Value="5"/>
-                <Setter Property="Padding" Value="10,5"/>
-                <Setter Property="MinWidth" Value="80"/>
-            </Style>
-            <Style x:Key="StubButtonStyle" TargetType="syncfusion:ButtonAdv">
-                <Setter Property="Opacity" Value="0.85"/>
-                <Setter Property="ToolTip" Value="Planned feature — not active in MVP"/>
-            </Style>
         </ResourceDictionary>
     </UserControl.Resources>
 
@@ -100,26 +91,24 @@
                 AutomationProperties.HelpText="Open the full route assignment and stops editor"/>
 
                     <!-- Planning Operations -->
-            <syncfusion:ButtonAdv Name="GenerateScheduleButton" Label="📅 Generate Schedule (Stub)"
-                Command="{Binding GenerateScheduleCommand}"
-                Style="{StaticResource StubButtonStyle}"
+            <syncfusion:ButtonAdv Name="GenerateScheduleButton" Label="📅 Generate Schedule"
+                            Command="{Binding GenerateScheduleCommand}"
                 SizeMode="Normal"
                 IconHeight="16" IconWidth="16"
                 CornerRadius="4"
                 Background="{StaticResource BusBuddy.Brush.FleetGreen}" 
                 Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}"
                 AutomationProperties.Name="Generate Schedule"
-                AutomationProperties.HelpText="Placeholder — schedule generation coming post-MVP"/>
-            <syncfusion:ButtonAdv Name="ViewMapButton" Label="🗺️ View Map (Stub)"
-                Command="{Binding ViewMapCommand}"
-                Style="{StaticResource StubButtonStyle}"
+                AutomationProperties.HelpText="Generate printable schedule for the selected route"/>
+            <syncfusion:ButtonAdv Name="ViewMapButton" Label="🗺️ View Map"
+                            Command="{Binding ViewMapCommand}"
                 SizeMode="Normal"
                 IconHeight="16" IconWidth="16"
                 CornerRadius="4"
                 Background="{StaticResource BusBuddy.Brush.Semantic.Info}" 
                 Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}"
                 AutomationProperties.Name="View Map"
-                AutomationProperties.HelpText="Placeholder — map view coming post-MVP"/>
+                AutomationProperties.HelpText="Open route map in Google Earth view"/>
                     <Separator Margin="10,0"/>
 
                     <!-- Assignment Operations -->
@@ -133,17 +122,16 @@
                 Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}"
                 AutomationProperties.Name="Assign Students to Route"
                 AutomationProperties.HelpText="Assign students to the selected route"/>
-            <syncfusion:ButtonAdv Name="AssignVehicleButton" Label="🚌 Assign Vehicle (Stub)"
+            <syncfusion:ButtonAdv Name="AssignVehicleButton" Label="🚌 Assign Vehicle"
                 Command="{Binding AssignVehicleCommand}"
                 IsEnabled="{Binding IsRouteSelected}"
-                Style="{StaticResource StubButtonStyle}"
                 SizeMode="Normal"
                 IconHeight="16" IconWidth="16"
                 CornerRadius="4"
                 Background="{StaticResource BusBuddy.Brush.Semantic.Warning}" 
                 Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}"
                 AutomationProperties.Name="Assign Vehicle to Route"
-                AutomationProperties.HelpText="Placeholder — vehicle assignment coming post-MVP"/>
+                AutomationProperties.HelpText="Assign a bus to the selected route"/>
                 </StackPanel>
 
                 <!-- Export and Print Actions -->
@@ -178,12 +166,11 @@
                             Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"
                             AutomationProperties.Name="Print Schedule"
                             AutomationProperties.HelpText="Print route schedules"/>
-            <syncfusion:ButtonAdv Name="PrintRouteMapsButton" Label="🗺️ Print Maps (Stub)"
+            <syncfusion:ButtonAdv Name="PrintRouteMapsButton" Label="🗺️ Route Map"
                             Command="{Binding PrintRouteMapsCommand}"
-                            Style="{StaticResource StubButtonStyle}"
                 Background="{DynamicResource BusBuddy.Brush.Semantic.Warning}" Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"
                             AutomationProperties.Name="Print Route Maps"
-                            AutomationProperties.HelpText="Placeholder — map print coming post-MVP"/>
+                            AutomationProperties.HelpText="Print route maps for the selected route"/>
 
                     <Separator Margin="10,0"/>
 
@@ -194,45 +181,11 @@
                             AutomationProperties.HelpText="Reload route data from database"/>
 
                     <!-- Quick Filter -->
-                    <TextBox Name="QuickSearchBox" Width="150" Margin="10,0,0,0"
-                            Text="{Binding QuickSearchText, UpdateSourceTrigger=PropertyChanged}"
-                            AutomationProperties.Name="Quick Search Routes"
-                            AutomationProperties.HelpText="Type to search routes by name or description">
-                        <TextBox.Style>
-                            <Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
-                                <Setter Property="Template">
-                                    <Setter.Value>
-                                        <ControlTemplate TargetType="TextBox">
-                                            <Border Background="{TemplateBinding Background}"
-                                                   BorderBrush="{TemplateBinding BorderBrush}"
-                                                   BorderThickness="{TemplateBinding BorderThickness}"
-                                                   CornerRadius="3">
-                                                <Grid>
-                                                    <ScrollViewer x:Name="PART_ContentHost" />
-                                                    <TextBlock Text="🔍 Search routes..."
-                                                              Foreground="Gray"
-                                                              IsHitTestVisible="False"
-                                                              Margin="5,0,0,0"
-                                                              VerticalAlignment="Center">
-                                                        <TextBlock.Style>
-                                                            <Style TargetType="TextBlock">
-                                                                <Setter Property="Visibility" Value="Collapsed"/>
-                                                                <Style.Triggers>
-                                                                    <DataTrigger Binding="{Binding Text, RelativeSource={RelativeSource AncestorType=TextBox}}" Value="">
-                                                                        <Setter Property="Visibility" Value="Visible"/>
-                                                                    </DataTrigger>
-                                                                </Style.Triggers>
-                                                            </Style>
-                                                        </TextBlock.Style>
-                                                    </TextBlock>
-                                                </Grid>
-                                            </Border>
-                                        </ControlTemplate>
-                                    </Setter.Value>
-                                </Setter>
-                            </Style>
-                        </TextBox.Style>
-                    </TextBox>
+                    <syncfusion:SfTextBoxExt Name="QuickSearchBox" Width="150" Margin="10,0,0,0"
+                                              Text="{Binding QuickSearchText, UpdateSourceTrigger=PropertyChanged}"
+                                              Watermark="🔍 Search routes..."
+                                              AutomationProperties.Name="Quick Search Routes"
+                                              AutomationProperties.HelpText="Type to search routes by name or description"/>
                 </StackPanel>
             </Grid>
         </Border>

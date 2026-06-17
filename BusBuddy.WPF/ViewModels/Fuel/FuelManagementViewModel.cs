@@ -345,8 +345,26 @@ namespace BusBuddy.WPF.ViewModels.Fuel
 
         private Task ShowFuelReportAsync()
         {
-            MessageBox.Show("Fuel reports will be implemented in the next sprint.",
-                "Coming Soon", MessageBoxButton.OK, MessageBoxImage.Information);
+            try
+            {
+                var reportsView = new BusBuddy.WPF.Views.Reports.ReportsView();
+                var host = new Window
+                {
+                    Title = "⛽ Fuel Reports",
+                    Width = 1050,
+                    Height = 750,
+                    WindowStartupLocation = WindowStartupLocation.CenterScreen,
+                    Content = reportsView
+                };
+                host.ShowDialog();
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Failed to open fuel reports");
+                MessageBox.Show($"Could not open fuel reports: {ex.Message}", "Fuel Report",
+                    MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+
             return Task.CompletedTask;
         }
 
