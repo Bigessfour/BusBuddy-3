@@ -374,9 +374,14 @@ namespace BusBuddy.Tests.Core
             _dbContext.Buses.Add(bus);
             await _dbContext.SaveChangesAsync();
 
-            var route = await _dbContext.Routes.FirstAsync(r => r.RouteName == "Route A");
-            var assignVehicle = await _routeService.AssignVehicleToRouteAsync(route.RouteId, bus.BusId, RouteTimeSlot.AM);
-            Assert.That(assignVehicle.IsSuccess, Is.True, assignVehicle.Error);
+            var route = await _dbContext.Routes.AsNoTracking().FirstAsync(r => r.RouteName == "Route A");
+            route.AMVehicleId = bus.BusId;
+            var updateRoute = await _routeService.UpdateRouteAsync(route);
+            Assert.That(updateRoute.IsSuccess, Is.True, updateRoute.Error);
+
+            var routeCheck = await _routeService.GetRouteByIdAsync(route.RouteId);
+            Assert.That(routeCheck.IsSuccess, Is.True);
+            Assert.That(routeCheck.Value!.AMVehicleId, Is.EqualTo(bus.BusId));
 
             for (int i = 0; i < 5; i++)
             {
