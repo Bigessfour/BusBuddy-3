@@ -4,7 +4,7 @@ namespace BusBuddy.Core.Configuration;
 
 /// <summary>
 /// Configuration options for Google Earth Engine integration.
-/// Maps to the GoogleEarthEngine section in appsettings.azure.json.
+/// Maps to the GoogleEarthEngine section in appsettings.json.
 /// </summary>
 public class GoogleEarthEngineOptions
 {

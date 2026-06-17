@@ -9,7 +9,7 @@
 - **Operating System**: Windows 10/11 (for WPF development)
 - **RAM**: 8GB minimum, 16GB recommended
 - **Storage**: 2GB free space for development environment
-- **Internet**: Required for package downloads and Azure services
+- **Internet**: Required for package downloads and API services (GEE, xAI, NuGet)
 
 ### **Required Software**
 
@@ -129,32 +129,6 @@ BusBuddy uses LocalDB by default:
         "DefaultConnection": "Data Source=(localdb)\\MSSQLLocalDB;Initial Catalog=BusBuddy;Integrated Security=True"
     }
 }
-```
-
-### **Azure SQL Database (Production)**
-
-For Azure SQL Database connection:
-
-1. Update `appsettings.json`:
-
-```json
-{
-    "ConnectionStrings": {
-        "BusBuddyDb": "Server=tcp:busbuddy-server-sm2.database.windows.net,1433;Initial Catalog=BusBuddyDB;Authentication=Active Directory Default;Encrypt=True;"
-    }
-}
-```
-
-2. Ensure Azure CLI is logged in:
-
-```bash
-az login
-```
-
-3. Run database migrations:
-
-```powershell
-dotnet ef database update --project BusBuddy.Core
 ```
 
 ## 🛠️ **Development Environment**

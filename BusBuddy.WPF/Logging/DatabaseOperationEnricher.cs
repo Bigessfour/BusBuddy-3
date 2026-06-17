@@ -19,24 +19,22 @@ namespace BusBuddy.WPF.Logging
                                messageTemplate.Contains("SQL", StringComparison.OrdinalIgnoreCase) ||
                                messageTemplate.Contains("Entity", StringComparison.OrdinalIgnoreCase) ||
                                messageTemplate.Contains("DbContext", StringComparison.OrdinalIgnoreCase) ||
-                               messageTemplate.Contains("Azure", StringComparison.OrdinalIgnoreCase);
+                               messageTemplate.Contains("Postgres", StringComparison.OrdinalIgnoreCase);
 
             if (isDatabaseLog)
             {
                 logEvent.AddPropertyIfAbsent(propertyFactory.CreateProperty("IsDatabaseOperation", true));
                 logEvent.AddPropertyIfAbsent(propertyFactory.CreateProperty("DatabaseContext", "BusBuddyDB"));
 
-                // Add database provider context if available
-                if (messageTemplate.Contains("Azure", StringComparison.OrdinalIgnoreCase))
+                if (messageTemplate.Contains("Postgres", StringComparison.OrdinalIgnoreCase) ||
+                    messageTemplate.Contains("Npgsql", StringComparison.OrdinalIgnoreCase))
                 {
-                    logEvent.AddPropertyIfAbsent(propertyFactory.CreateProperty("DatabaseProvider", "AzureSQL"));
-                    logEvent.AddPropertyIfAbsent(propertyFactory.CreateProperty("IsCloudDatabase", true));
+                    logEvent.AddPropertyIfAbsent(propertyFactory.CreateProperty("DatabaseProvider", "Postgres"));
                 }
                 else if (messageTemplate.Contains("Local", StringComparison.OrdinalIgnoreCase) ||
                          messageTemplate.Contains("Express", StringComparison.OrdinalIgnoreCase))
                 {
                     logEvent.AddPropertyIfAbsent(propertyFactory.CreateProperty("DatabaseProvider", "SQLServerExpress"));
-                    logEvent.AddPropertyIfAbsent(propertyFactory.CreateProperty("IsCloudDatabase", false));
                 }
 
                 // Add operation type context

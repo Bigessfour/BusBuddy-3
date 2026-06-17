@@ -65,5 +65,23 @@ namespace BusBuddy.Tests.Core
 
             Assert.That(result.NormalizedAddress, Is.Not.Null);
         }
+
+        [Test]
+        public void GoogleEarthEngineService_EligibilityCheck_Basic()
+        {
+            var mockConfig = new Mock<IConfiguration>();
+            mockConfig.Setup(c => c["GoogleEarthEngine:ProjectId"]).Returns("ee-bigessfour");
+            var service = new GoogleEarthEngineService(mockConfig.Object);
+            Assert.That(service, Is.Not.Null);
+        }
+
+        [Test]
+        public async Task UserSettingsService_LoadSave_Basic()
+        {
+            var service = new UserSettingsService();
+            await service.SetSettingAsync("testKey", "testValue");
+            var value = await service.GetSettingAsync<string>("testKey", string.Empty);
+            Assert.That(value, Is.EqualTo("testValue"));
+        }
     }
 }

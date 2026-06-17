@@ -2142,7 +2142,7 @@ namespace BusBuddy.WPF.ViewModels.Route
                         // TODO: Add similar logic for students, buses, drivers if services are available
                         OnPropertyChanged(nameof(AvailableRoutes));
                         UpdateStatusMessage();
-                        Logger.Information("Loaded Azure SQL data: {RouteCount} routes", _availableRoutes.Count);
+                        Logger.Information("Loaded route data: {RouteCount} routes", _availableRoutes.Count);
                         return;
                     }
                     else

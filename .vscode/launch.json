@@ -81,16 +81,6 @@
       "request": "launch",
       "script": "bb-test", // Profile alias for dotnet test
       "cwd": "${workspaceFolder}"
-    },
-
-    // === AZURE & SQL DEBUGGING ===
-    {
-      "name": "PowerShell: Azure SQL Test",
-      "type": "PowerShell",
-      "request": "launch",
-      "script": "${workspaceFolder}\\Scripts\\Test-AzureSqlConnection.ps1",
-      "args": [],
-      "cwd": "${workspaceFolder}"
     }
   ],
   "compounds": [

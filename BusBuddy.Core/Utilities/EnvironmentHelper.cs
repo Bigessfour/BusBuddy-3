@@ -80,18 +80,18 @@ namespace BusBuddy.Core.Utilities
         public static bool IsUsingLocalDb(IConfiguration? configuration = null)
         {
             var provider = configuration?["DatabaseProvider"] ?? "LocalDB";
-            return provider.Equals("LocalDB", StringComparison.OrdinalIgnoreCase);
+            return provider.Equals("LocalDB", StringComparison.OrdinalIgnoreCase) ||
+                   provider.Equals("SqlServer", StringComparison.OrdinalIgnoreCase);
         }
 
         /// <summary>
-        /// Determines if the application is using Azure SQL for data storage
+        /// Determines if the application is using Postgres (Docker / hybrid dev)
         /// </summary>
-        /// <param name="configuration">Optional configuration to check database provider</param>
-        /// <returns>True if using Azure SQL, false otherwise</returns>
-        public static bool IsUsingAzureSql(IConfiguration? configuration = null)
+        public static bool IsUsingPostgres(IConfiguration? configuration = null)
         {
             var provider = configuration?["DatabaseProvider"] ?? "LocalDB";
-            return provider.Equals("Azure", StringComparison.OrdinalIgnoreCase);
+            return provider.Equals("Postgres", StringComparison.OrdinalIgnoreCase) ||
+                   provider.Equals("PostgreSQL", StringComparison.OrdinalIgnoreCase);
         }
 
         /// <summary>
@@ -114,13 +114,11 @@ namespace BusBuddy.Core.Utilities
         {
             string? raw = null;
 
-            if (IsUsingAzureSql(configuration))
+            if (IsUsingPostgres(configuration))
             {
-                // Prefer Azure AD interactive/password auth first, then fallback to SQL auth, then default, then sqlite
-                raw = configuration.GetConnectionString("AzureADConnection") ??
-                      configuration.GetConnectionString("AzureConnection") ??
+                raw = configuration.GetConnectionString("PostgresConnection") ??
                       configuration.GetConnectionString("DefaultConnection") ??
-                      "Data Source=BusBuddy.db";
+                      "Host=localhost;Port=5432;Database=busbuddy_test;Username=busbuddy;Password=busbuddy_dev";
             }
             else if (IsUsingLocalDb(configuration))
             {
@@ -138,8 +136,7 @@ namespace BusBuddy.Core.Utilities
             // Expand any ${ENV_VAR} placeholders
             var expanded = ExpandEnvironmentPlaceholders(raw);
 
-            // If placeholders remain unresolved (common when AZURE_* env vars are not set),
-            // fall back to a reliable LocalDB connection for local/dev usage.
+            // If placeholders remain unresolved, fall back to LocalDB for local/dev usage.
             if (!string.IsNullOrWhiteSpace(expanded) && expanded.Contains("${"))
             {
                 try

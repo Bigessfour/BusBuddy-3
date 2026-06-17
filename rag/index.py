@@ -41,7 +41,15 @@ INDEX_EXTENSIONS = {
 }
 
 # Extra files to always include even if not perfect match
-ALWAYS_INCLUDE = {"README.md", "STEADY-STATE-AND-FINISH-ROADMAP.md", "DEVELOPMENT-GUIDE.md", "mcp.json", ".github/copilot-instructions.md"}
+ALWAYS_INCLUDE = {
+    "README.md",
+    "AGENTS.md",
+    "STEADY-STATE-AND-FINISH-ROADMAP.md",
+    "DEVELOPMENT-GUIDE.md",
+    "Documentation/GCP-GEE-SECRETS-AND-AUTH.md",
+    "mcp.json",
+    ".github/copilot-instructions.md",
+}
 
 def should_ignore(path: str) -> bool:
     path_lower = path.lower()

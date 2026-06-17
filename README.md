@@ -49,19 +49,62 @@ BusBuddy streamlines school transportation operations through intelligent route 
   - Run Core tests, use Docker Compose for Postgres (real DB for seeding/EF tests instead of InMemory).
   - WPF UI **cannot** run natively on macOS.
 - **Windows 11 VM side (for full WPF app)**: 
-  - Share the project folder from Mac (Parallels Tools folder sharing is excellent; or use git clone inside VM or cloud sync).
-  - In VM: Install .NET 9 SDK (ARM64 if Apple Silicon), open in Visual Studio 2022 or VS Code.
-  - Build/run the full `BusBuddy.WPF` project normally for UI/debug.
+  - Share the project folder from Mac (UTM directory sharing works great; name it "Shared with Windows" or similar). The source tree is live/bidirectional.
+  - In VM: Install .NET 9 SDK (ARM64 if Apple Silicon). The shared folder appears under a drive letter or "Shared with Windows".
+  - Build/run the full `BusBuddy.WPF` project normally for UI/debug (or use the helper below from your Mac).
   - Changes sync via shared folder/git.
-- **Docker on Mac**: Use `docker compose` (see below) for Postgres and test isolation. Accessible from VM via Mac host IP (e.g. 10.211.55.2 for Parallels default; check with `ipconfig getifaddr en0` on Mac).
-- **Keys**: Loaded automatically from macOS Passwords app via the code in `App.xaml.cs` (uses `security` CLI). See `LoadApiKeysFromMacPasswords()`.
+- **Docker on Mac**: Use `docker compose` (see below) for Postgres and test isolation. Accessible from VM via Mac host IP (run `ipconfig getifaddr en0` on Mac; the script below prints it for you).
+- **Keys & secrets**: Loaded from **macOS Passwords** at startup (`LoadApiKeysFromMacPasswords()` + `GcpCredentialBootstrap`). See [Documentation/GCP-GEE-SECRETS-AND-AUTH.md](Documentation/GCP-GEE-SECRETS-AND-AUTH.md) and [AGENTS.md](AGENTS.md).
+
+**To launch the WPF UI from your Mac terminal (the "dotnet run" experience for this hybrid setup):**
+
+```bash
+./run-wpf.sh
+```
+
+What it does:
+- Preflight `dotnet build ... -p:EnableWindowsTargeting=true` on the Mac (fast compile gate; focuses on the WPF app).
+- Ensures your UTM "Windows" VM is running (starts it if stopped; re-uses if already open).
+- Tries to auto-discover the shared project root *inside the guest* and launch `dotnet run --project BusBuddy.WPF/BusBuddy.WPF.csproj` detached so the main window appears on the VM desktop.
+- If guest automation isn't ready yet (boot/login), prints the exact manual steps (including the robust `utm_run_in_vm.ps1` that lives in your shared tree, handles drive-letter / "Shared with Windows" discovery, shared GEE key, and optional Syncfusion license drop-in).
+
+When you are already inside the VM PowerShell: just run `.\utm_run_in_vm.ps1` from the project root (or any dir — it searches for the sln).
 
 Use standard tools:
-- `dotnet build BusBuddy.sln -p:EnableWindowsTargeting=true` (Mac/container)
-- `dotnet run --project BusBuddy.WPF/BusBuddy.WPF.csproj` (in VM)
+- `dotnet build BusBuddy.sln -p:EnableWindowsTargeting=true` (Mac/container preflight)
+- `./run-wpf.sh` (Mac) or `dotnet run --project BusBuddy.WPF/BusBuddy.WPF.csproj` (inside VM)
 - Docker for services/tests.
 
-Legacy PS modules are in `Documentation/Archive/PowerShell-Legacy/` and `Powershell/` (retained for CI/dependency scripts only). See STEADY-STATE-AND-FINISH-ROADMAP.md.
+Legacy PS modules are in `Documentation/Archive/PowerShell-Legacy/` and `Powershell/` (retained for CI/dependency scripts only). See [STEADY-STATE-AND-FINISH-ROADMAP.md](STEADY-STATE-AND-FINISH-ROADMAP.md).
+
+### **Google Cloud & Earth Engine (GEE)**
+
+| Item | Value |
+|------|--------|
+| Earth Engine project | `ee-bigessfour` |
+| GCP console project | [new-coursera-490518](https://console.cloud.google.com/iam-admin/iam?project=new-coursera-490518) |
+| Service account | `bus-buddy-gee@ee-bigessfour.iam.gserviceaccount.com` |
+| Key file (gitignored) | `keys/bus-buddy-gee-key.json` |
+
+**First-time setup:**
+
+```bash
+brew install --cask google-cloud-sdk
+gcloud auth login
+.github/scripts/setup-gcp-gee.sh           # create SA + key + appsettings
+.github/scripts/store-gcp-passwords.sh   # macOS Passwords (production auth)
+```
+
+On app startup (Mac), Passwords entries load into env; `GcpCredentialBootstrap` materializes the service account JSON and wires `GoogleEarthEngineService` + `IGeoDataService` with a live token.
+
+Full reference: [Documentation/GCP-GEE-SECRETS-AND-AUTH.md](Documentation/GCP-GEE-SECRETS-AND-AUTH.md)
+
+### **CI/CD (solo developer)**
+
+- Branch `feature/<topic>` → PR to `master` → gates **Build & Test** + **Security (CodeQL)** → squash auto-merge
+- Local pre-push: `.github/scripts/validate-ci-local.sh`
+- Details: [AGENTS.md](AGENTS.md), `.github/copilot-instructions.md`
+
 
 ### **Installation & Setup**
 
@@ -410,13 +453,22 @@ dotnet ef migrations add NewMigrationName
 
 ### **Environment Variables**
 
-- `SYNCFUSION_LICENSE_KEY`: **License key for Syncfusion WPF controls** (required)
-    - **Community License**: Free for individual developers and small teams
-    - **Setup**: Use `bbLicense -Set` to securely configure your license key
-    - **Format**: Long alphanumeric string (200+ characters)
-    - **Validation**: Built-in placeholder detection prevents trial dialogs
-- `ConnectionStrings__DefaultConnection`: Database connection string
-- `GoogleEarthEngine__ApiKey`: Google Earth Engine API key (optional for basic features)
+**macOS (recommended):** Store in Passwords app; Name = env var. App loads automatically — see [Documentation/GCP-GEE-SECRETS-AND-AUTH.md](Documentation/GCP-GEE-SECRETS-AND-AUTH.md).
+
+| Variable | Purpose |
+|----------|---------|
+| `SYNCFUSION_LICENSE_KEY` | Syncfusion WPF license (required for UI) |
+| `XAI_API_KEY` / `GROK_API_KEY` | Grok / xAI route optimization |
+| `GEE_PROJECT_ID` | Earth Engine project (`ee-bigessfour`) |
+| `GEE_SERVICE_ACCOUNT_JSON` | Service account key JSON (production) |
+| `GOOGLE_APPLICATION_CREDENTIALS` | Path to SA key file |
+| `GoogleEarthEngine__ProjectId` | Config override (set by bootstrap) |
+| `ConnectionStrings__DefaultConnection` | Database connection |
+| `BUSBUDDY_CONNECTION` | Postgres override for Docker profiles |
+
+**Windows production:** Set `GEE_SERVICE_ACCOUNT_JSON` or `GOOGLE_APPLICATION_CREDENTIALS` as machine env vars.
+
+**Deprecated / invalid:** `GoogleEarthEngine__ApiKey`, project `busbuddy-465000`, PowerShell `bbLicense` / SecretManagement flows — use Passwords + `store-gcp-passwords.sh` instead.
 
 ### **🔐 Secure API Key Management**
 
