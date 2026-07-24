@@ -3,18 +3,38 @@ using System.ComponentModel.DataAnnotations;
 namespace BusBuddy.Core.Configuration;
 
 /// <summary>
-/// Configuration options for xAI Grok API integration.
-/// Maps to the XAI section in appsettings.json.
+/// Configuration options for AI providers (local Ollama preferred; legacy xAI optional).
+/// Maps to the XAI section in appsettings.json for backward compatibility.
 /// </summary>
 public class XaiOptions
 {
     public const string SectionName = "XAI";
+
+    /// <summary>
+    /// Active provider: Ollama (default), Xai, or Disabled.
+    /// </summary>
+    public string Provider { get; set; } = "Ollama";
 
     [Required]
     public string ApiKey { get; set; } = string.Empty;
 
     [Required]
     public string BaseUrl { get; set; } = "https://api.x.ai/v1";
+
+    /// <summary>
+    /// OpenAI-compatible base URL for local Ollama (default port 11434).
+    /// </summary>
+    public string OllamaBaseUrl { get; set; } = "http://localhost:11434/v1";
+
+    /// <summary>
+    /// Native Ollama HTTP API root (tags / health checks).
+    /// </summary>
+    public string OllamaNativeBaseUrl { get; set; } = "http://localhost:11434";
+
+    /// <summary>
+    /// Model name served by Ollama (e.g. llama3.2, mistral).
+    /// </summary>
+    public string OllamaModel { get; set; } = "llama3.2";
 
     public string DefaultModel { get; set; } = "grok-4-latest";
 
@@ -45,4 +65,14 @@ public class XaiOptions
     public int RateLimitPerMinute { get; set; } = 60;
 
     public string PriorityLevel { get; set; } = "Standard";
+
+    public bool IsOllama =>
+        string.Equals(Provider, "Ollama", StringComparison.OrdinalIgnoreCase);
+
+    public bool IsDisabled =>
+        string.Equals(Provider, "Disabled", StringComparison.OrdinalIgnoreCase);
+
+    public bool IsXai =>
+        string.Equals(Provider, "Xai", StringComparison.OrdinalIgnoreCase)
+        || string.Equals(Provider, "XAI", StringComparison.OrdinalIgnoreCase);
 }

@@ -41,18 +41,23 @@ Run `python -m rag.index` whenever:
 - Major features are added
 - Large refactors or hygiene passes complete
 - **Auth, CI/CD, GCP/GEE, or agent docs change** (`AGENTS.md`, `Documentation/GCP-GEE-SECRETS-AND-AUTH.md`, `README.md`)
+- **Spec-Kit artifacts change** (`.specify/memory/constitution.md`, anything under `specs/`, Spec-Kit templates that agents must follow)
 - You want the absolute latest baseline for the agent
 
-Always-included files for RAG (see `ALWAYS_INCLUDE` in `index.py`):
-- `README.md`, `AGENTS.md`, `STEADY-STATE-AND-FINISH-ROADMAP.md`
+Always-included files for RAG (see `ALWAYS_INCLUDE` in `index.py` — basenames **or** repo-relative paths):
+- `README.md`, `AGENTS.md`, `STEADY-STATE-AND-FINISH-ROADMAP.md`, `DEVELOPMENT-GUIDE.md`
 - `Documentation/GCP-GEE-SECRETS-AND-AUTH.md`
 - `.github/copilot-instructions.md`, `.cursor/mcp.json`
+- `.specify/memory/constitution.md`
 
-Example queries for GCP/GEE context:
+Also indexed via extensions (not ignored): `specs/**/*.md`, other `.specify/**/*.md` templates/docs.
+
+Example queries for GCP/GEE / Spec-Kit context:
 
 ```
 search_repo_context query="Google Earth Engine GcpCredentialBootstrap macOS Passwords production" top_k=8
 search_repo_context query="solo developer CI auto-merge workflow gates" top_k=6
+search_repo_context query="BusBuddy constitution Syncfusion Serilog RAG Spec-Kit" top_k=8
 ```
 
 The index is fast enough for a repo of this size (~480 files → ~3k chunks).

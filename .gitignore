@@ -953,6 +953,9 @@ syncfusion*/
 !.cursor/skills/
 !.cursor/skills/syncfusion-wpf-busbuddy/
 !.cursor/skills/syncfusion-wpf-busbuddy/**
+# Spec-Kit Cursor skills (installed by `specify init --integration cursor-agent`)
+!.cursor/skills/speckit-*/
+!.cursor/skills/speckit-*/**
 
 # .NET runtime and framework files
 **/Microsoft.*.dll
