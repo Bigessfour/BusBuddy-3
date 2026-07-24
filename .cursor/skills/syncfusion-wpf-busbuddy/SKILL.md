@@ -22,20 +22,32 @@ npx skills update
 
 ## BusBuddy packages in use
 
-Version: `$(SyncfusionVersion)` in `Directory.Build.props` (currently **33.x**). Match NuGet references in `BusBuddy.WPF/BusBuddy.WPF.csproj` — do not add packages the project does not already reference unless explicitly requested.
+Version: `$(SyncfusionVersion)` in `Directory.Build.props` (currently **34.1.32** / Syncfusion WPF 34.x). Match NuGet references in `BusBuddy.WPF/BusBuddy.WPF.csproj` — do not add packages the project does not already reference unless explicitly requested.
 
-| Control / area | NuGet | Official skill |
-|----------------|-------|----------------|
-| SfDataGrid | Syncfusion.SfGrid.WPF | `syncfusion-wpf-datagrid` |
-| SfChart | Syncfusion.SfChart.WPF | `syncfusion-wpf-charts` |
-| SfTextBoxExt, inputs | Syncfusion.SfInput.WPF | `syncfusion-wpf-textboxext`, `syncfusion-wpf-combobox`, etc. |
-| ButtonAdv | Syncfusion.Tools.WPF | `syncfusion-wpf-button` |
-| SfBusyIndicator | Syncfusion.SfBusyIndicator.WPF | `syncfusion-wpf-busy-indicator` |
-| Navigation drawer | Syncfusion.SfNavigationDrawer.WPF | `syncfusion-wpf-navigation-drawer` |
-| SfTreeView | Syncfusion.SfTreeView.WPF | `syncfusion-wpf-treeview` |
-| SfScheduler | Syncfusion.SfScheduler.WPF | `syncfusion-wpf-scheduler` |
-| SfAccordion | Syncfusion.SfAccordion.WPF | `syncfusion-wpf-accordion` |
-| Themes | FluentDark / FluentLight | `syncfusion-wpf-skin-manager` |
+Refresh vendor skills after clone or Syncfusion major bumps:
+
+```bash
+.github/scripts/setup-syncfusion-skills.sh          # all components
+.github/scripts/setup-syncfusion-skills.sh minimal  # interactive subset
+npx skills list
+npx skills update
+```
+
+MCP: project `.cursor/mcp.json` → `syncfusion-wpf-assistant` via `.github/scripts/run-syncfusion-mcp.sh` (Passwords / `Syncfusion_API_Key`). Spec: `specs/006-syncfusion-tool-integration/`.
+
+
+| Control / area       | NuGet                             | Official skill                                               |
+| -------------------- | --------------------------------- | ------------------------------------------------------------ |
+| SfDataGrid           | Syncfusion.SfGrid.WPF             | `syncfusion-wpf-datagrid`                                    |
+| SfChart              | Syncfusion.SfChart.WPF            | `syncfusion-wpf-charts`                                      |
+| SfTextBoxExt, inputs | Syncfusion.SfInput.WPF            | `syncfusion-wpf-textboxext`, `syncfusion-wpf-combobox`, etc. |
+| ButtonAdv            | Syncfusion.Tools.WPF              | `syncfusion-wpf-button`                                      |
+| SfBusyIndicator      | Syncfusion.SfBusyIndicator.WPF    | `syncfusion-wpf-busy-indicator`                              |
+| Navigation drawer    | Syncfusion.SfNavigationDrawer.WPF | `syncfusion-wpf-navigation-drawer`                           |
+| SfTreeView           | Syncfusion.SfTreeView.WPF         | `syncfusion-wpf-treeview`                                    |
+| SfScheduler          | Syncfusion.SfScheduler.WPF        | `syncfusion-wpf-scheduler`                                   |
+| SfAccordion          | Syncfusion.SfAccordion.WPF        | `syncfusion-wpf-accordion`                                   |
+| Themes               | FluentDark / FluentLight          | `syncfusion-wpf-skin-manager`                                |
 
 ## Mandatory XAML patterns
 
