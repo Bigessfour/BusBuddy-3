@@ -689,6 +689,8 @@ nunit-*.xml
 **/*secret*
 **/*credential*
 **/*password*
+# Canonical auth guide (name matches *secret* ignore — keep tracked)
+!Documentation/GCP-GEE-SECRETS-AND-AUTH.md
 
 # Database connection files with hardcoded credentials
 *-connection-test.ps1
