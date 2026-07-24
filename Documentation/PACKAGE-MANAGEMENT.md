@@ -86,22 +86,22 @@ Following [Syncfusion WPF Installation Guide](https://help.syncfusion.com/window
 
 ### Current Syncfusion Configuration
 
-- **Version**: `33.2.10` (pinned in Directory.Build.props; updated 2026 per package plan)
+- **Version**: `34.1.32` (pinned in `Directory.Build.props`; Spec 006 Syncfusion Tool Integration)
 - **Source**: `nuget.org` (official public feed)
-- **License**: Community/Commercial (configured via environment variable)
-- **Controls Used**: DockingManager, NavigationDrawer, SfDataGrid, Charts
+- **License**: Community/Commercial (configured via environment variable / macOS Passwords)
+- **Controls Used**: DockingManager, NavigationDrawer, SfDataGrid, Charts, SfScheduler, SfSkinManager (FluentDark/Light), and others per `BusBuddy.WPF.csproj`
 
 ### Syncfusion Package References
 
 ```xml
 <!-- Centralized in Directory.Build.props -->
 <PropertyGroup>
-  <SyncfusionVersion>30.1.40</SyncfusionVersion>
+  <SyncfusionVersion>34.1.32</SyncfusionVersion>
 </PropertyGroup>
 
 <!-- Individual project references -->
 <PackageReference Include="Syncfusion.SfChart.WPF" Version="$(SyncfusionVersion)" />
-<PackageReference Include="Syncfusion.SfDataGrid.WPF" Version="$(SyncfusionVersion)" />
+<PackageReference Include="Syncfusion.SfGrid.WPF" Version="$(SyncfusionVersion)" />
 <PackageReference Include="Syncfusion.Tools.WPF" Version="$(SyncfusionVersion)" />
 ```
 
