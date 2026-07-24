@@ -41,7 +41,9 @@ INDEX_EXTENSIONS = {
     ".csproj", ".sln", ".props", ".targets", ".config"
 }
 
-# Extra files to always include even if not perfect match
+# Extra files to always include even if extension would otherwise skip them.
+# Entries may be basenames (matched against Path.name) or repo-relative paths
+# using forward slashes (matched against the relative path).
 ALWAYS_INCLUDE = {
     "README.md",
     "AGENTS.md",
@@ -50,7 +52,14 @@ ALWAYS_INCLUDE = {
     "Documentation/GCP-GEE-SECRETS-AND-AUTH.md",
     ".cursor/mcp.json",
     ".github/copilot-instructions.md",
+    ".specify/memory/constitution.md",
 }
+
+def is_always_include(rel_posix: str, basename: str) -> bool:
+    """True if this file is pinned via basename or full relative path."""
+    if basename in ALWAYS_INCLUDE or rel_posix in ALWAYS_INCLUDE:
+        return True
+    return False
 
 def should_ignore(path: str) -> bool:
     path_lower = path.lower()
@@ -106,7 +115,8 @@ def collect_files(root: Path) -> List[Path]:
             if should_ignore(rel):
                 continue
             ext = fpath.suffix.lower()
-            if ext in INDEX_EXTENSIONS or fpath.name in ALWAYS_INCLUDE:
+            rel_posix = rel.replace("\\", "/")
+            if ext in INDEX_EXTENSIONS or is_always_include(rel_posix, fpath.name):
                 files.append(fpath)
     return sorted(files)
 

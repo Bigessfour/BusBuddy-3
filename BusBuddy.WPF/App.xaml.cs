@@ -2,6 +2,7 @@ using System.Windows;
 using System.IO;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http;
 using Serilog;
 using Serilog.Events;
 using BusBuddy.WPF.Views.Main;
@@ -483,6 +484,25 @@ namespace BusBuddy.WPF
                 // services.AddTransient<BusBuddy.WPF.Services.NavigationService>();
                 services.AddTransient<BusBuddy.WPF.Services.RouteExportService>();
                 services.AddSingleton<BusBuddy.WPF.Services.ISkinManagerService, BusBuddy.WPF.Services.SkinManagerService>();
+
+                // Local AI chat (Ollama by default; graceful fallback when unavailable).
+                // Separate HttpClient instances — GrokGlobalAPI mutates DefaultRequestHeaders/Timeout.
+                services.AddSingleton<BusBuddy.WPF.Services.IXAIChatService>(sp =>
+                {
+                    var cfg = sp.GetRequiredService<IConfiguration>();
+                    var provider = cfg["XAI:Provider"] ?? "Ollama";
+                    if (string.Equals(provider, "Ollama", StringComparison.OrdinalIgnoreCase))
+                    {
+                        return new BusBuddy.WPF.Services.OllamaChatService(new HttpClient(), cfg);
+                    }
+
+                    // Disabled / legacy Xai chat: keep mock keyword assistant (no cloud dependency)
+                    return new BusBuddy.WPF.Services.XAIChatService();
+                });
+                services.AddTransient<BusBuddy.Core.Services.GrokGlobalAPI>(sp =>
+                    new BusBuddy.Core.Services.GrokGlobalAPI(
+                        new HttpClient(),
+                        sp.GetRequiredService<IConfiguration>()));
 
                 services.AddScoped<IUserSettingsService, UserSettingsService>();
                 services.AddScoped<IFuelService, FuelService>();

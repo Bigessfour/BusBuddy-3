@@ -34,32 +34,52 @@ namespace BusBuddy.Core.Services
             _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
             _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
 
-            // Load xAI configuration from environment and appsettings.
-            // On macOS, the WPF App startup calls LoadApiKeysFromMacPasswords() which pulls
-            // XAI_API_KEY (and others) from the Passwords app (Keychain) into the process env
-            // before DI / this constructor runs. This satisfies the "documented entry point"
-            // requirement without changing this class.
-            _apiKey = _configuration["XAI:ApiKey"] ?? Environment.GetEnvironmentVariable("XAI_API_KEY") ?? string.Empty;
-            _baseUrl = _configuration["XAI:BaseUrl"] ?? API_BASE_URL;
+            // Provider: Ollama (default, local) | Xai (cloud) | Disabled.
+            // On macOS, App startup may load XAI_API_KEY from Passwords for legacy Xai mode.
+            var provider = _configuration["XAI:Provider"] ?? "Ollama";
             var useLiveAPIString = _configuration["XAI:UseLiveAPI"] ?? "true";
             var useLiveAPI = bool.TryParse(useLiveAPIString, out var parsed) ? parsed : true;
+            var isOllama = string.Equals(provider, "Ollama", StringComparison.OrdinalIgnoreCase);
+            var isDisabled = string.Equals(provider, "Disabled", StringComparison.OrdinalIgnoreCase);
 
-            _isConfigured = !string.IsNullOrEmpty(_apiKey) && !_apiKey.Contains("${XAI_API_KEY}") && useLiveAPI;
+            _apiKey = _configuration["XAI:ApiKey"] ?? Environment.GetEnvironmentVariable("XAI_API_KEY") ?? string.Empty;
+            _baseUrl = isOllama
+                ? (_configuration["XAI:OllamaBaseUrl"] ?? "http://localhost:11434/v1")
+                : (_configuration["XAI:BaseUrl"] ?? API_BASE_URL);
 
-            if (_isConfigured)
+            if (isDisabled || !useLiveAPI)
             {
+                _isConfigured = false;
+                Logger.Warning("GrokGlobalAPI disabled via XAI:Provider/UseLiveAPI. Using mock optimization.");
+            }
+            else if (isOllama)
+            {
+                // Local Ollama OpenAI-compatible API — no cloud API key required.
+                _isConfigured = true;
                 _httpClient.DefaultRequestHeaders.Clear();
-                _httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {_apiKey}");
                 _httpClient.DefaultRequestHeaders.Add("User-Agent", "BusBuddy/1.0");
                 var timeoutString = _configuration["XAI:TimeoutSeconds"] ?? "60";
                 var timeoutSeconds = int.TryParse(timeoutString, out var parsedTimeout) ? parsedTimeout : 60;
                 _httpClient.Timeout = TimeSpan.FromSeconds(timeoutSeconds);
-
-                Logger.Information("GrokGlobalAPI configured with xAI endpoint: {BaseUrl}", _baseUrl);
+                Logger.Information("GrokGlobalAPI configured with local Ollama endpoint: {BaseUrl}", _baseUrl);
             }
             else
             {
-                Logger.Warning("GrokGlobalAPI not configured. Set XAI_API_KEY environment variable for live AI features.");
+                _isConfigured = !string.IsNullOrEmpty(_apiKey) && !_apiKey.Contains("${XAI_API_KEY}");
+                if (_isConfigured)
+                {
+                    _httpClient.DefaultRequestHeaders.Clear();
+                    _httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {_apiKey}");
+                    _httpClient.DefaultRequestHeaders.Add("User-Agent", "BusBuddy/1.0");
+                    var timeoutString = _configuration["XAI:TimeoutSeconds"] ?? "60";
+                    var timeoutSeconds = int.TryParse(timeoutString, out var parsedTimeout) ? parsedTimeout : 60;
+                    _httpClient.Timeout = TimeSpan.FromSeconds(timeoutSeconds);
+                    Logger.Information("GrokGlobalAPI configured with xAI endpoint: {BaseUrl}", _baseUrl);
+                }
+                else
+                {
+                    Logger.Warning("GrokGlobalAPI not configured. Set XAI_API_KEY for Xai provider, or use Provider=Ollama.");
+                }
             }
         }
 
@@ -83,9 +103,15 @@ namespace BusBuddy.Core.Services
                 }
 
                 var prompt = BuildRouteOptimizationPrompt(request);
+                var provider = _configuration["XAI:Provider"] ?? "Ollama";
+                var isOllama = string.Equals(provider, "Ollama", StringComparison.OrdinalIgnoreCase);
+                var model = isOllama
+                    ? (_configuration["XAI:OllamaModel"] ?? "llama3.2")
+                    : (_configuration["XAI:DefaultModel"] ?? DEFAULT_MODEL);
+                var maxTokensDefault = isOllama ? 2048 : 4000;
                 var grokRequest = new XAIRequest
                 {
-                    Model = _configuration["XAI:DefaultModel"] ?? DEFAULT_MODEL,
+                    Model = model,
                     Messages = new[]
                     {
                         new XAIMessage
@@ -100,10 +126,18 @@ namespace BusBuddy.Core.Services
                         }
                     },
                     Temperature = double.TryParse(_configuration["XAI:Temperature"], out var temp) ? temp : 0.3,
-                    MaxTokens = int.TryParse(_configuration["XAI:MaxTokens"], out var maxTokens) ? maxTokens : 4000
+                    MaxTokens = int.TryParse(_configuration["XAI:MaxTokens"], out var maxTokens) ? maxTokens : maxTokensDefault
                 };
 
                 var response = await CallGrokAPI(CHAT_COMPLETIONS_ENDPOINT, grokRequest);
+                if (IsFailedApiResponse(response))
+                {
+                    Logger.Warning(
+                        "Live AI optimization unavailable for route {RouteId}; using mock fallback",
+                        request.RouteId);
+                    return await GenerateMockOptimization(request);
+                }
+
                 return ParseOptimizationResponse(response, request);
             }
             catch (Exception ex)
@@ -176,6 +210,26 @@ namespace BusBuddy.Core.Services
                     }
                 };
             }
+        }
+
+        /// <summary>
+        /// True when <see cref="CallGrokAPI"/> returned a synthetic error payload instead of model output.
+        /// </summary>
+        private static bool IsFailedApiResponse(XAIResponse? response)
+        {
+            if (response?.Choices == null || response.Choices.Length == 0)
+            {
+                return true;
+            }
+
+            var content = response.Choices[0]?.Message?.Content;
+            if (string.IsNullOrWhiteSpace(content))
+            {
+                return true;
+            }
+
+            return content.StartsWith("API Error:", StringComparison.OrdinalIgnoreCase)
+                   || content.StartsWith("Network Error:", StringComparison.OrdinalIgnoreCase);
         }
 
         /// <summary>

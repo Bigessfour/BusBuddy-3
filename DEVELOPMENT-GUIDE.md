@@ -416,7 +416,7 @@ Write-Information "API Key Length: $($apiKey.Length)"  # Should be 84
 # Current production settings (August 2025)
 $GrokConfig = @{
     DefaultModel = "grok-4-0709"       # Exact model ID required
-    BaseUrl = "https://api.x.ai/v1"    # xAI API endpoint  
+    BaseUrl = "https://api.x.ai/v1"    # xAI API endpoint
     MaxTokens = 4000                   # Response token limit
     Temperature = 0.3                  # Balanced creativity/consistency
     TimeoutSeconds = 60                # Request timeout
@@ -432,7 +432,7 @@ Test-GrokConnection -Verbose
 # Test route analysis
 grok-route-analysis -RouteData $routeData -OptimizationGoal "minimize-time"
 
-# Test maintenance predictions  
+# Test maintenance predictions
 grok-maintenance-forecast -VehicleData $vehicleData -PredictionWindow "30-days"
 ```
 
@@ -536,13 +536,14 @@ The project was originally Windows-only (WPF). On macOS:
 
   That script has robust discovery for whatever drive letter or "Shared with Windows" folder your UTM share got mounted as, pulls GEE credentials from the shared `keys/` artifacts, supports dropping `SYNCFUSION_LICENSE_KEY.txt` for a real (non-trial) license, and then does the build + `Start-Process` launch of the WPF app.
 
-- **Docker/Postgres**: `docker compose --profile db up -d` for real Postgres (better than InMemory for `SeedDataService`, EF tests with Wiley data). 
+- **Docker/Postgres**: `docker compose --profile db up -d` for real Postgres (better than InMemory for `SeedDataService`, EF tests with Wiley data).
   - Host (Mac): localhost:5432
   - From VM: Mac host IP (e.g. `192.168.x.x` or the Parallels default; the `run-wpf.sh` prints the value for you; also `ipconfig getifaddr en0` on Mac).
   - Compose also has test profile: `docker compose --profile test up --build`
 - **Keys**: Auto-loaded from macOS Passwords (see `App.xaml.cs` `LoadApiKeysFromMacPasswords()` using `security` CLI). On the Windows side rely on env vars or the shared keys/ drop-ins.
 - **Packages**: `dotnet restore -p:EnableWindowsTargeting=true`
 - See also the updated README and `.devcontainer/devcontainer.json` (includes Postgres port forward).
+- **Agent guardrails** (Spec-Kit): see `.specify/memory/constitution.md` § V and `specs/005-hybrid-dev-environment/spec.md`. Do not invent AWS/cloud app hosting or native macOS WPF.
 
 ## 🚦 **Error Handling Patterns**
 
