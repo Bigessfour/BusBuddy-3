@@ -10,6 +10,7 @@ Before **ANY** code change, edit, refactor, new feature, bug fix, or architectur
 - Only after consulting and referencing this fresh RAG context may you propose changes.
 - If results are insufficient, call the tool again with a refined query (e.g. "Postgres DbContext + BUSBUDDY_CONNECTION injection in docker-compose" or "GrokGlobalAPI + RouteService integration points").
 - This rule exists because the repo has a long history of iterations; RAG guarantees you have the current clean baseline (Postgres/Docker focus, archived legacy removed, functional services only) instead of hallucinating from partial memory.
+- Spec-Kit sources are part of that baseline: always treat `.specify/memory/constitution.md` and `specs/**` as authoritative when present. After changing them (or other always-include docs), re-run `python -m rag.index`. Project DNA: constitution first, then this file and `AGENTS.md` for tactical detail.
 
 Failure to use + reference RAG before changes is a violation of these instructions.
 
@@ -110,20 +111,20 @@ bb-build  # Verify clean build
 
 ### Required merge gates (blocking)
 
-| Check | Workflow | What it does |
-|-------|----------|--------------|
-| **Build & Test** | `.github/workflows/ci.yml` | Restore, build solution, run Core regression tests (excludes `Integration`, `InMemoryFlaky`) |
-| **Security (CodeQL)** | `.github/workflows/ci.yml` | Static analysis for C# |
+| Check                 | Workflow                   | What it does                                                                                 |
+| --------------------- | -------------------------- | -------------------------------------------------------------------------------------------- |
+| **Build & Test**      | `.github/workflows/ci.yml` | Restore, build solution, run Core regression tests (excludes `Integration`, `InMemoryFlaky`) |
+| **Security (CodeQL)** | `.github/workflows/ci.yml` | Static analysis for C#                                                                       |
 
 ### Non-blocking / optional
 
-| Job | When | Notes |
-|-----|------|-------|
-| **Release artifacts** | Push to `master` after Build & Test | Publishes win-x64 WPF package as artifact |
-| **Docker CI simulation** | Manual (`workflow_dispatch`) | Postgres + container test parity |
-| **CI with AI Analysis** | Manual only | Deprecated as merge gate; experimental |
-| Dependency vuln audit | Inside Build & Test | Informational (`|| true`), not blocking |
-| Code coverage | Local / future | Not gated until flaky tests stabilized |
+| Job                      | When                                | Notes                                     |
+| ------------------------ | ----------------------------------- | ----------------------------------------- |
+| **Release artifacts**    | Push to `master` after Build & Test | Publishes win-x64 WPF package as artifact |
+| **Docker CI simulation** | Manual (`workflow_dispatch`)        | Postgres + container test parity          |
+| **CI with AI Analysis**  | Manual only                         | Deprecated as merge gate; experimental    |
+| Dependency vuln audit    | Inside Build & Test                 | Informational (`|| true` in CI), not blocking |
+| Code coverage            | Local / future                      | Not gated until flaky tests stabilized        |
 
 ### Local pre-PR commands
 
@@ -173,6 +174,7 @@ The project [`.cursor/mcp.json`](.cursor/mcp.json) includes two critical tools f
      - "Postgres DbContext configuration, BUSBUDDY_CONNECTION injection, and how it relates to SeedDataService + Docker profiles"
      - "GrokGlobalAPI route optimization flow and where it is called from RouteService"
      - "current state of hybrid Mac Docker + UTM VM development setup after final hygiene"
+     - "BusBuddy constitution Spec-Kit Syncfusion Serilog RAG hybrid Ollama"
    - The tool returns file:line-anchored chunks with high semantic relevance. Quote them.
 
 2. **syncfusion-wpf-assistant** (existing)
