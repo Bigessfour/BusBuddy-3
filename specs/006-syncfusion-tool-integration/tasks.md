@@ -23,8 +23,8 @@
 - [x] Update `AGENTS.md` (due-outs pointer + Syncfusion pin)
 - [x] Update `Documentation/PACKAGE-MANAGEMENT.md` Syncfusion version section
 - [x] Update `docs/action-items.md` checkboxes
-- [ ] `python -m rag.index` after merge (operator)
-- [ ] Windows VM license + UI smoke
+- [x] `python -m rag.index` after merge (operator) — done 2026-07-24
+- [ ] Windows VM license + UI smoke — see `windows-vm-smoke.md`
 
 ## Done when
 Spec FR-001–FR-009 acceptance scenarios met; build green; action-items 006 rows updated; VM smoke + RAG re-index after merge.
