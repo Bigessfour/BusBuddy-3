@@ -20,7 +20,6 @@ Ship gate remains project acceptance / smoke checklists — inventory count alon
 - **P2** Other Public: MaintenanceView.xaml.MaintenanceView.xaml @ BusBuddy.WPF/Views/Maintenance/MaintenanceView.xaml.cs:1
 - **P2** Other Public: DriverScheduleView.xaml.DriverScheduleView.xaml @ BusBuddy.WPF/Views/Driver/DriverScheduleView.xaml.cs:1
 - **P2** Other Public: DashboardView.xaml.DashboardView.xaml @ BusBuddy.WPF/Views/Dashboard/DashboardView.xaml.cs:1
-- **P2** Other Public: GcpCredentialBootstrap.GcpCredentialBootstrap @ BusBuddy.Core/Configuration/GcpCredentialBootstrap.cs:1
 
 Empty proof ≠ missing feature. Prefer focused vitest / e2e / ops checks on P1 write paths.
 
@@ -64,11 +63,11 @@ Empty proof ≠ missing feature. Prefer focused vitest / e2e / ops checks on P1 
 | P2 | Other Public | MaintenanceView.xaml.MaintenanceView.xaml | BusBuddy.WPF/Views/Maintenance/MaintenanceView.xaml.cs:1 | NO PROOF FOUND | has logic |
 | P2 | Other Public | DriverScheduleView.xaml.DriverScheduleView.xaml | BusBuddy.WPF/Views/Driver/DriverScheduleView.xaml.cs:1 | NO PROOF FOUND | has logic |
 | P2 | Other Public | DriverAvailabilityCalculator.DriverAvailabilityCalculator | BusBuddy.Core/Services/DriverAvailabilityCalculator.cs:1 | BusBuddy.Tests/Core/DriverAvailabilityCalculatorTests.cs | has logic |
-| P2 | Core Service | GoogleEarthEngineService.GoogleEarthEngineService | BusBuddy.Core/Services/GoogleEarthEngineService.cs:1 | BusBuddy.Tests/Core/GapsCoverageTests.cs | has logic |
+| P2 | Core Service | GeoDataService.GeoDataService | BusBuddy.Core/Services/GeoDataService.cs:1 | (DB routes; EE retired) | has logic |
 | P2 | Other Public | DashboardView.xaml.DashboardView.xaml | BusBuddy.WPF/Views/Dashboard/DashboardView.xaml.cs:1 | NO PROOF FOUND | has logic |
 | P2 | Core Service | DashboardMetricsService.DashboardMetricsService | BusBuddy.Core/Services/DashboardMetricsService.cs:1 | BusBuddy.Tests/Core/GapsCoverageTests.cs | has logic |
 | P2 | Other Public | SyncfusionThemeManager.SyncfusionThemeManager | BusBuddy.WPF/Utilities/SyncfusionThemeManager.cs:1 | BusBuddy.Tests/WPF/SyncfusionThemeManagerTests.cs, BusBuddy.... | has logic |
-| P2 | Other Public | GcpCredentialBootstrap.GcpCredentialBootstrap | BusBuddy.Core/Configuration/GcpCredentialBootstrap.cs:1 | NO PROOF FOUND | has logic |
+| P2 | Other Public | ShapefileEligibilityService | BusBuddy.Core/Services/ShapefileEligibilityService.cs | (local shapefiles) | has logic |
 
 ## Philosophy (solo superpower)
 - Track **correctness surfaces** (pages, core services, handlers) — not every tiny helper.

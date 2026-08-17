@@ -40,21 +40,22 @@ BusBuddy streamlines school transportation operations through intelligent route 
 
 ### **Development Environment (PowerShell Deprecated; Mac + Windows VM Support)**
 
-**NOTE (2026)**: The original PowerShell development automation ("dd method" / bb-* commands, hyperthreading profiles, BusBuddy-Development) is **DEPRECATED**. It was created while learning PowerShell. The author now prefers **WSL / Docker / standard dotnet**.
+**NOTE (2026)**: The original PowerShell development automation ("dd method" / bb-\* commands, hyperthreading profiles, BusBuddy-Development) is **DEPRECATED**. It was created while learning PowerShell. The author now prefers **WSL / Docker / standard dotnet**.
 
 ### On MacBook Pro (with Windows 11 VM via Parallels/UTM)
+
 - **Mac side (recommended for .NET Core, tests, services, editing)**: Use VS Code + Dev Containers extension + the `.devcontainer` (Linux .NET 9 container via Docker Desktop).
-  - Open folder → "Reopen in Container".
-  - `Directory.Build.props` sets `EnableWindowsTargeting` so Mac CLI **and** OmniSharp/C# language service can load `net*-windows` TFMs (NETSDK1100). Passing `-p:EnableWindowsTargeting=true` remains valid and is still used in CI.
-  - Run Core tests, use Docker Compose for Postgres (real DB for seeding/EF tests instead of InMemory).
-  - WPF UI **cannot** run natively on macOS.
+    - Open folder → "Reopen in Container".
+    - `Directory.Build.props` sets `EnableWindowsTargeting` so Mac CLI **and** OmniSharp/C# language service can load `net*-windows` TFMs (NETSDK1100). Passing `-p:EnableWindowsTargeting=true` remains valid and is still used in CI.
+    - Run Core tests, use Docker Compose for Postgres (real DB for seeding/EF tests instead of InMemory).
+    - WPF UI **cannot** run natively on macOS.
 - **Windows 11 VM side (for full WPF app)**:
-  - Share the project folder from Mac (UTM directory sharing works great; name it "Shared with Windows" or similar). The source tree is live/bidirectional.
-  - In VM: Install .NET 9 SDK (ARM64 if Apple Silicon). The shared folder appears under a drive letter or "Shared with Windows".
-  - Build/run the full `BusBuddy.WPF` project normally for UI/debug (or use the helper below from your Mac).
-  - Changes sync via shared folder/git.
+    - Share the project folder from Mac (UTM directory sharing works great; name it "Shared with Windows" or similar). The source tree is live/bidirectional.
+    - In VM: Install .NET 9 SDK (ARM64 if Apple Silicon). The shared folder appears under a drive letter or "Shared with Windows".
+    - Build/run the full `BusBuddy.WPF` project normally for UI/debug (or use the helper below from your Mac).
+    - Changes sync via shared folder/git.
 - **Docker on Mac**: Use `docker compose` (see below) for Postgres and test isolation. Accessible from VM via Mac host IP (run `ipconfig getifaddr en0` on Mac; the script below prints it for you).
-- **Keys & secrets**: Loaded from **macOS Passwords** at startup (`LoadApiKeysFromMacPasswords()` + `GcpCredentialBootstrap`). See [Documentation/GCP-GEE-SECRETS-AND-AUTH.md](Documentation/GCP-GEE-SECRETS-AND-AUTH.md) and [AGENTS.md](AGENTS.md).
+- **Keys & secrets**: Loaded from **macOS Passwords** at startup (`LoadApiKeysFromMacPasswords()`). See [Documentation/GCP-GEE-SECRETS-AND-AUTH.md](Documentation/GCP-GEE-SECRETS-AND-AUTH.md) and [AGENTS.md](AGENTS.md). Earth Engine is not used.
 
 **To launch the WPF UI from your Mac terminal (the "dotnet run" experience for this hybrid setup):**
 
@@ -63,14 +64,16 @@ BusBuddy streamlines school transportation operations through intelligent route 
 ```
 
 What it does:
+
 - Preflight `dotnet build ... -p:EnableWindowsTargeting=true` on the Mac (fast compile gate; focuses on the WPF app).
 - Ensures your UTM "Windows" VM is running (starts it if stopped; re-uses if already open).
-- Tries to auto-discover the shared project root *inside the guest* and launch `dotnet run --project BusBuddy.WPF/BusBuddy.WPF.csproj` detached so the main window appears on the VM desktop.
+- Tries to auto-discover the shared project root _inside the guest_ and launch `dotnet run --project BusBuddy.WPF/BusBuddy.WPF.csproj` detached so the main window appears on the VM desktop.
 - If guest automation isn't ready yet (boot/login), prints the exact manual steps (including the robust `utm_run_in_vm.ps1` that lives in your shared tree, handles drive-letter / "Shared with Windows" discovery, shared GEE key, and optional Syncfusion license drop-in).
 
 When you are already inside the VM PowerShell: just run `.\utm_run_in_vm.ps1` from the project root (or any dir — it searches for the sln).
 
 Use standard tools:
+
 - `dotnet build BusBuddy.sln -p:EnableWindowsTargeting=true` (Mac/container preflight)
 - `./run-wpf.sh` (Mac) or `dotnet run --project BusBuddy.WPF/BusBuddy.WPF.csproj` (inside VM)
 - Docker for services/tests.
@@ -91,11 +94,9 @@ Legacy PS modules are in `Documentation/Archive/PowerShell-Legacy/` and `Powersh
 ```bash
 brew install --cask google-cloud-sdk
 gcloud auth login
-.github/scripts/setup-gcp-gee.sh           # create SA + key + appsettings
-.github/scripts/store-gcp-passwords.sh   # macOS Passwords (production auth)
 ```
 
-On app startup (Mac), Passwords entries load into env; `GcpCredentialBootstrap` materializes the service account JSON and wires `GoogleEarthEngineService` + `IGeoDataService` with a live token.
+On app startup (Mac), Passwords entries load into env. Geo uses the database + OSM map. Google Maps Platform (Address Validation / Routes) is specified in [007](specs/007-maps-platform-geo/spec.md) and **paused** (not wired).
 
 Full reference: [Documentation/GCP-GEE-SECRETS-AND-AUTH.md](Documentation/GCP-GEE-SECRETS-AND-AUTH.md)
 
@@ -104,7 +105,6 @@ Full reference: [Documentation/GCP-GEE-SECRETS-AND-AUTH.md](Documentation/GCP-GE
 - Branch `feature/<topic>` → PR to `master` → gates **Build & Test** + **Security (CodeQL)** → squash auto-merge
 - Local pre-push: `.github/scripts/validate-ci-local.sh`
 - Details: [AGENTS.md](AGENTS.md), `.github/copilot-instructions.md`
-
 
 ### **Installation & Setup**
 
@@ -128,7 +128,7 @@ Import-Module .\PowerShell\Modules\BusBuddy.Commands\BusBuddy.Commands.psm1
 
 **✅ Current Status**: Application builds and runs successfully with modern UI.
 
-**Development Environment**: WSL recommended for terminal/build. Use plain `dotnet` commands (PS bb-* modules removed/deprecated).
+**Development Environment**: WSL recommended for terminal/build. Use plain `dotnet` commands (PS bb-\* modules removed/deprecated).
 
 **Syncfusion AI Assist**: MCP server @syncfusion/wpf-assistant configured in [`.cursor/mcp.json`](.cursor/mcp.json). Prefix AI prompts with `SyncfusionWPFAssistant ` for accurate WPF + Syncfusion code gen (requires your Syncfusion API key). See .github/copilot-instructions.md and https://help.syncfusion.com/wpf/ai-coding-assistant/overview .
 
@@ -464,20 +464,17 @@ dotnet ef migrations add NewMigrationName
 
 **macOS (recommended):** Store in Passwords app; Name = env var. App loads automatically — see [Documentation/GCP-GEE-SECRETS-AND-AUTH.md](Documentation/GCP-GEE-SECRETS-AND-AUTH.md).
 
-| Variable                               | Purpose                                  |
-| -------------------------------------- | ---------------------------------------- |
-| `SYNCFUSION_LICENSE_KEY`               | Syncfusion WPF license (required for UI) |
-| `XAI_API_KEY` / `GROK_API_KEY`         | Grok / xAI route optimization            |
-| `GEE_PROJECT_ID`                       | Earth Engine project (`ee-bigessfour`)   |
-| `GEE_SERVICE_ACCOUNT_JSON`             | Service account key JSON (production)    |
-| `GOOGLE_APPLICATION_CREDENTIALS`       | Path to SA key file                      |
-| `GoogleEarthEngine__ProjectId`         | Config override (set by bootstrap)       |
-| `ConnectionStrings__DefaultConnection` | Database connection                      |
-| `BUSBUDDY_CONNECTION`                  | Postgres override for Docker profiles    |
+| Variable                               | Purpose                                      |
+| -------------------------------------- | -------------------------------------------- |
+| `SYNCFUSION_LICENSE_KEY`               | Syncfusion WPF license (required for UI)     |
+| `XAI_API_KEY` / `GROK_API_KEY`         | Grok / xAI route optimization                |
+| `GOOGLE_MAPS_API_KEY`                  | Maps Platform (when spec 007 US1/US3 resume) |
+| `ConnectionStrings__DefaultConnection` | Database connection                          |
+| `BUSBUDDY_CONNECTION`                  | Postgres override for Docker profiles        |
 
-**Windows production:** Set `GEE_SERVICE_ACCOUNT_JSON` or `GOOGLE_APPLICATION_CREDENTIALS` as machine env vars.
+**Windows production:** Set `GOOGLE_MAPS_API_KEY` when Maps clients are wired.
 
-**Deprecated / invalid:** `GoogleEarthEngine__ApiKey`, project `busbuddy-465000`, PowerShell `bbLicense` / SecretManagement flows — use Passwords + `store-gcp-passwords.sh` instead.
+**Deprecated / invalid:** Earth Engine (`GEE_*`, `GoogleEarthEngineService`, project `ee-bigessfour` as an app dependency), project `busbuddy-465000`, PowerShell `bbLicense` / SecretManagement flows.
 
 ### **🔐 Secure API Key Management**
 
@@ -543,6 +540,7 @@ Features = "text + vision, function calling, real-time search"
 ```
 
 **Important Notes:**
+
 - ✅ **Use exact model ID**: `"grok-4-0709"` (not `"grok-4"` or `"grok-4-latest"`)
 - ✅ **API compatibility**: OpenAI-compatible /chat/completions endpoint
 - ✅ **Released**: July 9, 2025 with enhanced reasoning capabilities

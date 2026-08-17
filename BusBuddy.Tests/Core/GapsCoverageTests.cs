@@ -67,15 +67,6 @@ namespace BusBuddy.Tests.Core
         }
 
         [Test]
-        public void GoogleEarthEngineService_EligibilityCheck_Basic()
-        {
-            var mockConfig = new Mock<IConfiguration>();
-            mockConfig.Setup(c => c["GoogleEarthEngine:ProjectId"]).Returns("ee-bigessfour");
-            var service = new GoogleEarthEngineService(mockConfig.Object);
-            Assert.That(service, Is.Not.Null);
-        }
-
-        [Test]
         public async Task UserSettingsService_LoadSave_Basic()
         {
             var service = new UserSettingsService();

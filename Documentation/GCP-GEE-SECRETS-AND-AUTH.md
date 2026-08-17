@@ -1,67 +1,60 @@
-# GCP / Google Earth Engine — Secrets & Authentication
+# GCP / Google Maps Platform — Secrets & Authentication
 
-Canonical reference for BusBuddy-3 Earth Engine and related secrets.  
-Keep in sync with `AGENTS.md`, `README.md` (Environment Variables), and `.specify/memory/constitution.md`.
+Canonical geo secrets for BusBuddy-3 after Earth Engine was retired (spec [007-maps-platform-geo](../specs/007-maps-platform-geo/spec.md)).
+
+Earth Engine is **not** an app dependency. Do not restore `GEE_*` keys, `GcpCredentialBootstrap`, or `GoogleEarthEngineService`.
+
+## Status (paused)
+
+Runtime today: local DB waypoints + Syncfusion SfMap (OpenStreetMap) + shapefile eligibility + offline hash geocoder (placeholder).
+
+**Next (paused):** Google Maps Platform on billing project `new-coursera-490518`:
+
+| API | Use |
+|-----|-----|
+| Address Validation (`enableUspsCass`) | Student addresses + lat/lng |
+| Routes (`computeRoutes`) | Drive polyline / distance / time |
+
+Implementation is **not** wired yet. Resume from `specs/007-maps-platform-geo/tasks.md` US1 / US3.
 
 ## Projects (do not invent IDs)
 
 | Project ID | Role |
 |------------|------|
-| `ee-bigessfour` | Earth Engine API + service account |
-| `new-coursera-490518` | GCP console / billing / `gcloud` default |
-| ~~`busbuddy-465000`~~ | **Invalid** — removed; never invent |
-
-Service account (typical): `bus-buddy-gee@ee-bigessfour.iam.gserviceaccount.com`
+| `new-coursera-490518` | GCP console / billing / Maps APIs / `gcloud` default |
+| `ee-bigessfour` | **Unused by the app** (historical Earth Engine — do not wire) |
+| ~~`busbuddy-465000`~~ | **Invalid** — never invent |
 
 ## macOS (dev) — Passwords app
 
-Entry **Name** = env var name. Loaded at startup by `LoadApiKeysFromMacPasswords()` then `BootstrapGcpCredentialsForProduction()` in `BusBuddy.WPF/App.xaml.cs`.
+Entry **Name** = env var. Loaded by `LoadApiKeysFromMacPasswords()` in `BusBuddy.WPF/App.xaml.cs`.
 
 | Env var | Purpose |
 |---------|---------|
 | `SYNCFUSION_LICENSE_KEY` | Syncfusion WPF |
-| `Syncfusion_API_Key` | Syncfusion MCP assistant (`run-syncfusion-mcp.sh`) |
-| `XAI_API_KEY` / `GROK_API_KEY` | Optional legacy cloud xAI (`XAI:Provider=Xai`); default AI is local Ollama |
-| `GEE_PROJECT_ID` | `ee-bigessfour` |
-| `GEE_SERVICE_ACCOUNT_EMAIL` | SA email |
-| `GEE_SERVICE_ACCOUNT_JSON` | Full SA key JSON → materialized by `GcpCredentialBootstrap` |
-| `GOOGLE_APPLICATION_CREDENTIALS` | Optional path to key file |
+| `Syncfusion_API_Key` | Syncfusion MCP assistant |
+| `XAI_API_KEY` / `GROK_API_KEY` | Optional legacy cloud xAI; default AI is local Ollama |
+| `GOOGLE_MAPS_API_KEY` | Maps Platform (when US1/US3 resume). Restrict to Address Validation + Routes |
 | `GCP_BILLING_PROJECT` / `GOOGLE_CLOUD_PROJECT` | `new-coursera-490518` |
-
-Setup helpers:
-
-```bash
-.github/scripts/setup-gcp-gee.sh      # gcloud: SA + keys/bus-buddy-gee-key.json
-.github/scripts/store-gcp-passwords.sh # macOS Passwords
-source .github/scripts/gcp-gee.env    # dev shell
-```
-
-## Production bootstrap (`GcpCredentialBootstrap`)
-
-- Path: `BusBuddy.Core/Configuration/GcpCredentialBootstrap.cs`
-- Materializes `GEE_SERVICE_ACCOUNT_JSON` to app data directory
-- Sets `GoogleEarthEngine__*` env overrides for `IConfiguration`
-- `IGeoDataService` gets live bearer token; `GoogleEarthEngineService` registered in WPF DI
 
 ## Windows production / VM
 
-Set `GEE_SERVICE_ACCOUNT_JSON` or `GOOGLE_APPLICATION_CREDENTIALS` as machine/user env — no Keychain.  
-Shared `keys/` from Mac host is acceptable for VM smoke.
+Set `GOOGLE_MAPS_API_KEY` as a machine/user env var — no Keychain.
 
-## Services wired in DI
+## Services in DI (current)
 
 | Type | Role |
 |------|------|
-| `GoogleEarthEngineService` | Full GEE export workflow (service account auth) |
-| `GeoDataService` | `IGeoDataService` — REST calls with bearer token |
-| `ShapefileEligibilityService` | Local Wiley district/town shapefiles (non-GEE) |
+| `GeoDataService` | `IGeoDataService` — routes/waypoints from Postgres |
+| `OfflineGeocodingService` | Temporary `IGeocodingService` until Maps client lands |
+| `ShapefileEligibilityService` | Local Wiley district/town shapefiles |
 
 ## Never commit
 
-- Raw SA JSON, license keys, Passwords exports, or `.env` with secrets.
+- API keys, SA JSON, Passwords exports, or `.env` with secrets.
 
 ## Related
 
-- Spec-Kit constitution: `.specify/memory/constitution.md`
+- Spec: `specs/007-maps-platform-geo/`
+- Constitution: `.specify/memory/constitution.md` (Geo = Maps + shapefiles)
 - Agent quick ref: `AGENTS.md`
-- Due-outs: `docs/action-items.md`
