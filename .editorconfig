@@ -3,19 +3,6 @@
 # top-most EditorConfig file
 root = true
 
-# VS Code WPF XAML Error Suppression
-# Suppress XAML designer-related errors in VS Code
-# These are false positives because VS Code doesn't generate XAML designer files
-
-# CS0103: The name 'X' does not exist in the current context (XAML elements)
-dotnet_diagnostic.CS0103.severity = none
-
-# CS0246: The type or namespace name could not be found
-dotnet_diagnostic.CS0246.severity = suggestion
-
-# CS1061: Type does not contain a definition for (XAML events)
-dotnet_diagnostic.CS1061.severity = none
-
 # All files
 [*]
 charset = utf-8
@@ -67,8 +54,14 @@ dotnet_diagnostic.CS1591.severity = none
 # CA1707: Identifiers should not contain underscores
 dotnet_diagnostic.CA1707.severity = none
 
-# CS1061 Prevention: FluentAssertions and Missing Definitions
-dotnet_diagnostic.CS1061.severity = error  # Escalate missing definitions
+# Mac / VS Code XAML designer false positives (generated fields/events).
+# Do not escalate these — they flood the Problems panel when WPF/Tests fail to
+# load (NETSDK1100) or files are analyzed without a Windows project context.
+# Real missing types still fail `dotnet build` on Windows / CI.
+dotnet_diagnostic.CS0103.severity = none
+dotnet_diagnostic.CS1061.severity = none
+dotnet_diagnostic.CS0234.severity = none
+dotnet_diagnostic.CS0246.severity = none
 
 # Test-specific rules for FluentAssertions prevention
 [*Tests.cs]

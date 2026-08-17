@@ -9,38 +9,37 @@ cli:
 plugins:
   sources:
     - id: trunk
-      ref: v1.7.2
+      ref: v1.11.0
       uri: https://github.com/trunk-io/plugins
 
 # Runtime versions matching BusBuddy project standards
 runtimes:
   enabled:
     - node@22.16.0 # For Prettier and other JS-based tools
-    - python@3.10.8 # For SQLFluff and other Python-based tools
+    - python@3.14.4 # For SQLFluff and other Python-based tools
 
 # Core linting and formatting configuration
 lint:
   disabled:
     - markdownlint # Using custom markdown standards
+    - codespell # Spelling disabled — too noisy for domain terms
+    - cspell # Spelling disabled — too noisy for domain terms
   enabled:
     # Security and infrastructure scanning
-    - codespell@2.4.1
-    - cspell@9.2.0
     - dotnet-format@7.0.400
-    - markdownlint@0.45.0
-    - checkov@3.2.464 # Infrastructure as code security
+    - checkov@3.3.11 # Infrastructure as code security
     - git-diff-check # Git hygiene
-    - osv-scanner@2.2.1 # Vulnerability scanning
-    - trufflehog@3.90.5 # Secret detection
+    - osv-scanner@2.2.4 # Vulnerability scanning
+    - trufflehog@3.97.0 # Secret detection
 
     # Code formatting and quality
-    - prettier@3.6.2 # JSON, YAML formatting
-    - yamllint@1.37.1 # YAML linting
+    - prettier@3.9.6 # JSON, YAML formatting
+    - yamllint@1.38.0 # YAML linting
 
     # PowerShell linting and formatting
-    - psscriptanalyzer@1.24.0 # PowerShell best practices
+    - psscriptanalyzer@1.25.0 # PowerShell best practices
 
-  # File path ignores for build artifacts and logs
+  # File path ignores for build artifacts, generated data, and archive noise
   ignore:
     - linters: [ALL]
       paths:
@@ -51,6 +50,11 @@ lint:
         - "**/logs/**" # Log files
         - "**/artifacts/**" # Build artifacts
         - "**/Migrations/**" # EF auto-generated migrations
+        - "rag/**" # Local RAG index / chroma binaries
+        - "Documentation/Archive/**" # Historical reports, not live code
+        - ".agents/**" # Vendored skill copies
+        - "**/*.pdf"
+        - "docs/function-inventory.generated.md"
     - linters: [git-diff-check]
       paths:
         - ".vscode/settings.json" # VS Code settings have different formatting standards
@@ -71,4 +75,4 @@ tools:
   enabled:
     - dotnet@7.0.400
     - pwsh@7.4.1
-    - converttosarif@1.0.0 # SARIF conversion for VS Code integration
+    - converttosarif@1.25.0 # SARIF conversion for VS Code integration
