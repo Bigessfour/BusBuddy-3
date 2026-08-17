@@ -1164,3 +1164,7 @@ global.json
 BusBuddy.db
 # Trunk output files that may contain sensitive data
 .trunk/out/*.yaml
+
+# Local RAG vector store (regenerate with: python -m rag.index)
+rag/chroma_db/
+**/chroma.sqlite3
