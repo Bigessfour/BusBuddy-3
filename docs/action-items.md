@@ -24,9 +24,9 @@
 
 ### P1 — Finish / domain (Spec-Kit wave 2) — aligns with [issue #11](https://github.com/Bigessfour/BusBuddy-3/issues/11)
 
-- [ ] Student import / optimize end-to-end (UI + SeedDataService + tests)
+- [x] Student import / optimize end-to-end (UI + SeedDataService + tests)
   - [x] CSV import wired: `ISeedDataService.ImportStudentsFromCsvAsync` + Students/StudentForm Import CSV buttons (Wiley-format file picker). Proof: parent address columns, next `WSD` number, Wiley header rejection, form import refreshes list via `StudentsImportedMessage`
-  - [ ] Optimize routes still a stub (`StudentsViewModel.ExecuteOptimizeRoutes`)
+  - [x] Optimize routes: `IStudentRouteOptimizer` fills active routes via `IRouteService.AutoAssignStudentsAsync`, then Ollama/`GrokGlobalAPI` commentary (mock fallback). Wired on Students + Dashboard. Proof: `StudentRouteOptimizerTests`
 - [ ] Reports: PdfReportService + AI path fully wired in UI
 - [ ] Driver availability + SfScheduler
 - [ ] Maintenance UI polish
@@ -77,4 +77,4 @@
 
 ---
 
-*Updated 2026-08-16: VM Syncfusion smoke passed; student CSV import wired to SeedDataService.*
+*Updated 2026-08-16: VM Syncfusion smoke passed; student CSV import + route optimize wired.*

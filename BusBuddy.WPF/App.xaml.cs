@@ -508,6 +508,7 @@ namespace BusBuddy.WPF
                 services.AddScoped<IFuelService, FuelService>();
                 services.AddScoped<IMaintenanceService, MaintenanceService>();
                 services.AddScoped<ISeedDataService, SeedDataService>();
+                services.AddScoped<IStudentRouteOptimizer, StudentRouteOptimizer>();
 
                 // Register ViewModels for dependency injection (standardized on subfolder organization for dedup)
                 services.AddTransient<BusBuddy.WPF.ViewModels.MainWindowViewModel>();

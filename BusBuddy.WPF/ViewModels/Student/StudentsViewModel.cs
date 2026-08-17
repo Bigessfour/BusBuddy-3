@@ -1022,7 +1022,7 @@ namespace BusBuddy.WPF.ViewModels.Student
         }
 
     /// <summary>
-    /// Simulates AI-based route optimization (placeholder).
+    /// Assigns unassigned students to active routes, then asks local Ollama (or mock AI) for commentary.
     /// </summary>
     private async Task ExecuteOptimizeRoutes()
         {
@@ -1032,17 +1032,21 @@ namespace BusBuddy.WPF.ViewModels.Student
                 StatusMessage = "Optimizing routes with AI...";
                 Logger.Information("AI route optimization started");
 
-                // Simulate AI processing
-                await Task.Delay(2000);
-
-                StatusMessage = "AI route optimization completed";
-                Logger.Information("AI route optimization completed");
-                // TODO: Integrate with xAI Grok for actual optimization
+                var optimizer = App.ServiceProvider?.GetService<IStudentRouteOptimizer>()
+                    ?? new StudentRouteOptimizer(new RouteService(_contextFactory));
+                var result = await optimizer.OptimizeUnassignedAsync();
+                await LoadStudentsAsync();
+                StatusMessage = result.Status;
+                OnPropertyChanged(nameof(StudentsWithRoutes));
+                OnPropertyChanged(nameof(UnassignedStudents));
+                Logger.Information(
+                    "AI route optimization completed Assigned={Assigned} Remaining={Remaining} MockAi={Mock}",
+                    result.AssignedCount, result.RemainingUnassigned, result.UsedMockAi);
             }
             catch (Exception ex)
             {
                 Logger.Error(ex, "Error executing route optimization");
-                StatusMessage = "Error in route optimization";
+                StatusMessage = $"Error in route optimization: {ex.Message}";
             }
             finally
             {
