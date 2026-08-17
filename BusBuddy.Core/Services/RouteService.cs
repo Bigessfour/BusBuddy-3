@@ -1,6 +1,7 @@
 using BusBuddy.Core.Models;
 using BusBuddy.Core.Data;
 using BusBuddy.Core.Utilities;
+using BusBuddy.Core.Services.RouteDetermination;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
 using System;
@@ -24,6 +25,7 @@ namespace BusBuddy.Core.Services
         private static readonly ILogger Logger = Log.ForContext<RouteService>();
         private readonly IBusBuddyDbContextFactory _contextFactory;
         private readonly IRouteWaypointRebuildService? _waypointRebuild;
+        private readonly AssignFitnessEvaluator? _fitnessEvaluator;
 
         // Minimal op timing helper (basic only; can expand later)
         private static (Guid OpId, Stopwatch Sw) StartOp(string name, object? routeId = null)
@@ -48,16 +50,25 @@ namespace BusBuddy.Core.Services
         }
 
         public RouteService(IBusBuddyDbContextFactory contextFactory)
-            : this(contextFactory, null)
+            : this(contextFactory, null, null)
         {
         }
 
         public RouteService(
             IBusBuddyDbContextFactory contextFactory,
             IRouteWaypointRebuildService? waypointRebuild)
+            : this(contextFactory, waypointRebuild, null)
+        {
+        }
+
+        public RouteService(
+            IBusBuddyDbContextFactory contextFactory,
+            IRouteWaypointRebuildService? waypointRebuild,
+            AssignFitnessEvaluator? fitnessEvaluator)
         {
             _contextFactory = contextFactory ?? throw new ArgumentNullException(nameof(contextFactory));
             _waypointRebuild = waypointRebuild;
+            _fitnessEvaluator = fitnessEvaluator;
         }
 
         // Context helpers: only dispose when using the concrete runtime factory
@@ -779,6 +790,16 @@ namespace BusBuddy.Core.Services
 
         public async Task<Result<bool>> AssignStudentToRouteAsync(int studentId, int routeId, RouteTimeSlot timeSlot)
         {
+            return await AssignStudentToRouteAsync(studentId, routeId, timeSlot, overrideSeating: false)
+                .ConfigureAwait(false);
+        }
+
+        public async Task<Result<bool>> AssignStudentToRouteAsync(
+            int studentId,
+            int routeId,
+            RouteTimeSlot timeSlot,
+            bool overrideSeating)
+        {
             try
             {
                 if (studentId <= 0 || routeId <= 0)
@@ -789,6 +810,30 @@ namespace BusBuddy.Core.Services
                 if (timeSlot == RouteTimeSlot.Both)
                 {
                     return Result.FailureResult<bool>("Specify AM or PM time slot for assignment");
+                }
+
+                if (_fitnessEvaluator is not null)
+                {
+                    var slotKind = timeSlot == RouteTimeSlot.AM
+                        ? RouteTimeSlotKind.AM
+                        : RouteTimeSlotKind.PM;
+                    var fitness = await _fitnessEvaluator
+                        .EvaluateAsync(studentId, routeId, slotKind, overrideSeating)
+                        .ConfigureAwait(false);
+                    if (!fitness.Allowed)
+                    {
+                        var detail = fitness.Reasons.Count > 0
+                            ? string.Join("; ", fitness.Reasons)
+                            : "Assignment blocked by fitness check";
+                        return Result.FailureResult<bool>(detail);
+                    }
+
+                    if (fitness.Severity == AssignFitnessSeverity.Warn && fitness.Reasons.Count > 0)
+                    {
+                        Logger.Information(
+                            "Assign proceeding with warnings Student={StudentId} Route={RouteId}: {Reasons}",
+                            studentId, routeId, string.Join("; ", fitness.Reasons));
+                    }
                 }
 
                 var (context, dispose) = GetWriteContext();
@@ -816,11 +861,15 @@ namespace BusBuddy.Core.Services
                         return Result.FailureResult<bool>($"Student already has a {timeSlot} route assigned: {currentSlotRoute}");
                     }
 
-                    var capacity = await GetCapacityForSlotAsync(context, route, timeSlot);
-                    var assignedCount = await GetAssignedCountForSlotAsync(context, route, timeSlot);
-                    if (capacity > 0 && assignedCount >= capacity)
+                    // Fallback seating gate when evaluator not registered
+                    if (_fitnessEvaluator is null)
                     {
-                        return Result.FailureResult<bool>($"Route '{route.RouteName}' is at {timeSlot} capacity");
+                        var capacity = await GetCapacityForSlotAsync(context, route, timeSlot);
+                        var assignedCount = await GetAssignedCountForSlotAsync(context, route, timeSlot);
+                        if (capacity > 0 && assignedCount >= capacity && !overrideSeating)
+                        {
+                            return Result.FailureResult<bool>($"Route '{route.RouteName}' is at {timeSlot} capacity");
+                        }
                     }
 
                     SetStudentRouteForSlot(student, timeSlot, route.RouteName);

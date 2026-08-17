@@ -206,7 +206,7 @@ namespace BusBuddy.WPF.ViewModels.GoogleEarth
                 result.OperationId,
                 draftNames.Count);
 
-            _ = Task.Run(async () =>
+            async Task SelectDraftOnUiAsync()
             {
                 await LoadRoutesAsync().ConfigureAwait(true);
                 var draft = Routes.FirstOrDefault(r =>
@@ -216,7 +216,17 @@ namespace BusBuddy.WPF.ViewModels.GoogleEarth
                 {
                     SelectedRoute = draft;
                 }
-            });
+            }
+
+            var dispatcher = System.Windows.Application.Current?.Dispatcher;
+            if (dispatcher is null || dispatcher.CheckAccess())
+            {
+                _ = SelectDraftOnUiAsync();
+            }
+            else
+            {
+                _ = dispatcher.InvokeAsync(SelectDraftOnUiAsync);
+            }
         }
 
         /// <summary>
