@@ -274,10 +274,16 @@
 
                         <StackPanel Grid.Row="1" Grid.Column="1" Margin="10,0,0,0">
                             <Label Content="School"/>
-                            <syncfusion:SfTextBoxExt Name="SchoolTextBox"
-                                     Text="{Binding Student.School, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                     Watermark="Optional"
-                                     AutomationProperties.Name="School"/>
+                            <syncfusion:ComboBoxAdv Name="SchoolComboBox"
+                                          ItemsSource="{Binding AvailableSchools}"
+                                          DisplayMemberPath="Name"
+                                          SelectedItem="{Binding SelectedSchoolDestination, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                          IsEditable="True"
+                                          AutomationProperties.Name="School">
+                                <syncfusion:ComboBoxAdv.ToolTip>
+                                    <ToolTip Content="Campus from Destinations (School). Assigns DestinationId for home-to-school routing."/>
+                                </syncfusion:ComboBoxAdv.ToolTip>
+                            </syncfusion:ComboBoxAdv>
                         </StackPanel>
 
                         <StackPanel Grid.Row="2" Grid.Column="0" Margin="0,0,10,0">
@@ -411,8 +417,8 @@
                     </Grid>
                 </GroupBox>
 
-                <!-- Contact Information -->
-                <GroupBox Header="Contact Information" Margin="0,0,0,15" Padding="15">
+                <!-- Contact Information: primary parent/guardian (distinct from emergency contact) -->
+                <GroupBox Header="Parent / Guardian Contact" Margin="0,0,0,15" Padding="15">
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
@@ -421,11 +427,19 @@
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
                         </Grid.RowDefinitions>
 
-                        <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,0,10,0">
+                        <StackPanel Grid.Row="0" Grid.ColumnSpan="2" Margin="0,0,0,8">
+                            <Label Content="Parent/Guardian Name"/>
+                            <syncfusion:SfTextBoxExt Name="ParentGuardianTextBox"
+                                     Text="{Binding Student.ParentGuardian, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                     Watermark="Primary parent or legal guardian"
+                                     AutomationProperties.Name="Parent or Guardian"/>
+                        </StackPanel>
+
+                        <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,10,0">
                             <Label Content="Home Phone"/>
-                            <!-- Use SfMaskedEdit for US phone number pattern -->
                             <syncfusion:SfMaskedEdit Name="HomePhoneMaskedEdit"
                                        Value="{Binding Student.HomePhone, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                        Mask="(###) ###-####"
@@ -434,22 +448,22 @@
                                        AutomationProperties.Name="Home Phone"/>
                         </StackPanel>
 
-                        <StackPanel Grid.Row="0" Grid.Column="1" Margin="10,0,0,0">
-                            <Label Content="Emergency Phone"/>
-                            <syncfusion:SfMaskedEdit Name="EmergencyPhoneMaskedEdit"
-                                       Value="{Binding Student.EmergencyPhone, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                        <StackPanel Grid.Row="1" Grid.Column="1" Margin="10,0,0,0">
+                            <Label Content="Cell Phone"/>
+                            <syncfusion:SfMaskedEdit Name="CellPhoneMaskedEdit"
+                                       Value="{Binding Student.CellPhone, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                        Mask="(###) ###-####"
                                        PromptChar="_"
                                        Watermark="(555) 123-4567 — Optional"
-                                       AutomationProperties.Name="Emergency Phone"/>
+                                       AutomationProperties.Name="Parent Cell Phone"/>
                         </StackPanel>
 
-                        <StackPanel Grid.Row="1" Grid.ColumnSpan="2">
-                            <Label Content="Parent/Guardian"/>
-                            <syncfusion:SfTextBoxExt Name="ParentGuardianTextBox"
-                                     Text="{Binding Student.ParentGuardian, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                     Watermark="Optional"
-                                     AutomationProperties.Name="Parent or Guardian"/>
+                        <StackPanel Grid.Row="2" Grid.ColumnSpan="2" Margin="0,8,0,0">
+                            <Label Content="Parent/Guardian Email"/>
+                            <syncfusion:SfTextBoxExt Name="ParentEmailTextBox"
+                                     Text="{Binding Student.ParentEmail, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                     Watermark="optional@example.com"
+                                     AutomationProperties.Name="Parent or Guardian Email"/>
                         </StackPanel>
                     </Grid>
                 </GroupBox>
@@ -566,17 +580,18 @@
 
                         <!-- Special Instructions -->
                         <StackPanel Grid.Row="1" Margin="0,10,0,0">
-                            <Label Content="Special Instructions"/>
+                            <Label Content="Special Transportation Instructions"/>
                             <syncfusion:SfTextBoxExt Name="SpecialInstructionsTextBox"
                                        Text="{Binding Student.SpecialInstructions, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                        AcceptsReturn="True"
                                        TextWrapping="Wrap"
                                        Height="60"
                                        VerticalScrollBarVisibility="Auto"
-                                       Watermark="Enter any special transportation instructions... — Optional"/>
+                                       Watermark="Bus-relevant notes only (pickup, equipment, seating). Avoid unrelated medical detail here."
+                                       AutomationProperties.Name="Special Transportation Instructions"/>
                         </StackPanel>
 
-                        <!-- Emergency Contact -->
+                        <!-- Emergency Contact (separate person from primary parent/guardian) -->
                         <Grid Grid.Row="2" Margin="0,10,0,0">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
@@ -587,7 +602,8 @@
                                 <Label Content="Emergency Contact Name"/>
                                 <syncfusion:SfTextBoxExt Name="EmergencyContactNameTextBox"
                                            Text="{Binding Student.EmergencyContactName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                           Watermark="Emergency contact full name — Optional"/>
+                                           Watermark="If different from parent/guardian — Recommended"
+                                           AutomationProperties.Name="Emergency Contact Name"/>
                             </StackPanel>
 
                             <StackPanel Grid.Column="1" Margin="10,0,0,0">
@@ -596,7 +612,8 @@
                                            Value="{Binding Student.EmergencyContactPhone, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                            Mask="(###) ###-####"
                                            PromptChar="_"
-                                           Watermark="(555) 123-4567 — Optional"/>
+                                           Watermark="(555) 123-4567 — Recommended"
+                                           AutomationProperties.Name="Emergency Contact Phone"/>
                             </StackPanel>
                         </Grid>
                     </Grid>

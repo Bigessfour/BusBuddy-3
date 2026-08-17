@@ -78,6 +78,7 @@ public class BusBuddyDbContext : DbContext
     public virtual DbSet<SchoolCalendar> SchoolCalendar { get; set; } = null!;
     public virtual DbSet<ActivitySchedule> ActivitySchedule { get; set; } = null!;
     public virtual DbSet<Destination> Destinations { get; set; } = null!;
+    public virtual DbSet<StudentSchoolTransfer> StudentSchoolTransfers { get; set; } = null!;
     public virtual DbSet<RouteAssignment> RouteAssignments { get; set; } = null!;
 
     public virtual DbSet<AIInsight> AIInsights { get; set; } = null!;
@@ -605,10 +606,14 @@ public class BusBuddyDbContext : DbContext
             entity.Property(e => e.EmergencyPhone).HasMaxLength(20);
             entity.Property(e => e.School).HasMaxLength(100);
             entity.Property(e => e.ParentGuardian).HasMaxLength(100);
+            entity.Property(e => e.ParentEmail).HasMaxLength(100);
+            entity.Property(e => e.CellPhone).HasMaxLength(20);
+            entity.Property(e => e.EmergencyContactName).HasMaxLength(100);
             entity.Property(e => e.HomeAddress).HasMaxLength(200);
             entity.Property(e => e.City).HasMaxLength(50);
             entity.Property(e => e.State).HasMaxLength(2);
             entity.Property(e => e.Zip).HasMaxLength(10);
+            entity.Property(e => e.HasMedicalNeeds).HasDefaultValue(false);
 
             // Audit fields
             entity.Property(e => e.CreatedBy).HasMaxLength(100);
@@ -620,6 +625,54 @@ public class BusBuddyDbContext : DbContext
             entity.HasIndex(e => e.Grade).HasDatabaseName("IX_Students_Grade");
             entity.HasIndex(e => e.School).HasDatabaseName("IX_Students_School");
             entity.HasIndex(e => e.Active).HasDatabaseName("IX_Students_Active");
+
+            entity.HasOne(e => e.Destination)
+                .WithMany()
+                .HasForeignKey(e => e.DestinationId)
+                .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        modelBuilder.Entity<Destination>(entity =>
+        {
+            entity.ToTable("Destinations");
+            entity.HasKey(e => e.DestinationId);
+            entity.Property(e => e.Name).IsRequired().HasMaxLength(200);
+            entity.Property(e => e.Address).IsRequired().HasMaxLength(300);
+            entity.Property(e => e.City).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.State).IsRequired().HasMaxLength(2);
+            entity.Property(e => e.ZipCode).IsRequired().HasMaxLength(10);
+            entity.Property(e => e.DestinationType).IsRequired().HasMaxLength(50);
+            entity.Property(e => e.DistrictName).HasMaxLength(150);
+            entity.Property(e => e.GradeMin).HasMaxLength(20);
+            entity.Property(e => e.GradeMax).HasMaxLength(20);
+            entity.Property(e => e.AdminContactName).HasMaxLength(100);
+            entity.Property(e => e.AdminPhone).HasMaxLength(20);
+            entity.Property(e => e.AdminEmail).HasMaxLength(100);
+            entity.HasIndex(e => e.DestinationType).HasDatabaseName("IX_Destinations_Type");
+            entity.HasIndex(e => e.IsActive).HasDatabaseName("IX_Destinations_Active");
+        });
+
+        modelBuilder.Entity<StudentSchoolTransfer>(entity =>
+        {
+            entity.ToTable("StudentSchoolTransfers");
+            entity.HasKey(e => e.TransferId);
+            entity.Property(e => e.PickupAddress).HasMaxLength(300);
+            entity.Property(e => e.DropoffAddress).HasMaxLength(300);
+            entity.Property(e => e.Notes).HasMaxLength(1000);
+            entity.HasOne(e => e.Student)
+                .WithMany()
+                .HasForeignKey(e => e.StudentId)
+                .OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(e => e.FromDestination)
+                .WithMany()
+                .HasForeignKey(e => e.FromDestinationId)
+                .OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne(e => e.ToDestination)
+                .WithMany()
+                .HasForeignKey(e => e.ToDestinationId)
+                .OnDelete(DeleteBehavior.Restrict);
+            entity.HasIndex(e => e.StudentId).HasDatabaseName("IX_StudentSchoolTransfers_Student");
+            entity.HasIndex(e => e.IsActive).HasDatabaseName("IX_StudentSchoolTransfers_Active");
         });
 
         // Configure Family entity for JSON import
@@ -666,7 +719,8 @@ public class BusBuddyDbContext : DbContext
         modelBuilder.Entity<Guardian>(entity =>
         {
             entity.ToTable("Guardians");
-            entity.HasKey(e => e.Id);
+            entity.HasKey(e => e.GuardianId);
+            entity.Ignore(e => e.Id);
             entity.Property(e => e.FirstName).IsRequired().HasMaxLength(50);
             entity.Property(e => e.LastName).IsRequired().HasMaxLength(50);
             entity.Property(e => e.Address).IsRequired().HasMaxLength(200);

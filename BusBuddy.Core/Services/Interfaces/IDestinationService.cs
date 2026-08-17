@@ -1,0 +1,17 @@
+using BusBuddy.Core.Models;
+
+namespace BusBuddy.Core.Services.Interfaces;
+
+/// <summary>School / destination catalog for intake dropdowns and map markers.</summary>
+public interface IDestinationService
+{
+    Task EnsureDefaultSchoolsAsync(CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<Destination>> GetActiveSchoolsAsync(CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<Destination>> GetActiveDestinationsAsync(
+        string? destinationType = null,
+        CancellationToken cancellationToken = default);
+
+    Task<Destination?> GetByIdAsync(int destinationId, CancellationToken cancellationToken = default);
+}

@@ -16,12 +16,15 @@
 ### P0 — Platform / tooling
 
 - [x] Spec-Kit brownfield bootstrap (001–005) — merged [PR #20](https://github.com/Bigessfour/BusBuddy-3/pull/20)
-- [x] **007 Maps Platform Geo (retire Earth Engine)** — US2+docs merged [PR #31](https://github.com/Bigessfour/BusBuddy-3/pull/31); US1+US3 on `feature/007-maps-us1-implement` · [spec](../specs/007-maps-platform-geo/spec.md) · [tasks](../specs/007-maps-platform-geo/tasks.md)
+- [x] **007 Maps Platform Geo (retire Earth Engine)** — US2+docs merged [PR #31](https://github.com/Bigessfour/BusBuddy-3/pull/31); US1+US3 [PR #35](https://github.com/Bigessfour/BusBuddy-3/pull/35) · [spec](../specs/007-maps-platform-geo/spec.md) · [tasks](../specs/007-maps-platform-geo/tasks.md)
   - [x] US2: Remove GEE DI, client, probe, unofficial Google tiles
   - [x] US1: Address Validation + geocode onto SfMap (Maps client + DI)
   - [x] US3: Routes API drive polyline (fail-open optimizer)
   - [x] US4: Places type-ahead — skipped (MVP cut)
-  - [x] Docs for US2; Maps clients wired on US1 implement branch
+  - [x] Docs for US2; Maps clients wired
+- [ ] **Student contact + school destinations** — parent/emergency fields, Destination School catalog, intake school dropdown, map schools, inter-district `StudentSchoolTransfer` (timed pickup/dropoff)
+  - [ ] Apply migration `20260817140000_StudentContactFieldsAlignment`
+  - [ ] VM: assign school on intake; Show Schools on map; create transfer home→campus
 - [x] **006 Syncfusion Tool Integration** — [spec](../specs/006-syncfusion-tool-integration/spec.md) — merged [PR #21](https://github.com/Bigessfour/BusBuddy-3/pull/21)
   - [x] MCP paths, skills overlay, Syncfusion **34.2.3**, deps audit
   - [x] `python -m rag.index` after merge (2026-07-24; ~3399 chunks)

@@ -477,7 +477,7 @@ public class StudentRepository : Repository<Student>, IStudentRepository
     public async Task<IEnumerable<Student>> GetStudentsByParentEmailAsync(string email)
     {
         return await Context.Students
-            .Where(s => s.ParentGuardian != null && s.ParentGuardian.Contains(email))
+            .Where(s => s.ParentEmail != null && s.ParentEmail.Contains(email))
             .ToListAsync();
     }
 

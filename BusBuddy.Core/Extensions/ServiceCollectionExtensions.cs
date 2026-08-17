@@ -111,6 +111,8 @@ namespace BusBuddy.Core.Extensions
             services.AddSingleton<PdfReportService>();
             services.AddScoped<IOperationalReportService, OperationalReportService>();
             services.AddScoped<IStudentService, StudentService>();
+            services.AddScoped<IDestinationService, DestinationService>();
+            services.AddScoped<IStudentSchoolTransferService, StudentSchoolTransferService>();
             services.AddScoped<IFuelService, FuelService>();
             services.AddScoped<IMaintenanceService, MaintenanceService>();
             services.AddScoped<IScheduleService, ScheduleService>();

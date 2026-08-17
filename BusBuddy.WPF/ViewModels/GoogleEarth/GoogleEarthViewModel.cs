@@ -18,6 +18,7 @@ using System.Linq; // For LINQ operations
 using System.Windows.Media; // For VisualTreeHelper during snapshot
 using System.Windows.Media.Imaging; // For RenderTargetBitmap / PngBitmapEncoder (Microsoft WPF docs: Imaging)
 using System.IO; // For saving generated eligibility PDF to disk
+using BusBuddy.WPF;
 
 namespace BusBuddy.WPF.ViewModels.GoogleEarth
 {
@@ -745,17 +746,34 @@ namespace BusBuddy.WPF.ViewModels.GoogleEarth
             }
         }
 
-        private void ShowSchools()
+        private async void ShowSchools()
         {
             StatusMessage = "Showing schools on map...";
             Logger.Information("Show schools requested");
             try
             {
-                if (!MapMarkers.Any(m => m.Label != null && m.Label.Contains("School", StringComparison.OrdinalIgnoreCase)))
+                using var scope = _scopeFactory?.CreateScope();
+                var destService = scope?.ServiceProvider.GetService<IDestinationService>()
+                    ?? App.ServiceProvider?.GetService<IDestinationService>();
+
+                var schools = destService is not null
+                    ? await destService.GetActiveSchoolsAsync()
+                    : Array.Empty<Destination>();
+
+                var plotted = 0;
+                foreach (var school in schools.Where(s => s.HasGpsCoordinates))
                 {
-                    PlotStop(WileyMapDefaults.SchoolLatitude, WileyMapDefaults.SchoolLongitude, null, WileyMapDefaults.SchoolLabel);
+                    PlotStop((double)school.Latitude!, (double)school.Longitude!, null, school.Name);
+                    plotted++;
                 }
 
+                if (plotted == 0)
+                {
+                    PlotStop(WileyMapDefaults.SchoolLatitude, WileyMapDefaults.SchoolLongitude, null, WileyMapDefaults.SchoolLabel);
+                    plotted = 1;
+                }
+
+                StatusMessage = $"Showing {plotted} school(s) on map";
                 ViewResetRequested?.Invoke(this, EventArgs.Empty);
             }
             catch (Exception ex)

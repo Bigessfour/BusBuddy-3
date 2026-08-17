@@ -1232,12 +1232,36 @@ namespace BusBuddy.WPF.ViewModels.Student
 
                 using var context = _contextFactory.CreateDbContext();
                 AvailableSchools.Clear();
-                var schools = await context.Students
+                var schoolNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                try
+                {
+                    var destService = App.ServiceProvider?.GetService<IDestinationService>();
+                    var destinations = destService is not null
+                        ? await destService.GetActiveSchoolsAsync()
+                        : await context.Destinations
+                            .Where(d => d.IsActive && !d.IsDeleted && d.DestinationType == DestinationTypes.School)
+                            .ToListAsync();
+                    foreach (var d in destinations)
+                    {
+                        schoolNames.Add(d.Name);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Logger.Warning(ex, "Destination school catalog unavailable — falling back to student.School values");
+                }
+
+                var fromStudents = await context.Students
                     .Where(s => !string.IsNullOrEmpty(s.School))
                     .Select(s => s.School!)
                     .Distinct()
                     .ToListAsync();
-                foreach (var school in schools)
+                foreach (var school in fromStudents)
+                {
+                    schoolNames.Add(school);
+                }
+
+                foreach (var school in schoolNames.OrderBy(s => s))
                 {
                     AvailableSchools.Add(school);
                 }
