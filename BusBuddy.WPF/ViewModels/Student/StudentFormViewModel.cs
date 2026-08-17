@@ -348,7 +348,7 @@ namespace BusBuddy.WPF.ViewModels.Student
         #region Command Handlers
 
         /// <summary>
-        /// Validate the student's address using simple regex patterns
+        /// Validate the student's address via Google Address Validation (when configured).
         /// </summary>
         private async Task ValidateAddressAsync()
         {
@@ -370,38 +370,54 @@ namespace BusBuddy.WPF.ViewModels.Student
                     return;
                 }
 
-                // Build a formatted address string and validate using documented patterns
-                var formatted = _addressService.FormatAddress(Student.HomeAddress, Student.City, Student.State, Student.Zip);
-                var addressValidation = _addressService.ValidateAddress(formatted);
-
-                // Prefer components validation when any component is provided
-                var hasComponents = !string.IsNullOrWhiteSpace(Student.City) || !string.IsNullOrWhiteSpace(Student.State) || !string.IsNullOrWhiteSpace(Student.Zip);
-                var componentValidation = _addressService.ValidateAddressComponents(
-                    Student.HomeAddress ?? string.Empty, Student.City ?? string.Empty, Student.State ?? string.Empty, Student.Zip ?? string.Empty);
-
-                // If individual components are provided and valid, consider address valid even if the formatted full string check is strict.
-                bool isValid = hasComponents
-                    ? componentValidation.IsValid || addressValidation.IsValid
-                    : addressValidation.IsValid;
-                string errorMessage = hasComponents && !componentValidation.IsValid && !addressValidation.IsValid
-                    ? (string.IsNullOrWhiteSpace(componentValidation.Error) ? addressValidation.Error : componentValidation.Error)
-                    : addressValidation.Error;
-
-                _addressValidationFailed = !isValid;
-                if (isValid)
+                var mapsClient = App.ServiceProvider?.GetService<BusBuddy.Core.Services.GoogleMaps.GoogleAddressValidationClient>();
+                if (mapsClient is not null)
                 {
-                    AddressValidationMessage = "✓ Address format is valid.";
-                    AddressValidationColor = Brushes.Green;
-                    Logger.Information("Address validation successful");
-                }
-                else
-                {
-                    AddressValidationMessage = $"✗ Address validation failed: {errorMessage}";
+                    var maps = await mapsClient.ValidateAndGeocodeAsync(
+                        Student.HomeAddress, Student.City, Student.State, Student.Zip);
+                    if (maps.Ok)
+                    {
+                        if (maps.Latitude.HasValue)
+                        {
+                            Student.Latitude = (decimal)maps.Latitude.Value;
+                        }
+
+                        if (maps.Longitude.HasValue)
+                        {
+                            Student.Longitude = (decimal)maps.Longitude.Value;
+                        }
+
+                        _addressValidationFailed = false;
+                        AddressValidationMessage = string.IsNullOrWhiteSpace(maps.FormattedAddress)
+                            ? "✓ Address validated."
+                            : $"✓ Address validated: {maps.FormattedAddress}";
+                        AddressValidationColor = Brushes.Green;
+                        Logger.Information("Address validation successful via Maps Platform");
+                        return;
+                    }
+
+                    if (maps.MappingUnconfigured)
+                    {
+                        _addressValidationFailed = true;
+                        AddressValidationMessage = maps.ErrorMessage
+                            ?? "Mapping is not configured (missing GOOGLE_MAPS_API_KEY).";
+                        AddressValidationColor = Brushes.Orange;
+                        Logger.Warning("Address validation skipped — mapping unconfigured");
+                        return;
+                    }
+
+                    _addressValidationFailed = true;
+                    AddressValidationMessage = $"✗ Address validation failed: {maps.ErrorMessage ?? "undeliverable or incomplete"}";
                     AddressValidationColor = Brushes.Red;
-                    Logger.Warning("Address validation failed: {Error}", errorMessage);
+                    Logger.Warning("Address validation failed: {Error}", maps.ErrorMessage);
+                    return;
                 }
 
-                await Task.CompletedTask; // No artificial delay
+                // No Maps client registered — do not treat regex as postal success.
+                _addressValidationFailed = true;
+                AddressValidationMessage = "Mapping is not configured — address not validated.";
+                AddressValidationColor = Brushes.Orange;
+                Logger.Warning("Maps Address Validation client missing from DI");
             }
             catch (Exception ex)
             {
@@ -644,7 +660,7 @@ namespace BusBuddy.WPF.ViewModels.Student
         }
 
         /// <summary>
-        /// Open Google Earth Engine to view student location on map
+        /// Open map view for student location (real coordinates only — never hash scatter).
         /// </summary>
         private async Task ViewOnMapAsync()
         {
@@ -662,13 +678,25 @@ namespace BusBuddy.WPF.ViewModels.Student
                 ValidationStatus = "Loading map preview...";
                 ValidationStatusBrush = Brushes.Blue;
 
-                var fullAddress = $"{Student.HomeAddress}, {Student.City}, {Student.State} {Student.Zip}";
                 var sp = App.ServiceProvider;
                 var geocoder = sp?.GetService<IGeocodingService>();
+                var mapsClient = sp?.GetService<BusBuddy.Core.Services.GoogleMaps.GoogleAddressValidationClient>();
                 var mapVm = sp?.GetService<GoogleEarthViewModel>();
-                var coords = geocoder is null
-                    ? null
-                    : await geocoder.GeocodeAsync(Student.HomeAddress, Student.City, Student.State, Student.Zip);
+
+                (double latitude, double longitude)? coords = null;
+                if (Student.Latitude.HasValue && Student.Longitude.HasValue)
+                {
+                    coords = ((double)Student.Latitude.Value, (double)Student.Longitude.Value);
+                }
+                else if (geocoder is not null)
+                {
+                    coords = await geocoder.GeocodeAsync(Student.HomeAddress, Student.City, Student.State, Student.Zip);
+                    if (coords.HasValue)
+                    {
+                        Student.Latitude = (decimal)coords.Value.latitude;
+                        Student.Longitude = (decimal)coords.Value.longitude;
+                    }
+                }
 
                 if (coords.HasValue && mapVm is not null)
                 {
@@ -677,17 +705,32 @@ namespace BusBuddy.WPF.ViewModels.Student
 
                 new Window
                 {
-                    Title = "🗺️ Student location",
+                    Title = "Student location",
                     Content = new GoogleEarthView(),
                     Width = 1100,
                     Height = 750,
                     Owner = Application.Current?.MainWindow
                 }.Show();
 
-                ValidationStatus = coords.HasValue ? "✓ Location plotted on map" : "✓ Map opened (address not geocoded)";
-                ValidationStatusBrush = Brushes.Green;
+                if (coords.HasValue)
+                {
+                    ValidationStatus = "✓ Location plotted on map";
+                    ValidationStatusBrush = Brushes.Green;
+                }
+                else if (mapsClient is null || string.IsNullOrWhiteSpace(mapsClient.ResolvedApiKey))
+                {
+                    ValidationStatus = "Mapping is not configured (missing GOOGLE_MAPS_API_KEY).";
+                    ValidationStatusBrush = Brushes.Orange;
+                }
+                else
+                {
+                    ValidationStatus = "Address could not be geocoded — map opened without a pin.";
+                    ValidationStatusBrush = Brushes.Orange;
+                }
 
-                Logger.Information("Map view opened for address: {Address}", fullAddress);
+                Logger.Information(
+                    "Map view opened for address: {Address}, {City}, {State} {Zip}",
+                    Student.HomeAddress, Student.City, Student.State, Student.Zip);
             }
             catch (Exception ex)
             {

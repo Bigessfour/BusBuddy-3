@@ -16,12 +16,12 @@
 ### P0 — Platform / tooling
 
 - [x] Spec-Kit brownfield bootstrap (001–005) — merged [PR #20](https://github.com/Bigessfour/BusBuddy-3/pull/20)
-- [x] **007 Maps Platform Geo (retire Earth Engine)** — US2+docs merged [PR #31](https://github.com/Bigessfour/BusBuddy-3/pull/31) · [spec](../specs/007-maps-platform-geo/spec.md) · [tasks](../specs/007-maps-platform-geo/tasks.md)
+- [x] **007 Maps Platform Geo (retire Earth Engine)** — US2+docs merged [PR #31](https://github.com/Bigessfour/BusBuddy-3/pull/31); US1+US3 on `feature/007-maps-us1-implement` · [spec](../specs/007-maps-platform-geo/spec.md) · [tasks](../specs/007-maps-platform-geo/tasks.md)
   - [x] US2: Remove GEE DI, client, probe, unofficial Google tiles
-  - [ ] US1: Address Validation + geocode onto SfMap (**paused**)
-  - [ ] US3: Routes API drive polyline (P2)
-  - [ ] US4: Places type-ahead (P3, optional)
-  - [x] Docs for US2 + pause (constitution v1.1.0; Maps clients not wired)
+  - [x] US1: Address Validation + geocode onto SfMap (Maps client + DI)
+  - [x] US3: Routes API drive polyline (fail-open optimizer)
+  - [x] US4: Places type-ahead — skipped (MVP cut)
+  - [x] Docs for US2; Maps clients wired on US1 implement branch
 - [x] **006 Syncfusion Tool Integration** — [spec](../specs/006-syncfusion-tool-integration/spec.md) — merged [PR #21](https://github.com/Bigessfour/BusBuddy-3/pull/21)
   - [x] MCP paths, skills overlay, Syncfusion **34.2.3**, deps audit
   - [x] `python -m rag.index` after merge (2026-07-24; ~3399 chunks)
@@ -39,7 +39,7 @@
 - [x] Maintenance UI polish — `MaintenanceView` + `IMaintenanceService` CRUD; `Maintenance_Click` opens it
   - Serilog proof: `Maintenance UI loaded Records=` / `Created maintenance record`
 - [x] Google Earth Engine enhancements (beyond current DI/auth) — **superseded by 007**: EE is the wrong product for addresses/trips; see [007 Maps Platform Geo](../specs/007-maps-platform-geo/spec.md)
-  - Historical: shared map VM + `IGeocodingService` + SfMap plot (hash geocoder / EE client remain until 007 lands)
+  - Historical: shared map VM + `IGeocodingService` + SfMap plot (hash geocoder retired with 007 US1)
 - [x] SfMap mapping: official OSM + Wiley center/zoom, Syncfusion string markers, shared map VM, live routes/buses (not sample-only)
 - [x] End-to-end student → assign → report proof test — `BusBuddy.Tests/Core/RouteAssignmentFlowTests.cs` (SeedDataService → StudentService → RouteService → PdfReportService). **UTM Windows VM 2026-08-16:** `Total tests: 1`, `Passed: 1` (built from `C:\dev\BusBuddy-3` after Z:\ sync). Mac host cannot execute WPF testhost; use `./run-wpf.sh` + `utm_run_in_vm.ps1` for GUI.
 
@@ -52,11 +52,11 @@
 
 ### GitHub issues triage (open as of 2026-07-24)
 
-| Issue                                                     | Topic                                           | Suggested disposition                                                                                      |
-| --------------------------------------------------------- | ----------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| [#13](https://github.com/Bigessfour/BusBuddy-3/issues/13) | ViewModel dedup                                 | **Closed** (hygiene / PR #16)                                                                                  |
-| [#14](https://github.com/Bigessfour/BusBuddy-3/issues/14) | CI + secrets/MCP                                | Solo CI + auto-merge done; Passwords for Syncfusion/Maps. Optional: GH Actions secrets / `ci-with-ai` cleanup → **close or narrow** |
-| [#15](https://github.com/Bigessfour/BusBuddy-3/issues/15) | Deprecate bb-* PS                               | Modules removed — open [PR #32](https://github.com/Bigessfour/BusBuddy-3/pull/32) (`Closes #15`)              |
+| Issue                                                     | Topic                                           | Suggested disposition                                                                                                                                  |
+| --------------------------------------------------------- | ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| [#13](https://github.com/Bigessfour/BusBuddy-3/issues/13) | ViewModel dedup                                 | **Closed** (hygiene / PR #16)                                                                                                                          |
+| [#14](https://github.com/Bigessfour/BusBuddy-3/issues/14) | CI + secrets/MCP                                | Solo CI + auto-merge done; Passwords for Syncfusion/Maps. Optional: GH Actions secrets / `ci-with-ai` cleanup → **close or narrow**                    |
+| [#15](https://github.com/Bigessfour/BusBuddy-3/issues/15) | Deprecate bb-* PS                               | Modules removed — open [PR #32](https://github.com/Bigessfour/BusBuddy-3/pull/32) (`Closes #15`)                                                       |
 | [#11](https://github.com/Bigessfour/BusBuddy-3/issues/11) | Close stubs (Reports/Grok/Settings/Maintenance) | P1 done ([PR #30](https://github.com/Bigessfour/BusBuddy-3/pull/30)); Drivers MVP placeholders wired to live reports/services — close via follow-up PR |
 
 ---
@@ -90,14 +90,14 @@ python3 ~/.cursor/skills/function-inventory/scripts/update-function-inventory.py
   --root . --output docs/function-inventory.generated.md
 ```
 
-| Surface                                                        | Tier | Proof / next check                                                                                                                                                                                                         |
-| -------------------------------------------------------------- | ---- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Student / Seed / Route / Optimizer / Reports services          | P1   | Unit tests present (`StudentServiceTests`, `SeedDataServiceTests`, `RouteServiceTests`, `StudentRouteOptimizerTests`, `OperationalReportServiceTests`, `PdfReportServiceTests`)                                            |
-| `StudentsView` / `ReportsView`                                 | P1   | No WPF testhost on Mac. Proof is VM smoke (`./run-wpf.sh`) + the Core tests above. Do not treat as a missing feature.                                                                                                      |
-| `ScheduleService`                                              | P1   | **Runtime proof via Serilog:** `GetSchedulesAsync` logs count + elapsed. SfScheduler UI: `DriverScheduleViewModel` / `DriverAvailabilityService` log appointment and 14-day availability summaries. Unit tests still open. |
-| `DriverService`                                                | P1   | `DriverServiceTests` exist; `DriverScheduleView` + `DriverAvailabilityCalculator` (Schedule + ActivitySchedule). Availability calc logs `Drivers=` / `WithOpenDays=`                                                       |
-| `MaintenanceService` / Dashboard metrics / theme manager | P2   | `MaintenanceService` logs CRUD. Dashboard: `DashboardViewModel` logs refresh/optimize/report. Earth Engine retired (spec 007). |
-| `DashboardView` / `GeoDataService`                       | P2   | VM smoke + Serilog: `Dashboard refresh completed` / `Loaded routes with geo data` |
+| Surface                                                  | Tier | Proof / next check                                                                                                                                                                                                         |
+| -------------------------------------------------------- | ---- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Student / Seed / Route / Optimizer / Reports services    | P1   | Unit tests present (`StudentServiceTests`, `SeedDataServiceTests`, `RouteServiceTests`, `StudentRouteOptimizerTests`, `OperationalReportServiceTests`, `PdfReportServiceTests`)                                            |
+| `StudentsView` / `ReportsView`                           | P1   | No WPF testhost on Mac. Proof is VM smoke (`./run-wpf.sh`) + the Core tests above. Do not treat as a missing feature.                                                                                                      |
+| `ScheduleService`                                        | P1   | **Runtime proof via Serilog:** `GetSchedulesAsync` logs count + elapsed. SfScheduler UI: `DriverScheduleViewModel` / `DriverAvailabilityService` log appointment and 14-day availability summaries. Unit tests still open. |
+| `DriverService`                                          | P1   | `DriverServiceTests` exist; `DriverScheduleView` + `DriverAvailabilityCalculator` (Schedule + ActivitySchedule). Availability calc logs `Drivers=` / `WithOpenDays=`                                                       |
+| `MaintenanceService` / Dashboard metrics / theme manager | P2   | `MaintenanceService` logs CRUD. Dashboard: `DashboardViewModel` logs refresh/optimize/report. Earth Engine retired (spec 007).                                                                                             |
+| `DashboardView` / `GeoDataService`                       | P2   | VM smoke + Serilog: `Dashboard refresh completed` / `Loaded routes with geo data`                                                                                                                                          |
 
 ---
 

@@ -30,8 +30,10 @@ flowchart TB
     Avail[DriverAvailabilityCalculator]
     Maint[MaintenanceService]
   end
-  subgraph p2 [P2]
+  subgraph p2 [P2 Geo]
     Geo[GeoDataService]
+    MapsValidate[GoogleAddressValidationClient]
+    MapsRoute[GoogleRoutingService]
     Metrics[DashboardMetricsService]
     Shape[ShapefileEligibilityService]
   end
@@ -46,6 +48,7 @@ flowchart TB
   Students --> StudentSvc
   Students --> Seed
   Students --> Opt
+  Students --> MapsValidate
   Reports --> ReportsSvc
   ReportsSvc --> Pdf
   Dashboard --> Metrics
@@ -55,6 +58,7 @@ flowchart TB
   SchedView --> Avail
   Opt --> RouteSvc
   Theme --> ui
+  MapsRoute --> Geo
   core --> EF
   p2 --> EF
 ```

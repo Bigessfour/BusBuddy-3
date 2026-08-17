@@ -11,17 +11,24 @@ namespace BusBuddy.Core.Services
     /// Fills active routes from unassigned students (AM then PM), then asks
     /// <see cref="GrokGlobalAPI"/> for commentary. Ollama is the default AI path;
     /// a mock result is used when the model is unavailable (spec 004).
+    /// Drive-path / Maps routing is intentionally not required — seat assignment must
+    /// succeed even when <see cref="Interfaces.IRoutingService"/> is missing or fails.
     /// </summary>
     public sealed class StudentRouteOptimizer : IStudentRouteOptimizer
     {
         private static readonly ILogger Logger = Log.ForContext<StudentRouteOptimizer>();
         private readonly IRouteService _routeService;
         private readonly GrokGlobalAPI? _grok;
+        private readonly Interfaces.IRoutingService? _routingService;
 
-        public StudentRouteOptimizer(IRouteService routeService, GrokGlobalAPI? grok = null)
+        public StudentRouteOptimizer(
+            IRouteService routeService,
+            GrokGlobalAPI? grok = null,
+            Interfaces.IRoutingService? routingService = null)
         {
             _routeService = routeService ?? throw new ArgumentNullException(nameof(routeService));
             _grok = grok;
+            _routingService = routingService;
         }
 
         public async Task<StudentRouteOptimizeResult> OptimizeUnassignedAsync()
@@ -63,6 +70,19 @@ namespace BusBuddy.Core.Services
             {
                 assigned += await AutoAssignSlotAsync(route.RouteId, RouteTimeSlot.AM);
                 assigned += await AutoAssignSlotAsync(route.RouteId, RouteTimeSlot.PM);
+            }
+
+            // Fail-open: never block assignment results on Routes API errors.
+            try
+            {
+                if (_routingService is not null)
+                {
+                    Logger.Debug("Optional routing service present; drive-path refresh is owned by map UI");
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Warning(ex, "Routing side-effect skipped after optimize — assignments kept");
             }
 
             var remaining = await CountUnassignedAsync();

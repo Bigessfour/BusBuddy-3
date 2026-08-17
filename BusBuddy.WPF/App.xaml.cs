@@ -416,10 +416,10 @@ namespace BusBuddy.WPF
                 // Use the proper extension method that registers IBusBuddyDbContextFactory
                 services.AddDataServices(configuration);
 
-                // Route geography from the database. Maps Platform clients are paused (spec 007).
+                // Route geography + eligibility. Maps Platform clients (IGeocodingService / IRoutingService)
+                // are registered in AddDataServices above — do not register OfflineGeocodingService here.
                 services.AddSingleton<IGeoDataService>(sp =>
                     new GeoDataService(sp.GetService<IBusBuddyDbContextFactory>()));
-                services.AddSingleton<IGeocodingService, OfflineGeocodingService>();
                 services.AddSingleton<IEligibilityService>(_ =>
                 {
                     var district = Path.Combine(AppContext.BaseDirectory, "Assets", "Maps", "WileyDistrict", "WileyDistrict.shp");
@@ -491,7 +491,8 @@ namespace BusBuddy.WPF
                         sp.GetService<IGeocodingService>(),
                         studentService: null,
                         busService: null,
-                        scopeFactory: sp.GetRequiredService<IServiceScopeFactory>()));
+                        scopeFactory: sp.GetRequiredService<IServiceScopeFactory>(),
+                        routingService: sp.GetService<BusBuddy.Core.Services.Interfaces.IRoutingService>()));
 
                 ServiceProvider = services.BuildServiceProvider();
 

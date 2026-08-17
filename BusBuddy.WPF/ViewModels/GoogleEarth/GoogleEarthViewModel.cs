@@ -33,6 +33,7 @@ namespace BusBuddy.WPF.ViewModels.GoogleEarth
     /// Optional geocoder for converting addresses to coordinates.
     /// </summary>
     private readonly IGeocodingService? _geocodingService;
+    private readonly IRoutingService? _routingService;
     private readonly BusBuddy.Core.Services.PdfReportService _pdfReportService = new(); // Lightweight stateless service
     private readonly BusBuddy.Core.Services.IStudentService? _studentService; // If available for pulling students
     private readonly IBusService? _busService;
@@ -83,11 +84,12 @@ namespace BusBuddy.WPF.ViewModels.GoogleEarth
             set => SetProperty(ref _latestMapSnapshotPng, value);
         }
 
-    public GoogleEarthViewModel(IGeoDataService geoDataService, IEligibilityService? eligibilityService = null, IGeocodingService? geocodingService = null, BusBuddy.Core.Services.IStudentService? studentService = null, IBusService? busService = null, IServiceScopeFactory? scopeFactory = null)
+    public GoogleEarthViewModel(IGeoDataService geoDataService, IEligibilityService? eligibilityService = null, IGeocodingService? geocodingService = null, BusBuddy.Core.Services.IStudentService? studentService = null, IBusService? busService = null, IServiceScopeFactory? scopeFactory = null, IRoutingService? routingService = null)
         {
             _geoDataService = geoDataService ?? throw new ArgumentNullException(nameof(geoDataService));
             _eligibilityService = eligibilityService; // optional during MVP
             _geocodingService = geocodingService; // optional until wired
+            _routingService = routingService;
             _studentService = studentService;
             _busService = busService;
             _scopeFactory = scopeFactory;
@@ -592,7 +594,8 @@ namespace BusBuddy.WPF.ViewModels.GoogleEarth
                 var points = Array.Empty<Point>();
                 if (SelectedRoute is not null && !string.IsNullOrWhiteSpace(SelectedRoute.WaypointsJson))
                 {
-                    points = ParseWaypointsToPoints(SelectedRoute.WaypointsJson);
+                    points = await TryRefreshDrivePathAsync(SelectedRoute)
+                        ?? ParseWaypointsToPoints(SelectedRoute.WaypointsJson);
                 }
 
                 await UpdatePolylineAsync(points);
@@ -601,6 +604,49 @@ namespace BusBuddy.WPF.ViewModels.GoogleEarth
             catch (Exception ex)
             {
                 Logger.Error(ex, "Failed to update map for route {RouteName}", routeName);
+            }
+        }
+
+        /// <summary>
+        /// Optionally refresh road geometry via Routes API. Fail-open: returns null on any error
+        /// so the map keeps using stored waypoints.
+        /// </summary>
+        private async Task<Point[]?> TryRefreshDrivePathAsync(RouteModel route)
+        {
+            if (_routingService is null)
+            {
+                return null;
+            }
+
+            var stops = RouteWaypointSerializer.Parse(route.WaypointsJson);
+            if (stops.Count < 2)
+            {
+                return null;
+            }
+
+            try
+            {
+                var origin = stops[0];
+                var destination = stops[^1];
+                var intermediates = stops.Skip(1).Take(stops.Count - 2).ToList();
+                var path = await _routingService.ComputeDrivePathAsync(origin, destination, intermediates);
+                if (!path.Succeeded || path.Points.Count == 0)
+                {
+                    Logger.Warning("Drive path refresh skipped for route {RouteId}: {Error}", route.RouteId, path.Error);
+                    return null;
+                }
+
+                route.WaypointsJson = RouteWaypointSerializer.FromEncodedPolyline(
+                    path.EncodedPolyline!, path.Points);
+                Logger.Information(
+                    "Drive path refreshed RouteId={RouteId} DistanceMeters={Distance} Duration={Duration}",
+                    route.RouteId, path.DistanceMeters, path.Duration);
+                return path.Points.Select(p => new Point(p.Latitude, p.Longitude)).ToArray();
+            }
+            catch (Exception ex)
+            {
+                Logger.Warning(ex, "Drive path refresh failed — using stored waypoints");
+                return null;
             }
         }
 
