@@ -16,6 +16,12 @@
 ### P0 — Platform / tooling
 
 - [x] Spec-Kit brownfield bootstrap (001–005) — merged [PR #20](https://github.com/Bigessfour/BusBuddy-3/pull/20)
+- [ ] **007 Maps Platform Geo (retire Earth Engine)** — [spec](../specs/007-maps-platform-geo/spec.md) · [plan](../specs/007-maps-platform-geo/plan.md) · [tasks](../specs/007-maps-platform-geo/tasks.md)
+  - [x] US2: Remove GEE DI, client, probe, unofficial Google tiles
+  - [ ] US1: Address Validation + geocode onto SfMap (**paused**)
+  - [ ] US3: Routes API drive polyline (P2)
+  - [ ] US4: Places type-ahead (P3, optional)
+  - [x] Docs for US2 + pause (constitution v1.1.0; Maps clients not wired)
 - [x] **006 Syncfusion Tool Integration** — [spec](../specs/006-syncfusion-tool-integration/spec.md) — merged [PR #21](https://github.com/Bigessfour/BusBuddy-3/pull/21)
   - [x] MCP paths, skills overlay, Syncfusion **34.2.3**, deps audit
   - [x] `python -m rag.index` after merge (2026-07-24; ~3399 chunks)
@@ -32,8 +38,8 @@
   - Serilog proof: `Driver availability calculated` / `Driver schedules loaded Appointments=`
 - [x] Maintenance UI polish — `MaintenanceView` + `IMaintenanceService` CRUD; `Maintenance_Click` opens it
   - Serilog proof: `Maintenance UI loaded Records=` / `Created maintenance record`
-- [x] Google Earth Engine enhancements (beyond current DI/auth) — shared map VM uses scope factory; `IGeocodingService` registered; student form plots onto SfMap; shapefile binaries still optional per `Assets/Maps/README.md`
-  - Serilog proof (current DI/auth): `TokenKind=live|placeholder`, `Loaded routes with geo data`, `Google Earth Engine configured`
+- [x] Google Earth Engine enhancements (beyond current DI/auth) — **superseded by 007**: EE is the wrong product for addresses/trips; see [007 Maps Platform Geo](../specs/007-maps-platform-geo/spec.md)
+  - Historical: shared map VM + `IGeocodingService` + SfMap plot (hash geocoder / EE client remain until 007 lands)
 - [x] SfMap mapping: official OSM + Wiley center/zoom, Syncfusion string markers, shared map VM, live routes/buses (not sample-only)
 - [x] End-to-end student → assign → report proof test — `BusBuddy.Tests/Core/RouteAssignmentFlowTests.cs` (SeedDataService → StudentService → RouteService → PdfReportService). **UTM Windows VM 2026-08-16:** `Total tests: 1`, `Passed: 1` (built from `C:\dev\BusBuddy-3` after Z:\ sync). Mac host cannot execute WPF testhost; use `./run-wpf.sh` + `utm_run_in_vm.ps1` for GUI.
 
@@ -90,8 +96,8 @@ python3 ~/.cursor/skills/function-inventory/scripts/update-function-inventory.py
 | `StudentsView` / `ReportsView`                                 | P1   | No WPF testhost on Mac. Proof is VM smoke (`./run-wpf.sh`) + the Core tests above. Do not treat as a missing feature.                                                                                                      |
 | `ScheduleService`                                              | P1   | **Runtime proof via Serilog:** `GetSchedulesAsync` logs count + elapsed. SfScheduler UI: `DriverScheduleViewModel` / `DriverAvailabilityService` log appointment and 14-day availability summaries. Unit tests still open. |
 | `DriverService`                                                | P1   | `DriverServiceTests` exist; `DriverScheduleView` + `DriverAvailabilityCalculator` (Schedule + ActivitySchedule). Availability calc logs `Drivers=` / `WithOpenDays=`                                                       |
-| `MaintenanceService` / GEE / Dashboard metrics / theme manager | P2   | `MaintenanceService` now logs CRUD. GEE: `GeoDataService` / `GcpCredentialBootstrap` / `GoogleEarthEngineService` log TokenKind (never the token). Dashboard: `DashboardViewModel` logs refresh/optimize/report.           |
-| `DashboardView` / `GcpCredentialBootstrap`                     | P2   | VM smoke + Serilog: `Dashboard refresh completed` / `Applied GEE configuration overrides` / `Obtained Earth Engine access token` (length only)                                                                             |
+| `MaintenanceService` / Dashboard metrics / theme manager | P2   | `MaintenanceService` logs CRUD. Dashboard: `DashboardViewModel` logs refresh/optimize/report. Earth Engine retired (spec 007). |
+| `DashboardView` / `GeoDataService`                       | P2   | VM smoke + Serilog: `Dashboard refresh completed` / `Loaded routes with geo data` |
 
 ---
 

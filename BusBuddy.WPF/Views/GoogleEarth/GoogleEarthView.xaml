@@ -93,12 +93,8 @@
                                             Width="150"
                                             Height="32"
                                             Margin="16,0"
-                                            SelectedIndex="4"
+                                            SelectedIndex="0"
                                             SelectionChanged="MapLayerComboBox_SelectionChanged">
-                        <syncfusion:ComboBoxItemAdv Content="Satellite"/>
-                        <syncfusion:ComboBoxItemAdv Content="Terrain"/>
-                        <syncfusion:ComboBoxItemAdv Content="Hybrid"/>
-                        <syncfusion:ComboBoxItemAdv Content="Roadmap"/>
                         <syncfusion:ComboBoxItemAdv Content="OpenStreetMap"/>
                     </syncfusion:ComboBoxAdv>
                 </StackPanel>

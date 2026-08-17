@@ -42,7 +42,7 @@ namespace BusBuddy.WPF.ViewModels.GoogleEarth
 
         private ObservableCollection<RouteModel> _routes = new();
         private RouteModel? _selectedRoute;
-        private string _selectedMapLayer = "Satellite";
+        private string _selectedMapLayer = "OpenStreetMap";
         private bool _isMapLoading;
         private string _statusMessage = "Ready";
     private bool _isLiveTrackingEnabled;
@@ -153,7 +153,7 @@ namespace BusBuddy.WPF.ViewModels.GoogleEarth
         }
 
         /// <summary>
-        /// Currently selected map layer (Satellite, Terrain, etc.)
+        /// Currently selected map layer (OSM only until Maps tiles resume)
         /// </summary>
         public string SelectedMapLayer
         {
@@ -249,10 +249,7 @@ namespace BusBuddy.WPF.ViewModels.GoogleEarth
         /// </summary>
         public ObservableCollection<string> MapLayers { get; } = new()
         {
-            "Satellite",
-            "Terrain",
-            "Roadmap",
-            "Hybrid"
+            "OpenStreetMap"
         };
 
         /// <summary>
