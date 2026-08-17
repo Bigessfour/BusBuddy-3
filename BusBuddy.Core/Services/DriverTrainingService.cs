@@ -33,15 +33,16 @@ public sealed class DriverTrainingService : IDriverTrainingService
         bool includeOptionalApplicable = false,
         CancellationToken cancellationToken = default)
     {
-        await using var context = _contextFactory.CreateDbContext();
-        var driver = await context.Drivers.FirstOrDefaultAsync(d => d.DriverId == driverId, cancellationToken)
+        await using var context = _contextFactory.CreateWriteDbContext();
+        var driver = await context.Drivers.AsTracking()
+            .FirstOrDefaultAsync(d => d.DriverId == driverId, cancellationToken)
             .ConfigureAwait(false);
         if (driver is null)
         {
             throw new ArgumentException($"Driver {driverId} not found", nameof(driverId));
         }
 
-        var existing = await context.DriverTrainingRecords
+        var existing = await context.DriverTrainingRecords.AsTracking()
             .Where(r => r.DriverId == driverId)
             .ToListAsync(cancellationToken)
             .ConfigureAwait(false);
@@ -95,12 +96,13 @@ public sealed class DriverTrainingService : IDriverTrainingService
             throw new ArgumentException("Requirement code is required", nameof(requirementCode));
         }
 
-        await using var context = _contextFactory.CreateDbContext();
+        // Write path must track: BusBuddyDbContext defaults to NoTracking.
+        await using var context = _contextFactory.CreateWriteDbContext();
         var catalogItem = CdeDriverTrainingCodes.Catalog
             .FirstOrDefault(c => string.Equals(c.Code, requirementCode, StringComparison.OrdinalIgnoreCase));
         var hasCatalog = !string.IsNullOrEmpty(catalogItem.Code);
 
-        var record = await context.DriverTrainingRecords
+        var record = await context.DriverTrainingRecords.AsTracking()
             .FirstOrDefaultAsync(
                 r => r.DriverId == driverId && r.RequirementCode == requirementCode,
                 cancellationToken)
@@ -146,8 +148,9 @@ public sealed class DriverTrainingService : IDriverTrainingService
         int driverId,
         CancellationToken cancellationToken = default)
     {
-        await using var context = _contextFactory.CreateDbContext();
-        var driver = await context.Drivers.FirstOrDefaultAsync(d => d.DriverId == driverId, cancellationToken)
+        await using var context = _contextFactory.CreateWriteDbContext();
+        var driver = await context.Drivers.AsTracking()
+            .FirstOrDefaultAsync(d => d.DriverId == driverId, cancellationToken)
             .ConfigureAwait(false);
         if (driver is null)
         {

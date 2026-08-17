@@ -19,7 +19,12 @@ public class DriverTrainingServiceTests
 
         public BusBuddyDbContext CreateDbContext() => new(_options);
 
-        public BusBuddyDbContext CreateWriteDbContext() => new(_options);
+        public BusBuddyDbContext CreateWriteDbContext()
+        {
+            var ctx = new BusBuddyDbContext(_options);
+            ctx.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.TrackAll;
+            return ctx;
+        }
     }
 
     private static DbContextOptions<BusBuddyDbContext> CreateOptions() =>
