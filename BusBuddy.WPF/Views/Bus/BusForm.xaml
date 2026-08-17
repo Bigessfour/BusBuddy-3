@@ -40,14 +40,15 @@
                     Padding="15"
                     Margin="0,0,0,20">
                 <StackPanel Orientation="Horizontal">
-                    <TextBlock Text="🚌"
+                    <TextBlock Text="&#xE7EC;"
+                               FontFamily="Segoe MDL2 Assets"
                                FontSize="20"
-                               Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"
+                               Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}"
                                VerticalAlignment="Center"
                                Margin="0,0,10,0" />
                     <TextBlock FontSize="18"
                                FontWeight="Bold"
-                               Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"
+                               Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}"
                                VerticalAlignment="Center"
                                Text="{Binding Title, RelativeSource={RelativeSource AncestorType=syncfusion:ChromelessWindow}}" />
                 </StackPanel>

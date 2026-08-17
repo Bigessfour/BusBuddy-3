@@ -50,42 +50,42 @@
                 <!-- Navigation + Theme Selector -->
                 <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,15,0,0">
                     <syncfusion:ButtonAdv Label="Eligibility PDF" Margin="0,0,18,0" Padding="15,8"
-                                          Background="{DynamicResource BusBuddy.Brush.Primary}" Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}" BorderThickness="0"
+                                          Background="{DynamicResource BusBuddy.Brush.Primary}" Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}" BorderThickness="0"
                                           Click="EligibilityPdfButton_Click" FontSize="14" FontWeight="SemiBold"
                                           ToolTip="Generate eligibility route PDF (district outside town, excludes Lamar)"
                                           AutomationProperties.Name="Generate Eligibility PDF"/>
                     <syncfusion:ButtonAdv Label="Print Last PDF" Margin="0,0,25,0" Padding="15,8"
-                                          Background="{DynamicResource BusBuddy.Brush.Primary}" Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}" BorderThickness="0"
+                                          Background="{DynamicResource BusBuddy.Brush.Primary}" Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}" BorderThickness="0"
                                           Click="PrintEligibilityPdfButton_Click" FontSize="14" FontWeight="SemiBold"
                                           ToolTip="Print the last generated eligibility PDF (opens system print dialog)"
                                           AutomationProperties.Name="Print Eligibility PDF"/>
                     <syncfusion:ButtonAdv Label="Map" Margin="0,0,18,0" Padding="15,8"
-                                          Background="{DynamicResource BusBuddy.Brush.Primary}" Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}" BorderThickness="0"
+                                          Background="{DynamicResource BusBuddy.Brush.Primary}" Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}" BorderThickness="0"
                                           Click="MapButton_Click" FontSize="14" FontWeight="SemiBold"
                                           ToolTip="Show Google Earth / Geospatial Map"
                                           AutomationProperties.Name="Map View Navigation"/>
                         <syncfusion:ButtonAdv Label="Students" Margin="0,0,10,0" Padding="15,8"
-                                          Background="{DynamicResource BusBuddy.Brush.Primary}" Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}" BorderThickness="0"
+                                          Background="{DynamicResource BusBuddy.Brush.Primary}" Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}" BorderThickness="0"
                                           Click="StudentsButton_Click" FontSize="14" FontWeight="SemiBold"
                                           ToolTip="Manage student records and information"
                                           AutomationProperties.Name="Students Management"/>
                     <syncfusion:ButtonAdv Label="Routes" Margin="0,0,10,0" Padding="15,8"
-                                          Background="{DynamicResource BusBuddy.Brush.Primary}" Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}" BorderThickness="0"
+                                          Background="{DynamicResource BusBuddy.Brush.Primary}" Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}" BorderThickness="0"
                                           Click="RouteManagementButton_Click" FontSize="14" FontWeight="SemiBold"
                                           ToolTip="Plan and manage transportation routes"
                                           AutomationProperties.Name="Route Management"/>
                     <syncfusion:ButtonAdv Label="Buses" Margin="0,0,10,0" Padding="15,8"
-                                          Background="{DynamicResource BusBuddy.Brush.Primary}" Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}" BorderThickness="0"
+                                          Background="{DynamicResource BusBuddy.Brush.Primary}" Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}" BorderThickness="0"
                                           Click="BusesButton_Click" FontSize="14" FontWeight="SemiBold"
                                           ToolTip="Manage bus fleet and vehicle information"
                                           AutomationProperties.Name="Bus Management"/>
                     <syncfusion:ButtonAdv Label="Drivers" Margin="0,0,10,0" Padding="15,8"
-                                          Background="{DynamicResource BusBuddy.Brush.Primary}" Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}" BorderThickness="0"
+                                          Background="{DynamicResource BusBuddy.Brush.Primary}" Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}" BorderThickness="0"
                                           Click="DriversButton_Click" FontSize="14" FontWeight="SemiBold"
                                           ToolTip="Manage driver information and schedules"
                                           AutomationProperties.Name="Driver Management"/>
                     <syncfusion:ButtonAdv Label="Reports" Padding="15,8"
-                                          Background="{DynamicResource BusBuddy.Brush.Primary}" Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}" BorderThickness="0"
+                                          Background="{DynamicResource BusBuddy.Brush.Primary}" Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}" BorderThickness="0"
                                           Click="ReportsButton_Click" FontSize="14" FontWeight="SemiBold"
                                           ToolTip="Generate and view transportation reports"
                                           AutomationProperties.Name="Reports and Print Routes"/>

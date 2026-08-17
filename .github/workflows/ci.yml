@@ -75,7 +75,7 @@ jobs:
           --logger "trx;LogFileName=test-results.trx"
           --collect:"XPlat Code Coverage"
           --results-directory ./TestResults
-          --filter "Category!=Integration&Category!=InMemoryFlaky&(FullyQualifiedName~Core|Seed|Student|Route|Maintenance|PdfReport|Fleet|Gaps|ModelValidation)"
+          --filter "Category!=Integration&Category!=InMemoryFlaky&(FullyQualifiedName~Core|Seed|Student|Route|Maintenance|PdfReport|Fleet|Gaps|ModelValidation|XamlCompliance)"
 
       - name: Upload test results
         if: always()

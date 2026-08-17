@@ -199,7 +199,7 @@
                             SizeMode="Normal"
                             CornerRadius="4"
                             Background="{DynamicResource BusBuddy.Brush.Primary}"
-                            Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"
+                            Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}"
                             AutomationProperties.Name="Print Schedule"
                             AutomationProperties.HelpText="Print route schedules"/>
             <syncfusion:ButtonAdv Name="PrintRouteMapsButton" Label="Route Map"
