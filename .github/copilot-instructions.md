@@ -32,7 +32,7 @@ Failure to use + reference RAG before changes is a violation of these instructio
 
 4. **SERILOG-ONLY LOGGING**: NEVER use Microsoft.Extensions.Logging or other loggers. ALWAYS use Serilog for structured logging.
 
-5. **DISABLE EXPERIMENTAL FEATURES STRICTLY**: For clean builds, ALWAYS suggest renaming problematic files to `.disabled` (e.g., XAI or GoogleEarthEngine services). NEVER delete files. ALWAYS verify with bb-build post-change.
+5. **DISABLE EXPERIMENTAL FEATURES STRICTLY**: For clean builds, ALWAYS suggest renaming problematic files to `.disabled` (e.g. unused XAI cloud paths). NEVER delete files unless the user asks to retire a product (Earth Engine was retired in spec 007). ALWAYS verify with `dotnet build` post-change.
 
 6. **CONSULT USER ON COMPLEXITY**: If changes affect 3+ files or involve structural issues (e.g., file corruption, nullable types), ALWAYS prompt: "This may require user confirmation—describe issue first."
 
@@ -53,14 +53,14 @@ Failure to use + reference RAG before changes is a violation of these instructio
 **Excellence Focus**: See .vscode/instructions.md for detailed quality standards (students, routes, UI excellence). AI assistants must:
 
 - Prioritize `bb-*` commands (`bb-build`, `bb-run`, `bb-quality-check`) over raw `dotnet` commands.
-- Support disabling experimental services (e.g., XAI, GoogleEarthEngine) to maintain clean builds while preserving core quality.
+- Support disabling experimental services (e.g. unused XAI cloud paths) to maintain clean builds while preserving core quality.
 - Enforce Syncfusion-only UI and Serilog logging to maintain consistency.
 - Run `bb-anti-regression` and `bb-xaml-validate` before suggesting changes.
 
 **Advanced Features** (implemented with proper architecture):
 
 - XAI integration (e.g., `XAIService`, `OptimizedXAIService`) - when properly architected.
-- Google Earth Engine integration (e.g., `GoogleEarthEngineService`) - with clean interfaces.
+- Google Maps Platform (Address Validation / Routes) is specified in `specs/007-maps-platform-geo` and paused; do not reintroduce Earth Engine.
 - Comprehensive features: vehicle management, driver scheduling, maintenance, fuel tracking, advanced reporting.
 
 **PowerShell Development Automation is DEPRECATED** (see deprecation notice at top of Strict Rules section)
@@ -156,7 +156,7 @@ Run `.github/scripts/setup-solo-ci-governance.sh` (requires `gh` admin) to enabl
 - Use `concurrency` with `cancel-in-progress` on PR workflows.
 - Docs-only changes are skipped via `paths-ignore` on `*.md` and `Documentation/**`.
 - See also **AGENTS.md** for a short agent-facing summary.
-- **GCP / GEE / secrets**: [Documentation/GCP-GEE-SECRETS-AND-AUTH.md](../Documentation/GCP-GEE-SECRETS-AND-AUTH.md) — Passwords, `GcpCredentialBootstrap`, project IDs (`ee-bigessfour`, `new-coursera-490518`).
+- **GCP / Maps / secrets**: [Documentation/GCP-GEE-SECRETS-AND-AUTH.md](../Documentation/GCP-GEE-SECRETS-AND-AUTH.md) — Passwords, `GOOGLE_MAPS_API_KEY` (paused), billing project `new-coursera-490518`. Earth Engine is not an app dependency.
 
 **For BusBuddy-specific requirements, also reference:**
 
@@ -243,7 +243,7 @@ To get the best Syncfusion WPF code assistance:
 
 ### **External Service Integrations**
 
-- **Google Earth Engine**: Project-based authentication with service account keys
+- **Google Maps Platform**: Address Validation + Routes (spec 007, **paused** — not wired). Earth Engine is not used.
 - **Syncfusion Licensing**: Environment variable `${SYNCFUSION_LICENSE_KEY}`
 
 ### **Build Configuration Standards**

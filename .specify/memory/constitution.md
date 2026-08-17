@@ -1,3 +1,14 @@
+<!--
+Sync Impact Report
+Version change: 1.0.0 → 1.1.0 (MINOR — Technology & Environment Geo constraint + secrets; Core Principles I–VII unchanged)
+Modified: Technology table Geo (Earth Engine only → Maps Platform + local shapefiles; EE retired from app)
+Modified: GCP project map (ee-bigessfour unused by app); Secrets (GOOGLE_MAPS_API_KEY; drop GEE bootstrap as required)
+Added: none
+Removed: none (EE project retained as historical unused ID so agents do not reinvent it)
+Templates: plan/spec/tasks — no mandatory section changes (⚠ feature 007 carries the operational rewrite)
+Follow-up: AGENTS.md, README env table, Documentation/GCP-GEE-SECRETS-AND-AUTH.md, architecture map — tasks in specs/007-maps-platform-geo
+-->
+
 # BusBuddy Constitution
 
 This document is the immutable architectural DNA for BusBuddy-3.
@@ -53,28 +64,28 @@ When those conflict with this constitution, **this file wins** until amended und
 
 ## Technology & Environment Constraints
 
-| Area | Rule |
-|------|------|
-| UI | Syncfusion WPF only; Windows target |
-| Logging | Serilog only |
-| Data | EF Core; Postgres preferred for real tests (`docker-compose` profiles) |
-| AI (app) | Prefer local Ollama (or compatible) behind existing service interfaces; cloud XAI is not required for core path |
-| Geo | Google Earth Engine via documented GCP projects only |
-| Hosting | No cloud app hosting / no AWS for BusBuddy runtime |
+| Area     | Rule                                                                                                                                                                                       |
+| -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| UI       | Syncfusion WPF only; Windows target                                                                                                                                                        |
+| Logging  | Serilog only                                                                                                                                                                               |
+| Data     | EF Core; Postgres preferred for real tests (`docker-compose` profiles)                                                                                                                     |
+| AI (app) | Prefer local Ollama (or compatible) behind existing service interfaces; cloud XAI is not required for core path                                                                            |
+| Geo      | Google Maps Platform (Address Validation, Routes) on documented billing project; local shapefiles for eligibility; Syncfusion SfMap for display. Earth Engine is **not** an app dependency |
+| Hosting  | No cloud app hosting / no AWS for BusBuddy runtime                                                                                                                                         |
 
 ### GCP project map (do not hallucinate)
 
-| Project ID | Role |
-|------------|------|
-| `ee-bigessfour` | Earth Engine API + service account |
-| `new-coursera-490518` | GCP console / billing / `gcloud` default |
-| ~~`busbuddy-465000`~~ | **Invalid** — removed; never invent |
+| Project ID            | Role                                                                  |
+| --------------------- | --------------------------------------------------------------------- |
+| `new-coursera-490518` | GCP console / billing / Maps APIs / `gcloud` default                  |
+| `ee-bigessfour`       | **Unused by the app** (historical Earth Engine project — do not wire) |
+| ~~`busbuddy-465000`~~ | **Invalid** — removed; never invent                                   |
 
 ### Secrets
 
-- macOS: Passwords app entries (Name = env var), loaded by `LoadApiKeysFromMacPasswords()` then `BootstrapGcpCredentialsForProduction()` in `BusBuddy.WPF/App.xaml.cs`.
-- Windows production: machine/user env vars (`GEE_SERVICE_ACCOUNT_JSON` or `GOOGLE_APPLICATION_CREDENTIALS`); no Keychain.
-- Canonical auth doc: `Documentation/GCP-GEE-SECRETS-AND-AUTH.md`.
+- macOS: Passwords app entries (Name = env var), loaded by `LoadApiKeysFromMacPasswords()` in `BusBuddy.WPF/App.xaml.cs`.
+- Windows production: machine/user env vars (including `GOOGLE_MAPS_API_KEY`); no Keychain.
+- Canonical geo/auth doc: `Documentation/GCP-GEE-SECRETS-AND-AUTH.md` (retitled/rewritten under spec 007 to Maps; do not document Earth Engine as required).
 
 ## Spec-Kit Upgrade Caution
 
@@ -96,4 +107,4 @@ When those conflict with this constitution, **this file wins** until amended und
 - Runtime tactical detail remains in `.github/copilot-instructions.md` and `AGENTS.md` as long as they stay consistent with this document.
 - Complexity beyond stated requirements must be justified in the PR or rejected.
 
-**Version**: 1.0.0 | **Ratified**: 2026-07-24 | **Last Amended**: 2026-07-24
+**Version**: 1.1.0 | **Ratified**: 2026-07-24 | **Last Amended**: 2026-08-17

@@ -16,11 +16,11 @@
     "BusBuddy.WPF/Views/Maintenance/MaintenanceView.xaml.cs",
     "BusBuddy.WPF/Views/Driver/DriverScheduleView.xaml.cs",
     "BusBuddy.Core/Services/DriverAvailabilityCalculator.cs",
-    "BusBuddy.Core/Services/GoogleEarthEngineService.cs",
+    "BusBuddy.Core/Services/GeoDataService.cs",
     "BusBuddy.WPF/Views/Dashboard/DashboardView.xaml.cs",
     "BusBuddy.Core/Services/DashboardMetricsService.cs",
     "BusBuddy.WPF/Utilities/SyncfusionThemeManager.cs",
-    "BusBuddy.Core/Configuration/GcpCredentialBootstrap.cs"
+    "BusBuddy.Core/Services/ShapefileEligibilityService.cs"
   ],
   "scan_roots": ["BusBuddy.Core", "BusBuddy.WPF", "BusBuddy.Tests"],
   "exclude_dirs": [

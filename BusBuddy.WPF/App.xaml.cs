@@ -13,7 +13,6 @@ using BusBuddy.Core.Services;
 using BusBuddy.Core.Services.Interfaces;
 // Phase-based extension removed; direct registrations used instead
 using BusBuddy.Core.Extensions; // Needed for AddDataServices extension
-using BusBuddy.Core.Configuration;
 using BusBuddy.WPF.ViewModels;
 using Microsoft.EntityFrameworkCore;
 using System.Threading;
@@ -51,7 +50,6 @@ namespace BusBuddy.WPF
             // This bridges Passwords app -> runtime env on macOS.
             // On non-mac, falls back to existing env / machine vars.
             LoadApiKeysFromMacPasswords();
-            BootstrapGcpCredentialsForProduction();
 
             // Register Syncfusion license before any UI initialization
             EnsureSyncfusionLicenseRegistered();
@@ -141,12 +139,9 @@ namespace BusBuddy.WPF
                 "SYNCFUSION_LICENSE_KEY",
                 "SYNCFUSION_API_KEY",
                 "Syncfusion_API_Key",
-                "GEE_PROJECT_ID",
-                "GEE_SERVICE_ACCOUNT_EMAIL",
                 "GCP_BILLING_PROJECT",
                 "GOOGLE_CLOUD_PROJECT",
-                "GOOGLE_APPLICATION_CREDENTIALS",
-                "GEE_SERVICE_ACCOUNT_JSON"
+                "GOOGLE_MAPS_API_KEY"
             };
 
             foreach (var keyName in keysToLoad)
@@ -269,30 +264,6 @@ namespace BusBuddy.WPF
             }
 
             return false;
-        }
-
-        /// <summary>
-        /// Materializes GCP service account credentials and sets GoogleEarthEngine__* env overrides.
-        /// Runs on all platforms so Production can use GEE_SERVICE_ACCOUNT_JSON / GOOGLE_APPLICATION_CREDENTIALS.
-        /// </summary>
-        private static void BootstrapGcpCredentialsForProduction()
-        {
-            try
-            {
-                var path = GcpCredentialBootstrap.MaterializeServiceAccountFromEnvironment();
-                if (!string.IsNullOrEmpty(path))
-                {
-                    _bootstrapLogger?.Information("GCP credentials ready for production (key path: {Path})", path);
-                }
-                else
-                {
-                    _bootstrapLogger?.Information("GCP credentials not materialized; GEE will use placeholders until configured.");
-                }
-            }
-            catch (Exception ex)
-            {
-                _bootstrapLogger?.Warning(ex, "GCP credential bootstrap failed: {Message}", ex.Message);
-            }
         }
 
         /// <summary>
@@ -445,29 +416,9 @@ namespace BusBuddy.WPF
                 // Use the proper extension method that registers IBusBuddyDbContextFactory
                 services.AddDataServices(configuration);
 
-                // Core geo/eligibility + Google Earth Engine (production auth via Passwords/env)
-                services.AddSingleton<GoogleEarthEngineService>();
+                // Route geography from the database. Maps Platform clients are paused (spec 007).
                 services.AddSingleton<IGeoDataService>(sp =>
-                {
-                    var config = sp.GetRequiredService<IConfiguration>();
-                    var baseUrl = config["GoogleEarthEngine:BaseUrl"] ?? "https://earthengine.googleapis.com";
-                    if (baseUrl.EndsWith("/v1alpha", StringComparison.OrdinalIgnoreCase))
-                    {
-                        baseUrl = "https://earthengine.googleapis.com";
-                    }
-
-                    var token = GcpCredentialBootstrap.TryGetEarthEngineAccessTokenAsync()
-                        .GetAwaiter()
-                        .GetResult()
-                        ?? Environment.GetEnvironmentVariable("GEE_ACCESS_TOKEN")
-                        ?? "placeholder_token";
-                    var tokenKind = string.IsNullOrWhiteSpace(token) || token == "placeholder_token"
-                        ? "placeholder"
-                        : "live";
-                    Log.Information("Registering IGeoDataService BaseUrl={BaseUrl} TokenKind={TokenKind}", baseUrl, tokenKind);
-
-                    return new GeoDataService(baseUrl, token, sp.GetService<IBusBuddyDbContextFactory>());
-                });
+                    new GeoDataService(sp.GetService<IBusBuddyDbContextFactory>()));
                 services.AddSingleton<IGeocodingService, OfflineGeocodingService>();
                 services.AddSingleton<IEligibilityService>(_ =>
                 {

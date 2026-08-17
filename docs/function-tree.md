@@ -31,9 +31,9 @@ flowchart TB
     Maint[MaintenanceService]
   end
   subgraph p2 [P2]
-    GEE[GoogleEarthEngineService]
+    Geo[GeoDataService]
     Metrics[DashboardMetricsService]
-    Gcp[GcpCredentialBootstrap]
+    Shape[ShapefileEligibilityService]
   end
   subgraph data [Data]
     EF[EF + Postgres Docker]
@@ -57,7 +57,6 @@ flowchart TB
   Theme --> ui
   core --> EF
   p2 --> EF
-  GEE --> Gcp
 ```
 
 Allowlist lives in [`.function-inventory.json`](../.function-inventory.json) (P1 first). Update this tree when a new operator view or core service is added to that list.

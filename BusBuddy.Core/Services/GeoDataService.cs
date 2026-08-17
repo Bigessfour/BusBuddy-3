@@ -1,7 +1,4 @@
 using System.Diagnostics;
-using System.Net.Http;
-using System.Net.Http.Headers;
-using BusBuddy.Core.Configuration;
 using BusBuddy.Core.Data;
 using BusBuddy.Core.Mapping;
 using BusBuddy.Core.Models;
@@ -11,56 +8,19 @@ using Serilog;
 
 namespace BusBuddy.Core.Services
 {
-    public class GeoDataService : IGeoDataService, IDisposable
+    /// <summary>
+    /// Database-backed route geography for SfMap. Earth Engine is not used.
+    /// Street geocoding/routing will use Google Maps Platform (spec 007) when resumed.
+    /// </summary>
+    public class GeoDataService : IGeoDataService
     {
         private static readonly ILogger Logger = Log.ForContext<GeoDataService>();
-        private readonly HttpClient _httpClient;
-        private readonly string _geeApiBaseUrl;
-        private readonly string _geeAccessToken;
         private readonly IBusBuddyDbContextFactory? _contextFactory;
-        private string? _cachedToken;
-        private DateTime _tokenExpiresUtc;
-        private bool _disposed;
 
-        public GeoDataService(string geeApiBaseUrl, string geeAccessToken, IBusBuddyDbContextFactory? contextFactory = null)
+        public GeoDataService(IBusBuddyDbContextFactory? contextFactory = null)
         {
-            _httpClient = new HttpClient();
-            _geeApiBaseUrl = geeApiBaseUrl;
-            _geeAccessToken = geeAccessToken;
             _contextFactory = contextFactory;
-            var tokenKind = string.IsNullOrWhiteSpace(geeAccessToken) || geeAccessToken == "placeholder_token"
-                ? "placeholder"
-                : "live";
-            Logger.Information(
-                "GeoDataService constructed BaseUrl={BaseUrl} TokenKind={TokenKind} HasDbContext={HasDbContext}",
-                geeApiBaseUrl, tokenKind, contextFactory is not null);
-        }
-
-        public async Task<string> GetGeoJsonAsync(string assetId)
-        {
-            var stopwatch = Stopwatch.StartNew();
-            var url = $"{_geeApiBaseUrl}/v1beta/projects/earthengine-public/assets/{assetId}:exportGeoJson";
-            Logger.Information("Requesting GEE GeoJSON for asset {AssetId}", assetId);
-            using var request = new HttpRequestMessage(HttpMethod.Get, url);
-            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", await ResolveAccessTokenAsync());
-            var response = await _httpClient.SendAsync(request);
-            var body = await response.Content.ReadAsStringAsync();
-            stopwatch.Stop();
-            if (!response.IsSuccessStatusCode)
-            {
-                Logger.Warning(
-                    "GEE GeoJSON request failed AssetId={AssetId} Status={StatusCode} ElapsedMs={ElapsedMs} Bytes={Bytes}",
-                    assetId, (int)response.StatusCode, stopwatch.ElapsedMilliseconds, body.Length);
-            }
-            else
-            {
-                Logger.Information(
-                    "GEE GeoJSON received AssetId={AssetId} Status={StatusCode} ElapsedMs={ElapsedMs} Bytes={Bytes}",
-                    assetId, (int)response.StatusCode, stopwatch.ElapsedMilliseconds, body.Length);
-            }
-
-            response.EnsureSuccessStatusCode();
-            return body;
+            Logger.Information("GeoDataService constructed HasDbContext={HasDbContext}", contextFactory is not null);
         }
 
         public async Task<List<Route>> GetRoutesWithGeoDataAsync()
@@ -166,25 +126,6 @@ namespace BusBuddy.Core.Services
             return route;
         }
 
-        private async Task<string> ResolveAccessTokenAsync()
-        {
-            if (!string.IsNullOrWhiteSpace(_cachedToken) && DateTime.UtcNow < _tokenExpiresUtc)
-            {
-                return _cachedToken;
-            }
-
-            var refreshed = await GcpCredentialBootstrap.TryGetEarthEngineAccessTokenAsync();
-            var token = !string.IsNullOrWhiteSpace(refreshed)
-                ? refreshed
-                : _geeAccessToken;
-            _cachedToken = token;
-            _tokenExpiresUtc = DateTime.UtcNow.AddMinutes(50);
-            Logger.Debug("Resolved GEE access token TokenKind={TokenKind} ExpiresUtc={ExpiresUtc:o}",
-                string.IsNullOrWhiteSpace(token) || token == "placeholder_token" ? "placeholder" : "live",
-                _tokenExpiresUtc);
-            return token ?? string.Empty;
-        }
-
         private static List<Route> SampleRoutes() =>
         [
             new Route
@@ -202,21 +143,5 @@ namespace BusBuddy.Core.Services
                 })
             }
         ];
-
-        public void Dispose()
-        {
-            Dispose(true);
-            GC.SuppressFinalize(this);
-        }
-
-        protected virtual void Dispose(bool disposing)
-        {
-            if (!_disposed && disposing)
-            {
-                _httpClient.Dispose();
-                _disposed = true;
-                Logger.Debug("GeoDataService disposed");
-            }
-        }
     }
 }
