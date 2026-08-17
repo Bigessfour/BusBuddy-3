@@ -115,6 +115,8 @@ namespace BusBuddy.Core.Extensions
             services.AddScoped<IStudentSchoolTransferService, StudentSchoolTransferService>();
             services.AddScoped<IRouteWaypointRebuildService, RouteWaypointRebuildService>();
             services.AddScoped<IDriverTrainingService, DriverTrainingService>();
+            services.AddScoped<BusBuddy.Core.Services.RouteDetermination.IRouteDeterminationService,
+                BusBuddy.Core.Services.RouteDetermination.RouteDeterminationService>();
             services.AddScoped<IFuelService, FuelService>();
             services.AddScoped<IMaintenanceService, MaintenanceService>();
             services.AddScoped<IScheduleService, ScheduleService>();
@@ -125,6 +127,8 @@ namespace BusBuddy.Core.Extensions
             // Geospatial: Google Maps Platform (Address Validation). Do not register OfflineGeocodingService in production.
             services.Configure<BusBuddy.Core.Configuration.GoogleMapsOptions>(
                 configuration.GetSection(BusBuddy.Core.Configuration.GoogleMapsOptions.SectionName));
+            services.Configure<BusBuddy.Core.Configuration.RoutingDistrictSettings>(
+                configuration.GetSection(BusBuddy.Core.Configuration.RoutingDistrictSettings.SectionName));
             services.AddSingleton(sp =>
             {
                 var opts = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<BusBuddy.Core.Configuration.GoogleMapsOptions>>();

@@ -180,6 +180,46 @@ namespace BusBuddy.WPF.ViewModels.GoogleEarth
         }
 
         /// <summary>
+        /// Surfaces year-start draft proposals on the map status line and selects the first draft route when present.
+        /// </summary>
+        public void ApplyGenerationResult(BusBuddy.Core.Services.RouteDetermination.RouteGenerationResult result)
+        {
+            ArgumentNullException.ThrowIfNull(result);
+            if (!result.Success)
+            {
+                StatusMessage = result.Error ?? "Route generation failed";
+                return;
+            }
+
+            var draftNames = result.Proposals
+                .Select(p => p.SuggestedRouteName)
+                .Where(n => n.StartsWith("Draft-", StringComparison.OrdinalIgnoreCase))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            StatusMessage =
+                $"Draft proposals: {result.Proposals.Count} route(s), {result.AssignedStudentCount} assigned, " +
+                $"{result.UnclusteredStudentIds.Count} unclustered — select a Draft-* route to review / override";
+
+            Logger.Information(
+                "Map status updated for generation OpId={OpId} Drafts={DraftCount}",
+                result.OperationId,
+                draftNames.Count);
+
+            _ = Task.Run(async () =>
+            {
+                await LoadRoutesAsync().ConfigureAwait(true);
+                var draft = Routes.FirstOrDefault(r =>
+                    draftNames.Any(n => string.Equals(n, r.RouteName, StringComparison.OrdinalIgnoreCase))
+                    || r.RouteName.StartsWith("Draft-", StringComparison.OrdinalIgnoreCase));
+                if (draft is not null)
+                {
+                    SelectedRoute = draft;
+                }
+            });
+        }
+
+        /// <summary>
         /// Collection of routes to display on the map
         /// </summary>
         public ObservableCollection<RouteModel> Routes

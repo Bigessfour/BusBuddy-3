@@ -22,20 +22,22 @@
   - [x] US3: Routes API drive polyline (fail-open optimizer)
   - [x] US4: Places type-ahead — skipped (MVP cut)
   - [x] Docs for US2; Maps clients wired
-- [ ] **Student contact + school destinations** — parent/emergency fields, Destination School catalog, intake school dropdown, map schools, inter-district `StudentSchoolTransfer` (timed pickup/dropoff)
+- [x] **Student contact + school destinations** — parent/emergency fields, Destination School catalog, intake school dropdown, map schools, inter-district `StudentSchoolTransfer` (timed pickup/dropoff) — merged [PR #36](https://github.com/Bigessfour/BusBuddy-3/pull/36)
   - [ ] Apply migration `20260817140000_StudentContactFieldsAlignment` — **Mac Postgres `dotnet ef database update` blocked** (InitialCreate seed uses SQL Server `bit` / unspecified timestamps). Apply on **Windows VM SQL Server**, or use EnsureCreated for local Postgres smoke only.
   - [ ] VM: assign school on intake; Show Schools on map; create transfer home→campus
   - [x] Transfer UI (Students → School Transfer) — pickup/dropoff location + times required; waypoints rebuild on assign/transfer
   - [x] Mac smoke 2026-08-17: InMemory services OK (schools, training 17 rows, transfer validation, waypoints). Postgres Migrate blocked as above.
-- [ ] **Driver employment + CDE training sub-module** — contact/address/hire; [CDE 2024-25 License/Training Matrix](https://resources.finalsite.net/images/v1764086158/cdestatecous/mpcomjjt3zryb1vussig/2024-25-License-Training-Matrix.pdf) checklist via `DriverTrainingRecord` / `IDriverTrainingService`
+- [x] **Driver employment + CDE training sub-module** — contact/address/hire; [CDE 2024-25 License/Training Matrix](https://resources.finalsite.net/images/v1764086158/cdestatecous/mpcomjjt3zryb1vussig/2024-25-License-Training-Matrix.pdf) checklist via `DriverTrainingRecord` / `IDriverTrainingService` — merged [PR #36](https://github.com/Bigessfour/BusBuddy-3/pull/36) (NoTracking write fix for Upsert)
   - [ ] Apply migration `20260817150000_DriverTrainingSubmodule` — same Windows/SQL Server path as above
   - [ ] VM: edit driver employment fields; open Training grid; mark complete + certificate
   - [x] Dedicated training grid UI (Drivers → Training) — mark complete / certificate per row
-- [ ] **008 Route determination / fleet sizing** (Spec-Kit next) — minimize buses with geographic + time comfort; AM/PM mirror with AM-only / PM-only / both; recalc on assign; year-start auto-assign + map override; toast when assign breaks arrival/capacity; home→school and transfer planners separate; target >100 riders / medium–large city, still usable for small districts
+- [ ] **008 Route determination / fleet sizing** — minimize buses with geographic + time comfort; AM/PM mirror with AM-only / PM-only / both; recalc on assign; year-start auto-assign + map override; toast when assign breaks arrival/capacity; home→school and transfer planners separate; target >100 riders / medium–large city, still usable for small districts
   - Design locked 2026-08-17 (user answers): soft capacity = assigned bus `SeatingCapacity` (hard); school map **start times** → work backward for pickups; simple **quadrants** + rural/outlier rules (large pickup gaps → other route); minimize buses without sacrificing ride time/mileage/comfort; keep occasional-rider stops on mirrored routes; suggest new route past thresholds
   - [x] `/speckit-specify` + `/speckit-plan` — [spec](../specs/008-route-determination/spec.md) · [plan](../specs/008-route-determination/plan.md) (Q1:A / Q2:B / Q3:B locked)
   - [x] `/speckit-tasks` — [tasks.md](../specs/008-route-determination/tasks.md) (41 tasks; MVP = US1 T001–T020)
-  - [ ] `/speckit-implement` (prefer after #36 merge) + school start/dismissal on Destination + VM migrate
+  - [x] `/speckit-implement` MVP T001–T020 (Setup + Foundational + US1) on `feature/008-route-determination`
+  - [ ] Apply migration `20260817160000_DestinationSchoolTimes` on Windows SQL Server; VM smoke Generate Routes + map draft status
+  - [ ] US2–US4 + polish (T021–T041)
 - [x] **006 Syncfusion Tool Integration** — [spec](../specs/006-syncfusion-tool-integration/spec.md) — merged [PR #21](https://github.com/Bigessfour/BusBuddy-3/pull/21)
   - [x] MCP paths, skills overlay, Syncfusion **34.2.3**, deps audit
   - [x] `python -m rag.index` after merge (2026-07-24; ~3399 chunks)

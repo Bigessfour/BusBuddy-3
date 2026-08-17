@@ -675,6 +675,8 @@ public class BusBuddyDbContext : DbContext
             entity.Property(e => e.AdminContactName).HasMaxLength(100);
             entity.Property(e => e.AdminPhone).HasMaxLength(20);
             entity.Property(e => e.AdminEmail).HasMaxLength(100);
+            entity.Property(e => e.StartTime);
+            entity.Property(e => e.DismissalTime);
             entity.HasIndex(e => e.DestinationType).HasDatabaseName("IX_Destinations_Type");
             entity.HasIndex(e => e.IsActive).HasDatabaseName("IX_Destinations_Active");
         });
