@@ -206,33 +206,33 @@
                                     AutomationProperties.Name="Export All Data to PDF"
                                     AutomationProperties.HelpText="Export formatted reports to PDF"/>
 
-                            <syncfusion:ButtonAdv Label="📈 Export to Excel"
+                            <syncfusion:ButtonAdv Label="📈 Export Excel-ready CSV"
                                     Command="{Binding ExportAllDataToExcelCommand}"
                                     Background="{DynamicResource BusBuddy.Brush.Semantic.Success}" Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}" Margin="0,5"
-                                    AutomationProperties.Name="Export All Data to Excel"
-                                    AutomationProperties.HelpText="Export data to Excel workbook"/>
+                                    AutomationProperties.Name="Export Excel-ready CSV"
+                                    AutomationProperties.HelpText="Export data as a CSV file that opens in Excel"/>
                         </StackPanel>
 
                         <StackPanel Grid.Column="1" Margin="10,0,0,0">
-                            <TextBlock Text="Print Options" FontWeight="Bold" Margin="0,0,0,10"/>
+                            <TextBlock Text="Save for print (PDF)" FontWeight="Bold" Margin="0,0,0,10"/>
 
-                            <syncfusion:ButtonAdv Label="🖨️ Print Student Lists"
+                            <syncfusion:ButtonAdv Label="🖨️ Save student lists (PDF)"
                                     Command="{Binding PrintStudentListsCommand}"
                                     Background="{DynamicResource BusBuddy.Brush.Primary}" Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}" Margin="0,5"
-                                    AutomationProperties.Name="Print Student Lists"
-                                    AutomationProperties.HelpText="Print formatted student lists by route"/>
+                                    AutomationProperties.Name="Save Student Lists PDF"
+                                    AutomationProperties.HelpText="Save a student-list PDF for printing"/>
 
-                            <syncfusion:ButtonAdv Label="🗺️ Print Route Maps"
+                            <syncfusion:ButtonAdv Label="🗺️ Save route list (PDF)"
                                     Command="{Binding PrintRouteMapsCommand}"
                                     Background="{DynamicResource BusBuddy.Brush.Semantic.Warning}" Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}" Margin="0,5"
-                                    AutomationProperties.Name="Print Route Maps"
-                                    AutomationProperties.HelpText="Print route maps and directions"/>
+                                    AutomationProperties.Name="Save Route List PDF"
+                                    AutomationProperties.HelpText="Save a route-list PDF for printing (not a map image)"/>
 
-                            <syncfusion:ButtonAdv Label="📅 Print Schedules"
+                            <syncfusion:ButtonAdv Label="📅 Save schedules (PDF)"
                                     Command="{Binding PrintSchedulesCommand}"
                                     Background="{DynamicResource BusBuddy.Brush.Semantic.Warning}" Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}" Margin="0,5"
-                                    AutomationProperties.Name="Print Schedules"
-                                    AutomationProperties.HelpText="Print transportation schedules"/>
+                                    AutomationProperties.Name="Save Schedules PDF"
+                                    AutomationProperties.HelpText="Save a schedule PDF for printing"/>
                         </StackPanel>
                     </Grid>
                 </GroupBox>

@@ -28,8 +28,8 @@ namespace BusBuddy.Core.Services
             {
                 "roster" or "studentlist" or "studentlists" => OperationalReportKind.StudentRoster,
                 "routemanifest" or "routesummary" or "routemap" or "routemaps" => OperationalReportKind.RouteSummary,
-                "driverschedule" or "driverroster" or "schedule" or "schedules" => OperationalReportKind.DriverRoster,
-                "dailyschedule" => OperationalReportKind.DailySchedule,
+                "driverschedule" or "driverroster" => OperationalReportKind.DriverRoster,
+                "schedule" or "schedules" or "dailyschedule" => OperationalReportKind.DailySchedule,
                 "csv" or "csvexport" => OperationalReportKind.CsvExport,
                 "excel" or "excelexport" or "xlsx" => OperationalReportKind.ExcelExport,
                 "pdf" or "pdfexport" => OperationalReportKind.PdfExport,

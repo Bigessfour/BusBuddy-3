@@ -116,6 +116,61 @@ namespace BusBuddy.Tests.Core
 
             Assert.That(async () => await _service.GenerateAsync(request), Throws.InvalidOperationException);
         }
+
+        [Test]
+        public async Task GenerateAsync_RouteSummaryWithoutRouteId_UsesAllRoutesTable()
+        {
+            _routes.Setup(r => r.GetAllActiveRoutesAsync()).ReturnsAsync(
+                Result.SuccessResult<IEnumerable<Route>>(new[]
+                {
+                    new Route { RouteId = 1, RouteName = "North", Date = DateTime.Today, IsActive = true, School = "Wiley" },
+                    new Route { RouteId = 2, RouteName = "South", Date = DateTime.Today, IsActive = true, School = "Wiley" }
+                }));
+
+            var result = await _service.GenerateAsync(OperationalReportKind.RouteSummary, _dir);
+
+            Assert.That(result.Status, Does.Contain("2 row"));
+            Assert.That(result.Status, Does.Not.Contain("route North"));
+            Assert.That(result.FileBytes[0], Is.EqualTo((byte)'%'));
+        }
+
+        [Test]
+        public async Task GenerateAsync_RouteSummaryWithRouteId_NamesThatRoute()
+        {
+            _routes.Setup(r => r.GetAllActiveRoutesAsync()).ReturnsAsync(
+                Result.SuccessResult<IEnumerable<Route>>(new[]
+                {
+                    new Route { RouteId = 1, RouteName = "North", Date = DateTime.Today, IsActive = true, School = "Wiley" },
+                    new Route { RouteId = 2, RouteName = "South", Date = DateTime.Today, IsActive = true, School = "Wiley" }
+                }));
+
+            var result = await _service.GenerateAsync(new OperationalReportRequest
+            {
+                Kind = OperationalReportKind.RouteSummary,
+                OutputDirectory = _dir,
+                RouteId = 2
+            });
+
+            Assert.That(result.Status, Does.Contain("route South"));
+        }
+
+        [Test]
+        public async Task GenerateAsync_CsvFormat_RewritesPdfExtension()
+        {
+            var requested = Path.Combine(_dir, "roster.pdf");
+
+            var result = await _service.GenerateAsync(new OperationalReportRequest
+            {
+                Kind = OperationalReportKind.StudentRoster,
+                OutputFilePath = requested,
+                AsCsv = true
+            });
+
+            Assert.That(result.FilePath, Does.EndWith(".csv"));
+            Assert.That(File.Exists(result.FilePath), Is.True);
+            Assert.That(File.Exists(requested), Is.False);
+            Assert.That(await File.ReadAllTextAsync(result.FilePath), Does.StartWith("Name,"));
+        }
     }
 
     [TestFixture]
@@ -126,6 +181,7 @@ namespace BusBuddy.Tests.Core
         [TestCase("student-list", OperationalReportKind.StudentRoster)]
         [TestCase("RouteManifest", OperationalReportKind.RouteSummary)]
         [TestCase("DriverSchedule", OperationalReportKind.DriverRoster)]
+        [TestCase("schedule", OperationalReportKind.DailySchedule)]
         [TestCase("UnassignedStudents", OperationalReportKind.UnassignedStudents)]
         public void TryParse_AliasesAndEnumNames_Succeed(string input, OperationalReportKind expected)
         {

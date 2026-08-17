@@ -36,17 +36,9 @@ namespace BusBuddy.WPF.ViewModels.Reports
 
         private static IOperationalReportService CreateDefaultReportService()
         {
-            var sp = App.ServiceProvider;
-            return sp?.GetService<IOperationalReportService>()
-                ?? new OperationalReportService(
-                    new PdfReportService(),
-                    sp?.GetService<IStudentService>() ?? new StudentService(new BusBuddy.Core.Data.BusBuddyDbContextFactory()),
-                    sp?.GetService<IRouteService>() ?? new RouteService(new BusBuddy.Core.Data.BusBuddyDbContextFactory()),
-                    sp?.GetService<IDriverService>(),
-                    sp?.GetService<BusBuddy.Core.Services.Interfaces.IBusService>(),
-                    sp?.GetService<IFuelService>(),
-                    sp?.GetService<IMaintenanceService>(),
-                    sp?.GetService<GrokGlobalAPI>());
+            return App.ServiceProvider?.GetService<IOperationalReportService>()
+                ?? throw new InvalidOperationException(
+                    "IOperationalReportService is not registered. Open Reports after the application finishes starting.");
         }
 
         #region Properties
@@ -233,16 +225,16 @@ namespace BusBuddy.WPF.ViewModels.Reports
             ExecuteKindAsync(OperationalReportKind.PdfExport, "PDF Export");
 
         private Task ExecuteExportAllDataToExcelAsync() =>
-            ExecuteKindAsync(OperationalReportKind.ExcelExport, "Excel Export");
+            ExecuteKindAsync(OperationalReportKind.ExcelExport, "Excel-ready CSV");
 
         private Task ExecutePrintStudentListsAsync() =>
-            ExecuteKindAsync(OperationalReportKind.PrintStudentLists, "Print Student Lists");
+            ExecuteKindAsync(OperationalReportKind.PrintStudentLists, "Student Lists PDF");
 
         private Task ExecutePrintRouteMapsAsync() =>
-            ExecuteKindAsync(OperationalReportKind.PrintRouteMaps, "Print Route Maps");
+            ExecuteKindAsync(OperationalReportKind.PrintRouteMaps, "Route List PDF");
 
         private Task ExecutePrintSchedulesAsync() =>
-            ExecuteKindAsync(OperationalReportKind.PrintSchedules, "Print Schedules");
+            ExecuteKindAsync(OperationalReportKind.PrintSchedules, "Schedules PDF");
 
         #endregion
 
