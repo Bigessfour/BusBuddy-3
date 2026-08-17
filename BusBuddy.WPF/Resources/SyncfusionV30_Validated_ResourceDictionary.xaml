@@ -197,6 +197,13 @@
   <!--  Muted brush used for secondary/cancel actions  -->
   <SolidColorBrush x:Key="BusBuddy.Text.Muted" Color="#4D4D4D"/>
 
+  <!--  Header / on-primary tokens referenced by MainWindow and toolbars.
+        FluentDark/FluentLight override these so theme switch stays consistent.  -->
+  <SolidColorBrush x:Key="BusBuddy.Brush.Header.Background"
+                   Color="{StaticResource BusBuddy.Panel.Header}"/>
+  <SolidColorBrush x:Key="BusBuddy.Brush.Text.OnPrimary"
+                   Color="#FFFFFF"/>
+
   <!--  ===============================================================================  -->
   <!--  SECTION 3: SYNCFUSION CONTROL DOCUMENTATION  -->
   <!--  ===============================================================================  -->

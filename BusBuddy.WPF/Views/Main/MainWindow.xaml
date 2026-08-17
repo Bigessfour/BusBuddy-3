@@ -92,7 +92,7 @@
 
                     <!-- Theme Selector & Quick Toggle -->
                     <StackPanel Orientation="Horizontal" Margin="20,0,0,0" VerticalAlignment="Center">
-                        <TextBlock Text="Theme:" Foreground="{DynamicResource ButtonForegroundBrush}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                        <TextBlock Text="Theme:" Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}" VerticalAlignment="Center" Margin="0,0,8,0"/>
                         <syncfusion:ComboBoxAdv x:Name="ThemeSelector" Width="150" SelectedIndex="0" SelectionChanged="ThemeSelector_SelectionChanged" ToolTip="Select application theme (Syncfusion Fluent themes)">
                             <syncfusion:ComboBoxItemAdv Content="FluentDark"/>
                             <syncfusion:ComboBoxItemAdv Content="FluentLight"/>
