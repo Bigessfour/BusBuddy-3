@@ -21,8 +21,7 @@ using Serilog.Formatting.Json;
 using Serilog.Settings.Configuration;
 using System.Threading.Tasks;
 using Syncfusion.SfSkinManager;
-using Syncfusion.Themes.FluentDark.WPF;
-using Syncfusion.Themes.FluentLight.WPF;
+using BusBuddy.WPF.Utilities;
 
 namespace BusBuddy.WPF
 {
@@ -1228,41 +1227,8 @@ Examples:
         /// </summary>
         private void InitializeSyncfusionThemes()
         {
-            try
-            {
-                Log.Information("🎨 Initializing SyncFusion themes for v30.1.42...");
-
-                // Enable theme application as default style (required for v30.1.42)
-                SfSkinManager.ApplyStylesOnApplication = true;
-
-                // Register FluentDark theme settings
-                SfSkinManager.RegisterThemeSettings("FluentDark", new FluentDarkThemeSettings());
-                Log.Debug("✅ FluentDark theme settings registered");
-
-                // Register FluentLight theme settings (fallback)
-                SfSkinManager.RegisterThemeSettings("FluentLight", new FluentLightThemeSettings());
-                Log.Debug("✅ FluentLight theme settings registered");
-
-                // Apply FluentDark as the application theme
-                SfSkinManager.ApplicationTheme = new Theme("FluentDark");
-                Log.Information("🎨 FluentDark theme applied as application default");
-
-                Log.Information("✅ SyncFusion theme initialization completed successfully");
-            }
-            catch (Exception ex)
-            {
-                Log.Warning(ex, "⚠️ Failed to initialize FluentDark theme, falling back to FluentLight");
-                try
-                {
-                    // Fallback to FluentLight
-                    SfSkinManager.ApplicationTheme = new Theme("FluentLight");
-                    Log.Information("🎨 FluentLight fallback theme applied");
-                }
-                catch (Exception fallbackEx)
-                {
-                    Log.Error(fallbackEx, "❌ Failed to apply any SyncFusion theme - using default styling");
-                }
-            }
+            Log.Information("Initializing Syncfusion Fluent themes");
+            SyncfusionThemeManager.ApplyApplicationTheme(SyncfusionThemeManager.PRIMARY_THEME);
         }
     }
 }
