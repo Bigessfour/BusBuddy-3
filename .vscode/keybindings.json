@@ -120,7 +120,7 @@
     "key": "ctrl+shift+h",
     "command": "workbench.action.terminal.sendSequence",
     "args": {
-      "text": "bb-health -Detailed\r"
+      "text": "dotnet build BusBuddy.sln -p:EnableWindowsTargeting=true\r"
     },
     "when": "terminalFocus"
   },
@@ -128,7 +128,7 @@
     "key": "ctrl+shift+b",
     "command": "workbench.action.terminal.sendSequence",
     "args": {
-      "text": "bb-build -Clean -Restore\r"
+      "text": "dotnet restore BusBuddy.sln -p:EnableWindowsTargeting=true && dotnet build BusBuddy.sln -p:EnableWindowsTargeting=true\r"
     },
     "when": "terminalFocus"
   },
@@ -144,7 +144,7 @@
     "key": "ctrl+shift+r",
     "command": "workbench.action.terminal.sendSequence",
     "args": {
-      "text": "bb-run -EnableDebug\r"
+      "text": "dotnet run --project BusBuddy.WPF/BusBuddy.WPF.csproj\r"
     },
     "when": "terminalFocus"
   },

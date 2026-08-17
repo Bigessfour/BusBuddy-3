@@ -75,7 +75,7 @@ Use standard tools:
 - `./run-wpf.sh` (Mac) or `dotnet run --project BusBuddy.WPF/BusBuddy.WPF.csproj` (inside VM)
 - Docker for services/tests.
 
-Legacy PS modules are in `Documentation/Archive/PowerShell-Legacy/` and `Powershell/` (retained for CI/dependency scripts only). See [STEADY-STATE-AND-FINISH-ROADMAP.md](STEADY-STATE-AND-FINISH-ROADMAP.md).
+Legacy `bb-*` PowerShell modules were removed ([issue #15](https://github.com/Bigessfour/BusBuddy-3/issues/15)). Keep only minimal scripts under `Scripts/` (e.g. `Validate-Dependencies.ps1`). See [STEADY-STATE-AND-FINISH-ROADMAP.md](STEADY-STATE-AND-FINISH-ROADMAP.md).
 
 ### **Google Cloud & Earth Engine (GEE)**
 
@@ -111,24 +111,18 @@ Full reference: [Documentation/GCP-GEE-SECRETS-AND-AUTH.md](Documentation/GCP-GE
 ```bash
 # Clone the repository
 git clone https://github.com/Bigessfour/BusBuddy-3.git
-cd BusBuddy
+cd BusBuddy-3
 
-# Enhanced build with hyperthreading optimization
-bb-build                 # State-of-the-art parallel build
-
-# Run with performance monitoring
-bb-run                   # Run with advanced diagnostics
-
-# Hyperthreading-aware testing
-bb-test                  # Optimized test execution
-
-# Optional: Load PowerShell development helpers (auto-loaded)
-Import-Module .\PowerShell\Modules\BusBuddy.Commands\BusBuddy.Commands.psm1
+dotnet restore BusBuddy.sln -p:EnableWindowsTargeting=true
+dotnet build BusBuddy.sln -c Release -p:EnableWindowsTargeting=true
+dotnet test BusBuddy.sln -c Release --no-build \
+  --filter "Category!=Integration&Category!=InMemoryFlaky"
+# Or: .github/scripts/validate-ci-local.sh
 ```
 
 **✅ Current Status**: Application builds and runs successfully with modern UI.
 
-**Development Environment**: WSL recommended for terminal/build. Use plain `dotnet` commands (PS bb-* modules removed/deprecated).
+**Development Environment**: Prefer Mac + Windows VM (or WSL) with plain `dotnet` / Docker. Legacy `bb-*` PowerShell modules are removed ([issue #15](https://github.com/Bigessfour/BusBuddy-3/issues/15)).
 
 **Syncfusion AI Assist**: MCP server @syncfusion/wpf-assistant configured in [`.cursor/mcp.json`](.cursor/mcp.json). Prefix AI prompts with `SyncfusionWPFAssistant ` for accurate WPF + Syncfusion code gen (requires your Syncfusion API key). See .github/copilot-instructions.md and https://help.syncfusion.com/wpf/ai-coding-assistant/overview .
 
@@ -149,20 +143,15 @@ See https://help.syncfusion.com/wpf/skills/component-skills .
 - ✅ **Dependencies**: All packages resolved (.NET 9.0, Syncfusion 30.1.42)
 - ✅ **Database**: Entity Framework migrations working with LocalDB
 - ✅ **UI Framework**: WPF with Syncfusion controls operational
-- ✅ **Development Tools**: PowerShell automation module available
+- ✅ **Development Tools**: `dotnet` CLI + Docker + optional `Scripts/Validate-Dependencies.ps1`
 - 🔄 **Active Development**: Ready for feature work
 
 ### **Development Setup**
 
-```powershell
-# Build and run the application
-dotnet build BusBuddy.sln
-dotnet run --project BusBuddy.WPF\BusBuddy.WPF.csproj
-
-# Development helpers (optional)
-Import-Module .\PowerShell\Modules\BusBuddy.Commands\BusBuddy.Commands.psm1
-Test-BbAntiRegression  # Check code quality
-Test-BbXaml           # Validate UI controls
+```bash
+dotnet build BusBuddy.sln -p:EnableWindowsTargeting=true
+dotnet run --project BusBuddy.WPF/BusBuddy.WPF.csproj   # Windows
+./run-wpf.sh                                           # Mac → UTM
 ```
 
 ## 📊 **Current Status (August 21, 2025)**
@@ -194,34 +183,27 @@ Test-BbXaml           # Validate UI controls
 - ✅ **Enhanced Syncfusion License Handling**: Improved registration with validation and diagnostics
 - ✅ **Centralized Logging**: All workspace logs consolidated into `logs/collected/` directory
 - ✅ **PowerShell Profile Formatting**: Applied trunk formatting standards and PSScriptAnalyzer compliance
-- ✅ **License Management Helper**: Added interactive `bbLicense` command for secure key management
+- ✅ **License Management Helper**: Syncfusion via `SYNCFUSION_LICENSE_KEY` (Passwords / env)
 - ✅ **Documentation Updates**: Verified Syncfusion licensing requirements and NuGet package setup
-- ✅ **Dependency Health Monitoring**: Added bb-deps-check, bb-deps-update, and bb-deps-report commands
+- ✅ **Dependency Health Monitoring**: Prefer `dotnet list package --vulnerable` / Dependabot; optional `Scripts/Validate-Dependencies.ps1`
 - ✅ **Codebase Hygiene**: Comprehensive legacy cleanup removing 13 obsolete files and dead references
 
 ### **Available Commands**
 
-```powershell
-# Core Development
-dotnet build BusBuddy.sln           # Direct build
-dotnet run --project BusBuddy.WPF   # Run application
+```bash
+# Core development
+dotnet build BusBuddy.sln -p:EnableWindowsTargeting=true
+dotnet run --project BusBuddy.WPF/BusBuddy.WPF.csproj   # Windows VM
+./run-wpf.sh                                            # Mac → UTM helper
 
-# PowerShell Helpers (from profile)
-bbBuild                  # Build with environment setup
-bbRun                    # Run with proper project targeting
-bbLicense                # Interactive Syncfusion license management
-bbHealth                 # System health diagnostics
+# Local CI mirror
+.github/scripts/validate-ci-local.sh
 
-# Dependency Management (NEW)
-bb-deps-check            # Comprehensive dependency health check
-bb-deps-update           # Safe dependency updates with backups
-bb-deps-dependabot       # Validate Dependabot configuration
-bb-deps-report           # Generate dependency status reports
+# Optional Windows dependency / license checks
+# pwsh Scripts/Validate-Dependencies.ps1 -ValidateLicense
 
-# Code Quality & Validation
-bb-anti-regression       # Scan for code quality issues
-bb-xaml-validate        # Validate Syncfusion controls usage
-trunk check --force     # Format and lint files with trunk
+# Format / lint
+trunk check --force
 ```
 
 ## ⚠️ **Development Notes**
@@ -235,8 +217,7 @@ trunk check --force     # Format and lint files with trunk
 
 ### **Known Development Items**
 
-- **PowerShell Module**: Recently fixed merge conflicts and improved compliance
-- **UI Consistency**: Syncfusion-only controls in Views (MCP config: `.cursor/mcp.json`)
+- **UI Consistency**: Syncfusion-only controls in Views (MCP config: Syncfusion WPF assistant)
 - **Testing**: Unit test coverage being expanded as features are added
 - **Documentation**: Keeping docs current with active development
 
@@ -250,26 +231,18 @@ trunk check --force     # Format and lint files with trunk
 
 #### **Quick Issue Resolution**
 
-- **Syncfusion License**: Use `bbLicense` to check/set license key interactively
+- **Syncfusion License**: Set `SYNCFUSION_LICENSE_KEY` (macOS Passwords or Windows env); optional `Scripts/Validate-Dependencies.ps1 -ValidateLicense`
 - **Log Analysis**: All workspace logs consolidated in `logs/collected/` for easy review
 - **Code Formatting**: Use `trunk fmt --force [file]` to apply project formatting standards
 - **Migration Issues**: `dotnet ef database update --force` (see [Troubleshooting Log](TROUBLESHOOTING-LOG.md))
-- **Build Errors**: Run `bbHealth` for comprehensive system diagnostics
+- **Build Errors**: `dotnet build BusBuddy.sln -p:EnableWindowsTargeting=true` and fix reported diagnostics
 
 #### **Comprehensive Testing**
 
-```powershell
-# Run end-to-end CRUD validation
-.\Test-EndToEndCRUD.ps1 -IncludeForeignKeyTests -GenerateReport
-
-# Check system health
-bbHealth
-
-# Validate migration status
+```bash
+dotnet test BusBuddy.sln -c Release --filter "Category!=Integration&Category!=InMemoryFlaky"
 dotnet ef migrations list --project BusBuddy.Core
-
-# Check Syncfusion license status
-bbLicense
+# Optional (Windows): pwsh Scripts/Validate-Dependencies.ps1 -ValidateLicense
 ```
 
 #### **Common Fixes**
@@ -340,27 +313,18 @@ Testing guidance:
 
 ## 🔧 **Development**
 
-### **PowerShell Automation**
+### **Build & quality (no bb-\* modules)**
 
-BusBuddy includes comprehensive PowerShell functions in the user profile for development tasks:
-
-```powershell
-# Essential commands (Updated August 19, 2025)
-bbBuild               # Build the solution with environment setup
-bbRun                 # Run the application with proper project targeting
-bbLicense             # Interactive Syncfusion license management
-bbHealth              # System diagnostics and health check
-
-# Development workflow
-bbClean               # Clean solution and packages
-bbRestore             # Restore NuGet packages
-bbTest                # Execute all tests
-
-# Code quality and formatting
-trunk check --force [file]    # Format and lint with trunk tools
-bb-anti-regression           # Prevent legacy patterns
-bb-xaml-validate            # Validate XAML files for Syncfusion compliance
+```bash
+dotnet restore BusBuddy.sln -p:EnableWindowsTargeting=true
+dotnet build BusBuddy.sln -c Release -p:EnableWindowsTargeting=true
+dotnet test BusBuddy.sln -c Release --no-build \
+  --filter "Category!=Integration&Category!=InMemoryFlaky"
+trunk check --force
+.github/scripts/validate-ci-local.sh
 ```
+
+Legacy `bb-*` / profile helpers were removed ([issue #15](https://github.com/Bigessfour/BusBuddy-3/issues/15)).
 
 ### **Log Management**
 
@@ -371,27 +335,18 @@ All workspace logs are automatically consolidated into `logs/collected/` directo
 - Trunk tool logs
 - Test results and coverage reports
 
-````
-
 ### **Building**
 ```bash
-# Standard .NET CLI approach
-dotnet build BusBuddy.sln
-dotnet run --project BusBuddy.WPF\BusBuddy.WPF.csproj
-
-# Alternative: Use PowerShell helpers
-Import-Module .\PowerShell\Modules\BusBuddy.Commands\BusBuddy.Commands.psm1
-Invoke-BbBuild
-````
+dotnet build BusBuddy.sln -p:EnableWindowsTargeting=true
+dotnet run --project BusBuddy.WPF/BusBuddy.WPF.csproj
+```
 
 ### **Testing**
 
 ```bash
 # Run all tests
-dotnet test BusBuddy.sln
-
-# Or use PowerShell
-bb-test
+dotnet test BusBuddy.sln -c Release \
+  --filter "Category!=Integration&Category!=InMemoryFlaky"
 ```
 
 ## 🎨 **UI Design**
@@ -479,89 +434,27 @@ dotnet ef migrations add NewMigrationName
 
 **Deprecated / invalid:** `GoogleEarthEngine__ApiKey`, project `busbuddy-465000`, PowerShell `bbLicense` / SecretManagement flows — use Passwords + `store-gcp-passwords.sh` instead.
 
-### **🔐 Secure API Key Management**
+### **🔐 Secrets (macOS Passwords / Windows env)**
 
-BusBuddy uses **Microsoft SecretManagement** for secure API key storage, following enterprise security best practices:
+Do **not** use SecretManagement / `PowerShell\Modules\*.psm1` (removed with [issue #15](https://github.com/Bigessfour/BusBuddy-3/issues/15)).
 
-#### **Setup Secure API Key Storage**
+| Host | How |
+| ---- | --- |
+| macOS | Passwords entries (Name = env var); loaded by `LoadApiKeysFromMacPasswords()` |
+| Windows | User/machine env vars |
 
-```powershell
-# Install required modules (if not already installed)
-Install-Module Microsoft.PowerShell.SecretManagement -Scope CurrentUser
-Install-Module Microsoft.PowerShell.SecretStore -Scope CurrentUser
+Common keys: `SYNCFUSION_LICENSE_KEY`, `XAI_API_KEY` / `GROK_API_KEY` (optional), `GOOGLE_MAPS_API_KEY` when Maps clients resume. See [AGENTS.md](AGENTS.md) and [Documentation/GCP-GEE-SECRETS-AND-AUTH.md](Documentation/GCP-GEE-SECRETS-AND-AUTH.md).
 
-# Method 1: Set machine environment variable (recommended for development)
-$env:XAI_API_KEY = "your-xai-api-key-here"
-[System.Environment]::SetEnvironmentVariable("XAI_API_KEY", "your-xai-api-key-here", "Machine")
+#### **xAI / Ollama note**
 
-# Method 2: Update secure vault directly
-Import-Module ".\PowerShell\Modules\BusBuddy-SecureConfig.psm1"
-Set-Secret -Name "XAI_API_KEY" -Secret "your-xai-api-key-here" -Vault GlobalApiSecrets
-
-# Verify configuration
-Import-Module ".\PowerShell\Modules\grok-config.psm1" -Force
-Get-ApiKeySecurely | Measure-Object -Character  # Should show length 84
-Test-GrokConnection -Verbose  # Should show success with grok-4-0709
-```
-
-#### **Key Benefits**
-
-- ✅ **No plain text exposure**: API keys never visible in environment variables or process lists
-- ✅ **Encrypted storage**: Keys stored using .NET cryptographic APIs with user-specific encryption
-- ✅ **Access control**: Keys only accessible to the current user account
-- ✅ **Automatic cleanup**: Removes insecure environment variables after migration
-- ✅ **Fallback support**: Legacy environment variable support for migration
-
-#### **Available Commands**
-
-```powershell
-# API key retrieval and configuration
-Get-ApiKeySecurely            # Retrieve API key from secure vault or environment
-grok-config                   # Show current Grok configuration (model: grok-4-0709)
-Test-GrokConnection -Verbose  # Test API connection with detailed output
-
-# Secure vault management
-Set-Secret -Name "XAI_API_KEY" -Secret "key" -Vault GlobalApiSecrets  # Store in vault
-Get-SecretInfo -Vault GlobalApiSecrets  # List stored secrets
-Initialize-SecureGrokConfig   # Setup secure vault (auto-runs on import)
-
-# Legacy support (environment variables are still supported)
-$env:XAI_API_KEY             # Machine environment variable (preferred for development)
-$env:GROK_API_KEY            # Alternative environment variable name
-```
-
-#### **xAI Grok Model Configuration**
-
-BusBuddy uses **Grok-4** (xAI's flagship reasoning model) for AI-powered features:
-
-```powershell
-# Current model configuration (August 2025)
-DefaultModel = "grok-4-0709"  # Exact model ID required by xAI API
-BaseUrl = "https://api.x.ai/v1"
-Context = 256000  # tokens (256K context window)
-Features = "text + vision, function calling, real-time search"
-```
-
-**Important Notes:**
-- ✅ **Use exact model ID**: `"grok-4-0709"` (not `"grok-4"` or `"grok-4-latest"`)
-- ✅ **API compatibility**: OpenAI-compatible /chat/completions endpoint
-- ✅ **Released**: July 9, 2025 with enhanced reasoning capabilities
-- ❌ **Don't use**: Generic names like `"grok-4"` will return 400 Bad Request errors
-
-#### **Security Features**
-
-- **Vault-based storage**: Uses Microsoft.PowerShell.SecretStore with AES encryption
-- **No environment exposure**: API keys removed from `$env:` variables and process environment
-- **SecureString handling**: Keys handled as SecureString objects in memory
-- **Automatic cleanup**: Memory cleared after API usage to prevent exposure
-- **Audit logging**: Security events logged for compliance
+Default app AI path is **local Ollama** (no cloud key). Optional legacy xAI uses `XAI_API_KEY` / `GROK_API_KEY` only when `XAI:Provider=Xai` is configured — never via deleted SecretManagement modules.
 
 ### **Syncfusion License Setup**
 
 1. **Get License**: Visit [Syncfusion Community License](https://www.syncfusion.com/products/communitylicense)
 2. **Generate Key**: Login to your Syncfusion account and generate license key
-3. **Set Environment**: Use `bbLicense -Set` command and paste your key when prompted
-4. **Verify**: Run `bbLicense` to check status; application should start without trial dialogs
+3. **Set Environment**: Store as `SYNCFUSION_LICENSE_KEY` (macOS Passwords or Windows env)
+4. **Verify**: App starts without Syncfusion trial dialogs on the Windows VM
 
 **Note**: No separate licensing NuGet package required - license registration is built into Syncfusion WPF packages.
 
@@ -572,23 +465,16 @@ Configuration is managed through `appsettings.json` files in each project:
 - `BusBuddy.Core/appsettings.json`: Core configuration
 - `BusBuddy.WPF/appsettings.json`: UI-specific settings
 
-## 🧪 **Testing** - Advanced NUnit Integration
+## 🧪 **Testing** - NUnit
 
-### **PowerShell Testing Module** ✨ **NEW**
+### **Run tests**
 
-BusBuddy includes a comprehensive testing infrastructure with VS Code NUnit Test Runner integration:
-
-```powershell
-# Load advanced testing module
-Import-Module ".\PowerShell\Modules\BusBuddy.Testing\BusBuddy.Testing.psd1"
-
-# Quick testing commands
-bb-test                    # Run all tests
-bb-test -TestSuite Unit    # Run unit tests only
-bb-test-watch              # Continuous testing with file monitoring
-bb-test-report             # Generate comprehensive markdown report
-bb-test-status             # Check current test status
+```bash
+dotnet test BusBuddy.sln -c Release \
+  --filter "Category!=Integration&Category!=InMemoryFlaky"
 ```
+
+Legacy PowerShell testing modules (`bb-test`, `BusBuddy.Testing`) were removed ([issue #15](https://github.com/Bigessfour/BusBuddy-3/issues/15)).
 
 ### **Test Structure**
 
@@ -662,10 +548,10 @@ Test coverage reports are generated in `TestResults/` directory with detailed TR
 
 ### **Code Quality**
 
-- All tests must pass: `bb-test`
-- Code analysis must pass: `bb-build`
-- XAML validation: `bb-xaml-validate`
-- PowerShell compliance: Follow Microsoft standards
+- All tests must pass: `dotnet test` (or CI **Build & Test**)
+- Build must pass: `dotnet build BusBuddy.sln -p:EnableWindowsTargeting=true`
+- Local pre-push: `.github/scripts/validate-ci-local.sh`
+- Syncfusion-only XAML (review Views; no `bb-xaml-validate` module)
 
 ## 📈 **Project Status**
 
@@ -673,8 +559,8 @@ Test coverage reports are generated in `TestResults/` directory with detailed TR
 
 - ✅ **Foundation**: Complete (.NET 9, Syncfusion, EF Core)
 - ✅ **Testing Infrastructure**: Operational (NUnit, coverage reporting)
-- ✅ **PowerShell Automation**: Core functionality stable (compliance improvements needed)
-- 🟢 **UI Migration**: Syncfusion-only controls across Views (see `bb-xaml-validate` on Windows)
+- ✅ **Dev tooling**: `dotnet` / Docker / trunk (legacy `bb-*` modules removed — [issue #15](https://github.com/Bigessfour/BusBuddy-3/issues/15))
+- 🟢 **UI Migration**: Syncfusion-only controls across Views
 - 🟡 **Student Management**: Core features functional (production hardening in progress)
 - 🔄 **Production Readiness**: Requires addressing known risks listed above
 - 🎯 **Route Optimization**: Next major milestone
@@ -685,7 +571,6 @@ Test coverage reports are generated in `TestResults/` directory with detailed TR
 - **Test Coverage**: 75%+ achieved (85% target)
 - **Code Quality**: Meets development standards (production review pending)
 - **Documentation**: Comprehensive for development (operational docs needed)
-- **PowerShell Compliance**: 45% (Microsoft standards remediation in progress)
 
 ## 🌟 **Roadmap**
 
@@ -709,21 +594,15 @@ Test coverage reports are generated in `TestResults/` directory with detailed TR
 ### **Getting Help**
 
 - 📚 **Documentation**: Start with this README and linked guides
-- 🔧 **PowerShell**: Use `bbHealth` for system diagnostics
+- 🔧 **Build / CI**: `.github/scripts/validate-ci-local.sh` or `dotnet build` / `dotnet test`
 - 🐛 **Issues**: Create GitHub issues for bugs or feature requests
 - 💬 **Discussions**: Use GitHub discussions for questions
 
 ### **Troubleshooting**
 
-```powershell
-# System health check
-bbHealth
-
-# Build diagnostics
-bb-build 2>&1 | tee build-output.log
-
-# XAML validation
-bb-xaml-validate
+```bash
+dotnet build BusBuddy.sln -p:EnableWindowsTargeting=true 2>&1 | tee build-output.log
+.github/scripts/validate-ci-local.sh
 ```
 
 ## 📄 **License**

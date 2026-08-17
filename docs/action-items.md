@@ -50,7 +50,7 @@
 | --------------------------------------------------------- | ----------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
 | [#13](https://github.com/Bigessfour/BusBuddy-3/issues/13) | ViewModel dedup                                 | Largely done in hygiene/PR #16 (`BaseViewModelMvp` removed). Confirm no remaining flat VM refs → **close** |
 | [#14](https://github.com/Bigessfour/BusBuddy-3/issues/14) | CI + secrets/MCP                                | Mostly done (solo CI, Passwords, Syncfusion MCP). Re-check `ci-with-ai` / GH secrets → update or **close** |
-| [#15](https://github.com/Bigessfour/BusBuddy-3/issues/15) | Deprecate bb-* PS                               | Docs/deprecation done; residual archive refs OK → **close** or narrow remaining tasks                      |
+| [#15](https://github.com/Bigessfour/BusBuddy-3/issues/15) | Deprecate bb-* PS                               | **Done 2026-08-17** — modules deleted (`Scripts/legacy`, archive `BusBuddy-*.psm1`, Install-BusBuddyModules); living docs/tasks use `dotnet`. Close after PR merges. |
 | [#11](https://github.com/Bigessfour/BusBuddy-3/issues/11) | Close stubs (Reports/Grok/Settings/Maintenance) | P1 items implemented; close after this PR merges                                                           |
 
 ---

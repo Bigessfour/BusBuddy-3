@@ -24,10 +24,10 @@
       "group": "build"
     },
     {
-      "label": "bb-build (dotnet build BusBuddy.sln)",
+      "label": "dotnet build BusBuddy.sln (default)",
       "type": "shell",
       "command": "dotnet",
-      "args": ["build", "BusBuddy.sln", "-v", "m"],
+      "args": ["build", "BusBuddy.sln", "-v", "m", "-p:EnableWindowsTargeting=true"],
       "options": {
         "env": {
           "BUSBUDDY_NO_WELCOME": "1",
@@ -62,81 +62,6 @@
       },
       "problemMatcher": ["$msCompile"],
       "group": "build"
-    },
-    {
-      "label": "bb-wpf-build (C# WPF via PowerShell)",
-      "type": "shell",
-      "command": "bb-build", // From optimized profile
-      "problemMatcher": ["$msCompile"],
-      "group": "build",
-      "presentation": {
-        "echo": true,
-        "reveal": "always",
-        "focus": false,
-        "panel": "shared"
-      }
-    },
-
-    // === BUSBUDDY POWERSHELL PROFILE TASKS ===
-    {
-      "label": "bb-run (PowerShell Profile)",
-      "type": "shell",
-      "command": "pwsh",
-      "args": ["-Command", "bb-run"],
-      "group": {
-        "kind": "build",
-        "isDefault": false
-      },
-      "presentation": {
-        "echo": true,
-        "reveal": "always",
-        "focus": false,
-        "panel": "shared",
-        "showReuseMessage": true,
-        "clear": false
-      },
-      "options": {
-        "env": {
-          "BUSBUDDY_NO_WELCOME": "1"
-        }
-      }
-    },
-    {
-      "label": "bb-health (System Health Check)",
-      "type": "shell",
-      "command": "pwsh",
-      "args": ["-Command", "bb-health"],
-      "group": "test",
-      "presentation": {
-        "echo": true,
-        "reveal": "always",
-        "focus": true,
-        "panel": "shared"
-      }
-    },
-    {
-      "label": "bb-sql-test (SQL Database Test)",
-      "type": "shell",
-      "command": "pwsh",
-      "args": ["-Command", "bb-sql-test"],
-      "group": "test",
-      "presentation": {
-        "echo": true,
-        "reveal": "always",
-        "focus": true,
-        "panel": "shared"
-      }
-    },
-    {
-      "label": "bb-deps-check",
-      "type": "shell",
-      "command": "pwsh",
-      "args": ["-Command", "bb-deps-check"],
-      "group": "build",
-      "presentation": {
-        "reveal": "always",
-        "panel": "shared"
-      }
     },
 
     // === CODE QUALITY & TRUNK TASKS ===
@@ -183,10 +108,14 @@
       }
     },
     {
-      "label": "Generate Fetchability Index",
+      "label": "Validate Dependencies (optional)",
       "type": "shell",
       "command": "pwsh",
-      "args": ["-Command", "& './generate-fetchability-index.ps1' -Validate"],
+      "args": [
+        "-File",
+        "${workspaceFolder}/Scripts/Validate-Dependencies.ps1",
+        "-ValidateLicense"
+      ],
       "group": "build",
       "presentation": {
         "echo": true,
@@ -194,38 +123,7 @@
         "focus": true,
         "panel": "shared"
       },
-      "options": {
-        "cwd": "${workspaceFolder}"
-      },
       "problemMatcher": []
-    },
-    {
-      "label": "PSScriptAnalyzer (PowerShell Quality)",
-      "type": "shell",
-      "command": "pwsh",
-      "args": [
-        "-Command",
-        "Invoke-ScriptAnalyzer -Path '${workspaceFolder}\\PowerShell' -Recurse -Settings '${workspaceFolder}\\PSScriptAnalyzerSettings.psd1'"
-      ],
-      "group": "test",
-      "presentation": {
-        "echo": true,
-        "reveal": "always",
-        "focus": true,
-        "panel": "shared"
-      },
-      "problemMatcher": {
-        "owner": "psscriptanalyzer",
-        "fileLocation": ["relative", "${workspaceFolder}"],
-        "pattern": {
-          "regexp": "^(.*):(\\d+):(\\d+):\\s+(Error|Warning|Information):\\s+(.*)$",
-          "file": 1,
-          "line": 2,
-          "column": 3,
-          "severity": 4,
-          "message": 5
-        }
-      }
     },
 
     // === TESTING TASKS ===

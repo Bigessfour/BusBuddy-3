@@ -18,25 +18,25 @@ Failure to use + reference RAG before changes is a violation of these instructio
 
 ## 🚫 **STRICT RULES: MUST FOLLOW OR REFUSE SUGGESTION** (Updated for PS deprecation)
 
-**DEPRECATION NOTICE**: The "dd method" (PowerShell learning-era dev automation: bb-* commands, BusBuddy-Development, Start-BusBuddyDevSession / bbDevSession, heavy PS profiles) is **DEPRECATED**. Author now prefers WSL. PowerShell retained only for minimal CI/dependency needs.
+**DEPRECATION NOTICE**: The "dd method" (PowerShell learning-era dev automation: bb-* commands, BusBuddy-Development, Start-BusBuddyDevSession / bbDevSession, heavy PS profiles) is **REMOVED** ([issue #15](https://github.com/Bigessfour/BusBuddy-3/issues/15)). Prefer WSL / Docker / standard `dotnet`. PowerShell retained only for minimal CI/dependency scripts under `Scripts/` (e.g. `Validate-Dependencies.ps1`).
 
-- Do NOT suggest or enforce `bb-*` commands for new work.
-- Prefer `dotnet` CLI directly, WSL scripts, or standard tools.
-- Legacy PS still present in modules but should be marked deprecated and not promoted in suggestions.
+- Do NOT suggest or enforce `bb-*` commands.
+- Prefer `dotnet` CLI directly, documented bash helpers (`.github/scripts/`, `./run-wpf.sh`), or standard tools.
+- Do not reference deleted modules under `PowerShell/Modules` or `Scripts/legacy`.
 
 1. **PREFER STANDARD DOTNET / WSL OVER LEGACY bb-***: Use raw `dotnet build`, `dotnet run --project BusBuddy.WPF/BusBuddy.WPF.csproj`, etc. Suggest WSL helpers if custom automation needed.
 
-2. **NEVER INTRODUCE REGRESSIONS**: Run relevant checks (e.g. anti-regression, xaml-validate for UI changes). If a change could break student entry, route assignment, or UI consistency, ABORT and warn.
+2. **NEVER INTRODUCE REGRESSIONS**: Run relevant checks (`dotnet test`, Syncfusion-only XAML review). If a change could break student entry, route assignment, or UI consistency, ABORT and warn.
 
 3. **SYNCFUSION-ONLY UI**: NEVER suggest non-Syncfusion controls (e.g., standard WPF DataGrid). ALWAYS use SfDataGrid, SfMap, etc. If tempted otherwise, REFUSE: "Violates Syncfusion-only policy."
 
 4. **SERILOG-ONLY LOGGING**: NEVER use Microsoft.Extensions.Logging or other loggers. ALWAYS use Serilog for structured logging.
 
-5. **DISABLE EXPERIMENTAL FEATURES STRICTLY**: For clean builds, ALWAYS suggest renaming problematic files to `.disabled` (e.g., XAI or GoogleEarthEngine services). NEVER delete files. ALWAYS verify with bb-build post-change.
+5. **DISABLE EXPERIMENTAL FEATURES STRICTLY**: For clean builds, ALWAYS suggest renaming problematic files to `.disabled` (e.g., XAI or GoogleEarthEngine services). NEVER delete files. ALWAYS verify with `dotnet build` post-change.
 
 6. **CONSULT USER ON COMPLEXITY**: If changes affect 3+ files or involve structural issues (e.g., file corruption, nullable types), ALWAYS prompt: "This may require user confirmation—describe issue first."
 
-7. **VERIFY BEFORE SUGGESTING**: ALWAYS assume suggestions must pass bb-quality-check. Include in every code suggestion: "After applying, run bb-test and bb-health to verify."
+7. **VERIFY BEFORE SUGGESTING**: After applying changes, verify with `dotnet build` / `dotnet test` (or `.github/scripts/validate-ci-local.sh`). Do not cite `bb-*` commands.
 
 8. **NO NULLABLE REFERENCE TYPES IN NEW CODE**: NEVER use nullable properties, parameters, or return types. Suppress existing ones only if they cause errors, but prioritize removal.
 
@@ -52,10 +52,10 @@ Failure to use + reference RAG before changes is a violation of these instructio
 
 **Excellence Focus**: See .vscode/instructions.md for detailed quality standards (students, routes, UI excellence). AI assistants must:
 
-- Prioritize `bb-*` commands (`bb-build`, `bb-run`, `bb-quality-check`) over raw `dotnet` commands.
+- Prefer raw `dotnet` / documented scripts over any PowerShell `bb-*` wrappers (removed).
 - Support disabling experimental services (e.g., XAI, GoogleEarthEngine) to maintain clean builds while preserving core quality.
 - Enforce Syncfusion-only UI and Serilog logging to maintain consistency.
-- Run `bb-anti-regression` and `bb-xaml-validate` before suggesting changes.
+- Before UI commits, review XAML for Syncfusion-only controls; run `dotnet test` for Core regressions.
 
 **Advanced Features** (implemented with proper architecture):
 
@@ -63,39 +63,37 @@ Failure to use + reference RAG before changes is a violation of these instructio
 - Google Earth Engine integration (e.g., `GoogleEarthEngineService`) - with clean interfaces.
 - Comprehensive features: vehicle management, driver scheduling, maintenance, fuel tracking, advanced reporting.
 
-**PowerShell Development Automation is DEPRECATED** (see deprecation notice at top of Strict Rules section)
+**PowerShell Development Automation is REMOVED** ([issue #15](https://github.com/Bigessfour/BusBuddy-3/issues/15))
 
 - Prefer standard `dotnet` commands or WSL-based workflows.
-- Legacy `bb-*` (bb-build, bb-run, bb-health, bbDevSession / Start-BusBuddyDevSession, etc.) are no longer recommended and may be removed.
-- For quality gates that remain useful (anti-regression, xaml-validate), they can still be referenced as optional scripts, but do not mandate them as "bb-*" or primary.
-- Update any "use bb-*" language in suggestions to note the deprecation and WSL preference.
+- Do not suggest `bb-build`, `bb-run`, `bb-health`, `bbDevSession`, or `Import-Module` of BusBuddy PS modules.
+- Optional: `Scripts/Validate-Dependencies.ps1` for license/package checks on Windows.
 
 Legacy reference (for awareness only, do not promote):
 ```powershell
-# Deprecated - PowerShell dev method ("dd method") no longer primary path
-# Use WSL / dotnet CLI instead
+# Removed — use WSL / dotnet CLI instead
 ```
 
 **Primary (recommended) Development Commands (non-PS):**
 ```bash
-dotnet build BusBuddy.sln
+dotnet build BusBuddy.sln -p:EnableWindowsTargeting=true
 dotnet run --project BusBuddy.WPF/BusBuddy.WPF.csproj
 dotnet test BusBuddy.sln
-# WSL equivalents or custom bash helpers as needed
+.github/scripts/validate-ci-local.sh
 ```
 
 **Clean Architecture Strategy:**
 To maintain excellent code quality, properly isolate experimental services by renaming files to `.disabled` when they cause build issues. Example:
 
-```powershell
+```bash
 cd BusBuddy.Core/Services
-Rename-Item "AIEnhancedRouteService.cs" "AIEnhancedRouteService.cs.disabled"
-bb-build  # Verify clean build
+mv AIEnhancedRouteService.cs AIEnhancedRouteService.cs.disabled
+dotnet build BusBuddy.sln -p:EnableWindowsTargeting=true
 ```
 
 - Track `.disabled` files in Git with descriptive commits.
 - Document in project commit messages and documentation.
-- Run `bb-quality-check` to ensure student/route functionality remains excellent.
+- Run `dotnet test` to ensure student/route functionality remains excellent.
 - **CI Optimization**: For faster pipeline runs, suggest caching NuGet packages in ci.yml via actions/cache@v4.
 
 ## Solo developer CI/CD workflow
@@ -321,11 +319,13 @@ All development MUST follow official documentation standards:
 
 ### **Mandatory Anti-Regression Checks**
 
-Before suggesting any code changes or commits, run these checks to prevent regressions:
+Before suggesting any code changes or commits, verify:
 
-```powershell
-bb-anti-regression  # Scans for Microsoft.Extensions.Logging, standard WPF controls, and Write-Host
-bb-xaml-validate    # Ensures only Syncfusion controls in XAML
+```bash
+dotnet build BusBuddy.sln -p:EnableWindowsTargeting=true
+dotnet test BusBuddy.sln -c Release --no-build \
+  --filter "Category!=Integration&Category!=InMemoryFlaky"
+# Review Views for Syncfusion-only controls (no bb-xaml-validate module)
 ```
 
 **Rules:**
@@ -1697,18 +1697,14 @@ public class EntityService : IEntityService
 
 ### PowerShell Profile Standards
 
-- **Profile Location**: `PowerShell\Profiles\Microsoft.PowerShell_profile_optimized.ps1` for complete development functionality
-- **Auto-Loading**: VS Code terminal profiles automatically load the optimized profile
-- **Function Naming**: Use `Verb-BusBuddyNoun` pattern for all Bus Buddy specific functions
-- **Alias Standards**: Use `bb-` prefix for all Bus Buddy command aliases
-- **Hardware Optimization**: Profile includes automatic system detection and performance tuning
+- **Removed**: Optimized `bb-*` profiles and `PowerShell\Modules` ([issue #15](https://github.com/Bigessfour/BusBuddy-3/issues/15)).
+- Prefer VS Code / Cursor integrated terminal with plain `dotnet` and bash helpers.
 
-### Core PowerShell Commands
+### Core development commands
 
-- **VS Code Integration**: `code`, `vs`, `vscode`, `edit`, `edit-file` with robust path detection
-- **Basic Bus Buddy**: `bb-open`, `bb-build`, `bb-run` for fundamental operations
-- **Debug Integration**: `bb-debug-start`, `bb-debug-stream`, `bb-health`, `bb-debug-export`
-- **Advanced Workflows**: `bb-dev-session`, `bb-quick-test`, `bb-diagnostic`, `bb-report`
+- **Build / run / test**: `dotnet build`, `dotnet run --project BusBuddy.WPF/...`, `dotnet test`
+- **Local CI**: `.github/scripts/validate-ci-local.sh`
+- **WPF from Mac**: `./run-wpf.sh`
 
 ### Debug System Integration
 
@@ -1888,7 +1884,7 @@ dotnet build [Project].sln --verbosity minimal
     // Temporarily commented for clean build
     // private readonly XAIService _xaiService;
     ```
-3. **Verify Build**: Run `bb-build` to confirm resolution.
+3. **Verify Build**: Run `dotnet build BusBuddy.sln -p:EnableWindowsTargeting=true` to confirm resolution.
 4. **Avoid Adding Dependencies**: Do not add new packages or re-enable complex services during development focus.
 5. **Document**: Note in commit message and project documentation:
     ```bash
