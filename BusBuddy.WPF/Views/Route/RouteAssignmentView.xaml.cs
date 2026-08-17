@@ -307,6 +307,8 @@ namespace BusBuddy.WPF.Views.Route
                 return;
             }
 
+            Logger.Debug("Starting student drag FromAssigned={FromAssigned} StudentId={StudentId}",
+                _isDraggingFromAssigned, student.StudentId);
             var data = new DataObject(StudentDragFormat, _dragStudent);
             try
             {

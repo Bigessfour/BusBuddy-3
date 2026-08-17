@@ -17,10 +17,10 @@ public class ScheduleRepository : Repository<Schedule>, IScheduleRepository
 
     #region Async Schedule-Specific Operations
 
-    public async Task<IEnumerable<Schedule>> GetSchedulesByDateAsync(DateTime date)
+    public async Task<IEnumerable<Schedule>> GetSchedulesByDateAsync(DateTime scheduleDate)
     {
         return await Query()
-            .Where(s => s.ScheduleDate.Date == date.Date)
+            .Where(s => s.ScheduleDate.Date == scheduleDate.Date)
             .OrderBy(s => s.DepartureTime)
             .ToListAsync();
     }
@@ -66,10 +66,10 @@ public class ScheduleRepository : Repository<Schedule>, IScheduleRepository
 
     #region Synchronous Schedule-Specific Operations
 
-    public IEnumerable<Schedule> GetSchedulesByDate(DateTime date)
+    public IEnumerable<Schedule> GetSchedulesByDate(DateTime scheduleDate)
     {
         return Query()
-            .Where(s => s.ScheduleDate.Date == date.Date)
+            .Where(s => s.ScheduleDate.Date == scheduleDate.Date)
             .OrderBy(s => s.DepartureTime)
             .ToList();
     }

@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Configuration;
 using Serilog;
+using System.Diagnostics;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
@@ -47,8 +48,7 @@ namespace BusBuddy.Core.Services
             }
             else
             {
-                Logger.Information($"Google Earth Engine configured for project: {_projectId}");
-                Logger.Information($"Google Earth Engine configured for project: {_projectId}");
+                Logger.Information("Google Earth Engine configured for project {ProjectId}", _projectId);
             }
         }
 
@@ -59,6 +59,8 @@ namespace BusBuddy.Core.Services
         /// </summary>
         public async Task<string> GetRouteGeoJsonAsync(string assetIdOrRegion)
         {
+            var stopwatch = Stopwatch.StartNew();
+            Logger.Information("GetRouteGeoJsonAsync started Asset={Asset} Configured={Configured}", assetIdOrRegion, _isConfigured);
             if (!_isConfigured)
             {
                 Logger.Warning("GEE not configured. Returning mock GeoJSON.");
@@ -83,6 +85,7 @@ namespace BusBuddy.Core.Services
                 collection = $"projects/{_projectId}/assets/{assetIdOrRegion}"
             };
             var exportUrl = $"https://earthengine.googleapis.com/v1/projects/{_projectId}/table:export";
+            Logger.Information("Starting GEE table export ProjectId={ProjectId} Asset={Asset}", _projectId, assetIdOrRegion);
             var exportResponse = await httpClient.PostAsJsonAsync(exportUrl, exportRequest);
             exportResponse.EnsureSuccessStatusCode();
             var exportResultJson = await exportResponse.Content.ReadAsStringAsync();
@@ -95,6 +98,7 @@ namespace BusBuddy.Core.Services
             }
 
             string taskName = taskNameElement.GetString() ?? throw new InvalidOperationException("Task name is null.");
+            Logger.Information("GEE export task started {TaskName}", taskName);
 
             // 3. Poll for export task completion
             // Configurable polling parameters
@@ -118,6 +122,10 @@ namespace BusBuddy.Core.Services
                 Logger.Warning("Failed to delete exported file from Drive: {FileId}", driveFileId);
             }
 
+            stopwatch.Stop();
+            Logger.Information(
+                "GetRouteGeoJsonAsync completed Asset={Asset} Bytes={Bytes} DriveFileDeleted={Deleted} ElapsedMs={ElapsedMs}",
+                assetIdOrRegion, geoJson.Length, deleted, stopwatch.ElapsedMilliseconds);
             return geoJson;
         }
 
@@ -226,6 +234,7 @@ namespace BusBuddy.Core.Services
                     var response = await httpClient.GetAsync(downloadUrl);
                     response.EnsureSuccessStatusCode();
                     var geoJson = await response.Content.ReadAsStringAsync();
+                    Logger.Information("Downloaded GeoJSON from Drive FileId={FileId} Bytes={Bytes}", fileId, geoJson.Length);
                     return geoJson;
                 }
             }
@@ -243,7 +252,7 @@ namespace BusBuddy.Core.Services
         {
             if (string.IsNullOrEmpty(_serviceAccountKeyPath) || !System.IO.File.Exists(_serviceAccountKeyPath))
             {
-                Logger.Error($"Service account key file not found: {_serviceAccountKeyPath}");
+                Logger.Error("Service account key file not found: {KeyPath}", _serviceAccountKeyPath);
                 return string.Empty;
             }
 
@@ -255,11 +264,13 @@ namespace BusBuddy.Core.Services
                     "https://www.googleapis.com/auth/drive.readonly"
                 };
 
-                using var stream = System.IO.File.OpenRead(_serviceAccountKeyPath);
-                var credential = await Google.Apis.Auth.OAuth2.GoogleCredential.FromStreamAsync(stream, System.Threading.CancellationToken.None);
-                var scoped = credential.CreateScoped(scopes);
+                var serviceAccount = await Google.Apis.Auth.OAuth2.CredentialFactory
+                    .FromFileAsync<Google.Apis.Auth.OAuth2.ServiceAccountCredential>(
+                        _serviceAccountKeyPath, System.Threading.CancellationToken.None);
+                var scoped = serviceAccount.ToGoogleCredential().CreateScoped(scopes);
                 var token = await scoped.UnderlyingCredential.GetAccessTokenForRequestAsync();
-                return token;
+                Logger.Information("Obtained Google access token from service account (length={Length})", token?.Length ?? 0);
+                return token ?? string.Empty;
             }
             catch (Exception ex)
             {

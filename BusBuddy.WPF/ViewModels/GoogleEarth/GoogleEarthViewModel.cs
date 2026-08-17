@@ -5,7 +5,9 @@ using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using BusBuddy.WPF.Commands; // Use local RelayCommand instead
+using BusBuddy.Core.Mapping;
 using BusBuddy.Core.Services.Interfaces;
+using Microsoft.Extensions.DependencyInjection;
 using BusBuddy.Core.Models;
 using Serilog;
 using RouteModel = BusBuddy.Core.Models.Route;
@@ -33,6 +35,8 @@ namespace BusBuddy.WPF.ViewModels.GoogleEarth
     private readonly IGeocodingService? _geocodingService;
     private readonly BusBuddy.Core.Services.PdfReportService _pdfReportService = new(); // Lightweight stateless service
     private readonly BusBuddy.Core.Services.IStudentService? _studentService; // If available for pulling students
+    private readonly IBusService? _busService;
+    private readonly IServiceScopeFactory? _scopeFactory;
         // Serilog logger with enrichments for this ViewModel
         private static readonly new Serilog.ILogger Logger = Serilog.Log.ForContext<GoogleEarthViewModel>();
 
@@ -67,6 +71,7 @@ namespace BusBuddy.WPF.ViewModels.GoogleEarth
     public event EventHandler? ZoomInRequested;
     public event EventHandler? ZoomOutRequested;
     public event EventHandler? CenterRequested;
+    public event EventHandler? ViewResetRequested;
 
         /// <summary>
         /// Latest captured map snapshot in PNG format (used for embedding into route PDF exports).
@@ -78,12 +83,14 @@ namespace BusBuddy.WPF.ViewModels.GoogleEarth
             set => SetProperty(ref _latestMapSnapshotPng, value);
         }
 
-    public GoogleEarthViewModel(IGeoDataService geoDataService, IEligibilityService? eligibilityService = null, IGeocodingService? geocodingService = null, BusBuddy.Core.Services.IStudentService? studentService = null)
+    public GoogleEarthViewModel(IGeoDataService geoDataService, IEligibilityService? eligibilityService = null, IGeocodingService? geocodingService = null, BusBuddy.Core.Services.IStudentService? studentService = null, IBusService? busService = null, IServiceScopeFactory? scopeFactory = null)
         {
             _geoDataService = geoDataService ?? throw new ArgumentNullException(nameof(geoDataService));
             _eligibilityService = eligibilityService; // optional during MVP
             _geocodingService = geocodingService; // optional until wired
             _studentService = studentService;
+            _busService = busService;
+            _scopeFactory = scopeFactory;
 
             LoadRoutesCommand = new RelayCommand(async _ => await LoadRoutesAsync());
             RefreshMapCommand = new RelayCommand(async _ => await RefreshMapAsync());
@@ -110,6 +117,7 @@ namespace BusBuddy.WPF.ViewModels.GoogleEarth
 
             // Add marker (stop) plotting command (MVP). Accepts parameter forms documented in AddMarkerFromParam.
             AddMarkerCommand = new RelayCommand(p => AddMarkerFromParam(p));
+            BulkPlotEligibleStudentsCommand = new RelayCommand(async _ => await BulkPlotEligibleStudentsAsync());
 
             // Reasonable defaults
             DistrictBoundaryVisible = false;
@@ -118,13 +126,10 @@ namespace BusBuddy.WPF.ViewModels.GoogleEarth
             // Seed a marker for Wiley School so the map has an anchor
             MapMarkers = new ObservableCollection<MapMarker>
             {
-                new MapMarker
-                {
-                    Label = "Wiley School RE-13JT",
-                    Latitude = 38.1527,
-                    Longitude = -102.7204
-                }
+                MapMarker.FromDegrees(WileyMapDefaults.SchoolLatitude, WileyMapDefaults.SchoolLongitude, WileyMapDefaults.SchoolLabel)
             };
+
+            _ = InitializeMapDataAsync();
         }
 
         #region Properties
@@ -397,25 +402,82 @@ namespace BusBuddy.WPF.ViewModels.GoogleEarth
             }
         }
 
+        private async Task InitializeMapDataAsync()
+        {
+            Logger.Information("InitializeMapDataAsync starting — loading routes and active buses");
+            try
+            {
+                await LoadRoutesAsync();
+                await LoadActiveBusesAsync();
+                Logger.Information("InitializeMapDataAsync completed Routes={RouteCount} Buses={BusCount} Markers={MarkerCount}",
+                    Routes.Count, ActiveBuses.Count, MapMarkers.Count);
+            }
+            catch (Exception ex)
+            {
+                Logger.Warning(ex, "InitializeMapDataAsync failed");
+            }
+        }
+
+        private IBusService? ResolveBusService(IServiceScope? scope) =>
+            _busService ?? scope?.ServiceProvider.GetService<IBusService>();
+
+        private BusBuddy.Core.Services.IStudentService? ResolveStudentService(IServiceScope? scope) =>
+            _studentService ?? scope?.ServiceProvider.GetService<BusBuddy.Core.Services.IStudentService>();
+
+        private async Task LoadActiveBusesAsync()
+        {
+            using var scope = _scopeFactory?.CreateScope();
+            var busService = ResolveBusService(scope);
+            if (busService is null)
+            {
+                Logger.Information("LoadActiveBusesAsync skipped — IBusService not registered");
+                return;
+            }
+
+            try
+            {
+                var buses = await busService.GetActiveBusesAsync();
+                ActiveBuses.Clear();
+                var withGps = 0;
+                foreach (var bus in buses)
+                {
+                    ActiveBuses.Add(bus);
+                    if (bus.CurrentLatitude.HasValue && bus.CurrentLongitude.HasValue)
+                    {
+                        withGps++;
+                    }
+                }
+
+                Logger.Information("Active buses loaded Count={Count} WithGps={WithGps}", ActiveBuses.Count, withGps);
+            }
+            catch (Exception ex)
+            {
+                Logger.Warning(ex, "LoadActiveBusesAsync failed");
+            }
+        }
+
         private async Task LoadAllRoutesOnMapAsync()
         {
             try
             {
-                // Sample route + line (placeholder until real multi-route overlay logic implemented)
-                var sampleRoute = new RouteModel
+                if (Routes.Count == 0)
                 {
-                    RouteId = 1,
-                    RouteName = "Sample Route 1",
-                    Date = DateTime.Today,
-                    School = "Sample School",
-                    IsActive = true
-                };
-                var samplePoints = new[] { new Point(38.1527, -102.7204), new Point(38.20, -102.68) };
-                await UpdatePolylineAsync(samplePoints);
+                    await LoadRoutesAsync();
+                }
+
+                var withWaypoints = Routes.FirstOrDefault(r => !string.IsNullOrWhiteSpace(r.WaypointsJson));
+                if (withWaypoints is null)
+                {
+                    StatusMessage = Routes.Count == 0 ? "No routes loaded" : "Routes have no waypoints yet";
+                    return;
+                }
+
+                SelectedRoute = withWaypoints;
+                await UpdateMapForRouteAsync(withWaypoints.RouteName ?? "Route");
             }
             catch (Exception ex)
             {
-                Logger.Warning(ex, "LoadAllRoutesOnMapAsync sample overlay failed");
+                Logger.Warning(ex, "LoadAllRoutesOnMapAsync overlay failed");
             }
         }
 
@@ -425,7 +487,9 @@ namespace BusBuddy.WPF.ViewModels.GoogleEarth
         /// </summary>
         private async Task BulkPlotEligibleStudentsAsync()
         {
-            if (_studentService is null)
+            using var scope = _scopeFactory?.CreateScope();
+            var studentService = ResolveStudentService(scope);
+            if (studentService is null)
             {
                 StatusMessage = "Student service unavailable";
                 return;
@@ -434,7 +498,7 @@ namespace BusBuddy.WPF.ViewModels.GoogleEarth
             List<BusBuddy.Core.Models.Student> students;
             try
             {
-                students = await _studentService.GetAllStudentsAsync();
+                students = await studentService.GetAllStudentsAsync();
             }
             catch (Exception ex)
             {
@@ -598,7 +662,25 @@ namespace BusBuddy.WPF.ViewModels.GoogleEarth
             Logger.Information("Show all buses requested");
             try
             {
-                // If ActiveBuses have coordinates (future), plot; placeholder logs only for MVP.
+                var plotted = 0;
+                foreach (var bus in ActiveBuses)
+                {
+                    if (!bus.CurrentLatitude.HasValue || !bus.CurrentLongitude.HasValue)
+                    {
+                        continue;
+                    }
+
+                    PlotStop((double)bus.CurrentLatitude.Value, (double)bus.CurrentLongitude.Value, null, $"Bus {bus.BusNumber}");
+                    plotted++;
+                }
+
+                StatusMessage = plotted == 0
+                    ? (ActiveBuses.Count == 0 ? "No active buses loaded" : "Active buses have no GPS coordinates")
+                    : $"Plotted {plotted} buses";
+                if (plotted > 0)
+                {
+                    CenterRequested?.Invoke(this, EventArgs.Empty);
+                }
             }
             catch (Exception ex)
             {
@@ -612,15 +694,7 @@ namespace BusBuddy.WPF.ViewModels.GoogleEarth
             Logger.Information("Show routes requested");
             try
             {
-                if (Routes.Count == 0)
-                {
-                    StatusMessage = "No routes loaded";
-                    return;
-                }
-                var first = Routes[0];
-                // Demo polyline: use existing Wiley anchor + small offset
-                var pts = new [] { new System.Windows.Point(38.1527, -102.7204), new System.Windows.Point(38.1600, -102.7000) };
-                _ = UpdatePolylineAsync(pts);
+                _ = LoadAllRoutesOnMapAsync();
             }
             catch (Exception ex)
             {
@@ -634,11 +708,12 @@ namespace BusBuddy.WPF.ViewModels.GoogleEarth
             Logger.Information("Show schools requested");
             try
             {
-                // Ensure school anchor marker exists; if not, add again.
                 if (!MapMarkers.Any(m => m.Label != null && m.Label.Contains("School", StringComparison.OrdinalIgnoreCase)))
                 {
-                    PlotStop(38.1527, -102.7204, null, "Wiley School RE-13JT");
+                    PlotStop(WileyMapDefaults.SchoolLatitude, WileyMapDefaults.SchoolLongitude, null, WileyMapDefaults.SchoolLabel);
                 }
+
+                ViewResetRequested?.Invoke(this, EventArgs.Empty);
             }
             catch (Exception ex)
             {
@@ -653,8 +728,17 @@ namespace BusBuddy.WPF.ViewModels.GoogleEarth
                 StatusMessage = "No bus selected to track";
                 return;
             }
-            StatusMessage = $"Tracking bus {SelectedBus.BusNumber}...";
+
+            if (!SelectedBus.CurrentLatitude.HasValue || !SelectedBus.CurrentLongitude.HasValue)
+            {
+                StatusMessage = $"Bus {SelectedBus.BusNumber} has no GPS coordinates";
+                return;
+            }
+
+            PlotStop((double)SelectedBus.CurrentLatitude.Value, (double)SelectedBus.CurrentLongitude.Value, null, $"Bus {SelectedBus.BusNumber}");
+            StatusMessage = $"Tracking bus {SelectedBus.BusNumber}";
             Logger.Information("Tracking selected bus {BusNumber}", SelectedBus.BusNumber);
+            CenterRequested?.Invoke(this, EventArgs.Empty);
         }
 
         private void ResetView()
@@ -665,7 +749,8 @@ namespace BusBuddy.WPF.ViewModels.GoogleEarth
             {
                 RouteLinePoints.Clear();
                 RouteLineUpdated?.Invoke(this, new RouteLineEventArgs(RouteLinePoints));
-                StatusMessage = "Map reset";
+                ViewResetRequested?.Invoke(this, EventArgs.Empty);
+                StatusMessage = "Map reset to Wiley";
             }
             catch (Exception ex)
             {
@@ -697,15 +782,10 @@ namespace BusBuddy.WPF.ViewModels.GoogleEarth
         {
             const double mergeTolerance = 0.00005; // ~5m tolerance for aggregating to existing marker (MVP simple clustering)
             // Try find existing marker within tolerance
-            var existing = MapMarkers.FirstOrDefault(m => Math.Abs(m.Latitude - latitude) < mergeTolerance && Math.Abs(m.Longitude - longitude) < mergeTolerance);
+            var existing = MapMarkers.FirstOrDefault(m => Math.Abs(m.LatitudeDegrees - latitude) < mergeTolerance && Math.Abs(m.LongitudeDegrees - longitude) < mergeTolerance);
             if (existing == null)
             {
-                existing = new MapMarker
-                {
-                    Latitude = latitude,
-                    Longitude = longitude,
-                    Label = label
-                };
+                existing = MapMarker.FromDegrees(latitude, longitude, label);
                 MapMarkers.Add(existing);
                 Logger.Information("Added new stop marker at ({Lat}, {Lon}) Label={Label}", latitude, longitude, label ?? "<auto>");
             }
@@ -739,14 +819,14 @@ namespace BusBuddy.WPF.ViewModels.GoogleEarth
                 if (param is null)
                 {
                     // Demo fallback – center of Wiley
-                    PlotStop(38.1527, -102.7204, null, "New Stop");
+                    PlotStop(WileyMapDefaults.SchoolLatitude, WileyMapDefaults.SchoolLongitude, null, "New Stop");
                     return;
                 }
 
                 switch (param)
                 {
                     case MapMarker mm:
-                        PlotStop(mm.Latitude, mm.Longitude, mm.StudentNames, mm.Label);
+                        PlotStop(mm.LatitudeDegrees, mm.LongitudeDegrees, mm.StudentNames, mm.Label);
                         break;
                     case ValueTuple<double, double, string?> tuple:
                         PlotStop(tuple.Item1, tuple.Item2, null, tuple.Item3);
@@ -833,22 +913,15 @@ namespace BusBuddy.WPF.ViewModels.GoogleEarth
             var allStudents = new List<BusBuddy.Core.Models.Student>();
             try
             {
-                if (_studentService is null)
+                using var scope = _scopeFactory?.CreateScope();
+                var studentService = ResolveStudentService(scope);
+                if (studentService is null)
                 {
                     StatusMessage = "Student service unavailable";
                     return (Array.Empty<byte>(), 0, 0);
                 }
-                // Basic fetch (assumes service has method GetAllStudentsAsync or similar pattern) — fallback to empty
-                var method = _studentService.GetType().GetMethod("GetAllStudentsAsync");
-                if (method is not null)
-                {
-                    var taskObj = method.Invoke(_studentService, null) as Task<System.Collections.Generic.List<BusBuddy.Core.Models.Student>>;
-                    if (taskObj != null)
-                    {
-                        var result = await taskObj.ConfigureAwait(false);
-                        allStudents = result ?? new();
-                    }
-                }
+
+                allStudents = await studentService.GetAllStudentsAsync() ?? new();
             }
             catch (Exception ex)
             {
@@ -893,8 +966,8 @@ namespace BusBuddy.WPF.ViewModels.GoogleEarth
             }
 
             // ORDER STOPS (Nearest Neighbor heuristic) starting/ending at school coordinates.
-            const double schoolLat = 38.1527; // Wiley School anchor
-            const double schoolLon = -102.7204;
+            const double schoolLat = WileyMapDefaults.SchoolLatitude;
+            const double schoolLon = WileyMapDefaults.SchoolLongitude;
             var remaining = eligibleStudents.Where(s => s.Latitude.HasValue && s.Longitude.HasValue).ToList();
             var ordered = new List<BusBuddy.Core.Models.Student>();
             double currentLat = schoolLat, currentLon = schoolLon;
@@ -1136,49 +1209,9 @@ namespace BusBuddy.WPF.ViewModels.GoogleEarth
         /// </summary>
         private static Point[] ParseWaypointsToPoints(string json)
         {
-            if (string.IsNullOrWhiteSpace(json))
-            {
-                return Array.Empty<Point>();
-            }
-
-            try
-            {
-                using var doc = JsonDocument.Parse(json);
-                if (doc.RootElement.ValueKind != JsonValueKind.Array)
-                {
-                    return Array.Empty<Point>();
-                }
-
-                var list = new System.Collections.Generic.List<Point>();
-                foreach (var el in doc.RootElement.EnumerateArray())
-                {
-                    switch (el.ValueKind)
-                    {
-                        case JsonValueKind.Object:
-                            if (el.TryGetProperty("Latitude", out var latProp) && el.TryGetProperty("Longitude", out var lonProp))
-                            {
-                                if (latProp.TryGetDouble(out var lat) && lonProp.TryGetDouble(out var lon))
-                                {
-                                    list.Add(new Point(lat, lon));
-                                }
-                            }
-                            break;
-                        case JsonValueKind.Array:
-                            if (el.GetArrayLength() >= 2)
-                            {
-                                var lat = el[0].GetDouble();
-                                var lon = el[1].GetDouble();
-                                list.Add(new Point(lat, lon));
-                            }
-                            break;
-                    }
-                }
-                return list.ToArray();
-            }
-            catch
-            {
-                return Array.Empty<Point>();
-            }
+            return RouteWaypointSerializer.Parse(json)
+                .Select(p => new Point(p.Latitude, p.Longitude))
+                .ToArray();
         }
 
         /// <summary>
@@ -1201,22 +1234,10 @@ namespace BusBuddy.WPF.ViewModels.GoogleEarth
         /// </summary>
         private static string BuildWaypointsJson(System.Collections.Generic.IEnumerable<BusBuddy.Core.Models.Student> ordered)
         {
-            var sb = new System.Text.StringBuilder();
-            sb.Append('[');
-            bool first = true;
-            foreach (var s in ordered)
-            {
-                if (!(s.Latitude.HasValue && s.Longitude.HasValue)) continue;
-                if (!first) sb.Append(',');
-                first = false;
-                sb.Append('[')
-                  .Append(s.Latitude.Value.ToString(System.Globalization.CultureInfo.InvariantCulture))
-                  .Append(',')
-                  .Append(s.Longitude.Value.ToString(System.Globalization.CultureInfo.InvariantCulture))
-                  .Append(']');
-            }
-            sb.Append(']');
-            return sb.ToString();
+            return RouteWaypointSerializer.FromPairs(
+                ordered
+                    .Where(s => s.Latitude.HasValue && s.Longitude.HasValue)
+                    .Select(s => ((double)s.Latitude!.Value, (double)s.Longitude!.Value)));
         }
 
         /// <summary>
@@ -1268,8 +1289,23 @@ namespace BusBuddy.WPF.ViewModels.GoogleEarth
         public sealed class MapMarker
         {
             public string? Label { get; set; }
-            public double Latitude { get; set; }
-            public double Longitude { get; set; }
+            /// <summary>Syncfusion ImageryLayer marker latitude (official N/S string).</summary>
+            public string Latitude { get; set; } = "0.0000N";
+            /// <summary>Syncfusion ImageryLayer marker longitude (official E/W string).</summary>
+            public string Longitude { get; set; } = "0.0000E";
+            public double LatitudeDegrees { get; set; }
+            public double LongitudeDegrees { get; set; }
+
+            public static MapMarker FromDegrees(double latitude, double longitude, string? label = null) =>
+                new()
+                {
+                    Label = label,
+                    LatitudeDegrees = latitude,
+                    LongitudeDegrees = longitude,
+                    Latitude = MapCoordinateFormatter.FormatLatitude(latitude),
+                    Longitude = MapCoordinateFormatter.FormatLongitude(longitude)
+                };
+
             // Aggregated list of student names for a stop (optional)
             public System.Collections.Generic.List<string> StudentNames { get; } = new();
 

@@ -171,12 +171,12 @@ namespace BusBuddy.WPF.ViewModels.Vehicle
             // Apply search filter
             if (!string.IsNullOrWhiteSpace(SearchText))
             {
-                var searchLower = SearchText.ToLower();
+                var search = SearchText;
                 filtered = filtered.Where(v =>
-                    (v.Make?.ToLower().Contains(searchLower, StringComparison.OrdinalIgnoreCase) == true) ||
-                    (v.Model?.ToLower().Contains(searchLower, StringComparison.OrdinalIgnoreCase) == true) ||
-                    (v.LicenseNumber?.ToLower().Contains(searchLower, StringComparison.OrdinalIgnoreCase) == true) ||
-                    (v.BusNumber?.ToLower().Contains(searchLower, StringComparison.OrdinalIgnoreCase) == true));
+                    (v.Make?.Contains(search, StringComparison.OrdinalIgnoreCase) == true) ||
+                    (v.Model?.Contains(search, StringComparison.OrdinalIgnoreCase) == true) ||
+                    (v.LicenseNumber?.Contains(search, StringComparison.OrdinalIgnoreCase) == true) ||
+                    (v.BusNumber?.Contains(search, StringComparison.OrdinalIgnoreCase) == true));
             }
 
             // Apply status filter

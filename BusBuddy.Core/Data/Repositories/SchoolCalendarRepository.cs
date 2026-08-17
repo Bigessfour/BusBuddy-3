@@ -81,15 +81,15 @@ public class SchoolCalendarRepository : Repository<SchoolCalendar>, ISchoolCalen
             .ToList();
     }
 
-    public bool IsSchoolDay(DateTime date)
+    public bool IsSchoolDay(DateTime checkDate)
     {
-        var calendarEntry = FirstOrDefault(sc => sc.Date.Date == date.Date);
+        var calendarEntry = FirstOrDefault(sc => sc.Date.Date == checkDate.Date);
         return calendarEntry != null && calendarEntry.EventType == "School Day";
     }
 
-    public bool AreRoutesRequired(DateTime date)
+    public bool AreRoutesRequired(DateTime checkDate)
     {
-        var calendarEntry = FirstOrDefault(sc => sc.Date.Date == date.Date);
+        var calendarEntry = FirstOrDefault(sc => sc.Date.Date == checkDate.Date);
         return calendarEntry?.RoutesRequired ?? false;
     }
 

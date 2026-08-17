@@ -1,5 +1,6 @@
 using System;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Input;
@@ -8,6 +9,7 @@ using BusBuddy.Core.Services;
 using BusBuddy.Core.Services.Interfaces;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Serilog;
 
 namespace BusBuddy.WPF.ViewModels.Dashboard
 {
@@ -16,6 +18,7 @@ namespace BusBuddy.WPF.ViewModels.Dashboard
     /// </summary>
     public partial class DashboardViewModel : ObservableObject
     {
+        private static readonly ILogger Logger = Log.ForContext<DashboardViewModel>();
         private readonly IRouteService _routeService;
         private readonly IDashboardMetricsService _metricsService;
         private readonly IFleetMonitoringService _fleetMonitoringService;
@@ -47,6 +50,7 @@ namespace BusBuddy.WPF.ViewModels.Dashboard
             AssignmentDistribution = new ObservableCollection<DashboardChartPoint>();
             RouteHealthDistribution = new ObservableCollection<DashboardChartPoint>();
 
+            Logger.Information("DashboardViewModel constructed — starting initial refresh");
             _ = Task.Run(async () => await RefreshDataAsync());
         }
 
@@ -84,17 +88,22 @@ namespace BusBuddy.WPF.ViewModels.Dashboard
         public ICommand OptimizeCommand { get; }
         public ICommand GenerateReportCommand { get; }
 
-        private async Task RefreshDataAsync()
+        public async Task RefreshDataAsync()
         {
+            var stopwatch = Stopwatch.StartNew();
             try
             {
                 IsLoading = true;
                 SystemStatus = "Loading data...";
+                Logger.Information("Dashboard refresh started");
 
                 var metrics = await _metricsService.GetDashboardMetricsAsync();
                 TotalRoutes = metrics.GetValueOrDefault("RouteCount");
                 ActiveBuses = metrics.GetValueOrDefault("BusCount");
                 AvailableDrivers = metrics.GetValueOrDefault("DriverCount");
+                Logger.Debug(
+                    "Dashboard metrics RouteCount={RouteCount} BusCount={BusCount} DriverCount={DriverCount}",
+                    TotalRoutes, ActiveBuses, AvailableDrivers);
 
                 var routesResult = await _routeService.GetAllRoutesAsync();
                 RouteSummaries.Clear();
@@ -110,6 +119,10 @@ namespace BusBuddy.WPF.ViewModels.Dashboard
                             AssignedCount = route.AssignedStudents?.Count ?? 0
                         });
                     }
+                }
+                else
+                {
+                    Logger.Warning("Dashboard route load failed: {Error}", routesResult.Error);
                 }
 
                 var buses = await _busService.GetAllBusesAsync();
@@ -144,10 +157,16 @@ namespace BusBuddy.WPF.ViewModels.Dashboard
                 }
 
                 TotalRoutes = RouteSummaries.Count;
+                stopwatch.Stop();
                 SystemStatus = $"Data loaded — {TotalRoutes} routes, {Buses.Count} buses";
+                Logger.Information(
+                    "Dashboard refresh completed Routes={RouteCount} Buses={BusCount} Drivers={DriverCount} Utilization={Utilization} ElapsedMs={ElapsedMs}",
+                    TotalRoutes, Buses.Count, AvailableDrivers, AverageUtilizationPercent, stopwatch.ElapsedMilliseconds);
             }
             catch (Exception ex)
             {
+                stopwatch.Stop();
+                Logger.Error(ex, "Dashboard refresh failed after {ElapsedMs}ms", stopwatch.ElapsedMilliseconds);
                 SystemStatus = $"Error loading data: {ex.Message}";
             }
             finally
@@ -162,13 +181,18 @@ namespace BusBuddy.WPF.ViewModels.Dashboard
             {
                 IsLoading = true;
                 SystemStatus = "Optimizing routes...";
+                Logger.Information("Dashboard optimize routes started HasInjectedOptimizer={HasOptimizer}", _routeOptimizer is not null);
                 var optimizer = _routeOptimizer ?? new StudentRouteOptimizer(_routeService);
                 var result = await optimizer.OptimizeUnassignedAsync();
                 await RefreshDataAsync();
                 SystemStatus = result.Status;
+                Logger.Information(
+                    "Dashboard optimize routes completed Assigned={Assigned} Remaining={Remaining} MockAi={MockAi} Status={Status}",
+                    result.AssignedCount, result.RemainingUnassigned, result.UsedMockAi, result.Status);
             }
             catch (Exception ex)
             {
+                Logger.Error(ex, "Dashboard optimize routes failed");
                 SystemStatus = $"Error optimizing routes: {ex.Message}";
             }
             finally
@@ -185,15 +209,19 @@ namespace BusBuddy.WPF.ViewModels.Dashboard
                 SystemStatus = "Generating report...";
                 if (_reportService is null)
                 {
+                    Logger.Warning("Dashboard generate report skipped — IOperationalReportService not registered");
                     SystemStatus = "Report service is not available";
                     return;
                 }
 
+                Logger.Information("Dashboard generate report started Kind={Kind}", OperationalReportKind.RouteSummary);
                 var result = await _reportService.GenerateAsync(OperationalReportKind.RouteSummary);
                 SystemStatus = result.Status;
+                Logger.Information("Dashboard generate report completed Path={Path} MockAi={MockAi}", result.FilePath, result.UsedMockAi);
             }
             catch (Exception ex)
             {
+                Logger.Error(ex, "Dashboard generate report failed");
                 SystemStatus = $"Error generating report: {ex.Message}";
             }
             finally

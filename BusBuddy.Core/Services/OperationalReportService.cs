@@ -53,6 +53,7 @@ namespace BusBuddy.Core.Services
         {
             ArgumentNullException.ThrowIfNull(request);
             var kind = request.Kind;
+            Logger.Information("Operational report started Kind={Kind} RouteId={RouteId} AsCsv={AsCsv}", kind, request.RouteId, request.AsCsv);
             var students = await _students.GetAllStudentsAsync().ConfigureAwait(false) ?? new List<Student>();
             var routesResult = await _routes.GetAllActiveRoutesAsync().ConfigureAwait(false);
             var routes = routesResult.IsSuccess && routesResult.Value is not null
@@ -106,7 +107,9 @@ namespace BusBuddy.Core.Services
             var prefix = kind.ToString().StartsWith("Print", StringComparison.Ordinal) ? "Saved PDF for print" : "Wrote";
             var routeNote = writeSingleRoutePdf ? $", route {route!.RouteName}" : string.Empty;
             var status = $"{prefix} {title} ({reportedRows} row(s){routeNote}, {bytes.Length} bytes) → {path}";
-            Logger.Information("Operational report {Kind} written to {Path} bytes={Bytes}", kind, path, bytes.Length);
+            Logger.Information(
+                "Operational report {Kind} written to {Path} bytes={Bytes} rows={Rows} students={Students} routes={Routes} mockAi={MockAi}",
+                kind, path, bytes.Length, reportedRows, students.Count, routes.Count, ai.Mock);
 
             return new OperationalReportResult
             {

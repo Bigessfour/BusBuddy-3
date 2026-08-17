@@ -458,7 +458,7 @@ public class DriverRepository : Repository<Driver>, IDriverRepository
 
     // Implement all interface methods similar to other repositories
     public async Task<IEnumerable<Driver>> GetActiveDriversAsync() => await GetAllAsync();
-    public async Task<IEnumerable<Driver>> GetAvailableDriversAsync(DateTime date, TimeSpan? startTime = null, TimeSpan? endTime = null) => await GetAllAsync();
+    public async Task<IEnumerable<Driver>> GetAvailableDriversAsync(DateTime checkDate, TimeSpan? startTime = null, TimeSpan? endTime = null) => await GetAllAsync();
     public async Task<IEnumerable<Driver>> GetDriversByLicenseTypeAsync(string licenseType) => await FindAsync(d => d.DriversLicenceType == licenseType);
     public async Task<IEnumerable<Driver>> GetDriversWithCompletedTrainingAsync() => await FindAsync(d => d.TrainingComplete);
     public async Task<IEnumerable<Driver>> GetDriversWithPendingTrainingAsync() => await FindAsync(d => !d.TrainingComplete);
@@ -468,9 +468,9 @@ public class DriverRepository : Repository<Driver>, IDriverRepository
     public async Task<IEnumerable<Driver>> GetDriversWithExpiredLicensesAsync() => await GetAllAsync();
     public async Task<IEnumerable<Driver>> GetDriversRequiringMedicalExamAsync(int withinDays = 30) => await GetAllAsync();
     public async Task<IEnumerable<Driver>> GetDriversRequiringTrainingRenewalAsync(int withinDays = 30) => await GetAllAsync();
-    public async Task<bool> IsDriverAvailableAsync(int driverId, DateTime date, TimeSpan startTime, TimeSpan endTime) => await Task.FromResult(true);
-    public async Task<IEnumerable<Driver>> GetDriversScheduledForDateAsync(DateTime date) => await GetAllAsync();
-    public async Task<IEnumerable<Driver>> GetDriversWithNoScheduleAsync(DateTime date) => await GetAllAsync();
+    public async Task<bool> IsDriverAvailableAsync(int driverId, DateTime checkDate, TimeSpan startTime, TimeSpan endTime) => await Task.FromResult(true);
+    public async Task<IEnumerable<Driver>> GetDriversScheduledForDateAsync(DateTime checkDate) => await GetAllAsync();
+    public async Task<IEnumerable<Driver>> GetDriversWithNoScheduleAsync(DateTime checkDate) => await GetAllAsync();
     public async Task<int> GetTotalDriverCountAsync() => await CountAsync();
     public async Task<int> GetActiveDriverCountAsync() => await CountAsync();
     public async Task<Dictionary<string, int>> GetDriverCountByLicenseTypeAsync() => await Task.FromResult(new Dictionary<string, int>());
@@ -482,11 +482,11 @@ public class DriverRepository : Repository<Driver>, IDriverRepository
 
     // Synchronous methods
     public IEnumerable<Driver> GetActiveDrivers() => GetAll();
-    public IEnumerable<Driver> GetAvailableDrivers(DateTime date, TimeSpan? startTime = null, TimeSpan? endTime = null) => GetAll();
+    public IEnumerable<Driver> GetAvailableDrivers(DateTime checkDate, TimeSpan? startTime = null, TimeSpan? endTime = null) => GetAll();
     public IEnumerable<Driver> GetDriversByLicenseType(string licenseType) => Find(d => d.DriversLicenceType == licenseType);
     public IEnumerable<Driver> GetDriversWithCompletedTraining() => Find(d => d.TrainingComplete);
     public IEnumerable<Driver> GetDriversWithExpiringLicenses(int withinDays = 30) => GetAll();
-    public bool IsDriverAvailable(int driverId, DateTime date, TimeSpan startTime, TimeSpan endTime) => true;
+    public bool IsDriverAvailable(int driverId, DateTime checkDate, TimeSpan startTime, TimeSpan endTime) => true;
 }
 
 public class StudentRepository : Repository<Student>, IStudentRepository
@@ -585,13 +585,13 @@ public class ScheduleRepository : Repository<Schedule>, IScheduleRepository
 {
     public ScheduleRepository(BusBuddyDbContext context, IUserContextService userContextService) : base(context, userContextService) { }
 
-    public async Task<IEnumerable<Schedule>> GetSchedulesByDateAsync(DateTime date) => await FindAsync(s => s.ScheduleDate.Date == date.Date);
+    public async Task<IEnumerable<Schedule>> GetSchedulesByDateAsync(DateTime scheduleDate) => await FindAsync(s => s.ScheduleDate.Date == scheduleDate.Date);
     public async Task<IEnumerable<Schedule>> GetSchedulesByRouteAsync(int routeId) => await FindAsync(s => s.RouteId == routeId);
     public async Task<IEnumerable<Schedule>> GetSchedulesByBusAsync(int busId) => await FindAsync(s => s.BusId == busId);
     public async Task<IEnumerable<Schedule>> GetSchedulesByDriverAsync(int driverId) => await FindAsync(s => s.DriverId == driverId);
     public async Task<bool> HasConflictAsync(int busId, int driverId, DateTime startTime, DateTime endTime) => await Task.FromResult(false);
 
-    public IEnumerable<Schedule> GetSchedulesByDate(DateTime date) => Find(s => s.ScheduleDate.Date == date.Date);
+    public IEnumerable<Schedule> GetSchedulesByDate(DateTime scheduleDate) => Find(s => s.ScheduleDate.Date == scheduleDate.Date);
     public IEnumerable<Schedule> GetSchedulesByRoute(int routeId) => Find(s => s.RouteId == routeId);
     public bool HasConflict(int busId, int driverId, DateTime startTime, DateTime endTime) => false;
 }
@@ -604,27 +604,27 @@ public class SchoolCalendarRepository : Repository<SchoolCalendar>, ISchoolCalen
     public async Task<IEnumerable<SchoolCalendar>> GetEventsByTypeAsync(string eventType) => await FindAsync(c => c.EventType == eventType);
     public async Task<IEnumerable<SchoolCalendar>> GetSchoolDaysAsync(DateTime startDate, DateTime endDate) => await FindAsync(c => c.EventType == "School Day" && c.Date >= startDate && c.Date <= endDate);
     public async Task<IEnumerable<SchoolCalendar>> GetHolidaysAsync(DateTime startDate, DateTime endDate) => await FindAsync(c => c.EventType == "Holiday" && c.Date >= startDate && c.Date <= endDate);
-    public async Task<bool> IsSchoolDayAsync(DateTime date) => await AnyAsync(c => c.Date.Date == date.Date && c.EventType == "School Day");
-    public async Task<bool> AreRoutesRequiredAsync(DateTime date) => await AnyAsync(c => c.Date.Date == date.Date && c.RoutesRequired);
+    public async Task<bool> IsSchoolDayAsync(DateTime checkDate) => await AnyAsync(c => c.Date.Date == checkDate.Date && c.EventType == "School Day");
+    public async Task<bool> AreRoutesRequiredAsync(DateTime checkDate) => await AnyAsync(c => c.Date.Date == checkDate.Date && c.RoutesRequired);
 
     public IEnumerable<SchoolCalendar> GetEventsByDateRange(DateTime startDate, DateTime endDate) => Find(c => c.Date >= startDate && c.Date <= endDate);
     public IEnumerable<SchoolCalendar> GetSchoolDays(DateTime startDate, DateTime endDate) => Find(c => c.EventType == "School Day" && c.Date >= startDate && c.Date <= endDate);
-    public bool IsSchoolDay(DateTime date) => Any(c => c.Date.Date == date.Date && c.EventType == "School Day");
-    public bool AreRoutesRequired(DateTime date) => Any(c => c.Date.Date == date.Date && c.RoutesRequired);
+    public bool IsSchoolDay(DateTime checkDate) => Any(c => c.Date.Date == checkDate.Date && c.EventType == "School Day");
+    public bool AreRoutesRequired(DateTime checkDate) => Any(c => c.Date.Date == checkDate.Date && c.RoutesRequired);
 }
 
 public class ActivityScheduleRepository : Repository<ActivitySchedule>, IActivityScheduleRepository
 {
     public ActivityScheduleRepository(BusBuddyDbContext context, IUserContextService userContextService) : base(context, userContextService) { }
 
-    public async Task<IEnumerable<ActivitySchedule>> GetSchedulesByDateAsync(DateTime date) => await FindAsync(a => a.ScheduledDate.Date == date.Date);
+    public async Task<IEnumerable<ActivitySchedule>> GetSchedulesByDateAsync(DateTime scheduleDate) => await FindAsync(a => a.ScheduledDate.Date == scheduleDate.Date);
     public async Task<IEnumerable<ActivitySchedule>> GetSchedulesByDateRangeAsync(DateTime startDate, DateTime endDate) => await FindAsync(a => a.ScheduledDate >= startDate && a.ScheduledDate <= endDate);
     public async Task<IEnumerable<ActivitySchedule>> GetSchedulesByTripTypeAsync(string tripType) => await FindAsync(a => a.TripType == tripType);
     public async Task<IEnumerable<ActivitySchedule>> GetSchedulesByVehicleAsync(int vehicleId) => await FindAsync(a => a.ScheduledVehicleId == vehicleId);
     public async Task<IEnumerable<ActivitySchedule>> GetSchedulesByDriverAsync(int driverId) => await FindAsync(a => a.ScheduledDriverId == driverId);
-    public async Task<bool> HasConflictAsync(int vehicleId, int driverId, DateTime date, TimeSpan startTime, TimeSpan endTime) => await Task.FromResult(false);
+    public async Task<bool> HasConflictAsync(int vehicleId, int driverId, DateTime scheduleDate, TimeSpan startTime, TimeSpan endTime) => await Task.FromResult(false);
 
-    public IEnumerable<ActivitySchedule> GetSchedulesByDate(DateTime date) => Find(a => a.ScheduledDate.Date == date.Date);
+    public IEnumerable<ActivitySchedule> GetSchedulesByDate(DateTime scheduleDate) => Find(a => a.ScheduledDate.Date == scheduleDate.Date);
     public IEnumerable<ActivitySchedule> GetSchedulesByTripType(string tripType) => Find(a => a.TripType == tripType);
-    public bool HasConflict(int vehicleId, int driverId, DateTime date, TimeSpan startTime, TimeSpan endTime) => false;
+    public bool HasConflict(int vehicleId, int driverId, DateTime scheduleDate, TimeSpan startTime, TimeSpan endTime) => false;
 }

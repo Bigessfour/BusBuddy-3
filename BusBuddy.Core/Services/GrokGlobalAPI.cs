@@ -422,9 +422,9 @@ Focus on measurable improvements and safety compliance.";
 
             foreach (var line in lines)
             {
-                if (line.Trim().StartsWith("1.") || line.Trim().StartsWith("2.") ||
-                    line.Trim().StartsWith("3.") || line.Trim().StartsWith("4.") ||
-                    line.Trim().StartsWith("5."))
+                if (line.Trim().StartsWith("1.", StringComparison.Ordinal) || line.Trim().StartsWith("2.", StringComparison.Ordinal) ||
+                    line.Trim().StartsWith("3.", StringComparison.Ordinal) || line.Trim().StartsWith("4.", StringComparison.Ordinal) ||
+                    line.Trim().StartsWith("5.", StringComparison.Ordinal))
                 {
                     steps.Add(line.Trim());
                 }

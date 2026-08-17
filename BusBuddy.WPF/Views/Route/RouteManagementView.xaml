@@ -52,7 +52,7 @@
                 SizeMode="Normal"
                 IconHeight="16" IconWidth="16"
                 CornerRadius="4"
-                Background="{StaticResource BusBuddy.Brush.Primary}" 
+                Background="{StaticResource BusBuddy.Brush.Primary}"
                 Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}"
                 AutomationProperties.Name="Add Route"
                 AutomationProperties.HelpText="Create a new bus route"/>
@@ -66,6 +66,16 @@
                 Foreground="{DynamicResource PrimaryTextBrush}"
                 AutomationProperties.Name="Edit Route"
                 AutomationProperties.HelpText="Edit the selected route"/>
+            <syncfusion:ButtonAdv Name="CopyRouteButton" Label="📋 Copy Route"
+                Command="{Binding CopyRouteCommand}"
+                IsEnabled="{Binding IsRouteSelected}"
+                SizeMode="Normal"
+                IconHeight="16" IconWidth="16"
+                CornerRadius="4"
+                Background="{DynamicResource AccentBackgroundBrush}"
+                Foreground="{DynamicResource PrimaryTextBrush}"
+                AutomationProperties.Name="Copy Route"
+                AutomationProperties.HelpText="Clone the selected route"/>
             <syncfusion:ButtonAdv Name="DeleteRouteButton" Label="🗑️ Delete Route"
                 Command="{Binding DeleteRouteCommand}"
                 IsEnabled="{Binding IsRouteSelected}"
@@ -85,7 +95,7 @@
                 SizeMode="Normal"
                 IconHeight="16" IconWidth="16"
                 CornerRadius="4"
-                Background="{StaticResource BusBuddy.Brush.Primary}" 
+                Background="{StaticResource BusBuddy.Brush.Primary}"
                 Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}"
                 AutomationProperties.Name="Manage Route"
                 AutomationProperties.HelpText="Open the full route assignment and stops editor"/>
@@ -96,7 +106,7 @@
                 SizeMode="Normal"
                 IconHeight="16" IconWidth="16"
                 CornerRadius="4"
-                Background="{StaticResource BusBuddy.Brush.FleetGreen}" 
+                Background="{StaticResource BusBuddy.Brush.FleetGreen}"
                 Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}"
                 AutomationProperties.Name="Generate Schedule"
                 AutomationProperties.HelpText="Generate printable schedule for the selected route"/>
@@ -105,7 +115,7 @@
                 SizeMode="Normal"
                 IconHeight="16" IconWidth="16"
                 CornerRadius="4"
-                Background="{StaticResource BusBuddy.Brush.Semantic.Info}" 
+                Background="{StaticResource BusBuddy.Brush.Semantic.Info}"
                 Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}"
                 AutomationProperties.Name="View Map"
                 AutomationProperties.HelpText="Open route map in Google Earth view"/>
@@ -118,7 +128,7 @@
                 SizeMode="Normal"
                 IconHeight="16" IconWidth="16"
                 CornerRadius="4"
-                Background="{StaticResource BusBuddy.Brush.SafetyOrange}" 
+                Background="{StaticResource BusBuddy.Brush.SafetyOrange}"
                 Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}"
                 AutomationProperties.Name="Assign Students to Route"
                 AutomationProperties.HelpText="Assign students to the selected route"/>
@@ -128,7 +138,7 @@
                 SizeMode="Normal"
                 IconHeight="16" IconWidth="16"
                 CornerRadius="4"
-                Background="{StaticResource BusBuddy.Brush.Semantic.Warning}" 
+                Background="{StaticResource BusBuddy.Brush.Semantic.Warning}"
                 Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}"
                 AutomationProperties.Name="Assign Vehicle to Route"
                 AutomationProperties.HelpText="Assign a bus to the selected route"/>
@@ -142,7 +152,7 @@
                             SizeMode="Normal"
                             IconHeight="16" IconWidth="16"
                             CornerRadius="4"
-                            Background="{DynamicResource BusBuddy.Brush.Semantic.Success}" 
+                            Background="{DynamicResource BusBuddy.Brush.Semantic.Success}"
                             Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"
                             AutomationProperties.Name="Export to CSV"
                             AutomationProperties.HelpText="Export route data to CSV file"/>
@@ -151,7 +161,7 @@
                             SizeMode="Normal"
                             IconHeight="16" IconWidth="16"
                             CornerRadius="4"
-                            Background="{DynamicResource BusBuddy.Brush.Semantic.Info}" 
+                            Background="{DynamicResource BusBuddy.Brush.Semantic.Info}"
                             Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"
                             AutomationProperties.Name="Export Report"
                             AutomationProperties.HelpText="Export detailed route report"/>
@@ -162,7 +172,7 @@
                             SizeMode="Normal"
                             IconHeight="16" IconWidth="16"
                             CornerRadius="4"
-                            Background="{DynamicResource BusBuddy.Brush.Primary}" 
+                            Background="{DynamicResource BusBuddy.Brush.Primary}"
                             Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"
                             AutomationProperties.Name="Print Schedule"
                             AutomationProperties.HelpText="Print route schedules"/>

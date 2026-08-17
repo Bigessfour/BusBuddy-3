@@ -144,7 +144,7 @@ namespace BusBuddy.Tests.Core
             try
             {
                 var ex = Assert.ThrowsAsync<InvalidOperationException>(
-                    async () => await service.ImportStudentsFromCsvAsync(path));
+                    (Func<Task>)(() => service.ImportStudentsFromCsvAsync(path)));
                 Assert.That(ex!.Message, Does.Contain("Wiley student format"));
             }
             finally

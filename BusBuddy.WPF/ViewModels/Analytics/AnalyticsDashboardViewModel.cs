@@ -92,7 +92,7 @@ namespace BusBuddy.WPF.ViewModels.Analytics
                 FuelAnalytics.Add(new AnalyticsChartPoint
                 {
                     Label = "Gallons (30d)",
-                    Value = (double)recent.Sum(f => f.Gallons)
+                    Value = (double)recent.Sum(f => f.Gallons ?? 0)
                 });
                 FuelAnalytics.Add(new AnalyticsChartPoint
                 {

@@ -22,7 +22,7 @@ npx skills update
 
 ## BusBuddy packages in use
 
-Version: `$(SyncfusionVersion)` in `Directory.Build.props` (currently **34.1.32** / Syncfusion WPF 34.x). Match NuGet references in `BusBuddy.WPF/BusBuddy.WPF.csproj` — do not add packages the project does not already reference unless explicitly requested.
+Version: `$(SyncfusionVersion)` in `Directory.Build.props` (currently **34.2.3** / Syncfusion WPF 34.x). Match NuGet references in `BusBuddy.WPF/BusBuddy.WPF.csproj` — do not add packages the project does not already reference unless explicitly requested.
 
 Refresh vendor skills after clone or Syncfusion major bumps:
 

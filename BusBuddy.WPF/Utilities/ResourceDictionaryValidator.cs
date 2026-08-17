@@ -48,14 +48,10 @@ namespace BusBuddy.WPF.Utilities
                                         string keyValue = reader.Value;
 
                                         // Check if this key has already been found
-                                        if (keysFound.Contains(keyValue))
+                                        if (!keysFound.Add(keyValue))
                                         {
                                             duplicateKeys.Add(keyValue);
                                             Logger.Warning("Duplicate key found in resource dictionary: {Key}", keyValue);
-                                        }
-                                        else
-                                        {
-                                            keysFound.Add(keyValue);
                                         }
                                     }
                                 }
@@ -133,9 +129,9 @@ namespace BusBuddy.WPF.Utilities
             foreach (var key in resources.Keys)
             {
                 string keyString = key?.ToString() ?? "null";
-                if (allKeys.ContainsKey(keyString))
+                if (allKeys.TryGetValue(keyString, out var count))
                 {
-                    allKeys[keyString]++;
+                    allKeys[keyString] = count + 1;
                 }
                 else
                 {
@@ -188,7 +184,7 @@ namespace BusBuddy.WPF.Utilities
                             string keyValue = keyAttr.Value;
 
                             // Check for duplicates
-                            if (keysFound.Contains(keyValue))
+                            if (!keysFound.Add(keyValue))
                             {
                                 // Add a suffix to make the key unique
                                 var newKeyValue = $"{keyValue}_Unique{duplicatesFixed}";
@@ -196,10 +192,6 @@ namespace BusBuddy.WPF.Utilities
                                 duplicatesFixed++;
 
                                 Logger.Information("Fixed duplicate key: {OriginalKey} -> {NewKey}", keyValue, newKeyValue);
-                            }
-                            else
-                            {
-                                keysFound.Add(keyValue);
                             }
                         }
                     }

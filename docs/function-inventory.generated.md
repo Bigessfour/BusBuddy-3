@@ -2,13 +2,13 @@
 <!-- Do NOT edit manually. Lightweight correctness-surface tracker. -->
 
 # Function Inventory — BusBuddy
-Generated: 2026-08-17T01:33:46.309515+00:00
+Generated: 2026-08-17T02:04:31.336738+00:00
 **Stack:** C#/Blazor
 **Tracking mode:** `surfaces`
 **Scan roots:** `BusBuddy.Core`, `BusBuddy.WPF`, `BusBuddy.Tests`
-**Configured surfaces:** 16 (from `.function-inventory.json` `surfaces` allowlist)
+**Configured surfaces:** 19 (from `.function-inventory.json` `surfaces` allowlist)
 
-**Summary:** 16 correctness surfaces | 11 with proof | 5 without proof
+**Summary:** 19 correctness surfaces | 12 with proof | 7 without proof
 This list is the **correctness queue** — resident/clerk-critical pages, services, and handlers only. Tiny helpers, Angular route paths, and demoted UI shells are omitted.
 
 Ship gate remains project acceptance / smoke checklists — inventory count alone is not “done.”
@@ -17,6 +17,8 @@ Ship gate remains project acceptance / smoke checklists — inventory count alon
 - **P1** Other Public: StudentsView.xaml.StudentsView.xaml @ BusBuddy.WPF/Views/Student/StudentsView.xaml.cs:1
 - **P1** Other Public: ReportsView.xaml.ReportsView.xaml @ BusBuddy.WPF/Views/Reports/ReportsView.xaml.cs:1
 - **P1** Core Service: ScheduleService.ScheduleService @ BusBuddy.Core/Services/ScheduleService.cs:1
+- **P2** Other Public: MaintenanceView.xaml.MaintenanceView.xaml @ BusBuddy.WPF/Views/Maintenance/MaintenanceView.xaml.cs:1
+- **P2** Other Public: DriverScheduleView.xaml.DriverScheduleView.xaml @ BusBuddy.WPF/Views/Driver/DriverScheduleView.xaml.cs:1
 - **P2** Other Public: DashboardView.xaml.DashboardView.xaml @ BusBuddy.WPF/Views/Dashboard/DashboardView.xaml.cs:1
 - **P2** Other Public: GcpCredentialBootstrap.GcpCredentialBootstrap @ BusBuddy.Core/Configuration/GcpCredentialBootstrap.cs:1
 
@@ -59,6 +61,9 @@ Empty proof ≠ missing feature. Prefer focused vitest / e2e / ops checks on P1 
 | P1 | Core Service | DriverService.DriverService | BusBuddy.Core/Services/DriverService.cs:1 | BusBuddy.Tests/Core/DriverServiceTests.cs | has logic |
 | P1 | Core Service | ScheduleService.ScheduleService | BusBuddy.Core/Services/ScheduleService.cs:1 | NO PROOF FOUND | has logic |
 | P2 | Core Service | MaintenanceService.MaintenanceService | BusBuddy.Core/Services/MaintenanceService.cs:1 | BusBuddy.Tests/Core/MaintenanceServiceTests.cs | has logic |
+| P2 | Other Public | MaintenanceView.xaml.MaintenanceView.xaml | BusBuddy.WPF/Views/Maintenance/MaintenanceView.xaml.cs:1 | NO PROOF FOUND | has logic |
+| P2 | Other Public | DriverScheduleView.xaml.DriverScheduleView.xaml | BusBuddy.WPF/Views/Driver/DriverScheduleView.xaml.cs:1 | NO PROOF FOUND | has logic |
+| P2 | Other Public | DriverAvailabilityCalculator.DriverAvailabilityCalculator | BusBuddy.Core/Services/DriverAvailabilityCalculator.cs:1 | BusBuddy.Tests/Core/DriverAvailabilityCalculatorTests.cs | has logic |
 | P2 | Core Service | GoogleEarthEngineService.GoogleEarthEngineService | BusBuddy.Core/Services/GoogleEarthEngineService.cs:1 | BusBuddy.Tests/Core/GapsCoverageTests.cs | has logic |
 | P2 | Other Public | DashboardView.xaml.DashboardView.xaml | BusBuddy.WPF/Views/Dashboard/DashboardView.xaml.cs:1 | NO PROOF FOUND | has logic |
 | P2 | Core Service | DashboardMetricsService.DashboardMetricsService | BusBuddy.Core/Services/DashboardMetricsService.cs:1 | BusBuddy.Tests/Core/GapsCoverageTests.cs | has logic |

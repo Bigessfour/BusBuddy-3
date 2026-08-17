@@ -1,7 +1,6 @@
 using System;
 using System.Windows;
 using System.Windows.Controls;
-using BusBuddy.WPF.ViewModels.Vehicle; // VM dedup - using subfolder version
 using System.Windows.Controls.Primitives;
 using System.Windows.Automation;
 using System.Windows.Media;

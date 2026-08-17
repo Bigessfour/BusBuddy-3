@@ -5,8 +5,12 @@ using System.ComponentModel;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
+using BusBuddy.Core.Services.Interfaces;
+using BusBuddy.WPF.ViewModels.GoogleEarth;
+using BusBuddy.WPF.Views.GoogleEarth;
 using System.Text.RegularExpressions;
 using BusBuddy.Core.Models;
 using BusBuddy.Core.Services;
@@ -38,6 +42,7 @@ namespace BusBuddy.WPF.ViewModels.Student
         private Core.Models.Student _student;
         private string _formTitle = "Add New Student";
         private string _addressValidationMessage = string.Empty;
+        private bool _addressValidationFailed;
         private Brush _addressValidationColor = Brushes.Gray;
         private bool _isEditMode;
 
@@ -49,7 +54,7 @@ namespace BusBuddy.WPF.ViewModels.Student
         }
 
         // Primary constructor for DI usage
-        public StudentFormViewModel(IStudentService studentService, Core.Models.Student? student = null, bool enableValidation = false)
+        public StudentFormViewModel(IStudentService studentService, Core.Models.Student? student = null, bool enableValidation = true)
         {
             _studentService = studentService;
             _context = TryCreateDbContextViaDi() ?? new BusBuddyDbContext();
@@ -82,14 +87,11 @@ namespace BusBuddy.WPF.ViewModels.Student
         }
 
         // Fallback constructor when DI is unavailable
-        public StudentFormViewModel(Core.Models.Student? student = null, bool enableValidation = false)
+        public StudentFormViewModel(Core.Models.Student? student = null, bool enableValidation = true)
         {
             _context = TryCreateDbContextViaDi() ?? new BusBuddyDbContext();
             _addressService = new AddressService();
             DisableAddressValidation = !enableValidation; // Allow tests to enable validation
-            // For MVP, we'll do simple validation directly in the ViewModel
-            // TODO: Inject AddressValidationService when UnitOfWork is available
-
             _student = student ?? new Core.Models.Student
             {
                 Active = true,
@@ -354,13 +356,15 @@ namespace BusBuddy.WPF.ViewModels.Student
             {
                 if (DisableAddressValidation)
                 {
-                    AddressValidationMessage = "Address validation disabled — TODO: re-enable post-MVP";
+                    _addressValidationFailed = false;
+                    AddressValidationMessage = "Address validation disabled";
                     AddressValidationColor = Brushes.Gray;
                     await Task.CompletedTask; return;
                 }
                 Logger.Information("Validating address for student");
                 if (string.IsNullOrWhiteSpace(Student.HomeAddress))
                 {
+                    _addressValidationFailed = false;
                     AddressValidationMessage = "Please enter an address before validating.";
                     AddressValidationColor = Brushes.Orange;
                     return;
@@ -383,6 +387,7 @@ namespace BusBuddy.WPF.ViewModels.Student
                     ? (string.IsNullOrWhiteSpace(componentValidation.Error) ? addressValidation.Error : componentValidation.Error)
                     : addressValidation.Error;
 
+                _addressValidationFailed = !isValid;
                 if (isValid)
                 {
                     AddressValidationMessage = "✓ Address format is valid.";
@@ -401,6 +406,7 @@ namespace BusBuddy.WPF.ViewModels.Student
             catch (Exception ex)
             {
                 Logger.Error(ex, "Error validating address");
+                _addressValidationFailed = true;
                 AddressValidationMessage = "✗ Error validating address. Please check format and try again.";
                 AddressValidationColor = Brushes.Red;
             }
@@ -450,6 +456,15 @@ namespace BusBuddy.WPF.ViewModels.Student
                     _validationErrors.Clear();
                     HasValidationErrors = false;
                     Logger.Warning("Bypassing student validation due to BUSBUDDY_SKIP_STUDENT_VALIDATION flag");
+                }
+                else if (!DisableAddressValidation && !string.IsNullOrWhiteSpace(Student.HomeAddress))
+                {
+                    await ValidateAddressAsync();
+                    if (_addressValidationFailed)
+                    {
+                        SetGlobalError("Correct the address before saving.");
+                        return;
+                    }
                 }
 
                 // Normalize loose inputs (format but don't block)
@@ -592,11 +607,6 @@ namespace BusBuddy.WPF.ViewModels.Student
                 ValidationStatus = "Analyzing address with AI...";
                 ValidationStatusBrush = Brushes.Orange;
 
-                // TODO: Implement xAI Grok API call
-                // For MVP tests, avoid artificial delays
-                // Simulate API call
-
-                // Mock AI response based on address analysis
                 var suggestedRoutes = await GetAISuggestedRoutes(Student.HomeAddress, Student.City, Student.State);
 
                 if (suggestedRoutes.Any())
@@ -652,15 +662,29 @@ namespace BusBuddy.WPF.ViewModels.Student
                 ValidationStatus = "Loading map preview...";
                 ValidationStatusBrush = Brushes.Blue;
 
-                // TODO: Implement Google Earth Engine integration
-                // For MVP tests, avoid artificial delays
-                // Simulate map opening
-
-                // Mock coordinates geocoding
                 var fullAddress = $"{Student.HomeAddress}, {Student.City}, {Student.State} {Student.Zip}";
+                var sp = App.ServiceProvider;
+                var geocoder = sp?.GetService<IGeocodingService>();
+                var mapVm = sp?.GetService<GoogleEarthViewModel>();
+                var coords = geocoder is null
+                    ? null
+                    : await geocoder.GeocodeAsync(Student.HomeAddress, Student.City, Student.State, Student.Zip);
 
-                // Simulate opening in browser or map application
-                ValidationStatus = "✓ Map opened successfully";
+                if (coords.HasValue && mapVm is not null)
+                {
+                    mapVm.PlotStop(coords.Value.latitude, coords.Value.longitude, new[] { Student.StudentName }, Student.StudentName);
+                }
+
+                new Window
+                {
+                    Title = "🗺️ Student location",
+                    Content = new GoogleEarthView(),
+                    Width = 1100,
+                    Height = 750,
+                    Owner = Application.Current?.MainWindow
+                }.Show();
+
+                ValidationStatus = coords.HasValue ? "✓ Location plotted on map" : "✓ Map opened (address not geocoded)";
                 ValidationStatusBrush = Brushes.Green;
 
                 Logger.Information("Map view opened for address: {Address}", fullAddress);
@@ -768,27 +792,36 @@ namespace BusBuddy.WPF.ViewModels.Student
                 }
                 HasValidationErrors = _validationErrors.Count > 0;
 
-                if (validationErrors.Any())
+                if (validationErrors.Count > 0)
                 {
-                    // Inform the user but do not block Save for MVP minimal data flow
-                    ValidationStatus = $"⚠️ {validationErrors.Count} validation warnings";
-                    ValidationStatusBrush = Brushes.Orange;
                     SetGlobalError($"Please review: {string.Join(", ", validationErrors)}");
-                    // Keep CanSave governed by CanSaveStudent()
-                    CanSave = CanSaveStudent();
-                    _saveRelay?.NotifyCanExecuteChanged();
-                    // Continue without returning so address validation can run if enabled
                 }
 
                 // Perform address validation unless disabled
-                if (!DisableAddressValidation)
+                if (!DisableAddressValidation && !string.IsNullOrWhiteSpace(Student.HomeAddress))
                 {
                     await ValidateAddressAsync();
+                    if (_addressValidationFailed)
+                    {
+                        validationErrors.Add(AddressValidationMessage);
+                        _validationErrors.Add("• " + AddressValidationMessage);
+                    }
                 }
-                else
+                else if (DisableAddressValidation)
                 {
-                    AddressValidationMessage = "Address validation disabled — TODO: re-enable post-MVP";
+                    AddressValidationMessage = "Address validation disabled";
                     AddressValidationColor = Brushes.Gray;
+                }
+
+                if (validationErrors.Count > 0 || _addressValidationFailed)
+                {
+                    HasValidationErrors = true;
+                    ValidationStatus = $"❌ {validationErrors.Count} validation error(s)";
+                    ValidationStatusBrush = Brushes.Red;
+                    CanSave = false;
+                    _saveRelay?.NotifyCanExecuteChanged();
+                    Logger.Warning("Comprehensive validation failed: {Errors}", validationErrors);
+                    return;
                 }
 
                 ValidationStatus = "✓ All data validated successfully";
@@ -837,26 +870,35 @@ namespace BusBuddy.WPF.ViewModels.Student
         /// <summary>
         /// Get AI-suggested routes based on address (MVP simulation)
         /// </summary>
-        private Task<List<string>> GetAISuggestedRoutes(string? address, string? city, string? state)
+        private async Task<List<string>> GetAISuggestedRoutes(string? address, string? city, string? state)
         {
-            // Mock AI logic based on location
             var routes = new List<string>();
+            var sp = App.ServiceProvider;
+            if (sp is not null)
+            {
+                using var scope = sp.CreateScope();
+                var routeService = scope.ServiceProvider.GetService<IRouteService>();
+                if (routeService is not null)
+                {
+                    var result = await routeService.GetAllActiveRoutesAsync();
+                    if (result.IsSuccess && result.Value is not null)
+                    {
+                        var citySafe = city ?? string.Empty;
+                        routes.AddRange(result.Value
+                            .Select(r => r.RouteName)
+                            .Where(n => !string.IsNullOrWhiteSpace(n) &&
+                                        (string.IsNullOrWhiteSpace(citySafe) ||
+                                         n!.Contains(citySafe, StringComparison.OrdinalIgnoreCase)))
+                            .Take(2)!);
+                        if (routes.Count == 0)
+                        {
+                            routes.AddRange(result.Value.Select(r => r.RouteName).Where(n => !string.IsNullOrWhiteSpace(n)).Take(2)!);
+                        }
+                    }
+                }
+            }
 
-            var citySafe = city ?? string.Empty;
-            if (citySafe.Contains("north", StringComparison.OrdinalIgnoreCase))
-            {
-                routes.AddRange(new[] { "Route N1", "Route N2" });
-            }
-            else if (citySafe.Contains("south", StringComparison.OrdinalIgnoreCase))
-            {
-                routes.AddRange(new[] { "Route S1", "Route S2" });
-            }
-            else
-            {
-                routes.AddRange(new[] { "Route Central-1", "Route Central-2" });
-            }
-
-            return Task.FromResult(routes);
+            return routes;
         }
 
         /// <summary>

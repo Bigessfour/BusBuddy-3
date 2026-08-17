@@ -10,7 +10,7 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <!-- UseWPF only in BusBuddy.WPF / test projects — not globally (breaks Core + WebDAV builds) -->
         <!-- Syncfusion / EF / Serilog Versions (single definitions) -->
-        <SyncfusionVersion>34.1.32</SyncfusionVersion> <!-- 006: latest nuget.org Syncfusion WPF (SfGrid.WPF) as of 2026-07-24 -->
+        <SyncfusionVersion>34.2.3</SyncfusionVersion> <!-- 34.x latest on nuget.org as of 2026-08-16 -->
         <EntityFrameworkVersion>9.0.18</EntityFrameworkVersion>
     <NpgsqlVersion>9.0.4</NpgsqlVersion> <!-- for Postgres in docker-compose test/dev profiles -->
         <SerilogVersion>4.4.0</SerilogVersion>
@@ -19,27 +19,27 @@
         <SerilogSinksDebugVersion>3.0.0</SerilogSinksDebugVersion>
         <SerilogExtensionsLoggingVersion>9.0.2</SerilogExtensionsLoggingVersion>
         <!-- WPF/UI Package Versions (.NET 9 Compatible) -->
-        <AutoMapperVersion>12.0.1</AutoMapperVersion>
+        <AutoMapperVersion>15.1.1</AutoMapperVersion>
         <AutoMapperExtensionsDIVersion>12.0.1</AutoMapperExtensionsDIVersion>
         <CommunityToolkitMvvmVersion>8.4.2</CommunityToolkitMvvmVersion> <!-- patch update -->
-        <WebView2Version>1.0.4078.44</WebView2Version>
+        <WebView2Version>1.0.4129.50</WebView2Version>
         <XamlBehaviorsVersion>1.1.135</XamlBehaviorsVersion>
         <!-- Testing Package Versions (.NET 9 Compatible) -->
-        <NUnitVersion>4.4.0</NUnitVersion>
+        <NUnitVersion>4.6.1</NUnitVersion>
         <TestSdkVersion>17.14.1</TestSdkVersion>
-        <FluentAssertionsVersion>8.6.0</FluentAssertionsVersion>
+        <FluentAssertionsVersion>8.10.0</FluentAssertionsVersion>
         <CoverletVersion>6.0.4</CoverletVersion>
         <MoqVersion>4.20.72</MoqVersion>
         <!-- External API Package Versions (.NET 9 Compatible) -->
         <SqlClientVersion>6.1.6</SqlClientVersion>
         <GoogleApisVersion>1.75.0</GoogleApisVersion>
         <GoogleCloudStorageVersion>4.15.0</GoogleCloudStorageVersion>
-        <GoogleApisDriveVersion>1.75.0.4210</GoogleApisDriveVersion>
-        <OpenAIVersion>2.12.0</OpenAIVersion>
+        <GoogleApisDriveVersion>1.75.0.4218</GoogleApisDriveVersion>
+        <OpenAIVersion>2.13.0</OpenAIVersion>
         <PollyVersion>8.7.0</PollyVersion>
         <SystemNetHttpJsonVersion>9.0.18</SystemNetHttpJsonVersion>
         <NetTopologySuiteVersion>2.6.0</NetTopologySuiteVersion>
-        <MicrosoftIdentityClientVersion>4.86.1</MicrosoftIdentityClientVersion>
+        <MicrosoftIdentityClientVersion>4.87.0</MicrosoftIdentityClientVersion>
         <SerilogSettingsConfigurationVersion>9.0.0</SerilogSettingsConfigurationVersion>
         <NUnit3TestAdapterVersion>5.1.0</NUnit3TestAdapterVersion>
         <MoqEntityFrameworkCoreVersion>9.0.0.5</MoqEntityFrameworkCoreVersion>
@@ -68,7 +68,7 @@
         <EnableNETAnalyzers>true</EnableNETAnalyzers>
         <AnalysisLevel>latest</AnalysisLevel>
         <!-- Consolidated NoWarn list (low-impact + nullable MVP suppressions) -->
-        <NoWarn>$(NoWarn);CA1305;CA1860;CA1848;CA1851;CA1304;CA1707;CS1591;CS8600;CS8601;CS8602;CS8603;CS8604</NoWarn>
+        <NoWarn>$(NoWarn);CA1305;CA1860;CA1848;CA1851;CA1304;CA1707;CS1591;CS8600;CS8601;CS8602;CS8603;CS8604;CA1822;CA1861;CA1859</NoWarn>
     </PropertyGroup>
     <!-- Global Build Performance Optimization — MVP stability -->
     <PropertyGroup>
