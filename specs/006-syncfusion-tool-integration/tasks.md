@@ -28,3 +28,7 @@
 
 ## Done when
 Spec FR-001–FR-009 acceptance scenarios met; build green; action-items 006 rows updated; VM smoke + RAG re-index after merge.
+
+## Phase 6: Convergence
+- [ ] T001 Replace leftover `30.1.40` examples in `Documentation/PACKAGE-MANAGEMENT.md` with `$(SyncfusionVersion)` / `34.1.32` and re-index RAG per FR-008 / US5/AC1 (partial)
+- [ ] T002 Make `.cursor/mcp.json` Syncfusion MCP + RAG launchers script-relative (no hard-coded home path) per FR-002 / US1/AC2 (partial)
