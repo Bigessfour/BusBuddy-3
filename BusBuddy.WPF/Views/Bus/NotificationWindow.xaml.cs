@@ -18,31 +18,13 @@ namespace BusBuddy.WPF.Views.Bus
         public NotificationWindow()
         {
             InitializeComponent();
-            try
-            {
-                SfSkinManager.ApplyThemeAsDefaultStyle = true;
-                using var dark = new Theme("FluentDark");
-                SfSkinManager.SetTheme(this, dark);
-            }
-            catch
-            {
-                try { using var light = new Theme("FluentLight"); SfSkinManager.SetTheme(this, light); } catch { }
-            }
+            BusBuddy.WPF.Utilities.SyncfusionThemeManager.ApplyTheme(this);
         }
 
         public NotificationWindow(string message, string title = "Notification", NotificationType type = NotificationType.Information)
         {
             InitializeComponent();
-            try
-            {
-                SfSkinManager.ApplyThemeAsDefaultStyle = true;
-                using var dark = new Theme("FluentDark");
-                SfSkinManager.SetTheme(this, dark);
-            }
-            catch
-            {
-                try { using var light = new Theme("FluentLight"); SfSkinManager.SetTheme(this, light); } catch { }
-            }
+            BusBuddy.WPF.Utilities.SyncfusionThemeManager.ApplyTheme(this);
 
             // Find elements by name and set their properties
             if (FindName("TitleText") is TextBlock titleText)

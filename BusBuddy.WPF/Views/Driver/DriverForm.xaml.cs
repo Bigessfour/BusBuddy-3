@@ -3,6 +3,7 @@ using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using Syncfusion.Windows.Shared;
 using Syncfusion.SfSkinManager;
+using BusBuddy.WPF.Utilities;
 using BusBuddy.WPF.ViewModels.Driver;
 using Microsoft.Extensions.DependencyInjection;
 using Serilog;
@@ -23,21 +24,7 @@ namespace BusBuddy.WPF.Views.Driver
             Log.Information("Initializing {ViewName}", nameof(DriverForm));
             InitializeComponent();
 
-            // Apply Syncfusion theme — FluentDark default, FluentLight fallback
-            SfSkinManager.ApplyThemeAsDefaultStyle = true;
-            try
-            {
-                using var dark = new Theme("FluentDark");
-                SfSkinManager.SetTheme(this, dark);
-                Log.Information("FluentDark theme applied to DriverForm");
-            }
-            catch (System.Exception ex)
-            {
-                Log.Error("Failed to apply FluentDark theme to DriverForm: {Error}", ex.Message);
-                using var white = new Theme("FluentWhite");
-                SfSkinManager.SetTheme(this, white);
-                Log.Information("Fallback to FluentLight theme for DriverForm");
-            }
+            SyncfusionThemeManager.ApplyTheme(this);
 
             // Set DataContext to DriverFormViewModel using DI
             if (App.ServiceProvider != null)

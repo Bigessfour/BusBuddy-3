@@ -20,6 +20,7 @@ using BusBuddy.WPF.Views.Settings;
 using BusBuddy.WPF.Views.Vehicle;
 using BusBuddy.WPF.Views.Reports;
 using BusBuddy.WPF.Views.Fuel;
+using BusBuddy.WPF.Utilities;
 using BusBuddy.Core.Services;
 using BusBuddy.Core.Data;
 using Syncfusion.SfSkinManager;
@@ -211,31 +212,17 @@ namespace BusBuddy.WPF.Views.Main
             Logger.Debug("ApplySyncfusionTheme method started");
             try
             {
-                Logger.Debug("Configuring Syncfusion SfSkinManager global settings");
-                // Apply FluentDark theme with FluentLight fallback
-                // Based on SYNCFUSION_API_REFERENCE.md validated patterns
-                SfSkinManager.ApplyStylesOnApplication = true;
-                SfSkinManager.ApplyThemeAsDefaultStyle = true;
-
-                Logger.Debug("Creating FluentDark theme instance");
-                using var fluentDarkTheme = new Theme("FluentDark");
-                Logger.Debug("Applying FluentDark theme to MainWindow");
-                SfSkinManager.SetTheme(this, fluentDarkTheme);
-
-                Logger.Information("Applied FluentDark theme successfully");
-                Logger.Debug("ApplySyncfusionTheme completed with FluentDark");
+                SyncfusionThemeManager.ApplyTheme(this);
+                Logger.Information("Applied {Theme} theme to MainWindow", SyncfusionThemeManager.CurrentThemeName);
             }
             catch (Exception ex)
             {
-                Logger.Warning(ex, "Failed to apply FluentDark theme, trying FluentLight fallback");
+                Logger.Warning(ex, "Failed to apply current theme, trying FluentLight fallback");
 
                 try
                 {
-                    Logger.Debug("Attempting FluentLight fallback theme");
-                    using var fluentLightTheme = new Theme("FluentLight");
-                    SfSkinManager.SetTheme(this, fluentLightTheme);
+                    SyncfusionThemeManager.ApplyApplicationTheme(SyncfusionThemeManager.FALLBACK_THEME);
                     Logger.Information("Applied FluentLight fallback theme successfully");
-                    Logger.Debug("ApplySyncfusionTheme completed with FluentLight fallback");
                 }
                 catch (Exception fallbackEx)
                 {
@@ -674,47 +661,7 @@ namespace BusBuddy.WPF.Views.Main
         /// </summary>
     private static void ApplyThemeGlobally(string themeName)
         {
-            try
-            {
-                // Ensure global flags are set so styles flow to children
-                SfSkinManager.ApplyStylesOnApplication = true;
-                SfSkinManager.ApplyThemeAsDefaultStyle = true;
-                var theme = new Theme(themeName);
-
-                // Set application-level theme so newly created windows get it automatically
-                SfSkinManager.ApplicationTheme = theme;
-                Logger.Information("Theme changed to {ThemeName} at application scope", themeName);
-
-                // Apply to each open window so the entire UI updates at runtime
-                foreach (Window win in Application.Current.Windows)
-                {
-                    try
-                    {
-                        SfSkinManager.SetTheme(win, theme);
-                        Logger.Information("Theme changed to {ThemeName} for {Component}", themeName, win.GetType().Name);
-                    }
-                    catch
-                    {
-                        // Continue applying theme to other windows even if one fails
-                    }
-                }
-
-                // Also apply to MainWindow explicitly (in case created after others)
-                if (Application.Current.MainWindow is not null)
-                {
-                    try
-                    {
-                        SfSkinManager.SetTheme(Application.Current.MainWindow, theme);
-                        Logger.Information("Theme changed to {ThemeName} for {Component}", themeName, Application.Current.MainWindow.GetType().Name);
-                    }
-                    catch { /* no-op */ }
-                }
-            }
-            catch (Exception)
-            {
-                // Swallow at this level; caller logs details and manages fallback
-                throw;
-            }
+            SyncfusionThemeManager.ApplyApplicationTheme(themeName);
         }
 
         /// <summary>

@@ -16,13 +16,8 @@
                 <!-- Load Syncfusion styles (no duplicate brushes, minimal control styles) -->
                 <ResourceDictionary Source="Resources/SyncfusionStyles.xaml" />
 
-                <!-- Load theme-specific resources -->
-                <!-- Note: Only load one theme at a time to avoid duplicate implicit styles -->
-                <!-- FluentDark is primary theme; FluentLight can be loaded dynamically via SfSkinManager -->
+                <!-- One Fluent brush dictionary at a time; SyncfusionThemeManager swaps this on theme change -->
                 <ResourceDictionary Source="Resources/Themes/FluentDarkTheme.xaml"/>
-
-                <!-- Custom brush overrides for enhanced form contrast -->
-                <ResourceDictionary Source="Resources/Themes/CustomBrushes.xaml"/>
 
                 <!-- Phase 1: Basic styling without complex theme conflicts -->
                 <!-- Note: Syncfusion themes are applied programmatically via SfSkinManager in App.xaml.cs -->

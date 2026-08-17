@@ -178,4 +178,23 @@
         </Style.Triggers>
     </Style>
 
+    <!-- Surface / text tokens used by docking panels. LightMode key names are historical; values follow FluentDark. -->
+    <SolidColorBrush x:Key="BusBuddy.Brush.Surface.LightMode.Background" Color="#1E1E1E"/>
+    <SolidColorBrush x:Key="BusBuddy.Brush.Surface.LightMode.Surface" Color="#252526"/>
+    <SolidColorBrush x:Key="BusBuddy.Brush.Surface.LightMode.Border" Color="#3F3F46"/>
+    <SolidColorBrush x:Key="BusBuddy.Brush.Surface.LightMode.Accent" Color="#2D2D30"/>
+    <SolidColorBrush x:Key="BusBuddy.Brush.Text.LightMode.Primary" Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="BusBuddy.Brush.Text.LightMode.Secondary" Color="#E5E5E5"/>
+    <SolidColorBrush x:Key="BusBuddy.Brush.Text.Primary" Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="BusBuddy.Brush.Text.Secondary" Color="#E5E5E5"/>
+    <SolidColorBrush x:Key="BusBuddy.Brush.Panel.Background" Color="#1A1A1A"/>
+    <SolidColorBrush x:Key="BusBuddy.Brush.Panel.Content" Color="#252526"/>
+    <SolidColorBrush x:Key="BusBuddy.Brush.Panel.Header" Color="#2D2D30"/>
+    <SolidColorBrush x:Key="BusBuddy.Brush.Panel.Border" Color="#404040"/>
+    <SolidColorBrush x:Key="FormLabelForegroundBrush" Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="FormInputForegroundBrush" Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="FormInputBackgroundBrush" Color="#2B2B2B"/>
+    <SolidColorBrush x:Key="FormInputBorderBrush" Color="#555555"/>
+    <SolidColorBrush x:Key="FormSectionHeaderBrush" Color="#333333"/>
+
 </ResourceDictionary>
