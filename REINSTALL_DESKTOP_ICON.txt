@@ -1,0 +1,19 @@
+================================================================================
+  REINSTALL BUSBUDDY DESKTOP ICON  (do this in the UTM Windows window)
+================================================================================
+
+1. Open File Explorer INSIDE Windows (UTM desktop).
+2. Go to the shared BusBuddy-3 folder (usually Z:\).
+3. Open the Scripts folder.
+4. Double-click:  Install-BusBuddyDesktopIcon.cmd
+
+That will:
+  - Delete old BusBuddy*.lnk shortcuts from the desktop
+  - Install C:\dev\BusBuddy-Launch\Run-BusBuddy.cmd  (stable target)
+  - Create a new Desktop\BusBuddy.lnk icon
+
+5. Double-click the new BusBuddy desktop icon.
+   It syncs from Z:\, rebuilds, then launches — so you get Mac-side changes.
+
+Do NOT run this from Cursor or Mac Terminal.
+================================================================================
