@@ -136,6 +136,7 @@ namespace BusBuddy.WPF.ViewModels.Route
     public ICommand DeleteRouteCommand { get; }
     public ICommand GenerateScheduleCommand { get; }
     public ICommand GenerateRoutesCommand { get; }
+    public ICommand GenerateTransferRoutesCommand { get; }
     public ICommand ViewMapCommand { get; }
     public ICommand AssignStudentsCommand { get; }
     public ICommand AssignVehicleCommand { get; }
@@ -175,6 +176,7 @@ namespace BusBuddy.WPF.ViewModels.Route
             DeleteRouteCommand = new RelayCommand(DeleteSelectedRoute, () => IsRouteSelected);
             GenerateScheduleCommand = new RelayCommand(GenerateSchedule, () => IsRouteSelected);
             GenerateRoutesCommand = new AsyncRelayCommand(GenerateRoutesAsync);
+            GenerateTransferRoutesCommand = new AsyncRelayCommand(GenerateTransferRoutesAsync);
             ViewMapCommand = new RelayCommand(OpenMapView);
             AssignStudentsCommand = new RelayCommand(AssignStudents, () => IsRouteSelected);
             AssignVehicleCommand = new RelayCommand(AssignVehicle, () => IsRouteSelected && SelectedBus != null);
@@ -459,6 +461,57 @@ namespace BusBuddy.WPF.ViewModels.Route
             {
                 Logger.Error(ex, "Generate routes failed");
                 StatusMessage = $"Error generating routes: {ex.Message}";
+            }
+        }
+
+        private async Task GenerateTransferRoutesAsync()
+        {
+            try
+            {
+                var planner = _routeDetermination
+                    ?? App.ServiceProvider?.GetService<IRouteDeterminationService>();
+                if (planner is null)
+                {
+                    StatusMessage = "Route determination service unavailable";
+                    return;
+                }
+
+                await using var context = _contextFactory.CreateDbContext();
+                var schools = await context.Destinations
+                    .Where(d => d.IsActive && d.DestinationType == DestinationTypes.School)
+                    .OrderBy(d => d.Name)
+                    .ToListAsync()
+                    .ConfigureAwait(true);
+                if (schools.Count == 0)
+                {
+                    StatusMessage = "No active school destinations";
+                    return;
+                }
+
+                Destination? school = null;
+                if (SelectedRoute is not null && !string.IsNullOrWhiteSpace(SelectedRoute.School))
+                {
+                    school = schools.FirstOrDefault(s =>
+                        string.Equals(s.Name, SelectedRoute.School, StringComparison.OrdinalIgnoreCase));
+                }
+
+                school ??= schools[0];
+                StatusMessage = $"Generating transfer routes for '{school.Name}'...";
+                var result = await planner.GenerateAndAssignAsync(
+                        school.DestinationId,
+                        RouteTimeSlotKind.Both,
+                        FleetKind.Transfer)
+                    .ConfigureAwait(true);
+
+                await LoadRoutesAsync().ConfigureAwait(true);
+                StatusMessage = result.Success
+                    ? $"Transfer fleet: {result.Proposals.Count} proposal(s), {result.AssignedStudentCount} assigned"
+                    : (result.Error ?? "Transfer generation failed");
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Generate transfer routes failed");
+                StatusMessage = $"Error generating transfer routes: {ex.Message}";
             }
         }
 

@@ -119,6 +119,15 @@
                 Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}"
                 AutomationProperties.Name="Generate Routes"
                 AutomationProperties.HelpText="Year-start auto route build for school destinations"/>
+            <syncfusion:ButtonAdv Name="GenerateTransferRoutesButton" Label="🔀 Transfer Routes"
+                            Command="{Binding GenerateTransferRoutesCommand}"
+                SizeMode="Normal"
+                IconHeight="16" IconWidth="16"
+                CornerRadius="4"
+                Background="{StaticResource BusBuddy.Brush.SafetyOrange}"
+                Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}"
+                AutomationProperties.Name="Generate Transfer Routes"
+                AutomationProperties.HelpText="Generate separate transfer fleet drafts"/>
             <syncfusion:ButtonAdv Name="ViewMapButton" Label="🗺️ View Map"
                             Command="{Binding ViewMapCommand}"
                 SizeMode="Normal"

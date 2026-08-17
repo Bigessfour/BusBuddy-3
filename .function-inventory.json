@@ -6,6 +6,8 @@
     "BusBuddy.Core/Services/SeedDataService.cs",
     "BusBuddy.WPF/Views/Student/StudentsView.xaml.cs",
     "BusBuddy.Core/Services/RouteService.cs",
+    "BusBuddy.Core/Services/RouteDetermination/RouteDeterminationService.cs",
+    "BusBuddy.Core/Services/RouteDetermination/AssignFitnessEvaluator.cs",
     "BusBuddy.Core/Services/StudentRouteOptimizer.cs",
     "BusBuddy.Core/Services/OperationalReportService.cs",
     "BusBuddy.Core/Services/PdfReportService.cs",

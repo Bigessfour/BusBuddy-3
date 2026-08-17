@@ -31,15 +31,11 @@
   - [ ] Apply migration `20260817150000_DriverTrainingSubmodule` — same Windows/SQL Server path as above
   - [ ] VM: edit driver employment fields; open Training grid; mark complete + certificate
   - [x] Dedicated training grid UI (Drivers → Training) — mark complete / certificate per row
-- [ ] **008 Route determination / fleet sizing** — minimize buses with geographic + time comfort; AM/PM mirror with AM-only / PM-only / both; recalc on assign; year-start auto-assign + map override; toast when assign breaks arrival/capacity; home→school and transfer planners separate; target >100 riders / medium–large city, still usable for small districts
-  - Design locked 2026-08-17 (user answers): soft capacity = assigned bus `SeatingCapacity` (hard); school map **start times** → work backward for pickups; simple **quadrants** + rural/outlier rules (large pickup gaps → other route); minimize buses without sacrificing ride time/mileage/comfort; keep occasional-rider stops on mirrored routes; suggest new route past thresholds
-  - [x] `/speckit-specify` + `/speckit-plan` — [spec](../specs/008-route-determination/spec.md) · [plan](../specs/008-route-determination/plan.md) (Q1:A / Q2:B / Q3:B locked)
-  - [x] `/speckit-tasks` — [tasks.md](../specs/008-route-determination/tasks.md) (41 tasks; MVP = US1 T001–T020)
-  - [x] `/speckit-implement` MVP T001–T020 (Setup + Foundational + US1) on `feature/008-route-determination` — [PR #37](https://github.com/Bigessfour/BusBuddy-3/pull/37)
-  - [x] Review-fix pass: idempotent Draft replace, AM-only PM skip, fail-closed Success, map UI-thread
-  - [x] US2 assign fitness (T021–T026): evaluator + RouteService gate + Route Assignment warn/block/override/SuggestNewRoute
-  - [ ] Apply migration `20260817160000_DestinationSchoolTimes` on Windows SQL Server; VM smoke Generate Routes + map draft status
-  - [ ] US3–US4 + polish (T027–T041)
+- [x] **008 Route determination / fleet sizing** — [tasks](../specs/008-route-determination/tasks.md) T001–T041 implemented on [PR #38](https://github.com/Bigessfour/BusBuddy-3/pull/38) (follow-on to merged [#37](https://github.com/Bigessfour/BusBuddy-3/pull/37) MVP)
+  - Design locked 2026-08-17: Q1:A / Q2:B / Q3:B
+  - [x] US1 generate/pack/override · US2 assign fitness · US3 school-time schedules · US4 transfer fleet · polish
+  - [ ] Apply migrations on Windows SQL Server (`…DestinationSchoolTimes` + #36 migrations); VM smoke per [quickstart](../specs/008-route-determination/quickstart.md)
+  - Serilog expected: `Route generation completed`, `Assign fitness Blocked|Warned`, `Schedule regen School=`
 - [x] **006 Syncfusion Tool Integration** — [spec](../specs/006-syncfusion-tool-integration/spec.md) — merged [PR #21](https://github.com/Bigessfour/BusBuddy-3/pull/21)
   - [x] MCP paths, skills overlay, Syncfusion **34.2.3**, deps audit
   - [x] `python -m rag.index` after merge (2026-07-24; ~3399 chunks)

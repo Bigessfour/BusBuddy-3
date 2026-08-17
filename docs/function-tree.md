@@ -22,6 +22,7 @@ flowchart TB
     StudentSvc[StudentService]
     Seed[SeedDataService]
     RouteSvc[RouteService]
+    RouteDet[RouteDetermination]
     Opt[StudentRouteOptimizer]
     ReportsSvc[OperationalReportService]
     Pdf[PdfReportService]
@@ -57,6 +58,7 @@ flowchart TB
   SchedView --> Sched
   SchedView --> Avail
   Opt --> RouteSvc
+  RouteDet --> RouteSvc
   Theme --> ui
   MapsRoute --> Geo
   core --> EF

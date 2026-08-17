@@ -297,7 +297,26 @@
                         </StackPanel>
 
                         <StackPanel Grid.Row="2" Grid.Column="1" Margin="10,0,0,0">
-                            <!-- Empty for now - can add more fields later -->
+                            <Label Content="School Start / Dismissal"/>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <syncfusion:SfTextBoxExt Grid.Column="0" Margin="0,0,6,0"
+                                         Text="{Binding SchoolStartTimeText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                         Watermark="08:00"
+                                         AutomationProperties.Name="School Start Time"/>
+                                <syncfusion:SfTextBoxExt Grid.Column="1" Margin="0,0,6,0"
+                                         Text="{Binding SchoolDismissalTimeText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                         Watermark="15:30"
+                                         AutomationProperties.Name="School Dismissal Time"/>
+                                <syncfusion:ButtonAdv Grid.Column="2" Label="Save times"
+                                         Command="{Binding SaveSchoolTimesCommand}"
+                                         SizeMode="Normal"
+                                         AutomationProperties.Name="Save School Times"/>
+                            </Grid>
                         </StackPanel>
 
                         <StackPanel Grid.Row="3" Grid.ColumnSpan="2">

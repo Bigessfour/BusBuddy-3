@@ -14,6 +14,7 @@ using BusBuddy.WPF.Views.GoogleEarth;
 using System.Text.RegularExpressions;
 using BusBuddy.Core.Models;
 using BusBuddy.Core.Services;
+using BusBuddy.Core.Services.RouteDetermination;
 using BusBuddy.Core;
 using BusBuddy.Core.Data;
 using BusBuddy.Core.Data.Interfaces;
@@ -189,6 +190,8 @@ namespace BusBuddy.WPF.ViewModels.Student
         public ObservableCollection<Destination> AvailableSchools { get; }
 
         private Destination? _selectedSchoolDestination;
+        private string _schoolStartTimeText = string.Empty;
+        private string _schoolDismissalTimeText = string.Empty;
 
         /// <summary>Selected campus; syncs Student.School and Student.DestinationId.</summary>
         public Destination? SelectedSchoolDestination
@@ -203,12 +206,28 @@ namespace BusBuddy.WPF.ViewModels.Student
 
                 if (value is null)
                 {
+                    SchoolStartTimeText = string.Empty;
+                    SchoolDismissalTimeText = string.Empty;
                     return;
                 }
 
                 Student.School = value.Name;
                 Student.DestinationId = value.DestinationId;
+                SchoolStartTimeText = value.StartTime?.ToString(@"hh\:mm") ?? string.Empty;
+                SchoolDismissalTimeText = value.DismissalTime?.ToString(@"hh\:mm") ?? string.Empty;
             }
+        }
+
+        public string SchoolStartTimeText
+        {
+            get => _schoolStartTimeText;
+            set => SetProperty(ref _schoolStartTimeText, value);
+        }
+
+        public string SchoolDismissalTimeText
+        {
+            get => _schoolDismissalTimeText;
+            set => SetProperty(ref _schoolDismissalTimeText, value);
         }
 
         /// <summary>
@@ -324,6 +343,7 @@ namespace BusBuddy.WPF.ViewModels.Student
 
     public ICommand ValidateAddressCommand { get; private set; } = null!;
     public ICommand SaveCommand { get; private set; } = null!;
+    public ICommand SaveSchoolTimesCommand { get; private set; } = null!;
         public ICommand CancelCommand { get; private set; } = null!;
 
         // AI and Enhancement Commands
@@ -361,6 +381,7 @@ namespace BusBuddy.WPF.ViewModels.Student
             // Make Save always executable; we gate inside SaveStudentAsync with validation.
             _saveRelay = new AsyncRelayCommand(SaveStudentAsync);
             SaveCommand = _saveRelay;
+            SaveSchoolTimesCommand = new AsyncRelayCommand(SaveSchoolTimesAsync);
             CancelCommand = new CommunityToolkit.Mvvm.Input.RelayCommand(ExecuteCancel);
 
             // AI and Enhancement Commands
@@ -459,6 +480,69 @@ namespace BusBuddy.WPF.ViewModels.Student
         /// <summary>
         /// Save the student to the database
         /// </summary>
+        private async Task SaveSchoolTimesAsync()
+        {
+            if (SelectedSchoolDestination is null)
+            {
+                ValidationStatus = "Select a school first";
+                return;
+            }
+
+            TimeSpan? start = null;
+            TimeSpan? dismissal = null;
+            if (!string.IsNullOrWhiteSpace(SchoolStartTimeText))
+            {
+                if (!TimeSpan.TryParse(SchoolStartTimeText.Trim(), out var startParsed))
+                {
+                    ValidationStatus = "Start time must be HH:mm";
+                    return;
+                }
+
+                start = startParsed;
+            }
+
+            if (!string.IsNullOrWhiteSpace(SchoolDismissalTimeText))
+            {
+                if (!TimeSpan.TryParse(SchoolDismissalTimeText.Trim(), out var dismissParsed))
+                {
+                    ValidationStatus = "Dismissal time must be HH:mm";
+                    return;
+                }
+
+                dismissal = dismissParsed;
+            }
+
+            var destService = App.ServiceProvider?.GetService<IDestinationService>();
+            if (destService is null)
+            {
+                ValidationStatus = "Destination service unavailable";
+                return;
+            }
+
+            var ok = await destService.UpdateSchoolTimesAsync(
+                SelectedSchoolDestination.DestinationId, start, dismissal).ConfigureAwait(true);
+            if (!ok)
+            {
+                ValidationStatus = "Failed to save school times";
+                return;
+            }
+
+            SelectedSchoolDestination.StartTime = start;
+            SelectedSchoolDestination.DismissalTime = dismissal;
+            ValidationStatus = "School times saved";
+
+            var planner = App.ServiceProvider?.GetService<IRouteDeterminationService>();
+            if (planner is not null && start.HasValue)
+            {
+                var regen = await planner
+                    .RegenerateSchedulesForSchoolAsync(SelectedSchoolDestination.DestinationId)
+                    .ConfigureAwait(true);
+                ValidationStatus = regen.Success
+                    ? $"School times saved; regenerated schedules on {regen.AssignedStudentCount} route(s)"
+                    : $"School times saved; schedule regen: {regen.Error}";
+            }
+        }
+
         private async Task SaveStudentAsync()
         {
             try
