@@ -28,8 +28,9 @@ public class PickupScheduleTests
         var schoolLon = -102.70;
 
         var arrivals = PickupScheduleCalculator.ComputeAmPickupArrivals(
-            stops, schoolLat, schoolLon, start, Settings());
+            stops, schoolLat, schoolLon, start, Settings(), out var underflow);
 
+        Assert.That(underflow, Is.False);
         Assert.That(arrivals.Count, Is.EqualTo(3));
         Assert.That(PickupScheduleCalculator.IsMonotonicNonDecreasing(arrivals), Is.True);
         Assert.That(arrivals[^1], Is.LessThan(start));
@@ -56,12 +57,30 @@ public class PickupScheduleTests
     }
 
     [Test]
-    public void AmGeneration_RequiresStartTime_DocumentedByEmptyGuard()
+    public void AmGeneration_EmptyStops_ReturnsEmpty()
     {
-        // Calculator itself does not throw; service Fail path is covered by contract —
-        // empty stop list returns empty (StartTime gate lives in RouteDeterminationService).
         var arrivals = PickupScheduleCalculator.ComputeAmPickupArrivals(
-            Array.Empty<(double, double)>(), 38.15, -102.70, TimeSpan.FromHours(8), Settings());
+            Array.Empty<(double, double)>(), 38.15, -102.70, TimeSpan.FromHours(8), Settings(), out var underflow);
         Assert.That(arrivals, Is.Empty);
+        Assert.That(underflow, Is.False);
+    }
+
+    [Test]
+    public void AmBackward_ImpossibleTravel_SetsUnderflowAndClamps()
+    {
+        // Very early start with distant stops → underflow
+        var start = new TimeSpan(0, 5, 0);
+        var stops = new List<(double, double)>
+        {
+            (40.0, -104.0),
+            (39.0, -103.0),
+            (38.5, -102.8)
+        };
+
+        var arrivals = PickupScheduleCalculator.ComputeAmPickupArrivals(
+            stops, 38.15, -102.70, start, Settings(), out var underflow);
+
+        Assert.That(underflow, Is.True);
+        Assert.That(arrivals.All(t => t >= TimeSpan.Zero), Is.True);
     }
 }

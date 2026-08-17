@@ -34,7 +34,8 @@
 - [x] **008 Route determination / fleet sizing** — [tasks](../specs/008-route-determination/tasks.md) T001–T041 implemented on [PR #38](https://github.com/Bigessfour/BusBuddy-3/pull/38) (follow-on to merged [#37](https://github.com/Bigessfour/BusBuddy-3/pull/37) MVP)
   - Design locked 2026-08-17: Q1:A / Q2:B / Q3:B
   - [x] US1 generate/pack/override · US2 assign fitness · US3 school-time schedules · US4 transfer fleet · polish
-  - [ ] Apply migrations on Windows SQL Server (`…DestinationSchoolTimes` + #36 migrations); VM smoke per [quickstart](../specs/008-route-determination/quickstart.md)
+  - [x] Review hardenings (schedule regen persists Scheduled+Estimated; transfer stops use pickup/dropoff; Both creates AM+PM) — PR #39 follow-up
+  - [ ] Apply migrations on Windows SQL Server (`…DestinationSchoolTimes` + #36 migrations); VM smoke per [quickstart](../specs/008-route-determination/quickstart.md) (**T041 still open**)
   - Serilog expected: `Route generation completed`, `Assign fitness Blocked|Warned`, `Schedule regen School=`
 - [x] **006 Syncfusion Tool Integration** — [spec](../specs/006-syncfusion-tool-integration/spec.md) — merged [PR #21](https://github.com/Bigessfour/BusBuddy-3/pull/21)
   - [x] MCP paths, skills overlay, Syncfusion **34.2.3**, deps audit

@@ -1,4 +1,5 @@
 using BusBuddy.Core.Configuration;
+using BusBuddy.Core.Models;
 
 namespace BusBuddy.Core.Services.RouteDetermination;
 
@@ -11,8 +12,41 @@ public static class PickupScheduleCalculator
     public static readonly TimeSpan DefaultDwell = TimeSpan.FromSeconds(45);
 
     /// <summary>
-    /// Ordered stops from first pickup toward school. Returns arrival times per stop (same length),
-    /// plus final school arrival (= startTime).
+    /// Transfer AM uses pickup; PM uses dropoff when present, otherwise pickup.
+    /// </summary>
+    public static bool TryResolveTransferStop(
+        StudentSchoolTransfer transfer,
+        RouteTimeSlotKind slot,
+        out decimal latitude,
+        out decimal longitude,
+        out string address)
+    {
+        ArgumentNullException.ThrowIfNull(transfer);
+        var useDropoff = slot == RouteTimeSlotKind.PM &&
+                         transfer.DropoffLatitude is not null &&
+                         transfer.DropoffLongitude is not null;
+        var lat = useDropoff ? transfer.DropoffLatitude : transfer.PickupLatitude;
+        var lon = useDropoff ? transfer.DropoffLongitude : transfer.PickupLongitude;
+        if (lat is null || lon is null)
+        {
+            latitude = default;
+            longitude = default;
+            address = string.Empty;
+            return false;
+        }
+
+        latitude = lat.Value;
+        longitude = lon.Value;
+        address = useDropoff
+            ? (transfer.DropoffAddress ?? transfer.PickupAddress ?? string.Empty)
+            : (transfer.PickupAddress ?? string.Empty);
+        return true;
+    }
+
+    /// <summary>
+    /// Ordered stops from first pickup toward school. Returns arrival times per stop (same length).
+    /// <paramref name="underflow"/> is true when travel would push a stop before midnight (00:00);
+    /// arrivals are still clamped to zero so callers can warn or fail.
     /// </summary>
     public static IReadOnlyList<TimeSpan> ComputeAmPickupArrivals(
         IReadOnlyList<(double Latitude, double Longitude)> orderedStopsTowardSchool,
@@ -20,10 +54,12 @@ public static class PickupScheduleCalculator
         double schoolLon,
         TimeSpan schoolStartTime,
         RoutingDistrictSettings settings,
+        out bool underflow,
         TimeSpan? dwellPerStop = null)
     {
         ArgumentNullException.ThrowIfNull(orderedStopsTowardSchool);
         ArgumentNullException.ThrowIfNull(settings);
+        underflow = false;
 
         if (orderedStopsTowardSchool.Count == 0)
         {
@@ -51,12 +87,15 @@ public static class PickupScheduleCalculator
             }
 
             var minutes = LegMinutes(lat, lon, nextLat, nextLon, mph);
-            cursor = cursor - TimeSpan.FromMinutes(minutes) - (i < orderedStopsTowardSchool.Count - 1 ? dwell : TimeSpan.Zero);
-            if (cursor < TimeSpan.Zero)
+            var next = cursor - TimeSpan.FromMinutes(minutes) -
+                       (i < orderedStopsTowardSchool.Count - 1 ? dwell : TimeSpan.Zero);
+            if (next < TimeSpan.Zero)
             {
-                cursor = TimeSpan.Zero;
+                underflow = true;
+                next = TimeSpan.Zero;
             }
 
+            cursor = next;
             arrivals[i] = RoundToMinute(cursor);
         }
 

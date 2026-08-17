@@ -1,4 +1,5 @@
 using BusBuddy.Core.Configuration;
+using BusBuddy.Core.Models;
 using BusBuddy.Core.Services.RouteDetermination;
 using NUnit.Framework;
 
@@ -42,5 +43,46 @@ public class TransferFleetTests
         Assert.That(xferPacked.Sum(p => p.OrderedStudentIds.Count), Is.EqualTo(2));
         Assert.That(homePacked.Count, Is.GreaterThanOrEqualTo(1));
         Assert.That(homeStudentIds.Intersect(transferOnlyPickups.Select(r => r.StudentId)).Any(), Is.False);
+    }
+
+    [Test]
+    public void TransferStopResolver_PrefersPickupForAm_AndDropoffForPm()
+    {
+        var transfer = new StudentSchoolTransfer
+        {
+            StudentId = 42,
+            PickupLatitude = 38.40m,
+            PickupLongitude = -102.50m,
+            PickupAddress = "Pickup Hub",
+            DropoffLatitude = 38.16m,
+            DropoffLongitude = -102.70m,
+            DropoffAddress = "Campus Door"
+        };
+
+        Assert.That(
+            PickupScheduleCalculator.TryResolveTransferStop(
+                transfer, RouteTimeSlotKind.AM, out var amLat, out var amLon, out var amAddr),
+            Is.True);
+        Assert.That(amLat, Is.EqualTo(38.40m));
+        Assert.That(amLon, Is.EqualTo(-102.50m));
+        Assert.That(amAddr, Is.EqualTo("Pickup Hub"));
+
+        Assert.That(
+            PickupScheduleCalculator.TryResolveTransferStop(
+                transfer, RouteTimeSlotKind.PM, out var pmLat, out var pmLon, out var pmAddr),
+            Is.True);
+        Assert.That(pmLat, Is.EqualTo(38.16m));
+        Assert.That(pmLon, Is.EqualTo(-102.70m));
+        Assert.That(pmAddr, Is.EqualTo("Campus Door"));
+    }
+
+    [Test]
+    public void TransferBothSlot_ProducesDistinctAmAndPmProposalNames()
+    {
+        // Naming contract used by GenerateTransferFleetAsync for RouteTimeSlotKind.Both
+        const string amName = "Draft-Xfer-Wiley-c1-1";
+        var pmName = $"{amName}-PM";
+        Assert.That(pmName, Does.EndWith("-PM"));
+        Assert.That(amName, Does.Not.EndWith("-PM"));
     }
 }

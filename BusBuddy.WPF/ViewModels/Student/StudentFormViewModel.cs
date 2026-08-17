@@ -538,7 +538,7 @@ namespace BusBuddy.WPF.ViewModels.Student
                     .RegenerateSchedulesForSchoolAsync(SelectedSchoolDestination.DestinationId)
                     .ConfigureAwait(true);
                 ValidationStatus = regen.Success
-                    ? $"School times saved; regenerated schedules on {regen.AssignedStudentCount} route(s)"
+                    ? $"School times saved; regenerated schedules on {regen.RoutesUpdated} route(s)"
                     : $"School times saved; schedule regen: {regen.Error}";
             }
         }
