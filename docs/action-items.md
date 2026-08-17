@@ -31,6 +31,10 @@
   - [ ] Apply migration `20260817150000_DriverTrainingSubmodule` — same Windows/SQL Server path as above
   - [ ] VM: edit driver employment fields; open Training grid; mark complete + certificate
   - [x] Dedicated training grid UI (Drivers → Training) — mark complete / certificate per row
+- [ ] **008 Route determination / fleet sizing** (Spec-Kit next) — minimize buses with geographic + time comfort; AM/PM mirror with AM-only / PM-only / both; recalc on assign; year-start auto-assign + map override; toast when assign breaks arrival/capacity; home→school and transfer planners separate; target >100 riders / medium–large city, still usable for small districts
+  - Design locked 2026-08-17 (user answers): soft capacity = assigned bus `SeatingCapacity` (hard); school map **start times** → work backward for pickups; simple **quadrants** + rural/outlier rules (large pickup gaps → other route); minimize buses without sacrificing ride time/mileage/comfort; keep occasional-rider stops on mirrored routes; suggest new route past thresholds
+  - [ ] `/speckit-specify` → plan/tasks under `specs/008-route-determination/`
+  - [ ] Depends on #36 merge + school start-time on Destination + VM migrate
 - [x] **006 Syncfusion Tool Integration** — [spec](../specs/006-syncfusion-tool-integration/spec.md) — merged [PR #21](https://github.com/Bigessfour/BusBuddy-3/pull/21)
   - [x] MCP paths, skills overlay, Syncfusion **34.2.3**, deps audit
   - [x] `python -m rag.index` after merge (2026-07-24; ~3399 chunks)
