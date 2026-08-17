@@ -23,6 +23,7 @@ namespace BusBuddy.Core.Services
     {
         private static readonly ILogger Logger = Log.ForContext<RouteService>();
         private readonly IBusBuddyDbContextFactory _contextFactory;
+        private readonly IRouteWaypointRebuildService? _waypointRebuild;
 
         // Minimal op timing helper (basic only; can expand later)
         private static (Guid OpId, Stopwatch Sw) StartOp(string name, object? routeId = null)
@@ -47,8 +48,16 @@ namespace BusBuddy.Core.Services
         }
 
         public RouteService(IBusBuddyDbContextFactory contextFactory)
+            : this(contextFactory, null)
+        {
+        }
+
+        public RouteService(
+            IBusBuddyDbContextFactory contextFactory,
+            IRouteWaypointRebuildService? waypointRebuild)
         {
             _contextFactory = contextFactory ?? throw new ArgumentNullException(nameof(contextFactory));
+            _waypointRebuild = waypointRebuild;
         }
 
         // Context helpers: only dispose when using the concrete runtime factory
@@ -819,6 +828,19 @@ namespace BusBuddy.Core.Services
                     context.Entry(student).State = EntityState.Modified;
                     await context.SaveChangesAsync();
                     Logger.Information("Assigned student {StudentId} to route {RouteName} ({Slot})", studentId, route.RouteName, timeSlot);
+
+                    if (_waypointRebuild is not null)
+                    {
+                        try
+                        {
+                            await _waypointRebuild.RebuildAndPersistAsync(routeId);
+                        }
+                        catch (Exception wpEx)
+                        {
+                            Logger.Warning(wpEx, "Waypoint rebuild after assign failed RouteId={RouteId}", routeId);
+                        }
+                    }
+
                     return Result.SuccessResult(true);
                 }
                 finally

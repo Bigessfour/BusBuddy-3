@@ -180,6 +180,7 @@ namespace BusBuddy.WPF.ViewModels.Student
                     _deleteStudentRelay?.NotifyCanExecuteChanged();
                     _validateAddressRelay?.NotifyCanExecuteChanged();
                     _bulkAssignRouteRelay?.NotifyCanExecuteChanged();
+                    _schoolTransferRelay?.NotifyCanExecuteChanged();
             Logger.Debug("Selection-dependent commands invalidated (CanExecute re-evaluated)");
                 }
             }
@@ -281,6 +282,7 @@ namespace BusBuddy.WPF.ViewModels.Student
                     _deleteStudentRelay?.NotifyCanExecuteChanged();
                     _validateAddressRelay?.NotifyCanExecuteChanged();
                     _bulkAssignRouteRelay?.NotifyCanExecuteChanged();
+                    _schoolTransferRelay?.NotifyCanExecuteChanged();
                 }
             }
         }
@@ -320,8 +322,10 @@ namespace BusBuddy.WPF.ViewModels.Student
         public ICommand SuggestRouteCommand { get; private set; } = null!;
         public ICommand ShowSummaryCommand { get; private set; } = null!;
         public ICommand ShowQuickActionsCommand { get; private set; } = null!;
-    public ICommand PlotStudentsCommand { get; private set; } = null!;
+        public ICommand PlotStudentsCommand { get; private set; } = null!;
     public ICommand SaveGridEditsCommand { get; private set; } = null!; // Inline save for grid edits
+        public ICommand SchoolTransferCommand { get; private set; } = null!;
+        private RelayCommand? _schoolTransferRelay;
 
         #endregion
 
@@ -355,8 +359,10 @@ namespace BusBuddy.WPF.ViewModels.Student
             ShowQuickActionsCommand = new RelayCommand(ExecuteShowQuickActions);
             PlotStudentsCommand = new RelayCommand(ExecutePlotStudents);
             SaveGridEditsCommand = new AsyncRelayCommand(SaveInlineGridEditsAsync);
+            _schoolTransferRelay = new RelayCommand(ExecuteSchoolTransfer, () => HasSelectedStudent);
+            SchoolTransferCommand = _schoolTransferRelay;
 
-            Logger.Debug("Commands initialized: Add/Edit/Delete/Import/BulkAssign/Optimize/ViewMap/ViewOnMap/Suggest/Validate/Refresh/Export/ShowSummary/ShowQuickActions/Plot");
+            Logger.Debug("Commands initialized: Add/Edit/Delete/Import/BulkAssign/Optimize/ViewMap/ViewOnMap/Suggest/Validate/Refresh/Export/ShowSummary/ShowQuickActions/Plot/SchoolTransfer");
         }
 
         #endregion
@@ -441,6 +447,60 @@ namespace BusBuddy.WPF.ViewModels.Student
                 StatusMessage = $"Error editing student: {ex.Message}";
             }
         }
+
+    /// <summary>
+    /// Opens school-to-school transfer dialog (pickup/dropoff locations + times required).
+    /// </summary>
+    private void ExecuteSchoolTransfer()
+    {
+        try
+        {
+            if (SelectedStudent is null)
+            {
+                return;
+            }
+
+            var sp = App.ServiceProvider;
+            var transferService = sp?.GetService<IStudentSchoolTransferService>();
+            var destinationService = sp?.GetService<IDestinationService>();
+            if (transferService is null || destinationService is null)
+            {
+                StatusMessage = "Transfer services unavailable";
+                Logger.Warning("School transfer skipped — services not registered");
+                return;
+            }
+
+            var vm = new StudentSchoolTransferViewModel(
+                SelectedStudent.StudentId,
+                SelectedStudent.StudentName ?? $"Student {SelectedStudent.StudentId}",
+                transferService,
+                destinationService);
+            var dialog = new BusBuddy.WPF.Views.Student.StudentSchoolTransferForm(vm);
+            try
+            {
+                var owner = System.Windows.Application.Current?.Windows
+                    .OfType<System.Windows.Window>()
+                    .FirstOrDefault(w => w.IsActive)
+                    ?? System.Windows.Application.Current?.MainWindow;
+                if (owner != null)
+                {
+                    dialog.Owner = owner;
+                }
+            }
+            catch { /* owner optional */ }
+
+            if (dialog.ShowDialog() == true)
+            {
+                _ = LoadStudentsAsync();
+                StatusMessage = $"School transfer saved for {SelectedStudent.StudentName}";
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.Error(ex, "Error opening school transfer");
+            StatusMessage = $"Transfer error: {ex.Message}";
+        }
+    }
 
     /// <summary>
     /// Only enabled when a student is selected.

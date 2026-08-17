@@ -392,6 +392,12 @@ namespace BusBuddy.WPF.ViewModels.Driver
 
         private async Task ExecuteTrainingRecordsAsync()
         {
+            if (SelectedDriver is not null)
+            {
+                OpenTrainingChecklist(SelectedDriver);
+                return;
+            }
+
             SelectedStatusFilter = "Training";
             var incomplete = Drivers.Count(d => !d.TrainingComplete);
             Logger.Information("Training records: {Incomplete} incomplete of {Total}", incomplete, Drivers.Count);
@@ -483,47 +489,46 @@ namespace BusBuddy.WPF.ViewModels.Driver
                 return;
             }
 
-            var d = SelectedDriver;
+            OpenTrainingChecklist(SelectedDriver);
+            await Task.CompletedTask;
+        }
+
+        private void OpenTrainingChecklist(Core.Models.Driver driver)
+        {
             try
             {
-                if (_trainingService is null)
+                var training = _trainingService
+                    ?? App.ServiceProvider?.GetService<IDriverTrainingService>();
+                if (training is null)
                 {
-                    var training = d.TrainingComplete ? "complete" : "incomplete";
-                    var hire = d.HireDate?.ToString("yyyy-MM-dd") ?? "not set";
-                    base.StatusMessage =
-                        $"{d.DriverName}: training {training}; hire {hire} (training service unavailable)";
+                    base.StatusMessage = "Training service unavailable";
                     return;
                 }
 
-                var records = await _trainingService.EnsureMatrixChecklistAsync(d.DriverId);
-                await _trainingService.RefreshTrainingCompleteFlagAsync(d.DriverId);
+                var vm = new DriverTrainingChecklistViewModel(
+                    driver.DriverId,
+                    driver.DriverName ?? $"Driver {driver.DriverId}",
+                    training);
+                var dialog = new BusBuddy.WPF.Views.Driver.DriverTrainingChecklistView(vm);
+                try
+                {
+                    var owner = System.Windows.Application.Current?.Windows
+                        .OfType<System.Windows.Window>()
+                        .FirstOrDefault(w => w.IsActive)
+                        ?? System.Windows.Application.Current?.MainWindow;
+                    if (owner != null)
+                    {
+                        dialog.Owner = owner;
+                    }
+                }
+                catch { /* owner optional */ }
 
-                var required = records.Where(r => r.IsRequired && r.IsApplicable).ToList();
-                var complete = required.Count(r => r.IsComplete && !r.IsExpired);
-                var missing = required.Count - complete;
-                var expiring = records.Count(r => r.IsExpiringSoon);
-
-                Logger.Information(
-                    "CDE training checklist DriverId={DriverId} Required={Required} Complete={Complete} Missing={Missing}",
-                    d.DriverId,
-                    required.Count,
-                    complete,
-                    missing);
-
-                base.StatusMessage =
-                    $"{d.DriverName}: CDE checklist {complete}/{required.Count} current" +
-                    (missing > 0 ? $", {missing} missing/expired" : string.Empty) +
-                    (expiring > 0 ? $", {expiring} expiring ≤30d" : string.Empty) +
-                    $"; hire {d.HireDate?.ToString("yyyy-MM-dd") ?? "not set"}" +
-                    (string.IsNullOrWhiteSpace(d.EmployingDistrict) ? string.Empty : $"; {d.EmployingDistrict}");
-
-                // Refresh list so TrainingComplete flag shows updates
-                await LoadDriversAsync();
-                SelectedDriver = Drivers.FirstOrDefault(x => x.DriverId == d.DriverId);
+                dialog.ShowDialog();
+                _ = LoadDriversAsync();
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Failed loading CDE training for driver {DriverId}", d.DriverId);
+                Logger.Error(ex, "Failed opening training checklist DriverId={DriverId}", driver.DriverId);
                 base.StatusMessage = $"Training checklist error: {ex.Message}";
             }
         }

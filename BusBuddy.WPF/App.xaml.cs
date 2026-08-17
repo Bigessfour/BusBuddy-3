@@ -431,6 +431,7 @@ namespace BusBuddy.WPF
                 services.AddScoped<IStudentService, StudentService>();
                 services.AddScoped<BusBuddy.Core.Services.Interfaces.IDestinationService, BusBuddy.Core.Services.DestinationService>();
                 services.AddScoped<BusBuddy.Core.Services.IStudentSchoolTransferService, BusBuddy.Core.Services.StudentSchoolTransferService>();
+                services.AddScoped<BusBuddy.Core.Services.IRouteWaypointRebuildService, BusBuddy.Core.Services.RouteWaypointRebuildService>();
                 services.AddScoped<BusBuddy.Core.Services.IDriverTrainingService, BusBuddy.Core.Services.DriverTrainingService>();
                 services.AddScoped<IDriverService, DriverService>();
                 services.AddScoped<IRouteService, RouteService>();
