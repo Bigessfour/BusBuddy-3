@@ -135,7 +135,7 @@ namespace BusBuddy.Tests.Core
         }
 
         /// <summary>
-        /// Syncfusion may emit literal or hex-encoded PDF strings; accept either.
+        /// Syncfusion may emit literal, ASCII-hex, or UTF-16BE hex strings.
         /// </summary>
         private static bool PdfContainsText(byte[] pdf, string text)
         {
@@ -145,8 +145,24 @@ namespace BusBuddy.Tests.Core
                 return true;
             }
 
-            var hex = Convert.ToHexString(Encoding.ASCII.GetBytes(text));
-            return latin1.Contains(hex, StringComparison.OrdinalIgnoreCase);
+            var asciiHex = Convert.ToHexString(Encoding.ASCII.GetBytes(text));
+            if (latin1.Contains(asciiHex, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+
+            var utf16Hex = Convert.ToHexString(Encoding.BigEndianUnicode.GetBytes(text));
+            if (latin1.Contains(utf16Hex, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+
+            // Trial/subset fonts sometimes split words; require every token.
+            return text.Split(' ', StringSplitOptions.RemoveEmptyEntries)
+                .All(token =>
+                    latin1.Contains(token, StringComparison.Ordinal) ||
+                    latin1.Contains(Convert.ToHexString(Encoding.ASCII.GetBytes(token)), StringComparison.OrdinalIgnoreCase) ||
+                    latin1.Contains(Convert.ToHexString(Encoding.BigEndianUnicode.GetBytes(token)), StringComparison.OrdinalIgnoreCase));
         }
 
         private async Task<Route> EnsureActiveRouteAsync()

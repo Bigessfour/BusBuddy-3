@@ -407,27 +407,30 @@ Annistyn,Sutphin,3,,,,,,,,,,,,,,,,,,
                 int idxFname = Array.IndexOf(header, "Fname");
                 int idxLname = Array.IndexOf(header, "Lname");
                 int idxGrade = Array.IndexOf(header, "Grade");
-                int idxParentFname = Array.IndexOf(header, "Fname", 3);
-                int idxParentLname = Array.IndexOf(header, "Lname", 4);
                 // First Address/City/State/County are the student/parent home — not the joint-parent copies.
                 int idxAddress = Array.IndexOf(header, "Address");
                 int idxCity = Array.IndexOf(header, "City");
                 int idxState = Array.IndexOf(header, "State");
                 int idxCounty = Array.IndexOf(header, "County");
-                int idxHphone = Array.IndexOf(header, "Hphone");
-                int idxCphone = Array.IndexOf(header, "Cphone");
-                int idxJointParentFname = Array.IndexOf(header, "Jparent FirstName");
-                int idxJointParentLname = Array.IndexOf(header, "Jparent LastName");
-                int idxJointParentCphone = Array.IndexOf(header, "Cphone", idxCphone >= 0 ? idxCphone + 1 : 0);
-                int idxEcontactFname = Array.IndexOf(header, "Econtact FirstName");
-                int idxEcontactLname = Array.IndexOf(header, "Econtact LastName");
-                int idxEcontactPhone = Array.IndexOf(header, "Econtact Phone");
 
                 if (idxFname < 0 || idxLname < 0 || idxGrade < 0 || idxAddress < 0)
                 {
                     throw new InvalidOperationException(
                         "CSV is not Wiley student format. Expected a header row with Fname, Lname, Grade, and Address.");
                 }
+
+                int idxParentFname = header.Length > 3 ? Array.IndexOf(header, "Fname", 3) : -1;
+                int idxParentLname = header.Length > 4 ? Array.IndexOf(header, "Lname", 4) : -1;
+                int idxHphone = Array.IndexOf(header, "Hphone");
+                int idxCphone = Array.IndexOf(header, "Cphone");
+                int idxJointParentFname = Array.IndexOf(header, "Jparent FirstName");
+                int idxJointParentLname = Array.IndexOf(header, "Jparent LastName");
+                int idxJointParentCphone = idxCphone >= 0 && idxCphone + 1 < header.Length
+                    ? Array.IndexOf(header, "Cphone", idxCphone + 1)
+                    : -1;
+                int idxEcontactFname = Array.IndexOf(header, "Econtact FirstName");
+                int idxEcontactLname = Array.IndexOf(header, "Econtact LastName");
+                int idxEcontactPhone = Array.IndexOf(header, "Econtact Phone");
 
                 string lastParent = string.Empty;
                 string lastJointParent = string.Empty;
