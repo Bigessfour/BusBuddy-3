@@ -1,7 +1,7 @@
 # Specification Quality Checklist: Route Determination / Fleet Sizing
 
-**Purpose**: Validate specification completeness and quality before proceeding to planning  
-**Created**: 2026-08-17  
+**Purpose**: Validate specification completeness and quality before proceeding to planning
+**Created**: 2026-08-17
 **Feature**: [spec.md](../spec.md)
 
 ## Content Quality

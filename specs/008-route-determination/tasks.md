@@ -178,16 +178,16 @@ Phase 7 Polish
 
 ## Task count summary
 
-| Phase | Tasks | Notes |
-|-------|-------|-------|
-| Setup | T001–T003 | 3 |
-| Foundational | T004–T009 | 6 |
-| US1 | T010–T020 | 11 (3 tests + 8 impl) |
-| US2 | T021–T026 | 6 |
-| US3 | T027–T031 | 5 |
-| US4 | T032–T036 | 5 |
-| Polish | T037–T041 | 5 |
-| **Total** | **T001–T041** | **41** |
+| Phase        | Tasks         | Notes                 |
+| ------------ | ------------- | --------------------- |
+| Setup        | T001–T003     | 3                     |
+| Foundational | T004–T009     | 6                     |
+| US1          | T010–T020     | 11 (3 tests + 8 impl) |
+| US2          | T021–T026     | 6                     |
+| US3          | T027–T031     | 5                     |
+| US4          | T032–T036     | 5                     |
+| Polish       | T037–T041     | 5                     |
+| **Total**    | **T001–T041** | **41**                |
 
 **MVP scope**: T001–T020 (Setup + Foundational + US1)
 

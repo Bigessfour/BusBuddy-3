@@ -12,6 +12,8 @@ flowchart TB
   end
   subgraph ui [Operator UI]
     Students[StudentsView]
+    TransferForm[StudentSchoolTransferForm]
+    TrainingView[DriverTrainingChecklistView]
     Reports[ReportsView]
     Dashboard[DashboardView]
     MaintView[MaintenanceView]
@@ -21,11 +23,14 @@ flowchart TB
   subgraph core [P1 Core]
     StudentSvc[StudentService]
     Seed[SeedDataService]
+    DestSvc[DestinationService]
+    TransferSvc[StudentSchoolTransferService]
     RouteSvc[RouteService]
     Opt[StudentRouteOptimizer]
     ReportsSvc[OperationalReportService]
     Pdf[PdfReportService]
     DriverSvc[DriverService]
+    TrainingSvc[DriverTrainingService]
     Sched[ScheduleService]
     Avail[DriverAvailabilityCalculator]
     Maint[MaintenanceService]
@@ -49,6 +54,9 @@ flowchart TB
   Students --> Seed
   Students --> Opt
   Students --> MapsValidate
+  TransferForm --> TransferSvc
+  TransferSvc --> DestSvc
+  TrainingView --> TrainingSvc
   Reports --> ReportsSvc
   ReportsSvc --> Pdf
   Dashboard --> Metrics
