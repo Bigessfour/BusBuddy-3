@@ -1290,6 +1290,8 @@ namespace BusBuddy.Core.Services
                         var match = dbStops.FirstOrDefault(s => s.RouteStopId == updated.RouteStopId);
                         if (match != null)
                         {
+                            match.ScheduledArrival = updated.ScheduledArrival;
+                            match.ScheduledDeparture = updated.ScheduledDeparture;
                             match.EstimatedArrivalTime = updated.EstimatedArrivalTime;
                             match.EstimatedDepartureTime = updated.EstimatedDepartureTime;
                             match.UpdatedDate = DateTime.UtcNow;

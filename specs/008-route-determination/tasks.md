@@ -141,7 +141,7 @@
 - [x] T038 [P] Update `STEADY-STATE-AND-FINISH-ROADMAP.md` architecture map with RouteDetermination service if structural
 - [x] T039 [P] Re-scan function inventory / `docs/function-tree.md` for planner surfaces
 - [x] T040 Run `python -m rag.index` after doc/spec updates
-- [x] T041 VM smoke per [quickstart.md](./quickstart.md); record Serilog proof lines in action-items
+- [ ] T041 VM smoke per [quickstart.md](./quickstart.md); record Serilog proof lines in action-items
 
 ---
 

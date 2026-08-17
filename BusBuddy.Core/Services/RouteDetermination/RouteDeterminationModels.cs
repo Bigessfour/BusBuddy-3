@@ -53,6 +53,8 @@ public sealed class RouteGenerationResult
     public IReadOnlyList<int> UnclusteredStudentIds { get; set; } = Array.Empty<int>();
     public IReadOnlyList<string> Warnings { get; set; } = Array.Empty<string>();
     public int AssignedStudentCount { get; set; }
+    /// <summary>Routes whose stop times were rewritten (schedule regen); not student assigns.</summary>
+    public int RoutesUpdated { get; set; }
     public bool Success { get; set; }
     public string? Error { get; set; }
 }
