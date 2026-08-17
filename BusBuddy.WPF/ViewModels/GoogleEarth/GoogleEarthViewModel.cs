@@ -98,7 +98,7 @@ namespace BusBuddy.WPF.ViewModels.GoogleEarth
             ZoomInCommand = new RelayCommand(_ => ZoomIn());
             ZoomOutCommand = new RelayCommand(_ => ZoomOut());
 
-            // Commands referenced by XAML — MVP stubs with logging
+            // Commands referenced by XAML (map toolbar)
             CenterOnFleetCommand = new RelayCommand(_ => CenterOnFleet());
             ShowAllBusesCommand = new RelayCommand(_ => ShowAllBuses());
             ShowRoutesCommand = new RelayCommand(_ => ShowRoutes());
@@ -645,7 +645,7 @@ namespace BusBuddy.WPF.ViewModels.GoogleEarth
             try { ZoomOutRequested?.Invoke(this, EventArgs.Empty); } catch (Exception ex) { Logger.Warning(ex, "ZoomOut event dispatch failed"); }
         }
 
-        // MVP stub implementations for XAML-bound commands
+        // Map toolbar commands bound from XAML (center / buses / routes / schools)
         private void CenterOnFleet()
         {
             StatusMessage = "Centering map on fleet...";

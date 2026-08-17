@@ -482,6 +482,7 @@ namespace BusBuddy.WPF
                 services.AddTransient<BusBuddy.WPF.ViewModels.Student.StudentsViewModel>();
                 services.AddTransient<BusBuddy.WPF.ViewModels.Route.RouteManagementViewModel>();
                 services.AddTransient<BusBuddy.WPF.ViewModels.Driver.DriverFormViewModel>();
+                services.AddTransient<BusBuddy.WPF.ViewModels.Driver.DriversViewModel>();
                 // Shared map VM: singleton + IServiceScopeFactory so scoped student/bus services are not captured
                 services.AddSingleton<BusBuddy.WPF.ViewModels.GoogleEarth.GoogleEarthViewModel>(sp =>
                     new BusBuddy.WPF.ViewModels.GoogleEarth.GoogleEarthViewModel(
