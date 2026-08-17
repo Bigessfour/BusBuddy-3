@@ -176,21 +176,18 @@
                     Visibility="{Binding HasGlobalError, Converter={StaticResource BooleanToVisibilityConverter}}">
                 <Grid>
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
 
-                    <TextBlock Grid.Column="0" Text="⚠️" FontSize="16" Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"
-                              VerticalAlignment="Center" Margin="0,0,10,0"/>
-                    <TextBlock Grid.Column="1" Text="{Binding GlobalErrorMessage}"
-                              Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}" FontWeight="Bold" TextWrapping="Wrap"
+                    <TextBlock Grid.Column="0" Text="{Binding GlobalErrorMessage}"
+                              Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}" FontWeight="Bold" TextWrapping="Wrap"
                               VerticalAlignment="Center"/>
-                    <syncfusion:ButtonAdv Grid.Column="2" Label="Clear"
+                    <syncfusion:ButtonAdv Grid.Column="1" Label="Clear"
                                          Command="{Binding ClearGlobalErrorCommand}"
-                                         Background="Transparent" Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"
-                                         BorderThickness="1" BorderBrush="{DynamicResource BusBuddy.Brush.Text.Primary}"
-                                         Width="30" Height="30"
+                                         Background="Transparent" Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}"
+                                         BorderThickness="1" BorderBrush="{DynamicResource BusBuddy.Brush.Text.OnPrimary}"
+                                         Padding="8,4" Margin="10,0,0,0"
                                              ToolTip="Clear error message"
                                              AutomationProperties.Name="Clear Error"/>
                 </Grid>
@@ -201,9 +198,9 @@
                     CornerRadius="5" Padding="15" Margin="0,0,0,20">
                 <StackPanel Orientation="Horizontal">
                     <TextBlock Text="&#xE716;" FontFamily="Segoe MDL2 Assets"
-                              FontSize="24" Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                              FontSize="24" Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}" VerticalAlignment="Center" Margin="0,0,10,0"/>
                     <TextBlock Text="{Binding FormTitle}" FontSize="18" FontWeight="Bold"
-                              Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}" VerticalAlignment="Center"/>
+                              Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}" VerticalAlignment="Center"/>
                 </StackPanel>
             </Border>
 
@@ -540,20 +537,20 @@
                 <syncfusion:ButtonAdv Name="SuggestRoutesButton"
                     Label="AI Suggest Routes"
                                     Command="{Binding SuggestRoutesCommand}"
-                                    Background="{DynamicResource BusBuddy.Brush.SafetyOrange}" Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"
+                                    Background="{DynamicResource BusBuddy.Brush.SafetyOrange}" Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}"
                                     ToolTip="Use xAI Grok to suggest optimal routes based on address"
                                     AutomationProperties.Name="AI Suggest Routes"/>
                 <syncfusion:ButtonAdv Name="ViewOnMapButton"
                     Label="View on Map"
                                     Command="{Binding ViewOnMapCommand}"
-                                    Background="{DynamicResource BusBuddy.Brush.Semantic.Info}" Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"
+                                    Background="{DynamicResource BusBuddy.Brush.Semantic.Info}" Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}"
                                     Margin="10,0,0,0"
                                     ToolTip="Show student location on Google Earth Engine map"
                                     AutomationProperties.Name="View on Map"/>
                 <syncfusion:ButtonAdv Name="ImportCsvButton"
                     Label="Import CSV"
                                     Command="{Binding ImportCsvCommand}"
-                                    Background="{DynamicResource BusBuddy.Brush.FleetGreen}" Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"
+                                    Background="{DynamicResource BusBuddy.Brush.FleetGreen}" Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}"
                                     Margin="10,0,0,0"
                                     ToolTip="Import student data from CSV file"
                                     AutomationProperties.Name="Import CSV"/>
@@ -688,21 +685,21 @@
             <syncfusion:ButtonAdv Name="ValidateButton"
         Label="Validate Data"
                 Command="{Binding ValidateDataCommand}"
-                Background="{DynamicResource BusBuddy.Brush.Semantic.Warning}" Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"
+                Background="{DynamicResource BusBuddy.Brush.Semantic.Warning}" Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}"
                 Margin="0,0,10,0"
                 ToolTip="Validate all student data and address"
                 AutomationProperties.Name="Validate Data"/>
             <syncfusion:ButtonAdv Name="SaveButton" Label="Save Student"
                 Command="{Binding SaveCommand}"
                 IsEnabled="{Binding CanSave}"
-                                Background="{DynamicResource BusBuddy.Brush.Primary}" Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"
+                                Background="{DynamicResource BusBuddy.Brush.Primary}" Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}"
                                 Margin="0,0,10,0"
                                 IsDefault="True"
                                 ToolTip="Save student information to database"
                                 AutomationProperties.Name="Save Student"/>
             <syncfusion:ButtonAdv Name="CancelButton" Label="Cancel"
                 Command="{Binding CancelCommand}"
-                Background="{DynamicResource BusBuddy.Brush.Semantic.Error}" Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"
+                Background="{DynamicResource BusBuddy.Brush.Semantic.Error}" Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}"
                 IsCancel="True"
                 ToolTip="Cancel and return to students list"
                 AutomationProperties.Name="Cancel"/>
