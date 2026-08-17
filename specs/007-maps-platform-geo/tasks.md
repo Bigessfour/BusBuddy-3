@@ -18,7 +18,7 @@
 **Purpose**: Config surface for Maps; stop documenting EE as required in appsettings shape
 
 - [x] T001 Add `GoogleMaps` section (ApiKey env placeholder, QuotaProject `new-coursera-490518`, EnableUspsCass true, RegionCode US) to `appsettings.json`, `BusBuddy.WPF/appsettings.json`, and `BusBuddy.Core/appsettings.json`; remove `GoogleEarthEngine` sections from those files
-- [ ] T002 Create `BusBuddy.Core/Configuration/GoogleMapsOptions.cs` (SectionName `GoogleMaps`) matching T001 keys — **paused** (no client yet)
+- [x] T002 Create `BusBuddy.Core/Configuration/GoogleMapsOptions.cs` (SectionName `GoogleMaps`) matching T001 keys
 - [x] T003 [P] Add `GOOGLE_MAPS_API_KEY` to the Passwords load list in `BusBuddy.WPF/App.xaml.cs` (`LoadApiKeysFromMacPasswords`)
 
 ---
@@ -29,9 +29,9 @@
 
 **⚠️ CRITICAL**: No user story work until this phase is complete
 
-- [ ] T004 Register named `HttpClient` `GoogleMaps` and bind `GoogleMapsOptions` in `BusBuddy.WPF/App.xaml.cs` `ConfigureServices` — **paused**
+- [x] T004 Bind `GoogleMapsOptions` and register Maps `HttpClient` factories in `AddDataServices` / WPF `ConfigureServices` (key from env `GOOGLE_MAPS_API_KEY`)
 - [x] T005 Remove `BootstrapGcpCredentialsForProduction` invocation and `GoogleEarthEngineService` / EE `IGeoDataService` token factory from `BusBuddy.WPF/App.xaml.cs`; keep `IGeoDataService` as DB-backed `GeoDataService` without a bearer token
-- [ ] T006 Add `BusBuddy.Core/Services/UnconfiguredGeocodingService.cs` that returns null and logs Warning; temporarily register it as `IGeocodingService` until US1 client exists — **paused** (`OfflineGeocodingService` still registered)
+- [x] T006 Unconfigured geocode: `GoogleAddressValidationClient` returns null / MappingUnconfigured when key missing (supersedes separate `UnconfiguredGeocodingService`); production DI is not `OfflineGeocodingService`
 - [x] T007 Strip `GetGeoJsonAsync` from `BusBuddy.Core/Services/Interfaces/IGeoDataService.cs` and `BusBuddy.Core/Services/GeoDataService.cs` (DB route methods stay)
 
 **Checkpoint**: App starts without GEE env; map can still load DB routes; geocode returns null
@@ -46,17 +46,17 @@
 
 ### Tests for User Story 1
 
-- [ ] T008 [P] [US1] Add failing tests in `BusBuddy.Tests/Core/GoogleAddressValidationClientTests.cs` for deliverable, undeliverable, and missing key using `HttpMessageHandler` fakes per `specs/007-maps-platform-geo/contracts/address-validation.md`
-- [ ] T009 [P] [US1] Add failing test in `BusBuddy.Tests/Core/GeocodingServiceRegistrationTests.cs` asserting production registration is not `OfflineGeocodingService`
+- [x] T008 [P] [US1] Add tests in `BusBuddy.Tests/Core/GoogleAddressValidationClientTests.cs` for deliverable, undeliverable, and missing key using `HttpMessageHandler` fakes per `specs/007-maps-platform-geo/contracts/address-validation.md`
+- [x] T009 [P] [US1] Add test in `BusBuddy.Tests/Core/GeocodingServiceRegistrationTests.cs` asserting production registration is not `OfflineGeocodingService`
 
 ### Implementation for User Story 1
 
-- [ ] T010 [US1] Implement `BusBuddy.Core/Services/GoogleMaps/GoogleAddressValidationClient.cs` (validate + geocode) per `specs/007-maps-platform-geo/contracts/address-validation.md`
-- [ ] T011 [US1] Implement or adapt `IAddressValidationService` in `BusBuddy.Core/Services/AddressValidationService.cs` to delegate to the Maps client when a key is present (keep regex only as last-resort format hint, not as success)
-- [ ] T012 [US1] Wire `IGeocodingService` and `IAddressValidationService` to the Maps client in `BusBuddy.WPF/App.xaml.cs` and `BusBuddy.Core/Extensions/ServiceCollectionExtensions.cs`; do not register `OfflineGeocodingService` in production
-- [ ] T013 [US1] Persist `Student.Latitude` / `Student.Longitude` from geocode in `BusBuddy.Core/Services/StudentService.cs` and student form plot path in `BusBuddy.WPF/ViewModels/Student/StudentFormViewModel.cs`
-- [ ] T014 [US1] Show mapping-unconfigured vs validation-failed messages in `BusBuddy.WPF/ViewModels/Student/StudentFormViewModel.cs` (no fake success)
-- [ ] T015 [US1] Serilog Information/Warning for validate/geocode in the Maps client (never log API key)
+- [x] T010 [US1] Implement `BusBuddy.Core/Services/GoogleMaps/GoogleAddressValidationClient.cs` (validate + geocode) per `specs/007-maps-platform-geo/contracts/address-validation.md`
+- [x] T011 [US1] Implement or adapt `IAddressValidationService` in `BusBuddy.Core/Services/AddressValidationService.cs` to delegate to the Maps client when a key is present (keep regex only as last-resort format hint, not as success)
+- [x] T012 [US1] Wire `IGeocodingService` and `IAddressValidationService` to the Maps client in `BusBuddy.WPF/App.xaml.cs` and `BusBuddy.Core/Extensions/ServiceCollectionExtensions.cs`; do not register `OfflineGeocodingService` in production
+- [x] T013 [US1] Persist `Student.Latitude` / `Student.Longitude` from geocode in `BusBuddy.Core/Services/StudentService.cs` and student form plot path in `BusBuddy.WPF/ViewModels/Student/StudentFormViewModel.cs`
+- [x] T014 [US1] Show mapping-unconfigured vs validation-failed messages in `BusBuddy.WPF/ViewModels/Student/StudentFormViewModel.cs` (no fake success)
+- [x] T015 [US1] Serilog Information/Warning for validate/geocode in the Maps client (never log API key)
 
 **Checkpoint**: US1 tests green; clerk path uses real or null coords only
 
@@ -89,15 +89,15 @@
 
 ### Tests for User Story 3
 
-- [ ] T022 [P] [US3] Add failing tests in `BusBuddy.Tests/Core/GoogleRoutingServiceTests.cs` per `specs/007-maps-platform-geo/contracts/routes.md`
+- [x] T022 [P] [US3] Add tests in `BusBuddy.Tests/Core/GoogleRoutingServiceTests.cs` per `specs/007-maps-platform-geo/contracts/routes.md`
 
 ### Implementation for User Story 3
 
-- [ ] T023 [US3] Add `BusBuddy.Core/Services/Interfaces/IRoutingService.cs` and `BusBuddy.Core/Services/GoogleMaps/GoogleRoutingService.cs`
-- [ ] T024 [US3] Extend `BusBuddy.Core/Mapping/RouteWaypointSerializer.cs` if needed to store encoded polyline + points
-- [ ] T025 [US3] Call `IRoutingService` from route refresh in `BusBuddy.WPF/ViewModels/GoogleEarth/GoogleEarthViewModel.cs` and/or `BusBuddy.WPF/ViewModels/Route/RouteManagementViewModel.cs`
-- [ ] T026 [US3] Ensure `BusBuddy.Core/Services/StudentRouteOptimizer.cs` still assigns seats if routing fails (try/catch + Serilog Warning)
-- [ ] T027 [US3] Register `IRoutingService` in `BusBuddy.WPF/App.xaml.cs`
+- [x] T023 [US3] Add `BusBuddy.Core/Services/Interfaces/IRoutingService.cs` and `BusBuddy.Core/Services/GoogleMaps/GoogleRoutingService.cs`
+- [x] T024 [US3] Extend `BusBuddy.Core/Mapping/RouteWaypointSerializer.cs` if needed to store encoded polyline + points
+- [x] T025 [US3] Call `IRoutingService` from route refresh in `BusBuddy.WPF/ViewModels/GoogleEarth/GoogleEarthViewModel.cs` and/or `BusBuddy.WPF/ViewModels/Route/RouteManagementViewModel.cs`
+- [x] T026 [US3] Ensure `BusBuddy.Core/Services/StudentRouteOptimizer.cs` still assigns seats if routing fails (try/catch + Serilog Warning)
+- [x] T027 [US3] Register `IRoutingService` in `BusBuddy.WPF/App.xaml.cs` (via `AddDataServices`)
 
 **Checkpoint**: Path draws when key present; optimize works without key
 
@@ -109,8 +109,8 @@
 
 **Independent Test**: No key → no suggestions, no errors
 
-- [ ] T028 [P] [US4] Add `BusBuddy.Core/Services/GoogleMaps/GooglePlacesAutocompleteClient.cs` (skip if MVP cut)
-- [ ] T029 [US4] Wire suggestions in `BusBuddy.WPF/ViewModels/Student/StudentFormViewModel.cs` + Syncfusion combo/autocomplete on the student form XAML (Syncfusion-only)
+- [x] T028 [P] [US4] **Skipped (MVP cut)** — Places Autocomplete deferred
+- [x] T029 [US4] **Skipped (MVP cut)** — no student-form type-ahead in this ship
 
 ---
 
@@ -158,18 +158,9 @@
 
 ---
 
-## Parallel Example: User Story 1
-
-```bash
-Task: "Add failing tests in BusBuddy.Tests/Core/GoogleAddressValidationClientTests.cs"
-Task: "Add failing test in BusBuddy.Tests/Core/GeocodingServiceRegistrationTests.cs"
-```
-
----
-
 ## Implementation Strategy
 
-**Paused 2026-08-17 after US2 + docs.** Do not implement T008–T015 or T022–T029 until resume. App runs without Earth Engine; Maps HTTP clients are not wired.
+**Resumed 2026-08-17**: US1 + US3 implemented on `feature/007-maps-us1-implement`. US4 skipped (P3 cut). Open follow-up PR for Maps clients + DI; run `/code-review` on HTTP clients and key handling after merge.
 
 ### MVP First (User Story 1 + Foundational + US2 compile-clean)
 

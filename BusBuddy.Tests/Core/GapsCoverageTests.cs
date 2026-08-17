@@ -60,10 +60,12 @@ namespace BusBuddy.Tests.Core
         public async Task AddressValidationService_ValidateAddress_Basic()
         {
             var mockUnitOfWork = new Mock<IUnitOfWork>();
+            // Without Maps client, validation must not succeed via regex alone.
             var service = new AddressValidationService(mockUnitOfWork.Object);
             var result = await service.ValidateAddressAsync("123 Test St");
 
-            Assert.That(result.NormalizedAddress, Is.Not.Null);
+            Assert.That(result.IsValid, Is.False);
+            Assert.That(result.NormalizedAddress, Is.Null);
         }
 
         [Test]

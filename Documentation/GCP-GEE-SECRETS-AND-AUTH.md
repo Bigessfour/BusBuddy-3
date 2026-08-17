@@ -10,32 +10,32 @@ Runtime today: local DB waypoints + Syncfusion SfMap (OpenStreetMap) + shapefile
 
 **Next (paused):** Google Maps Platform on billing project `new-coursera-490518`:
 
-| API | Use |
-|-----|-----|
-| Address Validation (`enableUspsCass`) | Student addresses + lat/lng |
-| Routes (`computeRoutes`) | Drive polyline / distance / time |
+| API                                   | Use                              |
+| ------------------------------------- | -------------------------------- |
+| Address Validation (`enableUspsCass`) | Student addresses + lat/lng      |
+| Routes (`computeRoutes`)              | Drive polyline / distance / time |
 
 Implementation is **not** wired yet. Resume from `specs/007-maps-platform-geo/tasks.md` US1 / US3.
 
 ## Projects (do not invent IDs)
 
-| Project ID | Role |
-|------------|------|
-| `new-coursera-490518` | GCP console / billing / Maps APIs / `gcloud` default |
-| `ee-bigessfour` | **Unused by the app** (historical Earth Engine — do not wire) |
-| ~~`busbuddy-465000`~~ | **Invalid** — never invent |
+| Project ID            | Role                                                          |
+| --------------------- | ------------------------------------------------------------- |
+| `new-coursera-490518` | GCP console / billing / Maps APIs / `gcloud` default          |
+| `ee-bigessfour`       | **Unused by the app** (historical Earth Engine — do not wire) |
+| ~~`busbuddy-465000`~~ | **Invalid** — never invent                                    |
 
 ## macOS (dev) — Passwords app
 
 Entry **Name** = env var. Loaded by `LoadApiKeysFromMacPasswords()` in `BusBuddy.WPF/App.xaml.cs`.
 
-| Env var | Purpose |
-|---------|---------|
-| `SYNCFUSION_LICENSE_KEY` | Syncfusion WPF |
-| `Syncfusion_API_Key` | Syncfusion MCP assistant |
-| `XAI_API_KEY` / `GROK_API_KEY` | Optional legacy cloud xAI; default AI is local Ollama |
-| `GOOGLE_MAPS_API_KEY` | Maps Platform (when US1/US3 resume). Restrict to Address Validation + Routes |
-| `GCP_BILLING_PROJECT` / `GOOGLE_CLOUD_PROJECT` | `new-coursera-490518` |
+| Env var                                        | Purpose                                                                      |
+| ---------------------------------------------- | ---------------------------------------------------------------------------- |
+| `SYNCFUSION_LICENSE_KEY`                       | Syncfusion WPF                                                               |
+| `Syncfusion_API_Key`                           | Syncfusion MCP assistant                                                     |
+| `XAI_API_KEY` / `GROK_API_KEY`                 | Optional legacy cloud xAI; default AI is local Ollama                        |
+| `GOOGLE_MAPS_API_KEY`                          | Maps Platform (when US1/US3 resume). Restrict to Address Validation + Routes |
+| `GCP_BILLING_PROJECT` / `GOOGLE_CLOUD_PROJECT` | `new-coursera-490518`                                                        |
 
 ## Windows production / VM
 
@@ -43,11 +43,13 @@ Set `GOOGLE_MAPS_API_KEY` as a machine/user env var — no Keychain.
 
 ## Services in DI (current)
 
-| Type | Role |
-|------|------|
-| `GeoDataService` | `IGeoDataService` — routes/waypoints from Postgres |
-| `OfflineGeocodingService` | Temporary `IGeocodingService` until Maps client lands |
-| `ShapefileEligibilityService` | Local Wiley district/town shapefiles |
+| Type                            | Role                                                   |
+| ------------------------------- | ------------------------------------------------------ |
+| `GeoDataService`                | `IGeoDataService` — routes/waypoints from Postgres     |
+| `GoogleAddressValidationClient` | Production `IGeocodingService` (null when key missing) |
+| `GoogleRoutingService`          | Production `IRoutingService` (fail-open)               |
+| `OfflineGeocodingService`       | Tests/demo only — not registered in production DI      |
+| `ShapefileEligibilityService`   | Local Wiley district/town shapefiles                   |
 
 ## Never commit
 

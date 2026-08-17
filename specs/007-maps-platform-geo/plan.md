@@ -1,6 +1,6 @@
 # Implementation Plan: Maps Platform Geo (retire Earth Engine)
 
-**Branch**: `feature/007-maps-platform-geo` | **Date**: 2026-08-17 | **Spec**: [spec.md](./spec.md) | **Status**: Paused after US2 (EE removed; Maps clients not wired)
+**Branch**: `feature/007-maps-us1-implement` | **Date**: 2026-08-17 | **Spec**: [spec.md](./spec.md) | **Status**: US1+US3 implemented (US4 skipped); open PR for Maps clients
 
 **Input**: Feature specification from `/specs/007-maps-platform-geo/spec.md`
 

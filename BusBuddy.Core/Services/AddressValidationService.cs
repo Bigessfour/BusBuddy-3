@@ -6,57 +6,61 @@ using System.Threading.Tasks;
 using Serilog;
 using BusBuddy.Core.Data.UnitOfWork;
 using BusBuddy.Core.Models;
+using BusBuddy.Core.Services.GoogleMaps;
 
 namespace BusBuddy.Core.Services
 {
     /// <summary>
-    /// Implementation of address validation service that uses a combination of
-    /// basic regex validation and the database of known bus stops
-    /// In a production environment, this would likely call an external geocoding API
+    /// Address validation: Google Maps Platform when a key is present; regex is format-hint only (not success).
     /// </summary>
     public class AddressValidationService : IAddressValidationService
     {
         private readonly IUnitOfWork _unitOfWork;
+        private readonly GoogleAddressValidationClient? _mapsClient;
         private static readonly ILogger Logger = Log.ForContext<AddressValidationService>();
 
-        public AddressValidationService(IUnitOfWork unitOfWork)
+        public AddressValidationService(IUnitOfWork unitOfWork, GoogleAddressValidationClient? mapsClient = null)
         {
             _unitOfWork = unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
+            _mapsClient = mapsClient;
         }
 
         /// <inheritdoc />
-        public Task<(bool IsValid, string? NormalizedAddress)> ValidateAddressAsync(
+        public async Task<(bool IsValid, string? NormalizedAddress)> ValidateAddressAsync(
             string address, string? city = null, string? state = null, string? zip = null)
         {
             if (string.IsNullOrWhiteSpace(address))
             {
-                return Task.FromResult<(bool IsValid, string? NormalizedAddress)>((false, null));
+                return (false, null);
             }
 
             try
             {
-                // Basic address validation using regex patterns
-                // In a real implementation, this would use a geocoding service
-                var isValidStreet = Regex.IsMatch(address, @"^\d+\s+[\w\s]+$");
-                var isValidCity = string.IsNullOrWhiteSpace(city) || Regex.IsMatch(city, @"^[A-Za-z\s]+$");
-                var isValidState = string.IsNullOrWhiteSpace(state) || Regex.IsMatch(state, @"^[A-Z]{2}$");
-                var isValidZip = string.IsNullOrWhiteSpace(zip) || Regex.IsMatch(zip, @"^\d{5}(-\d{4})?$");
-
-                bool isValid = isValidStreet && isValidCity && isValidState && isValidZip;
-
-                if (isValid)
+                if (_mapsClient != null)
                 {
-                    // Normalize the address (capitalize first letters, standardize formatting)
-                    var normalizedAddress = NormalizeAddress(address, city, state, zip);
-                    return Task.FromResult<(bool IsValid, string? NormalizedAddress)>((true, normalizedAddress));
+                    var maps = await _mapsClient.ValidateAndGeocodeAsync(address, city, state, zip).ConfigureAwait(false);
+                    if (maps.Ok)
+                    {
+                        return (true, maps.FormattedAddress ?? FormatAddress(address, city, state, zip));
+                    }
+
+                    // Regex is a last-resort format hint only — never treat as postal success.
+                    if (!string.IsNullOrWhiteSpace(_mapsClient.ResolvedApiKey))
+                    {
+                        return (false, null);
+                    }
+
+                    Logger.Warning("Maps key missing — address not treated as validated");
+                    return (false, null);
                 }
 
-                return Task.FromResult<(bool IsValid, string? NormalizedAddress)>((false, null));
+                Logger.Warning("Maps Address Validation client not registered — rejecting address as unvalidated");
+                return (false, null);
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Error validating address: {Address}", address);
-                return Task.FromResult((false, (string?)null));
+                Logger.Error(ex, "Error validating address");
+                return (false, null);
             }
         }
 

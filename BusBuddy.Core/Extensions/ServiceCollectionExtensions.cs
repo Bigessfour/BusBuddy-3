@@ -118,18 +118,39 @@ namespace BusBuddy.Core.Extensions
             services.AddScoped<IFleetMonitoringService, FleetMonitoringService>();
             // REMOVED: ITicketService - deprecated module
 
-            // Register Address Validation Service
-            services.AddScoped<IAddressValidationService, AddressValidationService>();
+            // Geospatial: Google Maps Platform (Address Validation). Do not register OfflineGeocodingService in production.
+            services.Configure<BusBuddy.Core.Configuration.GoogleMapsOptions>(
+                configuration.GetSection(BusBuddy.Core.Configuration.GoogleMapsOptions.SectionName));
+            services.AddSingleton(sp =>
+            {
+                var opts = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<BusBuddy.Core.Configuration.GoogleMapsOptions>>();
+                return new BusBuddy.Core.Services.GoogleMaps.GoogleAddressValidationClient(
+                    new System.Net.Http.HttpClient(),
+                    opts,
+                    ownsHttpClient: true);
+            });
+            services.AddSingleton<IGeocodingService>(sp =>
+                sp.GetRequiredService<BusBuddy.Core.Services.GoogleMaps.GoogleAddressValidationClient>());
+            services.AddSingleton<BusBuddy.Core.Services.Interfaces.IRoutingService>(sp =>
+            {
+                var opts = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<BusBuddy.Core.Configuration.GoogleMapsOptions>>();
+                return new BusBuddy.Core.Services.GoogleMaps.GoogleRoutingService(
+                    new System.Net.Http.HttpClient(),
+                    opts,
+                    ownsHttpClient: true);
+            });
+
+            // Register Address Validation Service (delegates to Maps client when key present)
+            services.AddScoped<IAddressValidationService>(sp =>
+                new AddressValidationService(
+                    sp.GetRequiredService<IUnitOfWork>(),
+                    sp.GetService<BusBuddy.Core.Services.GoogleMaps.GoogleAddressValidationClient>()));
 
             // Register Activity Log Service
             services.AddScoped<IActivityLogService, ActivityLogService>();
 
             // Register Dashboard Metrics Service
             services.AddScoped<IDashboardMetricsService, DashboardMetricsService>();
-
-            // Geospatial helpers (core, offline fallback)
-            // OfflineGeocodingService provides deterministic lat/long without external keys.
-            services.AddSingleton<IGeocodingService, OfflineGeocodingService>();
 
             // Note: Legacy Phase seeders, DataIntegrity, DatabaseNullFix etc. archived in Final-Portfolio-Baseline-2026-06-Legacy-Cleanse.
             // Core seeding is via SeedDataService (Postgres/Docker primary for testing).
