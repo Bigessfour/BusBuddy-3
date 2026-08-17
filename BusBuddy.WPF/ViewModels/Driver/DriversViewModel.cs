@@ -1,13 +1,17 @@
 using System;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using BusBuddy.Core.Models;
 using BusBuddy.Core.Services;
 using BusBuddy.Core.Data;
+using BusBuddy.WPF;
 using BusBuddy.WPF.ViewModels;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using CommunityToolkit.Mvvm.Input;
 using Serilog;
 
@@ -23,6 +27,7 @@ namespace BusBuddy.WPF.ViewModels.Driver
 
         private readonly IBusBuddyDbContextFactory _contextFactory;
         private readonly IDriverService? _driverService;
+        private readonly IOperationalReportService? _reportService;
 
     private Core.Models.Driver? _selectedDriver;
         private string _searchText = string.Empty;
@@ -176,53 +181,43 @@ namespace BusBuddy.WPF.ViewModels.Driver
         #region Constructor
 
         /// <summary>
-        /// Constructor for production use
+        /// Constructor for production use — resolves services from App DI when available.
         /// </summary>
         public DriversViewModel()
+            : this(
+                App.ServiceProvider?.GetService<IBusBuddyDbContextFactory>() ?? new BusBuddyDbContextFactory(),
+                App.ServiceProvider?.GetService<IDriverService>(),
+                App.ServiceProvider?.GetService<IOperationalReportService>())
         {
-            _contextFactory = new BusBuddyDbContextFactory();
-
-            // Initialize commands
-            LoadDriversCommand = new AsyncRelayCommand(LoadDriversAsync);
-            AddDriverCommand = new RelayCommand(ExecuteAddDriver);
-            EditDriverCommand = new RelayCommand(ExecuteEditDriver, () => HasSelectedDriver);
-            DeleteDriverCommand = new AsyncRelayCommand(ExecuteDeleteDriverAsync, () => HasSelectedDriver);
-            RefreshCommand = new AsyncRelayCommand(LoadDriversAsync);
-            ClearSearchCommand = new RelayCommand(ExecuteClearSearch, () => !string.IsNullOrEmpty(SearchText));
-            GenerateReportsCommand = new RelayCommand(ExecuteGenerateReports);
-            LicenseCheckCommand = new RelayCommand(ExecuteLicenseCheck);
-            TrainingRecordsCommand = new RelayCommand(ExecuteTrainingRecords);
-            AssignRouteCommand = new RelayCommand(ExecuteAssignRoute, () => HasSelectedDriver);
-            EditDetailsCommand = new RelayCommand(ExecuteEditDetails, () => HasSelectedDriver);
-            ViewLicenseCommand = new RelayCommand(ExecuteViewLicense, () => HasSelectedDriver);
-            TrainingHistoryCommand = new RelayCommand(ExecuteTrainingHistory, () => HasSelectedDriver);
-
-            // Load initial data
-            _ = LoadDriversAsync();
         }
 
         /// <summary>
-        /// Constructor for testing (dependency injection)
+        /// Constructor for testing / DI
         /// </summary>
-        public DriversViewModel(IBusBuddyDbContextFactory contextFactory, IDriverService? driverService = null)
+        public DriversViewModel(
+            IBusBuddyDbContextFactory contextFactory,
+            IDriverService? driverService = null,
+            IOperationalReportService? reportService = null)
         {
             _contextFactory = contextFactory ?? throw new ArgumentNullException(nameof(contextFactory));
             _driverService = driverService;
+            _reportService = reportService;
 
-            // Initialize commands (same as above)
             LoadDriversCommand = new AsyncRelayCommand(LoadDriversAsync);
             AddDriverCommand = new RelayCommand(ExecuteAddDriver);
             EditDriverCommand = new RelayCommand(ExecuteEditDriver, () => HasSelectedDriver);
             DeleteDriverCommand = new AsyncRelayCommand(ExecuteDeleteDriverAsync, () => HasSelectedDriver);
             RefreshCommand = new AsyncRelayCommand(LoadDriversAsync);
             ClearSearchCommand = new RelayCommand(ExecuteClearSearch, () => !string.IsNullOrEmpty(SearchText));
-            GenerateReportsCommand = new RelayCommand(ExecuteGenerateReports);
-            LicenseCheckCommand = new RelayCommand(ExecuteLicenseCheck);
-            TrainingRecordsCommand = new RelayCommand(ExecuteTrainingRecords);
-            AssignRouteCommand = new RelayCommand(ExecuteAssignRoute, () => HasSelectedDriver);
+            GenerateReportsCommand = new AsyncRelayCommand(ExecuteGenerateReportsAsync);
+            LicenseCheckCommand = new AsyncRelayCommand(ExecuteLicenseCheckAsync);
+            TrainingRecordsCommand = new AsyncRelayCommand(ExecuteTrainingRecordsAsync);
+            AssignRouteCommand = new AsyncRelayCommand(ExecuteAssignRouteAsync, () => HasSelectedDriver);
             EditDetailsCommand = new RelayCommand(ExecuteEditDetails, () => HasSelectedDriver);
             ViewLicenseCommand = new RelayCommand(ExecuteViewLicense, () => HasSelectedDriver);
             TrainingHistoryCommand = new RelayCommand(ExecuteTrainingHistory, () => HasSelectedDriver);
+
+            _ = LoadDriversAsync();
         }
 
         #endregion
@@ -369,33 +364,77 @@ namespace BusBuddy.WPF.ViewModels.Driver
             base.StatusMessage = "Search cleared";
         }
 
-        private void ExecuteGenerateReports()
+        private async Task ExecuteGenerateReportsAsync()
         {
-            Logger.Information("Generate reports command executed");
-            base.StatusMessage = "Generating driver reports (MVP placeholder)";
+            await GenerateDriverReportAsync(OperationalReportKind.DriverRoster, "Driver roster");
         }
 
-        private void ExecuteLicenseCheck()
+        private async Task ExecuteLicenseCheckAsync()
         {
-            Logger.Information("License check command executed");
-            base.StatusMessage = "Checking license expirations (MVP placeholder)";
+            SelectedStatusFilter = "License Expiring";
+            var needing = _driverService != null
+                ? await _driverService.GetDriversNeedingRenewalAsync()
+                : Drivers.Where(d =>
+                    d.LicenseExpiryDate.HasValue &&
+                    d.LicenseExpiryDate.Value.Date <= DateTime.Today.AddDays(30)).ToList();
+
+            Logger.Information("License check: {Count} drivers needing renewal within 30 days", needing.Count);
+            base.StatusMessage = needing.Count == 0
+                ? "No licenses expiring within 30 days"
+                : $"{needing.Count} license(s) due within 30 days — generating report";
+
+            await GenerateDriverReportAsync(OperationalReportKind.LicenseExpiration, "License expiration");
         }
 
-        private void ExecuteTrainingRecords()
+        private async Task ExecuteTrainingRecordsAsync()
         {
-            Logger.Information("Training records command executed");
-            base.StatusMessage = "Opening training records (MVP placeholder)";
+            SelectedStatusFilter = "Training";
+            var incomplete = Drivers.Count(d => !d.TrainingComplete);
+            Logger.Information("Training records: {Incomplete} incomplete of {Total}", incomplete, Drivers.Count);
+            base.StatusMessage = incomplete == 0
+                ? "All drivers have training marked complete — generating status report"
+                : $"{incomplete} driver(s) with incomplete training — generating report";
+
+            await GenerateDriverReportAsync(OperationalReportKind.TrainingStatus, "Training status");
         }
 
-        private void ExecuteAssignRoute()
+        private async Task ExecuteAssignRouteAsync()
         {
             if (SelectedDriver is null)
             {
                 return;
             }
 
-            Logger.Information("Assign route command executed for driver {DriverId}", SelectedDriver.DriverId);
-            base.StatusMessage = $"Assign route to {SelectedDriver.DriverName} (MVP placeholder)";
+            try
+            {
+                if (_driverService is null)
+                {
+                    base.StatusMessage = "Driver service unavailable — cannot load route assignments";
+                    Logger.Warning("AssignRoute skipped — IDriverService not registered");
+                    return;
+                }
+
+                var routes = await _driverService.GetDriverRoutesAsync(SelectedDriver.DriverId);
+                var names = routes
+                    .Select(r => string.IsNullOrWhiteSpace(r.RouteName) ? $"Route {r.RouteId}" : r.RouteName)
+                    .Take(5)
+                    .ToList();
+
+                Logger.Information(
+                    "Driver {DriverId} has {RouteCount} assigned route(s)",
+                    SelectedDriver.DriverId,
+                    routes.Count);
+
+                base.StatusMessage = routes.Count == 0
+                    ? $"{SelectedDriver.DriverName}: no routes assigned (use Route Assignment to assign)"
+                    : $"{SelectedDriver.DriverName}: {routes.Count} route(s) — {string.Join(", ", names)}"
+                      + (routes.Count > 5 ? "…" : string.Empty);
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Failed loading routes for driver {DriverId}", SelectedDriver.DriverId);
+                base.StatusMessage = $"Error loading routes: {ex.Message}";
+            }
         }
 
         private void ExecuteEditDetails()
@@ -416,8 +455,21 @@ namespace BusBuddy.WPF.ViewModels.Driver
                 return;
             }
 
-            Logger.Information("View license command executed for driver {DriverId}", SelectedDriver.DriverId);
-            base.StatusMessage = $"Viewing license for {SelectedDriver.DriverName} (MVP placeholder)";
+            var d = SelectedDriver;
+            var expiry = d.LicenseExpiryDate?.ToString("yyyy-MM-dd") ?? "not set";
+            var days = d.LicenseExpiryDate.HasValue
+                ? (d.LicenseExpiryDate.Value.Date - DateTime.Today).Days.ToString()
+                : "n/a";
+
+            Logger.Information(
+                "View license DriverId={DriverId} Number={LicenseNumber} Expiry={Expiry}",
+                d.DriverId,
+                d.LicenseNumber,
+                expiry);
+
+            base.StatusMessage =
+                $"{d.DriverName}: license {d.LicenseNumber ?? "(none)"} class {d.LicenseClass ?? "?"} " +
+                $"status {d.LicenseStatus ?? "?"} expires {expiry} ({days} days)";
         }
 
         private void ExecuteTrainingHistory()
@@ -427,8 +479,68 @@ namespace BusBuddy.WPF.ViewModels.Driver
                 return;
             }
 
-            Logger.Information("Training history command executed for driver {DriverId}", SelectedDriver.DriverId);
-            base.StatusMessage = $"Viewing training history for {SelectedDriver.DriverName} (MVP placeholder)";
+            var d = SelectedDriver;
+            var training = d.TrainingComplete ? "complete" : "incomplete";
+            var bg = d.BackgroundCheckDate?.ToString("yyyy-MM-dd") ?? "not set";
+            var hire = d.HireDate?.ToString("yyyy-MM-dd") ?? "not set";
+
+            Logger.Information(
+                "Training history DriverId={DriverId} TrainingComplete={TrainingComplete}",
+                d.DriverId,
+                d.TrainingComplete);
+
+            base.StatusMessage =
+                $"{d.DriverName}: training {training}; hire {hire}; background check {bg}";
+        }
+
+        private async Task GenerateDriverReportAsync(OperationalReportKind kind, string label)
+        {
+            if (_reportService is null)
+            {
+                base.StatusMessage = $"Report service unavailable — cannot generate {label}";
+                Logger.Warning("Driver report {Kind} skipped — IOperationalReportService not registered", kind);
+                return;
+            }
+
+            try
+            {
+                IsLoading = true;
+                base.StatusMessage = $"Generating {label} report...";
+                var result = await _reportService.GenerateAsync(kind);
+                base.StatusMessage = result.Status;
+                TryOpenReportFile(result.FilePath);
+                Logger.Information("Driver report {Kind} written to {Path}", kind, result.FilePath);
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Driver report {Kind} failed", kind);
+                base.StatusMessage = $"Error generating {label}: {ex.Message}";
+            }
+            finally
+            {
+                IsLoading = false;
+            }
+        }
+
+        private static void TryOpenReportFile(string? path)
+        {
+            if (string.IsNullOrWhiteSpace(path) || !File.Exists(path))
+            {
+                return;
+            }
+
+            try
+            {
+                Process.Start(new ProcessStartInfo
+                {
+                    FileName = path,
+                    UseShellExecute = true
+                });
+            }
+            catch (Exception ex)
+            {
+                Log.ForContext<DriversViewModel>().Warning(ex, "Could not open report file {Path}", path);
+            }
         }
 
         #endregion
@@ -442,10 +554,23 @@ namespace BusBuddy.WPF.ViewModels.Driver
         {
             var query = Drivers.AsEnumerable();
 
-            // Status filter
+            // Status / attention filter
             if (!string.IsNullOrWhiteSpace(SelectedStatusFilter) && !SelectedStatusFilter.Equals("All Status", StringComparison.OrdinalIgnoreCase))
             {
-                query = query.Where(d => string.Equals(d.Status ?? string.Empty, SelectedStatusFilter, StringComparison.OrdinalIgnoreCase));
+                if (SelectedStatusFilter.Equals("License Expiring", StringComparison.OrdinalIgnoreCase))
+                {
+                    query = query.Where(d =>
+                        d.LicenseExpiryDate.HasValue &&
+                        d.LicenseExpiryDate.Value.Date <= DateTime.Today.AddDays(30));
+                }
+                else if (SelectedStatusFilter.Equals("Training", StringComparison.OrdinalIgnoreCase))
+                {
+                    query = query.Where(d => !d.TrainingComplete);
+                }
+                else
+                {
+                    query = query.Where(d => string.Equals(d.Status ?? string.Empty, SelectedStatusFilter, StringComparison.OrdinalIgnoreCase));
+                }
             }
 
             // Search filter

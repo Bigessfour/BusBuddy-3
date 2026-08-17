@@ -7,6 +7,7 @@ using System.Windows.Media;
 using Serilog; // Serilog per project standards
 using BusBuddy.WPF.ViewModels.Driver;
 using BusBuddy.WPF.Utilities;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace BusBuddy.WPF.Views.Driver
 {
@@ -24,8 +25,8 @@ namespace BusBuddy.WPF.Views.Driver
             {
                 InitializeComponent();
 
-                // Set the ViewModel for data binding (simple instantiation Phase 1)
-                DataContext = new DriversViewModel(); // now from Driver subfolder after dedup
+                DataContext = App.ServiceProvider?.GetService<DriversViewModel>()
+                    ?? new DriversViewModel();
 
                 // Apply Syncfusion theme
                 SyncfusionThemeManager.ApplyTheme(this);
