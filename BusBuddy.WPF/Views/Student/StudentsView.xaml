@@ -22,6 +22,7 @@
                 <Setter Property="SizeMode" Value="Normal"/>
                 <Setter Property="IconWidth" Value="0"/>
                 <Setter Property="IconHeight" Value="0"/>
+                <Setter Property="SmallIcon" Value="{x:Null}"/>
                 <Setter Property="Padding" Value="12,8"/>
                 <Setter Property="Margin" Value="0,0,8,0"/>
                 <Setter Property="Background" Value="{DynamicResource ButtonBackgroundBrush}"/>
