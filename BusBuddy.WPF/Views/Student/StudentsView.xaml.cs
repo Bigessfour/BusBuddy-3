@@ -46,15 +46,18 @@ namespace BusBuddy.WPF.Views.Student
                 if (vm != null)
                 {
                     DataContext = vm;
+                    Logger.Information("StudentsView DataContext set from DI {ViewModelType}", vm.GetType().Name);
                 }
                 else if (sp != null)
                 {
                     var factory = sp.GetService<IBusBuddyDbContextFactory>() ?? new BusBuddyDbContextFactory();
                     DataContext = new StudentsViewModel(factory, sp.GetService<AddressService>() ?? new AddressService());
+                    Logger.Information("StudentsView DataContext constructed via factory fallback");
                 }
                 else
                 {
                     DataContext = new StudentsViewModel();
+                    Logger.Warning("StudentsView DataContext using default constructor — ServiceProvider unavailable");
                 }
             }
             catch (System.Exception ex)

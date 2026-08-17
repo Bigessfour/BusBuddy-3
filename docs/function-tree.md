@@ -14,6 +14,8 @@ flowchart TB
     Students[StudentsView]
     Reports[ReportsView]
     Dashboard[DashboardView]
+    MaintView[MaintenanceView]
+    SchedView[DriverScheduleView]
     Theme[SyncfusionThemeManager]
   end
   subgraph core [P1 Core]
@@ -25,9 +27,10 @@ flowchart TB
     Pdf[PdfReportService]
     DriverSvc[DriverService]
     Sched[ScheduleService]
+    Avail[DriverAvailabilityCalculator]
+    Maint[MaintenanceService]
   end
   subgraph p2 [P2]
-    Maint[MaintenanceService]
     GEE[GoogleEarthEngineService]
     Metrics[DashboardMetricsService]
     Gcp[GcpCredentialBootstrap]
@@ -47,6 +50,9 @@ flowchart TB
   ReportsSvc --> Pdf
   Dashboard --> Metrics
   Dashboard --> Opt
+  MaintView --> Maint
+  SchedView --> Sched
+  SchedView --> Avail
   Opt --> RouteSvc
   Theme --> ui
   core --> EF

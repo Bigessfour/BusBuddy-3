@@ -26,9 +26,11 @@ namespace BusBuddy.Core.Services
 
         public async Task<StudentRouteOptimizeResult> OptimizeUnassignedAsync()
         {
+            Logger.Information("OptimizeUnassignedAsync started");
             var routesResult = await _routeService.GetAllActiveRoutesAsync();
             if (!routesResult.IsSuccess || routesResult.Value is null)
             {
+                Logger.Warning("Optimize aborted — could not load active routes: {Error}", routesResult.Error);
                 return new StudentRouteOptimizeResult
                 {
                     Status = routesResult.Error ?? "Could not load active routes."
@@ -38,6 +40,7 @@ namespace BusBuddy.Core.Services
             var routes = routesResult.Value.ToList();
             if (routes.Count == 0)
             {
+                Logger.Information("Optimize aborted — no active routes");
                 return new StudentRouteOptimizeResult
                 {
                     Status = "No active routes to assign."
@@ -45,8 +48,10 @@ namespace BusBuddy.Core.Services
             }
 
             var before = await CountUnassignedAsync();
+            Logger.Information("Optimize loaded ActiveRoutes={RouteCount} UnassignedBefore={Unassigned}", routes.Count, before);
             if (before == 0)
             {
+                Logger.Information("Optimize skipped — all active students already have AM and PM routes");
                 return new StudentRouteOptimizeResult
                 {
                     Status = "All active students already have AM and PM routes."
@@ -95,6 +100,7 @@ namespace BusBuddy.Core.Services
                 return 0;
             }
 
+            Logger.Debug("Auto-assigned {Count} students to route {RouteId} {Slot}", result.Value.Count, routeId, slot);
             return result.Value.Count;
         }
 

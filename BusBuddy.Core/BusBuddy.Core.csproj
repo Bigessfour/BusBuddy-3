@@ -6,7 +6,7 @@
     <Nullable>enable</Nullable>
 
     <!-- Suppress MSBuild warning about locked DLLs during clean -->
-    <NoWarn>MSB3061</NoWarn>
+    <NoWarn>$(NoWarn);MSB3061</NoWarn>
 
     <!-- Core is class library — no WPF/XAML (global Directory.Build.props must not set UseWPF) -->
     <UseWPF>false</UseWPF>

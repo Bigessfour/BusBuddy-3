@@ -139,6 +139,7 @@ namespace BusBuddy.WPF.ViewModels.Route
     public ICommand PrintScheduleCommand { get; }
     public ICommand PrintRouteMapsCommand { get; }
     public ICommand RefreshCommand { get; }
+    public ICommand CopyRouteCommand { get; }
 
         public RouteManagementViewModel()
         {
@@ -166,6 +167,7 @@ namespace BusBuddy.WPF.ViewModels.Route
             PrintScheduleCommand = new RelayCommand(PrintSchedule);
             PrintRouteMapsCommand = new RelayCommand(PrintMaps);
             RefreshCommand = new AsyncRelayCommand(LoadRoutesAsync);
+            CopyRouteCommand = new AsyncRelayCommand(CopyRouteAsync, () => IsRouteSelected);
 
             // Ensure initial command states reflect current selection
             RefreshSelectionDependentCommands();
@@ -265,17 +267,35 @@ namespace BusBuddy.WPF.ViewModels.Route
             }
         }
 
-        private void CopyRoute()
+        private async Task CopyRouteAsync()
         {
-            if (SelectedRoute is not null)
+            if (SelectedRoute is null)
             {
-                var copiedRoute = new BusBuddy.Core.Models.Route
+                return;
+            }
+
+            try
+            {
+                var sourceName = SelectedRoute.RouteName;
+                Logger.Information("Copying route {RouteId}:{RouteName}", SelectedRoute.RouteId, sourceName);
+                var result = await _routeService.CloneRouteAsync(
+                    SelectedRoute.RouteId,
+                    DateTime.Today.AddDays(1),
+                    $"Copy of {sourceName}");
+                if (!result.IsSuccess)
                 {
-                    RouteName = $"Copy of {SelectedRoute.RouteName}",
-                    School = SelectedRoute.School
-                };
-                // TODO: Add to service in Phase 2
-                _ = LoadRoutesAsync();
+                    StatusMessage = $"Copy failed: {result.Error}";
+                    Logger.Warning("CloneRouteAsync failed for {RouteName}: {Error}", sourceName, result.Error);
+                    return;
+                }
+
+                await LoadRoutesAsync();
+                StatusMessage = $"Copied route '{sourceName}'";
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Failed to copy route");
+                StatusMessage = $"Error copying route: {ex.Message}";
             }
         }
 

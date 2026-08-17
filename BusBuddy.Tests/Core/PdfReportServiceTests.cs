@@ -9,7 +9,7 @@ namespace BusBuddy.Tests.Core
     [TestFixture]
     public class PdfReportServiceTests
     {
-        private PdfReportService _service;
+        private PdfReportService _service = null!;
 
         [SetUp]
         public void Setup()
@@ -51,7 +51,7 @@ namespace BusBuddy.Tests.Core
             var end = DateTime.Today.AddDays(1);
 
             // Act & Assert - proves robustness for the reports item
-            Assert.Throws<ArgumentNullException>(() => _service.GenerateActivityCalendarReport(null, start, end));
+            Assert.Throws<ArgumentNullException>((Action)(() => _service.GenerateActivityCalendarReport(null!, start, end)));
             // Empty list should also be handled without crash in real (current impl takes it)
             var bytes = _service.GenerateActivityCalendarReport(activities, start, end);
             Assert.That(bytes, Is.Not.Null);
@@ -96,7 +96,7 @@ namespace BusBuddy.Tests.Core
         }
 
         [Test]
-        public async Task GenerateRouteReport_WithGrokAI_MocksAndVerifies()
+        public void GenerateRouteReport_WithGrokAI_MocksAndVerifies()
         {
             // Arrange - for Reports + AI/Grok (item 5), boosts coverage for finish/reports integration
             var route = new Route { RouteId = 1, RouteName = "Test Route" };

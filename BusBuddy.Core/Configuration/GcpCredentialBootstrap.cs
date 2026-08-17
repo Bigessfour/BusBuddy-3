@@ -20,21 +20,26 @@ public static class GcpCredentialBootstrap
 
     public static string GetCredentialStoreDirectory()
     {
+        string directory;
         if (OperatingSystem.IsMacOS())
         {
-            return Path.Combine(
+            directory = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
                 "BusBuddy",
                 "keys");
         }
-
-        if (OperatingSystem.IsWindows())
+        else if (OperatingSystem.IsWindows())
         {
             var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-            return Path.Combine(localAppData, "BusBuddy", "keys");
+            directory = Path.Combine(localAppData, "BusBuddy", "keys");
+        }
+        else
+        {
+            directory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".busbuddy", "keys");
         }
 
-        return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".busbuddy", "keys");
+        Logger.Debug("GCP credential store directory {Directory} OS={OS}", directory, Environment.OSVersion.Platform);
+        return directory;
     }
 
     public static string DefaultServiceAccountKeyPath()
@@ -57,6 +62,7 @@ public static class GcpCredentialBootstrap
         var json = Environment.GetEnvironmentVariable("GEE_SERVICE_ACCOUNT_JSON");
         if (string.IsNullOrWhiteSpace(json))
         {
+            Logger.Information("GEE_SERVICE_ACCOUNT_JSON not set; Earth Engine stays unavailable until a key path exists");
             return existingPath is { Length: > 0 } ? existingPath : null;
         }
 
@@ -110,6 +116,12 @@ public static class GcpCredentialBootstrap
         {
             Environment.SetEnvironmentVariable("GoogleEarthEngine__ServiceAccountEmail", email);
         }
+
+        Logger.Information(
+            "Applied GEE configuration overrides KeyPathSet={KeyPathSet} HasProjectId={HasProjectId} HasServiceAccountEmail={HasEmail}",
+            !string.IsNullOrWhiteSpace(keyPath),
+            !string.IsNullOrWhiteSpace(projectId),
+            !string.IsNullOrWhiteSpace(email));
     }
 
     public static async Task<string?> TryGetEarthEngineAccessTokenAsync(string? keyPath = null)
@@ -117,6 +129,7 @@ public static class GcpCredentialBootstrap
         var directToken = Environment.GetEnvironmentVariable("GEE_ACCESS_TOKEN");
         if (!string.IsNullOrWhiteSpace(directToken) && directToken != "placeholder_token")
         {
+            Logger.Information("Using GEE_ACCESS_TOKEN from environment (length={Length})", directToken.Length);
             return directToken;
         }
 
@@ -128,15 +141,17 @@ public static class GcpCredentialBootstrap
 
         if (string.IsNullOrWhiteSpace(keyPath) || !File.Exists(keyPath))
         {
+            Logger.Warning("Earth Engine access token unavailable — no live GEE_ACCESS_TOKEN and no service account key file");
             return null;
         }
 
         try
         {
-            await using var stream = File.OpenRead(keyPath);
-            var credential = await GoogleCredential.FromStreamAsync(stream, CancellationToken.None);
-            var scoped = credential.CreateScoped(EarthEngineScopes);
-            return await scoped.UnderlyingCredential.GetAccessTokenForRequestAsync();
+            var serviceAccount = await CredentialFactory.FromFileAsync<ServiceAccountCredential>(keyPath, CancellationToken.None);
+            var scoped = serviceAccount.ToGoogleCredential().CreateScoped(EarthEngineScopes);
+            var token = await scoped.UnderlyingCredential.GetAccessTokenForRequestAsync();
+            Logger.Information("Obtained Earth Engine access token from service account key (length={Length})", token?.Length ?? 0);
+            return token;
         }
         catch (Exception ex)
         {

@@ -447,7 +447,7 @@ namespace BusBuddy.WPF
 
                 // Core geo/eligibility + Google Earth Engine (production auth via Passwords/env)
                 services.AddSingleton<GoogleEarthEngineService>();
-                services.AddScoped<IGeoDataService>(sp =>
+                services.AddSingleton<IGeoDataService>(sp =>
                 {
                     var config = sp.GetRequiredService<IConfiguration>();
                     var baseUrl = config["GoogleEarthEngine:BaseUrl"] ?? "https://earthengine.googleapis.com";
@@ -461,9 +461,14 @@ namespace BusBuddy.WPF
                         .GetResult()
                         ?? Environment.GetEnvironmentVariable("GEE_ACCESS_TOKEN")
                         ?? "placeholder_token";
+                    var tokenKind = string.IsNullOrWhiteSpace(token) || token == "placeholder_token"
+                        ? "placeholder"
+                        : "live";
+                    Log.Information("Registering IGeoDataService BaseUrl={BaseUrl} TokenKind={TokenKind}", baseUrl, tokenKind);
 
-                    return new GeoDataService(baseUrl, token);
+                    return new GeoDataService(baseUrl, token, sp.GetService<IBusBuddyDbContextFactory>());
                 });
+                services.AddSingleton<IGeocodingService, OfflineGeocodingService>();
                 services.AddSingleton<IEligibilityService>(_ =>
                 {
                     var district = Path.Combine(AppContext.BaseDirectory, "Assets", "Maps", "WileyDistrict", "WileyDistrict.shp");
@@ -505,6 +510,9 @@ namespace BusBuddy.WPF
                 services.AddScoped<IUserSettingsService, UserSettingsService>();
                 services.AddScoped<IFuelService, FuelService>();
                 services.AddScoped<IMaintenanceService, MaintenanceService>();
+                services.AddScoped<IScheduleService, ScheduleService>();
+                services.AddScoped<IActivityScheduleService, ActivityScheduleService>();
+                services.AddScoped<BusBuddy.WPF.Services.IDriverAvailabilityService, BusBuddy.WPF.Services.DriverAvailabilityService>();
                 services.AddScoped<ISeedDataService, SeedDataService>();
                 services.AddScoped<IStudentRouteOptimizer, StudentRouteOptimizer>();
                 services.AddSingleton<PdfReportService>();
@@ -517,12 +525,21 @@ namespace BusBuddy.WPF
                 services.AddTransient<BusBuddy.WPF.ViewModels.Settings.SettingsViewModel>();
                 services.AddTransient<BusBuddy.WPF.ViewModels.Analytics.AnalyticsDashboardViewModel>();
                 services.AddTransient<BusBuddy.WPF.ViewModels.Fuel.FuelManagementViewModel>();
+                services.AddTransient<BusBuddy.WPF.ViewModels.Maintenance.MaintenanceViewModel>();
+                services.AddTransient<BusBuddy.WPF.ViewModels.Driver.DriverScheduleViewModel>();
                 services.AddTransient<BusBuddy.WPF.ViewModels.Reports.ReportsViewModel>();
                 services.AddTransient<BusBuddy.WPF.ViewModels.Student.StudentsViewModel>();
                 services.AddTransient<BusBuddy.WPF.ViewModels.Route.RouteManagementViewModel>();
                 services.AddTransient<BusBuddy.WPF.ViewModels.Driver.DriverFormViewModel>();
-                // Google Earth ViewModel
-                services.AddTransient<BusBuddy.WPF.ViewModels.GoogleEarth.GoogleEarthViewModel>();
+                // Shared map VM: singleton + IServiceScopeFactory so scoped student/bus services are not captured
+                services.AddSingleton<BusBuddy.WPF.ViewModels.GoogleEarth.GoogleEarthViewModel>(sp =>
+                    new BusBuddy.WPF.ViewModels.GoogleEarth.GoogleEarthViewModel(
+                        sp.GetRequiredService<IGeoDataService>(),
+                        sp.GetService<IEligibilityService>(),
+                        sp.GetService<IGeocodingService>(),
+                        studentService: null,
+                        busService: null,
+                        scopeFactory: sp.GetRequiredService<IServiceScopeFactory>()));
 
                 ServiceProvider = services.BuildServiceProvider();
 
@@ -747,7 +764,7 @@ namespace BusBuddy.WPF
             {
                 for (int i = 0; i < args.Length; i++)
                 {
-                    switch (args[i].ToLower())
+                    switch (args[i].ToLowerInvariant())
                     {
                         case "--optimize-route":
                             return HandleRouteOptimization(args, i);
@@ -792,7 +809,7 @@ namespace BusBuddy.WPF
                         break;
                     }
 
-                    switch (args[i].ToLower())
+                    switch (args[i].ToLowerInvariant())
                     {
                         case "--route-id":
                             routeId = args[i + 1];
@@ -820,42 +837,37 @@ namespace BusBuddy.WPF
 
                 Log.Information("Starting command line route optimization for route {RouteId}", routeId);
 
-                // TODO: Implement actual GrokGlobalAPI call
-                // For now, return mock data that matches the PowerShell expected format
-                var result = new
+                if (ServiceProvider is null)
+                {
+                    Console.WriteLine("Error: application services are not initialized");
+                    return 1;
+                }
+
+                using var scope = ServiceProvider.CreateScope();
+                var grok = scope.ServiceProvider.GetRequiredService<GrokGlobalAPI>();
+                var request = new BusBuddy.Core.Models.RouteOptimizationRequest
                 {
                     RouteId = routeId,
-                    OptimizationSuggestions = $@"Route Optimization Analysis for {routeId}:
-
-EFFICIENCY IMPROVEMENTS:
-• Consolidate stops within 0.3 miles to reduce travel time by 12%
-• Optimize pickup sequence by grade level for 8% efficiency gain
-• Implement GPS tracking for real-time adjustments
-
-TIME OPTIMIZATION:
-• Reduce route time by 15% through strategic stop consolidation
-• Adjust departure times based on traffic patterns
-• Implement express routes for high-density areas
-
-FUEL EFFICIENCY:
-• Route adjustments could save 18% in fuel consumption
-• Reduce unnecessary turns and backtracking
-• Optimize idle time at stops
-
-IMPLEMENTATION STEPS:
-1. Review current route data and student locations
-2. Identify consolidation opportunities within walking distance
-3. Test optimized route during off-peak hours
-4. Gradually implement changes with driver feedback
-5. Monitor performance metrics for 2 weeks",
-                    EfficiencyGain = 12.5,
-                    TimeReduction = 15.0,
-                    FuelSavings = 18.0,
-                    SafetyImprovements = new[] { "Reduced left turns", "Improved stop visibility", "Better traffic coordination" },
-                    ImplementationSteps = new[] { "Review current route data", "Identify consolidation opportunities", "Test optimized route", "Implement changes gradually", "Monitor performance metrics" },
-                    GeneratedAt = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
-                    AIModel = "Grok-4-CLI-Integration"
+                    CurrentPerformance = currentPerformance,
+                    TargetMetrics = targetMetrics,
+                    Constraints = constraints
                 };
+                if (int.TryParse(routeId, out var parsedRouteId))
+                {
+                    var routes = scope.ServiceProvider.GetService<IRouteService>();
+                    var routeResult = routes is null
+                        ? null
+                        : Task.Run(() => routes.GetRouteByIdAsync(parsedRouteId)).GetAwaiter().GetResult();
+                    if (routeResult is { IsSuccess: true, Value: { } route })
+                    {
+                        request.StudentsServed = route.StudentCount ?? 0;
+                        request.CurrentPerformance = string.IsNullOrWhiteSpace(currentPerformance) || currentPerformance == "Standard performance metrics"
+                            ? $"{route.RouteName}: {route.StudentCount ?? 0} students"
+                            : currentPerformance;
+                    }
+                }
+
+                var result = Task.Run(() => grok.OptimizeRoutesAsync(request)).GetAwaiter().GetResult();
 
                 var json = System.Text.Json.JsonSerializer.Serialize(result, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
 
@@ -896,7 +908,7 @@ IMPLEMENTATION STEPS:
                         break;
                     }
 
-                    switch (args[i].ToLower())
+                    switch (args[i].ToLowerInvariant())
                     {
                         case "--report-type":
                             reportType = args[i + 1];

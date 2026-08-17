@@ -110,7 +110,6 @@
   <!-- Application-Specific Packages -->
   <ItemGroup>
     <PackageReference Include="AutoMapper" Version="$(AutoMapperVersion)" />
-    <PackageReference Include="AutoMapper.Extensions.Microsoft.DependencyInjection" Version="$(AutoMapperExtensionsDIVersion)" />
     <PackageReference Include="CommunityToolkit.Mvvm" Version="$(CommunityToolkitMvvmVersion)" />
     <PackageReference Include="Microsoft.Web.WebView2" Version="$(WebView2Version)" />
 

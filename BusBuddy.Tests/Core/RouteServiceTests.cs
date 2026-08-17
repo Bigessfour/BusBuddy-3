@@ -416,8 +416,7 @@ namespace BusBuddy.Tests.Core
         public void Constructor_WithNullDbContext_ThrowsArgumentNullException()
         {
             // Act & Assert
-            Assert.Throws<ArgumentNullException>(() =>
-                new RouteService(null!));
+            Assert.Throws<ArgumentNullException>((Action)(() => new RouteService(null!)));
         }
 
         #endregion
@@ -495,6 +494,41 @@ namespace BusBuddy.Tests.Core
             var uniqueWhenExcluding = await _routeService.IsRouteNumberUniqueAsync("UniqueX", r.RouteId);
             Assert.That(uniqueWhenExcluding.IsSuccess, Is.True);
             Assert.That(uniqueWhenExcluding.Value, Is.True);
+        }
+
+        [Test]
+        public async Task CloneRouteAsync_CopiesStopsAndDepartureEstimate()
+        {
+            var source = (await _dbContext.Routes.FirstAsync(r => r.RouteName == "Route A"));
+            var arrival = new DateTime(2026, 8, 17, 7, 15, 0);
+            var departure = new DateTime(2026, 8, 17, 7, 18, 0);
+            _dbContext.RouteStops.Add(new RouteStop
+            {
+                RouteId = source.RouteId,
+                StopName = "Main & 3rd",
+                StopAddress = "100 Main St",
+                StopOrder = 1,
+                ScheduledArrival = new TimeSpan(7, 15, 0),
+                ScheduledDeparture = new TimeSpan(7, 18, 0),
+                CreatedDate = DateTime.UtcNow,
+                EstimatedArrivalTime = arrival,
+                EstimatedDepartureTime = departure
+            });
+            await _dbContext.SaveChangesAsync();
+
+            var result = await _routeService.CloneRouteAsync(source.RouteId, DateTime.Today.AddDays(1), "Copy of Route A");
+
+            Assert.That(result.IsSuccess, Is.True);
+            Assert.That(result.Value, Is.Not.Null);
+            Assert.That(result.Value!.RouteName, Is.EqualTo("Copy of Route A"));
+            Assert.That(result.Value.IsActive, Is.False);
+
+            var clonedStops = await _dbContext.RouteStops
+                .Where(s => s.RouteId == result.Value.RouteId)
+                .ToListAsync();
+            Assert.That(clonedStops, Has.Count.EqualTo(1));
+            Assert.That(clonedStops[0].StopName, Is.EqualTo("Main & 3rd"));
+            Assert.That(clonedStops[0].EstimatedDepartureTime, Is.EqualTo(departure));
         }
 
         #endregion

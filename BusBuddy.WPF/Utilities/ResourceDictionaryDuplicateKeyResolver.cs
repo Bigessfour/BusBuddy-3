@@ -91,7 +91,7 @@ namespace BusBuddy.WPF.Utilities
 
                         var keyString = key.ToString() ?? string.Empty;
 
-                        if (LoadedKeys.Contains(keyString))
+                        if (!LoadedKeys.Add(keyString))
                         {
                             // We found a duplicate key
                             Logger.Warning("Duplicate resource key found: {Key} in {SourcePath}", keyString, sourcePath);
@@ -120,8 +120,6 @@ namespace BusBuddy.WPF.Utilities
                         }
                         else
                         {
-                            // New key - add it to our tracking and the clean dictionary
-                            LoadedKeys.Add(keyString);
                             cleanDictionary[key] = resourceDict[key];
                         }
                     }

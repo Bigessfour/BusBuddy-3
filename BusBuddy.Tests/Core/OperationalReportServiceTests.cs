@@ -114,7 +114,7 @@ namespace BusBuddy.Tests.Core
                 RouteId = 999
             };
 
-            Assert.That(async () => await _service.GenerateAsync(request), Throws.InvalidOperationException);
+            Assert.ThrowsAsync<InvalidOperationException>((Func<Task>)(() => _service.GenerateAsync(request)));
         }
 
         [Test]

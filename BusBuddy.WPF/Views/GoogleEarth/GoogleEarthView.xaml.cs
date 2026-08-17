@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Controls;
+using BusBuddy.Core.Mapping;
 using BusBuddy.WPF.ViewModels.GoogleEarth;
 using Serilog;
 using Serilog.Context;
@@ -39,6 +40,7 @@ namespace BusBuddy.WPF.Views.GoogleEarth
         private const int LayerChangeDebounceDelayMs = 500;
         private bool _disposed;
 
+    private GoogleEarthViewModel? _boundViewModel;
     private MapLayer? _currentLayer; // Tracks current map layer
     // Cache of MapLayer instances by type to reduce allocations and tile re-fetches
     private readonly Dictionary<string, MapLayer> _layerCache = new(StringComparer.OrdinalIgnoreCase);
@@ -64,7 +66,7 @@ namespace BusBuddy.WPF.Views.GoogleEarth
             {
                 // "lyrs" values: m=roadmap, s=satellite, y=hybrid, t=terrain (Google parameterization)
                 // Default to hybrid (y) to show both roads and imagery
-                var link = "http://mt1.google.com/vt/lyrs=y&x=" + x + "&y=" + y + "&z=" + scale;
+                var link = "https://mt1.google.com/vt/lyrs=y&x=" + x + "&y=" + y + "&z=" + scale;
                 return link;
             }
         }
@@ -74,7 +76,7 @@ namespace BusBuddy.WPF.Views.GoogleEarth
         {
             protected override string GetUri(int x, int y, int scale)
             {
-                return $"http://tile.openstreetmap.org/{scale}/{x}/{y}.png";
+                return $"https://tile.openstreetmap.org/{scale}/{x}/{y}.png";
             }
         }
 
@@ -119,8 +121,7 @@ namespace BusBuddy.WPF.Views.GoogleEarth
                 PrewarmLayers();
 
                 // Initialize map with default layer
-                InitializeMapLayer("Hybrid");
-                // Center to a reasonable default (world view) — see TryResetView
+                InitializeMapLayer("OpenStreetMap");
                 TryResetView();
 
                 // Kick off background health checks (DB connectivity, etc.)
@@ -268,29 +269,15 @@ namespace BusBuddy.WPF.Views.GoogleEarth
                     _currentLayer = newLayer;
                     Logger.Information("Applied map layer: {Layer}", layerType);
 
-                    // Toggle OSM attribution visibility based on layer
                     ToggleOsmAttribution(string.Equals(layerType, "OpenStreetMap", StringComparison.OrdinalIgnoreCase));
 
-                    // Re-apply overlays if toggled on
+                    if (newLayer is ImageryLayer imagery)
+                    {
+                        ConfigureImageryLayer(imagery, DataContext as GoogleEarthViewModel);
+                    }
+
                     if (DataContext is GoogleEarthViewModel vm)
                     {
-                        // Bind markers (students, school) to the active base layer
-                        try
-                        {
-                            if (newLayer is ImageryLayer imagery)
-                            {
-                                imagery.Markers = vm.MapMarkers;
-                                // Try to apply marker template if present in XAML resources
-                                if (this.TryFindResource("StudentMarkerTemplate") is System.Windows.DataTemplate template)
-                                {
-                                    imagery.MarkerTemplate = template;
-                                }
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            Logger.Warning(ex, "Failed to bind markers to imagery layer");
-                        }
                         if (vm.DistrictBoundaryVisible)
                         {
                             ApplyDistrictBoundaryVisibility(true);
@@ -352,7 +339,7 @@ namespace BusBuddy.WPF.Views.GoogleEarth
                     created = new DynamicGoogleImageryLayer("m");
                     break;
                 case "openstreetmap":
-                    created = new OpenStreetMapLayer();
+                    created = new ImageryLayer { LayerType = LayerType.OSM };
                     break;
                 case "hybrid":
                 default:
@@ -400,15 +387,47 @@ namespace BusBuddy.WPF.Views.GoogleEarth
         }
 
     // Simple helpers for map view manipulation
+        private void ConfigureImageryLayer(ImageryLayer imagery, GoogleEarthViewModel? vm)
+        {
+            imagery.Center = new Point(WileyMapDefaults.SchoolLatitude, WileyMapDefaults.SchoolLongitude);
+            if (vm is not null)
+            {
+                imagery.Markers = vm.MapMarkers;
+                if (TryFindResource("StudentMarkerTemplate") is DataTemplate template)
+                {
+                    imagery.MarkerTemplate = template;
+                }
+            }
+
+            if (_routeSubLayer is not null && !imagery.SubShapeFileLayers.Contains(_routeSubLayer))
+            {
+                imagery.SubShapeFileLayers.Add(_routeSubLayer);
+            }
+        }
+
+        private void ApplyCenter(double latitude, double longitude, int? zoomLevel = null)
+        {
+            if (MapControl is null)
+            {
+                return;
+            }
+
+            if (zoomLevel.HasValue)
+            {
+                MapControl.ZoomLevel = zoomLevel.Value;
+            }
+
+            if (_currentLayer is ImageryLayer imagery)
+            {
+                imagery.Center = new Point(latitude, longitude);
+            }
+        }
+
         private void TryResetView()
         {
             try
             {
-                if (MapControl is null)
-                {
-                    return;
-                }
-                // Optional: set initial view using Syncfusion-documented API (deferred until verified)
+                ApplyCenter(WileyMapDefaults.SchoolLatitude, WileyMapDefaults.SchoolLongitude, WileyMapDefaults.DefaultZoomLevel);
             }
             catch (Exception ex)
             {
@@ -456,7 +475,7 @@ namespace BusBuddy.WPF.Views.GoogleEarth
             }
             protected override string GetUri(int x, int y, int scale)
             {
-                return $"http://mt1.google.com/vt/lyrs={_mode}&x={x}&y={y}&z={scale}";
+                return $"https://mt1.google.com/vt/lyrs={_mode}&x={x}&y={y}&z={scale}";
             }
         }
 
@@ -476,55 +495,22 @@ namespace BusBuddy.WPF.Views.GoogleEarth
                     if (e.OldValue is GoogleEarthViewModel oldViewModel)
                     {
                         Logger.Debug("Cleaning up previous ViewModel binding");
-                        try
-                        {
-                            oldViewModel.PropertyChanged -= ViewModelOnPropertyChanged;
-                            oldViewModel.RouteLineUpdated -= OnRouteLineUpdated;
-                            oldViewModel.PrintRequested -= OnPrintRequested;
-                        }
-                        catch (Exception ex)
-                        {
-                            Logger.Warning(ex, "Error while detaching from previous ViewModel events");
-                        }
+                        DetachViewModel(oldViewModel);
                     }
 
                     if (e.NewValue is GoogleEarthViewModel newViewModel)
                     {
                         Logger.Information("Google Earth view model connected successfully");
-                        newViewModel.ZoomInRequested += (_, _) => Dispatcher.Invoke(() => ApplyZoom(+1));
-                        newViewModel.ZoomOutRequested += (_, _) => Dispatcher.Invoke(() => ApplyZoom(-1));
-                        newViewModel.CenterRequested += (_, _) => Dispatcher.Invoke(CenterOnCurrentMarkers);
-                        // Wire up any additional ViewModel events or initialize background operations
-                        Task.Run(async () =>
-                        {
-                            using (LogContext.PushProperty("BackgroundOperation", "ViewModelInitialization"))
-                            {
-                                try
-                                {
-                                    Logger.Debug("Initializing background ViewModel operations");
-
-                                    // Perform any heavy initialization operations here
-                                    await Task.Delay(100); // Placeholder for actual initialization
-
-                                    // Bind to overlay visibility changes
-                                    Dispatcher.Invoke(() =>
-                                    {
-                                        ApplyDistrictBoundaryVisibility(newViewModel.DistrictBoundaryVisible);
-                                        ApplyTownBoundaryVisibility(newViewModel.TownBoundaryVisible);
-                                        // Subscribe to route line updates and print requests
-                                        newViewModel.RouteLineUpdated += OnRouteLineUpdated;
-                                        newViewModel.PrintRequested += OnPrintRequested;
-                                    });
-                                    newViewModel.PropertyChanged += ViewModelOnPropertyChanged;
-
-                                    Logger.Debug("Background ViewModel initialization completed");
-                                }
-                                catch (Exception ex)
-                                {
-                                    Logger.Error(ex, "Failed during background ViewModel initialization");
-                                }
-                            }
-                        });
+                        _boundViewModel = newViewModel;
+                        newViewModel.ZoomInRequested += OnZoomInRequested;
+                        newViewModel.ZoomOutRequested += OnZoomOutRequested;
+                        newViewModel.CenterRequested += OnCenterRequested;
+                        newViewModel.ViewResetRequested += OnViewResetRequested;
+                        newViewModel.RouteLineUpdated += OnRouteLineUpdated;
+                        newViewModel.PrintRequested += OnPrintRequested;
+                        newViewModel.PropertyChanged += ViewModelOnPropertyChanged;
+                        ApplyDistrictBoundaryVisibility(newViewModel.DistrictBoundaryVisible);
+                        ApplyTownBoundaryVisibility(newViewModel.TownBoundaryVisible);
                     }
                     else if (e.NewValue != null)
                     {
@@ -533,6 +519,8 @@ namespace BusBuddy.WPF.Views.GoogleEarth
                     }
                     else
                     {
+                        DetachViewModel(_boundViewModel);
+                        _boundViewModel = null;
                         Logger.Debug("DataContext set to null");
                     }
                 }
@@ -540,6 +528,29 @@ namespace BusBuddy.WPF.Views.GoogleEarth
                 {
                     Logger.Error(ex, "Failed to handle DataContext change: {ErrorMessage}", ex.Message);
                 }
+            }
+        }
+
+        private void DetachViewModel(GoogleEarthViewModel? viewModel)
+        {
+            if (viewModel is null)
+            {
+                return;
+            }
+
+            try
+            {
+                viewModel.PropertyChanged -= ViewModelOnPropertyChanged;
+                viewModel.RouteLineUpdated -= OnRouteLineUpdated;
+                viewModel.PrintRequested -= OnPrintRequested;
+                viewModel.ZoomInRequested -= OnZoomInRequested;
+                viewModel.ZoomOutRequested -= OnZoomOutRequested;
+                viewModel.CenterRequested -= OnCenterRequested;
+                viewModel.ViewResetRequested -= OnViewResetRequested;
+            }
+            catch (Exception ex)
+            {
+                Logger.Warning(ex, "Error while detaching from GoogleEarthViewModel events");
             }
         }
 
@@ -726,6 +737,10 @@ namespace BusBuddy.WPF.Views.GoogleEarth
                         if (!System.IO.File.Exists(districtPath))
                         {
                             Logger.Warning("District shapefile not found at {Path}. Place WileyDistrict.shp/.dbf/.shx under Assets/Maps/WileyDistrict.", districtPath);
+                            if (DataContext is GoogleEarthViewModel missingVm)
+                            {
+                                missingVm.StatusMessage = "District shapefile not installed (see Assets/Maps/README.md)";
+                            }
                         }
                         _districtBoundaryLayer = new ShapeFileLayer
                         {
@@ -781,6 +796,10 @@ namespace BusBuddy.WPF.Views.GoogleEarth
                         if (!System.IO.File.Exists(townPath))
                         {
                             Logger.Warning("Town shapefile not found at {Path}. Place WileyTown.shp/.dbf/.shx under Assets/Maps/WileyTown.", townPath);
+                            if (DataContext is GoogleEarthViewModel missingVm)
+                            {
+                                missingVm.StatusMessage = "Town shapefile not installed (see Assets/Maps/README.md)";
+                            }
                         }
                         _townBoundaryLayer = new ShapeFileLayer
                         {
@@ -871,6 +890,8 @@ namespace BusBuddy.WPF.Views.GoogleEarth
                 try
                 {
                     _layerChangeDebounceTimer?.Dispose();
+                    DetachViewModel(_boundViewModel);
+                    _boundViewModel = null;
                     DataContextChanged -= OnDataContextChanged;
                     this.Unloaded -= GoogleEarthView_Unloaded;
                     try
@@ -930,6 +951,11 @@ namespace BusBuddy.WPF.Views.GoogleEarth
             }
         }
 
+        private void OnZoomInRequested(object? sender, EventArgs e) => Dispatcher.Invoke(() => ApplyZoom(+1));
+        private void OnZoomOutRequested(object? sender, EventArgs e) => Dispatcher.Invoke(() => ApplyZoom(-1));
+        private void OnCenterRequested(object? sender, EventArgs e) => Dispatcher.Invoke(CenterOnCurrentMarkers);
+        private void OnViewResetRequested(object? sender, EventArgs e) => Dispatcher.Invoke(TryResetView);
+
         private void CenterOnCurrentMarkers()
         {
             try
@@ -940,15 +966,15 @@ namespace BusBuddy.WPF.Views.GoogleEarth
                 double minLat = double.MaxValue, maxLat = double.MinValue, minLon = double.MaxValue, maxLon = double.MinValue;
                 foreach (var mk in vm.MapMarkers)
                 {
-                    if (mk.Latitude < minLat) minLat = mk.Latitude;
-                    if (mk.Latitude > maxLat) maxLat = mk.Latitude;
-                    if (mk.Longitude < minLon) minLon = mk.Longitude;
-                    if (mk.Longitude > maxLon) maxLon = mk.Longitude;
+                    if (mk.LatitudeDegrees < minLat) minLat = mk.LatitudeDegrees;
+                    if (mk.LatitudeDegrees > maxLat) maxLat = mk.LatitudeDegrees;
+                    if (mk.LongitudeDegrees < minLon) minLon = mk.LongitudeDegrees;
+                    if (mk.LongitudeDegrees > maxLon) maxLon = mk.LongitudeDegrees;
                 }
                 var centerLat = (minLat + maxLat) / 2d;
                 var centerLon = (minLon + maxLon) / 2d;
-                // TODO: Implement centering logic using supported SfMap API (e.g., setting GeoCoordinate/Viewport once verified in docs)
-                Logger.Debug("Computed centroid for potential centering {Lat},{Lon} (API pending)", centerLat, centerLon);
+                ApplyCenter(centerLat, centerLon, WileyMapDefaults.DefaultZoomLevel);
+                Logger.Debug("Centered map on marker centroid {Lat},{Lon}", centerLat, centerLon);
             }
             catch (Exception ex)
             {

@@ -4,6 +4,10 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using BusBuddy.WPF.ViewModels.Dashboard;
+using BusBuddy.WPF.Views.Analytics;
+using BusBuddy.WPF.Views.Route;
+using BusBuddy.WPF.Views.Student;
+using BusBuddy.WPF.Views.Vehicle;
 using Microsoft.Extensions.DependencyInjection;
 using Serilog;
 
@@ -182,10 +186,10 @@ namespace BusBuddy.WPF.Views.Dashboard
             try
             {
                 Logger.Information("Loading dashboard overview data");
-                await LoadFleetStatusAsync();
-                await LoadRouteMetricsAsync();
-                await LoadStudentCountsAsync();
-                await LoadActiveAlertsAsync();
+                if (DataContext is DashboardViewModel vm)
+                {
+                    await vm.RefreshDataAsync();
+                }
                 Logger.Information("Dashboard data loading completed successfully");
             }
             catch (Exception ex)
@@ -194,67 +198,16 @@ namespace BusBuddy.WPF.Views.Dashboard
             }
         }
 
-        private async Task LoadFleetStatusAsync()
-        {
-            Logger.Debug("LoadFleetStatusAsync method started");
-            try
-            {
-                // TODO: Implement actual fleet status loading from service
-                Logger.Debug("Simulating fleet status data load");
-                await Task.Delay(50); // Simulate async operation
-                Logger.Information("Fleet status data loaded successfully");
-            }
-            catch (Exception ex)
-            {
-                Logger.Error(ex, "Error loading fleet status data");
-            }
-        }
+        private Task LoadFleetStatusAsync() => RefreshFromViewModelAsync();
+        private Task LoadRouteMetricsAsync() => RefreshFromViewModelAsync();
+        private Task LoadStudentCountsAsync() => RefreshFromViewModelAsync();
+        private Task LoadActiveAlertsAsync() => RefreshFromViewModelAsync();
 
-        private async Task LoadRouteMetricsAsync()
+        private async Task RefreshFromViewModelAsync()
         {
-            Logger.Debug("LoadRouteMetricsAsync method started");
-            try
+            if (DataContext is DashboardViewModel vm)
             {
-                // TODO: Implement actual route metrics loading from service
-                Logger.Debug("Simulating route metrics data load");
-                await Task.Delay(50); // Simulate async operation
-                Logger.Information("Route metrics data loaded successfully");
-            }
-            catch (Exception ex)
-            {
-                Logger.Error(ex, "Error loading route metrics data");
-            }
-        }
-
-        private async Task LoadStudentCountsAsync()
-        {
-            Logger.Debug("LoadStudentCountsAsync method started");
-            try
-            {
-                // TODO: Implement actual student counts loading from service
-                Logger.Debug("Simulating student counts data load");
-                await Task.Delay(50); // Simulate async operation
-                Logger.Information("Student counts data loaded successfully");
-            }
-            catch (Exception ex)
-            {
-                Logger.Error(ex, "Error loading student counts data");
-            }
-        }
-
-        private async Task LoadActiveAlertsAsync()
-        {
-            Logger.Debug("LoadActiveAlertsAsync method started");
-            try
-            {
-                // TODO: Implement actual active alerts loading from service
-                Logger.Debug("Simulating active alerts data load");
-                await Task.Delay(50); // Simulate async operation
-                Logger.Information("Active alerts data loaded successfully");
-            }
-            catch (Exception ex)
-            {
-                Logger.Error(ex, "Error loading active alerts data");
+                await vm.RefreshDataAsync();
             }
         }
 
@@ -279,7 +232,7 @@ namespace BusBuddy.WPF.Views.Dashboard
             Logger.Debug("RefreshFleetMetrics method started");
             try
             {
-                // TODO: Implement fleet metrics refresh
+                _ = RefreshFromViewModelAsync();
                 Logger.Information("Fleet metrics refreshed successfully");
             }
             catch (Exception ex)
@@ -293,7 +246,7 @@ namespace BusBuddy.WPF.Views.Dashboard
             Logger.Debug("RefreshRouteStatus method started");
             try
             {
-                // TODO: Implement route status refresh
+                _ = RefreshFromViewModelAsync();
                 Logger.Information("Route status refreshed successfully");
             }
             catch (Exception ex)
@@ -309,7 +262,14 @@ namespace BusBuddy.WPF.Views.Dashboard
             try
             {
                 Logger.Information("Fleet details view requested");
-                // TODO: Navigate to fleet details view
+                new Window
+                {
+                    Title = "🚌 Vehicle Management",
+                    Content = new VehicleManagementView(),
+                    Width = 1100,
+                    Height = 750,
+                    Owner = Window.GetWindow(this)
+                }.Show();
                 Logger.Debug("Fleet details navigation completed");
             }
             catch (Exception ex)
@@ -324,7 +284,14 @@ namespace BusBuddy.WPF.Views.Dashboard
             try
             {
                 Logger.Information("Route details view requested");
-                // TODO: Navigate to route details view
+                new Window
+                {
+                    Title = "🗺️ Route Management",
+                    Content = new RouteManagementView(),
+                    Width = 1200,
+                    Height = 800,
+                    Owner = Window.GetWindow(this)
+                }.Show();
                 Logger.Debug("Route details navigation completed");
             }
             catch (Exception ex)
@@ -339,7 +306,11 @@ namespace BusBuddy.WPF.Views.Dashboard
             try
             {
                 Logger.Information("Student details view requested");
-                // TODO: Navigate to student details view
+                var students = new StudentsView
+                {
+                    Owner = Window.GetWindow(this)
+                };
+                students.Show();
                 Logger.Debug("Student details navigation completed");
             }
             catch (Exception ex)
@@ -354,7 +325,14 @@ namespace BusBuddy.WPF.Views.Dashboard
             try
             {
                 Logger.Information("Alerts view requested");
-                // TODO: Navigate to alerts view
+                new Window
+                {
+                    Title = "📊 Fleet Analytics",
+                    Content = new AnalyticsDashboardView(),
+                    Width = 1100,
+                    Height = 800,
+                    Owner = Window.GetWindow(this)
+                }.Show();
                 Logger.Debug("Alerts navigation completed");
             }
             catch (Exception ex)
@@ -369,7 +347,6 @@ namespace BusBuddy.WPF.Views.Dashboard
             Logger.Debug("FleetChart_SelectionChanged event triggered");
             try
             {
-                // TODO: Handle chart selection
                 Logger.Debug("Fleet chart selection processed");
             }
             catch (Exception ex)
@@ -383,7 +360,6 @@ namespace BusBuddy.WPF.Views.Dashboard
             Logger.Debug("RouteChart_SelectionChanged event triggered");
             try
             {
-                // TODO: Handle chart selection
                 Logger.Debug("Route chart selection processed");
             }
             catch (Exception ex)
@@ -413,8 +389,7 @@ namespace BusBuddy.WPF.Views.Dashboard
             Logger.Debug("DashboardView_Unloaded event triggered");
             try
             {
-                Logger.Information("Dashboard view unloaded, performing cleanup");
-                // TODO: Implement cleanup logic
+                Logger.Information("Dashboard view unloaded");
                 Logger.Debug("Dashboard cleanup completed");
             }
             catch (Exception ex)

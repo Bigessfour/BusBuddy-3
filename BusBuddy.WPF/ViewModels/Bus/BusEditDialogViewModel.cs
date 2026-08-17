@@ -1,3 +1,4 @@
+using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows.Input;
@@ -76,11 +77,23 @@ namespace BusBuddy.WPF.ViewModels.BusManagement
 
         public ICommand SaveCommand { get; }
         public ICommand CancelCommand { get; }
+        public bool? DialogResult { get; private set; }
+        public event Action<bool>? CloseRequested;
+
+        public void ApplyTo(BusBuddy.Core.Models.Bus bus)
+        {
+            bus.BusNumber = BusNumber.Trim();
+            bus.Make = Make.Trim();
+            bus.Model = Model.Trim();
+            bus.SeatingCapacity = Capacity;
+            bus.LicenseNumber = LicensePlate.Trim();
+            bus.Status = IsActive ? "Active" : "Inactive";
+        }
 
         private void ExecuteSave()
         {
-            // MVP Implementation - Basic save logic
-            // TODO: Implement actual save functionality in Phase 2
+            DialogResult = true;
+            CloseRequested?.Invoke(true);
         }
 
         private bool CanExecuteSave()
@@ -92,8 +105,8 @@ namespace BusBuddy.WPF.ViewModels.BusManagement
 
         private void ExecuteCancel()
         {
-            // MVP Implementation - Basic cancel logic
-            // TODO: Implement proper dialog result handling in Phase 2
+            DialogResult = false;
+            CloseRequested?.Invoke(false);
         }
 
         #endregion

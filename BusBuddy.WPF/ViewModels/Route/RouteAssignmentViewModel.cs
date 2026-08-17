@@ -10,6 +10,8 @@ using BusBuddy.WPF.Commands;
 using Serilog;
 using Microsoft.Extensions.DependencyInjection; // For resolving GoogleEarthViewModel / services
 using BusBuddy.WPF.ViewModels.GoogleEarth; // Map markers
+using BusBuddy.WPF.Views.Route;
+using BusBuddy.WPF.Views.Driver;
 using BusBuddy.Core.Services.Interfaces; // IGeocodingService
 using System.Globalization;
 using System.IO; // For PDF export file writing
@@ -107,6 +109,8 @@ namespace BusBuddy.WPF.ViewModels.Route
 
         private void Initialize()
         {
+            Logger.Information("RouteAssignmentViewModel initializing HasRouteService={HasRouteService} PreselectedRouteId={PreselectedRouteId}",
+                _routeService is not null, _preselectedRouteId);
             InitializeCommands();
             // Kick off data load async (fire & forget)
             _ = LoadDataFromServiceAsync();
@@ -1126,14 +1130,22 @@ namespace BusBuddy.WPF.ViewModels.Route
 
             try
             {
-                // TODO: Open dialog to get stop details
-                var stopName = $"Stop {RouteStops.Count + 1}";
+                var dialog = new RouteStopEditDialog($"Stop {RouteStops.Count + 1}", string.Empty)
+                {
+                    Owner = Application.Current?.MainWindow
+                };
+                if (dialog.ShowDialog() != true)
+                {
+                    return;
+                }
+
+                var stopName = dialog.StopName;
                 var newStop = new RouteStop
                 {
                     RouteId = SelectedRoute.RouteId,
                     StopName = stopName,
                     StopOrder = RouteStops.Count + 1,
-                    StopAddress = "New Stop Address"
+                    StopAddress = string.IsNullOrWhiteSpace(dialog.StopAddress) ? stopName : dialog.StopAddress
                 };
 
                 IsLoading = true;
@@ -1741,9 +1753,7 @@ namespace BusBuddy.WPF.ViewModels.Route
                 }
                 else
                 {
-                    // TODO: Replace with actual service calls
-                    await Task.Delay(500); // Simulate loading
-                    LoadMockData(); // For MVP
+                    LoadMockData();
                 }
                 StatusMessage = "Data refreshed successfully";
                 Logger.Information("Data refreshed successfully");
@@ -1921,16 +1931,19 @@ namespace BusBuddy.WPF.ViewModels.Route
                 return;
             }
 
-            // TODO: Open schedule view
-            MessageBox.Show($"Schedule view for {SelectedRoute.RouteName} - Coming in next phase!",
-                "Feature Preview", MessageBoxButton.OK, MessageBoxImage.Information);
+            new Window
+            {
+                Title = $"📅 Schedule — {SelectedRoute.RouteName}",
+                Content = new DriverScheduleView(),
+                Width = 1200,
+                Height = 800,
+                Owner = Application.Current?.MainWindow
+            }.Show();
         }
 
         private async void RefreshData()
         {
-            StatusMessage = "Refreshing data...";
-            // await LoadInitialData();
-            StatusMessage = "Data refreshed successfully";
+            _ = RefreshDataAsync();
         }
 
         private void GenerateReport()
@@ -2131,30 +2144,11 @@ namespace BusBuddy.WPF.ViewModels.Route
             {
                 if (_routeService != null)
                 {
-                    var result = await _routeService.GetAllRoutesAsync();
-                    if (result.IsSuccess && result.Value != null)
-                    {
-                        _availableRoutes.Clear();
-                        foreach (var route in result.Value)
-                        {
-                            _availableRoutes.Add(route);
-                        }
-                        // TODO: Add similar logic for students, buses, drivers if services are available
-                        OnPropertyChanged(nameof(AvailableRoutes));
-                        UpdateStatusMessage();
-                        Logger.Information("Loaded route data: {RouteCount} routes", _availableRoutes.Count);
-                        return;
-                    }
-                    else
-                    {
-                        Logger.Warning("RouteService.GetAllRoutesAsync failed or returned no data, falling back to mocks. Error: {Error}", result.Error);
-                    }
+                    await LoadDataFromServiceAsync();
+                    return;
                 }
-                else
-                {
-                    Logger.Warning("_routeService is null, falling back to mock data.");
-                }
-                // Fallback to mock data if service is unavailable or fails
+
+                Logger.Warning("_routeService is null, falling back to mock data.");
                 LoadMockData();
             }
             catch (Exception ex)
@@ -2320,12 +2314,7 @@ namespace BusBuddy.WPF.ViewModels.Route
 
                             System.Windows.Application.Current.Dispatcher.Invoke(() =>
                             {
-                                mapVm.MapMarkers.Add(new GoogleEarthViewModel.MapMarker
-                                {
-                                    Label = s.StudentName,
-                                    Latitude = lat.Value,
-                                    Longitude = lon.Value
-                                });
+                                mapVm.PlotStop(lat.Value, lon.Value, new[] { s.StudentName ?? "Student" }, s.StudentName);
                             });
                         }
                         catch (Exception ex)

@@ -116,12 +116,7 @@ namespace BusBuddy.Core.Services
 
         public async Task<ActivitySchedule> UpdateActivityScheduleAsync(ActivitySchedule activitySchedule)
         {
-            if (activitySchedule == null)
-            {
-
-                throw new ArgumentNullException(nameof(activitySchedule));
-            }
-
+            ArgumentNullException.ThrowIfNull(activitySchedule);
 
             try
             {
@@ -491,6 +486,28 @@ namespace BusBuddy.Core.Services
             }
         }
 
+        public async Task<bool> SetActivityScheduleStatusAsync(int activityScheduleId, string status)
+        {
+            if (string.IsNullOrWhiteSpace(status))
+            {
+                throw new ArgumentException("Status is required", nameof(status));
+            }
+
+            var activitySchedule = await _unitOfWork.ActivitySchedules.GetByIdAsync(activityScheduleId);
+            if (activitySchedule == null)
+            {
+                Logger.Warning("Activity schedule {ActivityScheduleId} not found for status {Status}", activityScheduleId, status);
+                return false;
+            }
+
+            activitySchedule.Status = status;
+            activitySchedule.UpdatedDate = DateTime.UtcNow;
+            _unitOfWork.ActivitySchedules.Update(activitySchedule);
+            await _unitOfWork.SaveChangesAsync();
+            Logger.Information("Set activity schedule {ActivityScheduleId} status to {Status}", activityScheduleId, status);
+            return true;
+        }
+
         #endregion
 
         #region Conflict Detection
@@ -526,12 +543,7 @@ namespace BusBuddy.Core.Services
 
         public async Task<bool> HasConflictsAsync(ActivitySchedule activitySchedule)
         {
-            if (activitySchedule == null)
-            {
-
-                throw new ArgumentNullException(nameof(activitySchedule));
-            }
-
+            ArgumentNullException.ThrowIfNull(activitySchedule);
 
             try
             {
@@ -543,15 +555,34 @@ namespace BusBuddy.Core.Services
                     activitySchedule.ActivityScheduleId);
 
                 // Filter conflicts for the same driver or vehicle
-                return conflicts.Any(c =>
+                if (conflicts.Any(c =>
                     c.ScheduledDriverId == activitySchedule.ScheduledDriverId ||
-                    c.ScheduledVehicleId == activitySchedule.ScheduledVehicleId);
+                    c.ScheduledVehicleId == activitySchedule.ScheduledVehicleId))
+                {
+                    return true;
+                }
+
+                return await HasRegularRouteConflictAsync(activitySchedule);
             }
             catch (Exception ex)
             {
                 Logger.Error(ex, "Error checking for scheduling conflicts");
                 throw;
             }
+        }
+
+        private async Task<bool> HasRegularRouteConflictAsync(ActivitySchedule activitySchedule)
+        {
+            using var context = _contextFactory.CreateDbContext();
+            var start = activitySchedule.ScheduledDate.Date + activitySchedule.ScheduledLeaveTime;
+            var end = activitySchedule.ScheduledDate.Date + activitySchedule.ScheduledEventTime;
+            return await context.Schedules.AsNoTracking().AnyAsync(s =>
+                s.ScheduleDate.Date == activitySchedule.ScheduledDate.Date &&
+                s.Status != "Cancelled" &&
+                (s.DriverId == activitySchedule.ScheduledDriverId ||
+                 s.BusId == activitySchedule.ScheduledVehicleId) &&
+                s.DepartureTime < end &&
+                s.ArrivalTime > start);
         }
 
         #endregion

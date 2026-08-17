@@ -79,9 +79,11 @@
                                                                          Fill="{DynamicResource ButtonForegroundBrush}"
                                      VerticalAlignment="Center"
                                      Margin="0,0,8,0"/>
-                            <TextBlock Text="GPS Active"
+                            <TextBlock Text="{Binding StatusMessage}"
                                        FontSize="12"
                                        FontWeight="SemiBold"
+                                       MaxWidth="280"
+                                       TextTrimming="CharacterEllipsis"
                                                                              Foreground="{DynamicResource ButtonForegroundBrush}"/>
                         </StackPanel>
                     </Border>
@@ -91,7 +93,7 @@
                                             Width="150"
                                             Height="32"
                                             Margin="16,0"
-                                            SelectedIndex="0"
+                                            SelectedIndex="4"
                                             SelectionChanged="MapLayerComboBox_SelectionChanged">
                         <syncfusion:ComboBoxItemAdv Content="Satellite"/>
                         <syncfusion:ComboBoxItemAdv Content="Terrain"/>
@@ -410,7 +412,8 @@
                             <!-- SfMap — per official docs: https://help.syncfusion.com/wpf/maps/getting-started -->
                             <maps:SfMap x:Name="GeoMap"
                                         EnableZoom="True"
-                                        EnablePan="True" />
+                                        EnablePan="True"
+                                        ZoomLevel="13" />
 
                             <!-- Map Loading — SfBusyIndicator pattern per docs: https://help.syncfusion.com/wpf/busy-indicator/getting-started -->
                             <Border x:Name="MapLoadingIndicator"

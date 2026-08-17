@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Input;
 using BusBuddy.Core.Models;
 using System.Windows.Data;
@@ -460,8 +461,17 @@ namespace BusBuddy.WPF.ViewModels.Student
             {
                 if (SelectedStudent != null)
                 {
-                    // TODO: Show confirmation dialog before deleting
-            Logger.Information("Delete student command executed for student {StudentId}", SelectedStudent.StudentId);
+                    var confirm = MessageBox.Show(
+                        $"Delete {SelectedStudent.StudentName}?",
+                        "Confirm delete",
+                        MessageBoxButton.YesNo,
+                        MessageBoxImage.Warning);
+                    if (confirm != MessageBoxResult.Yes)
+                    {
+                        return;
+                    }
+
+                    Logger.Information("Delete student command executed for student {StudentId}", SelectedStudent.StudentId);
                     await DeleteStudentAsync(SelectedStudent);
                 }
             }
@@ -608,12 +618,7 @@ namespace BusBuddy.WPF.ViewModels.Student
                     return;
                 }
 
-                mapVm.MapMarkers.Add(new GoogleEarthViewModel.MapMarker
-                {
-                    Label = student.StudentName,
-                    Latitude = lat.Value,
-                    Longitude = lon.Value
-                });
+                mapVm.PlotStop(lat.Value, lon.Value, new[] { student.StudentName ?? "Student" }, student.StudentName);
 
                 StatusMessage = $"Plotted {student.StudentName}";
             }
@@ -807,7 +812,7 @@ namespace BusBuddy.WPF.ViewModels.Student
             catch (Exception ex)
             {
                 Logger.Error(ex, "Error deleting student {StudentId}", student.StudentId);
-                // TODO: Show error message to user
+                MessageBox.Show($"Could not delete student: {ex.Message}", "Delete failed", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -1118,12 +1123,7 @@ namespace BusBuddy.WPF.ViewModels.Student
                             // Marshal to UI thread to update collection
                             System.Windows.Application.Current.Dispatcher.Invoke(() =>
                             {
-                                mapVm.MapMarkers.Add(new GoogleEarthViewModel.MapMarker
-                                {
-                                    Label = s.StudentName,
-                                    Latitude = lat.Value,
-                                    Longitude = lon.Value
-                                });
+                                mapVm.PlotStop(lat.Value, lon.Value, new[] { s.StudentName ?? "Student" }, s.StudentName);
                             });
                         }
                         catch (Exception ex)
@@ -1157,7 +1157,7 @@ namespace BusBuddy.WPF.ViewModels.Student
                 }
                 Logger.Information("AI route suggestion for student {StudentId}", student.StudentId);
                 StatusMessage = $"Getting AI route suggestions for {student.StudentName}";
-                // TODO: Integrate xAI Grok for route suggestions
+                _ = ExecuteOptimizeRoutes();
             }
             catch (Exception ex)
             {
