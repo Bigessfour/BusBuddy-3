@@ -1,10 +1,10 @@
 # BusBuddy Action Items (Due-Outs Tracker)
 
-**Canonical due-outs file for agents and humans.**  
-**Historical finish narrative:** [STEADY-STATE-AND-FINISH-ROADMAP.md](../STEADY-STATE-AND-FINISH-ROADMAP.md)  
-**Spec-Kit features:** [specs/](../specs/) (each feature may also have `tasks.md`)  
-**Open GitHub issues:** https://github.com/Bigessfour/BusBuddy-3/issues  
-**Generated inventory (optional):** run function-inventory scanner → `docs/function-inventory.generated.md`  
+**Canonical due-outs file for agents and humans.**
+**Historical finish narrative:** [STEADY-STATE-AND-FINISH-ROADMAP.md](../STEADY-STATE-AND-FINISH-ROADMAP.md)
+**Spec-Kit features:** [specs/](../specs/) (each feature may also have `tasks.md`)
+**Open GitHub issues:** https://github.com/Bigessfour/BusBuddy-3/issues
+**Generated inventory (optional):** run function-inventory scanner → `docs/function-inventory.generated.md`
 **Visual tree (optional):** [function-tree.md](./function-tree.md)
 
 **Update rule:** When starting or finishing work, check boxes here and link the PR/spec. Prefer this file for “what’s left”; use Spec-Kit `tasks.md` for implementation steps inside a feature.
@@ -19,17 +19,19 @@
 - [x] **006 Syncfusion Tool Integration** — [spec](../specs/006-syncfusion-tool-integration/spec.md) — merged [PR #21](https://github.com/Bigessfour/BusBuddy-3/pull/21)
   - [x] MCP paths, skills overlay, Syncfusion **34.1.32**, deps audit
   - [x] `python -m rag.index` after merge (2026-07-24; ~3399 chunks)
-  - [ ] Windows VM Syncfusion license + UI smoke — checklist: [windows-vm-smoke.md](../specs/006-syncfusion-tool-integration/windows-vm-smoke.md)
+  - [x] Windows VM Syncfusion license + UI smoke — checklist: [windows-vm-smoke.md](../specs/006-syncfusion-tool-integration/windows-vm-smoke.md) — **2026-08-16:** license registered early in `Program.cs`; MainWindow DockingManager loaded (no trial dialog / no star-width XAML crash)
   - [ ] P2: AutoMapper 12 → ≥15.1.1 (GHSA-rvv3-g6hj-g44x)
 
 ### P1 — Finish / domain (Spec-Kit wave 2) — aligns with [issue #11](https://github.com/Bigessfour/BusBuddy-3/issues/11)
 
-- [ ] Student import / optimize end-to-end (UI + SeedDataService + tests)
+- [x] Student import / optimize end-to-end (UI + SeedDataService + tests)
+  - [x] CSV import wired: `ISeedDataService.ImportStudentsFromCsvAsync` + Students/StudentForm Import CSV buttons (Wiley-format file picker). Proof: parent address columns, next `WSD` number, Wiley header rejection, form import refreshes list via `StudentsImportedMessage`
+  - [x] Optimize routes: `IStudentRouteOptimizer` fills active routes via `IRouteService.AutoAssignStudentsAsync`, then Ollama/`GrokGlobalAPI` commentary (mock fallback). Wired on Students + Dashboard. Proof: `StudentRouteOptimizerTests`
 - [ ] Reports: PdfReportService + AI path fully wired in UI
 - [ ] Driver availability + SfScheduler
 - [ ] Maintenance UI polish
 - [ ] Google Earth Engine enhancements (beyond current DI/auth)
-- [ ] End-to-end student → assign → report proof test
+- [x] End-to-end student → assign → report proof test — `BusBuddy.Tests/Core/RouteAssignmentFlowTests.cs` (SeedDataService → StudentService → RouteService → PdfReportService). **UTM Windows VM 2026-08-16:** `Total tests: 1`, `Passed: 1` (built from `C:\dev\BusBuddy-3` after Z:\ sync). Mac host cannot execute WPF testhost; use `./run-wpf.sh` + `utm_run_in_vm.ps1` for GUI.
 
 ### P2 — Hygiene / quality
 
@@ -40,21 +42,21 @@
 
 ### GitHub issues triage (open as of 2026-07-24)
 
-| Issue | Topic | Suggested disposition |
-|-------|--------|------------------------|
-| [#13](https://github.com/Bigessfour/BusBuddy-3/issues/13) | ViewModel dedup | Largely done in hygiene/PR #16 (`BaseViewModelMvp` removed). Confirm no remaining flat VM refs → **close** |
-| [#14](https://github.com/Bigessfour/BusBuddy-3/issues/14) | CI + secrets/MCP | Mostly done (solo CI, Passwords, Syncfusion MCP). Re-check `ci-with-ai` / GH secrets → update or **close** |
-| [#15](https://github.com/Bigessfour/BusBuddy-3/issues/15) | Deprecate bb-* PS | Docs/deprecation done; residual archive refs OK → **close** or narrow remaining tasks |
-| [#11](https://github.com/Bigessfour/BusBuddy-3/issues/11) | Close stubs (Reports/Grok/Settings/Maintenance) | Still active — maps to **P1** above; keep open |
+| Issue                                                     | Topic                                           | Suggested disposition                                                                                      |
+| --------------------------------------------------------- | ----------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| [#13](https://github.com/Bigessfour/BusBuddy-3/issues/13) | ViewModel dedup                                 | Largely done in hygiene/PR #16 (`BaseViewModelMvp` removed). Confirm no remaining flat VM refs → **close** |
+| [#14](https://github.com/Bigessfour/BusBuddy-3/issues/14) | CI + secrets/MCP                                | Mostly done (solo CI, Passwords, Syncfusion MCP). Re-check `ci-with-ai` / GH secrets → update or **close** |
+| [#15](https://github.com/Bigessfour/BusBuddy-3/issues/15) | Deprecate bb-* PS                               | Docs/deprecation done; residual archive refs OK → **close** or narrow remaining tasks                      |
+| [#11](https://github.com/Bigessfour/BusBuddy-3/issues/11) | Close stubs (Reports/Grok/Settings/Maintenance) | Still active — maps to **P1** above; keep open                                                             |
 
 ---
 
 ## Spec-Kit features — status
 
-| Spec | Title | Status |
-|------|-------|--------|
-| 001–005 | Platform wave | Done (PR #20) |
-| 006 | Syncfusion Tool Integration | Done code (PR #21); **VM smoke pending** |
+| Spec    | Title                       | Status                                   |
+| ------- | --------------------------- | ---------------------------------------- |
+| 001–005 | Platform wave               | Done (PR #20)                            |
+| 006     | Syncfusion Tool Integration | Done code (PR #21); VM smoke **passed 2026-08-16** |
 
 ---
 
@@ -75,4 +77,4 @@
 
 ---
 
-*Updated 2026-07-24 after PR #21 merge + RAG re-index.*
+*Updated 2026-08-16: VM Syncfusion smoke passed; student CSV import + route optimize wired.*

@@ -8,6 +8,7 @@
     <ProjectName>BusBuddy.WPF</ProjectName>
     <IntermediateOutputPath>$(MSBuildProjectDirectory)\obj\Debug\</IntermediateOutputPath>
   <ApplicationManifest>app.manifest</ApplicationManifest>
+  <ApplicationIcon>Assets\busbuddy.ico</ApplicationIcon>
 
     <!-- Force executable generation for WPF application -->
     <GenerateAssemblyInfo>true</GenerateAssemblyInfo>

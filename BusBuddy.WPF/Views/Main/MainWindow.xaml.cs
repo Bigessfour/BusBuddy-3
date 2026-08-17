@@ -132,8 +132,7 @@ namespace BusBuddy.WPF.Views.Main
             {
                 Logger.Error(ex, "Failed to initialize MainWindow");
                 Logger.Debug("Creating fallback layout due to initialization failure");
-                // Fallback to simple layout if XAML fails
-                CreateFallbackLayout();
+                CreateFallbackLayout(ex);
             }
         }
 
@@ -570,24 +569,26 @@ namespace BusBuddy.WPF.Views.Main
             }
         }
 
-        private void CreateFallbackLayout()
+        private void CreateFallbackLayout(Exception? ex = null)
         {
             Logger.Debug("CreateFallbackLayout method started");
             Logger.Information("Creating fallback layout due to XAML initialization failure");
 
-            // Simplified layout if XAML fails
             this.Width = 1200;
             this.Height = 800;
             this.Title = "BusBuddy - Transportation Management";
 
+            var detail = ex?.GetBaseException().Message
+                ?? "If this message persists, check Syncfusion assembly references.";
             var welcomeText = new TextBlock
             {
-                Text = "BusBuddy MVP - Syncfusion Layout Loading...\n\nIf this message persists, check Syncfusion assembly references.",
-                FontSize = 18,
+                Text = "BusBuddy could not load the main layout.\n\n" + detail,
+                FontSize = 16,
+                TextWrapping = TextWrapping.Wrap,
                 TextAlignment = TextAlignment.Center,
                 VerticalAlignment = VerticalAlignment.Center,
                 HorizontalAlignment = HorizontalAlignment.Center,
-                Margin = new Thickness(20)
+                Margin = new Thickness(40)
             };
 
             this.Content = welcomeText;

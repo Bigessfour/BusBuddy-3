@@ -76,7 +76,7 @@
                     <Separator Margin="10,0"/>
 
                     <!-- Bulk Operations -->
-        <!-- Import students from CSV/Excel (placeholder) — Command: ImportStudentsCommand -->
+        <!-- Import students from Wiley-format CSV — Command: ImportStudentsCommand -->
     <syncfusion:ButtonAdv Name="ImportStudentsButton" Label="📥 Import CSV"
                             Command="{Binding ImportStudentsCommand}"
                 Background="{DynamicResource BusBuddy.Brush.FleetGreen}" Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"

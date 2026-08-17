@@ -20,17 +20,20 @@ namespace BusBuddy.WPF.ViewModels.Dashboard
         private readonly IDashboardMetricsService _metricsService;
         private readonly IFleetMonitoringService _fleetMonitoringService;
         private readonly IBusService _busService;
+        private readonly IStudentRouteOptimizer? _routeOptimizer;
 
         public DashboardViewModel(
             IRouteService routeService,
             IDashboardMetricsService metricsService,
             IFleetMonitoringService fleetMonitoringService,
-            IBusService busService)
+            IBusService busService,
+            IStudentRouteOptimizer? routeOptimizer = null)
         {
             _routeService = routeService ?? throw new ArgumentNullException(nameof(routeService));
             _metricsService = metricsService ?? throw new ArgumentNullException(nameof(metricsService));
             _fleetMonitoringService = fleetMonitoringService ?? throw new ArgumentNullException(nameof(fleetMonitoringService));
             _busService = busService ?? throw new ArgumentNullException(nameof(busService));
+            _routeOptimizer = routeOptimizer;
 
             RefreshCommand = new RelayCommand(async () => await RefreshDataAsync());
             OptimizeCommand = new RelayCommand(async () => await OptimizeRoutesAsync());
@@ -156,8 +159,10 @@ namespace BusBuddy.WPF.ViewModels.Dashboard
             {
                 IsLoading = true;
                 SystemStatus = "Optimizing routes...";
-                await Task.Delay(2000);
-                SystemStatus = "Routes optimized successfully";
+                var optimizer = _routeOptimizer ?? new StudentRouteOptimizer(_routeService);
+                var result = await optimizer.OptimizeUnassignedAsync();
+                await RefreshDataAsync();
+                SystemStatus = result.Status;
             }
             catch (Exception ex)
             {

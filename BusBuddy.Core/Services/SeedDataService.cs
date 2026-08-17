@@ -352,16 +352,37 @@ namespace BusBuddy.Core.Services
         /// <summary>
         /// Seed students from real-world CSV data (BusRiders_25-26.xlsz.csv).
         /// </summary>
-        public async Task SeedStudentsFromCsvAsync()
+        public Task SeedStudentsFromCsvAsync()
         {
-            // Embedded CSV content from BusRiders_25-26.xlsz.csv
-            const string csvData = @"
+            return ImportFromCsvTextAsync(GetEmbeddedWileyCsv(), skipIfAlreadySeeded: true, createdBy: "SeedDataService");
+        }
+
+        /// <inheritdoc />
+        public async Task<int> ImportStudentsFromCsvAsync(string csvPath)
+        {
+            if (string.IsNullOrWhiteSpace(csvPath))
+            {
+                throw new ArgumentException("CSV path is required.", nameof(csvPath));
+            }
+
+            if (!File.Exists(csvPath))
+            {
+                throw new FileNotFoundException("Student CSV file was not found.", csvPath);
+            }
+
+            var csvData = await File.ReadAllTextAsync(csvPath);
+            return await ImportFromCsvTextAsync(csvData, skipIfAlreadySeeded: false, createdBy: "CsvImport");
+        }
+
+        private static string GetEmbeddedWileyCsv() => @"
 Student,,,Parent,,,,,,,,Joint Parent,,,,,,,Econtact,,
 Fname,Lname,Grade,Fname,Lname,Address,City,State,County,Hphone,Cphone,Jparent FirstName,Jparent LastName,Address,City,State,County,Cphone ,Econtact FirstName,Econtact LastName,Econtact Phone
 Blakelynn,Sutphin,7,Brittany ,Higgins,35616 County Road LL,Wiley,CO,Prowers,,719-691-9240,John,Sutphin,8276 County Highway 196,Lamar,CO,,719-940-9011,Tara,Parmely,719-940-8272
 Annistyn,Sutphin,3,,,,,,,,,,,,,,,,,,
-"; // Truncated for brevity; use full CSV in production
+";
 
+        private async Task<int> ImportFromCsvTextAsync(string csvData, bool skipIfAlreadySeeded, string createdBy)
+        {
             try
             {
                 using var context = _contextFactory.CreateDbContext();
@@ -380,23 +401,33 @@ Annistyn,Sutphin,3,,,,,,,,,,,,,,,,,,
                 if (lines.Length < 3)
                 {
                     Logger.Warning("No student data found in CSV.");
-                    return;
+                    return 0;
                 }
-                var header = lines[1].Split(',');
+                var header = lines[1].Split(',').Select(h => h.Trim()).ToArray();
                 int idxFname = Array.IndexOf(header, "Fname");
                 int idxLname = Array.IndexOf(header, "Lname");
                 int idxGrade = Array.IndexOf(header, "Grade");
-                int idxParentFname = Array.IndexOf(header, "Fname", 3);
-                int idxParentLname = Array.IndexOf(header, "Lname", 4);
-                int idxAddress = Array.IndexOf(header, "Address", 6);
-                int idxCity = Array.IndexOf(header, "City", 7);
-                int idxState = Array.IndexOf(header, "State", 8);
-                int idxCounty = Array.IndexOf(header, "County", 9);
+                // First Address/City/State/County are the student/parent home — not the joint-parent copies.
+                int idxAddress = Array.IndexOf(header, "Address");
+                int idxCity = Array.IndexOf(header, "City");
+                int idxState = Array.IndexOf(header, "State");
+                int idxCounty = Array.IndexOf(header, "County");
+
+                if (idxFname < 0 || idxLname < 0 || idxGrade < 0 || idxAddress < 0)
+                {
+                    throw new InvalidOperationException(
+                        "CSV is not Wiley student format. Expected a header row with Fname, Lname, Grade, and Address.");
+                }
+
+                int idxParentFname = header.Length > 3 ? Array.IndexOf(header, "Fname", 3) : -1;
+                int idxParentLname = header.Length > 4 ? Array.IndexOf(header, "Lname", 4) : -1;
                 int idxHphone = Array.IndexOf(header, "Hphone");
                 int idxCphone = Array.IndexOf(header, "Cphone");
                 int idxJointParentFname = Array.IndexOf(header, "Jparent FirstName");
                 int idxJointParentLname = Array.IndexOf(header, "Jparent LastName");
-                int idxJointParentCphone = Array.IndexOf(header, "Cphone ");
+                int idxJointParentCphone = idxCphone >= 0 && idxCphone + 1 < header.Length
+                    ? Array.IndexOf(header, "Cphone", idxCphone + 1)
+                    : -1;
                 int idxEcontactFname = Array.IndexOf(header, "Econtact FirstName");
                 int idxEcontactLname = Array.IndexOf(header, "Econtact LastName");
                 int idxEcontactPhone = Array.IndexOf(header, "Econtact Phone");
@@ -413,16 +444,16 @@ Annistyn,Sutphin,3,,,,,,,,,,,,,,,,,,
                 string lastEcontact = string.Empty;
                 string lastEcontactPhone = string.Empty;
                 int familyId = 1;
-                int studentNum = 1;
+                int studentNum = await NextWsdStudentNumberAsync(context);
                 var families = new List<Family>();
                 var students = new List<Student>();
 
                 // If existing students already meet or exceed CSV data rows (approximation), skip
                 var csvRowCount = Math.Max(0, lines.Length - 2);
-                if (existingCount >= csvRowCount)
+                if (skipIfAlreadySeeded && existingCount >= csvRowCount)
                 {
                     Logger.Information("Students already exist (Existing={ExistingCount} >= CSV={CsvCount}). Skipping CSV seed.", existingCount, csvRowCount);
-                    return;
+                    return 0;
                 }
 
                 for (int i = 2; i < lines.Length; i++)
@@ -545,7 +576,6 @@ Annistyn,Sutphin,3,,,,,,,,,,,,,,,,,,
                     {
                         family = new Family
                         {
-                            FamilyId = familyId++,
                             ParentGuardian = parentGuardian,
                             Address = lastAddress,
                             City = lastCity,
@@ -555,8 +585,13 @@ Annistyn,Sutphin,3,,,,,,,,,,,,,,,,,,
                             JointParent = lastJointParent,
                             EmergencyContact = lastEcontact,
                             CreatedDate = DateTime.UtcNow,
-                            CreatedBy = "SeedDataService"
+                            CreatedBy = createdBy
                         };
+                        if (skipIfAlreadySeeded)
+                        {
+                            family.FamilyId = familyId++;
+                        }
+
                         families.Add(family);
                     }
 
@@ -571,23 +606,86 @@ Annistyn,Sutphin,3,,,,,,,,,,,,,,,,,,
                         School = "Wiley School District",
                         StudentNumber = studentNumber,
                         Family = family,
-                        FamilyId = family.FamilyId,
                         CreatedDate = DateTime.UtcNow,
-                        CreatedBy = "SeedDataService"
+                        CreatedBy = createdBy
                     };
+                    if (skipIfAlreadySeeded)
+                    {
+                        student.FamilyId = family.FamilyId;
+                    }
                     students.Add(student);
+                }
+
+                if (!skipIfAlreadySeeded)
+                {
+                    HashSet<string> existingNames;
+                    try
+                    {
+                        existingNames = (await context.Students.Select(s => s.StudentName).ToListAsync())
+                            .Where(n => !string.IsNullOrWhiteSpace(n))
+                            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+                    }
+                    catch (InvalidOperationException)
+                    {
+                        existingNames = context.Students.Select(s => s.StudentName)
+                            .Where(n => !string.IsNullOrWhiteSpace(n))
+                            .ToHashSet(StringComparer.OrdinalIgnoreCase)!;
+                    }
+
+                    students.RemoveAll(s => existingNames.Contains(s.StudentName));
+                    var usedFamilies = new HashSet<Family>(students.Select(s => s.Family).Where(f => f != null)!);
+                    families.RemoveAll(f => !usedFamilies.Contains(f));
+                }
+
+                if (students.Count == 0)
+                {
+                    Logger.Information("CSV import added 0 students (empty file or all names already present).");
+                    return 0;
                 }
 
                 context.Families.AddRange(families);
                 context.Students.AddRange(students);
                 await context.SaveChangesAsync();
-                Logger.Information("Seeded {Count} students from CSV.", students.Count);
+                Logger.Information("Imported {Count} students from CSV.", students.Count);
+                return students.Count;
             }
             catch (Exception ex)
             {
                 Logger.Error(ex, "Error seeding students from CSV");
                 throw;
             }
+        }
+
+        private static async Task<int> NextWsdStudentNumberAsync(BusBuddyDbContext context)
+        {
+            List<string> existingNumbers;
+            try
+            {
+                existingNumbers = await context.Students
+                    .Where(s => s.StudentNumber != null && s.StudentNumber.StartsWith("WSD"))
+                    .Select(s => s.StudentNumber!)
+                    .ToListAsync();
+            }
+            catch (InvalidOperationException)
+            {
+                existingNumbers = context.Students
+                    .Where(s => s.StudentNumber != null && s.StudentNumber.StartsWith("WSD"))
+                    .Select(s => s.StudentNumber!)
+                    .ToList();
+            }
+
+            var max = 0;
+            foreach (var number in existingNumbers)
+            {
+                if (number.Length > 3 &&
+                    int.TryParse(number.AsSpan(3), NumberStyles.None, CultureInfo.InvariantCulture, out var value) &&
+                    value > max)
+                {
+                    max = value;
+                }
+            }
+
+            return max + 1;
         }
 
         /// <summary>
