@@ -58,6 +58,25 @@ namespace BusBuddy.Tests.Core
         }
 
         [Test]
+        public void GenerateTabularReport_ReturnsValidPdf()
+        {
+            var bytes = _service.GenerateTabularReport(
+                "Student Roster",
+                new[] { "Name", "Grade" },
+                new[]
+                {
+                    (IReadOnlyList<string>)new[] { "Ada Rider", "4" },
+                    new[] { "Ben Rider", "2" }
+                },
+                "2 students; 1 unassigned");
+
+            Assert.That(bytes, Is.Not.Null);
+            Assert.That(bytes.Length, Is.GreaterThan(100));
+            Assert.That(bytes[0], Is.EqualTo((byte)'%'));
+            Assert.That(bytes[1], Is.EqualTo((byte)'P'));
+        }
+
+        [Test]
         public async Task GenerateRouteReport_WithGrokAI_MocksAndVerifies()
         {
             // Arrange - for Reports + AI/Grok (item 5), boosts coverage for finish/reports integration

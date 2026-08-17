@@ -86,6 +86,65 @@ namespace BusBuddy.Core.Services
         public bool IsConfigured => _isConfigured;
 
         /// <summary>
+        /// Short operator-facing commentary for reports. Uses Ollama when configured; otherwise a mock line.
+        /// </summary>
+        public async Task<string> GetShortCommentaryAsync(string topic, string facts)
+        {
+            if (string.IsNullOrWhiteSpace(topic))
+            {
+                topic = "report";
+            }
+
+            facts ??= string.Empty;
+            if (!_isConfigured)
+            {
+                return $"Mock insight for {topic}: {facts}";
+            }
+
+            try
+            {
+                var provider = _configuration["XAI:Provider"] ?? "Ollama";
+                var isOllama = string.Equals(provider, "Ollama", StringComparison.OrdinalIgnoreCase);
+                var model = isOllama
+                    ? (_configuration["XAI:OllamaModel"] ?? "llama3.2")
+                    : (_configuration["XAI:DefaultModel"] ?? DEFAULT_MODEL);
+                var request = new XAIRequest
+                {
+                    Model = model,
+                    Messages = new[]
+                    {
+                        new XAIMessage
+                        {
+                            Role = "system",
+                            Content = "You are a school transportation coordinator assistant. Reply in one or two short sentences."
+                        },
+                        new XAIMessage
+                        {
+                            Role = "user",
+                            Content = $"Topic: {topic}\nFacts: {facts}"
+                        }
+                    },
+                    Temperature = 0.2,
+                    MaxTokens = 120
+                };
+
+                var response = await CallGrokAPI(CHAT_COMPLETIONS_ENDPOINT, request);
+                if (IsFailedApiResponse(response))
+                {
+                    return $"Mock insight for {topic}: {facts}";
+                }
+
+                var content = response.Choices[0].Message.Content?.Trim();
+                return string.IsNullOrWhiteSpace(content) ? $"Mock insight for {topic}: {facts}" : content;
+            }
+            catch (Exception ex)
+            {
+                Logger.Warning(ex, "Report commentary fell back to mock for {Topic}", topic);
+                return $"Mock insight for {topic}: {facts}";
+            }
+        }
+
+        /// <summary>
         /// Call bb-routes for optimization using xAI Grok intelligence
         /// This is the main method requested in the user requirements
         /// </summary>

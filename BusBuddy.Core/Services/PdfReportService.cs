@@ -574,6 +574,74 @@ namespace BusBuddy.Core.Services
             return sb.ToString();
         }
 
+        /// <summary>
+        /// Generic tabular PDF used by operational reports (roster, fleet, drivers, etc.).
+        /// </summary>
+        public byte[] GenerateTabularReport(
+            string title,
+            IReadOnlyList<string> headers,
+            IReadOnlyList<IReadOnlyList<string>> rows,
+            string? notes = null)
+        {
+            ArgumentException.ThrowIfNullOrWhiteSpace(title);
+            headers ??= Array.Empty<string>();
+            rows ??= Array.Empty<IReadOnlyList<string>>();
+
+            using var document = new PdfDocument();
+            var page = document.Pages.Add();
+            var g = page.Graphics;
+            var titleFont = new PdfStandardFont(PdfFontFamily.Helvetica, 16, PdfFontStyle.Bold);
+            var labelFont = new PdfStandardFont(PdfFontFamily.Helvetica, 9, PdfFontStyle.Bold);
+            var bodyFont = new PdfStandardFont(PdfFontFamily.Helvetica, 9);
+            var accent = new PdfSolidBrush(new PdfColor(11, 126, 200));
+            var pageWidth = page.GetClientSize().Width;
+
+            g.DrawRectangle(accent, new RectangleF(0, 0, pageWidth, 44));
+            g.DrawString($"Bus Buddy — {title}", titleFont, PdfBrushes.White, new PointF(16, 12));
+
+            float y = 56f;
+            g.DrawString($"Generated {DateTime.Now:yyyy-MM-dd HH:mm}    Rows: {rows.Count}", bodyFont, PdfBrushes.Black, new PointF(16, y));
+            y += 18f;
+
+            if (!string.IsNullOrWhiteSpace(notes))
+            {
+                g.DrawString(notes.Length > 220 ? notes[..217] + "..." : notes, bodyFont, PdfBrushes.Black, new PointF(16, y));
+                y += 16f;
+            }
+
+            var colCount = Math.Max(1, headers.Count);
+            var colWidth = (pageWidth - 32f) / colCount;
+            for (var i = 0; i < headers.Count; i++)
+            {
+                g.DrawString(headers[i], labelFont, PdfBrushes.Black, new PointF(16 + (i * colWidth), y));
+            }
+
+            y += 14f;
+            foreach (var row in rows.Take(42))
+            {
+                for (var i = 0; i < colCount && i < row.Count; i++)
+                {
+                    var cell = row[i] ?? string.Empty;
+                    if (cell.Length > 28)
+                    {
+                        cell = cell[..25] + "...";
+                    }
+
+                    g.DrawString(cell, bodyFont, PdfBrushes.Black, new PointF(16 + (i * colWidth), y));
+                }
+
+                y += 13f;
+                if (y > page.GetClientSize().Height - 36f)
+                {
+                    break;
+                }
+            }
+
+            using var ms = new MemoryStream();
+            document.Save(ms);
+            return ms.ToArray();
+        }
+
         #endregion
     }
 }
