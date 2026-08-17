@@ -190,7 +190,7 @@ namespace BusBuddy.WPF.ViewModels.Student
 
         private Destination? _selectedSchoolDestination;
 
-        /// <summary>Selected campus; syncs <see cref="Student.School"/> and <see cref="Student.DestinationId"/>.</summary>
+        /// <summary>Selected campus; syncs Student.School and Student.DestinationId.</summary>
         public Destination? SelectedSchoolDestination
         {
             get => _selectedSchoolDestination;
