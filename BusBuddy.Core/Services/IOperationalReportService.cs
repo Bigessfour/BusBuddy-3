@@ -37,8 +37,18 @@ namespace BusBuddy.Core.Services
         public bool UsedMockAi { get; init; }
     }
 
+    public sealed class OperationalReportRequest
+    {
+        public OperationalReportKind Kind { get; init; }
+        public string? OutputDirectory { get; init; }
+        public string? OutputFilePath { get; init; }
+        public bool AsCsv { get; init; }
+        public int? RouteId { get; init; }
+    }
+
     public interface IOperationalReportService
     {
         Task<OperationalReportResult> GenerateAsync(OperationalReportKind kind, string? outputDirectory = null);
+        Task<OperationalReportResult> GenerateAsync(OperationalReportRequest request);
     }
 }
