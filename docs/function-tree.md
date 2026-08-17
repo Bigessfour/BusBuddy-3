@@ -1,6 +1,6 @@
 # BusBuddy Function Tree (overview)
 
-High-level surface area. Detail and due-outs: [action-items.md](./action-items.md).
+High-level surface area. Due-outs: [action-items.md](./action-items.md). Generated scan: [function-inventory.generated.md](./function-inventory.generated.md).
 
 ```mermaid
 flowchart TB
@@ -10,18 +10,48 @@ flowchart TB
     SfMCP[Syncfusion WPF MCP]
     SfSkills[Syncfusion WPF skills]
   end
-  subgraph app [BusBuddy]
-    WPF[BusBuddy.WPF Syncfusion UI]
-    Core[BusBuddy.Core services]
-    Data[EF + Postgres Docker]
+  subgraph ui [Operator UI]
+    Students[StudentsView]
+    Reports[ReportsView]
+    Dashboard[DashboardView]
+    Theme[SyncfusionThemeManager]
   end
-  SpecKit --> Core
-  SpecKit --> WPF
+  subgraph core [P1 Core]
+    StudentSvc[StudentService]
+    Seed[SeedDataService]
+    RouteSvc[RouteService]
+    Opt[StudentRouteOptimizer]
+    ReportsSvc[OperationalReportService]
+    Pdf[PdfReportService]
+    DriverSvc[DriverService]
+    Sched[ScheduleService]
+  end
+  subgraph p2 [P2]
+    Maint[MaintenanceService]
+    GEE[GoogleEarthEngineService]
+    Metrics[DashboardMetricsService]
+    Gcp[GcpCredentialBootstrap]
+  end
+  subgraph data [Data]
+    EF[EF + Postgres Docker]
+  end
+  SpecKit --> core
+  SpecKit --> ui
   RAG --> SpecKit
-  SfMCP --> WPF
-  SfSkills --> WPF
-  WPF --> Core
-  Core --> Data
+  SfMCP --> ui
+  SfSkills --> ui
+  Students --> StudentSvc
+  Students --> Seed
+  Students --> Opt
+  Reports --> ReportsSvc
+  ReportsSvc --> Pdf
+  Dashboard --> Metrics
+  Dashboard --> Opt
+  Opt --> RouteSvc
+  Theme --> ui
+  core --> EF
+  p2 --> EF
+  GEE --> Gcp
 ```
 
-Update when major layers change (new services, new agent tooling).
+Allowlist lives in [`.function-inventory.json`](../.function-inventory.json) (P1 first). Update this tree when a new operator view or core service is added to that list.

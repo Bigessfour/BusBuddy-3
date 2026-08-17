@@ -35,7 +35,7 @@
 
 ### P2 — Hygiene / quality
 
-- [ ] Bootstrap function-inventory generated scan (`docs/function-inventory.generated.md`)
+- [x] Bootstrap function-inventory generated scan — `.function-inventory.json` (16 surfaces) → [function-inventory.generated.md](./function-inventory.generated.md) (2026-08-16: 11/16 with proof)
 - [ ] Resolve/exclude corrupted LFS noise on `TWN_CICD_Checklist_…pdf` if still dirty locally
 - [ ] AutoMapper 12.x advisory — upgrade or replace (see 006 deps-audit)
 - [x] Restore [Documentation/GCP-GEE-SECRETS-AND-AUTH.md](../Documentation/GCP-GEE-SECRETS-AND-AUTH.md) (was missing; AGENTS link)
@@ -53,9 +53,9 @@
 
 ## Spec-Kit features — status
 
-| Spec    | Title                       | Status                                   |
-| ------- | --------------------------- | ---------------------------------------- |
-| 001–005 | Platform wave               | Done (PR #20)                            |
+| Spec    | Title                       | Status                                             |
+| ------- | --------------------------- | -------------------------------------------------- |
+| 001–005 | Platform wave               | Done (PR #20)                                      |
 | 006     | Syncfusion Tool Integration | Done code (PR #21); VM smoke **passed 2026-08-16** |
 
 ---
@@ -69,6 +69,28 @@
 
 ---
 
+## Function inventory (surfaces)
+
+Config: [`.function-inventory.json`](../.function-inventory.json) · generated: [function-inventory.generated.md](./function-inventory.generated.md) · tree: [function-tree.md](./function-tree.md)
+
+Re-scan after adding a P1 view or core service:
+
+```bash
+python3 ~/.cursor/skills/function-inventory/scripts/update-function-inventory.py \
+  --root . --output docs/function-inventory.generated.md
+```
+
+| Surface                                                        | Tier | Proof / next check                                                                                                                                                              |
+| -------------------------------------------------------------- | ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Student / Seed / Route / Optimizer / Reports services          | P1   | Unit tests present (`StudentServiceTests`, `SeedDataServiceTests`, `RouteServiceTests`, `StudentRouteOptimizerTests`, `OperationalReportServiceTests`, `PdfReportServiceTests`) |
+| `StudentsView` / `ReportsView`                                 | P1   | No WPF testhost on Mac. Proof is VM smoke (`./run-wpf.sh`) + the Core tests above. Do not treat as a missing feature.                                                           |
+| `ScheduleService`                                              | P1   | **No proof** — next domain slice (driver availability + SfScheduler)                                                                                                            |
+| `DriverService`                                                | P1   | `DriverServiceTests` exist; SfScheduler UI still open                                                                                                                           |
+| `MaintenanceService` / GEE / Dashboard metrics / theme manager | P2   | Tests or GapsCoverage present; Maintenance UI + GEE enhancements still open                                                                                                     |
+| `DashboardView` / `GcpCredentialBootstrap`                     | P2   | No dedicated test; VM smoke / auth doc is the current check                                                                                                                     |
+
+---
+
 ## Meta
 
 - Re-check this file at the start of each session.
@@ -77,4 +99,4 @@
 
 ---
 
-*Updated 2026-08-16: Reports CLI leftovers — real PDFs, exit codes, paginated tables (PR #25).*
+*Updated 2026-08-16: function-inventory bootstrapped (16 surfaces, 11 with proof).*
