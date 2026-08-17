@@ -133,6 +133,12 @@ namespace BusBuddy.Core.Models
         [Column(TypeName = "decimal(11,8)")]
         public decimal? Longitude { get; set; }
 
+        /// <summary>School bell / first period start — required for AM route generation (spec 008).</summary>
+        public TimeSpan? StartTime { get; set; }
+
+        /// <summary>School dismissal — drives PM mirror schedule (spec 008).</summary>
+        public TimeSpan? DismissalTime { get; set; }
+
         /// <summary>
         /// Whether this destination is currently active
         /// </summary>

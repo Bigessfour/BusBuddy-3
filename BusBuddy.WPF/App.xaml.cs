@@ -433,6 +433,10 @@ namespace BusBuddy.WPF
                 services.AddScoped<BusBuddy.Core.Services.IStudentSchoolTransferService, BusBuddy.Core.Services.StudentSchoolTransferService>();
                 services.AddScoped<BusBuddy.Core.Services.IRouteWaypointRebuildService, BusBuddy.Core.Services.RouteWaypointRebuildService>();
                 services.AddScoped<BusBuddy.Core.Services.IDriverTrainingService, BusBuddy.Core.Services.DriverTrainingService>();
+                services.AddScoped<BusBuddy.Core.Services.RouteDetermination.IRouteDeterminationService,
+                    BusBuddy.Core.Services.RouteDetermination.RouteDeterminationService>();
+                services.Configure<BusBuddy.Core.Configuration.RoutingDistrictSettings>(
+                    configuration.GetSection(BusBuddy.Core.Configuration.RoutingDistrictSettings.SectionName));
                 services.AddScoped<IDriverService, DriverService>();
                 services.AddScoped<IRouteService, RouteService>();
                 services.AddScoped<BusBuddy.Core.Services.Interfaces.IBusService, BusService>();
@@ -484,7 +488,11 @@ namespace BusBuddy.WPF
                 services.AddTransient<BusBuddy.WPF.ViewModels.Driver.DriverScheduleViewModel>();
                 services.AddTransient<BusBuddy.WPF.ViewModels.Reports.ReportsViewModel>();
                 services.AddTransient<BusBuddy.WPF.ViewModels.Student.StudentsViewModel>();
-                services.AddTransient<BusBuddy.WPF.ViewModels.Route.RouteManagementViewModel>();
+                services.AddTransient<BusBuddy.WPF.ViewModels.Route.RouteManagementViewModel>(sp =>
+                    new BusBuddy.WPF.ViewModels.Route.RouteManagementViewModel(
+                        sp.GetRequiredService<IBusBuddyDbContextFactory>(),
+                        sp.GetService<IRouteService>(),
+                        sp.GetService<BusBuddy.Core.Services.RouteDetermination.IRouteDeterminationService>()));
                 services.AddTransient<BusBuddy.WPF.ViewModels.Driver.DriverFormViewModel>();
                 services.AddTransient<BusBuddy.WPF.ViewModels.Driver.DriversViewModel>();
                 // Shared map VM: singleton + IServiceScopeFactory so scoped student/bus services are not captured
@@ -504,7 +512,11 @@ namespace BusBuddy.WPF
                             services.AddTransient<BusBuddy.WPF.ViewModels.MainWindowViewModel>();
                             services.AddTransient<BusBuddy.WPF.ViewModels.Dashboard.DashboardViewModel>();
                             services.AddTransient<BusBuddy.WPF.ViewModels.Student.StudentsViewModel>();
-                            services.AddTransient<BusBuddy.WPF.ViewModels.Route.RouteManagementViewModel>();
+                            services.AddTransient<BusBuddy.WPF.ViewModels.Route.RouteManagementViewModel>(sp =>
+                                new BusBuddy.WPF.ViewModels.Route.RouteManagementViewModel(
+                                    sp.GetRequiredService<IBusBuddyDbContextFactory>(),
+                                    sp.GetService<IRouteService>(),
+                                    sp.GetService<BusBuddy.Core.Services.RouteDetermination.IRouteDeterminationService>()));
                             services.AddTransient<BusBuddy.WPF.ViewModels.Driver.DriverFormViewModel>();
                             services.AddTransient<BusBuddy.WPF.ViewModels.Bus.BusFormViewModel>();
                             services.AddTransient<BusBuddy.WPF.Views.Bus.BusForm>();

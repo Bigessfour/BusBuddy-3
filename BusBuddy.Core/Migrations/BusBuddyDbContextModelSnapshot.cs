@@ -646,6 +646,12 @@ namespace BusBuddy.Core.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
 
+                    b.Property<TimeSpan?>("StartTime")
+                        .HasColumnType("time");
+
+                    b.Property<TimeSpan?>("DismissalTime")
+                        .HasColumnType("time");
+
                     b.Property<string>("State")
                         .IsRequired()
                         .ValueGeneratedOnAdd()

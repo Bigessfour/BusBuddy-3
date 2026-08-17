@@ -110,6 +110,15 @@
                 Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}"
                 AutomationProperties.Name="Generate Schedule"
                 AutomationProperties.HelpText="Generate printable schedule for the selected route"/>
+            <syncfusion:ButtonAdv Name="GenerateRoutesButton" Label="🚌 Generate Routes"
+                            Command="{Binding GenerateRoutesCommand}"
+                SizeMode="Normal"
+                IconHeight="16" IconWidth="16"
+                CornerRadius="4"
+                Background="{StaticResource BusBuddy.Brush.FleetGreen}"
+                Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}"
+                AutomationProperties.Name="Generate Routes"
+                AutomationProperties.HelpText="Year-start auto route build for school destinations"/>
             <syncfusion:ButtonAdv Name="ViewMapButton" Label="🗺️ View Map"
                             Command="{Binding ViewMapCommand}"
                 SizeMode="Normal"

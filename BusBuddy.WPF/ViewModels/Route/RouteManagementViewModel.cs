@@ -6,6 +6,7 @@ using BusBuddy.Core;
 using BusBuddy.Core.Data;
 using Microsoft.EntityFrameworkCore;
 using BusBuddy.Core.Services;
+using BusBuddy.Core.Services.RouteDetermination;
 using BusBuddy.Core.Models;
 using Serilog;
 using System.Windows.Input;
@@ -13,6 +14,8 @@ using CommunityToolkit.Mvvm.Input;
 using System.Threading.Tasks;
 using System.IO;
 using Serilog.Context;
+using Microsoft.Extensions.DependencyInjection;
+using BusBuddy.WPF;
 
 namespace BusBuddy.WPF.ViewModels.Route
 {
@@ -36,6 +39,7 @@ namespace BusBuddy.WPF.ViewModels.Route
         // Entity Framework context for data access
         private readonly IBusBuddyDbContextFactory _contextFactory;
         private readonly RouteService _routeService; // lightweight direct use for assignment (Phase 1)
+        private readonly IRouteDeterminationService? _routeDetermination;
 
         /// <summary>
         /// Buses available for assignment (Active only) — loaded lazily when first needed.
@@ -131,6 +135,7 @@ namespace BusBuddy.WPF.ViewModels.Route
     public ICommand EditRouteCommand { get; }
     public ICommand DeleteRouteCommand { get; }
     public ICommand GenerateScheduleCommand { get; }
+    public ICommand GenerateRoutesCommand { get; }
     public ICommand ViewMapCommand { get; }
     public ICommand AssignStudentsCommand { get; }
     public ICommand AssignVehicleCommand { get; }
@@ -142,12 +147,22 @@ namespace BusBuddy.WPF.ViewModels.Route
     public ICommand CopyRouteCommand { get; }
 
         public RouteManagementViewModel()
+            : this(
+                new BusBuddyDbContextFactory(),
+                null,
+                App.ServiceProvider?.GetService<IRouteDeterminationService>())
         {
-            // Initialize EF context factory
-            _contextFactory = new BusBuddyDbContextFactory();
-            // Direct instantiation (Phase 1) — in later phase migrate to DI container.
-            // RouteService expects an IBusBuddyDbContextFactory, not a delegate
-            _routeService = new RouteService(_contextFactory);
+        }
+
+        public RouteManagementViewModel(
+            IBusBuddyDbContextFactory contextFactory,
+            IRouteService? routeService,
+            IRouteDeterminationService? routeDetermination)
+        {
+            _contextFactory = contextFactory ?? throw new ArgumentNullException(nameof(contextFactory));
+            _routeService = routeService as RouteService
+                ?? new RouteService(_contextFactory);
+            _routeDetermination = routeDetermination;
             RoutesView = CollectionViewSource.GetDefaultView(Routes);
             RoutesView.Filter = FilterRoutes;
 
@@ -159,6 +174,7 @@ namespace BusBuddy.WPF.ViewModels.Route
             EditRouteCommand = new RelayCommand(EditSelectedRoute, () => IsRouteSelected);
             DeleteRouteCommand = new RelayCommand(DeleteSelectedRoute, () => IsRouteSelected);
             GenerateScheduleCommand = new RelayCommand(GenerateSchedule, () => IsRouteSelected);
+            GenerateRoutesCommand = new AsyncRelayCommand(GenerateRoutesAsync);
             ViewMapCommand = new RelayCommand(OpenMapView);
             AssignStudentsCommand = new RelayCommand(AssignStudents, () => IsRouteSelected);
             AssignVehicleCommand = new RelayCommand(AssignVehicle, () => IsRouteSelected && SelectedBus != null);
@@ -375,6 +391,77 @@ namespace BusBuddy.WPF.ViewModels.Route
             }
         }
     private void GenerateSchedule() => PrintSchedule();
+
+        private async Task GenerateRoutesAsync()
+        {
+            try
+            {
+                var planner = _routeDetermination
+                    ?? App.ServiceProvider?.GetService<IRouteDeterminationService>();
+                if (planner is null)
+                {
+                    StatusMessage = "Route determination service unavailable";
+                    return;
+                }
+
+                await using var context = _contextFactory.CreateDbContext();
+                var schools = await context.Destinations
+                    .Where(d => d.IsActive && d.DestinationType == DestinationTypes.School)
+                    .OrderBy(d => d.Name)
+                    .ToListAsync()
+                    .ConfigureAwait(true);
+
+                if (schools.Count == 0)
+                {
+                    StatusMessage = "No active school destinations — add a school first";
+                    return;
+                }
+
+                Destination? school = null;
+                if (SelectedRoute is not null && !string.IsNullOrWhiteSpace(SelectedRoute.School))
+                {
+                    school = schools.FirstOrDefault(s =>
+                        string.Equals(s.Name, SelectedRoute.School, StringComparison.OrdinalIgnoreCase));
+                }
+
+                school ??= schools.FirstOrDefault(s => s.StartTime.HasValue) ?? schools[0];
+
+                StatusMessage = $"Generating routes for '{school.Name}'...";
+                var result = await planner.GenerateAndAssignAsync(
+                        school.DestinationId,
+                        RouteTimeSlotKind.Both,
+                        FleetKind.HomeToSchool)
+                    .ConfigureAwait(true);
+
+                if (!result.Success)
+                {
+                    StatusMessage = result.Error ?? "Route generation failed";
+                    return;
+                }
+
+                await LoadRoutesAsync().ConfigureAwait(true);
+
+                var draft = Routes.FirstOrDefault(r =>
+                    r.RouteName.StartsWith("Draft-", StringComparison.OrdinalIgnoreCase));
+                if (draft is not null)
+                {
+                    SelectedRoute = draft;
+                }
+
+                var mapVm = App.ServiceProvider?.GetService<BusBuddy.WPF.ViewModels.GoogleEarth.GoogleEarthViewModel>();
+                mapVm?.ApplyGenerationResult(result);
+
+                StatusMessage =
+                    $"Generated {result.Proposals.Count} proposal(s), assigned {result.AssignedStudentCount} student(s)" +
+                    (result.Warnings.Count > 0 ? $" — {result.Warnings[0]}" : string.Empty);
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Generate routes failed");
+                StatusMessage = $"Error generating routes: {ex.Message}";
+            }
+        }
+
     private void OpenMapView() => AssignStudents();
     private void PrintMaps()
     {

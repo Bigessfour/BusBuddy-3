@@ -19,9 +19,9 @@
 
 **Purpose**: Folder + DI registration surface for the planner
 
-- [ ] T001 Create directory `BusBuddy.Core/Services/RouteDetermination/` and add placeholder `README.md` noting contracts in `specs/008-route-determination/contracts/`
-- [ ] T002 [P] Add `RoutingDistrictSettings` options class in `BusBuddy.Core/Configuration/RoutingDistrictSettings.cs` (bbox or extent keys, TargetRidersPerCell, MaxPickupGapMinutes, AverageSpeedMph, MaxRideMinutes, AllowSeatingOverride) per [data-model.md](./data-model.md)
-- [ ] T003 [P] Bind `RoutingDistrictSettings` section in `BusBuddy.WPF/appsettings.json` and `BusBuddy.Core/appsettings.json` with Wiley-scale defaults
+- [x] T001 Create directory `BusBuddy.Core/Services/RouteDetermination/` and add placeholder `README.md` noting contracts in `specs/008-route-determination/contracts/`
+- [x] T002 [P] Add `RoutingDistrictSettings` options class in `BusBuddy.Core/Configuration/RoutingDistrictSettings.cs` (bbox or extent keys, TargetRidersPerCell, MaxPickupGapMinutes, AverageSpeedMph, MaxRideMinutes, AllowSeatingOverride) per [data-model.md](./data-model.md)
+- [x] T003 [P] Bind `RoutingDistrictSettings` section in `BusBuddy.WPF/appsettings.json` and `BusBuddy.Core/appsettings.json` with Wiley-scale defaults
 
 ---
 
@@ -31,12 +31,12 @@
 
 **⚠️ CRITICAL**: No user story work until this phase is complete
 
-- [ ] T004 Add `StartTime` and `DismissalTime` (`TimeSpan?`) to `BusBuddy.Core/Models/Destination.cs` and configure in `BusBuddy.Core/Data/BusBuddyDbContext.cs`
-- [ ] T005 Add EF migration under `BusBuddy.Core/Migrations/` for Destination school times; update snapshot; note Windows SQL Server apply path
-- [ ] T006 [P] Add ride-mode helper in `BusBuddy.Core/Models/StudentRideMode.cs` (AM / PM / Both derived from `AMRoute`/`PMRoute`, with optional future enum)
-- [ ] T007 Create `IRouteDeterminationService` in `BusBuddy.Core/Services/RouteDetermination/IRouteDeterminationService.cs` matching [contracts/route-determination.md](./contracts/route-determination.md) (`GenerateAndAssignAsync`, `RecalculateOnAssignAsync`, `ApplyClerkOverrideAsync`)
-- [ ] T008 [P] Create DTOs `RouteGenerationResult`, `RouteProposalDto`, `AssignFitnessResult` in `BusBuddy.Core/Services/RouteDetermination/RouteDeterminationModels.cs` per [data-model.md](./data-model.md) and [contracts/assign-fitness.md](./contracts/assign-fitness.md)
-- [ ] T009 Register `IRouteDeterminationService` (stub or real) in `BusBuddy.Core/Extensions/ServiceCollectionExtensions.cs` and `BusBuddy.WPF/App.xaml.cs`
+- [x] T004 Add `StartTime` and `DismissalTime` (`TimeSpan?`) to `BusBuddy.Core/Models/Destination.cs` and configure in `BusBuddy.Core/Data/BusBuddyDbContext.cs`
+- [x] T005 Add EF migration under `BusBuddy.Core/Migrations/` for Destination school times; update snapshot; note Windows SQL Server apply path
+- [x] T006 [P] Add ride-mode helper in `BusBuddy.Core/Models/StudentRideMode.cs` (AM / PM / Both derived from `AMRoute`/`PMRoute`, with optional future enum)
+- [x] T007 Create `IRouteDeterminationService` in `BusBuddy.Core/Services/RouteDetermination/IRouteDeterminationService.cs` matching [contracts/route-determination.md](./contracts/route-determination.md) (`GenerateAndAssignAsync`, `RecalculateOnAssignAsync`, `ApplyClerkOverrideAsync`)
+- [x] T008 [P] Create DTOs `RouteGenerationResult`, `RouteProposalDto`, `AssignFitnessResult` in `BusBuddy.Core/Services/RouteDetermination/RouteDeterminationModels.cs` per [data-model.md](./data-model.md) and [contracts/assign-fitness.md](./contracts/assign-fitness.md)
+- [x] T009 Register `IRouteDeterminationService` (stub or real) in `BusBuddy.Core/Extensions/ServiceCollectionExtensions.cs` and `BusBuddy.WPF/App.xaml.cs`
 
 **Checkpoint**: Build succeeds; Destination times migrate on SQL Server; DI resolves `IRouteDeterminationService`
 
@@ -50,20 +50,20 @@
 
 ### Tests for User Story 1
 
-- [ ] T010 [P] [US1] Add `BusBuddy.Tests/Core/RouteDetermination/DensityCellBuilderTests.cs` — bbox/density yields N cells; empty coords excluded
-- [ ] T011 [P] [US1] Add `BusBuddy.Tests/Core/RouteDetermination/RoutePackingTests.cs` — 12 nearby riders pack into one route under seating; outlier gap forces split (SC-001/SC-002)
-- [ ] T012 [P] [US1] Add `BusBuddy.Tests/Core/RouteDetermination/RideModeMirrorTests.cs` — AM-only retains stop on PM mirror proposal
+- [x] T010 [P] [US1] Add `BusBuddy.Tests/Core/RouteDetermination/DensityCellBuilderTests.cs` — bbox/density yields N cells; empty coords excluded
+- [x] T011 [P] [US1] Add `BusBuddy.Tests/Core/RouteDetermination/RoutePackingTests.cs` — 12 nearby riders pack into one route under seating; outlier gap forces split (SC-001/SC-002)
+- [x] T012 [P] [US1] Add `BusBuddy.Tests/Core/RouteDetermination/RideModeMirrorTests.cs` — AM-only retains stop on PM mirror proposal
 
 ### Implementation for User Story 1
 
-- [ ] T013 [US1] Implement density/bbox cell builder in `BusBuddy.Core/Services/RouteDetermination/DensityCellBuilder.cs` (Q3:B)
-- [ ] T014 [US1] Implement outlier gap split + greedy seating packer in `BusBuddy.Core/Services/RouteDetermination/RoutePacker.cs` (hard capacity = suggested/assigned bus seating)
-- [ ] T015 [US1] Implement `RouteDeterminationService.GenerateAndAssignAsync` for `FleetKind.HomeToSchool` in `BusBuddy.Core/Services/RouteDetermination/RouteDeterminationService.cs` (create draft routes + AM assignments; mirror PM stop structure)
-- [ ] T016 [US1] Implement `ApplyClerkOverrideAsync` in `RouteDeterminationService.cs` (move student between proposals/routes; Serilog override)
-- [ ] T017 [US1] Persist accepted drafts via `IRouteService` / route create helpers in `RouteDeterminationService.cs` (naming `Draft-{School}-{Cell}-{n}` or accept-into-existing)
-- [ ] T018 [US1] Add year-start **Generate routes** command on `BusBuddy.WPF/ViewModels/Route/RouteManagementViewModel.cs` (or Students) calling `GenerateAndAssignAsync`
-- [ ] T019 [US1] Show draft proposals on map / status in `BusBuddy.WPF/ViewModels/GoogleEarth/GoogleEarthViewModel.cs` (or Route map path) for override selection
-- [ ] T020 [US1] Serilog `Route generation completed School={SchoolId} Fleet={Fleet} Routes={N} Students={S}` in `RouteDeterminationService.cs`
+- [x] T013 [US1] Implement density/bbox cell builder in `BusBuddy.Core/Services/RouteDetermination/DensityCellBuilder.cs` (Q3:B)
+- [x] T014 [US1] Implement outlier gap split + greedy seating packer in `BusBuddy.Core/Services/RouteDetermination/RoutePacker.cs` (hard capacity = suggested/assigned bus seating)
+- [x] T015 [US1] Implement `RouteDeterminationService.GenerateAndAssignAsync` for `FleetKind.HomeToSchool` in `BusBuddy.Core/Services/RouteDetermination/RouteDeterminationService.cs` (create draft routes + AM assignments; mirror PM stop structure)
+- [x] T016 [US1] Implement `ApplyClerkOverrideAsync` in `RouteDeterminationService.cs` (move student between proposals/routes; Serilog override)
+- [x] T017 [US1] Persist accepted drafts via `IRouteService` / route create helpers in `RouteDeterminationService.cs` (naming `Draft-{School}-{Cell}-{n}` or accept-into-existing)
+- [x] T018 [US1] Add year-start **Generate routes** command on `BusBuddy.WPF/ViewModels/Route/RouteManagementViewModel.cs` (or Students) calling `GenerateAndAssignAsync`
+- [x] T019 [US1] Show draft proposals on map / status in `BusBuddy.WPF/ViewModels/GoogleEarth/GoogleEarthViewModel.cs` (or Route map path) for override selection
+- [x] T020 [US1] Serilog `Route generation completed School={SchoolId} Fleet={Fleet} Routes={N} Students={S}` in `RouteDeterminationService.cs`
 
 **Checkpoint**: US1 unit tests green; year-start generate produces drafts for one school
 
