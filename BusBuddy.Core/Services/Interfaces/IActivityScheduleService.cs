@@ -31,6 +31,7 @@ namespace BusBuddy.Core.Services.Interfaces
         Task<bool> ConfirmActivityScheduleAsync(int activityScheduleId);
         Task<bool> CancelActivityScheduleAsync(int activityScheduleId, string? reason = null);
         Task<bool> CompleteActivityScheduleAsync(int activityScheduleId);
+        Task<bool> SetActivityScheduleStatusAsync(int activityScheduleId, string status);
 
         // Conflict Detection
         Task<IEnumerable<ActivitySchedule>> FindScheduleConflictsAsync(DateTime scheduleDate, TimeSpan startTime, TimeSpan endTime, int? excludeActivityScheduleId = null);

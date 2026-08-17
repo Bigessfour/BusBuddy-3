@@ -4,11 +4,11 @@ using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using System.Linq;
-using BusBuddy.Core;
-using BusBuddy.Core.Data;
 using BusBuddy.Core.Models;
-using Microsoft.EntityFrameworkCore;
+using BusBuddy.Core.Services.Interfaces;
+using Microsoft.Extensions.DependencyInjection;
 using System.Windows;
+using BusBuddy.WPF.Views.Activity;
 using Serilog;
 using System;
 using CommunityToolkit.Mvvm.Input;
@@ -21,7 +21,7 @@ namespace BusBuddy.WPF.ViewModels
     /// </summary>
     public class ActivityScheduleViewModel : INotifyPropertyChanged, IDisposable
     {
-        private readonly BusBuddyDbContext _context;
+        private readonly IServiceScopeFactory? _scopeFactory;
         private static readonly ILogger Logger = Log.ForContext<ActivityScheduleViewModel>();
 
         // Collections
@@ -167,12 +167,12 @@ namespace BusBuddy.WPF.ViewModels
 
         public ActivityScheduleViewModel()
         {
-            _context = new BusBuddyDbContext();
-
             // Initialize commands - using parameter-based RelayCommand
+            _scopeFactory = App.ServiceProvider?.GetService<IServiceScopeFactory>();
+
             RefreshCommand = new AsyncRelayCommand(LoadActivitySchedulesAsync);
-            AddActivityCommand = new RelayCommand(AddNewActivity);
-            EditActivityCommand = new RelayCommand(EditActivity, () => SelectedActivity != null);
+            AddActivityCommand = new AsyncRelayCommand(AddNewActivityAsync);
+            EditActivityCommand = new AsyncRelayCommand(EditActivityAsync, () => SelectedActivity != null);
             ViewDetailsCommand = new RelayCommand(ViewDetails, () => SelectedActivity != null);
             ConfirmActivityCommand = new AsyncRelayCommand(async () => await UpdateActivityStatus("Confirmed"), () => SelectedActivity != null);
             StartActivityCommand = new AsyncRelayCommand(async () => await UpdateActivityStatus("In Progress"), () => SelectedActivity != null);
@@ -192,12 +192,10 @@ namespace BusBuddy.WPF.ViewModels
                 IsLoading = true;
                 Logger.Information("📅 Loading activity schedules...");
 
-                var schedules = await _context.ActivitySchedules
-                    .Include("ScheduledDriver")
-                    .Include("ScheduledVehicle")
+                var schedules = (await WithActivityServiceAsync(svc => svc.GetAllActivitySchedulesAsync()))
                     .OrderBy(a => a.ScheduledDate)
                     .ThenBy(a => a.ScheduledLeaveTime)
-                    .ToListAsync();
+                    .ToList();
 
                 ActivitySchedules.Clear();
                 foreach (var schedule in schedules)
@@ -276,14 +274,18 @@ namespace BusBuddy.WPF.ViewModels
             }
         }
 
-        private void AddNewActivity()
+        private async Task AddNewActivityAsync()
         {
             try
             {
                 Logger.Information("➕ Adding new activity");
-                // TODO: Open Add Activity dialog/window
-                MessageBox.Show("Add Activity feature will be implemented in Phase 2.1", "Coming Soon",
-                              MessageBoxButton.OK, MessageBoxImage.Information);
+                if (!TryEditActivity(null, out var created) || created is null)
+                {
+                    return;
+                }
+
+                await WithActivityServiceAsync(svc => svc.CreateActivityScheduleAsync(created));
+                await LoadActivitySchedulesAsync();
             }
             catch (Exception ex)
             {
@@ -293,7 +295,7 @@ namespace BusBuddy.WPF.ViewModels
             }
         }
 
-        private void EditActivity()
+        private async Task EditActivityAsync()
         {
             try
             {
@@ -303,9 +305,13 @@ namespace BusBuddy.WPF.ViewModels
                 }
 
                 Logger.Information($"✏️ Editing activity: {SelectedActivity.Subject}");
-                // TODO: Open Edit Activity dialog/window
-                MessageBox.Show($"Edit Activity feature will be implemented in Phase 2.1\n\nSelected: {SelectedActivity.Subject}",
-                              "Coming Soon", MessageBoxButton.OK, MessageBoxImage.Information);
+                if (!TryEditActivity(SelectedActivity, out var updated) || updated is null)
+                {
+                    return;
+                }
+
+                await WithActivityServiceAsync(svc => svc.UpdateActivityScheduleAsync(updated));
+                await LoadActivitySchedulesAsync();
             }
             catch (Exception ex)
             {
@@ -313,6 +319,22 @@ namespace BusBuddy.WPF.ViewModels
                 MessageBox.Show($"Error editing activity: {ex.Message}", "Error",
                               MessageBoxButton.OK, MessageBoxImage.Error);
             }
+        }
+
+        private static bool TryEditActivity(ActivitySchedule? existing, out ActivitySchedule? result)
+        {
+            result = null;
+            var dialog = new ActivityScheduleEditDialog(existing)
+            {
+                Owner = Application.Current?.MainWindow
+            };
+            if (dialog.ShowDialog() != true)
+            {
+                return false;
+            }
+
+            result = dialog.ViewModel.GetActivitySchedule();
+            return true;
         }
 
         private void ViewDetails()
@@ -358,12 +380,22 @@ namespace BusBuddy.WPF.ViewModels
 
                 Logger.Information($"🔄 Updating activity status to: {newStatus}");
 
+                var id = SelectedActivity.ActivityScheduleId;
+                var ok = await WithActivityServiceAsync(svc => newStatus switch
+                {
+                    "Confirmed" => svc.ConfirmActivityScheduleAsync(id),
+                    "Cancelled" => svc.CancelActivityScheduleAsync(id),
+                    "Completed" => svc.CompleteActivityScheduleAsync(id),
+                    _ => svc.SetActivityScheduleStatusAsync(id, newStatus)
+                });
+                if (!ok)
+                {
+                    throw new InvalidOperationException($"Could not set status to {newStatus}.");
+                }
+
                 SelectedActivity.Status = newStatus;
                 SelectedActivity.UpdatedDate = DateTime.Now;
                 SelectedActivity.UpdatedBy = Environment.UserName;
-
-                await _context.SaveChangesAsync();
-
                 UpdateStatistics();
                 ApplyFilters();
 
@@ -379,6 +411,19 @@ namespace BusBuddy.WPF.ViewModels
             }
         }
 
+        private async Task<T> WithActivityServiceAsync<T>(Func<IActivityScheduleService, Task<T>> action)
+        {
+            if (_scopeFactory is null)
+            {
+                throw new InvalidOperationException("Activity schedule service is not registered.");
+            }
+
+            using var scope = _scopeFactory.CreateScope();
+            var service = scope.ServiceProvider.GetService<IActivityScheduleService>()
+                ?? throw new InvalidOperationException("Activity schedule service is not registered.");
+            return await action(service);
+        }
+
         public event PropertyChangedEventHandler? PropertyChanged;
 
         protected void OnPropertyChanged([CallerMemberName] string? propertyName = null)
@@ -389,7 +434,6 @@ namespace BusBuddy.WPF.ViewModels
         // IDisposable implementation
         public void Dispose()
         {
-            _context?.Dispose();
             GC.SuppressFinalize(this);
         }
     }

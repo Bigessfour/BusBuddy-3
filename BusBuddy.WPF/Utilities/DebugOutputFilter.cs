@@ -928,7 +928,7 @@ namespace BusBuddy.WPF.Utilities
                 return FilterPatterns.Values.SelectMany(p => p).ToList();
             }
 
-            return FilterPatterns.ContainsKey(category) ? FilterPatterns[category] : new List<Regex>();
+            return FilterPatterns.TryGetValue(category, out var patterns) ? patterns : new List<Regex>();
         }
 
         /// <summary>

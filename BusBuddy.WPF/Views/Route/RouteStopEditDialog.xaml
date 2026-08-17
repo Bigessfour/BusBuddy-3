@@ -1,0 +1,30 @@
+<Window x:Class="BusBuddy.WPF.Views.Route.RouteStopEditDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:syncfusion="http://schemas.syncfusion.com/wpf"
+        Title="Route Stop"
+        Height="260"
+        Width="420"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize">
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <StackPanel Grid.Row="0" Margin="0,0,0,12">
+            <TextBlock Text="Stop name" Margin="0,0,0,4"/>
+            <TextBox x:Name="StopNameBox" Height="28"/>
+        </StackPanel>
+        <StackPanel Grid.Row="1" Margin="0,0,0,12">
+            <TextBlock Text="Address" Margin="0,0,0,4"/>
+            <TextBox x:Name="StopAddressBox" Height="28"/>
+        </StackPanel>
+        <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right">
+            <syncfusion:ButtonAdv Label="Save" Width="80" Height="32" Margin="0,0,8,0" Click="Save_Click"/>
+            <syncfusion:ButtonAdv Label="Cancel" Width="80" Height="32" Click="Cancel_Click"/>
+        </StackPanel>
+    </Grid>
+</Window>

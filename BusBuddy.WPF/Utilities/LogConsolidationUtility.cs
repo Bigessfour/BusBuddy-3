@@ -62,7 +62,7 @@ namespace BusBuddy.WPF.Utilities
 
 
             var logFiles = Directory.GetFiles(solutionRoot, "*.log", SearchOption.AllDirectories)
-                .Where(f => !f.StartsWith(_logsDirectory)) // Exclude files already in logs directory
+                .Where(f => !f.StartsWith(_logsDirectory, StringComparison.Ordinal)) // Exclude files already in logs directory
                 .ToList();
 
             foreach (var logFile in logFiles)
@@ -203,8 +203,8 @@ Generated: " + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
 
 
             var allLogFiles = Directory.GetFiles(_logsDirectory, "*.log");
-            var activeLogFiles = allLogFiles.Where(f => !Path.GetFileName(f).StartsWith("archived-")).ToArray();
-            var archivedLogFiles = allLogFiles.Where(f => Path.GetFileName(f).StartsWith("archived-")).ToArray();
+            var activeLogFiles = allLogFiles.Where(f => !Path.GetFileName(f).StartsWith("archived-", StringComparison.Ordinal)).ToArray();
+            var archivedLogFiles = allLogFiles.Where(f => Path.GetFileName(f).StartsWith("archived-", StringComparison.Ordinal)).ToArray();
 
             var totalSize = allLogFiles.Sum(f => new FileInfo(f).Length);
 

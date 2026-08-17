@@ -159,7 +159,7 @@ public class BusBuddyScheduleDataProvider
 
     private Brush GetBrushForActivityType(string? activityType)
     {
-        return activityType?.ToLower() switch
+        return activityType?.ToLowerInvariant() switch
         {
             "morning" => new SolidColorBrush(System.Windows.Media.Color.FromArgb(255, 46, 125, 50)), // Green
             "afternoon" => new SolidColorBrush(System.Windows.Media.Color.FromArgb(255, 25, 118, 210)), // Blue

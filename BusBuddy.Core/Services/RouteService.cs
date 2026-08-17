@@ -1636,9 +1636,100 @@ namespace BusBuddy.Core.Services
 
     // ReorderRouteStopsAsync implemented earlier (single implementation retained)
 
-        public Task<Result<Route>> CloneRouteAsync(int sourceRouteId, DateTime newDate, string? newRouteName = null)
+        public async Task<Result<Route>> CloneRouteAsync(int sourceRouteId, DateTime newDate, string? newRouteName = null)
         {
-            return Task.FromResult(Result.FailureResult<Route>("Not implemented yet"));
+            try
+            {
+                var (opId, sw) = StartOp("CloneRoute", sourceRouteId);
+                if (sourceRouteId <= 0)
+                {
+                    return Result.FailureResult<Route>("Invalid source route id");
+                }
+
+                var (context, dispose) = GetWriteContext();
+                try
+                {
+                    var source = await context.Routes.AsNoTracking()
+                        .FirstOrDefaultAsync(r => r.RouteId == sourceRouteId);
+                    if (source is null)
+                    {
+                        return Result.FailureResult<Route>($"Route with ID {sourceRouteId} not found");
+                    }
+
+                    var stops = await context.RouteStops.AsNoTracking()
+                        .Where(s => s.RouteId == sourceRouteId)
+                        .OrderBy(s => s.StopOrder)
+                        .ToListAsync();
+
+                    var clone = new Route
+                    {
+                        Date = newDate == default ? DateTime.Today.AddDays(1) : newDate.Date,
+                        RouteName = string.IsNullOrWhiteSpace(newRouteName)
+                            ? $"Copy of {source.RouteName}"
+                            : newRouteName.Trim(),
+                        Description = source.Description,
+                        IsActive = false,
+                        School = source.School,
+                        RouteDescription = source.RouteDescription,
+                        Boundaries = source.Boundaries,
+                        Path = source.Path,
+                        WaypointsJson = source.WaypointsJson,
+                        Distance = source.Distance,
+                        EstimatedDuration = source.EstimatedDuration,
+                        StopCount = stops.Count,
+                        StudentCount = 0,
+                        DistrictBoundaryShapefilePath = source.DistrictBoundaryShapefilePath,
+                        TownBoundaryShapefilePath = source.TownBoundaryShapefilePath
+                    };
+
+                    await context.Routes.AddAsync(clone);
+                    await context.SaveChangesAsync();
+
+                    foreach (var stop in stops)
+                    {
+                        await context.RouteStops.AddAsync(new RouteStop
+                        {
+                            RouteId = clone.RouteId,
+                            StopName = stop.StopName,
+                            StopAddress = stop.StopAddress,
+                            Latitude = stop.Latitude,
+                            Longitude = stop.Longitude,
+                            StopOrder = stop.StopOrder,
+                            ScheduledArrival = stop.ScheduledArrival,
+                            ScheduledDeparture = stop.ScheduledDeparture,
+                            StopDuration = stop.StopDuration,
+                            Status = stop.Status,
+                            Notes = stop.Notes,
+                            CreatedDate = DateTime.UtcNow,
+                            EstimatedArrivalTime = stop.EstimatedArrivalTime,
+                            EstimatedDepartureTime = stop.EstimatedDepartureTime
+                        });
+                    }
+
+                    if (stops.Count > 0)
+                    {
+                        await context.SaveChangesAsync();
+                    }
+
+                    Logger.Information(
+                        "Cloned route {SourceId} to {CloneId} ({CloneName}) with {StopCount} stops OpId={OpId}",
+                        sourceRouteId, clone.RouteId, clone.RouteName, stops.Count, opId);
+                    EndOpOk("CloneRoute", opId, sw, clone.RouteId);
+                    return Result.SuccessResult(clone);
+                }
+                finally
+                {
+                    if (dispose)
+                    {
+                        await context.DisposeAsync();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Error cloning route {RouteId}", sourceRouteId);
+                return Result.FailureResult<Route>($"Error cloning route: {ex.Message}");
+            }
         }
 
         #endregion

@@ -355,17 +355,18 @@ namespace BusBuddy.WPF.Utilities
         {
             lock (_metricsLock)
             {
-                if (!_performanceMetrics.ContainsKey(operationName))
+                if (!_performanceMetrics.TryGetValue(operationName, out var measurements))
                 {
-                    _performanceMetrics[operationName] = new List<TimeSpan>();
+                    measurements = new List<TimeSpan>();
+                    _performanceMetrics[operationName] = measurements;
                 }
 
-                _performanceMetrics[operationName].Add(elapsed);
+                measurements.Add(elapsed);
 
                 // Keep only last 100 measurements to prevent memory growth
-                if (_performanceMetrics[operationName].Count > 100)
+                if (measurements.Count > 100)
                 {
-                    _performanceMetrics[operationName].RemoveAt(0);
+                    measurements.RemoveAt(0);
                 }
             }
         }

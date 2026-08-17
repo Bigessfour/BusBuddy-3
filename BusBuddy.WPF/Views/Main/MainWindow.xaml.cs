@@ -20,6 +20,7 @@ using BusBuddy.WPF.Views.Settings;
 using BusBuddy.WPF.Views.Vehicle;
 using BusBuddy.WPF.Views.Reports;
 using BusBuddy.WPF.Views.Fuel;
+using BusBuddy.WPF.Views.Maintenance;
 using BusBuddy.WPF.Utilities;
 using BusBuddy.Core.Services;
 using BusBuddy.Core.Data;
@@ -1050,7 +1051,7 @@ namespace BusBuddy.WPF.Views.Main
                 if (result == true)
                 {
                     Logger.Information("Bus added successfully");
-                    // TODO: Refresh bus grid
+                    RefreshBusesGrid();
                 }
             }
             catch (Exception ex)
@@ -1151,14 +1152,14 @@ namespace BusBuddy.WPF.Views.Main
         // Bus panel event handlers
         private void Maintenance_Click(object sender, RoutedEventArgs e)
         {
-            Logger.Information("Maintenance management requested — opening Analytics");
+            Logger.Information("Maintenance management requested");
             try
             {
-                ShowViewInWindow(new AnalyticsDashboardView(), "🔧 Fleet Analytics", 1100, 800);
+                ShowViewInWindow(new MaintenanceView(), "🔧 Fleet Maintenance", 1100, 800);
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Error opening maintenance analytics");
+                Logger.Error(ex, "Error opening maintenance");
                 MessageBox.Show($"Error: {ex.Message}", "Maintenance", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
@@ -1194,14 +1195,14 @@ namespace BusBuddy.WPF.Views.Main
 
         private void Schedule_Click(object sender, RoutedEventArgs e)
         {
-            Logger.Information("Driver scheduling requested — opening Route Management");
+            Logger.Information("Driver scheduling requested");
             try
             {
-                ShowViewInWindow(new RouteManagementView(), "📅 Route Scheduling", 1200, 800);
+                ShowViewInWindow(new DriverScheduleView(), "📅 Driver Schedule", 1200, 800);
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Error opening Route Management for scheduling");
+                Logger.Error(ex, "Error opening driver schedule");
                 MessageBox.Show($"Error: {ex.Message}", "Driver Scheduling", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
@@ -1236,7 +1237,10 @@ namespace BusBuddy.WPF.Views.Main
                 EnsureMainWindowViewModel();
                 // Refresh through ViewModel instead of direct grid access
                 Logger.Debug("Refreshing students data through ViewModel");
-                // Future enhancement: ((MainWindowViewModel)DataContext).RefreshStudents();
+                if (DataContext is MainWindowViewModel studentsVm)
+                {
+                    _ = studentsVm.RefreshStudentsAsync();
+                }
                 Logger.Information("Students data refresh requested");
             }
             catch (Exception ex)
@@ -1252,7 +1256,10 @@ namespace BusBuddy.WPF.Views.Main
             {
                 EnsureMainWindowViewModel();
                 Logger.Debug("Refreshing routes data through ViewModel");
-                // Future enhancement: ((MainWindowViewModel)DataContext).RefreshRoutes();
+                if (DataContext is MainWindowViewModel routesVm)
+                {
+                    _ = routesVm.RefreshRoutesAsync();
+                }
                 Logger.Information("Routes data refresh requested");
             }
             catch (Exception ex)
@@ -1268,7 +1275,10 @@ namespace BusBuddy.WPF.Views.Main
             {
                 EnsureMainWindowViewModel();
                 Logger.Debug("Refreshing buses data through ViewModel");
-                // Future enhancement: ((MainWindowViewModel)DataContext).RefreshBuses();
+                if (DataContext is MainWindowViewModel busesVm)
+                {
+                    _ = busesVm.RefreshBusesAsync();
+                }
                 Logger.Information("Buses data refresh requested");
             }
             catch (Exception ex)
@@ -1284,7 +1294,10 @@ namespace BusBuddy.WPF.Views.Main
             {
                 EnsureMainWindowViewModel();
                 Logger.Debug("Refreshing drivers data through ViewModel");
-                // Future enhancement: ((MainWindowViewModel)DataContext).RefreshDrivers();
+                if (DataContext is MainWindowViewModel driversVm)
+                {
+                    _ = driversVm.RefreshDriversAsync();
+                }
                 Logger.Information("Drivers data refresh requested");
             }
             catch (Exception ex)
@@ -1321,9 +1334,10 @@ namespace BusBuddy.WPF.Views.Main
             Logger.Debug("LoadStudentsDataAsync method started");
             try
             {
-                // TODO: Implement actual data loading from service
-                Logger.Debug("Simulating students data load");
-                await Task.Delay(100); // Simulate async operation
+                if (DataContext is MainWindowViewModel vm)
+                {
+                    await vm.RefreshStudentsAsync();
+                }
                 Logger.Information("Students data loaded successfully");
             }
             catch (Exception ex)
@@ -1337,9 +1351,10 @@ namespace BusBuddy.WPF.Views.Main
             Logger.Debug("LoadRoutesDataAsync method started");
             try
             {
-                // TODO: Implement actual data loading from service
-                Logger.Debug("Simulating routes data load");
-                await Task.Delay(100); // Simulate async operation
+                if (DataContext is MainWindowViewModel vm)
+                {
+                    await vm.RefreshRoutesAsync();
+                }
                 Logger.Information("Routes data loaded successfully");
             }
             catch (Exception ex)
@@ -1353,9 +1368,10 @@ namespace BusBuddy.WPF.Views.Main
             Logger.Debug("LoadBusesDataAsync method started");
             try
             {
-                // TODO: Implement actual data loading from service
-                Logger.Debug("Simulating buses data load");
-                await Task.Delay(100); // Simulate async operation
+                if (DataContext is MainWindowViewModel vm)
+                {
+                    await vm.RefreshBusesAsync();
+                }
                 Logger.Information("Buses data loaded successfully");
             }
             catch (Exception ex)
@@ -1369,9 +1385,10 @@ namespace BusBuddy.WPF.Views.Main
             Logger.Debug("LoadDriversDataAsync method started");
             try
             {
-                // TODO: Implement actual data loading from service
-                Logger.Debug("Simulating drivers data load");
-                await Task.Delay(100); // Simulate async operation
+                if (DataContext is MainWindowViewModel vm)
+                {
+                    await vm.RefreshDriversAsync();
+                }
                 Logger.Information("Drivers data loaded successfully");
             }
             catch (Exception ex)

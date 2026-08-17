@@ -114,10 +114,10 @@ namespace BusBuddy.WPF.Utilities
 
                 Logger.Debug("[UIDebug] Received debug command: {@DebugCommand}", debugCommand);
 
-                string mode = debugCommand.ContainsKey("Mode") ? debugCommand["Mode"].ToString() ?? "Toggle" : "Toggle";
-                string theme = debugCommand.ContainsKey("Theme") ? debugCommand["Theme"].ToString() ?? CurrentTheme : CurrentTheme;
-                bool enableLogging = debugCommand.ContainsKey("EnableLogging") &&
-                    bool.TryParse(debugCommand["EnableLogging"].ToString(), out bool logging) && logging;
+                string mode = debugCommand.TryGetValue("Mode", out var modeValue) ? modeValue.ToString() ?? "Toggle" : "Toggle";
+                string theme = debugCommand.TryGetValue("Theme", out var themeValue) ? themeValue.ToString() ?? CurrentTheme : CurrentTheme;
+                bool enableLogging = debugCommand.TryGetValue("EnableLogging", out var loggingValue) &&
+                    bool.TryParse(loggingValue.ToString(), out bool logging) && logging;
 
                 // Process the command on the UI thread
                 Application.Current.Dispatcher.Invoke(() =>

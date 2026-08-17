@@ -32,7 +32,6 @@ namespace BusBuddy.Core.Services
         public async Task<Dictionary<string, int>> GetDashboardMetricsAsync()
         {
             Logger.Information("Fetching dashboard metrics with optimized query");
-            System.Diagnostics.Debug.WriteLine("[DEBUG] DashboardMetricsService.GetDashboardMetricsAsync START");
             var result = new Dictionary<string, int>();
             var totalStopwatch = System.Diagnostics.Stopwatch.StartNew();
 
@@ -45,50 +44,40 @@ namespace BusBuddy.Core.Services
                 using var scope = _serviceProvider.CreateScope();
                 using var context = scope.ServiceProvider.GetRequiredService<BusBuddy.Core.Data.BusBuddyDbContext>();
 
-                // Use EF Core async methods to avoid DbContext threading issues
-                System.Diagnostics.Debug.WriteLine("[DEBUG] DashboardMetricsService: Starting bus count query");
                 var busStopwatch = System.Diagnostics.Stopwatch.StartNew();
                 var busCount = await context.Buses.CountAsync(b => b.Status == "Active");
                 busStopwatch.Stop();
-                System.Diagnostics.Debug.WriteLine($"[DEBUG] Query result BusCount: {busCount} (took {busStopwatch.ElapsedMilliseconds}ms)");
+                Logger.Debug("Dashboard bus count {BusCount} in {ElapsedMs}ms", busCount, busStopwatch.ElapsedMilliseconds);
 
-                System.Diagnostics.Debug.WriteLine("[DEBUG] DashboardMetricsService: Starting driver count query");
                 var driverStopwatch = System.Diagnostics.Stopwatch.StartNew();
                 var driverCount = await context.Drivers.CountAsync(d => d.Status == "Active");
                 driverStopwatch.Stop();
-                System.Diagnostics.Debug.WriteLine($"[DEBUG] Query result DriverCount: {driverCount} (took {driverStopwatch.ElapsedMilliseconds}ms)");
+                Logger.Debug("Dashboard driver count {DriverCount} in {ElapsedMs}ms", driverCount, driverStopwatch.ElapsedMilliseconds);
 
-                System.Diagnostics.Debug.WriteLine("[DEBUG] DashboardMetricsService: Starting route count query");
                 var routeStopwatch = System.Diagnostics.Stopwatch.StartNew();
-                // Routes are considered active based on IsActive flag
                 var routeCount = await context.Routes.CountAsync(r => r.IsActive);
                 routeStopwatch.Stop();
-                System.Diagnostics.Debug.WriteLine($"[DEBUG] Query result RouteCount: {routeCount} (took {routeStopwatch.ElapsedMilliseconds}ms)");
+                Logger.Debug("Dashboard route count {RouteCount} in {ElapsedMs}ms", routeCount, routeStopwatch.ElapsedMilliseconds);
 
                 result["BusCount"] = busCount;
                 result["DriverCount"] = driverCount;
                 result["RouteCount"] = routeCount;
 
-                // Placeholders for future metrics
                 result["StudentCount"] = 0;
                 result["OpenTicketCount"] = 0;
 
-                Logger.Information("Successfully fetched dashboard metrics: {Metrics}",
-                    string.Join(", ", result.Select(kv => $"{kv.Key}={kv.Value}")));
-
                 totalStopwatch.Stop();
-                System.Diagnostics.Debug.WriteLine($"[DEBUG] DashboardMetricsService.GetDashboardMetricsAsync SUCCESS - Total execution time: {totalStopwatch.ElapsedMilliseconds}ms");
+                Logger.Information(
+                    "Successfully fetched dashboard metrics BusCount={BusCount} DriverCount={DriverCount} RouteCount={RouteCount} ElapsedMs={ElapsedMs}",
+                    busCount, driverCount, routeCount, totalStopwatch.ElapsedMilliseconds);
 
                 return result;
             }
             catch (Exception ex)
             {
                 totalStopwatch.Stop();
-                Logger.Error(ex, "Error fetching dashboard metrics");
-                System.Diagnostics.Debug.WriteLine($"[DEBUG] DashboardMetricsService.GetDashboardMetricsAsync EXCEPTION: {ex.Message}");
-                System.Diagnostics.Debug.WriteLine($"[DEBUG] Failed after {totalStopwatch.ElapsedMilliseconds}ms");
+                Logger.Error(ex, "Error fetching dashboard metrics after {ElapsedMs}ms", totalStopwatch.ElapsedMilliseconds);
 
-                // Return empty results in case of error
                 result["BusCount"] = 0;
                 result["DriverCount"] = 0;
                 result["RouteCount"] = 0;

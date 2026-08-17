@@ -80,11 +80,11 @@ namespace BusBuddy.WPF.Utilities
             if (status.Length == 1)
             {
 
-                return status.ToUpper();
+                return status.ToUpperInvariant();
             }
 
 
-            return char.ToUpper(status[0]) + status.Substring(1).ToLower();
+            return char.ToUpperInvariant(status[0]) + status.Substring(1).ToLowerInvariant();
         }
 
         /// <summary>

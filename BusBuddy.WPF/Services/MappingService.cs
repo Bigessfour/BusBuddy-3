@@ -32,11 +32,7 @@ namespace BusBuddy.WPF.Services
         /// </summary>
         public TDestination Map<TSource, TDestination>(TSource source)
         {
-            if (source == null)
-            {
-
-                throw new ArgumentNullException(nameof(source));
-            }
+            ArgumentNullException.ThrowIfNull(source);
 
 
             var stopwatch = Stopwatch.StartNew();
@@ -63,11 +59,7 @@ namespace BusBuddy.WPF.Services
         /// </summary>
         public IEnumerable<TDestination> MapCollection<TSource, TDestination>(IEnumerable<TSource> source)
         {
-            if (source == null)
-            {
-
-                throw new ArgumentNullException(nameof(source));
-            }
+            ArgumentNullException.ThrowIfNull(source);
 
             // For empty collections, avoid unnecessary overhead
 
@@ -103,11 +95,7 @@ namespace BusBuddy.WPF.Services
         /// </summary>
         public void Map<TSource, TDestination>(TSource source, TDestination destination)
         {
-            if (source == null)
-            {
-
-                throw new ArgumentNullException(nameof(source));
-            }
+            ArgumentNullException.ThrowIfNull(source);
 
 
             if (destination == null)
@@ -165,11 +153,13 @@ namespace BusBuddy.WPF.Services
         /// </summary>
         public static IServiceCollection AddAutoMapperServices(this IServiceCollection services)
         {
-            // Register AutoMapper
-            services.AddAutoMapper(config =>
+            services.AddSingleton<IMapper>(sp =>
             {
-                config.AddProfile<MappingProfile>();
-            }, typeof(MappingProfile).Assembly);
+                var loggerFactory = sp.GetService<Microsoft.Extensions.Logging.ILoggerFactory>()
+                    ?? Microsoft.Extensions.Logging.Abstractions.NullLoggerFactory.Instance;
+                var config = new MapperConfiguration(cfg => cfg.AddProfile<MappingProfile>(), loggerFactory);
+                return config.CreateMapper();
+            });
 
             // Register mapping service
             services.AddSingleton<IMappingService, MappingService>();

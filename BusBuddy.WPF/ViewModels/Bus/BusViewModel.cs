@@ -91,7 +91,7 @@ namespace BusBuddy.WPF.ViewModels.BusManagement
         public string VINNumber
         {
             get => _vinNumber;
-            set => SetProperty(ref _vinNumber, value != null ? value.ToUpper() : string.Empty);
+            set => SetProperty(ref _vinNumber, value != null ? value.ToUpperInvariant() : string.Empty);
         }
 
         [Required(ErrorMessage = "License number is required")]

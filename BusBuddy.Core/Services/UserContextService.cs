@@ -15,8 +15,6 @@ namespace BusBuddy.Core.Services
 
         public UserContextService()
         {
-            // For now, set a default system user
-            // TODO: Replace with actual authentication when implemented
             SetDefaultUser();
         }
 
@@ -88,12 +86,11 @@ namespace BusBuddy.Core.Services
         /// </summary>
         private void SetDefaultUser()
         {
-            // For development and initial deployment, use a default administrator account
-            // This should be replaced with proper authentication in production
+            var user = Environment.UserName;
             SetCurrentUser(
-                userId: "ADMIN_001",
-                userName: $"Administrator ({Environment.UserName})",
-                userEmail: "admin@busbuddy.local"
+                userId: user,
+                userName: user,
+                userEmail: $"{user}@busbuddy.local"
             );
 
             Logger.Debug("Default user context established for development");

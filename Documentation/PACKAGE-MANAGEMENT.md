@@ -86,7 +86,7 @@ Following [Syncfusion WPF Installation Guide](https://help.syncfusion.com/window
 
 ### Current Syncfusion Configuration
 
-- **Version**: `34.1.32` (pinned in `Directory.Build.props`; Spec 006 Syncfusion Tool Integration)
+- **Version**: `34.2.3` (pinned in `Directory.Build.props`; Spec 006 Syncfusion Tool Integration)
 - **Source**: `nuget.org` (official public feed)
 - **License**: Community/Commercial (configured via environment variable / macOS Passwords)
 - **Controls Used**: DockingManager, NavigationDrawer, SfDataGrid, Charts, SfScheduler, SfSkinManager (FluentDark/Light), and others per `BusBuddy.WPF.csproj`
@@ -96,7 +96,7 @@ Following [Syncfusion WPF Installation Guide](https://help.syncfusion.com/window
 ```xml
 <!-- Centralized in Directory.Build.props -->
 <PropertyGroup>
-  <SyncfusionVersion>34.1.32</SyncfusionVersion>
+  <SyncfusionVersion>34.2.3</SyncfusionVersion>
 </PropertyGroup>
 
 <!-- Individual project references -->
@@ -140,7 +140,7 @@ public partial class App : Application
 
 <!-- ❌ AVOID: Floating versions -->
 <PackageReference Include="Syncfusion.SfChart.WPF" Version="34.*" />
-<PackageReference Include="Syncfusion.SfChart.WPF" Version="[34.1.32,)" />
+<PackageReference Include="Syncfusion.SfChart.WPF" Version="[34.2.3,)" />
 ```
 
 ### Centralized Version Management
@@ -155,7 +155,7 @@ public partial class App : Application
     <UseWPF>true</UseWPF>
 
     <!-- Package Versions -->
-    <SyncfusionVersion>34.1.32</SyncfusionVersion>
+    <SyncfusionVersion>34.2.3</SyncfusionVersion>
     <EntityFrameworkVersion>8.0.0</EntityFrameworkVersion>
     <SerilogVersion>4.0.2</SerilogVersion>
   </PropertyGroup>
@@ -186,7 +186,7 @@ dotnet list package --vulnerable --include-transitive
 ### Current Security Status
 
 - **Last Scan**: Clean (no known vulnerabilities)
-- **Syncfusion 34.1.32**: No security advisories
+- **Syncfusion 34.2.3**: No security advisories
 - **Entity Framework**: Latest stable versions
 - **Regular Scanning**: Integrated into CI/CD pipeline
 

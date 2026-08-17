@@ -166,9 +166,7 @@ namespace BusBuddy.WPF.ViewModels
 
         private void ExecuteQuickExport()
         {
-            // TODO: Implement data export functionality
-            // This could be a separate dialog or navigate to a reporting section
-            _navigationAction?.Invoke("Activity");
+            _navigationAction?.Invoke("Reports");
         }
 
         private bool CanExecuteQuickExport()

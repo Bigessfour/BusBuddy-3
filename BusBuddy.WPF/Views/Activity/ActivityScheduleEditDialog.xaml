@@ -2,63 +2,97 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:syncfusion="http://schemas.syncfusion.com/wpf"
-        Title="Edit Activity Schedule"
-        Height="400"
-        Width="500"
+        Title="{Binding DialogTitle}"
+        Height="640"
+        Width="560"
+        MinHeight="600"
+        MinWidth="520"
         WindowStartupLocation="CenterOwner"
         ResizeMode="NoResize">
+    <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+    </Window.Resources>
 
     <Grid Margin="20">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <!-- Title -->
         <TextBlock Grid.Row="0"
-                   Text="Activity Schedule Details"
+                   Text="{Binding DialogTitle}"
                    FontSize="18"
                    FontWeight="Bold"
-                   Margin="0,0,0,20"/>
+                   Margin="0,0,0,16"/>
 
-        <!-- Activity Name -->
-        <StackPanel Grid.Row="1" Margin="0,0,0,10">
-            <TextBlock Text="Activity Name:" Margin="0,0,0,5"/>
-            <syncfusion:SfMaskedEdit x:Name="ActivityNameTextBox" Height="30" Padding="5"/>
-        </StackPanel>
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+            <StackPanel>
+                <TextBlock Text="Subject (from trip type and destination)" Margin="0,0,0,4"/>
+                <TextBlock Text="{Binding Subject}" FontWeight="SemiBold" Margin="0,0,0,10"/>
 
-        <!-- Date -->
-        <StackPanel Grid.Row="2" Margin="0,0,0,10">
-            <TextBlock Text="Date:" Margin="0,0,0,5"/>
-            <syncfusion:SfMaskedEdit x:Name="ActivityDateTextBox" Height="30" Padding="5" Text="{Binding ActivityDate, Mode=TwoWay}"/>
-        </StackPanel>
+                <TextBlock Text="Trip type" Margin="0,0,0,4"/>
+                <ComboBox ItemsSource="{Binding TripTypes}" SelectedItem="{Binding TripType}" Height="28" Margin="0,0,0,10"/>
 
-        <!-- Time -->
-        <StackPanel Grid.Row="3" Margin="0,0,0,10">
-            <TextBlock Text="Time:" Margin="0,0,0,5"/>
-            <syncfusion:SfMaskedEdit x:Name="ActivityTimeTextBox" Height="30" Padding="5"/>
-        </StackPanel>
+                <TextBlock Text="Destination" Margin="0,0,0,4"/>
+                <TextBox Text="{Binding ScheduledDestination, UpdateSourceTrigger=PropertyChanged}" Height="28" Margin="0,0,0,10"/>
 
-        <!-- Buttons -->
-        <StackPanel Grid.Row="5"
-                    Orientation="Horizontal"
-                    HorizontalAlignment="Right"
-                    Margin="0,20,0,0">
+                <TextBlock Text="Date" Margin="0,0,0,4"/>
+                <DatePicker SelectedDate="{Binding ScheduledDate}" Margin="0,0,0,10"/>
+
+                <TextBlock Text="Leave time (hh:mm)" Margin="0,0,0,4"/>
+                <TextBox Text="{Binding LeaveTimeText, UpdateSourceTrigger=LostFocus}" Height="28" Margin="0,0,0,10"/>
+
+                <TextBlock Text="Event time (hh:mm)" Margin="0,0,0,4"/>
+                <TextBox Text="{Binding EventTimeText, UpdateSourceTrigger=LostFocus}" Height="28" Margin="0,0,0,10"/>
+
+                <TextBlock Text="Riders" Margin="0,0,0,4"/>
+                <TextBox Text="{Binding ScheduledRiders, UpdateSourceTrigger=PropertyChanged}" Height="28" Margin="0,0,0,10"/>
+
+                <TextBlock Text="Driver" Margin="0,0,0,4"/>
+                <ComboBox ItemsSource="{Binding AvailableDrivers}"
+                          SelectedItem="{Binding SelectedDriver}"
+                          DisplayMemberPath="DriverName"
+                          Height="28" Margin="0,0,0,10"/>
+
+                <TextBlock Text="Vehicle" Margin="0,0,0,4"/>
+                <ComboBox ItemsSource="{Binding AvailableVehicles}"
+                          SelectedItem="{Binding SelectedVehicle}"
+                          DisplayMemberPath="BusNumber"
+                          Height="28" Margin="0,0,0,10"/>
+
+                <TextBlock Text="Status" Margin="0,0,0,4"/>
+                <ComboBox ItemsSource="{Binding StatusOptions}" SelectedItem="{Binding Status}" Height="28" Margin="0,0,0,10"/>
+
+                <TextBlock Text="Requested by" Margin="0,0,0,4"/>
+                <TextBox Text="{Binding RequestedBy, UpdateSourceTrigger=PropertyChanged}" Height="28" Margin="0,0,0,10"/>
+
+                <TextBlock Text="Notes" Margin="0,0,0,4"/>
+                <TextBox Text="{Binding Notes, UpdateSourceTrigger=PropertyChanged}" Height="60" TextWrapping="Wrap" AcceptsReturn="True"/>
+            </StackPanel>
+        </ScrollViewer>
+
+        <TextBlock Grid.Row="2"
+                   Text="{Binding ValidationMessage}"
+                   Foreground="IndianRed"
+                   TextWrapping="Wrap"
+                   Margin="0,8,0,8"
+                   Visibility="{Binding HasValidationErrors, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+
+        <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right">
             <syncfusion:ButtonAdv x:Name="SaveButton"
-                    Label="Save"
-                    Width="80"
+                    Label="{Binding SaveButtonText}"
+                    Width="140"
                     Height="35"
-                    Margin="0,0,10,0"/>
+                    Margin="0,0,10,0"
+                    IsEnabled="{Binding ListsReady}"
+                    Click="SaveButton_Click"/>
             <syncfusion:ButtonAdv x:Name="CancelButton"
                     Label="Cancel"
                     Width="80"
-                    Height="35"/>
+                    Height="35"
+                    Click="CancelButton_Click"/>
         </StackPanel>
     </Grid>
 </Window>
-
-

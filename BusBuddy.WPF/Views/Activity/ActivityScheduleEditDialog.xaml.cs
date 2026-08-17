@@ -1,12 +1,15 @@
+using BusBuddy.Core.Mapping;
 using BusBuddy.Core.Models;
-using BusBuddy.WPF.ViewModels;
+using BusBuddy.Core.Services;
+using BusBuddy.Core.Services.Interfaces;
+using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Input;
 using Syncfusion.SfSkinManager;
 
 namespace BusBuddy.WPF.Views.Activity
@@ -27,11 +30,18 @@ namespace BusBuddy.WPF.Views.Activity
 
             ViewModel = new ActivityScheduleEditDialogViewModel(activityToEdit);
             DataContext = ViewModel;
+            Loaded += OnLoaded;
 
             // Configure dialog properties
             WindowStartupLocation = WindowStartupLocation.CenterOwner;
             ShowInTaskbar = false;
             ResizeMode = ResizeMode.NoResize;
+        }
+
+        private async void OnLoaded(object sender, RoutedEventArgs e)
+        {
+            Loaded -= OnLoaded;
+            await ViewModel.LoadAvailableDataAsync();
         }
 
         protected override void OnClosed(System.EventArgs e)
@@ -66,7 +76,6 @@ namespace BusBuddy.WPF.Views.Activity
         private readonly bool _isEditMode;
 
         // Activity properties
-        private string _subject = string.Empty;
         private DateTime _scheduledDate = DateTime.Today.AddDays(1);
         private TimeSpan _scheduledLeaveTime = new(8, 0, 0);
         private TimeSpan _scheduledEventTime = new(9, 0, 0);
@@ -90,6 +99,9 @@ namespace BusBuddy.WPF.Views.Activity
         // Validation
         private string _validationMessage = string.Empty;
         private bool _hasValidationErrors;
+        private bool _listsReady;
+        private string _leaveTimeText = TimeSpanParser.Format(new TimeSpan(8, 0, 0));
+        private string _eventTimeText = TimeSpanParser.Format(new TimeSpan(9, 0, 0));
 
         public ActivityScheduleEditDialogViewModel(ActivitySchedule? activityToEdit = null)
         {
@@ -102,8 +114,6 @@ namespace BusBuddy.WPF.Views.Activity
             {
                 LoadActivityData(activityToEdit);
             }
-
-            LoadAvailableData();
         }
 
         #region Properties
@@ -111,14 +121,59 @@ namespace BusBuddy.WPF.Views.Activity
         public string DialogTitle => _isEditMode ? "Edit Activity Schedule" : "Add New Activity Schedule";
         public string SaveButtonText => _isEditMode ? "Update Activity" : "Create Activity";
 
-        public string Subject
+        public string Subject => string.IsNullOrWhiteSpace(ScheduledDestination)
+            ? TripType
+            : $"{TripType} - {ScheduledDestination}";
+
+        public bool ListsReady
         {
-            get => _subject;
+            get => _listsReady;
+            private set
+            {
+                _listsReady = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public string LeaveTimeText
+        {
+            get => _leaveTimeText;
             set
             {
-                _subject = value;
+                _leaveTimeText = value ?? string.Empty;
                 OnPropertyChanged();
-                ValidateSubject();
+                if (TimeSpanParser.TryParse(_leaveTimeText, out var parsed))
+                {
+                    _scheduledLeaveTime = parsed;
+                    OnPropertyChanged(nameof(ScheduledLeaveTime));
+                    ValidateTime();
+                }
+                else
+                {
+                    ValidationMessage = "Leave time must be hh:mm";
+                    HasValidationErrors = true;
+                }
+            }
+        }
+
+        public string EventTimeText
+        {
+            get => _eventTimeText;
+            set
+            {
+                _eventTimeText = value ?? string.Empty;
+                OnPropertyChanged();
+                if (TimeSpanParser.TryParse(_eventTimeText, out var parsed))
+                {
+                    _scheduledEventTime = parsed;
+                    OnPropertyChanged(nameof(ScheduledEventTime));
+                    ValidateTime();
+                }
+                else
+                {
+                    ValidationMessage = "Event time must be hh:mm";
+                    HasValidationErrors = true;
+                }
             }
         }
 
@@ -139,7 +194,9 @@ namespace BusBuddy.WPF.Views.Activity
             set
             {
                 _scheduledLeaveTime = value;
+                _leaveTimeText = TimeSpanParser.Format(value);
                 OnPropertyChanged();
+                OnPropertyChanged(nameof(LeaveTimeText));
                 ValidateTime();
             }
         }
@@ -150,7 +207,9 @@ namespace BusBuddy.WPF.Views.Activity
             set
             {
                 _scheduledEventTime = value;
+                _eventTimeText = TimeSpanParser.Format(value);
                 OnPropertyChanged();
+                OnPropertyChanged(nameof(EventTimeText));
                 ValidateTime();
             }
         }
@@ -162,6 +221,7 @@ namespace BusBuddy.WPF.Views.Activity
             {
                 _tripType = value;
                 OnPropertyChanged();
+                OnPropertyChanged(nameof(Subject));
             }
         }
 
@@ -172,6 +232,7 @@ namespace BusBuddy.WPF.Views.Activity
             {
                 _scheduledDestination = value;
                 OnPropertyChanged();
+                OnPropertyChanged(nameof(Subject));
                 ValidateDestination();
             }
         }
@@ -285,7 +346,6 @@ namespace BusBuddy.WPF.Views.Activity
 
         private void LoadActivityData(ActivitySchedule activity)
         {
-            Subject = activity.Subject ?? string.Empty;
             ScheduledDate = activity.ScheduledDate;
             ScheduledLeaveTime = activity.ScheduledLeaveTime;
             ScheduledEventTime = activity.ScheduledEventTime;
@@ -295,15 +355,50 @@ namespace BusBuddy.WPF.Views.Activity
             RequestedBy = activity.RequestedBy ?? Environment.UserName;
             Notes = activity.Notes ?? string.Empty;
             Status = activity.Status ?? "Scheduled";
+            SelectedDriver = AvailableDrivers.FirstOrDefault(d => d.DriverId == activity.ScheduledDriverId);
+            SelectedVehicle = AvailableVehicles.FirstOrDefault(v => v.BusId == activity.ScheduledVehicleId);
         }
 
-        private void LoadAvailableData()
+        public async Task LoadAvailableDataAsync()
         {
             try
             {
-                // Load sample data - in Phase 3, this would come from database
-                LoadSampleDrivers();
-                LoadSampleVehicles();
+                var sp = App.ServiceProvider;
+                if (sp is null)
+                {
+                    ListsReady = true;
+                    return;
+                }
+
+                using var scope = sp.CreateScope();
+                var driverService = scope.ServiceProvider.GetService<IDriverService>();
+                var busService = scope.ServiceProvider.GetService<IBusService>();
+                var drivers = driverService is null
+                    ? Enumerable.Empty<BusBuddy.Core.Models.Driver>()
+                    : await driverService.GetAllDriversAsync().ConfigureAwait(true);
+                var buses = busService is null
+                    ? Enumerable.Empty<BusBuddy.Core.Models.Bus>()
+                    : await busService.GetAllBusesAsync().ConfigureAwait(true);
+
+                AvailableDrivers.Clear();
+                foreach (var driver in drivers)
+                {
+                    AvailableDrivers.Add(driver);
+                }
+
+                AvailableVehicles.Clear();
+                foreach (var bus in buses)
+                {
+                    AvailableVehicles.Add(bus);
+                }
+
+                if (_isEditMode)
+                {
+                    SelectedDriver = AvailableDrivers.FirstOrDefault(d => d.DriverId == _originalActivity.ScheduledDriverId);
+                    SelectedVehicle = AvailableVehicles.FirstOrDefault(v => v.BusId == _originalActivity.ScheduledVehicleId);
+                }
+
+                ListsReady = true;
             }
             catch (Exception ex)
             {
@@ -312,34 +407,31 @@ namespace BusBuddy.WPF.Views.Activity
             }
         }
 
-        private void LoadSampleDrivers()
-        {
-            AvailableDrivers.Clear();
-            AvailableDrivers.Add(new BusBuddy.Core.Models.Driver { DriverId = 1, DriverName = "John Smith", Status = "Active" });
-            AvailableDrivers.Add(new BusBuddy.Core.Models.Driver { DriverId = 2, DriverName = "Sarah Johnson", Status = "Active" });
-            AvailableDrivers.Add(new BusBuddy.Core.Models.Driver { DriverId = 3, DriverName = "Mike Wilson", Status = "Active" });
-            AvailableDrivers.Add(new BusBuddy.Core.Models.Driver { DriverId = 4, DriverName = "Lisa Brown", Status = "Active" });
-            AvailableDrivers.Add(new BusBuddy.Core.Models.Driver { DriverId = 5, DriverName = "Tom Davis", Status = "Active" });
-        }
-
-        private void LoadSampleVehicles()
-        {
-            AvailableVehicles.Clear();
-            AvailableVehicles.Add(new BusBuddy.Core.Models.Bus { BusId = 1, Make = "Blue Bird", Model = "Vision", LicenseNumber = "Bus-001", Capacity = 72 });
-            AvailableVehicles.Add(new BusBuddy.Core.Models.Bus { BusId = 2, Make = "Blue Bird", Model = "Vision", LicenseNumber = "Bus-002", Capacity = 71 });
-            AvailableVehicles.Add(new BusBuddy.Core.Models.Bus { BusId = 3, Make = "Thomas", Model = "C2", LicenseNumber = "Bus-003", Capacity = 77 });
-            AvailableVehicles.Add(new BusBuddy.Core.Models.Bus { BusId = 4, Make = "Thomas", Model = "C2", LicenseNumber = "Bus-004", Capacity = 72 });
-            AvailableVehicles.Add(new BusBuddy.Core.Models.Bus { BusId = 5, Make = "IC Bus", Model = "CE200", LicenseNumber = "Bus-005", Capacity = 78 });
-        }
-
         public bool ValidateActivity()
         {
             var errors = new List<string>();
 
-            // Subject validation
-            if (string.IsNullOrWhiteSpace(Subject))
+            if (!ListsReady)
             {
-                errors.Add("Subject is required");
+                errors.Add("Still loading drivers and vehicles");
+            }
+
+            if (!TimeSpanParser.TryParse(_leaveTimeText, out var leave))
+            {
+                errors.Add("Leave time must be hh:mm");
+            }
+            else
+            {
+                _scheduledLeaveTime = leave;
+            }
+
+            if (!TimeSpanParser.TryParse(_eventTimeText, out var eventTime))
+            {
+                errors.Add("Event time must be hh:mm");
+            }
+            else
+            {
+                _scheduledEventTime = eventTime;
             }
 
             // Date validation
@@ -372,6 +464,16 @@ namespace BusBuddy.WPF.Views.Activity
 
             // Vehicle capacity validation
 
+            if (SelectedDriver is null)
+            {
+                errors.Add("Driver is required");
+            }
+
+            if (SelectedVehicle is null)
+            {
+                errors.Add("Vehicle is required");
+            }
+
             if (SelectedVehicle != null && ScheduledRiders > SelectedVehicle.Capacity)
             {
                 errors.Add($"Number of riders ({ScheduledRiders}) exceeds vehicle capacity ({SelectedVehicle.Capacity})");
@@ -388,19 +490,6 @@ namespace BusBuddy.WPF.Views.Activity
             ValidationMessage = string.Empty;
             HasValidationErrors = false;
             return true;
-        }
-
-        private void ValidateSubject()
-        {
-            if (string.IsNullOrWhiteSpace(Subject))
-            {
-                ValidationMessage = "Subject is required";
-                HasValidationErrors = true;
-            }
-            else
-            {
-                ClearValidationIfOnlyThis("Subject is required");
-            }
         }
 
         private void ValidateDate()
@@ -492,8 +581,10 @@ namespace BusBuddy.WPF.Views.Activity
             activity.RequestedBy = RequestedBy;
             activity.Notes = Notes;
             activity.Status = Status;
-            activity.ScheduledDriverId = SelectedDriver?.DriverId ?? 0;
-            activity.ScheduledBusId = SelectedVehicle?.Id ?? 0;
+            activity.ScheduledDriverId = SelectedDriver?.DriverId
+                ?? (_isEditMode ? _originalActivity.ScheduledDriverId : 0);
+            activity.ScheduledBusId = SelectedVehicle?.BusId
+                ?? (_isEditMode ? _originalActivity.ScheduledVehicleId : 0);
             activity.UpdatedDate = DateTime.Now;
             activity.UpdatedBy = Environment.UserName;
 

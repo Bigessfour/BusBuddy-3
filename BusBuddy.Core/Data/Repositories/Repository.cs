@@ -294,10 +294,7 @@ public class Repository<T> : IRepository<T> where T : class
 
     public virtual async Task<T> AddAsync(T entity)
     {
-        if (entity == null)
-        {
-            throw new ArgumentNullException(nameof(entity));
-        }
+        ArgumentNullException.ThrowIfNull(entity);
 
         SetAuditFields(entity, isUpdate: false);
         var result = await DbSet.AddAsync(entity);
@@ -317,10 +314,7 @@ public class Repository<T> : IRepository<T> where T : class
 
     public virtual T Add(T entity)
     {
-        if (entity == null)
-        {
-            throw new ArgumentNullException(nameof(entity));
-        }
+        ArgumentNullException.ThrowIfNull(entity);
 
         SetAuditFields(entity, isUpdate: false);
         var result = DbSet.Add(entity);
