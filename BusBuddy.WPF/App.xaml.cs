@@ -920,41 +920,52 @@ IMPLEMENTATION STEPS:
 
                 Log.Information("Starting command line report generation: {ReportType} -> {OutputPath}", reportType, outputPath);
 
-                // TODO: Implement actual PdfReportService call
-                // For now, create a mock PDF/report file
-                var reportContent = $@"BusBuddy {reportType} Report
-Generated: {DateTime.Now:yyyy-MM-dd HH:mm:ss}
-Format: {format}
-{(routeId != null ? $"Route ID: {routeId}" : "")}
-
-This is a mock {reportType.ToLower()} report generated via command line.
-In the full implementation, this would use Syncfusion PDF tools to generate a proper {format} report.
-
-Sample data would include:
-- Student information
-- Route details
-- Driver schedules
-- Safety protocols
-- Performance metrics";
-
-                // Create output directory if needed
-                var directory = Path.GetDirectoryName(outputPath);
-                if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
+                if (!OperationalReportKindParser.TryParse(reportType, out var kind))
                 {
-                    Directory.CreateDirectory(directory);
+                    Console.WriteLine($"Error: unknown --report-type '{reportType}'. Use an OperationalReportKind name or Roster, RouteManifest, StudentList, DriverSchedule.");
+                    return true;
                 }
 
-                File.WriteAllText(outputPath, reportContent);
-                Log.Information("Report generated successfully: {OutputPath}", outputPath);
+                if (ServiceProvider is null)
+                {
+                    Console.WriteLine("Error: application services are not initialized");
+                    return true;
+                }
+
+                int? parsedRouteId = null;
+                if (!string.IsNullOrWhiteSpace(routeId))
+                {
+                    if (!int.TryParse(routeId, out var id))
+                    {
+                        Console.WriteLine("Error: --route-id must be an integer RouteId");
+                        return true;
+                    }
+
+                    parsedRouteId = id;
+                }
+
+                using var scope = ServiceProvider.CreateScope();
+                var reports = scope.ServiceProvider.GetRequiredService<IOperationalReportService>();
+                var generated = reports.GenerateAsync(new OperationalReportRequest
+                {
+                    Kind = kind,
+                    OutputFilePath = outputPath,
+                    AsCsv = OperationalReportKindParser.IsCsvFormat(format),
+                    RouteId = parsedRouteId
+                }).GetAwaiter().GetResult();
+
+                Log.Information("Report generated successfully: {OutputPath}", generated.FilePath);
 
                 var result = new
                 {
-                    ReportType = reportType,
-                    OutputPath = outputPath,
-                    Format = format,
+                    ReportType = kind.ToString(),
+                    OutputPath = generated.FilePath,
+                    Format = generated.FilePath.EndsWith(".csv", StringComparison.OrdinalIgnoreCase) ? "CSV" : "PDF",
                     RouteId = routeId,
                     GeneratedAt = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
-                    FileSize = new FileInfo(outputPath).Length
+                    FileSize = generated.FileBytes.Length,
+                    Status = generated.Status,
+                    AiSummary = generated.AiSummary
                 };
 
                 var json = System.Text.Json.JsonSerializer.Serialize(result, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
@@ -989,9 +1000,9 @@ Route Optimization:
 
 Report Generation:
   --generate-report --report-type <type> --output <path> [options]
-    --report-type <type>         Report type: Roster, RouteManifest, StudentList, DriverSchedule
+    --report-type <type>         Roster, RouteManifest, StudentList, DriverSchedule, or any OperationalReportKind
     --output <path>              Output file path (required)
-    --route-id <id>              Route ID for route-specific reports
+    --route-id <id>              RouteId for Route Summary (integer)
     --format <format>            Output format: PDF, Excel, CSV (default: PDF)
 
 General:

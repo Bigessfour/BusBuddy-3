@@ -87,5 +87,64 @@ namespace BusBuddy.Tests.Core
             Assert.That(text, Does.Contain("Ada Rider"));
             Assert.That(text, Does.StartWith("Name,"));
         }
+
+        [Test]
+        public async Task GenerateAsync_Request_WritesExactOutputPathAsCsv()
+        {
+            var path = Path.Combine(_dir, "cli-roster.csv");
+
+            var result = await _service.GenerateAsync(new OperationalReportRequest
+            {
+                Kind = OperationalReportKind.StudentRoster,
+                OutputFilePath = path,
+                AsCsv = true
+            });
+
+            Assert.That(result.FilePath, Is.EqualTo(path));
+            Assert.That(await File.ReadAllTextAsync(path), Does.Contain("Ben Rider"));
+        }
+
+        [Test]
+        public void GenerateAsync_UnknownRouteId_Throws()
+        {
+            var request = new OperationalReportRequest
+            {
+                Kind = OperationalReportKind.RouteSummary,
+                OutputDirectory = _dir,
+                RouteId = 999
+            };
+
+            Assert.That(async () => await _service.GenerateAsync(request), Throws.InvalidOperationException);
+        }
+    }
+
+    [TestFixture]
+    [Category("Core")]
+    public class OperationalReportKindParserTests
+    {
+        [TestCase("Roster", OperationalReportKind.StudentRoster)]
+        [TestCase("student-list", OperationalReportKind.StudentRoster)]
+        [TestCase("RouteManifest", OperationalReportKind.RouteSummary)]
+        [TestCase("DriverSchedule", OperationalReportKind.DriverRoster)]
+        [TestCase("UnassignedStudents", OperationalReportKind.UnassignedStudents)]
+        public void TryParse_AliasesAndEnumNames_Succeed(string input, OperationalReportKind expected)
+        {
+            Assert.That(OperationalReportKindParser.TryParse(input, out var kind), Is.True);
+            Assert.That(kind, Is.EqualTo(expected));
+        }
+
+        [Test]
+        public void TryParse_Unknown_Fails()
+        {
+            Assert.That(OperationalReportKindParser.TryParse("not-a-report", out _), Is.False);
+        }
+
+        [TestCase("csv", true)]
+        [TestCase("Excel", true)]
+        [TestCase("pdf", false)]
+        public void IsCsvFormat_MatchesHelpAliases(string format, bool expected)
+        {
+            Assert.That(OperationalReportKindParser.IsCsvFormat(format), Is.EqualTo(expected));
+        }
     }
 }
