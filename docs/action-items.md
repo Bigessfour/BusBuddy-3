@@ -16,7 +16,7 @@
 ### P0 — Platform / tooling
 
 - [x] Spec-Kit brownfield bootstrap (001–005) — merged [PR #20](https://github.com/Bigessfour/BusBuddy-3/pull/20)
-- [ ] **007 Maps Platform Geo (retire Earth Engine)** — [spec](../specs/007-maps-platform-geo/spec.md) · [plan](../specs/007-maps-platform-geo/plan.md) · [tasks](../specs/007-maps-platform-geo/tasks.md)
+- [x] **007 Maps Platform Geo (retire Earth Engine)** — US2+docs merged [PR #31](https://github.com/Bigessfour/BusBuddy-3/pull/31) · [spec](../specs/007-maps-platform-geo/spec.md) · [tasks](../specs/007-maps-platform-geo/tasks.md)
   - [x] US2: Remove GEE DI, client, probe, unofficial Google tiles
   - [ ] US1: Address Validation + geocode onto SfMap (**paused**)
   - [ ] US3: Routes API drive polyline (P2)
@@ -54,10 +54,10 @@
 
 | Issue                                                     | Topic                                           | Suggested disposition                                                                                      |
 | --------------------------------------------------------- | ----------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| [#13](https://github.com/Bigessfour/BusBuddy-3/issues/13) | ViewModel dedup                                 | Largely done in hygiene/PR #16 (`BaseViewModelMvp` removed). Confirm no remaining flat VM refs → **close** |
-| [#14](https://github.com/Bigessfour/BusBuddy-3/issues/14) | CI + secrets/MCP                                | Mostly done (solo CI, Passwords, Syncfusion MCP). Re-check `ci-with-ai` / GH secrets → update or **close** |
-| [#15](https://github.com/Bigessfour/BusBuddy-3/issues/15) | Deprecate bb-* PS                               | Docs/deprecation done; residual archive refs OK → **close** or narrow remaining tasks                      |
-| [#11](https://github.com/Bigessfour/BusBuddy-3/issues/11) | Close stubs (Reports/Grok/Settings/Maintenance) | P1 items implemented; close after this PR merges                                                           |
+| [#13](https://github.com/Bigessfour/BusBuddy-3/issues/13) | ViewModel dedup                                 | **Closed** (hygiene / PR #16)                                                                                  |
+| [#14](https://github.com/Bigessfour/BusBuddy-3/issues/14) | CI + secrets/MCP                                | Solo CI + auto-merge done; Passwords for Syncfusion/Maps. Optional: GH Actions secrets / `ci-with-ai` cleanup → **close or narrow** |
+| [#15](https://github.com/Bigessfour/BusBuddy-3/issues/15) | Deprecate bb-* PS                               | Modules removed — open [PR #32](https://github.com/Bigessfour/BusBuddy-3/pull/32) (`Closes #15`)              |
+| [#11](https://github.com/Bigessfour/BusBuddy-3/issues/11) | Close stubs (Reports/Grok/Settings/Maintenance) | P1 done ([PR #30](https://github.com/Bigessfour/BusBuddy-3/pull/30)); Drivers MVP placeholders wired to live reports/services — close via follow-up PR |
 
 ---
 
