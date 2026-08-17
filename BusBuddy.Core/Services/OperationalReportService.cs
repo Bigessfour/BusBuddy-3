@@ -46,8 +46,13 @@ namespace BusBuddy.Core.Services
             _grok = grok;
         }
 
-        public async Task<OperationalReportResult> GenerateAsync(OperationalReportKind kind, string? outputDirectory = null)
+        public Task<OperationalReportResult> GenerateAsync(OperationalReportKind kind, string? outputDirectory = null) =>
+            GenerateAsync(new OperationalReportRequest { Kind = kind, OutputDirectory = outputDirectory });
+
+        public async Task<OperationalReportResult> GenerateAsync(OperationalReportRequest request)
         {
+            ArgumentNullException.ThrowIfNull(request);
+            var kind = request.Kind;
             var students = await _students.GetAllStudentsAsync() ?? new List<Student>();
             var routesResult = await _routes.GetAllActiveRoutesAsync();
             var routes = routesResult.IsSuccess && routesResult.Value is not null
@@ -67,19 +72,26 @@ namespace BusBuddy.Core.Services
             var title = DisplayName(kind);
             var (headers, rows, facts) = BuildTable(kind, students, routes, drivers, buses, fuel, maintenance);
             var ai = await TryCommentaryAsync(title, facts);
-            var isCsv = kind is OperationalReportKind.CsvExport or OperationalReportKind.ExcelExport;
+            var isCsv = request.AsCsv || kind is OperationalReportKind.CsvExport or OperationalReportKind.ExcelExport;
+            var route = SelectRoute(routes, request.RouteId);
+            if (request.RouteId.HasValue && route is null)
+            {
+                throw new InvalidOperationException($"No active route with RouteId {request.RouteId.Value}.");
+            }
+
             var bytes = isCsv
                 ? Encoding.UTF8.GetBytes(ToCsv(headers, rows))
-                : kind == OperationalReportKind.RouteSummary && routes.Count > 0
-                    ? BuildRouteSummaryPdf(routes[0], students, buses, drivers, ai.Text)
+                : kind == OperationalReportKind.RouteSummary && route is not null
+                    ? BuildRouteSummaryPdf(route, students, buses, drivers, ai.Text)
                     : _pdf.GenerateTabularReport(title, headers, rows, ai.Text);
 
-            var dir = string.IsNullOrWhiteSpace(outputDirectory)
-                ? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "BusBuddy", "Reports")
-                : outputDirectory;
-            Directory.CreateDirectory(dir);
-            var ext = isCsv ? "csv" : "pdf";
-            var path = Path.Combine(dir, $"{kind}-{DateTime.Now:yyyyMMdd-HHmmss}.{ext}");
+            var path = ResolveOutputPath(request, kind, isCsv);
+            var dir = Path.GetDirectoryName(path);
+            if (!string.IsNullOrEmpty(dir))
+            {
+                Directory.CreateDirectory(dir);
+            }
+
             await File.WriteAllBytesAsync(path, bytes);
 
             var prefix = kind.ToString().StartsWith("Print", StringComparison.Ordinal) ? "Saved for print" : "Wrote";
@@ -94,6 +106,30 @@ namespace BusBuddy.Core.Services
                 AiSummary = ai.Text,
                 UsedMockAi = ai.Mock
             };
+        }
+
+        private static Route? SelectRoute(IReadOnlyList<Route> routes, int? routeId)
+        {
+            if (routeId.HasValue)
+            {
+                return routes.FirstOrDefault(r => r.RouteId == routeId.Value);
+            }
+
+            return routes.Count > 0 ? routes[0] : null;
+        }
+
+        private static string ResolveOutputPath(OperationalReportRequest request, OperationalReportKind kind, bool isCsv)
+        {
+            if (!string.IsNullOrWhiteSpace(request.OutputFilePath))
+            {
+                return request.OutputFilePath;
+            }
+
+            var dir = string.IsNullOrWhiteSpace(request.OutputDirectory)
+                ? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "BusBuddy", "Reports")
+                : request.OutputDirectory;
+            var ext = isCsv ? "csv" : "pdf";
+            return Path.Combine(dir, $"{kind}-{DateTime.Now:yyyyMMdd-HHmmss}.{ext}");
         }
 
         private byte[] BuildRouteSummaryPdf(

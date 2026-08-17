@@ -423,47 +423,5 @@ namespace BusBuddy.WPF.Views.Dashboard
             }
         }
 
-        // Data export methods
-        private void ExportFleetReport()
-        {
-            Logger.Debug("ExportFleetReport method started");
-            try
-            {
-                // TODO: Implement fleet report export
-                Logger.Information("Fleet report exported successfully");
-            }
-            catch (Exception ex)
-            {
-                Logger.Error(ex, "Error exporting fleet report");
-            }
-        }
-
-        private void ExportRouteReport()
-        {
-            Logger.Debug("ExportRouteReport method started");
-            try
-            {
-                // TODO: Implement route report export
-                Logger.Information("Route report exported successfully");
-            }
-            catch (Exception ex)
-            {
-                Logger.Error(ex, "Error exporting route report");
-            }
-        }
-
-        private void ExportStudentReport()
-        {
-            Logger.Debug("ExportStudentReport method started");
-            try
-            {
-                // TODO: Implement student report export
-                Logger.Information("Student report exported successfully");
-            }
-            catch (Exception ex)
-            {
-                Logger.Error(ex, "Error exporting student report");
-            }
-        }
     }
 }
