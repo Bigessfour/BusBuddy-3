@@ -126,7 +126,7 @@
 - [x] T035 Update `docs/action-items.md` 007 checkboxes from this feature
 - [x] T036 Run `python -m rag.index` after doc/constitution/spec edits
 - [x] T037 Run `.github/scripts/validate-ci-local.sh` (or Mac equivalent restore/build/test filter) before PR — passed 2026-08-17 (Docker Core + host compile; host tests skipped on Darwin)
-- [ ] T038 Open PR `feature/007-maps-platform-geo` → `master` (Build & Test + CodeQL). After merge, `/code-review` on the Maps HTTP clients and key handling
+- [x] T038 Open PR `feature/007-maps-platform-geo` → `master` (Build & Test + CodeQL) — https://github.com/Bigessfour/BusBuddy-3/pull/31. After merge, `/code-review` on the Maps HTTP clients and key handling
 
 ---
 
