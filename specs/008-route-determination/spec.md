@@ -53,7 +53,7 @@ As a clerk assigning a student to transportation, when the assignment would over
 
 1. **Given** a route at assigned-bus seating capacity, **When** the clerk assigns another student, **Then** a toast explains overload and the system suggests another route or a new route if past threshold.
 2. **Given** a route whose current riders already fill the time budget to school start, **When** assigning a farther student, **Then** a toast warns that optimal arrival goals would be missed and suggests alternatives.
-3. **Given** toast shown, **When** the clerk confirms an allowed override (where policy allows), **Then** assignment proceeds and is logged; when override is not allowed for hard seating, assignment does not proceed.
+3. **Given** toast shown for time/geo risk, **When** the clerk continues, **Then** assignment proceeds (warn-and-allow). **Given** hard seating capacity would be exceeded, **When** the clerk assigns without an explicit override, **Then** assignment does not proceed.
 
 ---
 
@@ -115,7 +115,7 @@ As a director, school-to-school transfer riders are planned with the same capaci
 - **FR-012**: System MUST remain usable for small districts and scale to more than 100 riders in a medium–large city service area.
 - **FR-013**: System MUST log generation and assign decisions with Serilog (counts, route ids, constraint violations—no secrets).
 - **FR-014**: Transfer fleet coupling is [NEEDS CLARIFICATION: separate fleet only vs shared buses with time gaps].
-- **FR-015**: Assign toast policy is [NEEDS CLARIFICATION: warn-and-allow vs block until alternate/override].
+- **FR-015**: On assign, the system MUST **block** when the assignment would exceed the assigned bus seating capacity (hard limit), unless an explicit override is recorded; for arrival-time / geographic fitness risks the system MUST **warn-and-allow** (toast + proceed) so clerks can continue with awareness.
 - **FR-016**: Quadrant construction is [NEEDS CLARIFICATION: fixed 4 from school centroid vs N from district bounding box/density].
 
 ### Key Entities

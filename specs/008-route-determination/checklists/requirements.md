@@ -13,7 +13,7 @@
 
 ## Requirement Completeness
 
-- [ ] No [NEEDS CLARIFICATION] markers remain — **3 remain (FR-014–016); awaiting user choices below**
+- [ ] No [NEEDS CLARIFICATION] markers remain — **2 remain (FR-014, FR-016); FR-015 resolved 2026-08-17 (Q2: B)**
 - [x] Requirements are testable and unambiguous (except marked clarifications)
 - [x] Success criteria are measurable
 - [x] Success criteria are technology-agnostic (no implementation details)
@@ -31,4 +31,4 @@
 
 ## Notes
 
-- Resolve FR-014 / FR-015 / FR-016 via user answers, then mark this checklist complete before `/speckit-plan`.
+- Resolve FR-014 / FR-016 via user answers (FR-015 = Q2:B block hard seating, warn-and-allow time/geo), then mark this checklist complete before `/speckit-plan`.
