@@ -191,6 +191,8 @@
     <SolidColorBrush x:Key="BusBuddy.Brush.Panel.Content" Color="#252526"/>
     <SolidColorBrush x:Key="BusBuddy.Brush.Panel.Header" Color="#2D2D30"/>
     <SolidColorBrush x:Key="BusBuddy.Brush.Panel.Border" Color="#404040"/>
+    <SolidColorBrush x:Key="BusBuddy.Brush.Header.Background" Color="#2D2D30"/>
+    <SolidColorBrush x:Key="BusBuddy.Brush.Text.OnPrimary" Color="#FFFFFF"/>
     <SolidColorBrush x:Key="FormLabelForegroundBrush" Color="#FFFFFF"/>
     <SolidColorBrush x:Key="FormInputForegroundBrush" Color="#FFFFFF"/>
     <SolidColorBrush x:Key="FormInputBackgroundBrush" Color="#2B2B2B"/>
