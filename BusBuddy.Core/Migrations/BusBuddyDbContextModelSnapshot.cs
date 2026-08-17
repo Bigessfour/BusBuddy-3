@@ -1744,6 +1744,10 @@ namespace BusBuddy.Core.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
+                    b.Property<string>("CellPhone")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
                     b.Property<string>("City")
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
@@ -1772,6 +1776,10 @@ namespace BusBuddy.Core.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
 
+                    b.Property<string>("EmergencyContactName")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
                     b.Property<string>("EmergencyPhone")
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
@@ -1792,6 +1800,11 @@ namespace BusBuddy.Core.Migrations
                     b.Property<string>("Grade")
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
+
+                    b.Property<bool>("HasMedicalNeeds")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
 
                     b.Property<string>("HomeAddress")
                         .HasMaxLength(200)
@@ -1818,6 +1831,10 @@ namespace BusBuddy.Core.Migrations
                     b.Property<string>("PMRoute")
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("ParentEmail")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<string>("ParentGuardian")
                         .HasMaxLength(100)

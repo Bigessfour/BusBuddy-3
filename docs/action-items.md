@@ -16,12 +16,26 @@
 ### P0 — Platform / tooling
 
 - [x] Spec-Kit brownfield bootstrap (001–005) — merged [PR #20](https://github.com/Bigessfour/BusBuddy-3/pull/20)
-- [x] **007 Maps Platform Geo (retire Earth Engine)** — US2+docs merged [PR #31](https://github.com/Bigessfour/BusBuddy-3/pull/31); US1+US3 on `feature/007-maps-us1-implement` · [spec](../specs/007-maps-platform-geo/spec.md) · [tasks](../specs/007-maps-platform-geo/tasks.md)
+- [x] **007 Maps Platform Geo (retire Earth Engine)** — US2+docs merged [PR #31](https://github.com/Bigessfour/BusBuddy-3/pull/31); US1+US3 [PR #35](https://github.com/Bigessfour/BusBuddy-3/pull/35) · [spec](../specs/007-maps-platform-geo/spec.md) · [tasks](../specs/007-maps-platform-geo/tasks.md)
   - [x] US2: Remove GEE DI, client, probe, unofficial Google tiles
   - [x] US1: Address Validation + geocode onto SfMap (Maps client + DI)
   - [x] US3: Routes API drive polyline (fail-open optimizer)
   - [x] US4: Places type-ahead — skipped (MVP cut)
-  - [x] Docs for US2; Maps clients wired on US1 implement branch
+  - [x] Docs for US2; Maps clients wired
+- [ ] **Student contact + school destinations** — parent/emergency fields, Destination School catalog, intake school dropdown, map schools, inter-district `StudentSchoolTransfer` (timed pickup/dropoff)
+  - [ ] Apply migration `20260817140000_StudentContactFieldsAlignment` — **Mac Postgres `dotnet ef database update` blocked** (InitialCreate seed uses SQL Server `bit` / unspecified timestamps). Apply on **Windows VM SQL Server**, or use EnsureCreated for local Postgres smoke only.
+  - [ ] VM: assign school on intake; Show Schools on map; create transfer home→campus
+  - [x] Transfer UI (Students → School Transfer) — pickup/dropoff location + times required; waypoints rebuild on assign/transfer
+  - [x] Mac smoke 2026-08-17: InMemory services OK (schools, training 17 rows, transfer validation, waypoints). Postgres Migrate blocked as above.
+- [ ] **Driver employment + CDE training sub-module** — contact/address/hire; [CDE 2024-25 License/Training Matrix](https://resources.finalsite.net/images/v1764086158/cdestatecous/mpcomjjt3zryb1vussig/2024-25-License-Training-Matrix.pdf) checklist via `DriverTrainingRecord` / `IDriverTrainingService`
+  - [ ] Apply migration `20260817150000_DriverTrainingSubmodule` — same Windows/SQL Server path as above
+  - [ ] VM: edit driver employment fields; open Training grid; mark complete + certificate
+  - [x] Dedicated training grid UI (Drivers → Training) — mark complete / certificate per row
+- [ ] **008 Route determination / fleet sizing** (Spec-Kit next) — minimize buses with geographic + time comfort; AM/PM mirror with AM-only / PM-only / both; recalc on assign; year-start auto-assign + map override; toast when assign breaks arrival/capacity; home→school and transfer planners separate; target >100 riders / medium–large city, still usable for small districts
+  - Design locked 2026-08-17 (user answers): soft capacity = assigned bus `SeatingCapacity` (hard); school map **start times** → work backward for pickups; simple **quadrants** + rural/outlier rules (large pickup gaps → other route); minimize buses without sacrificing ride time/mileage/comfort; keep occasional-rider stops on mirrored routes; suggest new route past thresholds
+  - [x] `/speckit-specify` + `/speckit-plan` — [spec](../specs/008-route-determination/spec.md) · [plan](../specs/008-route-determination/plan.md) (Q1:A / Q2:B / Q3:B locked)
+  - [x] `/speckit-tasks` — [tasks.md](../specs/008-route-determination/tasks.md) (41 tasks; MVP = US1 T001–T020)
+  - [ ] `/speckit-implement` (prefer after #36 merge) + school start/dismissal on Destination + VM migrate
 - [x] **006 Syncfusion Tool Integration** — [spec](../specs/006-syncfusion-tool-integration/spec.md) — merged [PR #21](https://github.com/Bigessfour/BusBuddy-3/pull/21)
   - [x] MCP paths, skills overlay, Syncfusion **34.2.3**, deps audit
   - [x] `python -m rag.index` after merge (2026-07-24; ~3399 chunks)
@@ -45,7 +59,7 @@
 
 ### P2 — Hygiene / quality
 
-- [x] Bootstrap function-inventory generated scan — `.function-inventory.json` (16 surfaces) → [function-inventory.generated.md](./function-inventory.generated.md) (2026-08-16: 11/16 with proof)
+- [x] Bootstrap function-inventory generated scan — `.function-inventory.json` (26 surfaces) → [function-inventory.generated.md](./function-inventory.generated.md) (2026-08-17: 16/26 with proof; added Destination/Transfer/Training)
 - [x] Resolve LFS/chroma noise — stop tracking `rag/chroma_db/` (~54MB sqlite blobs that triggered GH001); drop `*.pdf`/`*.sqlite` LFS attrs (PDF stays git binary). History purge of old blobs still needs force-push approval.
 - [x] AutoMapper 12.x advisory — upgraded to 15.1.1
 - [x] Restore [Documentation/GCP-GEE-SECRETS-AND-AUTH.md](../Documentation/GCP-GEE-SECRETS-AND-AUTH.md) (was missing; AGENTS link)
@@ -93,7 +107,9 @@ python3 ~/.cursor/skills/function-inventory/scripts/update-function-inventory.py
 | Surface                                                  | Tier | Proof / next check                                                                                                                                                                                                         |
 | -------------------------------------------------------- | ---- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Student / Seed / Route / Optimizer / Reports services    | P1   | Unit tests present (`StudentServiceTests`, `SeedDataServiceTests`, `RouteServiceTests`, `StudentRouteOptimizerTests`, `OperationalReportServiceTests`, `PdfReportServiceTests`)                                            |
-| `StudentsView` / `ReportsView`                           | P1   | No WPF testhost on Mac. Proof is VM smoke (`./run-wpf.sh`) + the Core tests above. Do not treat as a missing feature.                                                                                                      |
+| `DestinationService` / `StudentSchoolTransferService`    | P1   | Transfer + waypoints: `StudentSchoolTransferAndWaypointTests`. Destination unit tests still open. VM migrate + intake school assign still due (P0).                                                                        |
+| `DriverTrainingService`                                  | P1   | `DriverTrainingServiceTests` present. VM Training grid smoke still due (P0).                                                                                                                                               |
+| `StudentsView` / `ReportsView` / transfer & training UI  | P1   | No WPF testhost on Mac. Proof is VM smoke (`./run-wpf.sh`) + Core tests above. Do not treat as a missing feature.                                                                                                          |
 | `ScheduleService`                                        | P1   | **Runtime proof via Serilog:** `GetSchedulesAsync` logs count + elapsed. SfScheduler UI: `DriverScheduleViewModel` / `DriverAvailabilityService` log appointment and 14-day availability summaries. Unit tests still open. |
 | `DriverService`                                          | P1   | `DriverServiceTests` exist; `DriverScheduleView` + `DriverAvailabilityCalculator` (Schedule + ActivitySchedule). Availability calc logs `Drivers=` / `WithOpenDays=`                                                       |
 | `MaintenanceService` / Dashboard metrics / theme manager | P2   | `MaintenanceService` logs CRUD. Dashboard: `DashboardViewModel` logs refresh/optimize/report. Earth Engine retired (spec 007).                                                                                             |
@@ -109,4 +125,4 @@ python3 ~/.cursor/skills/function-inventory/scripts/update-function-inventory.py
 
 ---
 
-*Updated 2026-08-17: P1 stubs closed (availability, maintenance UI, activity persist/conflicts, map scope/dispose). Close issue #11 after merge.*
+*Updated 2026-08-17: function-inventory re-scan — 26 surfaces (added Destination/Transfer/Training); 16 with scanner proof.*

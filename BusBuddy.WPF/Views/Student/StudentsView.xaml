@@ -73,6 +73,13 @@
                             IsEnabled="{Binding HasSelectedStudent}"
                             AutomationProperties.Name="Delete Student"
                             AutomationProperties.HelpText="Removes the currently selected student from the system"/>
+            <syncfusion:ButtonAdv Name="SchoolTransferButton" Label="🔁 School Transfer"
+                            Command="{Binding SchoolTransferCommand}"
+                            IsEnabled="{Binding HasSelectedStudent}"
+                            Background="{DynamicResource BusBuddy.Brush.Semantic.Info}"
+                            Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"
+                            AutomationProperties.Name="School Transfer"
+                            AutomationProperties.HelpText="Assign school-to-school transfer with required pickup/dropoff locations and times"/>
                     <Separator Margin="10,0"/>
 
                     <!-- Bulk Operations -->

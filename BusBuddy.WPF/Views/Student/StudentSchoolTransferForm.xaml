@@ -1,0 +1,119 @@
+<syncfusion:ChromelessWindow x:Class="BusBuddy.WPF.Views.Student.StudentSchoolTransferForm"
+                             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                             xmlns:syncfusion="http://schemas.syncfusion.com/wpf"
+                             Title="{Binding Title}"
+                             Height="560"
+                             Width="640"
+                             WindowStartupLocation="CenterOwner"
+                             ResizeMode="CanResize">
+    <syncfusion:ChromelessWindow.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/SyncfusionV30_Validated_ResourceDictionary.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </syncfusion:ChromelessWindow.Resources>
+
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <Border Grid.Row="0"
+                Background="{DynamicResource BusBuddy.Brush.Primary}"
+                CornerRadius="5"
+                Padding="15"
+                Margin="0,0,0,15">
+            <TextBlock Text="{Binding Title}"
+                       FontSize="16"
+                       FontWeight="Bold"
+                       Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"
+                       TextWrapping="Wrap" />
+        </Border>
+
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+            <StackPanel>
+                <TextBlock Text="From school *" Margin="0,0,0,4" />
+                <syncfusion:ComboBoxAdv ItemsSource="{Binding Schools}"
+                                        SelectedItem="{Binding FromSchool, Mode=TwoWay}"
+                                        DisplayMemberPath="Name"
+                                        Height="32"
+                                        Margin="0,0,0,12"
+                                        AutomationProperties.Name="From school" />
+
+                <TextBlock Text="To school *" Margin="0,0,0,4" />
+                <syncfusion:ComboBoxAdv ItemsSource="{Binding Schools}"
+                                        SelectedItem="{Binding ToSchool, Mode=TwoWay}"
+                                        DisplayMemberPath="Name"
+                                        Height="32"
+                                        Margin="0,0,0,12"
+                                        AutomationProperties.Name="To school" />
+
+                <TextBlock Text="Pickup location *" Margin="0,0,0,4" />
+                <syncfusion:SfMaskedEdit Text="{Binding PickupAddress, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                         Height="32"
+                                         Margin="0,0,0,12"
+                                         AutomationProperties.Name="Pickup location"
+                                         AutomationProperties.HelpText="Required pickup address for the transfer" />
+
+                <TextBlock Text="Dropoff location *" Margin="0,0,0,4" />
+                <syncfusion:SfMaskedEdit Text="{Binding DropoffAddress, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                         Height="32"
+                                         Margin="0,0,0,12"
+                                         AutomationProperties.Name="Dropoff location"
+                                         AutomationProperties.HelpText="Required dropoff address for the transfer" />
+
+                <Grid Margin="0,0,0,12">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="12" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0">
+                        <TextBlock Text="Requested pickup time (HH:mm) *" Margin="0,0,0,4" />
+                        <syncfusion:SfMaskedEdit Text="{Binding PickupTimeText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                 Height="32"
+                                                 Mask="99:99"
+                                                 AutomationProperties.Name="Pickup time" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="2">
+                        <TextBlock Text="Requested dropoff time (HH:mm) *" Margin="0,0,0,4" />
+                        <syncfusion:SfMaskedEdit Text="{Binding DropoffTimeText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                 Height="32"
+                                                 Mask="99:99"
+                                                 AutomationProperties.Name="Dropoff time" />
+                    </StackPanel>
+                </Grid>
+
+                <TextBlock Text="Notes" Margin="0,0,0,4" />
+                <TextBox Text="{Binding Notes, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                         Height="72"
+                         TextWrapping="Wrap"
+                         AcceptsReturn="True"
+                         AutomationProperties.Name="Transfer notes" />
+            </StackPanel>
+        </ScrollViewer>
+
+        <TextBlock Grid.Row="2"
+                   Text="{Binding ValidationMessage}"
+                   Foreground="{DynamicResource BusBuddy.Brush.Semantic.Danger}"
+                   TextWrapping="Wrap"
+                   Margin="0,10,0,10" />
+
+        <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right">
+            <syncfusion:ButtonAdv Label="Cancel"
+                                  Command="{Binding CancelCommand}"
+                                  Margin="0,0,10,0"
+                                  AutomationProperties.Name="Cancel transfer" />
+            <syncfusion:ButtonAdv Label="Save Transfer"
+                                  Command="{Binding SaveCommand}"
+                                  Background="{DynamicResource BusBuddy.Brush.Primary}"
+                                  Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"
+                                  AutomationProperties.Name="Save transfer" />
+        </StackPanel>
+    </Grid>
+</syncfusion:ChromelessWindow>

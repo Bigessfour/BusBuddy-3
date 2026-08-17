@@ -75,6 +75,7 @@ namespace BusBuddy.WPF.ViewModels.Student
 
             AvailableRoutes = new ObservableCollection<string>();
             AvailableBusStops = new ObservableCollection<string>();
+            AvailableSchools = new ObservableCollection<Destination>();
 
             try { _student.PropertyChanged += OnStudentPropertyChanged; } catch { }
             InitializeCommands();
@@ -106,6 +107,7 @@ namespace BusBuddy.WPF.ViewModels.Student
 
             AvailableRoutes = new ObservableCollection<string>();
             AvailableBusStops = new ObservableCollection<string>();
+            AvailableSchools = new ObservableCollection<Destination>();
 
             try { _student.PropertyChanged += OnStudentPropertyChanged; } catch { }
             InitializeCommands();
@@ -182,6 +184,32 @@ namespace BusBuddy.WPF.ViewModels.Student
         /// Available bus stop names for assignment
         /// </summary>
         public ObservableCollection<string> AvailableBusStops { get; }
+
+        /// <summary>Active school Destinations for intake assignment (home-to-school routing).</summary>
+        public ObservableCollection<Destination> AvailableSchools { get; }
+
+        private Destination? _selectedSchoolDestination;
+
+        /// <summary>Selected campus; syncs Student.School and Student.DestinationId.</summary>
+        public Destination? SelectedSchoolDestination
+        {
+            get => _selectedSchoolDestination;
+            set
+            {
+                if (!SetProperty(ref _selectedSchoolDestination, value))
+                {
+                    return;
+                }
+
+                if (value is null)
+                {
+                    return;
+                }
+
+                Student.School = value.Name;
+                Student.DestinationId = value.DestinationId;
+            }
+        }
 
         /// <summary>
         /// Whether form is in edit mode (vs add mode)
@@ -1029,12 +1057,54 @@ namespace BusBuddy.WPF.ViewModels.Student
                     AvailableBusStops.Add(stop);
                 }
 
-                Logger.Information("Loaded {RouteCount} routes and {StopCount} bus stops",
-                    AvailableRoutes.Count, AvailableBusStops.Count);
+                await LoadSchoolsAsync();
+
+                Logger.Information("Form data loaded: {RouteCount} routes, {BusStopCount} bus stops, {SchoolCount} schools",
+                    AvailableRoutes.Count, AvailableBusStops.Count, AvailableSchools.Count);
             }
             catch (Exception ex)
             {
                 Logger.Error(ex, "Error loading form data");
+            }
+        }
+
+        private async Task LoadSchoolsAsync()
+        {
+            AvailableSchools.Clear();
+            try
+            {
+                var destService = App.ServiceProvider?.GetService<IDestinationService>();
+                IReadOnlyList<Destination> schools;
+                if (destService is not null)
+                {
+                    schools = await destService.GetActiveSchoolsAsync();
+                }
+                else
+                {
+                    schools = await _context.Destinations
+                        .Where(d => d.IsActive && !d.IsDeleted && d.DestinationType == DestinationTypes.School)
+                        .OrderBy(d => d.Name)
+                        .ToListAsync();
+                }
+
+                foreach (var school in schools)
+                {
+                    AvailableSchools.Add(school);
+                }
+
+                if (Student.DestinationId.HasValue)
+                {
+                    SelectedSchoolDestination = AvailableSchools.FirstOrDefault(s => s.DestinationId == Student.DestinationId.Value);
+                }
+                else if (!string.IsNullOrWhiteSpace(Student.School))
+                {
+                    SelectedSchoolDestination = AvailableSchools.FirstOrDefault(s =>
+                        string.Equals(s.Name, Student.School, StringComparison.OrdinalIgnoreCase));
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Warning(ex, "Failed to load school destinations — intake school dropdown may be empty");
             }
         }
 

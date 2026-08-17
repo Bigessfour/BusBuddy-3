@@ -66,18 +66,49 @@ namespace BusBuddy.Core.Models
         public string? ContactPhone { get; set; }
 
         /// <summary>
-        /// Contact email address
+        /// Contact email address (administrative for schools)
         /// </summary>
         [StringLength(100)]
         [EmailAddress]
         public string? ContactEmail { get; set; }
 
         /// <summary>
+        /// Secondary administrative contact (e.g. transportation liaison)
+        /// </summary>
+        [StringLength(100)]
+        public string? AdminContactName { get; set; }
+
+        [StringLength(20)]
+        public string? AdminPhone { get; set; }
+
+        [StringLength(100)]
+        [EmailAddress]
+        public string? AdminEmail { get; set; }
+
+        /// <summary>District or LEA name (supports inter-district transfers).</summary>
+        [StringLength(150)]
+        public string? DistrictName { get; set; }
+
+        /// <summary>Lowest served grade label (e.g. Pre-K, K, 1).</summary>
+        [StringLength(20)]
+        public string? GradeMin { get; set; }
+
+        /// <summary>Highest served grade label (e.g. 5, 8, 12).</summary>
+        [StringLength(20)]
+        public string? GradeMax { get; set; }
+
+        /// <summary>Approximate minimum age served (years), optional.</summary>
+        public int? AgeMinYears { get; set; }
+
+        /// <summary>Approximate maximum age served (years), optional.</summary>
+        public int? AgeMaxYears { get; set; }
+
+        /// <summary>
         /// Type of destination for categorization
         /// </summary>
         [Required]
         [StringLength(50)]
-        public string DestinationType { get; set; } = "Field Trip";
+        public string DestinationType { get; set; } = DestinationTypes.FieldTrip;
 
         /// <summary>
         /// Maximum number of students the venue can accommodate
@@ -163,6 +194,7 @@ namespace BusBuddy.Core.Models
     /// </summary>
     public static class DestinationTypes
     {
+        public const string School = "School";
         public const string FieldTrip = "Field Trip";
         public const string SportsEvent = "Sports Event";
         public const string AcademicCompetition = "Academic Competition";
@@ -176,9 +208,12 @@ namespace BusBuddy.Core.Models
         public const string Other = "Other";
 
         public static readonly string[] AllTypes = {
-            FieldTrip, SportsEvent, AcademicCompetition, CommunityService,
+            School, FieldTrip, SportsEvent, AcademicCompetition, CommunityService,
             BandCompetition, DramaPerformance, CareerFair, CulturalExchange,
             VolunteerWork, GraduationCeremony, Other
         };
+
+        public static bool IsSchool(string? type) =>
+            string.Equals(type, School, StringComparison.OrdinalIgnoreCase);
     }
 }

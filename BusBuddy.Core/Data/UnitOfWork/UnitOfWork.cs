@@ -524,9 +524,9 @@ public class StudentRepository : Repository<Student>, IStudentRepository
     public async Task<Dictionary<string, int>> GetStudentCountByTransportationTypeAsync() => await Task.FromResult(new Dictionary<string, int>());
     // TODO: Age property not available on Student model - return all students for now
     public async Task<IEnumerable<Student>> GetStudentsByAgeRangeAsync(int minAge, int maxAge) => await GetAllAsync();
-    public async Task<IEnumerable<Student>> GetStudentsByParentEmailAsync(string email) => await FindAsync(s => s.ParentGuardian != null && s.ParentGuardian.Contains(email));
-    public async Task<IEnumerable<Student>> GetStudentsByParentPhoneAsync(string phone) => await FindAsync(s => s.HomePhone == phone || s.EmergencyPhone == phone || s.AlternativePhone == phone);
-    public async Task<IEnumerable<Student>> GetStudentsWithIncompleteContactInfoAsync() => await FindAsync(s => string.IsNullOrEmpty(s.ParentGuardian) || string.IsNullOrEmpty(s.HomePhone));
+    public async Task<IEnumerable<Student>> GetStudentsByParentEmailAsync(string email) => await FindAsync(s => s.ParentEmail != null && s.ParentEmail.Contains(email));
+    public async Task<IEnumerable<Student>> GetStudentsByParentPhoneAsync(string phone) => await FindAsync(s => s.HomePhone == phone || s.CellPhone == phone || s.EmergencyPhone == phone || s.AlternativePhone == phone);
+    public async Task<IEnumerable<Student>> GetStudentsWithIncompleteContactInfoAsync() => await FindAsync(s => string.IsNullOrEmpty(s.ParentGuardian) || (string.IsNullOrEmpty(s.HomePhone) && string.IsNullOrEmpty(s.CellPhone)));
     public async Task<IEnumerable<Student>> GetStudentsBySchoolAsync(string schoolName) => await FindAsync(s => s.School == schoolName);
     public async Task<IEnumerable<Student>> GetStudentsWithActivityPermissionsAsync() => await FindAsync(s => s.PhotoPermission || s.FieldTripPermission);
     public async Task<IEnumerable<Student>> GetStudentsWithoutActivityPermissionsAsync() => await FindAsync(s => !s.PhotoPermission && !s.FieldTripPermission);

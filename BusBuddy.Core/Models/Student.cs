@@ -29,6 +29,12 @@ public class Student : INotifyPropertyChanged
   // Optional for MVP: family association can be added later during edit
   public int? FamilyId { get; set; }
   public Family? Family { get; set; }
+
+  /// <summary>Assigned campus from Destinations (DestinationType = School).</summary>
+  public int? DestinationId { get; set; }
+
+  [ForeignKey(nameof(DestinationId))]
+  public Destination? Destination { get; set; }
   [StringLength(20, ErrorMessage = "Student number cannot exceed 20 characters")]
   [Display(Name = "Student Number")]
   public string? StudentNumber { get; set; }
@@ -72,13 +78,40 @@ public class Student : INotifyPropertyChanged
   [Display(Name = "Home Phone")]
   public string? HomePhone { get; set; }
 
+  [StringLength(20, ErrorMessage = "Cell phone cannot exceed 20 characters")]
+  [Phone]
+  [Display(Name = "Parent/Guardian Cell")]
+  public string? CellPhone { get; set; }
+
   [StringLength(100, ErrorMessage = "Parent/Guardian name cannot exceed 100 characters")]
   [Display(Name = "Parent/Guardian")]
   public string? ParentGuardian { get; set; }
 
+  [StringLength(100, ErrorMessage = "Parent email cannot exceed 100 characters")]
+  [EmailAddress]
+  [Display(Name = "Parent/Guardian Email")]
+  public string? ParentEmail { get; set; }
+
+  /// <summary>
+  /// Emergency contact person (often different from primary parent/guardian).
+  /// Kept separate from <see cref="ParentGuardian"/> per school emergency-card practice.
+  /// </summary>
+  [StringLength(100, ErrorMessage = "Emergency contact name cannot exceed 100 characters")]
+  [Display(Name = "Emergency Contact Name")]
+  public string? EmergencyContactName { get; set; }
+
   [StringLength(20, ErrorMessage = "Emergency phone cannot exceed 20 characters")]
-  [Display(Name = "Emergency Phone")]
+  [Display(Name = "Emergency Contact Phone")]
   public string? EmergencyPhone { get; set; }
+
+  /// <summary>Form alias for emergency phone (same column as <see cref="EmergencyPhone"/>).</summary>
+  [NotMapped]
+  [Display(Name = "Emergency Contact Phone")]
+  public string? EmergencyContactPhone
+  {
+    get => EmergencyPhone;
+    set => EmergencyPhone = value;
+  }
 
   [StringLength(100, ErrorMessage = "School name cannot exceed 100 characters")]
   [Display(Name = "School")]
@@ -97,6 +130,10 @@ public class Student : INotifyPropertyChanged
   public string? PMRoute { get; set; }
 
   public bool Active { get; set; } = true;
+
+  /// <summary>True when bus staff should review medical / allergy / medication fields.</summary>
+  [Display(Name = "Has Medical Needs")]
+  public bool HasMedicalNeeds { get; set; }
 
   public string SpecialNeeds { get; set; } = string.Empty;
 
@@ -140,6 +177,15 @@ public class Student : INotifyPropertyChanged
   [Display(Name = "Transportation Notes")]
   public string? TransportationNotes { get; set; }
 
+  /// <summary>UI alias used by StudentForm (maps to <see cref="TransportationNotes"/>).</summary>
+  [NotMapped]
+  [Display(Name = "Special Instructions")]
+  public string? SpecialInstructions
+  {
+    get => TransportationNotes;
+    set => TransportationNotes = value;
+  }
+
   [StringLength(100, ErrorMessage = "Alternative contact cannot exceed 100 characters")]
   [Display(Name = "Alternative Contact")]
   public string? AlternativeContact { get; set; }
@@ -170,6 +216,29 @@ public class Student : INotifyPropertyChanged
 
   [NotMapped]
   public string FullAddress => string.Join(", ", new[] { HomeAddress, City, State, Zip }.Where(s => !string.IsNullOrWhiteSpace(s))!);
+
+  /// <summary>Derived age for seating / car-seat rules — do not store separately (use <see cref="DateOfBirth"/>).</summary>
+  [NotMapped]
+  [Display(Name = "Age")]
+  public int? AgeYears
+  {
+    get
+    {
+      if (!DateOfBirth.HasValue)
+      {
+        return null;
+      }
+
+      var today = DateTime.Today;
+      var age = today.Year - DateOfBirth.Value.Year;
+      if (DateOfBirth.Value.Date > today.AddYears(-age))
+      {
+        age--;
+      }
+
+      return age < 0 ? null : age;
+    }
+  }
 
   // INotifyPropertyChanged implementation for Syncfusion data binding
   public event PropertyChangedEventHandler? PropertyChanged;

@@ -272,6 +272,34 @@ public class Driver : INotifyPropertyChanged
     [Display(Name = "Hire Date")]
     public DateTime? HireDate { get; set; }
 
+    /// <summary>School / LEA employer name (district-specific employment).</summary>
+    [StringLength(150)]
+    [Display(Name = "Employing School / District")]
+    public string? EmployingDistrict { get; set; }
+
+    [Display(Name = "Employment End Date")]
+    public DateTime? EmploymentEndDate { get; set; }
+
+    /// <summary><see cref="DriverDutyCategories"/> — Route or Activity.</summary>
+    [StringLength(20)]
+    [Display(Name = "Duty Category")]
+    public string? DutyCategory { get; set; }
+
+    /// <summary><see cref="DriverVehicleCategories"/> — CDE matrix vehicle column.</summary>
+    [StringLength(60)]
+    [Display(Name = "Vehicle Category")]
+    public string? VehicleCategory { get; set; }
+
+    /// <summary>CDL restriction codes (e.g. M air-brake restriction from CDE matrix).</summary>
+    [StringLength(50)]
+    [Display(Name = "CDL Restrictions")]
+    public string? CdlRestrictions { get; set; }
+
+    /// <summary>USDOT Physical or STU-17 per CDE matrix medical form row.</summary>
+    [StringLength(40)]
+    [Display(Name = "Medical Form Type")]
+    public string? MedicalFormType { get; set; }
+
     [Display(Name = "Created Date")]
     public DateTime CreatedDate { get; set; } // Remove dynamic default, handle in application logic
 
@@ -443,6 +471,7 @@ public class Driver : INotifyPropertyChanged
     public string? Phone => DriverPhone;
 
     // Navigation properties
+    public virtual ICollection<DriverTrainingRecord> TrainingRecords { get; set; } = new List<DriverTrainingRecord>();
     public virtual ICollection<Route> AMRoutes { get; set; } = new List<Route>();
     public virtual ICollection<Route> PMRoutes { get; set; } = new List<Route>();
     public virtual ICollection<Schedule> Schedules { get; set; } = new List<Schedule>();
