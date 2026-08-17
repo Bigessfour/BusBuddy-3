@@ -79,6 +79,7 @@ public class BusBuddyDbContext : DbContext
     public virtual DbSet<ActivitySchedule> ActivitySchedule { get; set; } = null!;
     public virtual DbSet<Destination> Destinations { get; set; } = null!;
     public virtual DbSet<StudentSchoolTransfer> StudentSchoolTransfers { get; set; } = null!;
+    public virtual DbSet<DriverTrainingRecord> DriverTrainingRecords { get; set; } = null!;
     public virtual DbSet<RouteAssignment> RouteAssignments { get; set; } = null!;
 
     public virtual DbSet<AIInsight> AIInsights { get; set; } = null!;
@@ -403,6 +404,32 @@ public class BusBuddyDbContext : DbContext
             entity.Property(e => e.HomeLatitude).HasColumnType("decimal(10,8)");
             entity.Property(e => e.HomeLongitude).HasColumnType("decimal(11,8)");
             entity.HasIndex(e => new { e.HomeLatitude, e.HomeLongitude }).HasDatabaseName("IX_Drivers_HomeLocation");
+
+            entity.Property(e => e.EmployingDistrict).HasMaxLength(150);
+            entity.Property(e => e.DutyCategory).HasMaxLength(20);
+            entity.Property(e => e.VehicleCategory).HasMaxLength(60);
+            entity.Property(e => e.CdlRestrictions).HasMaxLength(50);
+            entity.Property(e => e.MedicalFormType).HasMaxLength(40);
+
+            entity.HasMany(e => e.TrainingRecords)
+                .WithOne(t => t.Driver)
+                .HasForeignKey(t => t.DriverId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<DriverTrainingRecord>(entity =>
+        {
+            entity.ToTable("DriverTrainingRecords");
+            entity.HasKey(e => e.TrainingRecordId);
+            entity.Property(e => e.RequirementCode).IsRequired().HasMaxLength(80);
+            entity.Property(e => e.RequirementName).IsRequired().HasMaxLength(200);
+            entity.Property(e => e.CertificateOrReference).HasMaxLength(100);
+            entity.Property(e => e.ProviderOrInstructor).HasMaxLength(100);
+            entity.Property(e => e.Notes).HasMaxLength(1000);
+            entity.HasIndex(e => e.DriverId).HasDatabaseName("IX_DriverTrainingRecords_Driver");
+            entity.HasIndex(e => new { e.DriverId, e.RequirementCode })
+                .IsUnique()
+                .HasDatabaseName("IX_DriverTrainingRecords_Driver_Code");
         });
 
         // Configure Route entity with enhanced relationships and indexing

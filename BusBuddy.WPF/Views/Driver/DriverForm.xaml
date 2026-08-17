@@ -99,6 +99,8 @@
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
                     <StackPanel Grid.Row="0"
                                 Grid.Column="0">
@@ -147,6 +149,47 @@
                     <StackPanel Grid.Row="2"
                                 Grid.Column="0"
                                 Grid.ColumnSpan="3">
+                        <TextBlock Text="Address:"
+                                   Style="{StaticResource FieldLabelStyle}" />
+                        <syncfusion:SfMaskedEdit Text="{Binding Driver.Address, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                 Style="{StaticResource FieldInputStyle}"
+                                                 AutomationProperties.Name="Driver Address"
+                                                 AutomationProperties.HelpText="Enter street address" />
+                    </StackPanel>
+                    <StackPanel Grid.Row="3"
+                                Grid.Column="0">
+                        <TextBlock Text="City:"
+                                   Style="{StaticResource FieldLabelStyle}" />
+                        <syncfusion:SfMaskedEdit Text="{Binding Driver.City, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                 Style="{StaticResource FieldInputStyle}"
+                                                 AutomationProperties.Name="City"
+                                                 AutomationProperties.HelpText="Enter city" />
+                    </StackPanel>
+                    <StackPanel Grid.Row="3"
+                                Grid.Column="2">
+                        <TextBlock Text="State / ZIP:"
+                                   Style="{StaticResource FieldLabelStyle}" />
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="80" />
+                                <ColumnDefinition Width="10" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <syncfusion:SfMaskedEdit Grid.Column="0"
+                                                     Text="{Binding Driver.State, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                     Style="{StaticResource FieldInputStyle}"
+                                                     AutomationProperties.Name="State"
+                                                     AutomationProperties.HelpText="State abbreviation" />
+                            <syncfusion:SfMaskedEdit Grid.Column="2"
+                                                     Text="{Binding Driver.Zip, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                     Style="{StaticResource FieldInputStyle}"
+                                                     AutomationProperties.Name="ZIP"
+                                                     AutomationProperties.HelpText="ZIP code" />
+                        </Grid>
+                    </StackPanel>
+                    <StackPanel Grid.Row="4"
+                                Grid.Column="0"
+                                Grid.ColumnSpan="3">
                         <TextBlock Text="Status:"
                                    Style="{StaticResource FieldLabelStyle}" />
                         <syncfusion:ComboBoxAdv Height="32"
@@ -163,8 +206,111 @@
                     </StackPanel>
                 </Grid>
             </GroupBox>
-            <!-- License Information Section -->
+            <!-- School employment / CDE matrix category -->
             <GroupBox Grid.Row="2"
+                      Header="School Employment"
+                      Margin="0,0,0,15"
+                      Padding="15">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="10" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <StackPanel Grid.Row="0"
+                                Grid.Column="0">
+                        <TextBlock Text="Employing School / District:"
+                                   Style="{StaticResource FieldLabelStyle}" />
+                        <syncfusion:SfMaskedEdit Text="{Binding Driver.EmployingDistrict, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                 Style="{StaticResource FieldInputStyle}"
+                                                 AutomationProperties.Name="Employing District"
+                                                 AutomationProperties.HelpText="School or district employer" />
+                    </StackPanel>
+                    <StackPanel Grid.Row="0"
+                                Grid.Column="2">
+                        <TextBlock Text="Hire Date:"
+                                   Style="{StaticResource FieldLabelStyle}" />
+                        <syncfusion:SfDatePicker Value="{Binding Driver.HireDate, Mode=TwoWay}"
+                                                 Height="32"
+                                                 Margin="0,0,0,10"
+                                                 AutomationProperties.Name="Hire Date"
+                                                 AutomationProperties.HelpText="Employment start date" />
+                    </StackPanel>
+                    <StackPanel Grid.Row="1"
+                                Grid.Column="0">
+                        <TextBlock Text="Employment End Date:"
+                                   Style="{StaticResource FieldLabelStyle}" />
+                        <syncfusion:SfDatePicker Value="{Binding Driver.EmploymentEndDate, Mode=TwoWay}"
+                                                 Height="32"
+                                                 Margin="0,0,0,10"
+                                                 AutomationProperties.Name="Employment End Date"
+                                                 AutomationProperties.HelpText="Leave blank if currently employed" />
+                    </StackPanel>
+                    <StackPanel Grid.Row="1"
+                                Grid.Column="2">
+                        <TextBlock Text="Duty Category:"
+                                   Style="{StaticResource FieldLabelStyle}" />
+                        <syncfusion:ComboBoxAdv Height="32"
+                                                SelectedItem="{Binding Driver.DutyCategory, Mode=TwoWay}"
+                                                Margin="0,0,0,10"
+                                                AutomationProperties.Name="Duty Category"
+                                                AutomationProperties.HelpText="Route or Activity per CDE matrix">
+                            <ComboBoxItem Content="Route" />
+                            <ComboBoxItem Content="Activity" />
+                        </syncfusion:ComboBoxAdv>
+                    </StackPanel>
+                    <StackPanel Grid.Row="2"
+                                Grid.Column="0"
+                                Grid.ColumnSpan="3">
+                        <TextBlock Text="Vehicle Category (CDE matrix):"
+                                   Style="{StaticResource FieldLabelStyle}" />
+                        <syncfusion:ComboBoxAdv Height="32"
+                                                SelectedItem="{Binding Driver.VehicleCategory, Mode=TwoWay}"
+                                                Margin="0,0,0,10"
+                                                AutomationProperties.Name="Vehicle Category"
+                                                AutomationProperties.HelpText="CDE 2024-25 license/training matrix column">
+                            <ComboBoxItem Content="Route_16+_GVWR_GT_26001" />
+                            <ComboBoxItem Content="Route_16+_GVWR_LT_26001" />
+                            <ComboBoxItem Content="Route_TypeA_15_or_less" />
+                            <ComboBoxItem Content="Activity_MF_16+_GVWR_GT_26001" />
+                            <ComboBoxItem Content="Activity_MF_16+_GVWR_LT_26001" />
+                            <ComboBoxItem Content="Activity_TypeA_MF_15_or_less" />
+                            <ComboBoxItem Content="Activity_LT_12_passengers" />
+                            <ComboBoxItem Content="Activity_Motorcoach_16+_GVWR_GT_26001" />
+                        </syncfusion:ComboBoxAdv>
+                    </StackPanel>
+                    <StackPanel Grid.Row="3"
+                                Grid.Column="0">
+                        <TextBlock Text="CDL Restrictions (e.g. M):"
+                                   Style="{StaticResource FieldLabelStyle}" />
+                        <syncfusion:SfMaskedEdit Text="{Binding Driver.CdlRestrictions, Mode=TwoWay}"
+                                                 Style="{StaticResource FieldInputStyle}"
+                                                 AutomationProperties.Name="CDL Restrictions"
+                                                 AutomationProperties.HelpText="CDL restriction codes from CDE matrix" />
+                    </StackPanel>
+                    <StackPanel Grid.Row="3"
+                                Grid.Column="2">
+                        <TextBlock Text="Medical Form Type:"
+                                   Style="{StaticResource FieldLabelStyle}" />
+                        <syncfusion:ComboBoxAdv Height="32"
+                                                SelectedItem="{Binding Driver.MedicalFormType, Mode=TwoWay}"
+                                                Margin="0,0,0,10"
+                                                AutomationProperties.Name="Medical Form Type"
+                                                AutomationProperties.HelpText="USDOT Physical or STU-17">
+                            <ComboBoxItem Content="USDOT Physical" />
+                            <ComboBoxItem Content="STU-17" />
+                        </syncfusion:ComboBoxAdv>
+                    </StackPanel>
+                </Grid>
+            </GroupBox>
+            <!-- License Information Section -->
+            <GroupBox Grid.Row="3"
                       Header="License Information"
                       Margin="0,0,0,15"
                       Padding="15">
@@ -225,7 +371,7 @@
                 </Grid>
             </GroupBox>
             <!-- Training and Compliance Section -->
-            <GroupBox Grid.Row="3"
+            <GroupBox Grid.Row="4"
                       Header="Training and Compliance"
                       Margin="0,0,0,15"
                       Padding="15">
@@ -271,7 +417,7 @@
                 </Grid>
             </GroupBox>
             <!-- Emergency Contact Section -->
-            <GroupBox Grid.Row="4"
+            <GroupBox Grid.Row="5"
                       Header="Emergency Contact"
                       Margin="0,0,0,15"
                       Padding="15">
@@ -301,7 +447,7 @@
                 </Grid>
             </GroupBox>
             <!-- Error/Status Display -->
-            <Border Grid.Row="11"
+            <Border Grid.Row="6"
                     Background="{StaticResource BusBuddy.Warning.Background}"
                     BorderBrush="{StaticResource BusBuddy.Warning.Border}"
                     BorderThickness="1"
@@ -314,7 +460,7 @@
                            TextWrapping="Wrap" />
             </Border>
             <!-- Action Buttons -->
-            <StackPanel Grid.Row="12"
+            <StackPanel Grid.Row="7"
                         Orientation="Horizontal"
                         HorizontalAlignment="Right"
                         Margin="0,20,0,0">

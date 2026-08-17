@@ -28,6 +28,7 @@ namespace BusBuddy.WPF.ViewModels.Driver
         private readonly IBusBuddyDbContextFactory _contextFactory;
         private readonly IDriverService? _driverService;
         private readonly IOperationalReportService? _reportService;
+        private readonly IDriverTrainingService? _trainingService;
 
     private Core.Models.Driver? _selectedDriver;
         private string _searchText = string.Empty;
@@ -187,7 +188,8 @@ namespace BusBuddy.WPF.ViewModels.Driver
             : this(
                 App.ServiceProvider?.GetService<IBusBuddyDbContextFactory>() ?? new BusBuddyDbContextFactory(),
                 App.ServiceProvider?.GetService<IDriverService>(),
-                App.ServiceProvider?.GetService<IOperationalReportService>())
+                App.ServiceProvider?.GetService<IOperationalReportService>(),
+                App.ServiceProvider?.GetService<IDriverTrainingService>())
         {
         }
 
@@ -197,11 +199,13 @@ namespace BusBuddy.WPF.ViewModels.Driver
         public DriversViewModel(
             IBusBuddyDbContextFactory contextFactory,
             IDriverService? driverService = null,
-            IOperationalReportService? reportService = null)
+            IOperationalReportService? reportService = null,
+            IDriverTrainingService? trainingService = null)
         {
             _contextFactory = contextFactory ?? throw new ArgumentNullException(nameof(contextFactory));
             _driverService = driverService;
             _reportService = reportService;
+            _trainingService = trainingService;
 
             LoadDriversCommand = new AsyncRelayCommand(LoadDriversAsync);
             AddDriverCommand = new RelayCommand(ExecuteAddDriver);
@@ -215,7 +219,7 @@ namespace BusBuddy.WPF.ViewModels.Driver
             AssignRouteCommand = new AsyncRelayCommand(ExecuteAssignRouteAsync, () => HasSelectedDriver);
             EditDetailsCommand = new RelayCommand(ExecuteEditDetails, () => HasSelectedDriver);
             ViewLicenseCommand = new RelayCommand(ExecuteViewLicense, () => HasSelectedDriver);
-            TrainingHistoryCommand = new RelayCommand(ExecuteTrainingHistory, () => HasSelectedDriver);
+            TrainingHistoryCommand = new AsyncRelayCommand(ExecuteTrainingHistoryAsync, () => HasSelectedDriver);
 
             _ = LoadDriversAsync();
         }
@@ -472,7 +476,7 @@ namespace BusBuddy.WPF.ViewModels.Driver
                 $"status {d.LicenseStatus ?? "?"} expires {expiry} ({days} days)";
         }
 
-        private void ExecuteTrainingHistory()
+        private async Task ExecuteTrainingHistoryAsync()
         {
             if (SelectedDriver is null)
             {
@@ -480,17 +484,48 @@ namespace BusBuddy.WPF.ViewModels.Driver
             }
 
             var d = SelectedDriver;
-            var training = d.TrainingComplete ? "complete" : "incomplete";
-            var bg = d.BackgroundCheckDate?.ToString("yyyy-MM-dd") ?? "not set";
-            var hire = d.HireDate?.ToString("yyyy-MM-dd") ?? "not set";
+            try
+            {
+                if (_trainingService is null)
+                {
+                    var training = d.TrainingComplete ? "complete" : "incomplete";
+                    var hire = d.HireDate?.ToString("yyyy-MM-dd") ?? "not set";
+                    base.StatusMessage =
+                        $"{d.DriverName}: training {training}; hire {hire} (training service unavailable)";
+                    return;
+                }
 
-            Logger.Information(
-                "Training history DriverId={DriverId} TrainingComplete={TrainingComplete}",
-                d.DriverId,
-                d.TrainingComplete);
+                var records = await _trainingService.EnsureMatrixChecklistAsync(d.DriverId);
+                await _trainingService.RefreshTrainingCompleteFlagAsync(d.DriverId);
 
-            base.StatusMessage =
-                $"{d.DriverName}: training {training}; hire {hire}; background check {bg}";
+                var required = records.Where(r => r.IsRequired && r.IsApplicable).ToList();
+                var complete = required.Count(r => r.IsComplete && !r.IsExpired);
+                var missing = required.Count - complete;
+                var expiring = records.Count(r => r.IsExpiringSoon);
+
+                Logger.Information(
+                    "CDE training checklist DriverId={DriverId} Required={Required} Complete={Complete} Missing={Missing}",
+                    d.DriverId,
+                    required.Count,
+                    complete,
+                    missing);
+
+                base.StatusMessage =
+                    $"{d.DriverName}: CDE checklist {complete}/{required.Count} current" +
+                    (missing > 0 ? $", {missing} missing/expired" : string.Empty) +
+                    (expiring > 0 ? $", {expiring} expiring ≤30d" : string.Empty) +
+                    $"; hire {d.HireDate?.ToString("yyyy-MM-dd") ?? "not set"}" +
+                    (string.IsNullOrWhiteSpace(d.EmployingDistrict) ? string.Empty : $"; {d.EmployingDistrict}");
+
+                // Refresh list so TrainingComplete flag shows updates
+                await LoadDriversAsync();
+                SelectedDriver = Drivers.FirstOrDefault(x => x.DriverId == d.DriverId);
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Failed loading CDE training for driver {DriverId}", d.DriverId);
+                base.StatusMessage = $"Training checklist error: {ex.Message}";
+            }
         }
 
         private async Task GenerateDriverReportAsync(OperationalReportKind kind, string label)

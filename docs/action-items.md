@@ -25,6 +25,9 @@
 - [ ] **Student contact + school destinations** — parent/emergency fields, Destination School catalog, intake school dropdown, map schools, inter-district `StudentSchoolTransfer` (timed pickup/dropoff)
   - [ ] Apply migration `20260817140000_StudentContactFieldsAlignment`
   - [ ] VM: assign school on intake; Show Schools on map; create transfer home→campus
+- [ ] **Driver employment + CDE training sub-module** — contact/address/hire; [CDE 2024-25 License/Training Matrix](https://resources.finalsite.net/images/v1764086158/cdestatecous/mpcomjjt3zryb1vussig/2024-25-License-Training-Matrix.pdf) checklist via `DriverTrainingRecord` / `IDriverTrainingService`
+  - [ ] Apply migration `20260817150000_DriverTrainingSubmodule`
+  - [ ] VM: edit driver employment fields; Training History seeds checklist + status bar summary
 - [x] **006 Syncfusion Tool Integration** — [spec](../specs/006-syncfusion-tool-integration/spec.md) — merged [PR #21](https://github.com/Bigessfour/BusBuddy-3/pull/21)
   - [x] MCP paths, skills overlay, Syncfusion **34.2.3**, deps audit
   - [x] `python -m rag.index` after merge (2026-07-24; ~3399 chunks)
