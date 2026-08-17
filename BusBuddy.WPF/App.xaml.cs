@@ -509,6 +509,8 @@ namespace BusBuddy.WPF
                 services.AddScoped<IMaintenanceService, MaintenanceService>();
                 services.AddScoped<ISeedDataService, SeedDataService>();
                 services.AddScoped<IStudentRouteOptimizer, StudentRouteOptimizer>();
+                services.AddSingleton<PdfReportService>();
+                services.AddScoped<IOperationalReportService, OperationalReportService>();
 
                 // Register ViewModels for dependency injection (standardized on subfolder organization for dedup)
                 services.AddTransient<BusBuddy.WPF.ViewModels.MainWindowViewModel>();
@@ -517,6 +519,7 @@ namespace BusBuddy.WPF
                 services.AddTransient<BusBuddy.WPF.ViewModels.Settings.SettingsViewModel>();
                 services.AddTransient<BusBuddy.WPF.ViewModels.Analytics.AnalyticsDashboardViewModel>();
                 services.AddTransient<BusBuddy.WPF.ViewModels.Fuel.FuelManagementViewModel>();
+                services.AddTransient<BusBuddy.WPF.ViewModels.Reports.ReportsViewModel>();
                 services.AddTransient<BusBuddy.WPF.ViewModels.Student.StudentsViewModel>();
                 services.AddTransient<BusBuddy.WPF.ViewModels.Route.RouteManagementViewModel>();
                 services.AddTransient<BusBuddy.WPF.ViewModels.Driver.DriverFormViewModel>();

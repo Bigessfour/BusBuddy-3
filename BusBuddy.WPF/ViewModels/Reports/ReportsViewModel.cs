@@ -1,14 +1,12 @@
 using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.ComponentModel;
-using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using System.Windows.Input;
-using BusBuddy.Core.Models;
 using BusBuddy.Core.Services;
+using BusBuddy.WPF;
 using BusBuddy.WPF.ViewModels;
 using CommunityToolkit.Mvvm.Input;
+using Microsoft.Extensions.DependencyInjection;
 using Serilog;
 
 namespace BusBuddy.WPF.ViewModels.Reports
@@ -19,16 +17,36 @@ namespace BusBuddy.WPF.ViewModels.Reports
     /// </summary>
     public class ReportsViewModel : BaseViewModel
     {
-        private readonly PdfReportService _reportService;
+        private readonly IOperationalReportService _reportService;
         private bool _isGeneratingReport;
         private string _lastReportGenerated = "None";
+        private string _aiReportSummary = "Run a report to see local AI insights (Ollama, with mock fallback).";
 
         public ReportsViewModel()
+            : this(CreateDefaultReportService())
         {
-            _reportService = new PdfReportService();
+        }
 
+        public ReportsViewModel(IOperationalReportService reportService)
+        {
+            _reportService = reportService ?? throw new ArgumentNullException(nameof(reportService));
             InitializeCommands();
             StatusMessage = "Ready to generate reports";
+        }
+
+        private static IOperationalReportService CreateDefaultReportService()
+        {
+            var sp = App.ServiceProvider;
+            return sp?.GetService<IOperationalReportService>()
+                ?? new OperationalReportService(
+                    new PdfReportService(),
+                    sp?.GetService<IStudentService>() ?? new StudentService(new BusBuddy.Core.Data.BusBuddyDbContextFactory()),
+                    sp?.GetService<IRouteService>() ?? new RouteService(new BusBuddy.Core.Data.BusBuddyDbContextFactory()),
+                    sp?.GetService<IDriverService>(),
+                    sp?.GetService<BusBuddy.Core.Services.Interfaces.IBusService>(),
+                    sp?.GetService<IFuelService>(),
+                    sp?.GetService<IMaintenanceService>(),
+                    sp?.GetService<GrokGlobalAPI>());
         }
 
         #region Properties
@@ -57,9 +75,13 @@ namespace BusBuddy.WPF.ViewModels.Reports
         public ObservableCollection<ReportEntry> GeneratedReports { get; } = new ObservableCollection<ReportEntry>();
 
         /// <summary>
-        /// AI-powered summary from Grok (wired for Reports + AI finish item)
+        /// AI-powered summary from Ollama / GrokGlobalAPI (mock fallback when offline).
         /// </summary>
-        public string AIReportSummary { get; private set; } = "Run a report to see Grok AI insights (e.g. optimization suggestions).";
+        public string AIReportSummary
+        {
+            get => _aiReportSummary;
+            private set => SetProperty(ref _aiReportSummary, value);
+        }
 
         #endregion
 
@@ -140,274 +162,105 @@ namespace BusBuddy.WPF.ViewModels.Reports
 
         #region Student Report Commands
 
-        private async Task ExecuteGenerateStudentRosterAsync()
-        {
-            await ExecuteReportGeneration("Student Roster Report", async () =>
-            {
-                Logger.Information("Generating student roster report");
-                // Real call to PdfReportService (Finish Reports UI + AI); empty list avoids model prop variance, proves integration + PDF bytes returned
-                var pdfBytes = _reportService.GenerateActivityCalendarReport(new List<BusBuddy.Core.Models.Activity>(), DateTime.Today.AddDays(-1), DateTime.Today.AddDays(1));
-                return $"Student roster report generated (PDF {pdfBytes.Length} bytes via PdfReportService + Grok AI insight applied)";
-            });
-        }
+        private Task ExecuteGenerateStudentRosterAsync() =>
+            ExecuteKindAsync(OperationalReportKind.StudentRoster, "Student Roster Report");
 
-        private async Task ExecuteGenerateStudentRouteReportAsync()
-        {
-            await ExecuteReportGeneration("Student Route Assignment Report", async () =>
-            {
-                Logger.Information("Generating student route assignment report");
-                // TODO: Implement student route assignment report
-                await Task.Delay(1500);
-                return "Student route assignment report generated";
-            });
-        }
+        private Task ExecuteGenerateStudentRouteReportAsync() =>
+            ExecuteKindAsync(OperationalReportKind.StudentRouteAssignment, "Student Route Assignment Report");
 
-        private async Task ExecuteGenerateEnrollmentSummaryAsync()
-        {
-            await ExecuteReportGeneration("Enrollment Summary Report", async () =>
-            {
-                Logger.Information("Generating enrollment summary report");
-                // TODO: Implement enrollment summary report
-                await Task.Delay(1500);
-                return "Enrollment summary report generated";
-            });
-        }
+        private Task ExecuteGenerateEnrollmentSummaryAsync() =>
+            ExecuteKindAsync(OperationalReportKind.EnrollmentSummary, "Enrollment Summary Report");
 
-        private async Task ExecuteGenerateUnassignedStudentsAsync()
-        {
-            await ExecuteReportGeneration("Unassigned Students Report", async () =>
-            {
-                Logger.Information("Generating unassigned students report");
-                // TODO: Implement unassigned students report
-                await Task.Delay(1500);
-                return "Unassigned students report generated";
-            });
-        }
+        private Task ExecuteGenerateUnassignedStudentsAsync() =>
+            ExecuteKindAsync(OperationalReportKind.UnassignedStudents, "Unassigned Students Report");
 
         #endregion
 
         #region Route Report Commands
 
-        private async Task ExecuteGenerateRouteSummaryAsync()
-        {
-            await ExecuteReportGeneration("Route Summary Report", async () =>
-            {
-                Logger.Information("Generating route summary report");
-                // Real PDF via service (Finish #5); RouteSummary overload shape varies by model version - using activity calendar for demo
-                var pdf = _reportService.GenerateActivityCalendarReport(new List<BusBuddy.Core.Models.Activity>(), DateTime.Today.AddDays(-1), DateTime.Today);
-                return $"Route summary report generated (PDF {pdf.Length} bytes via PdfReportService + Grok AI: efficiency +8%)";
-            });
-        }
+        private Task ExecuteGenerateRouteSummaryAsync() =>
+            ExecuteKindAsync(OperationalReportKind.RouteSummary, "Route Summary Report");
 
-        private async Task ExecuteGenerateDailyScheduleAsync()
-        {
-            await ExecuteReportGeneration("Daily Schedule Report", async () =>
-            {
-                Logger.Information("Generating daily schedule report");
-                // TODO: Implement daily schedule report
-                await Task.Delay(1500);
-                return "Daily schedule report generated";
-            });
-        }
+        private Task ExecuteGenerateDailyScheduleAsync() =>
+            ExecuteKindAsync(OperationalReportKind.DailySchedule, "Daily Schedule Report");
 
-        private async Task ExecuteGenerateVehicleAssignmentAsync()
-        {
-            await ExecuteReportGeneration("Vehicle Assignment Report", async () =>
-            {
-                Logger.Information("Generating vehicle assignment report");
-                // TODO: Implement vehicle assignment report
-                await Task.Delay(1500);
-                return "Vehicle assignment report generated";
-            });
-        }
+        private Task ExecuteGenerateVehicleAssignmentAsync() =>
+            ExecuteKindAsync(OperationalReportKind.VehicleAssignment, "Vehicle Assignment Report");
 
-        private async Task ExecuteGenerateRouteEfficiencyAsync()
-        {
-            await ExecuteReportGeneration("Route Efficiency Report", async () =>
-            {
-                Logger.Information("Generating route efficiency report");
-                // TODO: Implement route efficiency analysis
-                await Task.Delay(2000);
-                return "Route efficiency report generated";
-            });
-        }
+        private Task ExecuteGenerateRouteEfficiencyAsync() =>
+            ExecuteKindAsync(OperationalReportKind.RouteEfficiency, "Route Efficiency Report");
 
         #endregion
 
         #region Driver Report Commands
 
-        private async Task ExecuteGenerateDriverRosterAsync()
-        {
-            await ExecuteReportGeneration("Driver Roster Report", async () =>
-            {
-                Logger.Information("Generating driver roster report");
-                // TODO: Implement driver roster report
-                await Task.Delay(1500);
-                return "Driver roster report generated";
-            });
-        }
+        private Task ExecuteGenerateDriverRosterAsync() =>
+            ExecuteKindAsync(OperationalReportKind.DriverRoster, "Driver Roster Report");
 
-        private async Task ExecuteGenerateLicenseExpirationAsync()
-        {
-            await ExecuteReportGeneration("License Expiration Report", async () =>
-            {
-                Logger.Information("Generating license expiration report");
-                // TODO: Implement license expiration tracking
-                await Task.Delay(1500);
-                return "License expiration report generated";
-            });
-        }
+        private Task ExecuteGenerateLicenseExpirationAsync() =>
+            ExecuteKindAsync(OperationalReportKind.LicenseExpiration, "License Expiration Report");
 
-        private async Task ExecuteGenerateTrainingStatusAsync()
-        {
-            await ExecuteReportGeneration("Training Status Report", async () =>
-            {
-                Logger.Information("Generating training status report");
-                // TODO: Implement training status tracking
-                await Task.Delay(1500);
-                return "Training status report generated";
-            });
-        }
+        private Task ExecuteGenerateTrainingStatusAsync() =>
+            ExecuteKindAsync(OperationalReportKind.TrainingStatus, "Training Status Report");
 
-        private async Task ExecuteGenerateComplianceReportAsync()
-        {
-            await ExecuteReportGeneration("Compliance Report", async () =>
-            {
-                Logger.Information("Generating compliance report");
-                // TODO: Implement compliance tracking
-                await Task.Delay(1500);
-                return "Compliance report generated";
-            });
-        }
+        private Task ExecuteGenerateComplianceReportAsync() =>
+            ExecuteKindAsync(OperationalReportKind.Compliance, "Compliance Report");
 
         #endregion
 
         #region Fleet Report Commands
 
-        private async Task ExecuteGenerateFleetInventoryAsync()
-        {
-            await ExecuteReportGeneration("Fleet Inventory Report", async () =>
-            {
-                Logger.Information("Generating fleet inventory report");
-                // TODO: Implement fleet inventory report
-                await Task.Delay(1500);
-                return "Fleet inventory report generated";
-            });
-        }
+        private Task ExecuteGenerateFleetInventoryAsync() =>
+            ExecuteKindAsync(OperationalReportKind.FleetInventory, "Fleet Inventory Report");
 
-        private async Task ExecuteGenerateMaintenanceScheduleAsync()
-        {
-            await ExecuteReportGeneration("Maintenance Schedule Report", async () =>
-            {
-                Logger.Information("Generating maintenance schedule report");
-                // TODO: Implement maintenance scheduling
-                await Task.Delay(1500);
-                return "Maintenance schedule report generated";
-            });
-        }
+        private Task ExecuteGenerateMaintenanceScheduleAsync() =>
+            ExecuteKindAsync(OperationalReportKind.MaintenanceSchedule, "Maintenance Schedule Report");
 
-        private async Task ExecuteGenerateFuelUsageAsync()
-        {
-            await ExecuteReportGeneration("Fuel Usage Report", async () =>
-            {
-                Logger.Information("Generating fuel usage report");
-                // TODO: Implement fuel usage tracking
-                await Task.Delay(1500);
-                return "Fuel usage report generated";
-            });
-        }
+        private Task ExecuteGenerateFuelUsageAsync() =>
+            ExecuteKindAsync(OperationalReportKind.FuelUsage, "Fuel Usage Report");
 
-        private async Task ExecuteGenerateFleetUtilizationAsync()
-        {
-            await ExecuteReportGeneration("Fleet Utilization Report", async () =>
-            {
-                Logger.Information("Generating fleet utilization report");
-                // TODO: Implement fleet utilization analysis
-                await Task.Delay(1500);
-                return "Fleet utilization report generated";
-            });
-        }
+        private Task ExecuteGenerateFleetUtilizationAsync() =>
+            ExecuteKindAsync(OperationalReportKind.FleetUtilization, "Fleet Utilization Report");
 
         #endregion
 
         #region Export and Print Commands
 
-        private async Task ExecuteExportAllDataToCsvAsync()
-        {
-            await ExecuteReportGeneration("CSV Export", async () =>
-            {
-                Logger.Information("Exporting all data to CSV");
-                // TODO: Implement CSV export functionality
-                await Task.Delay(1500);
-                return "Data exported to CSV successfully";
-            });
-        }
+        private Task ExecuteExportAllDataToCsvAsync() =>
+            ExecuteKindAsync(OperationalReportKind.CsvExport, "CSV Export");
 
-        private async Task ExecuteExportAllDataToPdfAsync()
-        {
-            await ExecuteReportGeneration("PDF Export", async () =>
-            {
-                Logger.Information("Exporting all data to PDF");
-                // TODO: Use PdfReportService for comprehensive PDF export
-                await Task.Delay(2000);
-                return "Data exported to PDF successfully";
-            });
-        }
+        private Task ExecuteExportAllDataToPdfAsync() =>
+            ExecuteKindAsync(OperationalReportKind.PdfExport, "PDF Export");
 
-        private async Task ExecuteExportAllDataToExcelAsync()
-        {
-            await ExecuteReportGeneration("Excel Export", async () =>
-            {
-                Logger.Information("Exporting all data to Excel");
-                // TODO: Implement Excel export functionality
-                await Task.Delay(2000);
-                return "Data exported to Excel successfully";
-            });
-        }
+        private Task ExecuteExportAllDataToExcelAsync() =>
+            ExecuteKindAsync(OperationalReportKind.ExcelExport, "Excel Export");
 
-        private async Task ExecutePrintStudentListsAsync()
-        {
-            await ExecuteReportGeneration("Print Student Lists", async () =>
-            {
-                Logger.Information("Printing student lists");
-                // TODO: Implement student list printing
-                await Task.Delay(1500);
-                return "Student lists sent to printer";
-            });
-        }
+        private Task ExecutePrintStudentListsAsync() =>
+            ExecuteKindAsync(OperationalReportKind.PrintStudentLists, "Print Student Lists");
 
-        private async Task ExecutePrintRouteMapsAsync()
-        {
-            await ExecuteReportGeneration("Print Route Maps", async () =>
-            {
-                Logger.Information("Printing route maps");
-                // TODO: Implement route map printing
-                await Task.Delay(2000);
-                return "Route maps sent to printer";
-            });
-        }
+        private Task ExecutePrintRouteMapsAsync() =>
+            ExecuteKindAsync(OperationalReportKind.PrintRouteMaps, "Print Route Maps");
 
-        private async Task ExecutePrintSchedulesAsync()
-        {
-            await ExecuteReportGeneration("Print Schedules", async () =>
-            {
-                Logger.Information("Printing schedules");
-                // TODO: Implement schedule printing
-                await Task.Delay(1500);
-                return "Schedules sent to printer";
-            });
-        }
+        private Task ExecutePrintSchedulesAsync() =>
+            ExecuteKindAsync(OperationalReportKind.PrintSchedules, "Print Schedules");
 
         #endregion
 
         #region Helper Methods
 
-    private async Task ExecuteReportGeneration(string reportName, Func<Task<string>> reportAction)
+        private Task ExecuteKindAsync(OperationalReportKind kind, string reportName) =>
+            ExecuteReportGeneration(reportName, async () =>
+            {
+                var generated = await _reportService.GenerateAsync(kind);
+                AIReportSummary = generated.AiSummary;
+                return generated.Status;
+            });
+
+        private async Task ExecuteReportGeneration(string reportName, Func<Task<string>> reportAction)
         {
             try
             {
-        Logger.Debug("CanExecute for {Report} assumed true at execution time (AsyncRelayCommand)", reportName);
-        Logger.Information("Starting execution of report command: {Report}", reportName);
+                Logger.Information("Starting execution of report command: {Report}", reportName);
                 IsGeneratingReport = true;
                 StatusMessage = $"Generating {reportName}...";
 
@@ -415,14 +268,16 @@ namespace BusBuddy.WPF.ViewModels.Reports
 
                 StatusMessage = result;
                 LastReportGenerated = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
-                Logger.Information("Report generation completed: {ReportName}", reportName);
-
-                // Populate SfDataGrid history (UI element for Finish reports)
-                GeneratedReports.Insert(0, new ReportEntry { Name = reportName, GeneratedAt = DateTime.Now.ToString("HH:mm:ss"), Result = result });
-                if (GeneratedReports.Count > 8) GeneratedReports.RemoveAt(GeneratedReports.Count - 1);
-
-                // AI insight (Grok tie-in per roadmap #5 Reports + AI)
-                AIReportSummary = result + " | Grok AI: Review high-mileage routes for optimization opportunities (+5-12% potential efficiency).";
+                GeneratedReports.Insert(0, new ReportEntry
+                {
+                    Name = reportName,
+                    GeneratedAt = DateTime.Now.ToString("HH:mm:ss"),
+                    Result = result
+                });
+                if (GeneratedReports.Count > 8)
+                {
+                    GeneratedReports.RemoveAt(GeneratedReports.Count - 1);
+                }
             }
             catch (Exception ex)
             {
@@ -432,7 +287,6 @@ namespace BusBuddy.WPF.ViewModels.Reports
             finally
             {
                 IsGeneratingReport = false;
-                Logger.Debug("Finished execution of report command: {Report}", reportName);
             }
         }
 

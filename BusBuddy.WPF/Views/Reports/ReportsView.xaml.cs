@@ -1,11 +1,13 @@
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
+using BusBuddy.WPF;
+using BusBuddy.WPF.Utilities;
+using BusBuddy.WPF.ViewModels.Reports;
+using Microsoft.Extensions.DependencyInjection;
 using Serilog;
 using Syncfusion.SfSkinManager;
 using Syncfusion.Windows.Tools.Controls;
-using BusBuddy.WPF.Utilities;
-using BusBuddy.WPF.ViewModels.Reports;
 
 namespace BusBuddy.WPF.Views.Reports
 {
@@ -26,7 +28,8 @@ namespace BusBuddy.WPF.Views.Reports
             {
                 if (this.DataContext is not ReportsViewModel)
                 {
-                    this.DataContext = new ReportsViewModel();
+                    this.DataContext = App.ServiceProvider?.GetService<ReportsViewModel>()
+                        ?? new ReportsViewModel();
                     Log.Information("{ViewName}: DataContext set to ReportsViewModel", nameof(ReportsView));
                 }
             }

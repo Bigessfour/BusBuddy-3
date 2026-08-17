@@ -21,19 +21,22 @@ namespace BusBuddy.WPF.ViewModels.Dashboard
         private readonly IFleetMonitoringService _fleetMonitoringService;
         private readonly IBusService _busService;
         private readonly IStudentRouteOptimizer? _routeOptimizer;
+        private readonly IOperationalReportService? _reportService;
 
         public DashboardViewModel(
             IRouteService routeService,
             IDashboardMetricsService metricsService,
             IFleetMonitoringService fleetMonitoringService,
             IBusService busService,
-            IStudentRouteOptimizer? routeOptimizer = null)
+            IStudentRouteOptimizer? routeOptimizer = null,
+            IOperationalReportService? reportService = null)
         {
             _routeService = routeService ?? throw new ArgumentNullException(nameof(routeService));
             _metricsService = metricsService ?? throw new ArgumentNullException(nameof(metricsService));
             _fleetMonitoringService = fleetMonitoringService ?? throw new ArgumentNullException(nameof(fleetMonitoringService));
             _busService = busService ?? throw new ArgumentNullException(nameof(busService));
             _routeOptimizer = routeOptimizer;
+            _reportService = reportService;
 
             RefreshCommand = new RelayCommand(async () => await RefreshDataAsync());
             OptimizeCommand = new RelayCommand(async () => await OptimizeRoutesAsync());
@@ -180,8 +183,14 @@ namespace BusBuddy.WPF.ViewModels.Dashboard
             {
                 IsLoading = true;
                 SystemStatus = "Generating report...";
-                await Task.Delay(1500);
-                SystemStatus = "Report generated successfully";
+                if (_reportService is null)
+                {
+                    SystemStatus = "Report service is not available";
+                    return;
+                }
+
+                var result = await _reportService.GenerateAsync(OperationalReportKind.RouteSummary);
+                SystemStatus = result.Status;
             }
             catch (Exception ex)
             {

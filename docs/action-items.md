@@ -27,7 +27,7 @@
 - [x] Student import / optimize end-to-end (UI + SeedDataService + tests)
   - [x] CSV import wired: `ISeedDataService.ImportStudentsFromCsvAsync` + Students/StudentForm Import CSV buttons (Wiley-format file picker). Proof: parent address columns, next `WSD` number, Wiley header rejection, form import refreshes list via `StudentsImportedMessage`
   - [x] Optimize routes: `IStudentRouteOptimizer` fills active routes via `IRouteService.AutoAssignStudentsAsync`, then Ollama/`GrokGlobalAPI` commentary (mock fallback). Wired on Students + Dashboard. Proof: `StudentRouteOptimizerTests`
-- [ ] Reports: PdfReportService + AI path fully wired in UI
+- [x] Reports: `IOperationalReportService` writes live PDFs/CSVs via `PdfReportService.GenerateTabularReport` + Ollama/`GrokGlobalAPI.GetShortCommentaryAsync` (mock fallback). All Reports buttons + Dashboard Generate Report. Proof: `OperationalReportServiceTests`, `PdfReportServiceTests.GenerateTabularReport_ReturnsValidPdf`
 - [ ] Driver availability + SfScheduler
 - [ ] Maintenance UI polish
 - [ ] Google Earth Engine enhancements (beyond current DI/auth)
@@ -77,4 +77,4 @@
 
 ---
 
-*Updated 2026-08-16: VM Syncfusion smoke passed; student CSV import + route optimize wired.*
+*Updated 2026-08-16: Reports UI writes live PDFs/CSVs with Ollama commentary.*
