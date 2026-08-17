@@ -15,12 +15,29 @@
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/SyncfusionV30_Validated_ResourceDictionary.xaml"/>
             </ResourceDictionary.MergedDictionaries>
-            <!-- Required converter for Visibility bindings -->
             <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
-            <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
-                <Setter Property="Margin" Value="5"/>
-                <Setter Property="Padding" Value="10,5"/>
-                <Setter Property="MinWidth" Value="80"/>
+            <!-- Text-only ButtonAdv: Fluent templates show a default glyph when SmallIcon is unset (the blue "A"). -->
+            <Style x:Key="StudentsToolbarButton"
+                   TargetType="syncfusion:ButtonAdv">
+                <Setter Property="SizeMode" Value="Normal"/>
+                <Setter Property="IconWidth" Value="0"/>
+                <Setter Property="IconHeight" Value="0"/>
+                <Setter Property="Padding" Value="12,8"/>
+                <Setter Property="Margin" Value="0,0,8,0"/>
+                <Setter Property="Background" Value="{DynamicResource ButtonBackgroundBrush}"/>
+                <Setter Property="Foreground" Value="{DynamicResource ButtonForegroundBrush}"/>
+            </Style>
+            <Style x:Key="StudentsPrimaryButton"
+                   TargetType="syncfusion:ButtonAdv"
+                   BasedOn="{StaticResource StudentsToolbarButton}">
+                <Setter Property="Background" Value="{DynamicResource BusBuddy.Brush.Primary}"/>
+                <Setter Property="Foreground" Value="{DynamicResource BusBuddy.Brush.Text.OnPrimary}"/>
+            </Style>
+            <Style x:Key="StudentsSuccessButton"
+                   TargetType="syncfusion:ButtonAdv"
+                   BasedOn="{StaticResource StudentsToolbarButton}">
+                <Setter Property="Background" Value="{DynamicResource BusBuddy.Brush.Semantic.Success}"/>
+                <Setter Property="Foreground" Value="{DynamicResource BusBuddy.Brush.Text.OnPrimary}"/>
             </Style>
         </ResourceDictionary>
     </syncfusion:ChromelessWindow.Resources>
@@ -33,19 +50,17 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-    <!-- Header -->
-    <Border Grid.Row="0" Background="{DynamicResource BusBuddy.Brush.Primary}"
+        <Border Grid.Row="0" Background="{DynamicResource BusBuddy.Brush.Primary}"
                 CornerRadius="5" Padding="15" Margin="0,0,0,10">
             <StackPanel Orientation="Horizontal">
                 <TextBlock Text="&#xE716;" FontFamily="Segoe MDL2 Assets"
-                          FontSize="24" Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                          FontSize="24" Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}" VerticalAlignment="Center" Margin="0,0,10,0"/>
                 <TextBlock Text="Student Management" FontSize="20" FontWeight="Bold"
-                          Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}" VerticalAlignment="Center"/>
+                          Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}" VerticalAlignment="Center"/>
             </StackPanel>
         </Border>
 
-    <!-- Enhanced Toolbar for Route Building -->
-    <Border Grid.Row="1" Background="{DynamicResource BusBuddy.Brush.Surface.Light}"
+        <Border Grid.Row="1" Background="{DynamicResource BusBuddy.Brush.Surface.Light}"
                 CornerRadius="3" Padding="10" Margin="0,0,0,10">
             <Grid>
                 <Grid.ColumnDefinitions>
@@ -53,89 +68,89 @@
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
-        <!-- Main Actions — all Buttons must bind to ViewModel commands (verified below) -->
-                <StackPanel Grid.Column="0" Orientation="Horizontal">
-        <!-- Add student — always enabled. Command: AddStudentCommand -->
-        <syncfusion:ButtonAdv Name="AddStudentButton" Label="➕ Add Student"
+                <WrapPanel Grid.Column="0" Orientation="Horizontal">
+                    <syncfusion:ButtonAdv Name="AddStudentButton" Label="Add Student"
                             Command="{Binding AddStudentCommand}"
-                Background="{DynamicResource BusBuddy.Brush.Primary}" Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"
+                            Style="{StaticResource StudentsPrimaryButton}"
                             AutomationProperties.Name="Add Student"
-                            AutomationProperties.HelpText="Opens form to add a new student to the system"/>
-            <!-- Edit selected student — enabled only when HasSelectedStudent is true. Command: EditStudentCommand -->
-            <syncfusion:ButtonAdv Name="EditStudentButton" Label="✏️ Edit Student"
+                            AutomationProperties.HelpText="Opens form to add a new student to the system"
+                            ToolTip="Add a new student"/>
+                    <syncfusion:ButtonAdv Name="EditStudentButton" Label="Edit Student"
                             Command="{Binding EditStudentCommand}"
                             IsEnabled="{Binding HasSelectedStudent}"
+                            Style="{StaticResource StudentsToolbarButton}"
                             AutomationProperties.Name="Edit Student"
-                            AutomationProperties.HelpText="Opens form to edit the currently selected student"/>
-            <!-- Delete selected student — enabled only when HasSelectedStudent is true. Command: DeleteStudentCommand -->
-            <syncfusion:ButtonAdv Name="DeleteStudentButton" Label="🗑️ Delete Student"
+                            AutomationProperties.HelpText="Opens form to edit the currently selected student"
+                            ToolTip="Edit selected student"/>
+                    <syncfusion:ButtonAdv Name="DeleteStudentButton" Label="Delete Student"
                             Command="{Binding DeleteStudentCommand}"
                             IsEnabled="{Binding HasSelectedStudent}"
+                            Style="{StaticResource StudentsToolbarButton}"
                             AutomationProperties.Name="Delete Student"
-                            AutomationProperties.HelpText="Removes the currently selected student from the system"/>
-            <syncfusion:ButtonAdv Name="SchoolTransferButton" Label="🔁 School Transfer"
+                            AutomationProperties.HelpText="Removes the currently selected student from the system"
+                            ToolTip="Delete selected student"/>
+                    <syncfusion:ButtonAdv Name="SchoolTransferButton" Label="School Transfer"
                             Command="{Binding SchoolTransferCommand}"
                             IsEnabled="{Binding HasSelectedStudent}"
-                            Background="{DynamicResource BusBuddy.Brush.Semantic.Info}"
-                            Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"
+                            Style="{StaticResource StudentsToolbarButton}"
                             AutomationProperties.Name="School Transfer"
-                            AutomationProperties.HelpText="Assign school-to-school transfer with required pickup/dropoff locations and times"/>
-                    <Separator Margin="10,0"/>
+                            AutomationProperties.HelpText="Assign school-to-school transfer with required pickup/dropoff locations and times"
+                            ToolTip="School transfer for selected student"/>
+                    <Separator Margin="4,0,10,0"/>
 
-                    <!-- Bulk Operations -->
-        <!-- Import students from Wiley-format CSV — Command: ImportStudentsCommand -->
-    <syncfusion:ButtonAdv Name="ImportStudentsButton" Label="📥 Import CSV"
+                    <syncfusion:ButtonAdv Name="ImportStudentsButton" Label="Import CSV"
                             Command="{Binding ImportStudentsCommand}"
-                Background="{DynamicResource BusBuddy.Brush.FleetGreen}" Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"
+                            Style="{StaticResource StudentsSuccessButton}"
                             AutomationProperties.Name="Import Students from CSV"
-                AutomationProperties.HelpText="Import student records from a CSV file"/>
-        <!-- Bulk assign route to selection — requires HasSelectedStudents. Command: BulkAssignRouteCommand -->
-        <syncfusion:ButtonAdv Name="BulkAssignRouteButton" Label="🚌 Bulk Assign Route"
+                            AutomationProperties.HelpText="Import student records from a CSV file"
+                            ToolTip="Import students from Wiley-format CSV"/>
+                    <syncfusion:ButtonAdv Name="BulkAssignRouteButton" Label="Bulk Assign Route"
                             Command="{Binding BulkAssignRouteCommand}"
                             IsEnabled="{Binding HasSelectedStudents}"
-                Background="{DynamicResource BusBuddy.Brush.SafetyOrange}" Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"
+                            Style="{StaticResource StudentsToolbarButton}"
                             AutomationProperties.Name="Bulk Assign Route"
-                            AutomationProperties.HelpText="Assign routes to multiple selected students at once"/>
-                    <Separator Margin="10,0"/>
+                            AutomationProperties.HelpText="Assign routes to multiple selected students at once"
+                            ToolTip="Bulk assign route"/>
+                    <Separator Margin="4,0,10,0"/>
 
-                    <!-- AI & Mapping -->
-        <!-- Start AI optimization (placeholder). Command: OptimizeRoutesCommand -->
-    <syncfusion:ButtonAdv Name="OptimizeRoutesButton" Label="🤖 AI Optimize Routes"
+                    <syncfusion:ButtonAdv Name="OptimizeRoutesButton" Label="AI Optimize"
                             Command="{Binding OptimizeRoutesCommand}"
-                Background="{DynamicResource BusBuddy.Brush.Semantic.Warning}" Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"
+                            Style="{StaticResource StudentsToolbarButton}"
                             AutomationProperties.Name="AI Optimize Routes"
-                AutomationProperties.HelpText="Run AI-assisted route optimization for selected students"/>
-        <!-- Plot all students on the map. Command: ViewMapCommand -->
-        <syncfusion:ButtonAdv Name="ViewMapButton" Label="🗺️ View Map"
+                            AutomationProperties.HelpText="Run AI-assisted route optimization for selected students"
+                            ToolTip="AI-assisted route optimization"/>
+                    <syncfusion:ButtonAdv Name="ViewMapButton" Label="View Map"
                             Command="{Binding ViewMapCommand}"
-                Background="{DynamicResource BusBuddy.Brush.Semantic.Info}" Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"
+                            Style="{StaticResource StudentsToolbarButton}"
                             AutomationProperties.Name="View Map"
-                            AutomationProperties.HelpText="Display student locations on interactive map"/>
-                </StackPanel>
+                            AutomationProperties.HelpText="Display student locations on interactive map"
+                            ToolTip="Plot students on map"/>
+                </WrapPanel>
 
-                <!-- Quick Actions — utility commands (Refresh/Export) and quick search -->
-                <StackPanel Grid.Column="1" Orientation="Horizontal">
-                    <syncfusion:ButtonAdv Name="RefreshButton" Label="🔄 Refresh"
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                    <syncfusion:ButtonAdv Name="RefreshButton" Label="Refresh"
                             Command="{Binding RefreshCommand}"
+                            Style="{StaticResource StudentsToolbarButton}"
                             AutomationProperties.Name="Refresh Student List"
-                            AutomationProperties.HelpText="Reload student data from the database"/>
-                    <syncfusion:ButtonAdv Name="ExportButton" Label="📤 Export"
+                            AutomationProperties.HelpText="Reload student data from the database"
+                            ToolTip="Refresh list"/>
+                    <syncfusion:ButtonAdv Name="ExportButton" Label="Export"
                             Command="{Binding ExportCommand}"
+                            Style="{StaticResource StudentsToolbarButton}"
                             AutomationProperties.Name="Export Students"
-                            AutomationProperties.HelpText="Export student data to CSV file"/>
+                            AutomationProperties.HelpText="Export student data to CSV file"
+                            ToolTip="Export students"/>
 
-                    <!-- Quick Filter using Syncfusion SfTextBoxExt per docs -->
-                    <syncfusion:SfTextBoxExt Name="QuickSearchBox" Width="150" Margin="10,0,0,0"
+                    <syncfusion:SfTextBoxExt Name="QuickSearchBox" Width="180" Margin="10,0,0,0"
                                               Text="{Binding QuickSearchText, UpdateSourceTrigger=PropertyChanged}"
-                                              Watermark="\ud83d\udd0d Quick search..."
+                                              Watermark="Quick search..."
                                               AutomationProperties.Name="Quick Search"
                                               AutomationProperties.HelpText="Type to search students by name, ID, or route"/>
                 </StackPanel>
             </Grid>
         </Border>
 
-    <!-- Student Data Grid — Enhanced for route building (Syncfusion SfDataGrid per official docs) -->
-    <syncfusion:SfDataGrid Grid.Row="2"
+        <syncfusion:SfDataGrid Grid.Row="2"
                                Name="StudentsDataGrid"
                    ItemsSource="{Binding StudentsView}"
                                SelectedItem="{Binding SelectedStudent, Mode=TwoWay}"
@@ -159,7 +174,6 @@
                                NavigationMode="Cell"
                                AllowResizingColumns="True">
 
-            <!-- Table Summary for Route Analytics -->
             <syncfusion:SfDataGrid.TableSummaryRows>
                 <syncfusion:GridTableSummaryRow ShowSummaryInRow="False">
                     <syncfusion:GridTableSummaryRow.SummaryColumns>
@@ -175,7 +189,6 @@
                 </syncfusion:GridTableSummaryRow>
             </syncfusion:SfDataGrid.TableSummaryRows>
 
-            <!-- Group Summary for Route Assignment Analysis -->
             <syncfusion:SfDataGrid.GroupSummaryRows>
                 <syncfusion:GridSummaryRow ShowSummaryInRow="True">
                     <syncfusion:GridSummaryRow.SummaryColumns>
@@ -196,7 +209,6 @@
                                          MappingName="StudentName"
                                          Width="180"
                                          AllowEditing="True"/>
-                <!-- Optional: Enrollment Date column using Pattern per Syncfusion docs -->
                 <syncfusion:GridDateTimeColumn HeaderText="Enrolled"
                                              MappingName="EnrollmentDate"
                                              Width="110"
@@ -219,7 +231,6 @@
                                          MappingName="City"
                                          Width="120"
                                          AllowEditing="True"/>
-                <!-- Phone number uses GridMaskColumn per Syncfusion documentation -->
                 <syncfusion:GridMaskColumn HeaderText="Phone"
                                            MappingName="HomePhone"
                                            Width="120"
@@ -245,21 +256,23 @@
                 <syncfusion:GridCheckBoxColumn HeaderText="Active"
                                              MappingName="Active"
                                              Width="80"/>
-                <syncfusion:GridTemplateColumn HeaderText="Actions" Width="100" AllowFiltering="False" AllowSorting="False">
+                <syncfusion:GridTemplateColumn HeaderText="Actions" Width="120" AllowFiltering="False" AllowSorting="False">
                     <syncfusion:GridTemplateColumn.CellTemplate>
                         <DataTemplate>
                                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                    <syncfusion:ButtonAdv Label="🗺️"
+                                    <syncfusion:ButtonAdv Label="Map"
                                                           ToolTip="View on Map"
                                                           Command="{Binding DataContext.ViewOnMapCommand, RelativeSource={RelativeSource AncestorType=syncfusion:ChromelessWindow}}"
                                                           CommandParameter="{Binding}"
-                                                          Width="28" Height="28" Margin="2"
+                                                          Style="{StaticResource StudentsToolbarButton}"
+                                                          Width="48" Height="28" Margin="2,0"
                                                           AutomationProperties.Name="View Student On Map"/>
-                                    <syncfusion:ButtonAdv Label="🎯"
+                                    <syncfusion:ButtonAdv Label="Suggest"
                                                           ToolTip="AI Route Suggest"
                                                           Command="{Binding DataContext.SuggestRouteCommand, RelativeSource={RelativeSource AncestorType=syncfusion:ChromelessWindow}}"
                                                           CommandParameter="{Binding}"
-                                                          Width="28" Height="28" Margin="2"
+                                                          Style="{StaticResource StudentsToolbarButton}"
+                                                          Width="64" Height="28" Margin="2,0"
                                                           AutomationProperties.Name="Suggest Route For Student"/>
                                 </StackPanel>
                         </DataTemplate>
@@ -268,8 +281,7 @@
             </syncfusion:SfDataGrid.Columns>
         </syncfusion:SfDataGrid>
 
-    <!-- Enhanced Status Bar with Route Analytics -->
-    <Border Grid.Row="3" Background="{DynamicResource BusBuddy.Brush.Surface.Light}"
+        <Border Grid.Row="3" Background="{DynamicResource BusBuddy.Brush.Surface.Light}"
                 CornerRadius="3" Padding="10" Margin="0,10,0,0">
             <Grid>
                 <Grid.ColumnDefinitions>
@@ -277,35 +289,39 @@
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
-                <!-- Statistics -->
-                <StackPanel Grid.Column="0" Orientation="Horizontal">
-                    <TextBlock Text="📊 Students: " FontWeight="SemiBold"/>
-                    <TextBlock Text="{Binding TotalStudents}" FontWeight="Bold" Margin="0,0,15,0"/>
-                    <TextBlock Text="✅ Active: " FontWeight="SemiBold"/>
-                    <TextBlock Text="{Binding ActiveStudents}" FontWeight="Bold" Margin="0,0,15,0"/>
-                    <TextBlock Text="🚌 With Routes: " FontWeight="SemiBold"/>
-                    <TextBlock Text="{Binding StudentsWithRoutes}" FontWeight="Bold" Margin="0,0,15,0"/>
-                    <TextBlock Text="⚠️ Unassigned: " FontWeight="SemiBold"/>
-                    <TextBlock Text="{Binding UnassignedStudents}" FontWeight="Bold" Margin="0,0,15,0"/>
-                    <TextBlock Text="🎯 Selected: " FontWeight="SemiBold"/>
-                    <TextBlock Text="{Binding SelectedStudent.StudentName, FallbackValue='None'}" FontWeight="Bold"/>
+                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="Students: " FontWeight="SemiBold" Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"/>
+                    <TextBlock Text="{Binding TotalStudents}" FontWeight="Bold" Margin="0,0,15,0" Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"/>
+                    <TextBlock Text="Active: " FontWeight="SemiBold" Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"/>
+                    <TextBlock Text="{Binding ActiveStudents}" FontWeight="Bold" Margin="0,0,15,0" Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"/>
+                    <TextBlock Text="With Routes: " FontWeight="SemiBold" Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"/>
+                    <TextBlock Text="{Binding StudentsWithRoutes}" FontWeight="Bold" Margin="0,0,15,0" Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"/>
+                    <TextBlock Text="Unassigned: " FontWeight="SemiBold" Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"/>
+                    <TextBlock Text="{Binding UnassignedStudents}" FontWeight="Bold" Margin="0,0,15,0" Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"/>
+                    <TextBlock Text="Selected: " FontWeight="SemiBold" Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"/>
+                    <TextBlock Text="{Binding SelectedStudent.StudentName, FallbackValue='None'}" FontWeight="Bold" Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"/>
                 </StackPanel>
 
-                <!-- Quick Actions & Filter Status -->
-        <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                    <TextBlock Text="| " Margin="0,0,6,0"/>
-                    <TextBlock Text="Status: " FontStyle="Italic"/>
-                    <TextBlock Text="{Binding StatusMessage}" Margin="4,0,10,0"/>
-                    <TextBlock Text="{Binding FilterStatusText}" FontStyle="Italic" Margin="0,0,10,0"/>
-            <syncfusion:ButtonAdv Label="💾 Save" Width="80" Height="30" Margin="0,0,6,0"
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="Status: " FontStyle="Italic" Foreground="{DynamicResource BusBuddy.Brush.Text.Secondary}"/>
+                    <TextBlock Text="{Binding StatusMessage}" Margin="4,0,10,0" Foreground="{DynamicResource BusBuddy.Brush.Text.Secondary}"/>
+                    <TextBlock Text="{Binding FilterStatusText}" FontStyle="Italic" Margin="0,0,10,0" Foreground="{DynamicResource BusBuddy.Brush.Text.Secondary}"/>
+                    <syncfusion:ButtonAdv Label="Save"
                             Command="{Binding SaveGridEditsCommand}"
-                            ToolTip="Save inline edits (including phone/route changes)"/>
-            <syncfusion:ButtonAdv Label="📋 Summary" Width="100" Height="30"
+                            Style="{StaticResource StudentsToolbarButton}"
+                            ToolTip="Save inline edits (including phone/route changes)"
+                            AutomationProperties.Name="Save Grid Edits"/>
+                    <syncfusion:ButtonAdv Label="Summary"
                             Command="{Binding ShowSummaryCommand}"
-                ToolTip="Show route assignment summary"/>
-            <syncfusion:ButtonAdv Label="⚡ Quick Actions" Width="130" Height="30" Margin="8,0,0,0"
+                            Style="{StaticResource StudentsToolbarButton}"
+                            ToolTip="Show route assignment summary"
+                            AutomationProperties.Name="Show Summary"/>
+                    <syncfusion:ButtonAdv Label="Quick Actions"
                             Command="{Binding ShowQuickActionsCommand}"
-                ToolTip="Open quick actions menu (assign route, filter active, clear filters)"/>
+                            Style="{StaticResource StudentsToolbarButton}"
+                            Margin="0"
+                            ToolTip="Open quick actions menu (assign route, filter active, clear filters)"
+                            AutomationProperties.Name="Quick Actions"/>
                 </StackPanel>
             </Grid>
         </Border>
