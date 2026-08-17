@@ -8,6 +8,9 @@ obj/
 .git/
 .gitignore
 *.md
+.env
+.env.*
+keys/
 Dockerfile
 docker-compose.yml
 .devcontainer/
