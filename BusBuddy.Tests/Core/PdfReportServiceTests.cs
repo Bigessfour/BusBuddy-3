@@ -77,6 +77,25 @@ namespace BusBuddy.Tests.Core
         }
 
         [Test]
+        public void GenerateTabularReport_FiftyRows_IsLargerThanTwoRows()
+        {
+            var two = _service.GenerateTabularReport(
+                "Roster",
+                new[] { "Name" },
+                new[] { (IReadOnlyList<string>)new[] { "Ada" }, new[] { "Ben" } });
+            var manyRows = new List<IReadOnlyList<string>>();
+            for (var i = 0; i < 50; i++)
+            {
+                manyRows.Add(new[] { $"Student {i:00} with a long home address that should still appear" });
+            }
+
+            var fifty = _service.GenerateTabularReport("Roster", new[] { "Name" }, manyRows);
+
+            Assert.That(fifty[0], Is.EqualTo((byte)'%'));
+            Assert.That(fifty.Length, Is.GreaterThan(two.Length));
+        }
+
+        [Test]
         public async Task GenerateRouteReport_WithGrokAI_MocksAndVerifies()
         {
             // Arrange - for Reports + AI/Grok (item 5), boosts coverage for finish/reports integration

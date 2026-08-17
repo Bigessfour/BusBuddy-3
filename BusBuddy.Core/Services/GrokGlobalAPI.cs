@@ -128,7 +128,7 @@ namespace BusBuddy.Core.Services
                     MaxTokens = 120
                 };
 
-                var response = await CallGrokAPI(CHAT_COMPLETIONS_ENDPOINT, request);
+                var response = await CallGrokAPI(CHAT_COMPLETIONS_ENDPOINT, request).ConfigureAwait(false);
                 if (IsFailedApiResponse(response))
                 {
                     return $"Mock insight for {topic}: {facts}";
