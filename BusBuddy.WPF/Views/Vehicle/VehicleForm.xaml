@@ -188,7 +188,7 @@
                                             <TextBlock Text="{Binding Status}"
                                                        FontSize="10"
                                                        FontWeight="SemiBold"
-                                                       Foreground="White"/>
+                                                       Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}"/>
                                         </Border>
                                     </DataTemplate>
                                 </syncfusion:GridTemplateColumn.CellTemplate>
@@ -200,7 +200,7 @@
                     <StackPanel Grid.Row="2"
                                 Orientation="Horizontal"
                                 Margin="0,15,0,0">
-            <syncfusion:ButtonAdv Label="➕ New Vehicle"
+            <syncfusion:ButtonAdv Label="New Vehicle"
                                 Command="{Binding NewVehicleCommand}"
                 Background="{DynamicResource BusBuddy.Brush.Primary}"
                 Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"
@@ -208,7 +208,7 @@
                                 Padding="15,8"
                                 Margin="0,0,10,0"
                                 Cursor="Hand"/>
-            <syncfusion:ButtonAdv Label="🔄 Refresh"
+            <syncfusion:ButtonAdv Label="Refresh"
                                 Command="{Binding RefreshCommand}"
                 Background="{DynamicResource ButtonBackgroundBrush}"
                 Foreground="{DynamicResource ButtonForegroundBrush}"
@@ -350,7 +350,7 @@
                         <StackPanel Orientation="Horizontal"
                                     HorizontalAlignment="Right"
                                     Margin="0,20,0,0">
-                <syncfusion:ButtonAdv Label="💾 Save"
+                <syncfusion:ButtonAdv Label="Save"
                                     Command="{Binding DataContext.SaveVehicleCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                     Style="{StaticResource InverseBooleanStyle}"
                     Background="{DynamicResource BusBuddy.Brush.FleetGreen}"
@@ -359,7 +359,7 @@
                                     Padding="15,8"
                                     Margin="0,0,10,0"
                                     Cursor="Hand"/>
-                <syncfusion:ButtonAdv Label="🗑️ Delete"
+                <syncfusion:ButtonAdv Label="Delete"
                                     Command="{Binding DataContext.DeleteVehicleCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                     Style="{StaticResource InverseBooleanStyle}"
                     Background="{DynamicResource BusBuddy.Brush.Semantic.Error}"
@@ -379,7 +379,7 @@
                                 <TextBlock Text="Fleet Utilization"
                                            FontSize="14"
                                            FontWeight="SemiBold"
-                                           Foreground="White"
+                                           Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"
                                            VerticalAlignment="Top"/>
 
                                 <!-- Phase 1: Simple utilization display -->

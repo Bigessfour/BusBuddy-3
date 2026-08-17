@@ -10,7 +10,7 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <TextBlock Grid.Row="0" Text="⚙️ Application Settings"
+        <TextBlock Grid.Row="0" Text="Application Settings"
                    FontSize="26" FontWeight="Bold"
                    Foreground="{DynamicResource PrimaryTextBrush}" Margin="0,0,0,16"/>
 
@@ -31,8 +31,8 @@
                                              Margin="0,0,0,20"/>
 
                 <StackPanel Orientation="Horizontal">
-                    <syncfusion:ButtonAdv Label="💾 Save" Command="{Binding SaveCommand}" Margin="0,0,10,0"/>
-                    <syncfusion:ButtonAdv Label="↩️ Reset Defaults" Command="{Binding ResetCommand}"/>
+                    <syncfusion:ButtonAdv Label="Save" Command="{Binding SaveCommand}" Margin="0,0,10,0"/>
+                    <syncfusion:ButtonAdv Label="Reset Defaults" Command="{Binding ResetCommand}"/>
                 </StackPanel>
             </StackPanel>
         </Border>

@@ -40,7 +40,7 @@
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
-                <TextBlock Grid.Row="0" Text="🚌 BusBuddy MVP - Transportation Management"
+                <TextBlock Grid.Row="0" Text="BusBuddy MVP - Transportation Management"
                            FontSize="28" FontWeight="Bold" Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"
                            HorizontalAlignment="Center"/>
                 <TextBlock Grid.Row="1" Text="Students | Routes | Buses | Drivers - Monday Ready Demo"
@@ -368,9 +368,9 @@
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
                 <TextBlock Grid.Column="0"
-                           Text="🎯 MVP Ready: Students ✅ | Routes ✅ | Buses ✅ | Drivers ✅ | Reports ✅ | PowerShell Demo: bb-route-demo"
+                           Text="MVP Ready: Students | Routes | Buses | Drivers | Reports | PowerShell Demo: bb-route-demo"
                            Foreground="{StaticResource StatusBarPrimaryTextBrush}" VerticalAlignment="Center" FontSize="14" TextTrimming="CharacterEllipsis"/>
-                <TextBlock Grid.Column="1" Text="✅ Monday Demo Ready"
+                <TextBlock Grid.Column="1" Text="Monday Demo Ready"
                            Foreground="{StaticResource StatusBarAccentTextBrush}" VerticalAlignment="Center" FontSize="14" FontWeight="SemiBold"/>
             </Grid>
         </Border>

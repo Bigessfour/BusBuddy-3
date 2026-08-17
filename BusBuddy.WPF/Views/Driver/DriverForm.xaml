@@ -448,15 +448,15 @@
             </GroupBox>
             <!-- Error/Status Display -->
             <Border Grid.Row="6"
-                    Background="{StaticResource BusBuddy.Warning.Background}"
-                    BorderBrush="{StaticResource BusBuddy.Warning.Border}"
+                    Background="{DynamicResource BusBuddy.Warning.Background}"
+                    BorderBrush="{DynamicResource BusBuddy.Warning.Border}"
                     BorderThickness="1"
                     CornerRadius="3"
                     Padding="10"
                     Margin="0,10,0,10"
                     Visibility="{Binding HasErrors, Converter={StaticResource BooleanToVisibilityConverter}}">
                 <TextBlock Text="{Binding ErrorMessage}"
-                           Foreground="{StaticResource BusBuddy.Warning.Text}"
+                           Foreground="{DynamicResource BusBuddy.Warning.Text}"
                            TextWrapping="Wrap" />
             </Border>
             <!-- Action Buttons -->
@@ -465,23 +465,23 @@
                         HorizontalAlignment="Right"
                         Margin="0,20,0,0">
                 <syncfusion:ButtonAdv x:Name="SaveButton"
-                                      Label="💾 Save"
+                                      Label="Save"
                                       Width="100"
                                       Height="36"
                                       Margin="0,0,10,0"
                                       Command="{Binding SaveDriverCommand}"
-                                      Background="{StaticResource BusBuddy.Brush.Semantic.Success}"
-                                      Foreground="White"
+                                      Background="{DynamicResource BusBuddy.Brush.Semantic.Success}"
+                                      Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}"
                                       ToolTip="Save driver"
                                       AutomationProperties.Name="Save Driver"
                                       AutomationProperties.HelpText="Save driver information to database" />
                 <syncfusion:ButtonAdv x:Name="CancelButton"
-                                      Label="❌ Cancel"
+                                      Label="Cancel"
                                       Width="100"
                                       Height="36"
                                       Command="{Binding CancelCommand}"
-                                      Background="{StaticResource BusBuddy.Text.Muted}"
-                                      Foreground="White"
+                                      Background="{DynamicResource ButtonBackgroundBrush}"
+                                      Foreground="{DynamicResource ButtonForegroundBrush}"
                                       ToolTip="Cancel and close"
                                       AutomationProperties.Name="Cancel"
                                       AutomationProperties.HelpText="Cancel and close form without saving" />

@@ -27,7 +27,7 @@
                 </Grid.ColumnDefinitions>
                 <TextBlock Text="Analytics Dashboard" FontSize="24" FontWeight="Bold"
                            Foreground="{DynamicResource PrimaryTextBrush}"/>
-                <syncfusion:ButtonAdv Grid.Column="1" Label="🔄 Refresh"
+                <syncfusion:ButtonAdv Grid.Column="1" Label="Refresh"
                                       Command="{Binding RefreshCommand}"/>
             </Grid>
         </Border>

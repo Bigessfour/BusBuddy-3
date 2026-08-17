@@ -274,7 +274,7 @@
                     <syncfusion:SfTextBoxExt x:Name="UnassignedSearchBox"
                                              Grid.Row="0"
                                              Margin="0,0,0,8"
-                                             Watermark="🔍 Search unassigned students..."
+                                             Watermark="Search unassigned students..."
                                              Text="{Binding StudentSearchText, UpdateSourceTrigger=PropertyChanged}"
                                              AutomationProperties.Name="Unassigned Student Search"
                                              ToolTip="Search unassigned students" />

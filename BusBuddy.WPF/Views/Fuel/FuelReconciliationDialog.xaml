@@ -91,32 +91,36 @@
                         </Grid.ColumnDefinitions>
 
                         <Border Grid.Column="0"
-                                Background="#E6F7FF"
-                                BorderBrush="#A6D8FF"
+                                Background="{DynamicResource BusBuddy.Brush.Panel.Header}"
+                                BorderBrush="{DynamicResource BusBuddy.Brush.Panel.Border}"
                                 BorderThickness="1"
                                 CornerRadius="5"
                                 Margin="0,0,5,0"
                                 Padding="10">
                             <StackPanel>
-                                <TextBlock Text="Bulk Station Meter" FontWeight="Bold"/>
+                                <TextBlock Text="Bulk Station Meter" FontWeight="Bold"
+                                           Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"/>
                                 <TextBlock Text="{Binding BulkStationGallons, StringFormat='{}{0:N2} gallons'}"
                                            FontSize="18"
-                                           Margin="0,5,0,0"/>
+                                           Margin="0,5,0,0"
+                                           Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"/>
                             </StackPanel>
                         </Border>
 
                         <Border Grid.Column="1"
-                                Background="#FFF9E6"
-                                BorderBrush="#FFE0A6"
+                                Background="{DynamicResource BusBuddy.Brush.Panel.Content}"
+                                BorderBrush="{DynamicResource BusBuddy.Brush.Panel.Border}"
                                 BorderThickness="1"
                                 CornerRadius="5"
                                 Margin="5,0"
                                 Padding="10">
                             <StackPanel>
-                                <TextBlock Text="Vehicle Usage" FontWeight="Bold"/>
+                                <TextBlock Text="Vehicle Usage" FontWeight="Bold"
+                                           Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"/>
                                 <TextBlock Text="{Binding VehicleUsageGallons, StringFormat='{}{0:N2} gallons'}"
                                            FontSize="18"
-                                           Margin="0,5,0,0"/>
+                                           Margin="0,5,0,0"
+                                           Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"/>
                             </StackPanel>
                         </Border>
 

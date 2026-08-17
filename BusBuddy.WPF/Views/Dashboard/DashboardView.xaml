@@ -28,7 +28,7 @@
                 </Grid.ColumnDefinitions>
 
                 <StackPanel Grid.Column="0">
-                    <TextBlock Text="🚌 BusBuddy Dashboard"
+                    <TextBlock Text="BusBuddy Dashboard"
                                FontSize="28" FontWeight="Bold"
                                Foreground="{DynamicResource PrimaryTextBrush}" Margin="0,0,0,5"/>
                     <TextBlock Text="Transportation Management Overview"
@@ -37,14 +37,14 @@
 
                 <StackPanel Grid.Column="1" Orientation="Horizontal">
                         <!-- Replace standard Buttons with Syncfusion ButtonAdv per project rules -->
-                        <syncfusion:ButtonAdv Label="🔄 Refresh"
+                        <syncfusion:ButtonAdv Label="Refresh"
                                               Command="{Binding RefreshCommand}"
                                               Margin="0,0,10,0" Padding="15,8"
                                               Background="{DynamicResource ButtonBackgroundBrush}" Foreground="{DynamicResource ButtonForegroundBrush}"
                                               BorderThickness="1"
                                               AutomationProperties.Name="Refresh Dashboard"
                                               AutomationProperties.HelpText="Reload dashboard metrics and lists"/>
-                        <syncfusion:ButtonAdv Label="📊 Report"
+                        <syncfusion:ButtonAdv Label="Report"
                                               Command="{Binding GenerateReportCommand}"
                                               Padding="15,8"
                                               Background="{DynamicResource ButtonBackgroundBrush}" Foreground="{DynamicResource ButtonForegroundBrush}"
@@ -170,7 +170,7 @@
                             <RowDefinition Height="*"/>
                         </Grid.RowDefinitions>
 
-                        <TextBlock Grid.Row="0" Text="📋 Recent Routes"
+                        <TextBlock Grid.Row="0" Text="Recent Routes"
                                    FontSize="18" FontWeight="SemiBold"
                                    Foreground="{DynamicResource PrimaryTextBrush}" Margin="0,0,0,15"/>
 
@@ -206,7 +206,7 @@
                             <RowDefinition Height="*"/>
                         </Grid.RowDefinitions>
 
-                        <TextBlock Grid.Row="0" Text="🚌 Fleet Status"
+                        <TextBlock Grid.Row="0" Text="Fleet Status"
                                    FontSize="18" FontWeight="SemiBold"
                                    Foreground="{DynamicResource PrimaryTextBrush}" Margin="0,0,0,15"/>
 
