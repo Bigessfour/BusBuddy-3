@@ -374,10 +374,9 @@ namespace BusBuddy.WPF
                 // Removed redundant explicit Wiley seeding. Seeding now handled via EF Core 9 UseSeeding/UseAsyncSeeding
 
                 // Handle command line arguments for PowerShell integration
-                if (e.Args.Length > 0 && HandleCommandLineArgs(e.Args))
+                if (e.Args.Length > 0 && TryHandleCommandLineArgs(e.Args) is int exitCode)
                 {
-                    // Command line operation completed, exit gracefully
-                    Environment.Exit(0);
+                    Environment.Exit(exitCode);
                     return;
                 }
 
@@ -740,7 +739,10 @@ namespace BusBuddy.WPF
         /// <summary>
         /// Handle command line arguments for PowerShell integration
         /// </summary>
-        private bool HandleCommandLineArgs(string[] args)
+        /// <summary>
+        /// Returns an exit code when a CLI command was handled; null means start the GUI.
+        /// </summary>
+        private int? TryHandleCommandLineArgs(string[] args)
         {
             try
             {
@@ -757,23 +759,23 @@ namespace BusBuddy.WPF
                         case "--help":
                         case "-h":
                             ShowCommandLineHelp();
-                            return true;
+                            return 0;
                     }
                 }
-                return false;
+                return null;
             }
             catch (Exception ex)
             {
                 Log.Error(ex, "Error handling command line arguments");
                 Console.WriteLine($"Error: {ex.Message}");
-                return true; // Exit to prevent GUI startup on error
+                return 1;
             }
         }
 
         /// <summary>
         /// Handle route optimization command line operation
         /// </summary>
-        private bool HandleRouteOptimization(string[] args, int startIndex)
+        private int HandleRouteOptimization(string[] args, int startIndex)
         {
             try
             {
@@ -814,7 +816,7 @@ namespace BusBuddy.WPF
                 if (string.IsNullOrEmpty(routeId))
                 {
                     Console.WriteLine("Error: --route-id is required for route optimization");
-                    return true;
+                    return 1;
                 }
 
                 Log.Information("Starting command line route optimization for route {RouteId}", routeId);
@@ -865,20 +867,20 @@ IMPLEMENTATION STEPS:
                 }
 
                 Console.WriteLine(json);
-                return true;
+                return 0;
             }
             catch (Exception ex)
             {
                 Log.Error(ex, "Error in route optimization");
                 Console.WriteLine($"Route optimization error: {ex.Message}");
-                return true;
+                return 1;
             }
         }
 
         /// <summary>
         /// Handle report generation command line operation
         /// </summary>
-        private bool HandleReportGeneration(string[] args, int startIndex)
+        private int HandleReportGeneration(string[] args, int startIndex)
         {
             try
             {
@@ -915,7 +917,7 @@ IMPLEMENTATION STEPS:
                 if (string.IsNullOrEmpty(reportType) || string.IsNullOrEmpty(outputPath))
                 {
                     Console.WriteLine("Error: --report-type and --output are required for report generation");
-                    return true;
+                    return 1;
                 }
 
                 Log.Information("Starting command line report generation: {ReportType} -> {OutputPath}", reportType, outputPath);
@@ -923,13 +925,13 @@ IMPLEMENTATION STEPS:
                 if (!OperationalReportKindParser.TryParse(reportType, out var kind))
                 {
                     Console.WriteLine($"Error: unknown --report-type '{reportType}'. Use an OperationalReportKind name or Roster, RouteManifest, StudentList, DriverSchedule.");
-                    return true;
+                    return 1;
                 }
 
                 if (ServiceProvider is null)
                 {
                     Console.WriteLine("Error: application services are not initialized");
-                    return true;
+                    return 1;
                 }
 
                 int? parsedRouteId = null;
@@ -938,7 +940,7 @@ IMPLEMENTATION STEPS:
                     if (!int.TryParse(routeId, out var id))
                     {
                         Console.WriteLine("Error: --route-id must be an integer RouteId");
-                        return true;
+                        return 1;
                     }
 
                     parsedRouteId = id;
@@ -946,13 +948,14 @@ IMPLEMENTATION STEPS:
 
                 using var scope = ServiceProvider.CreateScope();
                 var reports = scope.ServiceProvider.GetRequiredService<IOperationalReportService>();
-                var generated = reports.GenerateAsync(new OperationalReportRequest
+                var request = new OperationalReportRequest
                 {
                     Kind = kind,
                     OutputFilePath = outputPath,
                     AsCsv = OperationalReportKindParser.IsCsvFormat(format),
                     RouteId = parsedRouteId
-                }).GetAwaiter().GetResult();
+                };
+                var generated = Task.Run(() => reports.GenerateAsync(request)).GetAwaiter().GetResult();
 
                 Log.Information("Report generated successfully: {OutputPath}", generated.FilePath);
 
@@ -970,13 +973,13 @@ IMPLEMENTATION STEPS:
 
                 var json = System.Text.Json.JsonSerializer.Serialize(result, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
                 Console.WriteLine(json);
-                return true;
+                return 0;
             }
             catch (Exception ex)
             {
                 Log.Error(ex, "Error in report generation");
                 Console.WriteLine($"Report generation error: {ex.Message}");
-                return true;
+                return 1;
             }
         }
 
@@ -1003,7 +1006,7 @@ Report Generation:
     --report-type <type>         Roster, RouteManifest, StudentList, DriverSchedule, or any OperationalReportKind
     --output <path>              Output file path (required)
     --route-id <id>              RouteId for Route Summary (integer)
-    --format <format>            Output format: PDF, Excel, CSV (default: PDF)
+    --format <format>            PDF (default) or CSV/Excel (writes .csv; extension is corrected)
 
 General:
   --help, -h                     Show this help message

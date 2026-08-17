@@ -588,24 +588,68 @@ namespace BusBuddy.Core.Services
             rows ??= Array.Empty<IReadOnlyList<string>>();
 
             using var document = new PdfDocument();
-            var page = document.Pages.Add();
-            var g = page.Graphics;
             var titleFont = new PdfStandardFont(PdfFontFamily.Helvetica, 16, PdfFontStyle.Bold);
             var labelFont = new PdfStandardFont(PdfFontFamily.Helvetica, 9, PdfFontStyle.Bold);
             var bodyFont = new PdfStandardFont(PdfFontFamily.Helvetica, 9);
             var accent = new PdfSolidBrush(new PdfColor(11, 126, 200));
-            var pageWidth = page.GetClientSize().Width;
 
+            var page = document.Pages.Add();
+            var g = page.Graphics;
+            var pageWidth = page.GetClientSize().Width;
+            var pageHeight = page.GetClientSize().Height;
+            var colCount = Math.Max(1, headers.Count);
+            var colWidth = (pageWidth - 32f) / colCount;
+            var y = DrawTableChrome(g, title, notes, rows.Count, headers, titleFont, labelFont, bodyFont, accent, pageWidth, includeNotes: true);
+
+            foreach (var row in rows)
+            {
+                if (y > pageHeight - 36f)
+                {
+                    page = document.Pages.Add();
+                    g = page.Graphics;
+                    pageWidth = page.GetClientSize().Width;
+                    pageHeight = page.GetClientSize().Height;
+                    colWidth = (pageWidth - 32f) / colCount;
+                    y = DrawTableChrome(g, title, notes, rows.Count, headers, titleFont, labelFont, bodyFont, accent, pageWidth, includeNotes: false);
+                }
+
+                for (var i = 0; i < colCount && i < row.Count; i++)
+                {
+                    var cell = FitCell(bodyFont, row[i] ?? string.Empty, colWidth - 4f);
+                    g.DrawString(cell, bodyFont, PdfBrushes.Black, new PointF(16 + (i * colWidth), y));
+                }
+
+                y += 13f;
+            }
+
+            using var ms = new MemoryStream();
+            document.Save(ms);
+            return ms.ToArray();
+        }
+
+        private static float DrawTableChrome(
+            PdfGraphics g,
+            string title,
+            string? notes,
+            int rowCount,
+            IReadOnlyList<string> headers,
+            PdfFont titleFont,
+            PdfFont labelFont,
+            PdfFont bodyFont,
+            PdfBrush accent,
+            float pageWidth,
+            bool includeNotes)
+        {
             g.DrawRectangle(accent, new RectangleF(0, 0, pageWidth, 44));
             g.DrawString($"Bus Buddy — {title}", titleFont, PdfBrushes.White, new PointF(16, 12));
 
             float y = 56f;
-            g.DrawString($"Generated {DateTime.Now:yyyy-MM-dd HH:mm}    Rows: {rows.Count}", bodyFont, PdfBrushes.Black, new PointF(16, y));
+            g.DrawString($"Generated {DateTime.Now:yyyy-MM-dd HH:mm}    Rows: {rowCount}", bodyFont, PdfBrushes.Black, new PointF(16, y));
             y += 18f;
 
-            if (!string.IsNullOrWhiteSpace(notes))
+            if (includeNotes && !string.IsNullOrWhiteSpace(notes))
             {
-                g.DrawString(notes.Length > 220 ? notes[..217] + "..." : notes, bodyFont, PdfBrushes.Black, new PointF(16, y));
+                g.DrawString(FitCell(bodyFont, notes, pageWidth - 32f), bodyFont, PdfBrushes.Black, new PointF(16, y));
                 y += 16f;
             }
 
@@ -613,33 +657,43 @@ namespace BusBuddy.Core.Services
             var colWidth = (pageWidth - 32f) / colCount;
             for (var i = 0; i < headers.Count; i++)
             {
-                g.DrawString(headers[i], labelFont, PdfBrushes.Black, new PointF(16 + (i * colWidth), y));
+                g.DrawString(FitCell(labelFont, headers[i], colWidth - 4f), labelFont, PdfBrushes.Black, new PointF(16 + (i * colWidth), y));
             }
 
-            y += 14f;
-            foreach (var row in rows.Take(42))
+            return y + 14f;
+        }
+
+        private static string FitCell(PdfFont font, string text, float maxWidth)
+        {
+            if (string.IsNullOrEmpty(text) || font.MeasureString(text).Width <= maxWidth)
             {
-                for (var i = 0; i < colCount && i < row.Count; i++)
-                {
-                    var cell = row[i] ?? string.Empty;
-                    if (cell.Length > 28)
-                    {
-                        cell = cell[..25] + "...";
-                    }
+                return text;
+            }
 
-                    g.DrawString(cell, bodyFont, PdfBrushes.Black, new PointF(16 + (i * colWidth), y));
+            const string ellipsis = "...";
+            var ellipsisWidth = font.MeasureString(ellipsis).Width;
+            if (ellipsisWidth >= maxWidth)
+            {
+                return ellipsis;
+            }
+
+            var available = maxWidth - ellipsisWidth;
+            var lo = 0;
+            var hi = text.Length;
+            while (lo < hi)
+            {
+                var mid = (lo + hi + 1) / 2;
+                if (font.MeasureString(text[..mid]).Width <= available)
+                {
+                    lo = mid;
                 }
-
-                y += 13f;
-                if (y > page.GetClientSize().Height - 36f)
+                else
                 {
-                    break;
+                    hi = mid - 1;
                 }
             }
 
-            using var ms = new MemoryStream();
-            document.Save(ms);
-            return ms.ToArray();
+            return lo == 0 ? ellipsis : text[..lo] + ellipsis;
         }
 
         #endregion

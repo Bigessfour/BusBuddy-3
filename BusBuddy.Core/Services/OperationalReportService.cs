@@ -53,37 +53,46 @@ namespace BusBuddy.Core.Services
         {
             ArgumentNullException.ThrowIfNull(request);
             var kind = request.Kind;
-            var students = await _students.GetAllStudentsAsync() ?? new List<Student>();
-            var routesResult = await _routes.GetAllActiveRoutesAsync();
+            var students = await _students.GetAllStudentsAsync().ConfigureAwait(false) ?? new List<Student>();
+            var routesResult = await _routes.GetAllActiveRoutesAsync().ConfigureAwait(false);
             var routes = routesResult.IsSuccess && routesResult.Value is not null
                 ? routesResult.Value.ToList()
                 : new List<Route>();
-            var drivers = _drivers is null ? new List<Driver>() : await _drivers.GetAllDriversAsync() ?? new List<Driver>();
-            var buses = _buses is null
-                ? new List<Bus>()
-                : (await _buses.GetAllBusesAsync())?.ToList() ?? new List<Bus>();
-            var fuel = _fuel is null
-                ? new List<Fuel>()
-                : (await _fuel.GetAllFuelRecordsAsync())?.ToList() ?? new List<Fuel>();
-            var maintenance = _maintenance is null
-                ? new List<Maintenance>()
-                : (await _maintenance.GetAllMaintenanceRecordsAsync())?.ToList() ?? new List<Maintenance>();
-
-            var title = DisplayName(kind);
-            var (headers, rows, facts) = BuildTable(kind, students, routes, drivers, buses, fuel, maintenance);
-            var ai = await TryCommentaryAsync(title, facts);
-            var isCsv = request.AsCsv || kind is OperationalReportKind.CsvExport or OperationalReportKind.ExcelExport;
             var route = SelectRoute(routes, request.RouteId);
             if (request.RouteId.HasValue && route is null)
             {
                 throw new InvalidOperationException($"No active route with RouteId {request.RouteId.Value}.");
             }
 
+            var drivers = _drivers is null ? new List<Driver>() : await _drivers.GetAllDriversAsync().ConfigureAwait(false) ?? new List<Driver>();
+            var buses = _buses is null
+                ? new List<Bus>()
+                : (await _buses.GetAllBusesAsync().ConfigureAwait(false))?.ToList() ?? new List<Bus>();
+            var fuel = _fuel is null
+                ? new List<Fuel>()
+                : (await _fuel.GetAllFuelRecordsAsync().ConfigureAwait(false))?.ToList() ?? new List<Fuel>();
+            var maintenance = _maintenance is null
+                ? new List<Maintenance>()
+                : (await _maintenance.GetAllMaintenanceRecordsAsync().ConfigureAwait(false))?.ToList() ?? new List<Maintenance>();
+
+            var title = DisplayName(kind);
+            var (headers, rows, facts) = BuildTable(kind, students, routes, drivers, buses, fuel, maintenance);
+            var ai = await TryCommentaryAsync(title, facts).ConfigureAwait(false);
+            var isCsv = request.AsCsv || kind is OperationalReportKind.CsvExport or OperationalReportKind.ExcelExport;
+            var writeSingleRoutePdf = !isCsv
+                && kind == OperationalReportKind.RouteSummary
+                && request.RouteId.HasValue
+                && route is not null;
             var bytes = isCsv
                 ? Encoding.UTF8.GetBytes(ToCsv(headers, rows))
-                : kind == OperationalReportKind.RouteSummary && route is not null
-                    ? BuildRouteSummaryPdf(route, students, buses, drivers, ai.Text)
+                : writeSingleRoutePdf
+                    ? BuildRouteSummaryPdf(route!, students, buses, drivers, ai.Text)
                     : _pdf.GenerateTabularReport(title, headers, rows, ai.Text);
+            var reportedRows = writeSingleRoutePdf
+                ? students.Count(s =>
+                    string.Equals(s.AMRoute, route!.RouteName, StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(s.PMRoute, route.RouteName, StringComparison.OrdinalIgnoreCase))
+                : rows.Count;
 
             var path = ResolveOutputPath(request, kind, isCsv);
             var dir = Path.GetDirectoryName(path);
@@ -92,10 +101,11 @@ namespace BusBuddy.Core.Services
                 Directory.CreateDirectory(dir);
             }
 
-            await File.WriteAllBytesAsync(path, bytes);
+            await File.WriteAllBytesAsync(path, bytes).ConfigureAwait(false);
 
-            var prefix = kind.ToString().StartsWith("Print", StringComparison.Ordinal) ? "Saved for print" : "Wrote";
-            var status = $"{prefix} {title} ({rows.Count} row(s), {bytes.Length} bytes) → {path}";
+            var prefix = kind.ToString().StartsWith("Print", StringComparison.Ordinal) ? "Saved PDF for print" : "Wrote";
+            var routeNote = writeSingleRoutePdf ? $", route {route!.RouteName}" : string.Empty;
+            var status = $"{prefix} {title} ({reportedRows} row(s){routeNote}, {bytes.Length} bytes) → {path}";
             Logger.Information("Operational report {Kind} written to {Path} bytes={Bytes}", kind, path, bytes.Length);
 
             return new OperationalReportResult
@@ -120,16 +130,16 @@ namespace BusBuddy.Core.Services
 
         private static string ResolveOutputPath(OperationalReportRequest request, OperationalReportKind kind, bool isCsv)
         {
+            var ext = isCsv ? ".csv" : ".pdf";
             if (!string.IsNullOrWhiteSpace(request.OutputFilePath))
             {
-                return request.OutputFilePath;
+                return Path.ChangeExtension(request.OutputFilePath, ext);
             }
 
             var dir = string.IsNullOrWhiteSpace(request.OutputDirectory)
                 ? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "BusBuddy", "Reports")
                 : request.OutputDirectory;
-            var ext = isCsv ? "csv" : "pdf";
-            return Path.Combine(dir, $"{kind}-{DateTime.Now:yyyyMMdd-HHmmss}.{ext}");
+            return Path.Combine(dir, $"{kind}-{DateTime.Now:yyyyMMdd-HHmmss}{ext}");
         }
 
         private byte[] BuildRouteSummaryPdf(
@@ -358,7 +368,7 @@ namespace BusBuddy.Core.Services
             OperationalReportKind.PdfExport => "PDF Export",
             OperationalReportKind.ExcelExport => "Excel-ready CSV",
             OperationalReportKind.PrintStudentLists => "Student Lists",
-            OperationalReportKind.PrintRouteMaps => "Route Maps",
+            OperationalReportKind.PrintRouteMaps => "Route List",
             OperationalReportKind.PrintSchedules => "Schedules",
             _ => kind.ToString()
         };
@@ -395,7 +405,7 @@ namespace BusBuddy.Core.Services
 
             try
             {
-                var text = await _grok.GetShortCommentaryAsync(topic, facts);
+                var text = await _grok.GetShortCommentaryAsync(topic, facts).ConfigureAwait(false);
                 var mock = text.StartsWith("Mock insight", StringComparison.OrdinalIgnoreCase);
                 return (text, mock);
             }

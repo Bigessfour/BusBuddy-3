@@ -77,4 +77,4 @@
 
 ---
 
-*Updated 2026-08-16: Reports UI + CLI `--generate-report` write live PDFs/CSVs (PR #24 + leftovers).*
+*Updated 2026-08-16: Reports CLI leftovers — real PDFs, exit codes, paginated tables (PR #25).*
