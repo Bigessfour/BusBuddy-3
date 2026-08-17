@@ -253,7 +253,7 @@
                     <syncfusion:SfDataGrid.Columns>
                         <syncfusion:GridTextColumn HeaderText="Report" MappingName="Name" Width="180"/>
                         <syncfusion:GridTextColumn HeaderText="Time" MappingName="GeneratedAt" Width="80"/>
-                        <syncfusion:GridTextColumn HeaderText="Result / AI Note" MappingName="Result" Width="*"/>
+                        <syncfusion:GridTextColumn HeaderText="Result / AI Note" MappingName="Result"/>
                     </syncfusion:SfDataGrid.Columns>
                 </syncfusion:SfDataGrid>
                 <TextBlock Grid.Row="2" Text="{Binding AIReportSummary}" FontSize="11" Foreground="{DynamicResource BusBuddy.Brush.Text.Secondary}" Margin="4,4,0,0" TextWrapping="Wrap"/>

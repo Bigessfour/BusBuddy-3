@@ -45,10 +45,10 @@ BusBuddy streamlines school transportation operations through intelligent route 
 ### On MacBook Pro (with Windows 11 VM via Parallels/UTM)
 - **Mac side (recommended for .NET Core, tests, services, editing)**: Use VS Code + Dev Containers extension + the `.devcontainer` (Linux .NET 9 container via Docker Desktop).
   - Open folder → "Reopen in Container".
-  - Builds use `-p:EnableWindowsTargeting=true` (for net*-windows TFMs in Core/Tests).
+  - `Directory.Build.props` sets `EnableWindowsTargeting` so Mac CLI **and** OmniSharp/C# language service can load `net*-windows` TFMs (NETSDK1100). Passing `-p:EnableWindowsTargeting=true` remains valid and is still used in CI.
   - Run Core tests, use Docker Compose for Postgres (real DB for seeding/EF tests instead of InMemory).
   - WPF UI **cannot** run natively on macOS.
-- **Windows 11 VM side (for full WPF app)**: 
+- **Windows 11 VM side (for full WPF app)**:
   - Share the project folder from Mac (UTM directory sharing works great; name it "Shared with Windows" or similar). The source tree is live/bidirectional.
   - In VM: Install .NET 9 SDK (ARM64 if Apple Silicon). The shared folder appears under a drive letter or "Shared with Windows".
   - Build/run the full `BusBuddy.WPF` project normally for UI/debug (or use the helper below from your Mac).
@@ -79,12 +79,12 @@ Legacy PS modules are in `Documentation/Archive/PowerShell-Legacy/` and `Powersh
 
 ### **Google Cloud & Earth Engine (GEE)**
 
-| Item | Value |
-|------|--------|
-| Earth Engine project | `ee-bigessfour` |
-| GCP console project | [new-coursera-490518](https://console.cloud.google.com/iam-admin/iam?project=new-coursera-490518) |
-| Service account | `bus-buddy-gee@ee-bigessfour.iam.gserviceaccount.com` |
-| Key file (gitignored) | `keys/bus-buddy-gee-key.json` |
+| Item                  | Value                                                                                             |
+| --------------------- | ------------------------------------------------------------------------------------------------- |
+| Earth Engine project  | `ee-bigessfour`                                                                                   |
+| GCP console project   | [new-coursera-490518](https://console.cloud.google.com/iam-admin/iam?project=new-coursera-490518) |
+| Service account       | `bus-buddy-gee@ee-bigessfour.iam.gserviceaccount.com`                                             |
+| Key file (gitignored) | `keys/bus-buddy-gee-key.json`                                                                     |
 
 **First-time setup:**
 
@@ -126,9 +126,9 @@ bb-test                  # Optimized test execution
 Import-Module .\PowerShell\Modules\BusBuddy.Commands\BusBuddy.Commands.psm1
 ```
 
-**✅ Current Status**: Application builds and runs successfully with modern UI. 
+**✅ Current Status**: Application builds and runs successfully with modern UI.
 
-**Development Environment**: WSL recommended for terminal/build. Use plain `dotnet` commands (PS bb-* modules removed/deprecated). 
+**Development Environment**: WSL recommended for terminal/build. Use plain `dotnet` commands (PS bb-* modules removed/deprecated).
 
 **Syncfusion AI Assist**: MCP server @syncfusion/wpf-assistant configured in [`.cursor/mcp.json`](.cursor/mcp.json). Prefix AI prompts with `SyncfusionWPFAssistant ` for accurate WPF + Syncfusion code gen (requires your Syncfusion API key). See .github/copilot-instructions.md and https://help.syncfusion.com/wpf/ai-coding-assistant/overview .
 
@@ -289,16 +289,16 @@ bbLicense
 
 ### **Technology Stack**
 
-| Component        | Technology                  | Version  |
-| ---------------- | --------------------------- | -------- |
-| **Framework**    | .NET                        | 9.0.303  |
-| **UI Framework** | WPF                         | Built-in |
+| Component        | Technology                  | Version                             |
+| ---------------- | --------------------------- | ----------------------------------- |
+| **Framework**    | .NET                        | 9.0.303                             |
+| **UI Framework** | WPF                         | Built-in                            |
 | **UI Controls**  | Syncfusion Essential Studio | 33.2.10 (see Directory.Build.props) |
-| **Data Access**  | Entity Framework Core       | 9.0.7    |
-| **Database**     | SQL Server / LocalDB        | Latest   |
-| **Logging**      | Serilog                     | 4.3.0    |
-| **Testing**      | NUnit                       | 4.3.1    |
-| **MVVM**         | CommunityToolkit.MVVM       | 8.3.2    |
+| **Data Access**  | Entity Framework Core       | 9.0.7                               |
+| **Database**     | SQL Server / LocalDB        | Latest                              |
+| **Logging**      | Serilog                     | 4.3.0                               |
+| **Testing**      | NUnit                       | 4.3.1                               |
+| **MVVM**         | CommunityToolkit.MVVM       | 8.3.2                               |
 
 ### **Project Structure**
 
@@ -464,16 +464,16 @@ dotnet ef migrations add NewMigrationName
 
 **macOS (recommended):** Store in Passwords app; Name = env var. App loads automatically — see [Documentation/GCP-GEE-SECRETS-AND-AUTH.md](Documentation/GCP-GEE-SECRETS-AND-AUTH.md).
 
-| Variable | Purpose |
-|----------|---------|
-| `SYNCFUSION_LICENSE_KEY` | Syncfusion WPF license (required for UI) |
-| `XAI_API_KEY` / `GROK_API_KEY` | Grok / xAI route optimization |
-| `GEE_PROJECT_ID` | Earth Engine project (`ee-bigessfour`) |
-| `GEE_SERVICE_ACCOUNT_JSON` | Service account key JSON (production) |
-| `GOOGLE_APPLICATION_CREDENTIALS` | Path to SA key file |
-| `GoogleEarthEngine__ProjectId` | Config override (set by bootstrap) |
-| `ConnectionStrings__DefaultConnection` | Database connection |
-| `BUSBUDDY_CONNECTION` | Postgres override for Docker profiles |
+| Variable                               | Purpose                                  |
+| -------------------------------------- | ---------------------------------------- |
+| `SYNCFUSION_LICENSE_KEY`               | Syncfusion WPF license (required for UI) |
+| `XAI_API_KEY` / `GROK_API_KEY`         | Grok / xAI route optimization            |
+| `GEE_PROJECT_ID`                       | Earth Engine project (`ee-bigessfour`)   |
+| `GEE_SERVICE_ACCOUNT_JSON`             | Service account key JSON (production)    |
+| `GOOGLE_APPLICATION_CREDENTIALS`       | Path to SA key file                      |
+| `GoogleEarthEngine__ProjectId`         | Config override (set by bootstrap)       |
+| `ConnectionStrings__DefaultConnection` | Database connection                      |
+| `BUSBUDDY_CONNECTION`                  | Postgres override for Docker profiles    |
 
 **Windows production:** Set `GEE_SERVICE_ACCOUNT_JSON` or `GOOGLE_APPLICATION_CREDENTIALS` as machine env vars.
 

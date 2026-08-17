@@ -11,11 +11,14 @@
 ```xml
 <!-- Modern .NET Foundation -->
 <TargetFramework>net9.0-windows</TargetFramework>
+<EnableWindowsTargeting>true</EnableWindowsTargeting>
 <LangVersion>12</LangVersion>
 <Nullable>enable</Nullable>
 <ImplicitUsings>enable</ImplicitUsings>
 <UseWPF>true</UseWPF>
 ```
+
+`EnableWindowsTargeting` lives in `Directory.Build.props` so Mac CLI **and** OmniSharp/C# language service can load `net*-windows` TFMs (NETSDK1100). Do not rely on CLI `-p:` alone — the IDE never sees it. `UseWPF` is **not** global; Core sets `UseWPF` false.
 
 **Copilot Context**: Modern C# 12 features, nullable reference types, WPF-specific patterns.
 

@@ -16,6 +16,13 @@ namespace BusBuddy.Core.Services
         Task SeedStudentsFromCsvAsync();
 
         /// <summary>
+        /// Import students from a user-selected Wiley-format CSV file.
+        /// Returns the number of students added (existing names are skipped).
+        /// Throws <see cref="InvalidOperationException"/> when the header is not Wiley format.
+        /// </summary>
+        Task<int> ImportStudentsFromCsvAsync(string csvPath);
+
+        /// <summary>
         /// Seed sample drivers for development/testing
         /// </summary>
         Task SeedDriversAsync(int count = 10);

@@ -33,7 +33,7 @@ npx skills list
 npx skills update
 ```
 
-MCP: project `.cursor/mcp.json` → `syncfusion-wpf-assistant` via `.github/scripts/run-syncfusion-mcp.sh` (Passwords / `Syncfusion_API_Key`). Spec: `specs/006-syncfusion-tool-integration/`.
+MCP: `syncfusion-wpf-assistant` via `.github/scripts/run-syncfusion-mcp.sh` (NuGet `Syncfusion.WPF.MCP`, Keychain `SYNCFUSION_API_KEY`). Official docs: https://help.syncfusion.com/wpf/mcp. Spec: `specs/006-syncfusion-tool-integration/`.
 
 
 | Control / area       | NuGet                             | Official skill                                               |

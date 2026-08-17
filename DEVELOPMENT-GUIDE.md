@@ -511,7 +511,7 @@ function Invoke-MvpCheck {
 
 ## MacBook Pro + Windows VM Development (with Docker)
 The project was originally Windows-only (WPF). On macOS:
-- **Core/.NET dev & tests**: Use VS Code + this project's `.devcontainer` (runs Linux .NET container via Docker Desktop). Always include `-p:EnableWindowsTargeting=true` for builds (handles Windows TFMs cross-platform).
+- **Core/.NET dev & tests**: Use VS Code + this project's `.devcontainer` (runs Linux .NET container via Docker Desktop). `EnableWindowsTargeting` is set in `Directory.Build.props` so Mac CLI and the C# language service can load `net*-windows` TFMs; `-p:EnableWindowsTargeting=true` is still fine and used in CI.
 - **Full WPF app (UI/debug)**: Use your Windows 11 VM (UTM recommended on Apple Silicon; Parallels also works).
   - Share the BusBuddy-3 folder bidirectionally into the VM (UTM Directory Sharing; you can label the share "Shared with Windows").
   - The tree is live — edits on Mac appear immediately inside the guest.

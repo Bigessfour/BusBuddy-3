@@ -14,6 +14,7 @@ using BusBuddy.Core;
 using BusBuddy.Core.Data;
 using BusBuddy.Core.Data.Interfaces;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using BusBuddy.WPF;
 using BusBuddy.WPF.Commands;
 using CommunityToolkit.Mvvm.Input;
@@ -678,7 +679,7 @@ namespace BusBuddy.WPF.ViewModels.Student
         }
 
         /// <summary>
-        /// Import student data from CSV file using Syncfusion Excel parser
+        /// Import student data from a Wiley-format CSV via <see cref="ISeedDataService"/>.
         /// </summary>
         private async Task ImportCsvAsync()
         {
@@ -686,20 +687,40 @@ namespace BusBuddy.WPF.ViewModels.Student
             {
                 Logger.Information("Starting CSV import process");
 
-                // TODO: Implement Syncfusion.XlsIO CSV import
-                // For MVP, simulate file dialog and parsing
+                var dialog = new Microsoft.Win32.OpenFileDialog
+                {
+                    Title = "Import students from CSV",
+                    Filter = "CSV files (*.csv)|*.csv|All files (*.*)|*.*",
+                    CheckFileExists = true
+                };
+                if (dialog.ShowDialog() != true)
+                {
+                    ValidationStatus = "CSV import cancelled";
+                    ValidationStatusBrush = Brushes.Gray;
+                    return;
+                }
 
                 IsValidating = true;
                 ValidationStatus = "Importing CSV data...";
                 ValidationStatusBrush = Brushes.Blue;
 
-                await Task.CompletedTask; // No artificial delay
+                var factory = App.ServiceProvider?.GetService<IBusBuddyDbContextFactory>();
+                var seed = App.ServiceProvider?.GetService<ISeedDataService>()
+                    ?? (factory != null ? new SeedDataService(factory) : null);
+                if (seed == null)
+                {
+                    ValidationStatus = "❌ Import unavailable (no seed service)";
+                    ValidationStatusBrush = Brushes.Red;
+                    return;
+                }
 
-                // Mock successful import
-                ValidationStatus = "✓ CSV import completed";
-                ValidationStatusBrush = Brushes.Green;
-
-                Logger.Information("CSV import completed successfully");
+                var added = await seed.ImportStudentsFromCsvAsync(dialog.FileName);
+                ValidationStatus = added == 0
+                    ? "No new students imported"
+                    : $"✓ Imported {added} student(s)";
+                ValidationStatusBrush = added == 0 ? Brushes.Gray : Brushes.Green;
+                try { WeakReferenceMessenger.Default.Send(new StudentsImportedMessage(added)); } catch { }
+                Logger.Information("CSV import completed Added={Added}", added);
             }
             catch (Exception ex)
             {

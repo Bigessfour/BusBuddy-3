@@ -98,7 +98,7 @@
                     <syncfusion:GridTextColumn HeaderText="Subject" MappingName="Subject" Width="220"/>
                     <syncfusion:GridDateTimeColumn HeaderText="Start" MappingName="StartTime" Width="160" Pattern="ShortDateTime"/>
                     <syncfusion:GridDateTimeColumn HeaderText="End" MappingName="EndTime" Width="160" Pattern="ShortDateTime"/>
-                    <syncfusion:GridTextColumn HeaderText="Details" MappingName="Details" Width="*"/>
+                    <syncfusion:GridTextColumn HeaderText="Details" MappingName="Details"/>
                 </syncfusion:SfDataGrid.Columns>
             </syncfusion:SfDataGrid>
 

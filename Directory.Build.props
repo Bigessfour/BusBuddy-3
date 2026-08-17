@@ -3,6 +3,9 @@
     <PropertyGroup>
         <!-- Target Framework default; projects may override with multi-targeting -->
         <TargetFramework Condition="'$(TargetFrameworks)' == '' and '$(TargetFramework)' == ''">net9.0-windows</TargetFramework>
+        <!-- Hybrid Mac/Linux IDE + CLI: NETSDK1100 without this. OmniSharp/C# LS do not see CLI -p: flags.
+             Harmless on Windows. See https://learn.microsoft.com/dotnet/core/tools/sdk-errors/netsdk1100 -->
+        <EnableWindowsTargeting>true</EnableWindowsTargeting>
         <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
         <!-- UseWPF only in BusBuddy.WPF / test projects — not globally (breaks Core + WebDAV builds) -->

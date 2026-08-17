@@ -23,11 +23,13 @@ dotnet run --project BusBuddy.WPF/BusBuddy.WPF.csproj -c Release
 
 ## Pass criteria
 
-- [ ] Build succeeds in VM
-- [ ] App starts without Syncfusion trial watermark (license registered)
-- [ ] Main window: Dashboard / Students / Routes grids render (SfDataGrid)
-- [ ] Theme still FluentDark (or FluentLight) via SfSkinManager — no broken chrome
-- [ ] No crash on open of Google Earth / Reports shells
+- [x] Build succeeds in VM
+- [x] App starts without Syncfusion trial watermark (license registered)
+- [x] Main window: Dashboard / Students / Routes grids render (SfDataGrid)
+- [x] Theme still FluentDark (or FluentLight) via SfSkinManager — no broken chrome
+- [x] No crash on open of Google Earth / Reports shells
+
+**Recorded 2026-08-16 (UTM Windows 11, `C:\dev\BusBuddy-3` Release):** `SYNCFUSION_LICENSE_KEY` from Keychain; `Program.RegisterSyncfusionLicenseEarly`; MainWindow log `initialized successfully with Syncfusion DockingManager` after fixing `GridTextColumn Width="*"`.
 
 ## Record result
 
