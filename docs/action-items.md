@@ -23,12 +23,13 @@
   - [x] US4: Places type-ahead — skipped (MVP cut)
   - [x] Docs for US2; Maps clients wired
 - [ ] **Student contact + school destinations** — parent/emergency fields, Destination School catalog, intake school dropdown, map schools, inter-district `StudentSchoolTransfer` (timed pickup/dropoff)
-  - [ ] Apply migration `20260817140000_StudentContactFieldsAlignment`
+  - [ ] Apply migration `20260817140000_StudentContactFieldsAlignment` — **Mac Postgres `dotnet ef database update` blocked** (InitialCreate seed uses SQL Server `bit` / unspecified timestamps). Apply on **Windows VM SQL Server**, or use EnsureCreated for local Postgres smoke only.
   - [ ] VM: assign school on intake; Show Schools on map; create transfer home→campus
   - [x] Transfer UI (Students → School Transfer) — pickup/dropoff location + times required; waypoints rebuild on assign/transfer
+  - [x] Mac smoke 2026-08-17: InMemory services OK (schools, training 17 rows, transfer validation, waypoints). Postgres Migrate blocked as above.
 - [ ] **Driver employment + CDE training sub-module** — contact/address/hire; [CDE 2024-25 License/Training Matrix](https://resources.finalsite.net/images/v1764086158/cdestatecous/mpcomjjt3zryb1vussig/2024-25-License-Training-Matrix.pdf) checklist via `DriverTrainingRecord` / `IDriverTrainingService`
-  - [ ] Apply migration `20260817150000_DriverTrainingSubmodule`
-  - [ ] VM: edit driver employment fields; Training History seeds checklist + status bar summary
+  - [ ] Apply migration `20260817150000_DriverTrainingSubmodule` — same Windows/SQL Server path as above
+  - [ ] VM: edit driver employment fields; open Training grid; mark complete + certificate
   - [x] Dedicated training grid UI (Drivers → Training) — mark complete / certificate per row
 - [x] **006 Syncfusion Tool Integration** — [spec](../specs/006-syncfusion-tool-integration/spec.md) — merged [PR #21](https://github.com/Bigessfour/BusBuddy-3/pull/21)
   - [x] MCP paths, skills overlay, Syncfusion **34.2.3**, deps audit
