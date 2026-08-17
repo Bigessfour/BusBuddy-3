@@ -228,16 +228,8 @@ namespace BusBuddy.WPF.Utilities
         {
             try
             {
-                if (Application.Current.MainWindow == null)
-                {
-                    return;
-                }
-
-                using (var theme = new Theme(CurrentTheme))
-                {
-                    SfSkinManager.SetTheme(Application.Current.MainWindow, theme);
-                }
-
+                SyncfusionThemeManager.ApplyApplicationTheme(CurrentTheme);
+                CurrentTheme = SyncfusionThemeManager.CurrentThemeName;
                 Logger.Debug("[UIDebug] Applied theme: {Theme}", CurrentTheme);
             }
             catch (Exception ex)

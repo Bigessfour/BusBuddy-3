@@ -134,26 +134,7 @@ namespace BusBuddy.WPF.Views.GoogleEarth
         /// </summary>
         private void ApplySyncfusionTheme()
         {
-            SfSkinManager.ApplyThemeAsDefaultStyle = true;
-            try
-            {
-                using var fluentDark = new Theme("FluentDark");
-                SfSkinManager.SetTheme(this, fluentDark);
-                Logger.Information("FluentDark theme applied to {ViewName}", GetType().Name);
-            }
-            catch
-            {
-                try
-                {
-                    using var fluentLight = new Theme("FluentLight");
-                    SfSkinManager.SetTheme(this, fluentLight);
-                    Logger.Information("Fallback to FluentLight theme for {ViewName}", GetType().Name);
-                }
-                catch
-                {
-                    // Continue without theme if both fail
-                }
-            }
+            BusBuddy.WPF.Utilities.SyncfusionThemeManager.ApplyTheme(this);
         }
 
     // Unloaded/Dispose implemented later in file with full dispose pattern

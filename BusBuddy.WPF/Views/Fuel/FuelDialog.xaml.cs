@@ -98,17 +98,7 @@ namespace BusBuddy.WPF.Views.Fuel
             DialogTitle = fuel.FuelId == 0 ? "Add Fuel Record" : "Edit Fuel Record";
 
             InitializeComponent();
-            // Apply Syncfusion theme — FluentDark default, FluentLight fallback
-            try
-            {
-                SfSkinManager.ApplyThemeAsDefaultStyle = true;
-                using var dark = new Theme("FluentDark");
-                SfSkinManager.SetTheme(this, dark);
-            }
-            catch
-            {
-                try { using var light = new Theme("FluentLight"); SfSkinManager.SetTheme(this, light); } catch { }
-            }
+            BusBuddy.WPF.Utilities.SyncfusionThemeManager.ApplyTheme(this);
             DataContext = this;
 
             // Ensure the model has default values if it's new

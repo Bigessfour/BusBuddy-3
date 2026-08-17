@@ -470,26 +470,7 @@ namespace BusBuddy.WPF.Views.Fuel
         /// </summary>
         private void ApplySyncfusionTheme()
         {
-            SfSkinManager.ApplyThemeAsDefaultStyle = true;
-            try
-            {
-                using var fluentDarkTheme = new Theme("FluentDark");
-                SfSkinManager.SetTheme(this, fluentDarkTheme);
-                Logger.Information("FluentDark theme applied to {ViewName}", GetType().Name);
-            }
-            catch
-            {
-                try
-                {
-                    using var fluentLightTheme = new Theme("FluentLight");
-                    SfSkinManager.SetTheme(this, fluentLightTheme);
-                    Logger.Information("Fallback to FluentLight theme for {ViewName}", GetType().Name);
-                }
-                catch
-                {
-                    // Continue without theme if both fail
-                }
-            }
+            BusBuddy.WPF.Utilities.SyncfusionThemeManager.ApplyTheme(this);
         }
 
         protected override void OnClosed(EventArgs e)

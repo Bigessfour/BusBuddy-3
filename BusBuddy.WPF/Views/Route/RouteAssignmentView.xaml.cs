@@ -122,30 +122,7 @@ namespace BusBuddy.WPF.Views.Route
                 }
                 catch
                 {
-                    // Fallback to direct theme application if utility path fails
-                    try
-                    {
-                        var window = Window.GetWindow(this);
-                        if (window != null)
-                        {
-                            SfSkinManager.ApplyThemeAsDefaultStyle = true;
-                            using var dark = new Theme("FluentDark");
-                            SfSkinManager.SetTheme(window, dark);
-                        }
-                    }
-                    catch
-                    {
-                        try
-                        {
-                            var window = Window.GetWindow(this);
-                            if (window != null)
-                            {
-                                using var light = new Theme("FluentLight");
-                                SfSkinManager.SetTheme(window, light);
-                            }
-                        }
-                        catch { }
-                    }
+                    // inherit ApplicationTheme
                 }
 
                 Logger.Information("Loaded {ViewName} with theme resource {ResourceKey}", GetType().Name, "BusBuddy.Brush.Primary");
