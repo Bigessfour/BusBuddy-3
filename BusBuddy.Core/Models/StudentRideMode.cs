@@ -50,4 +50,11 @@ public static class StudentRideModeHelper
     /// <summary>True when the student should keep a stop on the AM mirror even if PM-only.</summary>
     public static bool RetainStopOnAmMirror(StudentRideMode mode) =>
         mode is StudentRideMode.PM or StudentRideMode.Both or StudentRideMode.Neither;
+
+    /// <summary>
+    /// Year-start PM mirror: assign PMRoute unless the student was already AM-only
+    /// (occasional-rider stop stays on the PM proposal OrderedStudentIds only).
+    /// </summary>
+    public static bool ShouldAssignPmMirror(StudentRideMode priorMode) =>
+        priorMode is not StudentRideMode.AM;
 }
