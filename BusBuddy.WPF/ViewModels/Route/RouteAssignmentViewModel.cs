@@ -5,6 +5,7 @@ using System.Windows;
 using System.Windows.Input;
 using BusBuddy.Core.Models;
 using BusBuddy.Core.Services;
+using BusBuddy.Core.Services.RouteDetermination;
 using BusBuddy.Core.Utilities;
 using BusBuddy.WPF.Commands;
 using Serilog;
@@ -54,6 +55,7 @@ namespace BusBuddy.WPF.ViewModels.Route
         private int? _preselectedRouteId;
         private string _startTimeString = "07:30";
         private readonly IRouteService? _routeService;
+        private readonly IRouteDeterminationService? _routeDetermination;
         private static readonly ILogger Logger = Log.ForContext<RouteAssignmentViewModel>();
     private Timer? _retimeDebounceTimer; // Debounce timer for auto-retiming after structural stop changes
     private const int RetimeDebounceMs = 600; // Delay before auto timing after modifications
@@ -69,6 +71,7 @@ namespace BusBuddy.WPF.ViewModels.Route
             {
                 // Try resolve IRouteService from DI if available
                 _routeService = App.ServiceProvider?.GetService<IRouteService>();
+                _routeDetermination = App.ServiceProvider?.GetService<IRouteDeterminationService>();
             }
             catch { }
             Initialize();
@@ -92,12 +95,14 @@ namespace BusBuddy.WPF.ViewModels.Route
         public RouteAssignmentViewModel(IRouteService? routeService)
         {
             _routeService = routeService;
+            _routeDetermination = App.ServiceProvider?.GetService<IRouteDeterminationService>();
             Initialize();
         }
 
         public RouteAssignmentViewModel(IRouteService? routeService, BusBuddy.Core.Models.Route preselectedRoute)
         {
             _routeService = routeService;
+            _routeDetermination = App.ServiceProvider?.GetService<IRouteDeterminationService>();
             _preselectedRouteId = preselectedRoute?.RouteId;
             Initialize();
             // If the route collection already loaded synchronously (mock), select it
@@ -741,7 +746,79 @@ namespace BusBuddy.WPF.ViewModels.Route
 
                 if (_routeService != null)
                 {
-                    var result = await _routeService.AssignStudentToRouteAsync(student.StudentId, route.RouteId, slot);
+                    var overrideSeating = false;
+                    if (_routeDetermination is not null)
+                    {
+                        var slotKind = slot == RouteTimeSlot.AM
+                            ? RouteTimeSlotKind.AM
+                            : RouteTimeSlotKind.PM;
+                        var fitness = await _routeDetermination
+                            .RecalculateOnAssignAsync(student.StudentId, route.RouteId, slotKind)
+                            .ConfigureAwait(true);
+
+                        if (fitness.Severity == AssignFitnessSeverity.Warn && fitness.Reasons.Count > 0)
+                        {
+                            StatusMessage = string.Join("; ", fitness.Reasons);
+                            MessageBox.Show(
+                                string.Join("\n", fitness.Reasons),
+                                "Assignment warning",
+                                MessageBoxButton.OK,
+                                MessageBoxImage.Warning);
+                        }
+
+                        if (!fitness.Allowed)
+                        {
+                            var body = string.Join("\n", fitness.Reasons);
+                            if (fitness.SuggestedRouteIds.Count > 0)
+                            {
+                                body += "\n\nSuggested route IDs: " + string.Join(", ", fitness.SuggestedRouteIds);
+                            }
+
+                            if (fitness.SuggestNewRoute && student.DestinationId is int schoolId)
+                            {
+                                var gen = MessageBox.Show(
+                                    body + "\n\nCreate new draft routes for this student's school?",
+                                    "Assignment blocked",
+                                    MessageBoxButton.YesNoCancel,
+                                    MessageBoxImage.Warning);
+                                if (gen == MessageBoxResult.Yes)
+                                {
+                                    var genResult = await _routeDetermination.GenerateAndAssignAsync(
+                                            schoolId,
+                                            RouteTimeSlotKind.Both,
+                                            FleetKind.HomeToSchool)
+                                        .ConfigureAwait(true);
+                                    StatusMessage = genResult.Success
+                                        ? $"Generated {genResult.Proposals.Count} draft route(s)"
+                                        : (genResult.Error ?? "Route generation failed");
+                                    await LoadDataFromServiceAsync().ConfigureAwait(true);
+                                    return false;
+                                }
+
+                                if (gen == MessageBoxResult.Cancel)
+                                {
+                                    StatusMessage = "Assignment cancelled";
+                                    return false;
+                                }
+                            }
+
+                            var askOverride = MessageBox.Show(
+                                body + "\n\nOverride seating capacity and assign anyway?",
+                                "Assignment blocked",
+                                MessageBoxButton.YesNo,
+                                MessageBoxImage.Warning);
+                            if (askOverride != MessageBoxResult.Yes)
+                            {
+                                StatusMessage = "Assignment blocked: " + string.Join("; ", fitness.Reasons);
+                                return false;
+                            }
+
+                            overrideSeating = true;
+                        }
+                    }
+
+                    var result = await _routeService.AssignStudentToRouteAsync(
+                        student.StudentId, route.RouteId, slot, overrideSeating);
                     if (!result.IsSuccess)
                     {
                         StatusMessage = $"Failed to assign student: {result.Error}";

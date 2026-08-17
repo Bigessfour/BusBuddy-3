@@ -106,6 +106,7 @@ namespace BusBuddy.Core.Extensions
             services.AddScoped<IBusService, BusService>();
             services.AddScoped<IDriverService, DriverService>();
             services.AddScoped<IActivityService, ActivityService>();
+            services.AddScoped<BusBuddy.Core.Services.RouteDetermination.AssignFitnessEvaluator>();
             services.AddScoped<IRouteService, RouteService>();
             services.AddScoped<IStudentRouteOptimizer, StudentRouteOptimizer>();
             services.AddSingleton<PdfReportService>();

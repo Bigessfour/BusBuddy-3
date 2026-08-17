@@ -77,15 +77,15 @@
 
 ### Tests for User Story 2
 
-- [ ] T021 [P] [US2] Add `BusBuddy.Tests/Core/RouteDetermination/AssignFitnessTests.cs` — seating block without override; seating allow with override; warn on arrival/geo; SuggestNewRoute flag
+- [x] T021 [P] [US2] Add `BusBuddy.Tests/Core/RouteDetermination/AssignFitnessTests.cs` — seating block without override; seating allow with override; warn on arrival/geo; SuggestNewRoute flag
 
 ### Implementation for User Story 2
 
-- [ ] T022 [US2] Implement `RecalculateOnAssignAsync` / fitness evaluator in `BusBuddy.Core/Services/RouteDetermination/AssignFitnessEvaluator.cs` per [contracts/assign-fitness.md](./contracts/assign-fitness.md) (Q2:B)
-- [ ] T023 [US2] Wrap `AssignStudentToRouteAsync` path in `BusBuddy.Core/Services/RouteService.cs` (or caller) to consult fitness before persist; record seating override when requested
-- [ ] T024 [US2] Surface Syncfusion toast/status from `AssignFitnessResult` in `BusBuddy.WPF/ViewModels/Student/StudentsViewModel.cs` (bulk/single assign) and/or Route assign UI
-- [ ] T025 [US2] When `SuggestNewRoute`, offer command to call generation for that school cell in the same ViewModel
-- [ ] T026 [US2] Serilog `Assign fitness Blocked|Warned Student={Id} Route={Id} Reasons={Reasons}` in fitness evaluator
+- [x] T022 [US2] Implement `RecalculateOnAssignAsync` / fitness evaluator in `BusBuddy.Core/Services/RouteDetermination/AssignFitnessEvaluator.cs` per [contracts/assign-fitness.md](./contracts/assign-fitness.md) (Q2:B)
+- [x] T023 [US2] Wrap `AssignStudentToRouteAsync` path in `BusBuddy.Core/Services/RouteService.cs` (or caller) to consult fitness before persist; record seating override when requested
+- [x] T024 [US2] Surface Syncfusion toast/status from `AssignFitnessResult` in `BusBuddy.WPF/ViewModels/Student/StudentsViewModel.cs` (bulk/single assign) and/or Route assign UI
+- [x] T025 [US2] When `SuggestNewRoute`, offer command to call generation for that school cell in the same ViewModel
+- [x] T026 [US2] Serilog `Assign fitness Blocked|Warned Student={Id} Route={Id} Reasons={Reasons}` in fitness evaluator
 
 **Checkpoint**: US2 tests green; UI blocks overload and warns on time/geo
 

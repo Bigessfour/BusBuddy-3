@@ -33,6 +33,7 @@ namespace BusBuddy.Core.Services
         Task<Result<List<Driver>>> GetAvailableDriversAsync();
         Task<Result<bool>> AssignStudentToRouteAsync(int studentId, int routeId);
         Task<Result<bool>> AssignStudentToRouteAsync(int studentId, int routeId, RouteTimeSlot timeSlot);
+        Task<Result<bool>> AssignStudentToRouteAsync(int studentId, int routeId, RouteTimeSlot timeSlot, bool overrideSeating);
         Task<Result<bool>> RemoveStudentFromRouteAsync(int studentId, int routeId);
         Task<Result<bool>> RemoveStudentFromRouteAsync(int studentId, int routeId, RouteTimeSlot timeSlot);
         Task<Result<List<Student>>> GetUnassignedStudentsAsync();

@@ -15,15 +15,19 @@ public sealed class RouteDeterminationService : IRouteDeterminationService
     private readonly IBusBuddyDbContextFactory _contextFactory;
     private readonly IRouteService _routeService;
     private readonly RoutingDistrictSettings _settings;
+    private readonly AssignFitnessEvaluator _fitnessEvaluator;
 
     public RouteDeterminationService(
         IBusBuddyDbContextFactory contextFactory,
         IRouteService routeService,
-        IOptions<RoutingDistrictSettings>? settings = null)
+        IOptions<RoutingDistrictSettings>? settings = null,
+        AssignFitnessEvaluator? fitnessEvaluator = null)
     {
         _contextFactory = contextFactory ?? throw new ArgumentNullException(nameof(contextFactory));
         _routeService = routeService ?? throw new ArgumentNullException(nameof(routeService));
         _settings = settings?.Value ?? new RoutingDistrictSettings();
+        _fitnessEvaluator = fitnessEvaluator
+            ?? new AssignFitnessEvaluator(contextFactory, settings);
     }
 
     public async Task<RouteGenerationResult> GenerateAndAssignAsync(
@@ -200,63 +204,13 @@ public sealed class RouteDeterminationService : IRouteDeterminationService
         };
     }
 
-    public async Task<AssignFitnessResult> RecalculateOnAssignAsync(
+    public Task<AssignFitnessResult> RecalculateOnAssignAsync(
         int studentId,
         int routeId,
         RouteTimeSlotKind slot,
         bool overrideSeating = false,
-        CancellationToken cancellationToken = default)
-    {
-        if (slot == RouteTimeSlotKind.Both)
-        {
-            return new AssignFitnessResult
-            {
-                Allowed = false,
-                Severity = AssignFitnessSeverity.Block,
-                Reasons = new[] { "Specify AM or PM for assign fitness" }
-            };
-        }
-
-        await using var context = _contextFactory.CreateDbContext();
-        var route = await context.Routes.AsNoTracking()
-            .FirstOrDefaultAsync(r => r.RouteId == routeId, cancellationToken)
-            .ConfigureAwait(false);
-        if (route is null)
-        {
-            return new AssignFitnessResult
-            {
-                Allowed = false,
-                Severity = AssignFitnessSeverity.Block,
-                Reasons = new[] { $"Route {routeId} not found" }
-            };
-        }
-
-        var timeSlot = slot == RouteTimeSlotKind.AM ? RouteTimeSlot.AM : RouteTimeSlot.PM;
-        var capacity = await GetCapacityAsync(context, route, timeSlot, cancellationToken).ConfigureAwait(false);
-        var assigned = await CountAssignedAsync(context, route.RouteName, timeSlot, cancellationToken)
-            .ConfigureAwait(false);
-
-        if (capacity > 0 && assigned + 1 > capacity && !overrideSeating)
-        {
-            var reasons = new[] { $"Seating capacity {capacity} would be exceeded ({assigned} already assigned)" };
-            Logger.Information(
-                "Assign fitness Blocked Student={Id} Route={RouteId} Reasons={Reasons}",
-                studentId, routeId, string.Join("; ", reasons));
-            return new AssignFitnessResult
-            {
-                Allowed = false,
-                Severity = AssignFitnessSeverity.Block,
-                Reasons = reasons,
-                SuggestNewRoute = true
-            };
-        }
-
-        return new AssignFitnessResult
-        {
-            Allowed = true,
-            Severity = AssignFitnessSeverity.None
-        };
-    }
+        CancellationToken cancellationToken = default) =>
+        _fitnessEvaluator.EvaluateAsync(studentId, routeId, slot, overrideSeating, cancellationToken);
 
     public async Task<ClerkOverrideResult> ApplyClerkOverrideAsync(
         int studentId,
@@ -477,46 +431,6 @@ public sealed class RouteDeterminationService : IRouteDeterminationService
             .FirstOrDefaultAsync(cancellationToken)
             .ConfigureAwait(false);
         return bus?.SeatingCapacity > 0 ? bus.SeatingCapacity : fallback;
-    }
-
-    private async Task<int> GetCapacityAsync(
-        BusBuddyDbContext context,
-        Route route,
-        RouteTimeSlot slot,
-        CancellationToken cancellationToken)
-    {
-        var vehicleId = slot == RouteTimeSlot.AM ? route.AMVehicleId : route.PMVehicleId;
-        if (vehicleId is int id)
-        {
-            var bus = await context.Buses.AsNoTracking()
-                .FirstOrDefaultAsync(b => b.BusId == id, cancellationToken)
-                .ConfigureAwait(false);
-            if (bus is not null && bus.SeatingCapacity > 0)
-            {
-                return bus.SeatingCapacity;
-            }
-        }
-
-        return await ResolveDefaultSeatingAsync(context, fallback: 72, cancellationToken)
-            .ConfigureAwait(false);
-    }
-
-    private static async Task<int> CountAssignedAsync(
-        BusBuddyDbContext context,
-        string routeName,
-        RouteTimeSlot slot,
-        CancellationToken cancellationToken)
-    {
-        if (slot == RouteTimeSlot.AM)
-        {
-            return await context.Students.AsNoTracking()
-                .CountAsync(s => s.AMRoute == routeName, cancellationToken)
-                .ConfigureAwait(false);
-        }
-
-        return await context.Students.AsNoTracking()
-            .CountAsync(s => s.PMRoute == routeName, cancellationToken)
-            .ConfigureAwait(false);
     }
 
     private static RouteGenerationResult Fail(

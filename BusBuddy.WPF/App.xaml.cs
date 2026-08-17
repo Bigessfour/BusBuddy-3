@@ -433,6 +433,7 @@ namespace BusBuddy.WPF
                 services.AddScoped<BusBuddy.Core.Services.IStudentSchoolTransferService, BusBuddy.Core.Services.StudentSchoolTransferService>();
                 services.AddScoped<BusBuddy.Core.Services.IRouteWaypointRebuildService, BusBuddy.Core.Services.RouteWaypointRebuildService>();
                 services.AddScoped<BusBuddy.Core.Services.IDriverTrainingService, BusBuddy.Core.Services.DriverTrainingService>();
+                services.AddScoped<BusBuddy.Core.Services.RouteDetermination.AssignFitnessEvaluator>();
                 services.AddScoped<BusBuddy.Core.Services.RouteDetermination.IRouteDeterminationService,
                     BusBuddy.Core.Services.RouteDetermination.RouteDeterminationService>();
                 services.Configure<BusBuddy.Core.Configuration.RoutingDistrictSettings>(
