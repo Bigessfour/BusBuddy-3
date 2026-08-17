@@ -3,7 +3,7 @@
 ## Phase 1 — Tracking & MCP
 - [x] Bootstrap `docs/action-items.md` due-outs tracker
 - [x] Fix `.cursor/mcp.json` paths (Syncfusion MCP + filesystem + RAG cwd → Box workspace)
-- [ ] Smoke: Cursor reload MCP / `run-syncfusion-mcp.sh` with key (manual)
+- [x] Smoke: Cursor reload MCP / `run-syncfusion-mcp.sh` with key (manual)
 
 ## Phase 2 — Skills
 - [x] Update `.cursor/skills/syncfusion-wpf-busbuddy/SKILL.md` for 34.x pin
@@ -24,11 +24,11 @@
 - [x] Update `Documentation/PACKAGE-MANAGEMENT.md` Syncfusion version section
 - [x] Update `docs/action-items.md` checkboxes
 - [x] `python -m rag.index` after merge (operator) — done 2026-07-24
-- [ ] Windows VM license + UI smoke — see `windows-vm-smoke.md`
+- [x] Windows VM license + UI smoke — see `windows-vm-smoke.md`
 
 ## Done when
 Spec FR-001–FR-009 acceptance scenarios met; build green; action-items 006 rows updated; VM smoke + RAG re-index after merge.
 
 ## Phase 6: Convergence
-- [ ] T001 Replace leftover `30.1.40` examples in `Documentation/PACKAGE-MANAGEMENT.md` with `$(SyncfusionVersion)` / `34.1.32` and re-index RAG per FR-008 / US5/AC1 (partial)
-- [ ] T002 Make `.cursor/mcp.json` Syncfusion MCP + RAG launchers script-relative (no hard-coded home path) per FR-002 / US1/AC2 (partial)
+- [x] T001 Replace leftover `30.1.40` examples in `Documentation/PACKAGE-MANAGEMENT.md` with `$(SyncfusionVersion)` / `34.1.32` and re-index RAG per FR-008 / US5/AC1 (partial)
+- [x] T002 Make `.cursor/mcp.json` Syncfusion MCP + RAG launchers script-relative (no hard-coded home path) per FR-002 / US1/AC2 (partial)
