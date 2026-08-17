@@ -33,8 +33,9 @@
   - [x] Dedicated training grid UI (Drivers → Training) — mark complete / certificate per row
 - [ ] **008 Route determination / fleet sizing** (Spec-Kit next) — minimize buses with geographic + time comfort; AM/PM mirror with AM-only / PM-only / both; recalc on assign; year-start auto-assign + map override; toast when assign breaks arrival/capacity; home→school and transfer planners separate; target >100 riders / medium–large city, still usable for small districts
   - Design locked 2026-08-17 (user answers): soft capacity = assigned bus `SeatingCapacity` (hard); school map **start times** → work backward for pickups; simple **quadrants** + rural/outlier rules (large pickup gaps → other route); minimize buses without sacrificing ride time/mileage/comfort; keep occasional-rider stops on mirrored routes; suggest new route past thresholds
-  - [ ] `/speckit-specify` → [spec](../specs/008-route-determination/spec.md) (draft; 3 clarifications open) → plan/tasks under `specs/008-route-determination/`
-  - [ ] Depends on #36 merge + school start-time on Destination + VM migrate
+  - [x] `/speckit-specify` + `/speckit-plan` — [spec](../specs/008-route-determination/spec.md) · [plan](../specs/008-route-determination/plan.md) (Q1:A / Q2:B / Q3:B locked)
+  - [x] `/speckit-tasks` — [tasks.md](../specs/008-route-determination/tasks.md) (41 tasks; MVP = US1 T001–T020)
+  - [ ] `/speckit-implement` (prefer after #36 merge) + school start/dismissal on Destination + VM migrate
 - [x] **006 Syncfusion Tool Integration** — [spec](../specs/006-syncfusion-tool-integration/spec.md) — merged [PR #21](https://github.com/Bigessfour/BusBuddy-3/pull/21)
   - [x] MCP paths, skills overlay, Syncfusion **34.2.3**, deps audit
   - [x] `python -m rag.index` after merge (2026-07-24; ~3399 chunks)
