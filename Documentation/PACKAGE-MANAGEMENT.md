@@ -135,12 +135,12 @@ public partial class App : Application
 ### Implementation Pattern
 
 ```xml
-<!-- ✅ CORRECT: Exact version pinning -->
-<PackageReference Include="Syncfusion.SfChart.WPF" Version="30.1.40" />
+<!-- ✅ CORRECT: Central pin via Directory.Build.props -->
+<PackageReference Include="Syncfusion.SfChart.WPF" Version="$(SyncfusionVersion)" />
 
 <!-- ❌ AVOID: Floating versions -->
-<PackageReference Include="Syncfusion.SfChart.WPF" Version="30.*" />
-<PackageReference Include="Syncfusion.SfChart.WPF" Version="[30.1.40,)" />
+<PackageReference Include="Syncfusion.SfChart.WPF" Version="34.*" />
+<PackageReference Include="Syncfusion.SfChart.WPF" Version="[34.1.32,)" />
 ```
 
 ### Centralized Version Management
@@ -155,7 +155,7 @@ public partial class App : Application
     <UseWPF>true</UseWPF>
 
     <!-- Package Versions -->
-    <SyncfusionVersion>30.1.40</SyncfusionVersion>
+    <SyncfusionVersion>34.1.32</SyncfusionVersion>
     <EntityFrameworkVersion>8.0.0</EntityFrameworkVersion>
     <SerilogVersion>4.0.2</SerilogVersion>
   </PropertyGroup>
@@ -186,7 +186,7 @@ dotnet list package --vulnerable --include-transitive
 ### Current Security Status
 
 - **Last Scan**: Clean (no known vulnerabilities)
-- **Syncfusion 30.1.40**: No security advisories
+- **Syncfusion 34.1.32**: No security advisories
 - **Entity Framework**: Latest stable versions
 - **Regular Scanning**: Integrated into CI/CD pipeline
 
@@ -352,6 +352,6 @@ dotnet restore --verbosity diagnostic
 
 ---
 
-**Last Updated**: July 25, 2025
+**Last Updated**: August 16, 2026
 **Maintainer**: BusBuddy Development Team
 **Review Cycle**: Monthly security scans, quarterly dependency updates

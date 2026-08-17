@@ -2,18 +2,13 @@
   "mcpServers": {
     "syncfusion-wpf-assistant": {
       "type": "stdio",
-      "command": "/bin/bash",
-      "args": [
-        "/Users/stephenmckitrick/Bus_Buddy/BusBuddy-3/.github/scripts/run-syncfusion-mcp.sh"
-      ],
-      "env": {}
+      "command": "bash",
+      "args": [".github/scripts/run-syncfusion-mcp.sh"]
     },
     "busbuddy-rag": {
       "type": "stdio",
-      "command": "python3",
-      "args": ["-m", "rag.mcp_server"],
-      "cwd": "/Users/stephenmckitrick/Bus_Buddy/BusBuddy-3",
-      "env": {}
+      "command": "bash",
+      "args": [".github/scripts/run-busbuddy-rag-mcp.sh"]
     }
   }
 }
