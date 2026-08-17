@@ -10,15 +10,15 @@
 
 ## Baseline (as of draft)
 
-| Area | Current | Target |
-| ---- | ------- | ------ |
-| Assign to route | Capacity fill by route name (`AutoAssignStudentsAsync`); no geo/time planner | Suggest/create routes from student geography + school times + bus seats |
-| Capacity | Route/bus capacity checks on assign | Soft guidance; **hard** limit = assigned bus seating capacity |
-| Pickup times | Manual / transfer times only | Derived backward from school start (AM) / dismissal (PM) |
-| Geography | Waypoints rebuild (home → optional transfer stops → school); no clustering | Quadrants + rural outlier split; optimize miles, time, count |
-| Feedback on assign | Fail only when already at capacity / already assigned | Toast: arrival risk, overload, suggest another route; suggest new route past threshold |
-| Transfers | Separate entity + UI; not planned as a fleet | Independent planner with same rules as home→school |
-| Year start | Manual / bulk assign | Auto-assign with map override for outliers |
+| Area               | Current                                                                      | Target                                                                                 |
+| ------------------ | ---------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| Assign to route    | Capacity fill by route name (`AutoAssignStudentsAsync`); no geo/time planner | Suggest/create routes from student geography + school times + bus seats                |
+| Capacity           | Route/bus capacity checks on assign                                          | Soft guidance; **hard** limit = assigned bus seating capacity                          |
+| Pickup times       | Manual / transfer times only                                                 | Derived backward from school start (AM) / dismissal (PM)                               |
+| Geography          | Waypoints rebuild (home → optional transfer stops → school); no clustering   | Quadrants + rural outlier split; optimize miles, time, count                           |
+| Feedback on assign | Fail only when already at capacity / already assigned                        | Toast: arrival risk, overload, suggest another route; suggest new route past threshold |
+| Transfers          | Separate entity + UI; not planned as a fleet                                 | Independent planner with same rules as home→school                                     |
+| Year start         | Manual / bulk assign                                                         | Auto-assign with map override for outliers                                             |
 
 Constitution: Syncfusion-only UI, Serilog-only logging, hybrid Mac/Windows, no cloud app hosting, no committed secrets. Builds on school Destinations, student geo, Maps drive paths (007), and transfer records (PR #36).
 
@@ -114,9 +114,9 @@ As a director, school-to-school transfer riders are planned with the same capaci
 - **FR-011**: System MUST plan school-to-school transfer routes with the same logic independently from home→school routes.
 - **FR-012**: System MUST remain usable for small districts and scale to more than 100 riders in a medium–large city service area.
 - **FR-013**: System MUST log generation and assign decisions with Serilog (counts, route ids, constraint violations—no secrets).
-- **FR-014**: Transfer fleet coupling is [NEEDS CLARIFICATION: separate fleet only vs shared buses with time gaps].
+- **FR-014**: Transfer routes MUST be planned and seated in a **separate fleet / route pool** from home→school routes (same capacity/time/geo rules, independent seat inventory).
 - **FR-015**: On assign, the system MUST **block** when the assignment would exceed the assigned bus seating capacity (hard limit), unless an explicit override is recorded; for arrival-time / geographic fitness risks the system MUST **warn-and-allow** (toast + proceed) so clerks can continue with awareness.
-- **FR-016**: Quadrant construction is [NEEDS CLARIFICATION: fixed 4 from school centroid vs N from district bounding box/density].
+- **FR-016**: System MUST build geographic cells as an **N-cell grid derived from the district bounding box and rider density** (not a fixed 4-from-centroid only), with rural/outlier split when pickup gaps exceed configured thresholds.
 
 ### Key Entities
 
@@ -133,7 +133,7 @@ As a director, school-to-school transfer riders are planned with the same capaci
 - **SC-001**: For a single-school scenario of 12 nearby students and a bus seating ≥12, year-start generation proposes **1** AM route (and mirrored PM structure) without exceeding seating.
 - **SC-002**: For students split across distant quadrants such that one route would create large pickup gaps, generation proposes **more than one** route rather than a single district-wide path.
 - **SC-003**: A clerk can complete year-start auto-assign for a 100-rider school set and override at least one outlier on the map in one session without re-entering all students.
-- **SC-004**: On assign that exceeds hard seating capacity, the clerk always receives an explicit toast/message before the system either blocks or records an override (per clarified policy).
+- **SC-004**: On assign that exceeds hard seating capacity, the clerk always receives an explicit toast/message and the assign is **blocked** unless an explicit override is recorded; time/geo risks warn-and-allow.
 - **SC-005**: Changing school start time updates computed pickup times for affected routes without requiring manual re-entry of each stop time.
 - **SC-006**: Transfer planning produces a route count independent of home→school route count for the same student population when transfers exist.
 

@@ -13,7 +13,7 @@
 
 ## Requirement Completeness
 
-- [ ] No [NEEDS CLARIFICATION] markers remain — **2 remain (FR-014, FR-016); FR-015 resolved 2026-08-17 (Q2: B)**
+- [x] No [NEEDS CLARIFICATION] markers remain — **resolved 2026-08-17: Q1:A separate transfer fleet; Q2:B block hard seating / warn time-geo; Q3:B density/bbox grid**
 - [x] Requirements are testable and unambiguous (except marked clarifications)
 - [x] Success criteria are measurable
 - [x] Success criteria are technology-agnostic (no implementation details)
@@ -31,4 +31,4 @@
 
 ## Notes
 
-- Resolve FR-014 / FR-016 via user answers (FR-015 = Q2:B block hard seating, warn-and-allow time/geo), then mark this checklist complete before `/speckit-plan`.
+- Clarifications locked: FR-014 = Q1:A; FR-015 = Q2:B; FR-016 = Q3:B. Plan artifacts generated 2026-08-17 (`plan.md`, `research.md`, `data-model.md`, `contracts/`, `quickstart.md`). Next: `/speckit-tasks`.

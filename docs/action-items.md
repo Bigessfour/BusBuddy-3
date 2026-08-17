@@ -58,7 +58,7 @@
 
 ### P2 — Hygiene / quality
 
-- [x] Bootstrap function-inventory generated scan — `.function-inventory.json` (16 surfaces) → [function-inventory.generated.md](./function-inventory.generated.md) (2026-08-16: 11/16 with proof)
+- [x] Bootstrap function-inventory generated scan — `.function-inventory.json` (26 surfaces) → [function-inventory.generated.md](./function-inventory.generated.md) (2026-08-17: 16/26 with proof; added Destination/Transfer/Training)
 - [x] Resolve LFS/chroma noise — stop tracking `rag/chroma_db/` (~54MB sqlite blobs that triggered GH001); drop `*.pdf`/`*.sqlite` LFS attrs (PDF stays git binary). History purge of old blobs still needs force-push approval.
 - [x] AutoMapper 12.x advisory — upgraded to 15.1.1
 - [x] Restore [Documentation/GCP-GEE-SECRETS-AND-AUTH.md](../Documentation/GCP-GEE-SECRETS-AND-AUTH.md) (was missing; AGENTS link)
@@ -106,7 +106,9 @@ python3 ~/.cursor/skills/function-inventory/scripts/update-function-inventory.py
 | Surface                                                  | Tier | Proof / next check                                                                                                                                                                                                         |
 | -------------------------------------------------------- | ---- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Student / Seed / Route / Optimizer / Reports services    | P1   | Unit tests present (`StudentServiceTests`, `SeedDataServiceTests`, `RouteServiceTests`, `StudentRouteOptimizerTests`, `OperationalReportServiceTests`, `PdfReportServiceTests`)                                            |
-| `StudentsView` / `ReportsView`                           | P1   | No WPF testhost on Mac. Proof is VM smoke (`./run-wpf.sh`) + the Core tests above. Do not treat as a missing feature.                                                                                                      |
+| `DestinationService` / `StudentSchoolTransferService`    | P1   | Transfer + waypoints: `StudentSchoolTransferAndWaypointTests`. Destination unit tests still open. VM migrate + intake school assign still due (P0).                                                                        |
+| `DriverTrainingService`                                  | P1   | `DriverTrainingServiceTests` present. VM Training grid smoke still due (P0).                                                                                                                                               |
+| `StudentsView` / `ReportsView` / transfer & training UI  | P1   | No WPF testhost on Mac. Proof is VM smoke (`./run-wpf.sh`) + Core tests above. Do not treat as a missing feature.                                                                                                          |
 | `ScheduleService`                                        | P1   | **Runtime proof via Serilog:** `GetSchedulesAsync` logs count + elapsed. SfScheduler UI: `DriverScheduleViewModel` / `DriverAvailabilityService` log appointment and 14-day availability summaries. Unit tests still open. |
 | `DriverService`                                          | P1   | `DriverServiceTests` exist; `DriverScheduleView` + `DriverAvailabilityCalculator` (Schedule + ActivitySchedule). Availability calc logs `Drivers=` / `WithOpenDays=`                                                       |
 | `MaintenanceService` / Dashboard metrics / theme manager | P2   | `MaintenanceService` logs CRUD. Dashboard: `DashboardViewModel` logs refresh/optimize/report. Earth Engine retired (spec 007).                                                                                             |
@@ -122,4 +124,4 @@ python3 ~/.cursor/skills/function-inventory/scripts/update-function-inventory.py
 
 ---
 
-*Updated 2026-08-17: P1 stubs closed (availability, maintenance UI, activity persist/conflicts, map scope/dispose). Close issue #11 after merge.*
+*Updated 2026-08-17: function-inventory re-scan — 26 surfaces (added Destination/Transfer/Training); 16 with scanner proof.*
