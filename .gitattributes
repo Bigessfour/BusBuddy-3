@@ -39,7 +39,6 @@ LICENSE* text eol=crlf
 # Git LFS tracking (if used)
 *.psd filter=lfs diff=lfs merge=lfs -text
 *.ai filter=lfs diff=lfs merge=lfs -text
-*.pdf filter=lfs diff=lfs merge=lfs -text
 *.mp4 filter=lfs diff=lfs merge=lfs -text
 *.mov filter=lfs diff=lfs merge=lfs -text
 *.zip filter=lfs diff=lfs merge=lfs -text
@@ -47,4 +46,5 @@ LICENSE* text eol=crlf
 *.mdf filter=lfs diff=lfs merge=lfs -text
 *.ldf filter=lfs diff=lfs merge=lfs -text
 *.ndf filter=lfs diff=lfs merge=lfs -text
-*.sqlite filter=lfs diff=lfs merge=lfs -text
+
+# Do not LFS-track *.pdf / *.sqlite — PDFs stay as git binary; Chroma sqlite is gitignored.
