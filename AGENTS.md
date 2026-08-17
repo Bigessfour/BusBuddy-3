@@ -9,7 +9,7 @@ AI agents (Cursor, Copilot, Claude, Grok, etc.) working in this repo should foll
 - **Full technical rules**: [.github/copilot-instructions.md](.github/copilot-instructions.md) — architecture, Syncfusion, Serilog, RAG/MCP, anti-regression.
 - **Syncfusion WPF skills**: [.cursor/skills/syncfusion-wpf-busbuddy/SKILL.md](.cursor/skills/syncfusion-wpf-busbuddy/SKILL.md) — BusBuddy overlay; vendor skills in `.agents/skills/` (gitignored, install via [.github/scripts/setup-syncfusion-skills.sh](.github/scripts/setup-syncfusion-skills.sh)). NuGet pin `SyncfusionVersion` in `Directory.Build.props` (**34.2.3**); WPF MCP `syncfusion-wpf-assistant` via `.github/scripts/run-syncfusion-mcp.sh` → NuGet `Syncfusion.WPF.MCP` / `search_docs` ([WPF MCP docs](https://help.syncfusion.com/wpf/mcp)). Passwords Name = `SYNCFUSION_API_KEY` / `Syncfusion_API_Key`. Feature: [specs/006-syncfusion-tool-integration/spec.md](specs/006-syncfusion-tool-integration/spec.md).
 - **CI/CD workflow (solo developer)**: same file, section **Solo developer CI/CD workflow** — branch → PR → gates → auto-merge.
-- **GCP / GEE / secrets**: [Documentation/GCP-GEE-SECRETS-AND-AUTH.md](Documentation/GCP-GEE-SECRETS-AND-AUTH.md) — canonical auth reference.
+- **GCP / Maps / secrets**: [Documentation/GCP-GEE-SECRETS-AND-AUTH.md](Documentation/GCP-GEE-SECRETS-AND-AUTH.md) — Maps Platform (paused) + Passwords. Earth Engine is not an app dependency.
 - **Architecture map**: [STEADY-STATE-AND-FINISH-ROADMAP.md](STEADY-STATE-AND-FINISH-ROADMAP.md) (BusBuddy-3 Architecture Map section).
 
 ## Mandatory RAG usage
@@ -22,7 +22,7 @@ Before architectural, auth, CI, or cross-cutting changes:
 
 **High-value RAG queries:**
 
-- `"Google Earth Engine GcpCredentialBootstrap Passwords production auth"`
+- `"Google Maps Platform GOOGLE_MAPS_API_KEY Address Validation Routes"`
 - `"solo developer CI/CD auto-merge Build and Test CodeQL"`
 - `"Postgres BUSBUDDY_CONNECTION docker-compose profiles"`
 - `"BusBuddy-3 architecture diagram services CI Docker"`
@@ -45,45 +45,29 @@ Before architectural, auth, CI, or cross-cutting changes:
 
 ### macOS Passwords (entry Name = env var)
 
-Loaded by `LoadApiKeysFromMacPasswords()` then `BootstrapGcpCredentialsForProduction()` in `BusBuddy.WPF/App.xaml.cs`.
+Loaded by `LoadApiKeysFromMacPasswords()` in `BusBuddy.WPF/App.xaml.cs`.
 
 | Env var                                        | Purpose                                                                                                    |
 | ---------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
 | `XAI_API_KEY` / `GROK_API_KEY`                 | Optional legacy xAI cloud key (`XAI:Provider=Xai` only). Default AI path is local Ollama — no key required |
 | `SYNCFUSION_LICENSE_KEY`                       | Syncfusion WPF                                                                                             |
 | `Syncfusion_API_Key`                           | Syncfusion MCP assistant                                                                                   |
-| `GEE_PROJECT_ID`                               | `ee-bigessfour` (Earth Engine — not `busbuddy-465000`)                                                     |
-| `GEE_SERVICE_ACCOUNT_EMAIL`                    | `bus-buddy-gee@ee-bigessfour.iam.gserviceaccount.com`                                                      |
-| `GEE_SERVICE_ACCOUNT_JSON`                     | Full SA key JSON → materialized by `GcpCredentialBootstrap`                                                |
-| `GOOGLE_APPLICATION_CREDENTIALS`               | Optional path to key file                                                                                  |
+| `GOOGLE_MAPS_API_KEY`                          | Google Maps Platform (Address Validation + Routes) when spec 007 US1/US3 resume. Not required until then.  |
 | `GCP_BILLING_PROJECT` / `GOOGLE_CLOUD_PROJECT` | `new-coursera-490518`                                                                                      |
 
-**Setup scripts:**
-
-```bash
-.github/scripts/setup-gcp-gee.sh          # gcloud: SA + keys/bus-buddy-gee-key.json
-.github/scripts/store-gcp-passwords.sh    # macOS Passwords
-source .github/scripts/gcp-gee.env        # dev shell
-```
-
-### Production bootstrap (`GcpCredentialBootstrap`)
-
-- Path: `BusBuddy.Core/Configuration/GcpCredentialBootstrap.cs`
-- Materializes `GEE_SERVICE_ACCOUNT_JSON` to app data directory
-- Sets `GoogleEarthEngine__*` env overrides for `IConfiguration`
-- `IGeoDataService` gets live bearer token; `GoogleEarthEngineService` registered in DI
+**Setup:** Store Passwords entries (Name = env var). Maps API key is optional until spec 007 US1/US3. There is no Earth Engine setup script.
 
 ### Windows production
 
-Set `GEE_SERVICE_ACCOUNT_JSON` or `GOOGLE_APPLICATION_CREDENTIALS` as machine/user env — no Keychain.
+Set `GOOGLE_MAPS_API_KEY` as a machine/user env var when Maps clients are wired — no Keychain.
 
 ## GCP project map (agents must not hallucinate IDs)
 
-| Project ID            | Role                                            |
-| --------------------- | ----------------------------------------------- |
-| `ee-bigessfour`       | Earth Engine API + service account              |
-| `new-coursera-490518` | GCP console / billing / `gcloud config` default |
-| ~~`busbuddy-465000`~~ | **Invalid** — removed from appsettings          |
+| Project ID            | Role                                                          |
+| --------------------- | ------------------------------------------------------------- |
+| `new-coursera-490518` | GCP console / billing / Maps APIs / `gcloud config` default   |
+| `ee-bigessfour`       | **Unused by the app** (historical Earth Engine — do not wire) |
+| ~~`busbuddy-465000`~~ | **Invalid** — removed from appsettings                        |
 
 ## Local checks before PR
 
@@ -129,17 +113,17 @@ Launchers: `./run-wpf.sh` (Mac → UTM), `.\utm_run_in_vm.ps1` (inside VM). Post
 
 ## Key implementation files (quick index)
 
-| Concern               | File                                                    |
-| --------------------- | ------------------------------------------------------- |
-| Passwords load        | `BusBuddy.WPF/App.xaml.cs`                              |
-| GCP bootstrap         | `BusBuddy.Core/Configuration/GcpCredentialBootstrap.cs` |
-| GEE service           | `BusBuddy.Core/Services/GoogleEarthEngineService.cs`    |
-| Geo DI                | `BusBuddy.WPF/App.xaml.cs` → `ConfigureServices`        |
-| AI chat (Ollama)      | `BusBuddy.WPF/Services/OllamaChatService.cs`            |
-| CI workflow           | `.github/workflows/ci.yml`                              |
-| Auto-merge            | `.github/workflows/auto-merge.yml`                      |
-| RAG indexer           | `rag/index.py`                                          |
-| Spec-Kit constitution | `.specify/memory/constitution.md`                       |
+| Concern               | File                                             |
+| --------------------- | ------------------------------------------------ |
+| Passwords load        | `BusBuddy.WPF/App.xaml.cs`                       |
+| Geo (DB + shapefiles) | `GeoDataService`, `ShapefileEligibilityService`  |
+| Geo (Maps, paused)    | [spec 007](specs/007-maps-platform-geo/spec.md)  |
+| Geo DI                | `BusBuddy.WPF/App.xaml.cs` → `ConfigureServices` |
+| AI chat (Ollama)      | `BusBuddy.WPF/Services/OllamaChatService.cs`     |
+| CI workflow           | `.github/workflows/ci.yml`                       |
+| Auto-merge            | `.github/workflows/auto-merge.yml`               |
+| RAG indexer           | `rag/index.py`                                   |
+| Spec-Kit constitution | `.specify/memory/constitution.md`                |
 
 ## Documentation to keep in sync
 

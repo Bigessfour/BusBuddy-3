@@ -32,9 +32,6 @@
         <MoqVersion>4.20.72</MoqVersion>
         <!-- External API Package Versions (.NET 9 Compatible) -->
         <SqlClientVersion>6.1.6</SqlClientVersion>
-        <GoogleApisVersion>1.75.0</GoogleApisVersion>
-        <GoogleCloudStorageVersion>4.15.0</GoogleCloudStorageVersion>
-        <GoogleApisDriveVersion>1.75.0.4218</GoogleApisDriveVersion>
         <OpenAIVersion>2.13.0</OpenAIVersion>
         <PollyVersion>8.7.0</PollyVersion>
         <SystemNetHttpJsonVersion>9.0.18</SystemNetHttpJsonVersion>
