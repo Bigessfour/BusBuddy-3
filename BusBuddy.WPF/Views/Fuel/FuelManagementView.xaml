@@ -64,7 +64,7 @@
                     <syncfusion:GridNumericColumn MappingName="Gallons" HeaderText="Gallons" Width="80"/>
                     <syncfusion:GridNumericColumn MappingName="PricePerGallon" HeaderText="$/Gal" Width="80"/>
                     <syncfusion:GridNumericColumn MappingName="TotalCost" HeaderText="Total" Width="90"/>
-                    <syncfusion:GridTextColumn MappingName="Notes" HeaderText="Notes" Width="*"/>
+                    <syncfusion:GridTextColumn MappingName="Notes" HeaderText="Notes" Width="200"/>
                 </syncfusion:SfDataGrid.Columns>
             </syncfusion:SfDataGrid>
 

@@ -1,18 +1,10 @@
 {
   "mcpServers": {
-    "filesystem": {
-      "command": "npx",
-      "args": [
-        "-y",
-        "@modelcontextprotocol/server-filesystem",
-        "/Users/stephenmckitrick/Library/CloudStorage/Box-Box/BusBuddy/BusBuddy-3"
-      ]
-    },
     "syncfusion-wpf-assistant": {
       "type": "stdio",
       "command": "/bin/bash",
       "args": [
-        "/Users/stephenmckitrick/Library/CloudStorage/Box-Box/BusBuddy/BusBuddy-3/.github/scripts/run-syncfusion-mcp.sh"
+        "/Users/stephenmckitrick/Bus_Buddy/BusBuddy-3/.github/scripts/run-syncfusion-mcp.sh"
       ],
       "env": {}
     },
@@ -20,7 +12,7 @@
       "type": "stdio",
       "command": "python3",
       "args": ["-m", "rag.mcp_server"],
-      "cwd": "/Users/stephenmckitrick/Library/CloudStorage/Box-Box/BusBuddy/BusBuddy-3",
+      "cwd": "/Users/stephenmckitrick/Bus_Buddy/BusBuddy-3",
       "env": {}
     }
   }

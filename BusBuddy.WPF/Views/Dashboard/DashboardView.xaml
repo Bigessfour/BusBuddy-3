@@ -184,7 +184,7 @@
                                                HeaderLinesVisibility="Horizontal">
                             <syncfusion:SfDataGrid.Columns>
                                 <syncfusion:GridTextColumn HeaderText="Route" MappingName="RouteName" Width="140"/>
-                                <syncfusion:GridTextColumn HeaderText="Description" MappingName="Description" Width="*"/>
+                                <syncfusion:GridTextColumn HeaderText="Description" MappingName="Description"/>
                                 <syncfusion:GridNumericColumn HeaderText="Assigned" MappingName="AssignedCount" Width="70"/>
                                 <syncfusion:GridNumericColumn HeaderText="Cap" MappingName="MaxCapacity" Width="55"/>
                             </syncfusion:SfDataGrid.Columns>

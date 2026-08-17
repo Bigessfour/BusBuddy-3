@@ -119,6 +119,22 @@ namespace BusBuddy.WPF.ViewModels.Student
                     Logger.Error(ex, "Error refreshing after save");
                 }
             });
+
+            WeakReferenceMessenger.Default.Register<StudentsImportedMessage>(this, async (_, msg) =>
+            {
+                try
+                {
+                    Logger.Information("StudentsImportedMessage received — refreshing list Added={Added}", msg.Added);
+                    await LoadStudentsAsync();
+                    StatusMessage = msg.Added == 0
+                        ? "No new students imported (file empty or names already exist)"
+                        : $"Imported {msg.Added} student(s) from CSV";
+                }
+                catch (Exception ex)
+                {
+                    Logger.Error(ex, "Error refreshing after CSV import");
+                }
+            });
         }
 
         // Minimal internal factory wrapper for tests
@@ -327,7 +343,7 @@ namespace BusBuddy.WPF.ViewModels.Student
             ValidateAddressCommand = _validateAddressRelay;
 
             // New enhanced commands
-            ImportStudentsCommand = new RelayCommand(ExecuteImportStudents);
+            ImportStudentsCommand = new AsyncRelayCommand(ExecuteImportStudentsAsync);
             _bulkAssignRouteRelay = new RelayCommand(ExecuteBulkAssignRoute, CanExecuteBulkAssignRoute);
             BulkAssignRouteCommand = _bulkAssignRouteRelay;
             OptimizeRoutesCommand = new AsyncRelayCommand(ExecuteOptimizeRoutes);
@@ -834,20 +850,45 @@ namespace BusBuddy.WPF.ViewModels.Student
         }
 
     /// <summary>
-    /// Starts the CSV/Excel import workflow (placeholder).
+    /// Imports students from a Wiley-format CSV via <see cref="ISeedDataService"/>.
     /// </summary>
-    private void ExecuteImportStudents()
+    private async Task ExecuteImportStudentsAsync()
         {
             try
             {
                 Logger.Information("Import students command executed");
-                StatusMessage = "Import students feature coming soon - CSV/Excel support";
-                // TODO: Implement CSV/Excel import functionality
+                var dialog = new Microsoft.Win32.OpenFileDialog
+                {
+                    Title = "Import students from CSV",
+                    Filter = "CSV files (*.csv)|*.csv|All files (*.*)|*.*",
+                    CheckFileExists = true
+                };
+                if (dialog.ShowDialog() != true)
+                {
+                    StatusMessage = "CSV import cancelled";
+                    return;
+                }
+
+                IsLoading = true;
+                StatusMessage = "Importing students from CSV...";
+
+                var seed = App.ServiceProvider?.GetService<ISeedDataService>()
+                    ?? new SeedDataService(_contextFactory);
+                var added = await seed.ImportStudentsFromCsvAsync(dialog.FileName);
+                await LoadStudentsAsync();
+                StatusMessage = added == 0
+                    ? "No new students imported (file empty or names already exist)"
+                    : $"Imported {added} student(s) from CSV";
+                Logger.Information("CSV import finished Added={Added} Path={Path}", added, dialog.FileName);
             }
             catch (Exception ex)
             {
                 Logger.Error(ex, "Error executing import students command");
-                StatusMessage = "Error importing students";
+                StatusMessage = $"Error importing students: {ex.Message}";
+            }
+            finally
+            {
+                IsLoading = false;
             }
         }
 

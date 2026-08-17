@@ -507,6 +507,7 @@ namespace BusBuddy.WPF
                 services.AddScoped<IUserSettingsService, UserSettingsService>();
                 services.AddScoped<IFuelService, FuelService>();
                 services.AddScoped<IMaintenanceService, MaintenanceService>();
+                services.AddScoped<ISeedDataService, SeedDataService>();
 
                 // Register ViewModels for dependency injection (standardized on subfolder organization for dedup)
                 services.AddTransient<BusBuddy.WPF.ViewModels.MainWindowViewModel>();
@@ -1022,6 +1023,7 @@ Examples:
                 // Ensure license key is in env (Passwords / alternate keychain services)
                 TryLoadKeychainSecret("SYNCFUSION_LICENSE_KEY", "SYNCFUSION_LICENSE_KEY");
                 TryLoadKeychainSecret("com.wileyco.syncfusion.license", "SYNCFUSION_LICENSE_KEY");
+                TryLoadSyncfusionLicenseFromKeysFile();
 
                 // Check Process level first, then User level, then Machine level
                 var licenseKey = Environment.GetEnvironmentVariable("SYNCFUSION_LICENSE_KEY") ??
@@ -1065,6 +1067,50 @@ Examples:
         }
 
         /// <summary>
+        /// Windows VM / hybrid drop-in used by utm_run_in_vm.ps1:
+        /// keys/SYNCFUSION_LICENSE_KEY.txt (gitignored). Mac Keychain is not available in the guest.
+        /// </summary>
+        private static void TryLoadSyncfusionLicenseFromKeysFile()
+        {
+            if (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("SYNCFUSION_LICENSE_KEY")))
+            {
+                return;
+            }
+
+            var candidates = new[]
+            {
+                Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "keys", "SYNCFUSION_LICENSE_KEY.txt")),
+                @"C:\dev\BusBuddy-3\keys\SYNCFUSION_LICENSE_KEY.txt",
+                Path.Combine(Directory.GetCurrentDirectory(), "keys", "SYNCFUSION_LICENSE_KEY.txt")
+            };
+
+            foreach (var path in candidates.Distinct(StringComparer.OrdinalIgnoreCase))
+            {
+                try
+                {
+                    if (!File.Exists(path))
+                    {
+                        continue;
+                    }
+
+                    var text = File.ReadAllText(path).Trim();
+                    if (text.Length < 20)
+                    {
+                        continue;
+                    }
+
+                    Environment.SetEnvironmentVariable("SYNCFUSION_LICENSE_KEY", text);
+                    _bootstrapLogger?.Information("Loaded SYNCFUSION_LICENSE_KEY from keys file (length {Length})", text.Length);
+                    return;
+                }
+                catch (Exception ex)
+                {
+                    _bootstrapLogger?.Warning(ex, "Could not read Syncfusion keys file at {Path}", path);
+                }
+            }
+        }
+
+        /// <summary>
         /// Creates a safe preview of the license key for logging (masks sensitive parts)
         /// </summary>
         private static string GetLicenseKeyPreview(string licenseKey)
@@ -1101,28 +1147,15 @@ Examples:
                 return false;
             }
 
-            // Check for placeholder patterns like REPLACE_WI..._KEY
+            // Placeholder-only checks. Do not reject '/' or short tokens like "dev":
+            // Syncfusion keys are often JWT-like and commonly include those characters.
             if (licenseKey.StartsWith("REPLACE_", StringComparison.OrdinalIgnoreCase) ||
-                licenseKey.EndsWith("_KEY", StringComparison.OrdinalIgnoreCase) ||
                 licenseKey.Contains("...", StringComparison.Ordinal))
             {
                 return false;
             }
 
-            // Basic format validation - Syncfusion keys are typically long alphanumeric strings
-            if (licenseKey.Length < 20)
-            {
-                return false;
-            }
-
-            // Additional validation - license keys shouldn't contain common file paths or environment indicators
-            var suspiciousPatterns = new[] { "\\", "/", "C:", "D:", "temp", "test", "dev", "example" };
-            if (suspiciousPatterns.Any(pattern => licenseKey.Contains(pattern, StringComparison.OrdinalIgnoreCase)))
-            {
-                return false;
-            }
-
-            return true;
+            return licenseKey.Length >= 20;
         }
 
         /// <summary>

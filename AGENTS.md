@@ -7,7 +7,7 @@ AI agents (Cursor, Copilot, Claude, Grok, etc.) working in this repo should foll
 - **Constitution (Spec-Kit)**: [.specify/memory/constitution.md](.specify/memory/constitution.md) — immutable architectural DNA. Use Cursor `/speckit-*` skills (Constitution → Specify → Plan → Tasks → Implement). Feature specs live under `specs/`. Never run `specify init --here --force` without backing up the constitution.
 - **Due-outs tracker**: [docs/action-items.md](docs/action-items.md) — living checklist (Spec-Kit + Finish items). Historical narrative: [STEADY-STATE-AND-FINISH-ROADMAP.md](STEADY-STATE-AND-FINISH-ROADMAP.md).
 - **Full technical rules**: [.github/copilot-instructions.md](.github/copilot-instructions.md) — architecture, Syncfusion, Serilog, RAG/MCP, anti-regression.
-- **Syncfusion WPF skills**: [.cursor/skills/syncfusion-wpf-busbuddy/SKILL.md](.cursor/skills/syncfusion-wpf-busbuddy/SKILL.md) — BusBuddy overlay; vendor skills in `.agents/skills/` (gitignored, install via [.github/scripts/setup-syncfusion-skills.sh](.github/scripts/setup-syncfusion-skills.sh)). NuGet pin `SyncfusionVersion` in `Directory.Build.props` (**34.1.32**); MCP via `.cursor/mcp.json` → `run-syncfusion-mcp.sh`. Feature: [specs/006-syncfusion-tool-integration/spec.md](specs/006-syncfusion-tool-integration/spec.md).
+- **Syncfusion WPF skills**: [.cursor/skills/syncfusion-wpf-busbuddy/SKILL.md](.cursor/skills/syncfusion-wpf-busbuddy/SKILL.md) — BusBuddy overlay; vendor skills in `.agents/skills/` (gitignored, install via [.github/scripts/setup-syncfusion-skills.sh](.github/scripts/setup-syncfusion-skills.sh)). NuGet pin `SyncfusionVersion` in `Directory.Build.props` (**34.1.32**); WPF MCP `syncfusion-wpf-assistant` via `.github/scripts/run-syncfusion-mcp.sh` → NuGet `Syncfusion.WPF.MCP` / `search_docs` ([WPF MCP docs](https://help.syncfusion.com/wpf/mcp)). Passwords Name = `SYNCFUSION_API_KEY` / `Syncfusion_API_Key`. Feature: [specs/006-syncfusion-tool-integration/spec.md](specs/006-syncfusion-tool-integration/spec.md).
 - **CI/CD workflow (solo developer)**: same file, section **Solo developer CI/CD workflow** — branch → PR → gates → auto-merge.
 - **GCP / GEE / secrets**: [Documentation/GCP-GEE-SECRETS-AND-AUTH.md](Documentation/GCP-GEE-SECRETS-AND-AUTH.md) — canonical auth reference.
 - **Architecture map**: [STEADY-STATE-AND-FINISH-ROADMAP.md](STEADY-STATE-AND-FINISH-ROADMAP.md) (BusBuddy-3 Architecture Map section).
@@ -119,11 +119,11 @@ Requires `gh` CLI with admin access for auto-merge, branch ruleset, Dependabot a
 
 Durable rules: [.specify/memory/constitution.md](.specify/memory/constitution.md) § V; detail: [DEVELOPMENT-GUIDE.md](DEVELOPMENT-GUIDE.md); feature: [specs/005-hybrid-dev-environment/spec.md](specs/005-hybrid-dev-environment/spec.md).
 
-| Host       | Do                                                                                           | Do not                                            |
-| ---------- | -------------------------------------------------------------------------------------------- | ------------------------------------------------- |
-| Mac        | Core, Docker Postgres, RAG/MCP, Passwords secrets, `dotnet … -p:EnableWindowsTargeting=true` | Claim WPF runs natively on macOS                  |
-| Windows VM | Full Syncfusion WPF; shared folder; env / shared `keys/`                                     | Assume macOS Passwords/Keychain                   |
-| Either     | Local Ollama for app AI; PR → Build & Test + CodeQL                                          | Invent AWS/cloud app hosting for BusBuddy runtime |
+| Host       | Do                                                                                                                               | Do not                                            |
+| ---------- | -------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------- |
+| Mac        | Core, Docker Postgres, RAG/MCP, Passwords secrets; `EnableWindowsTargeting` is in `Directory.Build.props` (CLI `-p:` still fine) | Claim WPF runs natively on macOS                  |
+| Windows VM | Full Syncfusion WPF; shared folder; env / shared `keys/`                                                                         | Assume macOS Passwords/Keychain                   |
+| Either     | Local Ollama for app AI; PR → Build & Test + CodeQL                                                                              | Invent AWS/cloud app hosting for BusBuddy runtime |
 
 Launchers: `./run-wpf.sh` (Mac → UTM), `.\utm_run_in_vm.ps1` (inside VM). Postgres from VM uses Mac host IP (`run-wpf.sh` / `ipconfig getifaddr en0`).
 

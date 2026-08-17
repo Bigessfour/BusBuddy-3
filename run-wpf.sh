@@ -46,6 +46,20 @@ PFX="==>"
 echo "${PFX} BusBuddy WPF hybrid launcher (Mac host + UTM VM)"
 echo "${PFX} Project root: ${ROOT}"
 
+# Cursor/PowerShell sessions often put /usr/local/share/dotnet first. That install
+# currently has only the .NET 11 preview SDK, so global.json (9.0.303 + latestMinor)
+# cannot resolve. Prefer the user-local 9.x SDK used by this repo.
+if [[ -x "${HOME}/.dotnet/dotnet" ]]; then
+  export DOTNET_ROOT="${HOME}/.dotnet"
+  export PATH="${DOTNET_ROOT}:${PATH}"
+fi
+if ! command -v dotnet >/dev/null 2>&1; then
+  echo "ERROR: dotnet not found. Install .NET 9 SDK (https://aka.ms/dotnet/download)." >&2
+  exit 1
+fi
+echo "${PFX} Using $(command -v dotnet)  (DOTNET_ROOT=${DOTNET_ROOT:-unset})"
+dotnet --list-sdks | sed 's/^/    /'
+
 # 1. Host preflight build (fast feedback, same flag the VM will use)
 # We primarily build the runnable WPF app (plus Core via restore). This avoids transient test gaps
 # (e.g. GapsCoverageTests calling not-yet-implemented methods) from blocking your "see the UI" workflow.
