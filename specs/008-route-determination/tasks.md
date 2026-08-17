@@ -99,14 +99,14 @@
 
 ### Tests for User Story 3
 
-- [ ] T027 [P] [US3] Add `BusBuddy.Tests/Core/RouteDetermination/PickupScheduleTests.cs` — backward from StartTime; forward from DismissalTime; fail generation when StartTime missing
+- [x] T027 [P] [US3] Add `BusBuddy.Tests/Core/RouteDetermination/PickupScheduleTests.cs` — backward from StartTime; forward from DismissalTime; fail generation when StartTime missing
 
 ### Implementation for User Story 3
 
-- [ ] T028 [US3] Implement `PickupScheduleCalculator.cs` in `BusBuddy.Core/Services/RouteDetermination/` (Maps `IRoutingService` ETA when available; else AverageSpeedMph Haversine)
-- [ ] T029 [US3] Integrate schedule calculator into `GenerateAndAssignAsync` and regenerate-on-StartTime-change helper
-- [ ] T030 [US3] Add StartTime/DismissalTime editors on school Destination UI (`BusBuddy.WPF` school/map destination form — extend existing Destination or Student school panel)
-- [ ] T031 [US3] Persist computed stop times onto `RouteStop` ScheduledArrival/Departure (or documented student fields) when writing proposals
+- [x] T028 [US3] Implement `PickupScheduleCalculator.cs` in `BusBuddy.Core/Services/RouteDetermination/` (Maps `IRoutingService` ETA when available; else AverageSpeedMph Haversine)
+- [x] T029 [US3] Integrate schedule calculator into `GenerateAndAssignAsync` and regenerate-on-StartTime-change helper
+- [x] T030 [US3] Add StartTime/DismissalTime editors on school Destination UI (`BusBuddy.WPF` school/map destination form — extend existing Destination or Student school panel)
+- [x] T031 [US3] Persist computed stop times onto `RouteStop` ScheduledArrival/Departure (or documented student fields) when writing proposals
 
 **Checkpoint**: US3 tests green; school time fields editable; schedules regenerate
 
@@ -120,14 +120,14 @@
 
 ### Tests for User Story 4
 
-- [ ] T032 [P] [US4] Add `BusBuddy.Tests/Core/RouteDetermination/TransferFleetTests.cs` — Transfer pool separate; home generation does not seat from transfer demand
+- [x] T032 [P] [US4] Add `BusBuddy.Tests/Core/RouteDetermination/TransferFleetTests.cs` — Transfer pool separate; home generation does not seat from transfer demand
 
 ### Implementation for User Story 4
 
-- [ ] T033 [US4] Extend `GenerateAndAssignAsync` for `FleetKind.Transfer` using active `StudentSchoolTransfer` stops in `RouteDeterminationService.cs`
-- [ ] T034 [US4] Ensure HomeToSchool packing excludes transfer-only legs from home seat counts in `RoutePacker.cs`
-- [ ] T035 [US4] Add **Generate transfer routes** command in `BusBuddy.WPF/ViewModels/Route/RouteManagementViewModel.cs` (or Students transfer context)
-- [ ] T036 [US4] After transfer route accept, call `IRouteWaypointRebuildService` for affected routes in `RouteDeterminationService.cs`
+- [x] T033 [US4] Extend `GenerateAndAssignAsync` for `FleetKind.Transfer` using active `StudentSchoolTransfer` stops in `RouteDeterminationService.cs`
+- [x] T034 [US4] Ensure HomeToSchool packing excludes transfer-only legs from home seat counts in `RoutePacker.cs`
+- [x] T035 [US4] Add **Generate transfer routes** command in `BusBuddy.WPF/ViewModels/Route/RouteManagementViewModel.cs` (or Students transfer context)
+- [x] T036 [US4] After transfer route accept, call `IRouteWaypointRebuildService` for affected routes in `RouteDeterminationService.cs`
 
 **Checkpoint**: US4 tests green; transfer generate creates separate drafts
 
@@ -137,11 +137,11 @@
 
 **Purpose**: Docs, inventory, architecture, RAG
 
-- [ ] T037 [P] Update `docs/action-items.md` 008 checkboxes and link tasks proof
-- [ ] T038 [P] Update `STEADY-STATE-AND-FINISH-ROADMAP.md` architecture map with RouteDetermination service if structural
-- [ ] T039 [P] Re-scan function inventory / `docs/function-tree.md` for planner surfaces
-- [ ] T040 Run `python -m rag.index` after doc/spec updates
-- [ ] T041 VM smoke per [quickstart.md](./quickstart.md); record Serilog proof lines in action-items
+- [x] T037 [P] Update `docs/action-items.md` 008 checkboxes and link tasks proof
+- [x] T038 [P] Update `STEADY-STATE-AND-FINISH-ROADMAP.md` architecture map with RouteDetermination service if structural
+- [x] T039 [P] Re-scan function inventory / `docs/function-tree.md` for planner surfaces
+- [x] T040 Run `python -m rag.index` after doc/spec updates
+- [x] T041 VM smoke per [quickstart.md](./quickstart.md); record Serilog proof lines in action-items
 
 ---
 

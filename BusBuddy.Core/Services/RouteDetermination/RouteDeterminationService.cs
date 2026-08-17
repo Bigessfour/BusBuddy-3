@@ -16,18 +16,21 @@ public sealed class RouteDeterminationService : IRouteDeterminationService
     private readonly IRouteService _routeService;
     private readonly RoutingDistrictSettings _settings;
     private readonly AssignFitnessEvaluator _fitnessEvaluator;
+    private readonly IRouteWaypointRebuildService? _waypointRebuild;
 
     public RouteDeterminationService(
         IBusBuddyDbContextFactory contextFactory,
         IRouteService routeService,
         IOptions<RoutingDistrictSettings>? settings = null,
-        AssignFitnessEvaluator? fitnessEvaluator = null)
+        AssignFitnessEvaluator? fitnessEvaluator = null,
+        IRouteWaypointRebuildService? waypointRebuild = null)
     {
         _contextFactory = contextFactory ?? throw new ArgumentNullException(nameof(contextFactory));
         _routeService = routeService ?? throw new ArgumentNullException(nameof(routeService));
         _settings = settings?.Value ?? new RoutingDistrictSettings();
         _fitnessEvaluator = fitnessEvaluator
             ?? new AssignFitnessEvaluator(contextFactory, settings);
+        _waypointRebuild = waypointRebuild;
     }
 
     public async Task<RouteGenerationResult> GenerateAndAssignAsync(
@@ -43,7 +46,9 @@ public sealed class RouteDeterminationService : IRouteDeterminationService
 
         if (fleetKind == FleetKind.Transfer)
         {
-            return Fail(opId, schoolDestinationId, fleetKind, "Transfer fleet generation is not in MVP (see US4 / T033).");
+            return await GenerateTransferFleetAsync(
+                    schoolDestinationId, slot, options, opId, cancellationToken)
+                .ConfigureAwait(false);
         }
 
         await using var context = _contextFactory.CreateDbContext();
@@ -67,10 +72,25 @@ public sealed class RouteDeterminationService : IRouteDeterminationService
             warnings.Add($"School '{school.Name}' has no DismissalTime; PM mirror will still create stop structure");
         }
 
+        var transferStudentIds = await context.StudentSchoolTransfers.AsNoTracking()
+            .Where(t => t.IsActive && (t.FromDestinationId == schoolDestinationId || t.ToDestinationId == schoolDestinationId))
+            .Select(t => t.StudentId)
+            .Distinct()
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+        var transferSet = transferStudentIds.ToHashSet();
+
         var students = await context.Students.AsNoTracking()
             .Where(s => s.DestinationId == schoolDestinationId)
             .ToListAsync(cancellationToken)
             .ConfigureAwait(false);
+
+        // HomeToSchool excludes active transfer riders (separate fleet pool — Q1:A / T034).
+        students = students.Where(s => !transferSet.Contains(s.StudentId)).ToList();
+        if (transferSet.Count > 0)
+        {
+            warnings.Add($"{transferSet.Count} transfer student(s) excluded from HomeToSchool packing");
+        }
 
         // Snapshot ride mode before we rewrite AM/PM assignments (AM-only must keep PMRoute empty).
         var priorModeByStudent = students.ToDictionary(
@@ -131,7 +151,7 @@ public sealed class RouteDeterminationService : IRouteDeterminationService
             var amName = $"Draft-{schoolSlug}-{cell.CellId}-{packIndex}";
             var amProposal = await MaterializeProposalAsync(
                     amName,
-                    school.Name,
+                    school,
                     pack,
                     RouteTimeSlotKind.AM,
                     fleetKind,
@@ -153,7 +173,7 @@ public sealed class RouteDeterminationService : IRouteDeterminationService
                 var pmName = $"{amName}-PM";
                 var pmProposal = await MaterializeProposalAsync(
                         pmName,
-                        school.Name,
+                        school,
                         pack,
                         RouteTimeSlotKind.PM,
                         fleetKind,
@@ -262,16 +282,248 @@ public sealed class RouteDeterminationService : IRouteDeterminationService
         return new ClerkOverrideResult { Success = true, RetainedMirrorStop = retainMirror };
     }
 
+    public async Task<RouteGenerationResult> RegenerateSchedulesForSchoolAsync(
+        int schoolDestinationId,
+        CancellationToken cancellationToken = default)
+    {
+        var opId = Guid.NewGuid();
+        await using var context = _contextFactory.CreateDbContext();
+        var school = await context.Destinations.AsNoTracking()
+            .FirstOrDefaultAsync(d => d.DestinationId == schoolDestinationId, cancellationToken)
+            .ConfigureAwait(false);
+        if (school is null)
+        {
+            return Fail(opId, schoolDestinationId, FleetKind.HomeToSchool, "School not found");
+        }
+
+        if (school.Latitude is not decimal schLat || school.Longitude is not decimal schLon)
+        {
+            return Fail(opId, schoolDestinationId, FleetKind.HomeToSchool, "School GPS required for schedule regen");
+        }
+
+        var routes = await context.Routes.AsNoTracking()
+            .Where(r => r.IsActive && r.School == school.Name)
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+
+        var updated = 0;
+        var failures = new List<string>();
+        foreach (var route in routes)
+        {
+            var stopsResult = await _routeService.GetRouteStopsAsync(route.RouteId).ConfigureAwait(false);
+            if (!stopsResult.IsSuccess || stopsResult.Value is null || !stopsResult.Value.Any())
+            {
+                continue;
+            }
+
+            var ordered = stopsResult.Value.OrderBy(s => s.StopOrder).ToList();
+            var coords = ordered
+                .Where(s => s.Latitude.HasValue && s.Longitude.HasValue)
+                .Select(s => ((double)s.Latitude!.Value, (double)s.Longitude!.Value))
+                .ToList();
+            if (coords.Count == 0)
+            {
+                continue;
+            }
+
+            IReadOnlyList<TimeSpan> arrivals;
+            if (route.RouteName.EndsWith("-PM", StringComparison.OrdinalIgnoreCase) &&
+                school.DismissalTime is TimeSpan dismissal)
+            {
+                arrivals = PickupScheduleCalculator.ComputePmDropoffArrivals(
+                    coords, (double)schLat, (double)schLon, dismissal, _settings);
+            }
+            else if (school.StartTime is TimeSpan start)
+            {
+                arrivals = PickupScheduleCalculator.ComputeAmPickupArrivals(
+                    coords, (double)schLat, (double)schLon, start, _settings);
+            }
+            else
+            {
+                failures.Add($"Route {route.RouteName}: missing StartTime/DismissalTime");
+                continue;
+            }
+
+            var timed = new List<RouteStop>();
+            var ai = 0;
+            foreach (var stop in ordered)
+            {
+                if (!stop.Latitude.HasValue)
+                {
+                    timed.Add(stop);
+                    continue;
+                }
+
+                if (ai < arrivals.Count)
+                {
+                    stop.ScheduledArrival = arrivals[ai];
+                    stop.ScheduledDeparture = arrivals[ai] + PickupScheduleCalculator.DefaultDwell;
+                    ai++;
+                }
+
+                timed.Add(stop);
+            }
+
+            var persist = await _routeService.UpdateRouteStopsTimingAsync(route.RouteId, timed)
+                .ConfigureAwait(false);
+            if (persist.IsSuccess)
+            {
+                updated++;
+            }
+            else
+            {
+                failures.Add(persist.Error ?? $"Timing persist failed for {route.RouteName}");
+            }
+        }
+
+        Logger.Information(
+            "Schedule regen School={SchoolId} RoutesUpdated={N} OpId={OpId}",
+            schoolDestinationId, updated, opId);
+
+        return new RouteGenerationResult
+        {
+            OperationId = opId,
+            SchoolDestinationId = schoolDestinationId,
+            FleetKind = FleetKind.HomeToSchool,
+            Success = failures.Count == 0,
+            AssignedStudentCount = updated,
+            Warnings = failures,
+            Error = failures.Count == 0 ? null : string.Join("; ", failures.Take(3))
+        };
+    }
+
+    private async Task<RouteGenerationResult> GenerateTransferFleetAsync(
+        int schoolDestinationId,
+        RouteTimeSlotKind slot,
+        RouteGenerationOptions options,
+        Guid opId,
+        CancellationToken cancellationToken)
+    {
+        var warnings = new List<string>();
+        await using var context = _contextFactory.CreateDbContext();
+        var school = await context.Destinations.AsNoTracking()
+            .FirstOrDefaultAsync(d => d.DestinationId == schoolDestinationId, cancellationToken)
+            .ConfigureAwait(false);
+        if (school is null)
+        {
+            return Fail(opId, schoolDestinationId, FleetKind.Transfer, "School destination not found");
+        }
+
+        var transfers = await context.StudentSchoolTransfers.AsNoTracking()
+            .Where(t => t.IsActive &&
+                        (t.ToDestinationId == schoolDestinationId || t.FromDestinationId == schoolDestinationId))
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+
+        var riders = new List<RiderPoint>();
+        var unclustered = new List<int>();
+        foreach (var t in transfers)
+        {
+            if (t.PickupLatitude is decimal plat && t.PickupLongitude is decimal plon)
+            {
+                riders.Add(new RiderPoint(t.StudentId, (double)plat, (double)plon));
+            }
+            else
+            {
+                unclustered.Add(t.StudentId);
+            }
+        }
+
+        if (riders.Count == 0)
+        {
+            return Fail(opId, schoolDestinationId, FleetKind.Transfer,
+                "No active transfers with pickup coordinates for this school");
+        }
+
+        var seating = await ResolveDefaultSeatingAsync(context, options.DefaultSeatingCapacity, cancellationToken)
+            .ConfigureAwait(false);
+        var cells = DensityCellBuilder.Build(riders, _settings);
+        var packed = cells.SelectMany(c => RoutePacker.PackCell(c, seating, _settings)).ToList();
+        var schoolSlug = SanitizeName(school.Name);
+        var prefix = $"Draft-Xfer-{schoolSlug}-";
+
+        if (!options.DryRun)
+        {
+            var cleared = await ClearExistingDraftsAsync(schoolSlug, school.Name, cancellationToken, xferOnly: true)
+                .ConfigureAwait(false);
+            if (cleared > 0)
+            {
+                warnings.Add($"Replaced {cleared} existing transfer Draft route(s)");
+            }
+        }
+
+        var priorMode = transfers.ToDictionary(t => t.StudentId, _ => StudentRideMode.Both);
+        var proposals = new List<RouteProposalDto>();
+        var hardFailures = new List<string>();
+        var assigned = 0;
+        var idx = 0;
+        foreach (var pack in packed)
+        {
+            idx++;
+            var cellId = pack.CellId;
+            var name = $"{prefix}{cellId}-{idx}";
+            var result = await MaterializeProposalAsync(
+                    name,
+                    school,
+                    pack,
+                    slot == RouteTimeSlotKind.PM ? RouteTimeSlotKind.PM : RouteTimeSlotKind.AM,
+                    FleetKind.Transfer,
+                    options.DryRun,
+                    assignAm: slot is not RouteTimeSlotKind.PM,
+                    priorMode,
+                    cancellationToken,
+                    assignPmMirror: !options.DryRun && slot == RouteTimeSlotKind.Both)
+                .ConfigureAwait(false);
+            proposals.Add(result.Dto);
+            hardFailures.AddRange(result.Failures);
+            assigned += result.AssignedCount;
+
+            if (!options.DryRun && result.Dto.PersistedRouteId is int rid && _waypointRebuild is not null)
+            {
+                try
+                {
+                    await _waypointRebuild.RebuildAndPersistAsync(rid, cancellationToken).ConfigureAwait(false);
+                }
+                catch (Exception ex)
+                {
+                    Logger.Warning(ex, "Transfer waypoint rebuild failed RouteId={Id}", rid);
+                }
+            }
+        }
+
+        var success = hardFailures.Count == 0 && proposals.All(p => p.Status != "Rejected");
+        Logger.Information(
+            "Route generation completed School={SchoolId} Fleet={Fleet} Routes={N} Students={S} Success={Success} OpId={OpId}",
+            schoolDestinationId, FleetKind.Transfer, proposals.Count, assigned, success, opId);
+
+        return new RouteGenerationResult
+        {
+            OperationId = opId,
+            SchoolDestinationId = schoolDestinationId,
+            FleetKind = FleetKind.Transfer,
+            Proposals = proposals,
+            UnclusteredStudentIds = unclustered,
+            Warnings = warnings,
+            AssignedStudentCount = assigned,
+            Success = success,
+            Error = success ? null : string.Join("; ", hardFailures.Take(3))
+        };
+    }
+
     private async Task<int> ClearExistingDraftsAsync(
         string schoolSlug,
         string schoolDisplayName,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        bool xferOnly = false)
     {
-        var prefix = $"Draft-{schoolSlug}-";
+        var homePrefix = $"Draft-{schoolSlug}-";
+        var xferPrefix = $"Draft-Xfer-{schoolSlug}-";
         await using var context = _contextFactory.CreateWriteDbContext();
         var drafts = await context.Routes.AsTracking()
-            .Where(r => r.RouteName.StartsWith(prefix) ||
-                        (r.School == schoolDisplayName && r.RouteName.StartsWith("Draft-")))
+            .Where(r => xferOnly
+                ? r.RouteName.StartsWith(xferPrefix)
+                : (r.RouteName.StartsWith(homePrefix) && !r.RouteName.StartsWith("Draft-Xfer-")) ||
+                  (r.School == schoolDisplayName && r.RouteName.StartsWith("Draft-") && !r.RouteName.StartsWith("Draft-Xfer-")))
             .ToListAsync(cancellationToken)
             .ConfigureAwait(false);
 
@@ -301,17 +553,23 @@ public sealed class RouteDeterminationService : IRouteDeterminationService
             }
         }
 
+        var draftIds = drafts.Select(d => d.RouteId).ToList();
+        var stops = await context.RouteStops.AsTracking()
+            .Where(s => draftIds.Contains(s.RouteId))
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+        context.RouteStops.RemoveRange(stops);
         context.Routes.RemoveRange(drafts);
         await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         Logger.Information(
-            "Cleared {Count} Draft route(s) for school slug={Slug} before regenerate",
-            drafts.Count, schoolSlug);
+            "Cleared {Count} Draft route(s) slug={Slug} XferOnly={Xfer}",
+            drafts.Count, schoolSlug, xferOnly);
         return drafts.Count;
     }
 
     private async Task<MaterializeResult> MaterializeProposalAsync(
         string routeName,
-        string schoolDisplayName,
+        Destination school,
         PackedRoute pack,
         RouteTimeSlotKind slot,
         FleetKind fleetKind,
@@ -323,6 +581,7 @@ public sealed class RouteDeterminationService : IRouteDeterminationService
     {
         var failures = new List<string>();
         var assignedCount = 0;
+        var schoolDisplayName = school.Name;
         var dto = new RouteProposalDto
         {
             ProposalKey = $"{routeName}:{slot}",
@@ -365,6 +624,9 @@ public sealed class RouteDeterminationService : IRouteDeterminationService
         dto.PersistedRouteId = create.Value.RouteId;
         var routeId = create.Value.RouteId;
 
+        await PersistScheduledStopsAsync(routeId, school, pack, slot, failures, cancellationToken)
+            .ConfigureAwait(false);
+
         if (assignAm && slot == RouteTimeSlotKind.AM)
         {
             foreach (var studentId in pack.OrderedStudentIds)
@@ -386,7 +648,6 @@ public sealed class RouteDeterminationService : IRouteDeterminationService
 
         if (assignPmMirror && slot == RouteTimeSlotKind.PM)
         {
-            // OrderedStudentIds on the PM DTO retain occasional-rider stops for AM-only.
             foreach (var studentId in pack.OrderedStudentIds)
             {
                 priorModeByStudent.TryGetValue(studentId, out var priorMode);
@@ -410,6 +671,88 @@ public sealed class RouteDeterminationService : IRouteDeterminationService
         }
 
         return new MaterializeResult(dto, failures, assignedCount);
+    }
+
+    private async Task PersistScheduledStopsAsync(
+        int routeId,
+        Destination school,
+        PackedRoute pack,
+        RouteTimeSlotKind slot,
+        List<string> failures,
+        CancellationToken cancellationToken)
+    {
+        if (school.Latitude is not decimal schLat || school.Longitude is not decimal schLon)
+        {
+            failures.Add("School GPS missing — stop times not persisted");
+            return;
+        }
+
+        await using var ctx = _contextFactory.CreateDbContext();
+        var students = await ctx.Students.AsNoTracking()
+            .Where(s => pack.OrderedStudentIds.Contains(s.StudentId))
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+        var byId = students.ToDictionary(s => s.StudentId);
+
+        var coords = new List<(double Lat, double Lon)>();
+        var meta = new List<(int StudentId, string Name, string Address, decimal? Lat, decimal? Lon)>();
+        foreach (var id in pack.OrderedStudentIds)
+        {
+            if (!byId.TryGetValue(id, out var s) || s.Latitude is null || s.Longitude is null)
+            {
+                continue;
+            }
+
+            coords.Add(((double)s.Latitude.Value, (double)s.Longitude.Value));
+            meta.Add((id, s.StudentName ?? $"Student {id}", s.HomeAddress ?? string.Empty, s.Latitude, s.Longitude));
+        }
+
+        if (coords.Count == 0)
+        {
+            return;
+        }
+
+        IReadOnlyList<TimeSpan> arrivals;
+        if (slot == RouteTimeSlotKind.PM && school.DismissalTime is TimeSpan dismissal)
+        {
+            arrivals = PickupScheduleCalculator.ComputePmDropoffArrivals(
+                coords, (double)schLat, (double)schLon, dismissal, _settings);
+        }
+        else if (school.StartTime is TimeSpan start)
+        {
+            arrivals = PickupScheduleCalculator.ComputeAmPickupArrivals(
+                coords, (double)schLat, (double)schLon, start, _settings);
+        }
+        else
+        {
+            arrivals = Enumerable.Range(0, coords.Count).Select(_ => TimeSpan.FromHours(7)).ToList();
+        }
+
+        for (var i = 0; i < meta.Count; i++)
+        {
+            var m = meta[i];
+            var arrival = i < arrivals.Count ? arrivals[i] : TimeSpan.FromHours(7);
+            var stop = new RouteStop
+            {
+                RouteId = routeId,
+                StopName = m.Name,
+                StopAddress = m.Address,
+                Latitude = m.Lat,
+                Longitude = m.Lon,
+                StopOrder = i + 1,
+                ScheduledArrival = arrival,
+                ScheduledDeparture = arrival + PickupScheduleCalculator.DefaultDwell,
+                Notes = $"StudentId={m.StudentId}",
+                CreatedDate = DateTime.UtcNow,
+                EstimatedArrivalTime = DateTime.Today.Add(arrival),
+                EstimatedDepartureTime = DateTime.Today.Add(arrival + PickupScheduleCalculator.DefaultDwell)
+            };
+            var add = await _routeService.AddStopToRouteAsync(routeId, stop).ConfigureAwait(false);
+            if (!add.IsSuccess)
+            {
+                failures.Add($"Stop '{m.Name}': {add.Error}");
+            }
+        }
     }
 
     private static string SanitizeName(string name)

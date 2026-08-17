@@ -489,13 +489,14 @@ flowchart TB
     S_AI["GrokGlobalAPI<br/>AIInsightService"]
     S_USR["UserContextService<br/>UserSettingsService"]
     S_ADDR["AddressValidationService"]
+    S_ROUTEDET["RouteDeterminationService<br/>DensityCell + Packer + Fitness"]
   end
 
   subgraph UI["WPF ViewModels and Views"]
     direction TB
     VM_DASH["Dashboard"]
     VM_STU["Student"]
-    VM_RTE["Route Assignment"]
+    VM_RTE["Route Assignment / Generate Routes"]
     VM_DRV["Drivers"]
     VM_BUS["Bus / Vehicle"]
     VM_RPT["Reports"]

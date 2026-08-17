@@ -24,4 +24,9 @@ public interface IRouteDeterminationService
         RouteTimeSlotKind slot,
         string? reason = null,
         CancellationToken cancellationToken = default);
+
+    /// <summary>Recompute RouteStop times for draft/operational routes at a school when StartTime/DismissalTime change.</summary>
+    Task<RouteGenerationResult> RegenerateSchedulesForSchoolAsync(
+        int schoolDestinationId,
+        CancellationToken cancellationToken = default);
 }

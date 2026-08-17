@@ -14,4 +14,10 @@ public interface IDestinationService
         CancellationToken cancellationToken = default);
 
     Task<Destination?> GetByIdAsync(int destinationId, CancellationToken cancellationToken = default);
+
+    Task<bool> UpdateSchoolTimesAsync(
+        int destinationId,
+        TimeSpan? startTime,
+        TimeSpan? dismissalTime,
+        CancellationToken cancellationToken = default);
 }

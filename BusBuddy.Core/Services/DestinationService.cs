@@ -86,4 +86,29 @@ public sealed class DestinationService : IDestinationService
             .FirstOrDefaultAsync(d => d.DestinationId == destinationId && !d.IsDeleted, cancellationToken)
             .ConfigureAwait(false);
     }
+
+    public async Task<bool> UpdateSchoolTimesAsync(
+        int destinationId,
+        TimeSpan? startTime,
+        TimeSpan? dismissalTime,
+        CancellationToken cancellationToken = default)
+    {
+        await using var context = _contextFactory.CreateWriteDbContext();
+        var dest = await context.Destinations.AsTracking()
+            .FirstOrDefaultAsync(d => d.DestinationId == destinationId && !d.IsDeleted, cancellationToken)
+            .ConfigureAwait(false);
+        if (dest is null)
+        {
+            return false;
+        }
+
+        dest.StartTime = startTime;
+        dest.DismissalTime = dismissalTime;
+        dest.UpdatedDate = DateTime.UtcNow;
+        await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        Logger.Information(
+            "Updated school times DestinationId={Id} Start={Start} Dismissal={Dismissal}",
+            destinationId, startTime, dismissalTime);
+        return true;
+    }
 }
