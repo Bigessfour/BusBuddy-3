@@ -1,0 +1,33 @@
+{
+  "stack": "csharp",
+  "tracking_mode": "surfaces",
+  "surfaces": [
+    "BusBuddy.Core/Services/StudentService.cs",
+    "BusBuddy.Core/Services/SeedDataService.cs",
+    "BusBuddy.WPF/Views/Student/StudentsView.xaml.cs",
+    "BusBuddy.Core/Services/RouteService.cs",
+    "BusBuddy.Core/Services/StudentRouteOptimizer.cs",
+    "BusBuddy.Core/Services/OperationalReportService.cs",
+    "BusBuddy.Core/Services/PdfReportService.cs",
+    "BusBuddy.WPF/Views/Reports/ReportsView.xaml.cs",
+    "BusBuddy.Core/Services/DriverService.cs",
+    "BusBuddy.Core/Services/ScheduleService.cs",
+    "BusBuddy.Core/Services/MaintenanceService.cs",
+    "BusBuddy.Core/Services/GoogleEarthEngineService.cs",
+    "BusBuddy.WPF/Views/Dashboard/DashboardView.xaml.cs",
+    "BusBuddy.Core/Services/DashboardMetricsService.cs",
+    "BusBuddy.WPF/Utilities/SyncfusionThemeManager.cs",
+    "BusBuddy.Core/Configuration/GcpCredentialBootstrap.cs"
+  ],
+  "scan_roots": ["BusBuddy.Core", "BusBuddy.WPF", "BusBuddy.Tests"],
+  "exclude_dirs": [
+    "node_modules",
+    "mcp",
+    "dist",
+    "bin",
+    "obj",
+    "rag",
+    ".agents",
+    ".cursor"
+  ]
+}
