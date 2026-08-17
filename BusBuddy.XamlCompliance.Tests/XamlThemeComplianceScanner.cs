@@ -21,8 +21,12 @@ public static class XamlThemeComplianceScanner
         @"\bForeground\s*=\s*""(?:White|#FFF(?:FFF)?|#FFFFFF)""",
         RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
+    private static readonly Regex HardcodedHexForegroundRegex = new(
+        @"\bForeground\s*=\s*""#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6}|[0-9A-Fa-f]{8})""",
+        RegexOptions.Compiled);
+
     private static readonly Regex ButtonAdvOpenRegex = new(
-        @"<syncfusion:ButtonAdv\b(?<attrs>[\s\S]*?)(?:/>|>)",
+        @"<(?:[A-Za-z_][\w.-]*:)?ButtonAdv\b(?<attrs>[\s\S]*?)(?:/>|>)",
         RegexOptions.Compiled);
 
     private static readonly Regex LabelAttrRegex = new(
@@ -31,6 +35,14 @@ public static class XamlThemeComplianceScanner
 
     private static readonly Regex WatermarkAttrRegex = new(
         @"\bWatermark(?:Text)?\s*=\s*""(?<value>[^""]*)""",
+        RegexOptions.Compiled);
+
+    private static readonly Regex TextAttrRegex = new(
+        @"\bText\s*=\s*""(?<value>[^""]*)""",
+        RegexOptions.Compiled);
+
+    private static readonly Regex TextBlockOpenRegex = new(
+        @"<TextBlock\b(?<attrs>[\s\S]*?)(?:/>|>)",
         RegexOptions.Compiled);
 
     private static readonly Regex ColoredBackgroundRegex = new(
@@ -48,6 +60,10 @@ public static class XamlThemeComplianceScanner
     private static readonly Regex BrushKeyRegex = new(
         @"x:Key=""(BusBuddy\.Brush\.[^""]+)""",
         RegexOptions.Compiled);
+
+    private static readonly Regex AllowCommentRegex = new(
+        @"theme-compliance:allow\s+(?<rules>[A-Za-z0-9_,\s]+)",
+        RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
     private static readonly string[] RequiredBrushKeys =
     [
@@ -120,6 +136,16 @@ public static class XamlThemeComplianceScanner
             "HardcodedWhiteForeground",
             "Use BusBuddy.Brush.Text.OnPrimary or theme foreground brushes instead of White.");
 
+        AddLineMatches(findings, relative, text, HardcodedHexForegroundRegex,
+            "HardcodedHexForeground",
+            "Use DynamicResource theme text brushes instead of hardcoded hex Foreground.",
+            skip: m =>
+            {
+                var hex = m.Groups[1].Value;
+                return hex.Equals("FFF", StringComparison.OrdinalIgnoreCase) ||
+                       hex.Equals("FFFFFF", StringComparison.OrdinalIgnoreCase);
+            });
+
         AddLineMatches(findings, relative, text, LightChromeBackgroundRegex,
             "HardcodedLightChrome",
             "Use BusBuddy.Brush.Panel.Header / Panel.Content (or theme brushes) instead of light hex chrome.");
@@ -170,6 +196,20 @@ public static class XamlThemeComplianceScanner
             }
         }
 
+        foreach (Match m in TextBlockOpenRegex.Matches(text))
+        {
+            var attrs = m.Groups["attrs"].Value;
+            var textMatch = TextAttrRegex.Match(attrs);
+            if (textMatch.Success && ContainsEmojiOrLiteralEscape(textMatch.Groups["value"].Value))
+            {
+                findings.Add(new Finding(
+                    "EmojiInTextBlock",
+                    relative,
+                    LineNumberAt(text, m.Index),
+                    $"TextBlock Text contains emoji/escape: \"{textMatch.Groups["value"].Value}\""));
+            }
+        }
+
         foreach (Match m in ButtonAdvOpenRegex.Matches(text))
         {
             var attrs = m.Groups["attrs"].Value;
@@ -183,29 +223,104 @@ public static class XamlThemeComplianceScanner
             }
         }
 
-        foreach (Match m in Regex.Matches(
-                     text,
-                     @"<Border\b(?<attrs>[^>]*Background\s*=\s*""\{DynamicResource\s+BusBuddy\.Brush\.(?:Primary|FleetGreen|SafetyOrange|Semantic\.(?:Error|Warning|Success|Info|Danger))\}""[^>]*)>(?<body>[\s\S]*?)</Border>",
-                     RegexOptions.Compiled))
+        foreach (var (index, body) in FindColoredBorderBodies(text))
         {
-            foreach (var lineOffset in FindDirectChildTextPrimaryLines(m.Groups["body"].Value))
+            foreach (var lineOffset in FindDirectChildTextPrimaryLines(body))
             {
                 findings.Add(new Finding(
                     "TextPrimaryOnPrimaryHeader",
                     relative,
-                    LineNumberAt(text, m.Index) + lineOffset,
+                    LineNumberAt(text, index) + lineOffset,
                     "Colored header Border has a direct-child text element with Text.Primary — use Text.OnPrimary."));
             }
         }
 
-        return findings;
+        return FilterAllowed(text, findings);
+    }
+
+    /// <summary>
+    /// Depth-aware extraction of Border elements whose Background is a saturated BusBuddy brush.
+    /// Avoids non-greedy regex that stops at the first nested &lt;/Border&gt;.
+    /// </summary>
+    internal static IEnumerable<(int Index, string Body)> FindColoredBorderBodies(string text)
+    {
+        var i = 0;
+        while (i < text.Length)
+        {
+            var start = text.IndexOf("<Border", i, StringComparison.Ordinal);
+            if (start < 0)
+            {
+                yield break;
+            }
+
+            if (start + 7 < text.Length && char.IsLetterOrDigit(text[start + 7]))
+            {
+                i = start + 7;
+                continue;
+            }
+
+            var openEnd = text.IndexOf('>', start);
+            if (openEnd < 0)
+            {
+                yield break;
+            }
+
+            var openTag = text[start..openEnd];
+            if (openTag.EndsWith('/'))
+            {
+                i = openEnd + 1;
+                continue;
+            }
+
+            if (!ColoredBackgroundRegex.IsMatch(openTag))
+            {
+                i = openEnd + 1;
+                continue;
+            }
+
+            var depth = 1;
+            var pos = openEnd + 1;
+            while (pos < text.Length && depth > 0)
+            {
+                var nextOpen = text.IndexOf("<Border", pos, StringComparison.Ordinal);
+                var nextClose = text.IndexOf("</Border>", pos, StringComparison.Ordinal);
+                if (nextClose < 0)
+                {
+                    break;
+                }
+
+                if (nextOpen >= 0 && nextOpen < nextClose)
+                {
+                    if (nextOpen + 7 >= text.Length || !char.IsLetterOrDigit(text[nextOpen + 7]))
+                    {
+                        depth++;
+                    }
+
+                    pos = nextOpen + 7;
+                    continue;
+                }
+
+                depth--;
+                if (depth == 0)
+                {
+                    var body = text.Substring(openEnd + 1, nextClose - (openEnd + 1));
+                    yield return (start, body);
+                    pos = nextClose + "</Border>".Length;
+                    break;
+                }
+
+                pos = nextClose + "</Border>".Length;
+            }
+
+            i = pos;
+        }
     }
 
     /// <summary>
     /// Returns line offsets (0-based within body) for TextBlock/Label using Text.Primary
     /// that are not nested inside an inner Border (chips/inputs stay on Text.Primary).
     /// </summary>
-    private static IEnumerable<int> FindDirectChildTextPrimaryLines(string body)
+    internal static IEnumerable<int> FindDirectChildTextPrimaryLines(string body)
     {
         var depth = 0;
         var line = 0;
@@ -302,6 +417,55 @@ public static class XamlThemeComplianceScanner
             }
         }
 
+        // Named semantic ButtonAdv styles must suppress Fluent default glyph slot.
+        foreach (var themeRel in new[]
+                 {
+                     "BusBuddy.WPF/Resources/Themes/FluentDarkTheme.xaml",
+                     "BusBuddy.WPF/Resources/Themes/FluentLightTheme.xaml",
+                 })
+        {
+            var path = Path.Combine(repoRoot, themeRel.Replace('/', Path.DirectorySeparatorChar));
+            if (!File.Exists(path))
+            {
+                continue;
+            }
+
+            var themeText = File.ReadAllText(path);
+            foreach (var styleKey in new[]
+                     {
+                         "BusBuddy.ButtonAdv.Success",
+                         "BusBuddy.ButtonAdv.Warning",
+                         "BusBuddy.ButtonAdv.Danger",
+                         "BusBuddy.ButtonAdv.Info",
+                     })
+            {
+                if (!themeText.Contains($"x:Key=\"{styleKey}\"", StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                var styleMatch = Regex.Match(
+                    themeText,
+                    $@"<Style\s+x:Key=""{Regex.Escape(styleKey)}""[\s\S]*?</Style>",
+                    RegexOptions.Compiled);
+                if (!styleMatch.Success)
+                {
+                    continue;
+                }
+
+                var styleBody = styleMatch.Value;
+                if (!styleBody.Contains("IconWidth", StringComparison.Ordinal) ||
+                    !styleBody.Contains("SmallIcon", StringComparison.Ordinal))
+                {
+                    findings.Add(new Finding(
+                        "NamedButtonAdvMissingIconSuppression",
+                        themeRel,
+                        LineNumberAt(themeText, styleMatch.Index),
+                        $"Style '{styleKey}' should set IconWidth/Height=0 and SmallIcon={{x:Null}} (or BasedOn text-only ButtonAdv)."));
+                }
+            }
+        }
+
         return findings;
     }
 
@@ -324,6 +488,33 @@ public static class XamlThemeComplianceScanner
         }
 
         return sb.ToString();
+    }
+
+    private static List<Finding> FilterAllowed(string text, List<Finding> findings)
+    {
+        var lines = text.Replace("\r\n", "\n").Split('\n');
+        return findings.Where(f =>
+        {
+            var idx = Math.Clamp(f.Line - 1, 0, lines.Length - 1);
+            for (var i = Math.Max(0, idx - 3); i <= idx; i++)
+            {
+                var allow = AllowCommentRegex.Match(lines[i]);
+                if (!allow.Success)
+                {
+                    continue;
+                }
+
+                var rules = allow.Groups["rules"].Value
+                    .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+                if (rules.Any(r => r.Equals(f.Rule, StringComparison.OrdinalIgnoreCase) ||
+                                   r.Equals("*", StringComparison.Ordinal)))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }).ToList();
     }
 
     private static List<Finding> Deduplicate(IEnumerable<Finding> findings) =>
@@ -383,10 +574,16 @@ public static class XamlThemeComplianceScanner
         string text,
         Regex regex,
         string rule,
-        string detail)
+        string detail,
+        Func<Match, bool>? skip = null)
     {
         foreach (Match m in regex.Matches(text))
         {
+            if (skip?.Invoke(m) == true)
+            {
+                continue;
+            }
+
             findings.Add(new Finding(rule, relative, LineNumberAt(text, m.Index), detail));
         }
     }

@@ -25,7 +25,8 @@
         </Grid.RowDefinitions>
 
         <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,16">
-            <TextBlock Text="📅" FontSize="24" VerticalAlignment="Center" Margin="0,0,12,0"/>
+            <TextBlock Text="&#xE787;" FontFamily="Segoe MDL2 Assets" FontSize="24" VerticalAlignment="Center" Margin="0,0,12,0"
+                       Foreground="{DynamicResource PrimaryTextBrush}"/>
             <TextBlock Text="Driver Schedule" FontSize="24" FontWeight="Bold"
                        Foreground="{DynamicResource PrimaryTextBrush}" VerticalAlignment="Center"/>
         </StackPanel>

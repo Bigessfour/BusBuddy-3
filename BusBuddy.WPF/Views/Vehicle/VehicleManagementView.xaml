@@ -52,7 +52,8 @@
 
         <!-- Header Section -->
         <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,20">
-            <TextBlock Text="🚌" FontSize="24" VerticalAlignment="Center" Margin="0,0,15,0"/>
+            <TextBlock Text="&#xE7EC;" FontFamily="Segoe MDL2 Assets" FontSize="24" VerticalAlignment="Center" Margin="0,0,15,0"
+                      Foreground="{DynamicResource PrimaryTextBrush}"/>
             <TextBlock Text="Vehicle Management"
                       Style="{StaticResource SectionHeaderStyle}"
                       FontSize="24"

@@ -113,6 +113,10 @@
         <Setter Property="Padding" Value="12,6"/>
         <Setter Property="Cursor" Value="Hand"/>
         <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="SizeMode" Value="Normal"/>
+        <Setter Property="IconWidth" Value="0"/>
+        <Setter Property="IconHeight" Value="0"/>
+        <Setter Property="SmallIcon" Value="{x:Null}"/>
         <Style.Triggers>
             <Trigger Property="IsMouseOver" Value="True">
                 <Setter Property="Background" Value="#218838"/>
@@ -139,6 +143,10 @@
         <Setter Property="Padding" Value="12,6"/>
         <Setter Property="Cursor" Value="Hand"/>
         <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="SizeMode" Value="Normal"/>
+        <Setter Property="IconWidth" Value="0"/>
+        <Setter Property="IconHeight" Value="0"/>
+        <Setter Property="SmallIcon" Value="{x:Null}"/>
         <Style.Triggers>
             <Trigger Property="IsMouseOver" Value="True">
                 <Setter Property="Background" Value="#E0A800"/>
@@ -165,6 +173,10 @@
         <Setter Property="Padding" Value="12,6"/>
         <Setter Property="Cursor" Value="Hand"/>
         <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="SizeMode" Value="Normal"/>
+        <Setter Property="IconWidth" Value="0"/>
+        <Setter Property="IconHeight" Value="0"/>
+        <Setter Property="SmallIcon" Value="{x:Null}"/>
         <Style.Triggers>
             <Trigger Property="IsMouseOver" Value="True">
                 <Setter Property="Background" Value="#C82333"/>
@@ -191,6 +203,10 @@
         <Setter Property="Padding" Value="12,6"/>
         <Setter Property="Cursor" Value="Hand"/>
         <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="SizeMode" Value="Normal"/>
+        <Setter Property="IconWidth" Value="0"/>
+        <Setter Property="IconHeight" Value="0"/>
+        <Setter Property="SmallIcon" Value="{x:Null}"/>
         <Style.Triggers>
             <Trigger Property="IsMouseOver" Value="True">
                 <Setter Property="Background" Value="#138496"/>
