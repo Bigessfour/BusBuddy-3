@@ -50,28 +50,8 @@
     <SolidColorBrush x:Key="DataGridSelectionBackgroundBrush" Color="#094771"/>
     <SolidColorBrush x:Key="DataGridGridLinesBrush" Color="#3F3F46"/>
 
-    <!-- Syncfusion control styles integrated with Fluent Dark theme -->
-    <!-- Implicit style for ButtonAdv to improve contrast while preserving theme look -->
-    <!-- Properties are documented WPF dependency properties inherited by Syncfusion ButtonAdv -->
-    <Style TargetType="{x:Type syncfusion:ButtonAdv}">
-        <Setter Property="Background" Value="{DynamicResource ButtonBackgroundBrush}"/>
-        <Setter Property="Foreground" Value="{DynamicResource ButtonForegroundBrush}"/>
-        <Setter Property="BorderBrush" Value="{DynamicResource HoverBorderBrush}"/>
-        <Setter Property="BorderThickness" Value="1"/>
-        <Setter Property="Padding" Value="12,6"/>
-        <Setter Property="Cursor" Value="Hand"/>
-        <Style.Triggers>
-            <Trigger Property="IsMouseOver" Value="True">
-                <Setter Property="Background" Value="{DynamicResource ButtonHoverBackgroundBrush}"/>
-            </Trigger>
-            <Trigger Property="IsPressed" Value="True">
-                <Setter Property="Background" Value="{DynamicResource ButtonPressedBackgroundBrush}"/>
-            </Trigger>
-            <Trigger Property="IsEnabled" Value="False">
-                <Setter Property="Opacity" Value="0.6"/>
-            </Trigger>
-        </Style.Triggers>
-    </Style>
+    <!-- Syncfusion paints ButtonAdv chrome via SfSkinManager.ApplicationTheme.
+         Do not set implicit Background/Foreground here — that stomps the Fluent template. -->
 
     <!-- Named ButtonAdv Success style for semantic success actions -->
     <!-- Based on official Syncfusion ButtonAdv documentation: https://help.syncfusion.com/cr/wpf/Syncfusion.Windows.Tools.Controls.ButtonAdv.html -->
@@ -178,21 +158,21 @@
         </Style.Triggers>
     </Style>
 
-    <!-- Surface / text tokens used by docking panels. LightMode key names are historical; values follow FluentDark. -->
-    <SolidColorBrush x:Key="BusBuddy.Brush.Surface.LightMode.Background" Color="#1E1E1E"/>
-    <SolidColorBrush x:Key="BusBuddy.Brush.Surface.LightMode.Surface" Color="#252526"/>
-    <SolidColorBrush x:Key="BusBuddy.Brush.Surface.LightMode.Border" Color="#3F3F46"/>
-    <SolidColorBrush x:Key="BusBuddy.Brush.Surface.LightMode.Accent" Color="#2D2D30"/>
-    <SolidColorBrush x:Key="BusBuddy.Brush.Text.LightMode.Primary" Color="#FFFFFF"/>
-    <SolidColorBrush x:Key="BusBuddy.Brush.Text.LightMode.Secondary" Color="#E5E5E5"/>
+    <!-- Surface / text tokens swap with the theme selector (DynamicResource). -->
+    <SolidColorBrush x:Key="BusBuddy.Brush.Surface.Dark" Color="#1E1E1E"/>
+    <SolidColorBrush x:Key="BusBuddy.Brush.Surface.Medium" Color="#252526"/>
+    <SolidColorBrush x:Key="BusBuddy.Brush.Surface.Light" Color="#2D2D30"/>
+    <SolidColorBrush x:Key="BusBuddy.Brush.Surface.Border" Color="#3F3F46"/>
     <SolidColorBrush x:Key="BusBuddy.Brush.Text.Primary" Color="#FFFFFF"/>
     <SolidColorBrush x:Key="BusBuddy.Brush.Text.Secondary" Color="#E5E5E5"/>
+    <SolidColorBrush x:Key="BusBuddy.Brush.Text.Disabled" Color="#999999"/>
     <SolidColorBrush x:Key="BusBuddy.Brush.Panel.Background" Color="#1A1A1A"/>
     <SolidColorBrush x:Key="BusBuddy.Brush.Panel.Content" Color="#252526"/>
     <SolidColorBrush x:Key="BusBuddy.Brush.Panel.Header" Color="#2D2D30"/>
     <SolidColorBrush x:Key="BusBuddy.Brush.Panel.Border" Color="#404040"/>
     <SolidColorBrush x:Key="BusBuddy.Brush.Header.Background" Color="#2D2D30"/>
     <SolidColorBrush x:Key="BusBuddy.Brush.Text.OnPrimary" Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="BusBuddy.Brush.DataGrid.Background" Color="#1F1F1F"/>
     <SolidColorBrush x:Key="FormLabelForegroundBrush" Color="#FFFFFF"/>
     <SolidColorBrush x:Key="FormInputForegroundBrush" Color="#FFFFFF"/>
     <SolidColorBrush x:Key="FormInputBackgroundBrush" Color="#2B2B2B"/>

@@ -100,51 +100,10 @@
                    Color="{StaticResource BusBuddy.Semantic.Info}"/>
 
   <!--  ===============================================================================  -->
-  <!--  SECTION 2.1: FLUENTLIGHT THEME COMPATIBLE COLORS  -->
+  <!--  SECTION 2.1: PANEL AND CONTAINER BRUSHES  -->
   <!--  ===============================================================================  -->
-  <!--  FluentLight-specific colors for proper light mode support  -->
-
-  <!--  FluentLight Surface Colors  -->
-  <Color x:Key="BusBuddy.Surface.LightMode.Background">#FFFFFF</Color>
-  <Color x:Key="BusBuddy.Surface.LightMode.Surface">#F3F2F1</Color>
-  <Color x:Key="BusBuddy.Surface.LightMode.Border">#E1DFDD</Color>
-  <Color x:Key="BusBuddy.Surface.LightMode.Accent">#FAFAFA</Color>
-
-  <!--  FluentLight Text Colors  -->
-  <Color x:Key="BusBuddy.Text.LightMode.Primary">#000000</Color>
-  <Color x:Key="BusBuddy.Text.LightMode.Secondary">#323130</Color>
-  <Color x:Key="BusBuddy.Text.LightMode.Disabled">#A19F9D</Color>
-
-  <!--  FluentLight State Colors  -->
-  <Color x:Key="BusBuddy.State.LightMode.Hover">#F3F2F1</Color>
-  <Color x:Key="BusBuddy.State.LightMode.Pressed">#EDEBE9</Color>
-
-  <!--  FluentLight Brushes  -->
-  <SolidColorBrush x:Key="BusBuddy.Brush.Surface.LightMode.Background"
-                   Color="{StaticResource BusBuddy.Surface.LightMode.Background}"/>
-  <SolidColorBrush x:Key="BusBuddy.Brush.Surface.LightMode.Surface"
-                   Color="{StaticResource BusBuddy.Surface.LightMode.Surface}"/>
-  <SolidColorBrush x:Key="BusBuddy.Brush.Surface.LightMode.Border"
-                   Color="{StaticResource BusBuddy.Surface.LightMode.Border}"/>
-  <SolidColorBrush x:Key="BusBuddy.Brush.Surface.LightMode.Accent"
-                   Color="{StaticResource BusBuddy.Surface.LightMode.Accent}"/>
-
-  <SolidColorBrush x:Key="BusBuddy.Brush.Text.LightMode.Primary"
-                   Color="{StaticResource BusBuddy.Text.LightMode.Primary}"/>
-  <SolidColorBrush x:Key="BusBuddy.Brush.Text.LightMode.Secondary"
-                   Color="{StaticResource BusBuddy.Text.LightMode.Secondary}"/>
-  <SolidColorBrush x:Key="BusBuddy.Brush.Text.LightMode.Disabled"
-                   Color="{StaticResource BusBuddy.Text.LightMode.Disabled}"/>
-
-  <SolidColorBrush x:Key="BusBuddy.Brush.State.LightMode.Hover"
-                   Color="{StaticResource BusBuddy.State.LightMode.Hover}"/>
-  <SolidColorBrush x:Key="BusBuddy.Brush.State.LightMode.Pressed"
-                   Color="{StaticResource BusBuddy.State.LightMode.Pressed}"/>
-
-  <!--  ===============================================================================  -->
-  <!--  SECTION 2.2: HIGH CONTRAST PANEL AND CONTAINER BRUSHES  -->
-  <!--  ===============================================================================  -->
-  <!--  Enhanced contrast brushes for panel backgrounds and data grid containers  -->
+  <!--  Surface.* / Text.* swap with the theme selector via FluentDark/FluentLight dictionaries.
+        Do not add a LightMode.* parallel set — use Surface / Panel / Text tokens instead.  -->
 
   <!--  High Contrast Panel Colors  -->
   <Color x:Key="BusBuddy.Panel.Background">#1A1A1A</Color>         <!-- Darker than Surface.Dark for better contrast -->
