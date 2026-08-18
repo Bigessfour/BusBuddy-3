@@ -467,7 +467,7 @@ namespace BusBuddy.WPF
                         new HttpClient(),
                         sp.GetRequiredService<IConfiguration>()));
 
-                services.AddScoped<IUserSettingsService, UserSettingsService>();
+                services.AddSingleton<IUserSettingsService, UserSettingsService>();
                 services.AddScoped<IFuelService, FuelService>();
                 services.AddScoped<IMaintenanceService, MaintenanceService>();
                 services.AddScoped<IScheduleService, ScheduleService>();
@@ -1204,13 +1204,13 @@ Examples:
         }
 
         /// <summary>
-        /// Initialize SyncFusion themes according to v30.1.42 API guidelines
-        /// Sets up FluentDark as primary theme with FluentLight fallback
+        /// Initialize SyncFusion themes. SfSkinManager.ApplicationTheme owns the skin.
+        /// Restores the last theme saved from MainWindow / Settings.
         /// </summary>
         private void InitializeSyncfusionThemes()
         {
-            Log.Information("Initializing Syncfusion Fluent themes");
-            SyncfusionThemeManager.ApplyApplicationTheme(SyncfusionThemeManager.PRIMARY_THEME);
+            Log.Information("Initializing Syncfusion Fluent themes from saved preference");
+            SyncfusionThemeManager.ApplySavedApplicationTheme();
         }
     }
 }

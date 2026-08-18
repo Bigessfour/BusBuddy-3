@@ -90,15 +90,39 @@
                                           ToolTip="Generate and view transportation reports"
                                           AutomationProperties.Name="Reports and Print Routes"/>
 
-                    <!-- Theme Selector & Quick Toggle -->
+                    <!-- Theme selector — label is required; emoji-only tiles render blank under Fluent. -->
                     <StackPanel Orientation="Horizontal" Margin="20,0,0,0" VerticalAlignment="Center">
-                        <TextBlock Text="Theme:" Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                        <syncfusion:ComboBoxAdv x:Name="ThemeSelector" Width="150" SelectedIndex="0" SelectionChanged="ThemeSelector_SelectionChanged" ToolTip="Select application theme (Syncfusion Fluent themes)">
+                        <TextBlock Text="Theme"
+                                   Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"
+                                   VerticalAlignment="Center"
+                                   Margin="0,0,8,0"/>
+                        <syncfusion:ComboBoxAdv x:Name="ThemeSelector"
+                                                Width="150"
+                                                SelectedIndex="0"
+                                                SelectionChanged="ThemeSelector_SelectionChanged"
+                                                ToolTip="Select application theme"
+                                                AutomationProperties.Name="Theme">
                             <syncfusion:ComboBoxItemAdv Content="FluentDark"/>
                             <syncfusion:ComboBoxItemAdv Content="FluentLight"/>
                         </syncfusion:ComboBoxAdv>
-                        <syncfusion:ButtonAdv Label="🌙" Width="38" Margin="8,0,0,0" Padding="4" ToolTip="Switch to FluentDark" Click="DarkThemeButton_Click" Background="{DynamicResource ButtonBackgroundBrush}" Foreground="{DynamicResource ButtonForegroundBrush}"/>
-                        <syncfusion:ButtonAdv Label="☀️" Width="38" Margin="4,0,0,0" Padding="4" ToolTip="Switch to FluentLight" Click="LightThemeButton_Click" Background="{DynamicResource ButtonBackgroundBrush}" Foreground="{DynamicResource ButtonForegroundBrush}"/>
+                        <syncfusion:ButtonAdv Label="Dark"
+                                              Width="56"
+                                              Margin="8,0,0,0"
+                                              Padding="8,4"
+                                              ToolTip="Switch to FluentDark"
+                                              AutomationProperties.Name="Switch to FluentDark"
+                                              Click="DarkThemeButton_Click"
+                                              Background="{DynamicResource ButtonBackgroundBrush}"
+                                              Foreground="{DynamicResource ButtonForegroundBrush}"/>
+                        <syncfusion:ButtonAdv Label="Light"
+                                              Width="56"
+                                              Margin="4,0,0,0"
+                                              Padding="8,4"
+                                              ToolTip="Switch to FluentLight"
+                                              AutomationProperties.Name="Switch to FluentLight"
+                                              Click="LightThemeButton_Click"
+                                              Background="{DynamicResource ButtonBackgroundBrush}"
+                                              Foreground="{DynamicResource ButtonForegroundBrush}"/>
                     </StackPanel>
                 </StackPanel>
             </Grid>

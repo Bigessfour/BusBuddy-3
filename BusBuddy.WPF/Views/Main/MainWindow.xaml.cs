@@ -75,6 +75,7 @@ namespace BusBuddy.WPF.Views.Main
 
                 Logger.Debug("Applying Syncfusion theme");
                 ApplySyncfusionTheme();
+                TrySyncThemeSelector(SyncfusionThemeManager.CurrentThemeName);
 
                 Logger.Debug("Initializing MainWindow components and DataContext");
                 InitializeMainWindow();

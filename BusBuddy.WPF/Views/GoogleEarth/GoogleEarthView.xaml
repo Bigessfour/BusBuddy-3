@@ -86,14 +86,20 @@
                     </Border>
 
                     <!-- Layer selector — values map to InitializeMapLayer(..) via MapLayerComboBox_SelectionChanged -->
-                    <syncfusion:ComboBoxAdv x:Name="MapLayerComboBox"
-                                            Width="150"
-                                            Height="32"
-                                            Margin="16,0"
-                                            SelectedIndex="0"
-                                            SelectionChanged="MapLayerComboBox_SelectionChanged">
-                        <syncfusion:ComboBoxItemAdv Content="OpenStreetMap"/>
-                    </syncfusion:ComboBoxAdv>
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="16,0">
+                        <TextBlock Text="Map layer"
+                                   VerticalAlignment="Center"
+                                   Margin="0,0,8,0"
+                                   Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"/>
+                        <syncfusion:ComboBoxAdv x:Name="MapLayerComboBox"
+                                                Width="150"
+                                                Height="32"
+                                                SelectedIndex="0"
+                                                AutomationProperties.Name="Map layer"
+                                                SelectionChanged="MapLayerComboBox_SelectionChanged">
+                            <syncfusion:ComboBoxItemAdv Content="OpenStreetMap"/>
+                        </syncfusion:ComboBoxAdv>
+                    </StackPanel>
                 </StackPanel>
             </Grid>
         </Border>

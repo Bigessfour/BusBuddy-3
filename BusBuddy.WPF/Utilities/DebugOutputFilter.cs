@@ -196,7 +196,7 @@ namespace BusBuddy.WPF.Utilities
                 new Regex(@"SfSkinManager\.SetTheme", RegexOptions.IgnoreCase),
                 new Regex(@"theme.*not.*applied", RegexOptions.IgnoreCase),
                 new Regex(@"FluentDark.*theme.*error", RegexOptions.IgnoreCase),
-                new Regex(@"Office2019Colorful.*theme.*error", RegexOptions.IgnoreCase),
+                new Regex(@"FluentLight.*theme.*error", RegexOptions.IgnoreCase),
                 new Regex(@"SfSkinManager.*error", RegexOptions.IgnoreCase),
                 new Regex(@"ApplyStylesOnApplication.*error", RegexOptions.IgnoreCase),
                 new Regex(@"theme.*resource.*not.*found", RegexOptions.IgnoreCase)

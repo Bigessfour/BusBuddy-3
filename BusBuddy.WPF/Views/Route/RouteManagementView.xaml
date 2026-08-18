@@ -29,14 +29,14 @@
                 CornerRadius="5" Padding="15" Margin="10,10,10,0">
             <StackPanel Orientation="Horizontal">
                 <TextBlock Text="&#xE1C4;" FontFamily="Segoe MDL2 Assets"
-              FontSize="24" Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}" VerticalAlignment="Center" Margin="0,0,10,0"/>
+              FontSize="24" Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}" VerticalAlignment="Center" Margin="0,0,10,0"/>
                 <TextBlock Text="Route Management &amp; Planning" FontSize="20" FontWeight="Bold"
               Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}" VerticalAlignment="Center"/>
             </StackPanel>
         </Border>
 
         <!-- Enhanced Toolbar -->
-    <Border Grid.Row="1" Background="{DynamicResource BusBuddy.Brush.Surface.LightMode.Accent}"
+    <Border Grid.Row="1" Background="{DynamicResource BusBuddy.Brush.Panel.Header}"
                 CornerRadius="3" Padding="10" Margin="10,10,10,0">
             <Grid>
                 <Grid.ColumnDefinitions>
@@ -240,7 +240,7 @@
                               HeaderLinesVisibility="Both"
                               ColumnSizer="Star"
                               Margin="0,0,0,10"
-                              Background="{DynamicResource FluentDarkBackgroundBrush}"
+                              Background="{DynamicResource BusBuddy.Brush.DataGrid.Background}"
                               MouseDoubleClick="RoutesDataGrid_MouseDoubleClick"
                               AutomationProperties.Name="Routes Data Grid"
                               AutomationProperties.HelpText="Grid displaying all routes with their assignments and schedule information">
@@ -258,7 +258,7 @@
         </syncfusion:SfDataGrid>
 
             <!-- Stops editor (reuses MVP control; DataContext expected to be RouteAssignmentViewModel when opened in Manage dialog, so here show helper tip) -->
-            <Border Grid.Row="1" Background="{DynamicResource BusBuddy.Brush.Surface.LightMode.Surface}" CornerRadius="3" Padding="8">
+            <Border Grid.Row="1" Background="{DynamicResource BusBuddy.Brush.Surface.Medium}" CornerRadius="3" Padding="8">
                 <StackPanel>
                     <TextBlock Text="Tip: Select a route and click 'Manage Route' to add/move/delete stops and assign students."/>
                 </StackPanel>
@@ -266,7 +266,7 @@
         </Grid>
 
         <!-- Status Bar -->
-    <Border Grid.Row="3" Background="{DynamicResource BusBuddy.Brush.Surface.LightMode.Surface}" CornerRadius="3" Padding="10" Margin="10,0,10,10">
+    <Border Grid.Row="3" Background="{DynamicResource BusBuddy.Brush.Surface.Medium}" CornerRadius="3" Padding="10" Margin="10,0,10,10">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>

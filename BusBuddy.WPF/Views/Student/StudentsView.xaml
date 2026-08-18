@@ -249,17 +249,17 @@
                     <syncfusion:GridTemplateColumn.CellTemplate>
                         <DataTemplate>
                                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                    <syncfusion:ButtonAdv Label="🗺️"
+                                    <syncfusion:ButtonAdv Label="Map"
                                                           ToolTip="View on Map"
                                                           Command="{Binding DataContext.ViewOnMapCommand, RelativeSource={RelativeSource AncestorType=syncfusion:ChromelessWindow}}"
                                                           CommandParameter="{Binding}"
-                                                          Width="28" Height="28" Margin="2"
+                                                          Padding="8,4" Margin="2"
                                                           AutomationProperties.Name="View Student On Map"/>
-                                    <syncfusion:ButtonAdv Label="🎯"
+                                    <syncfusion:ButtonAdv Label="Suggest"
                                                           ToolTip="AI Route Suggest"
                                                           Command="{Binding DataContext.SuggestRouteCommand, RelativeSource={RelativeSource AncestorType=syncfusion:ChromelessWindow}}"
                                                           CommandParameter="{Binding}"
-                                                          Width="28" Height="28" Margin="2"
+                                                          Padding="8,4" Margin="2"
                                                           AutomationProperties.Name="Suggest Route For Student"/>
                                 </StackPanel>
                         </DataTemplate>
