@@ -37,9 +37,8 @@ public class Bus : INotifyPropertyChanged
     private decimal? _currentLongitude;
 
     [Key]
-    // Updated column name after migration RenameVehicleIdToBusId (20250822150000)
-    // Database primary key column is now BusId; remove old VehicleId mapping to prevent invalid column errors.
-    [Column("BusId")]
+    // CLR name is BusId; physical column remains VehicleId (RenameVehicleIdToBusId is a no-op).
+    [Column("VehicleId")]
     public int BusId { get; set; }
 
     /// <summary>

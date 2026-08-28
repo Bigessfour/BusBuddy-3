@@ -70,15 +70,6 @@ namespace BusBuddy.Core.Data
 
             var configuredCtx = new BusBuddyDbContext(configuredOptionsBuilder.Options);
             configuredCtx.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
-
-            // For Postgres in Docker profiles: ensure the database and schema exist (bypasses SQL-Server-only migrations)
-            if (provider.Equals("Postgres", StringComparison.OrdinalIgnoreCase) ||
-                provider.Equals("PostgreSQL", StringComparison.OrdinalIgnoreCase) ||
-                connectionString.Contains("Host=", StringComparison.OrdinalIgnoreCase))
-            {
-                configuredCtx.Database.EnsureCreated();
-            }
-
             return configuredCtx;
         }
 

@@ -532,10 +532,13 @@ namespace BusBuddy.WPF
                         var seedSvc = new SeedDataService(contextFactory, cfg);
                         using var context = contextFactory.CreateDbContext();
 
-                        // Ensure database is created and up to date with retry strategy
                         await BusBuddy.Core.Utilities.ResilientDbExecution.ExecuteWithResilienceAsync(
-                            async () => { await context.Database.EnsureCreatedAsync(); return true; },
-                            "Database EnsureCreated",
+                            async () =>
+                            {
+                                await RelationalSchemaApplier.ApplyAsync(context.Database);
+                                return true;
+                            },
+                            "Database Migrate",
                             maxRetries: 3
                         );
 

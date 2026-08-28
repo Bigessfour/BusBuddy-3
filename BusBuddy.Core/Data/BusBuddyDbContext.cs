@@ -96,8 +96,9 @@ public class BusBuddyDbContext : DbContext
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
         ArgumentNullException.ThrowIfNull(optionsBuilder);
-        // Snapshot is SQL Server-shaped; Mac applies the same chain via Npgsql.
-        // EF 9 treats that provider/store-type drift as pending model changes.
+        // Snapshot is SQL Server-shaped while Mac applies the same chain via Npgsql.
+        // Do not regenerate the snapshot against Npgsql until a single-provider cutover;
+        // EF 9 otherwise reports pending model changes on store-type drift.
         optionsBuilder.ConfigureWarnings(w =>
             w.Ignore(RelationalEventId.PendingModelChangesWarning));
         if (!optionsBuilder.IsConfigured)

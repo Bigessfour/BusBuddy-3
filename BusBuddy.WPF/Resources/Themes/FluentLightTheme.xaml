@@ -64,12 +64,15 @@
                      Color="#E1DFDD" />
     <!-- Syncfusion paints ButtonAdv chrome via SfSkinManager.ApplicationTheme.
          Do not set implicit Background/Foreground here — that stomps the Fluent template.
-         Hide the default glyph slot when Label is text-only (Fluent draws a blue "A"). -->
+         Hide the default glyph slot only when SmallIcon is unset (Fluent draws a blue "A"). -->
     <Style TargetType="{x:Type syncfusion:ButtonAdv}">
         <Setter Property="SizeMode" Value="Normal"/>
-        <Setter Property="IconWidth" Value="0"/>
-        <Setter Property="IconHeight" Value="0"/>
-        <Setter Property="SmallIcon" Value="{x:Null}"/>
+        <Style.Triggers>
+            <Trigger Property="SmallIcon" Value="{x:Null}">
+                <Setter Property="IconWidth" Value="0"/>
+                <Setter Property="IconHeight" Value="0"/>
+            </Trigger>
+        </Style.Triggers>
     </Style>
 
     <!-- Named ButtonAdv Success style for semantic success actions -->
