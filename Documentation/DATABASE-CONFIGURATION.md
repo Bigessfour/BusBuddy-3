@@ -48,6 +48,6 @@ dotnet ef database update --project BusBuddy.Core --startup-project BusBuddy.Cor
 
 `EnableWindowsTargeting` is already set in `Directory.Build.props`. Migrations are provider-aware (`MigrationSql`) so the same chain applies on SQL Server and Postgres.
 
-Existing Docker databases created with `EnsureCreated()` have no migration history — drop/recreate that catalog or use a new database name. Do not mix EnsureCreated and `database update` on the same database.
+The WPF app applies the same chain at startup via `RelationalSchemaApplier` (`Database.Migrate()`), not `EnsureCreated()`. Catalogs created with `EnsureCreated()` have tables but no `__EFMigrationsHistory` — the app will refuse to start against those. Drop/recreate that catalog or use a new database name.
 
 Windows VM SQL Server still works with the same `dotnet ef database update` command when `BUSBUDDY_CONNECTION` is a SQL Server string.

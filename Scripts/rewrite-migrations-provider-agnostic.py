@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
-"""Strip SQL Server-only store types from EF migration C# so Postgres can apply them.
+"""One-shot rewriter: strip SQL Server-only store types from EF migration C#.
 
-Does not rewrite BusBuddyDbContextModelSnapshot.cs (model snapshot, not applied SQL).
+Already applied 2026-08-28. Do not re-run on converted files (identity annotations
+would duplicate). Does not rewrite BusBuddyDbContextModelSnapshot.cs.
 """
 from __future__ import annotations
 
@@ -67,6 +68,11 @@ def transform(text: str) -> str:
 
 
 def main() -> None:
+    already = (ROOT / "20250804210443_InitialCreate.cs").read_text(encoding="utf-8")
+    if "Npgsql:ValueGenerationStrategy" in already and "MigrationSql.BoolType" in already:
+        print("Migrations already converted; refusing to re-run.")
+        raise SystemExit(0)
+
     changed = 0
     for path in sorted(ROOT.glob("*.cs")):
         if path.name in SKIP:

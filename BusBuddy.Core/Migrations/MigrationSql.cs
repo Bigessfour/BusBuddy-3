@@ -5,7 +5,7 @@ namespace BusBuddy.Core.Migrations;
 /// <summary>
 /// Provider-specific SQL fragments so one migration chain can apply on SQL Server and Postgres.
 /// </summary>
-internal static class MigrationSql
+public static class MigrationSql
 {
     public static bool IsNpgsql(MigrationBuilder builder) =>
         string.Equals(

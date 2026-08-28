@@ -297,6 +297,12 @@ public class UnitOfWork : IUnitOfWork
 
     public async Task EnsureDatabaseCreatedAsync()
     {
+        if (_context.Database.IsRelational())
+        {
+            await BusBuddy.Core.Data.RelationalSchemaApplier.ApplyAsync(_context.Database);
+            return;
+        }
+
         await _context.Database.EnsureCreatedAsync();
     }
 

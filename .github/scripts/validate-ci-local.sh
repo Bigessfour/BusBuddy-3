@@ -9,7 +9,7 @@ cd "${ROOT}"
 
 SOLUTION="BusBuddy.sln"
 CONFIG="Release"
-TEST_FILTER='Category!=Integration&Category!=InMemoryFlaky&(FullyQualifiedName~Core|Seed|Student|Route|Maintenance|PdfReport|Fleet|Gaps|ModelValidation|XamlCompliance)'
+TEST_FILTER='Category!=Integration&Category!=InMemoryFlaky&(FullyQualifiedName~Core|Seed|Student|Route|Maintenance|PdfReport|Fleet|Gaps|ModelValidation|XamlCompliance|Theme)'
 
 echo "==> Docker: build Core image + Postgres health"
 docker compose --profile db --profile test build busbuddy-test

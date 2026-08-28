@@ -23,7 +23,7 @@
   - [x] US4: Places type-ahead — skipped (MVP cut)
   - [x] Docs for US2; Maps clients wired
 - [x] **Student contact + school destinations** — parent/emergency fields, Destination School catalog, intake school dropdown, map schools, inter-district `StudentSchoolTransfer` (timed pickup/dropoff) — merged [PR #36](https://github.com/Bigessfour/BusBuddy-3/pull/36)
-  - [x] Apply migration `20260817140000_StudentContactFieldsAlignment` — Mac Postgres `dotnet ef database update` works on a **fresh** database (`BUSBUDDY_CONNECTION` → Docker). Existing EnsureCreated DBs need a drop/recreate or a new catalog (e.g. `busbuddy_migrate`).
+  - [x] Apply migration `20260817140000_StudentContactFieldsAlignment` — Mac Postgres `dotnet ef database update` works on a **fresh** database (`BUSBUDDY_CONNECTION` → Docker). WPF startup uses `Migrate()`; existing EnsureCreated DBs must be dropped or pointed at a new catalog.
   - [ ] VM: assign school on intake; Show Schools on map; create transfer home→campus
   - [x] Mac smoke 2026-08-28: `dotnet ef database update` on Docker Postgres applied through `20260817160000_DestinationSchoolTimes` (11 migrations). VM UI smoke still due.
   - [x] Transfer UI (Students → School Transfer) — pickup/dropoff location + times required; waypoints rebuild on assign/transfer
