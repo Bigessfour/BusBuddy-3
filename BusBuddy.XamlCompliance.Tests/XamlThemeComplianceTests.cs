@@ -39,7 +39,8 @@ public sealed class XamlThemeComplianceTests
         var findings = XamlThemeComplianceScanner.ScanThemeDictionaryParity(_repoRoot)
             .Where(f => f.Rule is "ThemeBrushKeyParity"
                 or "MissingRequiredThemeBrush"
-                or "NamedButtonAdvMissingIconSuppression")
+                or "NamedButtonAdvMissingIconSuppression"
+                or "ImplicitButtonAdvMissingIconSuppression")
             .ToList();
 
         findings.Should().BeEmpty(
@@ -52,6 +53,11 @@ public sealed class XamlThemeComplianceTests
     {
         const string sample = """
             <UserControl xmlns:syncfusion="http://schemas.syncfusion.com/wpf">
+              <UserControl.Resources>
+                <Style x:Key="BrokenButton" TargetType="syncfusion:ButtonAdv">
+                  <Setter Property="Padding" Value="8"/>
+                </Style>
+              </UserControl.Resources>
               <syncfusion:ButtonAdv Label="🔄 Refresh" Content="Ignored" Background="#F5F5F5" Foreground="White"/>
               <syncfusion:ButtonAdv Label="Save"
                 Background="{DynamicResource BusBuddy.Brush.Primary}"
@@ -81,6 +87,7 @@ public sealed class XamlThemeComplianceTests
         {
             var findings = XamlThemeComplianceScanner.ScanUiXaml(tempDir);
             findings.Select(f => f.Rule).Should().Contain([
+                "NamedButtonAdvMissingIconSuppression",
                 "EmojiInButtonAdvLabel",
                 "ButtonAdvContentIgnored",
                 "HardcodedLightChrome",

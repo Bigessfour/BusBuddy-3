@@ -72,8 +72,8 @@
                     <syncfusion:ButtonAdv Label="Routes" Margin="0,0,10,0" Padding="15,8"
                                           Background="{DynamicResource BusBuddy.Brush.Primary}" Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}" BorderThickness="0"
                                           Click="RouteManagementButton_Click" FontSize="14" FontWeight="SemiBold"
-                                          ToolTip="Plan and manage transportation routes"
-                                          AutomationProperties.Name="Route Management"/>
+                                          ToolTip="Open route assignment workspace (generate, assign, stops)"
+                                          AutomationProperties.Name="Route Assignment"/>
                     <syncfusion:ButtonAdv Label="Buses" Margin="0,0,10,0" Padding="15,8"
                                           Background="{DynamicResource BusBuddy.Brush.Primary}" Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}" BorderThickness="0"
                                           Click="BusesButton_Click" FontSize="14" FontWeight="SemiBold"
@@ -106,18 +106,26 @@
                             <syncfusion:ComboBoxItemAdv Content="FluentLight"/>
                         </syncfusion:ComboBoxAdv>
                         <syncfusion:ButtonAdv Label="Dark"
-                                              Width="56"
+                                              MinWidth="64"
                                               Margin="8,0,0,0"
-                                              Padding="8,4"
+                                              Padding="10,4"
+                                              SizeMode="Normal"
+                                              IconWidth="0"
+                                              IconHeight="0"
+                                              SmallIcon="{x:Null}"
                                               ToolTip="Switch to FluentDark"
                                               AutomationProperties.Name="Switch to FluentDark"
                                               Click="DarkThemeButton_Click"
                                               Background="{DynamicResource ButtonBackgroundBrush}"
                                               Foreground="{DynamicResource ButtonForegroundBrush}"/>
                         <syncfusion:ButtonAdv Label="Light"
-                                              Width="56"
+                                              MinWidth="64"
                                               Margin="4,0,0,0"
-                                              Padding="8,4"
+                                              Padding="10,4"
+                                              SizeMode="Normal"
+                                              IconWidth="0"
+                                              IconHeight="0"
+                                              SmallIcon="{x:Null}"
                                               ToolTip="Switch to FluentLight"
                                               AutomationProperties.Name="Switch to FluentLight"
                                               Click="LightThemeButton_Click"
@@ -216,18 +224,36 @@
                         </syncfusion:SfDataGrid.Columns>
                     </syncfusion:SfDataGrid>
 
-                    <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,15,0,0">
-                        <syncfusion:ButtonAdv Label="Optimize Routes" Margin="0,0,10,0" Padding="12,6"
+                    <WrapPanel Grid.Row="1" Orientation="Horizontal" Margin="0,15,0,0">
+                        <syncfusion:ButtonAdv Label="Generate Routes" Margin="0,0,10,8" Padding="12,6"
+                                              SizeMode="Normal" IconWidth="0" IconHeight="0" SmallIcon="{x:Null}"
+                                              Background="{DynamicResource BusBuddy.Brush.FleetGreen}"
+                                              Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}"
+                                              BorderThickness="0"
+                                              Click="GenerateRoutes_Click"
+                                              ToolTip="Year-start auto route build for school destinations"
+                                              AutomationProperties.Name="Generate Routes"/>
+                        <syncfusion:ButtonAdv Label="Transfer Routes" Margin="0,0,10,8" Padding="12,6"
+                                              SizeMode="Normal" IconWidth="0" IconHeight="0" SmallIcon="{x:Null}"
+                                              Background="{DynamicResource BusBuddy.Brush.SafetyOrange}"
+                                              Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}"
+                                              BorderThickness="0"
+                                              Click="GenerateTransferRoutes_Click"
+                                              ToolTip="Generate separate transfer fleet drafts"
+                                              AutomationProperties.Name="Generate Transfer Routes"/>
+                        <syncfusion:ButtonAdv Label="Optimize Routes" Margin="0,0,10,8" Padding="12,6"
+                                              SizeMode="Normal" IconWidth="0" IconHeight="0" SmallIcon="{x:Null}"
                                               Background="{DynamicResource ButtonBackgroundBrush}" Foreground="{DynamicResource ButtonForegroundBrush}" BorderThickness="0"
                                               Click="OptimizeRoutes_Click"
-                                              ToolTip="Optimize route efficiency and timing"
+                                              ToolTip="Open route planner (timing, maps, assignment)"
                                               AutomationProperties.Name="Optimize Transportation Routes"/>
-                        <syncfusion:ButtonAdv Label="Export Schedules" Padding="12,6"
+                        <syncfusion:ButtonAdv Label="Export Schedules" Margin="0,0,0,8" Padding="12,6"
+                                              SizeMode="Normal" IconWidth="0" IconHeight="0" SmallIcon="{x:Null}"
                                               Background="{DynamicResource ButtonBackgroundBrush}" Foreground="{DynamicResource ButtonForegroundBrush}" BorderThickness="0"
                                               Click="ExportSchedules_Click"
                                               ToolTip="Export route schedules to file"
                                               AutomationProperties.Name="Export Route Schedules"/>
-                    </StackPanel>
+                    </WrapPanel>
                 </Grid>
             </ContentControl>
 
@@ -344,11 +370,12 @@
             </ContentControl>
 
             <!-- Route Assignment Panel -->
-            <ContentControl syncfusion:DockingManager.Header="🗺️ Route Assignments"
+            <ContentControl x:Name="RouteAssignmentPane"
+                            syncfusion:DockingManager.Header="🗺️ Route Assignments"
                             syncfusion:DockingManager.State="Document"
                             Background="{DynamicResource BusBuddy.Brush.Panel.Background}">
                 <Grid Background="{DynamicResource BusBuddy.Brush.Panel.Content}">
-                    <route:RouteAssignmentView/>
+                    <route:RouteAssignmentView x:Name="RouteAssignmentPaneView"/>
                 </Grid>
             </ContentControl>
 

@@ -34,6 +34,12 @@
                         Value="6,4,0,0" />
                 <Setter Property="SizeMode"
                         Value="Normal" />
+                <Setter Property="IconWidth"
+                        Value="0" />
+                <Setter Property="IconHeight"
+                        Value="0" />
+                <Setter Property="SmallIcon"
+                        Value="{x:Null}" />
                 <Setter Property="Background"
                         Value="{DynamicResource ButtonBackgroundBrush}" />
                 <Setter Property="Foreground"
@@ -193,6 +199,18 @@
                                              Margin="0,4,0,0"
                                              Text="{Binding StartTimeString, Mode=TwoWay}"
                                              AutomationProperties.Name="Route Start Time" />
+                    <syncfusion:ButtonAdv x:Name="GenerateRoutesButton"
+                                          Label="Generate Routes"
+                                          Command="{Binding GenerateRoutesCommand}"
+                                          Style="{StaticResource SuccessButtonAdv}"
+                                          AutomationProperties.Name="Generate Routes"
+                                          ToolTip="Year-start auto route build for school destinations" />
+                    <syncfusion:ButtonAdv x:Name="GenerateTransferRoutesButton"
+                                          Label="Transfer Routes"
+                                          Command="{Binding GenerateTransferRoutesCommand}"
+                                          Style="{StaticResource WarningButtonAdv}"
+                                          AutomationProperties.Name="Generate Transfer Routes"
+                                          ToolTip="Generate separate transfer fleet drafts" />
                     <syncfusion:ButtonAdv x:Name="TimeButton"
                                           Label="Time"
                                           Command="{Binding TimeRouteCommand}"

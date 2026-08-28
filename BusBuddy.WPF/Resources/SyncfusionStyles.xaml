@@ -20,11 +20,14 @@
     <!--
     Implicit ButtonAdv: size/padding only. No Background/Foreground — those belong to
     the Fluent skin injected by SfSkinManager.ApplyThemeAsDefaultStyle.
+    IconWidth 0 + SmallIcon null: Fluent injects a default glyph that hides Label text.
+    Icon toolbars must set IconWidth/SmallIcon on the control or a keyed style.
     -->
     <Style TargetType="syncfusion:ButtonAdv">
         <Setter Property="SizeMode" Value="Normal"/>
-        <Setter Property="IconHeight" Value="16"/>
-        <Setter Property="IconWidth" Value="16"/>
+        <Setter Property="IconHeight" Value="0"/>
+        <Setter Property="IconWidth" Value="0"/>
+        <Setter Property="SmallIcon" Value="{x:Null}"/>
         <Setter Property="CornerRadius" Value="4"/>
         <Setter Property="Padding" Value="12,8"/>
         <Setter Property="Margin" Value="4"/>

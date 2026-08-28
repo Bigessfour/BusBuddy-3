@@ -2,24 +2,27 @@
 <!-- Do NOT edit manually. Lightweight correctness-surface tracker. -->
 
 # Function Inventory — BusBuddy
-Generated: 2026-08-17T02:04:31.336738+00:00
+Generated: 2026-08-28T17:30:19.864526+00:00
 **Stack:** C#/Blazor
 **Tracking mode:** `surfaces`
 **Scan roots:** `BusBuddy.Core`, `BusBuddy.WPF`, `BusBuddy.Tests`
-**Configured surfaces:** 19 (from `.function-inventory.json` `surfaces` allowlist)
+**Configured surfaces:** 23 (from `.function-inventory.json` `surfaces` allowlist)
 
-**Summary:** 19 correctness surfaces | 12 with proof | 7 without proof
+**Summary:** 23 correctness surfaces | 14 with proof | 9 without proof
 This list is the **correctness queue** — resident/clerk-critical pages, services, and handlers only. Tiny helpers, Angular route paths, and demoted UI shells are omitted.
 
 Ship gate remains project acceptance / smoke checklists — inventory count alone is not “done.”
 
 ## Surfaces without proof (review these)
 - **P1** Other Public: StudentsView.xaml.StudentsView.xaml @ BusBuddy.WPF/Views/Student/StudentsView.xaml.cs:1
+- **P1** Core Service: RouteDeterminationService.RouteDeterminationService @ BusBuddy.Core/Services/RouteDetermination/RouteDeterminationService.cs:1
+- **P1** Other Public: AssignFitnessEvaluator.AssignFitnessEvaluator @ BusBuddy.Core/Services/RouteDetermination/AssignFitnessEvaluator.cs:1
 - **P1** Other Public: ReportsView.xaml.ReportsView.xaml @ BusBuddy.WPF/Views/Reports/ReportsView.xaml.cs:1
-- **P1** Core Service: ScheduleService.ScheduleService @ BusBuddy.Core/Services/ScheduleService.cs:1
+- **P2** Core Service: ScheduleService.ScheduleService @ BusBuddy.Core/Services/ScheduleService.cs:1
 - **P2** Other Public: MaintenanceView.xaml.MaintenanceView.xaml @ BusBuddy.WPF/Views/Maintenance/MaintenanceView.xaml.cs:1
 - **P2** Other Public: DriverScheduleView.xaml.DriverScheduleView.xaml @ BusBuddy.WPF/Views/Driver/DriverScheduleView.xaml.cs:1
 - **P2** Other Public: DashboardView.xaml.DashboardView.xaml @ BusBuddy.WPF/Views/Dashboard/DashboardView.xaml.cs:1
+- **P2** Core Service: ShapefileEligibilityService.ShapefileEligibilityService @ BusBuddy.Core/Services/ShapefileEligibilityService.cs:1
 
 Empty proof ≠ missing feature. Prefer focused vitest / e2e / ops checks on P1 write paths.
 
@@ -53,21 +56,25 @@ Empty proof ≠ missing feature. Prefer focused vitest / e2e / ops checks on P1 
 | P1 | Core Service | SeedDataService.SeedDataService | BusBuddy.Core/Services/SeedDataService.cs:1 | BusBuddy.Tests/Core/SeedDataServiceTests.cs | has logic |
 | P1 | Other Public | StudentsView.xaml.StudentsView.xaml | BusBuddy.WPF/Views/Student/StudentsView.xaml.cs:1 | NO PROOF FOUND | has logic |
 | P1 | Core Service | RouteService.RouteService | BusBuddy.Core/Services/RouteService.cs:1 | BusBuddy.Tests/Core/RouteServiceTests.cs | has logic |
+| P1 | Core Service | RouteDeterminationService.RouteDeterminationService | BusBuddy.Core/Services/RouteDetermination/RouteDeterminationService.cs:1 | NO PROOF FOUND | has logic |
+| P1 | Other Public | AssignFitnessEvaluator.AssignFitnessEvaluator | BusBuddy.Core/Services/RouteDetermination/AssignFitnessEvaluator.cs:1 | NO PROOF FOUND | has logic |
 | P1 | Other Public | StudentRouteOptimizer.StudentRouteOptimizer | BusBuddy.Core/Services/StudentRouteOptimizer.cs:1 | BusBuddy.Tests/Core/StudentRouteOptimizerTests.cs | has logic |
 | P1 | Core Service | OperationalReportService.OperationalReportService | BusBuddy.Core/Services/OperationalReportService.cs:1 | BusBuddy.Tests/Core/OperationalReportServiceTests.cs | has logic |
 | P1 | Core Service | PdfReportService.PdfReportService | BusBuddy.Core/Services/PdfReportService.cs:1 | BusBuddy.Tests/Core/PdfReportServiceTests.cs | has logic |
 | P1 | Other Public | ReportsView.xaml.ReportsView.xaml | BusBuddy.WPF/Views/Reports/ReportsView.xaml.cs:1 | NO PROOF FOUND | has logic |
-| P1 | Core Service | DriverService.DriverService | BusBuddy.Core/Services/DriverService.cs:1 | BusBuddy.Tests/Core/DriverServiceTests.cs | has logic |
-| P1 | Core Service | ScheduleService.ScheduleService | BusBuddy.Core/Services/ScheduleService.cs:1 | NO PROOF FOUND | has logic |
+| P2 | Core Service | DriverService.DriverService | BusBuddy.Core/Services/DriverService.cs:1 | BusBuddy.Tests/Core/DriverServiceTests.cs | has logic |
+| P2 | Core Service | ScheduleService.ScheduleService | BusBuddy.Core/Services/ScheduleService.cs:1 | NO PROOF FOUND | has logic |
 | P2 | Core Service | MaintenanceService.MaintenanceService | BusBuddy.Core/Services/MaintenanceService.cs:1 | BusBuddy.Tests/Core/MaintenanceServiceTests.cs | has logic |
 | P2 | Other Public | MaintenanceView.xaml.MaintenanceView.xaml | BusBuddy.WPF/Views/Maintenance/MaintenanceView.xaml.cs:1 | NO PROOF FOUND | has logic |
 | P2 | Other Public | DriverScheduleView.xaml.DriverScheduleView.xaml | BusBuddy.WPF/Views/Driver/DriverScheduleView.xaml.cs:1 | NO PROOF FOUND | has logic |
 | P2 | Other Public | DriverAvailabilityCalculator.DriverAvailabilityCalculator | BusBuddy.Core/Services/DriverAvailabilityCalculator.cs:1 | BusBuddy.Tests/Core/DriverAvailabilityCalculatorTests.cs | has logic |
-| P2 | Core Service | GeoDataService.GeoDataService | BusBuddy.Core/Services/GeoDataService.cs:1 | (DB routes; EE retired) | has logic |
+| P2 | Core Service | GeoDataService.GeoDataService | BusBuddy.Core/Services/GeoDataService.cs:1 | BusBuddy.Tests/Core/FleetMonitoringServiceTests.cs | has logic |
+| P2 | Other Public | GoogleAddressValidationClient.GoogleAddressValidationClient | BusBuddy.Core/Services/GoogleMaps/GoogleAddressValidationClient.cs:1 | BusBuddy.Tests/Core/GoogleAddressValidationClientTests.cs | has logic |
+| P2 | Core Service | GoogleRoutingService.GoogleRoutingService | BusBuddy.Core/Services/GoogleMaps/GoogleRoutingService.cs:1 | BusBuddy.Tests/Core/GoogleRoutingServiceTests.cs | has logic |
 | P2 | Other Public | DashboardView.xaml.DashboardView.xaml | BusBuddy.WPF/Views/Dashboard/DashboardView.xaml.cs:1 | NO PROOF FOUND | has logic |
 | P2 | Core Service | DashboardMetricsService.DashboardMetricsService | BusBuddy.Core/Services/DashboardMetricsService.cs:1 | BusBuddy.Tests/Core/GapsCoverageTests.cs | has logic |
-| P2 | Other Public | SyncfusionThemeManager.SyncfusionThemeManager | BusBuddy.WPF/Utilities/SyncfusionThemeManager.cs:1 | BusBuddy.Tests/WPF/SyncfusionThemeManagerTests.cs, BusBuddy.... | has logic |
-| P2 | Other Public | ShapefileEligibilityService | BusBuddy.Core/Services/ShapefileEligibilityService.cs | (local shapefiles) | has logic |
+| P2 | Other Public | SyncfusionThemeManager.SyncfusionThemeManager | BusBuddy.WPF/Utilities/SyncfusionThemeManager.cs:1 | BusBuddy.Tests/WPF/SyncfusionThemeManagerTests.cs | has logic |
+| P2 | Core Service | ShapefileEligibilityService.ShapefileEligibilityService | BusBuddy.Core/Services/ShapefileEligibilityService.cs:1 | NO PROOF FOUND | has logic |
 
 ## Philosophy (solo superpower)
 - Track **correctness surfaces** (pages, core services, handlers) — not every tiny helper.

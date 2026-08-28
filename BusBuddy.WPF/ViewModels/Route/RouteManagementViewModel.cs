@@ -398,46 +398,17 @@ namespace BusBuddy.WPF.ViewModels.Route
         {
             try
             {
-                var planner = _routeDetermination
-                    ?? App.ServiceProvider?.GetService<IRouteDeterminationService>();
-                if (planner is null)
-                {
-                    StatusMessage = "Route determination service unavailable";
-                    return;
-                }
-
-                await using var context = _contextFactory.CreateDbContext();
-                var schools = await context.Destinations
-                    .Where(d => d.IsActive && d.DestinationType == DestinationTypes.School)
-                    .OrderBy(d => d.Name)
-                    .ToListAsync()
+                StatusMessage = "Generating routes...";
+                var outcome = await RouteGenerationCoordinator.GenerateAsync(
+                        FleetKind.HomeToSchool,
+                        SelectedRoute?.School,
+                        preferSchoolWithStartTime: true,
+                        _routeDetermination)
                     .ConfigureAwait(true);
 
-                if (schools.Count == 0)
+                StatusMessage = outcome.StatusMessage;
+                if (!outcome.Success || outcome.Result is null)
                 {
-                    StatusMessage = "No active school destinations — add a school first";
-                    return;
-                }
-
-                Destination? school = null;
-                if (SelectedRoute is not null && !string.IsNullOrWhiteSpace(SelectedRoute.School))
-                {
-                    school = schools.FirstOrDefault(s =>
-                        string.Equals(s.Name, SelectedRoute.School, StringComparison.OrdinalIgnoreCase));
-                }
-
-                school ??= schools.FirstOrDefault(s => s.StartTime.HasValue) ?? schools[0];
-
-                StatusMessage = $"Generating routes for '{school.Name}'...";
-                var result = await planner.GenerateAndAssignAsync(
-                        school.DestinationId,
-                        RouteTimeSlotKind.Both,
-                        FleetKind.HomeToSchool)
-                    .ConfigureAwait(true);
-
-                if (!result.Success)
-                {
-                    StatusMessage = result.Error ?? "Route generation failed";
                     return;
                 }
 
@@ -451,11 +422,7 @@ namespace BusBuddy.WPF.ViewModels.Route
                 }
 
                 var mapVm = App.ServiceProvider?.GetService<BusBuddy.WPF.ViewModels.GoogleEarth.GoogleEarthViewModel>();
-                mapVm?.ApplyGenerationResult(result);
-
-                StatusMessage =
-                    $"Generated {result.Proposals.Count} proposal(s), assigned {result.AssignedStudentCount} student(s)" +
-                    (result.Warnings.Count > 0 ? $" — {result.Warnings[0]}" : string.Empty);
+                mapVm?.ApplyGenerationResult(outcome.Result);
             }
             catch (Exception ex)
             {
@@ -468,45 +435,16 @@ namespace BusBuddy.WPF.ViewModels.Route
         {
             try
             {
-                var planner = _routeDetermination
-                    ?? App.ServiceProvider?.GetService<IRouteDeterminationService>();
-                if (planner is null)
-                {
-                    StatusMessage = "Route determination service unavailable";
-                    return;
-                }
-
-                await using var context = _contextFactory.CreateDbContext();
-                var schools = await context.Destinations
-                    .Where(d => d.IsActive && d.DestinationType == DestinationTypes.School)
-                    .OrderBy(d => d.Name)
-                    .ToListAsync()
-                    .ConfigureAwait(true);
-                if (schools.Count == 0)
-                {
-                    StatusMessage = "No active school destinations";
-                    return;
-                }
-
-                Destination? school = null;
-                if (SelectedRoute is not null && !string.IsNullOrWhiteSpace(SelectedRoute.School))
-                {
-                    school = schools.FirstOrDefault(s =>
-                        string.Equals(s.Name, SelectedRoute.School, StringComparison.OrdinalIgnoreCase));
-                }
-
-                school ??= schools[0];
-                StatusMessage = $"Generating transfer routes for '{school.Name}'...";
-                var result = await planner.GenerateAndAssignAsync(
-                        school.DestinationId,
-                        RouteTimeSlotKind.Both,
-                        FleetKind.Transfer)
+                StatusMessage = "Generating transfer routes...";
+                var outcome = await RouteGenerationCoordinator.GenerateAsync(
+                        FleetKind.Transfer,
+                        SelectedRoute?.School,
+                        preferSchoolWithStartTime: false,
+                        _routeDetermination)
                     .ConfigureAwait(true);
 
                 await LoadRoutesAsync().ConfigureAwait(true);
-                StatusMessage = result.Success
-                    ? $"Transfer fleet: {result.Proposals.Count} proposal(s), {result.AssignedStudentCount} assigned"
-                    : (result.Error ?? "Transfer generation failed");
+                StatusMessage = outcome.StatusMessage;
             }
             catch (Exception ex)
             {

@@ -700,29 +700,27 @@ namespace BusBuddy.WPF.Views.Main
         private void RouteManagementButton_Click(object sender, RoutedEventArgs e)
         {
             Logger.Debug("RouteManagementButton_Click event triggered");
-            Logger.Information("Route management navigation requested");
+            Logger.Information("Route assignment workspace requested");
             try
             {
-                // Create a window to host the RouteManagementView
-                var routeWindow = new Window
+                if (MainDockingManager != null)
                 {
-                    Title = "🗺️ Route Management",
-                    Width = 1200,
-                    Height = 800,
-                    WindowStartupLocation = WindowStartupLocation.CenterOwner,
-                    Owner = this,
-                    Content = new RouteManagementView()
-                };
-
-                Logger.Debug("Showing RouteManagementView in modal dialog");
-                routeWindow.ShowDialog();
-                Logger.Information("RouteManagementView dialog closed");
-                RefreshRoutesGrid();
+                    try
+                    {
+                        MainDockingManager.ActivateWindow("🗺️ Route Assignments");
+                        Logger.Information("Route Assignments pane activation attempted via header lookup");
+                    }
+                    catch (Exception inner)
+                    {
+                        Logger.Warning(inner, "ActivateWindow for Route Assignments failed; focusing pane");
+                        RouteAssignmentPane?.Focus();
+                    }
+                }
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Error opening Route Management view");
-                MessageBox.Show($"Error opening Route Management view: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                Logger.Error(ex, "Error activating Route Assignments view");
+                MessageBox.Show($"Error opening Route Assignments: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -1091,6 +1089,51 @@ namespace BusBuddy.WPF.Views.Main
         }
 
         // Routes panel event handlers
+        private async void GenerateRoutes_Click(object sender, RoutedEventArgs e)
+        {
+            Logger.Information("Generate Routes requested from main Routes pane");
+            await RunAssignmentGenerationAsync(transferFleet: false).ConfigureAwait(true);
+        }
+
+        private async void GenerateTransferRoutes_Click(object sender, RoutedEventArgs e)
+        {
+            Logger.Information("Generate Transfer Routes requested from main Routes pane");
+            await RunAssignmentGenerationAsync(transferFleet: true).ConfigureAwait(true);
+        }
+
+        private async Task RunAssignmentGenerationAsync(bool transferFleet)
+        {
+            try
+            {
+                if (RouteAssignmentPaneView.DataContext is RouteAssignmentViewModel assignmentVm)
+                {
+                    if (transferFleet)
+                    {
+                        await assignmentVm.GenerateTransferRoutesAsync().ConfigureAwait(true);
+                    }
+                    else
+                    {
+                        await assignmentVm.GenerateRoutesAsync().ConfigureAwait(true);
+                    }
+                }
+                else
+                {
+                    MessageBox.Show(
+                        "Route Assignment workspace is not ready. Open the Route Assignments tab and try again.",
+                        "Generate Routes",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Warning);
+                }
+
+                RefreshRoutesGrid();
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Error generating routes from main Routes pane transfer={Transfer}", transferFleet);
+                MessageBox.Show($"Error generating routes: {ex.Message}", "Generate Routes", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
         private void OptimizeRoutes_Click(object sender, RoutedEventArgs e)
         {
             Logger.Information("Route optimization requested — opening Route Management");

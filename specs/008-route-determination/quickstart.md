@@ -21,10 +21,10 @@ Expect: clustering packs nearby 12 into one route; distant gap splits; seating b
 ## VM UI smoke
 
 1. Set school start/dismissal on map school editor.
-2. Run **Generate routes** (year-start) for that school — expect draft AM + mirrored PM; map shows clusters.
+2. On the main window **Routes** workspace (Route Assignment tab, or the right-hand Routes pane) click **Generate Routes** — expect draft AM + mirrored PM; map shows clusters. (The Route Management planner dialog is still available from **Optimize Routes**.)
 3. Override one outlier on the map — assignment moves; stop remains on mirror for AM-only student.
 4. Assign a student that exceeds seating — **blocked** toast; assign with time risk only — **warn** and proceeds.
-5. Create two transfers — **Generate transfer routes** produces a separate pool (no seat theft from home routes).
+5. Create two transfers — **Transfer Routes** produces a separate pool (no seat theft from home routes).
 
 ## Serilog proof
 
