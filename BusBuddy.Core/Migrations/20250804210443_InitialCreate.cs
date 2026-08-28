@@ -18,11 +18,12 @@ namespace BusBuddy.Core.Migrations
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    Timestamp = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    Action = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false, defaultValue: ""),
-                    User = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false, defaultValue: ""),
-                    Details = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: true)
+                        .Annotation("SqlServer:Identity", "1, 1")
+                        .Annotation("Npgsql:ValueGenerationStrategy", Npgsql.EntityFrameworkCore.PostgreSQL.Metadata.NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    Timestamp = table.Column<DateTime>(type: MigrationSql.DateTimeType(migrationBuilder), nullable: false),
+                    Action = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 200), maxLength: 200, nullable: false, defaultValue: ""),
+                    User = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 100), maxLength: 100, nullable: false, defaultValue: ""),
+                    Details = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 1000), maxLength: 1000, nullable: true)
                 },
                 constraints: table =>
                 {
@@ -34,26 +35,27 @@ namespace BusBuddy.Core.Migrations
                 columns: table => new
                 {
                     DestinationId = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    Name = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false, defaultValue: ""),
-                    Address = table.Column<string>(type: "nvarchar(300)", maxLength: 300, nullable: false, defaultValue: ""),
-                    City = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false, defaultValue: ""),
-                    State = table.Column<string>(type: "nvarchar(2)", maxLength: 2, nullable: false, defaultValue: ""),
-                    ZipCode = table.Column<string>(type: "nvarchar(10)", maxLength: 10, nullable: false, defaultValue: ""),
-                    ContactName = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
-                    ContactPhone = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: true),
-                    ContactEmail = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
-                    DestinationType = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false, defaultValue: ""),
+                        .Annotation("SqlServer:Identity", "1, 1")
+                        .Annotation("Npgsql:ValueGenerationStrategy", Npgsql.EntityFrameworkCore.PostgreSQL.Metadata.NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    Name = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 200), maxLength: 200, nullable: false, defaultValue: ""),
+                    Address = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 300), maxLength: 300, nullable: false, defaultValue: ""),
+                    City = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 100), maxLength: 100, nullable: false, defaultValue: ""),
+                    State = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 2), maxLength: 2, nullable: false, defaultValue: ""),
+                    ZipCode = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 10), maxLength: 10, nullable: false, defaultValue: ""),
+                    ContactName = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 100), maxLength: 100, nullable: true),
+                    ContactPhone = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 20), maxLength: 20, nullable: true),
+                    ContactEmail = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 100), maxLength: 100, nullable: true),
+                    DestinationType = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 50), maxLength: 50, nullable: false, defaultValue: ""),
                     MaxCapacity = table.Column<int>(type: "int", nullable: true),
-                    SpecialRequirements = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
+                    SpecialRequirements = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 500), maxLength: 500, nullable: true),
                     Latitude = table.Column<decimal>(type: "decimal(10,8)", nullable: true),
                     Longitude = table.Column<decimal>(type: "decimal(11,8)", nullable: true),
-                    IsActive = table.Column<bool>(type: "bit", nullable: false),
-                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
-                    CreatedDate = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    UpdatedDate = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    CreatedBy = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
-                    UpdatedBy = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true)
+                    IsActive = table.Column<bool>(type: MigrationSql.BoolType(migrationBuilder), nullable: false),
+                    IsDeleted = table.Column<bool>(type: MigrationSql.BoolType(migrationBuilder), nullable: false),
+                    CreatedDate = table.Column<DateTime>(type: MigrationSql.DateTimeType(migrationBuilder), nullable: false),
+                    UpdatedDate = table.Column<DateTime>(type: MigrationSql.DateTimeType(migrationBuilder), nullable: false),
+                    CreatedBy = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 100), maxLength: 100, nullable: true),
+                    UpdatedBy = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 100), maxLength: 100, nullable: true)
                 },
                 constraints: table =>
                 {
@@ -65,39 +67,40 @@ namespace BusBuddy.Core.Migrations
                 columns: table => new
                 {
                     DriverID = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    DriverName = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false, defaultValue: ""),
-                    DriverPhone = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: true),
-                    DriverEmail = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
-                    Address = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
-                    City = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
-                    State = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: true),
-                    Zip = table.Column<string>(type: "nvarchar(10)", maxLength: 10, nullable: true),
-                    DriversLicenseType = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false, defaultValue: ""),
-                    TrainingComplete = table.Column<bool>(type: "bit", nullable: false),
-                    Status = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false, defaultValue: ""),
-                    FirstName = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
-                    LastName = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
-                    LicenseNumber = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: true),
-                    LicenseClass = table.Column<string>(type: "nvarchar(10)", maxLength: 10, nullable: true),
-                    LicenseIssueDate = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    LicenseExpiryDate = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    Endorsements = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
-                    HireDate = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    CreatedDate = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETUTCDATE()"),
-                    UpdatedDate = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    EmergencyContactName = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
-                    EmergencyContactPhone = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: true),
-                    MedicalRestrictions = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
-                    BackgroundCheckDate = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    BackgroundCheckExpiry = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    DrugTestDate = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    DrugTestExpiry = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    PhysicalExamDate = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    PhysicalExamExpiry = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    Notes = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: true),
-                    CreatedBy = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
-                    UpdatedBy = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true)
+                        .Annotation("SqlServer:Identity", "1, 1")
+                        .Annotation("Npgsql:ValueGenerationStrategy", Npgsql.EntityFrameworkCore.PostgreSQL.Metadata.NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    DriverName = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 100), maxLength: 100, nullable: false, defaultValue: ""),
+                    DriverPhone = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 20), maxLength: 20, nullable: true),
+                    DriverEmail = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 100), maxLength: 100, nullable: true),
+                    Address = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 200), maxLength: 200, nullable: true),
+                    City = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 50), maxLength: 50, nullable: true),
+                    State = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 20), maxLength: 20, nullable: true),
+                    Zip = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 10), maxLength: 10, nullable: true),
+                    DriversLicenseType = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 20), maxLength: 20, nullable: false, defaultValue: ""),
+                    TrainingComplete = table.Column<bool>(type: MigrationSql.BoolType(migrationBuilder), nullable: false),
+                    Status = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 20), maxLength: 20, nullable: false, defaultValue: ""),
+                    FirstName = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 50), maxLength: 50, nullable: true),
+                    LastName = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 50), maxLength: 50, nullable: true),
+                    LicenseNumber = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 20), maxLength: 20, nullable: true),
+                    LicenseClass = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 10), maxLength: 10, nullable: true),
+                    LicenseIssueDate = table.Column<DateTime>(type: MigrationSql.DateTimeType(migrationBuilder), nullable: true),
+                    LicenseExpiryDate = table.Column<DateTime>(type: MigrationSql.DateTimeType(migrationBuilder), nullable: true),
+                    Endorsements = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 100), maxLength: 100, nullable: true),
+                    HireDate = table.Column<DateTime>(type: MigrationSql.DateTimeType(migrationBuilder), nullable: true),
+                    CreatedDate = table.Column<DateTime>(type: MigrationSql.DateTimeType(migrationBuilder), nullable: false, defaultValueSql: MigrationSql.UtcNow(migrationBuilder)),
+                    UpdatedDate = table.Column<DateTime>(type: MigrationSql.DateTimeType(migrationBuilder), nullable: true),
+                    EmergencyContactName = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 100), maxLength: 100, nullable: true),
+                    EmergencyContactPhone = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 20), maxLength: 20, nullable: true),
+                    MedicalRestrictions = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 100), maxLength: 100, nullable: true),
+                    BackgroundCheckDate = table.Column<DateTime>(type: MigrationSql.DateTimeType(migrationBuilder), nullable: true),
+                    BackgroundCheckExpiry = table.Column<DateTime>(type: MigrationSql.DateTimeType(migrationBuilder), nullable: true),
+                    DrugTestDate = table.Column<DateTime>(type: MigrationSql.DateTimeType(migrationBuilder), nullable: true),
+                    DrugTestExpiry = table.Column<DateTime>(type: MigrationSql.DateTimeType(migrationBuilder), nullable: true),
+                    PhysicalExamDate = table.Column<DateTime>(type: MigrationSql.DateTimeType(migrationBuilder), nullable: true),
+                    PhysicalExamExpiry = table.Column<DateTime>(type: MigrationSql.DateTimeType(migrationBuilder), nullable: true),
+                    Notes = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 1000), maxLength: 1000, nullable: true),
+                    CreatedBy = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 100), maxLength: 100, nullable: true),
+                    UpdatedBy = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 100), maxLength: 100, nullable: true)
                 },
                 constraints: table =>
                 {
@@ -109,19 +112,20 @@ namespace BusBuddy.Core.Migrations
                 columns: table => new
                 {
                     CalendarId = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    Date = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    EventType = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false, defaultValue: ""),
-                    EventName = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false, defaultValue: ""),
-                    SchoolYear = table.Column<string>(type: "nvarchar(10)", maxLength: 10, nullable: false, defaultValue: ""),
-                    StartDate = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    EndDate = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    RoutesRequired = table.Column<bool>(type: "bit", nullable: false),
-                    Description = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
-                    Notes = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
-                    IsActive = table.Column<bool>(type: "bit", nullable: false),
-                    CreatedDate = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    UpdatedDate = table.Column<DateTime>(type: "datetime2", nullable: true)
+                        .Annotation("SqlServer:Identity", "1, 1")
+                        .Annotation("Npgsql:ValueGenerationStrategy", Npgsql.EntityFrameworkCore.PostgreSQL.Metadata.NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    Date = table.Column<DateTime>(type: MigrationSql.DateTimeType(migrationBuilder), nullable: false),
+                    EventType = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 50), maxLength: 50, nullable: false, defaultValue: ""),
+                    EventName = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 100), maxLength: 100, nullable: false, defaultValue: ""),
+                    SchoolYear = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 10), maxLength: 10, nullable: false, defaultValue: ""),
+                    StartDate = table.Column<DateTime>(type: MigrationSql.DateTimeType(migrationBuilder), nullable: true),
+                    EndDate = table.Column<DateTime>(type: MigrationSql.DateTimeType(migrationBuilder), nullable: true),
+                    RoutesRequired = table.Column<bool>(type: MigrationSql.BoolType(migrationBuilder), nullable: false),
+                    Description = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 200), maxLength: 200, nullable: true),
+                    Notes = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 500), maxLength: 500, nullable: true),
+                    IsActive = table.Column<bool>(type: MigrationSql.BoolType(migrationBuilder), nullable: false),
+                    CreatedDate = table.Column<DateTime>(type: MigrationSql.DateTimeType(migrationBuilder), nullable: false),
+                    UpdatedDate = table.Column<DateTime>(type: MigrationSql.DateTimeType(migrationBuilder), nullable: true)
                 },
                 constraints: table =>
                 {
@@ -133,43 +137,44 @@ namespace BusBuddy.Core.Migrations
                 columns: table => new
                 {
                     StudentId = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    StudentName = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false, defaultValue: ""),
-                    StudentNumber = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: true),
-                    Grade = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: true),
-                    DateOfBirth = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    Gender = table.Column<string>(type: "nvarchar(10)", maxLength: 10, nullable: true),
-                    HomeAddress = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
-                    City = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
-                    State = table.Column<string>(type: "nvarchar(2)", maxLength: 2, nullable: true),
-                    Zip = table.Column<string>(type: "nvarchar(10)", maxLength: 10, nullable: true),
-                    HomePhone = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: true),
-                    ParentGuardian = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
-                    EmergencyPhone = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: true),
-                    School = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
-                    BusStop = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
-                    AMRoute = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
-                    PMRoute = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
-                    Active = table.Column<bool>(type: "bit", nullable: false),
-                    SpecialNeeds = table.Column<bool>(type: "bit", nullable: false),
-                    SpecialAccommodations = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: true),
-                    Allergies = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
-                    Medications = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
-                    MedicalNotes = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: true),
-                    DoctorName = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
-                    DoctorPhone = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: true),
-                    FieldTripPermission = table.Column<bool>(type: "bit", nullable: false),
-                    PhotoPermission = table.Column<bool>(type: "bit", nullable: false),
-                    PickupAddress = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
-                    DropoffAddress = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
-                    TransportationNotes = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: true),
-                    AlternativeContact = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
-                    AlternativePhone = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: true),
-                    EnrollmentDate = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    CreatedDate = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETUTCDATE()"),
-                    CreatedBy = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
-                    UpdatedDate = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    UpdatedBy = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true)
+                        .Annotation("SqlServer:Identity", "1, 1")
+                        .Annotation("Npgsql:ValueGenerationStrategy", Npgsql.EntityFrameworkCore.PostgreSQL.Metadata.NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    StudentName = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 100), maxLength: 100, nullable: false, defaultValue: ""),
+                    StudentNumber = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 20), maxLength: 20, nullable: true),
+                    Grade = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 20), maxLength: 20, nullable: true),
+                    DateOfBirth = table.Column<DateTime>(type: MigrationSql.DateTimeType(migrationBuilder), nullable: true),
+                    Gender = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 10), maxLength: 10, nullable: true),
+                    HomeAddress = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 200), maxLength: 200, nullable: true),
+                    City = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 50), maxLength: 50, nullable: true),
+                    State = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 2), maxLength: 2, nullable: true),
+                    Zip = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 10), maxLength: 10, nullable: true),
+                    HomePhone = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 20), maxLength: 20, nullable: true),
+                    ParentGuardian = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 100), maxLength: 100, nullable: true),
+                    EmergencyPhone = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 20), maxLength: 20, nullable: true),
+                    School = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 100), maxLength: 100, nullable: true),
+                    BusStop = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 50), maxLength: 50, nullable: true),
+                    AMRoute = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 50), maxLength: 50, nullable: true),
+                    PMRoute = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 50), maxLength: 50, nullable: true),
+                    Active = table.Column<bool>(type: MigrationSql.BoolType(migrationBuilder), nullable: false),
+                    SpecialNeeds = table.Column<bool>(type: MigrationSql.BoolType(migrationBuilder), nullable: false),
+                    SpecialAccommodations = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 1000), maxLength: 1000, nullable: true),
+                    Allergies = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 200), maxLength: 200, nullable: true),
+                    Medications = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 200), maxLength: 200, nullable: true),
+                    MedicalNotes = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 1000), maxLength: 1000, nullable: true),
+                    DoctorName = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 100), maxLength: 100, nullable: true),
+                    DoctorPhone = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 20), maxLength: 20, nullable: true),
+                    FieldTripPermission = table.Column<bool>(type: MigrationSql.BoolType(migrationBuilder), nullable: false),
+                    PhotoPermission = table.Column<bool>(type: MigrationSql.BoolType(migrationBuilder), nullable: false),
+                    PickupAddress = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 200), maxLength: 200, nullable: true),
+                    DropoffAddress = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 200), maxLength: 200, nullable: true),
+                    TransportationNotes = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 1000), maxLength: 1000, nullable: true),
+                    AlternativeContact = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 100), maxLength: 100, nullable: true),
+                    AlternativePhone = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 20), maxLength: 20, nullable: true),
+                    EnrollmentDate = table.Column<DateTime>(type: MigrationSql.DateTimeType(migrationBuilder), nullable: true),
+                    CreatedDate = table.Column<DateTime>(type: MigrationSql.DateTimeType(migrationBuilder), nullable: false, defaultValueSql: MigrationSql.UtcNow(migrationBuilder)),
+                    CreatedBy = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 100), maxLength: 100, nullable: true),
+                    UpdatedDate = table.Column<DateTime>(type: MigrationSql.DateTimeType(migrationBuilder), nullable: true),
+                    UpdatedBy = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 100), maxLength: 100, nullable: true)
                 },
                 constraints: table =>
                 {
@@ -181,37 +186,38 @@ namespace BusBuddy.Core.Migrations
                 columns: table => new
                 {
                     VehicleId = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    BusNumber = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false, defaultValue: ""),
+                        .Annotation("SqlServer:Identity", "1, 1")
+                        .Annotation("Npgsql:ValueGenerationStrategy", Npgsql.EntityFrameworkCore.PostgreSQL.Metadata.NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    BusNumber = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 20), maxLength: 20, nullable: false, defaultValue: ""),
                     Year = table.Column<int>(type: "int", nullable: false),
-                    Make = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false, defaultValue: ""),
-                    Model = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false, defaultValue: ""),
+                    Make = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 50), maxLength: 50, nullable: false, defaultValue: ""),
+                    Model = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 50), maxLength: 50, nullable: false, defaultValue: ""),
                     SeatingCapacity = table.Column<int>(type: "int", nullable: false),
-                    VIN = table.Column<string>(type: "nvarchar(17)", maxLength: 17, nullable: false, defaultValue: ""),
-                    LicenseNumber = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false, defaultValue: ""),
-                    Status = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false, defaultValue: "Active"),
-                    DateLastInspection = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    VIN = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 17), maxLength: 17, nullable: false, defaultValue: ""),
+                    LicenseNumber = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 20), maxLength: 20, nullable: false, defaultValue: ""),
+                    Status = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 20), maxLength: 20, nullable: false, defaultValue: "Active"),
+                    DateLastInspection = table.Column<DateTime>(type: MigrationSql.DateTimeType(migrationBuilder), nullable: true),
                     CurrentOdometer = table.Column<int>(type: "int", nullable: true),
-                    PurchaseDate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    PurchaseDate = table.Column<DateTime>(type: MigrationSql.DateTimeType(migrationBuilder), nullable: true),
                     PurchasePrice = table.Column<decimal>(type: "decimal(10,2)", nullable: true),
-                    InsurancePolicyNumber = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
-                    InsuranceExpiryDate = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    CreatedDate = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETUTCDATE()"),
-                    UpdatedDate = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    CreatedBy = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
-                    UpdatedBy = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
-                    Department = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
-                    FleetType = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: true),
+                    InsurancePolicyNumber = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 100), maxLength: 100, nullable: true),
+                    InsuranceExpiryDate = table.Column<DateTime>(type: MigrationSql.DateTimeType(migrationBuilder), nullable: true),
+                    CreatedDate = table.Column<DateTime>(type: MigrationSql.DateTimeType(migrationBuilder), nullable: false, defaultValueSql: MigrationSql.UtcNow(migrationBuilder)),
+                    UpdatedDate = table.Column<DateTime>(type: MigrationSql.DateTimeType(migrationBuilder), nullable: true),
+                    CreatedBy = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 100), maxLength: 100, nullable: true),
+                    UpdatedBy = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 100), maxLength: 100, nullable: true),
+                    Department = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 50), maxLength: 50, nullable: true),
+                    FleetType = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 20), maxLength: 20, nullable: true),
                     FuelCapacity = table.Column<decimal>(type: "decimal(8,2)", nullable: true),
-                    FuelType = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: true),
+                    FuelType = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 20), maxLength: 20, nullable: true),
                     MilesPerGallon = table.Column<decimal>(type: "decimal(6,2)", nullable: true),
-                    NextMaintenanceDue = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    NextMaintenanceDue = table.Column<DateTime>(type: MigrationSql.DateTimeType(migrationBuilder), nullable: true),
                     NextMaintenanceMileage = table.Column<int>(type: "int", nullable: true),
-                    LastServiceDate = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    SpecialEquipment = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: true),
-                    GPSTracking = table.Column<bool>(type: "bit", nullable: false),
-                    GPSDeviceId = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
-                    Notes = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: true)
+                    LastServiceDate = table.Column<DateTime>(type: MigrationSql.DateTimeType(migrationBuilder), nullable: true),
+                    SpecialEquipment = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 1000), maxLength: 1000, nullable: true),
+                    GPSTracking = table.Column<bool>(type: MigrationSql.BoolType(migrationBuilder), nullable: false),
+                    GPSDeviceId = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 100), maxLength: 100, nullable: true),
+                    Notes = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 1000), maxLength: 1000, nullable: true)
                 },
                 constraints: table =>
                 {
@@ -223,16 +229,17 @@ namespace BusBuddy.Core.Migrations
                 columns: table => new
                 {
                     FuelId = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    FuelDate = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    FuelLocation = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false, defaultValue: ""),
+                        .Annotation("SqlServer:Identity", "1, 1")
+                        .Annotation("Npgsql:ValueGenerationStrategy", Npgsql.EntityFrameworkCore.PostgreSQL.Metadata.NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    FuelDate = table.Column<DateTime>(type: MigrationSql.DateTimeType(migrationBuilder), nullable: false),
+                    FuelLocation = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 100), maxLength: 100, nullable: false, defaultValue: ""),
                     VehicleFueledId = table.Column<int>(type: "int", nullable: false),
                     VehicleOdometerReading = table.Column<int>(type: "int", nullable: false),
-                    FuelType = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false, defaultValue: "Gasoline"),
+                    FuelType = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 20), maxLength: 20, nullable: false, defaultValue: "Gasoline"),
                     Gallons = table.Column<decimal>(type: "decimal(8,3)", nullable: true),
                     PricePerGallon = table.Column<decimal>(type: "decimal(8,3)", nullable: true),
                     TotalCost = table.Column<decimal>(type: "decimal(10,2)", nullable: true),
-                    Notes = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true)
+                    Notes = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 500), maxLength: 500, nullable: true)
                 },
                 constraints: table =>
                 {
@@ -250,31 +257,32 @@ namespace BusBuddy.Core.Migrations
                 columns: table => new
                 {
                     MaintenanceId = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    Date = table.Column<DateTime>(type: "datetime2", nullable: false),
+                        .Annotation("SqlServer:Identity", "1, 1")
+                        .Annotation("Npgsql:ValueGenerationStrategy", Npgsql.EntityFrameworkCore.PostgreSQL.Metadata.NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    Date = table.Column<DateTime>(type: MigrationSql.DateTimeType(migrationBuilder), nullable: false),
                     VehicleId = table.Column<int>(type: "int", nullable: false),
                     OdometerReading = table.Column<int>(type: "int", nullable: false),
-                    MaintenanceCompleted = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false, defaultValue: ""),
-                    Vendor = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false, defaultValue: ""),
+                    MaintenanceCompleted = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 100), maxLength: 100, nullable: false, defaultValue: ""),
+                    Vendor = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 100), maxLength: 100, nullable: false, defaultValue: ""),
                     RepairCost = table.Column<decimal>(type: "decimal(10,2)", nullable: false),
-                    Description = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
-                    PerformedBy = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
-                    NextServiceDue = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    Description = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 500), maxLength: 500, nullable: true),
+                    PerformedBy = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 100), maxLength: 100, nullable: true),
+                    NextServiceDue = table.Column<DateTime>(type: MigrationSql.DateTimeType(migrationBuilder), nullable: true),
                     NextServiceOdometer = table.Column<int>(type: "int", nullable: true),
-                    Status = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false, defaultValue: ""),
-                    Notes = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: true),
-                    WorkOrderNumber = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
-                    Priority = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false, defaultValue: "Normal"),
-                    Warranty = table.Column<bool>(type: "bit", nullable: false),
-                    WarrantyExpiry = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    PartsUsed = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: true),
+                    Status = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 20), maxLength: 20, nullable: false, defaultValue: ""),
+                    Notes = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 1000), maxLength: 1000, nullable: true),
+                    WorkOrderNumber = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 100), maxLength: 100, nullable: true),
+                    Priority = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 20), maxLength: 20, nullable: false, defaultValue: "Normal"),
+                    Warranty = table.Column<bool>(type: MigrationSql.BoolType(migrationBuilder), nullable: false),
+                    WarrantyExpiry = table.Column<DateTime>(type: MigrationSql.DateTimeType(migrationBuilder), nullable: true),
+                    PartsUsed = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 1000), maxLength: 1000, nullable: true),
                     LaborHours = table.Column<decimal>(type: "decimal(8,2)", nullable: true),
                     LaborCost = table.Column<decimal>(type: "decimal(10,2)", nullable: true),
                     PartsCost = table.Column<decimal>(type: "decimal(10,2)", nullable: true),
-                    CreatedDate = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETUTCDATE()"),
-                    UpdatedDate = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    CreatedBy = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
-                    UpdatedBy = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true)
+                    CreatedDate = table.Column<DateTime>(type: MigrationSql.DateTimeType(migrationBuilder), nullable: false, defaultValueSql: MigrationSql.UtcNow(migrationBuilder)),
+                    UpdatedDate = table.Column<DateTime>(type: MigrationSql.DateTimeType(migrationBuilder), nullable: true),
+                    CreatedBy = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 100), maxLength: 100, nullable: true),
+                    UpdatedBy = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 100), maxLength: 100, nullable: true)
                 },
                 constraints: table =>
                 {
@@ -292,11 +300,12 @@ namespace BusBuddy.Core.Migrations
                 columns: table => new
                 {
                     RouteID = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    Date = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    RouteName = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false, defaultValue: ""),
-                    Description = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
-                    IsActive = table.Column<bool>(type: "bit", nullable: false),
+                        .Annotation("SqlServer:Identity", "1, 1")
+                        .Annotation("Npgsql:ValueGenerationStrategy", Npgsql.EntityFrameworkCore.PostgreSQL.Metadata.NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    Date = table.Column<DateTime>(type: MigrationSql.DateTimeType(migrationBuilder), nullable: false),
+                    RouteName = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 50), maxLength: 50, nullable: false, defaultValue: ""),
+                    Description = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 500), maxLength: 500, nullable: true),
+                    IsActive = table.Column<bool>(type: MigrationSql.BoolType(migrationBuilder), nullable: false),
                     AMVehicleID = table.Column<int>(type: "int", nullable: true),
                     AMBeginMiles = table.Column<decimal>(type: "decimal(10,2)", nullable: true),
                     AMEndMiles = table.Column<decimal>(type: "decimal(10,2)", nullable: true),
@@ -313,9 +322,9 @@ namespace BusBuddy.Core.Migrations
                     StopCount = table.Column<int>(type: "int", nullable: true),
                     AMBeginTime = table.Column<TimeSpan>(type: "time", nullable: true),
                     PMBeginTime = table.Column<TimeSpan>(type: "time", nullable: true),
-                    DriverName = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
-                    BusNumber = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: true),
-                    School = table.Column<string>(type: "nvarchar(max)", nullable: false, defaultValue: "")
+                    DriverName = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 100), maxLength: 100, nullable: true),
+                    BusNumber = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 20), maxLength: 20, nullable: true),
+                    School = table.Column<string>(type: MigrationSql.StringType(migrationBuilder), nullable: false, defaultValue: "")
                 },
                 constraints: table =>
                 {
@@ -351,45 +360,46 @@ namespace BusBuddy.Core.Migrations
                 columns: table => new
                 {
                     ActivityId = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    Date = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    ActivityType = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false, defaultValue: ""),
-                    Destination = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false, defaultValue: ""),
+                        .Annotation("SqlServer:Identity", "1, 1")
+                        .Annotation("Npgsql:ValueGenerationStrategy", Npgsql.EntityFrameworkCore.PostgreSQL.Metadata.NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    Date = table.Column<DateTime>(type: MigrationSql.DateTimeType(migrationBuilder), nullable: false),
+                    ActivityType = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 50), maxLength: 50, nullable: false, defaultValue: ""),
+                    Destination = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 200), maxLength: 200, nullable: false, defaultValue: ""),
                     DestinationId = table.Column<int>(type: "int", nullable: true),
-                    DestinationOverride = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
+                    DestinationOverride = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 200), maxLength: 200, nullable: true),
                     LeaveTime = table.Column<TimeSpan>(type: "time", nullable: false),
                     EventTime = table.Column<TimeSpan>(type: "time", nullable: false),
-                    RequestedBy = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false, defaultValue: ""),
+                    RequestedBy = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 100), maxLength: 100, nullable: false, defaultValue: ""),
                     AssignedVehicleId = table.Column<int>(type: "int", nullable: false),
                     DriverId = table.Column<int>(type: "int", nullable: true),
                     StudentsCount = table.Column<int>(type: "int", nullable: true),
-                    Notes = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
-                    Status = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false, defaultValue: "Scheduled"),
+                    Notes = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 500), maxLength: 500, nullable: true),
+                    Status = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 20), maxLength: 20, nullable: false, defaultValue: "Scheduled"),
                     RouteId = table.Column<int>(type: "int", nullable: true),
-                    Description = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true, defaultValue: "Activity"),
+                    Description = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 500), maxLength: 500, nullable: true, defaultValue: "Activity"),
                     ReturnTime = table.Column<TimeSpan>(type: "time", nullable: false),
                     ExpectedPassengers = table.Column<int>(type: "int", nullable: true),
                     RecurringSeriesId = table.Column<int>(type: "int", nullable: true),
-                    ActivityCategory = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    ActivityCategory = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 100), maxLength: 100, nullable: true),
                     EstimatedCost = table.Column<decimal>(type: "decimal(10,2)", nullable: true),
                     ActualCost = table.Column<decimal>(type: "decimal(10,2)", nullable: true),
-                    ApprovalRequired = table.Column<bool>(type: "bit", nullable: false),
-                    Approved = table.Column<bool>(type: "bit", nullable: false),
-                    ApprovedBy = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
-                    ApprovalDate = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    CreatedDate = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETUTCDATE()"),
-                    UpdatedDate = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    CreatedBy = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
-                    UpdatedBy = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    ApprovalRequired = table.Column<bool>(type: MigrationSql.BoolType(migrationBuilder), nullable: false),
+                    Approved = table.Column<bool>(type: MigrationSql.BoolType(migrationBuilder), nullable: false),
+                    ApprovedBy = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 100), maxLength: 100, nullable: true),
+                    ApprovalDate = table.Column<DateTime>(type: MigrationSql.DateTimeType(migrationBuilder), nullable: true),
+                    CreatedDate = table.Column<DateTime>(type: MigrationSql.DateTimeType(migrationBuilder), nullable: false, defaultValueSql: MigrationSql.UtcNow(migrationBuilder)),
+                    UpdatedDate = table.Column<DateTime>(type: MigrationSql.DateTimeType(migrationBuilder), nullable: true),
+                    CreatedBy = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 100), maxLength: 100, nullable: true),
+                    UpdatedBy = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 100), maxLength: 100, nullable: true),
                     DestinationLatitude = table.Column<decimal>(type: "decimal(10,8)", nullable: true),
                     DestinationLongitude = table.Column<decimal>(type: "decimal(11,8)", nullable: true),
                     DistanceMiles = table.Column<decimal>(type: "decimal(8,2)", nullable: true),
                     EstimatedTravelTime = table.Column<TimeSpan>(type: "time", nullable: true),
-                    Directions = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
-                    PickupLocation = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
+                    Directions = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 500), maxLength: 500, nullable: true),
+                    PickupLocation = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 200), maxLength: 200, nullable: true),
                     PickupLatitude = table.Column<decimal>(type: "decimal(10,8)", nullable: true),
                     PickupLongitude = table.Column<decimal>(type: "decimal(11,8)", nullable: true),
-                    ActivityName = table.Column<string>(type: "nvarchar(max)", nullable: false, defaultValue: ""),
+                    ActivityName = table.Column<string>(type: MigrationSql.StringType(migrationBuilder), nullable: false, defaultValue: ""),
                     DepartureTime = table.Column<TimeSpan>(type: "time", nullable: false),
                     EstimatedArrival = table.Column<TimeSpan>(type: "time", nullable: false),
                     AssignedDriverId = table.Column<int>(type: "int", nullable: false)
@@ -427,22 +437,23 @@ namespace BusBuddy.Core.Migrations
                 columns: table => new
                 {
                     RouteStopId = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
+                        .Annotation("SqlServer:Identity", "1, 1")
+                        .Annotation("Npgsql:ValueGenerationStrategy", Npgsql.EntityFrameworkCore.PostgreSQL.Metadata.NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     RouteId = table.Column<int>(type: "int", nullable: false),
-                    StopName = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false, defaultValue: ""),
-                    StopAddress = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false, defaultValue: ""),
+                    StopName = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 100), maxLength: 100, nullable: false, defaultValue: ""),
+                    StopAddress = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 200), maxLength: 200, nullable: false, defaultValue: ""),
                     Latitude = table.Column<decimal>(type: "decimal(10,8)", nullable: true),
                     Longitude = table.Column<decimal>(type: "decimal(11,8)", nullable: true),
                     StopOrder = table.Column<int>(type: "int", nullable: false),
                     ScheduledArrival = table.Column<TimeSpan>(type: "time", nullable: false),
                     ScheduledDeparture = table.Column<TimeSpan>(type: "time", nullable: false),
                     StopDuration = table.Column<int>(type: "int", nullable: false),
-                    Status = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false, defaultValue: ""),
-                    Notes = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
-                    CreatedDate = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    UpdatedDate = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    EstimatedArrivalTime = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    EstimatedDepartureTime = table.Column<DateTime>(type: "datetime2", nullable: false)
+                    Status = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 20), maxLength: 20, nullable: false, defaultValue: ""),
+                    Notes = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 500), maxLength: 500, nullable: true),
+                    CreatedDate = table.Column<DateTime>(type: MigrationSql.DateTimeType(migrationBuilder), nullable: false),
+                    UpdatedDate = table.Column<DateTime>(type: MigrationSql.DateTimeType(migrationBuilder), nullable: true),
+                    EstimatedArrivalTime = table.Column<DateTime>(type: MigrationSql.DateTimeType(migrationBuilder), nullable: false),
+                    EstimatedDepartureTime = table.Column<DateTime>(type: MigrationSql.DateTimeType(migrationBuilder), nullable: false)
                 },
                 constraints: table =>
                 {
@@ -460,23 +471,24 @@ namespace BusBuddy.Core.Migrations
                 columns: table => new
                 {
                     ScheduleId = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
+                        .Annotation("SqlServer:Identity", "1, 1")
+                        .Annotation("Npgsql:ValueGenerationStrategy", Npgsql.EntityFrameworkCore.PostgreSQL.Metadata.NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     VehicleId = table.Column<int>(type: "int", nullable: false),
                     RouteId = table.Column<int>(type: "int", nullable: false),
                     DriverId = table.Column<int>(type: "int", nullable: false),
-                    DepartureTime = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    ArrivalTime = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    ScheduleDate = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    SportsCategory = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
-                    Opponent = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
-                    Location = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
-                    DestinationTown = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    DepartureTime = table.Column<DateTime>(type: MigrationSql.DateTimeType(migrationBuilder), nullable: false),
+                    ArrivalTime = table.Column<DateTime>(type: MigrationSql.DateTimeType(migrationBuilder), nullable: false),
+                    ScheduleDate = table.Column<DateTime>(type: MigrationSql.DateTimeType(migrationBuilder), nullable: false),
+                    SportsCategory = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 50), maxLength: 50, nullable: true),
+                    Opponent = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 200), maxLength: 200, nullable: true),
+                    Location = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 200), maxLength: 200, nullable: true),
+                    DestinationTown = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 100), maxLength: 100, nullable: true),
                     DepartTime = table.Column<TimeSpan>(type: "time", nullable: true),
                     ScheduledTime = table.Column<TimeSpan>(type: "time", nullable: true),
-                    Status = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false, defaultValue: ""),
-                    Notes = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
-                    CreatedDate = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETUTCDATE()"),
-                    UpdatedDate = table.Column<DateTime>(type: "datetime2", nullable: true)
+                    Status = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 20), maxLength: 20, nullable: false, defaultValue: ""),
+                    Notes = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 500), maxLength: 500, nullable: true),
+                    CreatedDate = table.Column<DateTime>(type: MigrationSql.DateTimeType(migrationBuilder), nullable: false, defaultValueSql: MigrationSql.UtcNow(migrationBuilder)),
+                    UpdatedDate = table.Column<DateTime>(type: MigrationSql.DateTimeType(migrationBuilder), nullable: true)
                 },
                 constraints: table =>
                 {
@@ -506,31 +518,32 @@ namespace BusBuddy.Core.Migrations
                 columns: table => new
                 {
                     TripEventId = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
+                        .Annotation("SqlServer:Identity", "1, 1")
+                        .Annotation("Npgsql:ValueGenerationStrategy", Npgsql.EntityFrameworkCore.PostgreSQL.Metadata.NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     Type = table.Column<int>(type: "int", nullable: false),
-                    CustomType = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
-                    POCName = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false, defaultValue: ""),
-                    POCPhone = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: true),
-                    POCEmail = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
-                    LeaveTime = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    ReturnTime = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CustomType = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 100), maxLength: 100, nullable: true),
+                    POCName = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 100), maxLength: 100, nullable: false, defaultValue: ""),
+                    POCPhone = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 20), maxLength: 20, nullable: true),
+                    POCEmail = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 100), maxLength: 100, nullable: true),
+                    LeaveTime = table.Column<DateTime>(type: MigrationSql.DateTimeType(migrationBuilder), nullable: false),
+                    ReturnTime = table.Column<DateTime>(type: MigrationSql.DateTimeType(migrationBuilder), nullable: true),
                     VehicleId = table.Column<int>(type: "int", nullable: true),
                     DriverId = table.Column<int>(type: "int", nullable: true),
                     RouteId = table.Column<int>(type: "int", nullable: true),
                     StudentCount = table.Column<int>(type: "int", nullable: false),
                     AdultSupervisorCount = table.Column<int>(type: "int", nullable: false),
-                    Destination = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
-                    SpecialRequirements = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
-                    TripNotes = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: true),
-                    ApprovalRequired = table.Column<bool>(type: "bit", nullable: false),
-                    IsApproved = table.Column<bool>(type: "bit", nullable: false),
-                    ApprovedBy = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
-                    ApprovalDate = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    Status = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false, defaultValue: "Scheduled"),
-                    CreatedDate = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETUTCDATE()"),
-                    UpdatedDate = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    CreatedBy = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
-                    UpdatedBy = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true)
+                    Destination = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 200), maxLength: 200, nullable: true),
+                    SpecialRequirements = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 500), maxLength: 500, nullable: true),
+                    TripNotes = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 1000), maxLength: 1000, nullable: true),
+                    ApprovalRequired = table.Column<bool>(type: MigrationSql.BoolType(migrationBuilder), nullable: false),
+                    IsApproved = table.Column<bool>(type: MigrationSql.BoolType(migrationBuilder), nullable: false),
+                    ApprovedBy = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 100), maxLength: 100, nullable: true),
+                    ApprovalDate = table.Column<DateTime>(type: MigrationSql.DateTimeType(migrationBuilder), nullable: true),
+                    Status = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 20), maxLength: 20, nullable: false, defaultValue: "Scheduled"),
+                    CreatedDate = table.Column<DateTime>(type: MigrationSql.DateTimeType(migrationBuilder), nullable: false, defaultValueSql: MigrationSql.UtcNow(migrationBuilder)),
+                    UpdatedDate = table.Column<DateTime>(type: MigrationSql.DateTimeType(migrationBuilder), nullable: true),
+                    CreatedBy = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 100), maxLength: 100, nullable: true),
+                    UpdatedBy = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 100), maxLength: 100, nullable: true)
                 },
                 constraints: table =>
                 {
@@ -560,22 +573,23 @@ namespace BusBuddy.Core.Migrations
                 columns: table => new
                 {
                     ActivityScheduleId = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    ScheduledDate = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    TripType = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false, defaultValue: ""),
+                        .Annotation("SqlServer:Identity", "1, 1")
+                        .Annotation("Npgsql:ValueGenerationStrategy", Npgsql.EntityFrameworkCore.PostgreSQL.Metadata.NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    ScheduledDate = table.Column<DateTime>(type: MigrationSql.DateTimeType(migrationBuilder), nullable: false),
+                    TripType = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 50), maxLength: 50, nullable: false, defaultValue: ""),
                     ScheduledVehicleId = table.Column<int>(type: "int", nullable: false),
-                    ScheduledDestination = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false, defaultValue: ""),
+                    ScheduledDestination = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 200), maxLength: 200, nullable: false, defaultValue: ""),
                     ScheduledLeaveTime = table.Column<TimeSpan>(type: "time", nullable: false),
                     ScheduledEventTime = table.Column<TimeSpan>(type: "time", nullable: false),
                     ScheduledRiders = table.Column<int>(type: "int", nullable: true),
                     ScheduledDriverId = table.Column<int>(type: "int", nullable: false),
-                    RequestedBy = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false, defaultValue: ""),
-                    Status = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false, defaultValue: ""),
-                    Notes = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
-                    CreatedDate = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    UpdatedDate = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    CreatedBy = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
-                    UpdatedBy = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    RequestedBy = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 100), maxLength: 100, nullable: false, defaultValue: ""),
+                    Status = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 20), maxLength: 20, nullable: false, defaultValue: ""),
+                    Notes = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 500), maxLength: 500, nullable: true),
+                    CreatedDate = table.Column<DateTime>(type: MigrationSql.DateTimeType(migrationBuilder), nullable: false),
+                    UpdatedDate = table.Column<DateTime>(type: MigrationSql.DateTimeType(migrationBuilder), nullable: true),
+                    CreatedBy = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 100), maxLength: 100, nullable: true),
+                    UpdatedBy = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 100), maxLength: 100, nullable: true),
                     TripEventId = table.Column<int>(type: "int", nullable: true),
                     ActivityId = table.Column<int>(type: "int", nullable: true)
                 },
@@ -611,20 +625,21 @@ namespace BusBuddy.Core.Migrations
                 columns: table => new
                 {
                     StudentScheduleId = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
+                        .Annotation("SqlServer:Identity", "1, 1")
+                        .Annotation("Npgsql:ValueGenerationStrategy", Npgsql.EntityFrameworkCore.PostgreSQL.Metadata.NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     StudentId = table.Column<int>(type: "int", nullable: false),
                     ScheduleId = table.Column<int>(type: "int", nullable: true),
                     ActivityScheduleId = table.Column<int>(type: "int", nullable: true),
-                    AssignmentType = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false, defaultValue: ""),
-                    PickupLocation = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
-                    DropoffLocation = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
-                    Confirmed = table.Column<bool>(type: "bit", nullable: false),
-                    Attended = table.Column<bool>(type: "bit", nullable: false),
-                    Notes = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
-                    CreatedDate = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    UpdatedDate = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    CreatedBy = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
-                    UpdatedBy = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true)
+                    AssignmentType = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 20), maxLength: 20, nullable: false, defaultValue: ""),
+                    PickupLocation = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 100), maxLength: 100, nullable: true),
+                    DropoffLocation = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 100), maxLength: 100, nullable: true),
+                    Confirmed = table.Column<bool>(type: MigrationSql.BoolType(migrationBuilder), nullable: false),
+                    Attended = table.Column<bool>(type: MigrationSql.BoolType(migrationBuilder), nullable: false),
+                    Notes = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 500), maxLength: 500, nullable: true),
+                    CreatedDate = table.Column<DateTime>(type: MigrationSql.DateTimeType(migrationBuilder), nullable: false),
+                    UpdatedDate = table.Column<DateTime>(type: MigrationSql.DateTimeType(migrationBuilder), nullable: true),
+                    CreatedBy = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 100), maxLength: 100, nullable: true),
+                    UpdatedBy = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 100), maxLength: 100, nullable: true)
                 },
                 constraints: table =>
                 {
@@ -649,23 +664,9 @@ namespace BusBuddy.Core.Migrations
                         onDelete: ReferentialAction.Cascade);
                 });
 
-            migrationBuilder.InsertData(
-                table: "Drivers",
-                columns: new[] { "DriverID", "Address", "City", "CreatedBy", "CreatedDate", "DriverEmail", "DriverName", "DriverPhone", "DriversLicenseType", "EmergencyContactName", "EmergencyContactPhone", "LicenseExpiryDate", "Notes", "State", "TrainingComplete", "UpdatedBy", "UpdatedDate", "Zip" },
-                values: new object[,]
-                {
-                    { 1, null, null, null, new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "john.smith@school.edu", "John Smith", "555-0123", "CDL", null, null, null, null, null, true, null, null, null },
-                    { 2, null, null, null, new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "mary.johnson@school.edu", "Mary Johnson", "555-0456", "CDL", null, null, null, null, null, true, null, null, null }
-                });
-
-            migrationBuilder.InsertData(
-                table: "Vehicles",
-                columns: new[] { "VehicleId", "BusNumber", "CreatedBy", "CreatedDate", "CurrentOdometer", "DateLastInspection", "Department", "FleetType", "FuelCapacity", "FuelType", "GPSDeviceId", "GPSTracking", "InsuranceExpiryDate", "InsurancePolicyNumber", "LastServiceDate", "LicenseNumber", "Make", "MilesPerGallon", "Model", "NextMaintenanceDue", "NextMaintenanceMileage", "Notes", "PurchaseDate", "PurchasePrice", "SeatingCapacity", "SpecialEquipment", "Status", "UpdatedBy", "UpdatedDate", "VIN", "Year" },
-                values: new object[,]
-                {
-                    { 1, "001", null, new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), null, null, null, null, null, null, null, false, null, null, null, "TX123456", "Blue Bird", null, "Vision", null, null, null, new DateTime(2020, 8, 15, 0, 0, 0, 0, DateTimeKind.Unspecified), 85000.00m, 72, null, "Active", null, null, "1BAANKCL7LF123456", 2020 },
-                    { 2, "002", null, new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), null, null, null, null, null, null, null, false, null, null, null, "TX654321", "Thomas Built", null, "Saf-T-Liner C2", null, null, null, new DateTime(2019, 7, 10, 0, 0, 0, 0, DateTimeKind.Unspecified), 82000.00m, 66, null, "Active", null, null, "4DRBTAAN7KB654321", 2019 }
-                });
+            // InsertData is omitted: Npgsql cannot emit literals for SQL Server store types
+            // in the snapshot (bool/bit). Demo rows come from OnModelCreating HasData
+            // and SeedDataService instead.
 
             migrationBuilder.CreateIndex(
                 name: "IX_Activities_ActivityType",
@@ -970,7 +971,7 @@ namespace BusBuddy.Core.Migrations
                 table: "StudentSchedules",
                 columns: new[] { "StudentId", "ScheduleId" },
                 unique: true,
-                filter: "[ScheduleId] IS NOT NULL");
+                filter: MigrationSql.NotNullFilter(migrationBuilder, "ScheduleId"));
 
             migrationBuilder.CreateIndex(
                 name: "IX_TripEvents_ApprovalRequired",

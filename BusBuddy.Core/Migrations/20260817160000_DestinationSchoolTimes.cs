@@ -8,7 +8,8 @@ namespace BusBuddy.Core.Migrations;
 
 /// <summary>
 /// Destination school StartTime / DismissalTime for route determination (spec 008).
-/// Apply on Windows SQL Server: <c>dotnet ef database update --project BusBuddy.Core --startup-project BusBuddy.WPF</c>.
+/// Apply with <c>dotnet ef database update --project BusBuddy.Core --startup-project BusBuddy.Core</c>
+/// (Mac Docker Postgres or Windows SQL Server). See Documentation/DATABASE-CONFIGURATION.md.
 /// Snapshot may lag older migrations; this Up/Down is authoritative for these columns.
 /// </summary>
 [DbContext(typeof(BusBuddyDbContext))]

@@ -19,25 +19,29 @@ public partial class StudentContactFieldsAlignment : Migration
         migrationBuilder.AddColumn<string>(
             name: "ParentEmail",
             table: "Students",
-            maxLength: 100,
+            type: MigrationSql.StringType(migrationBuilder, 100),
+                maxLength: 100,
             nullable: true);
 
         migrationBuilder.AddColumn<string>(
             name: "CellPhone",
             table: "Students",
-            maxLength: 20,
+            type: MigrationSql.StringType(migrationBuilder, 20),
+                maxLength: 20,
             nullable: true);
 
         migrationBuilder.AddColumn<string>(
             name: "EmergencyContactName",
             table: "Students",
-            maxLength: 100,
+            type: MigrationSql.StringType(migrationBuilder, 100),
+                maxLength: 100,
             nullable: true);
 
         migrationBuilder.AddColumn<bool>(
             name: "HasMedicalNeeds",
             table: "Students",
-            nullable: false,
+            type: MigrationSql.BoolType(migrationBuilder),
+                nullable: false,
             defaultValue: false);
 
         migrationBuilder.AddColumn<int>(
@@ -48,37 +52,43 @@ public partial class StudentContactFieldsAlignment : Migration
         migrationBuilder.AddColumn<string>(
             name: "AdminContactName",
             table: "Destinations",
-            maxLength: 100,
+            type: MigrationSql.StringType(migrationBuilder, 100),
+                maxLength: 100,
             nullable: true);
 
         migrationBuilder.AddColumn<string>(
             name: "AdminPhone",
             table: "Destinations",
-            maxLength: 20,
+            type: MigrationSql.StringType(migrationBuilder, 20),
+                maxLength: 20,
             nullable: true);
 
         migrationBuilder.AddColumn<string>(
             name: "AdminEmail",
             table: "Destinations",
-            maxLength: 100,
+            type: MigrationSql.StringType(migrationBuilder, 100),
+                maxLength: 100,
             nullable: true);
 
         migrationBuilder.AddColumn<string>(
             name: "DistrictName",
             table: "Destinations",
-            maxLength: 150,
+            type: MigrationSql.StringType(migrationBuilder, 150),
+                maxLength: 150,
             nullable: true);
 
         migrationBuilder.AddColumn<string>(
             name: "GradeMin",
             table: "Destinations",
-            maxLength: 20,
+            type: MigrationSql.StringType(migrationBuilder, 20),
+                maxLength: 20,
             nullable: true);
 
         migrationBuilder.AddColumn<string>(
             name: "GradeMax",
             table: "Destinations",
-            maxLength: 20,
+            type: MigrationSql.StringType(migrationBuilder, 20),
+                maxLength: 20,
             nullable: true);
 
         migrationBuilder.AddColumn<int>(

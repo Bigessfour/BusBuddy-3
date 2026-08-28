@@ -1,11 +1,15 @@
 ﻿using Microsoft.EntityFrameworkCore.Migrations;
+using BusBuddy.Core.Data;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 
 #nullable disable
 
 namespace BusBuddy.Core.Migrations
 {
     /// <inheritdoc />
-    public partial class FixDatabaseSchema : Migration
+    [DbContext(typeof(BusBuddyDbContext))]
+[Migration("20250809015130_FixDatabaseSchema")]
+public partial class FixDatabaseSchema : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -37,11 +41,10 @@ namespace BusBuddy.Core.Migrations
             migrationBuilder.AlterColumn<string>(
                 name: "School",
                 table: "Routes",
-                type: "nvarchar(100)",
+                type: MigrationSql.StringType(migrationBuilder, 100),
                 maxLength: 100,
                 nullable: true,
                 oldClrType: typeof(string),
-                oldType: "nvarchar(max)",
                 oldDefaultValue: "");
 
             migrationBuilder.AddColumn<int>(
@@ -55,16 +58,17 @@ namespace BusBuddy.Core.Migrations
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
+                        .Annotation("SqlServer:Identity", "1, 1")
+                        .Annotation("Npgsql:ValueGenerationStrategy", Npgsql.EntityFrameworkCore.PostgreSQL.Metadata.NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     GuardianId = table.Column<int>(type: "int", nullable: false),
-                    FirstName = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false, defaultValue: ""),
-                    LastName = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false, defaultValue: ""),
-                    Address = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false, defaultValue: ""),
+                    FirstName = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 50), maxLength: 50, nullable: false, defaultValue: ""),
+                    LastName = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 50), maxLength: 50, nullable: false, defaultValue: ""),
+                    Address = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 200), maxLength: 200, nullable: false, defaultValue: ""),
                     Latitude = table.Column<double>(type: "float", nullable: true),
                     Longitude = table.Column<double>(type: "float", nullable: true),
-                    Phone = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false, defaultValue: ""),
-                    Email = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
-                    Notes = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
+                    Phone = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 20), maxLength: 20, nullable: false, defaultValue: ""),
+                    Email = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 100), maxLength: 100, nullable: true),
+                    Notes = table.Column<string>(type: MigrationSql.StringType(migrationBuilder, 500), maxLength: 500, nullable: true),
                     FamilyId = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
@@ -147,11 +151,10 @@ namespace BusBuddy.Core.Migrations
             migrationBuilder.AlterColumn<string>(
                 name: "School",
                 table: "Routes",
-                type: "nvarchar(max)",
+                type: MigrationSql.StringType(migrationBuilder),
                 nullable: false,
                 defaultValue: "",
                 oldClrType: typeof(string),
-                oldType: "nvarchar(100)",
                 oldMaxLength: 100,
                 oldNullable: true);
 
