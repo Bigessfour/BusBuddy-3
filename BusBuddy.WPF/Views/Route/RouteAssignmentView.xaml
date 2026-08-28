@@ -25,43 +25,51 @@
                     <x:Type TypeName="models:RouteTimeSlot" />
                 </ObjectDataProvider.MethodParameters>
             </ObjectDataProvider>
-            <!-- Themed button styles for readability -->
+            <!-- Themed button styles — plain Label text (emoji often blank under Fluent ButtonAdv) -->
             <Style x:Key="PrimaryButtonAdv"
                    TargetType="syncfusion:ButtonAdv">
                 <Setter Property="Padding"
-                        Value="14,8" />
+                        Value="12,8" />
                 <Setter Property="Margin"
-                        Value="6,0,0,0" />
+                        Value="6,4,0,0" />
+                <Setter Property="SizeMode"
+                        Value="Normal" />
                 <Setter Property="Background"
-                        Value="{DynamicResource BusBuddy.Brush.Primary}" />
+                        Value="{DynamicResource ButtonBackgroundBrush}" />
                 <Setter Property="Foreground"
-                        Value="{DynamicResource BusBuddy.Brush.Text.OnPrimary}" />
+                        Value="{DynamicResource ButtonForegroundBrush}" />
             </Style>
             <Style x:Key="SuccessButtonAdv"
                    TargetType="syncfusion:ButtonAdv"
                    BasedOn="{StaticResource PrimaryButtonAdv}">
                 <Setter Property="Background"
                         Value="{DynamicResource BusBuddy.Brush.Semantic.Success}" />
+                <Setter Property="Foreground"
+                        Value="{DynamicResource BusBuddy.Brush.Text.OnPrimary}" />
             </Style>
             <Style x:Key="WarningButtonAdv"
                    TargetType="syncfusion:ButtonAdv"
                    BasedOn="{StaticResource PrimaryButtonAdv}">
                 <Setter Property="Background"
                         Value="{DynamicResource BusBuddy.Brush.Semantic.Warning}" />
+                <Setter Property="Foreground"
+                        Value="{DynamicResource PrimaryBackgroundBrush}" />
             </Style>
             <Style x:Key="DangerButtonAdv"
                    TargetType="syncfusion:ButtonAdv"
                    BasedOn="{StaticResource PrimaryButtonAdv}">
                 <Setter Property="Background"
                         Value="{DynamicResource BusBuddy.Brush.Semantic.Danger}" />
+                <Setter Property="Foreground"
+                        Value="{DynamicResource BusBuddy.Brush.Text.OnPrimary}" />
             </Style>
             <Style x:Key="InfoButtonAdv"
                    TargetType="syncfusion:ButtonAdv"
                    BasedOn="{StaticResource PrimaryButtonAdv}">
                 <Setter Property="Background"
-                        Value="{DynamicResource BusBuddy.Brush.Semantic.Info}" />
+                        Value="{DynamicResource ButtonBackgroundBrush}" />
                 <Setter Property="Foreground"
-                        Value="{DynamicResource BusBuddy.Brush.Text.Primary}" />
+                        Value="{DynamicResource ButtonForegroundBrush}" />
             </Style>
             <!-- Watermark search uses SfTextBoxExt (Syncfusion only) -->
         </ResourceDictionary>
@@ -82,10 +90,12 @@
                 Margin="0,0,0,12">
             <StackPanel Orientation="Horizontal"
                         VerticalAlignment="Center">
-                <TextBlock Text="🛠️"
+                <TextBlock Text="&#xE90F;"
+                           FontFamily="Segoe MDL2 Assets"
                            FontSize="22"
                            Margin="0,0,8,0"
-                           VerticalAlignment="Center" />
+                           VerticalAlignment="Center"
+                           Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}" />
                 <TextBlock Text="Route Assignment — MVP"
                            FontSize="18"
                            FontWeight="Bold"
@@ -171,72 +181,79 @@
                                             AutomationProperties.Name="Driver Selector"
                                             AutomationProperties.HelpText="Select a driver for the route" />
                 </StackPanel>
-                <!-- Start Time and Actions -->
-                <StackPanel Grid.Column="5"
-                            Orientation="Horizontal"
-                            VerticalAlignment="Bottom">
+                <!-- Start Time and Actions — WrapPanel so Labels are not crushed to blank icon tiles -->
+                <WrapPanel Grid.Column="5"
+                           Orientation="Horizontal"
+                           VerticalAlignment="Bottom">
                     <TextBlock Text="Start:"
                                VerticalAlignment="Center"
                                Margin="0,0,6,0" />
                     <syncfusion:SfMaskedEdit x:Name="StartTimeInput"
                                              Width="80"
+                                             Margin="0,4,0,0"
                                              Text="{Binding StartTimeString, Mode=TwoWay}"
                                              AutomationProperties.Name="Route Start Time" />
                     <syncfusion:ButtonAdv x:Name="TimeButton"
-                                          Label="⏱️ Time"
+                                          Label="Time"
                                           Command="{Binding TimeRouteCommand}"
                                           Style="{StaticResource InfoButtonAdv}"
                                           AutomationProperties.Name="Time Route"
                                           ToolTip="Calculate timing for all stops" />
                     <syncfusion:ButtonAdv x:Name="SaveButton"
-                                          Label="💾 Save"
+                                          Label="Save"
                                           Command="{Binding SaveRouteCommand}"
                                           Style="{StaticResource PrimaryButtonAdv}"
                                           AutomationProperties.Name="Save Route"
                                           ToolTip="Save route and assignments" />
                     <syncfusion:ButtonAdv x:Name="ActivateButton"
-                                          Label="✅ Activate"
+                                          Label="Activate"
                                           Command="{Binding ActivateRouteCommand}"
                                           Style="{StaticResource SuccessButtonAdv}"
-                                          AutomationProperties.Name="Activate Route" />
+                                          AutomationProperties.Name="Activate Route"
+                                          ToolTip="Activate selected route" />
                     <syncfusion:ButtonAdv x:Name="DeactivateButton"
-                                          Label="🛑 Deactivate"
+                                          Label="Deactivate"
                                           Command="{Binding DeactivateRouteCommand}"
                                           Style="{StaticResource WarningButtonAdv}"
-                                          AutomationProperties.Name="Deactivate Route" />
+                                          AutomationProperties.Name="Deactivate Route"
+                                          ToolTip="Deactivate selected route" />
                     <syncfusion:ButtonAdv x:Name="DeleteButton"
-                                          Label="🗑️ Delete"
+                                          Label="Delete"
                                           Command="{Binding DeleteRouteCommand}"
                                           Style="{StaticResource DangerButtonAdv}"
-                                          AutomationProperties.Name="Delete Route" />
+                                          AutomationProperties.Name="Delete Route"
+                                          ToolTip="Delete selected route" />
                     <syncfusion:ButtonAdv x:Name="ScheduleButton"
-                                          Label="🗓️ Schedule"
+                                          Label="Schedule"
                                           Command="{Binding ViewScheduleCommand}"
                                           Style="{StaticResource InfoButtonAdv}"
-                                          AutomationProperties.Name="View Schedule" />
+                                          AutomationProperties.Name="View Schedule"
+                                          ToolTip="View route schedule" />
                     <syncfusion:ButtonAdv x:Name="PlotButton"
-                                          Label="🗺️ Plot"
+                                          Label="Plot"
                                           Command="{Binding PlotRouteOnMapCommand}"
                                           Style="{StaticResource InfoButtonAdv}"
-                                          AutomationProperties.Name="Plot Route on Map" />
+                                          AutomationProperties.Name="Plot Route on Map"
+                                          ToolTip="Plot route on map" />
                     <syncfusion:ButtonAdv x:Name="PrintMapButton"
-                                          Label="🖨️ Print Map"
+                                          Label="Print Map"
                                           Command="{Binding PrintMapCommand}"
                                           Style="{StaticResource PrimaryButtonAdv}"
-                                          AutomationProperties.Name="Print Route Map" />
+                                          AutomationProperties.Name="Print Route Map"
+                                          ToolTip="Print route map" />
                     <syncfusion:ButtonAdv x:Name="AutoAssignButton"
-                                          Label="⚡ Auto-Assign"
+                                          Label="Auto-Assign"
                                           Command="{Binding AutoAssignCommand}"
                                           Style="{StaticResource SuccessButtonAdv}"
                                           AutomationProperties.Name="Auto Assign Students"
                                           ToolTip="Assign unassigned students up to route capacity for the selected time slot" />
                     <syncfusion:ButtonAdv x:Name="ReportButton"
-                                          Label="📄 Report"
+                                          Label="Report"
                                           Command="{Binding GenerateReportCommand}"
                                           Style="{StaticResource InfoButtonAdv}"
                                           AutomationProperties.Name="Generate Route Assignment Report"
                                           ToolTip="Export route assignment summary PDF" />
-                </StackPanel>
+                </WrapPanel>
             </Grid>
         </Border>
         <!-- Main Content: Unassigned ↔ Assigned -->
@@ -259,7 +276,7 @@
                     <syncfusion:SfTextBoxExt x:Name="UnassignedSearchBox"
                                              Grid.Row="0"
                                              Margin="0,0,0,8"
-                                             Watermark="🔍 Search unassigned students..."
+                                             Watermark="Search unassigned students..."
                                              Text="{Binding StudentSearchText, UpdateSourceTrigger=PropertyChanged}"
                                              AutomationProperties.Name="Unassigned Student Search"
                                              ToolTip="Search unassigned students" />
@@ -307,15 +324,17 @@
             <StackPanel Grid.Column="1"
                         VerticalAlignment="Center">
                 <syncfusion:ButtonAdv x:Name="AssignButton"
-                                      Label="➡️ Assign"
+                                      Label="Assign"
                                       Command="{Binding AssignStudentCommand}"
+                                      Style="{StaticResource PrimaryButtonAdv}"
                                       Margin="0,0,0,10"
                                       Padding="16,8"
                                       AutomationProperties.Name="Assign Student"
                                       ToolTip="Assign selected student to route" />
                 <syncfusion:ButtonAdv x:Name="RemoveButton"
-                                      Label="⬅️ Remove"
+                                      Label="Remove"
                                       Command="{Binding RemoveStudentCommand}"
+                                      Style="{StaticResource PrimaryButtonAdv}"
                                       Padding="16,8"
                                       AutomationProperties.Name="Remove Student"
                                       ToolTip="Remove selected student from route" />

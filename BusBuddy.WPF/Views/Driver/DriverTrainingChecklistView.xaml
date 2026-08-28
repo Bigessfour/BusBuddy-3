@@ -31,7 +31,7 @@
             <TextBlock Text="{Binding Title}"
                        FontSize="16"
                        FontWeight="Bold"
-                       Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}" />
+                       Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}" />
         </Border>
 
         <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,10">
@@ -47,7 +47,7 @@
                                   Command="{Binding MarkCompleteCommand}"
                                   Margin="0,0,8,0"
                                   Background="{DynamicResource BusBuddy.Brush.FleetGreen}"
-                                  Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"
+                                  Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}"
                                   AutomationProperties.Name="Mark training complete" />
             <syncfusion:ButtonAdv Label="Save selected row"
                                   Command="{Binding SaveRowCommand}"

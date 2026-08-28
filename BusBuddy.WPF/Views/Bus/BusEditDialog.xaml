@@ -89,14 +89,14 @@
             HorizontalAlignment="Right"
             Margin="0,25,0,0">
         <syncfusion:ButtonAdv x:Name="SaveButton"
-                   Label="💾 Save"
+                   Label="Save"
                    Width="100"
                    Height="38"
                    Margin="0,0,12,0"
                    AutomationProperties.Name="Save Bus"
                    AutomationProperties.HelpText="Validate and save bus details"/>
         <syncfusion:ButtonAdv x:Name="CancelButton"
-                   Label="✖ Cancel"
+                   Label="Cancel"
                    Width="100"
                    Height="38"
                    AutomationProperties.Name="Cancel Edit"

@@ -28,7 +28,7 @@
                 </Grid.ColumnDefinitions>
 
                 <StackPanel Grid.Column="0">
-                    <TextBlock Text="🚌 BusBuddy Dashboard"
+                    <TextBlock Text="BusBuddy Dashboard"
                                FontSize="28" FontWeight="Bold"
                                Foreground="{DynamicResource PrimaryTextBrush}" Margin="0,0,0,5"/>
                     <TextBlock Text="Transportation Management Overview"
@@ -37,14 +37,14 @@
 
                 <StackPanel Grid.Column="1" Orientation="Horizontal">
                         <!-- Replace standard Buttons with Syncfusion ButtonAdv per project rules -->
-                        <syncfusion:ButtonAdv Label="🔄 Refresh"
+                        <syncfusion:ButtonAdv Label="Refresh"
                                               Command="{Binding RefreshCommand}"
                                               Margin="0,0,10,0" Padding="15,8"
                                               Background="{DynamicResource ButtonBackgroundBrush}" Foreground="{DynamicResource ButtonForegroundBrush}"
                                               BorderThickness="1"
                                               AutomationProperties.Name="Refresh Dashboard"
                                               AutomationProperties.HelpText="Reload dashboard metrics and lists"/>
-                        <syncfusion:ButtonAdv Label="📊 Report"
+                        <syncfusion:ButtonAdv Label="Report"
                                               Command="{Binding GenerateReportCommand}"
                                               Padding="15,8"
                                               Background="{DynamicResource ButtonBackgroundBrush}" Foreground="{DynamicResource ButtonForegroundBrush}"
@@ -75,8 +75,9 @@
                         <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
 
-                    <TextBlock Grid.Row="0" Text="🗺️" FontSize="24"
-                               HorizontalAlignment="Center" Margin="0,0,0,10"/>
+                    <TextBlock Grid.Row="0" Text="&#xE1C4;" FontFamily="Segoe MDL2 Assets" FontSize="24"
+                               HorizontalAlignment="Center" Margin="0,0,0,10"
+                               Foreground="{DynamicResource AccentTextBrush}"/>
                     <TextBlock Grid.Row="1" Text="{Binding TotalRoutes}"
                                FontSize="36" FontWeight="Bold"
                                Foreground="{DynamicResource AccentTextBrush}" HorizontalAlignment="Center"/>
@@ -97,8 +98,9 @@
                         <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
 
-                    <TextBlock Grid.Row="0" Text="🚌" FontSize="24"
-                               HorizontalAlignment="Center" Margin="0,0,0,10"/>
+                    <TextBlock Grid.Row="0" Text="&#xE7EC;" FontFamily="Segoe MDL2 Assets" FontSize="24"
+                               HorizontalAlignment="Center" Margin="0,0,0,10"
+                               Foreground="{DynamicResource PrimaryTextBrush}"/>
                     <TextBlock Grid.Row="1" Text="{Binding ActiveBuses}"
                                FontSize="36" FontWeight="Bold"
                                Foreground="{DynamicResource PrimaryTextBrush}" HorizontalAlignment="Center"/>
@@ -119,8 +121,9 @@
                         <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
 
-                    <TextBlock Grid.Row="0" Text="👨‍✈️" FontSize="24"
-                               HorizontalAlignment="Center" Margin="0,0,0,10"/>
+                    <TextBlock Grid.Row="0" Text="&#xE77B;" FontFamily="Segoe MDL2 Assets" FontSize="24"
+                               HorizontalAlignment="Center" Margin="0,0,0,10"
+                               Foreground="{DynamicResource PrimaryTextBrush}"/>
                     <TextBlock Grid.Row="1" Text="{Binding AvailableDrivers}"
                                FontSize="36" FontWeight="Bold"
                                Foreground="{DynamicResource PrimaryTextBrush}" HorizontalAlignment="Center"/>
@@ -141,8 +144,9 @@
                         <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
 
-                    <TextBlock Grid.Row="0" Text="📊" FontSize="24"
-                               HorizontalAlignment="Center" Margin="0,0,0,10"/>
+                    <TextBlock Grid.Row="0" Text="&#xE9D9;" FontFamily="Segoe MDL2 Assets" FontSize="24"
+                               HorizontalAlignment="Center" Margin="0,0,0,10"
+                               Foreground="{DynamicResource BusBuddy.Brush.Semantic.Success}"/>
                     <Ellipse Grid.Row="1" Width="20" Height="20"
                              Fill="{DynamicResource BusBuddy.Brush.Semantic.Success}" HorizontalAlignment="Center"/>
                     <TextBlock Grid.Row="2" Text="System Online"
@@ -170,7 +174,7 @@
                             <RowDefinition Height="*"/>
                         </Grid.RowDefinitions>
 
-                        <TextBlock Grid.Row="0" Text="📋 Recent Routes"
+                        <TextBlock Grid.Row="0" Text="Recent Routes"
                                    FontSize="18" FontWeight="SemiBold"
                                    Foreground="{DynamicResource PrimaryTextBrush}" Margin="0,0,0,15"/>
 
@@ -206,7 +210,7 @@
                             <RowDefinition Height="*"/>
                         </Grid.RowDefinitions>
 
-                        <TextBlock Grid.Row="0" Text="🚌 Fleet Status"
+                        <TextBlock Grid.Row="0" Text="Fleet Status"
                                    FontSize="18" FontWeight="SemiBold"
                                    Foreground="{DynamicResource PrimaryTextBrush}" Margin="0,0,0,15"/>
 

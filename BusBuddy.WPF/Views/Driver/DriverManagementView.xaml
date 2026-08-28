@@ -1,3 +1,4 @@
+<!-- Alternate/legacy Driver Management layout — same FluentDark-safe ButtonAdv pattern as DriversView. -->
 <UserControl x:Class="BusBuddy.WPF.Views.Driver.DriverManagementView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -11,85 +12,74 @@
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/SyncfusionV30_Validated_ResourceDictionary.xaml"/>
-                    <!-- Removed redundant FluentDarkTheme -->
             </ResourceDictionary.MergedDictionaries>
+            <Style x:Key="DriverMgmtButton" TargetType="syncfusion:ButtonAdv">
+                <Setter Property="SizeMode" Value="Normal"/>
+                <Setter Property="IconWidth" Value="0"/>
+                <Setter Property="IconHeight" Value="0"/>
+                <Setter Property="SmallIcon" Value="{x:Null}"/>
+                <Setter Property="Padding" Value="12,8"/>
+                <Setter Property="Margin" Value="0,0,10,0"/>
+                <Setter Property="Background" Value="{DynamicResource ButtonBackgroundBrush}"/>
+                <Setter Property="Foreground" Value="{DynamicResource ButtonForegroundBrush}"/>
+            </Style>
         </ResourceDictionary>
     </UserControl.Resources>
 
-    <Grid>
+    <Grid Background="{DynamicResource PrimaryBackgroundBrush}">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <!-- Header Section -->
-    <Border Grid.Row="0"
-        Background="{DynamicResource AccentBackgroundBrush}"
+        <Border Grid.Row="0"
+                Background="{DynamicResource BusBuddy.Brush.Primary}"
                 Padding="20,15">
             <StackPanel Orientation="Horizontal">
                 <TextBlock Text="&#xE7C4;" FontFamily="Segoe MDL2 Assets"
-                          FontSize="20" Foreground="White" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                          FontSize="20" Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}"
+                          VerticalAlignment="Center" Margin="0,0,10,0"/>
                 <TextBlock Text="Driver Management"
                            FontSize="24"
                            FontWeight="Bold"
-                           Foreground="White"/>
+                           Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}"/>
             </StackPanel>
         </Border>
 
-        <!-- Action Buttons Section -->
-    <Border Grid.Row="1"
-        Background="{DynamicResource ContentBackgroundBrush}"
+        <Border Grid.Row="1"
+                Background="{DynamicResource BusBuddy.Brush.Panel.Header}"
                 Padding="20,10">
             <StackPanel Orientation="Horizontal">
                 <syncfusion:ButtonAdv Label="Add Driver"
-                                      Width="120"
-                                      Height="35"
-                                      Margin="0,0,10,0"
-                                      SizeMode="Normal"
-                                      SmallIcon="/Assets/Icons/add-user.png"
+                                      Style="{StaticResource DriverMgmtButton}"
                                       Command="{Binding AddDriverCommand}"
+                                      Background="{DynamicResource BusBuddy.Brush.Primary}"
+                                      Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}"
                                       AutomationProperties.Name="Add Driver"
-                                      AutomationProperties.HelpText="Add a new driver">
-                    <syncfusion:ButtonAdv.LargeIcon>
-                        <Image Source="/Assets/Icons/add-user.png" Width="16" Height="16"/>
-                    </syncfusion:ButtonAdv.LargeIcon>
-                </syncfusion:ButtonAdv>
+                                      AutomationProperties.HelpText="Add a new driver"
+                                      ToolTip="Add a new driver"/>
 
                 <syncfusion:ButtonAdv Label="Edit Driver"
-                                      Width="120"
-                                      Height="35"
-                                      Margin="0,0,10,0"
-                                      SizeMode="Normal"
-                                      SmallIcon="/Assets/Icons/edit-user.png"
+                                      Style="{StaticResource DriverMgmtButton}"
                                       Command="{Binding EditDriverCommand}"
                                       IsEnabled="{Binding HasSelectedDriver}"
                                       AutomationProperties.Name="Edit Driver"
-                                      AutomationProperties.HelpText="Edit the selected driver">
-                    <syncfusion:ButtonAdv.LargeIcon>
-                        <Image Source="/Assets/Icons/edit-user.png" Width="16" Height="16"/>
-                    </syncfusion:ButtonAdv.LargeIcon>
-                </syncfusion:ButtonAdv>
+                                      AutomationProperties.HelpText="Edit the selected driver"
+                                      ToolTip="Edit selected driver"/>
 
                 <syncfusion:ButtonAdv Label="Delete Driver"
-                                      Width="120"
-                                      Height="35"
-                                      SizeMode="Normal"
-                                      SmallIcon="/Assets/Icons/delete-user.png"
+                                      Style="{StaticResource DriverMgmtButton}"
                                       Command="{Binding DeleteDriverCommand}"
                                       IsEnabled="{Binding HasSelectedDriver}"
                                       AutomationProperties.Name="Delete Driver"
-                                      AutomationProperties.HelpText="Delete the selected driver">
-                    <syncfusion:ButtonAdv.LargeIcon>
-                        <Image Source="/Assets/Icons/delete-user.png" Width="16" Height="16"/>
-                    </syncfusion:ButtonAdv.LargeIcon>
-                </syncfusion:ButtonAdv>
+                                      AutomationProperties.HelpText="Delete the selected driver"
+                                      ToolTip="Delete selected driver"/>
             </StackPanel>
         </Border>
 
-        <!-- Data Grid Section -->
-    <Border Grid.Row="2"
-        Background="{DynamicResource ContentBackgroundBrush}"
+        <Border Grid.Row="2"
+                Background="{DynamicResource BusBuddy.Brush.Panel.Content}"
                 Margin="10"
                 CornerRadius="5">
             <syncfusion:SfDataGrid ItemsSource="{Binding Drivers}"
@@ -103,45 +93,37 @@
                                    HeaderLinesVisibility="Both"
                                    ShowRowHeader="True"
                                    ColumnSizer="Star"
+                                   Background="{DynamicResource BusBuddy.Brush.DataGrid.Background}"
                                    Margin="10">
 
-                <!-- Column Definitions following Syncfusion documentation -->
                 <syncfusion:SfDataGrid.Columns>
                     <syncfusion:GridTextColumn HeaderText="Driver Name"
                                                MappingName="DriverName"
                                                Width="200"
                                                MinimumWidth="150"/>
-
                     <syncfusion:GridTextColumn HeaderText="License Number"
                                                MappingName="LicenseNumber"
                                                Width="150"
                                                MinimumWidth="120"/>
-
                     <syncfusion:GridTextColumn HeaderText="Phone Number"
                                                MappingName="DriverPhone"
                                                Width="140"
                                                MinimumWidth="120"/>
-
                     <syncfusion:GridTextColumn HeaderText="Email Address"
                                                MappingName="DriverEmail"
                                                Width="200"
                                                MinimumWidth="150"/>
-
                     <syncfusion:GridTextColumn HeaderText="Status"
                                                MappingName="Status"
                                                Width="100"
                                                MinimumWidth="80"/>
-
                     <syncfusion:GridDateTimeColumn HeaderText="Hire Date"
                                                    MappingName="HireDate"
                                                    Width="120"
                                                    MinimumWidth="100"
                                                    Pattern="ShortDate"/>
-
-                    <!-- Removed Route Assignment column for MVP; property not present on Driver model -->
                 </syncfusion:SfDataGrid.Columns>
 
-                <!-- Grid styling following Syncfusion best practices -->
                 <syncfusion:SfDataGrid.TableSummaryRows>
                     <syncfusion:GridTableSummaryRow Title="Total Drivers: {TotalSummary}"
                                                     ShowSummaryInRow="True">

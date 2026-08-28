@@ -40,7 +40,7 @@
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
-                <TextBlock Grid.Row="0" Text="🚌 BusBuddy MVP - Transportation Management"
+                <TextBlock Grid.Row="0" Text="BusBuddy MVP - Transportation Management"
                            FontSize="28" FontWeight="Bold" Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"
                            HorizontalAlignment="Center"/>
                 <TextBlock Grid.Row="1" Text="Students | Routes | Buses | Drivers - Monday Ready Demo"
@@ -49,43 +49,43 @@
 
                 <!-- Navigation + Theme Selector -->
                 <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,15,0,0">
-                    <syncfusion:ButtonAdv Label="🧾 Eligibility PDF" Margin="0,0,18,0" Padding="15,8"
-                                          Background="{DynamicResource BusBuddy.Brush.Primary}" Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}" BorderThickness="0"
+                    <syncfusion:ButtonAdv Label="Eligibility PDF" Margin="0,0,18,0" Padding="15,8"
+                                          Background="{DynamicResource BusBuddy.Brush.Primary}" Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}" BorderThickness="0"
                                           Click="EligibilityPdfButton_Click" FontSize="14" FontWeight="SemiBold"
                                           ToolTip="Generate eligibility route PDF (district outside town, excludes Lamar)"
                                           AutomationProperties.Name="Generate Eligibility PDF"/>
                     <syncfusion:ButtonAdv Label="Print Last PDF" Margin="0,0,25,0" Padding="15,8"
-                                          Background="{DynamicResource BusBuddy.Brush.Primary}" Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}" BorderThickness="0"
+                                          Background="{DynamicResource BusBuddy.Brush.Primary}" Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}" BorderThickness="0"
                                           Click="PrintEligibilityPdfButton_Click" FontSize="14" FontWeight="SemiBold"
                                           ToolTip="Print the last generated eligibility PDF (opens system print dialog)"
                                           AutomationProperties.Name="Print Eligibility PDF"/>
-                    <syncfusion:ButtonAdv Label="🌍 Map" Margin="0,0,18,0" Padding="15,8"
-                                          Background="{DynamicResource BusBuddy.Brush.Primary}" Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}" BorderThickness="0"
+                    <syncfusion:ButtonAdv Label="Map" Margin="0,0,18,0" Padding="15,8"
+                                          Background="{DynamicResource BusBuddy.Brush.Primary}" Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}" BorderThickness="0"
                                           Click="MapButton_Click" FontSize="14" FontWeight="SemiBold"
                                           ToolTip="Show Google Earth / Geospatial Map"
                                           AutomationProperties.Name="Map View Navigation"/>
                         <syncfusion:ButtonAdv Label="Students" Margin="0,0,10,0" Padding="15,8"
-                                          Background="{DynamicResource BusBuddy.Brush.Primary}" Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}" BorderThickness="0"
+                                          Background="{DynamicResource BusBuddy.Brush.Primary}" Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}" BorderThickness="0"
                                           Click="StudentsButton_Click" FontSize="14" FontWeight="SemiBold"
                                           ToolTip="Manage student records and information"
                                           AutomationProperties.Name="Students Management"/>
-                    <syncfusion:ButtonAdv Label="🚌 Routes" Margin="0,0,10,0" Padding="15,8"
-                                          Background="{DynamicResource BusBuddy.Brush.Primary}" Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}" BorderThickness="0"
+                    <syncfusion:ButtonAdv Label="Routes" Margin="0,0,10,0" Padding="15,8"
+                                          Background="{DynamicResource BusBuddy.Brush.Primary}" Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}" BorderThickness="0"
                                           Click="RouteManagementButton_Click" FontSize="14" FontWeight="SemiBold"
                                           ToolTip="Plan and manage transportation routes"
                                           AutomationProperties.Name="Route Management"/>
-                    <syncfusion:ButtonAdv Label="🚐 Buses" Margin="0,0,10,0" Padding="15,8"
-                                          Background="{DynamicResource BusBuddy.Brush.Primary}" Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}" BorderThickness="0"
+                    <syncfusion:ButtonAdv Label="Buses" Margin="0,0,10,0" Padding="15,8"
+                                          Background="{DynamicResource BusBuddy.Brush.Primary}" Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}" BorderThickness="0"
                                           Click="BusesButton_Click" FontSize="14" FontWeight="SemiBold"
                                           ToolTip="Manage bus fleet and vehicle information"
                                           AutomationProperties.Name="Bus Management"/>
-                    <syncfusion:ButtonAdv Label="👨‍✈️ Drivers" Margin="0,0,10,0" Padding="15,8"
-                                          Background="{DynamicResource BusBuddy.Brush.Primary}" Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}" BorderThickness="0"
+                    <syncfusion:ButtonAdv Label="Drivers" Margin="0,0,10,0" Padding="15,8"
+                                          Background="{DynamicResource BusBuddy.Brush.Primary}" Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}" BorderThickness="0"
                                           Click="DriversButton_Click" FontSize="14" FontWeight="SemiBold"
                                           ToolTip="Manage driver information and schedules"
                                           AutomationProperties.Name="Driver Management"/>
-                    <syncfusion:ButtonAdv Label="📊 Reports" Padding="15,8"
-                                          Background="{DynamicResource BusBuddy.Brush.Primary}" Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}" BorderThickness="0"
+                    <syncfusion:ButtonAdv Label="Reports" Padding="15,8"
+                                          Background="{DynamicResource BusBuddy.Brush.Primary}" Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}" BorderThickness="0"
                                           Click="ReportsButton_Click" FontSize="14" FontWeight="SemiBold"
                                           ToolTip="Generate and view transportation reports"
                                           AutomationProperties.Name="Reports and Print Routes"/>
@@ -169,12 +169,12 @@
                     </syncfusion:SfDataGrid>
 
                     <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,15,0,0">
-                        <syncfusion:ButtonAdv Label="➕ Add Student" Margin="0,0,10,0" Padding="12,6"
+                        <syncfusion:ButtonAdv Label="Add Student" Margin="0,0,10,0" Padding="12,6"
                                               Background="{DynamicResource ButtonBackgroundBrush}" Foreground="{DynamicResource ButtonForegroundBrush}" BorderThickness="0"
                                               Click="AddStudent_Click"
                                               ToolTip="Add a new student to the system"
                                               AutomationProperties.Name="Add New Student"/>
-                        <syncfusion:ButtonAdv Label="📝 Edit Student" Padding="12,6"
+                        <syncfusion:ButtonAdv Label="Edit Student" Padding="12,6"
                                               Background="{DynamicResource ButtonBackgroundBrush}" Foreground="{DynamicResource ButtonForegroundBrush}" BorderThickness="0"
                                               Click="EditStudent_Click"
                                               ToolTip="Edit selected student information"
@@ -217,12 +217,12 @@
                     </syncfusion:SfDataGrid>
 
                     <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,15,0,0">
-                        <syncfusion:ButtonAdv Label="🗺️ Optimize Routes" Margin="0,0,10,0" Padding="12,6"
+                        <syncfusion:ButtonAdv Label="Optimize Routes" Margin="0,0,10,0" Padding="12,6"
                                               Background="{DynamicResource ButtonBackgroundBrush}" Foreground="{DynamicResource ButtonForegroundBrush}" BorderThickness="0"
                                               Click="OptimizeRoutes_Click"
                                               ToolTip="Optimize route efficiency and timing"
                                               AutomationProperties.Name="Optimize Transportation Routes"/>
-                        <syncfusion:ButtonAdv Label="📄 Export Schedules" Padding="12,6"
+                        <syncfusion:ButtonAdv Label="Export Schedules" Padding="12,6"
                                               Background="{DynamicResource ButtonBackgroundBrush}" Foreground="{DynamicResource ButtonForegroundBrush}" BorderThickness="0"
                                               Click="ExportSchedules_Click"
                                               ToolTip="Export route schedules to file"
@@ -264,17 +264,17 @@
                     </syncfusion:SfDataGrid>
 
                     <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,15,0,0">
-                        <syncfusion:ButtonAdv Label="➕ Add Bus" Margin="0,0,10,0" Padding="12,6"
+                        <syncfusion:ButtonAdv Label="Add Bus" Margin="0,0,10,0" Padding="12,6"
                                               Background="{DynamicResource ButtonBackgroundBrush}" Foreground="{DynamicResource ButtonForegroundBrush}" BorderThickness="0"
                                               Click="AddBus_Click"
                                               ToolTip="Add a new bus to the fleet"
                                               AutomationProperties.Name="Add New Bus"/>
-                        <syncfusion:ButtonAdv Label="🔧 Maintenance" Margin="0,0,10,0" Padding="12,6"
+                        <syncfusion:ButtonAdv Label="Maintenance" Margin="0,0,10,0" Padding="12,6"
                                               Background="{DynamicResource ButtonBackgroundBrush}" Foreground="{DynamicResource ButtonForegroundBrush}" BorderThickness="0"
                                               Click="Maintenance_Click"
                                               ToolTip="Schedule and track bus maintenance"
                                               AutomationProperties.Name="Bus Maintenance"/>
-                        <syncfusion:ButtonAdv Label="📊 Fleet Status" Padding="12,6"
+                        <syncfusion:ButtonAdv Label="Fleet Status" Padding="12,6"
                                               Background="{DynamicResource ButtonBackgroundBrush}" Foreground="{DynamicResource ButtonForegroundBrush}" BorderThickness="0"
                                               Click="FleetStatus_Click"
                                               ToolTip="View current fleet status and availability"
@@ -314,17 +314,17 @@
                     </syncfusion:SfDataGrid>
 
                     <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,15,0,0">
-                        <syncfusion:ButtonAdv Label="➕ Add Driver" Margin="0,0,10,0" Padding="12,6"
+                        <syncfusion:ButtonAdv Label="Add Driver" Margin="0,0,10,0" Padding="12,6"
                                               Background="{DynamicResource ButtonBackgroundBrush}" Foreground="{DynamicResource ButtonForegroundBrush}" BorderThickness="0"
                                               Click="AddDriver_Click"
                                               ToolTip="Add a new driver to the system"
                                               AutomationProperties.Name="Add New Driver"/>
-                        <syncfusion:ButtonAdv Label="🚌 Assign Bus" Margin="0,0,10,0" Padding="12,6"
+                        <syncfusion:ButtonAdv Label="Assign Bus" Margin="0,0,10,0" Padding="12,6"
                                               Background="{DynamicResource ButtonBackgroundBrush}" Foreground="{DynamicResource ButtonForegroundBrush}" BorderThickness="0"
                                               Click="AssignBus_Click"
                                               ToolTip="Assign a bus to the selected driver"
                                               AutomationProperties.Name="Assign Bus to Driver"/>
-                        <syncfusion:ButtonAdv Label="📅 Schedule" Padding="12,6"
+                        <syncfusion:ButtonAdv Label="Schedule" Padding="12,6"
                                               Background="{DynamicResource ButtonBackgroundBrush}" Foreground="{DynamicResource ButtonForegroundBrush}" BorderThickness="0"
                                               Click="Schedule_Click"
                                               ToolTip="Manage driver schedules and assignments"
@@ -382,9 +382,9 @@
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
                 <TextBlock Grid.Column="0"
-                           Text="🎯 MVP Ready: Students ✅ | Routes ✅ | Buses ✅ | Drivers ✅ | Reports ✅ | PowerShell Demo: bb-route-demo"
+                           Text="MVP Ready: Students | Routes | Buses | Drivers | Reports | PowerShell Demo: bb-route-demo"
                            Foreground="{StaticResource StatusBarPrimaryTextBrush}" VerticalAlignment="Center" FontSize="14" TextTrimming="CharacterEllipsis"/>
-                <TextBlock Grid.Column="1" Text="✅ Monday Demo Ready"
+                <TextBlock Grid.Column="1" Text="Monday Demo Ready"
                            Foreground="{StaticResource StatusBarAccentTextBrush}" VerticalAlignment="Center" FontSize="14" FontWeight="SemiBold"/>
             </Grid>
         </Border>
