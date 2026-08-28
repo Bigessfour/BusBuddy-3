@@ -3,6 +3,7 @@ using System.IO;
 using BusBuddy.Core.Models;
 using BusBuddy.Core.Models.Trips;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Serilog;
 using Serilog.Context;
 using Microsoft.Extensions.Configuration; // Added for dynamic configuration
@@ -95,6 +96,10 @@ public class BusBuddyDbContext : DbContext
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
         ArgumentNullException.ThrowIfNull(optionsBuilder);
+        // Snapshot is SQL Server-shaped; Mac applies the same chain via Npgsql.
+        // EF 9 treats that provider/store-type drift as pending model changes.
+        optionsBuilder.ConfigureWarnings(w =>
+            w.Ignore(RelationalEventId.PendingModelChangesWarning));
         if (!optionsBuilder.IsConfigured)
         {
             var logger = Log.ForContext<BusBuddyDbContext>();

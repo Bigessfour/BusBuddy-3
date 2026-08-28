@@ -14,18 +14,17 @@ namespace BusBuddy.Core.Migrations
             migrationBuilder.AddColumn<string>(
                 name: "Description",
                 table: "Vehicles",
-                type: "nvarchar(500)",
+                type: MigrationSql.StringType(migrationBuilder, 500),
                 maxLength: 500,
                 nullable: true);
 
             migrationBuilder.AlterColumn<string>(
                 name: "SpecialNeeds",
                 table: "Students",
-                type: "nvarchar(max)",
+                type: MigrationSql.StringType(migrationBuilder),
                 nullable: false,
                 defaultValue: "",
-                oldClrType: typeof(bool),
-                oldType: "bit");
+                oldClrType: typeof(bool));
 
             migrationBuilder.AddColumn<int>(
                 name: "RouteAssignmentId",
@@ -36,21 +35,21 @@ namespace BusBuddy.Core.Migrations
             migrationBuilder.AddColumn<string>(
                 name: "Boundaries",
                 table: "Routes",
-                type: "nvarchar(200)",
+                type: MigrationSql.StringType(migrationBuilder, 200),
                 maxLength: 200,
                 nullable: true);
 
             migrationBuilder.AddColumn<string>(
                 name: "Path",
                 table: "Routes",
-                type: "nvarchar(300)",
+                type: MigrationSql.StringType(migrationBuilder, 300),
                 maxLength: 300,
                 nullable: true);
 
             migrationBuilder.AddColumn<string>(
                 name: "RouteDescription",
                 table: "Routes",
-                type: "nvarchar(200)",
+                type: MigrationSql.StringType(migrationBuilder, 200),
                 maxLength: 200,
                 nullable: true);
 
@@ -59,10 +58,11 @@ namespace BusBuddy.Core.Migrations
                 columns: table => new
                 {
                     RouteAssignmentId = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
+                        .Annotation("SqlServer:Identity", "1, 1")
+                        .Annotation("Npgsql:ValueGenerationStrategy", Npgsql.EntityFrameworkCore.PostgreSQL.Metadata.NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     RouteId = table.Column<int>(type: "int", nullable: false),
                     VehicleId = table.Column<int>(type: "int", nullable: false),
-                    AssignmentDate = table.Column<DateTime>(type: "datetime2", nullable: false)
+                    AssignmentDate = table.Column<DateTime>(type: MigrationSql.DateTimeType(migrationBuilder), nullable: false)
                 },
                 constraints: table =>
                 {
@@ -155,10 +155,9 @@ namespace BusBuddy.Core.Migrations
             migrationBuilder.AlterColumn<bool>(
                 name: "SpecialNeeds",
                 table: "Students",
-                type: "bit",
+                type: MigrationSql.BoolType(migrationBuilder),
                 nullable: false,
                 oldClrType: typeof(string),
-                oldType: "nvarchar(max)",
                 oldDefaultValue: "");
         }
     }

@@ -13,5 +13,5 @@ Year-start fleet sizing and student assignment planner for BusBuddy (spec 008).
 | `AssignFitnessEvaluator` | Block seating / warn time-geo (Q2:B) |
 | `RouteDeterminationService` | HomeToSchool + Transfer fleets (Q1:A) |
 
-Apply Destination school-time migrations on **Windows SQL Server** (`dotnet ef database update`).
+Apply Destination school-time migrations with `dotnet ef database update` (Mac Docker Postgres or Windows SQL Server). See [DATABASE-CONFIGURATION.md](../../../Documentation/DATABASE-CONFIGURATION.md).
 VM smoke: [specs/008-route-determination/quickstart.md](../../../specs/008-route-determination/quickstart.md).

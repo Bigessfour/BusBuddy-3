@@ -32,13 +32,13 @@
 **⚠️ CRITICAL**: No user story work until this phase is complete
 
 - [x] T004 Add `StartTime` and `DismissalTime` (`TimeSpan?`) to `BusBuddy.Core/Models/Destination.cs` and configure in `BusBuddy.Core/Data/BusBuddyDbContext.cs`
-- [x] T005 Add EF migration under `BusBuddy.Core/Migrations/` for Destination school times; update snapshot; note Windows SQL Server apply path
+- [x] T005 Add EF migration under `BusBuddy.Core/Migrations/` for Destination school times; update snapshot; Mac Docker Postgres or Windows SQL Server apply path (`Documentation/DATABASE-CONFIGURATION.md`)
 - [x] T006 [P] Add ride-mode helper in `BusBuddy.Core/Models/StudentRideMode.cs` (AM / PM / Both derived from `AMRoute`/`PMRoute`, with optional future enum)
 - [x] T007 Create `IRouteDeterminationService` in `BusBuddy.Core/Services/RouteDetermination/IRouteDeterminationService.cs` matching [contracts/route-determination.md](./contracts/route-determination.md) (`GenerateAndAssignAsync`, `RecalculateOnAssignAsync`, `ApplyClerkOverrideAsync`)
 - [x] T008 [P] Create DTOs `RouteGenerationResult`, `RouteProposalDto`, `AssignFitnessResult` in `BusBuddy.Core/Services/RouteDetermination/RouteDeterminationModels.cs` per [data-model.md](./data-model.md) and [contracts/assign-fitness.md](./contracts/assign-fitness.md)
 - [x] T009 Register `IRouteDeterminationService` (stub or real) in `BusBuddy.Core/Extensions/ServiceCollectionExtensions.cs` and `BusBuddy.WPF/App.xaml.cs`
 
-**Checkpoint**: Build succeeds; Destination times migrate on SQL Server; DI resolves `IRouteDeterminationService`
+**Checkpoint**: Build succeeds; Destination times migrate on Postgres or SQL Server; DI resolves `IRouteDeterminationService`
 
 ---
 
