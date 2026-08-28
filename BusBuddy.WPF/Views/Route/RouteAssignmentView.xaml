@@ -105,7 +105,7 @@
         </Border>
         <!-- Route Configuration Bar -->
         <Border Grid.Row="1"
-                Background="{DynamicResource BusBuddy.Brush.Surface.LightMode.Surface}"
+                Background="{DynamicResource BusBuddy.Brush.Surface.Medium}"
                 CornerRadius="6"
                 Padding="10"
                 Margin="0,0,0,12">
@@ -397,7 +397,7 @@
         <!-- Footer / Status -->
         <Border Grid.Row="4"
                 Margin="0,12,0,0"
-                Background="{DynamicResource BusBuddy.Brush.Surface.LightMode.Surface}"
+                Background="{DynamicResource BusBuddy.Brush.Surface.Medium}"
                 CornerRadius="6"
                 Padding="10">
             <TextBlock Text="{Binding StatusMessage}"

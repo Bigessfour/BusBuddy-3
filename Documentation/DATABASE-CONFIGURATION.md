@@ -36,8 +36,18 @@ $env:BUSBUDDY_CONNECTION = "Host=192.168.x.x;Port=5432;Database=busbuddy_test;Us
 
 ## Migrations (design-time)
 
+Postgres (Mac Docker) is the hybrid-dev path. From the repo root:
+
 ```bash
-dotnet ef database update --project BusBuddy.Core --startup-project BusBuddy.WPF
+docker compose --profile db up -d
+export BUSBUDDY_CONNECTION="Host=localhost;Port=5432;Database=busbuddy_migrate;Username=busbuddy;Password=busbuddy_dev"
+# Use a catalog that was not created with EnsureCreated (no __EFMigrationsHistory).
+docker compose --profile db exec -T postgres psql -U busbuddy -d postgres -c "CREATE DATABASE busbuddy_migrate;"
+dotnet ef database update --project BusBuddy.Core --startup-project BusBuddy.Core
 ```
 
-Uses `BUSBUDDY_CONNECTION` if set; otherwise LocalDB.
+`EnableWindowsTargeting` is already set in `Directory.Build.props`. Migrations are provider-aware (`MigrationSql`) so the same chain applies on SQL Server and Postgres.
+
+Existing Docker databases created with `EnsureCreated()` have no migration history — drop/recreate that catalog or use a new database name. Do not mix EnsureCreated and `database update` on the same database.
+
+Windows VM SQL Server still works with the same `dotnet ef database update` command when `BUSBUDDY_CONNECTION` is a SQL Server string.

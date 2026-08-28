@@ -1,8 +1,12 @@
 using Microsoft.EntityFrameworkCore.Migrations;
+using BusBuddy.Core.Data;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 
 namespace BusBuddy.Core.Migrations
 {
-    public partial class GeoEnhancements : Migration
+    [DbContext(typeof(BusBuddyDbContext))]
+[Migration("20250809120000_GeoEnhancements")]
+public partial class GeoEnhancements : Migration
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {
@@ -49,21 +53,21 @@ namespace BusBuddy.Core.Migrations
             migrationBuilder.AddColumn<string>(
                 name: "WaypointsJson",
                 table: "Routes",
-                type: "nvarchar(4000)",
+                type: MigrationSql.StringType(migrationBuilder, 4000),
                 maxLength: 4000,
                 nullable: true);
 
             migrationBuilder.AddColumn<string>(
                 name: "DistrictBoundaryShapefilePath",
                 table: "Routes",
-                type: "nvarchar(500)",
+                type: MigrationSql.StringType(migrationBuilder, 500),
                 maxLength: 500,
                 nullable: true);
 
             migrationBuilder.AddColumn<string>(
                 name: "TownBoundaryShapefilePath",
                 table: "Routes",
-                type: "nvarchar(500)",
+                type: MigrationSql.StringType(migrationBuilder, 500),
                 maxLength: 500,
                 nullable: true);
         }

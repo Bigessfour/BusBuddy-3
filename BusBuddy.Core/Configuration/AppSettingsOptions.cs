@@ -10,7 +10,8 @@ public class AppSettingsOptions
 {
     public const string SectionName = "AppSettings";
 
-    public string Theme { get; set; } = "Office2019Colorful";
+    /// <summary>FluentDark or FluentLight. Office2019Colorful is retired.</summary>
+    public string Theme { get; set; } = "FluentDark";
     public bool AutoSave { get; set; } = true;
 
     [Range(60, 3600)]

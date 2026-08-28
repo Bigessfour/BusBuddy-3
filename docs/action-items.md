@@ -23,19 +23,20 @@
   - [x] US4: Places type-ahead — skipped (MVP cut)
   - [x] Docs for US2; Maps clients wired
 - [x] **Student contact + school destinations** — parent/emergency fields, Destination School catalog, intake school dropdown, map schools, inter-district `StudentSchoolTransfer` (timed pickup/dropoff) — merged [PR #36](https://github.com/Bigessfour/BusBuddy-3/pull/36)
-  - [ ] Apply migration `20260817140000_StudentContactFieldsAlignment` — **Mac Postgres `dotnet ef database update` blocked** (InitialCreate seed uses SQL Server `bit` / unspecified timestamps). Apply on **Windows VM SQL Server**, or use EnsureCreated for local Postgres smoke only.
+  - [x] Apply migration `20260817140000_StudentContactFieldsAlignment` — Mac Postgres `dotnet ef database update` works on a **fresh** database (`BUSBUDDY_CONNECTION` → Docker). Existing EnsureCreated DBs need a drop/recreate or a new catalog (e.g. `busbuddy_migrate`).
   - [ ] VM: assign school on intake; Show Schools on map; create transfer home→campus
+  - [x] Mac smoke 2026-08-28: `dotnet ef database update` on Docker Postgres applied through `20260817160000_DestinationSchoolTimes` (11 migrations). VM UI smoke still due.
   - [x] Transfer UI (Students → School Transfer) — pickup/dropoff location + times required; waypoints rebuild on assign/transfer
-  - [x] Mac smoke 2026-08-17: InMemory services OK (schools, training 17 rows, transfer validation, waypoints). Postgres Migrate blocked as above.
 - [x] **Driver employment + CDE training sub-module** — contact/address/hire; [CDE 2024-25 License/Training Matrix](https://resources.finalsite.net/images/v1764086158/cdestatecous/mpcomjjt3zryb1vussig/2024-25-License-Training-Matrix.pdf) checklist via `DriverTrainingRecord` / `IDriverTrainingService` — merged [PR #36](https://github.com/Bigessfour/BusBuddy-3/pull/36) (NoTracking write fix for Upsert)
-  - [ ] Apply migration `20260817150000_DriverTrainingSubmodule` — same Windows/SQL Server path as above
+  - [x] Apply migration `20260817150000_DriverTrainingSubmodule` — same Mac Postgres `database update` path as student-contact (2026-08-28)
   - [ ] VM: edit driver employment fields; open Training grid; mark complete + certificate
   - [x] Dedicated training grid UI (Drivers → Training) — mark complete / certificate per row
 - [x] **008 Route determination / fleet sizing** — [tasks](../specs/008-route-determination/tasks.md) T001–T041 implemented on [PR #38](https://github.com/Bigessfour/BusBuddy-3/pull/38) (follow-on to merged [#37](https://github.com/Bigessfour/BusBuddy-3/pull/37) MVP)
   - Design locked 2026-08-17: Q1:A / Q2:B / Q3:B
   - [x] US1 generate/pack/override · US2 assign fitness · US3 school-time schedules · US4 transfer fleet · polish
   - [x] Review hardenings (schedule regen persists Scheduled+Estimated; transfer stops use pickup/dropoff; Both creates AM+PM) — PR #39 follow-up
-  - [ ] Apply migrations on Windows SQL Server (`…DestinationSchoolTimes` + #36 migrations); VM smoke per [quickstart](../specs/008-route-determination/quickstart.md) (**T041 still open**)
+  - [x] Apply migrations on Mac Docker Postgres (`…DestinationSchoolTimes` + #36 migrations) — 2026-08-28
+  - [ ] VM smoke per [quickstart](../specs/008-route-determination/quickstart.md) (**T041 still open**)
   - Serilog expected: `Route generation completed`, `Assign fitness Blocked|Warned`, `Schedule regen School=`
 - [x] **006 Syncfusion Tool Integration** — [spec](../specs/006-syncfusion-tool-integration/spec.md) — merged [PR #21](https://github.com/Bigessfour/BusBuddy-3/pull/21)
   - [x] MCP paths, skills overlay, Syncfusion **34.2.3**, deps audit

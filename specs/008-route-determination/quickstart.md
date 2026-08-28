@@ -4,7 +4,7 @@ Validation guide after implementation (not runnable until `/speckit-tasks` + imp
 
 ## Prerequisites
 
-- PR #36 merged (schools, transfers, student geo) and migrations applied on Windows SQL Server or Postgres with fixed seed types
+- PR #36 merged (schools, transfers, student geo) and migrations applied (`dotnet ef database update` on Mac Docker Postgres or Windows SQL Server)
 - At least one School `Destination` with GPS + **StartTime** / **DismissalTime**
 - ≥12 students with home lat/lon assigned to that school; one bus with `SeatingCapacity` ≥ 12
 - Optional: `GOOGLE_MAPS_API_KEY` for tighter ETAs (fail-open without it)

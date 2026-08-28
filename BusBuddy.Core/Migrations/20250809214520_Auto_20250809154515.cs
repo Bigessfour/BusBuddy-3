@@ -37,21 +37,21 @@ namespace BusBuddy.Core.Migrations
             migrationBuilder.AddColumn<string>(
                 name: "DistrictBoundaryShapefilePath",
                 table: "Routes",
-                type: "nvarchar(500)",
+                type: MigrationSql.StringType(migrationBuilder, 500),
                 maxLength: 500,
                 nullable: true);
 
             migrationBuilder.AddColumn<string>(
                 name: "TownBoundaryShapefilePath",
                 table: "Routes",
-                type: "nvarchar(500)",
+                type: MigrationSql.StringType(migrationBuilder, 500),
                 maxLength: 500,
                 nullable: true);
 
             migrationBuilder.AddColumn<string>(
                 name: "WaypointsJson",
                 table: "Routes",
-                type: "nvarchar(4000)",
+                type: MigrationSql.StringType(migrationBuilder, 4000),
                 maxLength: 4000,
                 nullable: true);
 

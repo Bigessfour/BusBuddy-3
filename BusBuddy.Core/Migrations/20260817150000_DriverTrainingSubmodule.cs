@@ -18,36 +18,42 @@ public partial class DriverTrainingSubmodule : Migration
         migrationBuilder.AddColumn<string>(
             name: "EmployingDistrict",
             table: "Drivers",
-            maxLength: 150,
+            type: MigrationSql.StringType(migrationBuilder, 150),
+                maxLength: 150,
             nullable: true);
 
         migrationBuilder.AddColumn<DateTime>(
             name: "EmploymentEndDate",
             table: "Drivers",
-            nullable: true);
+            type: MigrationSql.DateTimeType(migrationBuilder),
+                nullable: true);
 
         migrationBuilder.AddColumn<string>(
             name: "DutyCategory",
             table: "Drivers",
-            maxLength: 20,
+            type: MigrationSql.StringType(migrationBuilder, 20),
+                maxLength: 20,
             nullable: true);
 
         migrationBuilder.AddColumn<string>(
             name: "VehicleCategory",
             table: "Drivers",
-            maxLength: 60,
+            type: MigrationSql.StringType(migrationBuilder, 60),
+                maxLength: 60,
             nullable: true);
 
         migrationBuilder.AddColumn<string>(
             name: "CdlRestrictions",
             table: "Drivers",
-            maxLength: 50,
+            type: MigrationSql.StringType(migrationBuilder, 50),
+                maxLength: 50,
             nullable: true);
 
         migrationBuilder.AddColumn<string>(
             name: "MedicalFormType",
             table: "Drivers",
-            maxLength: 40,
+            type: MigrationSql.StringType(migrationBuilder, 40),
+                maxLength: 40,
             nullable: true);
 
         migrationBuilder.CreateTable(

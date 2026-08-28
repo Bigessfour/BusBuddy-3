@@ -16,8 +16,8 @@
             <Style TargetType="GroupBox">
                 <Setter Property="Margin" Value="10"/>
                 <Setter Property="Padding" Value="15"/>
-                <Setter Property="Background" Value="{DynamicResource BusBuddy.Brush.Surface.LightMode.Accent}"/>
-                <Setter Property="BorderBrush" Value="{DynamicResource BusBuddy.Brush.Surface.LightMode.Border}"/>
+                <Setter Property="Background" Value="{DynamicResource BusBuddy.Brush.Surface.Light}"/>
+                <Setter Property="BorderBrush" Value="{DynamicResource BusBuddy.Brush.Surface.Border}"/>
                 <Setter Property="BorderThickness" Value="1"/>
             </Style>
         </ResourceDictionary>
@@ -240,7 +240,7 @@
         </ScrollViewer>
 
         <!-- Recent Generated Reports - SfDataGrid (Finish UI element per roadmap + RAG: Syncfusion key components) -->
-        <Border Grid.Row="2" Background="{DynamicResource BusBuddy.Brush.Surface.LightMode.Accent}" CornerRadius="4" Padding="8" Margin="0,6,0,4">
+        <Border Grid.Row="2" Background="{DynamicResource BusBuddy.Brush.Surface.Light}" CornerRadius="4" Padding="8" Margin="0,6,0,4">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
@@ -261,7 +261,7 @@
         </Border>
 
         <!-- Status Bar -->
-    <Border Grid.Row="3" Background="{DynamicResource BusBuddy.Brush.Surface.LightMode.Surface}" CornerRadius="3" Padding="10" Margin="0,10,0,0">
+    <Border Grid.Row="3" Background="{DynamicResource BusBuddy.Brush.Surface.Medium}" CornerRadius="3" Padding="10" Margin="0,10,0,0">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
@@ -272,7 +272,7 @@
                           VerticalAlignment="Center" Foreground="{DynamicResource BusBuddy.Brush.Text.Secondary}"/>
 
                 <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                    <Border Background="{DynamicResource BusBuddy.Brush.Surface.LightMode.Accent}" BorderBrush="{DynamicResource BusBuddy.Brush.Semantic.Warning}" BorderThickness="1"
+                    <Border Background="{DynamicResource BusBuddy.Brush.Surface.Light}" BorderBrush="{DynamicResource BusBuddy.Brush.Semantic.Warning}" BorderThickness="1"
                             CornerRadius="3" Padding="8,4" Margin="0,0,10,0"
                             Visibility="{Binding IsGeneratingReport, Converter={StaticResource BooleanToVisibilityConverter}}">
                         <StackPanel Orientation="Horizontal">

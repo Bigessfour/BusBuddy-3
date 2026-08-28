@@ -10,10 +10,12 @@ namespace BusBuddy.WPF.Utilities
     /// <summary>
     /// Single source of truth for FluentDark / FluentLight. Views inherit
     /// <see cref="SfSkinManager.ApplicationTheme"/>; windows/dialogs take the current theme.
+    /// Skin dictionaries are NOT merged in XAML — ApplicationTheme owns the skin.
     /// </summary>
     public static class SyncfusionThemeManager
     {
         private static readonly ILogger Logger = Log.ForContext(typeof(SyncfusionThemeManager));
+        private static bool _suppressPersist;
 
         public const string PRIMARY_THEME = "FluentDark";
         public const string FALLBACK_THEME = "FluentLight";
@@ -35,6 +37,7 @@ namespace BusBuddy.WPF.Utilities
                 return FALLBACK_THEME;
             }
 
+            // Retired Office2019Colorful (and any other leftover name) maps to FluentDark.
             return PRIMARY_THEME;
         }
 
@@ -81,6 +84,22 @@ namespace BusBuddy.WPF.Utilities
         }
 
         /// <summary>
+        /// Load the last saved Fluent theme (or <see cref="PRIMARY_THEME"/>) and apply it.
+        /// </summary>
+        public static void ApplySavedApplicationTheme()
+        {
+            _suppressPersist = true;
+            try
+            {
+                ApplyApplicationTheme(ThemePreferenceStore.Load());
+            }
+            finally
+            {
+                _suppressPersist = false;
+            }
+        }
+
+        /// <summary>
         /// Switch FluentDark / FluentLight for the whole app, including custom brush dictionaries.
         /// </summary>
         public static void ApplyApplicationTheme(string? themeName)
@@ -118,6 +137,11 @@ namespace BusBuddy.WPF.Utilities
                             Logger.Warning(ex, "[Theme] Could not apply {Theme} to {Window}", name, win.GetType().Name);
                         }
                     }
+                }
+
+                if (!_suppressPersist)
+                {
+                    ThemePreferenceStore.Save(name);
                 }
 
                 Logger.Information("Theme changed to {ThemeName} at application scope", name);
