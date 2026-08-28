@@ -92,6 +92,9 @@
 
   <SolidColorBrush x:Key="BusBuddy.Brush.Semantic.Error"
                    Color="{StaticResource BusBuddy.Semantic.Error}"/>
+  <!-- Alias used by RouteAssignment DangerButtonAdv (same as Error) -->
+  <SolidColorBrush x:Key="BusBuddy.Brush.Semantic.Danger"
+                   Color="{StaticResource BusBuddy.Semantic.Error}"/>
   <SolidColorBrush x:Key="BusBuddy.Brush.Semantic.Warning"
                    Color="{StaticResource BusBuddy.Semantic.Warning}"/>
   <SolidColorBrush x:Key="BusBuddy.Brush.Semantic.Success"

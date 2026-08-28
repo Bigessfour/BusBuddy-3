@@ -31,7 +31,7 @@
             <TextBlock Text="{Binding Title}"
                        FontSize="16"
                        FontWeight="Bold"
-                       Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"
+                       Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}"
                        TextWrapping="Wrap" />
         </Border>
 
@@ -112,7 +112,7 @@
             <syncfusion:ButtonAdv Label="Save Transfer"
                                   Command="{Binding SaveCommand}"
                                   Background="{DynamicResource BusBuddy.Brush.Primary}"
-                                  Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"
+                                  Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}"
                                   AutomationProperties.Name="Save transfer" />
         </StackPanel>
     </Grid>

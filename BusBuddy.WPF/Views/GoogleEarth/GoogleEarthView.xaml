@@ -47,7 +47,8 @@
                             Width="48" Height="48"
                             CornerRadius="24"
                             Margin="0,0,16,0">
-                        <TextBlock Text="🌍"
+                        <TextBlock Text="&#xE909;"
+                                   FontFamily="Segoe MDL2 Assets"
                                    FontSize="24"
                                    Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}"
                                    HorizontalAlignment="Center"
@@ -86,20 +87,14 @@
                     </Border>
 
                     <!-- Layer selector — values map to InitializeMapLayer(..) via MapLayerComboBox_SelectionChanged -->
-                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="16,0">
-                        <TextBlock Text="Map layer"
-                                   VerticalAlignment="Center"
-                                   Margin="0,0,8,0"
-                                   Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"/>
-                        <syncfusion:ComboBoxAdv x:Name="MapLayerComboBox"
-                                                Width="150"
-                                                Height="32"
-                                                SelectedIndex="0"
-                                                AutomationProperties.Name="Map layer"
-                                                SelectionChanged="MapLayerComboBox_SelectionChanged">
-                            <syncfusion:ComboBoxItemAdv Content="OpenStreetMap"/>
-                        </syncfusion:ComboBoxAdv>
-                    </StackPanel>
+                    <syncfusion:ComboBoxAdv x:Name="MapLayerComboBox"
+                                            Width="150"
+                                            Height="32"
+                                            Margin="16,0"
+                                            SelectedIndex="0"
+                                            SelectionChanged="MapLayerComboBox_SelectionChanged">
+                        <syncfusion:ComboBoxItemAdv Content="OpenStreetMap"/>
+                    </syncfusion:ComboBoxAdv>
                 </StackPanel>
             </Grid>
         </Border>
@@ -133,7 +128,7 @@
                        Foreground="{DynamicResource PrimaryTextBrush}"
                                            Margin="0,0,0,12"/>
 
-                <syncfusion:ButtonAdv Label="📍 Center on Fleet"
+                <syncfusion:ButtonAdv Label="Center on Fleet"
                               AutomationProperties.Name="Center on Fleet"
                               ToolTip="Center map on fleet"
                               Command="{Binding CenterOnFleetCommand}"
@@ -143,7 +138,7 @@
                               Margin="0,4"
                               HorizontalAlignment="Stretch"/>
 
-                <syncfusion:ButtonAdv Label="🚌 Show All Buses"
+                <syncfusion:ButtonAdv Label="Show All Buses"
                               AutomationProperties.Name="Show All Buses"
                               ToolTip="Show all active buses"
                               Command="{Binding ShowAllBusesCommand}"
@@ -154,7 +149,7 @@
                               HorizontalAlignment="Stretch"/>
 
                 <TextBlock Text="Map Layers &amp; Overlays" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryTextBrush}" Margin="0,0,0,4"/>
-                <syncfusion:ButtonAdv Label="🛣️ Show Routes"
+                <syncfusion:ButtonAdv Label="Show Routes"
                               AutomationProperties.Name="Show Routes"
                               ToolTip="Toggle route overlays"
                               Command="{Binding ShowRoutesCommand}"
@@ -164,7 +159,7 @@
                               Margin="0,4"
                               HorizontalAlignment="Stretch"/>
 
-                <syncfusion:ButtonAdv Label="🏫 Show Schools"
+                <syncfusion:ButtonAdv Label="Show Schools"
                               AutomationProperties.Name="Show Schools"
                               ToolTip="Show school destinations"
                               Command="{Binding ShowSchoolsCommand}"
@@ -176,7 +171,7 @@
 
                 <!-- MVP demo: Add a stop marker (plots coordinates near Wiley). Uses AddMarkerCommand with "lat,lon,label" string parameter -->
                 <TextBlock Text="Markers" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryTextBrush}" Margin="0,12,0,4"/>
-                <syncfusion:ButtonAdv Label="➕ Add Stop (Demo)"
+                <syncfusion:ButtonAdv Label="Add Stop (Demo)"
                               AutomationProperties.Name="Add Demo Stop"
                               ToolTip="Plot a demo stop near Wiley"
                               Command="{Binding AddMarkerCommand}"
@@ -197,7 +192,7 @@
                         <syncfusion:GridTextColumn HeaderText="Location" MappingName="CurrentLocation" Width="90"/>
                     </syncfusion:SfDataGrid.Columns>
                 </syncfusion:SfDataGrid>
-                <syncfusion:ButtonAdv Label="✅ Check Eligibility (Demo)"
+                <syncfusion:ButtonAdv Label="Check Eligibility (Demo)"
                               AutomationProperties.Name="Check Eligibility Demo"
                               ToolTip="Run eligibility check demo"
                               Command="{Binding CheckEligibilityCommand}"
@@ -208,7 +203,7 @@
                               HorizontalAlignment="Stretch"/>
 
                     <!-- Bulk plot rural eligible students (auto geocode + eligibility filter) -->
-                    <syncfusion:ButtonAdv Label="🗺️ Bulk Plot Eligible Students"
+                    <syncfusion:ButtonAdv Label="Bulk Plot Eligible Students"
                                           ToolTip="Auto-geocode + plot all rural (non-Lamar, out-of-town) eligible students"
                                           Command="{Binding BulkPlotEligibleStudentsCommand}"
                                           Background="{DynamicResource ButtonBackgroundBrush}"
@@ -218,7 +213,7 @@
                                           HorizontalAlignment="Stretch"/>
 
                 <!-- Generate Eligibility Route PDF (auto-build pseudo route) -->
-                <syncfusion:ButtonAdv Label="🧾 Generate Eligibility PDF"
+                <syncfusion:ButtonAdv Label="Generate Eligibility PDF"
                               AutomationProperties.Name="Generate Eligibility PDF"
                               ToolTip="Generate eligibility route PDF"
                               Command="{Binding GenerateEligibilityRoutePdfCommand}"
@@ -385,7 +380,7 @@
                                     </syncfusion:SfDataGrid.Columns>
                                 </syncfusion:SfDataGrid>
 
-                                <syncfusion:ButtonAdv Label="📍 Track Selected"
+                                <syncfusion:ButtonAdv Label="Track Selected"
                                                       AutomationProperties.Name="Track Selected Bus"
                                                       ToolTip="Track the selected bus on the map"
                                                       Command="{Binding TrackSelectedBusCommand}"

@@ -9,7 +9,7 @@ cd "${ROOT}"
 
 SOLUTION="BusBuddy.sln"
 CONFIG="Release"
-TEST_FILTER='Category!=Integration&Category!=InMemoryFlaky&(FullyQualifiedName~Core|Seed|Student|Route|Maintenance|PdfReport|Fleet|Gaps|ModelValidation)'
+TEST_FILTER='Category!=Integration&Category!=InMemoryFlaky&(FullyQualifiedName~Core|Seed|Student|Route|Maintenance|PdfReport|Fleet|Gaps|ModelValidation|XamlCompliance)'
 
 echo "==> Docker: build Core image + Postgres health"
 docker compose --profile db --profile test build busbuddy-test
@@ -41,8 +41,10 @@ if [[ "${OS_NAME}" == "MINGW"* ]] || [[ "${OS_NAME}" == "MSYS"* ]] || [[ "${OS_N
     --verbosity normal \
     --filter "${TEST_FILTER}"
 else
-  echo "==> Skipping host dotnet test on ${OS_NAME}: WPF tests require Windows (CI runs on windows-latest)."
-  echo "    Docker Core + host compile validation passed."
+  echo "==> Host: XAML theme compliance on ${OS_NAME} (net9.0 — no WindowsDesktop)"
+  dotnet test BusBuddy.XamlCompliance.Tests/BusBuddy.XamlCompliance.Tests.csproj \
+    --configuration "${CONFIG}" --no-build --verbosity normal
+  echo "==> Skipping WPF BusBuddy.Tests on ${OS_NAME}: requires Windows (CI runs on windows-latest)."
 fi
 
 echo "==> Local CI validation passed"

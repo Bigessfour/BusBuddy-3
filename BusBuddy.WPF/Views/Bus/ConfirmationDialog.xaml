@@ -26,10 +26,12 @@
         <StackPanel Grid.Row="0"
                     Orientation="Horizontal"
                     Margin="0,0,0,20">
-            <TextBlock Text="⚠️"
+            <TextBlock Text="&#xE7BA;"
+                       FontFamily="Segoe MDL2 Assets"
                        FontSize="24"
                        VerticalAlignment="Center"
-                       Margin="0,0,10,0"/>
+                       Margin="0,0,10,0"
+                       Foreground="{DynamicResource BusBuddy.Brush.Semantic.Warning}"/>
             <StackPanel>
                 <TextBlock Text="Confirmation Required"
                            FontSize="16"
@@ -37,7 +39,7 @@
                            Margin="0,0,0,5"/>
                 <TextBlock Text="Please confirm that you want to proceed with this action."
                            FontSize="12"
-                           Foreground="#666666"/>
+                           Foreground="{DynamicResource SecondaryTextBrush}"/>
             </StackPanel>
         </StackPanel>
 

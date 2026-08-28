@@ -28,7 +28,7 @@
                 Padding="15"
                 Margin="0,0,0,10">
             <StackPanel Orientation="Horizontal">
-                <TextBlock Text="⛽" FontSize="20"
+                <TextBlock Text="&#xE945;" FontFamily="Segoe MDL2 Assets" FontSize="20"
                            Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}"
                            VerticalAlignment="Center" Margin="0,0,10,0"/>
                 <TextBlock FontSize="18" FontWeight="Bold"
