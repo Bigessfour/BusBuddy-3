@@ -235,7 +235,59 @@ public static class XamlThemeComplianceScanner
             }
         }
 
+        ScanNamedButtonAdvStyles(findings, relative, text);
+
         return FilterAllowed(text, findings);
+    }
+
+    private static readonly Regex NamedStyleOpenRegex = new(
+        @"<Style\s+(?<attrs>[^>]+)>",
+        RegexOptions.Compiled);
+
+    private static void ScanNamedButtonAdvStyles(List<Finding> findings, string relative, string text)
+    {
+        foreach (Match open in NamedStyleOpenRegex.Matches(text))
+        {
+            var attrs = open.Groups["attrs"].Value;
+            if (!attrs.Contains("x:Key=", StringComparison.Ordinal) ||
+                !attrs.Contains("ButtonAdv", StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            if (attrs.Contains("BasedOn=", StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            var styleEnd = text.IndexOf("</Style>", open.Index, StringComparison.Ordinal);
+            if (styleEnd < 0)
+            {
+                continue;
+            }
+
+            var styleBody = text[open.Index..styleEnd];
+            var iconWidthMatch = Regex.Match(
+                styleBody,
+                @"Property=""IconWidth""\s+Value=""(?<value>[^""]+)""");
+            if (iconWidthMatch.Success &&
+                !string.Equals(iconWidthMatch.Groups["value"].Value, "0", StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            if (!styleBody.Contains("IconWidth", StringComparison.Ordinal) ||
+                !styleBody.Contains("SmallIcon", StringComparison.Ordinal))
+            {
+                var keyMatch = Regex.Match(attrs, @"x:Key=""(?<key>[^""]+)""");
+                var styleKey = keyMatch.Success ? keyMatch.Groups["key"].Value : "(unnamed)";
+                findings.Add(new Finding(
+                    "NamedButtonAdvMissingIconSuppression",
+                    relative,
+                    LineNumberAt(text, open.Index),
+                    $"Style '{styleKey}' should set IconWidth/Height=0 and SmallIcon={{x:Null}} so Fluent Label text is visible."));
+            }
+        }
     }
 
     /// <summary>
@@ -462,6 +514,25 @@ public static class XamlThemeComplianceScanner
                         themeRel,
                         LineNumberAt(themeText, styleMatch.Index),
                         $"Style '{styleKey}' should set IconWidth/Height=0 and SmallIcon={{x:Null}} (or BasedOn text-only ButtonAdv)."));
+                }
+            }
+
+            var implicitMatch = Regex.Match(
+                themeText,
+                @"<Style\s+TargetType=""\{x:Type syncfusion:ButtonAdv\}""[\s\S]*?</Style>",
+                RegexOptions.Compiled);
+            if (implicitMatch.Success)
+            {
+                var body = implicitMatch.Value;
+                if (!body.Contains("Property=\"IconWidth\"", StringComparison.Ordinal) ||
+                    !body.Contains("Property=\"SmallIcon\"", StringComparison.Ordinal) ||
+                    body.Contains("Style.Triggers", StringComparison.Ordinal))
+                {
+                    findings.Add(new Finding(
+                        "ImplicitButtonAdvMissingIconSuppression",
+                        themeRel,
+                        LineNumberAt(themeText, implicitMatch.Index),
+                        "Implicit ButtonAdv style must set IconWidth/Height=0 and SmallIcon={x:Null} as setters (Fluent default glyph is not null, so a trigger never fires)."));
                 }
             }
         }

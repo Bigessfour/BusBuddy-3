@@ -32,6 +32,10 @@
             </Style>
 
             <Style x:Key="ActionButtonStyle" TargetType="syncfusion:ButtonAdv">
+                <Setter Property="SizeMode" Value="Normal"/>
+                <Setter Property="IconWidth" Value="0"/>
+                <Setter Property="IconHeight" Value="0"/>
+                <Setter Property="SmallIcon" Value="{x:Null}"/>
                 <Setter Property="Padding" Value="15,8"/>
                 <Setter Property="Margin" Value="5"/>
                 <Setter Property="FontWeight" Value="Medium"/>

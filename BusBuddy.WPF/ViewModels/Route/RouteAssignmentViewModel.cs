@@ -10,6 +10,7 @@ using BusBuddy.Core.Utilities;
 using BusBuddy.WPF.Commands;
 using Serilog;
 using Microsoft.Extensions.DependencyInjection; // For resolving GoogleEarthViewModel / services
+using BusBuddy.WPF.ViewModels; // MainWindowViewModel refresh after generate
 using BusBuddy.WPF.ViewModels.GoogleEarth; // Map markers
 using BusBuddy.WPF.Views.Route;
 using BusBuddy.WPF.Views.Driver;
@@ -50,6 +51,7 @@ namespace BusBuddy.WPF.ViewModels.Route
         private bool _isRouteBeingBuilt;
         private bool _isRouteActive;
         private bool _isLoading;
+        private bool _isGeneratingRoutes;
         private string _studentSearchText = string.Empty;
         private string _statusMessage = string.Empty;
         private int? _preselectedRouteId;
@@ -490,6 +492,8 @@ namespace BusBuddy.WPF.ViewModels.Route
     public ICommand PlotRouteOnMapCommand { get; private set; } = null!;
     public ICommand TimeRouteCommand { get; private set; } = null!; // Basic stop timing
     public ICommand PrintMapCommand { get; private set; } = null!;
+        public ICommand GenerateRoutesCommand { get; private set; } = null!;
+        public ICommand GenerateTransferRoutesCommand { get; private set; } = null!;
 
         private void InitializeCommands()
         {
@@ -520,6 +524,8 @@ namespace BusBuddy.WPF.ViewModels.Route
             PlotRouteOnMapCommand = new RelayCommand(async () => await PlotRouteOnMapAsync(), () => SelectedRoute != null);
             TimeRouteCommand = new RelayCommand(() => TimeRouteStops(), () => SelectedRoute != null && RouteStops.Any() && IsStartTimeValid);
         PrintMapCommand = new RelayCommand(PrintMap, () => SelectedRoute != null);
+            GenerateRoutesCommand = new RelayCommand(async () => await GenerateRoutesAsync(), () => !_isGeneratingRoutes);
+            GenerateTransferRoutesCommand = new RelayCommand(async () => await GenerateTransferRoutesAsync(), () => !_isGeneratingRoutes);
                     // Re-evaluate map/ timing commands
                     (PlotRouteOnMapCommand as RelayCommand)?.RaiseCanExecuteChanged();
                     (TimeRouteCommand as RelayCommand)?.RaiseCanExecuteChanged();
@@ -548,10 +554,78 @@ namespace BusBuddy.WPF.ViewModels.Route
             (PlotRouteOnMapCommand as RelayCommand)?.RaiseCanExecuteChanged();
             (TimeRouteCommand as RelayCommand)?.RaiseCanExecuteChanged();
             (PrintMapCommand as RelayCommand)?.RaiseCanExecuteChanged();
+            (GenerateRoutesCommand as RelayCommand)?.RaiseCanExecuteChanged();
+            (GenerateTransferRoutesCommand as RelayCommand)?.RaiseCanExecuteChanged();
         }
         private void PrintMap()
         {
             ExportRouteAssignmentPdfAsync(includeMap: true);
+        }
+
+        public async Task GenerateRoutesAsync() =>
+            await GenerateFleetAsync(FleetKind.HomeToSchool, preferSchoolWithStartTime: true).ConfigureAwait(true);
+
+        public async Task GenerateTransferRoutesAsync() =>
+            await GenerateFleetAsync(FleetKind.Transfer, preferSchoolWithStartTime: false).ConfigureAwait(true);
+
+        private async Task GenerateFleetAsync(FleetKind fleet, bool preferSchoolWithStartTime)
+        {
+            if (_isGeneratingRoutes)
+            {
+                return;
+            }
+
+            _isGeneratingRoutes = true;
+            RefreshCommandStates();
+            try
+            {
+                StatusMessage = fleet == FleetKind.Transfer
+                    ? "Generating transfer routes..."
+                    : "Generating routes...";
+
+                var outcome = await RouteGenerationCoordinator.GenerateAsync(
+                        fleet,
+                        SelectedRoute?.School,
+                        preferSchoolWithStartTime,
+                        _routeDetermination)
+                    .ConfigureAwait(true);
+
+                StatusMessage = outcome.StatusMessage;
+                if (!outcome.Success || outcome.Result is null)
+                {
+                    return;
+                }
+
+                if (outcome.Result.Success)
+                {
+                    var mapVm = App.ServiceProvider?.GetService<GoogleEarthViewModel>();
+                    mapVm?.ApplyGenerationResult(outcome.Result);
+                }
+
+                await LoadDataFromServiceAsync().ConfigureAwait(true);
+
+                var draft = AvailableRoutes.FirstOrDefault(r =>
+                    r.RouteName.StartsWith("Draft-", StringComparison.OrdinalIgnoreCase));
+                if (draft is not null)
+                {
+                    SelectedRoute = draft;
+                }
+
+                if (System.Windows.Application.Current?.MainWindow?.DataContext is MainWindowViewModel mainVm)
+                {
+                    await mainVm.RefreshRoutesAsync().ConfigureAwait(true);
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Generate routes failed fleet={Fleet}", fleet);
+                StatusMessage = $"Error generating routes: {ex.Message}";
+            }
+            finally
+            {
+                _isGeneratingRoutes = false;
+                RefreshCommandStates();
+            }
         }
 
         private void ExportRouteAssignmentPdfAsync(bool includeMap)

@@ -52,15 +52,14 @@
 
     <!-- Syncfusion paints ButtonAdv chrome via SfSkinManager.ApplicationTheme.
          Do not set implicit Background/Foreground here — that stomps the Fluent template.
-         Hide the default glyph slot only when SmallIcon is unset (Fluent draws a blue "A"). -->
+         Fluent still injects a default SmallIcon glyph (the blue "A"), so a
+         SmallIcon={x:Null} trigger never fires. Collapse the icon slot so Label
+         text is visible. Icon toolbars must set IconWidth/SmallIcon locally. -->
     <Style TargetType="{x:Type syncfusion:ButtonAdv}">
         <Setter Property="SizeMode" Value="Normal"/>
-        <Style.Triggers>
-            <Trigger Property="SmallIcon" Value="{x:Null}">
-                <Setter Property="IconWidth" Value="0"/>
-                <Setter Property="IconHeight" Value="0"/>
-            </Trigger>
-        </Style.Triggers>
+        <Setter Property="IconWidth" Value="0"/>
+        <Setter Property="IconHeight" Value="0"/>
+        <Setter Property="SmallIcon" Value="{x:Null}"/>
     </Style>
 
     <!-- Named ButtonAdv Success style for semantic success actions -->

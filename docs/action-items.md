@@ -13,6 +13,34 @@
 
 ## Priorities (now)
 
+### P1 — Syncfusion page-by-page control audit (UI)
+
+Static scan 2026-08-28: **41 XAML surfaces** (1 shell, 18 pages, 18 dialogs, 4 controls), **611** `syncfusion:*` instances across **31** types, **474** `{Binding}` properties. Plus `maps:SfMap` on GoogleEarthView (different xmlns, not in the 611).
+
+Go **one surface at a time**. For every Syncfusion control on that surface, check:
+
+1. **Theme** — `DynamicResource` BusBuddy/Fluent brushes; no hardcoded `#F5F5F5` / `Foreground="White"`; headers use `Text.OnPrimary`.
+2. **ButtonAdv** — `Label` (not `Content`), `SizeMode=Normal`, `IconWidth=0` + `SmallIcon={x:Null}` unless a real icon is set; `Command` or `Click` wired.
+3. **Grids** — `SfDataGrid` `ItemsSource` + `SelectedItem` match the ViewModel; column `MappingName` exists on the row type.
+4. **Inputs** — `ComboBoxAdv` / `SfTextBoxExt` / `SfMaskedEdit` / `SfDatePicker` two-way bind; watermark vs `Label`.
+5. **Charts / scheduler / map** — series `ItemsSource`, `SfScheduler` appointment mapping, `SfMap` layers.
+
+Waves (do not skip Wave 1):
+
+| Wave | Surfaces |
+| ---- | -------- |
+| 1 | `MainWindow`, `RouteAssignmentView`, `RouteManagementView`, `StudentsView`, `StudentForm`, `GoogleEarthView` |
+| 2 | `DriversView`, `DriverForm`, `DriverTrainingChecklistView`, `VehicleManagementView`, `VehiclesView` (stub: 0 SF controls), `ReportsView` |
+| 3 | Remaining pages (`Dashboard`, `Fuel`, `Maintenance`, `Activity`, `Analytics`, `Settings`, `DriverSchedule`, `DriverManagement`) |
+| 4 | Dialogs / forms (`*Form`, `*Dialog`, preview/welcome) |
+| 5 | `Controls/*` (`QuickActionsPanel`, `AddressValidationControl`, `StudentStatisticsPanel`, `TestSyncfusionControl`) |
+
+Known scan flags (not yet fixed): **17** `ButtonAdv` with neither `Command` nor `Click` (code-behind or dead); `MainWindow` is Click-heavy (22 clicks, 0 commands); `VehiclesView` has no Syncfusion controls.
+
+- [ ] Wave 1 complete (VM smoke + XAML scanner green)
+- [ ] Wave 2 complete
+- [ ] Waves 3–5 complete
+
 ### P0 — Platform / tooling
 
 - [x] Spec-Kit brownfield bootstrap (001–005) — merged [PR #20](https://github.com/Bigessfour/BusBuddy-3/pull/20)
@@ -37,6 +65,7 @@
   - [x] Review hardenings (schedule regen persists Scheduled+Estimated; transfer stops use pickup/dropoff; Both creates AM+PM) — PR #39 follow-up
   - [x] Apply migrations on Mac Docker Postgres (`…DestinationSchoolTimes` + #36 migrations) — 2026-08-28
   - [ ] VM smoke per [quickstart](../specs/008-route-determination/quickstart.md) (**T041 still open**)
+    - Generate Routes / Transfer Routes are on the docking **Route Assignment** toolbar and the right-hand **Routes** pane (not only the Route Management dialog).
   - Serilog expected: `Route generation completed`, `Assign fitness Blocked|Warned`, `Schedule regen School=`
 - [x] **006 Syncfusion Tool Integration** — [spec](../specs/006-syncfusion-tool-integration/spec.md) — merged [PR #21](https://github.com/Bigessfour/BusBuddy-3/pull/21)
   - [x] MCP paths, skills overlay, Syncfusion **34.2.3**, deps audit
