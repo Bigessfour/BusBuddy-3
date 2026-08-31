@@ -1,0 +1,13 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:syncfusion="http://schemas.syncfusion.com/wpf">
+    <!-- Merge this dictionary in a Window/UserControl so it wins over Fluent's default glyph.
+         App-level FluentDarkTheme / SyncfusionStyles already set the same setters; local merge
+         covers ChromelessWindow surfaces where SfSkinManager restyles ButtonAdv. -->
+    <Style TargetType="{x:Type syncfusion:ButtonAdv}">
+        <Setter Property="SizeMode" Value="Normal"/>
+        <Setter Property="IconWidth" Value="0"/>
+        <Setter Property="IconHeight" Value="0"/>
+        <Setter Property="SmallIcon" Value="{x:Null}"/>
+    </Style>
+</ResourceDictionary>

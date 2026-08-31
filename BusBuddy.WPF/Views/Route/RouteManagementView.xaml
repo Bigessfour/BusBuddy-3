@@ -71,7 +71,7 @@
                 SizeMode="Normal"
                 CornerRadius="4"
                 Background="{DynamicResource AccentBackgroundBrush}"
-                Foreground="{DynamicResource PrimaryTextBrush}"
+                Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}"
                 AutomationProperties.Name="Edit Route"
                 AutomationProperties.HelpText="Edit the selected route"/>
             <syncfusion:ButtonAdv Name="CopyRouteButton" Label="Copy Route"
@@ -81,7 +81,7 @@
                 SizeMode="Normal"
                 CornerRadius="4"
                 Background="{DynamicResource AccentBackgroundBrush}"
-                Foreground="{DynamicResource PrimaryTextBrush}"
+                Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}"
                 AutomationProperties.Name="Copy Route"
                 AutomationProperties.HelpText="Clone the selected route"/>
             <syncfusion:ButtonAdv Name="DeleteRouteButton" Label="Delete Route"

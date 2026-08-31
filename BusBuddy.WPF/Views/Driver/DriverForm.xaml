@@ -15,6 +15,7 @@
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/SyncfusionV30_Validated_ResourceDictionary.xaml" />
+                <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/ButtonAdvTextOnly.xaml"/>
             </ResourceDictionary.MergedDictionaries>
             <!-- Required converter for Visibility bindings -->
             <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
@@ -27,7 +28,7 @@
                 <Setter Property="Foreground"
                         Value="{DynamicResource FormLabelForegroundBrush}" />
             </Style>
-            <Style TargetType="syncfusion:SfMaskedEdit"
+<Style TargetType="syncfusion:SfMaskedEdit"
                    x:Key="FieldInputStyle">
                 <Setter Property="Height"
                         Value="32" />
@@ -193,7 +194,8 @@
                         <TextBlock Text="Status:"
                                    Style="{StaticResource FieldLabelStyle}" />
                         <syncfusion:ComboBoxAdv Height="32"
-                                                SelectedItem="{Binding Driver.Status, Mode=TwoWay}"
+                                                SelectedValue="{Binding Driver.Status, Mode=TwoWay}"
+                                                SelectedValuePath="Content"
                                                 Margin="0,0,0,10"
                                                 AutomationProperties.Name="Driver Status Selection"
                                                 AutomationProperties.HelpText="Select driver's current status">
@@ -257,7 +259,8 @@
                         <TextBlock Text="Duty Category:"
                                    Style="{StaticResource FieldLabelStyle}" />
                         <syncfusion:ComboBoxAdv Height="32"
-                                                SelectedItem="{Binding Driver.DutyCategory, Mode=TwoWay}"
+                                                SelectedValue="{Binding Driver.DutyCategory, Mode=TwoWay}"
+                                                SelectedValuePath="Content"
                                                 Margin="0,0,0,10"
                                                 AutomationProperties.Name="Duty Category"
                                                 AutomationProperties.HelpText="Route or Activity per CDE matrix">
@@ -271,7 +274,8 @@
                         <TextBlock Text="Vehicle Category (CDE matrix):"
                                    Style="{StaticResource FieldLabelStyle}" />
                         <syncfusion:ComboBoxAdv Height="32"
-                                                SelectedItem="{Binding Driver.VehicleCategory, Mode=TwoWay}"
+                                                SelectedValue="{Binding Driver.VehicleCategory, Mode=TwoWay}"
+                                                SelectedValuePath="Content"
                                                 Margin="0,0,0,10"
                                                 AutomationProperties.Name="Vehicle Category"
                                                 AutomationProperties.HelpText="CDE 2024-25 license/training matrix column">
@@ -299,7 +303,8 @@
                         <TextBlock Text="Medical Form Type:"
                                    Style="{StaticResource FieldLabelStyle}" />
                         <syncfusion:ComboBoxAdv Height="32"
-                                                SelectedItem="{Binding Driver.MedicalFormType, Mode=TwoWay}"
+                                                SelectedValue="{Binding Driver.MedicalFormType, Mode=TwoWay}"
+                                                SelectedValuePath="Content"
                                                 Margin="0,0,0,10"
                                                 AutomationProperties.Name="Medical Form Type"
                                                 AutomationProperties.HelpText="USDOT Physical or STU-17">
@@ -339,7 +344,8 @@
                         <TextBlock Text="License Class:"
                                    Style="{StaticResource FieldLabelStyle}" />
                         <syncfusion:ComboBoxAdv Height="32"
-                                                SelectedItem="{Binding Driver.LicenseClass, Mode=TwoWay}"
+                                                SelectedValue="{Binding Driver.LicenseClass, Mode=TwoWay}"
+                                                SelectedValuePath="Content"
                                                 Margin="0,0,0,10"
                                                 AutomationProperties.Name="License Class"
                                                 AutomationProperties.HelpText="Select CDL license class">
@@ -466,7 +472,7 @@
                         Margin="0,20,0,0">
                 <syncfusion:ButtonAdv x:Name="SaveButton"
                                       Label="Save"
-                                      Width="100"
+                                      MinWidth="100"
                                       Height="36"
                                       Margin="0,0,10,0"
                                       Command="{Binding SaveDriverCommand}"
@@ -477,7 +483,7 @@
                                       AutomationProperties.HelpText="Save driver information to database" />
                 <syncfusion:ButtonAdv x:Name="CancelButton"
                                       Label="Cancel"
-                                      Width="100"
+                                      MinWidth="100"
                                       Height="36"
                                       Command="{Binding CancelCommand}"
                                       Background="{DynamicResource ButtonBackgroundBrush}"

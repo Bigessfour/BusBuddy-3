@@ -8,7 +8,13 @@
              d:DesignHeight="600" d:DesignWidth="1000">
 
     <UserControl.Resources>
-        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/SyncfusionV30_Validated_ResourceDictionary.xaml"/>
+                <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/ButtonAdvTextOnly.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+            <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+        </ResourceDictionary>
     </UserControl.Resources>
 
     <Grid Background="{DynamicResource PrimaryBackgroundBrush}" Margin="20">
@@ -327,15 +333,7 @@
     <Border Grid.RowSpan="4" Background="#80000000"
                 Visibility="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}}"
                 CornerRadius="8">
-            <Grid>
-                <TextBlock Text="⏳" FontSize="60"
-                           HorizontalAlignment="Center" VerticalAlignment="Center"
-               Foreground="{DynamicResource AccentTextBrush}"/>
-                <TextBlock Text="Loading dashboard data..."
-               Foreground="{DynamicResource PrimaryTextBrush}" FontSize="16"
-                           HorizontalAlignment="Center" VerticalAlignment="Center"
-                           Margin="0,100,0,0"/>
-            </Grid>
+            <syncfusion:SfBusyIndicator IsBusy="True" HorizontalAlignment="Center" VerticalAlignment="Center"/>
         </Border>
     </Grid>
 </UserControl>

@@ -31,6 +31,7 @@
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/SyncfusionV30_Validated_ResourceDictionary.xaml"/>
+                <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/ButtonAdvTextOnly.xaml"/>
             </ResourceDictionary.MergedDictionaries>
             <!-- Validation: Error template and invalid visual states -->
             <ControlTemplate x:Key="ValidationErrorTemplate">
@@ -115,7 +116,7 @@
             </x:Array>
             <!-- Required converter for Visibility bindings -->
             <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
-            <!-- Ensure consistent sizing for Syncfusion inputs -->
+<!-- Ensure consistent sizing for Syncfusion inputs -->
             <Style TargetType="syncfusion:SfMaskedEdit" BasedOn="{StaticResource {x:Type syncfusion:SfMaskedEdit}}">
                 <Setter Property="Height" Value="40"/>
                 <Setter Property="Padding" Value="8"/>

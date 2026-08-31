@@ -20,6 +20,14 @@
         Height="500"
         Width="600"
         WindowStartupLocation="CenterOwner">
+    <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/SyncfusionV30_Validated_ResourceDictionary.xaml"/>
+                <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/ButtonAdvTextOnly.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </Window.Resources>
 
     <Grid Margin="20">
         <Grid.RowDefinitions>
@@ -53,19 +61,19 @@
 
             <TextBlock Grid.Row="0" Grid.Column="0" Text="Fuel Date:" Margin="0,5,10,5" VerticalAlignment="Center"/>
             <syncfusion:SfDatePicker Grid.Row="0" Grid.Column="1"
-                        Value="{Binding Fuel.FuelDate}"
+                        Value="{Binding Fuel.FuelDate, Mode=TwoWay}"
                         Margin="0,5,0,5"/>
 
             <TextBlock Grid.Row="1" Grid.Column="0" Text="Fuel Location:" Margin="0,5,10,5" VerticalAlignment="Center"/>
             <syncfusion:ComboBoxAdv Grid.Row="1" Grid.Column="1"
                       ItemsSource="{Binding FuelLocations}"
-                      SelectedItem="{Binding Fuel.FuelLocation}"
+                      SelectedItem="{Binding Fuel.FuelLocation, Mode=TwoWay}"
                       Margin="0,5,0,5"/>
 
             <TextBlock Grid.Row="2" Grid.Column="0" Text="Bus:" Margin="0,5,10,5" VerticalAlignment="Center"/>
             <syncfusion:ComboBoxAdv Grid.Row="2" Grid.Column="1"
                       ItemsSource="{Binding AvailableBuses}"
-                      SelectedItem="{Binding SelectedBus}"
+                      SelectedItem="{Binding SelectedBus, Mode=TwoWay}"
                       DisplayMemberPath="BusNumber"
                       Margin="0,5,0,5"/>
 
@@ -78,7 +86,7 @@
             <TextBlock Grid.Row="4" Grid.Column="0" Text="Fuel Type:" Margin="0,5,10,5" VerticalAlignment="Center"/>
             <syncfusion:ComboBoxAdv Grid.Row="4" Grid.Column="1"
                       ItemsSource="{Binding FuelTypes}"
-                      SelectedItem="{Binding Fuel.FuelType}"
+                      SelectedItem="{Binding Fuel.FuelType, Mode=TwoWay}"
                       Margin="0,5,0,5"/>
 
             <TextBlock Grid.Row="5" Grid.Column="0" Text="Gallons:" Margin="0,5,10,5" VerticalAlignment="Center"/>
@@ -125,15 +133,15 @@
                     HorizontalAlignment="Right"
                     Margin="0,20,0,0">
             <syncfusion:ButtonAdv Label="Cancel"
-                    Width="100"
+                    MinWidth="100"
                     Margin="0,0,10,0"
                     Click="CancelButton_Click"
-                    Style="{StaticResource BusBuddyButtonAdvStyle}"/>
+                    AutomationProperties.Name="Cancel fuel record"/>
             <syncfusion:ButtonAdv Label="Save"
-                    Width="100"
+                    MinWidth="100"
                     Click="SaveButton_Click"
                     IsEnabled="{Binding IsValid}"
-                    Style="{StaticResource BusBuddyButtonAdvStyle}"/>
+                    AutomationProperties.Name="Save fuel record"/>
         </StackPanel>
     </Grid>
 </Window>

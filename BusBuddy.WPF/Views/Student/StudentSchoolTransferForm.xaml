@@ -11,6 +11,7 @@
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/SyncfusionV30_Validated_ResourceDictionary.xaml" />
+                <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/ButtonAdvTextOnly.xaml"/>
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </syncfusion:ChromelessWindow.Resources>
@@ -90,7 +91,7 @@
                 </Grid>
 
                 <TextBlock Text="Notes" Margin="0,0,0,4" />
-                <TextBox Text="{Binding Notes, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                <syncfusion:SfMaskedEdit Text="{Binding Notes, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                          Height="72"
                          TextWrapping="Wrap"
                          AcceptsReturn="True"

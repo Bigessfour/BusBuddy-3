@@ -3,8 +3,7 @@ using System.Windows.Controls;
 namespace BusBuddy.WPF.Views.Dashboard
 {
     /// <summary>
-    /// Interaction logic for DashboardWelcomeView.xaml
-    /// Phase 1: Simple welcome dashboard
+    /// Unused welcome surface. Kept as themed static copy only — navigation lives on MainWindow.
     /// </summary>
     public partial class DashboardWelcomeView : UserControl
     {

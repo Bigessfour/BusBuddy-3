@@ -32,7 +32,7 @@
         <!-- Content Area -->
     <syncfusion:SfDataGrid Grid.Row="1"
                                ItemsSource="{Binding Activities}"
-                               SelectedItem="{Binding SelectedActivity}"
+                               SelectedItem="{Binding SelectedActivity, Mode=TwoWay}"
                                AutoGenerateColumns="False"
                                AllowEditing="False"
                                AllowSorting="True"
@@ -41,7 +41,7 @@
                    Background="{DynamicResource BusBuddy.Brush.DataGrid.Background}">
             <syncfusion:SfDataGrid.Columns>
                 <syncfusion:GridTextColumn HeaderText="Activity Name" MappingName="ActivityName" Width="200"/>
-                <syncfusion:GridTextColumn HeaderText="Date" MappingName="ActivityDate" Width="120"/>
+                <syncfusion:GridDateTimeColumn HeaderText="Date" MappingName="ActivityDate" Width="120" Pattern="ShortDate"/>
                 <syncfusion:GridTextColumn HeaderText="Status" MappingName="Status" Width="100"/>
             </syncfusion:SfDataGrid.Columns>
         </syncfusion:SfDataGrid>

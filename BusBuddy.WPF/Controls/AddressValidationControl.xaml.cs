@@ -25,10 +25,10 @@ namespace BusBuddy.WPF.Controls
                 Logger.Information("Validate Address button clicked");
 
                 // Get the address from the text box (find control by name)
-                if (this.FindName("AddressTextBox") is TextBox addressTextBox &&
+                if (this.FindName("AddressTextBox") is Syncfusion.Windows.Controls.Input.SfMaskedEdit addressBox &&
                     this.FindName("ResultsTextBlock") is TextBlock resultsTextBlock)
                 {
-                    var address = addressTextBox.Text.Trim();
+                    var address = addressBox.Text?.Trim() ?? string.Empty;
 
                     if (string.IsNullOrEmpty(address))
                     {

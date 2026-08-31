@@ -37,6 +37,8 @@ namespace BusBuddy.WPF.Views.Main
     /// </summary>
     public partial class MainWindow : ChromelessWindow
     {
+        private const string RouteAssignmentsHeader = "Route Assignments";
+        private const string MapHeader = "Map";
     // Explicit reference placeholder to satisfy analyzer if generated partial field not yet recognized
     // At runtime, the XAML-generated field MainDockingManager will be used.
     private DockingManager? _designTimeDockingManagerAccessor => this.FindName("MainDockingManager") as DockingManager;
@@ -72,6 +74,11 @@ namespace BusBuddy.WPF.Views.Main
                 // Restore normal WPF initialization so x:Name fields (StudentsGrid, MainDockingManager, etc.) are generated
                 // Explicit 'this.' to help certain analyzers/linkers detect generated partial method
                 this.InitializeComponent();
+
+                if (RouteAssignmentPaneView.DataContext is RouteAssignmentViewModel assignmentVm)
+                {
+                    assignmentVm.RoutesGenerated += OnAssignmentRoutesGenerated;
+                }
 
                 Logger.Debug("Applying Syncfusion theme");
                 ApplySyncfusionTheme();
@@ -159,6 +166,10 @@ namespace BusBuddy.WPF.Views.Main
         {
             try
             {
+                if (RouteAssignmentPaneView.DataContext is RouteAssignmentViewModel closingVm)
+                {
+                    closingVm.RoutesGenerated -= OnAssignmentRoutesGenerated;
+                }
                 RemoveHandler(ButtonBase.ClickEvent, new System.Windows.RoutedEventHandler(OnAnyButtonClick));
                 RemoveHandler(Selector.SelectionChangedEvent, new System.Windows.Controls.SelectionChangedEventHandler(OnAnySelectionChanged));
                 RemoveHandler(TextBoxBase.TextChangedEvent, new System.Windows.Controls.TextChangedEventHandler(OnAnyTextChanged));
@@ -694,6 +705,8 @@ namespace BusBuddy.WPF.Views.Main
             }
         }
 
+        private void OnAssignmentRoutesGenerated(object? sender, EventArgs e) => RefreshRoutesGrid();
+
         /// <summary>
         /// Navigate to Route management view
         /// </summary>
@@ -707,7 +720,7 @@ namespace BusBuddy.WPF.Views.Main
                 {
                     try
                     {
-                        MainDockingManager.ActivateWindow("🗺️ Route Assignments");
+                        MainDockingManager.ActivateWindow(RouteAssignmentsHeader);
                         Logger.Information("Route Assignments pane activation attempted via header lookup");
                     }
                     catch (Exception inner)
@@ -769,7 +782,7 @@ namespace BusBuddy.WPF.Views.Main
                     try
                     {
                         // Activate by header text (Syncfusion ActivateWindow expects string header in current version build context)
-                        MainDockingManager.ActivateWindow("🌍 Map");
+                        MainDockingManager.ActivateWindow(MapHeader);
                         Logger.Information("Map pane activation attempted via header lookup");
                     }
                     catch (Exception inner)

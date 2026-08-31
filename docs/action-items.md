@@ -27,19 +27,25 @@ Go **one surface at a time**. For every Syncfusion control on that surface, chec
 
 Waves (do not skip Wave 1):
 
-| Wave | Surfaces |
-| ---- | -------- |
-| 1 | `MainWindow`, `RouteAssignmentView`, `RouteManagementView`, `StudentsView`, `StudentForm`, `GoogleEarthView` |
-| 2 | `DriversView`, `DriverForm`, `DriverTrainingChecklistView`, `VehicleManagementView`, `VehiclesView` (stub: 0 SF controls), `ReportsView` |
-| 3 | Remaining pages (`Dashboard`, `Fuel`, `Maintenance`, `Activity`, `Analytics`, `Settings`, `DriverSchedule`, `DriverManagement`) |
-| 4 | Dialogs / forms (`*Form`, `*Dialog`, preview/welcome) |
-| 5 | `Controls/*` (`QuickActionsPanel`, `AddressValidationControl`, `StudentStatisticsPanel`, `TestSyncfusionControl`) |
+| Wave | Surfaces                                                                                                                                 |
+| ---- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| 1    | `MainWindow`, `RouteAssignmentView`, `RouteManagementView`, `StudentsView`, `StudentForm`, `GoogleEarthView`                             |
+| 2    | `DriversView`, `DriverForm`, `DriverTrainingChecklistView`, `VehicleManagementView`, `VehiclesView` (stub: 0 SF controls), `ReportsView` |
+| 3    | Remaining pages (`Dashboard`, `Fuel`, `Maintenance`, `Activity`, `Analytics`, `Settings`, `DriverSchedule`, `DriverManagement`)          |
+| 4    | Dialogs / forms (`*Form`, `*Dialog`, preview/welcome)                                                                                    |
+| 5    | `Controls/*` (`QuickActionsPanel`, `AddressValidationControl`, `StudentStatisticsPanel`, `TestSyncfusionControl`)                        |
 
 Known scan flags (not yet fixed): **17** `ButtonAdv` with neither `Command` nor `Click` (code-behind or dead); `MainWindow` is Click-heavy (22 clicks, 0 commands); `VehiclesView` has no Syncfusion controls.
 
-- [ ] Wave 1 complete (VM smoke + XAML scanner green)
-- [ ] Wave 2 complete
-- [ ] Waves 3–5 complete
+Wave 1 (2026-08-28): implicit ButtonAdv glyph suppression on shell/map/form; Route Management Edit/Copy `Text.OnPrimary`; Students Map/Suggest min-width; map Live/Show AutomationNames + tracking interval binding.
+
+Wave 2–3 (2026-08-28): DriverForm ComboBox `SelectedValue`+`Content`; Vehicles stub hosts `VehicleManagementView`; Vehicle status bar off Accent blue; Reports/Fuel/Dashboard/Maintenance/Analytics/Timeline/Settings/Schedule glyph collapse + AutomationNames.
+
+- [x] Wave 1 XAML audit (`MainWindow`, `RouteAssignmentView`, `RouteManagementView`, `StudentsView`, `StudentForm`, `GoogleEarthView`) — remaining: VM smoke
+- [x] Wave 2 complete (`DriversView`, `DriverForm`, `DriverTrainingChecklistView`, `VehicleManagementView`, `VehiclesView` host, `ReportsView`)
+- [x] Wave 3 complete (remaining pages)
+- [x] Waves 4–5 complete (dialogs + shared controls) — 2026-08-31: unwired ButtonAdv wired or Click-in-XAML; NotificationWindow FindName; VehicleForm ancestor; missing styles; activity editor Syncfusion-only
+- [x] Code-review follow-up (2026-08-31): shared `ButtonAdvTextOnly.xaml`; generate coordinator takes `IDestinationService`; assignment generate is a partial; docking headers without emoji; live-tracking timer; welcome/VehiclesView stripped; VehicleForm hosts fleet view
 
 ### P0 — Platform / tooling
 

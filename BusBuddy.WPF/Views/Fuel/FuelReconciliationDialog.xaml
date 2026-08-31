@@ -12,6 +12,14 @@
         Height="700"
         Width="900"
         WindowStartupLocation="CenterOwner">
+    <syncfusion:ChromelessWindow.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/SyncfusionV30_Validated_ResourceDictionary.xaml"/>
+                <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/ButtonAdvTextOnly.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </syncfusion:ChromelessWindow.Resources>
     <Grid Margin="20">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -54,9 +62,10 @@
                        Margin="0,0,10,0"/>
 
             <syncfusion:SfDatePicker Grid.Column="1"
-                        Value="{Binding StartDate}"
+                        Value="{Binding StartDate, Mode=TwoWay}"
                         Width="120"
-                        Margin="0,0,5,0"/>
+                        Margin="0,0,5,0"
+                        AutomationProperties.Name="Reconciliation start date"/>
 
             <TextBlock Grid.Column="2"
                        Text="to"
@@ -64,14 +73,16 @@
                        Margin="0,0,5,0"/>
 
             <syncfusion:SfDatePicker Grid.Column="3"
-                        Value="{Binding EndDate}"
+                        Value="{Binding EndDate, Mode=TwoWay}"
                         Width="120"
-                        Margin="0,0,10,0"/>
+                        Margin="0,0,10,0"
+                        AutomationProperties.Name="Reconciliation end date"/>
 
             <syncfusion:ComboBoxAdv Grid.Column="5"
                       ItemsSource="{Binding FuelLocations}"
-                      SelectedItem="{Binding SelectedLocation}"
-                      Width="150"/>
+                      SelectedItem="{Binding SelectedLocation, Mode=TwoWay}"
+                      Width="150"
+                      AutomationProperties.Name="Fuel location"/>
         </Grid>
 
         <syncfusiontools:TabControlExt Grid.Row="2">
@@ -185,8 +196,7 @@
 
                     <syncfusion:SfDataGrid Grid.Row="1"
                                            ItemsSource="{Binding DiscrepancyDetails}"
-                                           AutoGenerateColumns="False"
-                                           Style="{StaticResource BusBuddySfDataGridStyle}">
+                                           AutoGenerateColumns="False">
                         <syncfusion:SfDataGrid.Columns>
                             <syncfusion:GridTextColumn MappingName="Date" HeaderText="Date" DisplayBinding="{Binding Date, StringFormat=d}"/>
                             <syncfusion:GridTextColumn MappingName="BusNumber" HeaderText="Bus Number"/>
@@ -208,15 +218,18 @@
                     Margin="0,15,0,0">
             <syncfusion:ButtonAdv Label="Export Report"
                     Command="{Binding ExportCommand}"
-                    Width="120"
-                    Margin="0,0,10,0"/>
+                    MinWidth="120"
+                    Margin="0,0,10,0"
+                    AutomationProperties.Name="Export fuel report"/>
             <syncfusion:ButtonAdv Label="Print"
                     Command="{Binding PrintCommand}"
-                    Width="80"
-                    Margin="0,0,10,0"/>
+                    MinWidth="80"
+                    Margin="0,0,10,0"
+                    AutomationProperties.Name="Print fuel report"/>
             <syncfusion:ButtonAdv Label="Close"
-                    Width="80"
-                    Click="CloseButton_Click"/>
+                    MinWidth="80"
+                    Click="CloseButton_Click"
+                    AutomationProperties.Name="Close reconciliation"/>
         </StackPanel>
 
         <StackPanel Grid.Row="4"

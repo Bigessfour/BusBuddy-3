@@ -11,27 +11,28 @@
                              MinHeight="420"
                              MinWidth="560"
                              WindowStartupLocation="CenterOwner">
+    <syncfusion:ChromelessWindow.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/SyncfusionV30_Validated_ResourceDictionary.xaml"/>
+                <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/ButtonAdvTextOnly.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </syncfusion:ChromelessWindow.Resources>
     <ScrollViewer VerticalScrollBarVisibility="Auto">
         <Grid Margin="20">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
-                <!-- 0 Header -->
                 <RowDefinition Height="Auto" />
-                <!-- 1 Bus Number -->
                 <RowDefinition Height="Auto" />
-                <!-- 2 Make -->
                 <RowDefinition Height="Auto" />
-                <!-- 3 Model -->
                 <RowDefinition Height="Auto" />
-                <!-- 4 Year -->
                 <RowDefinition Height="Auto" />
-                <!-- 5 Capacity -->
                 <RowDefinition Height="Auto" />
-                <!-- 6 License Number -->
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
                 <RowDefinition Height="*" />
-                <!-- 7 Spacer/Filler -->
                 <RowDefinition Height="Auto" />
-                <!-- 8 Action Buttons -->
             </Grid.RowDefinitions>
             <!-- Header -->
             <Border Grid.Row="0"
@@ -134,24 +135,28 @@
             <!-- Status selector -->
             <StackPanel Grid.Row="8" Margin="0,0,0,10">
                 <TextBlock Text="Status:" Margin="0,0,0,5" />
-                <syncfusion:ComboBoxAdv Height="34" Padding="4" ItemsSource="{Binding AvailableStatuses}" SelectedItem="{Binding Status, Mode=TwoWay}" />
+                <syncfusion:ComboBoxAdv Height="34" Padding="4" ItemsSource="{Binding AvailableStatuses}"
+                                        SelectedItem="{Binding Status, Mode=TwoWay}"
+                                        AutomationProperties.Name="Bus status"/>
             </StackPanel>
             <!-- Action Buttons -->
-            <StackPanel Grid.Row="9"
+            <StackPanel Grid.Row="10"
                         Orientation="Horizontal"
                         HorizontalAlignment="Right"
                         Margin="0,20,0,0">
                 <syncfusion:ButtonAdv x:Name="SaveBusButton"
                                       Label="Save"
-                                      Width="90"
+                                      MinWidth="90"
                                       Height="36"
                                       Margin="0,0,10,0"
-                                      Command="{Binding SaveCommand}" />
+                                      Command="{Binding SaveCommand}"
+                                      AutomationProperties.Name="Save bus"/>
                 <syncfusion:ButtonAdv x:Name="CancelBusButton"
                                       Label="Cancel"
-                                      Width="90"
+                                      MinWidth="90"
                                       Height="36"
-                                      Command="{Binding CancelCommand}" />
+                                      Command="{Binding CancelCommand}"
+                                      AutomationProperties.Name="Cancel bus form"/>
             </StackPanel>
         </Grid>
     </ScrollViewer>
