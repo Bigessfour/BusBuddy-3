@@ -18,6 +18,7 @@
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/SyncfusionV30_Validated_ResourceDictionary.xaml"/>
+                <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/ButtonAdvTextOnly.xaml"/>
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </syncfusion:ChromelessWindow.Resources>
@@ -361,7 +362,7 @@
 
             <!-- Map Panel (Google Earth Integration) -->
             <ContentControl x:Name="MapPane"
-                            syncfusion:DockingManager.Header="🌍 Map"
+                            syncfusion:DockingManager.Header="Map"
                             syncfusion:DockingManager.State="Document"
                             Background="{DynamicResource BusBuddy.Brush.Panel.Background}">
                 <Grid Background="{DynamicResource BusBuddy.Brush.Panel.Content}">
@@ -371,7 +372,7 @@
 
             <!-- Route Assignment Panel -->
             <ContentControl x:Name="RouteAssignmentPane"
-                            syncfusion:DockingManager.Header="🗺️ Route Assignments"
+                            syncfusion:DockingManager.Header="Route Assignments"
                             syncfusion:DockingManager.State="Document"
                             Background="{DynamicResource BusBuddy.Brush.Panel.Background}">
                 <Grid Background="{DynamicResource BusBuddy.Brush.Panel.Content}">

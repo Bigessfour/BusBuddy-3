@@ -13,6 +13,7 @@ https://help.syncfusion.com/cr/wpf/Syncfusion.Windows.Tools.Controls.SfTextBoxEx
              d:DesignHeight="100" d:DesignWidth="300">
     <Grid>
         <!-- Syncfusion SfTextBoxExt: https://help.syncfusion.com/wpf/textboxext/getting-started -->
-        <syncfusion:SfTextBoxExt Width="200" Height="30" Watermark="Enter text here" />
+        <syncfusion:SfTextBoxExt Width="200" Height="30" Watermark="Enter text here"
+                                 AutomationProperties.Name="Syncfusion text harness"/>
     </Grid>
 </UserControl>

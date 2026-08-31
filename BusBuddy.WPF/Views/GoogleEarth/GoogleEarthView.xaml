@@ -21,7 +21,11 @@
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/SyncfusionV30_Validated_ResourceDictionary.xaml"/>
+                <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/ButtonAdvTextOnly.xaml"/>
             </ResourceDictionary.MergedDictionaries>
+            <Style TargetType="syncfusion:ButtonAdv" BasedOn="{StaticResource {x:Type syncfusion:ButtonAdv}}">
+                <Setter Property="Padding" Value="10,6"/>
+            </Style>
             <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
         </ResourceDictionary>
     </UserControl.Resources>
@@ -92,7 +96,9 @@
                                             Height="32"
                                             Margin="16,0"
                                             SelectedIndex="0"
-                                            SelectionChanged="MapLayerComboBox_SelectionChanged">
+                                            SelectionChanged="MapLayerComboBox_SelectionChanged"
+                                            ToolTip="Map tile layer"
+                                            AutomationProperties.Name="Map layer">
                         <syncfusion:ComboBoxItemAdv Content="OpenStreetMap"/>
                     </syncfusion:ComboBoxAdv>
                 </StackPanel>
@@ -206,6 +212,7 @@
                     <syncfusion:ButtonAdv Label="Bulk Plot Eligible Students"
                                           ToolTip="Auto-geocode + plot all rural (non-Lamar, out-of-town) eligible students"
                                           Command="{Binding BulkPlotEligibleStudentsCommand}"
+                                          AutomationProperties.Name="Bulk Plot Eligible Students"
                                           Background="{DynamicResource ButtonBackgroundBrush}"
                                           Foreground="{DynamicResource ButtonForegroundBrush}"
                                           Padding="10,8"
@@ -253,14 +260,16 @@
 
                                     <!-- Use documented ButtonAdv toggle: https://help.syncfusion.com/wpf/button/toggle-state -->
                                     <syncfusion:ButtonAdv Grid.Column="1"
-                                                          Width="80"
+                                                          MinWidth="80"
                                                           Height="28"
                                                           HorizontalAlignment="Right"
                                                           Background="{DynamicResource ButtonBackgroundBrush}"
                                                           Foreground="{DynamicResource ButtonForegroundBrush}"
                                                           IsCheckable="True"
                                                           IsChecked="{Binding IsLiveTrackingEnabled, Mode=TwoWay}"
-                                                          Label="Live"/>
+                                                          Label="Live"
+                                                          ToolTip="Enable real-time bus position updates"
+                                                          AutomationProperties.Name="Live tracking"/>
                                 </Grid>
 
                                 <!-- Theme standard Separator via SfSkinManager key -->
@@ -271,7 +280,9 @@
                                            Foreground="{DynamicResource PrimaryTextBrush}"
                                            Margin="0,0,0,4"/>
 
-                                <syncfusion:ComboBoxAdv SelectedIndex="1">
+                                <syncfusion:ComboBoxAdv SelectedIndex="{Binding TrackingIntervalIndex, Mode=TwoWay}"
+                                                        ToolTip="How often live tracking refreshes"
+                                                        AutomationProperties.Name="Tracking update frequency">
                                     <syncfusion:ComboBoxItemAdv Content="5 seconds"/>
                                     <syncfusion:ComboBoxItemAdv Content="10 seconds"/>
                                     <syncfusion:ComboBoxItemAdv Content="30 seconds"/>
@@ -307,14 +318,16 @@
                                                VerticalAlignment="Center"/>
 
                                     <syncfusion:ButtonAdv Grid.Column="1"
-                                                          Width="100"
+                                                          MinWidth="80"
                                                           Height="28"
                                                           HorizontalAlignment="Right"
                                                           Background="{DynamicResource ButtonBackgroundBrush}"
                                                           Foreground="{DynamicResource ButtonForegroundBrush}"
                                                           IsCheckable="True"
                                                           IsChecked="{Binding DistrictBoundaryVisible, Mode=TwoWay}"
-                                                          Label="Show"/>
+                                                          Label="Show"
+                                                          ToolTip="Toggle school district boundary overlay"
+                                                          AutomationProperties.Name="Show district boundary"/>
                                 </Grid>
 
                                 <!-- Wiley Town Boundary Toggle — to visualize exclusion zone inside district for eligibility -->
@@ -331,14 +344,16 @@
                                                VerticalAlignment="Center"/>
 
                                     <syncfusion:ButtonAdv Grid.Column="1"
-                                                          Width="100"
+                                                          MinWidth="80"
                                                           Height="28"
                                                           HorizontalAlignment="Right"
                                                           Background="{DynamicResource ButtonBackgroundBrush}"
                                                           Foreground="{DynamicResource ButtonForegroundBrush}"
                                                           IsCheckable="True"
                                                           IsChecked="{Binding TownBoundaryVisible, Mode=TwoWay}"
-                                                          Label="Show"/>
+                                                          Label="Show"
+                                                          ToolTip="Toggle Wiley town boundary overlay"
+                                                          AutomationProperties.Name="Show town boundary"/>
                                 </Grid>
                             </StackPanel>
                         </Border>

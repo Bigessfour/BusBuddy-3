@@ -7,34 +7,53 @@
         Width="500"
         WindowStartupLocation="CenterOwner"
         ResizeMode="CanResize">
+    <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/ButtonAdvTextOnly.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </Window.Resources>
 
-    <Grid Margin="20">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>
-        </Grid.RowDefinitions>
+    <Border x:Name="MainBorder"
+            Margin="20"
+            BorderThickness="2"
+            BorderBrush="{DynamicResource BusBuddy.Brush.Semantic.Info}"
+            CornerRadius="6"
+            Padding="16"
+            Background="{DynamicResource ContentBackgroundBrush}">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
 
-        <TextBlock Grid.Row="0"
-                   Text="System Notification"
-                   FontSize="18"
-                   FontWeight="Bold"
-                   Margin="0,0,0,20"/>
+            <TextBlock x:Name="TitleText"
+                       Grid.Row="0"
+                       Text="System Notification"
+                       FontSize="18"
+                       FontWeight="Bold"
+                       Margin="0,0,0,20"
+                       Foreground="{DynamicResource PrimaryTextBrush}"/>
 
-        <ScrollViewer Grid.Row="1">
-            <TextBlock Text="Notification message will appear here"
-                       TextWrapping="Wrap"
-                       FontSize="12"/>
-        </ScrollViewer>
+            <ScrollViewer Grid.Row="1">
+                <TextBlock x:Name="MessageText"
+                           Text="Notification message will appear here"
+                           TextWrapping="Wrap"
+                           FontSize="12"
+                           Foreground="{DynamicResource SecondaryTextBrush}"/>
+            </ScrollViewer>
 
-        <syncfusion:ButtonAdv Grid.Row="2"
-                Label="OK"
-                Width="80"
-                Height="35"
-                HorizontalAlignment="Right"
-                Margin="0,20,0,0"/>
-    </Grid>
+            <syncfusion:ButtonAdv Grid.Row="2"
+                    Label="OK"
+                    MinWidth="80"
+                    Height="35"
+                    HorizontalAlignment="Right"
+                    Margin="0,20,0,0"
+                    Click="OkButton_Click"
+                    IsDefault="True"
+                    AutomationProperties.Name="Dismiss notification"/>
+        </Grid>
+    </Border>
 </Window>
-
-
-

@@ -14,6 +14,13 @@
         WindowStartupLocation="CenterOwner"
         ResizeMode="NoResize"
         Background="{DynamicResource SurfaceBackground}">
+    <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/ButtonAdvTextOnly.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </Window.Resources>
 
     <Grid Margin="20">
         <Grid.RowDefinitions>
@@ -65,16 +72,18 @@
                     Orientation="Horizontal"
                     HorizontalAlignment="Right">
             <syncfusion:ButtonAdv Label="No, Cancel"
-                    Width="100"
+                    MinWidth="120"
                     Height="35"
                     Margin="0,0,10,0"
                     Click="NoButton_Click"
-                    IsCancel="True"/>
+                    IsCancel="True"
+                    AutomationProperties.Name="Cancel confirmation"/>
             <syncfusion:ButtonAdv Label="Yes, Continue"
-                    Width="120"
+                    MinWidth="120"
                     Height="35"
                     Click="YesButton_Click"
-                    IsDefault="True"/>
+                    IsDefault="True"
+                    AutomationProperties.Name="Confirm action"/>
         </StackPanel>
     </Grid>
 </Window>

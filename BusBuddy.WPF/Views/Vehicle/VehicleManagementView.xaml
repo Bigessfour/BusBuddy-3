@@ -68,15 +68,19 @@
                 <syncfusion:ButtonAdv Label="Add Vehicle"
                        Command="{Binding AddVehicleCommand}"
                        Style="{StaticResource ActionButtonStyle}"
-                           Background="{DynamicResource ButtonBackgroundBrush}"/>
+                       Background="{DynamicResource BusBuddy.Brush.Primary}"
+                       Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}"
+                       AutomationProperties.Name="Add Vehicle"/>
                 <syncfusion:ButtonAdv Label="Edit Selected"
                        Command="{Binding EditVehicleCommand}"
                        Style="{StaticResource ActionButtonStyle}"
-                           Background="{DynamicResource ButtonBackgroundBrush}"/>
+                       Background="{DynamicResource ButtonBackgroundBrush}"
+                       AutomationProperties.Name="Edit Selected Vehicle"/>
                 <syncfusion:ButtonAdv Label="Delete"
                        Command="{Binding DeleteVehicleCommand}"
                        Style="{StaticResource ActionButtonStyle}"
-                           Background="{DynamicResource ButtonBackgroundBrush}"/>
+                       Background="{DynamicResource ButtonBackgroundBrush}"
+                       AutomationProperties.Name="Delete Vehicle"/>
             </StackPanel>
         </StackPanel>
 
@@ -89,11 +93,12 @@
             </Grid.ColumnDefinitions>
 
             <syncfusion:SfMaskedEdit Grid.Column="0"
-                    Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                    Text="{Binding SearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                     Padding="10"
                     FontSize="14"
                     Watermark="Search buses by make, model, or plate number..."
-                    Margin="0,0,15,0"/>
+                    Margin="0,0,15,0"
+                    AutomationProperties.Name="Search vehicles"/>
 
             <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,15,0">
                 <TextBlock Text="Status"
@@ -101,7 +106,7 @@
                            Margin="0,0,8,0"
                            Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"/>
                 <syncfusion:ComboBoxAdv ItemsSource="{Binding StatusFilterOptions}"
-                         SelectedItem="{Binding SelectedStatusFilter}"
+                         SelectedItem="{Binding SelectedStatusFilter, Mode=TwoWay}"
                          Width="150"
                          Padding="10"
                          AutomationProperties.Name="Status"/>
@@ -111,7 +116,8 @@
              Label="Refresh"
              Command="{Binding RefreshCommand}"
              Style="{StaticResource ActionButtonStyle}"
-             Background="{DynamicResource ButtonBackgroundBrush}"/>
+             Background="{DynamicResource ButtonBackgroundBrush}"
+             AutomationProperties.Name="Refresh vehicles"/>
         </Grid>
 
         <!-- Main Content - Split between Grid and Form -->
@@ -126,7 +132,7 @@
             <syncfusion:SfDataGrid Grid.Column="0"
                                    x:Name="VehicleDataGrid"
                                    ItemsSource="{Binding FilteredVehicles}"
-                                   SelectedItem="{Binding SelectedVehicle}"
+                                   SelectedItem="{Binding SelectedVehicle, Mode=TwoWay}"
                                    AutoGenerateColumns="False"
                                    AllowEditing="False"
                                    AllowSorting="True"
@@ -198,45 +204,50 @@
                                   Text="Bus Number:"
                                   Style="{StaticResource FormLabelStyle}"/>
                         <syncfusion:SfMaskedEdit Grid.Row="0" Grid.Column="1"
-                                Text="{Binding SelectedVehicle.BusNumber, UpdateSourceTrigger=PropertyChanged}"
+                                Text="{Binding SelectedVehicle.BusNumber, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                 Padding="8"
-                                Margin="0,5"/>
+                                Margin="0,5"
+                                AutomationProperties.Name="Bus Number"/>
 
                         <!-- Make -->
                         <TextBlock Grid.Row="1" Grid.Column="0"
                                   Text="Make:"
                                   Style="{StaticResource FormLabelStyle}"/>
                         <syncfusion:SfMaskedEdit Grid.Row="1" Grid.Column="1"
-                                Text="{Binding SelectedVehicle.Make, UpdateSourceTrigger=PropertyChanged}"
+                                Text="{Binding SelectedVehicle.Make, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                 Padding="8"
-                                Margin="0,5"/>
+                                Margin="0,5"
+                                AutomationProperties.Name="Make"/>
 
                         <!-- Model -->
                         <TextBlock Grid.Row="2" Grid.Column="0"
                                   Text="Model:"
                                   Style="{StaticResource FormLabelStyle}"/>
                         <syncfusion:SfMaskedEdit Grid.Row="2" Grid.Column="1"
-                                Text="{Binding SelectedVehicle.Model, UpdateSourceTrigger=PropertyChanged}"
+                                Text="{Binding SelectedVehicle.Model, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                 Padding="8"
-                                Margin="0,5"/>
+                                Margin="0,5"
+                                AutomationProperties.Name="Model"/>
 
                         <!-- License Number -->
                         <TextBlock Grid.Row="3" Grid.Column="0"
                                   Text="License Number:"
                                   Style="{StaticResource FormLabelStyle}"/>
                         <syncfusion:SfMaskedEdit Grid.Row="3" Grid.Column="1"
-                                Text="{Binding SelectedVehicle.LicenseNumber, UpdateSourceTrigger=PropertyChanged}"
+                                Text="{Binding SelectedVehicle.LicenseNumber, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                 Padding="8"
-                                Margin="0,5"/>
+                                Margin="0,5"
+                                AutomationProperties.Name="License Number"/>
 
                         <!-- Capacity -->
                         <TextBlock Grid.Row="4" Grid.Column="0"
                                   Text="Capacity:"
                                   Style="{StaticResource FormLabelStyle}"/>
                         <syncfusion:SfMaskedEdit Grid.Row="4" Grid.Column="1"
-                                Text="{Binding SelectedVehicle.SeatingCapacity, UpdateSourceTrigger=PropertyChanged}"
+                                Text="{Binding SelectedVehicle.SeatingCapacity, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                 Padding="8"
-                                Margin="0,5"/>
+                                Margin="0,5"
+                                AutomationProperties.Name="Seating Capacity"/>
 
                         <!-- Status -->
                         <TextBlock Grid.Row="5" Grid.Column="0"
@@ -244,18 +255,20 @@
                                   Style="{StaticResource FormLabelStyle}"/>
                         <syncfusion:ComboBoxAdv Grid.Row="5" Grid.Column="1"
                                  ItemsSource="{Binding OperationalStatusOptions}"
-                                 SelectedItem="{Binding SelectedVehicle.Status}"
+                                 SelectedItem="{Binding SelectedVehicle.Status, Mode=TwoWay}"
                                  Padding="8"
-                                 Margin="0,5"/>
+                                 Margin="0,5"
+                                 AutomationProperties.Name="Vehicle Status"/>
 
                         <!-- Year -->
                         <TextBlock Grid.Row="6" Grid.Column="0"
                                   Text="Year:"
                                   Style="{StaticResource FormLabelStyle}"/>
                         <syncfusion:SfMaskedEdit Grid.Row="6" Grid.Column="1"
-                                Text="{Binding SelectedVehicle.Year, UpdateSourceTrigger=PropertyChanged}"
+                                Text="{Binding SelectedVehicle.Year, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                 Padding="8"
-                                Margin="0,5"/>
+                                Margin="0,5"
+                                AutomationProperties.Name="Year"/>
 
                         <!-- Save/Cancel Buttons -->
                         <StackPanel Grid.Row="7" Grid.Column="0" Grid.ColumnSpan="2"
@@ -265,11 +278,14 @@
                 <syncfusion:ButtonAdv Label="Save"
                     Command="{Binding SaveVehicleCommand}"
                     Style="{StaticResource ActionButtonStyle}"
-                    Background="{DynamicResource ButtonBackgroundBrush}"/>
+                    Background="{DynamicResource BusBuddy.Brush.Semantic.Success}"
+                    Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}"
+                    AutomationProperties.Name="Save Vehicle"/>
                 <syncfusion:ButtonAdv Label="Cancel"
                     Command="{Binding CancelEditCommand}"
                     Style="{StaticResource ActionButtonStyle}"
-                    Background="{DynamicResource ButtonBackgroundBrush}"/>
+                    Background="{DynamicResource ButtonBackgroundBrush}"
+                    AutomationProperties.Name="Cancel Vehicle Edit"/>
                         </StackPanel>
 
                         <!-- Loading Indicator -->
@@ -297,7 +313,7 @@
 
         <!-- Status Bar -->
     <Border Grid.Row="3"
-           Background="{DynamicResource AccentBackgroundBrush}"
+           Background="{DynamicResource BusBuddy.Brush.Panel.Header}"
                Height="30"
                Margin="0,10,0,0"
                CornerRadius="2">
@@ -309,12 +325,12 @@
 
                 <TextBlock Grid.Column="0"
                           Text="{Binding StatusMessage}"
-                          Foreground="{DynamicResource PrimaryTextBrush}"
+                          Foreground="{DynamicResource BusBuddy.Brush.Text.Secondary}"
                           VerticalAlignment="Center"
                           Margin="10,0"/>
 
                 <TextBlock Grid.Column="1"
-                          Foreground="{DynamicResource PrimaryTextBrush}"
+                          Foreground="{DynamicResource BusBuddy.Brush.Text.Secondary}"
                           VerticalAlignment="Center"
                           Margin="0,0,10,0">
                     <TextBlock.Text>

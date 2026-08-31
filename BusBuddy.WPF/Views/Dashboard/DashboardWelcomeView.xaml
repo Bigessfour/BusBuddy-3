@@ -1,45 +1,31 @@
-<!--
-╔══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
-║                                              🔒 BUSBUDDY SYNCFUSION THEME COMPLIANCE REFERENCE 🔒                                                                    ║
-╚══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
--->
-
 <UserControl x:Class="BusBuddy.WPF.Views.Dashboard.DashboardWelcomeView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-             xmlns:syncfusion="http://schemas.syncfusion.com/wpf"
-             xmlns:syncfusiontools="clr-namespace:Syncfusion.Windows.Tools.Controls;assembly=Syncfusion.Tools.WPF"
              mc:Ignorable="d"
              d:DesignHeight="450" d:DesignWidth="800">
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/SyncfusionV30_Validated_ResourceDictionary.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </UserControl.Resources>
 
-    <Grid>
+    <Grid Background="{DynamicResource PrimaryBackgroundBrush}">
         <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
             <TextBlock Text="Welcome to BusBuddy"
                        FontSize="32"
                        FontWeight="Bold"
                        HorizontalAlignment="Center"
-                       Margin="0,0,0,20"/>
+                       Margin="0,0,0,20"
+                       Foreground="{DynamicResource PrimaryTextBrush}"/>
 
             <TextBlock Text="School Transportation Management System"
                        FontSize="18"
                        HorizontalAlignment="Center"
-                       Margin="0,0,0,40"/>
-
-            <syncfusion:ButtonAdv Label="Manage Students"
-                                  Width="150"
-                                  Height="40"
-                                  Margin="10"/>
-            <syncfusion:ButtonAdv Label="Manage Routes"
-                                  Width="150"
-                                  Height="40"
-                                  Margin="10"/>
-            <syncfusion:ButtonAdv Label="Manage Vehicles"
-                                  Width="150"
-                                  Height="40"
-                                  Margin="10"/>
+                       Foreground="{DynamicResource SecondaryTextBrush}"/>
         </StackPanel>
     </Grid>
 </UserControl>
-

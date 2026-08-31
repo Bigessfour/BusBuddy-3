@@ -19,12 +19,6 @@ namespace BusBuddy.WPF.Views.Bus
             BusBuddy.WPF.Utilities.SyncfusionThemeManager.ApplyTheme(this);
             // Load existing data into form controls
             LoadBusData();
-
-            // Wire buttons
-            SaveButton.Click += SaveButton_Click;
-            CancelButton.Click += CancelButton_Click;
-
-            // Initial focus
             BusNumberTextBox.Focus();
         }
 

@@ -12,6 +12,7 @@
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/SyncfusionV30_Validated_ResourceDictionary.xaml"/>
+                <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/ButtonAdvTextOnly.xaml"/>
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </UserControl.Resources>
@@ -32,10 +33,14 @@
         </StackPanel>
 
         <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,12">
-            <syncfusion:ButtonAdv Label="Add Record" Command="{Binding AddCommand}" Margin="0,0,8,0"/>
-            <syncfusion:ButtonAdv Label="Save" Command="{Binding SaveCommand}" Margin="0,0,8,0"/>
-            <syncfusion:ButtonAdv Label="Delete" Command="{Binding DeleteCommand}" Margin="0,0,8,0"/>
-            <syncfusion:ButtonAdv Label="Refresh" Command="{Binding RefreshCommand}"/>
+            <syncfusion:ButtonAdv Label="Add Record" Command="{Binding AddCommand}" Margin="0,0,8,0"
+                                  AutomationProperties.Name="Add maintenance record"/>
+            <syncfusion:ButtonAdv Label="Save" Command="{Binding SaveCommand}" Margin="0,0,8,0"
+                                  AutomationProperties.Name="Save maintenance record"/>
+            <syncfusion:ButtonAdv Label="Delete" Command="{Binding DeleteCommand}" Margin="0,0,8,0"
+                                  AutomationProperties.Name="Delete maintenance record"/>
+            <syncfusion:ButtonAdv Label="Refresh" Command="{Binding RefreshCommand}"
+                                  AutomationProperties.Name="Refresh maintenance"/>
         </StackPanel>
 
         <syncfusion:SfDataGrid Grid.Row="2"

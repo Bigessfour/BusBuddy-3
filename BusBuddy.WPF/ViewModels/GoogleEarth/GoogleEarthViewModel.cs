@@ -13,6 +13,7 @@ using Serilog;
 using RouteModel = BusBuddy.Core.Models.Route;
 using System.Text.Json; // Microsoft .NET docs: System.Text.Json for JSON serialization/deserialization
 using System.Windows; // For System.Windows.Point used by Syncfusion MapPolyline
+using System.Windows.Threading;
 using System.Collections.Generic; // For generic collections
 using System.Linq; // For LINQ operations
 using System.Windows.Media; // For VisualTreeHelper during snapshot
@@ -48,6 +49,15 @@ namespace BusBuddy.WPF.ViewModels.GoogleEarth
         private bool _isMapLoading;
         private string _statusMessage = "Ready";
     private bool _isLiveTrackingEnabled;
+    private int _trackingIntervalIndex = 1;
+    private DispatcherTimer? _liveTrackingTimer;
+    private static readonly TimeSpan[] TrackingIntervals =
+    [
+        TimeSpan.FromSeconds(5),
+        TimeSpan.FromSeconds(10),
+        TimeSpan.FromSeconds(30),
+        TimeSpan.FromMinutes(1),
+    ];
     private ObservableCollection<BusBuddy.Core.Models.Bus> _activeBuses = new();
     private BusBuddy.Core.Models.Bus? _selectedBus;
     private bool _districtBoundaryVisible;
@@ -152,7 +162,79 @@ namespace BusBuddy.WPF.ViewModels.GoogleEarth
         public bool IsLiveTrackingEnabled
         {
             get => _isLiveTrackingEnabled;
-            set => SetProperty(ref _isLiveTrackingEnabled, value);
+            set
+            {
+                if (SetProperty(ref _isLiveTrackingEnabled, value))
+                {
+                    UpdateLiveTrackingTimer();
+                }
+            }
+        }
+
+        /// <summary>
+        /// ComboBoxAdv index for live-tracking refresh: 0=5s, 1=10s, 2=30s, 3=1min.
+        /// </summary>
+        public int TrackingIntervalIndex
+        {
+            get => _trackingIntervalIndex;
+            set
+            {
+                if (SetProperty(ref _trackingIntervalIndex, value))
+                {
+                    UpdateLiveTrackingTimer();
+                }
+            }
+        }
+
+        private void UpdateLiveTrackingTimer()
+        {
+            _liveTrackingTimer ??= new DispatcherTimer();
+            _liveTrackingTimer.Tick -= OnLiveTrackingTick;
+            _liveTrackingTimer.Stop();
+            if (!_isLiveTrackingEnabled)
+            {
+                return;
+            }
+
+            var index = Math.Clamp(_trackingIntervalIndex, 0, TrackingIntervals.Length - 1);
+            _liveTrackingTimer.Interval = TrackingIntervals[index];
+            _liveTrackingTimer.Tick += OnLiveTrackingTick;
+            _liveTrackingTimer.Start();
+        }
+
+        private async void OnLiveTrackingTick(object? sender, EventArgs e)
+        {
+            if (_isMapLoading)
+            {
+                return;
+            }
+
+            await LoadActiveBusesAsync();
+            ReplaceLiveBusMarkers();
+        }
+
+        private void ReplaceLiveBusMarkers()
+        {
+            for (var i = MapMarkers.Count - 1; i >= 0; i--)
+            {
+                if (MapMarkers[i].Label.StartsWith("Bus ", StringComparison.Ordinal))
+                {
+                    MapMarkers.RemoveAt(i);
+                }
+            }
+
+            foreach (var bus in ActiveBuses)
+            {
+                if (!bus.CurrentLatitude.HasValue || !bus.CurrentLongitude.HasValue)
+                {
+                    continue;
+                }
+
+                MapMarkers.Add(MapMarker.FromDegrees(
+                    (double)bus.CurrentLatitude.Value,
+                    (double)bus.CurrentLongitude.Value,
+                    $"Bus {bus.BusNumber}"));
+            }
         }
 
         /// <summary>

@@ -7,6 +7,13 @@
         Width="420"
         WindowStartupLocation="CenterOwner"
         ResizeMode="NoResize">
+    <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/ButtonAdvTextOnly.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </Window.Resources>
     <Grid Margin="20">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -16,15 +23,19 @@
         </Grid.RowDefinitions>
         <StackPanel Grid.Row="0" Margin="0,0,0,12">
             <TextBlock Text="Stop name" Margin="0,0,0,4"/>
-            <TextBox x:Name="StopNameBox" Height="28"/>
+            <syncfusion:SfMaskedEdit x:Name="StopNameBox" Height="32"
+                                     AutomationProperties.Name="Stop name"/>
         </StackPanel>
         <StackPanel Grid.Row="1" Margin="0,0,0,12">
             <TextBlock Text="Address" Margin="0,0,0,4"/>
-            <TextBox x:Name="StopAddressBox" Height="28"/>
+            <syncfusion:SfMaskedEdit x:Name="StopAddressBox" Height="32"
+                                     AutomationProperties.Name="Stop address"/>
         </StackPanel>
         <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right">
-            <syncfusion:ButtonAdv Label="Save" Width="80" Height="32" Margin="0,0,8,0" Click="Save_Click"/>
-            <syncfusion:ButtonAdv Label="Cancel" Width="80" Height="32" Click="Cancel_Click"/>
+            <syncfusion:ButtonAdv Label="Save" MinWidth="80" Height="32" Margin="0,0,8,0"
+                                  Click="Save_Click" AutomationProperties.Name="Save stop"/>
+            <syncfusion:ButtonAdv Label="Cancel" MinWidth="80" Height="32"
+                                  Click="Cancel_Click" AutomationProperties.Name="Cancel stop"/>
         </StackPanel>
     </Grid>
 </Window>

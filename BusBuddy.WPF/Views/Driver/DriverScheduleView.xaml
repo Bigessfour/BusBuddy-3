@@ -12,6 +12,7 @@
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/SyncfusionV30_Validated_ResourceDictionary.xaml"/>
+                <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/ButtonAdvTextOnly.xaml"/>
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </UserControl.Resources>
@@ -32,7 +33,8 @@
         </StackPanel>
 
         <syncfusion:ButtonAdv Grid.Row="1" Label="Refresh" Command="{Binding RefreshCommand}"
-                              HorizontalAlignment="Left" Margin="0,0,0,12"/>
+                              HorizontalAlignment="Left" Margin="0,0,0,12"
+                              AutomationProperties.Name="Refresh driver schedule"/>
 
         <syncfusion:SfScheduler Grid.Row="2"
                                 ViewType="Week"

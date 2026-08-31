@@ -8,6 +8,13 @@
              mc:Ignorable="d"
              d:DesignHeight="300"
              d:DesignWidth="500">
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/ButtonAdvTextOnly.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </UserControl.Resources>
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -20,11 +27,13 @@
 
             <syncfusion:SfMaskedEdit x:Name="AddressTextBox"
                      Text="{Binding Street, Mode=TwoWay}"
-                     Margin="0,0,0,10"/>
+                     Margin="0,0,0,10"
+                     AutomationProperties.Name="Street address"/>
 
             <syncfusion:ButtonAdv Label="Validate Address"
                     Click="ValidateAddress_Click"
-                    Margin="0,0,0,10"/>
+                    Margin="0,0,0,10"
+                    AutomationProperties.Name="Validate Address"/>
         </StackPanel>
 
         <StackPanel Grid.Row="1" Margin="10">

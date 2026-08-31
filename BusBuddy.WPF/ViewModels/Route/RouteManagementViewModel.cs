@@ -6,6 +6,7 @@ using BusBuddy.Core;
 using BusBuddy.Core.Data;
 using Microsoft.EntityFrameworkCore;
 using BusBuddy.Core.Services;
+using BusBuddy.Core.Services.Interfaces;
 using BusBuddy.Core.Services.RouteDetermination;
 using BusBuddy.Core.Models;
 using Serilog;
@@ -40,6 +41,7 @@ namespace BusBuddy.WPF.ViewModels.Route
         private readonly IBusBuddyDbContextFactory _contextFactory;
         private readonly RouteService _routeService; // lightweight direct use for assignment (Phase 1)
         private readonly IRouteDeterminationService? _routeDetermination;
+        private readonly IDestinationService? _destinations;
 
         /// <summary>
         /// Buses available for assignment (Active only) — loaded lazily when first needed.
@@ -151,19 +153,22 @@ namespace BusBuddy.WPF.ViewModels.Route
             : this(
                 new BusBuddyDbContextFactory(),
                 null,
-                App.ServiceProvider?.GetService<IRouteDeterminationService>())
+                App.ServiceProvider?.GetService<IRouteDeterminationService>(),
+                App.ServiceProvider?.GetService<IDestinationService>())
         {
         }
 
         public RouteManagementViewModel(
             IBusBuddyDbContextFactory contextFactory,
             IRouteService? routeService,
-            IRouteDeterminationService? routeDetermination)
+            IRouteDeterminationService? routeDetermination,
+            IDestinationService? destinations = null)
         {
             _contextFactory = contextFactory ?? throw new ArgumentNullException(nameof(contextFactory));
             _routeService = routeService as RouteService
                 ?? new RouteService(_contextFactory);
             _routeDetermination = routeDetermination;
+            _destinations = destinations ?? App.ServiceProvider?.GetService<IDestinationService>();
             RoutesView = CollectionViewSource.GetDefaultView(Routes);
             RoutesView.Filter = FilterRoutes;
 
@@ -403,7 +408,8 @@ namespace BusBuddy.WPF.ViewModels.Route
                         FleetKind.HomeToSchool,
                         SelectedRoute?.School,
                         preferSchoolWithStartTime: true,
-                        _routeDetermination)
+                        _routeDetermination,
+                        _destinations)
                     .ConfigureAwait(true);
 
                 StatusMessage = outcome.StatusMessage;
@@ -440,7 +446,8 @@ namespace BusBuddy.WPF.ViewModels.Route
                         FleetKind.Transfer,
                         SelectedRoute?.School,
                         preferSchoolWithStartTime: false,
-                        _routeDetermination)
+                        _routeDetermination,
+                        _destinations)
                     .ConfigureAwait(true);
 
                 await LoadRoutesAsync().ConfigureAwait(true);

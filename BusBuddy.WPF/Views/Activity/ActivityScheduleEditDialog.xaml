@@ -10,7 +10,13 @@
         WindowStartupLocation="CenterOwner"
         ResizeMode="NoResize">
     <Window.Resources>
-        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/SyncfusionV30_Validated_ResourceDictionary.xaml"/>
+                <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/ButtonAdvTextOnly.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+            <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+        </ResourceDictionary>
     </Window.Resources>
 
     <Grid Margin="20">
@@ -33,49 +39,60 @@
                 <TextBlock Text="{Binding Subject}" FontWeight="SemiBold" Margin="0,0,0,10"/>
 
                 <TextBlock Text="Trip type" Margin="0,0,0,4"/>
-                <ComboBox ItemsSource="{Binding TripTypes}" SelectedItem="{Binding TripType}" Height="28" Margin="0,0,0,10"/>
+                <syncfusion:ComboBoxAdv ItemsSource="{Binding TripTypes}" SelectedItem="{Binding TripType, Mode=TwoWay}" Height="32" Margin="0,0,0,10"
+                                        AutomationProperties.Name="Trip type"/>
 
                 <TextBlock Text="Destination" Margin="0,0,0,4"/>
-                <TextBox Text="{Binding ScheduledDestination, UpdateSourceTrigger=PropertyChanged}" Height="28" Margin="0,0,0,10"/>
+                <syncfusion:SfMaskedEdit Text="{Binding ScheduledDestination, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Height="32" Margin="0,0,0,10"
+                                         AutomationProperties.Name="Destination"/>
 
                 <TextBlock Text="Date" Margin="0,0,0,4"/>
-                <DatePicker SelectedDate="{Binding ScheduledDate}" Margin="0,0,0,10"/>
+                <syncfusion:SfDatePicker Value="{Binding ScheduledDate, Mode=TwoWay}" Margin="0,0,0,10"
+                                         AutomationProperties.Name="Scheduled date"/>
 
                 <TextBlock Text="Leave time (hh:mm)" Margin="0,0,0,4"/>
-                <TextBox Text="{Binding LeaveTimeText, UpdateSourceTrigger=LostFocus}" Height="28" Margin="0,0,0,10"/>
+                <syncfusion:SfMaskedEdit Text="{Binding LeaveTimeText, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" Height="32" Margin="0,0,0,10"
+                                         Mask="99:99" AutomationProperties.Name="Leave time"/>
 
                 <TextBlock Text="Event time (hh:mm)" Margin="0,0,0,4"/>
-                <TextBox Text="{Binding EventTimeText, UpdateSourceTrigger=LostFocus}" Height="28" Margin="0,0,0,10"/>
+                <syncfusion:SfMaskedEdit Text="{Binding EventTimeText, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" Height="32" Margin="0,0,0,10"
+                                         Mask="99:99" AutomationProperties.Name="Event time"/>
 
                 <TextBlock Text="Riders" Margin="0,0,0,4"/>
-                <TextBox Text="{Binding ScheduledRiders, UpdateSourceTrigger=PropertyChanged}" Height="28" Margin="0,0,0,10"/>
+                <syncfusion:SfMaskedEdit Text="{Binding ScheduledRiders, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Height="32" Margin="0,0,0,10"
+                                         AutomationProperties.Name="Riders"/>
 
                 <TextBlock Text="Driver" Margin="0,0,0,4"/>
-                <ComboBox ItemsSource="{Binding AvailableDrivers}"
-                          SelectedItem="{Binding SelectedDriver}"
+                <syncfusion:ComboBoxAdv ItemsSource="{Binding AvailableDrivers}"
+                          SelectedItem="{Binding SelectedDriver, Mode=TwoWay}"
                           DisplayMemberPath="DriverName"
-                          Height="28" Margin="0,0,0,10"/>
+                          Height="32" Margin="0,0,0,10"
+                          AutomationProperties.Name="Driver"/>
 
                 <TextBlock Text="Vehicle" Margin="0,0,0,4"/>
-                <ComboBox ItemsSource="{Binding AvailableVehicles}"
-                          SelectedItem="{Binding SelectedVehicle}"
+                <syncfusion:ComboBoxAdv ItemsSource="{Binding AvailableVehicles}"
+                          SelectedItem="{Binding SelectedVehicle, Mode=TwoWay}"
                           DisplayMemberPath="BusNumber"
-                          Height="28" Margin="0,0,0,10"/>
+                          Height="32" Margin="0,0,0,10"
+                          AutomationProperties.Name="Vehicle"/>
 
                 <TextBlock Text="Status" Margin="0,0,0,4"/>
-                <ComboBox ItemsSource="{Binding StatusOptions}" SelectedItem="{Binding Status}" Height="28" Margin="0,0,0,10"/>
+                <syncfusion:ComboBoxAdv ItemsSource="{Binding StatusOptions}" SelectedItem="{Binding Status, Mode=TwoWay}" Height="32" Margin="0,0,0,10"
+                                        AutomationProperties.Name="Status"/>
 
                 <TextBlock Text="Requested by" Margin="0,0,0,4"/>
-                <TextBox Text="{Binding RequestedBy, UpdateSourceTrigger=PropertyChanged}" Height="28" Margin="0,0,0,10"/>
+                <syncfusion:SfMaskedEdit Text="{Binding RequestedBy, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Height="32" Margin="0,0,0,10"
+                                         AutomationProperties.Name="Requested by"/>
 
                 <TextBlock Text="Notes" Margin="0,0,0,4"/>
-                <TextBox Text="{Binding Notes, UpdateSourceTrigger=PropertyChanged}" Height="60" TextWrapping="Wrap" AcceptsReturn="True"/>
+                <syncfusion:SfMaskedEdit Text="{Binding Notes, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Height="60" TextWrapping="Wrap" AcceptsReturn="True"
+                                         AutomationProperties.Name="Notes"/>
             </StackPanel>
         </ScrollViewer>
 
         <TextBlock Grid.Row="2"
                    Text="{Binding ValidationMessage}"
-                   Foreground="IndianRed"
+                   Foreground="{DynamicResource BusBuddy.Brush.Semantic.Danger}"
                    TextWrapping="Wrap"
                    Margin="0,8,0,8"
                    Visibility="{Binding HasValidationErrors, Converter={StaticResource BooleanToVisibilityConverter}}"/>
@@ -83,16 +100,18 @@
         <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right">
             <syncfusion:ButtonAdv x:Name="SaveButton"
                     Label="{Binding SaveButtonText}"
-                    Width="140"
+                    MinWidth="140"
                     Height="35"
                     Margin="0,0,10,0"
                     IsEnabled="{Binding ListsReady}"
-                    Click="SaveButton_Click"/>
+                    Click="SaveButton_Click"
+                    AutomationProperties.Name="Save activity schedule"/>
             <syncfusion:ButtonAdv x:Name="CancelButton"
                     Label="Cancel"
-                    Width="80"
+                    MinWidth="80"
                     Height="35"
-                    Click="CancelButton_Click"/>
+                    Click="CancelButton_Click"
+                    AutomationProperties.Name="Cancel activity schedule"/>
         </StackPanel>
     </Grid>
 </Window>

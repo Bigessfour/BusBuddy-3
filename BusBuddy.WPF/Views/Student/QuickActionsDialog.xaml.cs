@@ -7,15 +7,11 @@ namespace BusBuddy.WPF.Views.Student
         public QuickActionsDialog()
         {
             InitializeComponent();
-            Loaded += QuickActionsDialog_Loaded;
-            CloseButton.Click += (_, __) => Close();
         }
 
-        private void QuickActionsDialog_Loaded(object sender, RoutedEventArgs e)
+        private void CloseButton_Click(object sender, RoutedEventArgs e)
         {
-            AssignRouteButton.Click += AssignRouteButton_Click;
-            FilterActiveButton.Click += FilterActiveButton_Click;
-            ClearFiltersButton.Click += ClearFiltersButton_Click;
+            Close();
         }
 
         private void AssignRouteButton_Click(object sender, RoutedEventArgs e)

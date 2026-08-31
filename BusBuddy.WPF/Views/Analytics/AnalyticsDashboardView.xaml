@@ -8,7 +8,13 @@
              d:DesignHeight="450" d:DesignWidth="800">
 
     <UserControl.Resources>
-        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/SyncfusionV30_Validated_ResourceDictionary.xaml"/>
+                <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/ButtonAdvTextOnly.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+            <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+        </ResourceDictionary>
     </UserControl.Resources>
 
     <Grid Background="{DynamicResource PrimaryBackgroundBrush}">
@@ -28,7 +34,8 @@
                 <TextBlock Text="Analytics Dashboard" FontSize="24" FontWeight="Bold"
                            Foreground="{DynamicResource PrimaryTextBrush}"/>
                 <syncfusion:ButtonAdv Grid.Column="1" Label="Refresh"
-                                      Command="{Binding RefreshCommand}"/>
+                                      Command="{Binding RefreshCommand}"
+                                      AutomationProperties.Name="Refresh analytics"/>
             </Grid>
         </Border>
 
@@ -74,6 +81,12 @@
                     </Grid.RowDefinitions>
                     <TextBlock Text="Route Efficiency" FontWeight="SemiBold" Margin="0,0,0,8"/>
                     <syncfusion:SfChart Grid.Row="1">
+                        <syncfusion:SfChart.PrimaryAxis>
+                            <syncfusion:CategoryAxis/>
+                        </syncfusion:SfChart.PrimaryAxis>
+                        <syncfusion:SfChart.SecondaryAxis>
+                            <syncfusion:NumericalAxis/>
+                        </syncfusion:SfChart.SecondaryAxis>
                         <syncfusion:ColumnSeries ItemsSource="{Binding RouteEfficiency}"
                                                  XBindingPath="Label" YBindingPath="Value" EnableAnimation="True"/>
                     </syncfusion:SfChart>
@@ -106,6 +119,12 @@
                     </Grid.RowDefinitions>
                     <TextBlock Text="Fuel Analytics (30 days)" FontWeight="SemiBold" Margin="0,0,0,8"/>
                     <syncfusion:SfChart Grid.Row="1">
+                        <syncfusion:SfChart.PrimaryAxis>
+                            <syncfusion:CategoryAxis/>
+                        </syncfusion:SfChart.PrimaryAxis>
+                        <syncfusion:SfChart.SecondaryAxis>
+                            <syncfusion:NumericalAxis/>
+                        </syncfusion:SfChart.SecondaryAxis>
                         <syncfusion:ColumnSeries ItemsSource="{Binding FuelAnalytics}"
                                                  XBindingPath="Label" YBindingPath="Value" EnableAnimation="True"/>
                     </syncfusion:SfChart>

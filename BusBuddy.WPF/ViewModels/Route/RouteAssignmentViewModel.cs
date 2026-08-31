@@ -10,7 +10,6 @@ using BusBuddy.Core.Utilities;
 using BusBuddy.WPF.Commands;
 using Serilog;
 using Microsoft.Extensions.DependencyInjection; // For resolving GoogleEarthViewModel / services
-using BusBuddy.WPF.ViewModels; // MainWindowViewModel refresh after generate
 using BusBuddy.WPF.ViewModels.GoogleEarth; // Map markers
 using BusBuddy.WPF.Views.Route;
 using BusBuddy.WPF.Views.Driver;
@@ -28,7 +27,7 @@ namespace BusBuddy.WPF.ViewModels.Route
     /// Implements comprehensive route building workflow with MVVM compliance
     /// Supports Syncfusion SfDataGrid integration and Result pattern error handling
     /// </summary>
-    public class RouteAssignmentViewModel : INotifyPropertyChanged, IDisposable
+    public partial class RouteAssignmentViewModel : INotifyPropertyChanged, IDisposable
     {
         // Backing fields for all properties (restored for CS0103 fix)
         private ObservableCollection<BusBuddy.Core.Models.Route> _availableRoutes = new();
@@ -58,6 +57,8 @@ namespace BusBuddy.WPF.ViewModels.Route
         private string _startTimeString = "07:30";
         private readonly IRouteService? _routeService;
         private readonly IRouteDeterminationService? _routeDetermination;
+        private readonly IDestinationService? _destinations;
+        private readonly GoogleEarthViewModel? _map;
         private static readonly ILogger Logger = Log.ForContext<RouteAssignmentViewModel>();
     private Timer? _retimeDebounceTimer; // Debounce timer for auto-retiming after structural stop changes
     private const int RetimeDebounceMs = 600; // Delay before auto timing after modifications
@@ -69,13 +70,23 @@ namespace BusBuddy.WPF.ViewModels.Route
         // 3) routeService + preselected route (used by RouteAssignmentView overload)
         public RouteAssignmentViewModel()
         {
+            IRouteService? routes = null;
+            IRouteDeterminationService? planner = null;
+            IDestinationService? dest = null;
+            GoogleEarthViewModel? map = null;
             try
             {
-                // Try resolve IRouteService from DI if available
-                _routeService = App.ServiceProvider?.GetService<IRouteService>();
-                _routeDetermination = App.ServiceProvider?.GetService<IRouteDeterminationService>();
+                var sp = App.ServiceProvider;
+                routes = sp?.GetService<IRouteService>();
+                planner = sp?.GetService<IRouteDeterminationService>();
+                dest = sp?.GetService<IDestinationService>();
+                map = sp?.GetService<GoogleEarthViewModel>();
             }
             catch { }
+            _routeService = routes;
+            _routeDetermination = planner;
+            _destinations = dest;
+            _map = map;
             Initialize();
         }
 
@@ -97,14 +108,14 @@ namespace BusBuddy.WPF.ViewModels.Route
         public RouteAssignmentViewModel(IRouteService? routeService)
         {
             _routeService = routeService;
-            _routeDetermination = App.ServiceProvider?.GetService<IRouteDeterminationService>();
+            (_routeDetermination, _destinations, _map) = ResolveGenerateServices();
             Initialize();
         }
 
         public RouteAssignmentViewModel(IRouteService? routeService, BusBuddy.Core.Models.Route preselectedRoute)
         {
             _routeService = routeService;
-            _routeDetermination = App.ServiceProvider?.GetService<IRouteDeterminationService>();
+            (_routeDetermination, _destinations, _map) = ResolveGenerateServices();
             _preselectedRouteId = preselectedRoute?.RouteId;
             Initialize();
             // If the route collection already loaded synchronously (mock), select it
@@ -112,6 +123,16 @@ namespace BusBuddy.WPF.ViewModels.Route
             {
                 SelectedRoute = preselectedRoute;
             }
+        }
+
+        private static (IRouteDeterminationService? Planner, IDestinationService? Destinations, GoogleEarthViewModel? Map)
+            ResolveGenerateServices()
+        {
+            var sp = App.ServiceProvider;
+            return (
+                sp?.GetService<IRouteDeterminationService>(),
+                sp?.GetService<IDestinationService>(),
+                sp?.GetService<GoogleEarthViewModel>());
         }
 
         private void Initialize()
@@ -562,72 +583,6 @@ namespace BusBuddy.WPF.ViewModels.Route
             ExportRouteAssignmentPdfAsync(includeMap: true);
         }
 
-        public async Task GenerateRoutesAsync() =>
-            await GenerateFleetAsync(FleetKind.HomeToSchool, preferSchoolWithStartTime: true).ConfigureAwait(true);
-
-        public async Task GenerateTransferRoutesAsync() =>
-            await GenerateFleetAsync(FleetKind.Transfer, preferSchoolWithStartTime: false).ConfigureAwait(true);
-
-        private async Task GenerateFleetAsync(FleetKind fleet, bool preferSchoolWithStartTime)
-        {
-            if (_isGeneratingRoutes)
-            {
-                return;
-            }
-
-            _isGeneratingRoutes = true;
-            RefreshCommandStates();
-            try
-            {
-                StatusMessage = fleet == FleetKind.Transfer
-                    ? "Generating transfer routes..."
-                    : "Generating routes...";
-
-                var outcome = await RouteGenerationCoordinator.GenerateAsync(
-                        fleet,
-                        SelectedRoute?.School,
-                        preferSchoolWithStartTime,
-                        _routeDetermination)
-                    .ConfigureAwait(true);
-
-                StatusMessage = outcome.StatusMessage;
-                if (!outcome.Success || outcome.Result is null)
-                {
-                    return;
-                }
-
-                if (outcome.Result.Success)
-                {
-                    var mapVm = App.ServiceProvider?.GetService<GoogleEarthViewModel>();
-                    mapVm?.ApplyGenerationResult(outcome.Result);
-                }
-
-                await LoadDataFromServiceAsync().ConfigureAwait(true);
-
-                var draft = AvailableRoutes.FirstOrDefault(r =>
-                    r.RouteName.StartsWith("Draft-", StringComparison.OrdinalIgnoreCase));
-                if (draft is not null)
-                {
-                    SelectedRoute = draft;
-                }
-
-                if (System.Windows.Application.Current?.MainWindow?.DataContext is MainWindowViewModel mainVm)
-                {
-                    await mainVm.RefreshRoutesAsync().ConfigureAwait(true);
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger.Error(ex, "Generate routes failed fleet={Fleet}", fleet);
-                StatusMessage = $"Error generating routes: {ex.Message}";
-            }
-            finally
-            {
-                _isGeneratingRoutes = false;
-                RefreshCommandStates();
-            }
-        }
-
         private void ExportRouteAssignmentPdfAsync(bool includeMap)
         {
             if (SelectedRoute == null)
@@ -646,7 +601,7 @@ namespace BusBuddy.WPF.ViewModels.Route
                 {
                     try
                     {
-                        var mapVm = App.ServiceProvider?.GetService<GoogleEarthViewModel>();
+                        var mapVm = _map;
                         if (mapVm != null)
                         {
                             if (mapVm.LatestMapSnapshotPng == null || mapVm.LatestMapSnapshotPng.Length == 0)
@@ -2400,21 +2355,14 @@ namespace BusBuddy.WPF.ViewModels.Route
                 StatusMessage = $"Plotting {AssignedStudentCount} students for {SelectedRoute.RouteName}...";
                 Logger.Information("PlotRouteOnMap invoked for RouteId={RouteId} Name={RouteName}", SelectedRoute.RouteId, SelectedRoute.RouteName);
 
-                var sp = App.ServiceProvider;
-                if (sp == null)
-                {
-                    StatusMessage = "Mapping unavailable (no service provider)";
-                    return;
-                }
-
-                var mapVm = sp.GetService<GoogleEarthViewModel>();
+                var mapVm = _map;
                 if (mapVm == null)
                 {
                     StatusMessage = "Map VM not registered";
                     return;
                 }
 
-                var geocoder = sp.GetService<IGeocodingService>();
+                var geocoder = App.ServiceProvider?.GetService<IGeocodingService>();
 
                 // Remove previous dynamic student markers (keep seeded school anchor)
                 for (int i = mapVm.MapMarkers.Count - 1; i >= 0; i--)

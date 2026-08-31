@@ -3,6 +3,14 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:syncfusion="http://schemas.syncfusion.com/wpf"
              xmlns:syncfusiontools="clr-namespace:Syncfusion.Windows.Tools.Controls;assembly=Syncfusion.Tools.WPF">
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/SyncfusionV30_Validated_ResourceDictionary.xaml"/>
+                <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/ButtonAdvTextOnly.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </UserControl.Resources>
     <Grid Background="{DynamicResource PrimaryBackgroundBrush}" Margin="20">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -21,7 +29,8 @@
                 <TextBlock Text="Theme" FontWeight="SemiBold" Margin="0,0,0,6"/>
                 <syncfusion:ComboBoxAdv ItemsSource="{Binding AvailableThemes}"
                                         SelectedItem="{Binding SelectedTheme, Mode=TwoWay}"
-                                        Width="220" Margin="0,0,0,20"/>
+                                        Width="220" Margin="0,0,0,20"
+                                        AutomationProperties.Name="Application theme"/>
 
                 <syncfusiontools:ToggleButtonExt Content="Enable activity logging"
                                              IsChecked="{Binding EnableActivityLogging, Mode=TwoWay}"
@@ -31,8 +40,10 @@
                                              Margin="0,0,0,20"/>
 
                 <StackPanel Orientation="Horizontal">
-                    <syncfusion:ButtonAdv Label="Save" Command="{Binding SaveCommand}" Margin="0,0,10,0"/>
-                    <syncfusion:ButtonAdv Label="Reset Defaults" Command="{Binding ResetCommand}"/>
+                    <syncfusion:ButtonAdv Label="Save" Command="{Binding SaveCommand}" Margin="0,0,10,0"
+                                          AutomationProperties.Name="Save settings"/>
+                    <syncfusion:ButtonAdv Label="Reset Defaults" Command="{Binding ResetCommand}"
+                                          AutomationProperties.Name="Reset settings"/>
                 </StackPanel>
             </StackPanel>
         </Border>

@@ -11,6 +11,7 @@
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/SyncfusionV30_Validated_ResourceDictionary.xaml" />
+                <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/ButtonAdvTextOnly.xaml"/>
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </syncfusion:ChromelessWindow.Resources>
@@ -100,7 +101,8 @@
                                   AutomationProperties.Name="Close training checklist" />
             <TextBlock Text="{Binding StatusMessage}"
                        VerticalAlignment="Center"
-                       TextWrapping="Wrap" />
+                       TextWrapping="Wrap"
+                       Foreground="{DynamicResource BusBuddy.Brush.Text.Secondary}" />
         </DockPanel>
     </Grid>
 </syncfusion:ChromelessWindow>

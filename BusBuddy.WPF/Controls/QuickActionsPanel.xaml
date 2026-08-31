@@ -15,13 +15,14 @@
             <Setter Property="FontSize" Value="14"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="Background" Value="{DynamicResource AccentBackgroundBrush}"/>
-            <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource BusBuddy.Brush.Text.OnPrimary}"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="CornerRadius" Value="4"/>
             <Setter Property="SizeMode" Value="Normal"/>
-            <Setter Property="IconHeight" Value="16"/>
-            <Setter Property="IconWidth" Value="16"/>
+            <Setter Property="IconHeight" Value="0"/>
+            <Setter Property="IconWidth" Value="0"/>
+            <Setter Property="SmallIcon" Value="{x:Null}"/>
         </Style>
     </UserControl.Resources>
 
@@ -37,19 +38,16 @@
         <StackPanel Grid.Row="1" Orientation="Vertical" HorizontalAlignment="Center">
             <syncfusion:ButtonAdv Label="Add Vehicle"
                     Style="{StaticResource QuickActionButtonStyle}"
-                    SizeMode="Normal"
-                    SmallIcon="pack://application:,,,/Assets/Icons/vehicle-add.png"
-                    Click="AddVehicle_Click"/>
+                    Click="AddVehicle_Click"
+                    AutomationProperties.Name="Add Vehicle"/>
             <syncfusion:ButtonAdv Label="Add Driver"
                     Style="{StaticResource QuickActionButtonStyle}"
-                    SizeMode="Normal"
-                    SmallIcon="pack://application:,,,/Assets/Icons/driver-add.png"
-                    Click="AddDriver_Click"/>
+                    Click="AddDriver_Click"
+                    AutomationProperties.Name="Add Driver"/>
             <syncfusion:ButtonAdv Label="Schedule Route"
                     Style="{StaticResource QuickActionButtonStyle}"
-                    SizeMode="Normal"
-                    SmallIcon="pack://application:,,,/Assets/Icons/route-schedule.png"
-                    Click="ScheduleRoute_Click"/>
+                    Click="ScheduleRoute_Click"
+                    AutomationProperties.Name="Schedule Route"/>
         </StackPanel>
     </Grid>
 </UserControl>

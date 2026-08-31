@@ -12,6 +12,7 @@
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/SyncfusionV30_Validated_ResourceDictionary.xaml"/>
+                <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/ButtonAdvTextOnly.xaml"/>
             </ResourceDictionary.MergedDictionaries>
             <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
         </ResourceDictionary>
@@ -33,13 +34,19 @@
         </StackPanel>
 
         <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,12">
-            <syncfusion:ButtonAdv Label="Add Record" Command="{Binding AddCommand}" Margin="0,0,8,0"/>
-            <syncfusion:ButtonAdv Label="Edit" Command="{Binding EditCommand}" IsEnabled="{Binding CanEdit}" Margin="0,0,8,0"/>
-            <syncfusion:ButtonAdv Label="Delete" Command="{Binding DeleteCommand}" IsEnabled="{Binding CanDelete}" Margin="0,0,8,0"/>
+            <syncfusion:ButtonAdv Label="Add Record" Command="{Binding AddCommand}" Margin="0,0,8,0"
+                                  AutomationProperties.Name="Add fuel record"/>
+            <syncfusion:ButtonAdv Label="Edit" Command="{Binding EditCommand}" IsEnabled="{Binding CanEdit}" Margin="0,0,8,0"
+                                  AutomationProperties.Name="Edit fuel record"/>
+            <syncfusion:ButtonAdv Label="Delete" Command="{Binding DeleteCommand}" IsEnabled="{Binding CanDelete}" Margin="0,0,8,0"
+                                  AutomationProperties.Name="Delete fuel record"/>
             <Separator Margin="8,0"/>
-            <syncfusion:ButtonAdv Label="Export CSV" Command="{Binding ExportCommand}" Margin="0,0,8,0"/>
-            <syncfusion:ButtonAdv Label="Fuel Report" Command="{Binding ReportCommand}" Margin="0,0,8,0"/>
-            <syncfusion:ButtonAdv Label="Reconciliation" Command="{Binding ReconciliationCommand}"/>
+            <syncfusion:ButtonAdv Label="Export CSV" Command="{Binding ExportCommand}" Margin="0,0,8,0"
+                                  AutomationProperties.Name="Export fuel CSV"/>
+            <syncfusion:ButtonAdv Label="Fuel Report" Command="{Binding ReportCommand}" Margin="0,0,8,0"
+                                  AutomationProperties.Name="Fuel report"/>
+            <syncfusion:ButtonAdv Label="Reconciliation" Command="{Binding ReconciliationCommand}"
+                                  AutomationProperties.Name="Fuel reconciliation"/>
         </StackPanel>
 
         <Grid Grid.Row="2">

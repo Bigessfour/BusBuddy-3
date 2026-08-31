@@ -11,7 +11,7 @@ namespace BusBuddy.Tests.Core.RouteDetermination;
 
 [TestFixture]
 [Category("Unit")]
-public class AssignFitnessTests
+public class AssignFitnessEvaluatorTests
 {
     private sealed class TestDbContextFactory : IBusBuddyDbContextFactory
     {

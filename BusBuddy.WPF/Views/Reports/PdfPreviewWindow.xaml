@@ -7,6 +7,13 @@
     WindowStartupLocation="CenterOwner"
     ResizeMode="CanResize"
     MinWidth="600" MinHeight="400">
+    <syncfusion:ChromelessWindow.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/ButtonAdvTextOnly.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </syncfusion:ChromelessWindow.Resources>
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -14,8 +21,10 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
         <DockPanel Grid.Row="0" LastChildFill="False" Margin="8" >
-            <syncfusion:ButtonAdv Label="Print" Margin="0,0,8,0" Padding="12,6" Click="Print_Click"/>
-            <syncfusion:ButtonAdv Label="Close" Padding="12,6" Click="Close_Click"/>
+            <syncfusion:ButtonAdv Label="Print" Margin="0,0,8,0" Padding="12,6" Click="Print_Click"
+                                  AutomationProperties.Name="Print PDF"/>
+            <syncfusion:ButtonAdv Label="Close" Padding="12,6" Click="Close_Click"
+                                  AutomationProperties.Name="Close PDF preview"/>
         </DockPanel>
     <!-- Removed ShowPrintStatusDialog (not in current Syncfusion PdfViewerControl API version) -->
     <!-- Basic PdfViewerControl (removed unsupported properties for current Syncfusion version) -->

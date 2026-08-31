@@ -47,30 +47,36 @@
         </Border>
         <local:RouteStopsEditor Grid.Row="3" />
         <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,14,0,0">
-            <syncfusion:ButtonAdv Label="Create Route" 
-                                  Command="{Binding CreateRouteCommand}" 
+            <syncfusion:ButtonAdv Label="Create Route"
+                                  Command="{Binding CreateRouteCommand}"
                                   SizeMode="Normal"
-                                  IconHeight="16" IconWidth="16"
+                                  IconHeight="0" IconWidth="0"
+                                  SmallIcon="{x:Null}"
                                   CornerRadius="4"
-                                  Background="{DynamicResource AccentBackgroundBrush}"
-                                  Foreground="{DynamicResource PrimaryTextBrush}"
-                                  Padding="14,8" Margin="0,0,8,0" />
-            <syncfusion:ButtonAdv Label="Save Changes" 
-                                  Command="{Binding SaveRouteCommand}" 
+                                  Background="{DynamicResource BusBuddy.Brush.Primary}"
+                                  Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}"
+                                  Padding="14,8" Margin="0,0,8,0"
+                                  AutomationProperties.Name="Create Route"/>
+            <syncfusion:ButtonAdv Label="Save Changes"
+                                  Command="{Binding SaveRouteCommand}"
                                   SizeMode="Normal"
-                                  IconHeight="16" IconWidth="16"
+                                  IconHeight="0" IconWidth="0"
+                                  SmallIcon="{x:Null}"
                                   CornerRadius="4"
-                                  Background="{DynamicResource AccentBackgroundBrush}"
-                                  Foreground="{DynamicResource PrimaryTextBrush}"
-                                  Padding="14,8" Margin="0,0,8,0" />
-            <syncfusion:ButtonAdv Label="Cancel" 
-                                  Command="{Binding CancelRouteBuildingCommand}" 
+                                  Background="{DynamicResource BusBuddy.Brush.Primary}"
+                                  Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}"
+                                  Padding="14,8" Margin="0,0,8,0"
+                                  AutomationProperties.Name="Save Route"/>
+            <syncfusion:ButtonAdv Label="Cancel"
+                                  Command="{Binding CancelRouteBuildingCommand}"
                                   SizeMode="Normal"
-                                  IconHeight="16" IconWidth="16"
+                                  IconHeight="0" IconWidth="0"
+                                  SmallIcon="{x:Null}"
                                   CornerRadius="4"
-                                  Background="{DynamicResource SecondaryBackgroundBrush}"
-                                  Foreground="{DynamicResource PrimaryTextBrush}"
-                                  Padding="14,8" />
+                                  Background="{DynamicResource ButtonBackgroundBrush}"
+                                  Foreground="{DynamicResource ButtonForegroundBrush}"
+                                  Padding="14,8"
+                                  AutomationProperties.Name="Cancel route builder"/>
         </StackPanel>
     </Grid>
 </UserControl>

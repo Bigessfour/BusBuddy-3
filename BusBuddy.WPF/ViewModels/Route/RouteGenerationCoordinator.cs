@@ -1,7 +1,6 @@
 using BusBuddy.Core.Models;
 using BusBuddy.Core.Services.Interfaces;
 using BusBuddy.Core.Services.RouteDetermination;
-using Microsoft.Extensions.DependencyInjection;
 using Serilog;
 
 namespace BusBuddy.WPF.ViewModels.Route;
@@ -24,15 +23,14 @@ internal static class RouteGenerationCoordinator
         FleetKind fleet,
         string? preferredSchoolName,
         bool preferSchoolWithStartTime,
-        IRouteDeterminationService? planner = null)
+        IRouteDeterminationService? planner,
+        IDestinationService? destinations)
     {
-        planner ??= global::BusBuddy.WPF.App.ServiceProvider?.GetService<IRouteDeterminationService>();
         if (planner is null)
         {
             return new Outcome(false, false, "Route determination service unavailable", null);
         }
 
-        var destinations = global::BusBuddy.WPF.App.ServiceProvider?.GetService<IDestinationService>();
         if (destinations is null)
         {
             return new Outcome(false, false, "Destination service unavailable", null);
