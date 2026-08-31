@@ -165,4 +165,7 @@
   <ItemGroup>
     <InternalsVisibleTo Include="BusBuddy.Tests" />
   </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="BusBuddy.Tests" />
+  </ItemGroup>
 </Project>
