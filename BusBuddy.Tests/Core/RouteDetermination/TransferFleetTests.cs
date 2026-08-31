@@ -80,7 +80,7 @@ public class TransferFleetTests
     public void TransferBothSlot_ProducesDistinctAmAndPmProposalNames()
     {
         // Naming contract used by GenerateTransferFleetAsync for RouteTimeSlotKind.Both
-        const string amName = "Draft-Xfer-Wiley-c1-1";
+        const string amName = "Draft-Xfer-Oakridge-c1-1";
         var pmName = $"{amName}-PM";
         Assert.That(pmName, Does.EndWith("-PM"));
         Assert.That(amName, Does.Not.EndWith("-PM"));

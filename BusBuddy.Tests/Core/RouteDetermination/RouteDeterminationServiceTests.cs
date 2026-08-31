@@ -66,7 +66,7 @@ public class RouteDeterminationServiceTests
             {
                 Name = "No Bell School",
                 Address = "1 Main",
-                City = "Wiley",
+                City = "Oakridge",
                 State = "CO",
                 ZipCode = "81092",
                 DestinationType = DestinationTypes.School,
@@ -99,9 +99,9 @@ public class RouteDeterminationServiceTests
         {
             var school = new Destination
             {
-                Name = "Wiley School",
+                Name = "Oakridge School",
                 Address = "510 Ward St",
-                City = "Wiley",
+                City = "Oakridge",
                 State = "CO",
                 ZipCode = "81092",
                 DestinationType = DestinationTypes.School,
@@ -134,7 +134,7 @@ public class RouteDeterminationServiceTests
                     StudentNumber = $"R{i}",
                     Grade = "5",
                     HomeAddress = "Addr",
-                    City = "Wiley",
+                    City = "Oakridge",
                     State = "CO",
                     Zip = "81092",
                     Latitude = 38.150m + i * 0.0002m,

@@ -1,6 +1,6 @@
 # BusBuddy Function Tree (overview)
 
-High-level surface area. Due-outs: [action-items.md](./action-items.md). Generated scan: [function-inventory.generated.md](./function-inventory.generated.md).
+High-level surface area. Due-outs: [action-items.md](./action-items.md). Clerk write path: [clerk-path.md](./clerk-path.md). Generated scan: [function-inventory.generated.md](./function-inventory.generated.md).
 
 ```mermaid
 flowchart TB
@@ -17,6 +17,7 @@ flowchart TB
     Dashboard[DashboardView]
     MaintView[MaintenanceView]
     SchedView[DriverScheduleView]
+    MapView[MapView]
     Theme[SyncfusionThemeManager]
   end
   subgraph core [P1 Core]
@@ -37,7 +38,6 @@ flowchart TB
     MapsValidate[GoogleAddressValidationClient]
     MapsRoute[GoogleRoutingService]
     Metrics[DashboardMetricsService]
-    Shape[ShapefileEligibilityService]
   end
   subgraph data [Data]
     EF[EF + Postgres Docker]
@@ -51,6 +51,8 @@ flowchart TB
   Students --> Seed
   Students --> Opt
   Students --> MapsValidate
+  MapView --> Geo
+  MapView --> MapsValidate
   RouteAssign --> RouteDet
   Reports --> ReportsSvc
   ReportsSvc --> Pdf

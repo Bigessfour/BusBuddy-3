@@ -21,16 +21,14 @@ using System.Windows.Media.Imaging; // For RenderTargetBitmap / PngBitmapEncoder
 using System.IO; // For saving generated eligibility PDF to disk
 using BusBuddy.WPF;
 
-namespace BusBuddy.WPF.ViewModels.GoogleEarth
+namespace BusBuddy.WPF.ViewModels.Map
 {
     /// <summary>
-    /// ViewModel for Google Earth integration view
-    /// Manages map layers, route visualization, and geographic data
+    /// ViewModel for the Syncfusion SfMap surface (OpenStreetMap + Maps Platform geocoding).
     /// </summary>
-    public class GoogleEarthViewModel : BaseViewModel // VM dedup: BaseViewModelMvp removed (legacy MVP base); inheriting standard BaseViewModel now
+    public class MapViewModel : BaseViewModel // VM dedup: BaseViewModelMvp removed (legacy MVP base); inheriting standard BaseViewModel now
     {
     private readonly IGeoDataService _geoDataService;
-    private readonly IEligibilityService? _eligibilityService;
     /// <summary>
     /// Optional geocoder for converting addresses to coordinates.
     /// </summary>
@@ -41,7 +39,7 @@ namespace BusBuddy.WPF.ViewModels.GoogleEarth
     private readonly IBusService? _busService;
     private readonly IServiceScopeFactory? _scopeFactory;
         // Serilog logger with enrichments for this ViewModel
-        private static readonly new Serilog.ILogger Logger = Serilog.Log.ForContext<GoogleEarthViewModel>();
+        private static readonly new Serilog.ILogger Logger = Serilog.Log.ForContext<MapViewModel>();
 
         private ObservableCollection<RouteModel> _routes = new();
         private RouteModel? _selectedRoute;
@@ -60,8 +58,6 @@ namespace BusBuddy.WPF.ViewModels.GoogleEarth
     ];
     private ObservableCollection<BusBuddy.Core.Models.Bus> _activeBuses = new();
     private BusBuddy.Core.Models.Bus? _selectedBus;
-    private bool _districtBoundaryVisible;
-    private bool _townBoundaryVisible;
     private byte[]? _latestMapSnapshotPng; // Holds last captured map snapshot (PNG bytes) for PDF embedding
 
     /// <summary>
@@ -95,10 +91,9 @@ namespace BusBuddy.WPF.ViewModels.GoogleEarth
             set => SetProperty(ref _latestMapSnapshotPng, value);
         }
 
-    public GoogleEarthViewModel(IGeoDataService geoDataService, IEligibilityService? eligibilityService = null, IGeocodingService? geocodingService = null, BusBuddy.Core.Services.IStudentService? studentService = null, IBusService? busService = null, IServiceScopeFactory? scopeFactory = null, IRoutingService? routingService = null)
+    public MapViewModel(IGeoDataService geoDataService, IGeocodingService? geocodingService = null, BusBuddy.Core.Services.IStudentService? studentService = null, IBusService? busService = null, IServiceScopeFactory? scopeFactory = null, IRoutingService? routingService = null)
         {
             _geoDataService = geoDataService ?? throw new ArgumentNullException(nameof(geoDataService));
-            _eligibilityService = eligibilityService; // optional during MVP
             _geocodingService = geocodingService; // optional until wired
             _routingService = routingService;
             _studentService = studentService;
@@ -119,9 +114,6 @@ namespace BusBuddy.WPF.ViewModels.GoogleEarth
             TrackSelectedBusCommand = new RelayCommand(_ => TrackSelectedBus(), _ => SelectedBus != null);
             ResetViewCommand = new RelayCommand(_ => ResetView());
 
-            // Demo data omitted (Bus model props vary; SfDataGrid element added for Finish UI - populates at runtime via services)
-            CheckEligibilityCommand = new RelayCommand(async _ => await CheckEligibilityAsync(), _ => _eligibilityService != null);
-
             // Print current route map/directions
             PrintRouteMapsCommand = new RelayCommand(_ => OnPrintRequested(), _ => true);
 
@@ -132,15 +124,7 @@ namespace BusBuddy.WPF.ViewModels.GoogleEarth
             AddMarkerCommand = new RelayCommand(p => AddMarkerFromParam(p));
             BulkPlotEligibleStudentsCommand = new RelayCommand(async _ => await BulkPlotEligibleStudentsAsync());
 
-            // Reasonable defaults
-            DistrictBoundaryVisible = false;
-            TownBoundaryVisible = false;
-
-            // Seed a marker for Wiley School so the map has an anchor
-            MapMarkers = new ObservableCollection<MapMarker>
-            {
-                MapMarker.FromDegrees(WileyMapDefaults.SchoolLatitude, WileyMapDefaults.SchoolLongitude, WileyMapDefaults.SchoolLabel)
-            };
+            MapMarkers = new ObservableCollection<MapMarker>();
 
             _ = InitializeMapDataAsync();
         }
@@ -387,36 +371,6 @@ namespace BusBuddy.WPF.ViewModels.GoogleEarth
             "OpenStreetMap"
         };
 
-        /// <summary>
-        /// Toggle to show or hide the school district boundary overlay layer
-        /// </summary>
-        public bool DistrictBoundaryVisible
-        {
-            get => _districtBoundaryVisible;
-            set
-            {
-                if (SetProperty(ref _districtBoundaryVisible, value))
-                {
-                    Logger.Information("District boundary overlay visibility changed: {Visible}", value);
-                }
-            }
-        }
-
-        /// <summary>
-        /// Toggle to show or hide the town boundary overlay (Wiley town limits)
-        /// </summary>
-        public bool TownBoundaryVisible
-        {
-            get => _townBoundaryVisible;
-            set
-            {
-                if (SetProperty(ref _townBoundaryVisible, value))
-                {
-                    Logger.Information("Town boundary overlay visibility changed: {Visible}", value);
-                }
-            }
-        }
-
         #endregion
 
         #region Commands
@@ -434,7 +388,6 @@ namespace BusBuddy.WPF.ViewModels.GoogleEarth
     public ICommand ShowSchoolsCommand { get; private set; } = null!;
     public ICommand TrackSelectedBusCommand { get; private set; } = null!;
     public ICommand ResetViewCommand { get; private set; } = null!;
-    public ICommand CheckEligibilityCommand { get; private set; } = null!;
     public ICommand AddMarkerCommand { get; private set; } = null!;
     public ICommand PrintRouteMapsCommand { get; private set; } = null!;
     public ICommand GenerateEligibilityRoutePdfCommand { get; private set; } = null!; // New command to trigger eligibility PDF generation
@@ -451,7 +404,7 @@ namespace BusBuddy.WPF.ViewModels.GoogleEarth
                 IsMapLoading = true;
                 StatusMessage = "Loading routes...";
 
-                Logger.Information("Loading routes for Google Earth integration");
+                Logger.Information("Loading routes for district map");
 
                 var routes = await _geoDataService.GetRoutesWithGeoDataAsync();
 
@@ -466,9 +419,9 @@ namespace BusBuddy.WPF.ViewModels.GoogleEarth
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Error loading routes for Google Earth");
+                Logger.Error(ex, "Error loading routes for the map");
                 StatusMessage = "Error loading routes";
-                ShowError("Failed to load routes for Google Earth integration");
+                ShowError("Failed to load routes for district map");
             }
             finally
             {
@@ -614,8 +567,8 @@ namespace BusBuddy.WPF.ViewModels.GoogleEarth
         }
 
         /// <summary>
-        /// Automatically loads all students, filters out Lamar and in-town Wiley addresses, geocodes missing coordinates, eligibility-checks, and plots markers.
-        /// Pattern leverages existing IStudentService + IGeocodingService + IEligibilityService interfaces. All operations are sequential for MVP reliability.
+        /// Automatically loads all students, geocodes missing coordinates, and plots markers.
+        /// Anyone already in the system is treated as eligible — no geofence.
         /// </summary>
         private async Task BulkPlotEligibleStudentsAsync()
         {
@@ -645,16 +598,10 @@ namespace BusBuddy.WPF.ViewModels.GoogleEarth
                 return;
             }
 
-            // Filter: exclude Lamar anywhere in address, and exclude obvious in-town Wiley addresses (simple contains heuristic on HomeAddress / City == Wiley)
-            var filtered = students.Where(s =>
-                (string.IsNullOrWhiteSpace(s.HomeAddress) || !s.HomeAddress.Contains("Lamar", StringComparison.OrdinalIgnoreCase)) &&
-                (string.IsNullOrWhiteSpace(s.City) || !s.City.Equals("Wiley", StringComparison.OrdinalIgnoreCase))
-            ).ToList();
-
             int geocoded = 0, eligibleCount = 0, plotted = 0;
-            StatusMessage = $"Filtering {filtered.Count} students...";
+            StatusMessage = $"Plotting {students.Count} students...";
 
-            foreach (var stu in filtered)
+            foreach (var stu in students)
             {
                 double? lat = (double?)stu.Latitude; // Student entity uses decimal?; cast carefully
                 double? lon = (double?)stu.Longitude;
@@ -682,23 +629,6 @@ namespace BusBuddy.WPF.ViewModels.GoogleEarth
                     continue; // cannot plot
                 }
 
-                bool eligible = true; // Default to true if no service
-                if (_eligibilityService != null)
-                {
-                    try
-                    {
-                        eligible = await _eligibilityService.IsEligibleAsync(lat.Value, lon.Value);
-                    }
-                    catch (Exception ex)
-                    {
-                        Logger.Warning(ex, "Eligibility check failed for student {Id}", stu.StudentId);
-                        eligible = false;
-                    }
-                }
-                if (!eligible)
-                {
-                    continue;
-                }
                 eligibleCount++;
 
                 // Plot marker; label with name (or ID) — clustering handled in PlotStop
@@ -713,8 +643,8 @@ namespace BusBuddy.WPF.ViewModels.GoogleEarth
                 }
             }
 
-            StatusMessage = $"Plotted {plotted} markers (Eligible {eligibleCount}, Geocoded {geocoded})";
-            Logger.Information("Bulk plot complete Eligible={Eligible} Geocoded={Geocoded} Plotted={Plotted} From={Filtered} Total={Total}", eligibleCount, geocoded, plotted, filtered.Count, students.Count);
+            StatusMessage = $"Plotted {plotted} markers (In system {eligibleCount}, Geocoded {geocoded})";
+            Logger.Information("Bulk plot complete InSystem={Eligible} Geocoded={Geocoded} Plotted={Plotted} Total={Total}", eligibleCount, geocoded, plotted, students.Count);
         }
 
         private async Task UpdateMapForRouteAsync(string routeName)
@@ -899,13 +829,9 @@ namespace BusBuddy.WPF.ViewModels.GoogleEarth
                     plotted++;
                 }
 
-                if (plotted == 0)
-                {
-                    PlotStop(WileyMapDefaults.SchoolLatitude, WileyMapDefaults.SchoolLongitude, null, WileyMapDefaults.SchoolLabel);
-                    plotted = 1;
-                }
-
-                StatusMessage = $"Showing {plotted} school(s) on map";
+                StatusMessage = plotted == 0
+                    ? "No schools with coordinates — add a school destination"
+                    : $"Showing {plotted} school(s) on map";
                 ViewResetRequested?.Invoke(this, EventArgs.Empty);
             }
             catch (Exception ex)
@@ -943,7 +869,7 @@ namespace BusBuddy.WPF.ViewModels.GoogleEarth
                 RouteLinePoints.Clear();
                 RouteLineUpdated?.Invoke(this, new RouteLineEventArgs(RouteLinePoints));
                 ViewResetRequested?.Invoke(this, EventArgs.Empty);
-                StatusMessage = "Map reset to Wiley";
+                StatusMessage = "Map view reset";
             }
             catch (Exception ex)
             {
@@ -1011,8 +937,7 @@ namespace BusBuddy.WPF.ViewModels.GoogleEarth
             {
                 if (param is null)
                 {
-                    // Demo fallback – center of Wiley
-                    PlotStop(WileyMapDefaults.SchoolLatitude, WileyMapDefaults.SchoolLongitude, null, "New Stop");
+                    PlotStop(MapDefaults.FallbackLatitude, MapDefaults.FallbackLongitude, null, "New Stop");
                     return;
                 }
 
@@ -1097,7 +1022,7 @@ namespace BusBuddy.WPF.ViewModels.GoogleEarth
         }
 
         /// <summary>
-        /// MVP helper: Build a pseudo-route PDF consisting of all eligible students (address not containing "Lamar" and inside district but outside town) plotted as individual stops.
+        /// Build a route PDF of students already in the system who have coordinates.
         /// For each student: create a RouteStop sequentially ordered. Bus is fixed to #17 (84 passenger) per requirement (placeholder bus object).
         /// Returns tuple(pdfBytes, countEligible, totalConsidered).
         /// </summary>
@@ -1126,41 +1051,18 @@ namespace BusBuddy.WPF.ViewModels.GoogleEarth
                 return (Array.Empty<byte>(), 0, 0);
             }
 
-            // Filter out Lamar addresses early (case-insensitive contains)
-            var considered = allStudents.Where(s => string.IsNullOrWhiteSpace(s.HomeAddress) || !s.HomeAddress.Contains("Lamar", StringComparison.OrdinalIgnoreCase)).ToList();
-
-            var eligibleStudents = new List<BusBuddy.Core.Models.Student>();
-            if (_eligibilityService != null)
-            {
-                foreach (var stu in considered)
-                {
-                    if (stu.Latitude.HasValue && stu.Longitude.HasValue)
-                    {
-                        try
-                        {
-                            var ok = await _eligibilityService.IsEligibleAsync((double)stu.Latitude.Value, (double)stu.Longitude.Value);
-                            if (ok)
-                            {
-                                eligibleStudents.Add(stu);
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            Logger.Warning(ex, "Eligibility check failed for student {Id}", stu.StudentId);
-                        }
-                    }
-                }
-            }
+            var eligibleStudents = allStudents
+                .Where(s => s.Latitude.HasValue && s.Longitude.HasValue)
+                .ToList();
 
             if (eligibleStudents.Count == 0)
             {
-                Logger.Information("No eligible students after filtering (Total={Total} Considered={Considered})", allStudents.Count, considered.Count);
-                return (Array.Empty<byte>(), 0, considered.Count);
+                Logger.Information("No students with coordinates (Total={Total})", allStudents.Count);
+                return (Array.Empty<byte>(), 0, allStudents.Count);
             }
 
-            // ORDER STOPS (Nearest Neighbor heuristic) starting/ending at school coordinates.
-            const double schoolLat = WileyMapDefaults.SchoolLatitude;
-            const double schoolLon = WileyMapDefaults.SchoolLongitude;
+            // ORDER STOPS (Nearest Neighbor heuristic) starting/ending at the catalog school, or map fallback.
+            var (schoolLat, schoolLon) = await ResolveSchoolAnchorAsync();
             var remaining = eligibleStudents.Where(s => s.Latitude.HasValue && s.Longitude.HasValue).ToList();
             var ordered = new List<BusBuddy.Core.Models.Student>();
             double currentLat = schoolLat, currentLon = schoolLon;
@@ -1261,12 +1163,12 @@ namespace BusBuddy.WPF.ViewModels.GoogleEarth
                 pdf = Array.Empty<byte>();
             }
 
-            Logger.Information("Eligibility route PDF generated Eligible={Eligible} Considered={Considered} Total={Total} Stops={Stops} Miles~{Miles:F1} ETA-Back={EtaBack}", eligibleStudents.Count, considered.Count, allStudents.Count, stops.Count, totalMiles, arrivalBack);
-            StatusMessage = $"Eligibility route built: {stops.Count} stops ~{totalMiles:F1} mi back {arrivalBack:hh\\:mm}";
-            return (pdf, eligibleStudents.Count, considered.Count);
+            Logger.Information("Student map PDF generated WithCoords={Eligible} Total={Total} Stops={Stops} Miles~{Miles:F1} ETA-Back={EtaBack}", eligibleStudents.Count, allStudents.Count, stops.Count, totalMiles, arrivalBack);
+            StatusMessage = $"Student map PDF: {stops.Count} stops ~{totalMiles:F1} mi";
+            return (pdf, eligibleStudents.Count, allStudents.Count);
         }
 
-    // UI wrapper made public so MainWindow can trigger it without hosting the GoogleEarthView
+    // UI wrapper made public so MainWindow can trigger it without hosting the MapView
     public async Task GenerateEligibilityRoutePdfAndSaveAsync()
         {
             try
@@ -1447,26 +1349,30 @@ namespace BusBuddy.WPF.ViewModels.GoogleEarth
             RouteLineUpdated?.Invoke(this, new RouteLineEventArgs(RouteLinePoints));
         }
 
-        private async Task CheckEligibilityAsync()
+        private async Task<(double Lat, double Lon)> ResolveSchoolAnchorAsync()
         {
-            if (_eligibilityService is null)
-            {
-                StatusMessage = "Eligibility service not available";
-                return;
-            }
-            // Demo coordinates — replace with selected student location later
-            var lat = 38.1544; // Wiley, CO vicinity
-            var lon = -102.7177;
             try
             {
-                var eligible = await _eligibilityService.IsEligibleAsync(lat, lon);
-                StatusMessage = eligible ? "Eligible: In district and outside Wiley town" : "Not eligible";
-                Logger.Information("Eligibility check at ({Lat}, {Lon}): {Eligible}", lat, lon, eligible);
+                using var scope = _scopeFactory?.CreateScope();
+                var dest = scope?.ServiceProvider.GetService<IDestinationService>()
+                    ?? App.ServiceProvider?.GetService<IDestinationService>();
+                if (dest is null)
+                {
+                    return (MapDefaults.FallbackLatitude, MapDefaults.FallbackLongitude);
+                }
+
+                var school = (await dest.GetActiveSchoolsAsync()).FirstOrDefault(s => s.HasGpsCoordinates);
+                if (school is null)
+                {
+                    return (MapDefaults.FallbackLatitude, MapDefaults.FallbackLongitude);
+                }
+
+                return ((double)school.Latitude!, (double)school.Longitude!);
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Eligibility check failed");
-                StatusMessage = $"Eligibility check error: {ex.Message}";
+                Logger.Debug(ex, "No school anchor; using map fallback center");
+                return (MapDefaults.FallbackLatitude, MapDefaults.FallbackLongitude);
             }
         }
 

@@ -6,21 +6,21 @@
 
 **Status**: Paused (Earth Engine removed; Maps clients not wired)
 
-**Input**: Earth Engine is the wrong product for student addresses, map plots, and trip planning. Remove it from the running app and replace it with working street-level mapping: postal address validation, geocoding onto the existing map, and road-network routing — while keeping Syncfusion map display and local district/town eligibility files.
+**Input**: Earth Engine is the wrong product for student addresses, map plots, and trip planning. Replace it with Google Maps Platform Address Validation + Routes, keeping Syncfusion `SfMap`. Students entered in the system are eligible (no geofence).
 
 ## Baseline (as of draft)
 
 | Area                  | Current                                                                         | Target                                                                          |
 | --------------------- | ------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
 | Address correctness   | Regex / format checks; optional skip                                            | Postal-grade US validation with standardized components and a clear fail reason |
-| Map coordinates       | Hash scatter around Wiley School (`OfflineGeocodingService`)                    | Real coordinates from the same validation result, cached on the student         |
+| Map coordinates       | Hash scatter (`OfflineGeocodingService`, tests only)                            | Real coordinates from Address Validation, cached on the student                 |
 | Trip / route geometry | Capacity fill + stored stop points; no road graph                               | Drive paths (distance, time, polyline) for school ↔ stops                       |
 | Satellite / EE        | `GoogleEarthEngineService`, `GcpCredentialBootstrap`, invented `:exportGeoJson` | **Removed** from DI, config, secrets, and probes                                |
 | Map UI                | Syncfusion `SfMap` + OSM only (unofficial Google tiles removed)                 | Keep `SfMap` + OSM; Maps Tiles API optional later                               |
-| District eligibility  | Local Wiley shapefiles                                                          | Unchanged                                                                       |
+| District eligibility  | Local shapefiles (wrong district)                                               | Students in the system are eligible — no geofence                               |
 | GCP                   | `ee-bigessfour` EE project + broken SA JWT                                      | Billing project `new-coursera-490518` + Maps API key in Passwords               |
 
-Constitution: this feature **amends** the Geo constraint (Earth Engine → street mapping provider + local shapefiles). Syncfusion-only UI, Serilog-only logging, hybrid Mac/Windows, no cloud app hosting, and no committed secrets remain in force.
+Constitution: this feature **amends** the Geo constraint (Earth Engine → Maps Platform Address Validation + SfMap; no shapefile geofence).
 
 Nominated provider (working solution): **Google Maps Platform** on `new-coursera-490518` — Address Validation (USPS CASS), Routes (`computeRoutes` / `computeRouteMatrix`). Places Autocomplete is out of MVP (P3). Earth Engine stays unused; do not re-enable it in this feature.
 
@@ -107,7 +107,7 @@ As a clerk, I can pick a suggested street address as I type so I spend less time
 - **FR-002**: System MUST persist latitude and longitude from a successful validation onto the student record for map plotting.
 - **FR-003**: System MUST NOT invent coordinates from a string hash when mapping is unconfigured or validation fails.
 - **FR-004**: System MUST cache successful validations so repeated plots of the same address do not require a new paid call.
-- **FR-005**: System MUST keep Syncfusion `SfMap` as the map surface and MUST keep local Wiley district/town shapefile eligibility.
+- **FR-005**: System MUST keep Syncfusion `SfMap` as the map surface. Students entered in the system are eligible (no geofence / no shapefile polygons).
 - **FR-006**: System MUST remove Earth Engine from runtime: no EE DI services, no EE appsettings, no EE bootstrap, no EE connection probe, no EE secrets in agent docs.
 - **FR-007**: System MUST load route geography from the database (stored waypoints or stop coordinates), not from an Earth Engine asset.
 - **FR-008**: System MUST obtain drive distance, duration, and a road polyline for a route with geocoded stops when mapping is configured (US3).
@@ -139,7 +139,7 @@ As a clerk, I can pick a suggested street address as I type so I spend less time
 
 - Nominated provider is Google Maps Platform (Address Validation with USPS CASS, Routes API) billed on `new-coursera-490518`.
 - Wiley-scale volume is hundreds of students; validate on save; cache; route compute on demand.
-- Renaming `GoogleEarthView` / `GoogleEarthViewModel` is out of scope (map UI stays; EE backend goes).
+- Renaming `MapView` / `MapViewModel` is out of scope (map UI stays; EE backend goes).
 - `StudentRouteOptimizer` capacity fill remains; routing **adds** path geometry and optional matrix ranking, it does not replace seat-capacity rules in MVP.
 - Local shapefiles remain the eligibility source; no Maps “dataset” upload in this feature.
 - Constitution Geo line is amended in the same PR as implementation.

@@ -23,7 +23,7 @@ BusBuddy streamlines school transportation operations through intelligent route 
 ### **Core Features**
 
 - 🚌 **Fleet Management**: Vehicle tracking, maintenance scheduling, driver assignments
-- 📍 **Route Optimization**: Google Earth Engine integration for efficient route planning
+- 📍 **Route Optimization**: Google Maps Platform Address Validation + Syncfusion SfMap
 - 👥 **Student Management**: Student enrollment, route assignments, pickup/dropoff tracking
 - 📊 **Analytics Dashboard**: Real-time metrics, performance reports, operational insights
 - 🔧 **Maintenance Tracking**: Scheduled maintenance, repair history, compliance monitoring
@@ -426,7 +426,7 @@ BusBuddy uses Syncfusion Essential Studio for WPF to provide a modern, professio
 
 #### **📍 Route Management**
 
-- Interactive route planning with Google Earth Engine
+- Interactive route planning with Syncfusion SfMap and Maps Platform routing
 - Stop optimization and timing
 - Student assignment to routes
 - Real-time tracking and updates

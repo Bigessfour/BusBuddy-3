@@ -123,37 +123,12 @@ namespace BusBuddy.WPF.ViewModels.Vehicle
             catch (Exception ex)
             {
                 StatusMessage = $"Error loading vehicles: {ex.Message}";
-                // Load sample data if service fails (for MVP Phase 1)
-                LoadSampleData();
+                Logger.Error(ex, "Failed to load buses; leaving vehicle grid empty");
             }
             finally
             {
                 IsBusy = false;
             }
-        }
-
-        /// <summary>
-        /// Load sample data for MVP testing
-        /// </summary>
-        private void LoadSampleData()
-        {
-            var sampleVehicles = new List<BusBuddy.Core.Models.Bus>
-            {
-                new() { BusId = 1, BusNumber = "BUS001", Make = "Ford", Model = "Transit", LicenseNumber = "ABC-123", SeatingCapacity = 40, Status = "Active", Year = 2020 },
-                new() { BusId = 2, BusNumber = "BUS002", Make = "Chevrolet", Model = "Express", LicenseNumber = "DEF-456", SeatingCapacity = 35, Status = "InService", Year = 2019 },
-                new() { BusId = 3, BusNumber = "BUS003", Make = "Mercedes", Model = "Sprinter", LicenseNumber = "GHI-789", SeatingCapacity = 20, Status = "Maintenance", Year = 2021 },
-                new() { BusId = 4, BusNumber = "BUS004", Make = "Ford", Model = "E-Series", LicenseNumber = "JKL-012", SeatingCapacity = 45, Status = "Active", Year = 2018 },
-                new() { BusId = 5, BusNumber = "BUS005", Make = "Isuzu", Model = "NPR", LicenseNumber = "MNO-345", SeatingCapacity = 30, Status = "OutOfService", Year = 2017 }
-            };
-
-            Vehicles.Clear();
-            foreach (var vehicle in sampleVehicles)
-            {
-                Vehicles.Add(vehicle);
-            }
-
-            ApplyFilters();
-            StatusMessage = "Sample data loaded (database unavailable)";
         }
 
         /// <summary>

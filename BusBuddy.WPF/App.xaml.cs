@@ -341,7 +341,7 @@ namespace BusBuddy.WPF
                 // Setup minimal DI for Students, Routes, Buses, Drivers (synchronous)
                 ConfigureServices();
 
-                // Removed redundant explicit Wiley seeding. Seeding now handled via EF Core 9 UseSeeding/UseAsyncSeeding
+                // Removed redundant explicit district JSON seeding. Seeding now handled via EF Core 9 UseSeeding/UseAsyncSeeding
 
                 // Handle command line arguments for PowerShell integration
                 if (e.Args.Length > 0 && TryHandleCommandLineArgs(e.Args) is int exitCode)
@@ -416,16 +416,11 @@ namespace BusBuddy.WPF
                 // Use the proper extension method that registers IBusBuddyDbContextFactory
                 services.AddDataServices(configuration);
 
-                // Route geography + eligibility. Maps Platform clients (IGeocodingService / IRoutingService)
+                // Route geography. Maps Platform clients (IGeocodingService / IRoutingService)
                 // are registered in AddDataServices above — do not register OfflineGeocodingService here.
+                // District/town shapefile eligibility was removed: those polygons were for another district.
                 services.AddSingleton<IGeoDataService>(sp =>
                     new GeoDataService(sp.GetService<IBusBuddyDbContextFactory>()));
-                services.AddSingleton<IEligibilityService>(_ =>
-                {
-                    var district = Path.Combine(AppContext.BaseDirectory, "Assets", "Maps", "WileyDistrict", "WileyDistrict.shp");
-                    var town = Path.Combine(AppContext.BaseDirectory, "Assets", "Maps", "WileyTown", "WileyTown.shp");
-                    return new ShapefileEligibilityService(district, town);
-                });
 
                 // Register core business services for Students, Routes, Buses, Drivers
                 services.AddScoped<IStudentService, StudentService>();
@@ -498,10 +493,9 @@ namespace BusBuddy.WPF
                 services.AddTransient<BusBuddy.WPF.ViewModels.Driver.DriverFormViewModel>();
                 services.AddTransient<BusBuddy.WPF.ViewModels.Driver.DriversViewModel>();
                 // Shared map VM: singleton + IServiceScopeFactory so scoped student/bus services are not captured
-                services.AddSingleton<BusBuddy.WPF.ViewModels.GoogleEarth.GoogleEarthViewModel>(sp =>
-                    new BusBuddy.WPF.ViewModels.GoogleEarth.GoogleEarthViewModel(
+                services.AddSingleton<BusBuddy.WPF.ViewModels.Map.MapViewModel>(sp =>
+                    new BusBuddy.WPF.ViewModels.Map.MapViewModel(
                         sp.GetRequiredService<IGeoDataService>(),
-                        sp.GetService<IEligibilityService>(),
                         sp.GetService<IGeocodingService>(),
                         studentService: null,
                         busService: null,
@@ -548,7 +542,7 @@ namespace BusBuddy.WPF
                         // Deprecated (MVP): JSON seeding disabled. Use CSV import path post-MVP.
                         // await BusBuddy.Core.Utilities.JsonDataImporter.SeedDatabaseIfEmptyAsync(context);
 
-                        // Also support plain array JSON via SeedDataService (uses WileyJsonPath)
+                        // Also support plain array JSON via SeedDataService (uses StudentJsonPath)
                         await seedSvc.SeedFromJsonAsync();
                     }
                     catch (Exception seedEx)
@@ -599,9 +593,7 @@ namespace BusBuddy.WPF
                         if (viewModel != null)
                         {
                             Log.Information("✅ MainWindowViewModel created successfully via DI");
-                            var mainWindow = new MainWindow();
-                            mainWindow.DataContext = viewModel;
-                            return mainWindow;
+                            return new MainWindow(viewModel);
                         }
                         else
                         {
@@ -620,8 +612,7 @@ namespace BusBuddy.WPF
                 // Initialize with basic functionality if DI failed
                 if (ServiceProvider == null)
                 {
-                    Log.Information("💡 Setting up MainWindow for standalone operation");
-                    // Can add basic sample data or simplified ViewModels here if needed
+                    Log.Warning("Creating MainWindow without DI; dock grids stay empty until services are available");
                 }
 
                 return fallbackWindow;

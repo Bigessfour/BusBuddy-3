@@ -1,7 +1,7 @@
 namespace BusBuddy.WPF.Messages
 {
     /// <summary>
-    /// Published after a Wiley CSV import so the students list can refresh
+    /// Published after a student CSV import so the students list can refresh
     /// without treating the import as a single-student save.
     /// </summary>
     public sealed class StudentsImportedMessage

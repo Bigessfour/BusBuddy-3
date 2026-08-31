@@ -546,7 +546,7 @@
                                     Command="{Binding ViewOnMapCommand}"
                                     Background="{DynamicResource BusBuddy.Brush.Semantic.Info}" Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}"
                                     Margin="10,0,0,0"
-                                    ToolTip="Show student location on Google Earth Engine map"
+                                    ToolTip="Show student location on district map"
                                     AutomationProperties.Name="View on Map"/>
                 <syncfusion:ButtonAdv Name="ImportCsvButton"
                     Label="Import CSV"

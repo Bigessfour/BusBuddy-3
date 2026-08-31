@@ -17,6 +17,7 @@ public class StudentsViewTests
         Assert.That(xaml, Does.Contain("Command=\"{Binding OptimizeRoutesCommand}\""));
         Assert.That(xaml, Does.Contain("Command=\"{Binding SchoolTransferCommand}\""));
         Assert.That(xaml, Does.Contain("Command=\"{Binding AddStudentCommand}\""));
+        Assert.That(xaml, Does.Contain("Command=\"{Binding AddSchoolCommand}\""));
     }
 
     private static string FindView(string relative)

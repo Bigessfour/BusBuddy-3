@@ -9,8 +9,8 @@ using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
 using BusBuddy.Core.Services.Interfaces;
-using BusBuddy.WPF.ViewModels.GoogleEarth;
-using BusBuddy.WPF.Views.GoogleEarth;
+using BusBuddy.WPF.ViewModels.Map;
+using BusBuddy.WPF.Views.Map;
 using System.Text.RegularExpressions;
 using BusBuddy.Core.Models;
 using BusBuddy.Core.Services;
@@ -67,7 +67,7 @@ namespace BusBuddy.WPF.ViewModels.Student
                 Active = true,
                 EnrollmentDate = DateTime.Today,
                 CreatedDate = DateTime.Now,
-                School = "Wiley Consolidated School RE-13JT",
+                School = string.Empty,
                 State = "CO"
             };
 
@@ -99,7 +99,7 @@ namespace BusBuddy.WPF.ViewModels.Student
                 Active = true,
                 EnrollmentDate = DateTime.Today,
                 CreatedDate = DateTime.Now,
-                School = "Wiley Consolidated School RE-13JT",
+                School = string.Empty,
                 State = "CO"
             };
 
@@ -793,7 +793,7 @@ namespace BusBuddy.WPF.ViewModels.Student
                 var sp = App.ServiceProvider;
                 var geocoder = sp?.GetService<IGeocodingService>();
                 var mapsClient = sp?.GetService<BusBuddy.Core.Services.GoogleMaps.GoogleAddressValidationClient>();
-                var mapVm = sp?.GetService<GoogleEarthViewModel>();
+                var mapVm = sp?.GetService<MapViewModel>();
 
                 (double latitude, double longitude)? coords = null;
                 if (Student.Latitude.HasValue && Student.Longitude.HasValue)
@@ -818,7 +818,7 @@ namespace BusBuddy.WPF.ViewModels.Student
                 new Window
                 {
                     Title = "Student location",
-                    Content = new GoogleEarthView(),
+                    Content = new MapView(),
                     Width = 1100,
                     Height = 750,
                     Owner = Application.Current?.MainWindow
@@ -858,7 +858,7 @@ namespace BusBuddy.WPF.ViewModels.Student
         }
 
         /// <summary>
-        /// Import student data from a Wiley-format CSV via <see cref="ISeedDataService"/>.
+        /// Import student data from a student CSV via <see cref="ISeedDataService"/>.
         /// </summary>
         private async Task ImportCsvAsync()
         {

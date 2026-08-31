@@ -29,13 +29,13 @@ namespace BusBuddy.Tests.Core
             _routes = new Mock<IRouteService>();
             _students.Setup(s => s.GetAllStudentsAsync()).ReturnsAsync(new List<Student>
             {
-                new() { StudentName = "Ada Rider", Grade = "4", School = "Wiley", AMRoute = "North", PMRoute = "North" },
-                new() { StudentName = "Ben Rider", Grade = "2", School = "Wiley" }
+                new() { StudentName = "Ada Rider", Grade = "4", School = "Oakridge", AMRoute = "North", PMRoute = "North" },
+                new() { StudentName = "Ben Rider", Grade = "2", School = "Oakridge" }
             });
             _routes.Setup(r => r.GetAllActiveRoutesAsync()).ReturnsAsync(
                 Result.SuccessResult<IEnumerable<Route>>(new[]
                 {
-                    new Route { RouteName = "North", Date = DateTime.Today, IsActive = true, School = "Wiley" }
+                    new Route { RouteName = "North", Date = DateTime.Today, IsActive = true, School = "Oakridge" }
                 }));
             _service = new OperationalReportService(new PdfReportService(), _students.Object, _routes.Object);
         }
@@ -123,8 +123,8 @@ namespace BusBuddy.Tests.Core
             _routes.Setup(r => r.GetAllActiveRoutesAsync()).ReturnsAsync(
                 Result.SuccessResult<IEnumerable<Route>>(new[]
                 {
-                    new Route { RouteId = 1, RouteName = "North", Date = DateTime.Today, IsActive = true, School = "Wiley" },
-                    new Route { RouteId = 2, RouteName = "South", Date = DateTime.Today, IsActive = true, School = "Wiley" }
+                    new Route { RouteId = 1, RouteName = "North", Date = DateTime.Today, IsActive = true, School = "Oakridge" },
+                    new Route { RouteId = 2, RouteName = "South", Date = DateTime.Today, IsActive = true, School = "Oakridge" }
                 }));
 
             var result = await _service.GenerateAsync(OperationalReportKind.RouteSummary, _dir);
@@ -140,8 +140,8 @@ namespace BusBuddy.Tests.Core
             _routes.Setup(r => r.GetAllActiveRoutesAsync()).ReturnsAsync(
                 Result.SuccessResult<IEnumerable<Route>>(new[]
                 {
-                    new Route { RouteId = 1, RouteName = "North", Date = DateTime.Today, IsActive = true, School = "Wiley" },
-                    new Route { RouteId = 2, RouteName = "South", Date = DateTime.Today, IsActive = true, School = "Wiley" }
+                    new Route { RouteId = 1, RouteName = "North", Date = DateTime.Today, IsActive = true, School = "Oakridge" },
+                    new Route { RouteId = 2, RouteName = "South", Date = DateTime.Today, IsActive = true, School = "Oakridge" }
                 }));
 
             var result = await _service.GenerateAsync(new OperationalReportRequest

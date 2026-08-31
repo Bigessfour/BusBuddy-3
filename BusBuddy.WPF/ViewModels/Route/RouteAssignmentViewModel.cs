@@ -9,8 +9,8 @@ using BusBuddy.Core.Services.RouteDetermination;
 using BusBuddy.Core.Utilities;
 using BusBuddy.WPF.Commands;
 using Serilog;
-using Microsoft.Extensions.DependencyInjection; // For resolving GoogleEarthViewModel / services
-using BusBuddy.WPF.ViewModels.GoogleEarth; // Map markers
+using Microsoft.Extensions.DependencyInjection; // For resolving MapViewModel / services
+using BusBuddy.WPF.ViewModels.Map; // Map markers
 using BusBuddy.WPF.Views.Route;
 using BusBuddy.WPF.Views.Driver;
 using BusBuddy.Core.Services.Interfaces; // IGeocodingService
@@ -58,7 +58,7 @@ namespace BusBuddy.WPF.ViewModels.Route
         private readonly IRouteService? _routeService;
         private readonly IRouteDeterminationService? _routeDetermination;
         private readonly IDestinationService? _destinations;
-        private readonly GoogleEarthViewModel? _map;
+        private readonly MapViewModel? _map;
         private static readonly ILogger Logger = Log.ForContext<RouteAssignmentViewModel>();
     private Timer? _retimeDebounceTimer; // Debounce timer for auto-retiming after structural stop changes
     private const int RetimeDebounceMs = 600; // Delay before auto timing after modifications
@@ -73,14 +73,14 @@ namespace BusBuddy.WPF.ViewModels.Route
             IRouteService? routes = null;
             IRouteDeterminationService? planner = null;
             IDestinationService? dest = null;
-            GoogleEarthViewModel? map = null;
+            MapViewModel? map = null;
             try
             {
                 var sp = App.ServiceProvider;
                 routes = sp?.GetService<IRouteService>();
                 planner = sp?.GetService<IRouteDeterminationService>();
                 dest = sp?.GetService<IDestinationService>();
-                map = sp?.GetService<GoogleEarthViewModel>();
+                map = sp?.GetService<MapViewModel>();
             }
             catch { }
             _routeService = routes;
@@ -125,14 +125,14 @@ namespace BusBuddy.WPF.ViewModels.Route
             }
         }
 
-        private static (IRouteDeterminationService? Planner, IDestinationService? Destinations, GoogleEarthViewModel? Map)
+        private static (IRouteDeterminationService? Planner, IDestinationService? Destinations, MapViewModel? Map)
             ResolveGenerateServices()
         {
             var sp = App.ServiceProvider;
             return (
                 sp?.GetService<IRouteDeterminationService>(),
                 sp?.GetService<IDestinationService>(),
-                sp?.GetService<GoogleEarthViewModel>());
+                sp?.GetService<MapViewModel>());
         }
 
         private void Initialize()
@@ -666,8 +666,8 @@ namespace BusBuddy.WPF.ViewModels.Route
         }
 
         /// <summary>
-        /// Attempts to proactively capture a map snapshot by locating an existing GoogleEarthView instance in visual trees.
-        /// MVP lightweight approach: scans Application.Current.Windows for a GoogleEarthView and invokes its internal snapshot via reflection.
+        /// Attempts to proactively capture a map snapshot by locating an existing MapView instance in visual trees.
+        /// MVP lightweight approach: scans Application.Current.Windows for a MapView and invokes its internal snapshot via reflection.
         /// If none found, logs and returns silently. Avoids tight coupling until a formal capture command is exposed.
         /// </summary>
         private void TryProactiveMapSnapshotCapture()
@@ -678,15 +678,15 @@ namespace BusBuddy.WPF.ViewModels.Route
                 if (app == null) return;
                 foreach (Window w in app.Windows)
                 {
-                    // Depth-first search visual tree for GoogleEarthView type
-                    var target = FindDescendantByTypeName(w, "GoogleEarthView");
+                    // Depth-first search visual tree for MapView type
+                    var target = FindDescendantByTypeName(w, "MapView");
                     if (target != null)
                     {
                         var m = target.GetType().GetMethod("TryCaptureMapSnapshot", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
                         if (m != null)
                         {
                             m.Invoke(target, null);
-                            Logger.Debug("Invoked TryCaptureMapSnapshot via reflection on GoogleEarthView");
+                            Logger.Debug("Invoked TryCaptureMapSnapshot via reflection on MapView");
                         }
                         break;
                     }
@@ -2341,8 +2341,8 @@ namespace BusBuddy.WPF.ViewModels.Route
         }
 
         /// <summary>
-        /// Basic plotting of the selected route's currently assigned students onto the shared map (GoogleEarthViewModel).
-        /// Reuses existing GoogleEarthViewModel marker infrastructure; only plots students with coordinates or successfully geocoded addresses.
+        /// Basic plotting of the selected route's currently assigned students onto the shared map (MapViewModel).
+        /// Reuses existing MapViewModel marker infrastructure; only plots students with coordinates or successfully geocoded addresses.
         /// </summary>
         private async Task PlotRouteOnMapAsync()
         {
@@ -2368,10 +2368,11 @@ namespace BusBuddy.WPF.ViewModels.Route
                 for (int i = mapVm.MapMarkers.Count - 1; i >= 0; i--)
                 {
                     var m = mapVm.MapMarkers[i];
-                    if (!string.Equals(m.Label, "Wiley School RE-13JT", StringComparison.OrdinalIgnoreCase))
+                    if (!string.IsNullOrWhiteSpace(m.Label) && m.Label.StartsWith("Bus ", StringComparison.Ordinal))
                     {
-                        mapVm.MapMarkers.RemoveAt(i);
+                        continue;
                     }
+                    mapVm.MapMarkers.RemoveAt(i);
                 }
 
                 var students = AssignedStudentsForSelectedRoute.ToList();

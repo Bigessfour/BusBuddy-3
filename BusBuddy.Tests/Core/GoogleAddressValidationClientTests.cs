@@ -28,7 +28,7 @@ public class GoogleAddressValidationClientTests
             {
               "result": {
                 "verdict": { "addressComplete": true, "validationGranularity": "PREMISE" },
-                "address": { "formattedAddress": "510 Ward St, Wiley, CO 81092, USA" },
+                "address": { "formattedAddress": "100 Main St, Oakridge, CO 80000, USA" },
                 "geocode": { "location": { "latitude": 38.1527, "longitude": -102.7204 } }
               }
             }
@@ -36,12 +36,12 @@ public class GoogleAddressValidationClientTests
         using var http = new HttpClient(new StubHandler(HttpStatusCode.OK, json));
         var client = new GoogleAddressValidationClient(http, Microsoft.Extensions.Options.Options.Create(TestOptions));
 
-        var result = await client.ValidateAndGeocodeAsync("510 Ward St", "Wiley", "CO", "81092");
+        var result = await client.ValidateAndGeocodeAsync("100 Main St", "Oakridge", "CO", "80000");
 
         Assert.That(result.Ok, Is.True);
         Assert.That(result.Latitude, Is.EqualTo(38.1527).Within(0.0001));
         Assert.That(result.Longitude, Is.EqualTo(-102.7204).Within(0.0001));
-        Assert.That(result.FormattedAddress, Does.Contain("Wiley"));
+        Assert.That(result.FormattedAddress, Does.Contain("Oakridge"));
     }
 
     [Test]
@@ -76,11 +76,11 @@ public class GoogleAddressValidationClientTests
             var opts = new GoogleMapsOptions { ApiKey = "${GOOGLE_MAPS_API_KEY}" };
             var client = new GoogleAddressValidationClient(http, Microsoft.Extensions.Options.Options.Create(opts));
 
-            var result = await client.ValidateAndGeocodeAsync("510 Ward St", "Wiley", "CO", "81092");
+            var result = await client.ValidateAndGeocodeAsync("100 Main St", "Oakridge", "CO", "80000");
 
             Assert.That(result.MappingUnconfigured, Is.True);
             Assert.That(result.Ok, Is.False);
-            Assert.That(await client.GeocodeAsync("510 Ward St", "Wiley", "CO", "81092"), Is.Null);
+            Assert.That(await client.GeocodeAsync("100 Main St", "Oakridge", "CO", "80000"), Is.Null);
         }
         finally
         {

@@ -76,6 +76,12 @@
                             AutomationProperties.Name="Add Student"
                             AutomationProperties.HelpText="Opens form to add a new student to the system"
                             ToolTip="Add a new student"/>
+                    <syncfusion:ButtonAdv Name="AddSchoolButton" Label="Add School"
+                            Command="{Binding AddSchoolCommand}"
+                            Style="{StaticResource StudentsToolbarButton}"
+                            AutomationProperties.Name="Add School"
+                            AutomationProperties.HelpText="Catalog a school campus with bell times before generating routes"
+                            ToolTip="Add a school destination (required before Generate Routes)"/>
                     <syncfusion:ButtonAdv Name="EditStudentButton" Label="Edit Student"
                             Command="{Binding EditStudentCommand}"
                             IsEnabled="{Binding HasSelectedStudent}"
@@ -104,7 +110,7 @@
                             Style="{StaticResource StudentsSuccessButton}"
                             AutomationProperties.Name="Import Students from CSV"
                             AutomationProperties.HelpText="Import student records from a CSV file"
-                            ToolTip="Import students from Wiley-format CSV"/>
+                            ToolTip="Import students from student CSV"/>
                     <syncfusion:ButtonAdv Name="BulkAssignRouteButton" Label="Bulk Assign Route"
                             Command="{Binding BulkAssignRouteCommand}"
                             IsEnabled="{Binding HasSelectedStudents}"

@@ -19,7 +19,7 @@ public sealed class RoutingDistrictSettings
     /// <summary>East edge of district frame (degrees).</summary>
     public double? BoundingBoxMaxLon { get; set; }
 
-    /// <summary>Target riders per density cell (hints N-cell grid). Wiley-scale default ~20.</summary>
+    /// <summary>Target riders per density cell (hints N-cell grid). Default ~20.</summary>
     public int TargetRidersPerCell { get; set; } = 20;
 
     /// <summary>Estimated travel minutes between consecutive pickups that force an outlier split.</summary>

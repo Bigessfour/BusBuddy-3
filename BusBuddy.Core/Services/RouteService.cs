@@ -1807,13 +1807,12 @@ namespace BusBuddy.Core.Services
 
         #endregion
 
-        #region Wiley Schedule Generation
+        #region Route Schedule Generation
 
         /// <summary>
-        /// Generates route schedules for Wiley routes, calculates times, and outputs to RouteSchedules/.
-        /// Integrates with IStudentService for dynamic assignments. Error handling per Error-Handling.md.
+        /// Generates route schedules, calculates times, and outputs to RouteSchedules/.
         /// </summary>
-        public async Task GenerateWileySchedulesAsync(BusBuddyDbContext context, IStudentService studentService)
+        public async Task GenerateRouteSchedulesAsync(BusBuddyDbContext context, IStudentService studentService)
         {
             var outputDir = Path.Combine(Directory.GetCurrentDirectory(), "RouteSchedules");
             Directory.CreateDirectory(outputDir);

@@ -266,7 +266,7 @@ namespace BusBuddy.WPF.ViewModels.Route
                     var newRoute = new BusBuddy.Core.Models.Route
                     {
                         RouteName = baseName,
-                        School = SelectedRoute?.School ?? "Wiley School District",
+                        School = SelectedRoute?.School ?? string.Empty,
                         Date = DateTime.Today,
                         IsActive = true
                     };
@@ -427,7 +427,7 @@ namespace BusBuddy.WPF.ViewModels.Route
                     SelectedRoute = draft;
                 }
 
-                var mapVm = App.ServiceProvider?.GetService<BusBuddy.WPF.ViewModels.GoogleEarth.GoogleEarthViewModel>();
+                var mapVm = App.ServiceProvider?.GetService<BusBuddy.WPF.ViewModels.Map.MapViewModel>();
                 mapVm?.ApplyGenerationResult(outcome.Result);
             }
             catch (Exception ex)

@@ -186,10 +186,9 @@ public interface IStudentService
 #endif
 
     /// <summary>
-    /// Seeds student data from Wiley School District registration forms
+    /// District JSON seed is retired. Add students through intake or CSV import.
     /// </summary>
-    /// <returns>Result of the seeding operation</returns>
-    Task<SeedResult> SeedWileySchoolDistrictDataAsync();
+    Task<SeedResult> SeedDistrictDataAsync();
 }
 
 /// <summary>

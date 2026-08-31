@@ -1,10 +1,6 @@
 using System.Collections.ObjectModel;
-using System.ComponentModel;
-using System.Runtime.CompilerServices;
 using BusBuddy.Core.Services;
-using BusBuddy.Core;
-using BusBuddy.Core.Data;
-using Microsoft.EntityFrameworkCore;
+using BusBuddy.Core.Services.Interfaces;
 using Serilog;
 
 namespace BusBuddy.WPF.ViewModels
@@ -12,13 +8,17 @@ namespace BusBuddy.WPF.ViewModels
     public class MainWindowViewModel : BaseViewModel
     {
         private new static readonly ILogger Logger = Log.ForContext<MainWindowViewModel>();
-        private string _title = "BusBuddy - School Transportation Management";
 
-        // Optional services for database connectivity
         private readonly IStudentService? _studentService;
         private readonly IDriverService? _driverService;
         private readonly IRouteService? _routeService;
-        private readonly BusService? _busService;
+        private readonly IBusService? _busService;
+
+        private string _title = "BusBuddy - School Transportation Management";
+        private BusBuddy.Core.Models.Student? _selectedStudent;
+        private BusBuddy.Core.Models.Route? _selectedRoute;
+        private BusBuddy.Core.Models.Bus? _selectedBus;
+        private BusBuddy.Core.Models.Driver? _selectedDriver;
 
         public string Title
         {
@@ -26,63 +26,108 @@ namespace BusBuddy.WPF.ViewModels
             set => SetProperty(ref _title, value);
         }
 
-        // Collections for the main grids - using fully qualified names to avoid namespace conflicts
-        public ObservableCollection<BusBuddy.Core.Models.Student> Students { get; set; } = new();
-        public ObservableCollection<BusBuddy.Core.Models.Route> Routes { get; set; } = new();
-        public ObservableCollection<BusBuddy.Core.Models.Bus> Buses { get; set; } = new();
-        public ObservableCollection<BusBuddy.Core.Models.Driver> Drivers { get; set; } = new();
+        public ObservableCollection<BusBuddy.Core.Models.Student> Students { get; } = new();
+        public ObservableCollection<BusBuddy.Core.Models.Route> Routes { get; } = new();
+        public ObservableCollection<BusBuddy.Core.Models.Bus> Buses { get; } = new();
+        public ObservableCollection<BusBuddy.Core.Models.Driver> Drivers { get; } = new();
 
-        // Default constructor - uses sample data (current working approach)
-        public MainWindowViewModel()
+        public bool HasDatabaseServices => _studentService != null && _routeService != null
+            && _busService != null && _driverService != null;
+
+        public BusBuddy.Core.Models.Student? SelectedStudent
         {
-            Logger.Information("MainWindowViewModel initialized with sample data");
-            LoadSampleData();
+            get => _selectedStudent;
+            set => SetProperty(ref _selectedStudent, value);
         }
 
-        // DI constructor - uses database services when available
+        public BusBuddy.Core.Models.Route? SelectedRoute
+        {
+            get => _selectedRoute;
+            set => SetProperty(ref _selectedRoute, value);
+        }
+
+        public BusBuddy.Core.Models.Bus? SelectedBus
+        {
+            get => _selectedBus;
+            set => SetProperty(ref _selectedBus, value);
+        }
+
+        public BusBuddy.Core.Models.Driver? SelectedDriver
+        {
+            get => _selectedDriver;
+            set => SetProperty(ref _selectedDriver, value);
+        }
+
+        /// <summary>
+        /// Designer / emergency fallback. Grids stay empty. Never invents sample rows.
+        /// </summary>
+        public MainWindowViewModel()
+        {
+            StatusMessage = "No database services. Dock grids are empty.";
+            Logger.Warning("MainWindowViewModel constructed without services; grids will stay empty");
+        }
+
         public MainWindowViewModel(
             IStudentService studentService,
             IDriverService driverService,
             IRouteService routeService,
-            BusService busService)
+            IBusService busService)
         {
             _studentService = studentService;
             _driverService = driverService;
             _routeService = routeService;
             _busService = busService;
-
+            StatusMessage = "Loading from database...";
             Logger.Information("MainWindowViewModel initialized with database services");
-            LoadDatabaseDataAsync();
+            _ = ReloadAllAsync();
         }
 
-        private async void LoadDatabaseDataAsync()
+        public async Task ReloadAllAsync()
         {
             try
             {
-                Logger.Information("Loading data from database...");
+                var studentsTask = _studentService?.GetAllStudentsAsync();
+                var routesTask = _routeService?.GetAllRoutesAsync();
+                var busesTask = _busService?.GetAllBusesAsync();
+                var driversTask = _driverService?.GetAllDriversAsync();
 
-                // Test database connectivity first
-                await TestDatabaseConnectivity();
-
-                // Load actual data from services
-                if (_studentService != null)
+                var pending = new List<Task>(4);
+                if (studentsTask != null)
                 {
-                    var students = await _studentService.GetAllStudentsAsync();
-                    Students.Clear();
-                    foreach (var student in students)
-                        Students.Add(student);
-                    Logger.Information("Loaded {Count} students from database", Students.Count);
+                    pending.Add(studentsTask);
                 }
 
-                if (_routeService != null)
+                if (routesTask != null)
                 {
-                    var routesResult = await _routeService.GetAllRoutesAsync();
+                    pending.Add(routesTask);
+                }
+
+                if (busesTask != null)
+                {
+                    pending.Add(busesTask);
+                }
+
+                if (driversTask != null)
+                {
+                    pending.Add(driversTask);
+                }
+
+                if (pending.Count > 0)
+                {
+                    await Task.WhenAll(pending).ConfigureAwait(true);
+                }
+
+                if (studentsTask != null)
+                {
+                    Replace(Students, await studentsTask.ConfigureAwait(true));
+                }
+
+                if (routesTask != null)
+                {
+                    var routesResult = await routesTask.ConfigureAwait(true);
                     if (routesResult.IsSuccess && routesResult.Value != null)
                     {
-                        Routes.Clear();
-                        foreach (var route in routesResult.Value)
-                            Routes.Add(route);
-                        Logger.Information("Loaded {Count} routes from database", Routes.Count);
+                        Replace(Routes, routesResult.Value);
                     }
                     else
                     {
@@ -90,187 +135,129 @@ namespace BusBuddy.WPF.ViewModels
                     }
                 }
 
-                if (_busService != null)
+                if (busesTask != null)
                 {
-                    var buses = await _busService.GetAllBusesAsync();
-                    Buses.Clear();
-                    foreach (var bus in buses)
-                        Buses.Add(bus);
-                    Logger.Information("Loaded {Count} buses from database", Buses.Count);
+                    Replace(Buses, await busesTask.ConfigureAwait(true));
                 }
 
-                if (_driverService != null)
+                if (driversTask != null)
                 {
-                    var drivers = await _driverService.GetAllDriversAsync();
-                    Drivers.Clear();
-                    foreach (var driver in drivers)
-                        Drivers.Add(driver);
-                    Logger.Information("Loaded {Count} drivers from database", Drivers.Count);
+                    Replace(Drivers, await driversTask.ConfigureAwait(true));
                 }
+
+                StatusMessage = HasDatabaseServices
+                    ? $"Loaded {Students.Count} students, {Routes.Count} routes, {Buses.Count} buses, {Drivers.Count} drivers"
+                    : "No database services. Dock grids are empty.";
+                Logger.Information(
+                    "Dock grids reloaded Students={Students} Routes={Routes} Buses={Buses} Drivers={Drivers}",
+                    Students.Count, Routes.Count, Buses.Count, Drivers.Count);
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Failed to load data from database, falling back to sample data");
-                LoadSampleData();
+                Logger.Error(ex, "Failed to load data from database; leaving dock grids empty");
+                ClearCollections();
+                StatusMessage = "Database unavailable. Dock grids are empty.";
             }
         }
 
-        private async Task TestDatabaseConnectivity()
-        {
-            try
-            {
-                using var context = new BusBuddyDbContext();
-                await context.Database.CanConnectAsync();
-                Logger.Information("✅ Database connectivity test successful");
-            }
-            catch (Exception ex)
-            {
-                Logger.Error(ex, "❌ Database connectivity test failed");
-                throw;
-            }
-        }
-
-        private void LoadSampleData()
-        {
-            // Add sample students
-            Students.Add(new BusBuddy.Core.Models.Student
-            {
-                StudentNumber = "12345",
-                StudentName = "John Doe",
-                Grade = "5th",
-                HomeAddress = "123 Main St"
-            });
-            Students.Add(new BusBuddy.Core.Models.Student
-            {
-                StudentNumber = "12346",
-                StudentName = "Jane Smith",
-                Grade = "4th",
-                HomeAddress = "456 Oak Ave"
-            });
-
-            // Add sample routes
-            Routes.Add(new BusBuddy.Core.Models.Route
-            {
-                RouteName = "Route 1",
-                Date = System.DateTime.Today,
-                Description = "Elementary School Route",
-                School = "Riverside Elementary"
-            });
-            Routes.Add(new BusBuddy.Core.Models.Route
-            {
-                RouteName = "Route 2",
-                Date = System.DateTime.Today,
-                Description = "Middle School Route",
-                School = "Lincoln Middle School"
-            });
-
-            // Add sample buses
-            Buses.Add(new BusBuddy.Core.Models.Bus
-            {
-                BusNumber = "Bus 001",
-                LicenseNumber = "ABC123",
-                Make = "Bluebird",
-                Model = "Vision",
-                Year = 2020,
-                SeatingCapacity = 35
-            });
-            Buses.Add(new BusBuddy.Core.Models.Bus
-            {
-                BusNumber = "Bus 002",
-                LicenseNumber = "DEF456",
-                Make = "Thomas",
-                Model = "Saf-T-Liner",
-                Year = 2019,
-                SeatingCapacity = 32
-            });
-
-            // Add sample drivers
-            Drivers.Add(new BusBuddy.Core.Models.Driver
-            {
-                DriverName = "Mike Johnson",
-                DriverPhone = "555-0123",
-                DriverEmail = "mike@busbuddy.com",
-                DriversLicenceType = "CDL"
-            });
-            Drivers.Add(new BusBuddy.Core.Models.Driver
-            {
-                DriverName = "Sarah Wilson",
-                DriverPhone = "555-0124",
-                DriverEmail = "sarah@busbuddy.com",
-                DriversLicenceType = "CDL"
-            });
-        }
-
-        // Simple refresh methods used by MainWindow after dialog operations
-        public async Task RefreshStudentsAsync()
-        {
-            if (_studentService != null)
-            {
-                try
-                {
-                    var students = await _studentService.GetAllStudentsAsync();
-                    Students.Clear();
-                    foreach (var s in students) Students.Add(s);
-                }
-                catch (Exception ex)
-                {
-                    Logger.Warning(ex, "RefreshStudentsAsync failed; retaining existing collection");
-                }
-            }
-        }
+        public Task RefreshStudentsAsync() =>
+            RefreshAsync(
+                _studentService?.GetAllStudentsAsync(),
+                Students,
+                nameof(RefreshStudentsAsync));
 
         public async Task RefreshRoutesAsync()
         {
-            if (_routeService != null)
+            if (_routeService == null)
             {
-                try
+                return;
+            }
+
+            try
+            {
+                var routesResult = await _routeService.GetAllRoutesAsync().ConfigureAwait(true);
+                if (routesResult.IsSuccess && routesResult.Value != null)
                 {
-                    var routesResult = await _routeService.GetAllRoutesAsync();
-                    if (routesResult.IsSuccess && routesResult.Value != null)
-                    {
-                        Routes.Clear();
-                        foreach (var r in routesResult.Value) Routes.Add(r);
-                    }
+                    Replace(Routes, routesResult.Value);
                 }
-                catch (Exception ex)
+                else
                 {
-                    Logger.Warning(ex, "RefreshRoutesAsync failed; retaining existing collection");
+                    Logger.Warning("Failed to load routes: {Error}", routesResult.Error);
                 }
+            }
+            catch (Exception ex)
+            {
+                Logger.Warning(ex, "RefreshRoutesAsync failed; retaining existing collection");
             }
         }
 
-        public async Task RefreshBusesAsync()
+        public Task RefreshBusesAsync() =>
+            RefreshAsync(
+                _busService?.GetAllBusesAsync(),
+                Buses,
+                nameof(RefreshBusesAsync));
+
+        public Task RefreshDriversAsync() =>
+            RefreshAsync(
+                _driverService?.GetAllDriversAsync(),
+                Drivers,
+                nameof(RefreshDriversAsync));
+
+        private async Task RefreshAsync<T>(
+            Task<IEnumerable<T>>? load,
+            ObservableCollection<T> target,
+            string name)
         {
-            if (_busService != null)
+            if (load == null)
             {
-                try
-                {
-                    var buses = await _busService.GetAllBusesAsync();
-                    Buses.Clear();
-                    foreach (var b in buses) Buses.Add(b);
-                }
-                catch (Exception ex)
-                {
-                    Logger.Warning(ex, "RefreshBusesAsync failed; retaining existing collection");
-                }
+                return;
+            }
+
+            try
+            {
+                Replace(target, await load.ConfigureAwait(true));
+            }
+            catch (Exception ex)
+            {
+                Logger.Warning(ex, "{Name} failed; retaining existing collection", name);
             }
         }
 
-        public async Task RefreshDriversAsync()
+        private async Task RefreshAsync<T>(
+            Task<List<T>>? load,
+            ObservableCollection<T> target,
+            string name)
         {
-            if (_driverService != null)
+            if (load == null)
             {
-                try
-                {
-                    var drivers = await _driverService.GetAllDriversAsync();
-                    Drivers.Clear();
-                    foreach (var d in drivers) Drivers.Add(d);
-                }
-                catch (Exception ex)
-                {
-                    Logger.Warning(ex, "RefreshDriversAsync failed; retaining existing collection");
-                }
+                return;
             }
+
+            try
+            {
+                Replace(target, await load.ConfigureAwait(true));
+            }
+            catch (Exception ex)
+            {
+                Logger.Warning(ex, "{Name} failed; retaining existing collection", name);
+            }
+        }
+
+        private static void Replace<T>(ObservableCollection<T> target, IEnumerable<T> items)
+        {
+            target.Clear();
+            foreach (var item in items)
+            {
+                target.Add(item);
+            }
+        }
+
+        private void ClearCollections()
+        {
+            Students.Clear();
+            Routes.Clear();
+            Buses.Clear();
+            Drivers.Clear();
         }
     }
 }

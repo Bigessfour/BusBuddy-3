@@ -135,11 +135,11 @@ namespace BusBuddy.Core.Services
                 Description = "Elementary school morning route",
                 Date = DateTime.Today,
                 IsActive = true,
-                School = "Wiley School RE-13JT",
+                School = "Elementary",
                 WaypointsJson = RouteWaypointSerializer.FromPairs(new[]
                 {
-                    (WileyMapDefaults.SchoolLatitude, WileyMapDefaults.SchoolLongitude),
-                    (38.1600, -102.7000)
+                    (MapDefaults.FallbackLatitude, MapDefaults.FallbackLongitude),
+                    (MapDefaults.FallbackLatitude + 0.05, MapDefaults.FallbackLongitude + 0.05)
                 })
             }
         ];

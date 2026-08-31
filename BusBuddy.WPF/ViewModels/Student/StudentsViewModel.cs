@@ -13,13 +13,14 @@ using BusBuddy.Core;
 using BusBuddy.Core.Data;
 using Microsoft.EntityFrameworkCore;
 using BusBuddy.WPF;
+using BusBuddy.WPF.Utilities;
 using Serilog;
 using Serilog.Context;
 using CommunityToolkit.Mvvm.Input;
 using System.IO;
 using Microsoft.Extensions.DependencyInjection;
 using BusBuddy.Core.Services.Interfaces;
-using BusBuddy.WPF.ViewModels.GoogleEarth;
+using BusBuddy.WPF.ViewModels.Map;
 using CommunityToolkit.Mvvm.Messaging;
 using BusBuddy.WPF.Messages;
 
@@ -301,6 +302,7 @@ namespace BusBuddy.WPF.ViewModels.Student
         #region Commands
 
         public ICommand AddStudentCommand { get; private set; } = null!;
+        public ICommand AddSchoolCommand { get; private set; } = null!;
         public ICommand EditStudentCommand { get; private set; } = null!;
         public ICommand DeleteStudentCommand { get; private set; } = null!;
         public ICommand RefreshCommand { get; private set; } = null!;
@@ -338,6 +340,7 @@ namespace BusBuddy.WPF.ViewModels.Student
         {
             // Existing commands
             AddStudentCommand = new RelayCommand(ExecuteAddStudent);
+            AddSchoolCommand = new RelayCommand(ExecuteAddSchool);
             _editStudentRelay = new RelayCommand(ExecuteEditStudent, CanExecuteEditStudent);
             EditStudentCommand = _editStudentRelay;
             _deleteStudentRelay = new RelayCommand(ExecuteDeleteStudent, CanExecuteDeleteStudent);
@@ -362,7 +365,7 @@ namespace BusBuddy.WPF.ViewModels.Student
             _schoolTransferRelay = new RelayCommand(ExecuteSchoolTransfer, () => HasSelectedStudent);
             SchoolTransferCommand = _schoolTransferRelay;
 
-            Logger.Debug("Commands initialized: Add/Edit/Delete/Import/BulkAssign/Optimize/ViewMap/ViewOnMap/Suggest/Validate/Refresh/Export/ShowSummary/ShowQuickActions/Plot/SchoolTransfer");
+            Logger.Debug("Commands initialized: AddStudent/AddSchool/Edit/Delete/Import/BulkAssign/Optimize/ViewMap/ViewOnMap/Suggest/Validate/Refresh/Export/ShowSummary/ShowQuickActions/Plot/SchoolTransfer");
         }
 
         #endregion
@@ -379,18 +382,7 @@ namespace BusBuddy.WPF.ViewModels.Student
                 Logger.Information("Add student command executed");
 
                 var studentForm = new BusBuddy.WPF.Views.Student.StudentForm();
-                try
-                {
-                    var owner = System.Windows.Application.Current?.Windows
-                        .OfType<System.Windows.Window>()
-                        .FirstOrDefault(w => w.IsActive)
-                        ?? System.Windows.Application.Current?.MainWindow;
-                    if (owner != null)
-                    {
-                        studentForm.Owner = owner;
-                    }
-                }
-                catch { /* non-fatal: owner is optional */ }
+                DialogOwner.Assign(studentForm);
                 var result = studentForm.ShowDialog();
 
                 if (result == true)
@@ -407,6 +399,37 @@ namespace BusBuddy.WPF.ViewModels.Student
             }
         }
 
+        private void ExecuteAddSchool()
+        {
+            try
+            {
+                var dest = App.ServiceProvider?.GetService<IDestinationService>();
+                if (dest is null)
+                {
+                    StatusMessage = "Destination service is not available.";
+                    Logger.Warning("Add school skipped: IDestinationService not registered");
+                    return;
+                }
+
+                var vm = new SchoolDestinationFormViewModel(dest);
+                var form = new BusBuddy.WPF.Views.Student.SchoolDestinationForm(vm);
+                DialogOwner.Assign(form);
+                var result = form.ShowDialog();
+                if (result == true)
+                {
+                    _ = LoadReferenceDataAsync();
+                    StatusMessage = vm.SavedWithGps
+                        ? "School saved. Assign it on the student form, then Generate Routes."
+                        : "School saved without GPS. Generate Routes will not persist stop times until coordinates are set.";
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Error executing add school command");
+                StatusMessage = $"Error adding school: {ex.Message}";
+            }
+        }
+
     /// <summary>
     /// Opens the StudentForm for editing the currently selected student.
     /// </summary>
@@ -419,18 +442,7 @@ namespace BusBuddy.WPF.ViewModels.Student
                     Logger.Information("Edit student command executed for student {StudentId}", SelectedStudent.StudentId);
 
                     var studentForm = new BusBuddy.WPF.Views.Student.StudentForm(SelectedStudent);
-                    try
-                    {
-                        var owner = System.Windows.Application.Current?.Windows
-                            .OfType<System.Windows.Window>()
-                            .FirstOrDefault(w => w.IsActive)
-                            ?? System.Windows.Application.Current?.MainWindow;
-                        if (owner != null)
-                        {
-                            studentForm.Owner = owner;
-                        }
-                    }
-                    catch { /* non-fatal: owner is optional */ }
+                    DialogOwner.Assign(studentForm);
                     var result = studentForm.ShowDialog();
 
                     if (result == true)
@@ -476,19 +488,7 @@ namespace BusBuddy.WPF.ViewModels.Student
                 transferService,
                 destinationService);
             var dialog = new BusBuddy.WPF.Views.Student.StudentSchoolTransferForm(vm);
-            try
-            {
-                var owner = System.Windows.Application.Current?.Windows
-                    .OfType<System.Windows.Window>()
-                    .FirstOrDefault(w => w.IsActive)
-                    ?? System.Windows.Application.Current?.MainWindow;
-                if (owner != null)
-                {
-                    dialog.Owner = owner;
-                }
-            }
-            catch { /* owner optional */ }
-
+            DialogOwner.Assign(dialog);
             if (dialog.ShowDialog() == true)
             {
                 _ = LoadStudentsAsync();
@@ -635,7 +635,7 @@ namespace BusBuddy.WPF.ViewModels.Student
             }
         }
     /// <summary>
-    /// Plots the provided student on the map via GoogleEarthViewModel.
+    /// Plots the provided student on the map via MapViewModel.
     /// </summary>
     private async void ExecuteViewOnMap(Core.Models.Student? student)
         {
@@ -654,7 +654,7 @@ namespace BusBuddy.WPF.ViewModels.Student
                 }
 
                 var geocoder = sp.GetService<IGeocodingService>();
-                var mapVm = sp.GetService<GoogleEarthViewModel>();
+                var mapVm = sp.GetService<MapViewModel>();
                 if (mapVm == null)
                 {
                     StatusMessage = "Map view unavailable";
@@ -915,7 +915,7 @@ namespace BusBuddy.WPF.ViewModels.Student
         }
 
     /// <summary>
-    /// Imports students from a Wiley-format CSV via <see cref="ISeedDataService"/>.
+    /// Imports students from a student CSV via <see cref="ISeedDataService"/>.
     /// </summary>
     private async Task ExecuteImportStudentsAsync()
         {
@@ -1120,7 +1120,7 @@ namespace BusBuddy.WPF.ViewModels.Student
         }
 
     /// <summary>
-    /// Plots all students on the map using the GoogleEarthViewModel.
+    /// Plots all students on the map using the MapViewModel.
     /// </summary>
     private void ExecuteViewMap()
         {
@@ -1137,7 +1137,7 @@ namespace BusBuddy.WPF.ViewModels.Student
                 }
 
                 var geocoder = sp.GetService<IGeocodingService>();
-                var mapVm = sp.GetService<GoogleEarthViewModel>();
+                var mapVm = sp.GetService<MapViewModel>();
                 if (mapVm == null)
                 {
                     StatusMessage = "Map view unavailable";
@@ -1148,10 +1148,11 @@ namespace BusBuddy.WPF.ViewModels.Student
                 for (int i = mapVm.MapMarkers.Count - 1; i >= 0; i--)
                 {
                     var m = mapVm.MapMarkers[i];
-                    if (!string.Equals(m.Label, "Wiley School RE-13JT", StringComparison.OrdinalIgnoreCase))
+                    if (!string.IsNullOrWhiteSpace(m.Label) && m.Label.StartsWith("Bus ", StringComparison.Ordinal))
                     {
-                        mapVm.MapMarkers.RemoveAt(i);
+                        continue;
                     }
+                    mapVm.MapMarkers.RemoveAt(i);
                 }
 
                 // Fire-and-forget each geocode to keep UI responsive

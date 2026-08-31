@@ -116,8 +116,8 @@ Launchers: `./run-wpf.sh` (Mac → UTM), `.\utm_run_in_vm.ps1` (inside VM). Post
 | Concern               | File                                             |
 | --------------------- | ------------------------------------------------ |
 | Passwords load        | `BusBuddy.WPF/App.xaml.cs`                       |
-| Geo (DB + shapefiles) | `GeoDataService`, `ShapefileEligibilityService`  |
-| Geo (Maps, paused)    | [spec 007](specs/007-maps-platform-geo/spec.md)  |
+| Geo (DB + map)        | `GeoDataService`, `MapView` / `MapViewModel` (SfMap) |
+| Geo (Maps Platform)   | [spec 007](specs/007-maps-platform-geo/spec.md) — Address Validation + Routes; not Earth Engine |
 | Geo DI                | `BusBuddy.WPF/App.xaml.cs` → `ConfigureServices` |
 | AI chat (Ollama)      | `BusBuddy.WPF/Services/OllamaChatService.cs`     |
 | CI workflow           | `.github/workflows/ci.yml`                       |

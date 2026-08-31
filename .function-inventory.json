@@ -19,12 +19,13 @@
     "BusBuddy.WPF/Views/Driver/DriverScheduleView.xaml.cs",
     "BusBuddy.Core/Services/DriverAvailabilityCalculator.cs",
     "BusBuddy.Core/Services/GeoDataService.cs",
+    "BusBuddy.Core/Services/DestinationService.cs",
     "BusBuddy.Core/Services/GoogleMaps/GoogleAddressValidationClient.cs",
     "BusBuddy.Core/Services/GoogleMaps/GoogleRoutingService.cs",
     "BusBuddy.WPF/Views/Dashboard/DashboardView.xaml.cs",
     "BusBuddy.Core/Services/DashboardMetricsService.cs",
     "BusBuddy.WPF/Utilities/SyncfusionThemeManager.cs",
-    "BusBuddy.Core/Services/ShapefileEligibilityService.cs"
+    "BusBuddy.WPF/Views/Map/MapView.xaml.cs"
   ],
   "scan_roots": ["BusBuddy.Core", "BusBuddy.WPF", "BusBuddy.Tests"],
   "exclude_dirs": [

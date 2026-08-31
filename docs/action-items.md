@@ -1,6 +1,7 @@
 # BusBuddy Action Items (Due-Outs Tracker)
 
 **Canonical due-outs file for agents and humans.**
+**Clerk write path (school → kids → generate → bus/driver → fuel/maintenance):** [clerk-path.md](./clerk-path.md)
 **Historical finish narrative:** [STEADY-STATE-AND-FINISH-ROADMAP.md](../STEADY-STATE-AND-FINISH-ROADMAP.md)
 **Spec-Kit features:** [specs/](../specs/) (each feature may also have `tasks.md`)
 **Open GitHub issues:** https://github.com/Bigessfour/BusBuddy-3/issues
@@ -13,9 +14,42 @@
 
 ## Priorities (now)
 
+### P0 — Clerk path (living tracker)
+
+Canonical hops: [clerk-path.md](./clerk-path.md). **Do not** split `MainWindow.xaml.cs` / `StudentsViewModel.cs` in the same session as a hop proof.
+
+**Now (hop 1 — Add School)**
+
+- [x] `IDestinationService.AddSchoolAsync` (name, address, bell times, optional GPS)
+- [x] Students → **Add School** form; geocode via `IGeocodingService` or typed lat/lng
+- [x] Unit: `DestinationServiceTests.AddSchool_PersistsCatalogRowWithBellTimes` + `AddSchool_PersistsOptionalGps`
+- [ ] **VM smoke:** Students → Add School → Serilog `Added school DestinationId=` → row in `Destinations` with `StartTime` / `DismissalTime`. Prefer GPS so hop 3 can persist stop times (`./run-wpf.sh`)
+
+**Next (one hop at a time; prove then check the box)**
+
+- [ ] Hop 2 — Student save / CSV: `DestinationId` + coordinates. VM: Add Student, pick the school, validate address
+- [ ] Hop 3 — Generate Routes: Serilog `Route generation completed`. Stop if a second table is written
+- [ ] Hop 4 — Bus + driver on `Routes.AMVehicleId` / `AMDriverId` (Assign Bus opens Route Assignments)
+- [ ] Hop 4b — Pick **one** write: `Route.AM*` vs `RouteAssignments` vs `Schedules` (do not add a fourth)
+- [ ] Hop 5 — `ScheduleService` row for that route
+- [ ] Hop 6 — Fuel / Maintenance records point at that bus (`VehicleFueledId` / `VehicleId`)
+
+**Later (after hops, not during proof)**
+
+- [ ] Split `MainWindow.xaml.cs` (1477) — navigation vs lifecycle partials
+- [ ] Stop growing `StudentsViewModel.cs` (1385); school catalog stays on `SchoolDestinationFormViewModel`
+- [ ] Dead tables stay unwired until hops are proved: Families/Guardians, TripEvents, AIInsights, SchoolCalendar, ActivityLogs
+
+**Already wired (not the current hop)**
+
+- [x] Dock grids load from services only (no John Doe sample rows)
+- [x] Edit Student uses grid `SelectedItem`
+- [x] Fuel and Maintenance on the main header
+- [x] Drivers **Assign Bus** opens Route Assignments
+
 ### P1 — Syncfusion page-by-page control audit (UI)
 
-Static scan 2026-08-28: **41 XAML surfaces** (1 shell, 18 pages, 18 dialogs, 4 controls), **611** `syncfusion:*` instances across **31** types, **474** `{Binding}` properties. Plus `maps:SfMap` on GoogleEarthView (different xmlns, not in the 611).
+Static scan 2026-08-28: **41 XAML surfaces** (1 shell, 18 pages, 18 dialogs, 4 controls), **611** `syncfusion:*` instances across **31** types, **474** `{Binding}` properties. Plus `maps:SfMap` on MapView (different xmlns, not in the 611).
 
 Go **one surface at a time**. For every Syncfusion control on that surface, check:
 
@@ -29,7 +63,7 @@ Waves (do not skip Wave 1):
 
 | Wave | Surfaces                                                                                                                                 |
 | ---- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| 1    | `MainWindow`, `RouteAssignmentView`, `RouteManagementView`, `StudentsView`, `StudentForm`, `GoogleEarthView`                             |
+| 1    | `MainWindow`, `RouteAssignmentView`, `RouteManagementView`, `StudentsView`, `StudentForm`, `MapView`                                     |
 | 2    | `DriversView`, `DriverForm`, `DriverTrainingChecklistView`, `VehicleManagementView`, `VehiclesView` (stub: 0 SF controls), `ReportsView` |
 | 3    | Remaining pages (`Dashboard`, `Fuel`, `Maintenance`, `Activity`, `Analytics`, `Settings`, `DriverSchedule`, `DriverManagement`)          |
 | 4    | Dialogs / forms (`*Form`, `*Dialog`, preview/welcome)                                                                                    |
@@ -41,7 +75,7 @@ Wave 1 (2026-08-28): implicit ButtonAdv glyph suppression on shell/map/form; Rou
 
 Wave 2–3 (2026-08-28): DriverForm ComboBox `SelectedValue`+`Content`; Vehicles stub hosts `VehicleManagementView`; Vehicle status bar off Accent blue; Reports/Fuel/Dashboard/Maintenance/Analytics/Timeline/Settings/Schedule glyph collapse + AutomationNames.
 
-- [x] Wave 1 XAML audit (`MainWindow`, `RouteAssignmentView`, `RouteManagementView`, `StudentsView`, `StudentForm`, `GoogleEarthView`) — remaining: VM smoke
+- [x] Wave 1 XAML audit (`MainWindow`, `RouteAssignmentView`, `RouteManagementView`, `StudentsView`, `StudentForm`, `MapView`) — remaining: VM smoke
 - [x] Wave 2 complete (`DriversView`, `DriverForm`, `DriverTrainingChecklistView`, `VehicleManagementView`, `VehiclesView` host, `ReportsView`)
 - [x] Wave 3 complete (remaining pages)
 - [x] Waves 4–5 complete (dialogs + shared controls) — 2026-08-31: unwired ButtonAdv wired or Click-in-XAML; NotificationWindow FindName; VehicleForm ancestor; missing styles; activity editor Syncfusion-only
@@ -83,7 +117,7 @@ Wave 2–3 (2026-08-28): DriverForm ComboBox `SelectedValue`+`Content`; Vehicles
 ### P1 — Finish / domain (Spec-Kit wave 2) — aligns with [issue #11](https://github.com/Bigessfour/BusBuddy-3/issues/11)
 
 - [x] Student import / optimize end-to-end (UI + SeedDataService + tests)
-  - [x] CSV import wired: `ISeedDataService.ImportStudentsFromCsvAsync` + Students/StudentForm Import CSV buttons (Wiley-format file picker). Proof: parent address columns, next `WSD` number, Wiley header rejection, form import refreshes list via `StudentsImportedMessage`
+  - [x] CSV import wired: `ISeedDataService.ImportStudentsFromCsvAsync` + Students/StudentForm Import CSV buttons. Proof: parent address columns, next `STU` number, unexpected-header rejection, form import refreshes list via `StudentsImportedMessage`
   - [x] Optimize routes: `IStudentRouteOptimizer` fills active routes via `IRouteService.AutoAssignStudentsAsync`, then Ollama/`GrokGlobalAPI` commentary (mock fallback). Wired on Students + Dashboard. Proof: `StudentRouteOptimizerTests`
 - [x] Reports: `IOperationalReportService` writes live PDFs/CSVs via `PdfReportService.GenerateTabularReport` + Ollama/`GrokGlobalAPI.GetShortCommentaryAsync` (mock fallback). All Reports buttons + Dashboard Generate Report. Proof: `OperationalReportServiceTests`, `PdfReportServiceTests.GenerateTabularReport_ReturnsValidPdf`. Merged [PR #24](https://github.com/Bigessfour/BusBuddy-3/pull/24). CLI `--generate-report` uses the same service (aliases: Roster, RouteManifest, StudentList, DriverSchedule)
 - [x] Driver availability + SfScheduler — `DriverAvailabilityCalculator` uses Schedule rows; `DriverScheduleView` binds SfScheduler; `Schedule_Click` opens it
@@ -92,7 +126,7 @@ Wave 2–3 (2026-08-28): DriverForm ComboBox `SelectedValue`+`Content`; Vehicles
   - Serilog proof: `Maintenance UI loaded Records=` / `Created maintenance record`
 - [x] Google Earth Engine enhancements (beyond current DI/auth) — **superseded by 007**: EE is the wrong product for addresses/trips; see [007 Maps Platform Geo](../specs/007-maps-platform-geo/spec.md)
   - Historical: shared map VM + `IGeocodingService` + SfMap plot (hash geocoder retired with 007 US1)
-- [x] SfMap mapping: official OSM + Wiley center/zoom, Syncfusion string markers, shared map VM, live routes/buses (not sample-only)
+- [x] SfMap mapping: official OSM + school-catalog / fallback center, Syncfusion string markers, shared `MapViewModel`, live routes/buses (not sample-only). Earth Engine is not used.
 - [x] End-to-end student → assign → report proof test — `BusBuddy.Tests/Core/RouteAssignmentFlowTests.cs` (SeedDataService → StudentService → RouteService → PdfReportService). **UTM Windows VM 2026-08-16:** `Total tests: 1`, `Passed: 1` (built from `C:\dev\BusBuddy-3` after Z:\ sync). Mac host cannot execute WPF testhost; use `./run-wpf.sh` + `utm_run_in_vm.ps1` for GUI.
 - [x] P1 surface proof files (2026-08-31): `StudentsViewTests` (Import/Optimize/Transfer/Add commands in XAML); `ReportsViewTests` (roster/unassigned/route summary/CSV); inventory links `AssignFitnessEvaluatorTests` + `RouteDeterminationServiceTests`
 
@@ -143,16 +177,16 @@ python3 ~/.cursor/skills/function-inventory/scripts/update-function-inventory.py
   --root . --output docs/function-inventory.generated.md
 ```
 
-| Surface                                                  | Tier | Proof / next check                                                                                                                                                                                                         |
-| -------------------------------------------------------- | ---- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Student / Seed / Route / Optimizer / Reports services    | P1   | Unit tests present (`StudentServiceTests`, `SeedDataServiceTests`, `RouteServiceTests`, `StudentRouteOptimizerTests`, `OperationalReportServiceTests`, `PdfReportServiceTests`)                                            |
-| `DestinationService` / `StudentSchoolTransferService`    | P1   | Transfer + waypoints: `StudentSchoolTransferAndWaypointTests`. Destination unit tests still open. VM migrate + intake school assign still due (P0).                                                                        |
-| `DriverTrainingService`                                  | P1   | `DriverTrainingServiceTests` present. VM Training grid smoke still due (P0).                                                                                                                                               |
-| `StudentsView` / `ReportsView` / transfer & training UI  | P1   | No WPF testhost on Mac. Proof is VM smoke (`./run-wpf.sh`) + Core tests above. Do not treat as a missing feature.                                                                                                          |
-| `ScheduleService`                                        | P1   | **Runtime proof via Serilog:** `GetSchedulesAsync` logs count + elapsed. SfScheduler UI: `DriverScheduleViewModel` / `DriverAvailabilityService` log appointment and 14-day availability summaries. Unit tests still open. |
-| `DriverService`                                          | P1   | `DriverServiceTests` exist; `DriverScheduleView` + `DriverAvailabilityCalculator` (Schedule + ActivitySchedule). Availability calc logs `Drivers=` / `WithOpenDays=`                                                       |
-| `MaintenanceService` / Dashboard metrics / theme manager | P2   | `MaintenanceService` logs CRUD. Dashboard: `DashboardViewModel` logs refresh/optimize/report. Earth Engine retired (spec 007).                                                                                             |
-| `DashboardView` / `GeoDataService`                       | P2   | VM smoke + Serilog: `Dashboard refresh completed` / `Loaded routes with geo data`                                                                                                                                          |
+| Surface                                                  | Tier | Proof / next check                                                                                                                                                              |
+| -------------------------------------------------------- | ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Student / Seed / Route / Optimizer / Reports services    | P1   | Unit tests present (`StudentServiceTests`, `SeedDataServiceTests`, `RouteServiceTests`, `StudentRouteOptimizerTests`, `OperationalReportServiceTests`, `PdfReportServiceTests`) |
+| `DestinationService` / `StudentSchoolTransferService`    | P1   | Transfer + waypoints: `StudentSchoolTransferAndWaypointTests`. Destination: `DestinationServiceTests` (no auto-seeded school). VM intake school assign still due (P0).          |
+| `ScheduleService`                                        | P1   | Unit: `ScheduleServiceTests`. Runtime Serilog: `GetSchedulesAsync` count + elapsed. SfScheduler: `DriverScheduleView`.                                                          |
+| `DriverTrainingService`                                  | P1   | `DriverTrainingServiceTests` present. VM Training grid smoke still due (P0).                                                                                                    |
+| `StudentsView` / `ReportsView` / transfer & training UI  | P1   | No WPF testhost on Mac. Proof is VM smoke (`./run-wpf.sh`) + Core tests above. Do not treat as a missing feature.                                                               |
+| `DriverService`                                          | P1   | `DriverServiceTests` exist; `DriverScheduleView` + `DriverAvailabilityCalculator` (Schedule + ActivitySchedule). Availability calc logs `Drivers=` / `WithOpenDays=`            |
+| `MaintenanceService` / Dashboard metrics / theme manager | P2   | `MaintenanceService` logs CRUD. Dashboard: `DashboardViewModel` logs refresh/optimize/report. Earth Engine retired (spec 007).                                                  |
+| `DashboardView` / `GeoDataService`                       | P2   | VM smoke + Serilog: `Dashboard refresh completed` / `Loaded routes with geo data`                                                                                               |
 
 ---
 
@@ -164,4 +198,4 @@ python3 ~/.cursor/skills/function-inventory/scripts/update-function-inventory.py
 
 ---
 
-*Updated 2026-08-17: function-inventory re-scan — 26 surfaces (added Destination/Transfer/Training); 16 with scanner proof.*
+*Updated 2026-08-31: clerk-path hop tracker. Now = hop 1 VM smoke. Later = split giant files after hops.*

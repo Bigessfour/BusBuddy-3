@@ -57,10 +57,7 @@
     <!-- Serilog -->
     <PackageReference Include="Serilog.Extensions.Logging" Version="$(SerilogExtensionsLoggingVersion)" />
 
-    <!-- Syncfusion PDF + geospatial -->
     <PackageReference Include="Syncfusion.Pdf.NET" Version="$(SyncfusionVersion)" />
-    <PackageReference Include="NetTopologySuite" Version="$(NetTopologySuiteVersion)" />
-    <PackageReference Include="NetTopologySuite.IO.ShapeFile" Version="2.1.0" />
   </ItemGroup>
 
   <ItemGroup>

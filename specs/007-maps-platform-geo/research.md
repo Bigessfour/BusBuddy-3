@@ -20,11 +20,11 @@
 
 ## Decision: Keep SfMap + OSM; drop unofficial Google tiles
 
-**Rationale**: `GoogleEarthView` already defaults to OSM with attribution. `mt1.google.com/vt` violates Google Maps tile ToS. Map Tiles API is optional later, not MVP.
+**Rationale**: `MapView` already defaults to OSM with attribution. `mt1.google.com/vt` violates Google Maps tile ToS. Map Tiles API is optional later, not MVP.
 
-## Decision: Keep shapefile eligibility
+## Decision: No geofence — students in the system are eligible
 
-**Rationale**: `ShapefileEligibilityService` is local, offline, already wired. Uploading district polygons to Maps/EE is out of scope.
+**Rationale**: District/town shapefiles were for another district and would have marked the wrong students ineligible. Anyone entered in BusBuddy is treated as eligible. Address correctness is Maps Platform Address Validation, not a polygon.
 
 ## Decision: Production DI must not use OfflineGeocodingService
 

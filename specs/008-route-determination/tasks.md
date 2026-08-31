@@ -62,7 +62,7 @@
 - [x] T016 [US1] Implement `ApplyClerkOverrideAsync` in `RouteDeterminationService.cs` (move student between proposals/routes; Serilog override)
 - [x] T017 [US1] Persist accepted drafts via `IRouteService` / route create helpers in `RouteDeterminationService.cs` (naming `Draft-{School}-{Cell}-{n}` or accept-into-existing)
 - [x] T018 [US1] Add year-start **Generate routes** command on `BusBuddy.WPF/ViewModels/Route/RouteManagementViewModel.cs` (or Students) calling `GenerateAndAssignAsync`
-- [x] T019 [US1] Show draft proposals on map / status in `BusBuddy.WPF/ViewModels/GoogleEarth/GoogleEarthViewModel.cs` (or Route map path) for override selection
+- [x] T019 [US1] Show draft proposals on map / status in `BusBuddy.WPF/ViewModels/GoogleEarth/MapViewModel.cs` (or Route map path) for override selection
 - [x] T020 [US1] Serilog `Route generation completed School={SchoolId} Fleet={Fleet} Routes={N} Students={S}` in `RouteDeterminationService.cs`
 
 **Checkpoint**: US1 unit tests green; year-start generate produces drafts for one school

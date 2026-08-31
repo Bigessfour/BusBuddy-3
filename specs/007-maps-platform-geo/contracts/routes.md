@@ -12,7 +12,7 @@ IRoutingService
     { Polyline, DistanceMeters, Duration, Error? }
 ```
 
-- `origin` / `destination`: Wiley School default (existing WileyMapDefaults) unless route specifies otherwise.
+- `origin` / `destination`: Wiley School default (existing MapDefaults) unless route specifies otherwise.
 - `waypoints`: RouteStops with lat/lon, StopOrder.
 - `travelMode`: DRIVE
 - `routingPreference`: TRAFFIC_UNAWARE (rural AM/PM planning; cheaper/stabler)

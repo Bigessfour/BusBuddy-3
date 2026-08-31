@@ -844,11 +844,11 @@ var entities = await _entityService.GetEntitiesAsync();
 
 ```csharp
 // Step 1: Ensure code-behind file exists with correct namespace
-namespace BusBuddy.WPF.Views.GoogleEarth
+namespace BusBuddy.WPF.Views.Map
 {
-    public partial class GoogleEarthView : UserControl
+    public partial class MapView : UserControl
     {
-        public GoogleEarthView()
+        public MapView()
         {
             InitializeComponent();
         }
@@ -858,7 +858,7 @@ namespace BusBuddy.WPF.Views.GoogleEarth
 
 ```xml
 <!-- Step 2: Match XAML x:Class to code-behind -->
-<UserControl x:Class="BusBuddy.WPF.Views.GoogleEarth.GoogleEarthView">
+<UserControl x:Class="BusBuddy.WPF.Views.Map.MapView">
 ```
 
 #### **Error Type 4: Missing Event Handler**
@@ -1040,7 +1040,7 @@ xmlns:syncfusion="http://schemas.syncfusion.com/wpf"
 ⚠️ **REQUIRES SIMILAR UPGRADE (NO REGRESSION ALLOWED):**
 
 - Any remaining DataGrid instances should be upgraded to SfDataGrid using above patterns
-- GoogleEarthView.xaml DataGrid → Convert to SfDataGrid following VehicleManagementView pattern
+- MapView.xaml DataGrid → Convert to SfDataGrid following VehicleManagementView pattern
 - VehiclesView.xaml → Add Syncfusion namespace and implement SfDataGrid
 - VehicleForm.xaml → Any data display should use SfDataGrid patterns
 

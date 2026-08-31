@@ -143,7 +143,7 @@ bb-maps                  # Launch Google Earth view (if implemented)
 bb-route-visual         # Visualize routes on map
 bb-earth-view           # Open Google Earth interface
 
-# Related Views: GoogleEarthView.xaml in BusBuddy.WPF/Views/GoogleEarth/
+# Related Views: MapView.xaml in BusBuddy.WPF/Views/GoogleEarth/
 ```
 
 ### XAI Chat & AI Features

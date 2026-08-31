@@ -40,7 +40,7 @@ namespace BusBuddy.Core.Services
         }
 
         /// <summary>
-        /// Seed students from a JSON file specified by configuration key "WileyJsonPath".
+        /// Seed students from a JSON file specified by configuration key "StudentJsonPath".
         /// If Students table already contains any records, this method exits without changes.
         /// </summary>
         public async Task SeedFromJsonAsync()
@@ -60,7 +60,7 @@ namespace BusBuddy.Core.Services
                 }
 
                 // Resolve JSON path
-                string? jsonPath = _configuration?["WileyJsonPath"];
+                string? jsonPath = _configuration?["StudentJsonPath"];
                 if (string.IsNullOrWhiteSpace(jsonPath))
                 {
                     // Fallback: try local appsettings.json next to the running app
@@ -71,17 +71,17 @@ namespace BusBuddy.Core.Services
                             .AddJsonFile("appsettings.json", optional: true)
                             .AddEnvironmentVariables()
                             .Build();
-                        jsonPath = config["WileyJsonPath"];
+                        jsonPath = config["StudentJsonPath"];
                     }
                     catch (Exception ex)
                     {
-                        Logger.Warning(ex, "Failed to load configuration for WileyJsonPath fallback");
+                        Logger.Warning(ex, "Failed to load configuration for StudentJsonPath fallback");
                     }
                 }
 
                 if (string.IsNullOrWhiteSpace(jsonPath) || !File.Exists(jsonPath))
                 {
-                    Logger.Warning("WileyJsonPath not found or file missing: {Path}", jsonPath);
+                    Logger.Warning("StudentJsonPath not found or file missing: {Path}", jsonPath);
                     return;
                 }
 
@@ -354,7 +354,7 @@ namespace BusBuddy.Core.Services
         /// </summary>
         public Task SeedStudentsFromCsvAsync()
         {
-            return ImportFromCsvTextAsync(GetEmbeddedWileyCsv(), skipIfAlreadySeeded: true, createdBy: "SeedDataService");
+            return ImportFromCsvTextAsync(GetEmbeddedSampleCsv(), skipIfAlreadySeeded: true, createdBy: "SeedDataService");
         }
 
         /// <inheritdoc />
@@ -374,11 +374,11 @@ namespace BusBuddy.Core.Services
             return await ImportFromCsvTextAsync(csvData, skipIfAlreadySeeded: false, createdBy: "CsvImport");
         }
 
-        private static string GetEmbeddedWileyCsv() => @"
+        private static string GetEmbeddedSampleCsv() => @"
 Student,,,Parent,,,,,,,,Joint Parent,,,,,,,Econtact,,
 Fname,Lname,Grade,Fname,Lname,Address,City,State,County,Hphone,Cphone,Jparent FirstName,Jparent LastName,Address,City,State,County,Cphone ,Econtact FirstName,Econtact LastName,Econtact Phone
-Blakelynn,Sutphin,7,Brittany ,Higgins,35616 County Road LL,Wiley,CO,Prowers,,719-691-9240,John,Sutphin,8276 County Highway 196,Lamar,CO,,719-940-9011,Tara,Parmely,719-940-8272
-Annistyn,Sutphin,3,,,,,,,,,,,,,,,,,,
+Alex,Rivera,7,Pat,Rivera,100 Main St,Oakridge,CO,County,,555-0100,,,,,,,,
+Jordan,Lee,3,Sam,Lee,200 Oak Ave,Oakridge,CO,County,,555-0101,,,,,,,,
 ";
 
         private async Task<int> ImportFromCsvTextAsync(string csvData, bool skipIfAlreadySeeded, string createdBy)
@@ -416,7 +416,7 @@ Annistyn,Sutphin,3,,,,,,,,,,,,,,,,,,
                 if (idxFname < 0 || idxLname < 0 || idxGrade < 0 || idxAddress < 0)
                 {
                     throw new InvalidOperationException(
-                        "CSV is not Wiley student format. Expected a header row with Fname, Lname, Grade, and Address.");
+                        "CSV is not in the expected student format. Expected a header row with Fname, Lname, Grade, and Address.");
                 }
 
                 int idxParentFname = header.Length > 3 ? Array.IndexOf(header, "Fname", 3) : -1;
@@ -444,7 +444,7 @@ Annistyn,Sutphin,3,,,,,,,,,,,,,,,,,,
                 string lastEcontact = string.Empty;
                 string lastEcontactPhone = string.Empty;
                 int familyId = 1;
-                int studentNum = await NextWsdStudentNumberAsync(context);
+                int studentNum = await NextStudentNumberAsync(context);
                 var families = new List<Family>();
                 var students = new List<Student>();
 
@@ -568,7 +568,7 @@ Annistyn,Sutphin,3,,,,,,,,,,,,,,,,,,
                     }
 
                     // Compose StudentNumber
-                    string studentNumber = $"WSD{studentNum++.ToString("D4", CultureInfo.InvariantCulture)}";
+                    string studentNumber = $"STU{studentNum++.ToString("D4", CultureInfo.InvariantCulture)}";
 
                     // Create or find family (by parentGuardian and homePhone)
                     var family = families.LastOrDefault(f => f.ParentGuardian == parentGuardian && f.HomePhone == homePhone);
@@ -603,7 +603,7 @@ Annistyn,Sutphin,3,,,,,,,,,,,,,,,,,,
                         ParentGuardian = parentGuardian,
                         HomePhone = homePhone,
                         EmergencyPhone = emergencyPhone,
-                        School = "Wiley School District",
+                        School = string.Empty,
                         StudentNumber = studentNumber,
                         Family = family,
                         CreatedDate = DateTime.UtcNow,
@@ -656,20 +656,20 @@ Annistyn,Sutphin,3,,,,,,,,,,,,,,,,,,
             }
         }
 
-        private static async Task<int> NextWsdStudentNumberAsync(BusBuddyDbContext context)
+        private static async Task<int> NextStudentNumberAsync(BusBuddyDbContext context)
         {
             List<string> existingNumbers;
             try
             {
                 existingNumbers = await context.Students
-                    .Where(s => s.StudentNumber != null && s.StudentNumber.StartsWith("WSD"))
+                    .Where(s => s.StudentNumber != null && s.StudentNumber.StartsWith("STU"))
                     .Select(s => s.StudentNumber!)
                     .ToListAsync();
             }
             catch (InvalidOperationException)
             {
                 existingNumbers = context.Students
-                    .Where(s => s.StudentNumber != null && s.StudentNumber.StartsWith("WSD"))
+                    .Where(s => s.StudentNumber != null && s.StudentNumber.StartsWith("STU"))
                     .Select(s => s.StudentNumber!)
                     .ToList();
             }

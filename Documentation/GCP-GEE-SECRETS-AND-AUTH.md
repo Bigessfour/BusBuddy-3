@@ -6,7 +6,7 @@ Earth Engine is **not** an app dependency. Do not restore `GEE_*` keys, `GcpCred
 
 ## Status (paused)
 
-Runtime today: local DB waypoints + Syncfusion SfMap (OpenStreetMap) + shapefile eligibility + offline hash geocoder (placeholder).
+Runtime today: local DB waypoints + Syncfusion SfMap (OpenStreetMap). Address Validation (Maps Platform) geocodes student addresses when `GOOGLE_MAPS_API_KEY` is set. Students entered in the system are eligible — there is no geofence.
 
 **Next (paused):** Google Maps Platform on billing project `new-coursera-490518`:
 
@@ -49,7 +49,6 @@ Set `GOOGLE_MAPS_API_KEY` as a machine/user env var — no Keychain.
 | `GoogleAddressValidationClient` | Production `IGeocodingService` (null when key missing) |
 | `GoogleRoutingService`          | Production `IRoutingService` (fail-open)               |
 | `OfflineGeocodingService`       | Tests/demo only — not registered in production DI      |
-| `ShapefileEligibilityService`   | Local Wiley district/town shapefiles                   |
 
 ## Never commit
 
@@ -58,5 +57,5 @@ Set `GOOGLE_MAPS_API_KEY` as a machine/user env var — no Keychain.
 ## Related
 
 - Spec: `specs/007-maps-platform-geo/`
-- Constitution: `.specify/memory/constitution.md` (Geo = Maps + shapefiles)
+- Constitution: `.specify/memory/constitution.md` (Geo = Maps Platform Address Validation + SfMap; no geofence)
 - Agent quick ref: `AGENTS.md`

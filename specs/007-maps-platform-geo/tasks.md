@@ -74,7 +74,7 @@
 - [x] T017 [P] [US2] Delete or gut `BusBuddy.Core/Configuration/GcpCredentialBootstrap.cs` and `BusBuddy.Core/Configuration/GoogleEarthEngineOptions.cs` if unused
 - [x] T018 [P] [US2] Remove `Google.Apis.Drive.v3` (and unused `Google.Apis.*`) from `BusBuddy.Core/BusBuddy.Core.csproj` after grep confirms no remaining references
 - [x] T019 [US2] **Skipped (pause):** `GeeConnectionProbe` deleted; `MapsConnectionProbe` not added until US1
-- [x] T020 [US2] Remove `GoogleImageryLayer` / `mt1.google.com` from `BusBuddy.WPF/Views/GoogleEarth/GoogleEarthView.xaml.cs`; keep OSM default
+- [x] T020 [US2] Remove `GoogleImageryLayer` / `mt1.google.com` from `BusBuddy.WPF/Views/GoogleEarth/MapView.xaml.cs`; keep OSM default
 - [x] T021 [US2] Removed `.github/scripts/gcp-gee.env` and `.github/scripts/setup-gcp-gee.sh`; living docs no longer reference GEE setup scripts
 
 **Checkpoint**: No EE runtime types; map tiles OSM-only
@@ -95,7 +95,7 @@
 
 - [x] T023 [US3] Add `BusBuddy.Core/Services/Interfaces/IRoutingService.cs` and `BusBuddy.Core/Services/GoogleMaps/GoogleRoutingService.cs`
 - [x] T024 [US3] Extend `BusBuddy.Core/Mapping/RouteWaypointSerializer.cs` if needed to store encoded polyline + points
-- [x] T025 [US3] Call `IRoutingService` from route refresh in `BusBuddy.WPF/ViewModels/GoogleEarth/GoogleEarthViewModel.cs` and/or `BusBuddy.WPF/ViewModels/Route/RouteManagementViewModel.cs`
+- [x] T025 [US3] Call `IRoutingService` from route refresh in `BusBuddy.WPF/ViewModels/GoogleEarth/MapViewModel.cs` and/or `BusBuddy.WPF/ViewModels/Route/RouteManagementViewModel.cs`
 - [x] T026 [US3] Ensure `BusBuddy.Core/Services/StudentRouteOptimizer.cs` still assigns seats if routing fails (try/catch + Serilog Warning)
 - [x] T027 [US3] Register `IRoutingService` in `BusBuddy.WPF/App.xaml.cs` (via `AddDataServices`)
 
@@ -184,5 +184,5 @@
 
 - Constitution already amended to v1.1.0 in `.specify/memory/constitution.md` (this feature)
 - Do not commit `GOOGLE_MAPS_API_KEY` or SA JSON
-- `GoogleEarthView*` rename is out of scope
+- `MapView*` rename is out of scope
 - Suggested commit after implement: `feat: replace Earth Engine with Maps Platform geo (007)`

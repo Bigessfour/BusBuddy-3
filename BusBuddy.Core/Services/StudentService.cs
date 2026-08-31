@@ -1477,162 +1477,19 @@ public class StudentService : IStudentService
     #region Data Seeding
 
     /// <summary>
-    /// Seeds student data from Wiley School District registration forms
-    /// Uses resilient execution patterns for reliable data import
+    /// District JSON seed is retired. Add students through intake or CSV import.
     /// </summary>
-    public async Task<SeedResult> SeedWileySchoolDistrictDataAsync()
+    public Task<SeedResult> SeedDistrictDataAsync()
     {
-        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
-        int recordsSeeded = 0;
-        try
+        Logger.Information("District JSON seed skipped — students are added through intake or CSV import");
+        return Task.FromResult(new SeedResult
         {
-            Logger.Information("Starting Wiley School District data seeding operation");
-
-            // Use WileyJsonPath from appsettings.json configuration
-            var configuration = new ConfigurationBuilder()
-                .SetBasePath(Directory.GetCurrentDirectory())
-                .AddJsonFile("appsettings.json", optional: true)
-                .AddEnvironmentVariables()
-                .Build();
-
-            var configPath = configuration["WileyJsonPath"];
-            var jsonPath = string.Empty;
-            var allPaths = new List<string>(); // Track all attempted paths for error logging
-
-            if (!string.IsNullOrEmpty(configPath) && File.Exists(configPath))
-            {
-                jsonPath = configPath;
-                Logger.Information("Using configured JSON path: {Path}", jsonPath);
-            }
-            else
-            {
-                // Fallback: try multiple documented candidate locations
-                var baseDir = AppDomain.CurrentDomain.BaseDirectory;
-                var candidatePaths = new[]
-                {
-                    Path.Combine(baseDir, "Data", "wiley-school-district-data.json"),
-                    Path.Combine(baseDir, "BusBuddy.Core", "Data", "wiley-school-district-data.json"),
-                    Path.GetFullPath(Path.Combine(baseDir, "..", "BusBuddy.Core", "Data", "wiley-school-district-data.json")),
-                    @"c:\Users\biges\Desktop\BusBuddy\BusBuddy.Core\Data\wiley-school-district-data.json"
-                };
-                allPaths.AddRange(candidatePaths);
-                jsonPath = candidatePaths.FirstOrDefault(File.Exists) ?? string.Empty;
-                Logger.Information("Using fallback path resolution: {Path}", jsonPath);
-            }
-            if (string.IsNullOrEmpty(jsonPath))
-            {
-                Logger.Error("Wiley JSON file not found. Paths tried: {Paths}", string.Join(" | ", allPaths));
-                return new SeedResult { Success = false, ErrorMessage = "JSON file not found", RecordsSeeded = 0, Duration = stopwatch.Elapsed, CompletedAt = DateTime.UtcNow };
-            }
-            var json = await File.ReadAllTextAsync(jsonPath);
-            var wileyData = System.Text.Json.JsonSerializer.Deserialize<WileyDataRoot>(json);
-            if (wileyData == null || wileyData.families == null)
-            {
-                Logger.Error("Wiley JSON deserialization failed");
-                return new SeedResult { Success = false, ErrorMessage = "JSON deserialization failed", RecordsSeeded = 0, Duration = stopwatch.Elapsed, CompletedAt = DateTime.UtcNow };
-            }
-            var studentsToSeed = wileyData.families.Take(5).Select((fam, idx) => new Student {
-                StudentName = fam.parentGuardian + " Child",
-                FamilyId = fam.id,
-                HomeAddress = fam.address,
-                City = fam.city,
-                State = fam.state,
-                ParentGuardian = fam.parentGuardian,
-                HomePhone = fam.homePhone,
-                EmergencyPhone = fam.cellPhone,
-                School = "Wiley School District",
-                Grade = "K",
-                StudentNumber = $"WILEY{1000+idx}",
-            }).ToList();
-            var result = await ResilientDbExecution.ExecuteWithResilienceAsync(async () => {
-                using var context = _contextFactory.CreateDbContext();
-
-                // Only consider previously seeded Wiley records, not total students
-                var existingWileyCount = await context.Students
-                    .Where(s => s.StudentNumber != null && s.StudentNumber.StartsWith("WILEY"))
-                    .CountAsync();
-                if (existingWileyCount >= 5)
-                {
-                    Logger.Information("Wiley seeding skipped: {ExistingCount} Wiley students already exist", existingWileyCount);
-                    return new SeedResult { Success = true, RecordsSeeded = 0, ErrorMessage = "Already seeded (WILEY)" };
-                }
-
-                // Check for duplicate StudentNumbers before adding
-                var existingStudentNumbers = await context.Students
-                    .Select(s => s.StudentNumber)
-                    .ToListAsync();
-
-                var studentsToAdd = studentsToSeed
-                    .Where(s => !existingStudentNumbers.Contains(s.StudentNumber))
-                    .ToList();
-
-                if (!studentsToAdd.Any())
-                {
-                    Logger.Information("Wiley seeding skipped: All WILEY student numbers already exist");
-                    return new SeedResult { Success = true, RecordsSeeded = 0, ErrorMessage = "Duplicate WILEY student numbers" };
-                }
-
-                Logger.Information("Adding {Count} Wiley students to database", studentsToAdd.Count);
-                context.Students.AddRange(studentsToAdd);
-                recordsSeeded = studentsToAdd.Count;
-
-                try
-                {
-                    await context.SaveChangesAsync();
-                    Logger.Information("Successfully saved {Count} Wiley students", studentsToAdd.Count);
-                    return new SeedResult { Success = true, RecordsSeeded = recordsSeeded };
-                }
-                catch (Exception saveEx)
-                {
-                    Logger.Error(saveEx, "SaveChanges failed for Wiley seeding. Inner exception: {InnerException}",
-                        saveEx.InnerException?.Message ?? "None");
-
-                    // Log specific SQL errors if available
-                    if (saveEx.InnerException is Microsoft.Data.SqlClient.SqlException sqlEx)
-                    {
-                        Logger.Error("SQL Error {Number}: {Message}, Severity: {Severity}, State: {State}",
-                            sqlEx.Number, sqlEx.Message, sqlEx.Class, sqlEx.State);
-                    }
-
-                    throw; // Re-throw for ResilientDbExecution to handle
-                }
-            }, "SeedWileySchoolDistrictData", maxRetries: 3);
-            stopwatch.Stop();
-            return new SeedResult {
-                Success = result.Success,
-                RecordsSeeded = result.RecordsSeeded,
-                ErrorMessage = result.ErrorMessage,
-                Duration = stopwatch.Elapsed,
-                CompletedAt = DateTime.UtcNow
-            };
-        }
-        catch (Exception ex)
-        {
-            stopwatch.Stop();
-            Logger.Error(ex, "Error during Wiley School District data seeding");
-            return new SeedResult {
-                Success = false,
-                RecordsSeeded = recordsSeeded,
-                ErrorMessage = ex.Message,
-                Duration = stopwatch.Elapsed,
-                CompletedAt = DateTime.UtcNow
-            };
-        }
+            Success = true,
+            RecordsSeeded = 0,
+            Duration = TimeSpan.Zero,
+            CompletedAt = DateTime.UtcNow
+        });
     }
-
-    // Helper for JSON deserialization
-public class WileyDataRoot {
-    public required List<Family> families { get; set; }
-}
-public class Family {
-    public int id { get; set; }
-    public required string parentGuardian { get; set; }
-    public required string address { get; set; }
-    public required string city { get; set; }
-    public required string state { get; set; }
-    public required string homePhone { get; set; }
-    public required string cellPhone { get; set; }
-}
 
     #endregion
 }

@@ -144,7 +144,7 @@
                 Background="{DynamicResource BusBuddy.Brush.Semantic.Info}"
                 Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}"
                 AutomationProperties.Name="View Map"
-                AutomationProperties.HelpText="Open route map in Google Earth view"/>
+                AutomationProperties.HelpText="Open route map in map view"/>
                     <Separator Margin="10,0"/>
 
                     <!-- Assignment Operations -->

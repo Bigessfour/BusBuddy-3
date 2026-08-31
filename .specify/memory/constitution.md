@@ -1,12 +1,12 @@
 <!--
 Sync Impact Report
-Version change: 1.0.0 → 1.1.0 (MINOR — Technology & Environment Geo constraint + secrets; Core Principles I–VII unchanged)
-Modified: Technology table Geo (Earth Engine only → Maps Platform + local shapefiles; EE retired from app)
-Modified: GCP project map (ee-bigessfour unused by app); Secrets (GOOGLE_MAPS_API_KEY; drop GEE bootstrap as required)
+Version change: 1.1.0 → 1.2.0 (MINOR — Geo: drop shapefile geofence and Earth Engine naming; Maps Platform Address Validation + SfMap)
+Modified: Technology table Geo (shapefiles/eligibility polygons removed; students in the system are eligible; map UI is Syncfusion SfMap)
+Modified: Last Amended 2026-08-31
 Added: none
-Removed: none (EE project retained as historical unused ID so agents do not reinvent it)
-Templates: plan/spec/tasks — no mandatory section changes (⚠ feature 007 carries the operational rewrite)
-Follow-up: AGENTS.md, README env table, Documentation/GCP-GEE-SECRETS-AND-AUTH.md, architecture map — tasks in specs/007-maps-platform-geo
+Removed: shapefile eligibility; hardcoded district school seed
+Templates: plan/spec/tasks — no mandatory section changes
+Follow-up: AGENTS.md, Documentation/GCP-GEE-SECRETS-AND-AUTH.md, architecture map
 -->
 
 # BusBuddy Constitution
@@ -70,7 +70,7 @@ When those conflict with this constitution, **this file wins** until amended und
 | Logging  | Serilog only                                                                                                                                                                               |
 | Data     | EF Core; Postgres preferred for real tests (`docker-compose` profiles)                                                                                                                     |
 | AI (app) | Prefer local Ollama (or compatible) behind existing service interfaces; cloud XAI is not required for core path                                                                            |
-| Geo      | Google Maps Platform (Address Validation, Routes) on documented billing project; local shapefiles for eligibility; Syncfusion SfMap for display. Earth Engine is **not** an app dependency |
+| Geo      | Google Maps Platform (Address Validation, Routes) on documented billing project; Syncfusion SfMap + OSM for display. Students entered in the system are eligible — no geofence. Earth Engine is **not** an app dependency |
 | Hosting  | No cloud app hosting / no AWS for BusBuddy runtime                                                                                                                                         |
 
 ### GCP project map (do not hallucinate)
@@ -107,4 +107,4 @@ When those conflict with this constitution, **this file wins** until amended und
 - Runtime tactical detail remains in `.github/copilot-instructions.md` and `AGENTS.md` as long as they stay consistent with this document.
 - Complexity beyond stated requirements must be justified in the PR or rejected.
 
-**Version**: 1.1.0 | **Ratified**: 2026-07-24 | **Last Amended**: 2026-08-17
+**Version**: 1.2.0 | **Ratified**: 2026-07-24 | **Last Amended**: 2026-08-31
