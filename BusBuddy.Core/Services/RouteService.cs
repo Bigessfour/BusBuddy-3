@@ -1584,7 +1584,7 @@ namespace BusBuddy.Core.Services
             }
         }
 
-    public async Task<Result<RouteStop>> AddStopToRouteAsync(int routeId, RouteStop routeStop)
+        public async Task<Result<RouteStop>> AddStopToRouteAsync(int routeId, RouteStop routeStop)
         {
             try
             {
@@ -1707,7 +1707,7 @@ namespace BusBuddy.Core.Services
             }
         }
 
-    // ReorderRouteStopsAsync implemented earlier (single implementation retained)
+        // ReorderRouteStopsAsync implemented earlier (single implementation retained)
 
         public async Task<Result<Route>> CloneRouteAsync(int sourceRouteId, DateTime newDate, string? newRouteName = null)
         {
@@ -1824,7 +1824,7 @@ namespace BusBuddy.Core.Services
                 {
                     var students = await studentService.GetStudentsForRouteAsync(context, route.RouteId);
                     var schedule = BuildRouteSchedule(route, students);
-                    var fileName = $"Route-{route.RouteName.Replace(" ","")}-Schedule.txt";
+                    var fileName = $"Route-{route.RouteName.Replace(" ", "")}-Schedule.txt";
                     var filePath = Path.Combine(outputDir, fileName);
                     await File.WriteAllTextAsync(filePath, schedule);
                     Logger.Information("Generated schedule for {RouteName} at {FilePath}", route.RouteName, filePath);

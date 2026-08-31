@@ -32,19 +32,19 @@ Add a Core route-determination service that (1) year-start auto-builds the minim
 
 ## Constitution Check
 
-*GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
+_GATE: Must pass before Phase 0 research. Re-check after Phase 1 design._
 
-| Gate | Status |
-|------|--------|
-| I Spec-driven + RAG | Pass — spec 008; plan/research/data-model/contracts; RAG re-index after merge |
-| II Syncfusion-only UI | Pass — toasts via Syncfusion notifications / existing patterns; SfMap for override |
-| III Serilog-only | Pass — planner logs counts/violations, no secrets |
-| IV Layered architecture | Pass — Core planner services; WPF VM/commands; tests in BusBuddy.Tests |
-| V Hybrid Mac/Windows | Pass — Core algorithms runnable on Mac; UI smoke on VM |
-| VI Solo CI/CD | Pass — feature branch + PR to master |
-| VII YAGNI / no secrets | Pass — heuristic planner; no new paid APIs beyond existing Maps |
-| Geo (v1.1.0) | Pass — optional Routes for ETA; shapefile/bbox for district extent |
-| Hosting | Pass — no AWS/cloud app host |
+| Gate                    | Status                                                                             |
+| ----------------------- | ---------------------------------------------------------------------------------- |
+| I Spec-driven + RAG     | Pass — spec 008; plan/research/data-model/contracts; RAG re-index after merge      |
+| II Syncfusion-only UI   | Pass — toasts via Syncfusion notifications / existing patterns; SfMap for override |
+| III Serilog-only        | Pass — planner logs counts/violations, no secrets                                  |
+| IV Layered architecture | Pass — Core planner services; WPF VM/commands; tests in BusBuddy.Tests             |
+| V Hybrid Mac/Windows    | Pass — Core algorithms runnable on Mac; UI smoke on VM                             |
+| VI Solo CI/CD           | Pass — feature branch + PR to master                                               |
+| VII YAGNI / no secrets  | Pass — heuristic planner; no new paid APIs beyond existing Maps                    |
+| Geo (v1.1.0)            | Pass — optional Routes for ETA; shapefile/bbox for district extent                 |
+| Hosting                 | Pass — no AWS/cloud app host                                                       |
 
 Post-design re-check: contracts are Core service interfaces + UI event contracts; no new control families. **Pass.**
 

@@ -92,23 +92,23 @@ namespace BusBuddy.Tests.Core
             Environment.SetEnvironmentVariable("BUSBUDDY_PHONE_VALIDATION_MODE", "strict");
             try
             {
-            var s = new Student
-            {
-                StudentName = "Bob",
-                Grade = "3",
-                School = "Test",
-                ParentGuardian = "P",
-                EmergencyPhone = "bad",
-                HomePhone = "also-bad",
-                HomeAddress = "1 A St",
-                City = "City",
-                State = "CO",
-                Zip = "9999"
-            };
+                var s = new Student
+                {
+                    StudentName = "Bob",
+                    Grade = "3",
+                    School = "Test",
+                    ParentGuardian = "P",
+                    EmergencyPhone = "bad",
+                    HomePhone = "also-bad",
+                    HomeAddress = "1 A St",
+                    City = "City",
+                    State = "CO",
+                    Zip = "9999"
+                };
 
-            var errors = await _studentService.ValidateStudentAsync(s);
-            errors.Should().Contain(e => e.Contains("phone", StringComparison.OrdinalIgnoreCase));
-            errors.Should().Contain(e => e.Contains("ZIP", StringComparison.OrdinalIgnoreCase));
+                var errors = await _studentService.ValidateStudentAsync(s);
+                errors.Should().Contain(e => e.Contains("phone", StringComparison.OrdinalIgnoreCase));
+                errors.Should().Contain(e => e.Contains("ZIP", StringComparison.OrdinalIgnoreCase));
             }
             finally
             {
@@ -162,7 +162,7 @@ namespace BusBuddy.Tests.Core
 
             var east = await _studentService.GetStudentsByRouteAsync("East Route");
             east.Should().HaveCount(2);
-            east.Select(s => s.StudentName).Should().BeEquivalentTo(new []{"S1","S2"});
+            east.Select(s => s.StudentName).Should().BeEquivalentTo(new[] { "S1", "S2" });
         }
 
         [Test]

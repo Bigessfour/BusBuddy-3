@@ -941,7 +941,7 @@ namespace BusBuddy.Core.Services
                 context.RouteAssignments.Any(ra => ra.RouteAssignmentId == s.RouteAssignmentId && ra.VehicleId == busId));
         }
 
-    // (Removed duplicate legacy ValidateVinAsync implementation)
+        // (Removed duplicate legacy ValidateVinAsync implementation)
 
     }
 }

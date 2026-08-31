@@ -91,8 +91,8 @@ namespace BusBuddy.Tests.Core
             context.Buses.AddRange(buses);
         }
 
-    [Test]
-    public async Task GetFleetStatusAsync_ShouldReturnCorrectStatistics()
+        [Test]
+        public async Task GetFleetStatusAsync_ShouldReturnCorrectStatistics()
         {
             // Act
             var fleetStatus = await _fleetService.GetFleetStatusAsync();
@@ -108,8 +108,8 @@ namespace BusBuddy.Tests.Core
             Assert.That(fleetStatus.CriticalAlerts, Is.Not.Empty);
         }
 
-    [Test]
-    public async Task MonitorBusLocationAsync_WithValidBus_ShouldReturnMonitoringData()
+        [Test]
+        public async Task MonitorBusLocationAsync_WithValidBus_ShouldReturnMonitoringData()
         {
             // Act
             var monitoringData = await _fleetService.MonitorBusLocationAsync(1);
@@ -125,8 +125,8 @@ namespace BusBuddy.Tests.Core
             Assert.That(monitoringData.HasMaintenanceAlerts, Is.False); // Bus 001 maintenance is not overdue
         }
 
-    [Test]
-    public async Task MonitorBusLocationAsync_WithInvalidBus_ShouldReturnNull()
+        [Test]
+        public async Task MonitorBusLocationAsync_WithInvalidBus_ShouldReturnNull()
         {
             // Act
             var monitoringData = await _fleetService.MonitorBusLocationAsync(999);
@@ -135,8 +135,8 @@ namespace BusBuddy.Tests.Core
             Assert.That(monitoringData, Is.Null);
         }
 
-    [Test]
-    public async Task GetOverdueMaintenanceAlertsAsync_ShouldReturnOverdueBuses()
+        [Test]
+        public async Task GetOverdueMaintenanceAlertsAsync_ShouldReturnOverdueBuses()
         {
             // Act
             var overdueBuses = await _fleetService.GetOverdueMaintenanceAlertsAsync();
@@ -147,8 +147,8 @@ namespace BusBuddy.Tests.Core
             Assert.That(overdueBuses[0].NextMaintenanceDue < DateTime.Today, Is.True);
         }
 
-    [Test]
-    public async Task GetActiveGpsTrackedBusesAsync_ShouldReturnOnlyActiveGpsBuses()
+        [Test]
+        public async Task GetActiveGpsTrackedBusesAsync_ShouldReturnOnlyActiveGpsBuses()
         {
             // Act
             var gpsBuses = await _fleetService.GetActiveGpsTrackedBusesAsync();
@@ -160,9 +160,9 @@ namespace BusBuddy.Tests.Core
             Assert.That(gpsBuses[0].GPSTracking, Is.True);
         }
 
-    [Test]
-    [Category("InMemoryFlaky")]
-    public async Task UpdateBusLocationAsync_WithValidBus_ShouldUpdateLocation()
+        [Test]
+        [Category("InMemoryFlaky")]
+        public async Task UpdateBusLocationAsync_WithValidBus_ShouldUpdateLocation()
         {
             // Arrange
             var newLat = 41.8781m;
@@ -179,8 +179,8 @@ namespace BusBuddy.Tests.Core
             Assert.That(monitoring.CurrentLongitude, Is.EqualTo(newLon));
         }
 
-    [Test]
-    public async Task UpdateBusLocationAsync_WithNonGpsBus_ShouldReturnFalse()
+        [Test]
+        public async Task UpdateBusLocationAsync_WithNonGpsBus_ShouldReturnFalse()
         {
             // Act
             var result = await _fleetService.UpdateBusLocationAsync(2, 40.0m, -74.0m); // Bus 002 has GPS disabled
@@ -189,8 +189,8 @@ namespace BusBuddy.Tests.Core
             Assert.That(result, Is.False);
         }
 
-    [Test]
-    public async Task GetBusesByOperationalStatusAsync_ShouldFilterByStatus()
+        [Test]
+        public async Task GetBusesByOperationalStatusAsync_ShouldFilterByStatus()
         {
             // Act
             var activeBuses = await _fleetService.GetBusesByOperationalStatusAsync("Active");
@@ -200,8 +200,8 @@ namespace BusBuddy.Tests.Core
             Assert.That(activeBuses[0].BusNumber, Is.EqualTo("001"));
         }
 
-    [Test]
-    public async Task GetCriticalAlertsAsync_ShouldReturnMaintenanceAndGpsAlerts()
+        [Test]
+        public async Task GetCriticalAlertsAsync_ShouldReturnMaintenanceAndGpsAlerts()
         {
             // Act
             var alerts = await _fleetService.GetCriticalAlertsAsync();
@@ -218,8 +218,8 @@ namespace BusBuddy.Tests.Core
             Assert.That(gpsAlert!.BusNumber, Is.EqualTo("003")); // Bus 003 has GPS enabled but offline
         }
 
-    [Test]
-    public async Task CalculateFleetUtilizationAsync_ShouldReturnMetrics()
+        [Test]
+        public async Task CalculateFleetUtilizationAsync_ShouldReturnMetrics()
         {
             // Act
             var metrics = await _fleetService.CalculateFleetUtilizationAsync();

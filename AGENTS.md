@@ -113,17 +113,17 @@ Launchers: `./run-wpf.sh` (Mac → UTM), `.\utm_run_in_vm.ps1` (inside VM). Post
 
 ## Key implementation files (quick index)
 
-| Concern               | File                                             |
-| --------------------- | ------------------------------------------------ |
-| Passwords load        | `BusBuddy.WPF/App.xaml.cs`                       |
-| Geo (DB + map)        | `GeoDataService`, `MapView` / `MapViewModel` (SfMap) |
+| Concern               | File                                                                                            |
+| --------------------- | ----------------------------------------------------------------------------------------------- |
+| Passwords load        | `BusBuddy.WPF/App.xaml.cs`                                                                      |
+| Geo (DB + map)        | `GeoDataService`, `MapView` / `MapViewModel` (SfMap)                                            |
 | Geo (Maps Platform)   | [spec 007](specs/007-maps-platform-geo/spec.md) — Address Validation + Routes; not Earth Engine |
-| Geo DI                | `BusBuddy.WPF/App.xaml.cs` → `ConfigureServices` |
-| AI chat (Ollama)      | `BusBuddy.WPF/Services/OllamaChatService.cs`     |
-| CI workflow           | `.github/workflows/ci.yml`                       |
-| Auto-merge            | `.github/workflows/auto-merge.yml`               |
-| RAG indexer           | `rag/index.py`                                   |
-| Spec-Kit constitution | `.specify/memory/constitution.md`                |
+| Geo DI                | `BusBuddy.WPF/App.xaml.cs` → `ConfigureServices`                                                |
+| AI chat (Ollama)      | `BusBuddy.WPF/Services/OllamaChatService.cs`                                                    |
+| CI workflow           | `.github/workflows/ci.yml`                                                                      |
+| Auto-merge            | `.github/workflows/auto-merge.yml`                                                              |
+| RAG indexer           | `rag/index.py`                                                                                  |
+| Spec-Kit constitution | `.specify/memory/constitution.md`                                                               |
 
 ## Documentation to keep in sync
 

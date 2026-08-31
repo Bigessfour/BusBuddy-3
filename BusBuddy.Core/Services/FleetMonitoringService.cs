@@ -263,42 +263,42 @@ namespace BusBuddy.Core.Services
             using (LogContext.PushProperty("Longitude", longitude))
             using (LogContext.PushProperty("Operation", "UpdateBusLocation"))
             {
-                    Logger.Information("Updating bus location for bus {BusId} to ({Latitude}, {Longitude})",
-                        busId, latitude, longitude);
+                Logger.Information("Updating bus location for bus {BusId} to ({Latitude}, {Longitude})",
+                    busId, latitude, longitude);
 
                 try
                 {
                     var (context, dispose) = GetWriteContext();
                     try
                     {
-                    var bus = await context.Buses
-                        .Where(b => b.BusId == busId)
-                        .FirstOrDefaultAsync();
+                        var bus = await context.Buses
+                            .Where(b => b.BusId == busId)
+                            .FirstOrDefaultAsync();
 
-                    if (bus == null)
-                    {
-                        Logger.Warning("Bus {BusId} not found for location update", busId);
-                        return false;
-                    }
+                        if (bus == null)
+                        {
+                            Logger.Warning("Bus {BusId} not found for location update", busId);
+                            return false;
+                        }
 
-                    if (!bus.GPSTracking)
-                    {
-                        Logger.Warning("GPS tracking not enabled for bus {BusNumber} (ID: {BusId})",
-                            bus.BusNumber, busId);
-                        return false;
-                    }
+                        if (!bus.GPSTracking)
+                        {
+                            Logger.Warning("GPS tracking not enabled for bus {BusNumber} (ID: {BusId})",
+                                bus.BusNumber, busId);
+                            return false;
+                        }
 
-                    bus.CurrentLatitude = latitude;
-                    bus.CurrentLongitude = longitude;
-                    bus.UpdatedDate = DateTime.Now;
+                        bus.CurrentLatitude = latitude;
+                        bus.CurrentLongitude = longitude;
+                        bus.UpdatedDate = DateTime.Now;
 
-                    await context.SaveChangesAsync();
+                        await context.SaveChangesAsync();
 
-                    // Invalidate cache to ensure fresh data
-                    _cacheService.InvalidateBusCache(busId);
+                        // Invalidate cache to ensure fresh data
+                        _cacheService.InvalidateBusCache(busId);
 
-                    Logger.Information("Bus location updated successfully for {BusNumber}", bus.BusNumber);
-                    return true;
+                        Logger.Information("Bus location updated successfully for {BusNumber}", bus.BusNumber);
+                        return true;
                     }
                     finally
                     {

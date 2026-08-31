@@ -510,107 +510,107 @@ public class StudentService : IStudentService
             try
             {
 
-            // Student number uniqueness check (if provided)
-            if (!string.IsNullOrWhiteSpace(student.StudentNumber))
-            {
-                var existingStudent = await context.Students
-                    .Where(s => s.StudentNumber == student.StudentNumber && s.StudentId != student.StudentId)
-                    .FirstOrDefaultAsync();
+                // Student number uniqueness check (if provided)
+                if (!string.IsNullOrWhiteSpace(student.StudentNumber))
+                {
+                    var existingStudent = await context.Students
+                        .Where(s => s.StudentNumber == student.StudentNumber && s.StudentId != student.StudentId)
+                        .FirstOrDefaultAsync();
 
-                if (existingStudent != null)
-                {
-                    errors.Add($"Student number '{student.StudentNumber}' is already in use");
-                }
-            }
-
-            // Grade validation
-            if (!string.IsNullOrWhiteSpace(student.Grade))
-            {
-                var validGrades = new[] { "Pre-K", "K", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12" };
-                if (!validGrades.Contains(student.Grade))
-                {
-                    errors.Add("Invalid grade level");
-                }
-            }
-
-            // Phone number format validation — configurable
-            if (!string.IsNullOrWhiteSpace(student.HomePhone) && !IsValidPhone(student.HomePhone))
-            {
-                if (PhoneValidationOff() || PhoneValidationWarnOnly())
-                {
-                    Logger.Warning("Home phone did not match validation but proceeding due to mode — Phone={Phone}", student.HomePhone);
-                }
-                else
-                {
-                    errors.Add("Invalid home phone number format");
-                }
-            }
-
-            if (!string.IsNullOrWhiteSpace(student.EmergencyPhone) && !IsValidPhone(student.EmergencyPhone))
-            {
-                if (PhoneValidationOff() || PhoneValidationWarnOnly())
-                {
-                    Logger.Warning("Emergency phone did not match validation but proceeding due to mode — Phone={Phone}", student.EmergencyPhone);
-                }
-                else
-                {
-                    errors.Add("Invalid emergency phone number format");
-                }
-            }
-
-            // State validation
-            if (!string.IsNullOrWhiteSpace(student.State))
-            {
-                if (student.State.Length != 2)
-                {
-                    errors.Add("State must be a 2-letter abbreviation");
-                }
-            }
-
-            // ZIP code validation
-            if (!string.IsNullOrWhiteSpace(student.Zip))
-            {
-                var zipPattern = @"^\d{5}(-\d{4})?$";
-                if (!System.Text.RegularExpressions.Regex.IsMatch(student.Zip, zipPattern))
-                {
-                    errors.Add("Invalid ZIP code format");
-                }
-            }
-
-            // Route validation (if routes exist in database)
-            if (!string.IsNullOrWhiteSpace(student.AMRoute))
-            {
-                try
-                {
-                    var amRouteExists = await context.Routes.AnyAsync(r => r.RouteName == student.AMRoute);
-                    if (!amRouteExists)
+                    if (existingStudent != null)
                     {
+                        errors.Add($"Student number '{student.StudentNumber}' is already in use");
+                    }
+                }
+
+                // Grade validation
+                if (!string.IsNullOrWhiteSpace(student.Grade))
+                {
+                    var validGrades = new[] { "Pre-K", "K", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12" };
+                    if (!validGrades.Contains(student.Grade))
+                    {
+                        errors.Add("Invalid grade level");
+                    }
+                }
+
+                // Phone number format validation — configurable
+                if (!string.IsNullOrWhiteSpace(student.HomePhone) && !IsValidPhone(student.HomePhone))
+                {
+                    if (PhoneValidationOff() || PhoneValidationWarnOnly())
+                    {
+                        Logger.Warning("Home phone did not match validation but proceeding due to mode — Phone={Phone}", student.HomePhone);
+                    }
+                    else
+                    {
+                        errors.Add("Invalid home phone number format");
+                    }
+                }
+
+                if (!string.IsNullOrWhiteSpace(student.EmergencyPhone) && !IsValidPhone(student.EmergencyPhone))
+                {
+                    if (PhoneValidationOff() || PhoneValidationWarnOnly())
+                    {
+                        Logger.Warning("Emergency phone did not match validation but proceeding due to mode — Phone={Phone}", student.EmergencyPhone);
+                    }
+                    else
+                    {
+                        errors.Add("Invalid emergency phone number format");
+                    }
+                }
+
+                // State validation
+                if (!string.IsNullOrWhiteSpace(student.State))
+                {
+                    if (student.State.Length != 2)
+                    {
+                        errors.Add("State must be a 2-letter abbreviation");
+                    }
+                }
+
+                // ZIP code validation
+                if (!string.IsNullOrWhiteSpace(student.Zip))
+                {
+                    var zipPattern = @"^\d{5}(-\d{4})?$";
+                    if (!System.Text.RegularExpressions.Regex.IsMatch(student.Zip, zipPattern))
+                    {
+                        errors.Add("Invalid ZIP code format");
+                    }
+                }
+
+                // Route validation (if routes exist in database)
+                if (!string.IsNullOrWhiteSpace(student.AMRoute))
+                {
+                    try
+                    {
+                        var amRouteExists = await context.Routes.AnyAsync(r => r.RouteName == student.AMRoute);
+                        if (!amRouteExists)
+                        {
+                            errors.Add($"AM Route '{student.AMRoute}' does not exist");
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.Error(ex, "Error validating AM route: {AMRoute}", student.AMRoute);
                         errors.Add($"AM Route '{student.AMRoute}' does not exist");
                     }
                 }
-                catch (Exception ex)
-                {
-                    Logger.Error(ex, "Error validating AM route: {AMRoute}", student.AMRoute);
-                    errors.Add($"AM Route '{student.AMRoute}' does not exist");
-                }
-            }
 
-            if (!string.IsNullOrWhiteSpace(student.PMRoute))
-            {
-                try
+                if (!string.IsNullOrWhiteSpace(student.PMRoute))
                 {
-                    var pmRouteExists = await context.Routes.AnyAsync(r => r.RouteName == student.PMRoute);
-                    if (!pmRouteExists)
+                    try
                     {
+                        var pmRouteExists = await context.Routes.AnyAsync(r => r.RouteName == student.PMRoute);
+                        if (!pmRouteExists)
+                        {
+                            errors.Add($"PM Route '{student.PMRoute}' does not exist");
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.Error(ex, "Error validating PM route: {PMRoute}", student.PMRoute);
                         errors.Add($"PM Route '{student.PMRoute}' does not exist");
                     }
                 }
-                catch (Exception ex)
-                {
-                    Logger.Error(ex, "Error validating PM route: {PMRoute}", student.PMRoute);
-                    errors.Add($"PM Route '{student.PMRoute}' does not exist");
-                }
-            }
             }
             finally
             {
@@ -642,28 +642,28 @@ public class StudentService : IStudentService
             var (context, dispose) = GetReadContext();
             try
             {
-            var stats = new Dictionary<string, int>
-            {
-                ["TotalStudents"] = await context.Students.CountAsync(),
-                ["ActiveStudents"] = await context.Students.CountAsync(s => s.Active),
-                ["InactiveStudents"] = await context.Students.CountAsync(s => !s.Active),
-                ["StudentsWithRoutes"] = await context.Students.CountAsync(s => !string.IsNullOrEmpty(s.AMRoute) || !string.IsNullOrEmpty(s.PMRoute)),
-                ["StudentsWithoutRoutes"] = await context.Students.CountAsync(s => string.IsNullOrEmpty(s.AMRoute) && string.IsNullOrEmpty(s.PMRoute))
-            };
+                var stats = new Dictionary<string, int>
+                {
+                    ["TotalStudents"] = await context.Students.CountAsync(),
+                    ["ActiveStudents"] = await context.Students.CountAsync(s => s.Active),
+                    ["InactiveStudents"] = await context.Students.CountAsync(s => !s.Active),
+                    ["StudentsWithRoutes"] = await context.Students.CountAsync(s => !string.IsNullOrEmpty(s.AMRoute) || !string.IsNullOrEmpty(s.PMRoute)),
+                    ["StudentsWithoutRoutes"] = await context.Students.CountAsync(s => string.IsNullOrEmpty(s.AMRoute) && string.IsNullOrEmpty(s.PMRoute))
+                };
 
-            // Grade level counts
-            var gradeCounts = await context.Students
-                .Where(s => !string.IsNullOrEmpty(s.Grade))
-                .GroupBy(s => s.Grade)
-                .Select(g => new { Grade = g.Key, Count = g.Count() })
-                .ToListAsync();
+                // Grade level counts
+                var gradeCounts = await context.Students
+                    .Where(s => !string.IsNullOrEmpty(s.Grade))
+                    .GroupBy(s => s.Grade)
+                    .Select(g => new { Grade = g.Key, Count = g.Count() })
+                    .ToListAsync();
 
-            foreach (var gradeCount in gradeCounts)
-            {
-                stats[$"Grade_{gradeCount.Grade}"] = gradeCount.Count;
-            }
+                foreach (var gradeCount in gradeCounts)
+                {
+                    stats[$"Grade_{gradeCount.Grade}"] = gradeCount.Count;
+                }
 
-            return stats;
+                return stats;
             }
             finally
             {

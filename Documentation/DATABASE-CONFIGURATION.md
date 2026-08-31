@@ -10,11 +10,11 @@ BusBuddy supports local SQL Server / LocalDB, SQLite, and **Postgres via Docker*
 
 ## Providers
 
-| Provider | When to use | Connection key |
-|----------|-------------|----------------|
-| `LocalDB` / `SqlServer` | Windows VM, SQL Express / LocalDB | `LocalConnection` or `DefaultConnection` |
-| `Postgres` | Mac Docker (`docker compose --profile db up -d`) | `PostgresConnection` or `BUSBUDDY_CONNECTION` |
-| `Local` | SQLite file | `BusBuddyDatabase` |
+| Provider                | When to use                                      | Connection key                                |
+| ----------------------- | ------------------------------------------------ | --------------------------------------------- |
+| `LocalDB` / `SqlServer` | Windows VM, SQL Express / LocalDB                | `LocalConnection` or `DefaultConnection`      |
+| `Postgres`              | Mac Docker (`docker compose --profile db up -d`) | `PostgresConnection` or `BUSBUDDY_CONNECTION` |
+| `Local`                 | SQLite file                                      | `BusBuddyDatabase`                            |
 
 ## Postgres (Mac Docker → VM)
 

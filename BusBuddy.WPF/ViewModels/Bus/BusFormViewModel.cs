@@ -23,9 +23,9 @@ namespace BusBuddy.WPF.ViewModels.Bus
 
         public event EventHandler<bool?>? RequestClose; // mimic DriverForm pattern
 
-        public BusFormViewModel() : this(null, new BusBuddy.Core.Models.Bus()) {}
+        public BusFormViewModel() : this(null, new BusBuddy.Core.Models.Bus()) { }
 
-        public BusFormViewModel(IBusService? busService) : this(busService, new BusBuddy.Core.Models.Bus()) {}
+        public BusFormViewModel(IBusService? busService) : this(busService, new BusBuddy.Core.Models.Bus()) { }
 
         public BusFormViewModel(IBusService? busService, BusBuddy.Core.Models.Bus bus)
         {
@@ -41,7 +41,7 @@ namespace BusBuddy.WPF.ViewModels.Bus
 
         #region Properties
 
-    public string Title => _isEditMode ? $"Edit Bus: {BusNumber}" : "Add New Bus"; // exposed as Title for binding
+        public string Title => _isEditMode ? $"Edit Bus: {BusNumber}" : "Add New Bus"; // exposed as Title for binding
 
         public string BusNumber
         {
@@ -307,7 +307,7 @@ namespace BusBuddy.WPF.ViewModels.Bus
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
 
-    public void ForceRequery() => ((RelayCommand)SaveCommand).RaiseCanExecuteChanged();
+        public void ForceRequery() => ((RelayCommand)SaveCommand).RaiseCanExecuteChanged();
 
         #endregion
     }

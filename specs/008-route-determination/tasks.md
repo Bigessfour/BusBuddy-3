@@ -164,6 +164,7 @@ Phase 7 Polish
 **Story completion order**: US1 → US2 (can partly parallel after T015) → US3 → US4 → Polish
 
 **Parallel examples**:
+
 - After T009: T010–T012 in parallel
 - After T015: T021 tests while T018–T019 UI proceeds
 - Polish T037–T039 in parallel
@@ -178,16 +179,16 @@ Phase 7 Polish
 
 ## Task count summary
 
-| Phase | Tasks | Notes |
-|-------|-------|-------|
-| Setup | T001–T003 | 3 |
-| Foundational | T004–T009 | 6 |
-| US1 | T010–T020 | 11 (3 tests + 8 impl) |
-| US2 | T021–T026 | 6 |
-| US3 | T027–T031 | 5 |
-| US4 | T032–T036 | 5 |
-| Polish | T037–T041 | 5 |
-| **Total** | **T001–T041** | **41** |
+| Phase        | Tasks         | Notes                 |
+| ------------ | ------------- | --------------------- |
+| Setup        | T001–T003     | 3                     |
+| Foundational | T004–T009     | 6                     |
+| US1          | T010–T020     | 11 (3 tests + 8 impl) |
+| US2          | T021–T026     | 6                     |
+| US3          | T027–T031     | 5                     |
+| US4          | T032–T036     | 5                     |
+| Polish       | T037–T041     | 5                     |
+| **Total**    | **T001–T041** | **41**                |
 
 **US1 scope**: T001–T020 (Setup + Foundational + US1)
 

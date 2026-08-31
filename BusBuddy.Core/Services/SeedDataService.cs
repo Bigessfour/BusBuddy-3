@@ -19,8 +19,8 @@ namespace BusBuddy.Core.Services
     /// </summary>
     public class SeedDataService : ISeedDataService
     {
-    private readonly IBusBuddyDbContextFactory _contextFactory;
-    private readonly IConfiguration? _configuration;
+        private readonly IBusBuddyDbContextFactory _contextFactory;
+        private readonly IConfiguration? _configuration;
         private static readonly ILogger Logger = Log.ForContext<SeedDataService>();
         // Cache JsonSerializerOptions to avoid repeated allocations (fixes CA1869)
         private static readonly JsonSerializerOptions _jsonOptions = new JsonSerializerOptions
@@ -726,8 +726,8 @@ Jordan,Lee,3,Sam,Lee,200 Oak Ave,Oakridge,CO,County,,555-0101,,,,,,,,
                         School = schools[random.Next(schools.Length)],
                         AMDriverId = drivers.Count > i ? drivers[i].DriverId : null,
                         AMVehicleId = buses.Count > i ? buses[i].BusId : null,
-                        PMDriverId = drivers.Count > i && drivers.Count > i + count/2 ? drivers[i + count/2].DriverId : null,
-                        PMVehicleId = buses.Count > i && buses.Count > i + count/2 ? buses[i + count/2].BusId : null,
+                        PMDriverId = drivers.Count > i && drivers.Count > i + count / 2 ? drivers[i + count / 2].DriverId : null,
+                        PMVehicleId = buses.Count > i && buses.Count > i + count / 2 ? buses[i + count / 2].BusId : null,
                         AMRiders = random.Next(5, 25),
                         PMRiders = random.Next(5, 25),
                         IsActive = random.Next(0, 10) > 1 // 90% active

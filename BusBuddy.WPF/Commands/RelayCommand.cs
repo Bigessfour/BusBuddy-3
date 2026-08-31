@@ -80,9 +80,9 @@ namespace BusBuddy.WPF.Commands
             _execute(parameter);
         }
 
-    /// <summary>
-    /// Manually force WPF to requery CanExecute (used by some ViewModels for dynamic button state)
-    /// </summary>
-    public void RaiseCanExecuteChanged() => CommandManager.InvalidateRequerySuggested();
+        /// <summary>
+        /// Manually force WPF to requery CanExecute (used by some ViewModels for dynamic button state)
+        /// </summary>
+        public void RaiseCanExecuteChanged() => CommandManager.InvalidateRequerySuggested();
     }
 }

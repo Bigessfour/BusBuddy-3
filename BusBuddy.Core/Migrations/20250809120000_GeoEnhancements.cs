@@ -5,8 +5,8 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 namespace BusBuddy.Core.Migrations
 {
     [DbContext(typeof(BusBuddyDbContext))]
-[Migration("20250809120000_GeoEnhancements")]
-public partial class GeoEnhancements : Migration
+    [Migration("20250809120000_GeoEnhancements")]
+    public partial class GeoEnhancements : Migration
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {

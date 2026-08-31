@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore.Migrations;
+using Microsoft.EntityFrameworkCore.Migrations;
 using BusBuddy.Core.Data;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 
@@ -8,8 +8,8 @@ namespace BusBuddy.Core.Migrations
 {
     /// <inheritdoc />
     [DbContext(typeof(BusBuddyDbContext))]
-[Migration("20250810190702_MVP_Sync_20250810")]
-public partial class MVP_Sync_20250810 : Migration
+    [Migration("20250810190702_MVP_Sync_20250810")]
+    public partial class MVP_Sync_20250810 : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)

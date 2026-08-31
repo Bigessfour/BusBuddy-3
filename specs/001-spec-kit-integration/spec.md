@@ -8,7 +8,7 @@
 
 **Input**: Brownfield adoption of GitHub Spec-Kit into BusBuddy-3 without overwriting existing agent canon (`AGENTS.md`, copilot-instructions).
 
-## User Scenarios & Testing *(mandatory)*
+## User Scenarios & Testing _(mandatory)_
 
 ### User Story 1 - Spec-Kit is present in the repo (Priority: P1)
 
@@ -56,7 +56,7 @@ As a maintainer, I know not to run `specify init --here --force` without backing
 - Init in a non-empty repo may warn about merges; use `--force` only with backups.
 - Community brownfield.bootstrap is deferred (rewrites `AGENTS.md`).
 
-## Requirements *(mandatory)*
+## Requirements _(mandatory)_
 
 ### Functional Requirements
 
@@ -72,7 +72,7 @@ As a maintainer, I know not to run `specify init --here --force` without backing
 - Do not change RAG indexer behavior here (owned by feature 002).
 - Do not change app AI providers here (owned by feature 004).
 
-## Success Criteria *(mandatory)*
+## Success Criteria _(mandatory)_
 
 - Spec-Kit skills usable in Cursor for subsequent features.
 - Constitution file present and BusBuddy-specific (see feature 003).

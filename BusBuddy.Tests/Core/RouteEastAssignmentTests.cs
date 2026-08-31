@@ -25,9 +25,9 @@ public class RouteEastAssignmentTests : IDisposable
         var contextFactory = new BusBuddyDbContextFactory();
         _context = contextFactory.CreateDbContext();
         _studentService = new StudentService(contextFactory);
-    _memoryCache = new MemoryCache(new MemoryCacheOptions());
-    _busCachingService = new BusCachingService(_memoryCache);
-    _busService = new BusService(contextFactory, _busCachingService);
+        _memoryCache = new MemoryCache(new MemoryCacheOptions());
+        _busCachingService = new BusCachingService(_memoryCache);
+        _busService = new BusService(contextFactory, _busCachingService);
 
         // Ensure baseline data required by tests
         // Guarantee that "East Route" exists with RouteId = 1 for deterministic assertions

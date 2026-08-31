@@ -14,7 +14,7 @@
 | --------------------- | ------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
 | Address correctness   | Regex / format checks; optional skip                                            | Postal-grade US validation with standardized components and a clear fail reason |
 | Map coordinates       | Hash scatter (`OfflineGeocodingService`, tests only)                            | Real coordinates from Address Validation, cached on the student                 |
-| Trip / route geometry | Capacity fill + stored stop points; no road graph                               | Drive paths (distance, time, polyline) for school ↔ stops                       |
+| Trip / route geometry | Capacity fill + stored stop points; no road graph                               | Drive paths (distance, time, polyline) for school ↔ stops                      |
 | Satellite / EE        | `GoogleEarthEngineService`, `GcpCredentialBootstrap`, invented `:exportGeoJson` | **Removed** from DI, config, secrets, and probes                                |
 | Map UI                | Syncfusion `SfMap` + OSM only (unofficial Google tiles removed)                 | Keep `SfMap` + OSM; Maps Tiles API optional later                               |
 | District eligibility  | Local shapefiles (wrong district)                                               | Students in the system are eligible — no geofence                               |
@@ -24,7 +24,7 @@ Constitution: this feature **amends** the Geo constraint (Earth Engine → Maps 
 
 Nominated provider (working solution): **Google Maps Platform** on `new-coursera-490518` — Address Validation (USPS CASS), Routes (`computeRoutes` / `computeRouteMatrix`). Places Autocomplete is deferred (P3). Earth Engine stays unused; do not re-enable it in this feature.
 
-## User Scenarios & Testing *(mandatory)*
+## User Scenarios & Testing _(mandatory)_
 
 ### User Story 1 - Clerk saves a real student address and sees it on the map (Priority: P1)
 
@@ -99,7 +99,7 @@ As a clerk, I can pick a suggested street address as I type so I spend less time
 - Mapping key present but Address Validation API not enabled on the GCP project: surface a configuration error, not a crash.
 - Offline tests and CI: never require a live Maps key; use fakes.
 
-## Requirements *(mandatory)*
+## Requirements _(mandatory)_
 
 ### Functional Requirements
 
@@ -124,7 +124,7 @@ As a clerk, I can pick a suggested street address as I type so I spend less time
 - **RoutePath**: Route id, ordered stops, encoded/decoded polyline, distance, duration, computed-at.
 - **MappingConfiguration**: Presence of API key, provider project (billing), enabled APIs; no service-account JSON.
 
-## Success Criteria *(mandatory)*
+## Success Criteria _(mandatory)_
 
 ### Measurable Outcomes
 

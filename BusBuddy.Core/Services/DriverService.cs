@@ -786,39 +786,39 @@ namespace BusBuddy.Core.Services
                 var (context, dispose) = GetWriteContext();
                 try
                 {
-                var driver = await context.Drivers.FindAsync(driverId);
-                if (driver == null)
-                {
-                    Logger.Warning("Driver with ID {DriverId} not found", driverId);
-                    return false;
-                }
+                    var driver = await context.Drivers.FindAsync(driverId);
+                    if (driver == null)
+                    {
+                        Logger.Warning("Driver with ID {DriverId} not found", driverId);
+                        return false;
+                    }
 
-                // Validate license information
-                if (string.IsNullOrWhiteSpace(licenseNumber))
-                {
-                    throw new ArgumentException("License number cannot be empty");
-                }
+                    // Validate license information
+                    if (string.IsNullOrWhiteSpace(licenseNumber))
+                    {
+                        throw new ArgumentException("License number cannot be empty");
+                    }
 
-                if (string.IsNullOrWhiteSpace(licenseClass))
-                {
-                    throw new ArgumentException("License class cannot be empty");
-                }
+                    if (string.IsNullOrWhiteSpace(licenseClass))
+                    {
+                        throw new ArgumentException("License class cannot be empty");
+                    }
 
-                if (expiryDate < DateTime.Today)
-                {
-                    throw new ArgumentException("License expiry date cannot be in the past");
-                }
+                    if (expiryDate < DateTime.Today)
+                    {
+                        throw new ArgumentException("License expiry date cannot be in the past");
+                    }
 
-                // Update license information
-                driver.LicenseNumber = licenseNumber;
-                driver.LicenseClass = licenseClass;
-                driver.LicenseExpiryDate = expiryDate;
-                driver.Endorsements = endorsements;
-                driver.UpdatedDate = DateTime.UtcNow;
+                    // Update license information
+                    driver.LicenseNumber = licenseNumber;
+                    driver.LicenseClass = licenseClass;
+                    driver.LicenseExpiryDate = expiryDate;
+                    driver.Endorsements = endorsements;
+                    driver.UpdatedDate = DateTime.UtcNow;
 
-                await context.SaveChangesAsync();
-                Logger.Information("Successfully updated license info for driver {DriverId}", driverId);
-                return true;
+                    await context.SaveChangesAsync();
+                    Logger.Information("Successfully updated license info for driver {DriverId}", driverId);
+                    return true;
                 }
                 finally
                 {

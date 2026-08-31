@@ -19,14 +19,14 @@ namespace BusBuddy.WPF.ViewModels.Driver
         private readonly IDriverService _driverService;
         private static readonly new ILogger Logger = Log.ForContext<DriverFormViewModel>();
 
-    private DriverModel _driver = new();
-    private DriverModel? _selectedDriver;
+        private DriverModel _driver = new();
+        private DriverModel? _selectedDriver;
         private string _searchText = string.Empty;
         private string _formTitle = "Add New Driver";
         private bool _isEditMode;
 
-    // Close coordination for dialog usage — mirrors StudentForm pattern
-    public event EventHandler<bool?>? RequestClose;
+        // Close coordination for dialog usage — mirrors StudentForm pattern
+        public event EventHandler<bool?>? RequestClose;
 
         public DriverFormViewModel(IDriverService driverService)
         {
@@ -89,7 +89,7 @@ namespace BusBuddy.WPF.ViewModels.Driver
             set => SetProperty(ref _isEditMode, value);
         }
 
-    public ObservableCollection<DriverModel> Drivers { get; } = new();
+        public ObservableCollection<DriverModel> Drivers { get; } = new();
 
         public bool CanSaveDriver => !string.IsNullOrWhiteSpace(Driver.DriverName) &&
                                      !string.IsNullOrWhiteSpace(Driver.DriverPhone) &&
@@ -287,7 +287,7 @@ namespace BusBuddy.WPF.ViewModels.Driver
             Logger.Information("User success: {Message}", message);
         }
 
-    private async Task LoadDriversAsync()
+        private async Task LoadDriversAsync()
         {
             try
             {
@@ -314,14 +314,14 @@ namespace BusBuddy.WPF.ViewModels.Driver
             }
         }
 
-    private void LoadDriverForEdit(DriverModel driver)
+        private void LoadDriverForEdit(DriverModel driver)
         {
             try
             {
                 Logger.Information("Loading driver for edit: {DriverName} (ID: {DriverId})",
                     driver.DriverName, driver.DriverId);
 
-        Driver = new DriverModel
+                Driver = new DriverModel
                 {
                     DriverId = driver.DriverId,
                     DriverName = driver.DriverName,

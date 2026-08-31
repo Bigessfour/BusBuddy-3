@@ -244,12 +244,12 @@ namespace BusBuddy.WPF.ViewModels.Student
         private string _globalErrorMessage = string.Empty;
         private bool _isValidating;
         private string _validationStatus = "Ready";
-    private Brush _validationStatusBrush = Brushes.Gray;
-    private ObservableCollection<string> _filteredBusStops = new();
-    private bool _canSave = true;
-    private readonly ObservableCollection<string> _validationErrors = new();
-    private bool _hasValidationErrors;
-    private bool _disableAddressValidation; // optional skip-validation flag
+        private Brush _validationStatusBrush = Brushes.Gray;
+        private ObservableCollection<string> _filteredBusStops = new();
+        private bool _canSave = true;
+        private readonly ObservableCollection<string> _validationErrors = new();
+        private bool _hasValidationErrors;
+        private bool _disableAddressValidation; // optional skip-validation flag
 
         /// <summary>
         /// Whether there's a global error to display
@@ -341,9 +341,9 @@ namespace BusBuddy.WPF.ViewModels.Student
 
         #region Commands
 
-    public ICommand ValidateAddressCommand { get; private set; } = null!;
-    public ICommand SaveCommand { get; private set; } = null!;
-    public ICommand SaveSchoolTimesCommand { get; private set; } = null!;
+        public ICommand ValidateAddressCommand { get; private set; } = null!;
+        public ICommand SaveCommand { get; private set; } = null!;
+        public ICommand SaveSchoolTimesCommand { get; private set; } = null!;
         public ICommand CancelCommand { get; private set; } = null!;
 
         // AI and Enhancement Commands
@@ -373,7 +373,7 @@ namespace BusBuddy.WPF.ViewModels.Student
 
         #region Command Initialization
 
-    private CommunityToolkit.Mvvm.Input.AsyncRelayCommand? _saveRelay;
+        private CommunityToolkit.Mvvm.Input.AsyncRelayCommand? _saveRelay;
 
         private void InitializeCommands()
         {
@@ -666,7 +666,7 @@ namespace BusBuddy.WPF.ViewModels.Student
             var digits = new string(input.Where(char.IsDigit).ToArray());
             if (digits.Length == 10)
             {
-                return $"({digits.Substring(0,3)}) {digits.Substring(3,3)}-{digits.Substring(6,4)}";
+                return $"({digits.Substring(0, 3)}) {digits.Substring(3, 3)}-{digits.Substring(6, 4)}";
             }
             return input; // leave as-is if not 10 digits
         }
@@ -675,16 +675,16 @@ namespace BusBuddy.WPF.ViewModels.Student
         {
             if (string.IsNullOrWhiteSpace(input)) return input;
             var digits = new string(input.Where(char.IsDigit).ToArray());
-            if (digits.Length >= 5) return digits.Substring(0,5);
+            if (digits.Length >= 5) return digits.Substring(0, 5);
             return digits;
         }
 
         private bool CanSaveStudent()
         {
-         // Allow Save with minimal required fields only (name + grade).
-         // Address fields are optional for Save to unblock CRUD flows.
-         return !string.IsNullOrWhiteSpace(Student?.StudentName)
-             && !string.IsNullOrWhiteSpace(Student?.Grade);
+            // Allow Save with minimal required fields only (name + grade).
+            // Address fields are optional for Save to unblock CRUD flows.
+            return !string.IsNullOrWhiteSpace(Student?.StudentName)
+                && !string.IsNullOrWhiteSpace(Student?.Grade);
         }
 
         private void OnStudentPropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -923,7 +923,7 @@ namespace BusBuddy.WPF.ViewModels.Student
             {
                 Logger.Information("Starting comprehensive data validation");
 
-                    // Avoid artificial delay in tests
+                // Avoid artificial delay in tests
                 ValidationStatus = "Validating all data...";
                 ValidationStatusBrush = Brushes.Orange;
 
@@ -1086,7 +1086,7 @@ namespace BusBuddy.WPF.ViewModels.Student
         /// <summary>
         /// Load available routes and bus stops for the form
         /// </summary>
-    private async Task LoadDataAsync()
+        private async Task LoadDataAsync()
         {
             try
             {
@@ -1196,7 +1196,7 @@ namespace BusBuddy.WPF.ViewModels.Student
         /// Minimal validation for Save — only ensure required fields are present.
         /// Detailed address checks are available via the Validate actions and should not block Save.
         /// </summary>
-    private bool IsValidStudent()
+        private bool IsValidStudent()
         {
             try
             {

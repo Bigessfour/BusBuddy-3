@@ -8,7 +8,7 @@
 
 **Input**: Replace cloud XAI/Grok as the default AI path with local Ollama behind existing interfaces (`IXAIChatService`, `GrokGlobalAPI` / `XaiOptions`).
 
-## User Scenarios & Testing *(mandatory)*
+## User Scenarios & Testing _(mandatory)_
 
 ### User Story 1 - Chat works offline via Ollama (Priority: P1)
 
@@ -48,7 +48,7 @@ As a developer, I configure provider mode and Ollama URLs/models under the exist
 
 **Independent Test**: `XaiOptions` exposes Provider, OllamaBaseUrl, OllamaNativeBaseUrl, OllamaModel; appsettings documents defaults.
 
-## Requirements *(mandatory)*
+## Requirements _(mandatory)_
 
 - **FR-001**: `IXAIChatService` remains the chat contract; `OllamaChatService` implements it.
 - **FR-002**: Default provider is Ollama; Disabled/Xai fall back to mock chat without cloud dependency.
@@ -56,7 +56,7 @@ As a developer, I configure provider mode and Ollama URLs/models under the exist
 - **FR-004**: Missing Ollama yields Serilog warning + graceful user-facing message.
 - **FR-005**: Cloud XAI key is optional when Provider=Ollama.
 
-## Success Criteria *(mandatory)*
+## Success Criteria _(mandatory)_
 
 - App builds with new registrations.
 - No hard dependency on cloud XAI for the default path.

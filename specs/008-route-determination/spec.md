@@ -22,7 +22,7 @@
 
 Constitution: Syncfusion-only UI, Serilog-only logging, hybrid Mac/Windows, no cloud app hosting, no committed secrets. Builds on school Destinations, student geo, Maps drive paths (007), and transfer records (PR #36).
 
-## User Scenarios & Testing *(mandatory)*
+## User Scenarios & Testing _(mandatory)_
 
 ### User Story 1 - Year-start auto route build for a school (Priority: P1)
 
@@ -97,7 +97,7 @@ As a director, school-to-school transfer riders are planned with the same capaci
 - Rural long deadhead: prefer splitting route over forcing one bus across the whole district.
 - Existing manual route names: generation may create drafts; clerk confirms before replacing production assignments.
 
-## Requirements *(mandatory)*
+## Requirements _(mandatory)_
 
 ### Functional Requirements
 
@@ -126,7 +126,7 @@ As a director, school-to-school transfer riders are planned with the same capaci
 - **Constraint toast**: Human-readable reason (overload, arrival risk) + suggested alternate.
 - **Transfer route set**: Separate proposals using transfer pickup/dropoff pairs.
 
-## Success Criteria *(mandatory)*
+## Success Criteria _(mandatory)_
 
 ### Measurable Outcomes
 

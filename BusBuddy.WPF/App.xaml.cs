@@ -29,7 +29,7 @@ namespace BusBuddy.WPF
     /// - EF Migration Mode: Minimal services for database operations only
     /// - UI Mode: Full dependency injection with robust error handling
     /// Features: Pure Serilog logging, Syncfusion license management, comprehensive error capture
-        /// </summary>
+    /// </summary>
     public partial class App : Application
     {
         public static IServiceProvider? ServiceProvider { get; private set; }
@@ -503,19 +503,19 @@ namespace BusBuddy.WPF
 
                 ServiceProvider = services.BuildServiceProvider();
 
-                            // Register ViewModels for dependency injection (cleaned duplicate block during VM dedup)
-                            services.AddTransient<BusBuddy.WPF.ViewModels.MainWindowViewModel>();
-                            services.AddTransient<BusBuddy.WPF.ViewModels.Dashboard.DashboardViewModel>();
-                            services.AddTransient<BusBuddy.WPF.ViewModels.Student.StudentsViewModel>();
-                            services.AddTransient<BusBuddy.WPF.ViewModels.Route.RouteManagementViewModel>(sp =>
-                                new BusBuddy.WPF.ViewModels.Route.RouteManagementViewModel(
-                                    sp.GetRequiredService<IBusBuddyDbContextFactory>(),
-                                    sp.GetService<IRouteService>(),
-                                    sp.GetService<BusBuddy.Core.Services.RouteDetermination.IRouteDeterminationService>(),
-                                    sp.GetService<BusBuddy.Core.Services.Interfaces.IDestinationService>()));
-                            services.AddTransient<BusBuddy.WPF.ViewModels.Driver.DriverFormViewModel>();
-                            services.AddTransient<BusBuddy.WPF.ViewModels.Bus.BusFormViewModel>();
-                            services.AddTransient<BusBuddy.WPF.Views.Bus.BusForm>();
+                // Register ViewModels for dependency injection (cleaned duplicate block during VM dedup)
+                services.AddTransient<BusBuddy.WPF.ViewModels.MainWindowViewModel>();
+                services.AddTransient<BusBuddy.WPF.ViewModels.Dashboard.DashboardViewModel>();
+                services.AddTransient<BusBuddy.WPF.ViewModels.Student.StudentsViewModel>();
+                services.AddTransient<BusBuddy.WPF.ViewModels.Route.RouteManagementViewModel>(sp =>
+                    new BusBuddy.WPF.ViewModels.Route.RouteManagementViewModel(
+                        sp.GetRequiredService<IBusBuddyDbContextFactory>(),
+                        sp.GetService<IRouteService>(),
+                        sp.GetService<BusBuddy.Core.Services.RouteDetermination.IRouteDeterminationService>(),
+                        sp.GetService<BusBuddy.Core.Services.Interfaces.IDestinationService>()));
+                services.AddTransient<BusBuddy.WPF.ViewModels.Driver.DriverFormViewModel>();
+                services.AddTransient<BusBuddy.WPF.ViewModels.Bus.BusFormViewModel>();
+                services.AddTransient<BusBuddy.WPF.Views.Bus.BusForm>();
                 // Seed database with JSON data if empty
                 Task.Run(async () =>
                 {
@@ -548,7 +548,7 @@ namespace BusBuddy.WPF
                     {
                         Log.Warning(seedEx, "⚠️ Failed to seed database with JSON data: {Error}", seedEx.Message);
                     }
-                });                Log.Information("✅ Full DI container configured successfully for UI application");
+                }); Log.Information("✅ Full DI container configured successfully for UI application");
             }
             catch (Exception ex)
             {
@@ -704,7 +704,8 @@ namespace BusBuddy.WPF
                 try
                 {
                     // Attempt to save any critical data before shutdown
-                    Current?.Dispatcher?.Invoke(() => {
+                    Current?.Dispatcher?.Invoke(() =>
+                    {
                         System.Windows.MessageBox.Show("A critical error occurred. The application will close.",
                             "BusBuddy Critical Error", MessageBoxButton.OK, MessageBoxImage.Error);
                     });
@@ -1038,8 +1039,8 @@ Examples:
                     Syncfusion.Licensing.SyncfusionLicenseProvider.RegisterLicense(licenseKey);
 
                     // Enhanced validation for Syncfusion v30+ (as per 2025 documentation)
-                // Registration successful - v30.1.42 doesn't require explicit platform validation
-                _bootstrapLogger?.Information("✅ Syncfusion license registered successfully for version 30.1.42");                    // Log additional diagnostics to help verify registration
+                    // Registration successful - v30.1.42 doesn't require explicit platform validation
+                    _bootstrapLogger?.Information("✅ Syncfusion license registered successfully for version 30.1.42");                    // Log additional diagnostics to help verify registration
                     _bootstrapLogger?.Information("🔍 License Key Preview: {Preview}", GetLicenseKeyPreview(licenseKey));
                     _bootstrapLogger?.Information("💡 If you see trial watermarks, verify your license key is valid and current");
                 }

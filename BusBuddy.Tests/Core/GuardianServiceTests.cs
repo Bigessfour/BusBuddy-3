@@ -33,7 +33,8 @@ namespace BusBuddy.Tests.Core
         [Test]
         public async Task AddGuardian_Succeeds()
         {
-            var guardian = new Guardian {
+            var guardian = new Guardian
+            {
                 FirstName = "Jane",
                 LastName = "Doe",
                 Address = "456 Oak St",
@@ -50,7 +51,8 @@ namespace BusBuddy.Tests.Core
         [Test]
         public async Task GetGuardiansForStudent_ReturnsNotes()
         {
-            var guardian = new Guardian {
+            var guardian = new Guardian
+            {
                 GuardianId = 1,
                 FirstName = "Jane",
                 LastName = "Doe",

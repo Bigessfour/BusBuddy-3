@@ -60,9 +60,9 @@ namespace BusBuddy.WPF.ViewModels.Route
         private readonly IDestinationService? _destinations;
         private readonly MapViewModel? _map;
         private static readonly ILogger Logger = Log.ForContext<RouteAssignmentViewModel>();
-    private Timer? _retimeDebounceTimer; // Debounce timer for auto-retiming after structural stop changes
-    private const int RetimeDebounceMs = 600; // Delay before auto timing after modifications
-    private static readonly Regex StartTimeRegex = new(@"^\s*(?:[01]?\d|2[0-3]):[0-5]\d\s*$", RegexOptions.Compiled); // HH:mm 24h
+        private Timer? _retimeDebounceTimer; // Debounce timer for auto-retiming after structural stop changes
+        private const int RetimeDebounceMs = 600; // Delay before auto timing after modifications
+        private static readonly Regex StartTimeRegex = new(@"^\s*(?:[01]?\d|2[0-3]):[0-5]\d\s*$", RegexOptions.Compiled); // HH:mm 24h
 
         // Constructors
         // 1) Parameterless for XAML designer / fallback
@@ -414,7 +414,7 @@ namespace BusBuddy.WPF.ViewModels.Route
             {
                 if (SelectedRoute == null)
                     return string.Empty;
-                var id = SelectedTimeSlot == BusBuddy.Core.Models.RouteTimeSlot.PM ? SelectedRoute.PMBusId: SelectedRoute.AMVehicleId;
+                var id = SelectedTimeSlot == BusBuddy.Core.Models.RouteTimeSlot.PM ? SelectedRoute.PMBusId : SelectedRoute.AMVehicleId;
                 var bus = id.HasValue ? AvailableBuses.FirstOrDefault(b => b.BusId == id.Value) : null;
                 return bus?.BusNumber ?? "(none)";
             }
@@ -508,11 +508,11 @@ namespace BusBuddy.WPF.ViewModels.Route
         public ICommand ActivateRouteCommand { get; private set; } = null!;
         public ICommand DeactivateRouteCommand { get; private set; } = null!;
         public ICommand CloneRouteCommand { get; private set; } = null!;
-    // Plot currently assigned students for selected route
+        // Plot currently assigned students for selected route
 
-    public ICommand PlotRouteOnMapCommand { get; private set; } = null!;
-    public ICommand TimeRouteCommand { get; private set; } = null!; // Basic stop timing
-    public ICommand PrintMapCommand { get; private set; } = null!;
+        public ICommand PlotRouteOnMapCommand { get; private set; } = null!;
+        public ICommand TimeRouteCommand { get; private set; } = null!; // Basic stop timing
+        public ICommand PrintMapCommand { get; private set; } = null!;
         public ICommand GenerateRoutesCommand { get; private set; } = null!;
         public ICommand GenerateTransferRoutesCommand { get; private set; } = null!;
 
@@ -544,12 +544,12 @@ namespace BusBuddy.WPF.ViewModels.Route
             CloneRouteCommand = new RelayCommand(async () => await CloneRouteAsync());
             PlotRouteOnMapCommand = new RelayCommand(async () => await PlotRouteOnMapAsync(), () => SelectedRoute != null);
             TimeRouteCommand = new RelayCommand(() => TimeRouteStops(), () => SelectedRoute != null && RouteStops.Any() && IsStartTimeValid);
-        PrintMapCommand = new RelayCommand(PrintMap, () => SelectedRoute != null);
+            PrintMapCommand = new RelayCommand(PrintMap, () => SelectedRoute != null);
             GenerateRoutesCommand = new RelayCommand(async () => await GenerateRoutesAsync(), () => !_isGeneratingRoutes);
             GenerateTransferRoutesCommand = new RelayCommand(async () => await GenerateTransferRoutesAsync(), () => !_isGeneratingRoutes);
-                    // Re-evaluate map/ timing commands
-                    (PlotRouteOnMapCommand as RelayCommand)?.RaiseCanExecuteChanged();
-                    (TimeRouteCommand as RelayCommand)?.RaiseCanExecuteChanged();
+            // Re-evaluate map/ timing commands
+            (PlotRouteOnMapCommand as RelayCommand)?.RaiseCanExecuteChanged();
+            (TimeRouteCommand as RelayCommand)?.RaiseCanExecuteChanged();
             (PrintMapCommand as RelayCommand)?.RaiseCanExecuteChanged();
         }
 
@@ -1328,7 +1328,7 @@ namespace BusBuddy.WPF.ViewModels.Route
             finally
             {
                 IsLoading = false;
-                                RefreshCommandStates();
+                RefreshCommandStates();
             }
         }
 
@@ -2455,6 +2455,6 @@ namespace BusBuddy.WPF.ViewModels.Route
         }
 
         #endregion
-    // Duplicate IDisposable region removed (primary implementation with logging retained earlier in file)
+        // Duplicate IDisposable region removed (primary implementation with logging retained earlier in file)
     }
 }

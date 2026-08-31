@@ -8,7 +8,7 @@
 
 **Input**: Elevate existing `rag/` + `busbuddy-rag` MCP from optional tooling to a constitutional agent contract, and ensure Spec-Kit artifacts are always indexed.
 
-## User Scenarios & Testing *(mandatory)*
+## User Scenarios & Testing _(mandatory)_
 
 ### User Story 1 - Agents must retrieve before changing (Priority: P1)
 
@@ -48,7 +48,7 @@ As a developer, I know to re-run `python -m rag.index` after Spec-Kit, auth, CI,
 
 **Independent Test**: `rag/README.md` lists Spec-Kit / constitution / `specs/` as re-index triggers.
 
-## Requirements *(mandatory)*
+## Requirements _(mandatory)_
 
 ### Functional Requirements
 
@@ -58,7 +58,7 @@ As a developer, I know to re-run `python -m rag.index` after Spec-Kit, auth, CI,
 - **FR-004**: `.specify/` and `specs/` MUST NOT be in `IGNORE_DIRS` (markdown under them indexes via extensions).
 - **FR-005**: `rag/README.md` and copilot-instructions MUST mention Spec-Kit artifacts as RAG sources / re-index triggers.
 
-## Success Criteria *(mandatory)*
+## Success Criteria _(mandatory)_
 
 - Constitution and feature specs are RAG-retrievable after re-index.
 - Path-aware `ALWAYS_INCLUDE` matching is implemented and documented.

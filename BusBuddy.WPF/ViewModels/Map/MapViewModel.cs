@@ -28,16 +28,16 @@ namespace BusBuddy.WPF.ViewModels.Map
     /// </summary>
     public class MapViewModel : BaseViewModel
     {
-    private readonly IGeoDataService _geoDataService;
-    /// <summary>
-    /// Optional geocoder for converting addresses to coordinates.
-    /// </summary>
-    private readonly IGeocodingService? _geocodingService;
-    private readonly IRoutingService? _routingService;
-    private readonly BusBuddy.Core.Services.PdfReportService _pdfReportService = new(); // Lightweight stateless service
-    private readonly BusBuddy.Core.Services.IStudentService? _studentService; // If available for pulling students
-    private readonly IBusService? _busService;
-    private readonly IServiceScopeFactory? _scopeFactory;
+        private readonly IGeoDataService _geoDataService;
+        /// <summary>
+        /// Optional geocoder for converting addresses to coordinates.
+        /// </summary>
+        private readonly IGeocodingService? _geocodingService;
+        private readonly IRoutingService? _routingService;
+        private readonly BusBuddy.Core.Services.PdfReportService _pdfReportService = new(); // Lightweight stateless service
+        private readonly BusBuddy.Core.Services.IStudentService? _studentService; // If available for pulling students
+        private readonly IBusService? _busService;
+        private readonly IServiceScopeFactory? _scopeFactory;
         // Serilog logger with enrichments for this ViewModel
         private static readonly new Serilog.ILogger Logger = Serilog.Log.ForContext<MapViewModel>();
 
@@ -46,40 +46,40 @@ namespace BusBuddy.WPF.ViewModels.Map
         private string _selectedMapLayer = "OpenStreetMap";
         private bool _isMapLoading;
         private string _statusMessage = "Ready";
-    private bool _isLiveTrackingEnabled;
-    private int _trackingIntervalIndex = 1;
-    private DispatcherTimer? _liveTrackingTimer;
-    private static readonly TimeSpan[] TrackingIntervals =
-    [
-        TimeSpan.FromSeconds(5),
+        private bool _isLiveTrackingEnabled;
+        private int _trackingIntervalIndex = 1;
+        private DispatcherTimer? _liveTrackingTimer;
+        private static readonly TimeSpan[] TrackingIntervals =
+        [
+            TimeSpan.FromSeconds(5),
         TimeSpan.FromSeconds(10),
         TimeSpan.FromSeconds(30),
         TimeSpan.FromMinutes(1),
     ];
-    private ObservableCollection<BusBuddy.Core.Models.Bus> _activeBuses = new();
-    private BusBuddy.Core.Models.Bus? _selectedBus;
-    private byte[]? _latestMapSnapshotPng; // Holds last captured map snapshot (PNG bytes) for PDF embedding
+        private ObservableCollection<BusBuddy.Core.Models.Bus> _activeBuses = new();
+        private BusBuddy.Core.Models.Bus? _selectedBus;
+        private byte[]? _latestMapSnapshotPng; // Holds last captured map snapshot (PNG bytes) for PDF embedding
 
-    /// <summary>
-    /// Points representing the currently selected route polyline — consumed by view to draw MapPolyline.
-    /// </summary>
-    public ObservableCollection<Point> RouteLinePoints { get; } = new();
+        /// <summary>
+        /// Points representing the currently selected route polyline — consumed by view to draw MapPolyline.
+        /// </summary>
+        public ObservableCollection<Point> RouteLinePoints { get; } = new();
 
-    /// <summary>
-    /// Raised when route line points are updated and the view should redraw the polyline layer.
-    /// </summary>
-    public event EventHandler<RouteLineEventArgs>? RouteLineUpdated;
+        /// <summary>
+        /// Raised when route line points are updated and the view should redraw the polyline layer.
+        /// </summary>
+        public event EventHandler<RouteLineEventArgs>? RouteLineUpdated;
 
-    /// <summary>
-    /// Raised when a print of the current route map has been requested.
-    /// </summary>
-    public event EventHandler? PrintRequested;
+        /// <summary>
+        /// Raised when a print of the current route map has been requested.
+        /// </summary>
+        public event EventHandler? PrintRequested;
 
-    // Map interaction events (view listens and applies actual SfMap changes)
-    public event EventHandler? ZoomInRequested;
-    public event EventHandler? ZoomOutRequested;
-    public event EventHandler? CenterRequested;
-    public event EventHandler? ViewResetRequested;
+        // Map interaction events (view listens and applies actual SfMap changes)
+        public event EventHandler? ZoomInRequested;
+        public event EventHandler? ZoomOutRequested;
+        public event EventHandler? CenterRequested;
+        public event EventHandler? ViewResetRequested;
 
         /// <summary>
         /// Latest captured map snapshot in PNG format (used for embedding into route PDF exports).
@@ -91,7 +91,7 @@ namespace BusBuddy.WPF.ViewModels.Map
             set => SetProperty(ref _latestMapSnapshotPng, value);
         }
 
-    public MapViewModel(IGeoDataService geoDataService, IGeocodingService? geocodingService = null, BusBuddy.Core.Services.IStudentService? studentService = null, IBusService? busService = null, IServiceScopeFactory? scopeFactory = null, IRoutingService? routingService = null)
+        public MapViewModel(IGeoDataService geoDataService, IGeocodingService? geocodingService = null, BusBuddy.Core.Services.IStudentService? studentService = null, IBusService? busService = null, IServiceScopeFactory? scopeFactory = null, IRoutingService? routingService = null)
         {
             _geoDataService = geoDataService ?? throw new ArgumentNullException(nameof(geoDataService));
             _geocodingService = geocodingService; // optional until wired
@@ -304,30 +304,30 @@ namespace BusBuddy.WPF.ViewModels.Map
             set => SetProperty(ref _routes, value);
         }
 
-    /// <summary>
-    /// Average travel speed in MPH for schedule estimation (configurable at runtime for refinement).
-    /// </summary>
-    private double _averageRouteSpeedMph = 35.0; // default rural estimate
-    public double AverageRouteSpeedMph
-    {
-        get => _averageRouteSpeedMph;
-        set => SetProperty(ref _averageRouteSpeedMph, value);
-    }
+        /// <summary>
+        /// Average travel speed in MPH for schedule estimation (configurable at runtime for refinement).
+        /// </summary>
+        private double _averageRouteSpeedMph = 35.0; // default rural estimate
+        public double AverageRouteSpeedMph
+        {
+            get => _averageRouteSpeedMph;
+            set => SetProperty(ref _averageRouteSpeedMph, value);
+        }
 
-    /// <summary>
-    /// Dwell minutes per stop (boarding + safety). Adjustable for calibration.
-    /// </summary>
-    private int _dwellMinutesPerStop = 1;
-    public int DwellMinutesPerStop
-    {
-        get => _dwellMinutesPerStop;
-        set => SetProperty(ref _dwellMinutesPerStop, value);
-    }
+        /// <summary>
+        /// Dwell minutes per stop (boarding + safety). Adjustable for calibration.
+        /// </summary>
+        private int _dwellMinutesPerStop = 1;
+        public int DwellMinutesPerStop
+        {
+            get => _dwellMinutesPerStop;
+            set => SetProperty(ref _dwellMinutesPerStop, value);
+        }
 
-    /// <summary>
-    /// Markers to display on the map (students, school, etc.).
-    /// </summary>
-    public ObservableCollection<MapMarker> MapMarkers { get; private set; } = new();
+        /// <summary>
+        /// Markers to display on the map (students, school, etc.).
+        /// </summary>
+        public ObservableCollection<MapMarker> MapMarkers { get; private set; } = new();
 
         /// <summary>
         /// Active buses list shown in SfDataGrid
@@ -381,17 +381,17 @@ namespace BusBuddy.WPF.ViewModels.Map
         public ICommand ZoomInCommand { get; private set; } = null!;
         public ICommand ZoomOutCommand { get; private set; } = null!;
 
-    // Additional commands referenced in XAML
-    public ICommand CenterOnFleetCommand { get; private set; } = null!;
-    public ICommand ShowAllBusesCommand { get; private set; } = null!;
-    public ICommand ShowRoutesCommand { get; private set; } = null!;
-    public ICommand ShowSchoolsCommand { get; private set; } = null!;
-    public ICommand TrackSelectedBusCommand { get; private set; } = null!;
-    public ICommand ResetViewCommand { get; private set; } = null!;
-    public ICommand AddMarkerCommand { get; private set; } = null!;
-    public ICommand PrintRouteMapsCommand { get; private set; } = null!;
-    public ICommand GenerateEligibilityRoutePdfCommand { get; private set; } = null!; // New command to trigger eligibility PDF generation
-    public ICommand BulkPlotEligibleStudentsCommand { get; private set; } = null!; // New: auto geocode + plot eligible rural students
+        // Additional commands referenced in XAML
+        public ICommand CenterOnFleetCommand { get; private set; } = null!;
+        public ICommand ShowAllBusesCommand { get; private set; } = null!;
+        public ICommand ShowRoutesCommand { get; private set; } = null!;
+        public ICommand ShowSchoolsCommand { get; private set; } = null!;
+        public ICommand TrackSelectedBusCommand { get; private set; } = null!;
+        public ICommand ResetViewCommand { get; private set; } = null!;
+        public ICommand AddMarkerCommand { get; private set; } = null!;
+        public ICommand PrintRouteMapsCommand { get; private set; } = null!;
+        public ICommand GenerateEligibilityRoutePdfCommand { get; private set; } = null!; // New command to trigger eligibility PDF generation
+        public ICommand BulkPlotEligibleStudentsCommand { get; private set; } = null!; // New: auto geocode + plot eligible rural students
 
         #endregion
 
@@ -1168,8 +1168,8 @@ namespace BusBuddy.WPF.ViewModels.Map
             return (pdf, eligibleStudents.Count, allStudents.Count);
         }
 
-    // UI wrapper made public so MainWindow can trigger it without hosting the MapView
-    public async Task GenerateEligibilityRoutePdfAndSaveAsync()
+        // UI wrapper made public so MainWindow can trigger it without hosting the MapView
+        public async Task GenerateEligibilityRoutePdfAndSaveAsync()
         {
             try
             {
@@ -1185,7 +1185,7 @@ namespace BusBuddy.WPF.ViewModels.Map
                     {
                         var noDataNote = Path.Combine(reportsDir, "NO-DATA.txt");
                         // Overwrite each invocation to reflect latest attempt.
-                        File.WriteAllText(noDataNote, $"No eligibility PDF generated at {DateTime.UtcNow:O}. Eligible={eligible} Considered={considered}. This file is created so the folder is visible.\n" );
+                        File.WriteAllText(noDataNote, $"No eligibility PDF generated at {DateTime.UtcNow:O}. Eligible={eligible} Considered={considered}. This file is created so the folder is visible.\n");
                         Logger.Information("Eligibility PDF skipped (no data). Placeholder NO-DATA.txt written to {Path}", noDataNote);
                     }
                     catch (Exception ioEx)

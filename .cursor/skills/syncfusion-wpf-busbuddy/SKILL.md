@@ -35,7 +35,6 @@ npx skills update
 
 MCP: `syncfusion-wpf-assistant` via `.github/scripts/run-syncfusion-mcp.sh` (NuGet `Syncfusion.WPF.MCP`, Keychain `SYNCFUSION_API_KEY`). Official docs: https://help.syncfusion.com/wpf/mcp. Spec: `specs/006-syncfusion-tool-integration/`.
 
-
 | Control / area       | NuGet                             | Official skill                                               |
 | -------------------- | --------------------------------- | ------------------------------------------------------------ |
 | SfDataGrid           | Syncfusion.SfGrid.WPF             | `syncfusion-wpf-datagrid`                                    |

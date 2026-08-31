@@ -44,8 +44,8 @@ public class BusBuddyDbContext : DbContext
         this.ChangeTracker.LazyLoadingEnabled = false;
         this.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
 
-    // Keep automatic change detection enabled to ensure reliability across providers and tests
-    // (Perf tuning can reintroduce targeted optimizations later.)
+        // Keep automatic change detection enabled to ensure reliability across providers and tests
+        // (Perf tuning can reintroduce targeted optimizations later.)
     }
 
     /// <summary>

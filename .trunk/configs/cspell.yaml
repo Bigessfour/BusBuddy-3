@@ -3,12 +3,30 @@ version: "0.2"
 # leading to inconsistent results.
 suggestionsTimeout: 5000 # ms
 
-# Custom words for BusBuddy project
+# Custom words for BusBuddy project (domain, vendors, WPF APIs)
 words:
-  - hyperthreading
-  - psscriptanalyzer
-  - syncfusion
   - busbuddy
+  - Chromeless
+  - codespell
+  - converttosarif
+  - geocoder
+  - geocodes
+  - geofence
+  - Geospatial
   - gitleaks
+  - hyperthreading
   - Intel
   - i5
+  - Macbook
+  - Mvvm
+  - Oakridge
+  - Pbgra
+  - psscriptanalyzer
+  - Sched
+  - Segoe
+  - Serilog
+  - shapefile
+  - syncfusion
+  - Unclustered
+  - unwired
+  - utmctl

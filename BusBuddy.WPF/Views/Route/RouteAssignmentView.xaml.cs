@@ -28,7 +28,7 @@ namespace BusBuddy.WPF.Views.Route
         private CoreStudent? _dragStudent;
         private bool _isDraggingFromAssigned;
 
-    public RouteAssignmentView()
+        public RouteAssignmentView()
         {
             Logger.Debug("RouteAssignmentView constructor starting");
             try
@@ -133,7 +133,7 @@ namespace BusBuddy.WPF.Views.Route
             catch { }
         }
 
-    private void OnUnloaded(object sender, System.Windows.RoutedEventArgs e)
+        private void OnUnloaded(object sender, System.Windows.RoutedEventArgs e)
         {
             // Detach handlers — cleanup
             try

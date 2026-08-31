@@ -155,25 +155,25 @@ namespace BusBuddy.WPF.ViewModels.Student
         /// </summary>
         public ObservableCollection<Core.Models.Student> Students { get; }
 
-    /// <summary>
-    /// View over Students that supports filtering/sorting/grouping for UI binding
-    /// </summary>
-    public ICollectionView StudentsView { get; }
+        /// <summary>
+        /// View over Students that supports filtering/sorting/grouping for UI binding
+        /// </summary>
+        public ICollectionView StudentsView { get; }
 
         /// <summary>
         /// Currently selected student in the data grid
         /// </summary>
-    /// <summary>
-    /// Currently selected student in the grid. Updates selection-dependent command CanExecute states.
-    /// </summary>
-    public Core.Models.Student? SelectedStudent
+        /// <summary>
+        /// Currently selected student in the grid. Updates selection-dependent command CanExecute states.
+        /// </summary>
+        public Core.Models.Student? SelectedStudent
         {
             get => _selectedStudent;
             set
             {
                 if (SetProperty(ref _selectedStudent, value))
                 {
-            Logger.Debug("SelectedStudent changed to {@Student}", _selectedStudent == null ? null : new { _selectedStudent.StudentId, _selectedStudent.StudentName });
+                    Logger.Debug("SelectedStudent changed to {@Student}", _selectedStudent == null ? null : new { _selectedStudent.StudentId, _selectedStudent.StudentName });
                     OnPropertyChanged(nameof(HasSelectedStudent));
                     OnPropertyChanged(nameof(HasSelectedStudents));
                     // Ensure selection-dependent commands update their CanExecute state
@@ -182,7 +182,7 @@ namespace BusBuddy.WPF.ViewModels.Student
                     _validateAddressRelay?.NotifyCanExecuteChanged();
                     _bulkAssignRouteRelay?.NotifyCanExecuteChanged();
                     _schoolTransferRelay?.NotifyCanExecuteChanged();
-            Logger.Debug("Selection-dependent commands invalidated (CanExecute re-evaluated)");
+                    Logger.Debug("Selection-dependent commands invalidated (CanExecute re-evaluated)");
                 }
             }
         }
@@ -195,17 +195,17 @@ namespace BusBuddy.WPF.ViewModels.Student
         /// <summary>
         /// Total number of students
         /// </summary>
-    public int TotalStudents => Students.Count;
+        public int TotalStudents => Students.Count;
 
-    /// <summary>
-    /// Number of active students
-    /// </summary>
-    public int ActiveStudents => Students.Count(s => s.Active);
+        /// <summary>
+        /// Number of active students
+        /// </summary>
+        public int ActiveStudents => Students.Count(s => s.Active);
 
-    /// <summary>
-    /// Number of students with assigned routes
-    /// </summary>
-    public int StudentsWithRoutes => Students.Count(s => !string.IsNullOrEmpty(s.AMRoute) || !string.IsNullOrEmpty(s.PMRoute));
+        /// <summary>
+        /// Number of students with assigned routes
+        /// </summary>
+        public int StudentsWithRoutes => Students.Count(s => !string.IsNullOrEmpty(s.AMRoute) || !string.IsNullOrEmpty(s.PMRoute));
         /// <summary>
         /// Number of students without assigned routes
         /// </summary>
@@ -214,17 +214,17 @@ namespace BusBuddy.WPF.ViewModels.Student
         /// <summary>
         /// Quick search text for filtering
         /// </summary>
-    /// <summary>
-    /// Text used for quick filtering; updates ICollectionView filter and status text.
-    /// </summary>
-    public string QuickSearchText
+        /// <summary>
+        /// Text used for quick filtering; updates ICollectionView filter and status text.
+        /// </summary>
+        public string QuickSearchText
         {
             get => _quickSearchText;
             set
             {
                 if (SetProperty(ref _quickSearchText, value))
                 {
-            Logger.Debug("QuickSearchText changed: {Text}", _quickSearchText);
+                    Logger.Debug("QuickSearchText changed: {Text}", _quickSearchText);
                     ApplyQuickFilter();
                     OnPropertyChanged(nameof(FilterStatusText));
                 }
@@ -234,7 +234,7 @@ namespace BusBuddy.WPF.ViewModels.Student
         /// <summary>
         /// Status text showing current filter state
         /// </summary>
-    public string FilterStatusText => string.IsNullOrEmpty(QuickSearchText) ? "" : $"Filtered: '{QuickSearchText}'";
+        public string FilterStatusText => string.IsNullOrEmpty(QuickSearchText) ? "" : $"Filtered: '{QuickSearchText}'";
 
         /// <summary>
         /// Available grades for dropdown selection
@@ -309,11 +309,11 @@ namespace BusBuddy.WPF.ViewModels.Student
         public ICommand ExportCommand { get; private set; } = null!;
         public ICommand ValidateAddressCommand { get; private set; } = null!;
 
-    // Backing fields to allow NotifyCanExecuteChanged on selection changes
-    private RelayCommand? _editStudentRelay;
-    private RelayCommand? _deleteStudentRelay;
-    private RelayCommand? _validateAddressRelay;
-    private RelayCommand? _bulkAssignRouteRelay;
+        // Backing fields to allow NotifyCanExecuteChanged on selection changes
+        private RelayCommand? _editStudentRelay;
+        private RelayCommand? _deleteStudentRelay;
+        private RelayCommand? _validateAddressRelay;
+        private RelayCommand? _bulkAssignRouteRelay;
 
         // New enhanced commands for route building
         public ICommand ImportStudentsCommand { get; private set; } = null!;
@@ -325,7 +325,7 @@ namespace BusBuddy.WPF.ViewModels.Student
         public ICommand ShowSummaryCommand { get; private set; } = null!;
         public ICommand ShowQuickActionsCommand { get; private set; } = null!;
         public ICommand PlotStudentsCommand { get; private set; } = null!;
-    public ICommand SaveGridEditsCommand { get; private set; } = null!; // Inline save for grid edits
+        public ICommand SaveGridEditsCommand { get; private set; } = null!; // Inline save for grid edits
         public ICommand SchoolTransferCommand { get; private set; } = null!;
         private RelayCommand? _schoolTransferRelay;
 
@@ -333,10 +333,10 @@ namespace BusBuddy.WPF.ViewModels.Student
 
         #region Command Initialization
 
-    /// <summary>
-    /// Wire up all commands. Edit/Delete/Validate/BulkAssign use CanExecute predicated on HasSelectedStudent.
-    /// </summary>
-    private void InitializeCommands()
+        /// <summary>
+        /// Wire up all commands. Edit/Delete/Validate/BulkAssign use CanExecute predicated on HasSelectedStudent.
+        /// </summary>
+        private void InitializeCommands()
         {
             // Existing commands
             AddStudentCommand = new RelayCommand(ExecuteAddStudent);
@@ -372,10 +372,10 @@ namespace BusBuddy.WPF.ViewModels.Student
 
         #region Command Handlers
 
-    /// <summary>
-    /// Opens the StudentForm for adding a new student and reloads the list on success.
-    /// </summary>
-    private void ExecuteAddStudent()
+        /// <summary>
+        /// Opens the StudentForm for adding a new student and reloads the list on success.
+        /// </summary>
+        private void ExecuteAddStudent()
         {
             try
             {
@@ -430,10 +430,10 @@ namespace BusBuddy.WPF.ViewModels.Student
             }
         }
 
-    /// <summary>
-    /// Opens the StudentForm for editing the currently selected student.
-    /// </summary>
-    private void ExecuteEditStudent()
+        /// <summary>
+        /// Opens the StudentForm for editing the currently selected student.
+        /// </summary>
+        private void ExecuteEditStudent()
         {
             try
             {
@@ -460,62 +460,62 @@ namespace BusBuddy.WPF.ViewModels.Student
             }
         }
 
-    /// <summary>
-    /// Opens school-to-school transfer dialog (pickup/dropoff locations + times required).
-    /// </summary>
-    private void ExecuteSchoolTransfer()
-    {
-        try
+        /// <summary>
+        /// Opens school-to-school transfer dialog (pickup/dropoff locations + times required).
+        /// </summary>
+        private void ExecuteSchoolTransfer()
         {
-            if (SelectedStudent is null)
+            try
             {
-                return;
-            }
+                if (SelectedStudent is null)
+                {
+                    return;
+                }
 
-            var sp = App.ServiceProvider;
-            var transferService = sp?.GetService<IStudentSchoolTransferService>();
-            var destinationService = sp?.GetService<IDestinationService>();
-            if (transferService is null || destinationService is null)
-            {
-                StatusMessage = "Transfer services unavailable";
-                Logger.Warning("School transfer skipped — services not registered");
-                return;
-            }
+                var sp = App.ServiceProvider;
+                var transferService = sp?.GetService<IStudentSchoolTransferService>();
+                var destinationService = sp?.GetService<IDestinationService>();
+                if (transferService is null || destinationService is null)
+                {
+                    StatusMessage = "Transfer services unavailable";
+                    Logger.Warning("School transfer skipped — services not registered");
+                    return;
+                }
 
-            var vm = new StudentSchoolTransferViewModel(
-                SelectedStudent.StudentId,
-                SelectedStudent.StudentName ?? $"Student {SelectedStudent.StudentId}",
-                transferService,
-                destinationService);
-            var dialog = new BusBuddy.WPF.Views.Student.StudentSchoolTransferForm(vm);
-            DialogOwner.Assign(dialog);
-            if (dialog.ShowDialog() == true)
+                var vm = new StudentSchoolTransferViewModel(
+                    SelectedStudent.StudentId,
+                    SelectedStudent.StudentName ?? $"Student {SelectedStudent.StudentId}",
+                    transferService,
+                    destinationService);
+                var dialog = new BusBuddy.WPF.Views.Student.StudentSchoolTransferForm(vm);
+                DialogOwner.Assign(dialog);
+                if (dialog.ShowDialog() == true)
+                {
+                    _ = LoadStudentsAsync();
+                    StatusMessage = $"School transfer saved for {SelectedStudent.StudentName}";
+                }
+            }
+            catch (Exception ex)
             {
-                _ = LoadStudentsAsync();
-                StatusMessage = $"School transfer saved for {SelectedStudent.StudentName}";
+                Logger.Error(ex, "Error opening school transfer");
+                StatusMessage = $"Transfer error: {ex.Message}";
             }
         }
-        catch (Exception ex)
-        {
-            Logger.Error(ex, "Error opening school transfer");
-            StatusMessage = $"Transfer error: {ex.Message}";
-        }
-    }
 
-    /// <summary>
-    /// Only enabled when a student is selected.
-    /// </summary>
-    private bool CanExecuteEditStudent()
+        /// <summary>
+        /// Only enabled when a student is selected.
+        /// </summary>
+        private bool CanExecuteEditStudent()
         {
             var can = HasSelectedStudent && !IsLoading;
             Logger.Debug("CanExecuteEditStudent evaluated — HasSelectedStudent={Can}", can);
             return can;
         }
 
-    /// <summary>
-    /// Deletes the currently selected student after confirmation (TBD).
-    /// </summary>
-    private async void ExecuteDeleteStudent()
+        /// <summary>
+        /// Deletes the currently selected student after confirmation (TBD).
+        /// </summary>
+        private async void ExecuteDeleteStudent()
         {
             try
             {
@@ -541,20 +541,20 @@ namespace BusBuddy.WPF.ViewModels.Student
             }
         }
 
-    /// <summary>
-    /// Only enabled when a student is selected.
-    /// </summary>
-    private bool CanExecuteDeleteStudent()
+        /// <summary>
+        /// Only enabled when a student is selected.
+        /// </summary>
+        private bool CanExecuteDeleteStudent()
         {
             var can = HasSelectedStudent && !IsLoading;
             Logger.Debug("CanExecuteDeleteStudent evaluated — HasSelectedStudent={Can}", can);
             return can;
         }
 
-    /// <summary>
-    /// Exports the current list to CSV (TBD).
-    /// </summary>
-    private void ExecuteExport()
+        /// <summary>
+        /// Exports the current list to CSV (TBD).
+        /// </summary>
+        private void ExecuteExport()
         {
             try
             {
@@ -602,15 +602,15 @@ namespace BusBuddy.WPF.ViewModels.Student
 
 
 
-    /// <summary>
-    /// Convenience redirect to ViewMap.
-    /// </summary>
-    private void ExecutePlotStudents() => ExecuteViewMap();
+        /// <summary>
+        /// Convenience redirect to ViewMap.
+        /// </summary>
+        private void ExecutePlotStudents() => ExecuteViewMap();
 
-    /// <summary>
-    /// Validates the SelectedStudent's HomeAddress using AddressService.
-    /// </summary>
-    private void ExecuteValidateAddress()
+        /// <summary>
+        /// Validates the SelectedStudent's HomeAddress using AddressService.
+        /// </summary>
+        private void ExecuteValidateAddress()
         {
             try
             {
@@ -634,10 +634,10 @@ namespace BusBuddy.WPF.ViewModels.Student
                 Logger.Error(ex, "Error executing validate address command");
             }
         }
-    /// <summary>
-    /// Plots the provided student on the map via MapViewModel.
-    /// </summary>
-    private async void ExecuteViewOnMap(Core.Models.Student? student)
+        /// <summary>
+        /// Plots the provided student on the map via MapViewModel.
+        /// </summary>
+        private async void ExecuteViewOnMap(Core.Models.Student? student)
         {
             try
             {
@@ -742,7 +742,7 @@ namespace BusBuddy.WPF.ViewModels.Student
             var digits = new string(phone.Where(char.IsDigit).ToArray());
             if (digits.Length == 10)
             {
-                return $"({digits.Substring(0,3)}) {digits.Substring(3,3)}-{digits.Substring(6,4)}";
+                return $"({digits.Substring(0, 3)}) {digits.Substring(3, 3)}-{digits.Substring(6, 4)}";
             }
             return phone; // leave as-is if not 10 digits
         }
@@ -750,8 +750,8 @@ namespace BusBuddy.WPF.ViewModels.Student
         /// <summary>
         /// Load all students from the database
         /// </summary>
-    /// <inheritdoc />
-    public async Task LoadStudentsAsync()
+        /// <inheritdoc />
+        public async Task LoadStudentsAsync()
         {
             try
             {
@@ -849,10 +849,10 @@ namespace BusBuddy.WPF.ViewModels.Student
         /// <summary>
         /// Delete a student from the database
         /// </summary>
-    /// <summary>
-    /// Removes the specified student from the database and updates the UI collections.
-    /// </summary>
-    private async Task DeleteStudentAsync(Core.Models.Student student)
+        /// <summary>
+        /// Removes the specified student from the database and updates the UI collections.
+        /// </summary>
+        private async Task DeleteStudentAsync(Core.Models.Student student)
         {
             try
             {
@@ -883,10 +883,10 @@ namespace BusBuddy.WPF.ViewModels.Student
         /// <summary>
         /// Apply quick filter to the students collection
         /// </summary>
-    /// <summary>
-    /// Forces the ICollectionView to refresh and apply the current filter predicate.
-    /// </summary>
-    private void ApplyQuickFilter()
+        /// <summary>
+        /// Forces the ICollectionView to refresh and apply the current filter predicate.
+        /// </summary>
+        private void ApplyQuickFilter()
         {
             // Refresh the ICollectionView to apply predicate
             StudentsView.Refresh();
@@ -914,10 +914,10 @@ namespace BusBuddy.WPF.ViewModels.Student
                    || (s.School?.IndexOf(q, StringComparison.OrdinalIgnoreCase) >= 0);
         }
 
-    /// <summary>
-    /// Imports students from a student CSV via <see cref="ISeedDataService"/>.
-    /// </summary>
-    private async Task ExecuteImportStudentsAsync()
+        /// <summary>
+        /// Imports students from a student CSV via <see cref="ISeedDataService"/>.
+        /// </summary>
+        private async Task ExecuteImportStudentsAsync()
         {
             try
             {
@@ -957,10 +957,10 @@ namespace BusBuddy.WPF.ViewModels.Student
             }
         }
 
-    /// <summary>
-    /// Assigns routes to a selection of students (placeholder).
-    /// </summary>
-    private void ExecuteBulkAssignRoute()
+        /// <summary>
+        /// Assigns routes to a selection of students (placeholder).
+        /// </summary>
+        private void ExecuteBulkAssignRoute()
         {
             try
             {
@@ -1086,10 +1086,10 @@ namespace BusBuddy.WPF.ViewModels.Student
             return can;
         }
 
-    /// <summary>
-    /// Assigns unassigned students to active routes, then asks local Ollama (or mock AI) for commentary.
-    /// </summary>
-    private async Task ExecuteOptimizeRoutes()
+        /// <summary>
+        /// Assigns unassigned students to active routes, then asks local Ollama (or mock AI) for commentary.
+        /// </summary>
+        private async Task ExecuteOptimizeRoutes()
         {
             try
             {
@@ -1119,10 +1119,10 @@ namespace BusBuddy.WPF.ViewModels.Student
             }
         }
 
-    /// <summary>
-    /// Plots all students on the map using the MapViewModel.
-    /// </summary>
-    private void ExecuteViewMap()
+        /// <summary>
+        /// Plots all students on the map using the MapViewModel.
+        /// </summary>
+        private void ExecuteViewMap()
         {
             try
             {
@@ -1205,10 +1205,10 @@ namespace BusBuddy.WPF.ViewModels.Student
 
 
 
-    /// <summary>
-    /// Placeholder for AI route suggestion for a single student.
-    /// </summary>
-    private void ExecuteSuggestRoute(Core.Models.Student? student)
+        /// <summary>
+        /// Placeholder for AI route suggestion for a single student.
+        /// </summary>
+        private void ExecuteSuggestRoute(Core.Models.Student? student)
         {
             try
             {
@@ -1227,10 +1227,10 @@ namespace BusBuddy.WPF.ViewModels.Student
             }
         }
 
-    /// <summary>
-    /// Creates and displays a quick summary of student counts.
-    /// </summary>
-    private void ExecuteShowSummary()
+        /// <summary>
+        /// Creates and displays a quick summary of student counts.
+        /// </summary>
+        private void ExecuteShowSummary()
         {
             try
             {
@@ -1245,10 +1245,10 @@ namespace BusBuddy.WPF.ViewModels.Student
             }
         }
 
-    /// <summary>
-    /// Displays quick action menu (placeholder).
-    /// </summary>
-    private void ExecuteShowQuickActions()
+        /// <summary>
+        /// Displays quick action menu (placeholder).
+        /// </summary>
+        private void ExecuteShowQuickActions()
         {
             try
             {
@@ -1276,10 +1276,10 @@ namespace BusBuddy.WPF.ViewModels.Student
         /// <summary>
         /// Load reference data for dropdowns
         /// </summary>
-    /// <summary>
-    /// Loads grades, schools, and routes used by dropdowns.
-    /// </summary>
-    private async Task LoadReferenceDataAsync()
+        /// <summary>
+        /// Loads grades, schools, and routes used by dropdowns.
+        /// </summary>
+        private async Task LoadReferenceDataAsync()
         {
             try
             {
@@ -1354,7 +1354,7 @@ namespace BusBuddy.WPF.ViewModels.Student
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
-            // ...existing code...
+        // ...existing code...
 
         protected bool SetProperty<T>(ref T field, T value, [CallerMemberName] string? propertyName = null)
         {
@@ -1381,7 +1381,7 @@ namespace BusBuddy.WPF.ViewModels.Student
             Logger.Debug("StudentsViewModel disposed");
             try { WeakReferenceMessenger.Default.UnregisterAll(this); } catch { }
         }
-            // No-op: context is now always local and disposed via using
+        // No-op: context is now always local and disposed via using
         #endregion
     }
 }

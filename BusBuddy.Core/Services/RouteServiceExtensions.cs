@@ -19,5 +19,5 @@ namespace BusBuddy.Core.Services
         // Enhanced route validation for activation.
         // Enhanced route activation with comprehensive checks.
     }
-// Removed extra closing brace
+    // Removed extra closing brace
 }

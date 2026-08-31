@@ -8,7 +8,7 @@
 
 **Input**: Hand-author BusBuddy architectural DNA into Spec-Kit memory so all later specs inherit Syncfusion, Serilog, RAG-first, hybrid Mac/Windows, solo CI, and GCP rules.
 
-## User Scenarios & Testing *(mandatory)*
+## User Scenarios & Testing _(mandatory)_
 
 ### User Story 1 - Single source of architectural truth (Priority: P1)
 
@@ -51,7 +51,7 @@ As a maintainer, I amend the constitution only via explicit PR with version/date
 
 1. **Given** a proposed constitution change, **When** following Governance, **Then** PR + version metadata + `python -m rag.index` are required.
 
-## Requirements *(mandatory)*
+## Requirements _(mandatory)_
 
 ### Functional Requirements
 
@@ -68,7 +68,7 @@ As a maintainer, I amend the constitution only via explicit PR with version/date
 - `STEADY-STATE-AND-FINISH-ROADMAP.md` (Architecture Map)
 - `Documentation/GCP-GEE-SECRETS-AND-AUTH.md`
 
-## Success Criteria *(mandatory)*
+## Success Criteria _(mandatory)_
 
 - Constitution is BusBuddy-specific and RAG-indexable.
 - Later features 002–005 can inherit these rules without restating them in full.

@@ -21,13 +21,15 @@ runtimes:
 # Core linting and formatting configuration
 lint:
   disabled:
-    - markdownlint # Using custom markdown standards
+    - markdownlint # Custom markdown; versioned enable below was a contradiction that re-enabled it
+    # Hermetic dotnet 7 has no osx-arm64 package; format via SDK 9 (`dotnet format`) instead
+    - dotnet-format
+    # PSScriptAnalyzer pulls converttosarif from Azure CDN (SSL fail); keep local PSScriptAnalyzerSettings for the IDE
+    - psscriptanalyzer
   enabled:
     # Security and infrastructure scanning
     - codespell@2.4.1
     - cspell@9.2.0
-    - dotnet-format@7.0.400
-    - markdownlint@0.45.0
     - checkov@3.2.464 # Infrastructure as code security
     - git-diff-check # Git hygiene
     - osv-scanner@2.2.1 # Vulnerability scanning
@@ -36,9 +38,6 @@ lint:
     # Code formatting and quality
     - prettier@3.6.2 # JSON, YAML formatting
     - yamllint@1.37.1 # YAML linting
-
-    # PowerShell linting and formatting
-    - psscriptanalyzer@1.24.0 # PowerShell best practices
 
   # File path ignores for build artifacts and logs
   ignore:
@@ -51,6 +50,17 @@ lint:
         - "**/logs/**" # Log files
         - "**/artifacts/**" # Build artifacts
         - "**/Migrations/**" # EF auto-generated migrations
+        - "rag/**" # Local RAG index / chroma binaries
+        - "Documentation/Archive/**" # Historical reports, not live code
+        - ".agents/**" # Vendored skill copies
+        - "**/*.pdf"
+        - "docs/function-inventory.generated.md"
+    - linters: [cspell, codespell]
+      paths:
+        - "**/*.bin"
+        - "**/*.sqlite3"
+        - "**/*.pickle"
+        - "**/skills-lock.json"
     - linters: [git-diff-check]
       paths:
         - ".vscode/settings.json" # VS Code settings have different formatting standards
@@ -68,7 +78,10 @@ actions:
 
 # Tools configuration
 tools:
+  disabled:
+    # No osx-arm64 hermetic package; local/CI use the installed .NET 9 SDK
+    - dotnet
+    # Azure CDN SSL failure on converttosarif.1.0.0.nupkg; not required to lint
+    - converttosarif
   enabled:
-    - dotnet@7.0.400
     - pwsh@7.4.1
-    - converttosarif@1.0.0 # SARIF conversion for VS Code integration

@@ -8,7 +8,7 @@
 
 **Input**: Codify Mac (Core/Docker/RAG) + Windows VM (full WPF + Syncfusion) workflow and rules agents must follow so they never invent cloud hosts or break hybrid builds.
 
-## User Scenarios & Testing *(mandatory)*
+## User Scenarios & Testing _(mandatory)_
 
 ### User Story 1 - Agents respect the Mac/Windows split (Priority: P1)
 
@@ -49,7 +49,7 @@ As a Windows VM developer, I connect to Docker Postgres on the Mac host IP print
 
 **Independent Test**: Checklist references `run-wpf.sh` / `ipconfig getifaddr en0` and docker compose db profile.
 
-## Requirements *(mandatory)*
+## Requirements _(mandatory)_
 
 - **FR-001**: Agent-facing hybrid checklist exists in `AGENTS.md` (thin) and durable rules remain in constitution.
 - **FR-002**: `DEVELOPMENT-GUIDE.md` hybrid section remains the detailed operator guide; this feature must not create a third competing standards doc.
@@ -64,7 +64,7 @@ As a Windows VM developer, I connect to Docker Postgres on the Mac host IP print
 | Windows VM | Full Syncfusion WPF run/debug; shared folder; env/keys secrets             | Assume Keychain/Passwords API    |
 | Either     | Local Ollama for AI; solo CI via PR gates                                  | Propose AWS/cloud app hosting    |
 
-## Success Criteria *(mandatory)*
+## Success Criteria _(mandatory)_
 
 - Checklist is visible from `AGENTS.md`.
 - Constitution and this spec agree; no conflicting "deploy to AWS" language introduced.

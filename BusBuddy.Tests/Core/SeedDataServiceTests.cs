@@ -158,21 +158,21 @@ namespace BusBuddy.Tests.Core
             "Fname,Lname,Grade,Fname,Lname,Address,City,State,County,Hphone,Cphone,Jparent FirstName,Jparent LastName,Address,City,State,County,Cphone ,Econtact FirstName,Econtact LastName,Econtact Phone\n" +
             dataRow + "\n";
 #pragma warning restore CS1998
-    // Helper for EF Core 9: manually mock DbSet<T> for in-memory lists
-    private static Mock<DbSet<T>> CreateMockDbSet<T>(IList<T> sourceList) where T : class
-    {
-        var queryable = sourceList.AsQueryable();
-        var mockSet = new Mock<DbSet<T>>();
-        mockSet.As<IQueryable<T>>().Setup(m => m.Provider).Returns(queryable.Provider);
-        mockSet.As<IQueryable<T>>().Setup(m => m.Expression).Returns(queryable.Expression);
-        mockSet.As<IQueryable<T>>().Setup(m => m.ElementType).Returns(queryable.ElementType);
-        mockSet.As<IQueryable<T>>().Setup(m => m.GetEnumerator()).Returns(() => queryable.GetEnumerator());
-        mockSet.Setup(d => d.Add(It.IsAny<T>())).Callback<T>(sourceList.Add);
-        mockSet.Setup(d => d.AddRange(It.IsAny<IEnumerable<T>>())).Callback<IEnumerable<T>>(items =>
+        // Helper for EF Core 9: manually mock DbSet<T> for in-memory lists
+        private static Mock<DbSet<T>> CreateMockDbSet<T>(IList<T> sourceList) where T : class
         {
-            foreach (var i in items) sourceList.Add(i);
-        });
-        return mockSet;
-    }
+            var queryable = sourceList.AsQueryable();
+            var mockSet = new Mock<DbSet<T>>();
+            mockSet.As<IQueryable<T>>().Setup(m => m.Provider).Returns(queryable.Provider);
+            mockSet.As<IQueryable<T>>().Setup(m => m.Expression).Returns(queryable.Expression);
+            mockSet.As<IQueryable<T>>().Setup(m => m.ElementType).Returns(queryable.ElementType);
+            mockSet.As<IQueryable<T>>().Setup(m => m.GetEnumerator()).Returns(() => queryable.GetEnumerator());
+            mockSet.Setup(d => d.Add(It.IsAny<T>())).Callback<T>(sourceList.Add);
+            mockSet.Setup(d => d.AddRange(It.IsAny<IEnumerable<T>>())).Callback<IEnumerable<T>>(items =>
+            {
+                foreach (var i in items) sourceList.Add(i);
+            });
+            return mockSet;
+        }
     }
 }

@@ -27,6 +27,10 @@ rules:
   
   # Trailing spaces - clean up (aligns with .editorconfig)
   trailing-spaces: enable
+
+  # Match .editorconfig end_of_line = crlf
+  new-lines:
+    type: dos
   
   # Empty lines - reasonable limits for readability
   empty-lines:

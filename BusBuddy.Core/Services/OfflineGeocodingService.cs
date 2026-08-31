@@ -44,7 +44,7 @@ namespace BusBuddy.Core.Services
 
             double lat = CenterLat + (r2 * MaxOffsetDeg);
             double lon = CenterLon + (r1 * MaxOffsetDeg);
-            return Task.FromResult<(double, double)?>( (lat, lon) );
+            return Task.FromResult<(double, double)?>((lat, lon));
         }
     }
 }

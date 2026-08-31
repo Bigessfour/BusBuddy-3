@@ -19,57 +19,57 @@ namespace BusBuddy.WPF.Views.Route
     /// </summary>
     public partial class RouteManagementView : UserControl
     {
-    // Ensure Serilog per standards — https://learn.microsoft.com/dotnet/core/diagnostics/serilog-logging
-    private static readonly ILogger Logger = Log.ForContext<RouteManagementView>();
-    private bool _isDataReady;
-    private DateTime _loadStartedUtc;
-    private bool _auditRun;
+        // Ensure Serilog per standards — https://learn.microsoft.com/dotnet/core/diagnostics/serilog-logging
+        private static readonly ILogger Logger = Log.ForContext<RouteManagementView>();
+        private bool _isDataReady;
+        private DateTime _loadStartedUtc;
+        private bool _auditRun;
 
         public RouteManagementView()
         {
             Logger.Debug("RouteManagementView ctor start");
-        try
-        {
-            InitializeComponent();
-
-            // Ensure DataContext is set so bindings/commands are active
             try
             {
-                if (this.DataContext is null)
+                InitializeComponent();
+
+                // Ensure DataContext is set so bindings/commands are active
+                try
                 {
-                    this.DataContext = new RouteManagementViewModel();
-                    Logger.Information("RouteManagementView DataContext set to RouteManagementViewModel");
+                    if (this.DataContext is null)
+                    {
+                        this.DataContext = new RouteManagementViewModel();
+                        Logger.Information("RouteManagementView DataContext set to RouteManagementViewModel");
+                    }
                 }
+                catch (Exception ex)
+                {
+                    Logger.Error(ex, "Failed to set DataContext for RouteManagementView");
+                }
+
+                // Add async lifecycle handlers after InitializeComponent
+                Loaded += OnLoadedAsync;
+                // Only run audit once, not on Unloaded
+
+                // Attach bubbling interaction diagnostics
+                try
+                {
+                    AddHandler(ButtonBase.ClickEvent, new RoutedEventHandler(OnAnyButtonClick), true);
+                    AddHandler(Selector.SelectionChangedEvent, new System.Windows.Controls.SelectionChangedEventHandler(OnAnySelectionChanged), true);
+                    AddHandler(TextBoxBase.TextChangedEvent, new TextChangedEventHandler(OnAnyTextChanged), true);
+                    AddHandler(System.Windows.Controls.Validation.ErrorEvent, new EventHandler<ValidationErrorEventArgs>(OnValidationError), true);
+                }
+                catch (Exception ex)
+                {
+                    Logger.Warning(ex, "RouteManagementView: failed to attach global handlers");
+                }
+
+                Logger.Information("RouteManagementView initialized");
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Failed to set DataContext for RouteManagementView");
+                Logger.Error(ex, "RouteManagementView initialization failed");
+                throw;
             }
-
-            // Add async lifecycle handlers after InitializeComponent
-            Loaded += OnLoadedAsync;
-            // Only run audit once, not on Unloaded
-
-            // Attach bubbling interaction diagnostics
-            try
-            {
-                AddHandler(ButtonBase.ClickEvent, new RoutedEventHandler(OnAnyButtonClick), true);
-                AddHandler(Selector.SelectionChangedEvent, new System.Windows.Controls.SelectionChangedEventHandler(OnAnySelectionChanged), true);
-                AddHandler(TextBoxBase.TextChangedEvent, new TextChangedEventHandler(OnAnyTextChanged), true);
-                AddHandler(System.Windows.Controls.Validation.ErrorEvent, new EventHandler<ValidationErrorEventArgs>(OnValidationError), true);
-            }
-            catch (Exception ex)
-            {
-                Logger.Warning(ex, "RouteManagementView: failed to attach global handlers");
-            }
-
-            Logger.Information("RouteManagementView initialized");
-        }
-        catch (Exception ex)
-        {
-            Logger.Error(ex, "RouteManagementView initialization failed");
-            throw;
-        }
         }
 
         // Microsoft docs — FrameworkElement.Loaded/Unloaded events:
@@ -190,14 +190,14 @@ namespace BusBuddy.WPF.Views.Route
             }
         }
 
-    private void OnAnySelectionChanged(object? sender, System.Windows.Controls.SelectionChangedEventArgs e)
+        private void OnAnySelectionChanged(object? sender, System.Windows.Controls.SelectionChangedEventArgs e)
         {
             try
             {
                 var src = e.OriginalSource as DependencyObject;
                 var fe = src as FrameworkElement;
                 var name = fe?.Name ?? "(unnamed)";
-        var type = src?.GetType().Name ?? (sender?.GetType().Name ?? "(unknown)");
+                var type = src?.GetType().Name ?? (sender?.GetType().Name ?? "(unknown)");
                 Logger.Information("RouteMgmt SelectionChanged: Type={Type} Name={Name} Added={Added} Removed={Removed}", type, name, e.AddedItems?.Count ?? 0, e.RemovedItems?.Count ?? 0);
             }
             catch (Exception ex)
@@ -281,6 +281,6 @@ namespace BusBuddy.WPF.Views.Route
             Logger.Information("RouteMgmt Audit Summary — Buttons={Total}, ButtonAdv={Adv}, MissingLabel/Content={MissingLabel}, MissingAutomationName={MissingAuto}, NoCommand={NoCmd}", total, adv, missingLabel, missingAuto, noCmd);
         }
 
-    // Traverse method removed; replaced with queue-based traversal in AuditButtonsAccessibility
+        // Traverse method removed; replaced with queue-based traversal in AuditButtonsAccessibility
     }
 }

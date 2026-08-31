@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore.Migrations;
+using Microsoft.EntityFrameworkCore.Migrations;
 using BusBuddy.Core.Data;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 
@@ -8,8 +8,8 @@ namespace BusBuddy.Core.Migrations
 {
     /// <inheritdoc />
     [DbContext(typeof(BusBuddyDbContext))]
-[Migration("20250809015130_FixDatabaseSchema")]
-public partial class FixDatabaseSchema : Migration
+    [Migration("20250809015130_FixDatabaseSchema")]
+    public partial class FixDatabaseSchema : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)

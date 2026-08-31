@@ -16,7 +16,7 @@ namespace BusBuddy.WPF.ViewModels.Vehicle
     public partial class VehicleManagementViewModel : BaseViewModel
     {
         private readonly IBusService _busService;
-    private BusBuddy.Core.Models.Bus? _lastSelectedVehicle;
+        private BusBuddy.Core.Models.Bus? _lastSelectedVehicle;
 
         [ObservableProperty]
         private ObservableCollection<BusBuddy.Core.Models.Bus> _vehicles = new();
@@ -373,9 +373,9 @@ namespace BusBuddy.WPF.ViewModels.Vehicle
         /// </summary>
         private bool CanUpdateVehicle()
         {
-         return SelectedVehicle != null &&
-             SelectedVehicle.BusId > 0 &&
-                   !IsBusy;
+            return SelectedVehicle != null &&
+                SelectedVehicle.BusId > 0 &&
+                      !IsBusy;
         }
 
         /// <summary>
@@ -395,9 +395,9 @@ namespace BusBuddy.WPF.ViewModels.Vehicle
         /// </summary>
         private bool CanDeleteVehicle()
         {
-         return SelectedVehicle != null &&
-             SelectedVehicle.BusId > 0 &&
-                   !IsBusy;
+            return SelectedVehicle != null &&
+                SelectedVehicle.BusId > 0 &&
+                      !IsBusy;
         }
 
         /// <summary>

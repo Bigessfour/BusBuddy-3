@@ -435,7 +435,7 @@ namespace BusBuddy.Tests.Core
             // Test passes if it completes within timeout
         }
 
-    #endregion
+        #endregion
 
         #region Additional Scenarios
 

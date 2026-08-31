@@ -30,28 +30,28 @@ namespace BusBuddy.WPF.ViewModels.Driver
         private readonly IOperationalReportService? _reportService;
         private readonly IDriverTrainingService? _trainingService;
 
-    private Core.Models.Driver? _selectedDriver;
+        private Core.Models.Driver? _selectedDriver;
         private string _searchText = string.Empty;
-    private string _selectedStatusFilter = "All Status";
-    private DateTime _lastUpdated = DateTime.Now;
+        private string _selectedStatusFilter = "All Status";
+        private DateTime _lastUpdated = DateTime.Now;
         private readonly ObservableCollection<StatusCount> _driverStatusData = new();
 
         #region Properties
 
-    /// <summary>
-    /// Collection of all drivers loaded from the database
-    /// </summary>
-    public ObservableCollection<Core.Models.Driver> Drivers { get; } = new();
+        /// <summary>
+        /// Collection of all drivers loaded from the database
+        /// </summary>
+        public ObservableCollection<Core.Models.Driver> Drivers { get; } = new();
 
-    /// <summary>
-    /// Filtered view of drivers for binding to the UI grid
-    /// </summary>
-    public ObservableCollection<Core.Models.Driver> FilteredDrivers { get; } = new();
+        /// <summary>
+        /// Filtered view of drivers for binding to the UI grid
+        /// </summary>
+        public ObservableCollection<Core.Models.Driver> FilteredDrivers { get; } = new();
 
-    /// <summary>
-    /// Chart source for driver status distribution (Status/Count)
-    /// </summary>
-    public ObservableCollection<StatusCount> DriverStatusData => _driverStatusData;
+        /// <summary>
+        /// Chart source for driver status distribution (Status/Count)
+        /// </summary>
+        public ObservableCollection<StatusCount> DriverStatusData => _driverStatusData;
 
         /// <summary>
         /// Currently selected driver in the data grid
@@ -123,15 +123,15 @@ namespace BusBuddy.WPF.ViewModels.Driver
         /// </summary>
         public int ActiveDrivers => Drivers.Count(d => d.Status == "Active");
 
-    /// <summary>
-    /// Number of drivers with training pending (not complete)
-    /// </summary>
-    public int TrainingPendingDrivers => Drivers.Count(d => !d.TrainingComplete);
+        /// <summary>
+        /// Number of drivers with training pending (not complete)
+        /// </summary>
+        public int TrainingPendingDrivers => Drivers.Count(d => !d.TrainingComplete);
 
-    /// <summary>
-    /// Number of drivers with licenses expiring within 30 days
-    /// </summary>
-    public int ExpiringLicensesCount => Drivers.Count(d => d.LicenseExpiryDate.HasValue && d.LicenseExpiryDate.Value.Date > DateTime.Today && d.LicenseExpiryDate.Value.Date <= DateTime.Today.AddDays(30));
+        /// <summary>
+        /// Number of drivers with licenses expiring within 30 days
+        /// </summary>
+        public int ExpiringLicensesCount => Drivers.Count(d => d.LicenseExpiryDate.HasValue && d.LicenseExpiryDate.Value.Date > DateTime.Today && d.LicenseExpiryDate.Value.Date <= DateTime.Today.AddDays(30));
 
         /// <summary>
         /// Selected status filter from the UI (e.g., All Status, Active, Inactive, Training, License Expiring)

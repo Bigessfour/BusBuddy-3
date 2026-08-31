@@ -9,8 +9,8 @@ namespace BusBuddy.Core.Migrations
 {
     /// <inheritdoc />
     [DbContext(typeof(BusBuddyDbContext))]
-[Migration("20250814210725_RemoveShapefileColumns")]
-public partial class RemoveShapefileColumns : Migration
+    [Migration("20250814210725_RemoveShapefileColumns")]
+    public partial class RemoveShapefileColumns : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)

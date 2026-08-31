@@ -39,17 +39,17 @@ namespace BusBuddy.WPF.Views.Main
     {
         private const string RouteAssignmentsHeader = "Route Assignments";
         private const string MapHeader = "Map";
-    // Explicit reference placeholder to satisfy analyzer if generated partial field not yet recognized
-    // At runtime, the XAML-generated field MainDockingManager will be used.
-    private DockingManager? _designTimeDockingManagerAccessor => this.FindName("MainDockingManager") as DockingManager;
+        // Explicit reference placeholder to satisfy analyzer if generated partial field not yet recognized
+        // At runtime, the XAML-generated field MainDockingManager will be used.
+        private DockingManager? _designTimeDockingManagerAccessor => this.FindName("MainDockingManager") as DockingManager;
         private static readonly ILogger Logger = Log.ForContext<MainWindow>();
         private static readonly int DockActivatedWidthBump = 120; // consolidated width bump constant
         private readonly Guid _windowInstanceId = Guid.NewGuid(); // correlation id for structured logs
         private BusBuddy.WPF.ViewModels.MainWindowViewModel? _viewModel;
 
-    // Generated fields (StudentsGrid, MainDockingManager, etc.) come from XAML partial class after InitializeComponent.
+        // Generated fields (StudentsGrid, MainDockingManager, etc.) come from XAML partial class after InitializeComponent.
 
-    // DI-friendly constructor to ensure DataContext is set before initialization
+        // DI-friendly constructor to ensure DataContext is set before initialization
         public MainWindow(BusBuddy.WPF.ViewModels.MainWindowViewModel viewModel) : this()
         {
             try
@@ -379,7 +379,7 @@ namespace BusBuddy.WPF.Views.Main
         }
 
         // Global selection change diagnostics (mirrors pattern used in other views)
-    private void OnAnySelectionChanged(object? sender, System.Windows.Controls.SelectionChangedEventArgs e)
+        private void OnAnySelectionChanged(object? sender, System.Windows.Controls.SelectionChangedEventArgs e)
         {
             try
             {
@@ -611,7 +611,7 @@ namespace BusBuddy.WPF.Views.Main
             Logger.Debug("Dashboard navigation logic completed");
         }
 
-    private void ThemeSelector_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+        private void ThemeSelector_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
         {
             try
             {
@@ -679,7 +679,7 @@ namespace BusBuddy.WPF.Views.Main
         /// Docs: https://help.syncfusion.com/cr/wpf/Syncfusion.SfSkinManager.SfSkinManager.html
         ///       https://help.syncfusion.com/cr/wpf/Syncfusion.SfSkinManager.Theme.html
         /// </summary>
-    private static void ApplyThemeGlobally(string themeName)
+        private static void ApplyThemeGlobally(string themeName)
         {
             SyncfusionThemeManager.ApplyApplicationTheme(themeName);
         }
@@ -1378,7 +1378,7 @@ namespace BusBuddy.WPF.Views.Main
             }
         }
 
-    #endregion
+        #endregion
 
         #region Helper Methods
 

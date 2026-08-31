@@ -64,14 +64,14 @@ When those conflict with this constitution, **this file wins** until amended und
 
 ## Technology & Environment Constraints
 
-| Area     | Rule                                                                                                                                                                                       |
-| -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| UI       | Syncfusion WPF only; Windows target                                                                                                                                                        |
-| Logging  | Serilog only                                                                                                                                                                               |
-| Data     | EF Core; Postgres preferred for real tests (`docker-compose` profiles)                                                                                                                     |
-| AI (app) | Prefer local Ollama (or compatible) behind existing service interfaces; cloud XAI is not required for core path                                                                            |
+| Area     | Rule                                                                                                                                                                                                                      |
+| -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| UI       | Syncfusion WPF only; Windows target                                                                                                                                                                                       |
+| Logging  | Serilog only                                                                                                                                                                                                              |
+| Data     | EF Core; Postgres preferred for real tests (`docker-compose` profiles)                                                                                                                                                    |
+| AI (app) | Prefer local Ollama (or compatible) behind existing service interfaces; cloud XAI is not required for core path                                                                                                           |
 | Geo      | Google Maps Platform (Address Validation, Routes) on documented billing project; Syncfusion SfMap + OSM for display. Students entered in the system are eligible — no geofence. Earth Engine is **not** an app dependency |
-| Hosting  | No cloud app hosting / no AWS for BusBuddy runtime                                                                                                                                         |
+| Hosting  | No cloud app hosting / no AWS for BusBuddy runtime                                                                                                                                                                        |
 
 ### GCP project map (do not hallucinate)
 

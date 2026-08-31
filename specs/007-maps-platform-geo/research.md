@@ -5,6 +5,7 @@
 **Rationale**: Live probes (2026-08-17) showed `ee-bigessfour` registered with Earth Engine, but the app never used it for addresses or trips. `GetGeoJsonAsync` called a non-existent `:exportGeoJson` (HTTP 404). `table:export` body used invalid fields (HTTP 400). Address/plot paths used regex + hash geocoding. EE is catalog/raster compute, not a geocoder or router ([Earth Engine](https://developers.google.com/earth-engine)).
 
 **Alternatives considered**:
+
 - Repair EE REST + Drive export — still would not validate USPS addresses or plan bus trips.
 - Keep EE “for later satellite” while adding Maps — extra secrets and a dead client; rejected (YAGNI).
 - Nominatim + OSRM — weaker rural rooftops and bulk ToS; extra vendor.
@@ -14,6 +15,7 @@
 **Rationale**: Same GCP billing console already used. Address Validation (optional USPS CASS) returns standardized components **and** lat/lng ([overview](https://developers.google.com/maps/documentation/address-validation/overview), [validation vs geocoding](https://developers.google.com/maps/architecture/geocoding-address-validation)). Routes API `computeRoutes` / matrix for drive paths ([compute routes](https://developers.google.com/maps/documentation/routes/compute-route-over)). Restrict API key to those APIs.
 
 **Alternatives considered**:
+
 - Geocoding API only — less clerk feedback on bad components; use Address Validation as primary.
 - Mapbox / HERE — extra vendor; GCP already in play.
 - Maps JavaScript / Navigation SDK — not WPF; constitution requires Syncfusion UI.

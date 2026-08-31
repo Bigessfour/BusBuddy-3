@@ -5,6 +5,7 @@
 **Rationale**: Spec requires minimize buses with comfort for &gt;100 riders, but constitution YAGNI forbids a heavy commercial OR-Tools/VRP dependency in this increment. Density/bbox cells + outlier gap split + greedy seat packing delivers SC-001/SC-002 and can later plug Maps matrix costs.
 
 **Alternatives considered**:
+
 - Google OR-Tools VRP — stronger optima; heavier native deps and ops surface; deferred.
 - Single k-means only — weak rural outliers; rejected as sole method.
 - Manual routes only — fails year-start auto-assign requirement.
@@ -25,7 +26,7 @@
 
 **Rationale**: User choice. Fixed 4-from-centroid is too coarse for medium/large cities; density-aware cells better match &gt;100 rider scenarios while remaining simple.
 
-**Alternatives considered**: Fixed 4 (A); 4 + auto-split only (C) — outlier split still used *inside* cells as a secondary rule.
+**Alternatives considered**: Fixed 4 (A); 4 + auto-split only (C) — outlier split still used _inside_ cells as a secondary rule.
 
 ## Decision: School times on Destination; pickups computed, not clerk-entered per stop in this increment
 
