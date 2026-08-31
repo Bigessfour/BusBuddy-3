@@ -210,7 +210,31 @@ namespace BusBuddy.WPF.ViewModels.GoogleEarth
             }
 
             await LoadActiveBusesAsync();
-            ShowAllBuses();
+            ReplaceLiveBusMarkers();
+        }
+
+        private void ReplaceLiveBusMarkers()
+        {
+            for (var i = MapMarkers.Count - 1; i >= 0; i--)
+            {
+                if (MapMarkers[i].Label.StartsWith("Bus ", StringComparison.Ordinal))
+                {
+                    MapMarkers.RemoveAt(i);
+                }
+            }
+
+            foreach (var bus in ActiveBuses)
+            {
+                if (!bus.CurrentLatitude.HasValue || !bus.CurrentLongitude.HasValue)
+                {
+                    continue;
+                }
+
+                MapMarkers.Add(MapMarker.FromDegrees(
+                    (double)bus.CurrentLatitude.Value,
+                    (double)bus.CurrentLongitude.Value,
+                    $"Bus {bus.BusNumber}"));
+            }
         }
 
         /// <summary>
