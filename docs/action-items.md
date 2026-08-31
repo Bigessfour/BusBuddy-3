@@ -73,6 +73,7 @@ Wave 2–3 (2026-08-28): DriverForm ComboBox `SelectedValue`+`Content`; Vehicles
   - [ ] VM smoke per [quickstart](../specs/008-route-determination/quickstart.md) (**T041 still open**)
     - Generate Routes / Transfer Routes are on the docking **Route Assignment** toolbar and the right-hand **Routes** pane (not only the Route Management dialog).
   - Serilog expected: `Route generation completed`, `Assign fitness Blocked|Warned`, `Schedule regen School=`
+  - [x] Unit proof (2026-08-31): `RouteDeterminationServiceTests` (missing school / AM StartTime / dry-run drafts / Both override reject); `AssignFitnessEvaluatorTests` (seating block/override, geo warn); `RouteGenerationCoordinatorTests` (no planner/schools, named-school dispatch). Mac cannot run WPF testhost — CI windows-latest.
 - [x] **006 Syncfusion Tool Integration** — [spec](../specs/006-syncfusion-tool-integration/spec.md) — merged [PR #21](https://github.com/Bigessfour/BusBuddy-3/pull/21)
   - [x] MCP paths, skills overlay, Syncfusion **34.2.3**, deps audit
   - [x] `python -m rag.index` after merge (2026-07-24; ~3399 chunks)
@@ -93,6 +94,7 @@ Wave 2–3 (2026-08-28): DriverForm ComboBox `SelectedValue`+`Content`; Vehicles
   - Historical: shared map VM + `IGeocodingService` + SfMap plot (hash geocoder retired with 007 US1)
 - [x] SfMap mapping: official OSM + Wiley center/zoom, Syncfusion string markers, shared map VM, live routes/buses (not sample-only)
 - [x] End-to-end student → assign → report proof test — `BusBuddy.Tests/Core/RouteAssignmentFlowTests.cs` (SeedDataService → StudentService → RouteService → PdfReportService). **UTM Windows VM 2026-08-16:** `Total tests: 1`, `Passed: 1` (built from `C:\dev\BusBuddy-3` after Z:\ sync). Mac host cannot execute WPF testhost; use `./run-wpf.sh` + `utm_run_in_vm.ps1` for GUI.
+- [x] P1 surface proof files (2026-08-31): `StudentsViewTests` (Import/Optimize/Transfer/Add commands in XAML); `ReportsViewTests` (roster/unassigned/route summary/CSV); inventory links `AssignFitnessEvaluatorTests` + `RouteDeterminationServiceTests`
 
 ### P2 — Hygiene / quality
 

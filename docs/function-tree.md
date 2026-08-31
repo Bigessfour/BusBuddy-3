@@ -13,6 +13,7 @@ flowchart TB
   subgraph ui [Operator UI]
     Students[StudentsView]
     Reports[ReportsView]
+    RouteAssign[RouteAssignmentView]
     Dashboard[DashboardView]
     MaintView[MaintenanceView]
     SchedView[DriverScheduleView]
@@ -50,6 +51,7 @@ flowchart TB
   Students --> Seed
   Students --> Opt
   Students --> MapsValidate
+  RouteAssign --> RouteDet
   Reports --> ReportsSvc
   ReportsSvc --> Pdf
   Dashboard --> Metrics
