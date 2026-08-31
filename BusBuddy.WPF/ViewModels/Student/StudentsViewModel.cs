@@ -28,7 +28,7 @@ namespace BusBuddy.WPF.ViewModels.Student
 {
     /// <summary>
     /// ViewModel for the StudentsView - manages student list display and operations
-    /// Implements MVP pattern with basic CRUD operations
+    /// Basic CRUD operations
     /// </summary>
     public class StudentsViewModel : INotifyPropertyChanged, IDisposable
     {
@@ -989,7 +989,7 @@ namespace BusBuddy.WPF.ViewModels.Student
                         return;
                     }
 
-                    // Cap very large operations for MVP safety
+                    // Cap very large operations
                     const int MaxBatch = 500;
                     if (candidates.Count > MaxBatch)
                     {
@@ -1036,7 +1036,7 @@ namespace BusBuddy.WPF.ViewModels.Student
                             context.SaveChanges();
                             try
                             {
-                                // Recompute and persist Route.StudentCount after bulk assignment (MVP requirement)
+                                // Recompute and persist Route.StudentCount after bulk assignment
                                 // Count unique students whose AMRoute or PMRoute matches the target route name
                                 var routeEntity = context.Routes.FirstOrDefault(r => r.RouteId == targetRoute.RouteId);
                                 if (routeEntity != null)

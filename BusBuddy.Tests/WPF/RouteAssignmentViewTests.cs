@@ -13,5 +13,6 @@ public class RouteAssignmentViewTests
         var xaml = XamlViewFile.Read("Views/Route/RouteAssignmentView.xaml");
         Assert.That(xaml, Does.Contain("Command=\"{Binding GenerateRoutesCommand}\""));
         Assert.That(xaml, Does.Contain("Command=\"{Binding GenerateTransferRoutesCommand}\""));
+        Assert.That(xaml, Does.Not.Contain("MVP"));
     }
 }

@@ -9,7 +9,6 @@ namespace BusBuddy.WPF.ViewModels.BusManagement
 {
     /// <summary>
     /// ViewModel for the Bus Edit Dialog
-    /// MVP Implementation - Basic functionality for Monday demo
     /// </summary>
     public class BusEditDialogViewModel : INotifyPropertyChanged
     {

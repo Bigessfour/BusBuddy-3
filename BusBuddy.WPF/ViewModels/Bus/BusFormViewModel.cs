@@ -12,13 +12,13 @@ namespace BusBuddy.WPF.ViewModels.Bus
 {
     /// <summary>
     /// ViewModel for Bus entry form
-    /// MVP-ready implementation with validation and CRUD operations
+    /// Implementation with validation and CRUD operations
     /// </summary>
     public class BusFormViewModel : INotifyPropertyChanged
     {
         private BusBuddy.Core.Models.Bus _bus;
         private bool _isEditMode;
-        private readonly IBusService? _busService; // optional during MVP if DI not configured
+        private readonly IBusService? _busService; // optional if DI not configured
         private static readonly ILogger Logger = Log.ForContext<BusFormViewModel>();
 
         public event EventHandler<bool?>? RequestClose; // mimic DriverForm pattern
@@ -243,7 +243,7 @@ namespace BusBuddy.WPF.ViewModels.Bus
                 }
                 else
                 {
-                    Logger.Warning("_busService not available — skipping persistence (MVP fallback)");
+                    Logger.Warning("_busService not available — skipping persistence");
                 }
 
                 RequestClose?.Invoke(this, true);

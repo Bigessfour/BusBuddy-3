@@ -1,4 +1,4 @@
-// MainWindow code-behind trimmed for MVP; extensive troubleshooting notes moved to GROK-README.md.
+// MainWindow code-behind; extensive troubleshooting notes moved to GROK-README.md.
 using System;
 using System.Threading.Tasks;
 using System.Windows;
@@ -32,7 +32,7 @@ using Syncfusion.Windows.Shared; // ChromelessWindow API per Syncfusion docs
 namespace BusBuddy.WPF.Views.Main
 {
     /// <summary>
-    /// BusBuddy MainWindow - MVP Implementation with Syncfusion ChromelessWindow and DockingManager
+    /// BusBuddy MainWindow with Syncfusion ChromelessWindow and DockingManager
     /// Professional layout with validated Syncfusion patterns using ChromelessWindow for modern UI
     /// </summary>
     public partial class MainWindow : ChromelessWindow
@@ -186,10 +186,10 @@ namespace BusBuddy.WPF.Views.Main
             try
             {
                 // ===================================================================
-                // SYNCFUSION EVENT HOOKS - DISABLED FOR MVP STABILITY
+                // SYNCFUSION EVENT HOOKS - DISABLED
                 // ===================================================================
 
-                // For MVP stability, basic functionality is prioritized over advanced events
+                // Basic functionality is prioritized over advanced events
                 Logger.Information("Syncfusion event hooks ready (basic functionality enabled)");
             }
             catch (Exception ex)
@@ -946,7 +946,7 @@ namespace BusBuddy.WPF.Views.Main
 
         #region Action Button Click Handlers
 
-        // MVP Button Click Handlers
+        // Button Click Handlers
         private void AddStudent_Click(object sender, RoutedEventArgs e)
         {
             Logger.Debug("AddStudent_Click event triggered");

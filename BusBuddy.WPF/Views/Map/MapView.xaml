@@ -175,19 +175,6 @@
                               Margin="0,4"
                               HorizontalAlignment="Stretch"/>
 
-                <!-- MVP demo: Add a stop marker (plots coordinates near the map center). Uses AddMarkerCommand with "lat,lon,label" string parameter -->
-                <TextBlock Text="Markers" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryTextBrush}" Margin="0,12,0,4"/>
-                <syncfusion:ButtonAdv Label="Add Stop (Demo)"
-                              AutomationProperties.Name="Add Demo Stop"
-                              ToolTip="Plot a demo stop near the map center"
-                              Command="{Binding AddMarkerCommand}"
-                              CommandParameter="39.8283,-98.5795,Demo Stop"
-                              Background="{DynamicResource ButtonBackgroundBrush}"
-                              Foreground="{DynamicResource ButtonForegroundBrush}"
-                              Padding="10,8"
-                              Margin="0,4"
-                              HorizontalAlignment="Stretch"/>
-
                 <TextBlock Text="Students" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryTextBrush}" Margin="0,12,0,4"/>
                 <!-- SfDataGrid for stops / buses (Finish map UI element; Syncfusion Sf* only + RAG cited components) -->
                 <syncfusion:SfDataGrid ItemsSource="{Binding ActiveBuses}" AutoGenerateColumns="False" Height="90" Margin="0,4,0,8"

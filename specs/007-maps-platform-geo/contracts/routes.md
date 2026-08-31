@@ -25,7 +25,7 @@ Headers:
 
 - `X-Goog-FieldMask`: `routes.duration,routes.distanceMeters,routes.polyline.encodedPolyline`
 
-Optional later: `computeRouteMatrix` for ranking students vs routes — same interface file, not MVP-blocking.
+Optional later: `computeRouteMatrix` for ranking students vs routes — same interface file, not blocking this increment.
 
 ## Persistence
 

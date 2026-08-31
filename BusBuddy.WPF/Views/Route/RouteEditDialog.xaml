@@ -1,4 +1,4 @@
-<!-- RouteEditDialog.xaml - Route editing dialog for BusBuddy MVP
+<!-- RouteEditDialog.xaml - Route editing dialog
      Uses Syncfusion SfMaskedEdit for route details (Start, End, Stops)
      Documentation: https://help.syncfusion.com/wpf/maskededit/getting-started -->
 <UserControl x:Class="BusBuddy.WPF.Views.Route.RouteEditDialog"

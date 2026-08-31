@@ -1,5 +1,4 @@
-// Temporarily excluded from build to resolve duplicate StudentsView definitions in tests (MVP clean build).
-// See project guidelines: Greenfield Reset strategy — non-MVP or duplicate UI classes are disabled.
+// Temporarily excluded from build to resolve duplicate StudentsView definitions in tests.
 #if false
 using System.Windows;
 using System.Windows.Controls;

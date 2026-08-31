@@ -23,7 +23,6 @@
         </ResourceDictionary>
     </syncfusion:ChromelessWindow.Resources>
 
-    <!-- MVP-Ready UI with DockingManager for professional layout -->
     <!-- Trigger language server refresh -->
     <Grid>
     <Grid.RowDefinitions>

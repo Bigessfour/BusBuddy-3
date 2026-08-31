@@ -18,7 +18,9 @@ public class MainWindowClerkPathTests
         Assert.That(xaml, Does.Contain("SelectedItem=\"{Binding SelectedBus, Mode=TwoWay}\""));
         Assert.That(xaml, Does.Contain("Text=\"{Binding StatusMessage"));
         Assert.That(xaml, Does.Not.Contain("Monday Ready Demo"));
+        Assert.That(xaml, Does.Not.Contain("MONDAY DEMO"));
         Assert.That(xaml, Does.Not.Contain("bb-route-demo"));
+        Assert.That(xaml, Does.Not.Contain("MVP"));
     }
 
     [Test]

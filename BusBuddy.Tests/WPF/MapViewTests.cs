@@ -18,5 +18,8 @@ public class MapViewTests
         Assert.That(xaml, Does.Contain("Command=\"{Binding ShowSchoolsCommand}\""));
         Assert.That(xaml, Does.Not.Contain("GoogleEarth"));
         Assert.That(xaml, Does.Not.Contain("Wiley"));
+        Assert.That(xaml, Does.Not.Contain("Add Stop (Demo)"));
+        Assert.That(xaml, Does.Not.Contain("Demo Stop"));
+        Assert.That(xaml, Does.Not.Contain("MVP"));
     }
 }

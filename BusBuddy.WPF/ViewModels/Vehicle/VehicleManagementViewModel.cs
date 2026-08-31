@@ -257,13 +257,13 @@ namespace BusBuddy.WPF.ViewModels.Vehicle
 
                 if (SelectedVehicle.BusId == 0)
                 {
-                    // New vehicle - for MVP Phase 1, just add to collection
+                    // New vehicle — add to collection
                     SelectedVehicle.BusId = Vehicles.Count > 0 ? Vehicles.Max(v => v.BusId) + 1 : 1;
                     Vehicles.Add(SelectedVehicle);
                     StatusMessage = $"Vehicle {SelectedVehicle.BusNumber} added successfully";
 
                     // Attempt to persist via service if available
-                    try { await _busService.AddBusAsync(SelectedVehicle); } catch { /* MVP: ignore service failure */ }
+                    try { await _busService.AddBusAsync(SelectedVehicle); } catch { /* ignore service failure */ }
                 }
                 else
                 {
@@ -276,7 +276,7 @@ namespace BusBuddy.WPF.ViewModels.Vehicle
                     StatusMessage = $"Vehicle {SelectedVehicle.BusNumber} updated successfully";
 
                     // Attempt to persist via service if available
-                    try { await _busService.UpdateBusAsync(SelectedVehicle); } catch { /* MVP: ignore service failure */ }
+                    try { await _busService.UpdateBusAsync(SelectedVehicle); } catch { /* ignore service failure */ }
                 }
 
                 ApplyFilters();

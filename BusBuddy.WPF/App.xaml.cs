@@ -29,8 +29,7 @@ namespace BusBuddy.WPF
     /// - EF Migration Mode: Minimal services for database operations only
     /// - UI Mode: Full dependency injection with robust error handling
     /// Features: Pure Serilog logging, Syncfusion license management, comprehensive error capture
-    /// Updated: Enhanced startup logic for MVP with full UI support
-    /// </summary>
+        /// </summary>
     public partial class App : Application
     {
         public static IServiceProvider? ServiceProvider { get; private set; }
@@ -77,7 +76,7 @@ namespace BusBuddy.WPF
                     .CreateLogger();
             }
 
-            Log.Information("🚌 BusBuddy MVP starting...");
+            Log.Information("🚌 BusBuddy starting...");
         }
 
         /// <summary>
@@ -336,7 +335,7 @@ namespace BusBuddy.WPF
 
             try
             {
-                Log.Information("🚌 Initializing BusBuddy MVP application");
+                Log.Information("🚌 Initializing BusBuddy application");
 
                 // Setup minimal DI for Students, Routes, Buses, Drivers (synchronous)
                 ConfigureServices();
@@ -357,11 +356,11 @@ namespace BusBuddy.WPF
                 var mainWindow = CreateMainWindow();
                 mainWindow.Show();
 
-                Log.Information("🚌 BusBuddy MVP application started successfully");
+                Log.Information("🚌 BusBuddy application started successfully");
             }
             catch (Exception ex)
             {
-                Log.Fatal(ex, "🚌 Failed to start BusBuddy MVP application");
+                Log.Fatal(ex, "🚌 Failed to start BusBuddy application");
                 MessageBox.Show($"Failed to start application: {ex.Message}", "BusBuddy Error",
                     MessageBoxButton.OK, MessageBoxImage.Error);
                 Environment.Exit(1);
@@ -437,7 +436,7 @@ namespace BusBuddy.WPF
                 services.AddScoped<IRouteService, RouteService>();
                 services.AddScoped<BusBuddy.Core.Services.Interfaces.IBusService, BusService>();
 
-                // Register UI services (commented out for MVP - services don't exist yet)
+                // Register UI services (commented out — services don't exist yet)
                 // services.AddTransient<BusBuddy.WPF.Services.DialogService>();
                 // services.AddTransient<BusBuddy.WPF.Services.NavigationService>();
                 services.AddTransient<BusBuddy.WPF.Services.RouteExportService>();
@@ -539,7 +538,7 @@ namespace BusBuddy.WPF
                         );
 
                         // Import JSON data if database is empty with retry strategy
-                        // Deprecated (MVP): JSON seeding disabled. Use CSV import path post-MVP.
+                        // JSON seeding disabled. Use CSV import path.
                         // await BusBuddy.Core.Utilities.JsonDataImporter.SeedDatabaseIfEmptyAsync(context);
 
                         // Also support plain array JSON via SeedDataService (uses StudentJsonPath)
@@ -996,7 +995,7 @@ Examples:
 
         protected override void OnExit(ExitEventArgs e)
         {
-            Log.Information("🚌 BusBuddy MVP application shutting down");
+            Log.Information("🚌 BusBuddy application shutting down");
             Log.CloseAndFlush();
             base.OnExit(e);
         }

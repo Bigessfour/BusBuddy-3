@@ -14,7 +14,7 @@ Retire Google Earth Engine from BusBuddy runtime and replace the student/map/tri
 
 **Primary Dependencies**: Existing HttpClient; Google Maps REST (no EE client libs). Remove `Google.Apis.Drive.v3` if unused after EE deletion. Keep `Google.Apis.Auth` only if still required elsewhere (expect **remove** with EE).
 
-**Storage**: Existing EF student lat/lon + `Route.WaypointsJson`; no new tables in MVP (optional cache columns documented in data-model)
+**Storage**: Existing EF student lat/lon + `Route.WaypointsJson`; no new tables in this increment (optional cache columns documented in data-model)
 
 **Testing**: xUnit in `BusBuddy.Tests`; fake `HttpMessageHandler`; CI filter `Category!=Integration&Category!=InMemoryFlaky`
 

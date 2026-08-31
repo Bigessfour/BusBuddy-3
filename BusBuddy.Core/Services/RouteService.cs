@@ -17,7 +17,7 @@ namespace BusBuddy.Core.Services
     /// <summary>
     /// Route Service implementation with comprehensive route management capabilities
     /// Implements Result pattern for robust error handling and logging
-    /// MVP-focused implementation prioritizing core route building functionality
+    /// Route building implementation
     /// Updated: Uses IBusBuddyDbContextFactory for consistent dependency injection
     /// </summary>
     public partial class RouteService : IRouteService
@@ -353,7 +353,7 @@ namespace BusBuddy.Core.Services
 
         #endregion
 
-        #region Route Building Methods (MVP Priority)
+        #region Route Building Methods
 
         public async Task<Result<Route>> CreateNewRouteAsync(string routeName, DateTime routeDate, string? description = null)
         {
@@ -445,7 +445,7 @@ namespace BusBuddy.Core.Services
                     }
 
                     // TODO: Add more comprehensive validation (bus, driver, stops, students)
-                    // For MVP, basic validation is sufficient
+                    // Basic validation is sufficient
 
                     validationResult.IsValid = validationResult.Issues.Count == 0;
 
@@ -474,7 +474,7 @@ namespace BusBuddy.Core.Services
             try
             {
                 Logger.Information("Activating route {RouteId}", routeId);
-                // MVP simplification: skip validation (already covered in separate tests / faster)
+                // Skip validation here (already covered in separate tests)
 
                 var (context, dispose) = GetWriteContext();
                 try
@@ -1151,7 +1151,7 @@ namespace BusBuddy.Core.Services
                     foreach (var route in routes)
                     {
                         var capacity = await GetRouteCapacityAsync(context, route);
-                        if (capacity <= 0) capacity = 30; // default MVP capacity
+                        if (capacity <= 0) capacity = 30; // default capacity
                         var assigned = await context.Students.CountAsync(s => s.AMRoute == route.RouteName || s.PMRoute == route.RouteName);
                         if (assigned < capacity)
                         {

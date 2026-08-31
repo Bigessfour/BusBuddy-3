@@ -185,7 +185,7 @@ public partial class Route : INotifyPropertyChanged
     [Display(Name = "Path")]
     public string? Path { get; set; }
 
-    // Geo JSON for waypoints polyline (MVP-friendly)
+    // Geo JSON for waypoints polyline
     [StringLength(4000)]
     [Display(Name = "Waypoints GeoJSON")]
     public string? WaypointsJson { get; set; }

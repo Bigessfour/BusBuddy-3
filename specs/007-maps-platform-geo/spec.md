@@ -22,7 +22,7 @@
 
 Constitution: this feature **amends** the Geo constraint (Earth Engine → Maps Platform Address Validation + SfMap; no shapefile geofence).
 
-Nominated provider (working solution): **Google Maps Platform** on `new-coursera-490518` — Address Validation (USPS CASS), Routes (`computeRoutes` / `computeRouteMatrix`). Places Autocomplete is out of MVP (P3). Earth Engine stays unused; do not re-enable it in this feature.
+Nominated provider (working solution): **Google Maps Platform** on `new-coursera-490518` — Address Validation (USPS CASS), Routes (`computeRoutes` / `computeRouteMatrix`). Places Autocomplete is deferred (P3). Earth Engine stays unused; do not re-enable it in this feature.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -37,7 +37,7 @@ As a transportation clerk, when I enter a Wiley-area student street address, the
 **Acceptance Scenarios**:
 
 1. **Given** a mapping key and a complete US address in the Wiley service area, **When** the clerk validates or saves the student, **Then** the address is accepted or corrected to a standardized form and latitude/longitude are stored.
-2. **Given** a mapping key and a nonsense or incomplete address, **When** the clerk validates, **Then** save is blocked (unless the existing skip-validation MVP flag is on) and the clerk sees why it failed.
+2. **Given** a mapping key and a nonsense or incomplete address, **When** the clerk validates, **Then** save is blocked (unless the existing skip-validation flag is on) and the clerk sees why it failed.
 3. **Given** no mapping key, **When** the clerk plots or validates, **Then** the UI states mapping is not configured and does **not** hash the address into fake coordinates.
 4. **Given** a previously validated student with coordinates, **When** the map bulk-plots eligible students, **Then** markers use stored coordinates and do not re-call the network for every row.
 
@@ -94,7 +94,7 @@ As a clerk, I can pick a suggested street address as I type so I spend less time
 
 - Rural Prowers/Bent County addresses that USPS can certify but Google rooftop is approximate: store coordinates anyway; show precision (rooftop vs range vs approximate) to the clerk.
 - Rate limits / quota: cache by normalized address; do not geocode on every keystroke (except P3 suggestions).
-- Existing students with hash-scattered coordinates: treat as untrusted; re-validate on next edit, not a silent mass rewrite in MVP.
+- Existing students with hash-scattered coordinates: treat as untrusted; re-validate on next edit, not a silent mass rewrite in this increment.
 - Unofficial `mt1.google.com` map tiles: remove or disable; OSM remains default.
 - Mapping key present but Address Validation API not enabled on the GCP project: surface a configuration error, not a crash.
 - Offline tests and CI: never require a live Maps key; use fakes.
@@ -140,7 +140,7 @@ As a clerk, I can pick a suggested street address as I type so I spend less time
 - Nominated provider is Google Maps Platform (Address Validation with USPS CASS, Routes API) billed on `new-coursera-490518`.
 - Wiley-scale volume is hundreds of students; validate on save; cache; route compute on demand.
 - Renaming `MapView` / `MapViewModel` is out of scope (map UI stays; EE backend goes).
-- `StudentRouteOptimizer` capacity fill remains; routing **adds** path geometry and optional matrix ranking, it does not replace seat-capacity rules in MVP.
+- `StudentRouteOptimizer` capacity fill remains; routing **adds** path geometry and optional matrix ranking, it does not replace seat-capacity rules in this increment.
 - Local shapefiles remain the eligibility source; no Maps “dataset” upload in this feature.
 - Constitution Geo line is amended in the same PR as implementation.
 - Offline hasher remains only behind tests/demo flag if needed; production DI uses the mapping client or a no-op that returns null.
@@ -150,5 +150,5 @@ As a clerk, I can pick a suggested street address as I type so I spend less time
 - Re-registering or repairing the `bus-buddy-gee` Earth Engine service account.
 - Satellite imagery, NDVI, flood, or EE table export.
 - Google Maps JavaScript, Navigation SDK, or replacing Syncfusion `SfMap`.
-- Mass re-geocoding of the entire historical student table in MVP.
+- Mass re-geocoding of the entire historical student table in this increment.
 - AWS or any cloud host for the WPF app.

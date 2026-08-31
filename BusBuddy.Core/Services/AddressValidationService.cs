@@ -258,9 +258,9 @@ namespace BusBuddy.Core.Services
             return FormatAddress(address, city, state, zip);
         }
 
-        // MVP Address Validation Methods - Simple regex-based validation for forms
+        // Address validation methods - simple regex-based validation for forms
         /// <summary>
-        /// MVP: Simple address validation for student intake forms
+        /// Simple address validation for student intake forms
         /// Uses basic regex patterns for US address validation
         /// </summary>
         /// <param name="fullAddress">Complete address string to validate</param>
@@ -292,7 +292,7 @@ namespace BusBuddy.Core.Services
         }
 
         /// <summary>
-        /// MVP: Validates address components separately for form validation
+        /// Validates address components separately for form validation
         /// </summary>
         public Task<AddressValidationResult> ValidateAddressComponentsSimpleAsync(string street, string city, string state, string zipCode)
         {
@@ -350,7 +350,7 @@ namespace BusBuddy.Core.Services
         }
 
         /// <summary>
-        /// MVP: Validates ZIP code format (5-digit or 9-digit)
+        /// Validates ZIP code format (5-digit or 9-digit)
         /// </summary>
         public bool IsValidZipCode(string zipCode)
         {
@@ -364,7 +364,7 @@ namespace BusBuddy.Core.Services
         }
 
         /// <summary>
-        /// MVP: Validates US state abbreviation
+        /// Validates US state abbreviation
         /// </summary>
         public bool IsValidState(string state)
         {
@@ -388,7 +388,7 @@ namespace BusBuddy.Core.Services
     }
 
     /// <summary>
-    /// MVP: Simple result class for address validation
+    /// Simple result class for address validation
     /// </summary>
     public class AddressValidationResult
     {

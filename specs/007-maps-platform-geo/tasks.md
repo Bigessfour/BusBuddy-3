@@ -38,7 +38,7 @@
 
 ---
 
-## Phase 3: User Story 1 - Clerk saves a real address and sees it on the map (Priority: P1) 🎯 MVP
+## Phase 3: User Story 1 - Clerk saves a real address and sees it on the map (Priority: P1)
 
 **Goal**: Postal-grade validate + persist lat/lon; no hash coordinates in production
 
@@ -109,8 +109,8 @@
 
 **Independent Test**: No key → no suggestions, no errors
 
-- [x] T028 [P] [US4] **Skipped (MVP cut)** — Places Autocomplete deferred
-- [x] T029 [US4] **Skipped (MVP cut)** — no student-form type-ahead in this ship
+- [x] T028 [P] [US4] **Skipped (deferred)** — Places Autocomplete deferred
+- [x] T029 [US4] **Skipped (deferred)** — no student-form type-ahead in this ship
 
 ---
 
@@ -136,7 +136,7 @@
 
 - **Setup (Phase 1)**: Immediate
 - **Foundational (Phase 2)**: Depends on Setup — BLOCKS all stories
-- **US1 (Phase 3)**: After Foundational — MVP
+- **US1 (Phase 3)**: After Foundational — User Story 1
 - **US2 (Phase 4)**: After Foundational; can overlap US1 if files don’t conflict (`App.xaml.cs` is shared — serialize with US1)
 - **US3 (Phase 5)**: After US1 (needs real coordinates)
 - **US4 (Phase 6)**: After US1; skippable
@@ -162,7 +162,7 @@
 
 **Resumed 2026-08-17**: US1 + US3 implemented on `feature/007-maps-us1-implement`. US4 skipped (P3 cut). Open follow-up PR for Maps clients + DI; run `/code-review` on HTTP clients and key handling after merge.
 
-### MVP First (User Story 1 + Foundational + US2 compile-clean)
+### User Story 1 first (User Story 1 + Foundational + US2 compile-clean)
 
 1. Phase 1–2
 2. Phase 3 US1

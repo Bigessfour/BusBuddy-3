@@ -19,7 +19,7 @@ namespace BusBuddy.WPF.ViewModels.Driver
 {
     /// <summary>
     /// ViewModel for the DriversView - manages driver list display and CRUD operations
-    /// Implements MVP pattern with enhanced search and filtering capabilities
+    /// Search and filtering for drivers
     /// </summary>
     public class DriversViewModel : BaseViewModel
     {

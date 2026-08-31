@@ -49,7 +49,7 @@ namespace BusBuddy.WPF.Views.Vehicle
             }
             catch
             {
-                // no-op for MVP
+                // no-op
             }
         }
     }

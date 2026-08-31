@@ -59,7 +59,7 @@ namespace BusBuddy.Core.Services
         Task<Result<bool>> ActivateRouteAsync(int routeId);
         Task<Result<bool>> DeactivateRouteAsync(int routeId);
         Task<Result<Route>> CloneRouteAsync(int sourceRouteId, DateTime newDate, string? newRouteName = null);
-    // Persist updated stop timing (arrival/departure) — MVP timing persistence
+    // Persist updated stop timing (arrival/departure)
     Task<Result<bool>> UpdateRouteStopsTimingAsync(int routeId, IEnumerable<RouteStop> stops);
     }
 }

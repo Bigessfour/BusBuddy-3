@@ -3,7 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:local="clr-namespace:BusBuddy.WPF">
              <!-- StartupUri removed - handled programmatically in App.xaml.cs OnStartup method -->
-             <!-- xmlns:converters="clr-namespace:BusBuddy.WPF.Converters" Temporarily disabled for MVP -->
+             <!-- xmlns:converters="clr-namespace:BusBuddy.WPF.Converters" -->
     <Application.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>

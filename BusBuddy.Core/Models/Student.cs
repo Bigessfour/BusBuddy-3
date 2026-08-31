@@ -26,7 +26,7 @@ public class Student : INotifyPropertyChanged
   [Display(Name = "Student Name")]
   public string StudentName { get; set; } = string.Empty;
 
-  // Optional for MVP: family association can be added later during edit
+  // Family association can be added later during edit
   public int? FamilyId { get; set; }
   public Family? Family { get; set; }
 

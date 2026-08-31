@@ -20,7 +20,7 @@
 
 ## Decision: Keep SfMap + OSM; drop unofficial Google tiles
 
-**Rationale**: `MapView` already defaults to OSM with attribution. `mt1.google.com/vt` violates Google Maps tile ToS. Map Tiles API is optional later, not MVP.
+**Rationale**: `MapView` already defaults to OSM with attribution. `mt1.google.com/vt` violates Google Maps tile ToS. Map Tiles API is optional later.
 
 ## Decision: No geofence — students in the system are eligible
 
@@ -34,7 +34,7 @@
 
 **Rationale**: Constitution prefers `.disabled` for experimental breakage. EE client is **incorrect REST**, unused, and a false “configured” path. Deleting `GoogleEarthEngineService`, EE bootstrap, and Drive export is the smaller long-term surface. Git history retains the files.
 
-## Decision: No new EF migration in MVP
+## Decision: No new EF migration in this increment
 
 **Rationale**: Student already has lat/lon; Route has `WaypointsJson`. Cache can be in-memory + those columns. Optional `AddressValidatedAt` later.
 

@@ -286,7 +286,7 @@ bb-docs-serve     # Serve documentation locally
 - ✅ **Enhanced Documentation**: Added visual diagrams and comprehensive API reference
 - ✅ **Restored SportsEvents**: Full sports scheduling functionality
 - ✅ **Improved Data Seeding**: OCR-based student/family import capabilities
-- ✅ **Project Hygiene**: Clean codebase with intentional `.disabled` files for MVP control
+- ✅ **Project Hygiene**: Clean codebase with intentional `.disabled` files for feature control
 
 **Documentation Enhancements:**
 

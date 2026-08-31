@@ -104,8 +104,8 @@ bbRestore
 # Build solution
 bbBuild
 
-# Verify MVP readiness
-bbMvpCheck
+# Restore and build
+dotnet restore BusBuddy.sln -p:EnableWindowsTargeting=true
 ```
 
 ### **Step 4: First Run**
@@ -168,7 +168,7 @@ bbClean               # Clean build artifacts
 # Quality Assurance
 bbXamlValidate        # Validate XAML files
 bbAntiRegression      # Run compliance checks
-bbMvpCheck            # Verify MVP readiness
+.github/scripts/validate-ci-local.sh
 
 # Route Optimization
 bbRoutes              # XAI route optimization
@@ -194,7 +194,7 @@ bbTest
 - **Unit Tests**: Core business logic validation
 - **Integration Tests**: Database and service integration
 - **XAML Validation**: UI component verification
-- **MVP Tests**: Essential functionality verification
+- **Tests**: Essential functionality verification
 
 ## 🔍 **Troubleshooting**
 
@@ -245,7 +245,7 @@ After setup, verify everything works:
 
 - [ ] `bbHealth` returns all green checkmarks
 - [ ] `bbBuild` completes successfully (0 errors)
-- [ ] `bbMvpCheck` reports "MVP READY! You can ship this!"
+- [ ] `.github/scripts/validate-ci-local.sh` passes
 - [ ] `bbRun` launches the WPF application
 - [ ] Application displays student and route management interfaces
 

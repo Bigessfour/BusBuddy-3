@@ -1,5 +1,5 @@
 // Note: This file previously contained a duplicate StudentsView window class definition.
-// For MVP clean build, ensure only unit tests remain compiled.
+// Ensure only unit tests remain compiled.
 // The UI window class block is excluded below.
 #define EXCLUDE_UI_DUPLICATE
 using System.Windows;

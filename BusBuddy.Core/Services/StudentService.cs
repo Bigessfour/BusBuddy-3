@@ -19,7 +19,7 @@ public class StudentService : IStudentService
 {
     private static readonly ILogger Logger = Log.ForContext<StudentService>();
     private readonly IBusBuddyDbContextFactory _contextFactory;
-    private readonly IGeocodingService? _geocodingService; // optional MVP geocoder
+    private readonly IGeocodingService? _geocodingService; // optional geocoder
     private static readonly SemaphoreSlim _semaphore = new(1, 1);
 
     // Centralized, flexible US phone validation:
@@ -51,7 +51,7 @@ public class StudentService : IStudentService
         return PhoneRegex.IsMatch(phone);
     }
 
-    // MVP toggle — allow relaxing phone validation to reduce perceived "button not working" issues when saves are blocked.
+    // Allow relaxing phone validation so format issues do not block saves.
     // Controls: BUSBUDDY_SKIP_PHONE_VALIDATION=1|true (skip), BUSBUDDY_PHONE_VALIDATION_MODE=warn|off|strict
     private static bool PhoneValidationOff()
     {
@@ -64,7 +64,7 @@ public class StudentService : IStudentService
 
     private static bool PhoneValidationWarnOnly()
     {
-        // Default to 'warn' for MVP so phone format issues do not block saves.
+        // Default to 'warn' so phone format issues do not block saves.
         // Supported modes via BUSBUDDY_PHONE_VALIDATION_MODE: off | warn (default) | strict
         var mode = Environment.GetEnvironmentVariable("BUSBUDDY_PHONE_VALIDATION_MODE");
         if (string.IsNullOrEmpty(mode)) return true; // default: warn-only
@@ -533,7 +533,7 @@ public class StudentService : IStudentService
                 }
             }
 
-            // Phone number format validation — configurable for MVP
+            // Phone number format validation — configurable
             if (!string.IsNullOrWhiteSpace(student.HomePhone) && !IsValidPhone(student.HomePhone))
             {
                 if (PhoneValidationOff() || PhoneValidationWarnOnly())
@@ -996,7 +996,7 @@ public class StudentService : IStudentService
         {
             Logger.Information("Updating contact information for student {StudentId}", studentId);
 
-            // Validate phone number formats — configurable for MVP
+            // Validate phone number formats — configurable
             if (!string.IsNullOrWhiteSpace(homePhone) && !IsValidPhone(homePhone))
             {
                 if (PhoneValidationOff() || PhoneValidationWarnOnly())
@@ -1061,7 +1061,7 @@ public class StudentService : IStudentService
         {
             Logger.Information("Updating emergency contact information for student {StudentId}", studentId);
 
-            // Validate phone number formats — configurable for MVP
+            // Validate phone number formats — configurable
             if (!string.IsNullOrWhiteSpace(alternativePhone) && !IsValidPhone(alternativePhone))
             {
                 if (PhoneValidationOff() || PhoneValidationWarnOnly())

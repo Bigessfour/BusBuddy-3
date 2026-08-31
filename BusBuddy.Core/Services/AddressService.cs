@@ -3,12 +3,12 @@ using System.Text.RegularExpressions;
 namespace BusBuddy.Core.Services;
 
 /// <summary>
-/// Address validation service for MVP phase — basic US address validation
+/// Address validation service — basic US address validation
 /// </summary>
 public class AddressService
 {
     /// <summary>
-    /// Validates a US address format for MVP phase
+    /// Validates a US address format
     /// </summary>
     /// <param name="address">Full address string to validate</param>
     /// <returns>Validation result with success flag and error message</returns>
@@ -19,7 +19,7 @@ public class AddressService
             return (false, "Address is required");
         }
 
-        // MVP Simple validation - check for basic address components
+        // Simple validation - check for basic address components
         if (address.Length < 10)
         {
             return (false, "Address too short - please provide complete address");

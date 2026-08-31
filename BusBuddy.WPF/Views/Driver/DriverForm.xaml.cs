@@ -13,7 +13,7 @@ namespace BusBuddy.WPF.Views.Driver
 {
     /// <summary>
     /// Interaction logic for DriverForm.xaml
-    /// MVP-ready driver entry form with ChromelessWindow and SkinManager theming
+    /// Driver entry form with ChromelessWindow and SkinManager theming
     /// </summary>
     public partial class DriverForm : ChromelessWindow
     {

@@ -664,7 +664,7 @@ namespace BusBuddy.WPF.ViewModels.Route
                 using var sw = new StreamWriter(fullPath, false, System.Text.Encoding.UTF8);
                 sw.WriteLine($"Schedule for {SelectedRoute.RouteName} ({SelectedRoute.Date:yyyy-MM-dd})");
                 sw.WriteLine($"Active: {SelectedRoute.IsActive}  Students: {SelectedRoute.StudentCount ?? 0}  Stops: {SelectedRoute.StopCount ?? 0}");
-                sw.WriteLine("(Detailed stop listing TBD in MVP)");
+                sw.WriteLine("(Detailed stop listing not included)");
                 sw.Flush();
                 StatusMessage = "Printed schedule (text)";
                 Logger.Information("Printed schedule for route {RouteId} to {File}", SelectedRoute.RouteId, fullPath);

@@ -88,7 +88,7 @@ Wave 2–3 (2026-08-28): DriverForm ComboBox `SelectedValue`+`Content`; Vehicles
   - [x] US2: Remove GEE DI, client, probe, unofficial Google tiles
   - [x] US1: Address Validation + geocode onto SfMap (Maps client + DI)
   - [x] US3: Routes API drive polyline (fail-open optimizer)
-  - [x] US4: Places type-ahead — skipped (MVP cut)
+  - [x] US4: Places type-ahead — skipped (deferred)
   - [x] Docs for US2; Maps clients wired
 - [x] **Student contact + school destinations** — parent/emergency fields, Destination School catalog, intake school dropdown, map schools, inter-district `StudentSchoolTransfer` (timed pickup/dropoff) — merged [PR #36](https://github.com/Bigessfour/BusBuddy-3/pull/36)
   - [x] Apply migration `20260817140000_StudentContactFieldsAlignment` — Mac Postgres `dotnet ef database update` works on a **fresh** database (`BUSBUDDY_CONNECTION` → Docker). WPF startup uses `Migrate()`; existing EnsureCreated DBs must be dropped or pointed at a new catalog.
@@ -99,7 +99,7 @@ Wave 2–3 (2026-08-28): DriverForm ComboBox `SelectedValue`+`Content`; Vehicles
   - [x] Apply migration `20260817150000_DriverTrainingSubmodule` — same Mac Postgres `database update` path as student-contact (2026-08-28)
   - [ ] VM: edit driver employment fields; open Training grid; mark complete + certificate
   - [x] Dedicated training grid UI (Drivers → Training) — mark complete / certificate per row
-- [x] **008 Route determination / fleet sizing** — [tasks](../specs/008-route-determination/tasks.md) T001–T041 implemented on [PR #38](https://github.com/Bigessfour/BusBuddy-3/pull/38) (follow-on to merged [#37](https://github.com/Bigessfour/BusBuddy-3/pull/37) MVP)
+- [x] **008 Route determination / fleet sizing** — [tasks](../specs/008-route-determination/tasks.md) T001–T041 implemented on [PR #38](https://github.com/Bigessfour/BusBuddy-3/pull/38) (follow-on to merged [#37](https://github.com/Bigessfour/BusBuddy-3/pull/37))
   - Design locked 2026-08-17: Q1:A / Q2:B / Q3:B
   - [x] US1 generate/pack/override · US2 assign fitness · US3 school-time schedules · US4 transfer fleet · polish
   - [x] Review hardenings (schedule regen persists Scheduled+Estimated; transfer stops use pickup/dropoff; Both creates AM+PM) — PR #39 follow-up
@@ -144,7 +144,7 @@ Wave 2–3 (2026-08-28): DriverForm ComboBox `SelectedValue`+`Content`; Vehicles
 | [#13](https://github.com/Bigessfour/BusBuddy-3/issues/13) | ViewModel dedup                                 | **Closed** (hygiene / PR #16)                                                                                                                          |
 | [#14](https://github.com/Bigessfour/BusBuddy-3/issues/14) | CI + secrets/MCP                                | Solo CI + auto-merge done; Passwords for Syncfusion/Maps. Optional: GH Actions secrets / `ci-with-ai` cleanup → **close or narrow**                    |
 | [#15](https://github.com/Bigessfour/BusBuddy-3/issues/15) | Deprecate bb-* PS                               | **Closed** — remaining install/archive modules removed in [PR #32](https://github.com/Bigessfour/BusBuddy-3/pull/32)                                   |
-| [#11](https://github.com/Bigessfour/BusBuddy-3/issues/11) | Close stubs (Reports/Grok/Settings/Maintenance) | P1 done ([PR #30](https://github.com/Bigessfour/BusBuddy-3/pull/30)); Drivers MVP placeholders wired to live reports/services — close via follow-up PR |
+| [#11](https://github.com/Bigessfour/BusBuddy-3/issues/11) | Close stubs (Reports/Grok/Settings/Maintenance) | P1 done ([PR #30](https://github.com/Bigessfour/BusBuddy-3/pull/30)); Drivers placeholders wired to live reports/services — close via follow-up PR |
 
 ---
 

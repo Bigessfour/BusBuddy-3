@@ -64,7 +64,7 @@ namespace BusBuddy.WPF.ViewModels.Route
     private const int RetimeDebounceMs = 600; // Delay before auto timing after modifications
     private static readonly Regex StartTimeRegex = new(@"^\s*(?:[01]?\d|2[0-3]):[0-5]\d\s*$", RegexOptions.Compiled); // HH:mm 24h
 
-        // Constructors added (MVP restoration)
+        // Constructors
         // 1) Parameterless for XAML designer / fallback
         // 2) routeService injection (primary)
         // 3) routeService + preselected route (used by RouteAssignmentView overload)
@@ -220,7 +220,7 @@ namespace BusBuddy.WPF.ViewModels.Route
 
         public bool IsStartTimeValid => StartTimeRegex.IsMatch(_startTimeString);
 
-        // Students currently assigned to the SelectedRoute (MVP-local collection)
+        // Students currently assigned to the SelectedRoute
         public ObservableCollection<BusBuddy.Core.Models.Student> AssignedStudentsForSelectedRoute
         {
             get => _assignedStudentsForSelectedRoute;
@@ -508,7 +508,7 @@ namespace BusBuddy.WPF.ViewModels.Route
         public ICommand ActivateRouteCommand { get; private set; } = null!;
         public ICommand DeactivateRouteCommand { get; private set; } = null!;
         public ICommand CloneRouteCommand { get; private set; } = null!;
-    // Basic mapping (MVP) — plot currently assigned students for selected route
+    // Plot currently assigned students for selected route
 
     public ICommand PlotRouteOnMapCommand { get; private set; } = null!;
     public ICommand TimeRouteCommand { get; private set; } = null!; // Basic stop timing
@@ -667,7 +667,7 @@ namespace BusBuddy.WPF.ViewModels.Route
 
         /// <summary>
         /// Attempts to proactively capture a map snapshot by locating an existing MapView instance in visual trees.
-        /// MVP lightweight approach: scans Application.Current.Windows for a MapView and invokes its internal snapshot via reflection.
+        /// Scans Application.Current.Windows for a MapView and invokes its internal snapshot via reflection.
         /// If none found, logs and returns silently. Avoids tight coupling until a formal capture command is exposed.
         /// </summary>
         private void TryProactiveMapSnapshotCapture()
@@ -698,7 +698,7 @@ namespace BusBuddy.WPF.ViewModels.Route
             }
         }
 
-        // Simple visual tree walker (recursive) — MVP helper
+        // Simple visual tree walker (recursive)
         private static System.Windows.DependencyObject? FindDescendantByTypeName(System.Windows.DependencyObject root, string typeName)
         {
             if (root == null) return null;
@@ -956,7 +956,7 @@ namespace BusBuddy.WPF.ViewModels.Route
         }
 
         /// <summary>
-        /// Lightweight helper to keep SelectedRoute.StudentCount in sync during MVP without full reload.
+        /// Lightweight helper to keep SelectedRoute.StudentCount in sync without a full reload.
         /// </summary>
         private void IncrementRouteStudentCount(BusBuddy.Core.Models.Route route, int delta)
         {
@@ -1058,7 +1058,7 @@ namespace BusBuddy.WPF.ViewModels.Route
                 }
                 else
                 {
-                    // MVP fallback - create mock route
+                    // Fallback - create mock route
                     var mockRoute = new BusBuddy.Core.Models.Route
                     {
                         RouteId = AvailableRoutes.Count + 1,
@@ -1077,7 +1077,7 @@ namespace BusBuddy.WPF.ViewModels.Route
                     NewRouteName = string.Empty;
                     NewRouteDescription = string.Empty;
 
-                    StatusMessage = $"Successfully created route '{mockRoute.RouteName}' (MVP mode)";
+                    StatusMessage = $"Successfully created route '{mockRoute.RouteName}'";
                 }
             }
             catch (Exception ex)
@@ -1437,7 +1437,7 @@ namespace BusBuddy.WPF.ViewModels.Route
 
         /// <summary>
         /// Basic sequential timing of route stops based on a user-provided StartTimeString.
-        /// For MVP each stop gets arrival = current time cursor, departure = arrival + StopDuration minutes (default 2 if 0).
+        /// Each stop gets arrival = current time cursor, departure = arrival + StopDuration minutes (default 2 if 0).
         /// Persisted via IRouteService.UpdateRouteStopsTimingAsync when available.
         /// </summary>
         private async void TimeRouteStops()
@@ -1473,7 +1473,7 @@ namespace BusBuddy.WPF.ViewModels.Route
                 foreach (var stop in RouteStops.OrderBy(s => s.StopOrder))
                 {
                     stop.EstimatedArrivalTime = current;
-                    var dwellMinutes = stop.StopDuration > 0 ? stop.StopDuration : 2; // MVP default dwell
+                    var dwellMinutes = stop.StopDuration > 0 ? stop.StopDuration : 2; // default dwell
                     stop.EstimatedDepartureTime = current.AddMinutes(dwellMinutes);
                     stop.UpdatedDate = DateTime.Now;
                     current = stop.EstimatedDepartureTime; // advance cursor
@@ -1553,9 +1553,9 @@ namespace BusBuddy.WPF.ViewModels.Route
                 }
                 else
                 {
-                    // MVP validation
+                    // Validation without route service
                     var isValid = !string.IsNullOrEmpty(SelectedRoute.RouteName) && RouteStops.Any();
-                    StatusMessage = isValid ? "Route validation passed (MVP mode)" : "Route validation failed (MVP mode)";
+                    StatusMessage = isValid ? "Route validation passed" : "Route validation failed";
                     MessageBox.Show(isValid ? "Route is valid!" : "Route needs a name and at least one stop.",
                         "Route Validation", MessageBoxButton.OK, MessageBoxImage.Information);
                 }
@@ -1579,7 +1579,7 @@ namespace BusBuddy.WPF.ViewModels.Route
                 return;
             }
 
-            // MVP activation guard – ensure minimal required components
+            // Activation guard – ensure minimal required components
             var missing = new List<string>();
             if (!AssignedStudentsForSelectedRoute.Any()) missing.Add("at least one student");
             if (!RouteStops.Any()) missing.Add("at least one stop");
@@ -1719,7 +1719,7 @@ namespace BusBuddy.WPF.ViewModels.Route
                 }
                 else
                 {
-                    // MVP fallback
+                    // Fallback
                     var clonedRoute = new BusBuddy.Core.Models.Route
                     {
                         RouteId = AvailableRoutes.Count + 1,
@@ -1732,7 +1732,7 @@ namespace BusBuddy.WPF.ViewModels.Route
 
                     AvailableRoutes.Add(clonedRoute);
                     SelectedRoute = clonedRoute;
-                    StatusMessage = $"Successfully cloned route as '{newName}' (MVP mode)";
+                    StatusMessage = $"Successfully cloned route as '{newName}'";
                 }
             }
             catch (Exception ex)
@@ -1904,7 +1904,7 @@ namespace BusBuddy.WPF.ViewModels.Route
                 }
                 else
                 {
-                    // MVP fallback - load mock stops
+                    // Fallback - load mock stops
                     for (int i = 1; i <= 3; i++)
                     {
                         RouteStops.Add(new RouteStop
@@ -1917,7 +1917,7 @@ namespace BusBuddy.WPF.ViewModels.Route
                         });
                     }
 
-                    // MVP: Seed some assigned students visually for the grid
+                    // Seed some assigned students visually for the grid
                     var seedCount = Math.Min(10, UnassignedStudents.Count);
                     foreach (var s in UnassignedStudents.Take(seedCount).ToList())
                     {
@@ -2164,7 +2164,7 @@ namespace BusBuddy.WPF.ViewModels.Route
                         StudentNumber = $"STU{i:000}",
                         StudentName = $"Student {i}",
                         Grade = (i % 12 + 1).ToString(),
-                        // Address = $"{i * 100} Main Street", // Removed for MVP
+                        // Address = $"{i * 100} Main Street",
                         Active = true
                     });
                 }

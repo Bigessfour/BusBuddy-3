@@ -172,7 +172,6 @@ bb-generate-report -ReportType DriverSchedule -Format Excel -OutputPath "schedul
 ```powershell
 # Core route operations
 bb-routes               # Main route optimization system
-bb-route-demo           # Demo route optimization with sample data
 bb-route-status         # Check route optimization system status
 
 # Route optimization examples

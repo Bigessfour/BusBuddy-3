@@ -197,7 +197,7 @@ namespace BusBuddy.Core.Services
         }
 
         /// <summary>
-        /// Generates a concise PDF summary for a route (MVP route assignment export).
+        /// Generates a concise PDF summary for a route.
         /// Includes: Header (route name/date/time slot), assignment summary, stop list, student roster.
         /// Documentation references:
         /// - Syncfusion PDF Getting Started / API (PdfDocument, PdfStandardFont, PdfBrushes)

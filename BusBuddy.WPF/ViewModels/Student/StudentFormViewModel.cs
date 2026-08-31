@@ -83,7 +83,7 @@ namespace BusBuddy.WPF.ViewModels.Student
             _ = LoadDataAsync();
             if (DisableAddressValidation)
             {
-                AddressValidationMessage = "Address validation disabled — MVP mode";
+                AddressValidationMessage = "Address validation disabled";
                 AddressValidationColor = Brushes.Gray;
             }
         }
@@ -115,7 +115,7 @@ namespace BusBuddy.WPF.ViewModels.Student
             _ = LoadDataAsync();
             if (DisableAddressValidation)
             {
-                AddressValidationMessage = "Address validation disabled — MVP mode";
+                AddressValidationMessage = "Address validation disabled";
                 AddressValidationColor = Brushes.Gray;
             }
         }
@@ -249,7 +249,7 @@ namespace BusBuddy.WPF.ViewModels.Student
     private bool _canSave = true;
     private readonly ObservableCollection<string> _validationErrors = new();
     private bool _hasValidationErrors;
-    private bool _disableAddressValidation; // MVP escape hatch
+    private bool _disableAddressValidation; // optional skip-validation flag
 
         /// <summary>
         /// Whether there's a global error to display
@@ -329,7 +329,7 @@ namespace BusBuddy.WPF.ViewModels.Student
         }
 
         /// <summary>
-        /// When true, skips address validation steps (temporary MVP fallback)
+        /// When true, skips address validation steps
         /// </summary>
         public bool DisableAddressValidation
         {
@@ -557,7 +557,7 @@ namespace BusBuddy.WPF.ViewModels.Student
                     return;
                 }
 
-                // Optional MVP feature flag to bypass validation and allow saving immediately
+                // Optional flag to bypass validation and allow saving immediately
                 // Enable by setting environment variable: BUSBUDDY_SKIP_STUDENT_VALIDATION=1
                 static bool ShouldSkipValidation()
                     => string.Equals(Environment.GetEnvironmentVariable("BUSBUDDY_SKIP_STUDENT_VALIDATION"), "1", StringComparison.OrdinalIgnoreCase)
@@ -613,7 +613,7 @@ namespace BusBuddy.WPF.ViewModels.Student
                 }
 
                 // Prefer StudentService when available (normal flow). If skipping validation,
-                // avoid service-level validation and use direct EF save instead (MVP flag).
+                // avoid service-level validation and use direct EF save instead.
                 if (_studentService != null && !ShouldSkipValidation())
                 {
                     if (IsEditMode)
@@ -632,7 +632,7 @@ namespace BusBuddy.WPF.ViewModels.Student
                 else
                 {
                     // Fallback direct EF save if service not available
-                    // or when skipping validation for MVP save bypass
+                    // or when skipping validation
                     if (IsEditMode)
                     {
                         _context.Students.Update(Student);
@@ -681,7 +681,7 @@ namespace BusBuddy.WPF.ViewModels.Student
 
         private bool CanSaveStudent()
         {
-         // MVP: allow Save with minimal required fields only (name + grade).
+         // Allow Save with minimal required fields only (name + grade).
          // Address fields are optional for Save to unblock CRUD flows.
          return !string.IsNullOrWhiteSpace(Student?.StudentName)
              && !string.IsNullOrWhiteSpace(Student?.Grade);
@@ -936,7 +936,7 @@ namespace BusBuddy.WPF.ViewModels.Student
                 if (string.IsNullOrWhiteSpace(Student.Grade))
                     validationErrors.Add("Grade is required");
 
-                // MVP: Address fields are optional for Save. Do not flag as blocking errors.
+                // Address fields are optional for Save. Do not flag as blocking errors.
                 // You can still validate address via the dedicated Validate Address action.
 
                 // Populate error list for UI
@@ -1023,7 +1023,7 @@ namespace BusBuddy.WPF.ViewModels.Student
         }
 
         /// <summary>
-        /// Get AI-suggested routes based on address (MVP simulation)
+        /// Get AI-suggested routes based on address
         /// </summary>
         private async Task<List<string>> GetAISuggestedRoutes(string? address, string? city, string? state)
         {
@@ -1092,7 +1092,7 @@ namespace BusBuddy.WPF.ViewModels.Student
             {
                 Logger.Information("Loading form data");
 
-                // Load available routes from database (active + distinct), union with safe defaults for MVP/tests
+                // Load available routes from database (active + distinct), union with safe defaults for tests
                 var defaultRoutes = new[] { "Route A", "Route B", "Route C", "Route D" };
                 List<string> dbRouteNames = new();
                 try
@@ -1194,7 +1194,7 @@ namespace BusBuddy.WPF.ViewModels.Student
 
         /// <summary>
         /// Minimal validation for Save — only ensure required fields are present.
-        /// Detailed address checks are available via the Validate actions and should not block Save in MVP.
+        /// Detailed address checks are available via the Validate actions and should not block Save.
         /// </summary>
     private bool IsValidStudent()
         {
@@ -1204,7 +1204,7 @@ namespace BusBuddy.WPF.ViewModels.Student
                     Student?.StudentName, Student?.Grade, Student?.HomeAddress, Student?.City, Student?.State, Student?.Zip);
             }
             catch { /* logging best-effort */ }
-            // MVP: Only enforce Name and Grade for Save; address fields are optional.
+            // Only enforce Name and Grade for Save; address fields are optional.
             if (string.IsNullOrWhiteSpace(Student.StudentName)) return false;
             if (string.IsNullOrWhiteSpace(Student.Grade)) return false;
 
@@ -1218,8 +1218,8 @@ namespace BusBuddy.WPF.ViewModels.Student
         /// </summary>
         private List<string> GetValidationErrors()
         {
-            // MVP: Only enforce the minimal required fields for Save so buttons “work” visibly.
-            // Address fields are optional during MVP and validated via dedicated actions.
+            // Only enforce the minimal required fields for Save so buttons work visibly.
+            // Address fields are optional and validated via dedicated actions.
             var errors = new List<string>();
             if (string.IsNullOrWhiteSpace(Student.StudentName)) errors.Add("Student name is required");
             if (string.IsNullOrWhiteSpace(Student.Grade)) errors.Add("Grade is required");
@@ -1227,7 +1227,7 @@ namespace BusBuddy.WPF.ViewModels.Student
         }
 
         /// <summary>
-        /// Simple address validation using regex patterns (MVP implementation)
+        /// Simple address validation using regex patterns
         /// </summary>
         private (bool IsValid, string? ErrorMessage) ValidateAddressComponents(string street, string city, string state, string zipCode)
         {

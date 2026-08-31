@@ -29,11 +29,11 @@
 | PM | PMRoute set; AMRoute empty — stop kept on AM mirror |
 | Both | Both routes set |
 
-Optional later: explicit `RideMode` column; MVP may derive from AM/PM route nullability.
+Optional later: explicit `RideMode` column; This increment may derive from AM/PM route nullability.
 
 ## RouteProposal / draft Route
 
-MVP may create real `Route` rows with a naming convention (`Draft-{School}-{Cell}-{n}`) or a `RouteProposals` table:
+This increment may create real `Route` rows with a naming convention (`Draft-{School}-{Cell}-{n}`) or a `RouteProposals` table:
 
 | Field | Type | Rules |
 |-------|------|-------|

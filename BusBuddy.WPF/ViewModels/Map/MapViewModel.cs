@@ -26,7 +26,7 @@ namespace BusBuddy.WPF.ViewModels.Map
     /// <summary>
     /// ViewModel for the Syncfusion SfMap surface (OpenStreetMap + Maps Platform geocoding).
     /// </summary>
-    public class MapViewModel : BaseViewModel // VM dedup: BaseViewModelMvp removed (legacy MVP base); inheriting standard BaseViewModel now
+    public class MapViewModel : BaseViewModel
     {
     private readonly IGeoDataService _geoDataService;
     /// <summary>
@@ -120,7 +120,7 @@ namespace BusBuddy.WPF.ViewModels.Map
             // Eligibility route PDF generation
             GenerateEligibilityRoutePdfCommand = new RelayCommand(async _ => await GenerateEligibilityRoutePdfAndSaveAsync(), _ => true);
 
-            // Add marker (stop) plotting command (MVP). Accepts parameter forms documented in AddMarkerFromParam.
+            // Add marker (stop) plotting command. Accepts parameter forms documented in AddMarkerFromParam.
             AddMarkerCommand = new RelayCommand(p => AddMarkerFromParam(p));
             BulkPlotEligibleStudentsCommand = new RelayCommand(async _ => await BulkPlotEligibleStudentsAsync());
 
@@ -348,7 +348,7 @@ namespace BusBuddy.WPF.ViewModels.Map
             {
                 if (SetProperty(ref _selectedRoute, value))
                 {
-                    // ((RelayCommand)ExportRouteDataCommand).NotifyCanExecuteChanged(); // Not available in MVP RelayCommand
+                    // ((RelayCommand)ExportRouteDataCommand).NotifyCanExecuteChanged();
                     OnSelectedRouteChanged();
                 }
             }
@@ -899,7 +899,7 @@ namespace BusBuddy.WPF.ViewModels.Map
         /// <param name="label">Optional explicit label (overrides auto aggregation label if provided).</param>
         public MapMarker PlotStop(double latitude, double longitude, IEnumerable<string>? studentNames = null, string? label = null)
         {
-            const double mergeTolerance = 0.00005; // ~5m tolerance for aggregating to existing marker (MVP simple clustering)
+            const double mergeTolerance = 0.00005; // ~5m tolerance for aggregating to existing marker
             // Try find existing marker within tolerance
             var existing = MapMarkers.FirstOrDefault(m => Math.Abs(m.LatitudeDegrees - latitude) < mergeTolerance && Math.Abs(m.LongitudeDegrees - longitude) < mergeTolerance);
             if (existing == null)
@@ -1087,12 +1087,12 @@ namespace BusBuddy.WPF.ViewModels.Map
             }
 
             // BUILD ROUTE & STOPS WITH SCHEDULE ESTIMATION
-            // Assumptions (documented for MVP):
+            // Assumptions:
             //  • Departure from school: 06:50 local time (provided requirement).
             //  • Average route speed on county / rural roads: 35 mph (approximation; configurable later).
             //  • Dwell time per stop: 1 minute (boarding + safety check).
             //  • Return directly to school after last pickup.
-            //  • Distance calculation: Haversine formula (great-circle) — acceptable rural approximation for MVP.
+            //  • Distance calculation: Haversine formula (great-circle).
             var averageMph = Math.Max(5.0, AverageRouteSpeedMph); // safety floor
             var dwellPerStop = TimeSpan.FromMinutes(Math.Max(0, DwellMinutesPerStop));
             var departTimeOfDay = new TimeSpan(6, 50, 0); // 6:50 AM

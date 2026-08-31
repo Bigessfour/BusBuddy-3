@@ -14,7 +14,7 @@ namespace BusBuddy.Tests.Core
     /// <summary>
     /// Simple, focused data layer tests for BusBuddy transportation models
     /// Critical for kids waiting on their route schedules - keep it simple and working
-    /// MVP Focus: Students and Routes testing
+    /// Students and Routes testing
     /// </summary>
     [TestFixture]
     public class DataLayerTests : IDisposable
@@ -46,7 +46,7 @@ namespace BusBuddy.Tests.Core
             Dispose();
         }
 
-        #region MVP Priority: Student Tests
+        #region Student Tests
 
         [Test]
         public async Task Student_CanCreate_BasicTest()
@@ -126,7 +126,7 @@ namespace BusBuddy.Tests.Core
 
         #endregion
 
-        #region MVP Priority: Route Tests
+        #region Route Tests
 
         [Test]
         public async Task Route_CanCreate_BasicTest()
@@ -231,24 +231,24 @@ namespace BusBuddy.Tests.Core
 
         #endregion
 
-        #region Deferred: Vehicle Tests (Post-MVP)
+        #region Deferred: Vehicle Tests
 
         [Test]
         public void Vehicle_CanCreate_BasicTest()
         {
-            // TODO: Implement post-MVP - Vehicle management deferred
-            Assert.Pass("Vehicle tests deferred to post-MVP phase");
+            // Vehicle management coverage deferred
+            Assert.Pass("Vehicle tests deferred");
         }
 
         #endregion
 
-        #region Deferred: Driver Tests (Post-MVP)
+        #region Deferred: Driver Tests
 
         [Test]
         public void Driver_CanCreate_BasicTest()
         {
-            // TODO: Implement post-MVP - Driver management deferred
-            Assert.Pass("Driver tests deferred to post-MVP phase");
+            // Driver management coverage deferred
+            Assert.Pass("Driver tests deferred");
         }
 
         #endregion

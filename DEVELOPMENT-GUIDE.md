@@ -4,13 +4,13 @@
 
 ## 🎯 **Development Philosophy**
 
-### **MVP-First Approach**
+## Development philosophy
 
-BusBuddy follows a clean build, MVP-first development strategy:
+BusBuddy follows a clean-build clerk-path strategy:
 
-- **Primary Goal**: Maintain 0 build errors at all times
-- **MVP Focus**: Student management and route assignment core functionality
-- **Quality Gates**: All changes must pass `bbMvpCheck` and `bbAntiRegression`
+- **Primary goal**: Maintain 0 build errors at all times
+- **Focus**: School catalog → students → generate routes → bus and driver → fuel / maintenance
+- **Quality gates**: `.github/scripts/validate-ci-local.sh` (Build & Test + CodeQL locally)
 
 ### **Technology Stack**
 
@@ -213,7 +213,7 @@ function Bad-Example {
 
     ```powershell
     bbHealth              # Verify system state
-    bbMvpCheck           # Ensure MVP baseline
+    validate-ci-local.sh  # Local Build & Test gate
     ```
 
 2. **Make Changes**
@@ -232,7 +232,6 @@ function Bad-Example {
 
 4. **Final Verification**
     ```powershell
-    bbMvpCheck           # Must show "MVP READY!"
     ```
 
 ### **Commit Standards**
@@ -268,8 +267,8 @@ bbXamlValidate       # Ensures:
 
 ### **Code Quality Gates**
 
-1. **Build**: Must be 0 errors, warnings acceptable during MVP
-2. **MVP Check**: Must pass all essential functionality tests
+1. **Build**: Must be 0 errors
+2. **Tests**: Must pass unit tests (Category!=Integration&Category!=InMemoryFlaky)
 3. **Anti-Regression**: Must not introduce forbidden patterns
 4. **XAML Validation**: Must use Syncfusion controls consistently
 
@@ -489,7 +488,7 @@ public async Task<Student> CreateStudentAsync(CreateStudentRequest request)
 ```powershell
 <#
 .SYNOPSIS
-    Validates the current build state and MVP readiness
+    Validates the current build state
 
 .DESCRIPTION
     Performs comprehensive checks including:
@@ -499,12 +498,12 @@ public async Task<Student> CreateStudentAsync(CreateStudentRequest request)
     - UI component verification
 
 .EXAMPLE
-    bbMvpCheck
+    .github/scripts/validate-ci-local.sh
 
 .NOTES
-    Must return "MVP READY! You can ship this!" for deployment
+    Local gate for Build & Test before opening a PR
 #>
-function Invoke-MvpCheck {
+function Invoke-ValidateCiLocal {
     # Implementation
 }
 ```
@@ -572,23 +571,21 @@ public async Task<Result<Student>> CreateStudentAsync(CreateStudentRequest reque
 }
 ```
 
-## 🎯 **MVP Requirements**
+## Core requirements
 
-### **Core Functionality**
+### Connected now
 
-- ✅ Student management (CRUD operations)
-- ✅ Route assignment
-- ✅ Basic dashboard
-- ✅ Data persistence
+- Student management (CRUD)
+- Route assignment
+- Dashboard
+- Data persistence
+- Vehicle / driver / fuel / maintenance surfaces (prove via clerk-path hops)
 
-### **Deferred Features**
+### Not on the clerk path yet
 
-- XAI integration
-- Google Earth Engine
-- Advanced reporting
-- Vehicle management
-- Driver scheduling
-- Maintenance tracking
+- Families / Guardians UI
+- Earth Engine
+- Advanced AI insights
 
 ## 🛠️ **Available Commands**
 
@@ -604,7 +601,6 @@ public async Task<Result<Student>> CreateStudentAsync(CreateStudentRequest reque
 
 - `bbXamlValidate` - Validate XAML files
 - `bbAntiRegression` - Run compliance checks
-- `bbMvpCheck` - Verify MVP readiness
 
 ### **Advanced Workflows**
 

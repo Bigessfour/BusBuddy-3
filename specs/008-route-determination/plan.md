@@ -26,7 +26,7 @@ Add a Core route-determination service that (1) year-start auto-builds the minim
 
 **Performance Goals**: Year-start generation for 100+ riders &lt; ~30s perceived on typical hardware; assign-time fitness check &lt; 1s without live routing (use cached/fallback ETA)
 
-**Constraints**: Syncfusion-only UI; Serilog-only; no cloud hosting; YAGNI — no full commercial VRP solver in MVP (heuristic clustering + greedy fill); constitution Geo = Maps + shapefiles when available
+**Constraints**: Syncfusion-only UI; Serilog-only; no cloud hosting; YAGNI — no full commercial VRP solver in this increment (heuristic clustering + greedy fill); constitution Geo = Maps + shapefiles when available
 
 **Scale/Scope**: Small districts through &gt;100 riders / medium–large city; 4 user stories in spec
 

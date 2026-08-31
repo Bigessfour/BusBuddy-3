@@ -1,20 +1,11 @@
-# 🚌[![Build Status](https://img.shields.io/badge/build-✅%20passing-brightgreen)](https://github.com/Bigessfour/BusBuddy-3)
+# BusBuddy — School Transportation Management System
 
-[![.NET](https://img.shields.io/badge/.NET-9.0.304-blue)](https://dotnet.microsoft.com/download/dotnet/9.0)
-[![PowerShell](https://img.shields.io/badge/PowerShell-7.5.2%20✨%20Advanced-blue)](https://github.com/PowerShell/PowerShell)
-[![Syncfusion](https://img.shields.io/badge/Syncfusion-33.2.10%20✅%20Licensed-orange)](https://www.syncfusion.com/wpf-controls)
-[![Hyperthreading](https://img.shields.io/badge/Hyperthreading-⚡%20Optimized-green)](https://docs.microsoft.com/en-us/powershell/scripting/learn/experimental-features)
-[![MVP Status](https://img.shields.io/badge/MVP-⚠️%20Development-yellow)](https://github.com/Bigessfour/BusBuddy-3)
-[![Production](https://img.shields.io/badge/Production-🚧%20In%20Progress-yellow)](https://github.com/Bigessfour/BusBuddy-3)ddy - School Transportation Management System
-
-> **Modern WPF application for comprehensive school bus fleet management, built with .NET 9.0 and Syncfusion controls. Features state-of-the-art PowerShell 7.5.2 automation with hyperthreading optimization.**
-
-[![Build Status](https://img.shields.io/badge/build-✅%20passing-brightgreen)](https://github.com/Bigessfour/BusBuddy-3)
+[![Build Status](https://img.shields.io/badge/build-passing-brightgreen)](https://github.com/Bigessfour/BusBuddy-3)
 [![.NET](https://img.shields.io/badge/.NET-9.0.304-blue)](https://dotnet.microsoft.com/download/dotnet/9.0)
 [![PowerShell](https://img.shields.io/badge/PowerShell-7.5.2-blue)](https://github.com/PowerShell/PowerShell)
-[![Syncfusion](https://img.shields.io/badge/Syncfusion-33.2.10%20✅%20Licensed-orange)](https://www.syncfusion.com/wpf-controls)
-[![MVP Status](https://img.shields.io/badge/MVP-⚠️%20Development-yellow)](https://github.com/Bigessfour/BusBuddy-3)
-[![Production](https://img.shields.io/badge/Production-�%20In%20Progress-yellow)](https://github.com/Bigessfour/BusBuddy-3)
+[![Syncfusion](https://img.shields.io/badge/Syncfusion-34.2.3-orange)](https://www.syncfusion.com/wpf-controls)
+
+> **Modern WPF application for school bus fleet management, built with .NET 9.0 and Syncfusion controls.**
 
 ## 🎯 **Project Vision**
 
@@ -593,7 +584,7 @@ bb-test-status             # Check current test status
 Legacy Phase 3/4 harness scripts have been archived (see `Documentation/Archive/LegacyScripts/INDEX.md`). Current active tests:
 
 - **Unit Tests**: `BusBuddy.Tests/Core/` - Core business logic validation
-- **Integration Tests**: `BusBuddy.Tests/Phase3Tests/` - Database and service interactions (rename planned post-MVP)
+- **Integration Tests**: `BusBuddy.Tests/Phase3Tests/` - Database and service interactions
 - **Validation Tests**: `BusBuddy.Tests/ValidationTests/` - Input validation and error handling
 
 ### **Test Categories**
@@ -667,7 +658,7 @@ Test coverage reports are generated in `TestResults/` directory with detailed TR
 
 ## 📈 **Project Status**
 
-### **Current Phase**: MVP Development (Historic Phase 4 artifacts archived)
+### **Current Phase**: Clerk path (school → students → generate → bus/driver → fuel/maintenance)
 
 - ✅ **Foundation**: Complete (.NET 9, Syncfusion, EF Core)
 - ✅ **Testing Infrastructure**: Operational (NUnit, coverage reporting)

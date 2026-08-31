@@ -8,7 +8,7 @@ namespace BusBuddy.WPF.Views.Bus
 {
     /// <summary>
     /// Interaction logic for BusForm.xaml
-    /// MVP-ready bus entry form with Syncfusion ChromelessWindow and SkinManager theming
+    /// Bus entry form with Syncfusion ChromelessWindow and SkinManager theming
     /// </summary>
     public partial class BusForm : ChromelessWindow
     {

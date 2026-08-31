@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore.Diagnostics;
 using Serilog;
 using Serilog.Context;
 using Microsoft.Extensions.Configuration; // Added for dynamic configuration
-using BusBuddy.Core.Utilities; // For JsonDataImporter in seeding (deprecated for MVP)
+using BusBuddy.Core.Utilities; // For JsonDataImporter in seeding (disabled)
 using System.Text.RegularExpressions;
 
 namespace BusBuddy.Core.Data;
@@ -45,7 +45,7 @@ public class BusBuddyDbContext : DbContext
         this.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
 
     // Keep automatic change detection enabled to ensure reliability across providers and tests
-    // (Perf tuning can reintroduce targeted optimizations post-MVP.)
+    // (Perf tuning can reintroduce targeted optimizations later.)
     }
 
     /// <summary>
@@ -139,7 +139,7 @@ public class BusBuddyDbContext : DbContext
                     {
                         try
                         {
-                            // Deprecated (MVP): Disable JSON seeding path
+                            // JSON seeding path disabled
                             // JsonDataImporter.SeedDatabaseIfEmptyAsync((BusBuddyDbContext)ctx).GetAwaiter().GetResult();
                         }
                         catch (Exception ex)
@@ -149,11 +149,11 @@ public class BusBuddyDbContext : DbContext
                     })
                     .UseAsyncSeeding(async (ctx, _, token) =>
                     {
-                        // JSON seeding disabled for MVP; avoid warning for empty async lambda
+                        // JSON seeding disabled; avoid warning for empty async lambda
                         await Task.CompletedTask;
                         try
                         {
-                            // Deprecated (MVP): Disable JSON seeding path
+                            // JSON seeding path disabled
                             // await JsonDataImporter.SeedDatabaseIfEmptyAsync((BusBuddyDbContext)ctx);
                         }
                         catch (Exception ex)
@@ -229,7 +229,7 @@ public class BusBuddyDbContext : DbContext
                         {
                             try
                             {
-                                // Deprecated (MVP): Disable JSON seeding path
+                                // JSON seeding path disabled
                                 // JsonDataImporter.SeedDatabaseIfEmptyAsync((BusBuddyDbContext)ctx).GetAwaiter().GetResult();
                             }
                             catch (Exception ex)
@@ -239,10 +239,10 @@ public class BusBuddyDbContext : DbContext
                         })
                         .UseAsyncSeeding(async (ctx, _, token) =>
                         {
-                            await Task.CompletedTask; // MVP: disabled JSON seeding
+                            await Task.CompletedTask; // JSON seeding disabled
                             try
                             {
-                                // Deprecated (MVP): Disable JSON seeding path
+                                // JSON seeding path disabled
                                 // await JsonDataImporter.SeedDatabaseIfEmptyAsync((BusBuddyDbContext)ctx);
                             }
                             catch (Exception ex)
@@ -267,7 +267,7 @@ public class BusBuddyDbContext : DbContext
                 {
                     try
                     {
-                        // Deprecated (MVP): Disable JSON seeding path
+                        // JSON seeding path disabled
                         // JsonDataImporter.SeedDatabaseIfEmptyAsync((BusBuddyDbContext)ctx).GetAwaiter().GetResult();
                     }
                     catch (Exception ex)
@@ -277,10 +277,10 @@ public class BusBuddyDbContext : DbContext
                 })
                 .UseAsyncSeeding(async (ctx, _, token) =>
                 {
-                    await Task.CompletedTask; // MVP: disabled JSON seeding
+                    await Task.CompletedTask; // JSON seeding disabled
                     try
                     {
-                        // Deprecated (MVP): Disable JSON seeding path
+                        // JSON seeding path disabled
                         // await JsonDataImporter.SeedDatabaseIfEmptyAsync((BusBuddyDbContext)ctx);
                     }
                     catch (Exception ex)
