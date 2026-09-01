@@ -17,7 +17,7 @@ namespace BusBuddy.WPF.Views.Route
 {
     /// <summary>
     /// Interaction logic for RouteAssignmentView.xaml
-    /// MVP-ready route assignment interface with drag-drop functionality
+    /// Route assignment interface with drag-drop functionality
     /// Supports comprehensive route building workflow with Syncfusion integration
     /// </summary>
     public partial class RouteAssignmentView : UserControl
@@ -28,7 +28,7 @@ namespace BusBuddy.WPF.Views.Route
         private CoreStudent? _dragStudent;
         private bool _isDraggingFromAssigned;
 
-    public RouteAssignmentView()
+        public RouteAssignmentView()
         {
             Logger.Debug("RouteAssignmentView constructor starting");
             try
@@ -57,7 +57,7 @@ namespace BusBuddy.WPF.Views.Route
                 }
                 DataContext = viewModel;
 
-                Logger.Information("RouteAssignmentView initialized successfully with MVP route building interface");
+                Logger.Information("RouteAssignmentView initialized successfully");
                 Loaded += OnLoaded;
                 Unloaded += OnUnloaded;
 
@@ -78,7 +78,7 @@ namespace BusBuddy.WPF.Views.Route
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Failed to initialize RouteAssignmentView - Critical MVP component failure");
+                Logger.Error(ex, "Failed to initialize RouteAssignmentView");
                 throw; // Re-throw to maintain application stability
             }
         }
@@ -133,7 +133,7 @@ namespace BusBuddy.WPF.Views.Route
             catch { }
         }
 
-    private void OnUnloaded(object sender, System.Windows.RoutedEventArgs e)
+        private void OnUnloaded(object sender, System.Windows.RoutedEventArgs e)
         {
             // Detach handlers — cleanup
             try

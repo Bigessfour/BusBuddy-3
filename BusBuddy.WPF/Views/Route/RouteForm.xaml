@@ -1,4 +1,4 @@
-<!-- RouteForm.xaml - Enhanced route creation / editing form (MVP)
+<!-- RouteForm.xaml - Route creation / editing form
      Syncfusion controls only (SfMaskedEdit, ButtonAdv, SfDataGrid, ComboBoxAdv)
      References:
        SfMaskedEdit Getting Started: https://help.syncfusion.com/wpf/maskededit/getting-started
@@ -24,9 +24,13 @@
         <TextBlock Text="Route Builder" FontWeight="Bold" FontSize="18" Margin="0,0,0,16" />
         <StackPanel Grid.Row="1" Orientation="Vertical" Margin="0,0,0,12">
             <TextBlock Text="Route Name" />
-            <syncfusion:SfMaskedEdit MaskType="Text" Width="320" Height="32" Padding="8" Text="{Binding NewRouteName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+            <syncfusion:SfTextBoxExt Width="320" Height="40" Padding="8"
+                                     AutoCompleteMode="None"
+                                     Text="{Binding NewRouteName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
             <TextBlock Text="Description" Margin="0,8,0,0" />
-            <syncfusion:SfMaskedEdit MaskType="Text" Width="320" Height="32" Padding="8" Text="{Binding NewRouteDescription, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+            <syncfusion:SfTextBoxExt Width="320" Height="40" Padding="8"
+                                     AutoCompleteMode="None"
+                                     Text="{Binding NewRouteDescription, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
             <StackPanel Orientation="Horizontal" Margin="0,10,0,0" VerticalAlignment="Center">
                 <TextBlock Text="Date:" VerticalAlignment="Center" />
                 <syncfusion:SfDatePicker Width="140" Margin="6,0,12,0" Value="{Binding NewRouteDate, Mode=TwoWay}" />

@@ -65,13 +65,10 @@ public sealed class GoogleAddressValidationClient : IGeocodingService, IDisposab
 
             if (response.StatusCode == HttpStatusCode.Forbidden)
             {
-                Logger.Warning("Address Validation forbidden (API not enabled?) ElapsedMs={ElapsedMs}", sw.ElapsedMilliseconds);
-                return new MapsGeocodeResult
-                {
-                    Ok = false,
-                    MappingUnconfigured = true,
-                    ErrorMessage = "Maps Address Validation is not enabled for this API key / project."
-                };
+                Logger.Warning(
+                    "Address Validation forbidden (API not enabled for key?) — falling back to Geocoding API. ElapsedMs={ElapsedMs}",
+                    sw.ElapsedMilliseconds);
+                return await GeocodeFallbackAsync(key!, line, cancellationToken).ConfigureAwait(false);
             }
 
             if ((int)response.StatusCode == 429)
@@ -285,6 +282,153 @@ public sealed class GoogleAddressValidationClient : IGeocodingService, IDisposab
             Latitude = lat,
             Longitude = lon,
             Precision = precision
+        };
+    }
+
+    /// <summary>
+    /// Demo / restricted API keys often allow Geocoding but block Address Validation
+    /// (<c>API_KEY_SERVICE_BLOCKED</c>). Fall back so clerk Validate Address still geocodes.
+    /// </summary>
+    private async Task<MapsGeocodeResult> GeocodeFallbackAsync(
+        string key,
+        string line,
+        CancellationToken cancellationToken)
+    {
+        var sw = Stopwatch.StartNew();
+        try
+        {
+            var uri =
+                $"https://maps.googleapis.com/maps/api/geocode/json?address={Uri.EscapeDataString(line)}&key={Uri.EscapeDataString(key)}";
+            using var response = await _httpClient.GetAsync(uri, cancellationToken).ConfigureAwait(false);
+            var json = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+            sw.Stop();
+
+            if (!response.IsSuccessStatusCode)
+            {
+                Logger.Warning(
+                    "Geocoding fallback HTTP {Status} ElapsedMs={ElapsedMs}",
+                    (int)response.StatusCode,
+                    sw.ElapsedMilliseconds);
+                return new MapsGeocodeResult
+                {
+                    Ok = false,
+                    MappingUnconfigured = true,
+                    ErrorMessage =
+                        "Address Validation is blocked for this API key, and Geocoding fallback also failed. " +
+                        "Enable Address Validation API (or Geocoding API) in Google Cloud — see https://developers.google.com/maps/get-started"
+                };
+            }
+
+            return ParseGeocodeJson(json, sw.ElapsedMilliseconds);
+        }
+        catch (Exception ex)
+        {
+            Logger.Warning(ex, "Geocoding fallback failed");
+            return new MapsGeocodeResult
+            {
+                Ok = false,
+                MappingUnconfigured = true,
+                ErrorMessage =
+                    "Maps Address Validation is blocked for this key. Enable it in Cloud Console, or ensure Geocoding API works."
+            };
+        }
+    }
+
+    private static MapsGeocodeResult ParseGeocodeJson(string json, long elapsedMs)
+    {
+        using var doc = JsonDocument.Parse(json);
+        var root = doc.RootElement;
+        var status = root.TryGetProperty("status", out var st) && st.ValueKind == JsonValueKind.String
+            ? st.GetString()
+            : null;
+
+        if (!string.Equals(status, "OK", StringComparison.OrdinalIgnoreCase))
+        {
+            string? apiError = null;
+            if (root.TryGetProperty("error_message", out var em) && em.ValueKind == JsonValueKind.String)
+            {
+                apiError = em.GetString();
+            }
+
+            Logger.Warning(
+                "Geocoding fallback status={Status} Err={Err} ElapsedMs={ElapsedMs}",
+                status,
+                apiError,
+                elapsedMs);
+
+            var billingHint = !string.IsNullOrWhiteSpace(apiError) &&
+                              apiError.Contains("Billing", StringComparison.OrdinalIgnoreCase);
+            return new MapsGeocodeResult
+            {
+                Ok = false,
+                MappingUnconfigured = billingHint ||
+                                      string.Equals(status, "REQUEST_DENIED", StringComparison.OrdinalIgnoreCase),
+                ErrorMessage = status switch
+                {
+                    "ZERO_RESULTS" => "No geocode match for that address.",
+                    "REQUEST_DENIED" when billingHint =>
+                        "Google Maps requires billing on the Cloud project for this API key. " +
+                        "Enable billing: https://console.cloud.google.com/billing — then enable Geocoding / Address Validation " +
+                        "(https://developers.google.com/maps/get-started).",
+                    "REQUEST_DENIED" =>
+                        "Geocoding API denied this key — enable Geocoding (and billing) in Google Cloud: " +
+                        "https://developers.google.com/maps/get-started",
+                    _ => $"Geocoding failed ({status ?? "unknown"})."
+                }
+            };
+        }
+
+        if (!root.TryGetProperty("results", out var results) ||
+            results.ValueKind != JsonValueKind.Array ||
+            results.GetArrayLength() == 0)
+        {
+            return new MapsGeocodeResult { Ok = false, ErrorMessage = "No geocode match for that address." };
+        }
+
+        var first = results[0];
+        string? formatted = null;
+        if (first.TryGetProperty("formatted_address", out var fa) && fa.ValueKind == JsonValueKind.String)
+        {
+            formatted = fa.GetString();
+        }
+
+        double? lat = null;
+        double? lon = null;
+        if (first.TryGetProperty("geometry", out var geometry) &&
+            geometry.TryGetProperty("location", out var location))
+        {
+            if (location.TryGetProperty("lat", out var latEl) && latEl.TryGetDouble(out var latVal))
+            {
+                lat = latVal;
+            }
+
+            if (location.TryGetProperty("lng", out var lonEl) && lonEl.TryGetDouble(out var lonVal))
+            {
+                lon = lonVal;
+            }
+        }
+
+        if (!lat.HasValue || !lon.HasValue)
+        {
+            return new MapsGeocodeResult
+            {
+                Ok = false,
+                FormattedAddress = formatted,
+                ErrorMessage = "Geocode response missing coordinates."
+            };
+        }
+
+        Logger.Information(
+            "Geocoding fallback OK Precision=geocode ElapsedMs={ElapsedMs}",
+            elapsedMs);
+
+        return new MapsGeocodeResult
+        {
+            Ok = true,
+            FormattedAddress = formatted,
+            Latitude = lat,
+            Longitude = lon,
+            Precision = "geocode"
         };
     }
 }

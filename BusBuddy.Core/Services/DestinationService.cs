@@ -1,5 +1,4 @@
 using BusBuddy.Core.Data;
-using BusBuddy.Core.Mapping;
 using BusBuddy.Core.Models;
 using BusBuddy.Core.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
@@ -17,49 +16,14 @@ public sealed class DestinationService : IDestinationService
         _contextFactory = contextFactory ?? throw new ArgumentNullException(nameof(contextFactory));
     }
 
-    public async Task EnsureDefaultSchoolsAsync(CancellationToken cancellationToken = default)
+    public Task EnsureDefaultSchoolsAsync(CancellationToken cancellationToken = default)
     {
-        await using var context = _contextFactory.CreateDbContext();
-        var exists = await context.Destinations.AnyAsync(
-            d => d.DestinationType == DestinationTypes.School &&
-                 d.Name == WileyMapDefaults.SchoolLabel &&
-                 !d.IsDeleted,
-            cancellationToken).ConfigureAwait(false);
-
-        if (exists)
-        {
-            return;
-        }
-
-        context.Destinations.Add(new Destination
-        {
-            Name = WileyMapDefaults.SchoolLabel,
-            Address = "510 Ward St",
-            City = "Wiley",
-            State = "CO",
-            ZipCode = "81092",
-            DestinationType = DestinationTypes.School,
-            IsActive = true,
-            Latitude = (decimal)WileyMapDefaults.SchoolLatitude,
-            Longitude = (decimal)WileyMapDefaults.SchoolLongitude,
-            DistrictName = "Wiley RE-13JT",
-            GradeMin = "Pre-K",
-            GradeMax = "12",
-            AgeMinYears = 4,
-            AgeMaxYears = 18,
-            ContactName = "Main Office",
-            CreatedDate = DateTime.UtcNow,
-            UpdatedDate = DateTime.UtcNow
-        });
-        await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
-        Logger.Information("Seeded default school destination {Name}", WileyMapDefaults.SchoolLabel);
+        Logger.Debug("No default school is seeded; add schools through Destinations");
+        return Task.CompletedTask;
     }
 
-    public async Task<IReadOnlyList<Destination>> GetActiveSchoolsAsync(CancellationToken cancellationToken = default)
-    {
-        await EnsureDefaultSchoolsAsync(cancellationToken).ConfigureAwait(false);
-        return await GetActiveDestinationsAsync(DestinationTypes.School, cancellationToken).ConfigureAwait(false);
-    }
+    public Task<IReadOnlyList<Destination>> GetActiveSchoolsAsync(CancellationToken cancellationToken = default) =>
+        GetActiveDestinationsAsync(DestinationTypes.School, cancellationToken);
 
     public async Task<IReadOnlyList<Destination>> GetActiveDestinationsAsync(
         string? destinationType = null,
@@ -110,5 +74,70 @@ public sealed class DestinationService : IDestinationService
             "Updated school times DestinationId={Id} Start={Start} Dismissal={Dismissal}",
             destinationId, startTime, dismissalTime);
         return true;
+    }
+
+    public async Task<Destination> AddSchoolAsync(
+        string name,
+        string address,
+        string city,
+        string state,
+        string zipCode,
+        TimeSpan startTime,
+        TimeSpan dismissalTime,
+        decimal? latitude = null,
+        decimal? longitude = null,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(name);
+        ArgumentException.ThrowIfNullOrWhiteSpace(address);
+        ArgumentException.ThrowIfNullOrWhiteSpace(city);
+        ArgumentException.ThrowIfNullOrWhiteSpace(state);
+        ArgumentException.ThrowIfNullOrWhiteSpace(zipCode);
+        if (state.Trim().Length != 2)
+        {
+            throw new ArgumentException("State must be a 2-letter abbreviation.", nameof(state));
+        }
+
+        if (dismissalTime <= startTime)
+        {
+            throw new ArgumentException("Dismissal time must be after start time.", nameof(dismissalTime));
+        }
+
+        await using var context = _contextFactory.CreateWriteDbContext();
+        var trimmedName = name.Trim();
+        var exists = await context.Destinations.AsNoTracking()
+            .AnyAsync(
+                d => d.IsActive && !d.IsDeleted && d.DestinationType == DestinationTypes.School
+                     && d.Name == trimmedName,
+                cancellationToken)
+            .ConfigureAwait(false);
+        if (exists)
+        {
+            throw new InvalidOperationException($"A school named '{trimmedName}' is already in the catalog.");
+        }
+
+        var dest = new Destination
+        {
+            Name = trimmedName,
+            Address = address.Trim(),
+            City = city.Trim(),
+            State = state.Trim().ToUpperInvariant(),
+            ZipCode = zipCode.Trim(),
+            DestinationType = DestinationTypes.School,
+            StartTime = startTime,
+            DismissalTime = dismissalTime,
+            Latitude = latitude,
+            Longitude = longitude,
+            IsActive = true,
+            CreatedDate = DateTime.UtcNow,
+            UpdatedDate = DateTime.UtcNow,
+            CreatedBy = "Clerk"
+        };
+        context.Destinations.Add(dest);
+        await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        Logger.Information(
+            "Added school DestinationId={Id} Name={Name} Start={Start} Dismissal={Dismissal}",
+            dest.DestinationId, dest.Name, startTime, dismissalTime);
+        return dest;
     }
 }

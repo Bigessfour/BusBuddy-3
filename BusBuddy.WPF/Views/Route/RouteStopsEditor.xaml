@@ -1,4 +1,4 @@
-<!-- RouteStopsEditor.xaml - Reusable route stops editor for BusBuddy MVP
+<!-- RouteStopsEditor.xaml - Reusable route stops editor
      Syncfusion WPF 34.x (SfDataGrid, ButtonAdv, SfMaskedEdit)
      ButtonAdv uses Label with plain text — emoji often renders blank under Fluent themes. -->
 <UserControl x:Class="BusBuddy.WPF.Views.Route.RouteStopsEditor"

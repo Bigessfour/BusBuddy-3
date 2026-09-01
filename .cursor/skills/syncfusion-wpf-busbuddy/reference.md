@@ -2,16 +2,16 @@
 
 ## Local documentation
 
-| Topic | Path |
-|-------|------|
-| Full API reference | `BusBuddy.WPF/Documentation/SYNCFUSION_API_REFERENCE.md` |
-| Development standards | `BusBuddy.WPF/Documentation/BUSBUDDY_DEVELOPMENT_STANDARDS.md` |
-| Copilot / agent rules | `.github/copilot-instructions.md` (Syncfusion protection section) |
-| Brand colors & brushes | `BusBuddy.WPF/Resources/SyncfusionV30_Validated_ResourceDictionary.xaml` |
+| Topic                  | Path                                                                        |
+| ---------------------- | --------------------------------------------------------------------------- |
+| Full API reference     | `BusBuddy.WPF/Documentation/SYNCFUSION_API_REFERENCE.md`                    |
+| Development standards  | `BusBuddy.WPF/Documentation/BUSBUDDY_DEVELOPMENT_STANDARDS.md`              |
+| Copilot / agent rules  | `.github/copilot-instructions.md` (Syncfusion protection section)           |
+| Brand colors & brushes | `BusBuddy.WPF/Resources/SyncfusionV30_Validated_ResourceDictionary.xaml`    |
 | Fluent theme overrides | `BusBuddy.WPF/Resources/Themes/FluentLightTheme.xaml`, `CustomBrushes.xaml` |
-| Theme bootstrap | `BusBuddy.WPF/App.xaml.cs` (`SfSkinManager`) |
-| Examples | `Documentation/Reference/Syncfusion-Examples.md` |
-| Theming audit | `Documentation/Theming/Theming-Audit-Checklist.md` |
+| Theme bootstrap        | `BusBuddy.WPF/App.xaml.cs` (`SfSkinManager`)                                |
+| Examples               | `Documentation/Reference/Syncfusion-Examples.md`                            |
+| Theming audit          | `Documentation/Theming/Theming-Audit-Checklist.md`                          |
 
 ## External
 

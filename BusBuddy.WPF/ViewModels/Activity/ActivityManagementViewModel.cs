@@ -4,7 +4,7 @@ using Serilog;
 
 namespace BusBuddy.WPF.ViewModels.Activity
 {
-    // Simple ViewModel to back ActivityManagementView during MVP
+    // ViewModel for ActivityManagementView
     public class ActivityManagementViewModel
     {
         private static readonly ILogger Logger = Log.ForContext<ActivityManagementViewModel>();

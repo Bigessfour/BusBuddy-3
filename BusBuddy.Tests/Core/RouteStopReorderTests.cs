@@ -33,9 +33,9 @@ public class RouteStopReorderTests : IDisposable
             .UseInMemoryDatabase($"RouteReorder_{Guid.NewGuid()}")
             .EnableSensitiveDataLogging()
             .Options;
-    _context = new BusBuddyDbContext(options);
-    _factory = new TestDbContextFactory(options);
-    _routeService = new RouteService(_factory);
+        _context = new BusBuddyDbContext(options);
+        _factory = new TestDbContextFactory(options);
+        _routeService = new RouteService(_factory);
     }
 
     [TearDown]
@@ -72,17 +72,17 @@ public class RouteStopReorderTests : IDisposable
 
         Assert.That(result.IsSuccess, Is.True, result.Error);
 
-    // Use a fresh verification context to avoid any tracked entity overlap
-    await using var verifyCtx = _factory.CreateDbContext();
-    var reloaded = await verifyCtx.RouteStops.Where(rs => rs.RouteId == route.RouteId)
-            .OrderBy(rs => rs.StopOrder)
-            .Select(rs => new { rs.RouteStopId, rs.StopOrder })
-            .ToListAsync();
+        // Use a fresh verification context to avoid any tracked entity overlap
+        await using var verifyCtx = _factory.CreateDbContext();
+        var reloaded = await verifyCtx.RouteStops.Where(rs => rs.RouteId == route.RouteId)
+                .OrderBy(rs => rs.StopOrder)
+                .Select(rs => new { rs.RouteStopId, rs.StopOrder })
+                .ToListAsync();
 
-    // Diagnostics: capture pre and post ordering for debugging
-    TestContext.WriteLine("Original IDs (initial order 1..n): " + string.Join(",", stops.Select(s => s.RouteStopId)));
-    TestContext.WriteLine("Reversed target IDs: " + string.Join(",", reversedIds));
-    TestContext.WriteLine("Reloaded by StopOrder: " + string.Join(",", reloaded.Select(r => $"{r.StopOrder}:{r.RouteStopId}")));
+        // Diagnostics: capture pre and post ordering for debugging
+        TestContext.WriteLine("Original IDs (initial order 1..n): " + string.Join(",", stops.Select(s => s.RouteStopId)));
+        TestContext.WriteLine("Reversed target IDs: " + string.Join(",", reversedIds));
+        TestContext.WriteLine("Reloaded by StopOrder: " + string.Join(",", reloaded.Select(r => $"{r.StopOrder}:{r.RouteStopId}")));
 
         Assert.That(reloaded, Has.Count.EqualTo(3));
         // Validate each ID got the expected StopOrder per its position in reversedIds

@@ -29,7 +29,6 @@ namespace BusBuddy.WPF
     /// - EF Migration Mode: Minimal services for database operations only
     /// - UI Mode: Full dependency injection with robust error handling
     /// Features: Pure Serilog logging, Syncfusion license management, comprehensive error capture
-    /// Updated: Enhanced startup logic for MVP with full UI support
     /// </summary>
     public partial class App : Application
     {
@@ -50,6 +49,8 @@ namespace BusBuddy.WPF
             // This bridges Passwords app -> runtime env on macOS.
             // On non-mac, falls back to existing env / machine vars.
             LoadApiKeysFromMacPasswords();
+            // Hybrid keys file (Syncfusion + optional Google_Maps_Demo_Key) — before DI / Maps clients.
+            TryLoadSecretsFromKeysFile();
 
             // Register Syncfusion license before any UI initialization
             EnsureSyncfusionLicenseRegistered();
@@ -77,7 +78,7 @@ namespace BusBuddy.WPF
                     .CreateLogger();
             }
 
-            Log.Information("🚌 BusBuddy MVP starting...");
+            Log.Information("🚌 BusBuddy starting...");
         }
 
         /// <summary>
@@ -336,12 +337,12 @@ namespace BusBuddy.WPF
 
             try
             {
-                Log.Information("🚌 Initializing BusBuddy MVP application");
+                Log.Information("🚌 Initializing BusBuddy application");
 
                 // Setup minimal DI for Students, Routes, Buses, Drivers (synchronous)
                 ConfigureServices();
 
-                // Removed redundant explicit Wiley seeding. Seeding now handled via EF Core 9 UseSeeding/UseAsyncSeeding
+                // Removed redundant explicit district JSON seeding. Seeding now handled via EF Core 9 UseSeeding/UseAsyncSeeding
 
                 // Handle command line arguments for PowerShell integration
                 if (e.Args.Length > 0 && TryHandleCommandLineArgs(e.Args) is int exitCode)
@@ -357,11 +358,11 @@ namespace BusBuddy.WPF
                 var mainWindow = CreateMainWindow();
                 mainWindow.Show();
 
-                Log.Information("🚌 BusBuddy MVP application started successfully");
+                Log.Information("🚌 BusBuddy application started successfully");
             }
             catch (Exception ex)
             {
-                Log.Fatal(ex, "🚌 Failed to start BusBuddy MVP application");
+                Log.Fatal(ex, "🚌 Failed to start BusBuddy application");
                 MessageBox.Show($"Failed to start application: {ex.Message}", "BusBuddy Error",
                     MessageBoxButton.OK, MessageBoxImage.Error);
                 Environment.Exit(1);
@@ -416,16 +417,11 @@ namespace BusBuddy.WPF
                 // Use the proper extension method that registers IBusBuddyDbContextFactory
                 services.AddDataServices(configuration);
 
-                // Route geography + eligibility. Maps Platform clients (IGeocodingService / IRoutingService)
+                // Route geography. Maps Platform clients (IGeocodingService / IRoutingService)
                 // are registered in AddDataServices above — do not register OfflineGeocodingService here.
+                // District/town shapefile eligibility was removed: those polygons were for another district.
                 services.AddSingleton<IGeoDataService>(sp =>
                     new GeoDataService(sp.GetService<IBusBuddyDbContextFactory>()));
-                services.AddSingleton<IEligibilityService>(_ =>
-                {
-                    var district = Path.Combine(AppContext.BaseDirectory, "Assets", "Maps", "WileyDistrict", "WileyDistrict.shp");
-                    var town = Path.Combine(AppContext.BaseDirectory, "Assets", "Maps", "WileyTown", "WileyTown.shp");
-                    return new ShapefileEligibilityService(district, town);
-                });
 
                 // Register core business services for Students, Routes, Buses, Drivers
                 services.AddScoped<IStudentService, StudentService>();
@@ -442,7 +438,7 @@ namespace BusBuddy.WPF
                 services.AddScoped<IRouteService, RouteService>();
                 services.AddScoped<BusBuddy.Core.Services.Interfaces.IBusService, BusService>();
 
-                // Register UI services (commented out for MVP - services don't exist yet)
+                // Register UI services (commented out — services don't exist yet)
                 // services.AddTransient<BusBuddy.WPF.Services.DialogService>();
                 // services.AddTransient<BusBuddy.WPF.Services.NavigationService>();
                 services.AddTransient<BusBuddy.WPF.Services.RouteExportService>();
@@ -498,10 +494,9 @@ namespace BusBuddy.WPF
                 services.AddTransient<BusBuddy.WPF.ViewModels.Driver.DriverFormViewModel>();
                 services.AddTransient<BusBuddy.WPF.ViewModels.Driver.DriversViewModel>();
                 // Shared map VM: singleton + IServiceScopeFactory so scoped student/bus services are not captured
-                services.AddSingleton<BusBuddy.WPF.ViewModels.GoogleEarth.GoogleEarthViewModel>(sp =>
-                    new BusBuddy.WPF.ViewModels.GoogleEarth.GoogleEarthViewModel(
+                services.AddSingleton<BusBuddy.WPF.ViewModels.Map.MapViewModel>(sp =>
+                    new BusBuddy.WPF.ViewModels.Map.MapViewModel(
                         sp.GetRequiredService<IGeoDataService>(),
-                        sp.GetService<IEligibilityService>(),
                         sp.GetService<IGeocodingService>(),
                         studentService: null,
                         busService: null,
@@ -510,19 +505,19 @@ namespace BusBuddy.WPF
 
                 ServiceProvider = services.BuildServiceProvider();
 
-                            // Register ViewModels for dependency injection (cleaned duplicate block during VM dedup)
-                            services.AddTransient<BusBuddy.WPF.ViewModels.MainWindowViewModel>();
-                            services.AddTransient<BusBuddy.WPF.ViewModels.Dashboard.DashboardViewModel>();
-                            services.AddTransient<BusBuddy.WPF.ViewModels.Student.StudentsViewModel>();
-                            services.AddTransient<BusBuddy.WPF.ViewModels.Route.RouteManagementViewModel>(sp =>
-                                new BusBuddy.WPF.ViewModels.Route.RouteManagementViewModel(
-                                    sp.GetRequiredService<IBusBuddyDbContextFactory>(),
-                                    sp.GetService<IRouteService>(),
-                                    sp.GetService<BusBuddy.Core.Services.RouteDetermination.IRouteDeterminationService>(),
-                                    sp.GetService<BusBuddy.Core.Services.Interfaces.IDestinationService>()));
-                            services.AddTransient<BusBuddy.WPF.ViewModels.Driver.DriverFormViewModel>();
-                            services.AddTransient<BusBuddy.WPF.ViewModels.Bus.BusFormViewModel>();
-                            services.AddTransient<BusBuddy.WPF.Views.Bus.BusForm>();
+                // Register ViewModels for dependency injection (cleaned duplicate block during VM dedup)
+                services.AddTransient<BusBuddy.WPF.ViewModels.MainWindowViewModel>();
+                services.AddTransient<BusBuddy.WPF.ViewModels.Dashboard.DashboardViewModel>();
+                services.AddTransient<BusBuddy.WPF.ViewModels.Student.StudentsViewModel>();
+                services.AddTransient<BusBuddy.WPF.ViewModels.Route.RouteManagementViewModel>(sp =>
+                    new BusBuddy.WPF.ViewModels.Route.RouteManagementViewModel(
+                        sp.GetRequiredService<IBusBuddyDbContextFactory>(),
+                        sp.GetService<IRouteService>(),
+                        sp.GetService<BusBuddy.Core.Services.RouteDetermination.IRouteDeterminationService>(),
+                        sp.GetService<BusBuddy.Core.Services.Interfaces.IDestinationService>()));
+                services.AddTransient<BusBuddy.WPF.ViewModels.Driver.DriverFormViewModel>();
+                services.AddTransient<BusBuddy.WPF.ViewModels.Bus.BusFormViewModel>();
+                services.AddTransient<BusBuddy.WPF.Views.Bus.BusForm>();
                 // Seed database with JSON data if empty
                 Task.Run(async () =>
                 {
@@ -545,17 +540,17 @@ namespace BusBuddy.WPF
                         );
 
                         // Import JSON data if database is empty with retry strategy
-                        // Deprecated (MVP): JSON seeding disabled. Use CSV import path post-MVP.
+                        // JSON seeding disabled. Use CSV import path.
                         // await BusBuddy.Core.Utilities.JsonDataImporter.SeedDatabaseIfEmptyAsync(context);
 
-                        // Also support plain array JSON via SeedDataService (uses WileyJsonPath)
+                        // Also support plain array JSON via SeedDataService (uses StudentJsonPath)
                         await seedSvc.SeedFromJsonAsync();
                     }
                     catch (Exception seedEx)
                     {
                         Log.Warning(seedEx, "⚠️ Failed to seed database with JSON data: {Error}", seedEx.Message);
                     }
-                });                Log.Information("✅ Full DI container configured successfully for UI application");
+                }); Log.Information("✅ Full DI container configured successfully for UI application");
             }
             catch (Exception ex)
             {
@@ -599,9 +594,7 @@ namespace BusBuddy.WPF
                         if (viewModel != null)
                         {
                             Log.Information("✅ MainWindowViewModel created successfully via DI");
-                            var mainWindow = new MainWindow();
-                            mainWindow.DataContext = viewModel;
-                            return mainWindow;
+                            return new MainWindow(viewModel);
                         }
                         else
                         {
@@ -620,8 +613,7 @@ namespace BusBuddy.WPF
                 // Initialize with basic functionality if DI failed
                 if (ServiceProvider == null)
                 {
-                    Log.Information("💡 Setting up MainWindow for standalone operation");
-                    // Can add basic sample data or simplified ViewModels here if needed
+                    Log.Warning("Creating MainWindow without DI; dock grids stay empty until services are available");
                 }
 
                 return fallbackWindow;
@@ -714,7 +706,8 @@ namespace BusBuddy.WPF
                 try
                 {
                     // Attempt to save any critical data before shutdown
-                    Current?.Dispatcher?.Invoke(() => {
+                    Current?.Dispatcher?.Invoke(() =>
+                    {
                         System.Windows.MessageBox.Show("A critical error occurred. The application will close.",
                             "BusBuddy Critical Error", MessageBoxButton.OK, MessageBoxImage.Error);
                     });
@@ -1005,7 +998,7 @@ Examples:
 
         protected override void OnExit(ExitEventArgs e)
         {
-            Log.Information("🚌 BusBuddy MVP application shutting down");
+            Log.Information("🚌 BusBuddy application shutting down");
             Log.CloseAndFlush();
             base.OnExit(e);
         }
@@ -1027,7 +1020,7 @@ Examples:
                 // Ensure license key is in env (Passwords / alternate keychain services)
                 TryLoadKeychainSecret("SYNCFUSION_LICENSE_KEY", "SYNCFUSION_LICENSE_KEY");
                 TryLoadKeychainSecret("com.wileyco.syncfusion.license", "SYNCFUSION_LICENSE_KEY");
-                TryLoadSyncfusionLicenseFromKeysFile();
+                TryLoadSecretsFromKeysFile();
 
                 // Check Process level first, then User level, then Machine level
                 var licenseKey = Environment.GetEnvironmentVariable("SYNCFUSION_LICENSE_KEY") ??
@@ -1048,8 +1041,8 @@ Examples:
                     Syncfusion.Licensing.SyncfusionLicenseProvider.RegisterLicense(licenseKey);
 
                     // Enhanced validation for Syncfusion v30+ (as per 2025 documentation)
-                // Registration successful - v30.1.42 doesn't require explicit platform validation
-                _bootstrapLogger?.Information("✅ Syncfusion license registered successfully for version 30.1.42");                    // Log additional diagnostics to help verify registration
+                    // Registration successful - v30.1.42 doesn't require explicit platform validation
+                    _bootstrapLogger?.Information("✅ Syncfusion license registered successfully for version 30.1.42");                    // Log additional diagnostics to help verify registration
                     _bootstrapLogger?.Information("🔍 License Key Preview: {Preview}", GetLicenseKeyPreview(licenseKey));
                     _bootstrapLogger?.Information("💡 If you see trial watermarks, verify your license key is valid and current");
                 }
@@ -1073,19 +1066,18 @@ Examples:
         /// <summary>
         /// Windows VM / hybrid drop-in used by utm_run_in_vm.ps1:
         /// keys/SYNCFUSION_LICENSE_KEY.txt (gitignored). Mac Keychain is not available in the guest.
+        /// Supports multi-line file: Syncfusion key on its own line(s), plus optional
+        /// <c>Google_Maps_Demo_Key: …</c> or <c>GOOGLE_MAPS_API_KEY: …</c> for Maps Platform.
+        /// See https://developers.google.com/maps/get-started
         /// </summary>
-        private static void TryLoadSyncfusionLicenseFromKeysFile()
+        private static void TryLoadSecretsFromKeysFile()
         {
-            if (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("SYNCFUSION_LICENSE_KEY")))
-            {
-                return;
-            }
-
             var candidates = new[]
             {
                 Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "keys", "SYNCFUSION_LICENSE_KEY.txt")),
                 @"C:\dev\BusBuddy-3\keys\SYNCFUSION_LICENSE_KEY.txt",
-                Path.Combine(Directory.GetCurrentDirectory(), "keys", "SYNCFUSION_LICENSE_KEY.txt")
+                Path.Combine(Directory.GetCurrentDirectory(), "keys", "SYNCFUSION_LICENSE_KEY.txt"),
+                @"C:\Users\Public\SYNCFUSION_LICENSE_KEY.txt"
             };
 
             foreach (var path in candidates.Distinct(StringComparer.OrdinalIgnoreCase))
@@ -1097,21 +1089,84 @@ Examples:
                         continue;
                     }
 
-                    var text = File.ReadAllText(path).Trim();
-                    if (text.Length < 20)
+                    var lines = File.ReadAllLines(path);
+                    string? syncfusionKey = null;
+                    string? mapsKey = null;
+
+                    foreach (var raw in lines)
                     {
-                        continue;
+                        var line = raw.Trim();
+                        if (line.Length == 0 ||
+                            line.StartsWith('#') ||
+                            line.StartsWith("//", StringComparison.Ordinal))
+                        {
+                            continue;
+                        }
+
+                        if (TryParseLabeledSecret(line, "Google_Maps_Demo_Key", out var demoMaps) ||
+                            TryParseLabeledSecret(line, "GOOGLE_MAPS_API_KEY", out demoMaps))
+                        {
+                            mapsKey = demoMaps;
+                            continue;
+                        }
+
+                        if (TryParseLabeledSecret(line, "SYNCFUSION_LICENSE_KEY", out var labeledSf))
+                        {
+                            syncfusionKey = labeledSf;
+                            continue;
+                        }
+
+                        // Unlabeled non-empty line → Syncfusion license (legacy single-line file)
+                        if (syncfusionKey is null &&
+                            !line.Contains("Maps", StringComparison.OrdinalIgnoreCase) &&
+                            line.Length >= 20)
+                        {
+                            syncfusionKey = line;
+                        }
                     }
 
-                    Environment.SetEnvironmentVariable("SYNCFUSION_LICENSE_KEY", text);
-                    _bootstrapLogger?.Information("Loaded SYNCFUSION_LICENSE_KEY from keys file (length {Length})", text.Length);
-                    return;
+                    if (string.IsNullOrEmpty(Environment.GetEnvironmentVariable("SYNCFUSION_LICENSE_KEY")) &&
+                        !string.IsNullOrWhiteSpace(syncfusionKey))
+                    {
+                        Environment.SetEnvironmentVariable("SYNCFUSION_LICENSE_KEY", syncfusionKey.Trim());
+                        _bootstrapLogger?.Information(
+                            "Loaded SYNCFUSION_LICENSE_KEY from keys file (length {Length})",
+                            syncfusionKey.Trim().Length);
+                    }
+
+                    if (string.IsNullOrEmpty(Environment.GetEnvironmentVariable("GOOGLE_MAPS_API_KEY")) &&
+                        !string.IsNullOrWhiteSpace(mapsKey))
+                    {
+                        Environment.SetEnvironmentVariable("GOOGLE_MAPS_API_KEY", mapsKey.Trim());
+                        _bootstrapLogger?.Information(
+                            "Loaded GOOGLE_MAPS_API_KEY from keys file (prefix {Prefix}…, length {Length})",
+                            mapsKey.Trim().Length >= 8 ? mapsKey.Trim()[..4] : "****",
+                            mapsKey.Trim().Length);
+                    }
+
+                    if (!string.IsNullOrWhiteSpace(syncfusionKey) || !string.IsNullOrWhiteSpace(mapsKey))
+                    {
+                        return;
+                    }
                 }
                 catch (Exception ex)
                 {
-                    _bootstrapLogger?.Warning(ex, "Could not read Syncfusion keys file at {Path}", path);
+                    _bootstrapLogger?.Warning(ex, "Could not read secrets keys file at {Path}", path);
                 }
             }
+        }
+
+        private static bool TryParseLabeledSecret(string line, string label, out string value)
+        {
+            value = string.Empty;
+            var prefix = label + ":";
+            if (!line.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+
+            value = line[prefix.Length..].Trim();
+            return value.Length > 0;
         }
 
         /// <summary>

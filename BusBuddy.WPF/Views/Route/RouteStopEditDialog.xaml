@@ -23,18 +23,18 @@
         </Grid.RowDefinitions>
         <StackPanel Grid.Row="0" Margin="0,0,0,12">
             <TextBlock Text="Stop name" Margin="0,0,0,4"/>
-            <syncfusion:SfMaskedEdit x:Name="StopNameBox" Height="32"
+            <syncfusion:SfTextBoxExt x:Name="StopNameBox" Height="40"
                                      AutomationProperties.Name="Stop name"/>
         </StackPanel>
         <StackPanel Grid.Row="1" Margin="0,0,0,12">
             <TextBlock Text="Address" Margin="0,0,0,4"/>
-            <syncfusion:SfMaskedEdit x:Name="StopAddressBox" Height="32"
+            <syncfusion:SfTextBoxExt x:Name="StopAddressBox" Height="40"
                                      AutomationProperties.Name="Stop address"/>
         </StackPanel>
         <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right">
-            <syncfusion:ButtonAdv Label="Save" MinWidth="80" Height="32" Margin="0,0,8,0"
+            <syncfusion:ButtonAdv Label="Save" MinWidth="80" Height="40" Margin="0,0,8,0"
                                   Click="Save_Click" AutomationProperties.Name="Save stop"/>
-            <syncfusion:ButtonAdv Label="Cancel" MinWidth="80" Height="32"
+            <syncfusion:ButtonAdv Label="Cancel" MinWidth="80" Height="40"
                                   Click="Cancel_Click" AutomationProperties.Name="Cancel stop"/>
         </StackPanel>
     </Grid>

@@ -1,5 +1,5 @@
 // Note: This file previously contained a duplicate StudentsView window class definition.
-// For MVP clean build, ensure only unit tests remain compiled.
+// Ensure only unit tests remain compiled.
 // The UI window class block is excluded below.
 #define EXCLUDE_UI_DUPLICATE
 using System.Windows;
@@ -26,7 +26,7 @@ namespace BusBuddy.WPF.Views.Student
     /// - WPF DPI handling (OnDpiChanged): https://learn.microsoft.com/dotnet/api/system.windows.window.ondpichanged
     /// </summary>
 #if EXCLUDE_UI_DUPLICATE
-    // Excluded duplicate class — see WileyTests.cs for similar content
+    // Excluded duplicate class — see RouteEastAssignmentTests.cs for similar content
     public partial class StudentsView : ChromelessWindow { }
 #else
     public partial class StudentsView : ChromelessWindow

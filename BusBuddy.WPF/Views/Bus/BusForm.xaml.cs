@@ -8,7 +8,7 @@ namespace BusBuddy.WPF.Views.Bus
 {
     /// <summary>
     /// Interaction logic for BusForm.xaml
-    /// MVP-ready bus entry form with Syncfusion ChromelessWindow and SkinManager theming
+    /// Bus entry form with Syncfusion ChromelessWindow and SkinManager theming
     /// </summary>
     public partial class BusForm : ChromelessWindow
     {
@@ -16,21 +16,21 @@ namespace BusBuddy.WPF.Views.Bus
         {
             InitializeComponent();
             ApplySyncfusionTheme();
-                // Resolve from DI if available, fallback to parameterless
-                if (App.ServiceProvider != null)
+            // Resolve from DI if available, fallback to parameterless
+            if (App.ServiceProvider != null)
+            {
+                var vm = App.ServiceProvider.GetService<BusFormViewModel>() ?? new BusFormViewModel();
+                DataContext = vm;
+                vm.RequestClose += (_, result) =>
                 {
-                    var vm = App.ServiceProvider.GetService<BusFormViewModel>() ?? new BusFormViewModel();
-                    DataContext = vm;
-                    vm.RequestClose += (_, result) =>
-                    {
-                        DialogResult = result;
-                        Close();
-                    };
-                }
-                else
-                {
-                    DataContext = new BusFormViewModel();
-                }
+                    DialogResult = result;
+                    Close();
+                };
+            }
+            else
+            {
+                DataContext = new BusFormViewModel();
+            }
         }
 
         public BusForm(BusBuddy.Core.Models.Bus bus)

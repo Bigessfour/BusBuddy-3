@@ -5,11 +5,11 @@
   },
   "RoslynExtensionsOptions": {
     "EnableImportCompletion": true,
-    "EnableAnalyzersSupport": true,
+    "EnableAnalyzersSupport": false,
     "EnableDecompilationSupport": true
   },
   "MsBuild": {
-    "LoadProjectsOnDemand": false,
+    "LoadProjectsOnDemand": true,
     "EnablePackageAutoRestore": true,
     "UseLegacySdkResolver": false
   },
@@ -19,6 +19,6 @@
   "Sdk": {
     "IncludePrereleases": false
   },
-  "enableMsBuildLoadProjectsOnDemand": false,
-  "enableRoslynAnalyzers": true
+  "enableMsBuildLoadProjectsOnDemand": true,
+  "enableRoslynAnalyzers": false
 }

@@ -241,23 +241,72 @@ public class Driver : INotifyPropertyChanged
     public bool IsActive => Status == "Active";
 
     // Additional properties for enhanced functionality
+    private string? _firstName;
+    private string? _lastName;
+    private string? _licenseNumber;
+    private string? _licenseClass;
+
     [StringLength(50)]
     [Display(Name = "First Name")]
-    public string? FirstName { get; set; }
-    // NOTE: For MVP Save button enablement we need PropertyChanged when First/Last names change.
-    // Rather than refactor auto-property widely, provide explicit backing fields in future.
+    public string? FirstName
+    {
+        get => _firstName;
+        set
+        {
+            if (_firstName != value)
+            {
+                _firstName = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(FullName));
+            }
+        }
+    }
 
     [StringLength(50)]
     [Display(Name = "Last Name")]
-    public string? LastName { get; set; }
+    public string? LastName
+    {
+        get => _lastName;
+        set
+        {
+            if (_lastName != value)
+            {
+                _lastName = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(FullName));
+            }
+        }
+    }
 
     [StringLength(20)]
     [Display(Name = "License Number")]
-    public string? LicenseNumber { get; set; }
+    public string? LicenseNumber
+    {
+        get => _licenseNumber;
+        set
+        {
+            if (_licenseNumber != value)
+            {
+                _licenseNumber = value;
+                OnPropertyChanged();
+            }
+        }
+    }
 
     [StringLength(10)]
     [Display(Name = "License Class")]
-    public string? LicenseClass { get; set; }
+    public string? LicenseClass
+    {
+        get => _licenseClass;
+        set
+        {
+            if (_licenseClass != value)
+            {
+                _licenseClass = value;
+                OnPropertyChanged();
+            }
+        }
+    }
 
     [Display(Name = "License Issue Date")]
     public DateTime? LicenseIssueDate { get; set; }

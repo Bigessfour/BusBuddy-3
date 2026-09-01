@@ -18,13 +18,13 @@ Failure to use + reference RAG before changes is a violation of these instructio
 
 ## 🚫 **STRICT RULES: MUST FOLLOW OR REFUSE SUGGESTION** (Updated for PS deprecation)
 
-**DEPRECATION NOTICE**: The "dd method" (PowerShell learning-era dev automation: bb-* commands, BusBuddy-Development, Start-BusBuddyDevSession / bbDevSession, heavy PS profiles) is **DEPRECATED**. Author now prefers WSL. PowerShell retained only for minimal CI/dependency needs.
+**DEPRECATION NOTICE**: The "dd method" (PowerShell learning-era dev automation: bb-\* commands, BusBuddy-Development, Start-BusBuddyDevSession / bbDevSession, heavy PS profiles) is **DEPRECATED**. Author now prefers WSL. PowerShell retained only for minimal CI/dependency needs.
 
 - Do NOT suggest or enforce `bb-*` commands for new work.
 - Prefer `dotnet` CLI directly, WSL scripts, or standard tools.
 - Legacy PS still present in modules but should be marked deprecated and not promoted in suggestions.
 
-1. **PREFER STANDARD DOTNET / WSL OVER LEGACY bb-***: Use raw `dotnet build`, `dotnet run --project BusBuddy.WPF/BusBuddy.WPF.csproj`, etc. Suggest WSL helpers if custom automation needed.
+1. **PREFER STANDARD DOTNET / WSL OVER LEGACY bb-\***: Use raw `dotnet build`, `dotnet run --project BusBuddy.WPF/BusBuddy.WPF.csproj`, etc. Suggest WSL helpers if custom automation needed.
 
 2. **NEVER INTRODUCE REGRESSIONS**: Run relevant checks (e.g. anti-regression, xaml-validate for UI changes). If a change could break student entry, route assignment, or UI consistency, ABORT and warn.
 
@@ -67,16 +67,18 @@ Failure to use + reference RAG before changes is a violation of these instructio
 
 - Prefer standard `dotnet` commands or WSL-based workflows.
 - Legacy `bb-*` (bb-build, bb-run, bb-health, bbDevSession / Start-BusBuddyDevSession, etc.) are no longer recommended and may be removed.
-- For quality gates that remain useful (anti-regression, xaml-validate), they can still be referenced as optional scripts, but do not mandate them as "bb-*" or primary.
-- Update any "use bb-*" language in suggestions to note the deprecation and WSL preference.
+- For quality gates that remain useful (anti-regression, xaml-validate), they can still be referenced as optional scripts, but do not mandate them as "bb-\*" or primary.
+- Update any "use bb-\*" language in suggestions to note the deprecation and WSL preference.
 
 Legacy reference (for awareness only, do not promote):
+
 ```powershell
 # Deprecated - PowerShell dev method ("dd method") no longer primary path
 # Use WSL / dotnet CLI instead
 ```
 
 **Primary (recommended) Development Commands (non-PS):**
+
 ```bash
 dotnet build BusBuddy.sln
 dotnet run --project BusBuddy.WPF/BusBuddy.WPF.csproj
@@ -119,12 +121,12 @@ bb-build  # Verify clean build
 ### Non-blocking / optional
 
 | Job                      | When                                | Notes                                     |
-| ------------------------ | ----------------------------------- | ----------------------------------------- |
+| ------------------------ | ----------------------------------- | ----------------------------------------- | --- | -------------------------- |
 | **Release artifacts**    | Push to `master` after Build & Test | Publishes win-x64 WPF package as artifact |
 | **Docker CI simulation** | Manual (`workflow_dispatch`)        | Postgres + container test parity          |
 | **CI with AI Analysis**  | Manual only                         | Deprecated as merge gate; experimental    |
-| Dependency vuln audit    | Inside Build & Test                 | Informational (`|| true` in CI), not blocking |
-| Code coverage            | Local / future                      | Not gated until flaky tests stabilized        |
+| Dependency vuln audit    | Inside Build & Test                 | Informational (`                          |     | true` in CI), not blocking |
+| Code coverage            | Local / future                      | Not gated until flaky tests stabilized    |
 
 ### Local pre-PR commands
 
@@ -168,19 +170,20 @@ Run `.github/scripts/setup-solo-ci-governance.sh` (requires `gh` admin) to enabl
 The project [`.cursor/mcp.json`](.cursor/mcp.json) includes two critical tools for full awareness:
 
 1. **busbuddy-rag** (local semantic RAG over the entire cleaned codebase)
-   - **ALWAYS call first** (see CRITICAL RULE above) before any edit.
-   - Tool name in MCP calls: `search_repo_context`
-   - Example queries that give excellent results:
-     - "Postgres DbContext configuration, BUSBUDDY_CONNECTION injection, and how it relates to SeedDataService + Docker profiles"
-     - "GrokGlobalAPI route optimization flow and where it is called from RouteService"
-     - "current state of hybrid Mac Docker + UTM VM development setup after final hygiene"
-     - "BusBuddy constitution Spec-Kit Syncfusion Serilog RAG hybrid Ollama"
-   - The tool returns file:line-anchored chunks with high semantic relevance. Quote them.
+    - **ALWAYS call first** (see CRITICAL RULE above) before any edit.
+    - Tool name in MCP calls: `search_repo_context`
+    - Example queries that give excellent results:
+        - "Postgres DbContext configuration, BUSBUDDY_CONNECTION injection, and how it relates to SeedDataService + Docker profiles"
+        - "GrokGlobalAPI route optimization flow and where it is called from RouteService"
+        - "current state of hybrid Mac Docker + UTM VM development setup after final hygiene"
+        - "BusBuddy constitution Spec-Kit Syncfusion Serilog RAG hybrid Ollama"
+    - The tool returns file:line-anchored chunks with high semantic relevance. Quote them.
 
 2. **syncfusion-wpf-assistant** (existing)
-   - Prefix prompts as before for UI work.
+    - Prefix prompts as before for UI work.
 
 **MCP registration** (in `.cursor/mcp.json`):
+
 ```json
 "busbuddy-rag": {
   "type": "stdio",
@@ -198,8 +201,8 @@ To get the best Syncfusion WPF code assistance:
 - The project `.cursor/mcp.json` includes "syncfusion-wpf-assistant" (requires your Syncfusion API key from https://syncfusion.com/account/api-key - set in env or config).
 - In your AI chat (Copilot, Cursor, Claude, etc. that supports MCP): prefix prompts with `SyncfusionWPFAssistant `, `/syncfusion-wpf-assistant`, `@syncfusion-wpf`, or `wpf`.
 - Examples:
-  - "SyncfusionWPFAssistant how to bind SfDataGrid to ObservableCollection of Students with filtering and paging"
-  - "SyncfusionWPFAssistant implement route stops editor using SfDataGrid and drag drop"
+    - "SyncfusionWPFAssistant how to bind SfDataGrid to ObservableCollection of Students with filtering and paging"
+    - "SyncfusionWPFAssistant implement route stops editor using SfDataGrid and drag drop"
 - This gives the AI accurate knowledge of Syncfusion WPF controls, themes (FluentDark/Light), and best practices used in this project.
 - Always verify generated code compiles and follows our Syncfusion-only policy.
 - See https://help.syncfusion.com/wpf/ai-coding-assistant/overview for full details.
@@ -844,11 +847,11 @@ var entities = await _entityService.GetEntitiesAsync();
 
 ```csharp
 // Step 1: Ensure code-behind file exists with correct namespace
-namespace BusBuddy.WPF.Views.GoogleEarth
+namespace BusBuddy.WPF.Views.Map
 {
-    public partial class GoogleEarthView : UserControl
+    public partial class MapView : UserControl
     {
-        public GoogleEarthView()
+        public MapView()
         {
             InitializeComponent();
         }
@@ -858,7 +861,7 @@ namespace BusBuddy.WPF.Views.GoogleEarth
 
 ```xml
 <!-- Step 2: Match XAML x:Class to code-behind -->
-<UserControl x:Class="BusBuddy.WPF.Views.GoogleEarth.GoogleEarthView">
+<UserControl x:Class="BusBuddy.WPF.Views.Map.MapView">
 ```
 
 #### **Error Type 4: Missing Event Handler**
@@ -1040,7 +1043,7 @@ xmlns:syncfusion="http://schemas.syncfusion.com/wpf"
 ⚠️ **REQUIRES SIMILAR UPGRADE (NO REGRESSION ALLOWED):**
 
 - Any remaining DataGrid instances should be upgraded to SfDataGrid using above patterns
-- GoogleEarthView.xaml DataGrid → Convert to SfDataGrid following VehicleManagementView pattern
+- MapView.xaml DataGrid → Convert to SfDataGrid following VehicleManagementView pattern
 - VehiclesView.xaml → Add Syncfusion namespace and implement SfDataGrid
 - VehicleForm.xaml → Any data display should use SfDataGrid patterns
 

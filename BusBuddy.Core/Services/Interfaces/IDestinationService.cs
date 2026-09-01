@@ -20,4 +20,17 @@ public interface IDestinationService
         TimeSpan? startTime,
         TimeSpan? dismissalTime,
         CancellationToken cancellationToken = default);
+
+    /// <summary>Catalog a school campus. Start and dismissal times are required for route generation.</summary>
+    Task<Destination> AddSchoolAsync(
+        string name,
+        string address,
+        string city,
+        string state,
+        string zipCode,
+        TimeSpan startTime,
+        TimeSpan dismissalTime,
+        decimal? latitude = null,
+        decimal? longitude = null,
+        CancellationToken cancellationToken = default);
 }

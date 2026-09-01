@@ -1,4 +1,4 @@
-<!-- RouteEditDialog.xaml - Route editing dialog for BusBuddy MVP
+<!-- RouteEditDialog.xaml - Route editing dialog
      Uses Syncfusion SfMaskedEdit for route details (Start, End, Stops)
      Documentation: https://help.syncfusion.com/wpf/maskededit/getting-started -->
 <UserControl x:Class="BusBuddy.WPF.Views.Route.RouteEditDialog"
@@ -20,20 +20,30 @@
         <TextBlock Text="Edit Route" FontWeight="Bold" FontSize="18" Margin="0,0,0,16"/>
         <StackPanel Grid.Row="1" Orientation="Vertical" Margin="0,0,0,8">
             <TextBlock Text="Start Location"/>
-            <syncfusion:SfMaskedEdit x:Name="StartMaskedEdit"
-                                    MaskType="Text"
+            <syncfusion:SfTextBoxExt x:Name="StartMaskedEdit"
+                                    AutoCompleteMode="None"
                                     Text="{Binding StartLocation, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                    Height="40"
+                                    FontSize="14"
                                     Width="250" Margin="0,2,0,8"/>
             <TextBlock Text="End Location"/>
-            <syncfusion:SfMaskedEdit x:Name="EndMaskedEdit"
-                                    MaskType="Text"
+            <syncfusion:SfTextBoxExt x:Name="EndMaskedEdit"
+                                    AutoCompleteMode="None"
                                     Text="{Binding EndLocation, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                    Height="40"
+                                    FontSize="14"
                                     Width="250" Margin="0,2,0,8"/>
             <TextBlock Text="Stops (comma separated)"/>
-            <syncfusion:SfMaskedEdit x:Name="StopsMaskedEdit"
-                                    MaskType="Text"
+            <syncfusion:SfTextBoxExt x:Name="StopsMaskedEdit"
+                                    AutoCompleteMode="None"
                                     Text="{Binding Stops, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                    Height="40"
+                                    FontSize="14"
                                     Width="250" Margin="0,2,0,8"/>
+            <TextBlock Text="{Binding ValidationMessage}"
+                       Foreground="{DynamicResource BusBuddy.Brush.Semantic.Danger}"
+                       TextWrapping="Wrap"
+                       Margin="0,4,0,0"/>
         </StackPanel>
     <syncfusion:ButtonAdv Grid.Row="4"
                          Label="Save"
@@ -48,7 +58,18 @@
                          HorizontalAlignment="Right"
                          Margin="0,12,0,0"
                          AutomationProperties.Name="Save Route Changes"
-                         Command="{Binding SaveCommand}"
-                         CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=UserControl}}"/>
+                         Command="{Binding SaveCommand}"/>
+    <syncfusion:ButtonAdv Grid.Row="4"
+                         Label="Cancel"
+                         SizeMode="Normal"
+                         IconHeight="0" IconWidth="0"
+                         SmallIcon="{x:Null}"
+                         CornerRadius="4"
+                         MinWidth="110"
+                         Height="36"
+                         HorizontalAlignment="Left"
+                         Margin="0,12,0,0"
+                         AutomationProperties.Name="Cancel Route Changes"
+                         Command="{Binding CancelCommand}"/>
     </Grid>
 </UserControl>

@@ -145,7 +145,7 @@ namespace BusBuddy.WPF.Views.Student
             catch { }
         }
 
-    private void OnAnyButtonClick(object? sender, RoutedEventArgs e)
+        private void OnAnyButtonClick(object? sender, RoutedEventArgs e)
         {
             try
             {
@@ -177,7 +177,7 @@ namespace BusBuddy.WPF.Views.Student
             }
         }
 
-    private void OnAnySelectionChanged(object? sender, SelectionChangedEventArgs e)
+        private void OnAnySelectionChanged(object? sender, SelectionChangedEventArgs e)
         {
             try
             {
@@ -193,7 +193,7 @@ namespace BusBuddy.WPF.Views.Student
             }
         }
 
-    private void OnAnyTextChanged(object? sender, TextChangedEventArgs e)
+        private void OnAnyTextChanged(object? sender, TextChangedEventArgs e)
         {
             try
             {
@@ -210,7 +210,7 @@ namespace BusBuddy.WPF.Views.Student
             }
         }
 
-    private void OnValidationError(object? sender, ValidationErrorEventArgs e)
+        private void OnValidationError(object? sender, ValidationErrorEventArgs e)
         {
             try
             {

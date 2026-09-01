@@ -786,39 +786,39 @@ namespace BusBuddy.Core.Services
                 var (context, dispose) = GetWriteContext();
                 try
                 {
-                var driver = await context.Drivers.FindAsync(driverId);
-                if (driver == null)
-                {
-                    Logger.Warning("Driver with ID {DriverId} not found", driverId);
-                    return false;
-                }
+                    var driver = await context.Drivers.FindAsync(driverId);
+                    if (driver == null)
+                    {
+                        Logger.Warning("Driver with ID {DriverId} not found", driverId);
+                        return false;
+                    }
 
-                // Validate license information
-                if (string.IsNullOrWhiteSpace(licenseNumber))
-                {
-                    throw new ArgumentException("License number cannot be empty");
-                }
+                    // Validate license information
+                    if (string.IsNullOrWhiteSpace(licenseNumber))
+                    {
+                        throw new ArgumentException("License number cannot be empty");
+                    }
 
-                if (string.IsNullOrWhiteSpace(licenseClass))
-                {
-                    throw new ArgumentException("License class cannot be empty");
-                }
+                    if (string.IsNullOrWhiteSpace(licenseClass))
+                    {
+                        throw new ArgumentException("License class cannot be empty");
+                    }
 
-                if (expiryDate < DateTime.Today)
-                {
-                    throw new ArgumentException("License expiry date cannot be in the past");
-                }
+                    if (expiryDate < DateTime.Today)
+                    {
+                        throw new ArgumentException("License expiry date cannot be in the past");
+                    }
 
-                // Update license information
-                driver.LicenseNumber = licenseNumber;
-                driver.LicenseClass = licenseClass;
-                driver.LicenseExpiryDate = expiryDate;
-                driver.Endorsements = endorsements;
-                driver.UpdatedDate = DateTime.UtcNow;
+                    // Update license information
+                    driver.LicenseNumber = licenseNumber;
+                    driver.LicenseClass = licenseClass;
+                    driver.LicenseExpiryDate = expiryDate;
+                    driver.Endorsements = endorsements;
+                    driver.UpdatedDate = DateTime.UtcNow;
 
-                await context.SaveChangesAsync();
-                Logger.Information("Successfully updated license info for driver {DriverId}", driverId);
-                return true;
+                    await context.SaveChangesAsync();
+                    Logger.Information("Successfully updated license info for driver {DriverId}", driverId);
+                    return true;
                 }
                 finally
                 {
@@ -1274,6 +1274,16 @@ namespace BusBuddy.Core.Services
 
             try
             {
+                // This scrubber is SQL Server–oriented (unquoted Drivers, + concat). On Postgres EF
+                // creates quoted "Drivers"; unquoted Drivers folds to drivers and 42P01's.
+                var provider = context.Database.ProviderName ?? string.Empty;
+                if (provider.Contains("Npgsql", StringComparison.OrdinalIgnoreCase))
+                {
+                    Logger.Debug("Skipping SQL Server NULL scrubber on Npgsql provider");
+                    _nullValuesFixed = true;
+                    return;
+                }
+
                 // Check if there are any NULL values in required columns
                 var hasNullValues = await context.Database.ExecuteSqlRawAsync(@"
                     SELECT CASE WHEN EXISTS (

@@ -12,20 +12,20 @@ namespace BusBuddy.WPF.ViewModels.Bus
 {
     /// <summary>
     /// ViewModel for Bus entry form
-    /// MVP-ready implementation with validation and CRUD operations
+    /// Implementation with validation and CRUD operations
     /// </summary>
     public class BusFormViewModel : INotifyPropertyChanged
     {
         private BusBuddy.Core.Models.Bus _bus;
         private bool _isEditMode;
-        private readonly IBusService? _busService; // optional during MVP if DI not configured
+        private readonly IBusService? _busService; // optional if DI not configured
         private static readonly ILogger Logger = Log.ForContext<BusFormViewModel>();
 
         public event EventHandler<bool?>? RequestClose; // mimic DriverForm pattern
 
-        public BusFormViewModel() : this(null, new BusBuddy.Core.Models.Bus()) {}
+        public BusFormViewModel() : this(null, new BusBuddy.Core.Models.Bus()) { }
 
-        public BusFormViewModel(IBusService? busService) : this(busService, new BusBuddy.Core.Models.Bus()) {}
+        public BusFormViewModel(IBusService? busService) : this(busService, new BusBuddy.Core.Models.Bus()) { }
 
         public BusFormViewModel(IBusService? busService, BusBuddy.Core.Models.Bus bus)
         {
@@ -41,7 +41,7 @@ namespace BusBuddy.WPF.ViewModels.Bus
 
         #region Properties
 
-    public string Title => _isEditMode ? $"Edit Bus: {BusNumber}" : "Add New Bus"; // exposed as Title for binding
+        public string Title => _isEditMode ? $"Edit Bus: {BusNumber}" : "Add New Bus"; // exposed as Title for binding
 
         public string BusNumber
         {
@@ -243,7 +243,7 @@ namespace BusBuddy.WPF.ViewModels.Bus
                 }
                 else
                 {
-                    Logger.Warning("_busService not available — skipping persistence (MVP fallback)");
+                    Logger.Warning("_busService not available — skipping persistence");
                 }
 
                 RequestClose?.Invoke(this, true);
@@ -307,7 +307,7 @@ namespace BusBuddy.WPF.ViewModels.Bus
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
 
-    public void ForceRequery() => ((RelayCommand)SaveCommand).RaiseCanExecuteChanged();
+        public void ForceRequery() => ((RelayCommand)SaveCommand).RaiseCanExecuteChanged();
 
         #endregion
     }

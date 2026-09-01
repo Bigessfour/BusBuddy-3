@@ -208,7 +208,7 @@ public class AIInsightService
             }
 
             var insights = await query.Take(maxResults).ToListAsync();
-            
+
             Logger.Information("Retrieved {Count} insights of type {InsightType}", insights.Count, insightType);
             return insights;
         }

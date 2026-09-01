@@ -123,7 +123,7 @@ public sealed class AssignFitnessEvaluator
                 if (slot == RouteTimeSlotKind.AM && school.StartTime is TimeSpan start)
                 {
                     // Backward estimate: leave home at StartTime - ride; warn if ride alone exceeds soft max already covered.
-                    // Arrival risk: if current time-of-day simulation N/A, flag when estimated minutes leave less than 5 min buffer before start from a nominal 7:00 depot — use MaxRideMinutes only for MVP.
+                    // Arrival risk: if current time-of-day simulation N/A, flag when estimated minutes leave less than 5 min buffer before start from a nominal 7:00 depot — use MaxRideMinutes only.
                     _ = start;
                 }
             }

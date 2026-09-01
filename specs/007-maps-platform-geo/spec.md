@@ -6,25 +6,25 @@
 
 **Status**: Paused (Earth Engine removed; Maps clients not wired)
 
-**Input**: Earth Engine is the wrong product for student addresses, map plots, and trip planning. Remove it from the running app and replace it with working street-level mapping: postal address validation, geocoding onto the existing map, and road-network routing — while keeping Syncfusion map display and local district/town eligibility files.
+**Input**: Earth Engine is the wrong product for student addresses, map plots, and trip planning. Replace it with Google Maps Platform Address Validation + Routes, keeping Syncfusion `SfMap`. Students entered in the system are eligible (no geofence).
 
 ## Baseline (as of draft)
 
 | Area                  | Current                                                                         | Target                                                                          |
 | --------------------- | ------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
 | Address correctness   | Regex / format checks; optional skip                                            | Postal-grade US validation with standardized components and a clear fail reason |
-| Map coordinates       | Hash scatter around Wiley School (`OfflineGeocodingService`)                    | Real coordinates from the same validation result, cached on the student         |
-| Trip / route geometry | Capacity fill + stored stop points; no road graph                               | Drive paths (distance, time, polyline) for school ↔ stops                       |
+| Map coordinates       | Hash scatter (`OfflineGeocodingService`, tests only)                            | Real coordinates from Address Validation, cached on the student                 |
+| Trip / route geometry | Capacity fill + stored stop points; no road graph                               | Drive paths (distance, time, polyline) for school ↔ stops                      |
 | Satellite / EE        | `GoogleEarthEngineService`, `GcpCredentialBootstrap`, invented `:exportGeoJson` | **Removed** from DI, config, secrets, and probes                                |
 | Map UI                | Syncfusion `SfMap` + OSM only (unofficial Google tiles removed)                 | Keep `SfMap` + OSM; Maps Tiles API optional later                               |
-| District eligibility  | Local Wiley shapefiles                                                          | Unchanged                                                                       |
+| District eligibility  | Local shapefiles (wrong district)                                               | Students in the system are eligible — no geofence                               |
 | GCP                   | `ee-bigessfour` EE project + broken SA JWT                                      | Billing project `new-coursera-490518` + Maps API key in Passwords               |
 
-Constitution: this feature **amends** the Geo constraint (Earth Engine → street mapping provider + local shapefiles). Syncfusion-only UI, Serilog-only logging, hybrid Mac/Windows, no cloud app hosting, and no committed secrets remain in force.
+Constitution: this feature **amends** the Geo constraint (Earth Engine → Maps Platform Address Validation + SfMap; no shapefile geofence).
 
-Nominated provider (working solution): **Google Maps Platform** on `new-coursera-490518` — Address Validation (USPS CASS), Routes (`computeRoutes` / `computeRouteMatrix`). Places Autocomplete is out of MVP (P3). Earth Engine stays unused; do not re-enable it in this feature.
+Nominated provider (working solution): **Google Maps Platform** on `new-coursera-490518` — Address Validation (USPS CASS), Routes (`computeRoutes` / `computeRouteMatrix`). Places Autocomplete is deferred (P3). Earth Engine stays unused; do not re-enable it in this feature.
 
-## User Scenarios & Testing *(mandatory)*
+## User Scenarios & Testing _(mandatory)_
 
 ### User Story 1 - Clerk saves a real student address and sees it on the map (Priority: P1)
 
@@ -37,7 +37,7 @@ As a transportation clerk, when I enter a Wiley-area student street address, the
 **Acceptance Scenarios**:
 
 1. **Given** a mapping key and a complete US address in the Wiley service area, **When** the clerk validates or saves the student, **Then** the address is accepted or corrected to a standardized form and latitude/longitude are stored.
-2. **Given** a mapping key and a nonsense or incomplete address, **When** the clerk validates, **Then** save is blocked (unless the existing skip-validation MVP flag is on) and the clerk sees why it failed.
+2. **Given** a mapping key and a nonsense or incomplete address, **When** the clerk validates, **Then** save is blocked (unless the existing skip-validation flag is on) and the clerk sees why it failed.
 3. **Given** no mapping key, **When** the clerk plots or validates, **Then** the UI states mapping is not configured and does **not** hash the address into fake coordinates.
 4. **Given** a previously validated student with coordinates, **When** the map bulk-plots eligible students, **Then** markers use stored coordinates and do not re-call the network for every row.
 
@@ -94,12 +94,12 @@ As a clerk, I can pick a suggested street address as I type so I spend less time
 
 - Rural Prowers/Bent County addresses that USPS can certify but Google rooftop is approximate: store coordinates anyway; show precision (rooftop vs range vs approximate) to the clerk.
 - Rate limits / quota: cache by normalized address; do not geocode on every keystroke (except P3 suggestions).
-- Existing students with hash-scattered coordinates: treat as untrusted; re-validate on next edit, not a silent mass rewrite in MVP.
+- Existing students with hash-scattered coordinates: treat as untrusted; re-validate on next edit, not a silent mass rewrite in this increment.
 - Unofficial `mt1.google.com` map tiles: remove or disable; OSM remains default.
 - Mapping key present but Address Validation API not enabled on the GCP project: surface a configuration error, not a crash.
 - Offline tests and CI: never require a live Maps key; use fakes.
 
-## Requirements *(mandatory)*
+## Requirements _(mandatory)_
 
 ### Functional Requirements
 
@@ -107,7 +107,7 @@ As a clerk, I can pick a suggested street address as I type so I spend less time
 - **FR-002**: System MUST persist latitude and longitude from a successful validation onto the student record for map plotting.
 - **FR-003**: System MUST NOT invent coordinates from a string hash when mapping is unconfigured or validation fails.
 - **FR-004**: System MUST cache successful validations so repeated plots of the same address do not require a new paid call.
-- **FR-005**: System MUST keep Syncfusion `SfMap` as the map surface and MUST keep local Wiley district/town shapefile eligibility.
+- **FR-005**: System MUST keep Syncfusion `SfMap` as the map surface. Students entered in the system are eligible (no geofence / no shapefile polygons).
 - **FR-006**: System MUST remove Earth Engine from runtime: no EE DI services, no EE appsettings, no EE bootstrap, no EE connection probe, no EE secrets in agent docs.
 - **FR-007**: System MUST load route geography from the database (stored waypoints or stop coordinates), not from an Earth Engine asset.
 - **FR-008**: System MUST obtain drive distance, duration, and a road polyline for a route with geocoded stops when mapping is configured (US3).
@@ -124,7 +124,7 @@ As a clerk, I can pick a suggested street address as I type so I spend less time
 - **RoutePath**: Route id, ordered stops, encoded/decoded polyline, distance, duration, computed-at.
 - **MappingConfiguration**: Presence of API key, provider project (billing), enabled APIs; no service-account JSON.
 
-## Success Criteria *(mandatory)*
+## Success Criteria _(mandatory)_
 
 ### Measurable Outcomes
 
@@ -139,8 +139,8 @@ As a clerk, I can pick a suggested street address as I type so I spend less time
 
 - Nominated provider is Google Maps Platform (Address Validation with USPS CASS, Routes API) billed on `new-coursera-490518`.
 - Wiley-scale volume is hundreds of students; validate on save; cache; route compute on demand.
-- Renaming `GoogleEarthView` / `GoogleEarthViewModel` is out of scope (map UI stays; EE backend goes).
-- `StudentRouteOptimizer` capacity fill remains; routing **adds** path geometry and optional matrix ranking, it does not replace seat-capacity rules in MVP.
+- Renaming `MapView` / `MapViewModel` is out of scope (map UI stays; EE backend goes).
+- `StudentRouteOptimizer` capacity fill remains; routing **adds** path geometry and optional matrix ranking, it does not replace seat-capacity rules in this increment.
 - Local shapefiles remain the eligibility source; no Maps “dataset” upload in this feature.
 - Constitution Geo line is amended in the same PR as implementation.
 - Offline hasher remains only behind tests/demo flag if needed; production DI uses the mapping client or a no-op that returns null.
@@ -150,5 +150,5 @@ As a clerk, I can pick a suggested street address as I type so I spend less time
 - Re-registering or repairing the `bus-buddy-gee` Earth Engine service account.
 - Satellite imagery, NDVI, flood, or EE table export.
 - Google Maps JavaScript, Navigation SDK, or replacing Syncfusion `SfMap`.
-- Mass re-geocoding of the entire historical student table in MVP.
+- Mass re-geocoding of the entire historical student table in this increment.
 - AWS or any cloud host for the WPF app.

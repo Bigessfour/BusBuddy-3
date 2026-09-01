@@ -144,7 +144,7 @@
                 Background="{DynamicResource BusBuddy.Brush.Semantic.Info}"
                 Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}"
                 AutomationProperties.Name="View Map"
-                AutomationProperties.HelpText="Open route map in Google Earth view"/>
+                AutomationProperties.HelpText="Open route map in map view"/>
                     <Separator Margin="10,0"/>
 
                     <!-- Assignment Operations -->
@@ -267,7 +267,7 @@
             </syncfusion:SfDataGrid.Columns>
         </syncfusion:SfDataGrid>
 
-            <!-- Stops editor (reuses MVP control; DataContext expected to be RouteAssignmentViewModel when opened in Manage dialog, so here show helper tip) -->
+            <!-- Stops editor (DataContext expected to be RouteAssignmentViewModel when opened in Manage dialog) -->
             <Border Grid.Row="1" Background="{DynamicResource BusBuddy.Brush.Surface.Medium}" CornerRadius="3" Padding="8">
                 <StackPanel>
                     <TextBlock Text="Tip: Select a route and click 'Manage Route' to add/move/delete stops and assign students."/>

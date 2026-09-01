@@ -25,7 +25,7 @@
       "label": "Postgres (Docker)",
       "onAutoForward": "notify"
     }
-  },
+  }
 
   // Use 'remoteUser': 'root' if needed for some tools.
   // "remoteUser": "root"

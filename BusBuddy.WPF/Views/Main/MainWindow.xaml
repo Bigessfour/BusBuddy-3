@@ -5,9 +5,9 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:syncfusion="http://schemas.syncfusion.com/wpf"
         xmlns:route="clr-namespace:BusBuddy.WPF.Views.Route"
-    xmlns:viewsGE="clr-namespace:BusBuddy.WPF.Views.GoogleEarth"
+    xmlns:viewsGE="clr-namespace:BusBuddy.WPF.Views.Map"
         mc:Ignorable="d"
-        Title="🚌 BusBuddy MVP - Student Route Management"
+        Title="BusBuddy - School Transportation"
         Height="900"
         Width="1400"
         WindowStartupLocation="CenterScreen"
@@ -23,7 +23,6 @@
         </ResourceDictionary>
     </syncfusion:ChromelessWindow.Resources>
 
-    <!-- MVP-Ready UI with DockingManager for professional layout -->
     <!-- Trigger language server refresh -->
     <Grid>
     <Grid.RowDefinitions>
@@ -41,29 +40,29 @@
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
-                <TextBlock Grid.Row="0" Text="BusBuddy MVP - Transportation Management"
+                <TextBlock Grid.Row="0" Text="BusBuddy - Transportation Management"
                            FontSize="28" FontWeight="Bold" Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"
                            HorizontalAlignment="Center"/>
-                <TextBlock Grid.Row="1" Text="Students | Routes | Buses | Drivers - Monday Ready Demo"
+                <TextBlock Grid.Row="1" Text="School → Students → Generate routes → Bus and driver → Fuel / Maintenance"
                            FontSize="16" Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}" Opacity="0.9"
                            HorizontalAlignment="Center" Margin="0,8,0,0"/>
 
                 <!-- Navigation + Theme Selector -->
                 <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,15,0,0">
-                    <syncfusion:ButtonAdv Label="Eligibility PDF" Margin="0,0,18,0" Padding="15,8"
+                    <syncfusion:ButtonAdv Label="Student Map PDF" Margin="0,0,18,0" Padding="15,8"
                                           Background="{DynamicResource BusBuddy.Brush.Primary}" Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}" BorderThickness="0"
                                           Click="EligibilityPdfButton_Click" FontSize="14" FontWeight="SemiBold"
-                                          ToolTip="Generate eligibility route PDF (district outside town, excludes Lamar)"
-                                          AutomationProperties.Name="Generate Eligibility PDF"/>
+                                          ToolTip="PDF of students in the system who have map coordinates"
+                                          AutomationProperties.Name="Generate Student Map PDF"/>
                     <syncfusion:ButtonAdv Label="Print Last PDF" Margin="0,0,25,0" Padding="15,8"
                                           Background="{DynamicResource BusBuddy.Brush.Primary}" Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}" BorderThickness="0"
                                           Click="PrintEligibilityPdfButton_Click" FontSize="14" FontWeight="SemiBold"
-                                          ToolTip="Print the last generated eligibility PDF (opens system print dialog)"
-                                          AutomationProperties.Name="Print Eligibility PDF"/>
+                                          ToolTip="Print the last generated student map PDF"
+                                          AutomationProperties.Name="Print Student Map PDF"/>
                     <syncfusion:ButtonAdv Label="Map" Margin="0,0,18,0" Padding="15,8"
                                           Background="{DynamicResource BusBuddy.Brush.Primary}" Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}" BorderThickness="0"
                                           Click="MapButton_Click" FontSize="14" FontWeight="SemiBold"
-                                          ToolTip="Show Google Earth / Geospatial Map"
+                                          ToolTip="Show district map (OpenStreetMap)"
                                           AutomationProperties.Name="Map View Navigation"/>
                         <syncfusion:ButtonAdv Label="Students" Margin="0,0,10,0" Padding="15,8"
                                           Background="{DynamicResource BusBuddy.Brush.Primary}" Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}" BorderThickness="0"
@@ -85,6 +84,16 @@
                                           Click="DriversButton_Click" FontSize="14" FontWeight="SemiBold"
                                           ToolTip="Manage driver information and schedules"
                                           AutomationProperties.Name="Driver Management"/>
+                    <syncfusion:ButtonAdv Label="Fuel" Margin="0,0,10,0" Padding="15,8"
+                                          Background="{DynamicResource BusBuddy.Brush.Primary}" Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}" BorderThickness="0"
+                                          Click="FuelManagementButton_Click" FontSize="14" FontWeight="SemiBold"
+                                          ToolTip="Fuel records for a bus"
+                                          AutomationProperties.Name="Fuel Management"/>
+                    <syncfusion:ButtonAdv Label="Maintenance" Margin="0,0,10,0" Padding="15,8"
+                                          Background="{DynamicResource BusBuddy.Brush.Primary}" Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}" BorderThickness="0"
+                                          Click="Maintenance_Click" FontSize="14" FontWeight="SemiBold"
+                                          ToolTip="Maintenance records for a bus"
+                                          AutomationProperties.Name="Fleet Maintenance"/>
                     <syncfusion:ButtonAdv Label="Reports" Padding="15,8"
                                           Background="{DynamicResource BusBuddy.Brush.Primary}" Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}" BorderThickness="0"
                                           Click="ReportsButton_Click" FontSize="14" FontWeight="SemiBold"
@@ -159,6 +168,7 @@
 
                     <syncfusion:SfDataGrid Grid.Row="0" x:Name="StudentsGrid"
                                           ItemsSource="{Binding Students}"
+                                          SelectedItem="{Binding SelectedStudent, Mode=TwoWay}"
                                           AutoGenerateColumns="False"
                                           AllowEditing="False"
                                           AllowSorting="True"
@@ -207,6 +217,7 @@
 
                     <syncfusion:SfDataGrid Grid.Row="0" x:Name="RoutesGrid"
                                           ItemsSource="{Binding Routes}"
+                                          SelectedItem="{Binding SelectedRoute, Mode=TwoWay}"
                                           AutoGenerateColumns="False"
                                           AllowEditing="False"
                                           AllowSorting="True"
@@ -270,6 +281,7 @@
 
                     <syncfusion:SfDataGrid Grid.Row="0" x:Name="BusesGrid"
                                           ItemsSource="{Binding Buses}"
+                                          SelectedItem="{Binding SelectedBus, Mode=TwoWay}"
                                           AutoGenerateColumns="False"
                                           AllowEditing="False"
                                           AllowSorting="True"
@@ -322,6 +334,7 @@
 
                     <syncfusion:SfDataGrid Grid.Row="0" x:Name="DriversGrid"
                                           ItemsSource="{Binding Drivers}"
+                                          SelectedItem="{Binding SelectedDriver, Mode=TwoWay}"
                                           AutoGenerateColumns="False"
                                           AllowEditing="False"
                                           AllowSorting="True"
@@ -349,7 +362,7 @@
                         <syncfusion:ButtonAdv Label="Assign Bus" Margin="0,0,10,0" Padding="12,6"
                                               Background="{DynamicResource ButtonBackgroundBrush}" Foreground="{DynamicResource ButtonForegroundBrush}" BorderThickness="0"
                                               Click="AssignBus_Click"
-                                              ToolTip="Assign a bus to the selected driver"
+                                              ToolTip="Open Route Assignments to put a bus and driver on a route"
                                               AutomationProperties.Name="Assign Bus to Driver"/>
                         <syncfusion:ButtonAdv Label="Schedule" Padding="12,6"
                                               Background="{DynamicResource ButtonBackgroundBrush}" Foreground="{DynamicResource ButtonForegroundBrush}" BorderThickness="0"
@@ -360,13 +373,13 @@
                 </Grid>
             </ContentControl>
 
-            <!-- Map Panel (Google Earth Integration) -->
+            <!-- Map Panel (District Map) -->
             <ContentControl x:Name="MapPane"
                             syncfusion:DockingManager.Header="Map"
                             syncfusion:DockingManager.State="Document"
                             Background="{DynamicResource BusBuddy.Brush.Panel.Background}">
                 <Grid Background="{DynamicResource BusBuddy.Brush.Panel.Content}">
-                    <viewsGE:GoogleEarthView />
+                    <viewsGE:MapView />
                 </Grid>
             </ContentControl>
 
@@ -410,9 +423,9 @@
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
                 <TextBlock Grid.Column="0"
-                           Text="MVP Ready: Students | Routes | Buses | Drivers | Reports | PowerShell Demo: bb-route-demo"
+                           Text="{Binding StatusMessage, FallbackValue='Loading…'}"
                            Foreground="{StaticResource StatusBarPrimaryTextBrush}" VerticalAlignment="Center" FontSize="14" TextTrimming="CharacterEllipsis"/>
-                <TextBlock Grid.Column="1" Text="Monday Demo Ready"
+                <TextBlock Grid.Column="1" Text="Postgres"
                            Foreground="{StaticResource StatusBarAccentTextBrush}" VerticalAlignment="Center" FontSize="14" FontWeight="SemiBold"/>
             </Grid>
         </Border>

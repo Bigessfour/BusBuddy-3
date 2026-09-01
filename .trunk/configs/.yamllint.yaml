@@ -5,3 +5,5 @@ rules:
   key-duplicates: {}
   octal-values:
     forbid-implicit-octal: true
+  new-lines:
+    type: dos

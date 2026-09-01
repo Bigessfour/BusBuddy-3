@@ -51,15 +51,15 @@ namespace BusBuddy.Core.Services
         // Route Building Methods
         Task<Result<Route>> CreateNewRouteAsync(string routeName, DateTime routeDate, string? description = null);
         Task<Result<bool>> AssignVehicleToRouteAsync(int routeId, int vehicleId, BusBuddy.Core.Models.RouteTimeSlot timeSlot);
-    Task<Result<bool>> AssignDriverToRouteAsync(int routeId, int driverId, BusBuddy.Core.Models.RouteTimeSlot timeSlot);
-    Task<Result<RouteStop>> AddStopToRouteAsync(int routeId, RouteStop routeStop);
+        Task<Result<bool>> AssignDriverToRouteAsync(int routeId, int driverId, BusBuddy.Core.Models.RouteTimeSlot timeSlot);
+        Task<Result<RouteStop>> AddStopToRouteAsync(int routeId, RouteStop routeStop);
         Task<Result<bool>> RemoveStopFromRouteAsync(int routeId, int stopId);
         Task<Result<bool>> ReorderRouteStopsAsync(int routeId, List<int> orderedStopIds);
         Task<Result<RouteValidationResult>> ValidateRouteForActivationAsync(int routeId);
         Task<Result<bool>> ActivateRouteAsync(int routeId);
         Task<Result<bool>> DeactivateRouteAsync(int routeId);
         Task<Result<Route>> CloneRouteAsync(int sourceRouteId, DateTime newDate, string? newRouteName = null);
-    // Persist updated stop timing (arrival/departure) — MVP timing persistence
-    Task<Result<bool>> UpdateRouteStopsTimingAsync(int routeId, IEnumerable<RouteStop> stops);
+        // Persist updated stop timing (arrival/departure)
+        Task<Result<bool>> UpdateRouteStopsTimingAsync(int routeId, IEnumerable<RouteStop> stops);
     }
 }

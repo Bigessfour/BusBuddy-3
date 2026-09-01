@@ -45,7 +45,8 @@ public sealed class StudentSchoolTransferViewModel : BaseViewModel
         _destinationService = destinationService ?? throw new ArgumentNullException(nameof(destinationService));
 
         Schools = new ObservableCollection<Destination>();
-        SaveCommand = new AsyncRelayCommand(SaveAsync, () => CanSave);
+        // Always executable — validate inside SaveAsync so ButtonAdv never silently no-ops.
+        SaveCommand = new AsyncRelayCommand(SaveAsync);
         CancelCommand = new RelayCommand(() => RequestClose?.Invoke(this, false));
         _ = LoadSchoolsAsync();
     }
@@ -247,11 +248,21 @@ public sealed class StudentSchoolTransferViewModel : BaseViewModel
             return false;
         }
 
+        // SfMaskedEdit may leave prompt chars (e.g. "07:1_") — strip before parse.
+        var normalized = text
+            .Replace("_", string.Empty, StringComparison.Ordinal)
+            .Trim();
+
+        if (string.IsNullOrWhiteSpace(normalized) || !normalized.Contains(':', StringComparison.Ordinal))
+        {
+            return false;
+        }
+
         return TimeSpan.TryParseExact(
-                   text.Trim(),
+                   normalized,
                    new[] { @"h\:mm", @"hh\:mm", @"h\:mm\:ss", @"hh\:mm\:ss" },
                    CultureInfo.InvariantCulture,
                    out time)
-               || TimeSpan.TryParse(text.Trim(), CultureInfo.InvariantCulture, out time);
+               || TimeSpan.TryParse(normalized, CultureInfo.InvariantCulture, out time);
     }
 }

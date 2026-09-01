@@ -162,27 +162,8 @@
 
   <!-- SDK automatically includes XAML files with EnableDefaultPageItems=true -->
 
-  <!-- Add Wiley data JSON so it is available at runtime for seeding -->
   <ItemGroup>
-    <None Include="..\BusBuddy.Core\Data\wiley-school-district-data.json" Link="Data\wiley-school-district-data.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-  </ItemGroup>
-
-  <!-- Copy map shapefiles (if present) to output for ShapeFileLayer Uri resolution -->
-  <ItemGroup>
-    <None Include="Assets\Maps\**\*.shp">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="Assets\Maps\**\*.dbf">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="Assets\Maps\**\*.shx">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="Assets\Maps\**\*.prj">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
+    <InternalsVisibleTo Include="BusBuddy.Tests" />
   </ItemGroup>
   <ItemGroup>
     <InternalsVisibleTo Include="BusBuddy.Tests" />

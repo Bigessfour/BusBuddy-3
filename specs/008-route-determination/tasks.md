@@ -6,7 +6,7 @@
 
 **Tests**: Included (plan Testing + story Independent Tests). Prefer failing Core unit tests before production services.
 
-**Organization**: Setup → Foundational → US1 (MVP) → US2 → US3 → US4 → Polish.
+**Organization**: Setup → Foundational → US1 → US2 → US3 → US4 → Polish.
 
 **Gate**: Prefer branch from `master` after PR #36 merge (schools, transfers, student geo).
 
@@ -42,7 +42,7 @@
 
 ---
 
-## Phase 3: User Story 1 - Year-start auto route build (Priority: P1) 🎯 MVP
+## Phase 3: User Story 1 - Year-start auto route build (Priority: P1)
 
 **Goal**: Minimum HomeToSchool AM routes (+ mirrored PM structure) from school times, homes, seating, density cells + outlier split; auto-assign with map override hook
 
@@ -62,7 +62,7 @@
 - [x] T016 [US1] Implement `ApplyClerkOverrideAsync` in `RouteDeterminationService.cs` (move student between proposals/routes; Serilog override)
 - [x] T017 [US1] Persist accepted drafts via `IRouteService` / route create helpers in `RouteDeterminationService.cs` (naming `Draft-{School}-{Cell}-{n}` or accept-into-existing)
 - [x] T018 [US1] Add year-start **Generate routes** command on `BusBuddy.WPF/ViewModels/Route/RouteManagementViewModel.cs` (or Students) calling `GenerateAndAssignAsync`
-- [x] T019 [US1] Show draft proposals on map / status in `BusBuddy.WPF/ViewModels/GoogleEarth/GoogleEarthViewModel.cs` (or Route map path) for override selection
+- [x] T019 [US1] Show draft proposals on map / status in `BusBuddy.WPF/ViewModels/GoogleEarth/MapViewModel.cs` (or Route map path) for override selection
 - [x] T020 [US1] Serilog `Route generation completed School={SchoolId} Fleet={Fleet} Routes={N} Students={S}` in `RouteDeterminationService.cs`
 
 **Checkpoint**: US1 unit tests green; year-start generate produces drafts for one school
@@ -152,7 +152,7 @@ Phase 1 Setup
     ↓
 Phase 2 Foundational (times + interfaces + DI)
     ↓
-Phase 3 US1 MVP (generate/pack/override) ──┬──→ Phase 4 US2 (fitness on assign)
+Phase 3 US1 (generate/pack/override) ──┬──→ Phase 4 US2 (fitness on assign)
     ↓                                      │
 Phase 5 US3 (schedules) ←── uses US1 packer/order
     ↓
@@ -164,13 +164,14 @@ Phase 7 Polish
 **Story completion order**: US1 → US2 (can partly parallel after T015) → US3 → US4 → Polish
 
 **Parallel examples**:
+
 - After T009: T010–T012 in parallel
 - After T015: T021 tests while T018–T019 UI proceeds
 - Polish T037–T039 in parallel
 
 ## Implementation strategy
 
-1. **MVP**: Phase 1–3 only (year-start generate + override) — delivers SC-001/SC-002
+1. **US1**: Phase 1–3 only (year-start generate + override) — delivers SC-001/SC-002
 2. **Increment**: US2 assign toasts (day-to-day safety)
 3. **Increment**: US3 school-time scheduling quality
 4. **Increment**: US4 transfer fleet
@@ -178,17 +179,17 @@ Phase 7 Polish
 
 ## Task count summary
 
-| Phase | Tasks | Notes |
-|-------|-------|-------|
-| Setup | T001–T003 | 3 |
-| Foundational | T004–T009 | 6 |
-| US1 | T010–T020 | 11 (3 tests + 8 impl) |
-| US2 | T021–T026 | 6 |
-| US3 | T027–T031 | 5 |
-| US4 | T032–T036 | 5 |
-| Polish | T037–T041 | 5 |
-| **Total** | **T001–T041** | **41** |
+| Phase        | Tasks         | Notes                 |
+| ------------ | ------------- | --------------------- |
+| Setup        | T001–T003     | 3                     |
+| Foundational | T004–T009     | 6                     |
+| US1          | T010–T020     | 11 (3 tests + 8 impl) |
+| US2          | T021–T026     | 6                     |
+| US3          | T027–T031     | 5                     |
+| US4          | T032–T036     | 5                     |
+| Polish       | T037–T041     | 5                     |
+| **Total**    | **T001–T041** | **41**                |
 
-**MVP scope**: T001–T020 (Setup + Foundational + US1)
+**US1 scope**: T001–T020 (Setup + Foundational + US1)
 
 **Format validation**: All tasks use `- [ ]`, Task IDs, optional `[P]`, story labels on US phases only, and concrete file paths.

@@ -114,12 +114,12 @@ graph LR
 
 ### **Infrastructure Configuration**
 
-| Document                                              | Purpose                                     | Critical For          |
-| ----------------------------------------------------- | ------------------------------------------- | --------------------- |
-| [Database Configuration](./DATABASE-CONFIGURATION.md) | EF Core, migrations, connection strings     | Data layer setup      |
-| [NuGet Config Reference](./NUGET-CONFIG-REFERENCE.md) | Package management and Syncfusion licensing | Build configuration   |
-| [Package Management](./PACKAGE-MANAGEMENT.md)         | Dependency management best practices        | Project maintenance   |
-| [Database Configuration](./DATABASE-CONFIGURATION.md) | LocalDB, Postgres, Docker   | Development setup     |
+| Document                                              | Purpose                                     | Critical For        |
+| ----------------------------------------------------- | ------------------------------------------- | ------------------- |
+| [Database Configuration](./DATABASE-CONFIGURATION.md) | EF Core, migrations, connection strings     | Data layer setup    |
+| [NuGet Config Reference](./NUGET-CONFIG-REFERENCE.md) | Package management and Syncfusion licensing | Build configuration |
+| [Package Management](./PACKAGE-MANAGEMENT.md)         | Dependency management best practices        | Project maintenance |
+| [Database Configuration](./DATABASE-CONFIGURATION.md) | LocalDB, Postgres, Docker                   | Development setup   |
 
 ---
 
@@ -286,7 +286,7 @@ bb-docs-serve     # Serve documentation locally
 - ✅ **Enhanced Documentation**: Added visual diagrams and comprehensive API reference
 - ✅ **Restored SportsEvents**: Full sports scheduling functionality
 - ✅ **Improved Data Seeding**: OCR-based student/family import capabilities
-- ✅ **Project Hygiene**: Clean codebase with intentional `.disabled` files for MVP control
+- ✅ **Project Hygiene**: Clean codebase with intentional `.disabled` files for feature control
 
 **Documentation Enhancements:**
 

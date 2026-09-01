@@ -1,6 +1,6 @@
 # Data Model: 007 Maps Platform Geo
 
-MVP persists on existing student and route columns. No required migration.
+This increment persists on existing student and route columns. No required migration.
 
 ## ValidatedAddress (transient + mapped onto Student)
 

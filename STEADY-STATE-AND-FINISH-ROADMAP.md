@@ -72,7 +72,7 @@ From plan + package/steady:
 6. **DashboardMetrics / FleetMonitoring / Analytics**: Extend FleetMonitoringServiceTests; add for metrics queries, tiles.
 7. **MaintenanceService + UI flows**: Add MaintenanceServiceTests; basic CRUD + alerts.
 8. **DriverService + availability**: Extend DriverServiceTests; add for availability logic.
-9. **Map / eligibility**: Add tests for GeoDataService / ShapefileEligibilityService. Earth Engine is retired (spec 007).
+9. **Map**: Address Validation + SfMap. Earth Engine is retired (spec 007). No shapefile geofence.
 10. **UserSettingsService + Settings**: Add tests for persistence/load/save.
 11. **UserContextService (auth basics)**: Add minimal tests.
 12. **Overall steady**: After hygiene, ensure no regression in existing tests (Student/Route/Seed/Family/Guardian etc. still pass). Add integration test for end-to-end student → route → report flow.
@@ -169,7 +169,7 @@ All user requirements in this query fulfilled. The project now has the plan at r
     - Legacy flat duplicate ViewModels purged (StudentsViewModel.cs, DriversViewModel.cs, VehiclesViewModel.cs, DashboardViewModel.cs, BaseViewModelMvp.cs, StudentManagementViewModel.cs, DashboardTileViewModel.cs etc. removed from root ViewModels/).
     - Updated App.xaml.cs registrations and duplicate blocks to use organized subfolder versions (e.g. .Dashboard.DashboardViewModel, .Student.StudentsViewModel).
     - Fixed using/namespace in key Views (DriversView, VehiclesView, StudentsView) and some tests.
-    - Fixed remaining critical refs: LazyViewModelService.cs now uses full sub namespace for Dashboard; GoogleEarthViewModel.cs switched inheritance from removed BaseViewModelMvp to BaseViewModel (MVP legacy base purged).
+    - Fixed remaining critical refs: LazyViewModelService.cs now uses full sub namespace for Dashboard; MapViewModel.cs switched inheritance from removed BaseViewModelMvp to BaseViewModel (MVP legacy base purged).
     - Test files (e.g. StudentsViewModelTests, integration) and minor views (QuickActions) updated where possible; any residual will be caught in build (plan notes "ensure no regression").
     - Cleaned duplicate using directives (via post-fix hygiene) – no more CS0105 warnings from our changes.
     - VM dedup hygiene task completed; organized subfolder structure now canonical with minimal duplication. Core builds 0 errors; WPF cross-compile clean post-cleanup.
@@ -185,7 +185,7 @@ All user requirements in this query fulfilled. The project now has the plan at r
 
 **Next per plan (hygiene + dedup continuation)**:
 
-- Complete VM dedup: fix all remaining references (LazyViewModelService, GoogleEarthViewModel base class -> switch to BaseViewModel, test files, other Views like QuickActions, any DI fallbacks).
+- Complete VM dedup: fix all remaining references (LazyViewModelService, MapViewModel base class -> switch to BaseViewModel, test files, other Views like QuickActions, any DI fallbacks).
 - Purge/clean more lingering bb- refs in non-active/legacy files (ci-profile-load-report, Documentation/README.md, experiments, old fix scripts if not already archived).
 - Expand tests per "Items That Need Proof" list (e.g. more for Grok integration now that keys are wired, UserSettings, end-to-end flows).
 - Continue docs purge of old PS language.
@@ -485,7 +485,7 @@ flowchart TB
     S_FUEL["FuelService"]
     S_PDF["PdfReportService"]
     S_DASH["DashboardMetricsService"]
-    S_GEO["GeoDataService<br/>ShapefileEligibility<br/>Maps Platform paused"]
+    S_GEO["GeoDataService<br/>Address Validation + SfMap<br/>Maps Platform"]
     S_AI["GrokGlobalAPI<br/>AIInsightService"]
     S_USR["UserContextService<br/>UserSettingsService"]
     S_ADDR["AddressValidationService"]
@@ -503,7 +503,7 @@ flowchart TB
     VM_ANA["Analytics"]
     VM_FUEL["Fuel"]
     VM_ACT["Activity"]
-    VM_GEO["GoogleEarth"]
+    VM_GEO["Map SfMap"]
     VM_SET["Settings"]
     VIEWS["Syncfusion Views<br/>SfDataGrid SfMap SfChart"]
     VM_DASH --> VIEWS
@@ -688,7 +688,7 @@ Update this file and diagram as architecture evolves. Use RAG/MCP for all change
 
 - ReportsView + ReportsViewModel (sub/Reports): Added SfDataGrid (history of GeneratedReports + columns Name/Time/Result), AIReportSummary binding (Grok note post-gen); 2+ report execs now call real PdfReportService.GenerateActivityCalendarReport (PDF bytes len in status; + Grok text); collection populates on gen (max 8); all buttons already Syncfusion ButtonAdv. Proves "real Reports via Pdf + AI".
 - DashboardView + DashboardViewModel: Replaced loading text with live SfDataGrid (bound to Routes from IRouteService; filters/sort); metrics cards + DockingManager retained.
-- GoogleEarthView + GoogleEarthViewModel: Added SfDataGrid (ActiveBuses bound for eligibility/map data; existing SfMaps namespace + ButtonAdv/ComboBoxAdv layers/markers). ActiveBuses exposed.
+- MapView + MapViewModel: Added SfDataGrid (ActiveBuses bound for eligibility/map data; existing SfMaps namespace + ButtonAdv/ComboBoxAdv layers/markers). ActiveBuses exposed.
 - All: Syncfusion-only (no fallback grids), themed, automation props, RAG/architecture aligned. Cross-build clean on mac (EnableWindowsTargeting).
 
 **Local pre-PR**: .github/scripts/validate-ci-local.sh (passed), manual dotnet restore/build WPF flag (0 err post-fixes for model refs in demo calls), RAG query executed.
@@ -702,7 +702,7 @@ Update this file and diagram as architecture evolves. Use RAG/MCP for all change
     dotnet run --project BusBuddy.WPF/BusBuddy.WPF.csproj   # or bin\Release\net9.0-windows\BusBuddy.WPF.exe after publish
     ```
 - Nav (MainWindow Chromeless + buttons): Dashboard (metrics + new grid), Students, Routes, Buses, Drivers, 📊 Reports (new SfDataGrid history + AI summary + all report buttons trigger PDF+status), 🌍 Map (GoogleEarth + new grid + layers), Settings, etc.
-- All pages (from find): Activity/_ (3), Analytics/AnalyticsDashboardView, Bus/_ (5), Dashboard/_ (2), Driver/_ (3), Fuel/_ (2), GoogleEarth/GoogleEarthView, Main/MainWindow, Reports/_ (2 + PdfPreview), Route/_ (5), Settings/_ (2), Student/_ (3), Vehicle/_ (3). ~30 XAMLs total; developed/polished the Finish stubs ones.
+- All pages (from find): Activity/_ (3), Analytics/AnalyticsDashboardView, Bus/_ (5), Dashboard/_ (2), Driver/_ (3), Fuel/_ (2), GoogleEarth/MapView, Main/MainWindow, Reports/_ (2 + PdfPreview), Route/_ (5), Settings/_ (2), Student/_ (3), Vehicle/_ (3). ~30 XAMLs total; developed/polished the Finish stubs ones.
 
 **Next per plan/roadmap**: Full 80%+ cov on Win (WPF incl), integrate docker-ci-sim as required gate, more Finish (e.g. SfScheduler for driver avail, end-to-end student-route-report flow test, UserSettings persist UI). Update diagram + re-index on changes. Small PRs.
 

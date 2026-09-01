@@ -3,7 +3,7 @@
 This directory provides **full-project semantic context** for AI agents via RAG.
 
 ## Why this exists
-The BusBuddy repo went through many iterations (first programming project). Even after aggressive archiving of legacy/MVP/Phase/debug code, an agent can lose context across sessions or large refactors.
+The BusBuddy repo went through many iterations (first programming project). Even after aggressive archiving of legacy/Phase/debug code, an agent can lose context across sessions or large refactors.
 
 **Rule**: Before any code change, the agent **must** retrieve fresh, relevant chunks from the entire current baseline using this tool.
 

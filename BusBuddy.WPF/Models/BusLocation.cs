@@ -5,7 +5,7 @@ using System.Runtime.CompilerServices;
 namespace BusBuddy.WPF.Models
 {
     /// <summary>
-    /// Represents a bus location for Google Earth integration
+    /// Represents a bus location for district map
     /// </summary>
     public class BusLocation : INotifyPropertyChanged
     {

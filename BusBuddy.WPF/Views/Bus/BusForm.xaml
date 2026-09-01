@@ -59,7 +59,7 @@
                         Margin="0,0,0,10">
                 <TextBlock Text="Bus Number:"
                            Margin="0,0,0,5" />
-                <syncfusion:SfMaskedEdit Height="34"
+                <syncfusion:SfTextBoxExt Height="40"
                                          Padding="8"
                                          Text="{Binding BusNumber, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                          AutomationProperties.Name="Bus Number Input"
@@ -70,7 +70,7 @@
                         Margin="0,0,0,10">
                 <TextBlock Text="Make:"
                            Margin="0,0,0,5" />
-                <syncfusion:SfMaskedEdit Height="34"
+                <syncfusion:SfTextBoxExt Height="40"
                                          Padding="8"
                                          Text="{Binding Make, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                          AutomationProperties.Name="Make Input"
@@ -81,7 +81,7 @@
                         Margin="0,0,0,10">
                 <TextBlock Text="Model:"
                            Margin="0,0,0,5" />
-                <syncfusion:SfMaskedEdit Height="34"
+                <syncfusion:SfTextBoxExt Height="40"
                                          Padding="8"
                                          Text="{Binding Model, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                          AutomationProperties.Name="Model Input"
@@ -92,33 +92,27 @@
                         Margin="0,0,0,10">
                 <TextBlock Text="Year:"
                            Margin="0,0,0,5" />
-                <syncfusion:SfMaskedEdit Height="34"
-                                         Padding="8"
-                                         Text="{Binding Year, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                         AutomationProperties.Name="Year Input"
-                                         Mask="0000"
-                                         PromptChar="_"
-                                         Watermark="YYYY" />
+                <syncfusion:IntegerTextBox Height="40"
+                                           Padding="8"
+                                           Value="{Binding Year, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                           AutomationProperties.Name="Year Input" />
             </StackPanel>
             <!-- Capacity -->
             <StackPanel Grid.Row="5"
                         Margin="0,0,0,10">
                 <TextBlock Text="Seating Capacity:"
                            Margin="0,0,0,5" />
-                <syncfusion:SfMaskedEdit Height="34"
-                                         Padding="8"
-                                         Text="{Binding SeatingCapacity, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                         AutomationProperties.Name="Seating Capacity Input"
-                                         Mask="000"
-                                         PromptChar="_"
-                                         Watermark="Seats" />
+                <syncfusion:IntegerTextBox Height="40"
+                                           Padding="8"
+                                           Value="{Binding SeatingCapacity, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                           AutomationProperties.Name="Seating Capacity Input" />
             </StackPanel>
             <!-- License Number -->
             <StackPanel Grid.Row="6"
                         Margin="0,0,0,10">
                 <TextBlock Text="License Number:"
                            Margin="0,0,0,5" />
-                <syncfusion:SfMaskedEdit Height="34"
+                <syncfusion:SfTextBoxExt Height="40"
                                          Padding="8"
                                          Text="{Binding LicenseNumber, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                          AutomationProperties.Name="License Number Input"
@@ -127,7 +121,7 @@
             <!-- VIN Number (optional) -->
             <StackPanel Grid.Row="7" Margin="0,0,0,10">
                 <TextBlock Text="VIN Number:" Margin="0,0,0,5" />
-                <syncfusion:SfMaskedEdit Height="34" Padding="8"
+                <syncfusion:SfTextBoxExt Height="40" Padding="8"
                                          Text="{Binding VinNumber, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                          AutomationProperties.Name="VIN Number Input"
                                          Watermark="Enter VIN (optional)" />
@@ -135,7 +129,7 @@
             <!-- Status selector -->
             <StackPanel Grid.Row="8" Margin="0,0,0,10">
                 <TextBlock Text="Status:" Margin="0,0,0,5" />
-                <syncfusion:ComboBoxAdv Height="34" Padding="4" ItemsSource="{Binding AvailableStatuses}"
+                <syncfusion:ComboBoxAdv Height="40" Padding="4" ItemsSource="{Binding AvailableStatuses}"
                                         SelectedItem="{Binding Status, Mode=TwoWay}"
                                         AutomationProperties.Name="Bus status"/>
             </StackPanel>

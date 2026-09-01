@@ -1,4 +1,4 @@
-// MainWindow code-behind trimmed for MVP; extensive troubleshooting notes moved to GROK-README.md.
+// MainWindow code-behind; extensive troubleshooting notes moved to GROK-README.md.
 using System;
 using System.Threading.Tasks;
 using System.Windows;
@@ -32,24 +32,24 @@ using Syncfusion.Windows.Shared; // ChromelessWindow API per Syncfusion docs
 namespace BusBuddy.WPF.Views.Main
 {
     /// <summary>
-    /// BusBuddy MainWindow - MVP Implementation with Syncfusion ChromelessWindow and DockingManager
+    /// BusBuddy MainWindow with Syncfusion ChromelessWindow and DockingManager
     /// Professional layout with validated Syncfusion patterns using ChromelessWindow for modern UI
     /// </summary>
     public partial class MainWindow : ChromelessWindow
     {
         private const string RouteAssignmentsHeader = "Route Assignments";
         private const string MapHeader = "Map";
-    // Explicit reference placeholder to satisfy analyzer if generated partial field not yet recognized
-    // At runtime, the XAML-generated field MainDockingManager will be used.
-    private DockingManager? _designTimeDockingManagerAccessor => this.FindName("MainDockingManager") as DockingManager;
+        // Explicit reference placeholder to satisfy analyzer if generated partial field not yet recognized
+        // At runtime, the XAML-generated field MainDockingManager will be used.
+        private DockingManager? _designTimeDockingManagerAccessor => this.FindName("MainDockingManager") as DockingManager;
         private static readonly ILogger Logger = Log.ForContext<MainWindow>();
         private static readonly int DockActivatedWidthBump = 120; // consolidated width bump constant
         private readonly Guid _windowInstanceId = Guid.NewGuid(); // correlation id for structured logs
         private BusBuddy.WPF.ViewModels.MainWindowViewModel? _viewModel;
 
-    // Generated fields (StudentsGrid, MainDockingManager, etc.) come from XAML partial class after InitializeComponent.
+        // Generated fields (StudentsGrid, MainDockingManager, etc.) come from XAML partial class after InitializeComponent.
 
-    // DI-friendly constructor to ensure DataContext is set before initialization
+        // DI-friendly constructor to ensure DataContext is set before initialization
         public MainWindow(BusBuddy.WPF.ViewModels.MainWindowViewModel viewModel) : this()
         {
             try
@@ -150,7 +150,7 @@ namespace BusBuddy.WPF.Views.Main
         {
             try
             {
-                // Delay audit slightly to ensure visual tree fully ready
+                EnsureMainWindowViewModel();
                 Dispatcher.BeginInvoke(new Action(() =>
                 {
                     try { AuditButtonsAccessibility(); } catch (Exception ex2) { Logger.Warning(ex2, "MainWindow: post-load audit failed"); }
@@ -186,10 +186,10 @@ namespace BusBuddy.WPF.Views.Main
             try
             {
                 // ===================================================================
-                // SYNCFUSION EVENT HOOKS - DISABLED FOR MVP STABILITY
+                // SYNCFUSION EVENT HOOKS - DISABLED
                 // ===================================================================
 
-                // For MVP stability, basic functionality is prioritized over advanced events
+                // Basic functionality is prioritized over advanced events
                 Logger.Information("Syncfusion event hooks ready (basic functionality enabled)");
             }
             catch (Exception ex)
@@ -248,30 +248,35 @@ namespace BusBuddy.WPF.Views.Main
         private void InitializeMainWindow()
         {
             Logger.Debug("InitializeMainWindow method started");
+            this.DataContextChanged += MainWindow_DataContextChanged;
 
-            Logger.Debug("Ensuring robust DataContext management");
-            // Create and set ViewModel if not already present
-            if (this.DataContext == null || this.DataContext is not BusBuddy.WPF.ViewModels.MainWindowViewModel)
+            if (this.DataContext is BusBuddy.WPF.ViewModels.MainWindowViewModel existing)
             {
-                Logger.Debug("Creating new MainWindowViewModel instance");
-                _viewModel = new BusBuddy.WPF.ViewModels.MainWindowViewModel();
-                this.DataContext = _viewModel;
-                Logger.Information("MainWindow DataContext initialized with new ViewModel");
+                _viewModel = existing;
+                Logger.Information("MainWindow DataContext preserved from caller");
             }
             else
             {
-                Logger.Debug("Existing MainWindowViewModel found, preserving it");
-                _viewModel = (BusBuddy.WPF.ViewModels.MainWindowViewModel)this.DataContext;
-                Logger.Information("MainWindow DataContext preserved from DI");
+                Logger.Debug("MainWindow DataContext not set yet; DI constructor or Loaded will attach it");
             }
-
-            // Ensure DataContext persistence
-            this.DataContextChanged += MainWindow_DataContextChanged;
 
             Logger.Debug("InitializeMainWindow method completed");
         }
 
-        // Generate eligibility route PDF directly from MainWindow without needing GoogleEarthView visible.
+        private static BusBuddy.WPF.ViewModels.MainWindowViewModel? TryResolveMainWindowViewModel()
+        {
+            try
+            {
+                return App.ServiceProvider?.GetService<BusBuddy.WPF.ViewModels.MainWindowViewModel>();
+            }
+            catch (Exception ex)
+            {
+                Logger.Warning(ex, "Failed to resolve MainWindowViewModel from DI");
+                return null;
+            }
+        }
+
+        // Generate eligibility route PDF directly from MainWindow without needing MapView visible.
         private async void EligibilityPdfButton_Click(object sender, RoutedEventArgs e)
         {
             try
@@ -280,11 +285,11 @@ namespace BusBuddy.WPF.Views.Main
                 {
                     Logger.Information("Eligibility PDF button clicked (MainWindow)");
                     var sp = App.ServiceProvider;
-                    var vm = sp?.GetService<BusBuddy.WPF.ViewModels.GoogleEarth.GoogleEarthViewModel>();
+                    var vm = sp?.GetService<BusBuddy.WPF.ViewModels.Map.MapViewModel>();
                     if (vm == null)
                     {
-                        Logger.Warning("GoogleEarthViewModel not resolved for eligibility PDF generation");
-                        System.Windows.MessageBox.Show("Map ViewModel not available (GoogleEarthViewModel)", "Eligibility PDF", MessageBoxButton.OK, MessageBoxImage.Warning);
+                        Logger.Warning("MapViewModel not resolved for eligibility PDF generation");
+                        System.Windows.MessageBox.Show("Map ViewModel not available (MapViewModel)", "Eligibility PDF", MessageBoxButton.OK, MessageBoxImage.Warning);
                         return;
                     }
                     await vm.GenerateEligibilityRoutePdfAndSaveAsync();
@@ -304,7 +309,7 @@ namespace BusBuddy.WPF.Views.Main
             try
             {
                 var sp = App.ServiceProvider;
-                var vm = sp?.GetService<BusBuddy.WPF.ViewModels.GoogleEarth.GoogleEarthViewModel>();
+                var vm = sp?.GetService<BusBuddy.WPF.ViewModels.Map.MapViewModel>();
                 var path = vm?.LastGeneratedEligibilityPdfPath;
                 if (string.IsNullOrWhiteSpace(path) || !System.IO.File.Exists(path))
                 {
@@ -374,7 +379,7 @@ namespace BusBuddy.WPF.Views.Main
         }
 
         // Global selection change diagnostics (mirrors pattern used in other views)
-    private void OnAnySelectionChanged(object? sender, System.Windows.Controls.SelectionChangedEventArgs e)
+        private void OnAnySelectionChanged(object? sender, System.Windows.Controls.SelectionChangedEventArgs e)
         {
             try
             {
@@ -538,15 +543,10 @@ namespace BusBuddy.WPF.Views.Main
             Logger.Debug("DataContext changed detected");
 
             // Accept DataContext if it is the expected ViewModel type or has the same runtime name (avoids cross-assembly type identity issues)
-            if (e.NewValue is BusBuddy.WPF.ViewModels.MainWindowViewModel newViewModel ||
-                string.Equals(e.NewValue?.GetType()?.Name, nameof(BusBuddy.WPF.ViewModels.MainWindowViewModel), StringComparison.OrdinalIgnoreCase))
+            if (e.NewValue is BusBuddy.WPF.ViewModels.MainWindowViewModel newViewModel)
             {
-                _viewModel = e.NewValue as BusBuddy.WPF.ViewModels.MainWindowViewModel ?? _viewModel ?? new BusBuddy.WPF.ViewModels.MainWindowViewModel();
-                if (this.DataContext is not BusBuddy.WPF.ViewModels.MainWindowViewModel)
-                {
-                    this.DataContext = _viewModel;
-                }
-                Logger.Debug("DataContext updated to MainWindowViewModel (by type/name match)");
+                _viewModel = newViewModel;
+                Logger.Debug("DataContext updated to MainWindowViewModel");
             }
             else if (e.NewValue == null)
             {
@@ -557,9 +557,16 @@ namespace BusBuddy.WPF.Views.Main
                 }
                 else
                 {
-                    Logger.Warning("No previous ViewModel available, creating new one");
-                    _viewModel = new BusBuddy.WPF.ViewModels.MainWindowViewModel();
-                    this.DataContext = _viewModel;
+                    var restored = TryResolveMainWindowViewModel();
+                    if (restored != null)
+                    {
+                        _viewModel = restored;
+                        this.DataContext = restored;
+                    }
+                    else
+                    {
+                        Logger.Warning("No MainWindowViewModel available; dock grids stay empty");
+                    }
                 }
             }
             else
@@ -604,7 +611,7 @@ namespace BusBuddy.WPF.Views.Main
             Logger.Debug("Dashboard navigation logic completed");
         }
 
-    private void ThemeSelector_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+        private void ThemeSelector_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
         {
             try
             {
@@ -672,7 +679,7 @@ namespace BusBuddy.WPF.Views.Main
         /// Docs: https://help.syncfusion.com/cr/wpf/Syncfusion.SfSkinManager.SfSkinManager.html
         ///       https://help.syncfusion.com/cr/wpf/Syncfusion.SfSkinManager.Theme.html
         /// </summary>
-    private static void ApplyThemeGlobally(string themeName)
+        private static void ApplyThemeGlobally(string themeName)
         {
             SyncfusionThemeManager.ApplyApplicationTheme(themeName);
         }
@@ -770,7 +777,7 @@ namespace BusBuddy.WPF.Views.Main
         }
 
         /// <summary>
-        /// Show / activate the Map (Google Earth) pane inside the DockingManager.
+        /// Show / activate the Map pane inside the DockingManager.
         /// </summary>
         private void MapButton_Click(object sender, RoutedEventArgs e)
         {
@@ -939,7 +946,7 @@ namespace BusBuddy.WPF.Views.Main
 
         #region Action Button Click Handlers
 
-        // MVP Button Click Handlers
+        // Button Click Handlers
         private void AddStudent_Click(object sender, RoutedEventArgs e)
         {
             Logger.Debug("AddStudent_Click event triggered");
@@ -973,7 +980,6 @@ namespace BusBuddy.WPF.Views.Main
             Logger.Information("Edit student requested");
             try
             {
-                // Get selected student through ViewModel to avoid direct grid access
                 if (DataContext is not MainWindowViewModel mainViewModel)
                 {
                     Logger.Warning("DataContext is not MainWindowViewModel, cannot access student data");
@@ -982,58 +988,19 @@ namespace BusBuddy.WPF.Views.Main
                     return;
                 }
 
-                // Use grid's selected item if available, with fallback to ViewModel
-                BusBuddy.Core.Models.Student? selectedStudent = null;
-
-                try
-                {
-                    // Try to get selected item from grid
-                    // Guard: StudentsGrid may be null if InitializeComponent was skipped
-                    selectedStudent = null;
-                }
-                catch (Exception gridEx)
-                {
-                    Logger.Warning(gridEx, "Unable to access StudentsGrid directly, using ViewModel fallback");
-                }
-
-                // Fallback: use first student if no selection or grid access fails
+                var selectedStudent = mainViewModel.SelectedStudent
+                    ?? StudentsGrid?.SelectedItem as BusBuddy.Core.Models.Student;
                 if (selectedStudent == null)
                 {
-                    // Use a safe approach to access students data
-                    var studentsProperty = mainViewModel.GetType().GetProperty("Students");
-                    if (studentsProperty != null)
-                    {
-                        var studentsCollection = studentsProperty.GetValue(mainViewModel) as System.Collections.ICollection;
-                        if (studentsCollection != null && studentsCollection.Count > 0)
-                        {
-                            var studentsEnumerable = studentsCollection as System.Collections.IEnumerable;
-                            foreach (var student in studentsEnumerable)
-                            {
-                                selectedStudent = student as BusBuddy.Core.Models.Student;
-                                if (selectedStudent != null)
-                                {
-                                    Logger.Information("No student selected, using first student as fallback: {StudentName}",
-                                        selectedStudent.StudentName);
-                                    break;
-                                }
-                            }
-                        }
-                    }
-
-                    if (selectedStudent == null)
-                    {
-                        MessageBox.Show("No students available to edit", "No Student Selected",
-                            MessageBoxButton.OK, MessageBoxImage.Information);
-                        return;
-                    }
+                    MessageBox.Show("Select a student in the grid first.", "No Student Selected",
+                        MessageBoxButton.OK, MessageBoxImage.Information);
+                    return;
                 }
 
                 Logger.Information("Opening StudentForm for editing student: {StudentName} (ID: {StudentId})",
                     selectedStudent.StudentName, selectedStudent.StudentId);
 
                 var studentForm = new BusBuddy.WPF.Views.Student.StudentForm();
-
-                // Set the DataContext to a new ViewModel with the selected student
                 var studentViewModel = new BusBuddy.WPF.ViewModels.Student.StudentFormViewModel(selectedStudent);
                 studentForm.DataContext = studentViewModel;
 
@@ -1042,8 +1009,6 @@ namespace BusBuddy.WPF.Views.Main
                 {
                     Logger.Information("Student edited successfully");
                     RefreshStudentsGrid();
-                    MessageBox.Show("Student updated successfully!", "Success",
-                        MessageBoxButton.OK, MessageBoxImage.Information);
                 }
             }
             catch (Exception ex)
@@ -1238,14 +1203,14 @@ namespace BusBuddy.WPF.Views.Main
         // Driver panel event handlers
         private void AssignBus_Click(object sender, RoutedEventArgs e)
         {
-            Logger.Information("Bus assignment requested — opening Driver Management");
+            Logger.Information("Bus assignment requested: opening Route Assignments");
             try
             {
-                ShowViewInWindow(new DriversView(), "👨‍✈️ Driver Management", 1000, 700);
+                RouteManagementButton_Click(sender, e);
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Error opening Driver Management");
+                Logger.Error(ex, "Error opening Route Assignments for bus assignment");
                 MessageBox.Show($"Error: {ex.Message}", "Assign Bus", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
@@ -1270,96 +1235,55 @@ namespace BusBuddy.WPF.Views.Main
 
         private bool EnsureMainWindowViewModel()
         {
-            if (DataContext is BusBuddy.WPF.ViewModels.MainWindowViewModel)
+            if (DataContext is BusBuddy.WPF.ViewModels.MainWindowViewModel current)
             {
+                _viewModel = current;
                 return true;
             }
 
-            if (_viewModel == null)
+            var fromDi = TryResolveMainWindowViewModel();
+            if (fromDi != null)
             {
-                _viewModel = new BusBuddy.WPF.ViewModels.MainWindowViewModel();
+                _viewModel = fromDi;
+                DataContext = fromDi;
+                Logger.Information("DataContext restored to MainWindowViewModel from DI");
+                return true;
             }
 
-            DataContext = _viewModel;
-            Logger.Information("DataContext restored to MainWindowViewModel");
-            return true;
+            if (_viewModel != null)
+            {
+                DataContext = _viewModel;
+                return true;
+            }
+
+            Logger.Warning("MainWindowViewModel unavailable; dock refresh will be a no-op");
+            return false;
         }
 
         // Data refresh methods
-        private void RefreshStudentsGrid()
-        {
-            Logger.Debug("RefreshStudentsGrid method started");
-            try
-            {
-                EnsureMainWindowViewModel();
-                // Refresh through ViewModel instead of direct grid access
-                Logger.Debug("Refreshing students data through ViewModel");
-                if (DataContext is MainWindowViewModel studentsVm)
-                {
-                    _ = studentsVm.RefreshStudentsAsync();
-                }
-                Logger.Information("Students data refresh requested");
-            }
-            catch (Exception ex)
-            {
-                Logger.Error(ex, "Error refreshing students grid");
-            }
-        }
+        private void RefreshStudentsGrid() => RefreshDock(vm => vm.RefreshStudentsAsync(), "Students");
 
-        private void RefreshRoutesGrid()
-        {
-            Logger.Debug("RefreshRoutesGrid method started");
-            try
-            {
-                EnsureMainWindowViewModel();
-                Logger.Debug("Refreshing routes data through ViewModel");
-                if (DataContext is MainWindowViewModel routesVm)
-                {
-                    _ = routesVm.RefreshRoutesAsync();
-                }
-                Logger.Information("Routes data refresh requested");
-            }
-            catch (Exception ex)
-            {
-                Logger.Error(ex, "Error refreshing routes grid");
-            }
-        }
+        private void RefreshRoutesGrid() => RefreshDock(vm => vm.RefreshRoutesAsync(), "Routes");
 
-        private void RefreshBusesGrid()
-        {
-            Logger.Debug("RefreshBusesGrid method started");
-            try
-            {
-                EnsureMainWindowViewModel();
-                Logger.Debug("Refreshing buses data through ViewModel");
-                if (DataContext is MainWindowViewModel busesVm)
-                {
-                    _ = busesVm.RefreshBusesAsync();
-                }
-                Logger.Information("Buses data refresh requested");
-            }
-            catch (Exception ex)
-            {
-                Logger.Error(ex, "Error refreshing buses grid");
-            }
-        }
+        private void RefreshBusesGrid() => RefreshDock(vm => vm.RefreshBusesAsync(), "Buses");
 
-        private void RefreshDriversGrid()
+        private void RefreshDriversGrid() => RefreshDock(vm => vm.RefreshDriversAsync(), "Drivers");
+
+        private void RefreshDock(Func<MainWindowViewModel, Task> refresh, string label)
         {
-            Logger.Debug("RefreshDriversGrid method started");
             try
             {
                 EnsureMainWindowViewModel();
-                Logger.Debug("Refreshing drivers data through ViewModel");
-                if (DataContext is MainWindowViewModel driversVm)
+                if (DataContext is MainWindowViewModel vm)
                 {
-                    _ = driversVm.RefreshDriversAsync();
+                    _ = refresh(vm);
                 }
-                Logger.Information("Drivers data refresh requested");
+
+                Logger.Information("{Label} data refresh requested", label);
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Error refreshing drivers grid");
+                Logger.Error(ex, "Error refreshing {Label} grid", label);
             }
         }
 
@@ -1454,7 +1378,7 @@ namespace BusBuddy.WPF.Views.Main
             }
         }
 
-    #endregion
+        #endregion
 
         #region Helper Methods
 

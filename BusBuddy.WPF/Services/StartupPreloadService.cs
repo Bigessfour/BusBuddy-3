@@ -100,7 +100,8 @@ namespace BusBuddy.WPF.Services
             {
                 var busesTask = _cachingService.GetAllBusesAsync(async () => await _busService.GetAllBusesAsync());
                 var driversTask = _cachingService.GetAllDriversAsync(async () => await _driverService.GetAllDriversAsync());
-                var routesTask = _cachingService.GetAllRoutesAsync(async () => {
+                var routesTask = _cachingService.GetAllRoutesAsync(async () =>
+                {
                     var result = await _routeService.GetAllActiveRoutesAsync();
                     return result.IsSuccess ? result.Value : Enumerable.Empty<BusBuddy.Core.Models.Route>();
                 });
@@ -127,7 +128,8 @@ namespace BusBuddy.WPF.Services
             {
                 var buses = await _cachingService.GetAllBusesAsync(async () => await _busService.GetAllBusesAsync());
                 var drivers = await _cachingService.GetAllDriversAsync(async () => await _driverService.GetAllDriversAsync());
-                var routes = await _cachingService.GetAllRoutesAsync(async () => {
+                var routes = await _cachingService.GetAllRoutesAsync(async () =>
+                {
                     var result = await _routeService.GetAllActiveRoutesAsync();
                     return result.IsSuccess ? result.Value : Enumerable.Empty<BusBuddy.Core.Models.Route>();
                 });
@@ -184,7 +186,8 @@ namespace BusBuddy.WPF.Services
             try
             {
                 var stopwatch = Stopwatch.StartNew();
-                await _cachingService.GetAllRoutesAsync(async () => {
+                await _cachingService.GetAllRoutesAsync(async () =>
+                {
                     var result = await _routeService.GetAllActiveRoutesAsync();
                     return result.Value;
                 });

@@ -4,13 +4,13 @@
 
 ## 🎯 **Development Philosophy**
 
-### **MVP-First Approach**
+## Development philosophy
 
-BusBuddy follows a clean build, MVP-first development strategy:
+BusBuddy follows a clean-build clerk-path strategy:
 
-- **Primary Goal**: Maintain 0 build errors at all times
-- **MVP Focus**: Student management and route assignment core functionality
-- **Quality Gates**: All changes must pass `bbMvpCheck` and `bbAntiRegression`
+- **Primary goal**: Maintain 0 build errors at all times
+- **Focus**: School catalog → students → generate routes → bus and driver → fuel / maintenance
+- **Quality gates**: `.github/scripts/validate-ci-local.sh` (Build & Test + CodeQL locally)
 
 ### **Technology Stack**
 
@@ -213,7 +213,7 @@ function Bad-Example {
 
     ```powershell
     bbHealth              # Verify system state
-    bbMvpCheck           # Ensure MVP baseline
+    validate-ci-local.sh  # Local Build & Test gate
     ```
 
 2. **Make Changes**
@@ -231,8 +231,9 @@ function Bad-Example {
     ```
 
 4. **Final Verification**
+
     ```powershell
-    bbMvpCheck           # Must show "MVP READY!"
+
     ```
 
 ### **Commit Standards**
@@ -268,8 +269,8 @@ bbXamlValidate       # Ensures:
 
 ### **Code Quality Gates**
 
-1. **Build**: Must be 0 errors, warnings acceptable during MVP
-2. **MVP Check**: Must pass all essential functionality tests
+1. **Build**: Must be 0 errors
+2. **Tests**: Must pass unit tests (Category!=Integration&Category!=InMemoryFlaky)
 3. **Anti-Regression**: Must not introduce forbidden patterns
 4. **XAML Validation**: Must use Syncfusion controls consistently
 
@@ -400,6 +401,7 @@ Log.Logger = new LoggerConfiguration()
 BusBuddy integrates with xAI Grok-4 for route optimization and intelligent analysis:
 
 #### **API Key Setup**
+
 ```powershell
 # Set machine environment variable (required for development)
 $env:XAI_API_KEY = "your-xai-api-key-here"
@@ -412,6 +414,7 @@ Write-Information "API Key Length: $($apiKey.Length)"  # Should be 84
 ```
 
 #### **Model Configuration**
+
 ```powershell
 # Current production settings (August 2025)
 $GrokConfig = @{
@@ -424,6 +427,7 @@ $GrokConfig = @{
 ```
 
 #### **Testing AI Integration**
+
 ```powershell
 # Test API connectivity
 Test-GrokConnection -Verbose
@@ -437,6 +441,7 @@ grok-maintenance-forecast -VehicleData $vehicleData -PredictionWindow "30-days"
 ```
 
 #### **Troubleshooting AI Issues**
+
 ```powershell
 # Diagnostic check for common issues
 $apiKey = Get-ApiKeySecurely
@@ -489,7 +494,7 @@ public async Task<Student> CreateStudentAsync(CreateStudentRequest request)
 ```powershell
 <#
 .SYNOPSIS
-    Validates the current build state and MVP readiness
+    Validates the current build state
 
 .DESCRIPTION
     Performs comprehensive checks including:
@@ -499,47 +504,49 @@ public async Task<Student> CreateStudentAsync(CreateStudentRequest request)
     - UI component verification
 
 .EXAMPLE
-    bbMvpCheck
+    .github/scripts/validate-ci-local.sh
 
 .NOTES
-    Must return "MVP READY! You can ship this!" for deployment
+    Local gate for Build & Test before opening a PR
 #>
-function Invoke-MvpCheck {
+function Invoke-ValidateCiLocal {
     # Implementation
 }
 ```
 
 ## MacBook Pro + Windows VM Development (with Docker)
+
 The project was originally Windows-only (WPF). On macOS:
+
 - **Core/.NET dev & tests**: Use VS Code + this project's `.devcontainer` (runs Linux .NET container via Docker Desktop). `EnableWindowsTargeting` is set in `Directory.Build.props` so Mac CLI and the C# language service can load `net*-windows` TFMs; `-p:EnableWindowsTargeting=true` is still fine and used in CI.
 - **Full WPF app (UI/debug)**: Use your Windows 11 VM (UTM recommended on Apple Silicon; Parallels also works).
-  - Share the BusBuddy-3 folder bidirectionally into the VM (UTM Directory Sharing; you can label the share "Shared with Windows").
-  - The tree is live — edits on Mac appear immediately inside the guest.
-  - In VM: .NET 9 SDK + Visual Studio 2022 (or VS Code + C# Dev Kit). Open the shared folder and run normally, **or** use the one-command launcher from your Mac terminal (see below).
+    - Share the BusBuddy-3 folder bidirectionally into the VM (UTM Directory Sharing; you can label the share "Shared with Windows").
+    - The tree is live — edits on Mac appear immediately inside the guest.
+    - In VM: .NET 9 SDK + Visual Studio 2022 (or VS Code + C# Dev Kit). Open the shared folder and run normally, **or** use the one-command launcher from your Mac terminal (see below).
 - **From your Mac terminal — the closest thing to `dotnet run` for the WPF UI**:
 
-  ```bash
-  ./run-wpf.sh
-  ```
+    ```bash
+    ./run-wpf.sh
+    ```
 
-  - Does a fast preflight build on the Mac using the required flag (targets the WPF app so you get immediate feedback).
-  - Starts (or re-uses) the UTM VM named "Windows".
-  - Attempts to auto-launch the app inside the guest via `utmctl exec` so the main window (Dashboard, Reports, Map, etc.) appears on the VM desktop.
-  - If auto-launch can't connect yet (VM still booting / logging in / guest agent), it prints precise copy-paste commands.
-  - The script prints your current Mac host IP (for reaching Docker Postgres from inside the VM).
+    - Does a fast preflight build on the Mac using the required flag (targets the WPF app so you get immediate feedback).
+    - Starts (or re-uses) the UTM VM named "Windows".
+    - Attempts to auto-launch the app inside the guest via `utmctl exec` so the main window (Dashboard, Reports, Map, etc.) appears on the VM desktop.
+    - If auto-launch can't connect yet (VM still booting / logging in / guest agent), it prints precise copy-paste commands.
+    - The script prints your current Mac host IP (for reaching Docker Postgres from inside the VM).
 
-  When you are already sitting in a PowerShell prompt *inside the VM* (and the shared folder is visible):
+    When you are already sitting in a PowerShell prompt _inside the VM_ (and the shared folder is visible):
 
-  ```powershell
-  .\utm_run_in_vm.ps1
-  ```
+    ```powershell
+    .\utm_run_in_vm.ps1
+    ```
 
-  That script has robust discovery for whatever drive letter or "Shared with Windows" folder your UTM share got mounted as, pulls GEE credentials from the shared `keys/` artifacts, supports dropping `SYNCFUSION_LICENSE_KEY.txt` for a real (non-trial) license, and then does the build + `Start-Process` launch of the WPF app.
+    That script has robust discovery for whatever drive letter or "Shared with Windows" folder your UTM share got mounted as, pulls GEE credentials from the shared `keys/` artifacts, supports dropping `SYNCFUSION_LICENSE_KEY.txt` for a real (non-trial) license, and then does the build + `Start-Process` launch of the WPF app.
 
 - **Docker/Postgres**: `docker compose --profile db up -d` for real Postgres (better than InMemory for `SeedDataService`, EF tests with Wiley data).
-  - Host (Mac): localhost:5432
-  - From VM: Mac host IP (e.g. `192.168.x.x` or the Parallels default; the `run-wpf.sh` prints the value for you; also `ipconfig getifaddr en0` on Mac).
-  - Compose also has test profile: `docker compose --profile test up --build`
+    - Host (Mac): localhost:5432
+    - From VM: Mac host IP (e.g. `192.168.x.x` or the Parallels default; the `run-wpf.sh` prints the value for you; also `ipconfig getifaddr en0` on Mac).
+    - Compose also has test profile: `docker compose --profile test up --build`
 - **Keys**: Auto-loaded from macOS Passwords (see `App.xaml.cs` `LoadApiKeysFromMacPasswords()` using `security` CLI). On the Windows side rely on env vars or the shared keys/ drop-ins.
 - **Packages**: `dotnet restore -p:EnableWindowsTargeting=true`
 - See also the updated README and `.devcontainer/devcontainer.json` (includes Postgres port forward).
@@ -572,23 +579,21 @@ public async Task<Result<Student>> CreateStudentAsync(CreateStudentRequest reque
 }
 ```
 
-## 🎯 **MVP Requirements**
+## Core requirements
 
-### **Core Functionality**
+### Connected now
 
-- ✅ Student management (CRUD operations)
-- ✅ Route assignment
-- ✅ Basic dashboard
-- ✅ Data persistence
+- Student management (CRUD)
+- Route assignment
+- Dashboard
+- Data persistence
+- Vehicle / driver / fuel / maintenance surfaces (prove via clerk-path hops)
 
-### **Deferred Features**
+### Not on the clerk path yet
 
-- XAI integration
-- Google Earth Engine
-- Advanced reporting
-- Vehicle management
-- Driver scheduling
-- Maintenance tracking
+- Families / Guardians UI
+- Earth Engine
+- Advanced AI insights
 
 ## 🛠️ **Available Commands**
 
@@ -604,7 +609,6 @@ public async Task<Result<Student>> CreateStudentAsync(CreateStudentRequest reque
 
 - `bbXamlValidate` - Validate XAML files
 - `bbAntiRegression` - Run compliance checks
-- `bbMvpCheck` - Verify MVP readiness
 
 ### **Advanced Workflows**
 

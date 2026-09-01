@@ -71,7 +71,7 @@ namespace BusBuddy.Tests.Core
             await _seedService.SeedStudentsFromCsvAsync();
 
             var csvStudents = await _dbContext.Students.AsNoTracking().ToListAsync();
-            Assert.That(csvStudents.Count, Is.GreaterThanOrEqualTo(2), "CSV seed should import the embedded Wiley riders");
+            Assert.That(csvStudents.Count, Is.GreaterThanOrEqualTo(2), "CSV seed should import the embedded sample riders");
 
             var route = await EnsureActiveRouteAsync();
             var stop = await AddProofStopAsync(route.RouteId);
@@ -80,12 +80,12 @@ namespace BusBuddy.Tests.Core
             {
                 StudentName = ProofStudentName,
                 Grade = "3",
-                School = "Wiley",
+                School = "Oakridge",
                 ParentGuardian = "Proof Guardian",
                 EmergencyPhone = "555-010-1234",
                 HomePhone = "555-010-5678",
                 HomeAddress = "100 Proof Lane",
-                City = "Wiley",
+                City = "Oakridge",
                 State = "CO",
                 Zip = "81092",
                 Active = true
@@ -157,7 +157,7 @@ namespace BusBuddy.Tests.Core
             {
                 RouteId = routeId,
                 StopName = "Proof Stop",
-                StopAddress = "100 Proof Lane, Wiley, CO",
+                StopAddress = "100 Proof Lane, Oakridge, CO",
                 StopOrder = 1,
                 ScheduledArrival = new TimeSpan(7, 15, 0),
                 ScheduledDeparture = new TimeSpan(7, 18, 0),

@@ -53,7 +53,7 @@ Loaded by `LoadApiKeysFromMacPasswords()` in `BusBuddy.WPF/App.xaml.cs`.
 | `SYNCFUSION_LICENSE_KEY`                       | Syncfusion WPF                                                                                             |
 | `Syncfusion_API_Key`                           | Syncfusion MCP assistant                                                                                   |
 | `GOOGLE_MAPS_API_KEY`                          | Google Maps Platform (Address Validation + Routes) when spec 007 US1/US3 resume. Not required until then.  |
-| `GCP_BILLING_PROJECT` / `GOOGLE_CLOUD_PROJECT` | `new-coursera-490518`                                                                                      |
+| `GCP_BILLING_PROJECT` / `GOOGLE_CLOUD_PROJECT` | `busbuddy-507301`                                                                                          |
 
 **Setup:** Store Passwords entries (Name = env var). Maps API key is optional until spec 007 US1/US3. There is no Earth Engine setup script.
 
@@ -65,7 +65,8 @@ Set `GOOGLE_MAPS_API_KEY` as a machine/user env var when Maps clients are wired 
 
 | Project ID            | Role                                                          |
 | --------------------- | ------------------------------------------------------------- |
-| `new-coursera-490518` | GCP console / billing / Maps APIs / `gcloud config` default   |
+| `busbuddy-507301`     | **Primary** GCP / billing / Maps Platform / `gcloud` default  |
+| `new-coursera-490518` | Legacy Coursera project (billed; prefer `busbuddy-507301`)    |
 | `ee-bigessfour`       | **Unused by the app** (historical Earth Engine — do not wire) |
 | ~~`busbuddy-465000`~~ | **Invalid** — removed from appsettings                        |
 
@@ -113,17 +114,17 @@ Launchers: `./run-wpf.sh` (Mac → UTM), `.\utm_run_in_vm.ps1` (inside VM). Post
 
 ## Key implementation files (quick index)
 
-| Concern               | File                                             |
-| --------------------- | ------------------------------------------------ |
-| Passwords load        | `BusBuddy.WPF/App.xaml.cs`                       |
-| Geo (DB + shapefiles) | `GeoDataService`, `ShapefileEligibilityService`  |
-| Geo (Maps, paused)    | [spec 007](specs/007-maps-platform-geo/spec.md)  |
-| Geo DI                | `BusBuddy.WPF/App.xaml.cs` → `ConfigureServices` |
-| AI chat (Ollama)      | `BusBuddy.WPF/Services/OllamaChatService.cs`     |
-| CI workflow           | `.github/workflows/ci.yml`                       |
-| Auto-merge            | `.github/workflows/auto-merge.yml`               |
-| RAG indexer           | `rag/index.py`                                   |
-| Spec-Kit constitution | `.specify/memory/constitution.md`                |
+| Concern               | File                                                                                            |
+| --------------------- | ----------------------------------------------------------------------------------------------- |
+| Passwords load        | `BusBuddy.WPF/App.xaml.cs`                                                                      |
+| Geo (DB + map)        | `GeoDataService`, `MapView` / `MapViewModel` (SfMap)                                            |
+| Geo (Maps Platform)   | [spec 007](specs/007-maps-platform-geo/spec.md) — Address Validation + Routes; not Earth Engine |
+| Geo DI                | `BusBuddy.WPF/App.xaml.cs` → `ConfigureServices`                                                |
+| AI chat (Ollama)      | `BusBuddy.WPF/Services/OllamaChatService.cs`                                                    |
+| CI workflow           | `.github/workflows/ci.yml`                                                                      |
+| Auto-merge            | `.github/workflows/auto-merge.yml`                                                              |
+| RAG indexer           | `rag/index.py`                                                                                  |
+| Spec-Kit constitution | `.specify/memory/constitution.md`                                                               |
 
 ## Documentation to keep in sync
 

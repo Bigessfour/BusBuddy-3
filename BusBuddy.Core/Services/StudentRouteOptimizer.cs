@@ -147,7 +147,7 @@ namespace BusBuddy.Core.Services
                     RouteId = "fleet",
                     StudentsServed = assigned,
                     CurrentPerformance = $"{assigned} slots assigned; {remaining} students still unassigned",
-                    TargetMetrics = "Fill active routes within capacity; keep Wiley riders on named routes",
+                    TargetMetrics = "Fill active routes within capacity; keep riders on named routes",
                     Constraints = routes.Select(r => r.RouteName).Where(n => !string.IsNullOrWhiteSpace(n)).ToList()!
                 });
 

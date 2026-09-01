@@ -35,7 +35,6 @@
         <OpenAIVersion>2.13.0</OpenAIVersion>
         <PollyVersion>8.7.0</PollyVersion>
         <SystemNetHttpJsonVersion>9.0.18</SystemNetHttpJsonVersion>
-        <NetTopologySuiteVersion>2.6.0</NetTopologySuiteVersion>
         <MicrosoftIdentityClientVersion>4.87.0</MicrosoftIdentityClientVersion>
         <SerilogSettingsConfigurationVersion>9.0.0</SerilogSettingsConfigurationVersion>
         <NUnit3TestAdapterVersion>5.1.0</NUnit3TestAdapterVersion>

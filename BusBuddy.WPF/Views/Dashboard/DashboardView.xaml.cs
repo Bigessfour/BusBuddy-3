@@ -15,7 +15,7 @@ namespace BusBuddy.WPF.Views.Dashboard
 {
     /// <summary>
     /// Interaction logic for DashboardView.xaml
-    /// Enhanced with comprehensive Syncfusion error capture for MVP
+    /// Enhanced with comprehensive Syncfusion error capture
     /// </summary>
     public partial class DashboardView : UserControl
     {

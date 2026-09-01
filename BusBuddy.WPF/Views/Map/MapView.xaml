@@ -1,21 +1,21 @@
 <!--
-    Google Earth Integration View
+    District Map View
     Syncfusion WPF 34.x via SfSkinManager (FluentDark primary, FluentLight fallback).
     Prefer BusBuddy.Brush.* tokens; ButtonAdv must use Label (Content is ignored).
     Docs: ButtonAdv Label, ComboBoxAdv, SfBusyIndicator, SfDataGrid, SfSkinManager / SfMaps.
 -->
-<UserControl x:Class="BusBuddy.WPF.Views.GoogleEarth.GoogleEarthView"
+<UserControl x:Class="BusBuddy.WPF.Views.Map.MapView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:syncfusion="http://schemas.syncfusion.com/wpf"
              xmlns:maps="clr-namespace:Syncfusion.UI.Xaml.Maps;assembly=Syncfusion.SfMaps.WPF"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-             xmlns:local="clr-namespace:BusBuddy.WPF.Views.GoogleEarth"
-             xmlns:viewModels="clr-namespace:BusBuddy.WPF.ViewModels.GoogleEarth"
+             xmlns:local="clr-namespace:BusBuddy.WPF.Views.Map"
+             xmlns:viewModels="clr-namespace:BusBuddy.WPF.ViewModels.Map"
              mc:Ignorable="d"
              d:DesignHeight="800" d:DesignWidth="1200"
-             d:DataContext="{d:DesignInstance viewModels:GoogleEarthViewModel}">
+             d:DataContext="{d:DesignInstance viewModels:MapViewModel}">
 
     <UserControl.Resources>
         <ResourceDictionary>
@@ -60,7 +60,7 @@
                     </Border>
 
                     <StackPanel VerticalAlignment="Center">
-                        <TextBlock Text="Google Earth Integration"
+                        <TextBlock Text="District Map"
                                    FontSize="28"
                                    FontWeight="Bold"
                                    Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"/>
@@ -112,7 +112,7 @@
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
 
-            <!-- Control Panel — Commands bind to GoogleEarthViewModel (CenterOnFleet, ShowAllBuses, ShowRoutes, ShowSchools) -->
+            <!-- Control Panel — Commands bind to MapViewModel (CenterOnFleet, ShowAllBuses, ShowRoutes, ShowSchools) -->
     <Border Grid.Column="0"
             Background="{DynamicResource PrimaryBackgroundBrush}"
             BorderBrush="{DynamicResource BorderBrush}"
@@ -175,21 +175,8 @@
                               Margin="0,4"
                               HorizontalAlignment="Stretch"/>
 
-                <!-- MVP demo: Add a stop marker (plots coordinates near Wiley). Uses AddMarkerCommand with "lat,lon,label" string parameter -->
-                <TextBlock Text="Markers" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryTextBrush}" Margin="0,12,0,4"/>
-                <syncfusion:ButtonAdv Label="Add Stop (Demo)"
-                              AutomationProperties.Name="Add Demo Stop"
-                              ToolTip="Plot a demo stop near Wiley"
-                              Command="{Binding AddMarkerCommand}"
-                              CommandParameter="38.1530,-102.7200,Demo Stop"
-                              Background="{DynamicResource ButtonBackgroundBrush}"
-                              Foreground="{DynamicResource ButtonForegroundBrush}"
-                              Padding="10,8"
-                              Margin="0,4"
-                              HorizontalAlignment="Stretch"/>
-
-                <TextBlock Text="Eligibility" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryTextBrush}" Margin="0,12,0,4"/>
-                <!-- SfDataGrid for eligibility / stops / buses (Finish GoogleEarth UI element; Syncfusion Sf* only + RAG cited components) -->
+                <TextBlock Text="Students" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryTextBrush}" Margin="0,12,0,4"/>
+                <!-- SfDataGrid for stops / buses (Finish map UI element; Syncfusion Sf* only + RAG cited components) -->
                 <syncfusion:SfDataGrid ItemsSource="{Binding ActiveBuses}" AutoGenerateColumns="False" Height="90" Margin="0,4,0,8"
                                        AllowFiltering="True" ColumnSizer="Star">
                     <syncfusion:SfDataGrid.Columns>
@@ -198,21 +185,11 @@
                         <syncfusion:GridTextColumn HeaderText="Location" MappingName="CurrentLocation" Width="90"/>
                     </syncfusion:SfDataGrid.Columns>
                 </syncfusion:SfDataGrid>
-                <syncfusion:ButtonAdv Label="Check Eligibility (Demo)"
-                              AutomationProperties.Name="Check Eligibility Demo"
-                              ToolTip="Run eligibility check demo"
-                              Command="{Binding CheckEligibilityCommand}"
-                              Background="{DynamicResource ButtonBackgroundBrush}"
-                              Foreground="{DynamicResource ButtonForegroundBrush}"
-                              Padding="10,8"
-                              Margin="0,8,0,0"
-                              HorizontalAlignment="Stretch"/>
-
-                    <!-- Bulk plot rural eligible students (auto geocode + eligibility filter) -->
-                    <syncfusion:ButtonAdv Label="Bulk Plot Eligible Students"
-                                          ToolTip="Auto-geocode + plot all rural (non-Lamar, out-of-town) eligible students"
+                    <!-- Plot students already in the system (auto geocode missing coordinates) -->
+                    <syncfusion:ButtonAdv Label="Plot Students"
+                                          ToolTip="Geocode and plot every student in the system — no geofence"
                                           Command="{Binding BulkPlotEligibleStudentsCommand}"
-                                          AutomationProperties.Name="Bulk Plot Eligible Students"
+                                          AutomationProperties.Name="Plot Students"
                                           Background="{DynamicResource ButtonBackgroundBrush}"
                                           Foreground="{DynamicResource ButtonForegroundBrush}"
                                           Padding="10,8"
@@ -288,73 +265,6 @@
                                     <syncfusion:ComboBoxItemAdv Content="30 seconds"/>
                                     <syncfusion:ComboBoxItemAdv Content="1 minute"/>
                                 </syncfusion:ComboBoxAdv>
-                            </StackPanel>
-                        </Border>
-
-                        <!-- District Boundary Overlay Toggle — uses Syncfusion ButtonAdv toggle per docs: https://help.syncfusion.com/wpf/button/toggle-state -->
-            <Border Background="{DynamicResource PrimaryBackgroundBrush}"
-                BorderBrush="{DynamicResource BorderBrush}"
-                                BorderThickness="1"
-                                CornerRadius="8"
-                                Padding="16"
-                                Margin="0,16,0,0">
-                            <StackPanel>
-                                <TextBlock Text="Overlays"
-                                           FontSize="16"
-                                           FontWeight="SemiBold"
-                       Foreground="{DynamicResource PrimaryTextBrush}"
-                                           Margin="0,0,0,12"/>
-
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="Auto"/>
-                                    </Grid.ColumnDefinitions>
-
-                                    <TextBlock Grid.Column="0"
-                                               Text="School District Boundary"
-                                               FontSize="14"
-                                               Foreground="{DynamicResource PrimaryTextBrush}"
-                                               VerticalAlignment="Center"/>
-
-                                    <syncfusion:ButtonAdv Grid.Column="1"
-                                                          MinWidth="80"
-                                                          Height="28"
-                                                          HorizontalAlignment="Right"
-                                                          Background="{DynamicResource ButtonBackgroundBrush}"
-                                                          Foreground="{DynamicResource ButtonForegroundBrush}"
-                                                          IsCheckable="True"
-                                                          IsChecked="{Binding DistrictBoundaryVisible, Mode=TwoWay}"
-                                                          Label="Show"
-                                                          ToolTip="Toggle school district boundary overlay"
-                                                          AutomationProperties.Name="Show district boundary"/>
-                                </Grid>
-
-                                <!-- Wiley Town Boundary Toggle — to visualize exclusion zone inside district for eligibility -->
-                                <Grid Margin="0,8,0,0">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="Auto"/>
-                                    </Grid.ColumnDefinitions>
-
-                                    <TextBlock Grid.Column="0"
-                                               Text="Wiley Town Boundary"
-                                               FontSize="14"
-                                               Foreground="{DynamicResource PrimaryTextBrush}"
-                                               VerticalAlignment="Center"/>
-
-                                    <syncfusion:ButtonAdv Grid.Column="1"
-                                                          MinWidth="80"
-                                                          Height="28"
-                                                          HorizontalAlignment="Right"
-                                                          Background="{DynamicResource ButtonBackgroundBrush}"
-                                                          Foreground="{DynamicResource ButtonForegroundBrush}"
-                                                          IsCheckable="True"
-                                                          IsChecked="{Binding TownBoundaryVisible, Mode=TwoWay}"
-                                                          Label="Show"
-                                                          ToolTip="Toggle Wiley town boundary overlay"
-                                                          AutomationProperties.Name="Show town boundary"/>
-                                </Grid>
                             </StackPanel>
                         </Border>
 

@@ -11,7 +11,7 @@ namespace BusBuddy.Tests.Core;
 [TestFixture]
 [Category("Integration")]
 [NonParallelizable]
-public class WileyTests : IDisposable
+public class RouteEastAssignmentTests : IDisposable
 {
     private BusBuddyDbContext? _context;
     private StudentService? _studentService;
@@ -25,9 +25,9 @@ public class WileyTests : IDisposable
         var contextFactory = new BusBuddyDbContextFactory();
         _context = contextFactory.CreateDbContext();
         _studentService = new StudentService(contextFactory);
-    _memoryCache = new MemoryCache(new MemoryCacheOptions());
-    _busCachingService = new BusCachingService(_memoryCache);
-    _busService = new BusService(contextFactory, _busCachingService);
+        _memoryCache = new MemoryCache(new MemoryCacheOptions());
+        _busCachingService = new BusCachingService(_memoryCache);
+        _busService = new BusService(contextFactory, _busCachingService);
 
         // Ensure baseline data required by tests
         // Guarantee that "East Route" exists with RouteId = 1 for deterministic assertions
@@ -41,7 +41,7 @@ public class WileyTests : IDisposable
                 RouteName = "East Route",
                 Date = System.DateTime.Today,
                 IsActive = true,
-                School = "Wiley School District",
+                School = "Oakridge School",
                 Boundaries = "east of 287"
             });
         }
@@ -51,7 +51,7 @@ public class WileyTests : IDisposable
             eastById.RouteName = "East Route";
             eastById.Date = System.DateTime.Today;
             eastById.IsActive = true;
-            eastById.School = "Wiley School District";
+            eastById.School = "Oakridge School";
             eastById.Boundaries = "east of 287";
         }
         if (!_context.Buses.Any(v => v.BusNumber == "17"))
@@ -68,7 +68,7 @@ public class WileyTests : IDisposable
         Assert.That(_context, Is.Not.Null);
         Assert.That(_studentService, Is.Not.Null);
         Assert.That(_busService, Is.Not.Null);
-        var student = new Student { StudentName = "Test East", HomeAddress = "123 East Hwy 287", Grade = "5", School = "Wiley School District" };
+        var student = new Student { StudentName = "Test East", HomeAddress = "123 East Hwy 287", Grade = "5", School = "Oakridge School" };
         var route = _context!.Routes.FirstOrDefault(r => r.RouteName == "East Route");
         Assert.That(route, Is.Not.Null, "East Route must exist");
         await _context.Students.AddAsync(student);

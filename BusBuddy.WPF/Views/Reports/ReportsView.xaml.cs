@@ -66,7 +66,7 @@ namespace BusBuddy.WPF.Views.Reports
             Log.Information("{ViewName} initialized successfully", nameof(ReportsView));
         }
 
-    private void OnLoaded(object sender, System.Windows.RoutedEventArgs e)
+        private void OnLoaded(object sender, System.Windows.RoutedEventArgs e)
         {
             try
             {

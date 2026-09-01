@@ -68,6 +68,9 @@
   "unwantedRecommendations": [
     // Prevent extension conflicts with our quality-focused approach
 
+    // Community OmniSharp fights C# Dev Kit and queues every C# file for analysis
+    "muhammad-sammy.csharp",
+
     // Competing auto-formatting tools (conflicts with XAML Styler excellence and Trunk)
     "formulahendry.auto-close-tag",
     "formulahendry.auto-rename-tag",

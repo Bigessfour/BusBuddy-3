@@ -143,7 +143,7 @@ bb-maps                  # Launch Google Earth view (if implemented)
 bb-route-visual         # Visualize routes on map
 bb-earth-view           # Open Google Earth interface
 
-# Related Views: GoogleEarthView.xaml in BusBuddy.WPF/Views/GoogleEarth/
+# Related Views: MapView.xaml in BusBuddy.WPF/Views/GoogleEarth/
 ```
 
 ### XAI Chat & AI Features
@@ -172,7 +172,6 @@ bb-generate-report -ReportType DriverSchedule -Format Excel -OutputPath "schedul
 ```powershell
 # Core route operations
 bb-routes               # Main route optimization system
-bb-route-demo           # Demo route optimization with sample data
 bb-route-status         # Check route optimization system status
 
 # Route optimization examples

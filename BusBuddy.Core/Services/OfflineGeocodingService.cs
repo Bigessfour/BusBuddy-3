@@ -2,20 +2,19 @@ using System;
 using System.Globalization;
 using System.Text;
 using System.Threading.Tasks;
+using BusBuddy.Core.Mapping;
 using BusBuddy.Core.Services.Interfaces;
 
 namespace BusBuddy.Core.Services
 {
     /// <summary>
-    /// Deterministic, offline geocoder suitable for demos and tests.
-    /// Uses a simple string hash to map addresses into a bounded area around Wiley, CO.
-    /// Replace with a real provider when keys/configs are available.
+    /// Deterministic, offline geocoder for tests only — not registered in production DI.
+    /// Hashes addresses into a small box around the continental-US fallback center.
     /// </summary>
     public sealed class OfflineGeocodingService : IGeocodingService
     {
-        // Wiley School coordinates as center point
-        private const double CenterLat = 38.1527; // 510 Ward St, Wiley, CO
-        private const double CenterLon = -102.7204;
+        private const double CenterLat = MapDefaults.FallbackLatitude;
+        private const double CenterLon = MapDefaults.FallbackLongitude;
         private const double MaxOffsetDeg = 0.25; // ~27km radius; safe for demo
 
         public Task<(double latitude, double longitude)?> GeocodeAsync(string? addressLine1, string? city, string? state, string? zip)
@@ -43,29 +42,9 @@ namespace BusBuddy.Core.Services
             double r1 = ((hash & 0xFFFFFFFF) / (double)uint.MaxValue) * 2 - 1;
             double r2 = (((hash >> 32) & 0xFFFFFFFF) / (double)uint.MaxValue) * 2 - 1;
 
-            // Bias city names we know to rough directions (keeps consistent map feel)
-            if (!string.IsNullOrWhiteSpace(city))
-            {
-                var cityLower = city.Trim().ToLowerInvariant();
-                if (cityLower.Contains("lajunta") || cityLower.Contains("la junta"))
-                {
-                    r1 = Math.Abs(r1) * 0.9 + 0.1; // east/southeast of Wiley
-                    r2 = r2 * 0.5; // smaller north/south spread
-                }
-                else if (cityLower.Contains("lamar"))
-                {
-                    r1 = -Math.Abs(r1) * 0.9 - 0.1; // west of Wiley
-                    r2 = r2 * 0.5;
-                }
-                else if (cityLower.Contains("prowers") || cityLower.Contains("bent"))
-                {
-                    r1 *= 0.5; r2 *= 0.5; // closer-in scatter within counties
-                }
-            }
-
             double lat = CenterLat + (r2 * MaxOffsetDeg);
             double lon = CenterLon + (r1 * MaxOffsetDeg);
-            return Task.FromResult<(double, double)?>( (lat, lon) );
+            return Task.FromResult<(double, double)?>((lat, lon));
         }
     }
 }

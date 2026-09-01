@@ -48,7 +48,7 @@ bb-copilot-ref -ShowTopics      # List all reference files
 
 ### 3. **Special BusBuddy Features Referenced**
 
-- **Google Earth Integration**: GoogleEarthView.xaml patterns
+- **Google Earth Integration**: MapView.xaml patterns
 - **XAI Chat Interface**: AI-powered development assistance
 - **Route Optimization**: XAI route optimization system
 - **Testing Framework**: Comprehensive testing patterns

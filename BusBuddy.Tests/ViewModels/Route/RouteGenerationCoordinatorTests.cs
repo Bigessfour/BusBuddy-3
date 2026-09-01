@@ -55,7 +55,7 @@ public class RouteGenerationCoordinatorTests
 
         var outcome = await RouteGenerationCoordinator.GenerateAsync(
             FleetKind.HomeToSchool,
-            preferredSchoolName: "Wiley",
+            preferredSchoolName: "Oakridge",
             preferSchoolWithStartTime: true,
             planner.Object,
             destinations.Object);
@@ -77,7 +77,7 @@ public class RouteGenerationCoordinatorTests
         var named = new Destination
         {
             DestinationId = 7,
-            Name = "Wiley School"
+            Name = "Oakridge School"
         };
         var destinations = new Mock<IDestinationService>();
         destinations
@@ -95,13 +95,13 @@ public class RouteGenerationCoordinatorTests
             .ReturnsAsync(new RouteGenerationResult
             {
                 Success = true,
-                Proposals = [new RouteProposalDto { SuggestedRouteName = "Draft-Wiley-1" }],
+                Proposals = [new RouteProposalDto { SuggestedRouteName = "Draft-Oakridge-1" }],
                 AssignedStudentCount = 3
             });
 
         var outcome = await RouteGenerationCoordinator.GenerateAsync(
             FleetKind.HomeToSchool,
-            preferredSchoolName: "Wiley School",
+            preferredSchoolName: "Oakridge School",
             preferSchoolWithStartTime: true,
             planner.Object,
             destinations.Object);

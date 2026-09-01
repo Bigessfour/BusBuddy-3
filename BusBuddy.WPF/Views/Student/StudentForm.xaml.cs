@@ -30,7 +30,7 @@ namespace BusBuddy.WPF.Views.Student
     {
         private static readonly ILogger Logger = Log.ForContext<StudentForm>();
         public StudentFormViewModel ViewModel { get; private set; }
-    private bool _isDirty;
+        private bool _isDirty;
 
         /// <summary>
         /// Default constructor: initializes theming, ViewModel, and event hooks.

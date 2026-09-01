@@ -41,8 +41,8 @@ namespace BusBuddy.Tests.Core
         public async Task OptimizeUnassignedAsync_AssignsAmAndPm_OnActiveRoutes()
         {
             _context.Routes.AddRange(
-                new Route { RouteName = "North", Date = DateTime.Today, IsActive = true, School = "Wiley" },
-                new Route { RouteName = "South", Date = DateTime.Today, IsActive = false, School = "Wiley" });
+                new Route { RouteName = "North", Date = DateTime.Today, IsActive = true, School = "Oakridge" },
+                new Route { RouteName = "South", Date = DateTime.Today, IsActive = false, School = "Oakridge" });
             _context.Students.AddRange(
                 NewStudent("Ada Rider"),
                 NewStudent("Ben Rider"));
@@ -73,12 +73,12 @@ namespace BusBuddy.Tests.Core
         [Test]
         public async Task OptimizeUnassignedAsync_WhenEveryoneAssigned_DoesNotReassign()
         {
-            _context.Routes.Add(new Route { RouteName = "East", Date = DateTime.Today, IsActive = true, School = "Wiley" });
+            _context.Routes.Add(new Route { RouteName = "East", Date = DateTime.Today, IsActive = true, School = "Oakridge" });
             _context.Students.Add(new Student
             {
                 StudentName = "Done Rider",
                 Grade = "3",
-                School = "Wiley",
+                School = "Oakridge",
                 ParentGuardian = "P",
                 EmergencyPhone = "555-0100",
                 Active = true,
@@ -97,7 +97,7 @@ namespace BusBuddy.Tests.Core
         {
             StudentName = name,
             Grade = "4",
-            School = "Wiley",
+            School = "Oakridge",
             ParentGuardian = "P",
             EmergencyPhone = "555-0100",
             Active = true

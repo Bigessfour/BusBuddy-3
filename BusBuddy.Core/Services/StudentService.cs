@@ -19,7 +19,7 @@ public class StudentService : IStudentService
 {
     private static readonly ILogger Logger = Log.ForContext<StudentService>();
     private readonly IBusBuddyDbContextFactory _contextFactory;
-    private readonly IGeocodingService? _geocodingService; // optional MVP geocoder
+    private readonly IGeocodingService? _geocodingService; // optional geocoder
     private static readonly SemaphoreSlim _semaphore = new(1, 1);
 
     // Centralized, flexible US phone validation:
@@ -51,7 +51,7 @@ public class StudentService : IStudentService
         return PhoneRegex.IsMatch(phone);
     }
 
-    // MVP toggle — allow relaxing phone validation to reduce perceived "button not working" issues when saves are blocked.
+    // Allow relaxing phone validation so format issues do not block saves.
     // Controls: BUSBUDDY_SKIP_PHONE_VALIDATION=1|true (skip), BUSBUDDY_PHONE_VALIDATION_MODE=warn|off|strict
     private static bool PhoneValidationOff()
     {
@@ -64,7 +64,7 @@ public class StudentService : IStudentService
 
     private static bool PhoneValidationWarnOnly()
     {
-        // Default to 'warn' for MVP so phone format issues do not block saves.
+        // Default to 'warn' so phone format issues do not block saves.
         // Supported modes via BUSBUDDY_PHONE_VALIDATION_MODE: off | warn (default) | strict
         var mode = Environment.GetEnvironmentVariable("BUSBUDDY_PHONE_VALIDATION_MODE");
         if (string.IsNullOrEmpty(mode)) return true; // default: warn-only
@@ -510,107 +510,107 @@ public class StudentService : IStudentService
             try
             {
 
-            // Student number uniqueness check (if provided)
-            if (!string.IsNullOrWhiteSpace(student.StudentNumber))
-            {
-                var existingStudent = await context.Students
-                    .Where(s => s.StudentNumber == student.StudentNumber && s.StudentId != student.StudentId)
-                    .FirstOrDefaultAsync();
+                // Student number uniqueness check (if provided)
+                if (!string.IsNullOrWhiteSpace(student.StudentNumber))
+                {
+                    var existingStudent = await context.Students
+                        .Where(s => s.StudentNumber == student.StudentNumber && s.StudentId != student.StudentId)
+                        .FirstOrDefaultAsync();
 
-                if (existingStudent != null)
-                {
-                    errors.Add($"Student number '{student.StudentNumber}' is already in use");
-                }
-            }
-
-            // Grade validation
-            if (!string.IsNullOrWhiteSpace(student.Grade))
-            {
-                var validGrades = new[] { "Pre-K", "K", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12" };
-                if (!validGrades.Contains(student.Grade))
-                {
-                    errors.Add("Invalid grade level");
-                }
-            }
-
-            // Phone number format validation — configurable for MVP
-            if (!string.IsNullOrWhiteSpace(student.HomePhone) && !IsValidPhone(student.HomePhone))
-            {
-                if (PhoneValidationOff() || PhoneValidationWarnOnly())
-                {
-                    Logger.Warning("Home phone did not match validation but proceeding due to mode — Phone={Phone}", student.HomePhone);
-                }
-                else
-                {
-                    errors.Add("Invalid home phone number format");
-                }
-            }
-
-            if (!string.IsNullOrWhiteSpace(student.EmergencyPhone) && !IsValidPhone(student.EmergencyPhone))
-            {
-                if (PhoneValidationOff() || PhoneValidationWarnOnly())
-                {
-                    Logger.Warning("Emergency phone did not match validation but proceeding due to mode — Phone={Phone}", student.EmergencyPhone);
-                }
-                else
-                {
-                    errors.Add("Invalid emergency phone number format");
-                }
-            }
-
-            // State validation
-            if (!string.IsNullOrWhiteSpace(student.State))
-            {
-                if (student.State.Length != 2)
-                {
-                    errors.Add("State must be a 2-letter abbreviation");
-                }
-            }
-
-            // ZIP code validation
-            if (!string.IsNullOrWhiteSpace(student.Zip))
-            {
-                var zipPattern = @"^\d{5}(-\d{4})?$";
-                if (!System.Text.RegularExpressions.Regex.IsMatch(student.Zip, zipPattern))
-                {
-                    errors.Add("Invalid ZIP code format");
-                }
-            }
-
-            // Route validation (if routes exist in database)
-            if (!string.IsNullOrWhiteSpace(student.AMRoute))
-            {
-                try
-                {
-                    var amRouteExists = await context.Routes.AnyAsync(r => r.RouteName == student.AMRoute);
-                    if (!amRouteExists)
+                    if (existingStudent != null)
                     {
+                        errors.Add($"Student number '{student.StudentNumber}' is already in use");
+                    }
+                }
+
+                // Grade validation
+                if (!string.IsNullOrWhiteSpace(student.Grade))
+                {
+                    var validGrades = new[] { "Pre-K", "K", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12" };
+                    if (!validGrades.Contains(student.Grade))
+                    {
+                        errors.Add("Invalid grade level");
+                    }
+                }
+
+                // Phone number format validation — configurable
+                if (!string.IsNullOrWhiteSpace(student.HomePhone) && !IsValidPhone(student.HomePhone))
+                {
+                    if (PhoneValidationOff() || PhoneValidationWarnOnly())
+                    {
+                        Logger.Warning("Home phone did not match validation but proceeding due to mode — Phone={Phone}", student.HomePhone);
+                    }
+                    else
+                    {
+                        errors.Add("Invalid home phone number format");
+                    }
+                }
+
+                if (!string.IsNullOrWhiteSpace(student.EmergencyPhone) && !IsValidPhone(student.EmergencyPhone))
+                {
+                    if (PhoneValidationOff() || PhoneValidationWarnOnly())
+                    {
+                        Logger.Warning("Emergency phone did not match validation but proceeding due to mode — Phone={Phone}", student.EmergencyPhone);
+                    }
+                    else
+                    {
+                        errors.Add("Invalid emergency phone number format");
+                    }
+                }
+
+                // State validation
+                if (!string.IsNullOrWhiteSpace(student.State))
+                {
+                    if (student.State.Length != 2)
+                    {
+                        errors.Add("State must be a 2-letter abbreviation");
+                    }
+                }
+
+                // ZIP code validation
+                if (!string.IsNullOrWhiteSpace(student.Zip))
+                {
+                    var zipPattern = @"^\d{5}(-\d{4})?$";
+                    if (!System.Text.RegularExpressions.Regex.IsMatch(student.Zip, zipPattern))
+                    {
+                        errors.Add("Invalid ZIP code format");
+                    }
+                }
+
+                // Route validation (if routes exist in database)
+                if (!string.IsNullOrWhiteSpace(student.AMRoute))
+                {
+                    try
+                    {
+                        var amRouteExists = await context.Routes.AnyAsync(r => r.RouteName == student.AMRoute);
+                        if (!amRouteExists)
+                        {
+                            errors.Add($"AM Route '{student.AMRoute}' does not exist");
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.Error(ex, "Error validating AM route: {AMRoute}", student.AMRoute);
                         errors.Add($"AM Route '{student.AMRoute}' does not exist");
                     }
                 }
-                catch (Exception ex)
-                {
-                    Logger.Error(ex, "Error validating AM route: {AMRoute}", student.AMRoute);
-                    errors.Add($"AM Route '{student.AMRoute}' does not exist");
-                }
-            }
 
-            if (!string.IsNullOrWhiteSpace(student.PMRoute))
-            {
-                try
+                if (!string.IsNullOrWhiteSpace(student.PMRoute))
                 {
-                    var pmRouteExists = await context.Routes.AnyAsync(r => r.RouteName == student.PMRoute);
-                    if (!pmRouteExists)
+                    try
                     {
+                        var pmRouteExists = await context.Routes.AnyAsync(r => r.RouteName == student.PMRoute);
+                        if (!pmRouteExists)
+                        {
+                            errors.Add($"PM Route '{student.PMRoute}' does not exist");
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.Error(ex, "Error validating PM route: {PMRoute}", student.PMRoute);
                         errors.Add($"PM Route '{student.PMRoute}' does not exist");
                     }
                 }
-                catch (Exception ex)
-                {
-                    Logger.Error(ex, "Error validating PM route: {PMRoute}", student.PMRoute);
-                    errors.Add($"PM Route '{student.PMRoute}' does not exist");
-                }
-            }
             }
             finally
             {
@@ -642,28 +642,28 @@ public class StudentService : IStudentService
             var (context, dispose) = GetReadContext();
             try
             {
-            var stats = new Dictionary<string, int>
-            {
-                ["TotalStudents"] = await context.Students.CountAsync(),
-                ["ActiveStudents"] = await context.Students.CountAsync(s => s.Active),
-                ["InactiveStudents"] = await context.Students.CountAsync(s => !s.Active),
-                ["StudentsWithRoutes"] = await context.Students.CountAsync(s => !string.IsNullOrEmpty(s.AMRoute) || !string.IsNullOrEmpty(s.PMRoute)),
-                ["StudentsWithoutRoutes"] = await context.Students.CountAsync(s => string.IsNullOrEmpty(s.AMRoute) && string.IsNullOrEmpty(s.PMRoute))
-            };
+                var stats = new Dictionary<string, int>
+                {
+                    ["TotalStudents"] = await context.Students.CountAsync(),
+                    ["ActiveStudents"] = await context.Students.CountAsync(s => s.Active),
+                    ["InactiveStudents"] = await context.Students.CountAsync(s => !s.Active),
+                    ["StudentsWithRoutes"] = await context.Students.CountAsync(s => !string.IsNullOrEmpty(s.AMRoute) || !string.IsNullOrEmpty(s.PMRoute)),
+                    ["StudentsWithoutRoutes"] = await context.Students.CountAsync(s => string.IsNullOrEmpty(s.AMRoute) && string.IsNullOrEmpty(s.PMRoute))
+                };
 
-            // Grade level counts
-            var gradeCounts = await context.Students
-                .Where(s => !string.IsNullOrEmpty(s.Grade))
-                .GroupBy(s => s.Grade)
-                .Select(g => new { Grade = g.Key, Count = g.Count() })
-                .ToListAsync();
+                // Grade level counts
+                var gradeCounts = await context.Students
+                    .Where(s => !string.IsNullOrEmpty(s.Grade))
+                    .GroupBy(s => s.Grade)
+                    .Select(g => new { Grade = g.Key, Count = g.Count() })
+                    .ToListAsync();
 
-            foreach (var gradeCount in gradeCounts)
-            {
-                stats[$"Grade_{gradeCount.Grade}"] = gradeCount.Count;
-            }
+                foreach (var gradeCount in gradeCounts)
+                {
+                    stats[$"Grade_{gradeCount.Grade}"] = gradeCount.Count;
+                }
 
-            return stats;
+                return stats;
             }
             finally
             {
@@ -996,7 +996,7 @@ public class StudentService : IStudentService
         {
             Logger.Information("Updating contact information for student {StudentId}", studentId);
 
-            // Validate phone number formats — configurable for MVP
+            // Validate phone number formats — configurable
             if (!string.IsNullOrWhiteSpace(homePhone) && !IsValidPhone(homePhone))
             {
                 if (PhoneValidationOff() || PhoneValidationWarnOnly())
@@ -1061,7 +1061,7 @@ public class StudentService : IStudentService
         {
             Logger.Information("Updating emergency contact information for student {StudentId}", studentId);
 
-            // Validate phone number formats — configurable for MVP
+            // Validate phone number formats — configurable
             if (!string.IsNullOrWhiteSpace(alternativePhone) && !IsValidPhone(alternativePhone))
             {
                 if (PhoneValidationOff() || PhoneValidationWarnOnly())
@@ -1477,162 +1477,19 @@ public class StudentService : IStudentService
     #region Data Seeding
 
     /// <summary>
-    /// Seeds student data from Wiley School District registration forms
-    /// Uses resilient execution patterns for reliable data import
+    /// District JSON seed is retired. Add students through intake or CSV import.
     /// </summary>
-    public async Task<SeedResult> SeedWileySchoolDistrictDataAsync()
+    public Task<SeedResult> SeedDistrictDataAsync()
     {
-        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
-        int recordsSeeded = 0;
-        try
+        Logger.Information("District JSON seed skipped — students are added through intake or CSV import");
+        return Task.FromResult(new SeedResult
         {
-            Logger.Information("Starting Wiley School District data seeding operation");
-
-            // Use WileyJsonPath from appsettings.json configuration
-            var configuration = new ConfigurationBuilder()
-                .SetBasePath(Directory.GetCurrentDirectory())
-                .AddJsonFile("appsettings.json", optional: true)
-                .AddEnvironmentVariables()
-                .Build();
-
-            var configPath = configuration["WileyJsonPath"];
-            var jsonPath = string.Empty;
-            var allPaths = new List<string>(); // Track all attempted paths for error logging
-
-            if (!string.IsNullOrEmpty(configPath) && File.Exists(configPath))
-            {
-                jsonPath = configPath;
-                Logger.Information("Using configured JSON path: {Path}", jsonPath);
-            }
-            else
-            {
-                // Fallback: try multiple documented candidate locations
-                var baseDir = AppDomain.CurrentDomain.BaseDirectory;
-                var candidatePaths = new[]
-                {
-                    Path.Combine(baseDir, "Data", "wiley-school-district-data.json"),
-                    Path.Combine(baseDir, "BusBuddy.Core", "Data", "wiley-school-district-data.json"),
-                    Path.GetFullPath(Path.Combine(baseDir, "..", "BusBuddy.Core", "Data", "wiley-school-district-data.json")),
-                    @"c:\Users\biges\Desktop\BusBuddy\BusBuddy.Core\Data\wiley-school-district-data.json"
-                };
-                allPaths.AddRange(candidatePaths);
-                jsonPath = candidatePaths.FirstOrDefault(File.Exists) ?? string.Empty;
-                Logger.Information("Using fallback path resolution: {Path}", jsonPath);
-            }
-            if (string.IsNullOrEmpty(jsonPath))
-            {
-                Logger.Error("Wiley JSON file not found. Paths tried: {Paths}", string.Join(" | ", allPaths));
-                return new SeedResult { Success = false, ErrorMessage = "JSON file not found", RecordsSeeded = 0, Duration = stopwatch.Elapsed, CompletedAt = DateTime.UtcNow };
-            }
-            var json = await File.ReadAllTextAsync(jsonPath);
-            var wileyData = System.Text.Json.JsonSerializer.Deserialize<WileyDataRoot>(json);
-            if (wileyData == null || wileyData.families == null)
-            {
-                Logger.Error("Wiley JSON deserialization failed");
-                return new SeedResult { Success = false, ErrorMessage = "JSON deserialization failed", RecordsSeeded = 0, Duration = stopwatch.Elapsed, CompletedAt = DateTime.UtcNow };
-            }
-            var studentsToSeed = wileyData.families.Take(5).Select((fam, idx) => new Student {
-                StudentName = fam.parentGuardian + " Child",
-                FamilyId = fam.id,
-                HomeAddress = fam.address,
-                City = fam.city,
-                State = fam.state,
-                ParentGuardian = fam.parentGuardian,
-                HomePhone = fam.homePhone,
-                EmergencyPhone = fam.cellPhone,
-                School = "Wiley School District",
-                Grade = "K",
-                StudentNumber = $"WILEY{1000+idx}",
-            }).ToList();
-            var result = await ResilientDbExecution.ExecuteWithResilienceAsync(async () => {
-                using var context = _contextFactory.CreateDbContext();
-
-                // Only consider previously seeded Wiley records, not total students
-                var existingWileyCount = await context.Students
-                    .Where(s => s.StudentNumber != null && s.StudentNumber.StartsWith("WILEY"))
-                    .CountAsync();
-                if (existingWileyCount >= 5)
-                {
-                    Logger.Information("Wiley seeding skipped: {ExistingCount} Wiley students already exist", existingWileyCount);
-                    return new SeedResult { Success = true, RecordsSeeded = 0, ErrorMessage = "Already seeded (WILEY)" };
-                }
-
-                // Check for duplicate StudentNumbers before adding
-                var existingStudentNumbers = await context.Students
-                    .Select(s => s.StudentNumber)
-                    .ToListAsync();
-
-                var studentsToAdd = studentsToSeed
-                    .Where(s => !existingStudentNumbers.Contains(s.StudentNumber))
-                    .ToList();
-
-                if (!studentsToAdd.Any())
-                {
-                    Logger.Information("Wiley seeding skipped: All WILEY student numbers already exist");
-                    return new SeedResult { Success = true, RecordsSeeded = 0, ErrorMessage = "Duplicate WILEY student numbers" };
-                }
-
-                Logger.Information("Adding {Count} Wiley students to database", studentsToAdd.Count);
-                context.Students.AddRange(studentsToAdd);
-                recordsSeeded = studentsToAdd.Count;
-
-                try
-                {
-                    await context.SaveChangesAsync();
-                    Logger.Information("Successfully saved {Count} Wiley students", studentsToAdd.Count);
-                    return new SeedResult { Success = true, RecordsSeeded = recordsSeeded };
-                }
-                catch (Exception saveEx)
-                {
-                    Logger.Error(saveEx, "SaveChanges failed for Wiley seeding. Inner exception: {InnerException}",
-                        saveEx.InnerException?.Message ?? "None");
-
-                    // Log specific SQL errors if available
-                    if (saveEx.InnerException is Microsoft.Data.SqlClient.SqlException sqlEx)
-                    {
-                        Logger.Error("SQL Error {Number}: {Message}, Severity: {Severity}, State: {State}",
-                            sqlEx.Number, sqlEx.Message, sqlEx.Class, sqlEx.State);
-                    }
-
-                    throw; // Re-throw for ResilientDbExecution to handle
-                }
-            }, "SeedWileySchoolDistrictData", maxRetries: 3);
-            stopwatch.Stop();
-            return new SeedResult {
-                Success = result.Success,
-                RecordsSeeded = result.RecordsSeeded,
-                ErrorMessage = result.ErrorMessage,
-                Duration = stopwatch.Elapsed,
-                CompletedAt = DateTime.UtcNow
-            };
-        }
-        catch (Exception ex)
-        {
-            stopwatch.Stop();
-            Logger.Error(ex, "Error during Wiley School District data seeding");
-            return new SeedResult {
-                Success = false,
-                RecordsSeeded = recordsSeeded,
-                ErrorMessage = ex.Message,
-                Duration = stopwatch.Elapsed,
-                CompletedAt = DateTime.UtcNow
-            };
-        }
+            Success = true,
+            RecordsSeeded = 0,
+            Duration = TimeSpan.Zero,
+            CompletedAt = DateTime.UtcNow
+        });
     }
-
-    // Helper for JSON deserialization
-public class WileyDataRoot {
-    public required List<Family> families { get; set; }
-}
-public class Family {
-    public int id { get; set; }
-    public required string parentGuardian { get; set; }
-    public required string address { get; set; }
-    public required string city { get; set; }
-    public required string state { get; set; }
-    public required string homePhone { get; set; }
-    public required string cellPhone { get; set; }
-}
 
     #endregion
 }

@@ -20,7 +20,7 @@
 
 Constitution constraints (MUST obey): Syncfusion-only UI; Serilog-only logging; Windows WPF + `EnableWindowsTargeting` on Mac; RAG-first for architectural changes; no AWS/cloud app hosting.
 
-## User Scenarios & Testing *(mandatory)*
+## User Scenarios & Testing _(mandatory)_
 
 ### User Story 1 - Syncfusion WPF MCP works in Cursor (Priority: P1)
 
@@ -64,7 +64,7 @@ As a maintainer, all Syncfusion WPF PackageReferences resolve to one latest stab
 
 **Acceptance Scenarios**:
 
-1. **Given** implement-time nuget.org latest for `Syncfusion.SfGrid.WPF` (and peer WPF packages), **When** updating `SyncfusionVersion`, **Then** every Syncfusion.* PackageReference uses `$(SyncfusionVersion)` only.
+1. **Given** implement-time nuget.org latest for `Syncfusion.SfGrid.WPF` (and peer WPF packages), **When** updating `SyncfusionVersion`, **Then** every Syncfusion.\* PackageReference uses `$(SyncfusionVersion)` only.
 2. **Given** the bump, **When** building Release with `EnableWindowsTargeting`, **Then** 0 errors (warnings triage documented if new analyzer noise appears).
 3. **Given** license registration in `App.xaml.cs`, **When** app starts on Windows VM, **Then** Syncfusion license still registers from env / Passwords (no trial watermarks when key present).
 4. **Given** upgrade notes / breaking changes in Syncfusion 34.x release notes, **When** compiling XAML, **Then** any API renames required by the bump are fixed in-repo (no deferred broken views).
@@ -73,7 +73,7 @@ As a maintainer, all Syncfusion WPF PackageReferences resolve to one latest stab
 
 ### User Story 4 - Core infrastructure dependency version check (Priority: P2)
 
-As a maintainer, I audit and selectively bump non-Syncfusion pins in `Directory.Build.props` (EF Core, Npgsql, Serilog, Microsoft.Extensions.*, CommunityToolkit.Mvvm, WebView2, test packages, Google client libs used by GEE, etc.) to latest compatible stables.
+As a maintainer, I audit and selectively bump non-Syncfusion pins in `Directory.Build.props` (EF Core, Npgsql, Serilog, Microsoft.Extensions.\*, CommunityToolkit.Mvvm, WebView2, test packages, Google client libs used by GEE, etc.) to latest compatible stables.
 
 **Why this priority**: High leverage but secondary to Syncfusion tooling; must not destabilize CI.
 
@@ -109,7 +109,7 @@ As an agent, I discover MCP + skills + version pins from `AGENTS.md` / constitut
 - Mixed Syncfusion versions from transitive packages → force alignment via central property / explicit PackageReference versions.
 - `mcp.json` is machine-specific → prefer script-relative invocation; avoid hard-coding another developer’s home path.
 
-## Requirements *(mandatory)*
+## Requirements _(mandatory)_
 
 ### Functional Requirements
 
@@ -130,7 +130,7 @@ As an agent, I discover MCP + skills + version pins from `AGENTS.md` / constitut
 - Committing `.agents/skills/` vendor tree or chroma DB.
 - Expanding Spec-Kit constitution beyond a one-line pointer if versions are already covered by docs.
 
-## Success Criteria *(mandatory)*
+## Success Criteria _(mandatory)_
 
 - MCP + skills refresh path documented and path-correct for this clone.
 - Single Syncfusion NuGet version = latest stable at implement time; build green.

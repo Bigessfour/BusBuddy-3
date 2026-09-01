@@ -3,19 +3,6 @@
 # top-most EditorConfig file
 root = true
 
-# VS Code WPF XAML Error Suppression
-# Suppress XAML designer-related errors in VS Code
-# These are false positives because VS Code doesn't generate XAML designer files
-
-# CS0103: The name 'X' does not exist in the current context (XAML elements)
-dotnet_diagnostic.CS0103.severity = none
-
-# CS0246: The type or namespace name could not be found
-dotnet_diagnostic.CS0246.severity = suggestion
-
-# CS1061: Type does not contain a definition for (XAML events)
-dotnet_diagnostic.CS1061.severity = none
-
 # All files
 [*]
 charset = utf-8
@@ -61,14 +48,16 @@ dotnet_diagnostic.CA1822.severity = warning
 dotnet_diagnostic.CA1305.severity = suggestion
 dotnet_diagnostic.CA1860.severity = suggestion
 
-# MVP: Suppress noisy documentation/naming warnings
+# Suppress noisy documentation/naming warnings
 # CS1591: Missing XML comment for publicly visible members
 dotnet_diagnostic.CS1591.severity = none
 # CA1707: Identifiers should not contain underscores
 dotnet_diagnostic.CA1707.severity = none
 
-# CS1061 Prevention: FluentAssertions and Missing Definitions
-dotnet_diagnostic.CS1061.severity = error  # Escalate missing definitions
+# Do not set CS1061 to error here. That overrode the default and flooded the
+# Problems panel whenever WPF generated members or CommunityToolkit source
+# generators failed to load in the IDE. Real missing members still fail
+# `dotnet build` / CI as compiler errors.
 
 # Test-specific rules for FluentAssertions prevention
 [*Tests.cs]

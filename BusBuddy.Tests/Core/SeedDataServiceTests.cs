@@ -74,7 +74,7 @@ namespace BusBuddy.Tests.Core
             await context.Database.EnsureCreatedAsync();
             var service = new SeedDataService(new TestDbContextFactory(options));
 
-            var csv = WileyCsv("Import,Rider,4,Pat,Rider,100 Main,Wiley,CO,Prowers,,719-555-0100,,,,,,,,,,,,,");
+            var csv = StudentCsv("Import,Rider,4,Pat,Rider,100 Main,Oakridge,CO,Prowers,,719-555-0100,,,,,,,,,,,,,");
             var path = Path.Combine(Path.GetTempPath(), $"busbuddy-import-{Guid.NewGuid():N}.csv");
             await File.WriteAllTextAsync(path, csv);
             try
@@ -86,10 +86,10 @@ namespace BusBuddy.Tests.Core
                 Assert.That(second, Is.EqualTo(0));
                 var imported = context.Students.Single(s => s.StudentName == "Import Rider");
                 Assert.That(imported.HomeAddress, Does.Contain("100 Main"));
-                Assert.That(imported.HomeAddress, Does.Contain("Wiley"));
+                Assert.That(imported.HomeAddress, Does.Contain("Oakridge"));
                 Assert.That(imported.HomeAddress, Does.Contain("Prowers"));
                 Assert.That(imported.HomePhone, Is.EqualTo("719-555-0100"));
-                Assert.That(imported.StudentNumber, Is.EqualTo("WSD0001"));
+                Assert.That(imported.StudentNumber, Is.EqualTo("STU0001"));
             }
             finally
             {
@@ -98,7 +98,7 @@ namespace BusBuddy.Tests.Core
         }
 
         [Test]
-        public async Task ImportStudentsFromCsvAsync_AllocatesNextWsdNumber_WhenWsd0001Exists()
+        public async Task ImportStudentsFromCsvAsync_AllocatesNextStudentNumber_WhenStu0001Exists()
         {
             var options = new DbContextOptionsBuilder<BusBuddyDbContext>()
                 .UseInMemoryDatabase($"CsvImportNum_{Guid.NewGuid()}")
@@ -108,21 +108,21 @@ namespace BusBuddy.Tests.Core
             context.Students.Add(new Student
             {
                 StudentName = "Existing Rider",
-                StudentNumber = "WSD0001",
+                StudentNumber = "STU0001",
                 Grade = "2",
-                School = "Wiley School District"
+                School = "Oakridge School"
             });
             await context.SaveChangesAsync();
 
             var service = new SeedDataService(new TestDbContextFactory(options));
             var path = Path.Combine(Path.GetTempPath(), $"busbuddy-import-{Guid.NewGuid():N}.csv");
-            await File.WriteAllTextAsync(path, WileyCsv("Import,Rider,4,Pat,Rider,100 Main,Wiley,CO,Prowers,,719-555-0100,,,,,,,,,,,,,"));
+            await File.WriteAllTextAsync(path, StudentCsv("Import,Rider,4,Pat,Rider,100 Main,Oakridge,CO,Prowers,,719-555-0100,,,,,,,,,,,,,"));
             try
             {
                 var added = await service.ImportStudentsFromCsvAsync(path);
                 Assert.That(added, Is.EqualTo(1));
                 var imported = context.Students.Single(s => s.StudentName == "Import Rider");
-                Assert.That(imported.StudentNumber, Is.EqualTo("WSD0002"));
+                Assert.That(imported.StudentNumber, Is.EqualTo("STU0002"));
             }
             finally
             {
@@ -131,7 +131,7 @@ namespace BusBuddy.Tests.Core
         }
 
         [Test]
-        public void ImportStudentsFromCsvAsync_RejectsNonWileyHeader()
+        public void ImportStudentsFromCsvAsync_RejectsUnexpectedHeader()
         {
             var options = new DbContextOptionsBuilder<BusBuddyDbContext>()
                 .UseInMemoryDatabase($"CsvImportBad_{Guid.NewGuid()}")
@@ -145,7 +145,7 @@ namespace BusBuddy.Tests.Core
             {
                 var ex = Assert.ThrowsAsync<InvalidOperationException>(
                     (Func<Task>)(() => service.ImportStudentsFromCsvAsync(path)));
-                Assert.That(ex!.Message, Does.Contain("Wiley student format"));
+                Assert.That(ex!.Message, Does.Contain("expected student format"));
             }
             finally
             {
@@ -153,26 +153,26 @@ namespace BusBuddy.Tests.Core
             }
         }
 
-        private static string WileyCsv(string dataRow) =>
+        private static string StudentCsv(string dataRow) =>
             "Student,,,Parent,,,,,,,,Joint Parent,,,,,,,Econtact,,\n" +
             "Fname,Lname,Grade,Fname,Lname,Address,City,State,County,Hphone,Cphone,Jparent FirstName,Jparent LastName,Address,City,State,County,Cphone ,Econtact FirstName,Econtact LastName,Econtact Phone\n" +
             dataRow + "\n";
 #pragma warning restore CS1998
-    // Helper for EF Core 9: manually mock DbSet<T> for in-memory lists
-    private static Mock<DbSet<T>> CreateMockDbSet<T>(IList<T> sourceList) where T : class
-    {
-        var queryable = sourceList.AsQueryable();
-        var mockSet = new Mock<DbSet<T>>();
-        mockSet.As<IQueryable<T>>().Setup(m => m.Provider).Returns(queryable.Provider);
-        mockSet.As<IQueryable<T>>().Setup(m => m.Expression).Returns(queryable.Expression);
-        mockSet.As<IQueryable<T>>().Setup(m => m.ElementType).Returns(queryable.ElementType);
-        mockSet.As<IQueryable<T>>().Setup(m => m.GetEnumerator()).Returns(() => queryable.GetEnumerator());
-        mockSet.Setup(d => d.Add(It.IsAny<T>())).Callback<T>(sourceList.Add);
-        mockSet.Setup(d => d.AddRange(It.IsAny<IEnumerable<T>>())).Callback<IEnumerable<T>>(items =>
+        // Helper for EF Core 9: manually mock DbSet<T> for in-memory lists
+        private static Mock<DbSet<T>> CreateMockDbSet<T>(IList<T> sourceList) where T : class
         {
-            foreach (var i in items) sourceList.Add(i);
-        });
-        return mockSet;
-    }
+            var queryable = sourceList.AsQueryable();
+            var mockSet = new Mock<DbSet<T>>();
+            mockSet.As<IQueryable<T>>().Setup(m => m.Provider).Returns(queryable.Provider);
+            mockSet.As<IQueryable<T>>().Setup(m => m.Expression).Returns(queryable.Expression);
+            mockSet.As<IQueryable<T>>().Setup(m => m.ElementType).Returns(queryable.ElementType);
+            mockSet.As<IQueryable<T>>().Setup(m => m.GetEnumerator()).Returns(() => queryable.GetEnumerator());
+            mockSet.Setup(d => d.Add(It.IsAny<T>())).Callback<T>(sourceList.Add);
+            mockSet.Setup(d => d.AddRange(It.IsAny<IEnumerable<T>>())).Callback<IEnumerable<T>>(items =>
+            {
+                foreach (var i in items) sourceList.Add(i);
+            });
+            return mockSet;
+        }
     }
 }

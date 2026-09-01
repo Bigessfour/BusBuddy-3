@@ -10,7 +10,7 @@ namespace BusBuddy.Core.Utilities
     /// </summary>
     public static class EnvironmentHelper
     {
-    private static readonly ILogger? Logger = Log.Logger;
+        private static readonly ILogger? Logger = Log.Logger;
         /// <summary>
         /// Checks if the application is running in development mode
         /// </summary>

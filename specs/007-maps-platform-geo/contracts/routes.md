@@ -12,7 +12,7 @@ IRoutingService
     { Polyline, DistanceMeters, Duration, Error? }
 ```
 
-- `origin` / `destination`: Wiley School default (existing WileyMapDefaults) unless route specifies otherwise.
+- `origin` / `destination`: Wiley School default (existing MapDefaults) unless route specifies otherwise.
 - `waypoints`: RouteStops with lat/lon, StopOrder.
 - `travelMode`: DRIVE
 - `routingPreference`: TRAFFIC_UNAWARE (rural AM/PM planning; cheaper/stabler)
@@ -25,7 +25,7 @@ Headers:
 
 - `X-Goog-FieldMask`: `routes.duration,routes.distanceMeters,routes.polyline.encodedPolyline`
 
-Optional later: `computeRouteMatrix` for ranking students vs routes — same interface file, not MVP-blocking.
+Optional later: `computeRouteMatrix` for ranking students vs routes — same interface file, not blocking this increment.
 
 ## Persistence
 

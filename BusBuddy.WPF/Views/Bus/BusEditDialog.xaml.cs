@@ -6,7 +6,7 @@ using Syncfusion.SfSkinManager;
 namespace BusBuddy.WPF.Views.Bus
 {
     /// <summary>
-    /// Interaction logic for BusEditDialog.xaml - MVP Version
+    /// Interaction logic for BusEditDialog.xaml
     /// </summary>
     public partial class BusEditDialog : Window
     {
@@ -52,7 +52,7 @@ namespace BusBuddy.WPF.Views.Bus
         {
             try
             {
-                // Validate required fields (minimal MVP subset)
+                // Validate required fields
                 if (string.IsNullOrWhiteSpace(BusNumberTextBox.Text))
                 {
                     MessageBox.Show("Bus Number is required.", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);

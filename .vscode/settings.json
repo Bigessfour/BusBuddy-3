@@ -142,6 +142,34 @@
     "POWERSHELL_TELEMETRY_OPTOUT": "1",
     "POWERSHELL_DISTRIBUTION_CHANNEL": "VSCode"
   },
+  "dotnet.defaultSolution": "BusBuddy.sln",
+
+  // === PROBLEMS PANEL — real issues only (hybrid Mac + WPF) ===
+  // OmniSharp was queuing all 436 C# files; C# Dev Kit should stay on open files.
+  "dotnet.backgroundAnalysis.analyzerDiagnosticsScope": "none",
+  "dotnet.backgroundAnalysis.compilerDiagnosticsScope": "openFiles",
+  "trunk.showPreexistingIssues": false,
+  "trunk.showBelowThresholdIssues": false,
+  "xml.validation.noGrammar": "ignore",
+  "xml.validation.filters": [
+    {
+      "pattern": "**/*.xaml",
+      "enabled": false
+    }
+  ],
+  "cSpell.diagnosticLevel": "Hint",
+  "cSpell.maxNumberOfProblems": 25,
+  "cSpell.ignorePaths": [
+    "rag/**",
+    "**/chroma_db/**",
+    "Documentation/Archive/**",
+    ".agents/**",
+    "**/bin/**",
+    "**/obj/**",
+    "**/*.pdf",
+    "docs/function-inventory.generated.md"
+  ],
+
   // === TRUNK CODE QUALITY INTEGRATION ===
   "trunk.enableLinting": true,
   "trunk.enableFormatting": true,
@@ -194,7 +222,7 @@
   // === C# AND .NET DEVELOPMENT ===
   "csharp.suppressDotnetRestoreNotification": true,
   "dotnetAcquisitionExtension.existingDotnetPath": ["${env:DOTNET_VERSION}"], // Ties to profile's DOTNET_VERSION=9.0.303
-  "omnisharp.enableRoslynAnalyzers": true, // Integrates Roslynator for WPF C# refactoring
+  "omnisharp.enableRoslynAnalyzers": false, // Full-solution analyzers flood Problems; C# Dev Kit uses openFiles scope
   "omnisharp.enableEditorConfigSupport": true, // Use .editorconfig for style
   "dotnet.completion.showCompletionItemsFromUnimportedNamespaces": true,
   "dotnet.inlayHints.enableInlayHintsForParameters": true,
@@ -207,7 +235,7 @@
   "dotnet.inlayHints.suppressInlayHintsForParametersThatMatchArgumentName": true,
 
   // === ROSLYNATOR C# QUALITY ===
-  "roslynator.enableAnalyzersSupport": true,
+  "roslynator.enableAnalyzersSupport": false,
   "roslynator.enableRefactoringsSupport": true,
   "roslynator.enableCodeFixesSupport": true,
   "roslynator.suppressUnityScriptMethods": false,
@@ -294,7 +322,7 @@
 
   // Script Analysis Configuration (PSScriptAnalyzer integration)
   "powershell.scriptAnalysis.enable": true,
-  "powershell.scriptAnalysis.settingsPath": "./PSScriptAnalyzerSettings.psd1",
+  "powershell.scriptAnalysis.settingsPath": "./.trunk/configs/PSScriptAnalyzerSettings.psd1",
 
   // IntelliSense and Language Features
   "powershell.enablePipelineHints": true,
@@ -323,7 +351,7 @@
   "powershell.codeFormatting.autoCorrectAliases": false, // Keep false for BusBuddy aliases
   "powershell.startAutomatically": true,
   "powershell.enableReferencesCodeLens": true,
-  "powershell.analyzeOpenDocumentsOnly": false, // Analyze all workspace files
+  "powershell.analyzeOpenDocumentsOnly": true,
 
   // Pester Integration (for testing PowerShell modules)
   "powershell.pester.useLegacyCodeLens": false,
@@ -491,7 +519,7 @@
     { "tag": "!", "color": "#FF2D00" }, // For critical notes in PS/C#
     { "tag": "bb", "color": "#3498DB" } // BusBuddy-specific comments
   ],
-  "cSpell.enabled": true, // Aligns with streetsidesoftware.code-spell-checker
+  "cSpell.enabled": false, // Spell lint (Trunk cspell/codespell + Code Spell Checker) was drowning domain terms
 
   // === DOTNET CORE EXPLORER ===
   "dotnetCoreExplorer.showProjectFileInExplorer": true,

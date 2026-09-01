@@ -16,7 +16,7 @@
                 <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/SyncfusionV30_Validated_ResourceDictionary.xaml"/>
             </ResourceDictionary.MergedDictionaries>
 
-            <!-- Custom Styles for MVP -->
+            <!-- Section header style -->
             <Style x:Key="SectionHeaderStyle" TargetType="TextBlock">
                 <Setter Property="FontSize" Value="16"/>
                 <Setter Property="FontWeight" Value="SemiBold"/>
@@ -92,10 +92,11 @@
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
 
-            <syncfusion:SfMaskedEdit Grid.Column="0"
+            <syncfusion:SfTextBoxExt Grid.Column="0"
                     Text="{Binding SearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                     Padding="10"
                     FontSize="14"
+                    Height="40"
                     Watermark="Search buses by make, model, or plate number..."
                     Margin="0,0,15,0"
                     AutomationProperties.Name="Search vehicles"/>
@@ -108,6 +109,7 @@
                 <syncfusion:ComboBoxAdv ItemsSource="{Binding StatusFilterOptions}"
                          SelectedItem="{Binding SelectedStatusFilter, Mode=TwoWay}"
                          Width="150"
+                         Height="40"
                          Padding="10"
                          AutomationProperties.Name="Status"/>
             </StackPanel>
@@ -203,9 +205,10 @@
                         <TextBlock Grid.Row="0" Grid.Column="0"
                                   Text="Bus Number:"
                                   Style="{StaticResource FormLabelStyle}"/>
-                        <syncfusion:SfMaskedEdit Grid.Row="0" Grid.Column="1"
+                        <syncfusion:SfTextBoxExt Grid.Row="0" Grid.Column="1"
                                 Text="{Binding SelectedVehicle.BusNumber, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                 Padding="8"
+                                Height="40"
                                 Margin="0,5"
                                 AutomationProperties.Name="Bus Number"/>
 
@@ -213,9 +216,10 @@
                         <TextBlock Grid.Row="1" Grid.Column="0"
                                   Text="Make:"
                                   Style="{StaticResource FormLabelStyle}"/>
-                        <syncfusion:SfMaskedEdit Grid.Row="1" Grid.Column="1"
+                        <syncfusion:SfTextBoxExt Grid.Row="1" Grid.Column="1"
                                 Text="{Binding SelectedVehicle.Make, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                 Padding="8"
+                                Height="40"
                                 Margin="0,5"
                                 AutomationProperties.Name="Make"/>
 
@@ -223,9 +227,10 @@
                         <TextBlock Grid.Row="2" Grid.Column="0"
                                   Text="Model:"
                                   Style="{StaticResource FormLabelStyle}"/>
-                        <syncfusion:SfMaskedEdit Grid.Row="2" Grid.Column="1"
+                        <syncfusion:SfTextBoxExt Grid.Row="2" Grid.Column="1"
                                 Text="{Binding SelectedVehicle.Model, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                 Padding="8"
+                                Height="40"
                                 Margin="0,5"
                                 AutomationProperties.Name="Model"/>
 
@@ -233,9 +238,10 @@
                         <TextBlock Grid.Row="3" Grid.Column="0"
                                   Text="License Number:"
                                   Style="{StaticResource FormLabelStyle}"/>
-                        <syncfusion:SfMaskedEdit Grid.Row="3" Grid.Column="1"
+                        <syncfusion:SfTextBoxExt Grid.Row="3" Grid.Column="1"
                                 Text="{Binding SelectedVehicle.LicenseNumber, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                 Padding="8"
+                                Height="40"
                                 Margin="0,5"
                                 AutomationProperties.Name="License Number"/>
 
@@ -243,9 +249,10 @@
                         <TextBlock Grid.Row="4" Grid.Column="0"
                                   Text="Capacity:"
                                   Style="{StaticResource FormLabelStyle}"/>
-                        <syncfusion:SfMaskedEdit Grid.Row="4" Grid.Column="1"
-                                Text="{Binding SelectedVehicle.SeatingCapacity, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                        <syncfusion:IntegerTextBox Grid.Row="4" Grid.Column="1"
+                                Value="{Binding SelectedVehicle.SeatingCapacity, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                 Padding="8"
+                                Height="40"
                                 Margin="0,5"
                                 AutomationProperties.Name="Seating Capacity"/>
 
@@ -257,6 +264,7 @@
                                  ItemsSource="{Binding OperationalStatusOptions}"
                                  SelectedItem="{Binding SelectedVehicle.Status, Mode=TwoWay}"
                                  Padding="8"
+                                 Height="40"
                                  Margin="0,5"
                                  AutomationProperties.Name="Vehicle Status"/>
 
@@ -264,9 +272,10 @@
                         <TextBlock Grid.Row="6" Grid.Column="0"
                                   Text="Year:"
                                   Style="{StaticResource FormLabelStyle}"/>
-                        <syncfusion:SfMaskedEdit Grid.Row="6" Grid.Column="1"
-                                Text="{Binding SelectedVehicle.Year, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                        <syncfusion:IntegerTextBox Grid.Row="6" Grid.Column="1"
+                                Value="{Binding SelectedVehicle.Year, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                 Padding="8"
+                                Height="40"
                                 Margin="0,5"
                                 AutomationProperties.Name="Year"/>
 

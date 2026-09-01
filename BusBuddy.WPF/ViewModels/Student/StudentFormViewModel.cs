@@ -9,8 +9,8 @@ using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
 using BusBuddy.Core.Services.Interfaces;
-using BusBuddy.WPF.ViewModels.GoogleEarth;
-using BusBuddy.WPF.Views.GoogleEarth;
+using BusBuddy.WPF.ViewModels.Map;
+using BusBuddy.WPF.Views.Map;
 using System.Text.RegularExpressions;
 using BusBuddy.Core.Models;
 using BusBuddy.Core.Services;
@@ -67,7 +67,7 @@ namespace BusBuddy.WPF.ViewModels.Student
                 Active = true,
                 EnrollmentDate = DateTime.Today,
                 CreatedDate = DateTime.Now,
-                School = "Wiley Consolidated School RE-13JT",
+                School = string.Empty,
                 State = "CO"
             };
 
@@ -83,7 +83,7 @@ namespace BusBuddy.WPF.ViewModels.Student
             _ = LoadDataAsync();
             if (DisableAddressValidation)
             {
-                AddressValidationMessage = "Address validation disabled — MVP mode";
+                AddressValidationMessage = "Address validation disabled";
                 AddressValidationColor = Brushes.Gray;
             }
         }
@@ -99,7 +99,7 @@ namespace BusBuddy.WPF.ViewModels.Student
                 Active = true,
                 EnrollmentDate = DateTime.Today,
                 CreatedDate = DateTime.Now,
-                School = "Wiley Consolidated School RE-13JT",
+                School = string.Empty,
                 State = "CO"
             };
 
@@ -115,7 +115,7 @@ namespace BusBuddy.WPF.ViewModels.Student
             _ = LoadDataAsync();
             if (DisableAddressValidation)
             {
-                AddressValidationMessage = "Address validation disabled — MVP mode";
+                AddressValidationMessage = "Address validation disabled";
                 AddressValidationColor = Brushes.Gray;
             }
         }
@@ -244,12 +244,12 @@ namespace BusBuddy.WPF.ViewModels.Student
         private string _globalErrorMessage = string.Empty;
         private bool _isValidating;
         private string _validationStatus = "Ready";
-    private Brush _validationStatusBrush = Brushes.Gray;
-    private ObservableCollection<string> _filteredBusStops = new();
-    private bool _canSave = true;
-    private readonly ObservableCollection<string> _validationErrors = new();
-    private bool _hasValidationErrors;
-    private bool _disableAddressValidation; // MVP escape hatch
+        private Brush _validationStatusBrush = Brushes.Gray;
+        private ObservableCollection<string> _filteredBusStops = new();
+        private bool _canSave = true;
+        private readonly ObservableCollection<string> _validationErrors = new();
+        private bool _hasValidationErrors;
+        private bool _disableAddressValidation; // optional skip-validation flag
 
         /// <summary>
         /// Whether there's a global error to display
@@ -329,7 +329,7 @@ namespace BusBuddy.WPF.ViewModels.Student
         }
 
         /// <summary>
-        /// When true, skips address validation steps (temporary MVP fallback)
+        /// When true, skips address validation steps
         /// </summary>
         public bool DisableAddressValidation
         {
@@ -341,9 +341,9 @@ namespace BusBuddy.WPF.ViewModels.Student
 
         #region Commands
 
-    public ICommand ValidateAddressCommand { get; private set; } = null!;
-    public ICommand SaveCommand { get; private set; } = null!;
-    public ICommand SaveSchoolTimesCommand { get; private set; } = null!;
+        public ICommand ValidateAddressCommand { get; private set; } = null!;
+        public ICommand SaveCommand { get; private set; } = null!;
+        public ICommand SaveSchoolTimesCommand { get; private set; } = null!;
         public ICommand CancelCommand { get; private set; } = null!;
 
         // AI and Enhancement Commands
@@ -373,7 +373,7 @@ namespace BusBuddy.WPF.ViewModels.Student
 
         #region Command Initialization
 
-    private CommunityToolkit.Mvvm.Input.AsyncRelayCommand? _saveRelay;
+        private CommunityToolkit.Mvvm.Input.AsyncRelayCommand? _saveRelay;
 
         private void InitializeCommands()
         {
@@ -438,8 +438,8 @@ namespace BusBuddy.WPF.ViewModels.Student
 
                         _addressValidationFailed = false;
                         AddressValidationMessage = string.IsNullOrWhiteSpace(maps.FormattedAddress)
-                            ? "✓ Address validated."
-                            : $"✓ Address validated: {maps.FormattedAddress}";
+                            ? "Address validated (Google Maps)."
+                            : $"Address validated: {maps.FormattedAddress}";
                         AddressValidationColor = Brushes.Green;
                         Logger.Information("Address validation successful via Maps Platform");
                         return;
@@ -447,33 +447,54 @@ namespace BusBuddy.WPF.ViewModels.Student
 
                     if (maps.MappingUnconfigured)
                     {
-                        _addressValidationFailed = true;
-                        AddressValidationMessage = maps.ErrorMessage
-                            ?? "Mapping is not configured (missing GOOGLE_MAPS_API_KEY).";
-                        AddressValidationColor = Brushes.Orange;
-                        Logger.Warning("Address validation skipped — mapping unconfigured");
+                        ApplyLocalAddressValidationFallback(
+                            "Google Maps API key not configured (set GOOGLE_MAPS_API_KEY). Local format check:");
                         return;
                     }
 
                     _addressValidationFailed = true;
-                    AddressValidationMessage = $"✗ Address validation failed: {maps.ErrorMessage ?? "undeliverable or incomplete"}";
+                    AddressValidationMessage = $"Address validation failed: {maps.ErrorMessage ?? "undeliverable or incomplete"}";
                     AddressValidationColor = Brushes.Red;
                     Logger.Warning("Address validation failed: {Error}", maps.ErrorMessage);
                     return;
                 }
 
-                // No Maps client registered — do not treat regex as postal success.
-                _addressValidationFailed = true;
-                AddressValidationMessage = "Mapping is not configured — address not validated.";
-                AddressValidationColor = Brushes.Orange;
-                Logger.Warning("Maps Address Validation client missing from DI");
+                ApplyLocalAddressValidationFallback(
+                    "Maps Address Validation is not registered in DI. Local format check:");
             }
             catch (Exception ex)
             {
                 Logger.Error(ex, "Error validating address");
                 _addressValidationFailed = true;
-                AddressValidationMessage = "✗ Error validating address. Please check format and try again.";
+                AddressValidationMessage = "Error validating address. Please check format and try again.";
                 AddressValidationColor = Brushes.Red;
+            }
+        }
+
+        /// <summary>
+        /// When Google Maps is unavailable, still give the clerk visible feedback via local format rules.
+        /// </summary>
+        private void ApplyLocalAddressValidationFallback(string prefix)
+        {
+            var local = ValidateAddressComponents(
+                Student.HomeAddress ?? string.Empty,
+                Student.City ?? string.Empty,
+                Student.State ?? string.Empty,
+                Student.Zip ?? string.Empty);
+
+            if (local.IsValid)
+            {
+                _addressValidationFailed = false;
+                AddressValidationMessage = $"{prefix} street/city/state/ZIP look OK. GPS geocode skipped.";
+                AddressValidationColor = Brushes.Orange;
+                Logger.Warning("Address local format OK; Maps validation unavailable");
+            }
+            else
+            {
+                _addressValidationFailed = true;
+                AddressValidationMessage = $"{prefix} {local.ErrorMessage}";
+                AddressValidationColor = Brushes.Red;
+                Logger.Warning("Address local format failed: {Error}", local.ErrorMessage);
             }
         }
 
@@ -557,7 +578,7 @@ namespace BusBuddy.WPF.ViewModels.Student
                     return;
                 }
 
-                // Optional MVP feature flag to bypass validation and allow saving immediately
+                // Optional flag to bypass validation and allow saving immediately
                 // Enable by setting environment variable: BUSBUDDY_SKIP_STUDENT_VALIDATION=1
                 static bool ShouldSkipValidation()
                     => string.Equals(Environment.GetEnvironmentVariable("BUSBUDDY_SKIP_STUDENT_VALIDATION"), "1", StringComparison.OrdinalIgnoreCase)
@@ -613,7 +634,7 @@ namespace BusBuddy.WPF.ViewModels.Student
                 }
 
                 // Prefer StudentService when available (normal flow). If skipping validation,
-                // avoid service-level validation and use direct EF save instead (MVP flag).
+                // avoid service-level validation and use direct EF save instead.
                 if (_studentService != null && !ShouldSkipValidation())
                 {
                     if (IsEditMode)
@@ -632,7 +653,7 @@ namespace BusBuddy.WPF.ViewModels.Student
                 else
                 {
                     // Fallback direct EF save if service not available
-                    // or when skipping validation for MVP save bypass
+                    // or when skipping validation
                     if (IsEditMode)
                     {
                         _context.Students.Update(Student);
@@ -666,7 +687,7 @@ namespace BusBuddy.WPF.ViewModels.Student
             var digits = new string(input.Where(char.IsDigit).ToArray());
             if (digits.Length == 10)
             {
-                return $"({digits.Substring(0,3)}) {digits.Substring(3,3)}-{digits.Substring(6,4)}";
+                return $"({digits.Substring(0, 3)}) {digits.Substring(3, 3)}-{digits.Substring(6, 4)}";
             }
             return input; // leave as-is if not 10 digits
         }
@@ -675,16 +696,16 @@ namespace BusBuddy.WPF.ViewModels.Student
         {
             if (string.IsNullOrWhiteSpace(input)) return input;
             var digits = new string(input.Where(char.IsDigit).ToArray());
-            if (digits.Length >= 5) return digits.Substring(0,5);
+            if (digits.Length >= 5) return digits.Substring(0, 5);
             return digits;
         }
 
         private bool CanSaveStudent()
         {
-         // MVP: allow Save with minimal required fields only (name + grade).
-         // Address fields are optional for Save to unblock CRUD flows.
-         return !string.IsNullOrWhiteSpace(Student?.StudentName)
-             && !string.IsNullOrWhiteSpace(Student?.Grade);
+            // Allow Save with minimal required fields only (name + grade).
+            // Address fields are optional for Save to unblock CRUD flows.
+            return !string.IsNullOrWhiteSpace(Student?.StudentName)
+                && !string.IsNullOrWhiteSpace(Student?.Grade);
         }
 
         private void OnStudentPropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -793,7 +814,7 @@ namespace BusBuddy.WPF.ViewModels.Student
                 var sp = App.ServiceProvider;
                 var geocoder = sp?.GetService<IGeocodingService>();
                 var mapsClient = sp?.GetService<BusBuddy.Core.Services.GoogleMaps.GoogleAddressValidationClient>();
-                var mapVm = sp?.GetService<GoogleEarthViewModel>();
+                var mapVm = sp?.GetService<MapViewModel>();
 
                 (double latitude, double longitude)? coords = null;
                 if (Student.Latitude.HasValue && Student.Longitude.HasValue)
@@ -818,7 +839,7 @@ namespace BusBuddy.WPF.ViewModels.Student
                 new Window
                 {
                     Title = "Student location",
-                    Content = new GoogleEarthView(),
+                    Content = new MapView(),
                     Width = 1100,
                     Height = 750,
                     Owner = Application.Current?.MainWindow
@@ -858,7 +879,7 @@ namespace BusBuddy.WPF.ViewModels.Student
         }
 
         /// <summary>
-        /// Import student data from a Wiley-format CSV via <see cref="ISeedDataService"/>.
+        /// Import student data from a student CSV via <see cref="ISeedDataService"/>.
         /// </summary>
         private async Task ImportCsvAsync()
         {
@@ -923,7 +944,7 @@ namespace BusBuddy.WPF.ViewModels.Student
             {
                 Logger.Information("Starting comprehensive data validation");
 
-                    // Avoid artificial delay in tests
+                // Avoid artificial delay in tests
                 ValidationStatus = "Validating all data...";
                 ValidationStatusBrush = Brushes.Orange;
 
@@ -936,7 +957,7 @@ namespace BusBuddy.WPF.ViewModels.Student
                 if (string.IsNullOrWhiteSpace(Student.Grade))
                     validationErrors.Add("Grade is required");
 
-                // MVP: Address fields are optional for Save. Do not flag as blocking errors.
+                // Address fields are optional for Save. Do not flag as blocking errors.
                 // You can still validate address via the dedicated Validate Address action.
 
                 // Populate error list for UI
@@ -1023,7 +1044,7 @@ namespace BusBuddy.WPF.ViewModels.Student
         }
 
         /// <summary>
-        /// Get AI-suggested routes based on address (MVP simulation)
+        /// Get AI-suggested routes based on address
         /// </summary>
         private async Task<List<string>> GetAISuggestedRoutes(string? address, string? city, string? state)
         {
@@ -1086,13 +1107,13 @@ namespace BusBuddy.WPF.ViewModels.Student
         /// <summary>
         /// Load available routes and bus stops for the form
         /// </summary>
-    private async Task LoadDataAsync()
+        private async Task LoadDataAsync()
         {
             try
             {
                 Logger.Information("Loading form data");
 
-                // Load available routes from database (active + distinct), union with safe defaults for MVP/tests
+                // Load available routes from database (active + distinct), union with safe defaults for tests
                 var defaultRoutes = new[] { "Route A", "Route B", "Route C", "Route D" };
                 List<string> dbRouteNames = new();
                 try
@@ -1194,9 +1215,9 @@ namespace BusBuddy.WPF.ViewModels.Student
 
         /// <summary>
         /// Minimal validation for Save — only ensure required fields are present.
-        /// Detailed address checks are available via the Validate actions and should not block Save in MVP.
+        /// Detailed address checks are available via the Validate actions and should not block Save.
         /// </summary>
-    private bool IsValidStudent()
+        private bool IsValidStudent()
         {
             try
             {
@@ -1204,7 +1225,7 @@ namespace BusBuddy.WPF.ViewModels.Student
                     Student?.StudentName, Student?.Grade, Student?.HomeAddress, Student?.City, Student?.State, Student?.Zip);
             }
             catch { /* logging best-effort */ }
-            // MVP: Only enforce Name and Grade for Save; address fields are optional.
+            // Only enforce Name and Grade for Save; address fields are optional.
             if (string.IsNullOrWhiteSpace(Student.StudentName)) return false;
             if (string.IsNullOrWhiteSpace(Student.Grade)) return false;
 
@@ -1218,8 +1239,8 @@ namespace BusBuddy.WPF.ViewModels.Student
         /// </summary>
         private List<string> GetValidationErrors()
         {
-            // MVP: Only enforce the minimal required fields for Save so buttons “work” visibly.
-            // Address fields are optional during MVP and validated via dedicated actions.
+            // Only enforce the minimal required fields for Save so buttons work visibly.
+            // Address fields are optional and validated via dedicated actions.
             var errors = new List<string>();
             if (string.IsNullOrWhiteSpace(Student.StudentName)) errors.Add("Student name is required");
             if (string.IsNullOrWhiteSpace(Student.Grade)) errors.Add("Grade is required");
@@ -1227,7 +1248,7 @@ namespace BusBuddy.WPF.ViewModels.Student
         }
 
         /// <summary>
-        /// Simple address validation using regex patterns (MVP implementation)
+        /// Simple address validation using regex patterns
         /// </summary>
         private (bool IsValid, string? ErrorMessage) ValidateAddressComponents(string street, string city, string state, string zipCode)
         {

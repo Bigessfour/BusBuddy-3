@@ -43,7 +43,7 @@ MVVM Integration: ✅ 90% - ViewModel patterns align with best practices
 
 ### Google Earth Integration
 
-**Location**: `BusBuddy.WPF\Views\GoogleEarth\GoogleEarthView.xaml`
+**Location**: `BusBuddy.WPF\Views\GoogleEarth\MapView.xaml`
 
 ```xml
 <!-- Advanced WebView2 integration with Google Earth -->
@@ -62,7 +62,7 @@ MVVM Integration: ✅ 90% - ViewModel patterns align with best practices
 
 ```csharp
 // Official MVVM pattern for map integration
-public class GoogleEarthViewModel : BaseViewModel
+public class MapViewModel : BaseViewModel
 {
     private bool _isMapLoading = true;
     public bool IsMapLoading
@@ -501,7 +501,7 @@ bb-update-syncfusion
 
 - **StudentsView.xaml**: Working SfDataGrid implementation with filtering
 - **VehicleManagementView.xaml**: Professional data grid with MVVM binding
-- **GoogleEarthView.xaml**: Advanced WebView2 integration with Syncfusion busy indicators
+- **MapView.xaml**: Advanced WebView2 integration with Syncfusion busy indicators
 - **FuelReconciliationDialog.xaml**: Modal dialog with custom Syncfusion styling
 - **App.xaml**: FluentDark theme integration example
 - **MainWindow.xaml**: DockingManager layout with multi-panel design
