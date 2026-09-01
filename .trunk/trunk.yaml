@@ -26,10 +26,11 @@ lint:
     - dotnet-format
     # PSScriptAnalyzer pulls converttosarif from Azure CDN (SSL fail); keep local PSScriptAnalyzerSettings for the IDE
     - psscriptanalyzer
+    # Domain words (Serilog, SfMap, geofence) flood Problems; real typos are not a merge gate
+    - cspell
+    - codespell
   enabled:
     # Security and infrastructure scanning
-    - codespell@2.4.1
-    - cspell@9.2.0
     - checkov@3.2.464 # Infrastructure as code security
     - git-diff-check # Git hygiene
     - osv-scanner@2.2.1 # Vulnerability scanning
@@ -55,12 +56,6 @@ lint:
         - ".agents/**" # Vendored skill copies
         - "**/*.pdf"
         - "docs/function-inventory.generated.md"
-    - linters: [cspell, codespell]
-      paths:
-        - "**/*.bin"
-        - "**/*.sqlite3"
-        - "**/*.pickle"
-        - "**/skills-lock.json"
     - linters: [git-diff-check]
       paths:
         - ".vscode/settings.json" # VS Code settings have different formatting standards

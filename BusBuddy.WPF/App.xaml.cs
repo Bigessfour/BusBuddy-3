@@ -49,6 +49,8 @@ namespace BusBuddy.WPF
             // This bridges Passwords app -> runtime env on macOS.
             // On non-mac, falls back to existing env / machine vars.
             LoadApiKeysFromMacPasswords();
+            // Hybrid keys file (Syncfusion + optional Google_Maps_Demo_Key) — before DI / Maps clients.
+            TryLoadSecretsFromKeysFile();
 
             // Register Syncfusion license before any UI initialization
             EnsureSyncfusionLicenseRegistered();
@@ -1018,7 +1020,7 @@ Examples:
                 // Ensure license key is in env (Passwords / alternate keychain services)
                 TryLoadKeychainSecret("SYNCFUSION_LICENSE_KEY", "SYNCFUSION_LICENSE_KEY");
                 TryLoadKeychainSecret("com.wileyco.syncfusion.license", "SYNCFUSION_LICENSE_KEY");
-                TryLoadSyncfusionLicenseFromKeysFile();
+                TryLoadSecretsFromKeysFile();
 
                 // Check Process level first, then User level, then Machine level
                 var licenseKey = Environment.GetEnvironmentVariable("SYNCFUSION_LICENSE_KEY") ??
@@ -1064,19 +1066,18 @@ Examples:
         /// <summary>
         /// Windows VM / hybrid drop-in used by utm_run_in_vm.ps1:
         /// keys/SYNCFUSION_LICENSE_KEY.txt (gitignored). Mac Keychain is not available in the guest.
+        /// Supports multi-line file: Syncfusion key on its own line(s), plus optional
+        /// <c>Google_Maps_Demo_Key: …</c> or <c>GOOGLE_MAPS_API_KEY: …</c> for Maps Platform.
+        /// See https://developers.google.com/maps/get-started
         /// </summary>
-        private static void TryLoadSyncfusionLicenseFromKeysFile()
+        private static void TryLoadSecretsFromKeysFile()
         {
-            if (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("SYNCFUSION_LICENSE_KEY")))
-            {
-                return;
-            }
-
             var candidates = new[]
             {
                 Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "keys", "SYNCFUSION_LICENSE_KEY.txt")),
                 @"C:\dev\BusBuddy-3\keys\SYNCFUSION_LICENSE_KEY.txt",
-                Path.Combine(Directory.GetCurrentDirectory(), "keys", "SYNCFUSION_LICENSE_KEY.txt")
+                Path.Combine(Directory.GetCurrentDirectory(), "keys", "SYNCFUSION_LICENSE_KEY.txt"),
+                @"C:\Users\Public\SYNCFUSION_LICENSE_KEY.txt"
             };
 
             foreach (var path in candidates.Distinct(StringComparer.OrdinalIgnoreCase))
@@ -1088,21 +1089,84 @@ Examples:
                         continue;
                     }
 
-                    var text = File.ReadAllText(path).Trim();
-                    if (text.Length < 20)
+                    var lines = File.ReadAllLines(path);
+                    string? syncfusionKey = null;
+                    string? mapsKey = null;
+
+                    foreach (var raw in lines)
                     {
-                        continue;
+                        var line = raw.Trim();
+                        if (line.Length == 0 ||
+                            line.StartsWith('#') ||
+                            line.StartsWith("//", StringComparison.Ordinal))
+                        {
+                            continue;
+                        }
+
+                        if (TryParseLabeledSecret(line, "Google_Maps_Demo_Key", out var demoMaps) ||
+                            TryParseLabeledSecret(line, "GOOGLE_MAPS_API_KEY", out demoMaps))
+                        {
+                            mapsKey = demoMaps;
+                            continue;
+                        }
+
+                        if (TryParseLabeledSecret(line, "SYNCFUSION_LICENSE_KEY", out var labeledSf))
+                        {
+                            syncfusionKey = labeledSf;
+                            continue;
+                        }
+
+                        // Unlabeled non-empty line → Syncfusion license (legacy single-line file)
+                        if (syncfusionKey is null &&
+                            !line.Contains("Maps", StringComparison.OrdinalIgnoreCase) &&
+                            line.Length >= 20)
+                        {
+                            syncfusionKey = line;
+                        }
                     }
 
-                    Environment.SetEnvironmentVariable("SYNCFUSION_LICENSE_KEY", text);
-                    _bootstrapLogger?.Information("Loaded SYNCFUSION_LICENSE_KEY from keys file (length {Length})", text.Length);
-                    return;
+                    if (string.IsNullOrEmpty(Environment.GetEnvironmentVariable("SYNCFUSION_LICENSE_KEY")) &&
+                        !string.IsNullOrWhiteSpace(syncfusionKey))
+                    {
+                        Environment.SetEnvironmentVariable("SYNCFUSION_LICENSE_KEY", syncfusionKey.Trim());
+                        _bootstrapLogger?.Information(
+                            "Loaded SYNCFUSION_LICENSE_KEY from keys file (length {Length})",
+                            syncfusionKey.Trim().Length);
+                    }
+
+                    if (string.IsNullOrEmpty(Environment.GetEnvironmentVariable("GOOGLE_MAPS_API_KEY")) &&
+                        !string.IsNullOrWhiteSpace(mapsKey))
+                    {
+                        Environment.SetEnvironmentVariable("GOOGLE_MAPS_API_KEY", mapsKey.Trim());
+                        _bootstrapLogger?.Information(
+                            "Loaded GOOGLE_MAPS_API_KEY from keys file (prefix {Prefix}…, length {Length})",
+                            mapsKey.Trim().Length >= 8 ? mapsKey.Trim()[..4] : "****",
+                            mapsKey.Trim().Length);
+                    }
+
+                    if (!string.IsNullOrWhiteSpace(syncfusionKey) || !string.IsNullOrWhiteSpace(mapsKey))
+                    {
+                        return;
+                    }
                 }
                 catch (Exception ex)
                 {
-                    _bootstrapLogger?.Warning(ex, "Could not read Syncfusion keys file at {Path}", path);
+                    _bootstrapLogger?.Warning(ex, "Could not read secrets keys file at {Path}", path);
                 }
             }
+        }
+
+        private static bool TryParseLabeledSecret(string line, string label, out string value)
+        {
+            value = string.Empty;
+            var prefix = label + ":";
+            if (!line.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+
+            value = line[prefix.Length..].Trim();
+            return value.Length > 0;
         }
 
         /// <summary>

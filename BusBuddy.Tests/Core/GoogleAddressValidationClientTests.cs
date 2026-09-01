@@ -88,6 +88,33 @@ public class GoogleAddressValidationClientTests
         }
     }
 
+    [Test]
+    public async Task ValidateAndGeocode_Forbidden_FallsBackToGeocoding()
+    {
+        var geocodeJson = """
+            {
+              "status": "OK",
+              "results": [{
+                "formatted_address": "1600 Amphitheatre Parkway, Mountain View, CA 94043, USA",
+                "geometry": { "location": { "lat": 37.422, "lng": -122.084 } }
+              }]
+            }
+            """;
+        using var http = new HttpClient(new SequenceStubHandler(
+            (HttpStatusCode.Forbidden, "{\"error\":{\"status\":\"PERMISSION_DENIED\"}}"),
+            (HttpStatusCode.OK, geocodeJson)));
+        var client = new GoogleAddressValidationClient(http, Microsoft.Extensions.Options.Options.Create(TestOptions));
+
+        var result = await client.ValidateAndGeocodeAsync(
+            "1600 Amphitheatre Parkway", "Mountain View", "CA", "94043");
+
+        Assert.That(result.Ok, Is.True);
+        Assert.That(result.MappingUnconfigured, Is.False);
+        Assert.That(result.Precision, Is.EqualTo("geocode"));
+        Assert.That(result.Latitude, Is.EqualTo(37.422).Within(0.001));
+        Assert.That(result.FormattedAddress, Does.Contain("Mountain View"));
+    }
+
     private sealed class StubHandler : HttpMessageHandler
     {
         private readonly HttpStatusCode _status;
@@ -104,6 +131,25 @@ public class GoogleAddressValidationClientTests
             return Task.FromResult(new HttpResponseMessage(_status)
             {
                 Content = new StringContent(_body)
+            });
+        }
+    }
+
+    private sealed class SequenceStubHandler : HttpMessageHandler
+    {
+        private readonly Queue<(HttpStatusCode Status, string Body)> _responses;
+
+        public SequenceStubHandler(params (HttpStatusCode Status, string Body)[] responses)
+        {
+            _responses = new Queue<(HttpStatusCode, string)>(responses);
+        }
+
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        {
+            var (status, body) = _responses.Dequeue();
+            return Task.FromResult(new HttpResponseMessage(status)
+            {
+                Content = new StringContent(body)
             });
         }
     }

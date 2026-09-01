@@ -438,8 +438,8 @@ namespace BusBuddy.WPF.ViewModels.Student
 
                         _addressValidationFailed = false;
                         AddressValidationMessage = string.IsNullOrWhiteSpace(maps.FormattedAddress)
-                            ? "✓ Address validated."
-                            : $"✓ Address validated: {maps.FormattedAddress}";
+                            ? "Address validated (Google Maps)."
+                            : $"Address validated: {maps.FormattedAddress}";
                         AddressValidationColor = Brushes.Green;
                         Logger.Information("Address validation successful via Maps Platform");
                         return;
@@ -447,33 +447,54 @@ namespace BusBuddy.WPF.ViewModels.Student
 
                     if (maps.MappingUnconfigured)
                     {
-                        _addressValidationFailed = true;
-                        AddressValidationMessage = maps.ErrorMessage
-                            ?? "Mapping is not configured (missing GOOGLE_MAPS_API_KEY).";
-                        AddressValidationColor = Brushes.Orange;
-                        Logger.Warning("Address validation skipped — mapping unconfigured");
+                        ApplyLocalAddressValidationFallback(
+                            "Google Maps API key not configured (set GOOGLE_MAPS_API_KEY). Local format check:");
                         return;
                     }
 
                     _addressValidationFailed = true;
-                    AddressValidationMessage = $"✗ Address validation failed: {maps.ErrorMessage ?? "undeliverable or incomplete"}";
+                    AddressValidationMessage = $"Address validation failed: {maps.ErrorMessage ?? "undeliverable or incomplete"}";
                     AddressValidationColor = Brushes.Red;
                     Logger.Warning("Address validation failed: {Error}", maps.ErrorMessage);
                     return;
                 }
 
-                // No Maps client registered — do not treat regex as postal success.
-                _addressValidationFailed = true;
-                AddressValidationMessage = "Mapping is not configured — address not validated.";
-                AddressValidationColor = Brushes.Orange;
-                Logger.Warning("Maps Address Validation client missing from DI");
+                ApplyLocalAddressValidationFallback(
+                    "Maps Address Validation is not registered in DI. Local format check:");
             }
             catch (Exception ex)
             {
                 Logger.Error(ex, "Error validating address");
                 _addressValidationFailed = true;
-                AddressValidationMessage = "✗ Error validating address. Please check format and try again.";
+                AddressValidationMessage = "Error validating address. Please check format and try again.";
                 AddressValidationColor = Brushes.Red;
+            }
+        }
+
+        /// <summary>
+        /// When Google Maps is unavailable, still give the clerk visible feedback via local format rules.
+        /// </summary>
+        private void ApplyLocalAddressValidationFallback(string prefix)
+        {
+            var local = ValidateAddressComponents(
+                Student.HomeAddress ?? string.Empty,
+                Student.City ?? string.Empty,
+                Student.State ?? string.Empty,
+                Student.Zip ?? string.Empty);
+
+            if (local.IsValid)
+            {
+                _addressValidationFailed = false;
+                AddressValidationMessage = $"{prefix} street/city/state/ZIP look OK. GPS geocode skipped.";
+                AddressValidationColor = Brushes.Orange;
+                Logger.Warning("Address local format OK; Maps validation unavailable");
+            }
+            else
+            {
+                _addressValidationFailed = true;
+                AddressValidationMessage = $"{prefix} {local.ErrorMessage}";
+                AddressValidationColor = Brushes.Red;
+                Logger.Warning("Address local format failed: {Error}", local.ErrorMessage);
             }
         }
 

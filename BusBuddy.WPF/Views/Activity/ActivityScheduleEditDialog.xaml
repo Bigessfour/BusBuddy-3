@@ -39,53 +39,53 @@
                 <TextBlock Text="{Binding Subject}" FontWeight="SemiBold" Margin="0,0,0,10"/>
 
                 <TextBlock Text="Trip type" Margin="0,0,0,4"/>
-                <syncfusion:ComboBoxAdv ItemsSource="{Binding TripTypes}" SelectedItem="{Binding TripType, Mode=TwoWay}" Height="32" Margin="0,0,0,10"
+                <syncfusion:ComboBoxAdv ItemsSource="{Binding TripTypes}" SelectedItem="{Binding TripType, Mode=TwoWay}" Height="40" Margin="0,0,0,10"
                                         AutomationProperties.Name="Trip type"/>
 
                 <TextBlock Text="Destination" Margin="0,0,0,4"/>
-                <syncfusion:SfMaskedEdit Text="{Binding ScheduledDestination, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Height="32" Margin="0,0,0,10"
+                <syncfusion:SfTextBoxExt Text="{Binding ScheduledDestination, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Height="40" Margin="0,0,0,10"
                                          AutomationProperties.Name="Destination"/>
 
                 <TextBlock Text="Date" Margin="0,0,0,4"/>
-                <syncfusion:SfDatePicker Value="{Binding ScheduledDate, Mode=TwoWay}" Margin="0,0,0,10"
+                <syncfusion:SfDatePicker Value="{Binding ScheduledDate, Mode=TwoWay}" Margin="0,0,0,10" FontSize="14" Height="40"
                                          AutomationProperties.Name="Scheduled date"/>
 
                 <TextBlock Text="Leave time (hh:mm)" Margin="0,0,0,4"/>
-                <syncfusion:SfMaskedEdit Text="{Binding LeaveTimeText, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" Height="32" Margin="0,0,0,10"
+                <syncfusion:SfMaskedEdit Value="{Binding LeaveTimeText, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" Height="40" Margin="0,0,0,10"
                                          Mask="99:99" AutomationProperties.Name="Leave time"/>
 
                 <TextBlock Text="Event time (hh:mm)" Margin="0,0,0,4"/>
-                <syncfusion:SfMaskedEdit Text="{Binding EventTimeText, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" Height="32" Margin="0,0,0,10"
+                <syncfusion:SfMaskedEdit Value="{Binding EventTimeText, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" Height="40" Margin="0,0,0,10"
                                          Mask="99:99" AutomationProperties.Name="Event time"/>
 
                 <TextBlock Text="Riders" Margin="0,0,0,4"/>
-                <syncfusion:SfMaskedEdit Text="{Binding ScheduledRiders, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Height="32" Margin="0,0,0,10"
-                                         AutomationProperties.Name="Riders"/>
+                <syncfusion:IntegerTextBox Value="{Binding ScheduledRiders, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Height="40" Margin="0,0,0,10"
+                                           AutomationProperties.Name="Riders"/>
 
                 <TextBlock Text="Driver" Margin="0,0,0,4"/>
                 <syncfusion:ComboBoxAdv ItemsSource="{Binding AvailableDrivers}"
                           SelectedItem="{Binding SelectedDriver, Mode=TwoWay}"
                           DisplayMemberPath="DriverName"
-                          Height="32" Margin="0,0,0,10"
+                          Height="40" Margin="0,0,0,10"
                           AutomationProperties.Name="Driver"/>
 
                 <TextBlock Text="Vehicle" Margin="0,0,0,4"/>
                 <syncfusion:ComboBoxAdv ItemsSource="{Binding AvailableVehicles}"
                           SelectedItem="{Binding SelectedVehicle, Mode=TwoWay}"
                           DisplayMemberPath="BusNumber"
-                          Height="32" Margin="0,0,0,10"
+                          Height="40" Margin="0,0,0,10"
                           AutomationProperties.Name="Vehicle"/>
 
                 <TextBlock Text="Status" Margin="0,0,0,4"/>
-                <syncfusion:ComboBoxAdv ItemsSource="{Binding StatusOptions}" SelectedItem="{Binding Status, Mode=TwoWay}" Height="32" Margin="0,0,0,10"
+                <syncfusion:ComboBoxAdv ItemsSource="{Binding StatusOptions}" SelectedItem="{Binding Status, Mode=TwoWay}" Height="40" Margin="0,0,0,10"
                                         AutomationProperties.Name="Status"/>
 
                 <TextBlock Text="Requested by" Margin="0,0,0,4"/>
-                <syncfusion:SfMaskedEdit Text="{Binding RequestedBy, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Height="32" Margin="0,0,0,10"
+                <syncfusion:SfTextBoxExt Text="{Binding RequestedBy, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Height="40" Margin="0,0,0,10"
                                          AutomationProperties.Name="Requested by"/>
 
                 <TextBlock Text="Notes" Margin="0,0,0,4"/>
-                <syncfusion:SfMaskedEdit Text="{Binding Notes, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Height="60" TextWrapping="Wrap" AcceptsReturn="True"
+                <syncfusion:SfTextBoxExt Text="{Binding Notes, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Height="60" TextWrapping="Wrap" AcceptsReturn="True"
                                          AutomationProperties.Name="Notes"/>
             </StackPanel>
         </ScrollViewer>

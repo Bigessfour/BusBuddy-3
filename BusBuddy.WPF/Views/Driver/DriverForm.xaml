@@ -28,10 +28,31 @@
                 <Setter Property="Foreground"
                         Value="{DynamicResource FormLabelForegroundBrush}" />
             </Style>
-<Style TargetType="syncfusion:SfMaskedEdit"
+            <Style TargetType="syncfusion:SfMaskedEdit"
                    x:Key="FieldInputStyle">
                 <Setter Property="Height"
-                        Value="32" />
+                        Value="40" />
+                <Setter Property="FontSize"
+                        Value="14" />
+                <Setter Property="Padding"
+                        Value="8,5" />
+                <Setter Property="Margin"
+                        Value="0,0,0,10" />
+                <Setter Property="Foreground"
+                        Value="{DynamicResource FormInputForegroundBrush}" />
+                <Setter Property="Background"
+                        Value="{DynamicResource FormInputBackgroundBrush}" />
+                <Setter Property="BorderBrush"
+                        Value="{DynamicResource FormInputBorderBrush}" />
+                <Setter Property="BorderThickness"
+                        Value="1" />
+            </Style>
+            <Style TargetType="syncfusion:SfTextBoxExt"
+                   x:Key="FieldTextBoxStyle">
+                <Setter Property="Height"
+                        Value="40" />
+                <Setter Property="FontSize"
+                        Value="14" />
                 <Setter Property="Padding"
                         Value="8,5" />
                 <Setter Property="Margin"
@@ -107,8 +128,8 @@
                                 Grid.Column="0">
                         <TextBlock Text="First Name:"
                                    Style="{StaticResource FieldLabelStyle}" />
-                        <syncfusion:SfMaskedEdit Text="{Binding Driver.FirstName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                 Style="{StaticResource FieldInputStyle}"
+                        <syncfusion:SfTextBoxExt Text="{Binding Driver.FirstName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                 Style="{StaticResource FieldTextBoxStyle}"
                                                  AutomationProperties.Name="First Name"
                                                  AutomationProperties.HelpText="Enter driver's first name" />
                     </StackPanel>
@@ -116,8 +137,8 @@
                                 Grid.Column="2">
                         <TextBlock Text="Last Name:"
                                    Style="{StaticResource FieldLabelStyle}" />
-                        <syncfusion:SfMaskedEdit Text="{Binding Driver.LastName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                 Style="{StaticResource FieldInputStyle}"
+                        <syncfusion:SfTextBoxExt Text="{Binding Driver.LastName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                 Style="{StaticResource FieldTextBoxStyle}"
                                                  AutomationProperties.Name="Last Name"
                                                  AutomationProperties.HelpText="Enter driver's last name" />
                     </StackPanel>
@@ -125,7 +146,7 @@
                                 Grid.Column="0">
                         <TextBlock Text="Phone Number:"
                                    Style="{StaticResource FieldLabelStyle}" />
-                        <syncfusion:SfMaskedEdit Text="{Binding Driver.DriverPhone, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                        <syncfusion:SfMaskedEdit Value="{Binding Driver.DriverPhone, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                                  Style="{StaticResource FieldInputStyle}"
                                                  Mask="(999) 999-9999"
                                                  AutomationProperties.Name="Phone Number Input"
@@ -135,25 +156,19 @@
                                 Grid.Column="2">
                         <TextBlock Text="Email:"
                                    Style="{StaticResource FieldLabelStyle}" />
-                        <!-- Syncfusion WPF — SfMaskedEdit RegEx mask for email (v30.1.42)
-                    Reference: https://help.syncfusion.com/wpf/maskededit/mask-types -->
-                        <syncfusion:SfMaskedEdit x:Name="EmailMaskedEdit"
-                                                 Text="{Binding Driver.DriverEmail, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                 Style="{StaticResource FieldInputStyle}"
-                                                 MaskType="RegEx"
-                                                 Mask="[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}"
-                                                 PromptChar="_"
-                                                 Watermark="Enter driver email"
+                        <syncfusion:SfTextBoxExt Text="{Binding Driver.DriverEmail, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                 Style="{StaticResource FieldTextBoxStyle}"
+                                                 Watermark="name@example.com"
                                                  AutomationProperties.Name="Email Address"
-                                                 AutomationProperties.HelpText="Enter driver's email address" />
+                                                 AutomationProperties.HelpText="Enter driver's email address (optional)" />
                     </StackPanel>
                     <StackPanel Grid.Row="2"
                                 Grid.Column="0"
                                 Grid.ColumnSpan="3">
                         <TextBlock Text="Address:"
                                    Style="{StaticResource FieldLabelStyle}" />
-                        <syncfusion:SfMaskedEdit Text="{Binding Driver.Address, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                 Style="{StaticResource FieldInputStyle}"
+                        <syncfusion:SfTextBoxExt Text="{Binding Driver.Address, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                 Style="{StaticResource FieldTextBoxStyle}"
                                                  AutomationProperties.Name="Driver Address"
                                                  AutomationProperties.HelpText="Enter street address" />
                     </StackPanel>
@@ -161,8 +176,8 @@
                                 Grid.Column="0">
                         <TextBlock Text="City:"
                                    Style="{StaticResource FieldLabelStyle}" />
-                        <syncfusion:SfMaskedEdit Text="{Binding Driver.City, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                 Style="{StaticResource FieldInputStyle}"
+                        <syncfusion:SfTextBoxExt Text="{Binding Driver.City, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                 Style="{StaticResource FieldTextBoxStyle}"
                                                  AutomationProperties.Name="City"
                                                  AutomationProperties.HelpText="Enter city" />
                     </StackPanel>
@@ -176,14 +191,16 @@
                                 <ColumnDefinition Width="10" />
                                 <ColumnDefinition Width="*" />
                             </Grid.ColumnDefinitions>
-                            <syncfusion:SfMaskedEdit Grid.Column="0"
+                            <syncfusion:SfTextBoxExt Grid.Column="0"
                                                      Text="{Binding Driver.State, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                     Style="{StaticResource FieldInputStyle}"
+                                                     Style="{StaticResource FieldTextBoxStyle}"
                                                      AutomationProperties.Name="State"
                                                      AutomationProperties.HelpText="State abbreviation" />
                             <syncfusion:SfMaskedEdit Grid.Column="2"
-                                                     Text="{Binding Driver.Zip, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                     Value="{Binding Driver.Zip, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                                      Style="{StaticResource FieldInputStyle}"
+                                                     MaskType="RegEx"
+                                                     Mask="\d{5}(-\d{4})?"
                                                      AutomationProperties.Name="ZIP"
                                                      AutomationProperties.HelpText="ZIP code" />
                         </Grid>
@@ -193,18 +210,12 @@
                                 Grid.ColumnSpan="3">
                         <TextBlock Text="Status:"
                                    Style="{StaticResource FieldLabelStyle}" />
-                        <syncfusion:ComboBoxAdv Height="32"
-                                                SelectedValue="{Binding Driver.Status, Mode=TwoWay}"
-                                                SelectedValuePath="Content"
+                        <syncfusion:ComboBoxAdv Height="40"
+                                                ItemsSource="{Binding StatusOptions}"
+                                                SelectedItem="{Binding Driver.Status, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                                 Margin="0,0,0,10"
                                                 AutomationProperties.Name="Driver Status Selection"
-                                                AutomationProperties.HelpText="Select driver's current status">
-                            <ComboBoxItem Content="Active" />
-                            <ComboBoxItem Content="Inactive" />
-                            <ComboBoxItem Content="On Leave" />
-                            <ComboBoxItem Content="Training" />
-                            <ComboBoxItem Content="Terminated" />
-                        </syncfusion:ComboBoxAdv>
+                                                AutomationProperties.HelpText="Select driver's current status" />
                     </StackPanel>
                 </Grid>
             </GroupBox>
@@ -229,8 +240,8 @@
                                 Grid.Column="0">
                         <TextBlock Text="Employing School / District:"
                                    Style="{StaticResource FieldLabelStyle}" />
-                        <syncfusion:SfMaskedEdit Text="{Binding Driver.EmployingDistrict, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                 Style="{StaticResource FieldInputStyle}"
+                        <syncfusion:SfTextBoxExt Text="{Binding Driver.EmployingDistrict, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                 Style="{StaticResource FieldTextBoxStyle}"
                                                  AutomationProperties.Name="Employing District"
                                                  AutomationProperties.HelpText="School or district employer" />
                     </StackPanel>
@@ -239,7 +250,8 @@
                         <TextBlock Text="Hire Date:"
                                    Style="{StaticResource FieldLabelStyle}" />
                         <syncfusion:SfDatePicker Value="{Binding Driver.HireDate, Mode=TwoWay}"
-                                                 Height="32"
+                                                 Height="40"
+                                                 FontSize="14"
                                                  Margin="0,0,0,10"
                                                  AutomationProperties.Name="Hire Date"
                                                  AutomationProperties.HelpText="Employment start date" />
@@ -249,7 +261,8 @@
                         <TextBlock Text="Employment End Date:"
                                    Style="{StaticResource FieldLabelStyle}" />
                         <syncfusion:SfDatePicker Value="{Binding Driver.EmploymentEndDate, Mode=TwoWay}"
-                                                 Height="32"
+                                                 Height="40"
+                                                 FontSize="14"
                                                  Margin="0,0,0,10"
                                                  AutomationProperties.Name="Employment End Date"
                                                  AutomationProperties.HelpText="Leave blank if currently employed" />
@@ -258,43 +271,31 @@
                                 Grid.Column="2">
                         <TextBlock Text="Duty Category:"
                                    Style="{StaticResource FieldLabelStyle}" />
-                        <syncfusion:ComboBoxAdv Height="32"
-                                                SelectedValue="{Binding Driver.DutyCategory, Mode=TwoWay}"
-                                                SelectedValuePath="Content"
+                        <syncfusion:ComboBoxAdv Height="40"
+                                                ItemsSource="{Binding DutyCategoryOptions}"
+                                                SelectedItem="{Binding Driver.DutyCategory, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                                 Margin="0,0,0,10"
                                                 AutomationProperties.Name="Duty Category"
-                                                AutomationProperties.HelpText="Route or Activity per CDE matrix">
-                            <ComboBoxItem Content="Route" />
-                            <ComboBoxItem Content="Activity" />
-                        </syncfusion:ComboBoxAdv>
+                                                AutomationProperties.HelpText="Route or Activity per CDE matrix" />
                     </StackPanel>
                     <StackPanel Grid.Row="2"
                                 Grid.Column="0"
                                 Grid.ColumnSpan="3">
                         <TextBlock Text="Vehicle Category (CDE matrix):"
                                    Style="{StaticResource FieldLabelStyle}" />
-                        <syncfusion:ComboBoxAdv Height="32"
-                                                SelectedValue="{Binding Driver.VehicleCategory, Mode=TwoWay}"
-                                                SelectedValuePath="Content"
+                        <syncfusion:ComboBoxAdv Height="40"
+                                                ItemsSource="{Binding VehicleCategoryOptions}"
+                                                SelectedItem="{Binding Driver.VehicleCategory, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                                 Margin="0,0,0,10"
                                                 AutomationProperties.Name="Vehicle Category"
-                                                AutomationProperties.HelpText="CDE 2024-25 license/training matrix column">
-                            <ComboBoxItem Content="Route_16+_GVWR_GT_26001" />
-                            <ComboBoxItem Content="Route_16+_GVWR_LT_26001" />
-                            <ComboBoxItem Content="Route_TypeA_15_or_less" />
-                            <ComboBoxItem Content="Activity_MF_16+_GVWR_GT_26001" />
-                            <ComboBoxItem Content="Activity_MF_16+_GVWR_LT_26001" />
-                            <ComboBoxItem Content="Activity_TypeA_MF_15_or_less" />
-                            <ComboBoxItem Content="Activity_LT_12_passengers" />
-                            <ComboBoxItem Content="Activity_Motorcoach_16+_GVWR_GT_26001" />
-                        </syncfusion:ComboBoxAdv>
+                                                AutomationProperties.HelpText="CDE 2024-25 license/training matrix column" />
                     </StackPanel>
                     <StackPanel Grid.Row="3"
                                 Grid.Column="0">
                         <TextBlock Text="CDL Restrictions (e.g. M):"
                                    Style="{StaticResource FieldLabelStyle}" />
-                        <syncfusion:SfMaskedEdit Text="{Binding Driver.CdlRestrictions, Mode=TwoWay}"
-                                                 Style="{StaticResource FieldInputStyle}"
+                        <syncfusion:SfTextBoxExt Text="{Binding Driver.CdlRestrictions, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                 Style="{StaticResource FieldTextBoxStyle}"
                                                  AutomationProperties.Name="CDL Restrictions"
                                                  AutomationProperties.HelpText="CDL restriction codes from CDE matrix" />
                     </StackPanel>
@@ -302,15 +303,12 @@
                                 Grid.Column="2">
                         <TextBlock Text="Medical Form Type:"
                                    Style="{StaticResource FieldLabelStyle}" />
-                        <syncfusion:ComboBoxAdv Height="32"
-                                                SelectedValue="{Binding Driver.MedicalFormType, Mode=TwoWay}"
-                                                SelectedValuePath="Content"
+                        <syncfusion:ComboBoxAdv Height="40"
+                                                ItemsSource="{Binding MedicalFormTypeOptions}"
+                                                SelectedItem="{Binding Driver.MedicalFormType, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                                 Margin="0,0,0,10"
                                                 AutomationProperties.Name="Medical Form Type"
-                                                AutomationProperties.HelpText="USDOT Physical or STU-17">
-                            <ComboBoxItem Content="USDOT Physical" />
-                            <ComboBoxItem Content="STU-17" />
-                        </syncfusion:ComboBoxAdv>
+                                                AutomationProperties.HelpText="USDOT Physical or STU-17" />
                     </StackPanel>
                 </Grid>
             </GroupBox>
@@ -334,8 +332,8 @@
                                 Grid.Column="0">
                         <TextBlock Text="License Number:"
                                    Style="{StaticResource FieldLabelStyle}" />
-                        <syncfusion:SfMaskedEdit Text="{Binding Driver.LicenseNumber, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                 Style="{StaticResource FieldInputStyle}"
+                        <syncfusion:SfTextBoxExt Text="{Binding Driver.LicenseNumber, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                 Style="{StaticResource FieldTextBoxStyle}"
                                                  AutomationProperties.Name="License Number Input"
                                                  AutomationProperties.HelpText="Enter CDL license number" />
                     </StackPanel>
@@ -343,24 +341,20 @@
                                 Grid.Column="2">
                         <TextBlock Text="License Class:"
                                    Style="{StaticResource FieldLabelStyle}" />
-                        <syncfusion:ComboBoxAdv Height="32"
-                                                SelectedValue="{Binding Driver.LicenseClass, Mode=TwoWay}"
-                                                SelectedValuePath="Content"
+                        <syncfusion:ComboBoxAdv Height="40"
+                                                ItemsSource="{Binding LicenseClassOptions}"
+                                                SelectedItem="{Binding Driver.LicenseClass, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                                 Margin="0,0,0,10"
                                                 AutomationProperties.Name="License Class"
-                                                AutomationProperties.HelpText="Select CDL license class">
-                            <ComboBoxItem Content="Class A CDL" />
-                            <ComboBoxItem Content="Class B CDL" />
-                            <ComboBoxItem Content="Class C CDL" />
-                            <ComboBoxItem Content="Regular" />
-                        </syncfusion:ComboBoxAdv>
+                                                AutomationProperties.HelpText="Select CDL license class" />
                     </StackPanel>
                     <StackPanel Grid.Row="1"
                                 Grid.Column="0">
                         <TextBlock Text="License Expiry Date:"
                                    Style="{StaticResource FieldLabelStyle}" />
                         <syncfusion:SfDatePicker Value="{Binding Driver.LicenseExpiryDate, Mode=TwoWay}"
-                                                 Height="32"
+                                                 Height="40"
+                                                 FontSize="14"
                                                  Margin="0,0,0,10"
                                                  AutomationProperties.Name="License Expiry Date"
                                                  AutomationProperties.HelpText="Select license expiration date" />
@@ -369,8 +363,8 @@
                                 Grid.Column="2">
                         <TextBlock Text="Endorsements:"
                                    Style="{StaticResource FieldLabelStyle}" />
-                        <syncfusion:SfMaskedEdit Text="{Binding Driver.Endorsements, Mode=TwoWay}"
-                                                 Style="{StaticResource FieldInputStyle}"
+                        <syncfusion:SfTextBoxExt Text="{Binding Driver.Endorsements, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                 Style="{StaticResource FieldTextBoxStyle}"
                                                  AutomationProperties.Name="License Endorsements"
                                                  AutomationProperties.HelpText="Enter license endorsements (P, S, N, etc.)" />
                     </StackPanel>
@@ -405,7 +399,8 @@
                         <TextBlock Text="Background Check Date:"
                                    Style="{StaticResource FieldLabelStyle}" />
                         <syncfusion:SfDatePicker Value="{Binding Driver.BackgroundCheckDate, Mode=TwoWay}"
-                                                 Height="32"
+                                                 Height="40"
+                                                 FontSize="14"
                                                  Margin="0,0,0,10"
                                                  AutomationProperties.Name="Background Check Date"
                                                  AutomationProperties.HelpText="Select background check completion date" />
@@ -415,7 +410,8 @@
                         <TextBlock Text="Drug Test Date:"
                                    Style="{StaticResource FieldLabelStyle}" />
                         <syncfusion:SfDatePicker Value="{Binding Driver.DrugTestDate, Mode=TwoWay}"
-                                                 Height="32"
+                                                 Height="40"
+                                                 FontSize="14"
                                                  Margin="0,0,0,10"
                                                  AutomationProperties.Name="Drug Test Date"
                                                  AutomationProperties.HelpText="Select last drug test date" />
@@ -436,15 +432,15 @@
                     <StackPanel Grid.Column="0">
                         <TextBlock Text="Emergency Contact Name:"
                                    Style="{StaticResource FieldLabelStyle}" />
-                        <syncfusion:SfMaskedEdit Text="{Binding Driver.EmergencyContactName, Mode=TwoWay}"
-                                                 Style="{StaticResource FieldInputStyle}"
+                        <syncfusion:SfTextBoxExt Text="{Binding Driver.EmergencyContactName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                 Style="{StaticResource FieldTextBoxStyle}"
                                                  AutomationProperties.Name="Emergency Contact Name"
                                                  AutomationProperties.HelpText="Enter emergency contact person name" />
                     </StackPanel>
                     <StackPanel Grid.Column="2">
                         <TextBlock Text="Emergency Contact Phone:"
                                    Style="{StaticResource FieldLabelStyle}" />
-                        <syncfusion:SfMaskedEdit Text="{Binding Driver.EmergencyContactPhone, Mode=TwoWay}"
+                        <syncfusion:SfMaskedEdit Value="{Binding Driver.EmergencyContactPhone, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                                  Style="{StaticResource FieldInputStyle}"
                                                  Mask="(999) 999-9999"
                                                  AutomationProperties.Name="Emergency Contact Phone"
@@ -460,8 +456,8 @@
                     CornerRadius="3"
                     Padding="10"
                     Margin="0,10,0,10"
-                    Visibility="{Binding HasErrors, Converter={StaticResource BooleanToVisibilityConverter}}">
-                <TextBlock Text="{Binding ErrorMessage}"
+                    Visibility="{Binding HasStatusMessage, Converter={StaticResource BooleanToVisibilityConverter}}">
+                <TextBlock Text="{Binding StatusMessage}"
                            Foreground="{DynamicResource BusBuddy.Warning.Text}"
                            TextWrapping="Wrap" />
             </Border>

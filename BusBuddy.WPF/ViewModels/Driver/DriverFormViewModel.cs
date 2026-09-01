@@ -31,6 +31,7 @@ namespace BusBuddy.WPF.ViewModels.Driver
         public DriverFormViewModel(IDriverService driverService)
         {
             _driverService = driverService ?? throw new ArgumentNullException(nameof(driverService));
+            _driver.PropertyChanged += OnDriverModelPropertyChanged;
             InitializeCommands();
             _ = LoadDriversAsync();
         }
@@ -41,19 +42,27 @@ namespace BusBuddy.WPF.ViewModels.Driver
             get => _driver;
             set
             {
+                var old = _driver;
                 if (SetProperty(ref _driver, value))
                 {
+                    if (old is not null)
+                    {
+                        old.PropertyChanged -= OnDriverModelPropertyChanged;
+                    }
+
+                    if (_driver is not null)
+                    {
+                        _driver.PropertyChanged += OnDriverModelPropertyChanged;
+                    }
+
                     // Keep composite name aligned
                     TryUpdateDriverName();
-                    if (SaveDriverCommand is IRelayCommand save)
-                    {
-                        save.NotifyCanExecuteChanged();
-                    }
+                    RefreshSaveCanExecute();
                     if (DeleteDriverCommand is IRelayCommand del)
                     {
                         del.NotifyCanExecuteChanged();
                     }
-                    OnPropertyChanged(nameof(CanSaveDriver));
+
                     Logger.Debug("Driver object replaced -> Id={Id} Name={Name}", _driver?.DriverId, _driver?.DriverName);
                 }
             }
@@ -91,10 +100,39 @@ namespace BusBuddy.WPF.ViewModels.Driver
 
         public ObservableCollection<DriverModel> Drivers { get; } = new();
 
-        public bool CanSaveDriver => !string.IsNullOrWhiteSpace(Driver.DriverName) &&
-                                     !string.IsNullOrWhiteSpace(Driver.DriverPhone) &&
-                                     !string.IsNullOrWhiteSpace(Driver.LicenseNumber) &&
-                                     !string.IsNullOrWhiteSpace(Driver.LicenseClass);
+        public IReadOnlyList<string> StatusOptions { get; } =
+            ["Active", "Inactive", "On Leave", "Training", "Terminated"];
+
+        public IReadOnlyList<string> DutyCategoryOptions { get; } =
+            [DriverDutyCategories.Route, DriverDutyCategories.Activity];
+
+        public IReadOnlyList<string> VehicleCategoryOptions { get; } =
+        [
+            DriverVehicleCategories.Route16PlusGvwrOver26001,
+            DriverVehicleCategories.Route16PlusGvwrUnder26001,
+            DriverVehicleCategories.RouteTypeA15OrLess,
+            DriverVehicleCategories.ActivityMf16PlusGvwrOver26001,
+            DriverVehicleCategories.ActivityMf16PlusGvwrUnder26001,
+            DriverVehicleCategories.ActivityTypeA15OrLess,
+            DriverVehicleCategories.ActivityUnder12,
+            DriverVehicleCategories.ActivityMotorcoach
+        ];
+
+        public IReadOnlyList<string> MedicalFormTypeOptions { get; } =
+            ["USDOT Physical", "STU-17"];
+
+        /// <summary>Stored values must fit Drivers.LicenseClass (max 10).</summary>
+        public IReadOnlyList<string> LicenseClassOptions { get; } =
+            ["Class A", "Class B", "Class C", "Regular"];
+
+        public bool CanSaveDriver =>
+            HasUsableDriverName() &&
+            HasRealInput(Driver.DriverPhone) &&
+            HasRealInput(Driver.LicenseNumber) &&
+            HasRealInput(Driver.LicenseClass);
+
+        /// <summary>True when StatusMessage should show in the form status panel.</summary>
+        public bool HasStatusMessage => !string.IsNullOrWhiteSpace(StatusMessage);
 
         public bool CanDeleteDriver => IsEditMode && SelectedDriver is not null;
 
@@ -277,6 +315,7 @@ namespace BusBuddy.WPF.ViewModels.Driver
         private void ShowError(string message)
         {
             StatusMessage = message;
+            OnPropertyChanged(nameof(HasStatusMessage));
             Logger.Warning("User error: {Message}", message);
             System.Windows.MessageBox.Show(message, "Error", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
         }
@@ -284,6 +323,7 @@ namespace BusBuddy.WPF.ViewModels.Driver
         private void ShowSuccess(string message)
         {
             StatusMessage = message;
+            OnPropertyChanged(nameof(HasStatusMessage));
             Logger.Information("User success: {Message}", message);
         }
 
@@ -343,6 +383,13 @@ namespace BusBuddy.WPF.ViewModels.Driver
                     Zip = driver.Zip,
                     EmergencyContactName = driver.EmergencyContactName,
                     EmergencyContactPhone = driver.EmergencyContactPhone,
+                    HireDate = driver.HireDate,
+                    EmploymentEndDate = driver.EmploymentEndDate,
+                    EmployingDistrict = driver.EmployingDistrict,
+                    DutyCategory = driver.DutyCategory,
+                    VehicleCategory = driver.VehicleCategory,
+                    CdlRestrictions = driver.CdlRestrictions,
+                    MedicalFormType = driver.MedicalFormType,
                     CreatedDate = driver.CreatedDate,
                     UpdatedDate = driver.UpdatedDate
                 };
@@ -350,11 +397,7 @@ namespace BusBuddy.WPF.ViewModels.Driver
                 IsEditMode = true;
                 FormTitle = $"Edit Driver - {driver.DriverName}";
                 TryUpdateDriverName();
-
-                if (SaveDriverCommand is IRelayCommand save)
-                {
-                    save.NotifyCanExecuteChanged();
-                }
+                RefreshSaveCanExecute();
                 if (DeleteDriverCommand is IRelayCommand del)
                 {
                     del.NotifyCanExecuteChanged();
@@ -367,6 +410,62 @@ namespace BusBuddy.WPF.ViewModels.Driver
             }
         }
 
+        private void OnDriverModelPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName is nameof(DriverModel.FirstName) or nameof(DriverModel.LastName))
+            {
+                TryUpdateDriverName();
+            }
+
+            if (e.PropertyName is nameof(DriverModel.FirstName)
+                or nameof(DriverModel.LastName)
+                or nameof(DriverModel.DriverName)
+                or nameof(DriverModel.DriverPhone)
+                or nameof(DriverModel.LicenseNumber)
+                or nameof(DriverModel.LicenseClass))
+            {
+                RefreshSaveCanExecute();
+            }
+        }
+
+        private void RefreshSaveCanExecute()
+        {
+            OnPropertyChanged(nameof(CanSaveDriver));
+            if (SaveDriverCommand is IRelayCommand save)
+            {
+                save.NotifyCanExecuteChanged();
+            }
+        }
+
+        private bool HasUsableDriverName()
+        {
+            if (HasRealInput(Driver.FirstName) || HasRealInput(Driver.LastName))
+            {
+                return true;
+            }
+
+            var name = Driver.DriverName?.Trim() ?? string.Empty;
+            return HasRealInput(name) &&
+                   !name.StartsWith("Driver-", StringComparison.OrdinalIgnoreCase);
+        }
+
+        /// <summary>True when text has content beyond Syncfusion mask prompt characters.</summary>
+        private static bool HasRealInput(string? value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return false;
+            }
+
+            var cleaned = value
+                .Replace("_", string.Empty, StringComparison.Ordinal)
+                .Replace("(", string.Empty, StringComparison.Ordinal)
+                .Replace(")", string.Empty, StringComparison.Ordinal)
+                .Replace("-", string.Empty, StringComparison.Ordinal)
+                .Replace(" ", string.Empty, StringComparison.Ordinal);
+            return cleaned.Length > 0;
+        }
+
         private void TryUpdateDriverName()
         {
             try
@@ -374,15 +473,11 @@ namespace BusBuddy.WPF.ViewModels.Driver
                 if (!string.IsNullOrWhiteSpace(Driver.FirstName) || !string.IsNullOrWhiteSpace(Driver.LastName))
                 {
                     var full = ($"{Driver.FirstName} {Driver.LastName}").Trim();
-                    if (!string.IsNullOrWhiteSpace(full))
+                    if (!string.IsNullOrWhiteSpace(full) &&
+                        !string.Equals(Driver.DriverName, full, StringComparison.Ordinal))
                     {
                         Driver.DriverName = full;
                         OnPropertyChanged(nameof(Driver));
-                        if (SaveDriverCommand is IRelayCommand save)
-                        {
-                            save.NotifyCanExecuteChanged();
-                        }
-                        OnPropertyChanged(nameof(CanSaveDriver));
                         Logger.Debug("Computed DriverName -> {Name} (First={First} Last={Last})", full, Driver.FirstName, Driver.LastName);
                     }
                 }

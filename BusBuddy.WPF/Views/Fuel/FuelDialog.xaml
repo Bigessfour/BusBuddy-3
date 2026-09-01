@@ -79,7 +79,7 @@
 
             <TextBlock Grid.Row="3" Grid.Column="0" Text="Odometer Reading:" Margin="0,5,10,5" VerticalAlignment="Center"/>
             <syncfusion:DoubleTextBox Grid.Row="3" Grid.Column="1"
-                                       Value="{Binding Fuel.VehicleOdometerReading}"
+                                       Value="{Binding Fuel.VehicleOdometerReading, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                        MinValue="0"
                                        Margin="0,5,0,5"/>
 
@@ -91,14 +91,14 @@
 
             <TextBlock Grid.Row="5" Grid.Column="0" Text="Gallons:" Margin="0,5,10,5" VerticalAlignment="Center"/>
             <syncfusion:DoubleTextBox Grid.Row="5" Grid.Column="1"
-                                       Value="{Binding Fuel.Gallons}"
+                                       Value="{Binding Fuel.Gallons, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                        NumberDecimalDigits="3"
                                        MinValue="0"
                                        Margin="0,5,0,5"/>
 
             <TextBlock Grid.Row="6" Grid.Column="0" Text="Price per Gallon ($):" Margin="0,5,10,5" VerticalAlignment="Center"/>
             <syncfusion:DoubleTextBox Grid.Row="6" Grid.Column="1"
-                                       Value="{Binding Fuel.PricePerGallon}"
+                                       Value="{Binding Fuel.PricePerGallon, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                        NumberDecimalDigits="3"
                                        MinValue="0"
                                        Margin="0,5,0,5"
@@ -106,15 +106,15 @@
 
             <TextBlock Grid.Row="7" Grid.Column="0" Text="Total Cost ($):" Margin="0,5,10,5" VerticalAlignment="Center"/>
             <syncfusion:DoubleTextBox Grid.Row="7" Grid.Column="1"
-                                       Value="{Binding Fuel.TotalCost}"
+                                       Value="{Binding Fuel.TotalCost, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                        NumberDecimalDigits="2"
                                        MinValue="0"
                                        Margin="0,5,0,5"
                                        ValueChanged="TotalCost_ValueChanged"/>
 
             <TextBlock Grid.Row="8" Grid.Column="0" Text="Notes:" Margin="0,5,10,5" VerticalAlignment="Top"/>
-            <syncfusion:SfMaskedEdit Grid.Row="8" Grid.Column="1"
-                     Text="{Binding Fuel.Notes}"
+            <syncfusion:SfTextBoxExt Grid.Row="8" Grid.Column="1"
+                     Text="{Binding Fuel.Notes, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                      Height="80"
                      TextWrapping="Wrap"
                      AcceptsReturn="True"

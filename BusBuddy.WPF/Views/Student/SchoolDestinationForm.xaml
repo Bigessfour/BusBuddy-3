@@ -2,11 +2,22 @@
                              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                              xmlns:syncfusion="http://schemas.syncfusion.com/wpf"
+                             xmlns:maps="clr-namespace:Syncfusion.UI.Xaml.Maps;assembly=Syncfusion.SfMaps.WPF"
                              Title="{Binding Title}"
-                             Height="640"
-                             Width="520"
+                             Height="720"
+                             Width="920"
+                             MinHeight="560"
+                             MinWidth="720"
                              WindowStartupLocation="CenterOwner"
-                             ResizeMode="CanResize">
+                             ResizeMode="CanResize"
+                             UseNativeChrome="False"
+                             PreviewKeyDown="SchoolForm_PreviewKeyDown">
+    <!--
+      Input reliability (clerk form):
+      - No SfMaskedEdit here — Simple masks reject NumPad keys and often fail to push Text to the VM.
+      - SfTextBoxExt AutoCompleteMode=None for all text; DoubleTextBox for lat/lon (map pick works).
+      - Save clicks PushFieldsToViewModel() then SaveCommand (bindings alone were leaving VM empty).
+    -->
     <syncfusion:ChromelessWindow.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
@@ -16,7 +27,7 @@
         </ResourceDictionary>
     </syncfusion:ChromelessWindow.Resources>
 
-    <Grid Margin="20">
+    <Grid Margin="16">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
@@ -27,8 +38,8 @@
         <Border Grid.Row="0"
                 Background="{DynamicResource BusBuddy.Brush.Primary}"
                 CornerRadius="5"
-                Padding="15"
-                Margin="0,0,0,15">
+                Padding="12,10"
+                Margin="0,0,0,12">
             <TextBlock Text="Add school (required before Generate Routes)"
                        FontSize="16"
                        FontWeight="Bold"
@@ -36,88 +47,149 @@
                        TextWrapping="Wrap"/>
         </Border>
 
-        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
-            <StackPanel>
-                <TextBlock Text="School name *" Margin="0,0,0,4"/>
-                <syncfusion:SfTextBoxExt Text="{Binding Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                         Height="32" Margin="0,0,0,12"
-                                         AutomationProperties.Name="School name"/>
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="360" MinWidth="300"/>
+                <ColumnDefinition Width="12"/>
+                <ColumnDefinition Width="*" MinWidth="320"/>
+            </Grid.ColumnDefinitions>
 
-                <TextBlock Text="Street address *" Margin="0,0,0,4"/>
-                <syncfusion:SfTextBoxExt Text="{Binding Address, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                         Height="32" Margin="0,0,0,12"
-                                         AutomationProperties.Name="School street address"/>
+            <ScrollViewer Grid.Column="0" VerticalScrollBarVisibility="Auto" Focusable="False">
+                <StackPanel>
+                    <TextBlock Text="School name *" Margin="0,0,0,4"/>
+                    <syncfusion:SfTextBoxExt x:Name="SchoolNameBox"
+                                             AutoCompleteMode="None"
+                                             ShowClearButton="True"
+                                             Height="40" Margin="0,0,0,10"
+                                             AutomationProperties.Name="School name"/>
 
-                <TextBlock Text="City *" Margin="0,0,0,4"/>
-                <syncfusion:SfTextBoxExt Text="{Binding City, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                         Height="32" Margin="0,0,0,12"
-                                         AutomationProperties.Name="School city"/>
+                    <TextBlock Text="Street address *" Margin="0,0,0,4"/>
+                    <syncfusion:SfTextBoxExt x:Name="SchoolAddressBox"
+                                             AutoCompleteMode="None"
+                                             ShowClearButton="True"
+                                             Watermark="1105 Parkview Ave"
+                                             Height="40" Margin="0,0,0,10"
+                                             AutomationProperties.Name="School street address"/>
 
-                <Grid Margin="0,0,0,12">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="12"/>
-                        <ColumnDefinition Width="*"/>
-                    </Grid.ColumnDefinitions>
-                    <StackPanel Grid.Column="0">
-                        <TextBlock Text="State *" Margin="0,0,0,4"/>
-                        <syncfusion:SfTextBoxExt Text="{Binding State, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                 Height="32"
-                                                 AutomationProperties.Name="School state"/>
-                    </StackPanel>
-                    <StackPanel Grid.Column="2">
-                        <TextBlock Text="ZIP *" Margin="0,0,0,4"/>
-                        <syncfusion:SfTextBoxExt Text="{Binding ZipCode, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                 Height="32"
-                                                 AutomationProperties.Name="School ZIP"/>
-                    </StackPanel>
-                </Grid>
+                    <TextBlock Text="City *" Margin="0,0,0,4"/>
+                    <syncfusion:SfTextBoxExt x:Name="SchoolCityBox"
+                                             AutoCompleteMode="None"
+                                             ShowClearButton="True"
+                                             Height="40" Margin="0,0,0,10"
+                                             AutomationProperties.Name="School city"/>
 
+                    <Grid Margin="0,0,0,10">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="12"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0">
+                            <TextBlock Text="State * (2-letter)" Margin="0,0,0,4"/>
+                            <syncfusion:SfTextBoxExt x:Name="SchoolStateBox"
+                                                     AutoCompleteMode="None"
+                                                     Height="40"
+                                                     AutomationProperties.Name="School state"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="2">
+                            <TextBlock Text="ZIP *" Margin="0,0,0,4"/>
+                            <syncfusion:SfTextBoxExt x:Name="SchoolZipBox"
+                                                     AutoCompleteMode="None"
+                                                     Height="40"
+                                                     AutomationProperties.Name="School ZIP"/>
+                        </StackPanel>
+                    </Grid>
+
+                    <Grid Margin="0,0,0,10">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="12"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0">
+                            <TextBlock Text="Start (HH:mm) *" Margin="0,0,0,4"/>
+                            <syncfusion:SfTextBoxExt x:Name="SchoolStartBox"
+                                                     AutoCompleteMode="None"
+                                                     Watermark="08:00"
+                                                     Height="40"
+                                                     AutomationProperties.Name="School start time"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="2">
+                            <TextBlock Text="Dismissal (HH:mm) *" Margin="0,0,0,4"/>
+                            <syncfusion:SfTextBoxExt x:Name="SchoolDismissalBox"
+                                                     AutoCompleteMode="None"
+                                                     Watermark="15:30"
+                                                     Height="40"
+                                                     AutomationProperties.Name="School dismissal time"/>
+                        </StackPanel>
+                    </Grid>
+
+                    <TextBlock Text="Latitude / longitude" Margin="0,4,0,4" FontWeight="SemiBold"/>
+                    <TextBlock Text="{Binding MapHint}" TextWrapping="Wrap" Margin="0,0,0,6"
+                               Foreground="{DynamicResource BusBuddy.Brush.Text.Secondary}"
+                               AutomationProperties.Name="School map hint"/>
+                    <Grid Margin="0,0,0,8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="12"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <syncfusion:DoubleTextBox x:Name="SchoolLatBox"
+                                                  Grid.Column="0"
+                                                  NumberDecimalDigits="6"
+                                                  MinValue="-90"
+                                                  MaxValue="90"
+                                                  Height="40"
+                                                  AutomationProperties.Name="School latitude"/>
+                        <syncfusion:DoubleTextBox x:Name="SchoolLonBox"
+                                                  Grid.Column="2"
+                                                  NumberDecimalDigits="6"
+                                                  MinValue="-180"
+                                                  MaxValue="180"
+                                                  Height="40"
+                                                  AutomationProperties.Name="School longitude"/>
+                    </Grid>
+                    <syncfusion:ButtonAdv Label="Clear map pin"
+                                          Command="{Binding ClearMapPickCommand}"
+                                          SizeMode="Normal" IconWidth="0" IconHeight="0" SmallIcon="{x:Null}"
+                                          HorizontalAlignment="Left"
+                                          AutomationProperties.Name="Clear school map pin"/>
+                </StackPanel>
+            </ScrollViewer>
+
+            <Border Grid.Column="2"
+                    BorderBrush="{DynamicResource BusBuddy.Brush.Surface.Border}"
+                    BorderThickness="1"
+                    CornerRadius="4"
+                    Padding="4">
                 <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="12"/>
-                        <ColumnDefinition Width="*"/>
-                    </Grid.ColumnDefinitions>
-                    <StackPanel Grid.Column="0">
-                        <TextBlock Text="Start (HH:mm) *" Margin="0,0,0,4"/>
-                        <syncfusion:SfMaskedEdit Text="{Binding StartTimeText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                 Height="32"
-                                                 AutomationProperties.Name="School start time"/>
-                    </StackPanel>
-                    <StackPanel Grid.Column="2">
-                        <TextBlock Text="Dismissal (HH:mm) *" Margin="0,0,0,4"/>
-                        <syncfusion:SfMaskedEdit Text="{Binding DismissalTimeText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                 Height="32"
-                                                 AutomationProperties.Name="School dismissal time"/>
-                    </StackPanel>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <TextBlock Grid.Row="0" Margin="4,2,4,6" TextWrapping="Wrap"
+                               Text="Click map to pin school location (Lamar area). Scroll wheel zooms; drag pans."/>
+                    <maps:SfMap x:Name="SchoolPickMap"
+                                Grid.Row="1"
+                                ZoomLevel="{Binding MapZoomLevel}"
+                                EnableZoom="True"
+                                EnablePan="True"
+                                MouseLeftButtonUp="SchoolPickMap_MouseLeftButtonUp"
+                                AutomationProperties.Name="School location map">
+                        <maps:SfMap.Layers>
+                            <maps:ImageryLayer x:Name="SchoolPickLayer"
+                                               LayerType="OSM"
+                                               Center="{Binding MapCenter}"
+                                               Markers="{Binding MapMarkers}"/>
+                        </maps:SfMap.Layers>
+                    </maps:SfMap>
                 </Grid>
-
-                <TextBlock Text="Latitude / longitude (optional if Address Validation can geocode)"
-                           Margin="0,12,0,4" TextWrapping="Wrap"/>
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="12"/>
-                        <ColumnDefinition Width="*"/>
-                    </Grid.ColumnDefinitions>
-                    <syncfusion:SfTextBoxExt Grid.Column="0"
-                                             Text="{Binding LatitudeText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                             Height="32"
-                                             Watermark="Latitude"
-                                             AutomationProperties.Name="School latitude"/>
-                    <syncfusion:SfTextBoxExt Grid.Column="2"
-                                             Text="{Binding LongitudeText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                             Height="32"
-                                             Watermark="Longitude"
-                                             AutomationProperties.Name="School longitude"/>
-                </Grid>
-            </StackPanel>
-        </ScrollViewer>
+            </Border>
+        </Grid>
 
         <TextBlock Grid.Row="2" Text="{Binding ValidationMessage}"
                    Foreground="{DynamicResource BusBuddy.Brush.Semantic.Danger}"
-                   TextWrapping="Wrap" Margin="0,12,0,8"
+                   TextWrapping="Wrap" Margin="0,10,0,8" MinHeight="20"
                    AutomationProperties.Name="School form validation"/>
 
         <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right">
@@ -125,8 +197,11 @@
                                   SizeMode="Normal" IconWidth="0" IconHeight="0" SmallIcon="{x:Null}"
                                   Margin="0,0,10,0"
                                   AutomationProperties.Name="Cancel add school"/>
-            <syncfusion:ButtonAdv Label="Save school" Command="{Binding SaveCommand}"
+            <syncfusion:ButtonAdv x:Name="SaveSchoolButton"
+                                  Label="Save school"
+                                  Click="SaveSchoolButton_Click"
                                   SizeMode="Normal" IconWidth="0" IconHeight="0" SmallIcon="{x:Null}"
+                                  IsDefault="True"
                                   Background="{DynamicResource BusBuddy.Brush.Primary}"
                                   Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}"
                                   AutomationProperties.Name="Save school"/>

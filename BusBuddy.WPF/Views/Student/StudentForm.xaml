@@ -124,10 +124,6 @@
                 <Setter Property="Foreground" Value="{DynamicResource BusBuddy.Brush.Text.Primary}"/>
                 <Setter Property="Background" Value="{DynamicResource BusBuddy.Brush.Surface.Light}"/>
             </Style>
-            <Style TargetType="syncfusion:SfDatePicker" BasedOn="{StaticResource {x:Type syncfusion:SfDatePicker}}">
-                <Setter Property="Height" Value="40"/>
-                <Setter Property="Margin" Value="0,0,0,10"/>
-            </Style>
             <!-- High-contrast styles for Syncfusion inputs used on this form -->
             <Style TargetType="syncfusion:ComboBoxAdv" BasedOn="{StaticResource {x:Type syncfusion:ComboBoxAdv}}">
                 <Setter Property="Height" Value="40"/>
@@ -138,9 +134,13 @@
             </Style>
             <Style TargetType="syncfusion:SfDatePicker" BasedOn="{StaticResource {x:Type syncfusion:SfDatePicker}}">
                 <Setter Property="Height" Value="40"/>
+                <Setter Property="FontSize" Value="14"/>
                 <Setter Property="Margin" Value="0,0,0,10"/>
                 <Setter Property="Foreground" Value="{DynamicResource BusBuddy.Brush.Text.Primary}"/>
                 <Setter Property="Background" Value="{DynamicResource BusBuddy.Brush.Surface.Light}"/>
+                <Setter Property="FormatString" Value="MMM dd, yyyy"/>
+                <Setter Property="SelectorFormatString" Value="M/d/yyyy"/>
+                <Setter Property="DropDownHeight" Value="320"/>
             </Style>
             <Style TargetType="syncfusion:SfTextBoxExt" BasedOn="{StaticResource {x:Type syncfusion:SfTextBoxExt}}">
                 <Setter Property="Foreground" Value="{DynamicResource BusBuddy.Brush.Text.Primary}"/>
@@ -290,7 +290,11 @@
                                        Value="{Binding Student.DateOfBirth, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                        AllowNull="True"
                                        Watermark="Select birthdate (optional)"
-                                       Height="35"
+                                       FormatString="MMM dd, yyyy"
+                                       SelectorFormatString="M/d/yyyy"
+                                       FontSize="14"
+                                       Height="40"
+                                       DropDownHeight="320"
                                        AutomationProperties.Name="Date of Birth"/>
                         </StackPanel>
 
@@ -419,17 +423,27 @@
                         </StackPanel>
 
                         <StackPanel Grid.Row="2" Grid.ColumnSpan="3">
-                <syncfusion:ButtonAdv Name="ValidateAddressButton"
-                    Label="Validate Address"
+                            <syncfusion:ButtonAdv Name="ValidateAddressButton"
+                                    Label="Validate Address"
                                     Command="{Binding ValidateAddressCommand}"
                                     HorizontalAlignment="Left"
                                     Margin="0,10,0,0"
+                                    SizeMode="Normal" IconWidth="0" IconHeight="0" SmallIcon="{x:Null}"
                                     AutomationProperties.Name="Validate Address"/>
-                            <TextBlock Name="AddressValidationMessage"
-                                       Text="{Binding AddressValidationMessage}"
-                                       Foreground="{Binding AddressValidationColor}"
-                                       Margin="0,5,0,0"
-                                       TextWrapping="Wrap"/>
+                            <Border Margin="0,8,0,0"
+                                    Padding="10,8"
+                                    Background="{DynamicResource BusBuddy.Brush.Surface.Medium}"
+                                    BorderBrush="{DynamicResource BusBuddy.Brush.Surface.Border}"
+                                    BorderThickness="1"
+                                    CornerRadius="4"
+                                    MinHeight="36">
+                                <TextBlock Name="AddressValidationMessage"
+                                           Text="{Binding AddressValidationMessage}"
+                                           Foreground="{Binding AddressValidationColor}"
+                                           FontSize="13"
+                                           TextWrapping="Wrap"
+                                           AutomationProperties.Name="Address validation result"/>
+                            </Border>
                         </StackPanel>
                     </Grid>
                 </GroupBox>
@@ -642,6 +656,7 @@
                     CornerRadius="3" Padding="15" Margin="0,20,0,0">
                 <Grid>
                     <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>

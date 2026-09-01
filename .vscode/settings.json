@@ -519,7 +519,7 @@
     { "tag": "!", "color": "#FF2D00" }, // For critical notes in PS/C#
     { "tag": "bb", "color": "#3498DB" } // BusBuddy-specific comments
   ],
-  "cSpell.enabled": true, // Aligns with streetsidesoftware.code-spell-checker
+  "cSpell.enabled": false, // Spell lint (Trunk cspell/codespell + Code Spell Checker) was drowning domain terms
 
   // === DOTNET CORE EXPLORER ===
   "dotnetCoreExplorer.showProjectFileInExplorer": true,

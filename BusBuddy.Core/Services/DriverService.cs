@@ -1274,6 +1274,16 @@ namespace BusBuddy.Core.Services
 
             try
             {
+                // This scrubber is SQL Server–oriented (unquoted Drivers, + concat). On Postgres EF
+                // creates quoted "Drivers"; unquoted Drivers folds to drivers and 42P01's.
+                var provider = context.Database.ProviderName ?? string.Empty;
+                if (provider.Contains("Npgsql", StringComparison.OrdinalIgnoreCase))
+                {
+                    Logger.Debug("Skipping SQL Server NULL scrubber on Npgsql provider");
+                    _nullValuesFixed = true;
+                    return;
+                }
+
                 // Check if there are any NULL values in required columns
                 var hasNullValues = await context.Database.ExecuteSqlRawAsync(@"
                     SELECT CASE WHEN EXISTS (

@@ -42,7 +42,7 @@
                 <syncfusion:ComboBoxAdv ItemsSource="{Binding Schools}"
                                         SelectedItem="{Binding FromSchool, Mode=TwoWay}"
                                         DisplayMemberPath="Name"
-                                        Height="32"
+                                        Height="40"
                                         Margin="0,0,0,12"
                                         AutomationProperties.Name="From school" />
 
@@ -50,20 +50,20 @@
                 <syncfusion:ComboBoxAdv ItemsSource="{Binding Schools}"
                                         SelectedItem="{Binding ToSchool, Mode=TwoWay}"
                                         DisplayMemberPath="Name"
-                                        Height="32"
+                                        Height="40"
                                         Margin="0,0,0,12"
                                         AutomationProperties.Name="To school" />
 
                 <TextBlock Text="Pickup location *" Margin="0,0,0,4" />
-                <syncfusion:SfMaskedEdit Text="{Binding PickupAddress, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                         Height="32"
+                <syncfusion:SfTextBoxExt Text="{Binding PickupAddress, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                         Height="40"
                                          Margin="0,0,0,12"
                                          AutomationProperties.Name="Pickup location"
                                          AutomationProperties.HelpText="Required pickup address for the transfer" />
 
                 <TextBlock Text="Dropoff location *" Margin="0,0,0,4" />
-                <syncfusion:SfMaskedEdit Text="{Binding DropoffAddress, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                         Height="32"
+                <syncfusion:SfTextBoxExt Text="{Binding DropoffAddress, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                         Height="40"
                                          Margin="0,0,0,12"
                                          AutomationProperties.Name="Dropoff location"
                                          AutomationProperties.HelpText="Required dropoff address for the transfer" />
@@ -76,22 +76,22 @@
                     </Grid.ColumnDefinitions>
                     <StackPanel Grid.Column="0">
                         <TextBlock Text="Requested pickup time (HH:mm) *" Margin="0,0,0,4" />
-                        <syncfusion:SfMaskedEdit Text="{Binding PickupTimeText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                 Height="32"
+                        <syncfusion:SfMaskedEdit Value="{Binding PickupTimeText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                 Height="40"
                                                  Mask="99:99"
                                                  AutomationProperties.Name="Pickup time" />
                     </StackPanel>
                     <StackPanel Grid.Column="2">
                         <TextBlock Text="Requested dropoff time (HH:mm) *" Margin="0,0,0,4" />
-                        <syncfusion:SfMaskedEdit Text="{Binding DropoffTimeText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                 Height="32"
+                        <syncfusion:SfMaskedEdit Value="{Binding DropoffTimeText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                 Height="40"
                                                  Mask="99:99"
                                                  AutomationProperties.Name="Dropoff time" />
                     </StackPanel>
                 </Grid>
 
                 <TextBlock Text="Notes" Margin="0,0,0,4" />
-                <syncfusion:SfMaskedEdit Text="{Binding Notes, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                <syncfusion:SfTextBoxExt Text="{Binding Notes, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                          Height="72"
                          TextWrapping="Wrap"
                          AcceptsReturn="True"

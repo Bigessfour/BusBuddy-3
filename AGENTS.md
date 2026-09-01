@@ -53,7 +53,7 @@ Loaded by `LoadApiKeysFromMacPasswords()` in `BusBuddy.WPF/App.xaml.cs`.
 | `SYNCFUSION_LICENSE_KEY`                       | Syncfusion WPF                                                                                             |
 | `Syncfusion_API_Key`                           | Syncfusion MCP assistant                                                                                   |
 | `GOOGLE_MAPS_API_KEY`                          | Google Maps Platform (Address Validation + Routes) when spec 007 US1/US3 resume. Not required until then.  |
-| `GCP_BILLING_PROJECT` / `GOOGLE_CLOUD_PROJECT` | `new-coursera-490518`                                                                                      |
+| `GCP_BILLING_PROJECT` / `GOOGLE_CLOUD_PROJECT` | `busbuddy-507301`                                                                                          |
 
 **Setup:** Store Passwords entries (Name = env var). Maps API key is optional until spec 007 US1/US3. There is no Earth Engine setup script.
 
@@ -65,7 +65,8 @@ Set `GOOGLE_MAPS_API_KEY` as a machine/user env var when Maps clients are wired 
 
 | Project ID            | Role                                                          |
 | --------------------- | ------------------------------------------------------------- |
-| `new-coursera-490518` | GCP console / billing / Maps APIs / `gcloud config` default   |
+| `busbuddy-507301`     | **Primary** GCP / billing / Maps Platform / `gcloud` default  |
+| `new-coursera-490518` | Legacy Coursera project (billed; prefer `busbuddy-507301`)    |
 | `ee-bigessfour`       | **Unused by the app** (historical Earth Engine — do not wire) |
 | ~~`busbuddy-465000`~~ | **Invalid** — removed from appsettings                        |
 
