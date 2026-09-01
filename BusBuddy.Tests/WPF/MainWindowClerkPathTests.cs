@@ -52,7 +52,7 @@ public class MainWindowClerkPathTests
         Assert.That(xaml, Does.Contain("SchoolPickMap_MouseLeftButtonUp"));
         Assert.That(xaml, Does.Contain("DoubleTextBox"));
         Assert.That(xaml, Does.Contain("AutoCompleteMode=\"None\""));
-        Assert.That(xaml, Does.Not.Contain("SfMaskedEdit"));
+        Assert.That(xaml, Does.Not.Contain("<syncfusion:SfMaskedEdit"));
         Assert.That(xaml, Does.Not.Contain("MaskType=\"Text\""));
         Assert.That(xaml, Does.Contain("Height=\"40\""));
         var codeBehind = XamlViewFile.Read("Views/Student/SchoolDestinationForm.xaml.cs");

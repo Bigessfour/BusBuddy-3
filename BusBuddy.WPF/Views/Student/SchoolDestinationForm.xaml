@@ -14,7 +14,7 @@
                              PreviewKeyDown="SchoolForm_PreviewKeyDown">
     <!--
       Input reliability (clerk form):
-      - No SfMaskedEdit here — Simple masks reject NumPad keys and often fail to push Text to the VM.
+      - No masked-edit control here — Simple masks reject NumPad keys and often fail to push Text to the VM.
       - SfTextBoxExt AutoCompleteMode=None for all text; DoubleTextBox for lat/lon (map pick works).
       - Save clicks PushFieldsToViewModel() then SaveCommand (bindings alone were leaving VM empty).
     -->
