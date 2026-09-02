@@ -4,6 +4,7 @@ using BusBuddy.Core.Data.Repositories;
 using BusBuddy.Core.Data.UnitOfWork;
 using BusBuddy.Core.Services;
 using BusBuddy.Core.Services.Interfaces;
+using BusBuddy.Core.Utilities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -29,13 +30,13 @@ namespace BusBuddy.Core.Extensions
                 var optionsBuilder = new DbContextOptionsBuilder<BusBuddyDbContext>();
 
                 // Highest precedence: environment override for quick diagnostics
-                var envOverride = Environment.GetEnvironmentVariable("BUSBUDDY_CONNECTION");
+                var envOverride = PostgresConnectionResolver.ResolveAndApply()
+                    ?? Environment.GetEnvironmentVariable("BUSBUDDY_CONNECTION");
                 if (!string.IsNullOrWhiteSpace(envOverride))
                 {
-                    if (envOverride.Contains("Host=", StringComparison.OrdinalIgnoreCase) ||
-                        envOverride.Contains("postgres", StringComparison.OrdinalIgnoreCase))
+                    if (PostgresConnectionResolver.IsPostgresConnection(envOverride))
                     {
-                        optionsBuilder.UseNpgsql(envOverride);
+                        optionsBuilder.UseBusBuddyPostgres(envOverride);
                     }
                     else
                     {
@@ -57,7 +58,7 @@ namespace BusBuddy.Core.Extensions
                 else if (databaseProvider.Equals("Postgres", StringComparison.OrdinalIgnoreCase) ||
                          databaseProvider.Equals("PostgreSQL", StringComparison.OrdinalIgnoreCase))
                 {
-                    optionsBuilder.UseNpgsql(connectionString);
+                    optionsBuilder.UseBusBuddyPostgres(connectionString);
                 }
                 else if (databaseProvider.Equals("Local", StringComparison.OrdinalIgnoreCase))
                 {

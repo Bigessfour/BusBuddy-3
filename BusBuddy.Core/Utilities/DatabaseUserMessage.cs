@@ -1,5 +1,4 @@
 using System;
-using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
@@ -12,10 +11,6 @@ namespace BusBuddy.Core.Utilities;
 /// </summary>
 public static class DatabaseUserMessage
 {
-    private static readonly Regex HostPortRegex = new(
-        @"Host=([^;]+);Port=(\d+)",
-        RegexOptions.IgnoreCase | RegexOptions.Compiled);
-
     public const string UnavailableShort =
         "Database is unavailable. Ensure Postgres is running and this machine can reach the Mac host on port 5432.";
 
@@ -122,17 +117,6 @@ public static class DatabaseUserMessage
     private static string? DescribeConfiguredEndpoint()
     {
         var raw = Environment.GetEnvironmentVariable("BUSBUDDY_CONNECTION");
-        if (string.IsNullOrWhiteSpace(raw))
-        {
-            return null;
-        }
-
-        var match = HostPortRegex.Match(raw);
-        if (!match.Success)
-        {
-            return null;
-        }
-
-        return $"{match.Groups[1].Value}:{match.Groups[2].Value}";
+        return PostgresConnectionResolver.DescribeEndpoint(raw);
     }
 }

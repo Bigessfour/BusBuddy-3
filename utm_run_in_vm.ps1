@@ -61,6 +61,46 @@ function Sync-BusBuddyToLocal {
     Write-Host "Local sync complete." -ForegroundColor Green
 }
 
+function Get-MacHostIpForPostgres {
+    param([string]$ProjectRoot)
+
+    $ipFile = Join-Path $ProjectRoot "keys\mac-host-ip.txt"
+    if (Test-Path -LiteralPath $ipFile) {
+        $ip = (Get-Content -LiteralPath $ipFile -Raw).Trim()
+        if ($ip -match '^\d{1,3}(\.\d{1,3}){3}$') {
+            return $ip
+        }
+    }
+
+    $existing = [Environment]::GetEnvironmentVariable('BUSBUDDY_CONNECTION', 'User')
+    if ($existing -match 'Host=([^;]+)') {
+        return $Matches[1]
+    }
+
+    return $null
+}
+
+function Set-BusBuddyPostgresConnection {
+    param([string]$HostIp)
+
+    if ([string]::IsNullOrWhiteSpace($HostIp)) {
+        Write-Host "WARNING: Mac host IP unknown — set keys\mac-host-ip.txt from the Mac (run ./run-wpf.sh) or BUSBUDDY_CONNECTION manually." -ForegroundColor Yellow
+        return
+    }
+
+    $conn = "Host=$HostIp;Port=5432;Database=busbuddy_test;Username=busbuddy;Password=busbuddy_dev;Include Error Detail=true"
+    $env:BUSBUDDY_CONNECTION = $conn
+    $env:DatabaseProvider = 'Postgres'
+
+    $current = [Environment]::GetEnvironmentVariable('BUSBUDDY_CONNECTION', 'User')
+    if ($current -ne $conn) {
+        [Environment]::SetEnvironmentVariable('BUSBUDDY_CONNECTION', $conn, 'User')
+        Write-Host "Updated BUSBUDDY_CONNECTION -> Host=$HostIp" -ForegroundColor Cyan
+    } else {
+        Write-Host "BUSBUDDY_CONNECTION -> Host=$HostIp" -ForegroundColor Cyan
+    }
+}
+
 function Find-BusBuddyRoot {
     param([string]$Override)
 
@@ -149,6 +189,12 @@ try {
 
     Set-Location -LiteralPath $projectRoot
     Write-Host "Building from: $projectRoot" -ForegroundColor Green
+
+    $macHostIp = Get-MacHostIpForPostgres -ProjectRoot $sharedRoot
+    if (-not $macHostIp) {
+        $macHostIp = Get-MacHostIpForPostgres -ProjectRoot $projectRoot
+    }
+    Set-BusBuddyPostgresConnection -HostIp $macHostIp
 
     $keyPath = Join-Path $sharedRoot "keys\bus-buddy-gee-key.json"
     if (Test-Path -LiteralPath $keyPath) {

@@ -113,6 +113,11 @@ fi
 # Helpful host IP for when the guest needs to reach Mac-hosted Docker Postgres
 HOST_IP="$(ipconfig getifaddr en0 2>/dev/null || ipconfig getifaddr en1 2>/dev/null || echo 'unknown')"
 echo "${PFX} Mac host IP for VM (Postgres etc.): ${HOST_IP}   (example BUSBUDDY_CONNECTION: Host=${HOST_IP};...)"
+if [[ "${HOST_IP}" != "unknown" ]]; then
+  mkdir -p "${ROOT}/keys"
+  printf '%s\n' "${HOST_IP}" > "${ROOT}/keys/mac-host-ip.txt"
+  echo "${PFX} Wrote keys/mac-host-ip.txt for the VM launcher."
+fi
 
 # 3. Attempt automatic launch inside guest via utmctl exec + discovery (best UX when guest agent ready)
 echo "${PFX} Attempting auto-launch of WPF inside the VM (via guest exec)..."
@@ -140,6 +145,14 @@ foreach ($r in ($roots | Select -Unique)) {
 if (-not $found) { Write-Output "NOTFOUND"; exit 1 }
 Set-Location $found
 Write-Output "FOUND:$found"
+$hostIp = "'"${HOST_IP}"'"
+$ipFile = Join-Path $found "keys\mac-host-ip.txt"
+if (Test-Path $ipFile) { $hostIp = (Get-Content $ipFile -Raw).Trim() }
+if ($hostIp -match "^\d") {
+  $env:BUSBUDDY_CONNECTION = "Host=$hostIp;Port=5432;Database=busbuddy_test;Username=busbuddy;Password=busbuddy_dev;Include Error Detail=true"
+  $env:DatabaseProvider = "Postgres"
+  Write-Output "CONN:$hostIp"
+}
 Start-Process -FilePath "dotnet" -ArgumentList "run","--project","BusBuddy.WPF/BusBuddy.WPF.csproj" -WorkingDirectory $found -WindowStyle Normal
 exit 0
 '
