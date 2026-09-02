@@ -3,27 +3,35 @@ using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows.Input;
 using BusBuddy.WPF.Commands;
-using BusBuddy.Core.Models;
 
-namespace BusBuddy.WPF.ViewModels.BusManagement
+namespace BusBuddy.WPF.ViewModels.Bus
 {
     /// <summary>
     /// ViewModel for the Bus Edit Dialog
     /// </summary>
     public class BusEditDialogViewModel : INotifyPropertyChanged
     {
+        private readonly BusBuddy.Core.Models.Bus _bus;
         private string _dialogTitle = "Edit Bus";
         private string _busNumber = string.Empty;
         private string _make = string.Empty;
         private string _model = string.Empty;
+        private int _year;
         private int _capacity;
-        private string _licensePlate = string.Empty;
+        private string _licenseNumber = string.Empty;
         private bool _isActive = true;
 
         public BusEditDialogViewModel()
+            : this(new BusBuddy.Core.Models.Bus())
         {
+        }
+
+        public BusEditDialogViewModel(BusBuddy.Core.Models.Bus bus)
+        {
+            _bus = bus ?? new BusBuddy.Core.Models.Bus();
             SaveCommand = new RelayCommand(_ => ExecuteSave(), _ => CanExecuteSave());
             CancelCommand = new RelayCommand(_ => ExecuteCancel());
+            Hydrate(_bus);
         }
 
         #region Properties
@@ -52,16 +60,22 @@ namespace BusBuddy.WPF.ViewModels.BusManagement
             set => SetProperty(ref _model, value);
         }
 
+        public int Year
+        {
+            get => _year;
+            set => SetProperty(ref _year, value);
+        }
+
         public int Capacity
         {
             get => _capacity;
             set => SetProperty(ref _capacity, value);
         }
 
-        public string LicensePlate
+        public string LicenseNumber
         {
-            get => _licensePlate;
-            set => SetProperty(ref _licensePlate, value);
+            get => _licenseNumber;
+            set => SetProperty(ref _licenseNumber, value);
         }
 
         public bool IsActive
@@ -84,22 +98,39 @@ namespace BusBuddy.WPF.ViewModels.BusManagement
             bus.BusNumber = BusNumber.Trim();
             bus.Make = Make.Trim();
             bus.Model = Model.Trim();
+            bus.Year = Year;
             bus.SeatingCapacity = Capacity;
-            bus.LicenseNumber = LicensePlate.Trim();
+            bus.LicenseNumber = LicenseNumber.Trim();
             bus.Status = IsActive ? "Active" : "Inactive";
+        }
+
+        private void Hydrate(BusBuddy.Core.Models.Bus bus)
+        {
+            BusNumber = bus.BusNumber ?? string.Empty;
+            Make = bus.Make ?? string.Empty;
+            Model = bus.Model ?? string.Empty;
+            Year = bus.Year;
+            Capacity = bus.SeatingCapacity;
+            LicenseNumber = bus.LicenseNumber ?? string.Empty;
+            IsActive = string.Equals(bus.Status, "Active", StringComparison.OrdinalIgnoreCase)
+                       || string.IsNullOrWhiteSpace(bus.Status);
+            DialogTitle = bus.BusId > 0 ? "Edit Bus" : "Add Bus";
         }
 
         private void ExecuteSave()
         {
+            ApplyTo(_bus);
             DialogResult = true;
             CloseRequested?.Invoke(true);
         }
 
         private bool CanExecuteSave()
         {
+            var maxYear = DateTime.Now.Year + 1;
             return !string.IsNullOrWhiteSpace(BusNumber) &&
-                   !string.IsNullOrWhiteSpace(Make) &&
-                   Capacity > 0;
+                   Capacity > 0 &&
+                   Year >= 1990 &&
+                   Year <= maxYear;
         }
 
         private void ExecuteCancel()
@@ -127,6 +158,7 @@ namespace BusBuddy.WPF.ViewModels.BusManagement
             }
             field = value;
             OnPropertyChanged(propertyName);
+            (SaveCommand as RelayCommand)?.RaiseCanExecuteChanged();
             return true;
         }
 

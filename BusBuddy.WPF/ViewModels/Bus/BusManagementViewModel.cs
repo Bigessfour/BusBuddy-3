@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using Views = BusBuddy.WPF.Views;
 
-namespace BusBuddy.WPF.ViewModels.BusManagement
+namespace BusBuddy.WPF.ViewModels.Bus
 {
     public partial class BusManagementViewModel : ObservableObject
     {
