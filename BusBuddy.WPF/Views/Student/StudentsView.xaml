@@ -82,6 +82,12 @@
                             AutomationProperties.Name="Add School"
                             AutomationProperties.HelpText="Catalog a school campus with bell times before generating routes"
                             ToolTip="Add a school destination (required before Generate Routes)"/>
+                    <syncfusion:ButtonAdv Name="AddPickupStopButton" Label="Add Pickup Stop"
+                            Command="{Binding AddPickupStopCommand}"
+                            Style="{StaticResource StudentsToolbarButton}"
+                            AutomationProperties.Name="Add Pickup Stop"
+                            AutomationProperties.HelpText="Place a shared corner or block stop on the map for multiple students"
+                            ToolTip="Add a district pickup stop (pin on map)"/>
                     <syncfusion:ButtonAdv Name="EditStudentButton" Label="Edit Student"
                             Command="{Binding EditStudentCommand}"
                             IsEnabled="{Binding HasSelectedStudent}"

@@ -481,12 +481,30 @@
                             </StackPanel>
 
                             <StackPanel Grid.Column="2" Margin="10,0,0,0">
-                                <Label Content="Bus Stop"/>
-                                <syncfusion:ComboBoxAdv Name="BusStopComboBox"
-                                          Text="{Binding Student.BusStop, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                          ItemsSource="{Binding FilteredBusStops}"
-                                          IsEditable="True"
-                                          AutomationProperties.Name="Bus Stop"/>
+                                <Label Content="Pickup stop"/>
+                                <syncfusion:ComboBoxAdv Name="PickupStopComboBox"
+                                          ItemsSource="{Binding AvailablePickupStops}"
+                                          SelectedItem="{Binding SelectedPickupStop, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                          DisplayMemberPath="Name"
+                                          IsEditable="False"
+                                          Height="40"
+                                          AutomationProperties.Name="Pickup stop"/>
+                                <TextBlock Text="{Binding PickupStopHint}"
+                                           TextWrapping="Wrap"
+                                           Margin="0,4,0,0"
+                                           Foreground="{DynamicResource BusBuddy.Brush.Text.Secondary}"
+                                           FontSize="12"/>
+                                <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
+                                    <syncfusion:ButtonAdv Label="Suggest nearest"
+                                                          Command="{Binding SuggestNearestPickupStopCommand}"
+                                                          SizeMode="Small" IconWidth="0" IconHeight="0" SmallIcon="{x:Null}"
+                                                          Margin="0,0,8,0"
+                                                          AutomationProperties.Name="Suggest nearest pickup stop"/>
+                                    <syncfusion:ButtonAdv Label="Use home as stop"
+                                                          Command="{Binding UseHomeAsPickupStopCommand}"
+                                                          SizeMode="Small" IconWidth="0" IconHeight="0" SmallIcon="{x:Null}"
+                                                          AutomationProperties.Name="Use home address as pickup stop"/>
+                                </StackPanel>
                             </StackPanel>
                         </Grid>
 

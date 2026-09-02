@@ -9,6 +9,7 @@ using System.Windows.Input;
 using BusBuddy.Core.Models;
 using System.Windows.Data;
 using BusBuddy.Core.Services;
+using BusBuddy.Core.Services.Interfaces;
 using BusBuddy.Core;
 using BusBuddy.Core.Data;
 using Microsoft.EntityFrameworkCore;
@@ -19,7 +20,6 @@ using Serilog.Context;
 using CommunityToolkit.Mvvm.Input;
 using System.IO;
 using Microsoft.Extensions.DependencyInjection;
-using BusBuddy.Core.Services.Interfaces;
 using BusBuddy.WPF.ViewModels.Map;
 using CommunityToolkit.Mvvm.Messaging;
 using BusBuddy.WPF.Messages;
@@ -303,6 +303,7 @@ namespace BusBuddy.WPF.ViewModels.Student
 
         public ICommand AddStudentCommand { get; private set; } = null!;
         public ICommand AddSchoolCommand { get; private set; } = null!;
+        public ICommand AddPickupStopCommand { get; private set; } = null!;
         public ICommand EditStudentCommand { get; private set; } = null!;
         public ICommand DeleteStudentCommand { get; private set; } = null!;
         public ICommand RefreshCommand { get; private set; } = null!;
@@ -341,6 +342,7 @@ namespace BusBuddy.WPF.ViewModels.Student
             // Existing commands
             AddStudentCommand = new RelayCommand(ExecuteAddStudent);
             AddSchoolCommand = new RelayCommand(ExecuteAddSchool);
+            AddPickupStopCommand = new RelayCommand(ExecuteAddPickupStop);
             _editStudentRelay = new RelayCommand(ExecuteEditStudent, CanExecuteEditStudent);
             EditStudentCommand = _editStudentRelay;
             _deleteStudentRelay = new RelayCommand(ExecuteDeleteStudent, CanExecuteDeleteStudent);
@@ -427,6 +429,34 @@ namespace BusBuddy.WPF.ViewModels.Student
             {
                 Logger.Error(ex, "Error executing add school command");
                 StatusMessage = $"Error adding school: {ex.Message}";
+            }
+        }
+
+        private void ExecuteAddPickupStop()
+        {
+            try
+            {
+                var stopService = App.ServiceProvider?.GetService<IPickupStopService>();
+                if (stopService is null)
+                {
+                    StatusMessage = "Pickup stop service is not available.";
+                    Logger.Warning("Add pickup stop skipped: IPickupStopService not registered");
+                    return;
+                }
+
+                var vm = new PickupStopFormViewModel(stopService);
+                var form = new BusBuddy.WPF.Views.Student.PickupStopForm(vm);
+                DialogOwner.Assign(form);
+                var result = form.ShowDialog();
+                if (result == true)
+                {
+                    StatusMessage = $"Pickup stop saved (Id={vm.SavedPickupStopId}). Assign it on the student form.";
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Error executing add pickup stop command");
+                StatusMessage = $"Error adding pickup stop: {ex.Message}";
             }
         }
 

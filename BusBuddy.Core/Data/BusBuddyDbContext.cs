@@ -79,6 +79,7 @@ public class BusBuddyDbContext : DbContext
     public virtual DbSet<SchoolCalendar> SchoolCalendar { get; set; } = null!;
     public virtual DbSet<ActivitySchedule> ActivitySchedule { get; set; } = null!;
     public virtual DbSet<Destination> Destinations { get; set; } = null!;
+    public virtual DbSet<PickupStop> PickupStops { get; set; } = null!;
     public virtual DbSet<StudentSchoolTransfer> StudentSchoolTransfers { get; set; } = null!;
     public virtual DbSet<DriverTrainingRecord> DriverTrainingRecords { get; set; } = null!;
     public virtual DbSet<RouteAssignment> RouteAssignments { get; set; } = null!;
@@ -663,6 +664,24 @@ public class BusBuddyDbContext : DbContext
                 .WithMany()
                 .HasForeignKey(e => e.DestinationId)
                 .OnDelete(DeleteBehavior.SetNull);
+
+            entity.HasOne(e => e.PickupStop)
+                .WithMany()
+                .HasForeignKey(e => e.PickupStopId)
+                .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        modelBuilder.Entity<PickupStop>(entity =>
+        {
+            entity.ToTable("PickupStops");
+            entity.HasKey(e => e.PickupStopId);
+            entity.Property(e => e.Name).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.Address).HasMaxLength(300);
+            entity.Property(e => e.StopType).IsRequired().HasMaxLength(20);
+            entity.Property(e => e.Notes).HasMaxLength(500);
+            entity.Property(e => e.CreatedBy).HasMaxLength(100);
+            entity.Property(e => e.Active).HasDefaultValue(true);
+            entity.HasIndex(e => e.Active).HasDatabaseName("IX_PickupStops_Active");
         });
 
         modelBuilder.Entity<Destination>(entity =>
