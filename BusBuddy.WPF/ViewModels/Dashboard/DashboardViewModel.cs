@@ -51,7 +51,7 @@ namespace BusBuddy.WPF.ViewModels.Dashboard
             RouteHealthDistribution = new ObservableCollection<DashboardChartPoint>();
 
             Logger.Information("DashboardViewModel constructed — starting initial refresh");
-            _ = Task.Run(async () => await RefreshDataAsync());
+            _ = RefreshDataAsync();
         }
 
         [ObservableProperty]
@@ -106,31 +106,25 @@ namespace BusBuddy.WPF.ViewModels.Dashboard
                     TotalRoutes, ActiveBuses, AvailableDrivers);
 
                 var routesResult = await _routeService.GetAllRoutesAsync();
-                RouteSummaries.Clear();
                 if (routesResult.IsSuccess && routesResult.Value != null)
                 {
-                    foreach (var route in routesResult.Value)
-                    {
-                        RouteSummaries.Add(new DashboardRouteRow
+                    RouteSummaries = new ObservableCollection<DashboardRouteRow>(
+                        routesResult.Value.Select(route => new DashboardRouteRow
                         {
                             RouteName = route.RouteName,
                             Description = route.Description ?? string.Empty,
                             MaxCapacity = route.MaxCapacity,
                             AssignedCount = route.AssignedStudents?.Count ?? 0
-                        });
-                    }
+                        }));
                 }
                 else
                 {
+                    RouteSummaries = new ObservableCollection<DashboardRouteRow>();
                     Logger.Warning("Dashboard route load failed: {Error}", routesResult.Error);
                 }
 
                 var buses = await _busService.GetAllBusesAsync();
-                Buses.Clear();
-                foreach (var bus in buses)
-                {
-                    Buses.Add(bus);
-                }
+                Buses = new ObservableCollection<BusBuddy.Core.Models.Bus>(buses);
 
                 var fleetStatus = await _fleetMonitoringService.GetFleetStatusAsync();
                 if (fleetStatus != null)
@@ -139,21 +133,29 @@ namespace BusBuddy.WPF.ViewModels.Dashboard
                 }
 
                 var utilizationResult = await _routeService.GetRouteUtilizationStatsAsync();
-                AssignmentDistribution.Clear();
-                RouteHealthDistribution.Clear();
-
                 if (utilizationResult.IsSuccess && utilizationResult.Value != null)
                 {
                     var stats = utilizationResult.Value;
                     AverageUtilizationPercent = Math.Round(stats.AverageUtilizationRate * 100, 1);
 
-                    AssignmentDistribution.Add(new DashboardChartPoint { Label = "Assigned", Count = stats.TotalAssignedStudents });
-                    AssignmentDistribution.Add(new DashboardChartPoint { Label = "Unassigned", Count = stats.TotalUnassignedStudents });
+                    AssignmentDistribution = new ObservableCollection<DashboardChartPoint>
+                    {
+                        new() { Label = "Assigned", Count = stats.TotalAssignedStudents },
+                        new() { Label = "Unassigned", Count = stats.TotalUnassignedStudents }
+                    };
 
-                    RouteHealthDistribution.Add(new DashboardChartPoint { Label = "At Capacity", Count = stats.RoutesAtCapacity });
-                    RouteHealthDistribution.Add(new DashboardChartPoint { Label = "Underutilized", Count = stats.UnderutilizedRoutes });
                     var healthy = Math.Max(0, stats.TotalRoutes - stats.RoutesAtCapacity - stats.UnderutilizedRoutes);
-                    RouteHealthDistribution.Add(new DashboardChartPoint { Label = "On Target", Count = healthy });
+                    RouteHealthDistribution = new ObservableCollection<DashboardChartPoint>
+                    {
+                        new() { Label = "At Capacity", Count = stats.RoutesAtCapacity },
+                        new() { Label = "Underutilized", Count = stats.UnderutilizedRoutes },
+                        new() { Label = "On Target", Count = healthy }
+                    };
+                }
+                else
+                {
+                    AssignmentDistribution = new ObservableCollection<DashboardChartPoint>();
+                    RouteHealthDistribution = new ObservableCollection<DashboardChartPoint>();
                 }
 
                 TotalRoutes = RouteSummaries.Count;

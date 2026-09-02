@@ -44,6 +44,7 @@
                 <StackPanel Grid.Column="1" Orientation="Horizontal">
                         <!-- Replace standard Buttons with Syncfusion ButtonAdv per project rules -->
                         <syncfusion:ButtonAdv Label="Refresh"
+                                              SizeMode="Normal"
                                               Command="{Binding RefreshCommand}"
                                               Margin="0,0,10,0" Padding="15,8"
                                               Background="{DynamicResource ButtonBackgroundBrush}" Foreground="{DynamicResource ButtonForegroundBrush}"
@@ -51,6 +52,7 @@
                                               AutomationProperties.Name="Refresh Dashboard"
                                               AutomationProperties.HelpText="Reload dashboard metrics and lists"/>
                         <syncfusion:ButtonAdv Label="Report"
+                                              SizeMode="Normal"
                                               Command="{Binding GenerateReportCommand}"
                                               Padding="15,8"
                                               Background="{DynamicResource ButtonBackgroundBrush}" Foreground="{DynamicResource ButtonForegroundBrush}"
@@ -277,10 +279,18 @@
                                     <syncfusion:SfChart.SecondaryAxis>
                                         <syncfusion:NumericalAxis Header="Students"/>
                                     </syncfusion:SfChart.SecondaryAxis>
-                                    <syncfusion:ColumnSeries ItemsSource="{Binding AssignmentDistribution}"
+                                    <syncfusion:ColumnSeries Label="Students"
                                                              XBindingPath="Label"
                                                              YBindingPath="Count"
-                                                             EnableAnimation="True"/>
+                                                             ItemsSource="{Binding AssignmentDistribution}"
+                                                             ShowTooltip="True"
+                                                             EnableAnimation="True">
+                                        <syncfusion:ColumnSeries.AdornmentsInfo>
+                                            <syncfusion:ChartAdornmentInfo ShowLabel="True"
+                                                                           AdornmentsPosition="Top"
+                                                                           SegmentLabelFormat="0"/>
+                                        </syncfusion:ColumnSeries.AdornmentsInfo>
+                                    </syncfusion:ColumnSeries>
                                 </syncfusion:SfChart>
                             </Grid>
                         </Border>
@@ -297,10 +307,24 @@
                                            FontWeight="SemiBold" Margin="0,0,0,8"
                                            Foreground="{DynamicResource PrimaryTextBrush}"/>
                                 <syncfusion:SfChart Grid.Row="1">
-                                    <syncfusion:PieSeries ItemsSource="{Binding RouteHealthDistribution}"
-                                                          XBindingPath="Label"
+                                    <syncfusion:SfChart.Legend>
+                                        <syncfusion:ChartLegend DockPosition="Bottom" Orientation="Horizontal"/>
+                                    </syncfusion:SfChart.Legend>
+                                    <syncfusion:PieSeries XBindingPath="Label"
                                                           YBindingPath="Count"
-                                                          EnableAnimation="True"/>
+                                                          ItemsSource="{Binding RouteHealthDistribution}"
+                                                          ShowTooltip="True"
+                                                          EnableAnimation="True"
+                                                          LabelPosition="OutsideExtended"
+                                                          ExplodeIndex="0"
+                                                          ExplodeRadius="10">
+                                        <syncfusion:PieSeries.AdornmentsInfo>
+                                            <syncfusion:ChartAdornmentInfo ShowLabel="True"
+                                                                           SegmentLabelContent="Percentage"
+                                                                           ShowConnectorLine="True"
+                                                                           ConnectorHeight="20"/>
+                                        </syncfusion:PieSeries.AdornmentsInfo>
+                                    </syncfusion:PieSeries>
                                 </syncfusion:SfChart>
                             </Grid>
                         </Border>
@@ -333,7 +357,10 @@
     <Border Grid.RowSpan="4" Background="#80000000"
                 Visibility="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}}"
                 CornerRadius="8">
-            <syncfusion:SfBusyIndicator IsBusy="True" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+            <syncfusion:SfBusyIndicator IsBusy="{Binding IsLoading}"
+                                        Header="{Binding SystemStatus}"
+                                        HorizontalAlignment="Center"
+                                        VerticalAlignment="Center"/>
         </Border>
     </Grid>
 </UserControl>

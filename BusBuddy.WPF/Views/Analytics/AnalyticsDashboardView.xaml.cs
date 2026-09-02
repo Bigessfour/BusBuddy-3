@@ -11,8 +11,7 @@ namespace BusBuddy.WPF.Views.Analytics
             InitializeComponent();
             if (DataContext == null && App.ServiceProvider != null)
             {
-                DataContext = App.ServiceProvider.GetService<AnalyticsDashboardViewModel>()
-                    ?? App.ServiceProvider.GetRequiredService<AnalyticsDashboardViewModel>();
+                DataContext = App.ServiceProvider.GetRequiredService<AnalyticsDashboardViewModel>();
             }
         }
     }

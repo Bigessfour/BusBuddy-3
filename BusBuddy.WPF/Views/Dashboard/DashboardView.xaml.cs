@@ -60,8 +60,7 @@ namespace BusBuddy.WPF.Views.Dashboard
                     var sp = App.ServiceProvider;
                     if (sp != null)
                     {
-                        DataContext = sp.GetService<DashboardViewModel>()
-                            ?? sp.GetRequiredService<DashboardViewModel>();
+                        DataContext = sp.GetRequiredService<DashboardViewModel>();
                     }
                     Logger.Information("DashboardView DataContext initialized from DI");
                 }
