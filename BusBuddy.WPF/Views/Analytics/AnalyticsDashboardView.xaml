@@ -33,7 +33,9 @@
                 </Grid.ColumnDefinitions>
                 <TextBlock Text="Analytics Dashboard" FontSize="24" FontWeight="Bold"
                            Foreground="{DynamicResource PrimaryTextBrush}"/>
-                <syncfusion:ButtonAdv Grid.Column="1" Label="Refresh"
+                <syncfusion:ButtonAdv Grid.Column="1"
+                                      Label="Refresh"
+                                      SizeMode="Normal"
                                       Command="{Binding RefreshCommand}"
                                       AutomationProperties.Name="Refresh analytics"/>
             </Grid>
@@ -57,16 +59,27 @@
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
-                    <TextBlock Text="Fleet Performance" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                    <TextBlock Text="Fleet Performance" FontWeight="SemiBold" Margin="0,0,0,8"
+                               Foreground="{DynamicResource PrimaryTextBrush}"/>
                     <syncfusion:SfChart Grid.Row="1">
                         <syncfusion:SfChart.PrimaryAxis>
-                            <syncfusion:CategoryAxis/>
+                            <syncfusion:CategoryAxis Header="Status"/>
                         </syncfusion:SfChart.PrimaryAxis>
                         <syncfusion:SfChart.SecondaryAxis>
-                            <syncfusion:NumericalAxis/>
+                            <syncfusion:NumericalAxis Header="Buses"/>
                         </syncfusion:SfChart.SecondaryAxis>
-                        <syncfusion:ColumnSeries ItemsSource="{Binding FleetPerformance}"
-                                                 XBindingPath="Label" YBindingPath="Value" EnableAnimation="True"/>
+                        <syncfusion:ColumnSeries Label="Fleet"
+                                                 XBindingPath="Label"
+                                                 YBindingPath="Value"
+                                                 ItemsSource="{Binding FleetPerformance}"
+                                                 ShowTooltip="True"
+                                                 EnableAnimation="True">
+                            <syncfusion:ColumnSeries.AdornmentsInfo>
+                                <syncfusion:ChartAdornmentInfo ShowLabel="True"
+                                                               AdornmentsPosition="Top"
+                                                               SegmentLabelFormat="0"/>
+                            </syncfusion:ColumnSeries.AdornmentsInfo>
+                        </syncfusion:ColumnSeries>
                     </syncfusion:SfChart>
                 </Grid>
             </Border>
@@ -79,16 +92,27 @@
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
-                    <TextBlock Text="Route Efficiency" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                    <TextBlock Text="Student Assignments" FontWeight="SemiBold" Margin="0,0,0,8"
+                               Foreground="{DynamicResource PrimaryTextBrush}"/>
                     <syncfusion:SfChart Grid.Row="1">
                         <syncfusion:SfChart.PrimaryAxis>
-                            <syncfusion:CategoryAxis/>
+                            <syncfusion:CategoryAxis Header="Status"/>
                         </syncfusion:SfChart.PrimaryAxis>
                         <syncfusion:SfChart.SecondaryAxis>
-                            <syncfusion:NumericalAxis/>
+                            <syncfusion:NumericalAxis Header="Students"/>
                         </syncfusion:SfChart.SecondaryAxis>
-                        <syncfusion:ColumnSeries ItemsSource="{Binding RouteEfficiency}"
-                                                 XBindingPath="Label" YBindingPath="Value" EnableAnimation="True"/>
+                        <syncfusion:ColumnSeries Label="Students"
+                                                 XBindingPath="Label"
+                                                 YBindingPath="Value"
+                                                 ItemsSource="{Binding RouteEfficiency}"
+                                                 ShowTooltip="True"
+                                                 EnableAnimation="True">
+                            <syncfusion:ColumnSeries.AdornmentsInfo>
+                                <syncfusion:ChartAdornmentInfo ShowLabel="True"
+                                                               AdornmentsPosition="Top"
+                                                               SegmentLabelFormat="0"/>
+                            </syncfusion:ColumnSeries.AdornmentsInfo>
+                        </syncfusion:ColumnSeries>
                     </syncfusion:SfChart>
                 </Grid>
             </Border>
@@ -101,10 +125,27 @@
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
-                    <TextBlock Text="Maintenance Metrics" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                    <TextBlock Text="Maintenance Metrics" FontWeight="SemiBold" Margin="0,0,0,8"
+                               Foreground="{DynamicResource PrimaryTextBrush}"/>
                     <syncfusion:SfChart Grid.Row="1">
-                        <syncfusion:PieSeries ItemsSource="{Binding MaintenanceMetrics}"
-                                              XBindingPath="Label" YBindingPath="Value" EnableAnimation="True"/>
+                        <syncfusion:SfChart.Legend>
+                            <syncfusion:ChartLegend DockPosition="Bottom" Orientation="Horizontal"/>
+                        </syncfusion:SfChart.Legend>
+                        <syncfusion:PieSeries XBindingPath="Label"
+                                              YBindingPath="Value"
+                                              ItemsSource="{Binding MaintenanceMetrics}"
+                                              ShowTooltip="True"
+                                              EnableAnimation="True"
+                                              LabelPosition="OutsideExtended"
+                                              ExplodeIndex="0"
+                                              ExplodeRadius="10">
+                            <syncfusion:PieSeries.AdornmentsInfo>
+                                <syncfusion:ChartAdornmentInfo ShowLabel="True"
+                                                               SegmentLabelContent="Percentage"
+                                                               ShowConnectorLine="True"
+                                                               ConnectorHeight="20"/>
+                            </syncfusion:PieSeries.AdornmentsInfo>
+                        </syncfusion:PieSeries>
                     </syncfusion:SfChart>
                 </Grid>
             </Border>
@@ -117,16 +158,45 @@
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
-                    <TextBlock Text="Fuel Analytics (30 days)" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                    <TextBlock Text="Fuel Analytics (30 days)" FontWeight="SemiBold" Margin="0,0,0,8"
+                               Foreground="{DynamicResource PrimaryTextBrush}"/>
                     <syncfusion:SfChart Grid.Row="1">
+                        <syncfusion:SfChart.Legend>
+                            <syncfusion:ChartLegend DockPosition="Bottom" Orientation="Horizontal"/>
+                        </syncfusion:SfChart.Legend>
                         <syncfusion:SfChart.PrimaryAxis>
-                            <syncfusion:CategoryAxis/>
+                            <syncfusion:CategoryAxis Header="Period"/>
                         </syncfusion:SfChart.PrimaryAxis>
                         <syncfusion:SfChart.SecondaryAxis>
-                            <syncfusion:NumericalAxis/>
+                            <syncfusion:NumericalAxis Header="Gallons"/>
                         </syncfusion:SfChart.SecondaryAxis>
-                        <syncfusion:ColumnSeries ItemsSource="{Binding FuelAnalytics}"
-                                                 XBindingPath="Label" YBindingPath="Value" EnableAnimation="True"/>
+                        <syncfusion:ColumnSeries Label="Gallons"
+                                                 XBindingPath="Label"
+                                                 YBindingPath="Value"
+                                                 ItemsSource="{Binding FuelGallons}"
+                                                 ShowTooltip="True"
+                                                 EnableAnimation="True">
+                            <syncfusion:ColumnSeries.AdornmentsInfo>
+                                <syncfusion:ChartAdornmentInfo ShowLabel="True"
+                                                               AdornmentsPosition="Top"
+                                                               SegmentLabelFormat="0"/>
+                            </syncfusion:ColumnSeries.AdornmentsInfo>
+                        </syncfusion:ColumnSeries>
+                        <syncfusion:ColumnSeries Label="Records"
+                                                 XBindingPath="Label"
+                                                 YBindingPath="Value"
+                                                 ItemsSource="{Binding FuelRecords}"
+                                                 ShowTooltip="True"
+                                                 EnableAnimation="True">
+                            <syncfusion:ColumnSeries.YAxis>
+                                <syncfusion:NumericalAxis Header="Records" OpposedPosition="True"/>
+                            </syncfusion:ColumnSeries.YAxis>
+                            <syncfusion:ColumnSeries.AdornmentsInfo>
+                                <syncfusion:ChartAdornmentInfo ShowLabel="True"
+                                                               AdornmentsPosition="Top"
+                                                               SegmentLabelFormat="0"/>
+                            </syncfusion:ColumnSeries.AdornmentsInfo>
+                        </syncfusion:ColumnSeries>
                     </syncfusion:SfChart>
                 </Grid>
             </Border>
@@ -137,7 +207,10 @@
 
         <Border Grid.RowSpan="3" Background="#80000000"
                 Visibility="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}}">
-            <syncfusion:SfBusyIndicator IsBusy="True" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+            <syncfusion:SfBusyIndicator IsBusy="{Binding IsLoading}"
+                                        Header="{Binding StatusMessage}"
+                                        HorizontalAlignment="Center"
+                                        VerticalAlignment="Center"/>
         </Border>
     </Grid>
 </UserControl>

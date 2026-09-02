@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
@@ -11,6 +12,9 @@ namespace BusBuddy.WPF.ViewModels.Analytics
 {
     public partial class AnalyticsDashboardViewModel : ObservableObject
     {
+        private static readonly string[] KnownBusStatuses = ["Active", "Maintenance", "Out of Service"];
+        private static readonly string[] KnownMaintenanceStatuses = ["Scheduled", "In Progress", "Completed"];
+
         private readonly IFuelService _fuelService;
         private readonly IMaintenanceService _maintenanceService;
         private readonly IRouteService _routeService;
@@ -27,26 +31,24 @@ namespace BusBuddy.WPF.ViewModels.Analytics
             _routeService = routeService;
             _busService = busService;
 
-            FleetPerformance = new ObservableCollection<AnalyticsChartPoint>();
-            RouteEfficiency = new ObservableCollection<AnalyticsChartPoint>();
-            MaintenanceMetrics = new ObservableCollection<AnalyticsChartPoint>();
-            FuelAnalytics = new ObservableCollection<AnalyticsChartPoint>();
-
             RefreshCommand = new AsyncRelayCommand(RefreshAsync);
-            _ = Task.Run(RefreshAsync);
+            _ = RefreshCommand.ExecuteAsync(null);
         }
 
         [ObservableProperty]
-        private ObservableCollection<AnalyticsChartPoint> fleetPerformance;
+        private ObservableCollection<AnalyticsChartPoint> fleetPerformance = new();
 
         [ObservableProperty]
-        private ObservableCollection<AnalyticsChartPoint> routeEfficiency;
+        private ObservableCollection<AnalyticsChartPoint> routeEfficiency = new();
 
         [ObservableProperty]
-        private ObservableCollection<AnalyticsChartPoint> maintenanceMetrics;
+        private ObservableCollection<AnalyticsChartPoint> maintenanceMetrics = new();
 
         [ObservableProperty]
-        private ObservableCollection<AnalyticsChartPoint> fuelAnalytics;
+        private ObservableCollection<AnalyticsChartPoint> fuelGallons = new();
+
+        [ObservableProperty]
+        private ObservableCollection<AnalyticsChartPoint> fuelRecords = new();
 
         [ObservableProperty]
         private string statusMessage = "Loading analytics...";
@@ -64,41 +66,33 @@ namespace BusBuddy.WPF.ViewModels.Analytics
                 StatusMessage = "Loading analytics...";
 
                 var buses = (await _busService.GetAllBusesAsync()).ToList();
-                FleetPerformance.Clear();
-                FleetPerformance.Add(new AnalyticsChartPoint { Label = "Active", Value = buses.Count(b => b.Status == "Active") });
-                FleetPerformance.Add(new AnalyticsChartPoint { Label = "Maintenance", Value = buses.Count(b => b.Status == "Maintenance") });
-                FleetPerformance.Add(new AnalyticsChartPoint { Label = "Out of Service", Value = buses.Count(b => b.Status == "Out of Service") });
+                FleetPerformance = CountByStatus(
+                    buses.Select(b => b.Status),
+                    KnownBusStatuses);
 
                 var utilization = await _routeService.GetRouteUtilizationStatsAsync();
-                RouteEfficiency.Clear();
                 if (utilization.IsSuccess && utilization.Value != null)
                 {
                     var stats = utilization.Value;
-                    RouteEfficiency.Add(new AnalyticsChartPoint { Label = "Assigned", Value = stats.TotalAssignedStudents });
-                    RouteEfficiency.Add(new AnalyticsChartPoint { Label = "Unassigned", Value = stats.TotalUnassignedStudents });
-                    RouteEfficiency.Add(new AnalyticsChartPoint { Label = "At Capacity", Value = stats.RoutesAtCapacity });
+                    RouteEfficiency = CreatePoints(
+                        ("Assigned", stats.TotalAssignedStudents),
+                        ("Unassigned", stats.TotalUnassignedStudents));
+                }
+                else
+                {
+                    RouteEfficiency = new ObservableCollection<AnalyticsChartPoint>();
                 }
 
                 var maintenance = (await _maintenanceService.GetAllMaintenanceRecordsAsync()).ToList();
-                MaintenanceMetrics.Clear();
-                MaintenanceMetrics.Add(new AnalyticsChartPoint { Label = "Scheduled", Value = maintenance.Count(m => m.Status == "Scheduled") });
-                MaintenanceMetrics.Add(new AnalyticsChartPoint { Label = "In Progress", Value = maintenance.Count(m => m.Status == "In Progress") });
-                MaintenanceMetrics.Add(new AnalyticsChartPoint { Label = "Completed", Value = maintenance.Count(m => m.Status == "Completed") });
+                MaintenanceMetrics = CountByStatus(
+                    maintenance.Select(m => m.Status),
+                    KnownMaintenanceStatuses);
 
                 var fuel = (await _fuelService.GetAllFuelRecordsAsync()).ToList();
                 var cutoff = DateTime.UtcNow.AddDays(-30);
                 var recent = fuel.Where(f => f.FuelDate >= cutoff).ToList();
-                FuelAnalytics.Clear();
-                FuelAnalytics.Add(new AnalyticsChartPoint
-                {
-                    Label = "Gallons (30d)",
-                    Value = (double)recent.Sum(f => f.Gallons ?? 0)
-                });
-                FuelAnalytics.Add(new AnalyticsChartPoint
-                {
-                    Label = "Records",
-                    Value = recent.Count
-                });
+                FuelGallons = CreatePoints(("30 days", (double)recent.Sum(f => f.Gallons ?? 0)));
+                FuelRecords = CreatePoints(("30 days", recent.Count));
 
                 StatusMessage = $"Analytics updated — {buses.Count} buses, {fuel.Count} fuel records";
             }
@@ -110,6 +104,36 @@ namespace BusBuddy.WPF.ViewModels.Analytics
             {
                 IsLoading = false;
             }
+        }
+
+        private static ObservableCollection<AnalyticsChartPoint> CountByStatus(
+            IEnumerable<string> statuses,
+            IReadOnlyList<string> knownStatuses)
+        {
+            var list = statuses.ToList();
+            var points = knownStatuses
+                .Select(status => new AnalyticsChartPoint
+                {
+                    Label = status,
+                    Value = list.Count(item => string.Equals(item, status, StringComparison.OrdinalIgnoreCase))
+                })
+                .ToList();
+
+            var counted = points.Sum(point => point.Value);
+            var remainder = list.Count - counted;
+            if (remainder > 0)
+            {
+                points.Add(new AnalyticsChartPoint { Label = "Other", Value = remainder });
+            }
+
+            return new ObservableCollection<AnalyticsChartPoint>(points);
+        }
+
+        private static ObservableCollection<AnalyticsChartPoint> CreatePoints(
+            params (string Label, double Value)[] items)
+        {
+            return new ObservableCollection<AnalyticsChartPoint>(
+                items.Select(item => new AnalyticsChartPoint { Label = item.Label, Value = item.Value }));
         }
     }
 
