@@ -130,7 +130,7 @@
             <StackPanel Grid.Row="8" Margin="0,0,0,10">
                 <TextBlock Text="Status:" Margin="0,0,0,5" />
                 <syncfusion:ComboBoxAdv Height="40" Padding="4" ItemsSource="{Binding AvailableStatuses}"
-                                        SelectedItem="{Binding Status, Mode=TwoWay}"
+                                        SelectedItem="{Binding Status, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                         AutomationProperties.Name="Bus status"/>
             </StackPanel>
             <!-- Action Buttons -->

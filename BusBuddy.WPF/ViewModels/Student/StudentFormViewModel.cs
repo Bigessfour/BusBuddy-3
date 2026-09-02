@@ -181,6 +181,23 @@ namespace BusBuddy.WPF.ViewModels.Student
         /// </summary>
         public ObservableCollection<string> AvailableRoutes { get; }
 
+        /// <summary>Grade pick list for ComboBoxAdv ItemsSource (replaces XAML PriorityBinding fallback).</summary>
+        public IReadOnlyList<string> AvailableGrades { get; } =
+        [
+            "K", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"
+        ];
+
+        /// <summary>US state abbreviations for ComboBoxAdv ItemsSource (replaces XAML PriorityBinding fallback).</summary>
+        public IReadOnlyList<string> AvailableStates { get; } =
+        [
+            "AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", "FL", "GA",
+            "HI", "ID", "IL", "IN", "IA", "KS", "KY", "LA", "ME", "MD",
+            "MA", "MI", "MN", "MS", "MO", "MT", "NE", "NV", "NH", "NJ",
+            "NM", "NY", "NC", "ND", "OH", "OK", "OR", "PA", "RI", "SC",
+            "SD", "TN", "TX", "UT", "VT", "VA", "WA", "WV", "WI", "WY",
+            "DC"
+        ];
+
         /// <summary>
         /// Available bus stop names for assignment
         /// </summary>

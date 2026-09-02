@@ -39,7 +39,7 @@
                 <TextBlock Text="{Binding Subject}" FontWeight="SemiBold" Margin="0,0,0,10"/>
 
                 <TextBlock Text="Trip type" Margin="0,0,0,4"/>
-                <syncfusion:ComboBoxAdv ItemsSource="{Binding TripTypes}" SelectedItem="{Binding TripType, Mode=TwoWay}" Height="40" Margin="0,0,0,10"
+                <syncfusion:ComboBoxAdv ItemsSource="{Binding TripTypes}" SelectedItem="{Binding TripType, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Height="40" Margin="0,0,0,10"
                                         AutomationProperties.Name="Trip type"/>
 
                 <TextBlock Text="Destination" Margin="0,0,0,4"/>
@@ -64,20 +64,20 @@
 
                 <TextBlock Text="Driver" Margin="0,0,0,4"/>
                 <syncfusion:ComboBoxAdv ItemsSource="{Binding AvailableDrivers}"
-                          SelectedItem="{Binding SelectedDriver, Mode=TwoWay}"
+                          SelectedItem="{Binding SelectedDriver, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                           DisplayMemberPath="DriverName"
                           Height="40" Margin="0,0,0,10"
                           AutomationProperties.Name="Driver"/>
 
                 <TextBlock Text="Vehicle" Margin="0,0,0,4"/>
                 <syncfusion:ComboBoxAdv ItemsSource="{Binding AvailableVehicles}"
-                          SelectedItem="{Binding SelectedVehicle, Mode=TwoWay}"
+                          SelectedItem="{Binding SelectedVehicle, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                           DisplayMemberPath="BusNumber"
                           Height="40" Margin="0,0,0,10"
                           AutomationProperties.Name="Vehicle"/>
 
                 <TextBlock Text="Status" Margin="0,0,0,4"/>
-                <syncfusion:ComboBoxAdv ItemsSource="{Binding StatusOptions}" SelectedItem="{Binding Status, Mode=TwoWay}" Height="40" Margin="0,0,0,10"
+                <syncfusion:ComboBoxAdv ItemsSource="{Binding StatusOptions}" SelectedItem="{Binding Status, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Height="40" Margin="0,0,0,10"
                                         AutomationProperties.Name="Status"/>
 
                 <TextBlock Text="Requested by" Margin="0,0,0,4"/>

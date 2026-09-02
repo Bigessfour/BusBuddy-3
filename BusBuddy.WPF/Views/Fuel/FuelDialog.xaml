@@ -61,19 +61,19 @@
 
             <TextBlock Grid.Row="0" Grid.Column="0" Text="Fuel Date:" Margin="0,5,10,5" VerticalAlignment="Center"/>
             <syncfusion:SfDatePicker Grid.Row="0" Grid.Column="1"
-                        Value="{Binding Fuel.FuelDate, Mode=TwoWay}"
+                        Value="{Binding Fuel.FuelDate, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                         Margin="0,5,0,5"/>
 
             <TextBlock Grid.Row="1" Grid.Column="0" Text="Fuel Location:" Margin="0,5,10,5" VerticalAlignment="Center"/>
             <syncfusion:ComboBoxAdv Grid.Row="1" Grid.Column="1"
                       ItemsSource="{Binding FuelLocations}"
-                      SelectedItem="{Binding Fuel.FuelLocation, Mode=TwoWay}"
+                      SelectedItem="{Binding Fuel.FuelLocation, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                       Margin="0,5,0,5"/>
 
             <TextBlock Grid.Row="2" Grid.Column="0" Text="Bus:" Margin="0,5,10,5" VerticalAlignment="Center"/>
             <syncfusion:ComboBoxAdv Grid.Row="2" Grid.Column="1"
                       ItemsSource="{Binding AvailableBuses}"
-                      SelectedItem="{Binding SelectedBus, Mode=TwoWay}"
+                      SelectedItem="{Binding SelectedBus, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                       DisplayMemberPath="BusNumber"
                       Margin="0,5,0,5"/>
 
@@ -86,7 +86,7 @@
             <TextBlock Grid.Row="4" Grid.Column="0" Text="Fuel Type:" Margin="0,5,10,5" VerticalAlignment="Center"/>
             <syncfusion:ComboBoxAdv Grid.Row="4" Grid.Column="1"
                       ItemsSource="{Binding FuelTypes}"
-                      SelectedItem="{Binding Fuel.FuelType, Mode=TwoWay}"
+                      SelectedItem="{Binding Fuel.FuelType, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                       Margin="0,5,0,5"/>
 
             <TextBlock Grid.Row="5" Grid.Column="0" Text="Gallons:" Margin="0,5,10,5" VerticalAlignment="Center"/>

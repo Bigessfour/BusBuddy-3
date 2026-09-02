@@ -69,16 +69,16 @@
 
 ### File tasks
 
-- [ ] T011 [US3] `BusBuddy.WPF/Views/Fuel/FuelDialog.xaml` — confirm TwoWay on SfDatePicker, ComboBoxAdv, DoubleTextBox, Notes; ComboBoxAdv ItemsSource + SelectedItem (+ DisplayMemberPath on Bus)
-- [ ] T012 [US3] `BusBuddy.WPF/Views/Fuel/FuelDialog.xaml.cs` — **no** VM extract this wave; `DataContext = this` may remain
+- [x] T011 [US3] `BusBuddy.WPF/Views/Fuel/FuelDialog.xaml` — confirm TwoWay on SfDatePicker, ComboBoxAdv, DoubleTextBox, Notes; ComboBoxAdv ItemsSource + SelectedItem (+ DisplayMemberPath on Bus)
+- [x] T012 [US3] `BusBuddy.WPF/Views/Fuel/FuelDialog.xaml.cs` — **no** VM extract this wave; `DataContext = this` may remain
 - [x] T013 [P] [US4] `BusBuddy.WPF/Views/Driver/DriverForm.xaml` — **complete on `master` (PR #48)**. ItemsSource + SelectedItem already; no WPF `ComboBoxItem`; no `SelectedValuePath=Content`. **Do not rewrite.**
 - [x] T013b [P] [US4] `BusBuddy.WPF/ViewModels/Driver/DriverFormViewModel.cs` — **complete on `master` (PR #48)**. StatusOptions, DutyCategoryOptions, VehicleCategoryOptions, MedicalFormTypeOptions, LicenseClassOptions already exist. **Do not rewrite.**
-- [ ] T014 [P] [US4] `BusBuddy.WPF/Views/Student/StudentForm.xaml` — Grade/State lists via VM ItemsSource + SelectedItem (move off nested PriorityBinding ItemsSource); AM/PM `SelectedValuePath=RouteName` may stay
-- [ ] T015 [P] [US4] `BusBuddy.WPF/ViewModels/Student/StudentFormViewModel.cs` — expose Grade/State (and related) lists for ComboBoxAdv ItemsSource
-- [ ] T016 [P] [US4] `BusBuddy.WPF/Views/Activity/ActivityScheduleEditDialog.xaml` — ComboBoxAdv ItemsSource + SelectedItem (+ DisplayMemberPath for objects)
-- [ ] T017 [P] [US4] `BusBuddy.WPF/Views/Student/StudentSchoolTransferForm.xaml` — ComboBoxAdv ItemsSource + SelectedItem
-- [ ] T018 [P] [US4] `BusBuddy.WPF/Views/Bus/BusForm.xaml` — ComboBoxAdv ItemsSource + SelectedItem
-- [ ] T019 [P] [US4] `BusBuddy.WPF/Views/Fuel/FuelReconciliationDialog.xaml` — ComboBoxAdv ItemsSource + SelectedItem only (not a record-entry form)
+- [x] T014 [P] [US4] `BusBuddy.WPF/Views/Student/StudentForm.xaml` — Grade/State lists via VM ItemsSource + SelectedItem (move off nested PriorityBinding ItemsSource); AM/PM `SelectedValuePath=RouteName` may stay
+- [x] T015 [P] [US4] `BusBuddy.WPF/ViewModels/Student/StudentFormViewModel.cs` — expose Grade/State (and related) lists for ComboBoxAdv ItemsSource
+- [x] T016 [P] [US4] `BusBuddy.WPF/Views/Activity/ActivityScheduleEditDialog.xaml` — ComboBoxAdv ItemsSource + SelectedItem (+ DisplayMemberPath for objects)
+- [x] T017 [P] [US4] `BusBuddy.WPF/Views/Student/StudentSchoolTransferForm.xaml` — ComboBoxAdv ItemsSource + SelectedItem
+- [x] T018 [P] [US4] `BusBuddy.WPF/Views/Bus/BusForm.xaml` — ComboBoxAdv ItemsSource + SelectedItem
+- [x] T019 [P] [US4] `BusBuddy.WPF/Views/Fuel/FuelReconciliationDialog.xaml` — ComboBoxAdv ItemsSource + SelectedItem only (not a record-entry form)
 
 **Checkpoint**: Mac build green. Fuel Add/Edit + DriverForm + StudentForm clicked in VM before Wave 3.
 
