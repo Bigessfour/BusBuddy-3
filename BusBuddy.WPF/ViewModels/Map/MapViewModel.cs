@@ -8,6 +8,8 @@ using BusBuddy.WPF.Commands; // Use local RelayCommand instead
 using BusBuddy.Core.Mapping;
 using BusBuddy.Core.Services.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
+using BusBuddy.Core.Configuration;
 using BusBuddy.Core.Models;
 using Serilog;
 using RouteModel = BusBuddy.Core.Models.Route;
@@ -1061,11 +1063,12 @@ namespace BusBuddy.WPF.ViewModels.Map
                 return (Array.Empty<byte>(), 0, allStudents.Count);
             }
 
-            // ORDER STOPS (Nearest Neighbor heuristic) starting/ending at the catalog school, or map fallback.
+            // ORDER STOPS (Nearest Neighbor heuristic) starting at the district bus barn and ending at the catalog school.
+            var (startLat, startLon) = await ResolveRouteStartAnchorAsync();
             var (schoolLat, schoolLon) = await ResolveSchoolAnchorAsync();
             var remaining = eligibleStudents.Where(s => s.Latitude.HasValue && s.Longitude.HasValue).ToList();
             var ordered = new List<BusBuddy.Core.Models.Student>();
-            double currentLat = schoolLat, currentLon = schoolLon;
+            double currentLat = startLat, currentLon = startLon;
             while (remaining.Count > 0)
             {
                 BusBuddy.Core.Models.Student? nearest = null;
@@ -1088,11 +1091,10 @@ namespace BusBuddy.WPF.ViewModels.Map
 
             // BUILD ROUTE & STOPS WITH SCHEDULE ESTIMATION
             // Assumptions:
-            //  • Departure from school: 06:50 local time (provided requirement).
+            //  • Departure from district bus barn (RoutingDistrict config) when configured.
             //  • Average route speed on county / rural roads: 35 mph (approximation; configurable later).
             //  • Dwell time per stop: 1 minute (boarding + safety check).
-            //  • Return directly to school after last pickup.
-            //  • Distance calculation: Haversine formula (great-circle).
+            //  • Return to catalog school after last pickup.
             var averageMph = Math.Max(5.0, AverageRouteSpeedMph); // safety floor
             var dwellPerStop = TimeSpan.FromMinutes(Math.Max(0, DwellMinutesPerStop));
             var departTimeOfDay = new TimeSpan(6, 50, 0); // 6:50 AM
@@ -1100,7 +1102,7 @@ namespace BusBuddy.WPF.ViewModels.Map
             double totalMiles = 0.0;
             var stops = new List<BusBuddy.Core.Models.RouteStop>();
             int order = 1;
-            currentLat = schoolLat; currentLon = schoolLon;
+            currentLat = startLat; currentLon = startLon;
             foreach (var stu in ordered)
             {
                 var legMiles = HaversineMiles(currentLat, currentLon, (double)stu.Latitude!, (double)stu.Longitude!);
@@ -1347,6 +1349,26 @@ namespace BusBuddy.WPF.ViewModels.Map
                 RouteLinePoints.Add(p);
             }
             RouteLineUpdated?.Invoke(this, new RouteLineEventArgs(RouteLinePoints));
+        }
+
+        private async Task<(double Lat, double Lon)> ResolveRouteStartAnchorAsync()
+        {
+            try
+            {
+                using var scope = _scopeFactory?.CreateScope();
+                var settings = scope?.ServiceProvider.GetService<IOptions<RoutingDistrictSettings>>()?.Value
+                    ?? App.ServiceProvider?.GetService<IOptions<RoutingDistrictSettings>>()?.Value;
+                if (DistrictDepot.TryGetCoordinates(settings, out var lat, out var lon))
+                {
+                    return (lat, lon);
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Debug(ex, "No district depot configured; using school anchor for route start");
+            }
+
+            return await ResolveSchoolAnchorAsync();
         }
 
         private async Task<(double Lat, double Lon)> ResolveSchoolAnchorAsync()

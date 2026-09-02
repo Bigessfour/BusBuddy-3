@@ -1,7 +1,9 @@
+using BusBuddy.Core.Configuration;
 using BusBuddy.Core.Data;
 using BusBuddy.Core.Mapping;
 using BusBuddy.Core.Models;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Serilog;
 
 namespace BusBuddy.Core.Services;
@@ -21,10 +23,14 @@ public sealed class RouteWaypointRebuildService : IRouteWaypointRebuildService
 {
     private static readonly ILogger Logger = Log.ForContext<RouteWaypointRebuildService>();
     private readonly IBusBuddyDbContextFactory _contextFactory;
+    private readonly RoutingDistrictSettings _districtSettings;
 
-    public RouteWaypointRebuildService(IBusBuddyDbContextFactory contextFactory)
+    public RouteWaypointRebuildService(
+        IBusBuddyDbContextFactory contextFactory,
+        IOptions<RoutingDistrictSettings>? districtSettings = null)
     {
         _contextFactory = contextFactory ?? throw new ArgumentNullException(nameof(contextFactory));
+        _districtSettings = districtSettings?.Value ?? new RoutingDistrictSettings();
     }
 
     public async Task RebuildForStudentRoutesAsync(int studentId, CancellationToken cancellationToken = default)
@@ -97,26 +103,10 @@ public sealed class RouteWaypointRebuildService : IRouteWaypointRebuildService
             .GroupBy(t => t.StudentId)
             .ToDictionary(g => g.Key, g => g.OrderByDescending(t => t.EffectiveDate).First());
 
+        var isPmRoute = route.RouteName.EndsWith("-PM", StringComparison.OrdinalIgnoreCase);
         var points = new List<(double Lat, double Lon)>();
-        foreach (var student in students)
-        {
-            TryAdd(points, student.Latitude, student.Longitude);
 
-            if (!transfersByStudent.TryGetValue(student.StudentId, out var transfer))
-            {
-                continue;
-            }
-
-            // Transfer stop pair: requested pickup → dropoff (coords or school destination GPS)
-            var pickupLat = transfer.PickupLatitude ?? transfer.FromDestination?.Latitude;
-            var pickupLon = transfer.PickupLongitude ?? transfer.FromDestination?.Longitude;
-            var dropLat = transfer.DropoffLatitude ?? transfer.ToDestination?.Latitude;
-            var dropLon = transfer.DropoffLongitude ?? transfer.ToDestination?.Longitude;
-            TryAdd(points, pickupLat, pickupLon);
-            TryAdd(points, dropLat, dropLon);
-        }
-
-        // Terminal school for home→school path
+        // Terminal school for home→school / school→home path
         Destination? school = null;
         if (!string.IsNullOrWhiteSpace(route.School))
         {
@@ -142,7 +132,44 @@ public sealed class RouteWaypointRebuildService : IRouteWaypointRebuildService
             }
         }
 
-        TryAdd(points, school?.Latitude, school?.Longitude);
+        if (isPmRoute)
+        {
+            TryAdd(points, school?.Latitude, school?.Longitude);
+        }
+        else if (DistrictDepot.TryGetCoordinates(_districtSettings, out var depotLat, out var depotLon))
+        {
+            TryAdd(points, depotLat, depotLon);
+        }
+
+        foreach (var student in students)
+        {
+            TryAdd(points, student.Latitude, student.Longitude);
+
+            if (!transfersByStudent.TryGetValue(student.StudentId, out var transfer))
+            {
+                continue;
+            }
+
+            // Transfer stop pair: requested pickup → dropoff (coords or school destination GPS)
+            var pickupLat = transfer.PickupLatitude ?? transfer.FromDestination?.Latitude;
+            var pickupLon = transfer.PickupLongitude ?? transfer.FromDestination?.Longitude;
+            var dropLat = transfer.DropoffLatitude ?? transfer.ToDestination?.Latitude;
+            var dropLon = transfer.DropoffLongitude ?? transfer.ToDestination?.Longitude;
+            TryAdd(points, pickupLat, pickupLon);
+            TryAdd(points, dropLat, dropLon);
+        }
+
+        if (isPmRoute)
+        {
+            if (DistrictDepot.TryGetCoordinates(_districtSettings, out var depotLat, out var depotLon))
+            {
+                TryAdd(points, depotLat, depotLon);
+            }
+        }
+        else
+        {
+            TryAdd(points, school?.Latitude, school?.Longitude);
+        }
 
         if (points.Count < 2)
         {
@@ -172,7 +199,12 @@ public sealed class RouteWaypointRebuildService : IRouteWaypointRebuildService
             return;
         }
 
-        var next = ((double)lat.Value, (double)lon.Value);
+        TryAdd(points, (double)lat.Value, (double)lon.Value);
+    }
+
+    private static void TryAdd(List<(double Lat, double Lon)> points, double lat, double lon)
+    {
+        var next = (lat, lon);
         if (points.Count > 0)
         {
             var last = points[^1];

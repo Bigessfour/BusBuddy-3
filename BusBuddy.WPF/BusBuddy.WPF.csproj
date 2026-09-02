@@ -85,6 +85,7 @@
     <PackageReference Include="Microsoft.Identity.Client" Version="$(MicrosoftIdentityClientVersion)" /> <!-- resolved hardcode (was 4.74.1) -->
     <PackageReference Include="Serilog.Settings.Configuration" Version="$(SerilogSettingsConfigurationVersion)" /> <!-- resolved to central (added var in props) -->
     <PackageReference Include="Syncfusion.SfGrid.WPF" Version="$(SyncfusionVersion)" />
+    <PackageReference Include="Syncfusion.Licensing" Version="$(SyncfusionVersion)" />
     <PackageReference Include="Syncfusion.SfChart.WPF" Version="$(SyncfusionVersion)" />
     <PackageReference Include="Syncfusion.SfInput.WPF" Version="$(SyncfusionVersion)" />
     <PackageReference Include="Syncfusion.SfTextInputLayout.WPF" Version="$(SyncfusionVersion)" />

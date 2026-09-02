@@ -20,8 +20,8 @@ using System.Threading;
 using Serilog.Formatting.Json;
 using Serilog.Settings.Configuration;
 using System.Threading.Tasks;
-using Syncfusion.SfSkinManager;
 using BusBuddy.WPF.Utilities;
+using Syncfusion.Licensing;
 
 namespace BusBuddy.WPF
 {
@@ -39,22 +39,15 @@ namespace BusBuddy.WPF
 
         public App()
         {
-            // Initialize bootstrap logger first for early startup error capture
+            // Syncfusion WPF docs: register in App() before any Syncfusion control is initialized.
+            // https://help.syncfusion.com/wpf/licensing/how-to-register-in-an-application
+            LoadKeysDotEnv();
+            RegisterSyncfusionLicenseOnce();
+
+            // Initialize bootstrap logger after license (logging does not touch Syncfusion UI assemblies).
             InitializeBootstrapLogger();
 
-            _bootstrapLogger?.Information("🚌 BusBuddy bootstrap starting...");
-
-            // Load API keys from macOS Passwords (Keychain) into process environment variables
-            // so that documented entry points (EnsureSyncfusionLicenseRegistered, GrokGlobalAPI ctor, etc.)
-            // can find them via the standard Environment.GetEnvironmentVariable paths.
-            // This bridges Passwords app -> runtime env on macOS.
-            // On non-mac, falls back to existing env / machine vars.
-            LoadApiKeysFromMacPasswords();
-            // Hybrid keys file (Syncfusion + optional Google_Maps_Demo_Key) — before DI / Maps clients.
-            TryLoadSecretsFromKeysFile();
-
-            // Register Syncfusion license before any UI initialization
-            EnsureSyncfusionLicenseRegistered();
+            _bootstrapLogger?.Information("BusBuddy bootstrap starting (Syncfusion license step complete)");
 
             // Load configuration from appsettings.json (consolidated)
             IConfiguration configuration = BuildConfiguration();
@@ -80,6 +73,25 @@ namespace BusBuddy.WPF
             }
 
             Log.Information("🚌 BusBuddy starting...");
+        }
+
+        /// <summary>Load keys/.env into process environment (SYNCFUSION_LICENSE_KEY, etc.).</summary>
+        private static void LoadKeysDotEnv()
+        {
+            var count = EnvFileLoader.LoadIntoEnvironment(EnvFileLoader.GetKeysEnvFileCandidates());
+            if (count > 0)
+            {
+                Console.WriteLine($"BusBuddy: loaded {count} value(s) from keys/.env");
+            }
+
+            // Mac Passwords + legacy keys file for other secrets (do not overwrite .env).
+            if (System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(
+                    System.Runtime.InteropServices.OSPlatform.OSX))
+            {
+                LoadApiKeysFromMacPasswords();
+            }
+
+            TryLoadSecretsFromKeysFile();
         }
 
         /// <summary>
@@ -1011,80 +1023,36 @@ Examples:
         }
 
         /// <summary>
-        /// Ensures Syncfusion license registration (runs only once).
-        /// Enhanced based on Syncfusion WPF licensing documentation and 2025 best practices.
-        /// Supports explicit platform validation and better placeholder detection.
+        /// Sole Syncfusion license registration point (App() constructor, before any control init).
+        /// https://help.syncfusion.com/wpf/licensing/how-to-register-in-an-application
         /// </summary>
-        private static void EnsureSyncfusionLicenseRegistered()
+        private static void RegisterSyncfusionLicenseOnce()
         {
             if (_syncfusionLicenseChecked)
             {
-                return; // already attempted
+                return;
             }
             _syncfusionLicenseChecked = true;
-            try
+
+            var licenseKey = Environment.GetEnvironmentVariable("SYNCFUSION_LICENSE_KEY")?.Trim();
+            if (string.IsNullOrEmpty(licenseKey) || licenseKey.StartsWith("${", StringComparison.Ordinal))
             {
-                // Ensure license key is in env (Passwords / alternate keychain services)
-                TryLoadKeychainSecret("SYNCFUSION_LICENSE_KEY", "SYNCFUSION_LICENSE_KEY");
-                TryLoadKeychainSecret("com.wileyco.syncfusion.license", "SYNCFUSION_LICENSE_KEY");
-                TryLoadSecretsFromKeysFile();
-
-                // Check Process level first, then User level, then Machine level
-                var licenseKey = Environment.GetEnvironmentVariable("SYNCFUSION_LICENSE_KEY") ??
-                               Environment.GetEnvironmentVariable("SYNCFUSION_LICENSE_KEY", EnvironmentVariableTarget.User) ??
-                               Environment.GetEnvironmentVariable("SYNCFUSION_LICENSE_KEY", EnvironmentVariableTarget.Machine);
-
-                if (string.IsNullOrWhiteSpace(licenseKey))
-                {
-                    _bootstrapLogger?.Warning("⚠️ SYNCFUSION_LICENSE_KEY environment variable not set at Process, User, or Machine level. Running in trial mode.");
-                    _bootstrapLogger?.Information("💡 To remove trial limitations, set SYNCFUSION_LICENSE_KEY environment variable");
-                    _bootstrapLogger?.Information("💡 Get your license key from: https://www.syncfusion.com/account/downloads");
-                    LogSyncfusionDiagnostics();
-                    return; // trial mode – do not attempt registration
-                }
-
-                if (ValidateSyncfusionLicenseKey(licenseKey))
-                {
-                    Syncfusion.Licensing.SyncfusionLicenseProvider.RegisterLicense(licenseKey);
-
-                    // Enhanced validation for Syncfusion v30+ (as per 2025 documentation)
-                    // Registration successful - v30.1.42 doesn't require explicit platform validation
-                    _bootstrapLogger?.Information("✅ Syncfusion license registered successfully for version 30.1.42");                    // Log additional diagnostics to help verify registration
-                    _bootstrapLogger?.Information("🔍 License Key Preview: {Preview}", GetLicenseKeyPreview(licenseKey));
-                    _bootstrapLogger?.Information("💡 If you see trial watermarks, verify your license key is valid and current");
-                }
-                else
-                {
-                    _bootstrapLogger?.Warning("⚠️ Provided Syncfusion license key contains placeholder or invalid format. Running in trial mode.");
-                    _bootstrapLogger?.Information("� License Key Preview: {Preview}", GetLicenseKeyPreview(licenseKey));
-                    _bootstrapLogger?.Information("💡 Replace placeholder with actual license key from Syncfusion account");
-                    _bootstrapLogger?.Information("💡 Set via PowerShell: $env:SYNCFUSION_LICENSE_KEY = 'your-actual-license-key'");
-                    LogSyncfusionDiagnostics();
-                }
+                Console.WriteLine("BusBuddy: SYNCFUSION_LICENSE_KEY not set — add keys/.env or set env var.");
+                return;
             }
-            catch (Exception ex)
-            {
-                _bootstrapLogger?.Error(ex, "❌ Syncfusion license registration attempt failed: {ErrorMessage}", ex.Message);
-                LogSyncfusionDiagnostics();
-                // Allow fallback to trial mode without throwing to keep app usable
-            }
+
+            SyncfusionLicenseProvider.RegisterLicense(licenseKey);
+            Console.WriteLine($"BusBuddy: Syncfusion license registered in App() (length {licenseKey.Length}).");
         }
 
-        /// <summary>
-        /// Windows VM / hybrid drop-in used by utm_run_in_vm.ps1:
-        /// keys/SYNCFUSION_LICENSE_KEY.txt (gitignored). Mac Keychain is not available in the guest.
-        /// Supports multi-line file: Syncfusion key on its own line(s), plus optional
-        /// <c>Google_Maps_Demo_Key: …</c> or <c>GOOGLE_MAPS_API_KEY: …</c> for Maps Platform.
-        /// See https://developers.google.com/maps/get-started
-        /// </summary>
+        /// <summary>Legacy keys/*.txt fallback for Google Maps only (Syncfusion uses keys/.env).</summary>
         private static void TryLoadSecretsFromKeysFile()
         {
             var candidates = new[]
             {
-                Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "keys", "SYNCFUSION_LICENSE_KEY.txt")),
-                @"C:\dev\BusBuddy-3\keys\SYNCFUSION_LICENSE_KEY.txt",
                 Path.Combine(Directory.GetCurrentDirectory(), "keys", "SYNCFUSION_LICENSE_KEY.txt"),
-                @"C:\Users\Public\SYNCFUSION_LICENSE_KEY.txt"
+                @"C:\dev\BusBuddy-3\keys\SYNCFUSION_LICENSE_KEY.txt",
+                @"C:\dev\busbuddy\keys\SYNCFUSION_LICENSE_KEY.txt",
             };
 
             foreach (var path in candidates.Distinct(StringComparer.OrdinalIgnoreCase))
@@ -1096,16 +1064,11 @@ Examples:
                         continue;
                     }
 
-                    var lines = File.ReadAllLines(path);
-                    string? syncfusionKey = null;
                     string? mapsKey = null;
-
-                    foreach (var raw in lines)
+                    foreach (var raw in File.ReadAllLines(path))
                     {
                         var line = raw.Trim();
-                        if (line.Length == 0 ||
-                            line.StartsWith('#') ||
-                            line.StartsWith("//", StringComparison.Ordinal))
+                        if (line.Length == 0 || line.StartsWith('#'))
                         {
                             continue;
                         }
@@ -1114,47 +1077,16 @@ Examples:
                             TryParseLabeledSecret(line, "GOOGLE_MAPS_API_KEY", out demoMaps))
                         {
                             mapsKey = demoMaps;
-                            continue;
                         }
-
-                        if (TryParseLabeledSecret(line, "SYNCFUSION_LICENSE_KEY", out var labeledSf))
-                        {
-                            syncfusionKey = labeledSf;
-                            continue;
-                        }
-
-                        // Unlabeled non-empty line → Syncfusion license (legacy single-line file)
-                        if (syncfusionKey is null &&
-                            !line.Contains("Maps", StringComparison.OrdinalIgnoreCase) &&
-                            line.Length >= 20)
-                        {
-                            syncfusionKey = line;
-                        }
-                    }
-
-                    if (string.IsNullOrEmpty(Environment.GetEnvironmentVariable("SYNCFUSION_LICENSE_KEY")) &&
-                        !string.IsNullOrWhiteSpace(syncfusionKey))
-                    {
-                        Environment.SetEnvironmentVariable("SYNCFUSION_LICENSE_KEY", syncfusionKey.Trim());
-                        _bootstrapLogger?.Information(
-                            "Loaded SYNCFUSION_LICENSE_KEY from keys file (length {Length})",
-                            syncfusionKey.Trim().Length);
                     }
 
                     if (string.IsNullOrEmpty(Environment.GetEnvironmentVariable("GOOGLE_MAPS_API_KEY")) &&
                         !string.IsNullOrWhiteSpace(mapsKey))
                     {
                         Environment.SetEnvironmentVariable("GOOGLE_MAPS_API_KEY", mapsKey.Trim());
-                        _bootstrapLogger?.Information(
-                            "Loaded GOOGLE_MAPS_API_KEY from keys file (prefix {Prefix}…, length {Length})",
-                            mapsKey.Trim().Length >= 8 ? mapsKey.Trim()[..4] : "****",
-                            mapsKey.Trim().Length);
                     }
 
-                    if (!string.IsNullOrWhiteSpace(syncfusionKey) || !string.IsNullOrWhiteSpace(mapsKey))
-                    {
-                        return;
-                    }
+                    return;
                 }
                 catch (Exception ex)
                 {
@@ -1191,40 +1123,6 @@ Examples:
         }
 
         /// <summary>
-        /// Validates Syncfusion license key format and provides diagnostic information
-        /// Enhanced to detect common placeholders including REPLACE_WI pattern
-        /// Based on Syncfusion documentation for version 30.1.42
-        /// </summary>
-        private static bool ValidateSyncfusionLicenseKey(string licenseKey)
-        {
-            if (string.IsNullOrWhiteSpace(licenseKey))
-            {
-                return false;
-            }
-
-            // Check for common invalid placeholder values and patterns
-            var invalidPlaceholders = new[] {
-                "YOUR_LICENSE_KEY", "YOUR LICENSE KEY", "PLACEHOLDER", "TRIAL", "DEMO",
-                "REPLACE_WITH", "REPLACE_WI", "ENTER_YOUR", "INSERT_YOUR", "ADD_YOUR"
-            };
-            if (invalidPlaceholders.Any(placeholder =>
-                licenseKey.Contains(placeholder, StringComparison.OrdinalIgnoreCase)))
-            {
-                return false;
-            }
-
-            // Placeholder-only checks. Do not reject '/' or short tokens like "dev":
-            // Syncfusion keys are often JWT-like and commonly include those characters.
-            if (licenseKey.StartsWith("REPLACE_", StringComparison.OrdinalIgnoreCase) ||
-                licenseKey.Contains("...", StringComparison.Ordinal))
-            {
-                return false;
-            }
-
-            return licenseKey.Length >= 20;
-        }
-
-        /// <summary>
         /// Provides detailed diagnostic information for Syncfusion licensing issues
         /// </summary>
         private static void LogSyncfusionDiagnostics()
@@ -1232,10 +1130,9 @@ Examples:
             var logger = _bootstrapLogger ?? Log.Logger;
 
             logger.Information("🔍 Syncfusion Diagnostics:");
-            logger.Information("   Version: 30.1.42 (as defined in Directory.Build.props)");
+            logger.Information("   NuGet pin: 34.2.3 (Directory.Build.props SyncfusionVersion)");
             logger.Information("   Platform: WPF (.NET 9.0-windows)");
-            logger.Information("   License Type: Offline validation (no internet required)");
-            logger.Information("   Registration Location: App() constructor (before any control initialization)");
+            logger.Information("   Registration: App() constructor from keys/.env SYNCFUSION_LICENSE_KEY");
 
             // Check environment variable
             var envLicenseKey = Environment.GetEnvironmentVariable("SYNCFUSION_LICENSE_KEY");
@@ -1248,8 +1145,6 @@ Examples:
             else
             {
                 logger.Information("   Environment Variable SYNCFUSION_LICENSE_KEY: Set (length: {Length})", envLicenseKey.Length);
-                logger.Information("   💡 License key format looks {Status}",
-                    ValidateSyncfusionLicenseKey(envLicenseKey) ? "valid" : "invalid");
             }
 
             // Check for common Syncfusion assemblies

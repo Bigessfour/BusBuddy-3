@@ -14,6 +14,7 @@ $ErrorActionPreference = "Stop"
 
 $manualOverride = $null  # e.g. "Z:\" if auto-find fails
 $localBuildRoot = "C:\dev\BusBuddy-3"
+$alternateLocalRoots = @("C:\dev\busbuddy", "C:\dev\BusBuddy")
 
 Write-Host ""
 Write-Host "BusBuddy VM launcher (Windows — NOT macOS)" -ForegroundColor Cyan
@@ -111,6 +112,8 @@ function Find-BusBuddyRoot {
     $quick = @(
         "Z:\",
         "C:\dev\BusBuddy-3",
+        "C:\dev\busbuddy",
+        "C:\dev\BusBuddy",
         "Z:\Shared with Windows",
         "Z:\BusBuddy-3",
         "D:\Shared with Windows",
@@ -202,13 +205,22 @@ try {
         Write-Host "GEE key loaded from share." -ForegroundColor Cyan
     }
 
-    $licFile = Join-Path $sharedRoot "keys\SYNCFUSION_LICENSE_KEY.txt"
-    if (Test-Path -LiteralPath $licFile) {
-        $lic = (Get-Content -LiteralPath $licFile -Raw).Trim()
-        if ($lic -and $lic.Length -gt 10) {
-            $env:SYNCFUSION_LICENSE_KEY = $lic
-            Write-Host "Syncfusion license loaded from share." -ForegroundColor Cyan
+    $envFile = Join-Path $sharedRoot "keys\.env"
+    if (Test-Path -LiteralPath $envFile) {
+        foreach ($raw in Get-Content -LiteralPath $envFile) {
+            $line = $raw.Trim()
+            if ($line.Length -eq 0 -or $line.StartsWith('#')) { continue }
+            $eq = $line.IndexOf('=')
+            if ($eq -le 0) { continue }
+            $name = $line.Substring(0, $eq).Trim()
+            $value = $line.Substring($eq + 1).Trim().Trim('"').Trim("'")
+            if ($name.Length -gt 0) {
+                $env:$name = $value
+            }
         }
+        Write-Host "Loaded keys/.env from share." -ForegroundColor Cyan
+    } else {
+        Write-Host "WARNING: keys\.env not found — create from Documentation/keys-dotenv.example" -ForegroundColor Yellow
     }
 
     Write-Host ""
