@@ -13,6 +13,7 @@ using BusBuddy.Core.Services;
 using BusBuddy.Core.Services.Interfaces;
 // Phase-based extension removed; direct registrations used instead
 using BusBuddy.Core.Extensions; // Needed for AddDataServices extension
+using BusBuddy.Core.Utilities;
 using BusBuddy.WPF.ViewModels;
 using Microsoft.EntityFrameworkCore;
 using System.Threading;
@@ -338,6 +339,12 @@ namespace BusBuddy.WPF
             try
             {
                 Log.Information("🚌 Initializing BusBuddy application");
+
+                var resolvedConnection = PostgresConnectionResolver.ResolveAndApply();
+                Log.Information(
+                    "Postgres endpoint after resolver: {Endpoint}",
+                    PostgresConnectionResolver.DescribeEndpoint(resolvedConnection)
+                        ?? "(not configured — using appsettings provider)");
 
                 // Setup minimal DI for Students, Routes, Buses, Drivers (synchronous)
                 ConfigureServices();

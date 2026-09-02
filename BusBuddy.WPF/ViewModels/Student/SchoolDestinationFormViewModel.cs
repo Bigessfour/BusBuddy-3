@@ -4,7 +4,9 @@ using System.Globalization;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
+using BusBuddy.Core.Data;
 using BusBuddy.Core.Services.Interfaces;
+using BusBuddy.Core.Utilities;
 using BusBuddy.WPF.ViewModels;
 using BusBuddy.WPF.ViewModels.Map;
 using CommunityToolkit.Mvvm.Input;
@@ -23,6 +25,7 @@ public sealed class SchoolDestinationFormViewModel : BaseViewModel
     public const int DefaultMapZoom = 13;
 
     private readonly IDestinationService _destinations;
+    private readonly BusBuddyDbContext? _context;
 
     private string _name = string.Empty;
     private string _address = string.Empty;
@@ -42,6 +45,7 @@ public sealed class SchoolDestinationFormViewModel : BaseViewModel
     public SchoolDestinationFormViewModel(IDestinationService destinations)
     {
         _destinations = destinations ?? throw new ArgumentNullException(nameof(destinations));
+        _context = TryCreateDbContextViaDi();
         // Do NOT gate CanExecute — ButtonAdv often looks enabled while CanExecute=false → silent no-op.
         // Validate inside SaveAsync and surface ValidationMessage instead.
         SaveCommand = new AsyncRelayCommand(SaveAsync);
@@ -220,6 +224,12 @@ public sealed class SchoolDestinationFormViewModel : BaseViewModel
                 return;
             }
 
+            if (_context is not null && !await DatabaseUserMessage.CanConnectAsync(_context).ConfigureAwait(true))
+            {
+                ValidationMessage = DatabaseUserMessage.UnavailableForOperation("save the school");
+                return;
+            }
+
             var (lat, lon) = await ResolveSchoolGpsAsync().ConfigureAwait(true);
             var school = await _destinations.AddSchoolAsync(
                 Name.Trim(),
@@ -244,7 +254,20 @@ public sealed class SchoolDestinationFormViewModel : BaseViewModel
         catch (Exception ex)
         {
             Logger.Warning(ex, "Add school failed");
-            ValidationMessage = ex.Message;
+            ValidationMessage = DatabaseUserMessage.ForOperation(ex, "save the school");
+        }
+    }
+
+    private static BusBuddyDbContext? TryCreateDbContextViaDi()
+    {
+        try
+        {
+            var factory = App.ServiceProvider?.GetService(typeof(IBusBuddyDbContextFactory)) as IBusBuddyDbContextFactory;
+            return factory?.CreateDbContext();
+        }
+        catch
+        {
+            return null;
         }
     }
 

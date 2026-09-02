@@ -108,21 +108,16 @@ public class BusBuddyDbContext : DbContext
             logger.Information("Starting DbContext configuration (dynamic)");
 
             // 1. Environment variable hard override (preferred)
-            var envOverride = Environment.GetEnvironmentVariable("BUSBUDDY_CONNECTION");
+            var envOverride = PostgresConnectionResolver.ResolveAndApply()
+                ?? Environment.GetEnvironmentVariable("BUSBUDDY_CONNECTION");
             if (!string.IsNullOrWhiteSpace(envOverride))
             {
                 logger.Information("Using BUSBUDDY_CONNECTION environment override");
 
-                // Docker / Postgres path: detect Postgres connection string (Host= or postgres in it)
-                if (envOverride.Contains("Host=", StringComparison.OrdinalIgnoreCase) ||
-                    envOverride.Contains("postgres", StringComparison.OrdinalIgnoreCase))
+                if (PostgresConnectionResolver.IsPostgresConnection(envOverride))
                 {
                     logger.Information("Detected Postgres connection in BUSBUDDY_CONNECTION - using Npgsql provider");
-                    optionsBuilder.UseNpgsql(envOverride, npgsql =>
-                    {
-                        npgsql.CommandTimeout(60);
-                        npgsql.EnableRetryOnFailure();
-                    });
+                    optionsBuilder.UseBusBuddyPostgres(envOverride);
                 }
                 else
                 {
