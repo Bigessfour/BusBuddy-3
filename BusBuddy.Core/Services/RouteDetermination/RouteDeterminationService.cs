@@ -753,8 +753,21 @@ public sealed class RouteDeterminationService : IRouteDeterminationService
             .ConfigureAwait(false);
         var byId = students.ToDictionary(s => s.StudentId);
 
+        var pickupStopIds = students
+            .Where(s => s.PickupStopId.HasValue)
+            .Select(s => s.PickupStopId!.Value)
+            .Distinct()
+            .ToList();
+        var pickupStops = pickupStopIds.Count == 0
+            ? new Dictionary<int, PickupStop>()
+            : await ctx.PickupStops.AsNoTracking()
+                .Where(p => pickupStopIds.Contains(p.PickupStopId))
+                .ToDictionaryAsync(p => p.PickupStopId, cancellationToken)
+                .ConfigureAwait(false);
+
         var coords = new List<(double Lat, double Lon)>();
-        var meta = new List<(int StudentId, string Name, string Address, decimal? Lat, decimal? Lon)>();
+        var meta = new List<(List<int> StudentIds, string Name, string Address, decimal Lat, decimal Lon)>();
+        var stopKeyIndex = new Dictionary<string, int>(StringComparer.Ordinal);
         foreach (var id in pack.OrderedStudentIds)
         {
             if (fleetKind == FleetKind.Transfer &&
@@ -765,18 +778,60 @@ public sealed class RouteDeterminationService : IRouteDeterminationService
             {
                 byId.TryGetValue(id, out var student);
                 var name = student?.StudentName ?? $"Student {id}";
+                var transferKey = $"transfer:{id}";
+                if (stopKeyIndex.TryGetValue(transferKey, out var tIdx))
+                {
+                    meta[tIdx].StudentIds.Add(id);
+                    continue;
+                }
+
+                stopKeyIndex[transferKey] = meta.Count;
                 coords.Add(((double)tLat, (double)tLon));
-                meta.Add((id, name, tAddr, tLat, tLon));
+                meta.Add((new List<int> { id }, name, tAddr, tLat, tLon));
                 continue;
             }
 
-            if (!byId.TryGetValue(id, out var s) || s.Latitude is null || s.Longitude is null)
+            if (!byId.TryGetValue(id, out var s))
             {
                 continue;
             }
 
-            coords.Add(((double)s.Latitude.Value, (double)s.Longitude.Value));
-            meta.Add((id, s.StudentName ?? $"Student {id}", s.HomeAddress ?? string.Empty, s.Latitude, s.Longitude));
+            string stopKey;
+            decimal lat;
+            decimal lon;
+            string stopName;
+            string stopAddress;
+
+            if (s.PickupStopId is int psId && pickupStops.TryGetValue(psId, out var catalogStop))
+            {
+                stopKey = $"pickup:{psId}";
+                lat = catalogStop.Latitude;
+                lon = catalogStop.Longitude;
+                stopName = catalogStop.Name;
+                stopAddress = catalogStop.Address ?? string.Empty;
+            }
+            else if (s.Latitude is not null && s.Longitude is not null)
+            {
+                stopKey = $"home:{id}";
+                lat = s.Latitude.Value;
+                lon = s.Longitude.Value;
+                stopName = s.StudentName ?? $"Student {id}";
+                stopAddress = s.HomeAddress ?? string.Empty;
+            }
+            else
+            {
+                continue;
+            }
+
+            if (stopKeyIndex.TryGetValue(stopKey, out var idx))
+            {
+                meta[idx].StudentIds.Add(id);
+                continue;
+            }
+
+            stopKeyIndex[stopKey] = meta.Count;
+            coords.Add(((double)lat, (double)lon));
+            meta.Add((new List<int> { id }, stopName, stopAddress, lat, lon));
         }
 
         if (coords.Count == 0)
@@ -821,7 +876,9 @@ public sealed class RouteDeterminationService : IRouteDeterminationService
                 StopOrder = i + 1,
                 ScheduledArrival = arrival,
                 ScheduledDeparture = departure,
-                Notes = $"StudentId={m.StudentId}",
+                Notes = m.StudentIds.Count == 1
+                    ? $"StudentId={m.StudentIds[0]}"
+                    : $"StudentIds={string.Join(",", m.StudentIds)}",
                 CreatedDate = DateTime.UtcNow,
                 EstimatedArrivalTime = DateTime.Today.Add(arrival),
                 EstimatedDepartureTime = DateTime.Today.Add(departure)

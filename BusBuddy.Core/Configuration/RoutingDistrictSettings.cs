@@ -33,4 +33,7 @@ public sealed class RoutingDistrictSettings
 
     /// <summary>When false, hard seating block has no UI override path.</summary>
     public bool AllowSeatingOverride { get; set; } = true;
+
+    /// <summary>Max walk distance (meters) when suggesting a catalog pickup stop from a geocoded home.</summary>
+    public double StopSuggestMaxMeters { get; set; } = 400;
 }

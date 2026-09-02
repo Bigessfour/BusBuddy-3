@@ -31,6 +31,12 @@ public class Student : INotifyPropertyChanged
     public int? FamilyId { get; set; }
     public Family? Family { get; set; }
 
+    /// <summary>Shared district pickup stop (corner/block). Null = use home address as stop (rural).</summary>
+    public int? PickupStopId { get; set; }
+
+    [ForeignKey(nameof(PickupStopId))]
+    public PickupStop? PickupStop { get; set; }
+
     /// <summary>Assigned campus from Destinations (DestinationType = School).</summary>
     public int? DestinationId { get; set; }
 

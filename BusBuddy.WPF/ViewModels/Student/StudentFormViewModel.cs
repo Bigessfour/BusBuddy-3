@@ -76,6 +76,7 @@ namespace BusBuddy.WPF.ViewModels.Student
 
             AvailableRoutes = new ObservableCollection<string>();
             AvailableBusStops = new ObservableCollection<string>();
+            AvailablePickupStops = new ObservableCollection<PickupStop>();
             AvailableSchools = new ObservableCollection<Destination>();
 
             try { _student.PropertyChanged += OnStudentPropertyChanged; } catch { }
@@ -108,6 +109,7 @@ namespace BusBuddy.WPF.ViewModels.Student
 
             AvailableRoutes = new ObservableCollection<string>();
             AvailableBusStops = new ObservableCollection<string>();
+            AvailablePickupStops = new ObservableCollection<PickupStop>();
             AvailableSchools = new ObservableCollection<Destination>();
 
             try { _student.PropertyChanged += OnStudentPropertyChanged; } catch { }
@@ -198,10 +200,43 @@ namespace BusBuddy.WPF.ViewModels.Student
             "DC"
         ];
 
-        /// <summary>
-        /// Available bus stop names for assignment
-        /// </summary>
+        /// <summary>Available bus stop names for assignment</summary>
         public ObservableCollection<string> AvailableBusStops { get; }
+
+        /// <summary>District pickup stop catalog (shared corners / blocks).</summary>
+        public ObservableCollection<PickupStop> AvailablePickupStops { get; }
+
+        private PickupStop? _selectedPickupStop;
+        private string _pickupStopHint = "Assign a catalog stop near the home address, or use home as stop (rural).";
+
+        public PickupStop? SelectedPickupStop
+        {
+            get => _selectedPickupStop;
+            set
+            {
+                if (SetProperty(ref _selectedPickupStop, value))
+                {
+                    Student.PickupStopId = value?.PickupStopId;
+                    if (value is not null)
+                    {
+                        Student.BusStop = value.Name;
+                    }
+
+                    OnPropertyChanged(nameof(UsesHomeAsPickupStop));
+                    PickupStopHint = value is null
+                        ? "No catalog stop selected — home address will be used when generating routes."
+                        : $"Boarding at {value.Name}.";
+                }
+            }
+        }
+
+        public bool UsesHomeAsPickupStop => !Student.PickupStopId.HasValue;
+
+        public string PickupStopHint
+        {
+            get => _pickupStopHint;
+            private set => SetProperty(ref _pickupStopHint, value);
+        }
 
         /// <summary>Active school Destinations for intake assignment (home-to-school routing).</summary>
         public ObservableCollection<Destination> AvailableSchools { get; }
@@ -369,6 +404,8 @@ namespace BusBuddy.WPF.ViewModels.Student
         public ICommand ImportCsvCommand { get; private set; } = null!;
         public ICommand ValidateDataCommand { get; private set; } = null!;
         public ICommand ClearGlobalErrorCommand { get; private set; } = null!;
+        public ICommand SuggestNearestPickupStopCommand { get; private set; } = null!;
+        public ICommand UseHomeAsPickupStopCommand { get; private set; } = null!;
 
         #endregion
 
@@ -407,6 +444,8 @@ namespace BusBuddy.WPF.ViewModels.Student
             ImportCsvCommand = new AsyncRelayCommand(ImportCsvAsync);
             ValidateDataCommand = new AsyncRelayCommand(ValidateAllDataAsync);
             ClearGlobalErrorCommand = new CommunityToolkit.Mvvm.Input.RelayCommand(ClearGlobalError);
+            SuggestNearestPickupStopCommand = new AsyncRelayCommand(SuggestNearestPickupStopAsync);
+            UseHomeAsPickupStopCommand = new CommunityToolkit.Mvvm.Input.RelayCommand(UseHomeAsPickupStop);
         }
 
         #endregion
@@ -459,6 +498,7 @@ namespace BusBuddy.WPF.ViewModels.Student
                             : $"Address validated: {maps.FormattedAddress}";
                         AddressValidationColor = Brushes.Green;
                         Logger.Information("Address validation successful via Maps Platform");
+                        await SuggestNearestPickupStopAsync().ConfigureAwait(true);
                         return;
                     }
 
@@ -1164,30 +1204,97 @@ namespace BusBuddy.WPF.ViewModels.Student
                     AvailableRoutes.Add(n);
                 }
 
-                // Load available bus stops
-                var busStops = new[]
-                {
-                    "Oak & 1st", "Maple & Main", "Pine & Center", "Elm & 2nd",
-                    "Cedar & Park", "Birch & State", "Walnut & Lincoln", "Cherry & Washington",
-                    "Spruce & Adams", "Hickory & Jefferson", "Poplar & Monroe", "Ash & Madison",
-                    "Sycamore & Jackson", "Willow & Van Buren", "Dogwood & Harrison"
-                };
-
-                AvailableBusStops.Clear();
-                foreach (var stop in busStops)
-                {
-                    AvailableBusStops.Add(stop);
-                }
+                // Load district pickup stops (shared corners / blocks)
+                await LoadPickupStopsAsync();
 
                 await LoadSchoolsAsync();
 
-                Logger.Information("Form data loaded: {RouteCount} routes, {BusStopCount} bus stops, {SchoolCount} schools",
-                    AvailableRoutes.Count, AvailableBusStops.Count, AvailableSchools.Count);
+                Logger.Information("Form data loaded: {RouteCount} routes, {PickupStopCount} pickup stops, {SchoolCount} schools",
+                    AvailableRoutes.Count, AvailablePickupStops.Count, AvailableSchools.Count);
             }
             catch (Exception ex)
             {
                 Logger.Error(ex, "Error loading form data");
             }
+        }
+
+        private async Task LoadPickupStopsAsync()
+        {
+            AvailablePickupStops.Clear();
+            try
+            {
+                var stopService = App.ServiceProvider?.GetService<IPickupStopService>();
+                IReadOnlyList<PickupStop> stops;
+                if (stopService is not null)
+                {
+                    stops = await stopService.GetActiveStopsAsync().ConfigureAwait(true);
+                }
+                else
+                {
+                    stops = await _context.PickupStops
+                        .Where(s => s.Active)
+                        .OrderBy(s => s.Name)
+                        .ToListAsync()
+                        .ConfigureAwait(true);
+                }
+
+                foreach (var stop in stops)
+                {
+                    AvailablePickupStops.Add(stop);
+                }
+
+                if (Student.PickupStopId is int stopId)
+                {
+                    _selectedPickupStop = AvailablePickupStops.FirstOrDefault(s => s.PickupStopId == stopId);
+                    OnPropertyChanged(nameof(SelectedPickupStop));
+                    OnPropertyChanged(nameof(UsesHomeAsPickupStop));
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Warning(ex, "Failed to load pickup stops");
+            }
+        }
+
+        private async Task SuggestNearestPickupStopAsync()
+        {
+            if (Student.Latitude is not decimal lat || Student.Longitude is not decimal lon)
+            {
+                PickupStopHint = "Validate the home address first to suggest a nearby catalog stop.";
+                return;
+            }
+
+            var stopService = App.ServiceProvider?.GetService<IPickupStopService>();
+            if (stopService is null)
+            {
+                PickupStopHint = "Pickup stop service is not available.";
+                return;
+            }
+
+            var settings = App.ServiceProvider?
+                .GetService<Microsoft.Extensions.Options.IOptions<BusBuddy.Core.Configuration.RoutingDistrictSettings>>()?
+                .Value;
+            var maxMeters = settings?.StopSuggestMaxMeters ?? 400;
+
+            var nearest = await stopService.FindNearestAsync(
+                (double)lat, (double)lon, maxMeters).ConfigureAwait(true);
+            if (nearest is null)
+            {
+                PickupStopHint = $"No catalog stop within {maxMeters:F0} m — use home as stop or add a pickup stop.";
+                return;
+            }
+
+            SelectedPickupStop = nearest;
+            PickupStopHint = $"Suggested {nearest.Name} (within {maxMeters:F0} m of home).";
+        }
+
+        private void UseHomeAsPickupStop()
+        {
+            SelectedPickupStop = null;
+            Student.PickupStopId = null;
+            Student.BusStop = "Home address";
+            PickupStopHint = "Using home address as pickup stop (rural / driveway).";
+            OnPropertyChanged(nameof(UsesHomeAsPickupStop));
         }
 
         private async Task LoadSchoolsAsync()
