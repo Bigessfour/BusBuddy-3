@@ -1,7 +1,6 @@
 using System;
 using System.Data;
 using System.Threading.Tasks;
-using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
 using Serilog.Context;
@@ -136,27 +135,11 @@ public static class ResilientDbExecution
             {
                 Logger.Debug("Validating database connection");
 
-                var canConnect = await context.Database.CanConnectAsync();
-                if (!canConnect)
-                {
-                    Logger.Warning("Database connection validation failed");
-                    return false;
-                }
-
-                // Test with a simple query
-                var connectionString = context.Database.GetConnectionString();
-                using var connection = new SqlConnection(connectionString);
-                await connection.OpenAsync();
-
-                using var command = new SqlCommand("SELECT 1", connection);
-                var result = await command.ExecuteScalarAsync();
-
-                Logger.Information("Database connection validation successful");
-                return result != null;
+                return await context.Database.CanConnectAsync();
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Database connection validation failed with exception");
+                Logger.Warning(ex, "Database connection validation failed with exception");
                 return false;
             }
         }
@@ -176,35 +159,10 @@ public static class ResilientDbExecution
 
         return exception switch
         {
-            SqlException sqlEx => IsTransientSqlError(sqlEx),
             TimeoutException => true,
-            InvalidOperationException invOpEx when invOpEx.Message.Contains("timeout") => true,
-            DbUpdateException dbEx when dbEx.InnerException is SqlException sqlInner => IsTransientSqlError(sqlInner),
+            _ when DatabaseUserMessage.IsConnectivityFailure(exception) => true,
             _ => false
         };
-    }
-
-    /// <summary>
-    /// Determines if a SQL exception is transient and worth retrying
-    /// </summary>
-    private static bool IsTransientSqlError(SqlException sqlException)
-    {
-        // Common transient SQL error codes
-        int[] transientErrorCodes = {
-                -2,     // Timeout
-                2,      // Timeout
-                53,     // Network path not found
-                121,    // Semaphore timeout
-                232,    // Pipe broken
-                10053,  // Connection aborted
-                10054,  // Connection reset
-                10060,  // Connection timeout
-                40197,  // Service busy
-                40501,  // Service busy
-                40613   // Database unavailable
-            };
-
-        return Array.Exists(transientErrorCodes, code => code == sqlException.Number);
     }
 
     /// <summary>

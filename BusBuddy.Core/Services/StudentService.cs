@@ -1418,7 +1418,7 @@ public class StudentService : IStudentService
             metrics["StudentsWithoutRoutes"] = await context.Students.CountAsync(s => string.IsNullOrEmpty(s.AMRoute) && string.IsNullOrEmpty(s.PMRoute));
             metrics["StudentsWithBusStops"] = await context.Students.CountAsync(s => !string.IsNullOrEmpty(s.BusStop));
             metrics["StudentsWithoutBusStops"] = await context.Students.CountAsync(s => string.IsNullOrEmpty(s.BusStop));
-            metrics["StudentsWithSpecialNeeds"] = await context.Students.CountAsync(s => !string.IsNullOrEmpty(s.SpecialNeeds));
+            metrics["StudentsWithSpecialNeeds"] = await context.Students.CountAsync(s => s.RequiresSpecialNeedsBus || !string.IsNullOrEmpty(s.SpecialNeeds));
 
             // Database Performance Metrics
             var sw = new System.Diagnostics.Stopwatch();

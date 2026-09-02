@@ -449,6 +449,7 @@ public class BusBuddyDbContext : DbContext
             // Properties
             entity.Property(e => e.RouteName).IsRequired().HasMaxLength(50);
             entity.Property(e => e.Description).HasMaxLength(500);
+            entity.Property(e => e.IsSpecialNeedsRoute).HasDefaultValue(false);
 
             // Foreign key column mappings
             entity.Property(e => e.AMVehicleId).HasColumnName("AMVehicleID");
@@ -648,6 +649,10 @@ public class BusBuddyDbContext : DbContext
             entity.Property(e => e.State).HasMaxLength(2);
             entity.Property(e => e.Zip).HasMaxLength(10);
             entity.Property(e => e.HasMedicalNeeds).HasDefaultValue(false);
+            entity.Property(e => e.RequiresSpecialNeedsBus).HasDefaultValue(false);
+            entity.Property(e => e.RequiresWheelchair).HasDefaultValue(false);
+            entity.Property(e => e.RequiresSeatBelt).HasDefaultValue(false);
+            entity.Property(e => e.RequiresAide).HasDefaultValue(false);
 
             // Audit fields
             entity.Property(e => e.CreatedBy).HasMaxLength(100);

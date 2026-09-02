@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using BusBuddy.Core.Services;
 using BusBuddy.Core.Services.Interfaces;
+using BusBuddy.Core.Utilities;
 using Serilog;
 
 namespace BusBuddy.WPF.ViewModels
@@ -156,7 +157,9 @@ namespace BusBuddy.WPF.ViewModels
             {
                 Logger.Error(ex, "Failed to load data from database; leaving dock grids empty");
                 ClearCollections();
-                StatusMessage = "Database unavailable. Dock grids are empty.";
+                StatusMessage = DatabaseUserMessage.IsConnectivityFailure(ex)
+                    ? "Database unavailable — check Postgres on the Mac host and BUSBUDDY_CONNECTION."
+                    : "Database unavailable. Dock grids are empty.";
             }
         }
 

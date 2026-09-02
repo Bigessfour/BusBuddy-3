@@ -18,9 +18,12 @@
                              xmlns:validation="clr-namespace:BusBuddy.WPF.Validation"
                              mc:Ignorable="d"
                              Title="Student Form"
-                             Height="600" Width="800"
+                             Height="1000" Width="940"
+                             MinHeight="920" MinWidth="820"
+                             ResizeMode="CanResize"
                              WindowStartupLocation="CenterOwner"
-                             FontSize="14">
+                             FontSize="14"
+                             PreviewKeyDown="StudentForm_PreviewKeyDown">
 
     <!--
         Resource section: Styles, converters, and merged dictionaries for consistent Syncfusion look and feel.
@@ -64,11 +67,17 @@
                         <Setter Property="BorderThickness" Value="2"/>
                         <Setter Property="ToolTip" Value="{Binding (Validation.Errors)[0].ErrorContent, RelativeSource={RelativeSource Self}}"/>
                     </Trigger>
-                    <!-- Default to first item when no selection and items exist -->
-                    <Trigger Property="SelectedItem" Value="{x:Null}">
-                        <Setter Property="SelectedIndex" Value="0"/>
-                    </Trigger>
                 </Style.Triggers>
+            </Style>
+            <Style x:Key="StudentFormComboBoxStyle" TargetType="syncfusion:ComboBoxAdv" BasedOn="{StaticResource {x:Type syncfusion:ComboBoxAdv}}">
+                <Setter Property="Height" Value="44"/>
+                <Setter Property="Padding" Value="8,6"/>
+                <Setter Property="Margin" Value="0,0,0,10"/>
+                <Setter Property="FontSize" Value="15"/>
+                <Setter Property="Foreground" Value="{DynamicResource BusBuddy.Brush.Text.Primary}"/>
+                <Setter Property="Background" Value="{DynamicResource BusBuddy.Brush.Surface.Light}"/>
+                <Setter Property="MaxDropDownHeight" Value="280"/>
+                <Setter Property="AllowSelectAll" Value="False"/>
             </Style>
             <Style x:Key="ValidatedMaskedEditStyle" TargetType="syncfusion:SfMaskedEdit" BasedOn="{StaticResource {x:Type syncfusion:SfMaskedEdit}}">
                 <Style.Triggers>
@@ -99,15 +108,40 @@
                 <Setter Property="Foreground" Value="{DynamicResource BusBuddy.Brush.Text.Primary}"/>
                 <Setter Property="Background" Value="{DynamicResource BusBuddy.Brush.Surface.Light}"/>
             </Style>
-            <Style TargetType="syncfusion:SfDatePicker" BasedOn="{StaticResource {x:Type syncfusion:SfDatePicker}}">
-                <Setter Property="Height" Value="40"/>
-                <Setter Property="FontSize" Value="14"/>
+            <Style x:Key="StudentFormAddressTextStyle" TargetType="syncfusion:SfTextBoxExt" BasedOn="{StaticResource ValidatedSfTextBoxStyle}">
+                <Setter Property="Height" Value="48"/>
+                <Setter Property="MinHeight" Value="48"/>
+                <Setter Property="FontSize" Value="15"/>
+                <Setter Property="Padding" Value="10,8"/>
+            </Style>
+            <Style x:Key="StudentFormDatePickerStyle" TargetType="syncfusion:SfDatePicker" BasedOn="{StaticResource {x:Type syncfusion:SfDatePicker}}">
+                <Setter Property="Height" Value="38"/>
+                <Setter Property="FontSize" Value="15"/>
                 <Setter Property="Margin" Value="0,0,0,10"/>
                 <Setter Property="Foreground" Value="{DynamicResource BusBuddy.Brush.Text.Primary}"/>
                 <Setter Property="Background" Value="{DynamicResource BusBuddy.Brush.Surface.Light}"/>
                 <Setter Property="FormatString" Value="MMM dd, yyyy"/>
                 <Setter Property="SelectorFormatString" Value="M/d/yyyy"/>
-                <Setter Property="DropDownHeight" Value="320"/>
+                <Setter Property="DropDownHeight" Value="200"/>
+                <Setter Property="SelectorItemWidth" Value="48"/>
+                <Setter Property="SelectorItemHeight" Value="36"/>
+                <Setter Property="AccentBrush" Value="{DynamicResource BusBuddy.Brush.Primary}"/>
+                <Setter Property="SelectorStyle">
+                    <Setter.Value>
+                        <Style TargetType="syncfusion:SfDateSelector">
+                            <Setter Property="Background" Value="{DynamicResource BusBuddy.Brush.Surface.Dark}"/>
+                            <Setter Property="Foreground" Value="{DynamicResource BusBuddy.Brush.Text.Primary}"/>
+                            <Setter Property="FontSize" Value="15"/>
+                        </Style>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+            <Style x:Key="StudentFormTimeTextStyle" TargetType="syncfusion:SfTextBoxExt" BasedOn="{StaticResource {x:Type syncfusion:SfTextBoxExt}}">
+                <Setter Property="Height" Value="38"/>
+                <Setter Property="FontSize" Value="15"/>
+                <Setter Property="Padding" Value="8,6"/>
+                <Setter Property="Foreground" Value="{DynamicResource BusBuddy.Brush.Text.Primary}"/>
+                <Setter Property="Background" Value="{DynamicResource BusBuddy.Brush.Surface.Light}"/>
             </Style>
             <Style TargetType="syncfusion:SfTextBoxExt" BasedOn="{StaticResource {x:Type syncfusion:SfTextBoxExt}}">
                 <Setter Property="Foreground" Value="{DynamicResource BusBuddy.Brush.Text.Primary}"/>
@@ -130,8 +164,8 @@
         GroupBoxes organize logical sections: Basic Info, Address, Contact, Transportation, Special Needs.
         Action bar at bottom provides Save/Cancel/Validate with validation status.
     -->
-    <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="20">
-        <Grid MaxWidth="600">
+    <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="20,20,20,12">
+        <Grid MaxWidth="880">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
@@ -175,7 +209,7 @@
             <!-- Form Content -->
             <StackPanel Grid.Row="2">
                 <!-- Basic Information -->
-                <GroupBox Header="Basic Information" Margin="0,0,0,15" Padding="15">
+                <GroupBox Header="Basic Information" Margin="0,0,0,12" Padding="12">
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
@@ -228,6 +262,7 @@
                         <StackPanel Grid.Row="1" Grid.Column="1" Margin="10,0,0,0">
                             <Label Content="School"/>
                             <syncfusion:ComboBoxAdv Name="SchoolComboBox"
+                                          Style="{StaticResource StudentFormComboBoxStyle}"
                                           ItemsSource="{Binding AvailableSchools}"
                                           DisplayMemberPath="Name"
                                           SelectedItem="{Binding SelectedSchoolDestination, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
@@ -242,14 +277,10 @@
                         <StackPanel Grid.Row="2" Grid.Column="0" Margin="0,0,10,0">
                             <Label Content="Date of Birth"/>
                             <syncfusion:SfDatePicker Name="DateOfBirthPicker"
+                                       Style="{StaticResource StudentFormDatePickerStyle}"
                                        Value="{Binding Student.DateOfBirth, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                        AllowNull="True"
                                        Watermark="Select birthdate (optional)"
-                                       FormatString="MMM dd, yyyy"
-                                       SelectorFormatString="M/d/yyyy"
-                                       FontSize="14"
-                                       Height="40"
-                                       DropDownHeight="320"
                                        AutomationProperties.Name="Date of Birth"/>
                         </StackPanel>
 
@@ -262,10 +293,12 @@
                                     <ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
                                 <syncfusion:SfTextBoxExt Grid.Column="0" Margin="0,0,6,0"
+                                         Style="{StaticResource StudentFormTimeTextStyle}"
                                          Text="{Binding SchoolStartTimeText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                          Watermark="08:00"
                                          AutomationProperties.Name="School Start Time"/>
                                 <syncfusion:SfTextBoxExt Grid.Column="1" Margin="0,0,6,0"
+                                         Style="{StaticResource StudentFormTimeTextStyle}"
                                          Text="{Binding SchoolDismissalTimeText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                          Watermark="15:30"
                                          AutomationProperties.Name="School Dismissal Time"/>
@@ -276,7 +309,7 @@
                             </Grid>
                         </StackPanel>
 
-                        <StackPanel Grid.Row="3" Grid.ColumnSpan="2">
+                        <StackPanel Grid.Row="3" Grid.Column="0" Margin="0,0,10,0">
                             <syncfusiontools:ToggleButtonExt Name="ActiveCheckBox"
                                       Content="Active Student"
                                       IsChecked="{Binding Student.Active, Mode=TwoWay}"
@@ -287,7 +320,7 @@
                 </GroupBox>
 
                 <!-- Address Information -->
-                <GroupBox Header="Address Information" Margin="0,0,0,15" Padding="15">
+                <GroupBox Header="Address Information" Margin="0,0,0,12" Padding="12">
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
@@ -303,7 +336,7 @@
                         <StackPanel Grid.Row="0" Grid.ColumnSpan="3">
                             <Label Content="Home Address *"/>
                             <!-- Free-form address — use SfTextBoxExt -->
-                            <syncfusion:SfTextBoxExt Name="HomeAddressTextBox" Style="{StaticResource ValidatedSfTextBoxStyle}"
+                            <syncfusion:SfTextBoxExt Name="HomeAddressTextBox" Style="{StaticResource StudentFormAddressTextStyle}"
                                      Validation.ErrorTemplate="{StaticResource ValidationErrorTemplate}"
                                      Watermark="123 Main Street"
                                      AutomationProperties.Name="Home Address">
@@ -319,7 +352,7 @@
 
                         <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,10,0">
                             <Label Content="City *"/>
-                            <syncfusion:SfTextBoxExt Name="CityTextBox" Style="{StaticResource ValidatedSfTextBoxStyle}"
+                            <syncfusion:SfTextBoxExt Name="CityTextBox" Style="{StaticResource StudentFormAddressTextStyle}"
                                      Validation.ErrorTemplate="{StaticResource ValidationErrorTemplate}"
                                      Watermark="City name"
                                      AutomationProperties.Name="City">
@@ -336,9 +369,9 @@
                         <StackPanel Grid.Row="1" Grid.Column="1" Margin="10,0,10,0">
                             <Label Content="State *"/>
                             <!-- Use ComboBoxAdv bound to a canonical list of US states to avoid free text -->
-                            <syncfusion:ComboBoxAdv Name="StateComboBox" Style="{StaticResource ValidatedComboBoxAdvStyle}"
+                            <syncfusion:ComboBoxAdv Name="StateComboBox" Style="{StaticResource StudentFormComboBoxStyle}"
                                       Validation.ErrorTemplate="{StaticResource ValidationErrorTemplate}"
-                                      IsEditable="False" Width="100"
+                                      IsEditable="False" MinWidth="100"
                                       ItemsSource="{Binding AvailableStates}"
                                       SelectedItem="{Binding Student.State, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                       AutomationProperties.Name="State"/>
@@ -347,12 +380,16 @@
                         <StackPanel Grid.Row="1" Grid.Column="2" Margin="10,0,0,0">
                             <Label Content="ZIP Code *"/>
                             <!-- Use SfMaskedEdit with regex to enforce 5 or 5+4 ZIP formats -->
-                            <syncfusion:SfMaskedEdit Name="ZipMaskedEdit" Style="{StaticResource ValidatedMaskedEditStyle}"
+                            <syncfusion:SfMaskedEdit Name="ZipMaskedEdit"
+                                       Height="48"
+                                       MinHeight="48"
+                                       FontSize="15"
+                                       Padding="10,8"
                                        Validation.ErrorTemplate="{StaticResource ValidationErrorTemplate}"
                                        MaskType="RegEx"
                                        Mask="\d{5}(-\d{4})?"
                                        PromptChar="_"
-                                       Width="110"
+                                       MinWidth="140"
                                        Watermark="12345 or 12345-6789"
                                        AutomationProperties.Name="ZIP Code">
                                 <syncfusion:SfMaskedEdit.Value>
@@ -392,7 +429,7 @@
                 </GroupBox>
 
                 <!-- Contact Information: primary parent/guardian (distinct from emergency contact) -->
-                <GroupBox Header="Parent / Guardian Contact" Margin="0,0,0,15" Padding="15">
+                <GroupBox Header="Parent / Guardian Contact" Margin="0,0,0,12" Padding="12">
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
@@ -443,7 +480,7 @@
                 </GroupBox>
 
                 <!-- Transportation Information -->
-                <GroupBox Header="Transportation Information" Margin="0,0,0,15" Padding="15">
+                <GroupBox Header="Transportation Information" Margin="0,0,0,12" Padding="12">
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
@@ -461,10 +498,9 @@
                             <StackPanel Grid.Column="0" Margin="0,0,10,0">
                                 <Label Content="AM Route"/>
                                 <syncfusion:ComboBoxAdv Name="AMRouteComboBox"
+                                          Style="{StaticResource StudentFormComboBoxStyle}"
                                           ItemsSource="{Binding AvailableRoutes}"
-                                          DisplayMemberPath="RouteName"
-                                          SelectedValuePath="RouteName"
-                                          SelectedValue="{Binding Student.AMRoute, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                          SelectedItem="{Binding Student.AMRoute, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                           IsEditable="True"
                                           AutomationProperties.Name="AM Route"/>
                             </StackPanel>
@@ -472,10 +508,9 @@
                             <StackPanel Grid.Column="1" Margin="10,0,10,0">
                                 <Label Content="PM Route"/>
                                 <syncfusion:ComboBoxAdv Name="PMRouteComboBox"
+                                          Style="{StaticResource StudentFormComboBoxStyle}"
                                           ItemsSource="{Binding AvailableRoutes}"
-                                          DisplayMemberPath="RouteName"
-                                          SelectedValuePath="RouteName"
-                                          SelectedValue="{Binding Student.PMRoute, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                          SelectedItem="{Binding Student.PMRoute, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                           IsEditable="True"
                                           AutomationProperties.Name="PM Route"/>
                             </StackPanel>
@@ -483,11 +518,11 @@
                             <StackPanel Grid.Column="2" Margin="10,0,0,0">
                                 <Label Content="Pickup stop"/>
                                 <syncfusion:ComboBoxAdv Name="PickupStopComboBox"
+                                          Style="{StaticResource StudentFormComboBoxStyle}"
                                           ItemsSource="{Binding AvailablePickupStops}"
                                           SelectedItem="{Binding SelectedPickupStop, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                           DisplayMemberPath="Name"
                                           IsEditable="False"
-                                          Height="40"
                                           AutomationProperties.Name="Pickup stop"/>
                                 <TextBlock Text="{Binding PickupStopHint}"
                                            TextWrapping="Wrap"
@@ -535,16 +570,24 @@
                 </GroupBox>
 
                 <!-- Special Needs and Safety -->
-                <GroupBox Header="Special Needs and Safety Requirements" Margin="0,0,0,15" Padding="15">
+                <GroupBox Header="Special Needs and Safety Requirements" Margin="0,0,0,12" Padding="12">
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
                         </Grid.RowDefinitions>
 
+                        <syncfusiontools:ToggleButtonExt Grid.Row="0"
+                                Content="Rides special needs bus"
+                                IsChecked="{Binding Student.RequiresSpecialNeedsBus, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                Margin="0,0,0,10"
+                                VerticalAlignment="Center"
+                                ToolTip="Check when this student must ride a special-needs route (lift bus, aide, etc.)"/>
+
                         <!-- Special Needs Flags -->
-                        <Grid Grid.Row="0">
+                        <Grid Grid.Row="1">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="*"/>
@@ -554,24 +597,24 @@
 
                             <syncfusiontools:ToggleButtonExt Grid.Column="0" Name="RequiresWheelchairCheckBox"
                                     Content="Wheelchair Accessible"
-                                    IsChecked="{Binding Student.RequiresWheelchair, Mode=TwoWay}"
+                                    IsChecked="{Binding Student.RequiresWheelchair, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                     VerticalAlignment="Center"/>
                             <syncfusiontools:ToggleButtonExt Grid.Column="1" Name="RequiresSeatBeltCheckBox"
                                     Content="Seat Belt Required"
-                                    IsChecked="{Binding Student.RequiresSeatBelt, Mode=TwoWay}"
+                                    IsChecked="{Binding Student.RequiresSeatBelt, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                     VerticalAlignment="Center"/>
                             <syncfusiontools:ToggleButtonExt Grid.Column="2" Name="RequiresAideCheckBox"
                                     Content="Aide Required"
-                                    IsChecked="{Binding Student.RequiresAide, Mode=TwoWay}"
+                                    IsChecked="{Binding Student.RequiresAide, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                     VerticalAlignment="Center"/>
                             <syncfusiontools:ToggleButtonExt Grid.Column="3" Name="HasMedicalNeedsCheckBox"
                                     Content="Medical Needs"
-                                    IsChecked="{Binding Student.HasMedicalNeeds, Mode=TwoWay}"
+                                    IsChecked="{Binding Student.HasMedicalNeeds, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                     VerticalAlignment="Center"/>
                         </Grid>
 
                         <!-- Special Instructions -->
-                        <StackPanel Grid.Row="1" Margin="0,10,0,0">
+                        <StackPanel Grid.Row="2" Margin="0,10,0,0">
                             <Label Content="Special Transportation Instructions"/>
                             <syncfusion:SfTextBoxExt Name="SpecialInstructionsTextBox"
                                        Text="{Binding Student.SpecialInstructions, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
@@ -584,7 +627,7 @@
                         </StackPanel>
 
                         <!-- Emergency Contact (separate person from primary parent/guardian) -->
-                        <Grid Grid.Row="2" Margin="0,10,0,0">
+                        <Grid Grid.Row="3" Margin="0,10,0,0">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="*"/>

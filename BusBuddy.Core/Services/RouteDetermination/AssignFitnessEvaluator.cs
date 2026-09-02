@@ -66,6 +66,22 @@ public sealed class AssignFitnessEvaluator
         var suggestNew = false;
         var allowed = true;
 
+        var studentNeedsSpecial = StudentSpecialNeedsHelper.RequiresSpecialNeedsTransport(student);
+        var routeIsSpecial = StudentSpecialNeedsHelper.IsSpecialNeedsRoute(route);
+        if (studentNeedsSpecial != routeIsSpecial)
+        {
+            var msg = studentNeedsSpecial
+                ? "Student requires a special-needs route"
+                : "Route is designated for special-needs students only";
+            reasons.Add(msg);
+            severity = AssignFitnessSeverity.Block;
+            allowed = false;
+            suggestNew = true;
+            Logger.Information(
+                "Assign fitness Blocked Student={Id} Route={RouteId} Reasons={Reasons}",
+                studentId, routeId, msg);
+        }
+
         if (capacity > 0 && assigned + 1 > capacity)
         {
             var msg = $"Seating capacity {capacity} would be exceeded ({assigned} already assigned)";
@@ -200,9 +216,16 @@ public sealed class AssignFitnessEvaluator
             .ToListAsync(cancellationToken)
             .ConfigureAwait(false);
 
+        var studentNeedsSpecial = StudentSpecialNeedsHelper.RequiresSpecialNeedsTransport(student);
+
         var suggestions = new List<int>();
         foreach (var route in routes)
         {
+            if (StudentSpecialNeedsHelper.IsSpecialNeedsRoute(route) != studentNeedsSpecial)
+            {
+                continue;
+            }
+
             var cap = await ResolveCapacityAsync(context, route, timeSlot, cancellationToken)
                 .ConfigureAwait(false);
             var count = timeSlot == RouteTimeSlot.AM

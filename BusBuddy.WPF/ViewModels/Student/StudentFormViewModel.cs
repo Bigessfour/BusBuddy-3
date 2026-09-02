@@ -26,6 +26,7 @@ using CommunityToolkit.Mvvm.Input;
 using Serilog;
 using CommunityToolkit.Mvvm.Messaging;
 using BusBuddy.WPF.Messages;
+using BusBuddy.Core.Utilities;
 
 namespace BusBuddy.WPF.ViewModels.Student
 {
@@ -202,6 +203,8 @@ namespace BusBuddy.WPF.ViewModels.Student
 
         /// <summary>Available bus stop names for assignment</summary>
         public ObservableCollection<string> AvailableBusStops { get; }
+
+        private readonly List<(string Name, bool IsSpecialNeeds)> _routeCatalog = new();
 
         /// <summary>District pickup stop catalog (shared corners / blocks).</summary>
         public ObservableCollection<PickupStop> AvailablePickupStops { get; }
@@ -677,6 +680,13 @@ namespace BusBuddy.WPF.ViewModels.Student
                 Student.HomePhone = NormalizePhone(Student.HomePhone);
                 Student.EmergencyPhone = NormalizePhone(Student.EmergencyPhone);
                 Student.Zip = NormalizeZip(Student.Zip);
+                StudentSpecialNeedsHelper.SyncLegacySpecialNeedsText(Student);
+
+                if (!await DatabaseUserMessage.CanConnectAsync(_context).ConfigureAwait(true))
+                {
+                    SetGlobalError(DatabaseUserMessage.UnavailableForOperation("save the student"));
+                    return;
+                }
 
                 // Set audit fields
                 if (IsEditMode)
@@ -734,7 +744,7 @@ namespace BusBuddy.WPF.ViewModels.Student
             catch (Exception ex)
             {
                 Logger.Error(ex, "Error saving student");
-                SetGlobalError($"Failed to save student: {ex.Message}");
+                SetGlobalError(DatabaseUserMessage.ForOperation(ex, "save the student"));
             }
         }
 
@@ -773,8 +783,14 @@ namespace BusBuddy.WPF.ViewModels.Student
                 e.PropertyName == nameof(Core.Models.Student.HomeAddress) ||
                 e.PropertyName == nameof(Core.Models.Student.City) ||
                 e.PropertyName == nameof(Core.Models.Student.State) ||
-                e.PropertyName == nameof(Core.Models.Student.Zip))
+                e.PropertyName == nameof(Core.Models.Student.Zip) ||
+                e.PropertyName == nameof(Core.Models.Student.RequiresSpecialNeedsBus))
             {
+                if (e.PropertyName == nameof(Core.Models.Student.RequiresSpecialNeedsBus))
+                {
+                    RefreshAvailableRoutes();
+                }
+
                 _saveRelay?.NotifyCanExecuteChanged();
                 CanSave = CanSaveStudent();
             }
@@ -1161,6 +1177,57 @@ namespace BusBuddy.WPF.ViewModels.Student
 
         #region Data Operations
 
+        private void RefreshAvailableRoutes()
+        {
+            var specialOnly = Student.RequiresSpecialNeedsBus
+                || StudentSpecialNeedsHelper.RequiresSpecialNeedsTransport(Student);
+            var names = _routeCatalog
+                .Where(r => specialOnly ? r.IsSpecialNeeds : !r.IsSpecialNeeds)
+                .Select(r => r.Name)
+                .OrderBy(n => n)
+                .ToList();
+
+            if (names.Count == 0)
+            {
+                names = _routeCatalog.Select(r => r.Name).OrderBy(n => n).ToList();
+            }
+
+            AvailableRoutes.Clear();
+            foreach (var name in names)
+            {
+                AvailableRoutes.Add(name);
+            }
+
+            if (specialOnly)
+            {
+                if (!string.IsNullOrWhiteSpace(Student.AMRoute) &&
+                    !_routeCatalog.Any(r => r.Name.Equals(Student.AMRoute, StringComparison.OrdinalIgnoreCase) && r.IsSpecialNeeds))
+                {
+                    Student.AMRoute = names.FirstOrDefault();
+                }
+
+                if (!string.IsNullOrWhiteSpace(Student.PMRoute) &&
+                    !_routeCatalog.Any(r => r.Name.Equals(Student.PMRoute, StringComparison.OrdinalIgnoreCase) && r.IsSpecialNeeds))
+                {
+                    Student.PMRoute = names.FirstOrDefault();
+                }
+            }
+            else
+            {
+                if (!string.IsNullOrWhiteSpace(Student.AMRoute) &&
+                    _routeCatalog.Any(r => r.Name.Equals(Student.AMRoute, StringComparison.OrdinalIgnoreCase) && r.IsSpecialNeeds))
+                {
+                    Student.AMRoute = names.FirstOrDefault();
+                }
+
+                if (!string.IsNullOrWhiteSpace(Student.PMRoute) &&
+                    _routeCatalog.Any(r => r.Name.Equals(Student.PMRoute, StringComparison.OrdinalIgnoreCase) && r.IsSpecialNeeds))
+                {
+                    Student.PMRoute = names.FirstOrDefault();
+                }
+            }
+        }
+
         /// <summary>
         /// Load available routes and bus stops for the form
         /// </summary>
@@ -1171,43 +1238,61 @@ namespace BusBuddy.WPF.ViewModels.Student
                 Logger.Information("Loading form data");
 
                 // Load available routes from database (active + distinct), union with safe defaults for tests
-                var defaultRoutes = new[] { "Route A", "Route B", "Route C", "Route D" };
-                List<string> dbRouteNames = new();
+                var defaultRoutes = new[]
+                {
+                    ("Route A", false),
+                    ("Route B", false),
+                    ("Route C", false),
+                    ("Route D", false),
+                    ("Special Needs Route", true)
+                };
+                var dbRoutes = new List<(string Name, bool IsSpecialNeeds)>();
                 try
                 {
-                    dbRouteNames = await _context.Routes
+                    dbRoutes = await _context.Routes
                         .Where(r => r.IsActive)
-                        .Select(r => r.RouteName)
+                        .Select(r => new ValueTuple<string, bool>(
+                            r.RouteName,
+                            r.IsSpecialNeedsRoute || r.RouteName.Contains("Special Needs")))
                         .Distinct()
-                        .OrderBy(n => n)
-                        .ToListAsync();
+                        .OrderBy(n => n.Item1)
+                        .ToListAsync()
+                        .ConfigureAwait(true);
                 }
                 catch (Exception ex)
                 {
                     Logger.Warning(ex, "Failed to load routes from DB — falling back to defaults");
                 }
 
-                var routeNameSet = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-                foreach (var n in dbRouteNames)
+                await RunOnUiAsync(() =>
                 {
-                    var name = string.IsNullOrWhiteSpace(n) ? null : n.Trim();
-                    if (!string.IsNullOrEmpty(name)) routeNameSet.Add(name);
-                }
-                foreach (var n in defaultRoutes)
-                {
-                    routeNameSet.Add(n);
-                }
+                    _routeCatalog.Clear();
+                    var routeNameSet = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                    foreach (var (name, isSpecial) in dbRoutes)
+                    {
+                        var trimmed = string.IsNullOrWhiteSpace(name) ? null : name.Trim();
+                        if (!string.IsNullOrEmpty(trimmed) && routeNameSet.Add(trimmed))
+                        {
+                            _routeCatalog.Add((trimmed, isSpecial));
+                        }
+                    }
 
-                AvailableRoutes.Clear();
-                foreach (var n in routeNameSet.OrderBy(x => x))
-                {
-                    AvailableRoutes.Add(n);
-                }
+                    foreach (var (name, isSpecial) in defaultRoutes)
+                    {
+                        if (routeNameSet.Add(name))
+                        {
+                            _routeCatalog.Add((name, isSpecial));
+                        }
+                    }
+
+                    RefreshAvailableRoutes();
+                    OnPropertyChanged(nameof(AvailableRoutes));
+                }).ConfigureAwait(true);
 
                 // Load district pickup stops (shared corners / blocks)
-                await LoadPickupStopsAsync();
+                await LoadPickupStopsAsync().ConfigureAwait(true);
 
-                await LoadSchoolsAsync();
+                await LoadSchoolsAsync().ConfigureAwait(true);
 
                 Logger.Information("Form data loaded: {RouteCount} routes, {PickupStopCount} pickup stops, {SchoolCount} schools",
                     AvailableRoutes.Count, AvailablePickupStops.Count, AvailableSchools.Count);
@@ -1218,9 +1303,20 @@ namespace BusBuddy.WPF.ViewModels.Student
             }
         }
 
+        private static Task RunOnUiAsync(Action action)
+        {
+            var dispatcher = Application.Current?.Dispatcher;
+            if (dispatcher is null || dispatcher.CheckAccess())
+            {
+                action();
+                return Task.CompletedTask;
+            }
+
+            return dispatcher.InvokeAsync(action).Task;
+        }
+
         private async Task LoadPickupStopsAsync()
         {
-            AvailablePickupStops.Clear();
             try
             {
                 var stopService = App.ServiceProvider?.GetService<IPickupStopService>();
@@ -1238,17 +1334,23 @@ namespace BusBuddy.WPF.ViewModels.Student
                         .ConfigureAwait(true);
                 }
 
-                foreach (var stop in stops)
+                await RunOnUiAsync(() =>
                 {
-                    AvailablePickupStops.Add(stop);
-                }
+                    AvailablePickupStops.Clear();
+                    foreach (var stop in stops)
+                    {
+                        AvailablePickupStops.Add(stop);
+                    }
 
-                if (Student.PickupStopId is int stopId)
-                {
-                    _selectedPickupStop = AvailablePickupStops.FirstOrDefault(s => s.PickupStopId == stopId);
-                    OnPropertyChanged(nameof(SelectedPickupStop));
-                    OnPropertyChanged(nameof(UsesHomeAsPickupStop));
-                }
+                    if (Student.PickupStopId is int stopId)
+                    {
+                        _selectedPickupStop = AvailablePickupStops.FirstOrDefault(s => s.PickupStopId == stopId);
+                        OnPropertyChanged(nameof(SelectedPickupStop));
+                        OnPropertyChanged(nameof(UsesHomeAsPickupStop));
+                    }
+
+                    OnPropertyChanged(nameof(AvailablePickupStops));
+                }).ConfigureAwait(true);
             }
             catch (Exception ex)
             {
@@ -1299,37 +1401,43 @@ namespace BusBuddy.WPF.ViewModels.Student
 
         private async Task LoadSchoolsAsync()
         {
-            AvailableSchools.Clear();
             try
             {
                 var destService = App.ServiceProvider?.GetService<IDestinationService>();
                 IReadOnlyList<Destination> schools;
                 if (destService is not null)
                 {
-                    schools = await destService.GetActiveSchoolsAsync();
+                    schools = await destService.GetActiveSchoolsAsync().ConfigureAwait(true);
                 }
                 else
                 {
                     schools = await _context.Destinations
                         .Where(d => d.IsActive && !d.IsDeleted && d.DestinationType == DestinationTypes.School)
                         .OrderBy(d => d.Name)
-                        .ToListAsync();
+                        .ToListAsync()
+                        .ConfigureAwait(true);
                 }
 
-                foreach (var school in schools)
+                await RunOnUiAsync(() =>
                 {
-                    AvailableSchools.Add(school);
-                }
+                    AvailableSchools.Clear();
+                    foreach (var school in schools)
+                    {
+                        AvailableSchools.Add(school);
+                    }
 
-                if (Student.DestinationId.HasValue)
-                {
-                    SelectedSchoolDestination = AvailableSchools.FirstOrDefault(s => s.DestinationId == Student.DestinationId.Value);
-                }
-                else if (!string.IsNullOrWhiteSpace(Student.School))
-                {
-                    SelectedSchoolDestination = AvailableSchools.FirstOrDefault(s =>
-                        string.Equals(s.Name, Student.School, StringComparison.OrdinalIgnoreCase));
-                }
+                    if (Student.DestinationId.HasValue)
+                    {
+                        SelectedSchoolDestination = AvailableSchools.FirstOrDefault(s => s.DestinationId == Student.DestinationId.Value);
+                    }
+                    else if (!string.IsNullOrWhiteSpace(Student.School))
+                    {
+                        SelectedSchoolDestination = AvailableSchools.FirstOrDefault(s =>
+                            string.Equals(s.Name, Student.School, StringComparison.OrdinalIgnoreCase));
+                    }
+
+                    OnPropertyChanged(nameof(AvailableSchools));
+                }).ConfigureAwait(true);
             }
             catch (Exception ex)
             {

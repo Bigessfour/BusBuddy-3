@@ -345,6 +345,7 @@ namespace BusBuddy.WPF.ViewModels.Route
                 route.School = SelectedRoute.School;
                 route.Date = SelectedRoute.Date;
                 route.IsActive = SelectedRoute.IsActive;
+                route.IsSpecialNeedsRoute = SelectedRoute.IsSpecialNeedsRoute;
                 context.SaveChanges();
                 StatusMessage = $"Saved changes for '{route.RouteName}'";
             }
