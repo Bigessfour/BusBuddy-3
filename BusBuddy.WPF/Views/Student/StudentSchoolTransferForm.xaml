@@ -40,7 +40,7 @@
             <StackPanel>
                 <TextBlock Text="From school *" Margin="0,0,0,4" />
                 <syncfusion:ComboBoxAdv ItemsSource="{Binding Schools}"
-                                        SelectedItem="{Binding FromSchool, Mode=TwoWay}"
+                                        SelectedItem="{Binding FromSchool, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                         DisplayMemberPath="Name"
                                         Height="40"
                                         Margin="0,0,0,12"
@@ -48,7 +48,7 @@
 
                 <TextBlock Text="To school *" Margin="0,0,0,4" />
                 <syncfusion:ComboBoxAdv ItemsSource="{Binding Schools}"
-                                        SelectedItem="{Binding ToSchool, Mode=TwoWay}"
+                                        SelectedItem="{Binding ToSchool, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                         DisplayMemberPath="Name"
                                         Height="40"
                                         Margin="0,0,0,12"

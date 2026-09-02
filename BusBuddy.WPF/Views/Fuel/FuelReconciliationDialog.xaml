@@ -80,7 +80,8 @@
 
             <syncfusion:ComboBoxAdv Grid.Column="5"
                       ItemsSource="{Binding FuelLocations}"
-                      SelectedItem="{Binding SelectedLocation, Mode=TwoWay}"
+                      SelectedItem="{Binding SelectedLocation, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                      Height="40"
                       Width="150"
                       AutomationProperties.Name="Fuel location"/>
         </Grid>
