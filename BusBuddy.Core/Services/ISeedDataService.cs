@@ -43,6 +43,11 @@ namespace BusBuddy.Core.Services
         Task SeedAllAsync();
 
         /// <summary>
+        /// Idempotent prep for special-needs routing tests: school, SN bus/driver/route, sample students.
+        /// </summary>
+        Task<SpecialNeedsPrepSummary> SeedSpecialNeedsTransportPrepAsync();
+
+        /// <summary>
         /// Clear all seeded data (use with caution!)
         /// </summary>
         Task ClearSeedDataAsync();

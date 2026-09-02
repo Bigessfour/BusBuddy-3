@@ -92,6 +92,13 @@ public sealed class RouteDeterminationService : IRouteDeterminationService
             warnings.Add($"{transferSet.Count} transfer student(s) excluded from HomeToSchool packing");
         }
 
+        var specialNeedsCount = students.Count(StudentSpecialNeedsHelper.RequiresSpecialNeedsTransport);
+        if (specialNeedsCount > 0)
+        {
+            students = students.Where(s => !StudentSpecialNeedsHelper.RequiresSpecialNeedsTransport(s)).ToList();
+            warnings.Add($"{specialNeedsCount} special-needs student(s) excluded from auto-generation — assign manually to a special-needs route");
+        }
+
         // Snapshot ride mode before we rewrite AM/PM assignments (AM-only must keep PMRoute empty).
         var priorModeByStudent = students.ToDictionary(
             s => s.StudentId,

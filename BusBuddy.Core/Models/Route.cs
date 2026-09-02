@@ -13,7 +13,7 @@ namespace BusBuddy.Core.Models;
 [Table("Routes")]
 public partial class Route : INotifyPropertyChanged
 {
-    private DateTime _date = DateTime.Today;
+    private DateTime _date = DateTime.SpecifyKind(DateTime.UtcNow.Date, DateTimeKind.Utc);
     private string _routeName = string.Empty;
     private string? _description;
     private bool _isActive = true;
@@ -28,15 +28,37 @@ public partial class Route : INotifyPropertyChanged
         get => _date;
         set
         {
-            // Ensure date is always valid and not in the far future
-            var newValue = value == default(DateTime) ? DateTime.Today :
-                          value > DateTime.Today.AddYears(1) ? DateTime.Today : value.Date;
+            var newValue = NormalizeRouteDate(value);
             if (_date != newValue)
             {
                 _date = newValue;
                 OnPropertyChanged();
             }
         }
+    }
+
+    /// <summary>Calendar route date stored as UTC midnight for Postgres timestamptz.</summary>
+    internal static DateTime NormalizeRouteDate(DateTime value)
+    {
+        if (value == default)
+        {
+            return DateTime.SpecifyKind(DateTime.UtcNow.Date, DateTimeKind.Utc);
+        }
+
+        var calendarDate = value.Kind switch
+        {
+            DateTimeKind.Utc => value.Date,
+            DateTimeKind.Local => value.ToUniversalTime().Date,
+            _ => value.Date
+        };
+
+        var maxDate = DateTime.UtcNow.Date.AddYears(1);
+        if (calendarDate > maxDate)
+        {
+            calendarDate = DateTime.UtcNow.Date;
+        }
+
+        return DateTime.SpecifyKind(calendarDate, DateTimeKind.Utc);
     }
 
     [Required]
@@ -84,6 +106,10 @@ public partial class Route : INotifyPropertyChanged
             }
         }
     }
+
+    /// <summary>When true, only students flagged for special-needs transport should be assigned here.</summary>
+    [Display(Name = "Special Needs Route")]
+    public bool IsSpecialNeedsRoute { get; set; }
 
     // AM Route Information
     [ForeignKey("AMVehicle")]

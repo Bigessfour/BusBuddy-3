@@ -257,6 +257,7 @@
             <syncfusion:SfDataGrid.Columns>
         <syncfusion:GridTextColumn MappingName="RouteName" HeaderText="Route Name" Width="150"/>
         <syncfusion:GridTextColumn MappingName="Description" HeaderText="Description" Width="200"/>
+                <syncfusion:GridCheckBoxColumn MappingName="IsSpecialNeedsRoute" HeaderText="Special Needs" Width="110"/>
                 <syncfusion:GridTextColumn MappingName="School" HeaderText="School" Width="150"/>
                 <syncfusion:GridTextColumn MappingName="Path" HeaderText="Path" Width="200"/>
                 <syncfusion:GridTextColumn MappingName="BusNumber" HeaderText="Bus Number" Width="100"/>

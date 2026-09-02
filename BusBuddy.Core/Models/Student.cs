@@ -142,6 +142,34 @@ public class Student : INotifyPropertyChanged
     [Display(Name = "Has Medical Needs")]
     public bool HasMedicalNeeds { get; set; }
 
+    /// <summary>Student must ride a special-needs route (wheelchair lift, aide, etc.).</summary>
+    [Display(Name = "Rides Special Needs Bus")]
+    public bool RequiresSpecialNeedsBus
+    {
+        get => _requiresSpecialNeedsBus;
+        set
+        {
+            if (_requiresSpecialNeedsBus == value)
+            {
+                return;
+            }
+
+            _requiresSpecialNeedsBus = value;
+            OnPropertyChanged();
+        }
+    }
+
+    private bool _requiresSpecialNeedsBus;
+
+    [Display(Name = "Wheelchair Accessible")]
+    public bool RequiresWheelchair { get; set; }
+
+    [Display(Name = "Seat Belt Required")]
+    public bool RequiresSeatBelt { get; set; }
+
+    [Display(Name = "Aide Required")]
+    public bool RequiresAide { get; set; }
+
     public string SpecialNeeds { get; set; } = string.Empty;
 
     [StringLength(1000, ErrorMessage = "Special accommodations cannot exceed 1000 characters")]

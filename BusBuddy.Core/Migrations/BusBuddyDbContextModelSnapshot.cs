@@ -1260,6 +1260,11 @@ namespace BusBuddy.Core.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
 
+                    b.Property<bool>("IsSpecialNeedsRoute")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
+
                     b.Property<decimal?>("PMBeginMiles")
                         .HasColumnType("decimal(10,2)");
 
@@ -1808,6 +1813,26 @@ namespace BusBuddy.Core.Migrations
                         .HasColumnType("nvarchar(20)");
 
                     b.Property<bool>("HasMedicalNeeds")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
+
+                    b.Property<bool>("RequiresSpecialNeedsBus")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
+
+                    b.Property<bool>("RequiresWheelchair")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
+
+                    b.Property<bool>("RequiresSeatBelt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
+
+                    b.Property<bool>("RequiresAide")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("bit")
                         .HasDefaultValue(false);

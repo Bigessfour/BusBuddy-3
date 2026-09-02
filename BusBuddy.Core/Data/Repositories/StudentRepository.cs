@@ -303,7 +303,7 @@ public class StudentRepository : Repository<Student>, IStudentRepository
         try
         {
             var students = await Context.Students
-                .Where(s => !string.IsNullOrEmpty(s.SpecialNeeds) || !string.IsNullOrEmpty(s.MedicalNotes))
+                .Where(s => s.RequiresSpecialNeedsBus || !string.IsNullOrEmpty(s.SpecialNeeds) || !string.IsNullOrEmpty(s.MedicalNotes))
                 .ToListAsync();
             return students;
         }
@@ -521,7 +521,7 @@ public class StudentRepository : Repository<Student>, IStudentRepository
     public IEnumerable<Student> GetStudentsByGrade(string grade) => Context.Students.Where(s => s.Grade == grade);
     public IEnumerable<Student> GetStudentsByRoute(int? routeId) => Context.Students.Where(s => s.AMRoute == routeId.ToString() || s.PMRoute == routeId.ToString());
     public IEnumerable<Student> GetStudentsWithoutRoute() => Context.Students.Where(s => string.IsNullOrEmpty(s.AMRoute) && string.IsNullOrEmpty(s.PMRoute));
-    public IEnumerable<Student> GetStudentsWithSpecialNeeds() => Context.Students.Where(s => !string.IsNullOrEmpty(s.SpecialNeeds));
+    public IEnumerable<Student> GetStudentsWithSpecialNeeds() => Context.Students.Where(s => s.RequiresSpecialNeedsBus || !string.IsNullOrEmpty(s.SpecialNeeds));
     public IEnumerable<Student> SearchStudentsByName(string searchTerm) => Context.Students.Where(s => s.StudentName.Contains(searchTerm));
     public int GetStudentCountByRoute(int routeId) => Context.Students.Count(s => s.AMRoute == routeId.ToString() || s.PMRoute == routeId.ToString());
 

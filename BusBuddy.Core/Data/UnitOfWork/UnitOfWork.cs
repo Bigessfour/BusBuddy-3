@@ -515,9 +515,9 @@ public class StudentRepository : Repository<Student>, IStudentRepository
     public async Task<IEnumerable<Student>> GetStudentsWithoutRouteAsync() => await FindAsync(s => string.IsNullOrEmpty(s.AMRoute) && string.IsNullOrEmpty(s.PMRoute));
     public async Task<Student?> GetStudentByNameAsync(string studentName) => await FirstOrDefaultAsync(s => s.StudentName.Contains(studentName));
     public async Task<IEnumerable<Student>> SearchStudentsByNameAsync(string searchTerm) => await FindAsync(s => s.StudentName.Contains(searchTerm));
-    public async Task<IEnumerable<Student>> GetStudentsWithSpecialNeedsAsync() => await FindAsync(s => !string.IsNullOrEmpty(s.SpecialNeeds));
+    public async Task<IEnumerable<Student>> GetStudentsWithSpecialNeedsAsync() => await FindAsync(s => s.RequiresSpecialNeedsBus || !string.IsNullOrEmpty(s.SpecialNeeds));
     public async Task<IEnumerable<Student>> GetStudentsWithMedicalConditionsAsync() => await FindAsync(s => !string.IsNullOrEmpty(s.MedicalNotes));
-    public async Task<IEnumerable<Student>> GetStudentsRequiringSpecialTransportationAsync() => await FindAsync(s => !string.IsNullOrEmpty(s.SpecialNeeds) || !string.IsNullOrEmpty(s.SpecialAccommodations));
+    public async Task<IEnumerable<Student>> GetStudentsRequiringSpecialTransportationAsync() => await FindAsync(s => s.RequiresSpecialNeedsBus || !string.IsNullOrEmpty(s.SpecialNeeds) || !string.IsNullOrEmpty(s.SpecialAccommodations));
     public async Task<IEnumerable<Student>> GetStudentsWithEmergencyContactsAsync() => await FindAsync(s => !string.IsNullOrEmpty(s.EmergencyPhone));
     public async Task<IEnumerable<Student>> GetStudentsWithoutEmergencyContactsAsync() => await FindAsync(s => string.IsNullOrEmpty(s.EmergencyPhone));
     public async Task<IEnumerable<Student>> GetStudentsByTransportationTypeAsync(string transportationType) => await FindAsync(s => s.TransportationNotes != null && s.TransportationNotes.Contains(transportationType));
@@ -551,7 +551,7 @@ public class StudentRepository : Repository<Student>, IStudentRepository
         return Find(s => s.AMRoute == routeStr || s.PMRoute == routeStr);
     }
     public IEnumerable<Student> GetStudentsWithoutRoute() => Find(s => string.IsNullOrEmpty(s.AMRoute) && string.IsNullOrEmpty(s.PMRoute));
-    public IEnumerable<Student> GetStudentsWithSpecialNeeds() => Find(s => !string.IsNullOrEmpty(s.SpecialNeeds));
+    public IEnumerable<Student> GetStudentsWithSpecialNeeds() => Find(s => s.RequiresSpecialNeedsBus || !string.IsNullOrEmpty(s.SpecialNeeds));
     public IEnumerable<Student> SearchStudentsByName(string searchTerm) => Find(s => s.StudentName.Contains(searchTerm));
     public int GetStudentCountByRoute(int routeId) => Count(s => s.AMRoute == routeId.ToString() || s.PMRoute == routeId.ToString());
 }

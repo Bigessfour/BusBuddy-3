@@ -61,13 +61,48 @@ namespace BusBuddy.WPF.Views.Student
                 ViewModel = new StudentFormViewModel();
             }
             DataContext = ViewModel;
-            TryAttachGlobalErrorListener();
+            WireStudentFormChrome();
+            Logger.Information("StudentForm initialized (Create mode)");
+        }
 
-            // Subscribe to ViewModel events for form closure
-            // (Allows ViewModel to close dialog on save/cancel)
+        /// <summary>
+        /// Overload: initializes with an existing student for editing.
+        /// </summary>
+        public StudentForm(Core.Models.Student student)
+        {
+            InitializeComponent();
+            SfSkinManager.ApplyThemeAsDefaultStyle = true;
+            SyncfusionThemeManager.ApplyTheme(this);
+
+            UseLayoutRounding = true;
+            SnapsToDevicePixels = true;
+            RenderOptions.SetBitmapScalingMode(this, BitmapScalingMode.Fant);
+            TextOptions.SetTextFormattingMode(this, TextFormattingMode.Display);
+            TextOptions.SetTextRenderingMode(this, TextRenderingMode.ClearType);
+
+            try
+            {
+                var sp = App.ServiceProvider;
+                var svc = sp?.GetService<IStudentService>();
+                ViewModel = svc != null
+                    ? new StudentFormViewModel(svc, student, enableValidation: false)
+                    : new StudentFormViewModel(student, enableValidation: false);
+            }
+            catch
+            {
+                ViewModel = new StudentFormViewModel(student, enableValidation: false);
+            }
+
+            DataContext = ViewModel;
+            WireStudentFormChrome();
+            Logger.Information("StudentForm initialized (Edit mode) for StudentId={StudentId}", student.StudentId);
+        }
+
+        private void WireStudentFormChrome()
+        {
+            TryAttachGlobalErrorListener();
             ViewModel.RequestClose += OnRequestClose;
 
-            // Window lifecycle diagnostics — useful to trace load/render timing
             try
             {
                 Loaded += OnLoaded;
@@ -79,76 +114,19 @@ namespace BusBuddy.WPF.Views.Student
                 Logger.Warning(ex, "StudentForm: failed to attach window lifecycle diagnostics");
             }
 
-            // Global button click diagnostics for this dialog (bubbling handler)
             try
             {
                 AddHandler(ButtonBase.ClickEvent, new RoutedEventHandler(OnAnyButtonClick), true);
-                Logger.Information("StudentForm: global button click diagnostics attached");
-            }
-            catch (System.Exception ex)
-            {
-                Logger.Warning(ex, "StudentForm: failed to attach button diagnostics");
-            }
-
-            // Global selection change diagnostics for Selector-based controls (ComboBox, ListBox, etc.)
-            try
-            {
                 AddHandler(Selector.SelectionChangedEvent, new SelectionChangedEventHandler(OnAnySelectionChanged), true);
-                Logger.Information("StudentForm: global selection change diagnostics attached");
-            }
-            catch (System.Exception ex)
-            {
-                Logger.Warning(ex, "StudentForm: failed to attach selection diagnostics");
-            }
-
-            // Global text change diagnostics for text inputs — logs length only (no PII)
-            try
-            {
                 AddHandler(TextBoxBase.TextChangedEvent, new TextChangedEventHandler(OnAnyTextChanged), true);
-                Logger.Information("StudentForm: global text change diagnostics attached");
-                // Mark form dirty on any text change
                 AddHandler(TextBoxBase.TextChangedEvent, new TextChangedEventHandler((s, e) => _isDirty = true), true);
-            }
-            catch (System.Exception ex)
-            {
-                Logger.Warning(ex, "StudentForm: failed to attach text diagnostics");
-            }
-
-            // Validation diagnostics — logs when errors are added/removed
-            try
-            {
                 AddHandler(System.Windows.Controls.Validation.ErrorEvent, new EventHandler<ValidationErrorEventArgs>(OnValidationError), true);
-                Logger.Information("StudentForm: validation diagnostics attached");
-                // Also consider any validation error as a change indicator
                 AddHandler(System.Windows.Controls.Validation.ErrorEvent, new EventHandler<ValidationErrorEventArgs>((s, e) => _isDirty = true), true);
             }
             catch (System.Exception ex)
             {
-                Logger.Warning(ex, "StudentForm: failed to attach validation diagnostics");
+                Logger.Warning(ex, "StudentForm: failed to attach diagnostics handlers");
             }
-
-            Logger.Information("StudentForm initialized (Create mode)");
-        }
-
-        /// <summary>
-        /// Overload: initializes with an existing student for editing.
-        /// </summary>
-        public StudentForm(Core.Models.Student student) : this()
-        {
-            try
-            {
-                var sp = App.ServiceProvider;
-                var svc = sp?.GetService<IStudentService>();
-                ViewModel = svc != null ? new StudentFormViewModel(svc, student, enableValidation: false) : new StudentFormViewModel(student, enableValidation: false);
-            }
-            catch
-            {
-                ViewModel = new StudentFormViewModel(student, enableValidation: false);
-            }
-            DataContext = ViewModel;
-            TryAttachGlobalErrorListener();
-            ViewModel.RequestClose += OnRequestClose;
-            Logger.Information("StudentForm initialized (Edit mode) for StudentId={StudentId}", student.StudentId);
         }
 
         private void TryAttachGlobalErrorListener()
@@ -284,7 +262,24 @@ namespace BusBuddy.WPF.Views.Student
         /// </summary>
         private void OnLoaded(object? sender, RoutedEventArgs e)
         {
+            FitDialogToWorkArea();
             Logger.Information("StudentForm Loaded — DataContextType={DataContextType}", DataContext?.GetType().Name ?? "(null)");
+        }
+
+        private void FitDialogToWorkArea()
+        {
+            var workArea = SystemParameters.WorkArea;
+            MaxHeight = workArea.Height * 0.94;
+            MaxWidth = Math.Min(980, workArea.Width * 0.96);
+            if (Height > MaxHeight)
+            {
+                Height = MaxHeight;
+            }
+
+            if (Width > MaxWidth)
+            {
+                Width = MaxWidth;
+            }
         }
 
         /// <summary>
@@ -296,6 +291,11 @@ namespace BusBuddy.WPF.Views.Student
             // One-time UI audit after visual tree is ready
             try { AuditButtonsAccessibility(); }
             catch (System.Exception ex) { Logger.Warning(ex, "StudentForm: UI audit failed"); }
+        }
+
+        private void StudentForm_PreviewKeyDown(object sender, KeyEventArgs e)
+        {
+            NumpadInputHelper.HandlePreviewKeyDown(e);
         }
 
         private void OnAnyButtonClick(object? sender, RoutedEventArgs e)

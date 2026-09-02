@@ -175,4 +175,42 @@ public class AssignFitnessEvaluatorTests
         Assert.That(result.Severity, Is.EqualTo(AssignFitnessSeverity.Warn));
         Assert.That(result.Reasons.Any(r => r.Contains("outlier", StringComparison.OrdinalIgnoreCase)), Is.True);
     }
+
+    [Test]
+    public async Task Evaluate_SpecialNeedsStudentOnRegularRoute_Blocks()
+    {
+        var (factory, studentId, routeId) = await SeedAsync(seatingCapacity: 72, alreadyAssigned: 0);
+        await using (var ctx = factory.CreateWriteDbContext())
+        {
+            var student = await ctx.Students.FindAsync(studentId);
+            Assert.That(student, Is.Not.Null);
+            student!.RequiresSpecialNeedsBus = true;
+            await ctx.SaveChangesAsync();
+        }
+
+        var evaluator = new AssignFitnessEvaluator(factory);
+        var result = await evaluator.EvaluateAsync(studentId, routeId, RouteTimeSlotKind.AM);
+
+        Assert.That(result.Allowed, Is.False);
+        Assert.That(result.Reasons.Any(r => r.Contains("special-needs", StringComparison.OrdinalIgnoreCase)), Is.True);
+    }
+
+    [Test]
+    public async Task Evaluate_RegularStudentOnSpecialNeedsRoute_Blocks()
+    {
+        var (factory, studentId, routeId) = await SeedAsync(seatingCapacity: 72, alreadyAssigned: 0);
+        await using (var ctx = factory.CreateWriteDbContext())
+        {
+            var route = await ctx.Routes.FindAsync(routeId);
+            Assert.That(route, Is.Not.Null);
+            route!.IsSpecialNeedsRoute = true;
+            await ctx.SaveChangesAsync();
+        }
+
+        var evaluator = new AssignFitnessEvaluator(factory);
+        var result = await evaluator.EvaluateAsync(studentId, routeId, RouteTimeSlotKind.AM);
+
+        Assert.That(result.Allowed, Is.False);
+        Assert.That(result.Reasons.Any(r => r.Contains("special-needs", StringComparison.OrdinalIgnoreCase)), Is.True);
+    }
 }

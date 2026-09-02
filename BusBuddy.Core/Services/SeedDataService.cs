@@ -717,13 +717,15 @@ Jordan,Lee,3,Sam,Lee,200 Oak Ave,Oakridge,CO,County,,555-0101,,,,,,,,
                 for (int i = 0; i < count; i++)
                 {
                     var routeName = i < routeNames.Length ? routeNames[i] : $"Route {i + 1}";
+                    var isSpecialNeedsRoute = routeName.Contains("Special Needs", StringComparison.OrdinalIgnoreCase);
 
                     routes.Add(new Route
                     {
-                        Date = DateTime.Today.AddDays(-random.Next(0, 30)),
+                        Date = Route.NormalizeRouteDate(DateTime.UtcNow.AddDays(-random.Next(0, 30))),
                         RouteName = routeName,
                         Description = $"Daily route for {routeName}",
                         School = schools[random.Next(schools.Length)],
+                        IsSpecialNeedsRoute = isSpecialNeedsRoute,
                         AMDriverId = drivers.Count > i ? drivers[i].DriverId : null,
                         AMVehicleId = buses.Count > i ? buses[i].BusId : null,
                         PMDriverId = drivers.Count > i && drivers.Count > i + count / 2 ? drivers[i + count / 2].DriverId : null,
@@ -759,8 +761,359 @@ Jordan,Lee,3,Sam,Lee,200 Oak Ave,Oakridge,CO,County,,555-0101,,,,,,,,
             await SeedStudentsFromCsvAsync();
             await SeedRoutesAsync(8);
             await SeedActivitiesAsync(25);
+            await SeedSpecialNeedsTransportPrepAsync();
 
             Logger.Information("Development data seeding completed");
+        }
+
+        /// <inheritdoc />
+        public async Task<SpecialNeedsPrepSummary> SeedSpecialNeedsTransportPrepAsync()
+        {
+            const string schoolName = "Wiley K-12 School";
+            const string routeName = "Special Needs Route";
+            const string driverName = "Pat Special";
+            const string busNumber = "BUS-SN01";
+            var messages = new List<string>();
+            var todayUtc = DateTime.SpecifyKind(DateTime.UtcNow.Date, DateTimeKind.Utc);
+
+            using var context = _contextFactory.CreateWriteDbContext();
+
+            var school = await context.Destinations
+                .FirstOrDefaultAsync(d =>
+                    d.DestinationType == DestinationTypes.School &&
+                    d.Name == schoolName);
+
+            if (school is null)
+            {
+                school = new Destination
+                {
+                    Name = schoolName,
+                    Address = "403 N Main St",
+                    City = "Wiley",
+                    State = "CO",
+                    ZipCode = "81092",
+                    DestinationType = DestinationTypes.School,
+                    DistrictName = "Wiley School District RE-13",
+                    Latitude = 38.1535m,
+                    Longitude = -102.7195m,
+                    StartTime = TimeSpan.FromHours(8),
+                    DismissalTime = TimeSpan.FromHours(15) + TimeSpan.FromMinutes(30),
+                    IsActive = true,
+                    CreatedDate = DateTime.UtcNow,
+                    CreatedBy = "SeedDataService"
+                };
+                context.Destinations.Add(school);
+                await context.SaveChangesAsync();
+                messages.Add($"Created school destination '{schoolName}'");
+            }
+            else if (school.Latitude is null || school.Longitude is null)
+            {
+                school.Latitude = 38.1535m;
+                school.Longitude = -102.7195m;
+                school.StartTime ??= TimeSpan.FromHours(8);
+                school.DismissalTime ??= TimeSpan.FromHours(15) + TimeSpan.FromMinutes(30);
+                await context.SaveChangesAsync();
+                messages.Add($"Updated GPS and bell times for '{schoolName}'");
+            }
+
+            var driver = await context.Drivers
+                .FirstOrDefaultAsync(d => d.DriverName == driverName);
+            if (driver is null)
+            {
+                driver = new Driver
+                {
+                    DriverName = driverName,
+                    FirstName = "Pat",
+                    LastName = "Special",
+                    DriverPhone = "(719) 555-0142",
+                    DriverEmail = "pat.special@wiley.k12.co.us",
+                    DriversLicenceType = "CDL",
+                    TrainingComplete = true,
+                    Status = "Active",
+                    HireDate = DateTime.UtcNow.AddYears(-4),
+                    CreatedDate = DateTime.UtcNow,
+                    CreatedBy = "SeedDataService"
+                };
+                context.Drivers.Add(driver);
+                await context.SaveChangesAsync();
+                messages.Add($"Created special-needs driver '{driverName}'");
+            }
+
+            var bus = await context.Buses
+                .FirstOrDefaultAsync(b => b.BusNumber == busNumber);
+            if (bus is null)
+            {
+                bus = new Bus
+                {
+                    BusNumber = busNumber,
+                    Year = 2021,
+                    Make = "Thomas Built",
+                    Model = "Saf-T-Liner HDX",
+                    SeatingCapacity = 12,
+                    FleetType = "Special Needs",
+                    VINNumber = "1T8SNBUS21W000001",
+                    LicenseNumber = "SN1001",
+                    Status = "Active",
+                    Description = "Wheelchair lift, tie-downs, aide seating",
+                    DateLastInspection = DateTime.UtcNow.AddMonths(-2),
+                    PurchaseDate = DateTime.SpecifyKind(new DateTime(2021, 6, 1), DateTimeKind.Utc),
+                    PurchasePrice = 118000m,
+                    CreatedDate = DateTime.UtcNow,
+                    CreatedBy = "SeedDataService"
+                };
+                context.Buses.Add(bus);
+                await context.SaveChangesAsync();
+                messages.Add($"Created special-needs bus '{busNumber}'");
+            }
+            else if (!string.Equals(bus.FleetType, "Special Needs", StringComparison.OrdinalIgnoreCase))
+            {
+                bus.FleetType = "Special Needs";
+                bus.SeatingCapacity = Math.Min(bus.SeatingCapacity, 12) > 0 ? Math.Min(bus.SeatingCapacity, 12) : 12;
+                await context.SaveChangesAsync();
+                messages.Add($"Updated bus '{busNumber}' FleetType to Special Needs");
+            }
+
+            var route = await context.Routes
+                .FirstOrDefaultAsync(r => r.RouteName == routeName);
+            if (route is null)
+            {
+                route = new Route
+                {
+                    RouteName = routeName,
+                    Description = "Door-to-door special-needs transport to Wiley K-12",
+                    School = schoolName,
+                    Date = todayUtc,
+                    IsActive = true,
+                    IsSpecialNeedsRoute = true,
+                    AMDriverId = driver.DriverId,
+                    PMDriverId = driver.DriverId,
+                    AMVehicleId = bus.BusId,
+                    PMVehicleId = bus.BusId,
+                    DriverName = driver.DriverName,
+                    BusNumber = bus.BusNumber,
+                    AMBeginTime = TimeSpan.FromHours(7) + TimeSpan.FromMinutes(15),
+                    PMBeginTime = TimeSpan.FromHours(15) + TimeSpan.FromMinutes(45)
+                };
+                context.Routes.Add(route);
+                await context.SaveChangesAsync();
+                messages.Add($"Created route '{routeName}'");
+            }
+            else
+            {
+                route.IsSpecialNeedsRoute = true;
+                route.School = schoolName;
+                route.AMDriverId = driver.DriverId;
+                route.PMDriverId = driver.DriverId;
+                route.AMVehicleId = bus.BusId;
+                route.PMVehicleId = bus.BusId;
+                route.DriverName = driver.DriverName;
+                route.BusNumber = bus.BusNumber;
+                route.IsActive = true;
+                await context.SaveChangesAsync();
+                messages.Add($"Updated route '{routeName}' with SN driver/bus");
+            }
+
+            const string regularRouteName = "North Elementary";
+            var regularRoute = await context.Routes
+                .FirstOrDefaultAsync(r => r.RouteName == regularRouteName);
+            if (regularRoute is null)
+            {
+                regularRoute = new Route
+                {
+                    RouteName = regularRouteName,
+                    Description = "Regular home-to-school route — Wiley K-12",
+                    School = schoolName,
+                    Date = todayUtc,
+                    IsActive = true,
+                    IsSpecialNeedsRoute = false
+                };
+                context.Routes.Add(regularRoute);
+                await context.SaveChangesAsync();
+                messages.Add($"Created regular route '{regularRouteName}'");
+            }
+
+            var specialStudentSpecs = new[]
+            {
+                new
+                {
+                    Name = "Ashley Johnson",
+                    Grade = "5",
+                    Address = "456 Pine Avenue",
+                    City = "Wiley",
+                    Lat = 38.1512m,
+                    Lon = -102.7210m,
+                    Wheelchair = false,
+                    Aide = true,
+                    Notes = "Requires aide assistance boarding"
+                },
+                new
+                {
+                    Name = "Noah Martinez",
+                    Grade = "3",
+                    Address = "118 Cedar Ln",
+                    City = "Wiley",
+                    Lat = 38.1548m,
+                    Lon = -102.7162m,
+                    Wheelchair = true,
+                    Aide = true,
+                    Notes = "Wheelchair lift; secure tie-downs required"
+                },
+                new
+                {
+                    Name = "Sophia Reed",
+                    Grade = "7",
+                    Address = "902 County Road 25",
+                    City = "Wiley",
+                    Lat = 38.1485m,
+                    Lon = -102.7248m,
+                    Wheelchair = false,
+                    Aide = false,
+                    Notes = "Seat belt harness; monitor at drop-off"
+                }
+            };
+
+            var snCount = 0;
+            foreach (var spec in specialStudentSpecs)
+            {
+                var existing = await context.Students
+                    .FirstOrDefaultAsync(s => s.StudentName == spec.Name);
+                if (existing is null)
+                {
+                    existing = new Student
+                    {
+                        StudentName = spec.Name,
+                        Grade = spec.Grade,
+                        HomeAddress = spec.Address,
+                        City = spec.City,
+                        State = "CO",
+                        Zip = "81092",
+                        Latitude = spec.Lat,
+                        Longitude = spec.Lon,
+                        ParentGuardian = $"{spec.Name.Split(' ')[0]} Parent",
+                        CellPhone = "(719) 555-0100",
+                        School = schoolName,
+                        DestinationId = school.DestinationId,
+                        RequiresSpecialNeedsBus = true,
+                        RequiresWheelchair = spec.Wheelchair,
+                        RequiresAide = spec.Aide,
+                        RequiresSeatBelt = true,
+                        HasMedicalNeeds = spec.Wheelchair,
+                        TransportationNotes = spec.Notes,
+                        AMRoute = routeName,
+                        PMRoute = routeName,
+                        Active = true,
+                        EnrollmentDate = todayUtc,
+                        CreatedDate = DateTime.UtcNow,
+                        CreatedBy = "SeedDataService"
+                    };
+                    StudentSpecialNeedsHelper.SyncLegacySpecialNeedsText(existing);
+                    context.Students.Add(existing);
+                    snCount++;
+                }
+                else
+                {
+                    existing.RequiresSpecialNeedsBus = true;
+                    existing.RequiresWheelchair = spec.Wheelchair;
+                    existing.RequiresAide = spec.Aide;
+                    existing.RequiresSeatBelt = true;
+                    existing.DestinationId = school.DestinationId;
+                    existing.School = schoolName;
+                    existing.Latitude ??= spec.Lat;
+                    existing.Longitude ??= spec.Lon;
+                    existing.AMRoute = routeName;
+                    existing.PMRoute = routeName;
+                    existing.TransportationNotes = spec.Notes;
+                    StudentSpecialNeedsHelper.SyncLegacySpecialNeedsText(existing);
+                    snCount++;
+                }
+            }
+
+            await context.SaveChangesAsync();
+            messages.Add($"Prepared {snCount} special-needs student(s) on '{routeName}'");
+
+            var regularStudentSpecs = new[]
+            {
+                new { Name = "Emma Smith", Grade = "3", Address = "123 Oak Street", City = "Wiley", Lat = 38.1555m, Lon = -102.7180m },
+                new { Name = "Michael Smith", Grade = "1", Address = "123 Oak Street", City = "Wiley", Lat = 38.1556m, Lon = -102.7181m }
+            };
+
+            var regCount = 0;
+            foreach (var spec in regularStudentSpecs)
+            {
+                var existing = await context.Students
+                    .FirstOrDefaultAsync(s => s.StudentName == spec.Name);
+                if (existing is null)
+                {
+                    existing = new Student
+                    {
+                        StudentName = spec.Name,
+                        Grade = spec.Grade,
+                        HomeAddress = spec.Address,
+                        City = spec.City,
+                        State = "CO",
+                        Zip = "81092",
+                        Latitude = spec.Lat,
+                        Longitude = spec.Lon,
+                        ParentGuardian = "John Smith",
+                        CellPhone = "(719) 555-0200",
+                        School = schoolName,
+                        DestinationId = school.DestinationId,
+                        AMRoute = "North Elementary",
+                        PMRoute = "North Elementary",
+                        Active = true,
+                        EnrollmentDate = todayUtc,
+                        CreatedDate = DateTime.UtcNow,
+                        CreatedBy = "SeedDataService"
+                    };
+                    context.Students.Add(existing);
+                    regCount++;
+                }
+                else if (existing.RequiresSpecialNeedsBus)
+                {
+                    // leave SN students alone
+                }
+                else
+                {
+                    existing.DestinationId = school.DestinationId;
+                    existing.School = schoolName;
+                    existing.Latitude ??= spec.Lat;
+                    existing.Longitude ??= spec.Lon;
+                    if (string.IsNullOrWhiteSpace(existing.AMRoute))
+                    {
+                        existing.AMRoute = "North Elementary";
+                    }
+
+                    if (string.IsNullOrWhiteSpace(existing.PMRoute))
+                    {
+                        existing.PMRoute = "North Elementary";
+                    }
+
+                    regCount++;
+                }
+            }
+
+            await context.SaveChangesAsync();
+            messages.Add($"Prepared {regCount} regular student(s) for contrast routing");
+
+            route.StudentCount = await context.Students.CountAsync(s =>
+                s.AMRoute == routeName || s.PMRoute == routeName);
+            await context.SaveChangesAsync();
+
+            Logger.Information(
+                "Special-needs transport prep complete Route={RouteId} Students={SnCount}",
+                route.RouteId, snCount);
+
+            return new SpecialNeedsPrepSummary
+            {
+                SchoolDestinationId = school.DestinationId,
+                SpecialNeedsRouteId = route.RouteId,
+                SpecialNeedsRouteName = route.RouteName,
+                SpecialNeedsDriverId = driver.DriverId,
+                SpecialNeedsBusId = bus.BusId,
+                SpecialNeedsStudentsPrepared = snCount,
+                RegularStudentsPrepared = regCount,
+                Messages = messages
+            };
         }
 
         /// <summary>
