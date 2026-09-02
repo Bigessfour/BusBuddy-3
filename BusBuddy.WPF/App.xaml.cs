@@ -39,6 +39,8 @@ namespace BusBuddy.WPF
 
         public App()
         {
+            EntityFrameworkPostgresExtensions.ConfigureNpgsqlAppContext();
+
             // Syncfusion WPF docs: register in App() before any Syncfusion control is initialized.
             // https://help.syncfusion.com/wpf/licensing/how-to-register-in-an-application
             LoadKeysDotEnv();

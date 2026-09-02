@@ -3,6 +3,7 @@
 # Hybrid Mac (host) + UTM Windows 11 VM launcher for BusBuddy WPF.
 #
 # What it does:
+# - Ensures Mac Docker Postgres is running (Scripts/ensure-postgres-docker.sh).
 # - Fast preflight: dotnet restore + build of the solution with -p:EnableWindowsTargeting=true
 #   (catches compile errors on Mac before switching focus to the VM).
 # - Ensures the UTM VM named "Windows" (or the one with the matching UUID) is running.
@@ -45,6 +46,12 @@ PFX="==>"
 
 echo "${PFX} BusBuddy WPF hybrid launcher (Mac host + UTM VM)"
 echo "${PFX} Project root: ${ROOT}"
+
+echo "${PFX} Ensuring Mac Docker Postgres is up..."
+if ! "${ROOT}/Scripts/ensure-postgres-docker.sh"; then
+  echo "ERROR: Could not start Postgres. Start Docker Desktop on the Mac, then re-run ./run-wpf.sh" >&2
+  exit 1
+fi
 
 # Cursor/PowerShell sessions often put /usr/local/share/dotnet first. That install
 # currently has only the .NET 11 preview SDK, so global.json (9.0.303 + latestMinor)

@@ -327,6 +327,8 @@ public class StudentService : IStudentService
         {
             Logger.Information("Adding new student: {StudentName}", student.StudentName);
 
+            StudentRecordNormalizer.NormalizeForPersistence(student);
+
             // Validate student data
             var validationErrors = await ValidateStudentAsync(student);
             if (validationErrors.Count > 0)
@@ -337,7 +339,7 @@ public class StudentService : IStudentService
             // Set default values
             if (student.EnrollmentDate == null)
             {
-                student.EnrollmentDate = DateTime.Today;
+                student.EnrollmentDate = DateTime.UtcNow.Date;
             }
 
             // Geocode on add when coordinates are not provided and a geocoder is available
@@ -387,6 +389,8 @@ public class StudentService : IStudentService
         try
         {
             Logger.Information("Updating student with ID: {StudentId}", student.StudentId);
+
+            StudentRecordNormalizer.NormalizeForPersistence(student);
 
             // Validate student data
             var validationErrors = await ValidateStudentAsync(student);

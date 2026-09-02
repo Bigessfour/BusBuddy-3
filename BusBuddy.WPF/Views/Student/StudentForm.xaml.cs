@@ -100,8 +100,8 @@ namespace BusBuddy.WPF.Views.Student
 
         private void WireStudentFormChrome()
         {
-            TryAttachGlobalErrorListener();
             ViewModel.RequestClose += OnRequestClose;
+            ViewModel.RequestFocusField += OnRequestFocusField;
 
             try
             {
@@ -129,39 +129,65 @@ namespace BusBuddy.WPF.Views.Student
             }
         }
 
-        private void TryAttachGlobalErrorListener()
+        private void OnRequestFocusField(object? sender, string fieldKey)
         {
-            try
+            Dispatcher.BeginInvoke(() => FocusFieldByKey(fieldKey), System.Windows.Threading.DispatcherPriority.Input);
+        }
+
+        private void FocusFieldByKey(string fieldKey)
+        {
+            FrameworkElement? target = fieldKey switch
             {
-                if (ViewModel == null) return;
-                ViewModel.PropertyChanged += (s, e) =>
-                {
-                    try
-                    {
-                        if (e.PropertyName == nameof(ViewModel.HasGlobalError) && ViewModel.HasGlobalError)
-                        {
-                            var msg = ViewModel.GlobalErrorMessage ?? "An error occurred.";
-                            if (ViewModel.HasValidationErrors && ViewModel.ValidationErrors.Count > 0)
-                            {
-                                var first = ViewModel.ValidationErrors.Take(3).ToArray();
-                                msg += "\n\nDetails:" + "\n" + string.Join("\n", first);
-                                if (ViewModel.ValidationErrors.Count > 3)
-                                {
-                                    msg += $"\n(+{ViewModel.ValidationErrors.Count - 3} more)";
-                                }
-                            }
-                            MessageBox.Show(this, msg, "Validation error", MessageBoxButton.OK, MessageBoxImage.Warning);
-                        }
-                    }
-                    catch (System.Exception ex)
-                    {
-                        Logger.Warning(ex, "StudentForm: error listener failed");
-                    }
-                };
+                StudentFormFields.StudentName => StudentNameTextBox,
+                StudentFormFields.StudentNumber => StudentNumberTextBox,
+                StudentFormFields.Grade => GradeComboBox,
+                StudentFormFields.HomeAddress => HomeAddressTextBox,
+                StudentFormFields.City => CityTextBox,
+                StudentFormFields.State => StateComboBox,
+                StudentFormFields.Zip => ZipMaskedEdit,
+                StudentFormFields.DateOfBirth => DateOfBirthPicker,
+                _ => null,
+            };
+
+            if (target is null)
+            {
+                return;
             }
-            catch (System.Exception ex)
+
+            if (!target.Focus())
             {
-                Logger.Warning(ex, "StudentForm: failed to attach global error listener");
+                Keyboard.Focus(target);
+            }
+
+            if (target is System.Windows.Controls.TextBox textBox)
+            {
+                textBox.CaretIndex = textBox.Text?.Length ?? 0;
+            }
+        }
+
+        private void ClearFieldErrorForControl(string? controlName)
+        {
+            if (ViewModel is null || string.IsNullOrWhiteSpace(controlName))
+            {
+                return;
+            }
+
+            var fieldKey = controlName switch
+            {
+                nameof(StudentNameTextBox) => StudentFormFields.StudentName,
+                nameof(StudentNumberTextBox) => StudentFormFields.StudentNumber,
+                nameof(GradeComboBox) => StudentFormFields.Grade,
+                nameof(HomeAddressTextBox) => StudentFormFields.HomeAddress,
+                nameof(CityTextBox) => StudentFormFields.City,
+                nameof(StateComboBox) => StudentFormFields.State,
+                nameof(ZipMaskedEdit) => StudentFormFields.Zip,
+                nameof(DateOfBirthPicker) => StudentFormFields.DateOfBirth,
+                _ => null,
+            };
+
+            if (fieldKey is not null)
+            {
+                ViewModel.ClearFieldError(fieldKey);
             }
         }
 
@@ -263,7 +289,10 @@ namespace BusBuddy.WPF.Views.Student
         private void OnLoaded(object? sender, RoutedEventArgs e)
         {
             FitDialogToWorkArea();
-            Logger.Information("StudentForm Loaded — DataContextType={DataContextType}", DataContext?.GetType().Name ?? "(null)");
+            Title = $"Student Form · {ViewModel.FormTitle}";
+            Logger.Information("StudentForm Loaded — DataContextType={DataContextType} FormTitle={FormTitle}",
+                DataContext?.GetType().Name ?? "(null)", ViewModel.FormTitle);
+            Dispatcher.BeginInvoke(() => FocusFieldByKey(StudentFormFields.StudentName), System.Windows.Threading.DispatcherPriority.Input);
         }
 
         private void FitDialogToWorkArea()
@@ -347,32 +376,6 @@ namespace BusBuddy.WPF.Views.Student
             catch (System.Exception ex)
             {
                 Logger.Warning(ex, "StudentForm: button click logging failed");
-            }
-
-            // After any button click, if the ViewModel has surfaced a global error, show it immediately.
-            try
-            {
-                if (ViewModel?.HasGlobalError == true && !string.IsNullOrWhiteSpace(ViewModel.GlobalErrorMessage))
-                {
-                    // If there are detailed validation errors, include a compact hint
-                    string message = ViewModel.GlobalErrorMessage;
-                    if (ViewModel.HasValidationErrors && ViewModel.ValidationErrors.Count > 0)
-                    {
-                        // Show only first 3 to keep dialog concise
-                        var first = ViewModel.ValidationErrors.Take(3).ToArray();
-                        message += "\n\nDetails:" + "\n" + string.Join("\n", first);
-                        if (ViewModel.ValidationErrors.Count > 3)
-                        {
-                            message += $"\n(+{ViewModel.ValidationErrors.Count - 3} more)";
-                        }
-                    }
-
-                    MessageBox.Show(this, message, "Action blocked", MessageBoxButton.OK, MessageBoxImage.Warning);
-                }
-            }
-            catch (System.Exception ex)
-            {
-                Logger.Warning(ex, "StudentForm: failed to display global error message");
             }
         }
 
@@ -477,6 +480,7 @@ namespace BusBuddy.WPF.Views.Student
                 Logger.Information(
                     "StudentForm SelectionChanged: {Type} Name={Name} Added={Added} Removed={Removed} SelectedIndex={SelectedIndex} SelectedItemType={SelectedItemType}",
                     type, name, added, removed, selectedIndex, selectedType);
+                ClearFieldErrorForControl(name);
             }
             catch (System.Exception ex)
             {
@@ -507,6 +511,7 @@ namespace BusBuddy.WPF.Views.Student
                 }
 
                 Logger.Information("StudentForm TextChanged: {Type} Name={Name} Length={Length}", type, name, length);
+                ClearFieldErrorForControl(name);
             }
             catch (System.Exception ex)
             {

@@ -13,6 +13,7 @@ namespace BusBuddy.WPF
         [STAThread]
         public static void Main(string[] args)
         {
+            BusBuddy.Core.Utilities.EntityFrameworkPostgresExtensions.ConfigureNpgsqlAppContext();
             Thread.CurrentThread.SetApartmentState(ApartmentState.STA);
 
             var app = new App();

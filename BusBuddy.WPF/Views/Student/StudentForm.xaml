@@ -16,6 +16,8 @@
                              xmlns:syncfusiontools="clr-namespace:Syncfusion.Windows.Tools.Controls;assembly=Syncfusion.Tools.WPF"
                              xmlns:syncfusionshared="clr-namespace:Syncfusion.Windows.Shared;assembly=Syncfusion.Shared.Wpf"
                              xmlns:validation="clr-namespace:BusBuddy.WPF.Validation"
+                             xmlns:converters="clr-namespace:BusBuddy.WPF.Converters"
+                             xmlns:fields="clr-namespace:BusBuddy.WPF.Utilities"
                              mc:Ignorable="d"
                              Title="Student Form"
                              Height="1000" Width="940"
@@ -52,11 +54,16 @@
 
             <!-- Show red border when has validation error (Syncfusion SfTextBoxExt) -->
             <Style x:Key="ValidatedSfTextBoxStyle" TargetType="syncfusion:SfTextBoxExt" BasedOn="{StaticResource {x:Type syncfusion:SfTextBoxExt}}">
+                <Setter Property="CaretBrush" Value="{DynamicResource BusBuddy.Brush.Text.Primary}"/>
                 <Style.Triggers>
                     <Trigger Property="Validation.HasError" Value="True">
                         <Setter Property="BorderBrush" Value="{DynamicResource BusBuddy.Brush.Semantic.Error}"/>
                         <Setter Property="BorderThickness" Value="2"/>
                         <Setter Property="ToolTip" Value="{Binding (Validation.Errors)[0].ErrorContent, RelativeSource={RelativeSource Self}}"/>
+                    </Trigger>
+                    <Trigger Property="IsKeyboardFocused" Value="True">
+                        <Setter Property="BorderBrush" Value="{DynamicResource BusBuddy.Brush.Primary}"/>
+                        <Setter Property="BorderThickness" Value="2"/>
                     </Trigger>
                 </Style.Triggers>
             </Style>
@@ -66,6 +73,10 @@
                         <Setter Property="BorderBrush" Value="{DynamicResource BusBuddy.Brush.Semantic.Error}"/>
                         <Setter Property="BorderThickness" Value="2"/>
                         <Setter Property="ToolTip" Value="{Binding (Validation.Errors)[0].ErrorContent, RelativeSource={RelativeSource Self}}"/>
+                    </Trigger>
+                    <Trigger Property="IsKeyboardFocused" Value="True">
+                        <Setter Property="BorderBrush" Value="{DynamicResource BusBuddy.Brush.Primary}"/>
+                        <Setter Property="BorderThickness" Value="2"/>
                     </Trigger>
                 </Style.Triggers>
             </Style>
@@ -92,6 +103,9 @@
 
             <!-- Required converter for Visibility bindings -->
             <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+            <converters:FieldErrorBrushConverter x:Key="FieldErrorBrushConverter"/>
+            <converters:FieldErrorThicknessConverter x:Key="FieldErrorThicknessConverter"/>
+            <converters:FieldErrorMessageConverter x:Key="FieldErrorMessageConverter"/>
 <!-- Ensure consistent sizing for Syncfusion inputs -->
             <Style TargetType="syncfusion:SfMaskedEdit" BasedOn="{StaticResource {x:Type syncfusion:SfMaskedEdit}}">
                 <Setter Property="Height" Value="40"/>
@@ -99,6 +113,13 @@
                 <Setter Property="Margin" Value="0,0,0,10"/>
                 <Setter Property="Foreground" Value="{DynamicResource BusBuddy.Brush.Text.Primary}"/>
                 <Setter Property="Background" Value="{DynamicResource BusBuddy.Brush.Surface.Light}"/>
+                <Setter Property="CaretBrush" Value="{DynamicResource BusBuddy.Brush.Text.Primary}"/>
+                <Style.Triggers>
+                    <Trigger Property="IsKeyboardFocused" Value="True">
+                        <Setter Property="BorderBrush" Value="{DynamicResource BusBuddy.Brush.Primary}"/>
+                        <Setter Property="BorderThickness" Value="2"/>
+                    </Trigger>
+                </Style.Triggers>
             </Style>
             <!-- High-contrast styles for Syncfusion inputs used on this form -->
             <Style TargetType="syncfusion:ComboBoxAdv" BasedOn="{StaticResource {x:Type syncfusion:ComboBoxAdv}}">
@@ -107,6 +128,12 @@
                 <Setter Property="Margin" Value="0,0,0,10"/>
                 <Setter Property="Foreground" Value="{DynamicResource BusBuddy.Brush.Text.Primary}"/>
                 <Setter Property="Background" Value="{DynamicResource BusBuddy.Brush.Surface.Light}"/>
+                <Style.Triggers>
+                    <Trigger Property="IsKeyboardFocused" Value="True">
+                        <Setter Property="BorderBrush" Value="{DynamicResource BusBuddy.Brush.Primary}"/>
+                        <Setter Property="BorderThickness" Value="2"/>
+                    </Trigger>
+                </Style.Triggers>
             </Style>
             <Style x:Key="StudentFormAddressTextStyle" TargetType="syncfusion:SfTextBoxExt" BasedOn="{StaticResource ValidatedSfTextBoxStyle}">
                 <Setter Property="Height" Value="48"/>
@@ -225,10 +252,20 @@
                         <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,0,10,0">
                             <Label Content="Student Name *"/>
                             <!-- Plain text input — prefer SfTextBoxExt. Docs: https://help.syncfusion.com/wpf/autocomplete/getting-started -->
-                            <syncfusion:SfTextBoxExt Name="StudentNameTextBox" Style="{StaticResource ValidatedSfTextBoxStyle}"
+                            <syncfusion:SfTextBoxExt Name="StudentNameTextBox"
                                      Validation.ErrorTemplate="{StaticResource ValidationErrorTemplate}"
                                      Watermark="First Name, Last Name"
                                      AutomationProperties.Name="Student Name">
+                                <syncfusion:SfTextBoxExt.Style>
+                                    <Style TargetType="syncfusion:SfTextBoxExt" BasedOn="{StaticResource ValidatedSfTextBoxStyle}">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding HasStudentNameFieldError}" Value="True">
+                                                <Setter Property="BorderBrush" Value="{DynamicResource BusBuddy.Brush.Semantic.Error}"/>
+                                                <Setter Property="BorderThickness" Value="2"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </syncfusion:SfTextBoxExt.Style>
                                 <syncfusion:SfTextBoxExt.Text>
                                     <Binding Path="Student.StudentName" Mode="TwoWay" UpdateSourceTrigger="PropertyChanged" ValidatesOnDataErrors="True">
                                         <Binding.ValidationRules>
@@ -237,6 +274,10 @@
                                     </Binding>
                                 </syncfusion:SfTextBoxExt.Text>
                             </syncfusion:SfTextBoxExt>
+                            <TextBlock Margin="0,-6,0,4"
+                                       Text="{Binding StudentNameFieldError}"
+                                       Foreground="{DynamicResource BusBuddy.Brush.Semantic.Error}"
+                                       FontSize="12"/>
                         </StackPanel>
 
                         <StackPanel Grid.Row="0" Grid.Column="1" Margin="10,0,0,0">
@@ -250,13 +291,28 @@
 
                         <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,10,0">
                             <Label Content="Grade *"/>
-                            <syncfusion:ComboBoxAdv Name="GradeComboBox" Style="{StaticResource ValidatedComboBoxAdvStyle}"
+                            <syncfusion:ComboBoxAdv Name="GradeComboBox"
                                       Validation.ErrorTemplate="{StaticResource ValidationErrorTemplate}"
                                       IsEditable="False"
                                       Width="100"
                                       ItemsSource="{Binding AvailableGrades}"
                                       SelectedItem="{Binding Student.Grade, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                      AutomationProperties.Name="Grade"/>
+                                      AutomationProperties.Name="Grade">
+                                <syncfusion:ComboBoxAdv.Style>
+                                    <Style TargetType="syncfusion:ComboBoxAdv" BasedOn="{StaticResource ValidatedComboBoxAdvStyle}">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding HasGradeFieldError}" Value="True">
+                                                <Setter Property="BorderBrush" Value="{DynamicResource BusBuddy.Brush.Semantic.Error}"/>
+                                                <Setter Property="BorderThickness" Value="2"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </syncfusion:ComboBoxAdv.Style>
+                            </syncfusion:ComboBoxAdv>
+                            <TextBlock Margin="0,-6,0,4"
+                                       Text="{Binding GradeFieldError}"
+                                       Foreground="{DynamicResource BusBuddy.Brush.Semantic.Error}"
+                                       FontSize="12"/>
                         </StackPanel>
 
                         <StackPanel Grid.Row="1" Grid.Column="1" Margin="10,0,0,0">

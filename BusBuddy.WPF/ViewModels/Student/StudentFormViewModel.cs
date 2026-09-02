@@ -27,6 +27,7 @@ using Serilog;
 using CommunityToolkit.Mvvm.Messaging;
 using BusBuddy.WPF.Messages;
 using BusBuddy.Core.Utilities;
+using BusBuddy.WPF.Utilities;
 
 namespace BusBuddy.WPF.ViewModels.Student
 {
@@ -51,6 +52,9 @@ namespace BusBuddy.WPF.ViewModels.Student
         // Event to request the form to close
         public event EventHandler<bool?>? RequestClose;
 
+        /// <summary>Raised when validation should move keyboard focus to a named form field.</summary>
+        public event EventHandler<string>? RequestFocusField;
+
         public StudentFormViewModel() : this(new Core.Models.Student())
         {
         }
@@ -66,14 +70,14 @@ namespace BusBuddy.WPF.ViewModels.Student
             _student = student ?? new Core.Models.Student
             {
                 Active = true,
-                EnrollmentDate = DateTime.Today,
-                CreatedDate = DateTime.Now,
+                EnrollmentDate = DateTime.SpecifyKind(DateTime.UtcNow.Date, DateTimeKind.Utc),
+                CreatedDate = DateTime.UtcNow,
                 School = string.Empty,
                 State = "CO"
             };
 
             _isEditMode = student != null && student.StudentId > 0;
-            _formTitle = _isEditMode ? "Edit Student" : "Add New Student";
+            _formTitle = _isEditMode ? "Edit Student" : "Add New Student · UX v3 2026-09-02";
 
             AvailableRoutes = new ObservableCollection<string>();
             AvailableBusStops = new ObservableCollection<string>();
@@ -99,14 +103,14 @@ namespace BusBuddy.WPF.ViewModels.Student
             _student = student ?? new Core.Models.Student
             {
                 Active = true,
-                EnrollmentDate = DateTime.Today,
-                CreatedDate = DateTime.Now,
+                EnrollmentDate = DateTime.SpecifyKind(DateTime.UtcNow.Date, DateTimeKind.Utc),
+                CreatedDate = DateTime.UtcNow,
                 School = string.Empty,
                 State = "CO"
             };
 
             _isEditMode = student != null && student.StudentId > 0;
-            _formTitle = _isEditMode ? "Edit Student" : "Add New Student";
+            _formTitle = _isEditMode ? "Edit Student" : "Add New Student · UX v3 2026-09-02";
 
             AvailableRoutes = new ObservableCollection<string>();
             AvailableBusStops = new ObservableCollection<string>();
@@ -263,6 +267,8 @@ namespace BusBuddy.WPF.ViewModels.Student
                 {
                     SchoolStartTimeText = string.Empty;
                     SchoolDismissalTimeText = string.Empty;
+                    Student.School = null;
+                    Student.DestinationId = null;
                     return;
                 }
 
@@ -305,6 +311,29 @@ namespace BusBuddy.WPF.ViewModels.Student
         private readonly ObservableCollection<string> _validationErrors = new();
         private bool _hasValidationErrors;
         private bool _disableAddressValidation; // optional skip-validation flag
+        private readonly Dictionary<string, string> _fieldErrors = new(StringComparer.Ordinal);
+
+        /// <summary>Per-field validation messages keyed by <see cref="StudentFormFields"/>.</summary>
+        public IReadOnlyDictionary<string, string> FieldErrors => _fieldErrors;
+
+        private string? _studentNameFieldError;
+        private string? _gradeFieldError;
+
+        public string? StudentNameFieldError
+        {
+            get => _studentNameFieldError;
+            private set => SetProperty(ref _studentNameFieldError, value);
+        }
+
+        public bool HasStudentNameFieldError => !string.IsNullOrWhiteSpace(StudentNameFieldError);
+
+        public string? GradeFieldError
+        {
+            get => _gradeFieldError;
+            private set => SetProperty(ref _gradeFieldError, value);
+        }
+
+        public bool HasGradeFieldError => !string.IsNullOrWhiteSpace(GradeFieldError);
 
         /// <summary>
         /// Whether there's a global error to display
@@ -629,12 +658,13 @@ namespace BusBuddy.WPF.ViewModels.Student
             try
             {
                 Logger.Information("Saving student {StudentName}", Student.StudentName);
+                ClearAllFieldErrors();
 
                 // Hard guard: prevent saving with blank name (even if validation bypass flag is set)
                 if (string.IsNullOrWhiteSpace(Student.StudentName))
                 {
                     Logger.Warning("Blocked save — StudentName blank");
-                    SetGlobalError("Student name is required.");
+                    ReportFieldValidation([(StudentFormFields.StudentName, "Student name is required.")]);
                     return;
                 }
 
@@ -647,21 +677,14 @@ namespace BusBuddy.WPF.ViewModels.Student
                 // Validate required fields
                 if (!ShouldSkipValidation() && !IsValidStudent())
                 {
-                    // Collect validation errors for diagnostics and UI
-                    var errors = GetValidationErrors();
-                    Logger.Information("Validation failed: {Errors}", errors);
-                    // Reflect in UI list
-                    _validationErrors.Clear();
-                    foreach (var err in errors)
-                        _validationErrors.Add("• " + err);
-                    HasValidationErrors = _validationErrors.Count > 0;
-                    SetGlobalError("Please correct validation errors before saving.");
+                    var errors = GetValidationErrorsWithFields();
+                    Logger.Information("Validation failed: {Errors}", errors.Select(e => e.Message));
+                    ReportFieldValidation(errors);
                     return;
                 }
 
                 if (ShouldSkipValidation())
                 {
-                    // Clear any prior UI validation state but continue to save
                     _validationErrors.Clear();
                     HasValidationErrors = false;
                     Logger.Warning("Bypassing student validation due to BUSBUDDY_SKIP_STUDENT_VALIDATION flag");
@@ -671,7 +694,7 @@ namespace BusBuddy.WPF.ViewModels.Student
                     await ValidateAddressAsync();
                     if (_addressValidationFailed)
                     {
-                        SetGlobalError("Correct the address before saving.");
+                        ReportFieldValidation([(StudentFormFields.HomeAddress, "Correct the address before saving.")]);
                         return;
                     }
                 }
@@ -688,17 +711,19 @@ namespace BusBuddy.WPF.ViewModels.Student
                     return;
                 }
 
-                // Set audit fields
+                // Set audit fields (UTC for Postgres timestamptz)
                 if (IsEditMode)
                 {
-                    Student.UpdatedDate = DateTime.Now;
+                    Student.UpdatedDate = DateTime.UtcNow;
                     Student.UpdatedBy = Environment.UserName;
                 }
                 else
                 {
-                    Student.CreatedDate = DateTime.Now;
+                    Student.CreatedDate = DateTime.UtcNow;
                     Student.CreatedBy = Environment.UserName;
                 }
+
+                StudentRecordNormalizer.NormalizeForPersistence(Student);
 
                 // Prefer StudentService when available (normal flow). If skipping validation,
                 // avoid service-level validation and use direct EF save instead.
@@ -744,7 +769,25 @@ namespace BusBuddy.WPF.ViewModels.Student
             catch (Exception ex)
             {
                 Logger.Error(ex, "Error saving student");
-                SetGlobalError(DatabaseUserMessage.ForOperation(ex, "save the student"));
+                var message = DatabaseUserMessage.ForOperation(ex, "save the student");
+                if (message.Contains("student number", StringComparison.OrdinalIgnoreCase))
+                {
+                    ReportFieldValidation([(StudentFormFields.StudentNumber, message)]);
+                }
+                else if (message.Contains("grade", StringComparison.OrdinalIgnoreCase))
+                {
+                    ReportFieldValidation([(StudentFormFields.Grade, message)]);
+                }
+                else if (message.Contains("DateTime", StringComparison.OrdinalIgnoreCase)
+                         || message.Contains("timestamp", StringComparison.OrdinalIgnoreCase))
+                {
+                    ReportFieldValidation([(StudentFormFields.DateOfBirth,
+                        "A date field could not be saved. Clear Date of Birth or pick the date again, then retry.")]);
+                }
+                else
+                {
+                    SetGlobalError(message);
+                }
             }
         }
 
@@ -1098,22 +1141,112 @@ namespace BusBuddy.WPF.ViewModels.Student
         }
 
         /// <summary>
-        /// Clear the global error message
+        /// Clear the global error message and field highlights.
         /// </summary>
         private void ClearGlobalError()
         {
             HasGlobalError = false;
             GlobalErrorMessage = string.Empty;
+            ClearAllFieldErrors();
         }
 
         /// <summary>
-        /// Set a global error message
+        /// Set a global error message (non-blocking banner; no modal).
         /// </summary>
         private void SetGlobalError(string message)
         {
             GlobalErrorMessage = message;
             HasGlobalError = true;
             Logger.Warning("Global error set: {Message}", message);
+        }
+
+        /// <summary>Clear one field error when the operator edits that control.</summary>
+        public void ClearFieldError(string fieldKey)
+        {
+            if (string.IsNullOrWhiteSpace(fieldKey) || !_fieldErrors.Remove(fieldKey))
+            {
+                return;
+            }
+
+            switch (fieldKey)
+            {
+                case StudentFormFields.StudentName:
+                    StudentNameFieldError = null;
+                    break;
+                case StudentFormFields.Grade:
+                    GradeFieldError = null;
+                    break;
+            }
+
+            OnPropertyChanged(nameof(FieldErrors));
+            OnPropertyChanged(nameof(HasStudentNameFieldError));
+            OnPropertyChanged(nameof(HasGradeFieldError));
+            if (_fieldErrors.Count > 0)
+            {
+                return;
+            }
+
+            _validationErrors.Clear();
+            HasValidationErrors = false;
+            if (HasGlobalError)
+            {
+                HasGlobalError = false;
+                GlobalErrorMessage = string.Empty;
+            }
+        }
+
+        private void ClearAllFieldErrors()
+        {
+            if (_fieldErrors.Count == 0 && StudentNameFieldError is null && GradeFieldError is null)
+            {
+                return;
+            }
+
+            _fieldErrors.Clear();
+            StudentNameFieldError = null;
+            GradeFieldError = null;
+            OnPropertyChanged(nameof(FieldErrors));
+            OnPropertyChanged(nameof(HasStudentNameFieldError));
+            OnPropertyChanged(nameof(HasGradeFieldError));
+            _validationErrors.Clear();
+            HasValidationErrors = false;
+        }
+
+        private void ReportFieldValidation(IReadOnlyList<(string FieldKey, string Message)> errors)
+        {
+            _fieldErrors.Clear();
+            _validationErrors.Clear();
+            StudentNameFieldError = null;
+            GradeFieldError = null;
+
+            foreach (var (fieldKey, message) in errors)
+            {
+                _fieldErrors[fieldKey] = message;
+                _validationErrors.Add("• " + message);
+                switch (fieldKey)
+                {
+                    case StudentFormFields.StudentName:
+                        StudentNameFieldError = message;
+                        break;
+                    case StudentFormFields.Grade:
+                        GradeFieldError = message;
+                        break;
+                }
+            }
+
+            HasValidationErrors = errors.Count > 0;
+            OnPropertyChanged(nameof(FieldErrors));
+            OnPropertyChanged(nameof(HasStudentNameFieldError));
+            OnPropertyChanged(nameof(HasGradeFieldError));
+
+            if (errors.Count == 0)
+            {
+                return;
+            }
+
+            GlobalErrorMessage = errors[0].Message;
+            HasGlobalError = true;
+            RequestFocusField?.Invoke(this, errors[0].FieldKey);
         }
 
         /// <summary>
@@ -1467,16 +1600,30 @@ namespace BusBuddy.WPF.ViewModels.Student
         }
 
         /// <summary>
+        /// Build validation errors with field keys for inline highlighting and focus.
+        /// </summary>
+        private List<(string FieldKey, string Message)> GetValidationErrorsWithFields()
+        {
+            var errors = new List<(string FieldKey, string Message)>();
+            if (string.IsNullOrWhiteSpace(Student.StudentName))
+            {
+                errors.Add((StudentFormFields.StudentName, "Student name is required."));
+            }
+
+            if (string.IsNullOrWhiteSpace(Student.Grade))
+            {
+                errors.Add((StudentFormFields.Grade, "Grade is required."));
+            }
+
+            return errors;
+        }
+
+        /// <summary>
         /// Build a list of validation errors for diagnostics when Save fails.
         /// </summary>
         private List<string> GetValidationErrors()
         {
-            // Only enforce the minimal required fields for Save so buttons work visibly.
-            // Address fields are optional and validated via dedicated actions.
-            var errors = new List<string>();
-            if (string.IsNullOrWhiteSpace(Student.StudentName)) errors.Add("Student name is required");
-            if (string.IsNullOrWhiteSpace(Student.Grade)) errors.Add("Grade is required");
-            return errors;
+            return GetValidationErrorsWithFields().Select(e => e.Message).ToList();
         }
 
         /// <summary>

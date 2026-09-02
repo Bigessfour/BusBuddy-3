@@ -102,6 +102,73 @@ function Set-BusBuddyPostgresConnection {
     }
 }
 
+function Invoke-MacEnsurePostgresDocker {
+    param([string]$ProjectRoot)
+
+    if (-not (Get-Command ssh -ErrorAction SilentlyContinue)) {
+        return
+    }
+
+    $remoteConfig = Join-Path $ProjectRoot "keys\mac-docker-remote.txt"
+    if (-not (Test-Path -LiteralPath $remoteConfig)) {
+        return
+    }
+
+    $remoteLine = (Get-Content -LiteralPath $remoteConfig -Raw).Trim()
+    if ([string]::IsNullOrWhiteSpace($remoteLine) -or $remoteLine.StartsWith('#')) {
+        return
+    }
+
+    $sshTarget = $null
+    $repoPath = $null
+    if ($remoteLine -match '^(?<ssh>[^:]+):(?<repo>.+)$') {
+        $sshTarget = $Matches['ssh'].Trim()
+        $repoPath = $Matches['repo'].Trim()
+    } else {
+        $sshTarget = $remoteLine
+    }
+
+    Write-Host "Requesting Postgres start on Mac via SSH ($sshTarget)..." -ForegroundColor Cyan
+    if ($repoPath) {
+        $remoteCmd = "cd '$repoPath' && ./Scripts/ensure-postgres-docker.sh"
+    } else {
+        $remoteCmd = "./Scripts/ensure-postgres-docker.sh"
+    }
+
+    & ssh -o BatchMode=yes -o ConnectTimeout=10 -o StrictHostKeyChecking=accept-new $sshTarget $remoteCmd 2>$null
+}
+
+function Ensure-MacPostgresReady {
+    param(
+        [string]$MacHostIp,
+        [string]$ProjectRoot
+    )
+
+    if ([string]::IsNullOrWhiteSpace($MacHostIp)) {
+        Write-Host "WARNING: Cannot verify Postgres without Mac host IP." -ForegroundColor Yellow
+        return
+    }
+
+    Invoke-MacEnsurePostgresDocker -ProjectRoot $ProjectRoot
+
+    Write-Host "Checking Postgres at ${MacHostIp}:5432..." -ForegroundColor Cyan
+    $maxAttempts = 30
+    for ($i = 1; $i -le $maxAttempts; $i++) {
+        $probe = Test-NetConnection -ComputerName $MacHostIp -Port 5432 -WarningAction SilentlyContinue
+        if ($probe.TcpTestSucceeded) {
+            Write-Host "Postgres is reachable at ${MacHostIp}:5432." -ForegroundColor Green
+            return
+        }
+
+        if ($i -eq 1) {
+            Write-Host "Postgres not ready yet — waiting for Mac Docker (run ./run-wpf.sh on the Mac if this persists)..." -ForegroundColor Yellow
+        }
+        Start-Sleep -Seconds 2
+    }
+
+    throw "Postgres is not available at ${MacHostIp}:5432. On the Mac host run: ./Scripts/ensure-postgres-docker.sh (or ./run-wpf.sh)."
+}
+
 function Find-BusBuddyRoot {
     param([string]$Override)
 
@@ -185,18 +252,46 @@ try {
     }
 
     $sharedRoot = $projectRoot
+    $zDriveRoot = $null
+    if (Test-Path -LiteralPath "Z:\BusBuddy.sln") {
+        $zDriveRoot = (Resolve-Path "Z:\").Path
+    }
+
     if (Test-IsWebDavOrNetworkPath -Path $projectRoot) {
         Sync-BusBuddyToLocal -Source $sharedRoot -Destination $localBuildRoot
+        $projectRoot = $localBuildRoot
+    }
+    elseif ($zDriveRoot -and $projectRoot -ne $localBuildRoot) {
+        $localSln = Join-Path $localBuildRoot "BusBuddy.sln"
+        $shouldSync = -not (Test-Path -LiteralPath $localSln)
+        if (-not $shouldSync) {
+            $zTime = (Get-Item -LiteralPath (Join-Path $zDriveRoot "BusBuddy.sln")).LastWriteTimeUtc
+            $localTime = (Get-Item -LiteralPath $localSln).LastWriteTimeUtc
+            $shouldSync = $zTime -gt $localTime
+        }
+        if ($shouldSync) {
+            Write-Host "Shared folder is newer than C:\dev\BusBuddy-3 — syncing before build..." -ForegroundColor Yellow
+            Sync-BusBuddyToLocal -Source $zDriveRoot -Destination $localBuildRoot
+        }
         $projectRoot = $localBuildRoot
     }
 
     Set-Location -LiteralPath $projectRoot
     Write-Host "Building from: $projectRoot" -ForegroundColor Green
 
+    $stampPath = Join-Path $projectRoot "BUILD-STAMP.txt"
+    if (Test-Path -LiteralPath $stampPath) {
+        $stamp = (Get-Content -LiteralPath $stampPath -Raw).Trim()
+        Write-Host "Build stamp: $stamp" -ForegroundColor Magenta
+        Write-Host "  Student form title should show: Add New Student · UX v3 2026-09-02" -ForegroundColor Magenta
+        Write-Host "  If you still see an 'Action blocked' popup, you are NOT running this build." -ForegroundColor Magenta
+    }
+
     $macHostIp = Get-MacHostIpForPostgres -ProjectRoot $sharedRoot
     if (-not $macHostIp) {
         $macHostIp = Get-MacHostIpForPostgres -ProjectRoot $projectRoot
     }
+    Ensure-MacPostgresReady -MacHostIp $macHostIp -ProjectRoot $sharedRoot
     Set-BusBuddyPostgresConnection -HostIp $macHostIp
 
     $keyPath = Join-Path $sharedRoot "keys\bus-buddy-gee-key.json"
@@ -229,7 +324,7 @@ try {
     if ($LASTEXITCODE -ne 0) { throw "dotnet restore failed ($LASTEXITCODE)" }
 
     Write-Host "Building WPF..." -ForegroundColor Cyan
-    & dotnet build BusBuddy.WPF\BusBuddy.WPF.csproj -c Debug -p:EnableWindowsTargeting=true --no-restore
+    & dotnet build BusBuddy.WPF\BusBuddy.WPF.csproj -c Debug -p:EnableWindowsTargeting=true --no-restore --no-incremental
     if ($LASTEXITCODE -ne 0) { throw "dotnet build failed ($LASTEXITCODE)" }
 
     Write-Host ""
