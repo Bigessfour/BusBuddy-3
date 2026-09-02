@@ -44,16 +44,16 @@
 
 ### File tasks
 
-- [ ] T001 [US1] Delete `BusBuddy.WPF/Views/Route/RouteEditDialog.xaml`
-- [ ] T002 [P] [US1] Delete `BusBuddy.WPF/Views/Route/RouteEditDialog.xaml.cs` (present on `master` after PR #48)
-- [ ] T003 [P] [US1] Delete `BusBuddy.WPF/ViewModels/Route/RouteEditDialogViewModel.cs`
-- [ ] T004 [P] [US1] Delete `BusBuddy.WPF/Views/Route/RouteForm.xaml` (no code-behind exists; do **not** delete `RouteStopsEditor`)
-- [ ] T005 [US1] Update `BusBuddy.Tests/WPF/MainWindowClerkPathTests.RouteEditDialog_SaveCommandIsImplemented` so it does not read deleted files (assert absence, or remove the test). Grep `BusBuddy.Tests` for any other `RouteEditDialog` / `RouteForm` hits.
-- [ ] T006 [US2] Bind `BusBuddy.WPF/Views/Bus/BusEditDialog.xaml` to VM (`{Binding}` on SfTextBoxExt / IntegerTextBox; ButtonAdv `Command`; no named-control click copy)
-- [ ] T007 [US2] Wire DataContext + close in `BusBuddy.WPF/Views/Bus/BusEditDialog.xaml.cs` (stop LoadBusData from TextBox.Text)
-- [ ] T008 [US2] Move + complete `BusBuddy.WPF/ViewModels/Bus/BusEditDialogViewModel.cs` — namespace `BusBuddy.WPF.ViewModels.Bus`; align `LicenseNumber`, add `Year`; hydrate from `Bus`
-- [ ] T009 [P] [US2] Namespace only: `BusBuddy.WPF/ViewModels/Bus/BusManagementViewModel.cs` → `BusBuddy.WPF.ViewModels.Bus`
-- [ ] T010 [P] [US2] Namespace only: `BusBuddy.WPF/ViewModels/Bus/BusViewModel.cs` → `BusBuddy.WPF.ViewModels.Bus`
+- [x] T001 [US1] Delete `BusBuddy.WPF/Views/Route/RouteEditDialog.xaml`
+- [x] T002 [P] [US1] Delete `BusBuddy.WPF/Views/Route/RouteEditDialog.xaml.cs` (present on `master` after PR #48)
+- [x] T003 [P] [US1] Delete `BusBuddy.WPF/ViewModels/Route/RouteEditDialogViewModel.cs`
+- [x] T004 [P] [US1] Delete `BusBuddy.WPF/Views/Route/RouteForm.xaml` (no code-behind exists; do **not** delete `RouteStopsEditor`)
+- [x] T005 [US1] Update `BusBuddy.Tests/WPF/MainWindowClerkPathTests.RouteEditDialog_SaveCommandIsImplemented` so it does not read deleted files (assert absence, or remove the test). Grep `BusBuddy.Tests` for any other `RouteEditDialog` / `RouteForm` hits.
+- [x] T006 [US2] Bind `BusBuddy.WPF/Views/Bus/BusEditDialog.xaml` to VM (`{Binding}` on SfTextBoxExt / IntegerTextBox; ButtonAdv `Command`; no named-control click copy)
+- [x] T007 [US2] Wire DataContext + close in `BusBuddy.WPF/Views/Bus/BusEditDialog.xaml.cs` (stop LoadBusData from TextBox.Text)
+- [x] T008 [US2] Move + complete `BusBuddy.WPF/ViewModels/Bus/BusEditDialogViewModel.cs` — namespace `BusBuddy.WPF.ViewModels.Bus`; align `LicenseNumber`, add `Year`; hydrate from `Bus`
+- [x] T009 [P] [US2] Namespace only: `BusBuddy.WPF/ViewModels/Bus/BusManagementViewModel.cs` → `BusBuddy.WPF.ViewModels.Bus`
+- [x] T010 [P] [US2] Namespace only: `BusBuddy.WPF/ViewModels/Bus/BusViewModel.cs` → `BusBuddy.WPF.ViewModels.Bus`
 
 **Checkpoint**: Mac build green. Do not start Wave 2 until Windows VM smoke for Wave 1 is checked below. **Do not start Wave 1 in the Wave 0 PR.**
 

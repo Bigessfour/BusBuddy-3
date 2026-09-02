@@ -2,7 +2,7 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:syncfusion="http://schemas.syncfusion.com/wpf"
-        Title="Edit Bus"
+        Title="{Binding DialogTitle}"
     Height="560"
     Width="700"
     MinHeight="520"
@@ -41,49 +41,61 @@
         <!-- Bus Number -->
         <StackPanel Grid.Row="1" Margin="0,0,0,10">
             <TextBlock Text="Bus Number:" Margin="0,0,0,5"/>
-            <syncfusion:SfTextBoxExt x:Name="BusNumberTextBox"
+            <syncfusion:SfTextBoxExt
                      Height="40"
-                     Padding="5"/>
+                     Padding="5"
+                     Text="{Binding BusNumber, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                     AutomationProperties.Name="Bus Number"/>
         </StackPanel>
 
         <!-- Make -->
         <StackPanel Grid.Row="2" Margin="0,0,0,10">
             <TextBlock Text="Make:" Margin="0,0,0,5"/>
-            <syncfusion:SfTextBoxExt x:Name="MakeTextBox"
+            <syncfusion:SfTextBoxExt
                      Height="40"
-                     Padding="5"/>
+                     Padding="5"
+                     Text="{Binding Make, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                     AutomationProperties.Name="Make"/>
         </StackPanel>
 
         <!-- Model -->
         <StackPanel Grid.Row="3" Margin="0,0,0,10">
             <TextBlock Text="Model:" Margin="0,0,0,5"/>
-            <syncfusion:SfTextBoxExt x:Name="ModelTextBox"
+            <syncfusion:SfTextBoxExt
                      Height="40"
-                     Padding="5"/>
+                     Padding="5"
+                     Text="{Binding Model, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                     AutomationProperties.Name="Model"/>
         </StackPanel>
 
         <!-- Year -->
         <StackPanel Grid.Row="4" Margin="0,0,0,10">
             <TextBlock Text="Year:" Margin="0,0,0,5"/>
-            <syncfusion:SfTextBoxExt x:Name="YearTextBox"
+            <syncfusion:IntegerTextBox
                      Height="40"
-                     Padding="5"/>
+                     Padding="5"
+                     Value="{Binding Year, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                     AutomationProperties.Name="Year"/>
         </StackPanel>
 
         <!-- Seating Capacity -->
         <StackPanel Grid.Row="5" Margin="0,0,0,10">
             <TextBlock Text="Seating Capacity:" Margin="0,0,0,5"/>
-            <syncfusion:SfTextBoxExt x:Name="CapacityTextBox"
+            <syncfusion:IntegerTextBox
                      Height="40"
-                     Padding="5"/>
+                     Padding="5"
+                     Value="{Binding Capacity, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                     AutomationProperties.Name="Seating Capacity"/>
         </StackPanel>
 
         <!-- License Number -->
         <StackPanel Grid.Row="6" Margin="0,0,0,10">
             <TextBlock Text="License Number:" Margin="0,0,0,5"/>
-            <syncfusion:SfTextBoxExt x:Name="LicenseNumberTextBox"
+            <syncfusion:SfTextBoxExt
                      Height="40"
-                     Padding="5"/>
+                     Padding="5"
+                     Text="{Binding LicenseNumber, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                     AutomationProperties.Name="License Number"/>
         </StackPanel>
 
         <!-- Buttons -->
@@ -91,23 +103,21 @@
             Orientation="Horizontal"
             HorizontalAlignment="Right"
             Margin="0,25,0,0">
-        <syncfusion:ButtonAdv x:Name="SaveButton"
+        <syncfusion:ButtonAdv
                    Label="Save"
                    MinWidth="100"
                    Height="38"
                    Margin="0,0,12,0"
-                   Click="SaveButton_Click"
+                   Command="{Binding SaveCommand}"
                    AutomationProperties.Name="Save Bus"
                    AutomationProperties.HelpText="Validate and save bus details"/>
-        <syncfusion:ButtonAdv x:Name="CancelButton"
+        <syncfusion:ButtonAdv
                    Label="Cancel"
                    MinWidth="100"
                    Height="38"
-                   Click="CancelButton_Click"
+                   Command="{Binding CancelCommand}"
                    AutomationProperties.Name="Cancel Edit"
                    AutomationProperties.HelpText="Close without saving changes"/>
     </StackPanel>
     </Grid>
 </Window>
-
-<!-- Save / Cancel click handlers are wired in code-behind (BusEditDialog.xaml.cs) -->

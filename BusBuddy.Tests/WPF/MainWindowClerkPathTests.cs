@@ -87,15 +87,16 @@ public class MainWindowClerkPathTests
     }
 
     [Test]
-    public void RouteEditDialog_SaveCommandIsImplemented()
+    public void RouteEditDialog_AndRouteForm_AreRemoved()
     {
-        var vm = XamlViewFile.Read("ViewModels/Route/RouteEditDialogViewModel.cs");
-        Assert.That(vm, Does.Contain("RequestClose"));
-        Assert.That(vm, Does.Contain("Start location is required"));
-        Assert.That(vm, Does.Not.Contain("Validation stub"));
-        var xaml = XamlViewFile.Read("Views/Route/RouteEditDialog.xaml");
-        Assert.That(xaml, Does.Contain("Height=\"40\""));
-        Assert.That(xaml, Does.Contain("Command=\"{Binding CancelCommand}\""));
+        Assert.That(XamlViewFile.Exists("Views/Route/RouteEditDialog.xaml"), Is.False);
+        Assert.That(XamlViewFile.Exists("Views/Route/RouteEditDialog.xaml.cs"), Is.False);
+        Assert.That(XamlViewFile.Exists("ViewModels/Route/RouteEditDialogViewModel.cs"), Is.False);
+        Assert.That(XamlViewFile.Exists("Views/Route/RouteForm.xaml"), Is.False);
+
+        Assert.That(XamlViewFile.Exists("Views/Route/RouteStopsEditor.xaml"), Is.True);
+        var assignment = XamlViewFile.Read("Views/Route/RouteAssignmentView.xaml");
+        Assert.That(assignment, Does.Contain("RouteStopsEditor"));
     }
 
     [Test]

@@ -2,7 +2,7 @@ using BusBuddy.Core.Models;
 using System;
 using System.ComponentModel.DataAnnotations;
 
-namespace BusBuddy.WPF.ViewModels.BusManagement
+namespace BusBuddy.WPF.ViewModels.Bus
 {
     /// <summary>
     /// View model for Bus/Vehicle data with validation
