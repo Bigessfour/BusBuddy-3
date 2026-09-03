@@ -661,9 +661,9 @@ namespace BusBuddy.WPF.ViewModels.Student
                 }
 
                 // Normalize loose inputs (format but don't block)
-                Student.HomePhone = NormalizePhone(Student.HomePhone);
-                Student.CellPhone = NormalizePhone(Student.CellPhone);
-                Student.EmergencyPhone = NormalizePhone(Student.EmergencyPhone);
+                Student.HomePhone = StudentPhoneNormalizer.Normalize(Student.HomePhone);
+                Student.CellPhone = StudentPhoneNormalizer.Normalize(Student.CellPhone);
+                Student.EmergencyPhone = StudentPhoneNormalizer.Normalize(Student.EmergencyPhone);
                 Student.Zip = NormalizeZip(Student.Zip);
                 StudentSpecialNeedsHelper.SyncLegacySpecialNeedsText(Student);
 
@@ -784,16 +784,7 @@ namespace BusBuddy.WPF.ViewModels.Student
             }
         }
 
-        private static string? NormalizePhone(string? input)
-        {
-            if (string.IsNullOrWhiteSpace(input)) return input;
-            var digits = new string(input.Where(char.IsDigit).ToArray());
-            if (digits.Length == 10)
-            {
-                return $"({digits.Substring(0, 3)}) {digits.Substring(3, 3)}-{digits.Substring(6, 4)}";
-            }
-            return input; // leave as-is if not 10 digits
-        }
+        private static string? NormalizePhone(string? input) => StudentPhoneNormalizer.Normalize(input);
 
         private static string? NormalizeZip(string? input)
         {
