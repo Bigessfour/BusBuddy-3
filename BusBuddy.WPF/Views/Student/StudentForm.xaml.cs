@@ -13,6 +13,7 @@ using BusBuddy.WPF.Utilities; // SyncfusionThemeManager
 using Serilog;
 using Microsoft.Extensions.DependencyInjection;
 using BusBuddy.Core.Services;
+using BusBuddy.Core.Services.GoogleMaps;
 
 namespace BusBuddy.WPF.Views.Student
 {
@@ -54,10 +55,17 @@ namespace BusBuddy.WPF.Views.Student
             {
                 var sp = App.ServiceProvider;
                 var svc = sp?.GetService<IStudentService>();
-                ViewModel = svc != null ? new StudentFormViewModel(svc) : new StudentFormViewModel();
+                ViewModel = svc != null
+                    ? new StudentFormViewModel(svc)
+                    : new StudentFormViewModel();
+                if (svc is null)
+                {
+                    Logger.Warning("StudentForm: IStudentService not in DI — saves may skip service validation");
+                }
             }
-            catch
+            catch (Exception ex)
             {
+                Logger.Warning(ex, "StudentForm: DI resolve failed — using fallback ViewModel");
                 ViewModel = new StudentFormViewModel();
             }
             DataContext = ViewModel;
@@ -87,9 +95,14 @@ namespace BusBuddy.WPF.Views.Student
                 ViewModel = svc != null
                     ? new StudentFormViewModel(svc, student, enableValidation: false)
                     : new StudentFormViewModel(student, enableValidation: false);
+                if (svc is null)
+                {
+                    Logger.Warning("StudentForm: IStudentService not in DI — saves may skip service validation");
+                }
             }
-            catch
+            catch (Exception ex)
             {
+                Logger.Warning(ex, "StudentForm: DI resolve failed — using fallback ViewModel");
                 ViewModel = new StudentFormViewModel(student, enableValidation: false);
             }
 
@@ -139,13 +152,18 @@ namespace BusBuddy.WPF.Views.Student
             FrameworkElement? target = fieldKey switch
             {
                 StudentFormFields.StudentName => StudentNameTextBox,
-                StudentFormFields.StudentNumber => StudentNumberTextBox,
                 StudentFormFields.Grade => GradeComboBox,
                 StudentFormFields.HomeAddress => HomeAddressTextBox,
                 StudentFormFields.City => CityTextBox,
                 StudentFormFields.State => StateComboBox,
                 StudentFormFields.Zip => ZipMaskedEdit,
                 StudentFormFields.DateOfBirth => DateOfBirthPicker,
+                StudentFormFields.AMRoute => AMRouteComboBox,
+                StudentFormFields.PMRoute => PMRouteComboBox,
+                StudentFormFields.HomePhone => HomePhoneMaskedEdit,
+                StudentFormFields.CellPhone => CellPhoneMaskedEdit,
+                StudentFormFields.EmergencyPhone => EmergencyContactPhoneMaskedEdit,
+                StudentFormFields.School => SchoolComboBox,
                 _ => null,
             };
 
@@ -175,13 +193,18 @@ namespace BusBuddy.WPF.Views.Student
             var fieldKey = controlName switch
             {
                 nameof(StudentNameTextBox) => StudentFormFields.StudentName,
-                nameof(StudentNumberTextBox) => StudentFormFields.StudentNumber,
                 nameof(GradeComboBox) => StudentFormFields.Grade,
                 nameof(HomeAddressTextBox) => StudentFormFields.HomeAddress,
                 nameof(CityTextBox) => StudentFormFields.City,
                 nameof(StateComboBox) => StudentFormFields.State,
                 nameof(ZipMaskedEdit) => StudentFormFields.Zip,
                 nameof(DateOfBirthPicker) => StudentFormFields.DateOfBirth,
+                nameof(AMRouteComboBox) => StudentFormFields.AMRoute,
+                nameof(PMRouteComboBox) => StudentFormFields.PMRoute,
+                nameof(HomePhoneMaskedEdit) => StudentFormFields.HomePhone,
+                nameof(CellPhoneMaskedEdit) => StudentFormFields.CellPhone,
+                nameof(EmergencyContactPhoneMaskedEdit) => StudentFormFields.EmergencyPhone,
+                nameof(SchoolComboBox) => StudentFormFields.School,
                 _ => null,
             };
 
@@ -261,10 +284,10 @@ namespace BusBuddy.WPF.Views.Student
         protected override void OnClosed(System.EventArgs e)
         {
             Logger.Information("StudentForm closing, disposing resources");
-            // Unsubscribe from events to prevent memory leaks
             if (ViewModel != null)
             {
                 ViewModel.RequestClose -= OnRequestClose;
+                ViewModel.RequestFocusField -= OnRequestFocusField;
                 ViewModel.Dispose();
             }
             // Remove global handlers where applicable
@@ -542,6 +565,27 @@ namespace BusBuddy.WPF.Views.Student
             catch (System.Exception ex)
             {
                 Logger.Warning(ex, "StudentForm: validation logging failed");
+            }
+        }
+
+        private async void AddressSuggestionsList_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (ViewModel is null || AddressSuggestionsList.SelectedItem is not PlaceAutocompleteSuggestion suggestion)
+            {
+                return;
+            }
+
+            try
+            {
+                await ViewModel.ApplyAddressSuggestionAsync(suggestion).ConfigureAwait(true);
+            }
+            catch (Exception ex)
+            {
+                Logger.Warning(ex, "StudentForm: Places suggestion apply failed");
+            }
+            finally
+            {
+                AddressSuggestionsList.SelectedItem = null;
             }
         }
 

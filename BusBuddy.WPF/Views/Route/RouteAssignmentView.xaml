@@ -199,6 +199,24 @@
                                              Margin="0,4,0,0"
                                              Text="{Binding StartTimeString, Mode=TwoWay}"
                                              AutomationProperties.Name="Route Start Time" />
+                    <syncfusion:ButtonAdv x:Name="AssignBusButton"
+                                          Label="Assign Bus"
+                                          Command="{Binding AssignVehicleCommand}"
+                                          Style="{StaticResource WarningButtonAdv}"
+                                          AutomationProperties.Name="Assign Bus to Route"
+                                          ToolTip="Assign the selected bus to the route for the chosen time slot" />
+                    <syncfusion:ButtonAdv x:Name="AssignDriverButton"
+                                          Label="Assign Driver"
+                                          Command="{Binding AssignDriverCommand}"
+                                          Style="{StaticResource WarningButtonAdv}"
+                                          AutomationProperties.Name="Assign Driver to Route"
+                                          ToolTip="Assign the selected driver to the route for the chosen time slot" />
+                    <syncfusion:ButtonAdv x:Name="RefreshDataButton"
+                                          Label="Refresh"
+                                          Command="{Binding RefreshDataCommand}"
+                                          Style="{StaticResource InfoButtonAdv}"
+                                          AutomationProperties.Name="Refresh Route Data"
+                                          ToolTip="Reload routes, buses, drivers, and student assignments" />
                     <syncfusion:ButtonAdv x:Name="GenerateRoutesButton"
                                           Label="Generate Routes"
                                           Command="{Binding GenerateRoutesCommand}"
@@ -418,8 +436,29 @@
                 Background="{DynamicResource BusBuddy.Brush.Surface.Medium}"
                 CornerRadius="6"
                 Padding="10">
-            <TextBlock Text="{Binding StatusMessage}"
-                       Foreground="{DynamicResource BusBuddy.Brush.Text.Secondary}" />
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding StatusMessage}"
+                               Foreground="{DynamicResource BusBuddy.Brush.Text.Secondary}"/>
+                    <TextBlock Text="Loading..."
+                               Margin="12,0,0,0"
+                               FontStyle="Italic"
+                               Foreground="{DynamicResource BusBuddy.Brush.Primary}"
+                               Visibility="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                </StackPanel>
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="Assigned bus: " Foreground="{DynamicResource BusBuddy.Brush.Text.Secondary}"/>
+                    <TextBlock Text="{Binding SelectedRouteBusDisplay}" FontWeight="SemiBold"
+                               Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}" Margin="0,0,16,0"/>
+                    <TextBlock Text="Driver: " Foreground="{DynamicResource BusBuddy.Brush.Text.Secondary}"/>
+                    <TextBlock Text="{Binding SelectedRouteDriverDisplay}" FontWeight="SemiBold"
+                               Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"/>
+                </StackPanel>
+            </Grid>
         </Border>
     </Grid>
 </UserControl>

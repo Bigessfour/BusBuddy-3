@@ -234,8 +234,13 @@
                 <syncfusion:GridComboBoxColumn HeaderText="School"
                                              MappingName="School"
                                              Width="150"
+                                             DisplayMemberPath="Name"
                                              ItemsSource="{Binding AvailableSchools}"
                                              AllowEditing="True"/>
+                <syncfusion:GridTextColumn HeaderText="Dest. ID"
+                                         MappingName="DestinationId"
+                                         Width="70"
+                                         AllowEditing="False"/>
                 <syncfusion:GridTextColumn HeaderText="Address"
                                          MappingName="HomeAddress"
                                          Width="200"
@@ -244,6 +249,14 @@
                                          MappingName="City"
                                          Width="120"
                                          AllowEditing="True"/>
+                <syncfusion:GridTextColumn HeaderText="Latitude"
+                                         MappingName="Latitude"
+                                         Width="90"
+                                         AllowEditing="False"/>
+                <syncfusion:GridTextColumn HeaderText="Longitude"
+                                         MappingName="Longitude"
+                                         Width="90"
+                                         AllowEditing="False"/>
                 <syncfusion:GridMaskColumn HeaderText="Phone"
                                            MappingName="HomePhone"
                                            Width="120"
@@ -258,13 +271,11 @@
                                              MappingName="AMRoute"
                                              Width="120"
                                              ItemsSource="{Binding AvailableRoutes}"
-                                             DisplayMemberPath="RouteName"
                                              AllowEditing="True"/>
                 <syncfusion:GridComboBoxColumn HeaderText="PM Route"
                                              MappingName="PMRoute"
                                              Width="120"
                                              ItemsSource="{Binding AvailableRoutes}"
-                                             DisplayMemberPath="RouteName"
                                              AllowEditing="True"/>
                 <syncfusion:GridCheckBoxColumn HeaderText="Active"
                                              MappingName="Active"
@@ -329,12 +340,6 @@
                             Style="{StaticResource StudentsToolbarButton}"
                             ToolTip="Show route assignment summary"
                             AutomationProperties.Name="Show Summary"/>
-                    <syncfusion:ButtonAdv Label="Quick Actions"
-                            Command="{Binding ShowQuickActionsCommand}"
-                            Style="{StaticResource StudentsToolbarButton}"
-                            Margin="0"
-                            ToolTip="Open quick actions menu (assign route, filter active, clear filters)"
-                            AutomationProperties.Name="Quick Actions"/>
                 </StackPanel>
             </Grid>
         </Border>

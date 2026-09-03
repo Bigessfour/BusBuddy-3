@@ -128,7 +128,7 @@
 - [ ] T036 [P] [US4] `BusBuddy.WPF/Views/Activity/ActivityScheduleEditDialog.xaml.cs` — keep lists/Save wiring
 - [ ] T037 [P] [US4] `BusBuddy.WPF/Views/Bus/BusForm.xaml` — FieldInputStyle consume or prepare (Height **40** standard, not 32)
 - [ ] T038 [P] [US4] `BusBuddy.WPF/ViewModels/Bus/BusFormViewModel.cs` — no new orphan properties without UI
-- [ ] T039 [US4] `BusBuddy.WPF/Views/Student/QuickActionsDialog.xaml` — **no data-entry change** (actions only; checkbox = confirm skip)
+- [x] T039 [US4] ~~`QuickActionsDialog`~~ — **removed 2026-09-03** (was actions-only placeholder; use `StudentsView` toolbar)
 
 **Checkpoint**: Mac build green. Click SchoolDestinationForm, Transfer, Activity schedule edit, BusForm, RouteStop edit if reachable. Do not require Route Assignment drag-drop.
 

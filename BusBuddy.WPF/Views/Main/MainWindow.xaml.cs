@@ -10,8 +10,9 @@ using Syncfusion.UI.Xaml.Grid;
 using BusBuddy.WPF.ViewModels;
 using BusBuddy.WPF.Views.Dashboard;
 using BusBuddy.WPF.ViewModels.Route; // Needed for RouteManagementViewModel reference
+using BusBuddy.WPF.ViewModels.Student;
+using BusBuddy.WPF.ViewModels.Vehicle;
 using BusBuddy.WPF.Views.Student;
-using BusBuddy.WPF.Views.Bus;
 using BusBuddy.WPF.Views.Driver;
 using BusBuddy.WPF.Views.Analytics;
 using BusBuddy.WPF.Views.Activity;
@@ -151,6 +152,7 @@ namespace BusBuddy.WPF.Views.Main
             try
             {
                 EnsureMainWindowViewModel();
+                TryShowDashboardOnStartup();
                 Dispatcher.BeginInvoke(new Action(() =>
                 {
                     try { AuditButtonsAccessibility(); } catch (Exception ex2) { Logger.Warning(ex2, "MainWindow: post-load audit failed"); }
@@ -159,6 +161,32 @@ namespace BusBuddy.WPF.Views.Main
             catch (Exception ex)
             {
                 Logger.Warning(ex, "MainWindow_Loaded diagnostics failed");
+            }
+        }
+
+        private void TryShowDashboardOnStartup()
+        {
+            try
+            {
+                var settings = App.ServiceProvider?.GetService<IUserSettingsService>();
+                if (settings is null)
+                {
+                    return;
+                }
+
+                settings.LoadSettingsAsync().GetAwaiter().GetResult();
+                if (!settings.ShowDashboardOnStartup)
+                {
+                    Logger.Information("Dashboard on startup disabled in user settings");
+                    return;
+                }
+
+                Logger.Information("Opening dashboard on startup per user settings");
+                ShowViewInWindow(new DashboardView(), "Dashboard", 1050, 720);
+            }
+            catch (Exception ex)
+            {
+                Logger.Warning(ex, "Failed to open dashboard on startup");
             }
         }
 
@@ -607,8 +635,15 @@ namespace BusBuddy.WPF.Views.Main
         {
             Logger.Debug("DashboardButton_Click event triggered");
             Logger.Information("Dashboard navigation requested");
-            // Future: Navigate to dashboard view
-            Logger.Debug("Dashboard navigation logic completed");
+            try
+            {
+                ShowViewInWindow(new DashboardView(), "Dashboard", 1050, 720);
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Error opening Dashboard view");
+                MessageBox.Show($"Error opening Dashboard: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
         private void ThemeSelector_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
@@ -689,12 +724,16 @@ namespace BusBuddy.WPF.Views.Main
         /// </summary>
         private void StudentsButton_Click(object sender, RoutedEventArgs e)
         {
-            Logger.Debug("StudentsButton_Click event triggered");
-            Logger.Information("Students navigation requested");
+            ShowStudentsView(StudentsViewStartup.None);
+        }
+
+        private void ShowStudentsView(StudentsViewStartup startup, int? editStudentId = null)
+        {
+            Logger.Debug("ShowStudentsView startup={Startup} editStudentId={EditStudentId}", startup, editStudentId);
+            Logger.Information("Students navigation requested (startup={Startup})", startup);
             try
             {
-                // Open StudentsView as a top-level window (ChromelessWindow) — do not embed a Window as Content
-                var studentsView = new StudentsView
+                var studentsView = new StudentsView(startup, editStudentId)
                 {
                     Owner = this,
                     WindowStartupLocation = WindowStartupLocation.CenterOwner
@@ -815,20 +854,7 @@ namespace BusBuddy.WPF.Views.Main
             Logger.Information("Buses navigation requested");
             try
             {
-                // Create a window to host the VehicleManagementView
-                var busesWindow = new Window
-                {
-                    Title = "🚐 Bus Management",
-                    Width = 1200,
-                    Height = 800,
-                    WindowStartupLocation = WindowStartupLocation.CenterOwner,
-                    Owner = this,
-                    Content = new VehicleManagementView()
-                };
-
-                Logger.Debug("Showing VehicleManagementView in modal dialog");
-                busesWindow.ShowDialog();
-                Logger.Information("VehicleManagementView dialog closed");
+                VehicleFleetLauncher.ShowDialog(this);
                 RefreshBusesGrid();
             }
             catch (Exception ex)
@@ -857,7 +883,7 @@ namespace BusBuddy.WPF.Views.Main
             Logger.Information("Vehicles navigation requested");
             try
             {
-                ShowViewInWindow(new VehicleManagementView(), "🚌 Vehicle Management", 1100, 750);
+                VehicleFleetLauncher.ShowDialog(this);
             }
             catch (Exception ex)
             {
@@ -949,35 +975,13 @@ namespace BusBuddy.WPF.Views.Main
         // Button Click Handlers
         private void AddStudent_Click(object sender, RoutedEventArgs e)
         {
-            Logger.Debug("AddStudent_Click event triggered");
-            try
-            {
-                Logger.Debug("Creating new StudentForm dialog");
-                var studentForm = new StudentForm();
-                Logger.Debug("Showing StudentForm modal dialog");
-                var result = studentForm.ShowDialog();
-                Logger.Debug("StudentForm dialog result: {DialogResult}", result);
-                if (result == true)
-                {
-                    Logger.Information("Student added successfully");
-                    Logger.Debug("Student form completed successfully, refreshing data");
-                    RefreshStudentsGrid();
-                }
-                else
-                {
-                    Logger.Debug("Student form was cancelled or closed without saving");
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger.Error(ex, "Error opening Student form");
-                MessageBox.Show($"Error opening Student form: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
+            Logger.Debug("AddStudent_Click — routing to StudentsView add flow");
+            ShowStudentsView(StudentsViewStartup.AddStudent);
         }
 
         private void EditStudent_Click(object sender, RoutedEventArgs e)
         {
-            Logger.Information("Edit student requested");
+            Logger.Information("Edit student requested — routing to StudentsView edit flow");
             try
             {
                 if (DataContext is not MainWindowViewModel mainViewModel)
@@ -997,24 +1001,15 @@ namespace BusBuddy.WPF.Views.Main
                     return;
                 }
 
-                Logger.Information("Opening StudentForm for editing student: {StudentName} (ID: {StudentId})",
+                Logger.Information("Opening StudentsView for edit: {StudentName} (ID: {StudentId})",
                     selectedStudent.StudentName, selectedStudent.StudentId);
 
-                var studentForm = new BusBuddy.WPF.Views.Student.StudentForm();
-                var studentViewModel = new BusBuddy.WPF.ViewModels.Student.StudentFormViewModel(selectedStudent);
-                studentForm.DataContext = studentViewModel;
-
-                var result = studentForm.ShowDialog();
-                if (result == true)
-                {
-                    Logger.Information("Student edited successfully");
-                    RefreshStudentsGrid();
-                }
+                ShowStudentsView(StudentsViewStartup.EditStudent, selectedStudent.StudentId);
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Error opening Student form for editing");
-                MessageBox.Show($"Error opening Student form for editing: {ex.Message}", "Error",
+                Logger.Error(ex, "Error opening Students view for edit");
+                MessageBox.Show($"Error opening student editor: {ex.Message}", "Error",
                     MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
@@ -1023,18 +1018,13 @@ namespace BusBuddy.WPF.Views.Main
         {
             try
             {
-                var busForm = new BusForm();
-                var result = busForm.ShowDialog();
-                if (result == true)
-                {
-                    Logger.Information("Bus added successfully");
-                    RefreshBusesGrid();
-                }
+                VehicleFleetLauncher.ShowDialog(this, VehicleManagementStartup.AddVehicle);
+                RefreshBusesGrid();
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Error opening Bus form");
-                MessageBox.Show($"Error opening Bus form: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                Logger.Error(ex, "Error opening vehicle fleet for add bus");
+                MessageBox.Show($"Error opening vehicle management: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 

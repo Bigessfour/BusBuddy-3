@@ -62,6 +62,64 @@ public class GoogleRoutingServiceTests
         }
     }
 
+    [Test]
+    public async Task ComputeRouteMatrix_ReturnsElements()
+    {
+        var json = """
+            {
+              "elements": [
+                {
+                  "destinationIndex": 0,
+                  "distanceMeters": 5000,
+                  "duration": "600s",
+                  "status": "OK"
+                },
+                {
+                  "destinationIndex": 1,
+                  "distanceMeters": 12000,
+                  "duration": "900s",
+                  "status": "OK"
+                }
+              ]
+            }
+            """;
+        using var http = new HttpClient(new StubHandler(HttpStatusCode.OK, json));
+        var svc = new GoogleRoutingService(http, Options.Create(new GoogleMapsOptions { ApiKey = "test-key" }));
+
+        var result = await svc.ComputeRouteMatrixAsync(
+            (38.15, -102.72),
+            new[] { (38.16, -102.71), (37.08, -102.62) });
+
+        Assert.That(result, Has.Count.EqualTo(2));
+        Assert.That(result[0].DestinationIndex, Is.EqualTo(0));
+        Assert.That(result[0].DistanceMeters, Is.EqualTo(5000));
+        Assert.That(result[0].Duration, Is.EqualTo("600s"));
+        Assert.That(result[1].DestinationIndex, Is.EqualTo(1));
+        Assert.That(result[1].DistanceMeters, Is.EqualTo(12000));
+    }
+
+    [Test]
+    public async Task ComputeRouteMatrix_MissingKey_ReturnsEmpty()
+    {
+        var previous = Environment.GetEnvironmentVariable("GOOGLE_MAPS_API_KEY");
+        try
+        {
+            Environment.SetEnvironmentVariable("GOOGLE_MAPS_API_KEY", null);
+            using var http = new HttpClient(new StubHandler(HttpStatusCode.OK, "{}"));
+            var svc = new GoogleRoutingService(
+                http,
+                Options.Create(new GoogleMapsOptions { ApiKey = "${GOOGLE_MAPS_API_KEY}" }));
+
+            var result = await svc.ComputeRouteMatrixAsync((1, 2), new[] { (3.0, 4.0) });
+
+            Assert.That(result, Is.Empty);
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("GOOGLE_MAPS_API_KEY", previous);
+        }
+    }
+
     private sealed class StubHandler : HttpMessageHandler
     {
         private readonly HttpStatusCode _status;

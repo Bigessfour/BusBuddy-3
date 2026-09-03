@@ -6,6 +6,8 @@ using BusBuddy.Core.Models;
 using BusBuddy.Core.Services.Interfaces;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Serilog;
+using Serilog.Context;
 
 namespace BusBuddy.WPF.ViewModels.Vehicle
 {
@@ -15,6 +17,8 @@ namespace BusBuddy.WPF.ViewModels.Vehicle
     /// </summary>
     public partial class VehicleManagementViewModel : BaseViewModel
     {
+        private static new readonly ILogger Logger = Log.ForContext<VehicleManagementViewModel>();
+
         private readonly IBusService _busService;
         private BusBuddy.Core.Models.Bus? _lastSelectedVehicle;
 
@@ -91,6 +95,28 @@ namespace BusBuddy.WPF.ViewModels.Vehicle
             _ = LoadVehiclesAsync();
         }
 
+        /// <summary>
+        /// Runs a deferred startup action after the view loads (e.g. Add Bus shortcut).
+        /// </summary>
+        public async Task ApplyStartupAsync(VehicleManagementStartup startup)
+        {
+            if (startup == VehicleManagementStartup.None)
+            {
+                return;
+            }
+
+            using (LogContext.PushProperty("Startup", startup.ToString()))
+            {
+                Logger.Information("Applying fleet startup action {Startup}", startup);
+                switch (startup)
+                {
+                    case VehicleManagementStartup.AddVehicle:
+                        await AddVehicleAsync();
+                        break;
+                }
+            }
+        }
+
         private void RefreshCommandStates()
         {
             ((AsyncRelayCommand)EditVehicleCommand).NotifyCanExecuteChanged();
@@ -104,30 +130,35 @@ namespace BusBuddy.WPF.ViewModels.Vehicle
         /// </summary>
         private async Task LoadVehiclesAsync()
         {
-            try
+            using (LogContext.PushProperty("Operation", "LoadVehicles"))
             {
-                IsBusy = true;
-                StatusMessage = "Loading vehicles...";
-
-                var vehicles = await _busService.GetAllBusesAsync();
-
-                Vehicles.Clear();
-                foreach (var vehicle in vehicles)
+                try
                 {
-                    Vehicles.Add(vehicle);
-                }
+                    IsBusy = true;
+                    StatusMessage = "Loading vehicles...";
+                    Logger.Information("Loading vehicles from IBusService");
 
-                ApplyFilters();
-                StatusMessage = $"Loaded {Vehicles.Count} vehicles";
-            }
-            catch (Exception ex)
-            {
-                StatusMessage = $"Error loading vehicles: {ex.Message}";
-                Logger.Error(ex, "Failed to load buses; leaving vehicle grid empty");
-            }
-            finally
-            {
-                IsBusy = false;
+                    var vehicles = await _busService.GetAllBusesAsync();
+
+                    Vehicles.Clear();
+                    foreach (var vehicle in vehicles)
+                    {
+                        Vehicles.Add(vehicle);
+                    }
+
+                    ApplyFilters();
+                    StatusMessage = $"Loaded {Vehicles.Count} vehicles";
+                    Logger.Information("Loaded {VehicleCount} vehicles", Vehicles.Count);
+                }
+                catch (Exception ex)
+                {
+                    StatusMessage = $"Error loading vehicles: {ex.Message}";
+                    Logger.Error(ex, "Failed to load buses; leaving vehicle grid empty");
+                }
+                finally
+                {
+                    IsBusy = false;
+                }
             }
         }
 
@@ -205,10 +236,14 @@ namespace BusBuddy.WPF.ViewModels.Vehicle
 
                 SelectedVehicle = newVehicle;
                 StatusMessage = "Ready to add new vehicle - fill in details and click Save";
+                Logger.Information(
+                    "Prepared new vehicle draft BusNumber={BusNumber}",
+                    newVehicle.BusNumber);
             }
             catch (Exception ex)
             {
                 StatusMessage = $"Error adding vehicle: {ex.Message}";
+                Logger.Error(ex, "Error preparing new vehicle draft");
             }
             finally
             {
@@ -234,60 +269,86 @@ namespace BusBuddy.WPF.ViewModels.Vehicle
         /// </summary>
         private async Task SaveVehicleAsync()
         {
-            if (SelectedVehicle == null)
+            if (SelectedVehicle is null)
             {
                 return;
             }
 
-            try
+            var vehicle = SelectedVehicle;
+            var isNew = vehicle.BusId == 0;
+
+            using (LogContext.PushProperty("Operation", "SaveVehicle"))
+            using (LogContext.PushProperty("BusId", vehicle.BusId))
+            using (LogContext.PushProperty("BusNumber", vehicle.BusNumber))
             {
-                IsBusy = true;
-                StatusMessage = "Saving vehicle...";
-
-                // Ensure latest UI edits are propagated (in case some controls haven't lost focus yet)
-                // Trigger a minimal property change to force binding commits where applicable
-                SelectedVehicle.BusNumber = SelectedVehicle.BusNumber;
-
-                // Basic validation
-                if (string.IsNullOrWhiteSpace(SelectedVehicle.BusNumber))
+                try
                 {
-                    StatusMessage = "Bus Number is required";
-                    return;
-                }
+                    IsBusy = true;
+                    StatusMessage = "Saving vehicle...";
+                    Logger.Information(
+                        "Saving vehicle BusNumber={BusNumber} IsNew={IsNew}",
+                        vehicle.BusNumber,
+                        isNew);
 
-                if (SelectedVehicle.BusId == 0)
-                {
-                    // New vehicle — add to collection
-                    SelectedVehicle.BusId = Vehicles.Count > 0 ? Vehicles.Max(v => v.BusId) + 1 : 1;
-                    Vehicles.Add(SelectedVehicle);
-                    StatusMessage = $"Vehicle {SelectedVehicle.BusNumber} added successfully";
+                    // Ensure latest UI edits are propagated (in case some controls haven't lost focus yet)
+                    vehicle.BusNumber = vehicle.BusNumber;
 
-                    // Attempt to persist via service if available
-                    try { await _busService.AddBusAsync(SelectedVehicle); } catch { /* ignore service failure */ }
-                }
-                else
-                {
-                    // Update existing vehicle in collection
-                    var index = Vehicles.ToList().FindIndex(v => v.BusId == SelectedVehicle.BusId);
-                    if (index >= 0)
+                    if (string.IsNullOrWhiteSpace(vehicle.BusNumber))
                     {
-                        Vehicles[index] = SelectedVehicle;
+                        Logger.Warning("Vehicle save blocked — BusNumber blank");
+                        StatusMessage = "Bus Number is required";
+                        return;
                     }
-                    StatusMessage = $"Vehicle {SelectedVehicle.BusNumber} updated successfully";
 
-                    // Attempt to persist via service if available
-                    try { await _busService.UpdateBusAsync(SelectedVehicle); } catch { /* ignore service failure */ }
+                    if (isNew)
+                    {
+                        var added = await _busService.AddBusAsync(vehicle);
+                        Vehicles.Add(added);
+                        SelectedVehicle = added;
+                        Logger.Information(
+                            "Added vehicle BusId={BusId} BusNumber={BusNumber}",
+                            added.BusId,
+                            added.BusNumber);
+                        StatusMessage = $"Vehicle {added.BusNumber} added successfully";
+                    }
+                    else
+                    {
+                        var updated = await _busService.UpdateBusAsync(vehicle);
+                        if (!updated)
+                        {
+                            Logger.Warning(
+                                "UpdateBusAsync reported no changes for BusId={BusId}",
+                                vehicle.BusId);
+                        }
+
+                        var index = Vehicles.ToList().FindIndex(v => v.BusId == vehicle.BusId);
+                        if (index >= 0)
+                        {
+                            Vehicles[index] = vehicle;
+                        }
+
+                        Logger.Information(
+                            "Updated vehicle BusId={BusId} BusNumber={BusNumber}",
+                            vehicle.BusId,
+                            vehicle.BusNumber);
+                        StatusMessage = $"Vehicle {vehicle.BusNumber} updated successfully";
+                    }
+
+                    ApplyFilters();
                 }
-
-                ApplyFilters();
-            }
-            catch (Exception ex)
-            {
-                StatusMessage = $"Error saving vehicle: {ex.Message}";
-            }
-            finally
-            {
-                IsBusy = false;
+                catch (Exception ex)
+                {
+                    Logger.Error(
+                        ex,
+                        "Error saving vehicle BusId={BusId} BusNumber={BusNumber}",
+                        vehicle.BusId,
+                        vehicle.BusNumber);
+                    StatusMessage = $"Error saving vehicle: {ex.Message}";
+                }
+                finally
+                {
+                    IsBusy = false;
+                }
             }
         }
 
@@ -304,29 +365,61 @@ namespace BusBuddy.WPF.ViewModels.Vehicle
         /// </summary>
         private async Task DeleteVehicleAsync()
         {
-            if (SelectedVehicle == null)
+            if (SelectedVehicle is null)
             {
                 return;
             }
 
-            try
-            {
-                IsBusy = true;
-                StatusMessage = $"Deleting vehicle {SelectedVehicle.BusNumber}...";
+            var vehicle = SelectedVehicle;
+            var busId = vehicle.BusId;
+            var busNumber = vehicle.BusNumber;
 
-                Vehicles.Remove(SelectedVehicle);
-                SelectedVehicle = null;
-                ApplyFilters();
+            using (LogContext.PushProperty("Operation", "DeleteVehicle"))
+            using (LogContext.PushProperty("BusId", busId))
+            {
+                try
+                {
+                    IsBusy = true;
+                    StatusMessage = $"Deleting vehicle {busNumber}...";
+                    Logger.Information(
+                        "Deleting vehicle BusId={BusId} BusNumber={BusNumber}",
+                        busId,
+                        busNumber);
 
-                StatusMessage = "Vehicle deleted successfully";
-            }
-            catch (Exception ex)
-            {
-                StatusMessage = $"Error deleting vehicle: {ex.Message}";
-            }
-            finally
-            {
-                IsBusy = false;
+                    if (busId <= 0)
+                    {
+                        Vehicles.Remove(vehicle);
+                        SelectedVehicle = null;
+                        ApplyFilters();
+                        Logger.Information("Removed unsaved vehicle draft from list");
+                        StatusMessage = "Draft vehicle removed";
+                        return;
+                    }
+
+                    var deleted = await _busService.DeleteBusAsync(busId);
+                    if (!deleted)
+                    {
+                        Logger.Warning("DeleteBusAsync returned false for BusId={BusId}", busId);
+                        StatusMessage = "Vehicle could not be deleted";
+                        return;
+                    }
+
+                    Vehicles.Remove(vehicle);
+                    SelectedVehicle = null;
+                    ApplyFilters();
+
+                    Logger.Information("Successfully deleted vehicle BusId={BusId}", busId);
+                    StatusMessage = "Vehicle deleted successfully";
+                }
+                catch (Exception ex)
+                {
+                    Logger.Error(ex, "Error deleting vehicle BusId={BusId}", busId);
+                    StatusMessage = $"Error deleting vehicle: {ex.Message}";
+                }
+                finally
+                {
+                    IsBusy = false;
+                }
             }
         }
 
@@ -337,8 +430,10 @@ namespace BusBuddy.WPF.ViewModels.Vehicle
         {
             if (SelectedVehicle?.BusId == 0)
             {
+                Logger.Information("Cancelled unsaved vehicle draft");
                 SelectedVehicle = null;
             }
+
             StatusMessage = "Edit cancelled";
         }
 

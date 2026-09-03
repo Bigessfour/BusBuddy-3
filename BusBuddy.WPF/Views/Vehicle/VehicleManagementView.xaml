@@ -6,22 +6,38 @@
              xmlns:syncfusion="http://schemas.syncfusion.com/wpf"
              mc:Ignorable="d"
              d:DesignHeight="600"
-             d:DesignWidth="800"
+             d:DesignWidth="1100"
              Background="{DynamicResource ContentBackgroundBrush}">
 
     <UserControl.Resources>
-        <!-- Theme resources and custom styles contained within a single ResourceDictionary -->
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/SyncfusionV30_Validated_ResourceDictionary.xaml"/>
+                <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/ButtonAdvTextOnly.xaml"/>
             </ResourceDictionary.MergedDictionaries>
 
-            <!-- Section header style -->
-            <Style x:Key="SectionHeaderStyle" TargetType="TextBlock">
-                <Setter Property="FontSize" Value="16"/>
-                <Setter Property="FontWeight" Value="SemiBold"/>
-                <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}"/>
-                <Setter Property="Margin" Value="0,10,0,5"/>
+            <Style x:Key="VehicleToolbarButton" TargetType="syncfusion:ButtonAdv">
+                <Setter Property="SizeMode" Value="Normal"/>
+                <Setter Property="IconWidth" Value="0"/>
+                <Setter Property="IconHeight" Value="0"/>
+                <Setter Property="SmallIcon" Value="{x:Null}"/>
+                <Setter Property="Padding" Value="12,8"/>
+                <Setter Property="Margin" Value="0,0,8,0"/>
+                <Setter Property="FontWeight" Value="Medium"/>
+                <Setter Property="Cursor" Value="Hand"/>
+                <Setter Property="BorderThickness" Value="0"/>
+                <Setter Property="Background" Value="{DynamicResource ButtonBackgroundBrush}"/>
+                <Setter Property="Foreground" Value="{DynamicResource ButtonForegroundBrush}"/>
+            </Style>
+
+            <Style x:Key="VehiclePrimaryButton" TargetType="syncfusion:ButtonAdv" BasedOn="{StaticResource VehicleToolbarButton}">
+                <Setter Property="Background" Value="{DynamicResource BusBuddy.Brush.Primary}"/>
+                <Setter Property="Foreground" Value="{DynamicResource BusBuddy.Brush.Text.OnPrimary}"/>
+            </Style>
+
+            <Style x:Key="VehicleSuccessButton" TargetType="syncfusion:ButtonAdv" BasedOn="{StaticResource VehicleToolbarButton}">
+                <Setter Property="Background" Value="{DynamicResource BusBuddy.Brush.Semantic.Success}"/>
+                <Setter Property="Foreground" Value="{DynamicResource BusBuddy.Brush.Text.OnPrimary}"/>
             </Style>
 
             <Style x:Key="FormLabelStyle" TargetType="TextBlock">
@@ -29,24 +45,22 @@
                 <Setter Property="VerticalAlignment" Value="Center"/>
                 <Setter Property="Margin" Value="0,0,10,0"/>
                 <Setter Property="MinWidth" Value="120"/>
+                <Setter Property="Foreground" Value="{DynamicResource BusBuddy.Brush.Text.Primary}"/>
             </Style>
 
-            <Style x:Key="ActionButtonStyle" TargetType="syncfusion:ButtonAdv">
-                <Setter Property="SizeMode" Value="Normal"/>
-                <Setter Property="IconWidth" Value="0"/>
-                <Setter Property="IconHeight" Value="0"/>
-                <Setter Property="SmallIcon" Value="{x:Null}"/>
-                <Setter Property="Padding" Value="15,8"/>
-                <Setter Property="Margin" Value="5"/>
-                <Setter Property="FontWeight" Value="Medium"/>
-                <Setter Property="Cursor" Value="Hand"/>
-                <Setter Property="BorderThickness" Value="0"/>
-                <Setter Property="Foreground" Value="{DynamicResource ButtonForegroundBrush}"/>
+            <Style x:Key="VehicleIntegerTextBox" TargetType="syncfusion:IntegerTextBox">
+                <Setter Property="Height" Value="42"/>
+                <Setter Property="MinHeight" Value="42"/>
+                <Setter Property="Padding" Value="12,0,10,0"/>
+                <Setter Property="Margin" Value="0,0,0,10"/>
+                <Setter Property="VerticalContentAlignment" Value="Center"/>
+                <Setter Property="FontFamily" Value="Segoe UI"/>
+                <Setter Property="FontSize" Value="14"/>
             </Style>
         </ResourceDictionary>
     </UserControl.Resources>
 
-    <Grid Margin="20">
+    <Grid Margin="16">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
@@ -54,83 +68,85 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <!-- Header Section -->
-        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,20">
-            <TextBlock Text="&#xE7EC;" FontFamily="Segoe MDL2 Assets" FontSize="24" VerticalAlignment="Center" Margin="0,0,15,0"
-                      Foreground="{DynamicResource PrimaryTextBrush}"/>
-            <TextBlock Text="Vehicle Management"
-                      Style="{StaticResource SectionHeaderStyle}"
-                      FontSize="24"
-                      VerticalAlignment="Center"/>
+        <!-- Header -->
+        <Border Grid.Row="0" Background="{DynamicResource BusBuddy.Brush.Primary}"
+                CornerRadius="5" Padding="15" Margin="0,0,0,12">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
 
-            <!-- Action Buttons -->
-            <StackPanel Orientation="Horizontal" Margin="50,0,0,0">
-                <syncfusion:ButtonAdv Label="Add Vehicle"
-                       Command="{Binding AddVehicleCommand}"
-                       Style="{StaticResource ActionButtonStyle}"
-                       Background="{DynamicResource BusBuddy.Brush.Primary}"
-                       Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}"
-                       AutomationProperties.Name="Add Vehicle"/>
-                <syncfusion:ButtonAdv Label="Edit Selected"
-                       Command="{Binding EditVehicleCommand}"
-                       Style="{StaticResource ActionButtonStyle}"
-                       Background="{DynamicResource ButtonBackgroundBrush}"
-                       AutomationProperties.Name="Edit Selected Vehicle"/>
-                <syncfusion:ButtonAdv Label="Delete"
-                       Command="{Binding DeleteVehicleCommand}"
-                       Style="{StaticResource ActionButtonStyle}"
-                       Background="{DynamicResource ButtonBackgroundBrush}"
-                       AutomationProperties.Name="Delete Vehicle"/>
-            </StackPanel>
-        </StackPanel>
+                <StackPanel Grid.Column="0" Orientation="Horizontal">
+                    <TextBlock Text="&#xE7EC;" FontFamily="Segoe MDL2 Assets" FontSize="24"
+                               Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}"
+                               VerticalAlignment="Center" Margin="0,0,10,0"/>
+                    <TextBlock Text="Vehicle Management" FontSize="20" FontWeight="Bold"
+                               Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}"
+                               VerticalAlignment="Center"/>
+                </StackPanel>
 
-        <!-- Search and Filters -->
-        <Grid Grid.Row="1" Margin="0,0,0,20">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="Auto"/>
-            </Grid.ColumnDefinitions>
+                <WrapPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                    <syncfusion:ButtonAdv Label="Add Vehicle"
+                                          Command="{Binding AddVehicleCommand}"
+                                          Style="{StaticResource VehiclePrimaryButton}"
+                                          AutomationProperties.Name="Add Vehicle"
+                                          ToolTip="Create a new bus record"/>
+                    <syncfusion:ButtonAdv Label="Edit Selected"
+                                          Command="{Binding EditVehicleCommand}"
+                                          Style="{StaticResource VehicleToolbarButton}"
+                                          AutomationProperties.Name="Edit Selected Vehicle"
+                                          ToolTip="Focus the detail panel for the selected row"/>
+                    <syncfusion:ButtonAdv Label="Delete"
+                                          Command="{Binding DeleteVehicleCommand}"
+                                          Style="{StaticResource VehicleToolbarButton}"
+                                          AutomationProperties.Name="Delete Vehicle"
+                                          ToolTip="Remove the selected bus from the fleet"/>
+                </WrapPanel>
+            </Grid>
+        </Border>
 
-            <syncfusion:SfTextBoxExt Grid.Column="0"
-                    Text="{Binding SearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                    Padding="10"
-                    FontSize="14"
-                    Height="40"
-                    Watermark="Search buses by make, model, or plate number..."
-                    Margin="0,0,15,0"
-                    AutomationProperties.Name="Search vehicles"/>
+        <!-- Search and filters -->
+        <Border Grid.Row="1" Background="{DynamicResource BusBuddy.Brush.Surface.Light}"
+                CornerRadius="3" Padding="12" Margin="0,0,0,12">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
 
-            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,15,0">
-                <TextBlock Text="Status"
-                           VerticalAlignment="Center"
-                           Margin="0,0,8,0"
-                           Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"/>
-                <syncfusion:ComboBoxAdv ItemsSource="{Binding StatusFilterOptions}"
-                         SelectedItem="{Binding SelectedStatusFilter, Mode=TwoWay}"
-                         Width="150"
-                         Height="40"
-                         Padding="10"
-                         AutomationProperties.Name="Status"/>
-            </StackPanel>
+                <syncfusion:SfTextBoxExt Grid.Column="0"
+                                         Text="{Binding SearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                         Watermark="Search by bus number, make, model, or plate..."
+                                         Margin="0,0,12,0"
+                                         AutomationProperties.Name="Search vehicles"/>
 
-         <syncfusion:ButtonAdv Grid.Column="2"
-             Label="Refresh"
-             Command="{Binding RefreshCommand}"
-             Style="{StaticResource ActionButtonStyle}"
-             Background="{DynamicResource ButtonBackgroundBrush}"
-             AutomationProperties.Name="Refresh vehicles"/>
-        </Grid>
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,12,0">
+                    <TextBlock Text="Status" VerticalAlignment="Center" Margin="0,0,8,0"
+                               Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"/>
+                    <syncfusion:ComboBoxAdv ItemsSource="{Binding StatusFilterOptions}"
+                                            SelectedItem="{Binding SelectedStatusFilter, Mode=TwoWay}"
+                                            Width="160"
+                                            AutomationProperties.Name="Status filter"/>
+                </StackPanel>
 
-        <!-- Main Content - Split between Grid and Form -->
+                <syncfusion:ButtonAdv Grid.Column="2"
+                                      Label="Refresh"
+                                      Command="{Binding RefreshCommand}"
+                                      Style="{StaticResource VehicleToolbarButton}"
+                                      AutomationProperties.Name="Refresh vehicles"/>
+            </Grid>
+        </Border>
+
+        <!-- Grid + detail panel -->
         <Grid Grid.Row="2">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="2*"/>
-                <ColumnDefinition Width="5"/>
+                <ColumnDefinition Width="6"/>
                 <ColumnDefinition Width="1*"/>
             </Grid.ColumnDefinitions>
 
-            <!-- Vehicle List -->
             <syncfusion:SfDataGrid Grid.Column="0"
                                    x:Name="VehicleDataGrid"
                                    ItemsSource="{Binding FilteredVehicles}"
@@ -141,191 +157,169 @@
                                    AllowFiltering="True"
                                    ShowRowHeader="True"
                                    SelectionMode="Single"
-                                   GridLinesVisibility="Both"
-                                   HeaderLinesVisibility="Both"
-                                   ColumnSizer="Star">
+                                   GridLinesVisibility="Horizontal"
+                                   HeaderLinesVisibility="Horizontal"
+                                   ColumnSizer="Star"
+                                   AutomationProperties.Name="Vehicle fleet grid">
 
                 <syncfusion:SfDataGrid.Columns>
-                    <syncfusion:GridTextColumn HeaderText="ID"
-                                             MappingName="BusId"
-                                             Width="60"/>
-                    <syncfusion:GridTextColumn HeaderText="Bus Number"
-                                             MappingName="BusNumber"
-                                             Width="100"/>
-                    <syncfusion:GridTextColumn HeaderText="Make"
-                                             MappingName="Make"
-                                             Width="120"/>
-                    <syncfusion:GridTextColumn HeaderText="Model"
-                                             MappingName="Model"
-                                             Width="120"/>
-                    <syncfusion:GridTextColumn HeaderText="License Number"
-                                             MappingName="LicenseNumber"
-                                             Width="120"/>
-                    <syncfusion:GridTextColumn HeaderText="Capacity"
-                                             MappingName="SeatingCapacity"
-                                             Width="80"/>
-                    <syncfusion:GridTextColumn HeaderText="Status"
-                                             MappingName="Status"
-                                             Width="100"/>
-                    <syncfusion:GridTextColumn HeaderText="Year"
-                                             MappingName="Year"
-                                             Width="70"/>
+                    <syncfusion:GridTextColumn HeaderText="ID" MappingName="BusId" Width="56"/>
+                    <syncfusion:GridTextColumn HeaderText="Bus #" MappingName="BusNumber" Width="90"/>
+                    <syncfusion:GridTextColumn HeaderText="Make" MappingName="Make" Width="110"/>
+                    <syncfusion:GridTextColumn HeaderText="Model" MappingName="Model" Width="110"/>
+                    <syncfusion:GridTextColumn HeaderText="Plate" MappingName="LicenseNumber" Width="100"/>
+                    <syncfusion:GridTextColumn HeaderText="Capacity" MappingName="SeatingCapacity" Width="80"/>
+                    <syncfusion:GridTextColumn HeaderText="Year" MappingName="Year" Width="64"/>
+                    <syncfusion:GridTextColumn HeaderText="Status" MappingName="Status" Width="100"/>
                 </syncfusion:SfDataGrid.Columns>
             </syncfusion:SfDataGrid>
 
-            <!-- Splitter -->
-            <GridSplitter Grid.Column="1"
-                         HorizontalAlignment="Stretch"
-                         Background="{DynamicResource BorderBrush}"/>
+            <GridSplitter Grid.Column="1" HorizontalAlignment="Stretch"
+                          Background="{DynamicResource BorderBrush}"/>
 
-            <!-- Vehicle Form -->
-            <ScrollViewer Grid.Column="2" VerticalScrollBarVisibility="Auto">
-                <StackPanel Margin="15">
-                    <TextBlock Text="Vehicle Details" Style="{StaticResource SectionHeaderStyle}"/>
+            <Border Grid.Column="2" Background="{DynamicResource BusBuddy.Brush.Surface.Light}"
+                    CornerRadius="4" Padding="12">
+                <Grid>
+                    <!-- Empty state -->
+                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Margin="16">
+                        <StackPanel.Style>
+                            <Style TargetType="StackPanel">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding SelectedVehicle}" Value="{x:Null}">
+                                        <Setter Property="Visibility" Value="Visible"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </StackPanel.Style>
+                        <TextBlock Text="&#xE7EC;" FontFamily="Segoe MDL2 Assets" FontSize="32"
+                                   HorizontalAlignment="Center" Margin="0,0,0,8"
+                                   Foreground="{DynamicResource BusBuddy.Brush.Text.Secondary}"/>
+                        <TextBlock Text="Select a vehicle from the grid or click Add Vehicle."
+                                   TextWrapping="Wrap" TextAlignment="Center"
+                                   Foreground="{DynamicResource BusBuddy.Brush.Text.Secondary}"/>
+                    </StackPanel>
 
-                    <!-- Form Fields -->
-                    <Grid>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                        </Grid.RowDefinitions>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
-
-                        <!-- Bus Number -->
-                        <TextBlock Grid.Row="0" Grid.Column="0"
-                                  Text="Bus Number:"
-                                  Style="{StaticResource FormLabelStyle}"/>
-                        <syncfusion:SfTextBoxExt Grid.Row="0" Grid.Column="1"
-                                Text="{Binding SelectedVehicle.BusNumber, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                Padding="8"
-                                Height="40"
-                                Margin="0,5"
-                                AutomationProperties.Name="Bus Number"/>
-
-                        <!-- Make -->
-                        <TextBlock Grid.Row="1" Grid.Column="0"
-                                  Text="Make:"
-                                  Style="{StaticResource FormLabelStyle}"/>
-                        <syncfusion:SfTextBoxExt Grid.Row="1" Grid.Column="1"
-                                Text="{Binding SelectedVehicle.Make, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                Padding="8"
-                                Height="40"
-                                Margin="0,5"
-                                AutomationProperties.Name="Make"/>
-
-                        <!-- Model -->
-                        <TextBlock Grid.Row="2" Grid.Column="0"
-                                  Text="Model:"
-                                  Style="{StaticResource FormLabelStyle}"/>
-                        <syncfusion:SfTextBoxExt Grid.Row="2" Grid.Column="1"
-                                Text="{Binding SelectedVehicle.Model, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                Padding="8"
-                                Height="40"
-                                Margin="0,5"
-                                AutomationProperties.Name="Model"/>
-
-                        <!-- License Number -->
-                        <TextBlock Grid.Row="3" Grid.Column="0"
-                                  Text="License Number:"
-                                  Style="{StaticResource FormLabelStyle}"/>
-                        <syncfusion:SfTextBoxExt Grid.Row="3" Grid.Column="1"
-                                Text="{Binding SelectedVehicle.LicenseNumber, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                Padding="8"
-                                Height="40"
-                                Margin="0,5"
-                                AutomationProperties.Name="License Number"/>
-
-                        <!-- Capacity -->
-                        <TextBlock Grid.Row="4" Grid.Column="0"
-                                  Text="Capacity:"
-                                  Style="{StaticResource FormLabelStyle}"/>
-                        <syncfusion:IntegerTextBox Grid.Row="4" Grid.Column="1"
-                                Value="{Binding SelectedVehicle.SeatingCapacity, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                Padding="8"
-                                Height="40"
-                                Margin="0,5"
-                                AutomationProperties.Name="Seating Capacity"/>
-
-                        <!-- Status -->
-                        <TextBlock Grid.Row="5" Grid.Column="0"
-                                  Text="Status:"
-                                  Style="{StaticResource FormLabelStyle}"/>
-                        <syncfusion:ComboBoxAdv Grid.Row="5" Grid.Column="1"
-                                 ItemsSource="{Binding OperationalStatusOptions}"
-                                 SelectedItem="{Binding SelectedVehicle.Status, Mode=TwoWay}"
-                                 Padding="8"
-                                 Height="40"
-                                 Margin="0,5"
-                                 AutomationProperties.Name="Vehicle Status"/>
-
-                        <!-- Year -->
-                        <TextBlock Grid.Row="6" Grid.Column="0"
-                                  Text="Year:"
-                                  Style="{StaticResource FormLabelStyle}"/>
-                        <syncfusion:IntegerTextBox Grid.Row="6" Grid.Column="1"
-                                Value="{Binding SelectedVehicle.Year, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                Padding="8"
-                                Height="40"
-                                Margin="0,5"
-                                AutomationProperties.Name="Year"/>
-
-                        <!-- Save/Cancel Buttons -->
-                        <StackPanel Grid.Row="7" Grid.Column="0" Grid.ColumnSpan="2"
-                                   Orientation="Horizontal"
-                                   HorizontalAlignment="Right"
-                                   Margin="0,20,0,0">
-                <syncfusion:ButtonAdv Label="Save"
-                    Command="{Binding SaveVehicleCommand}"
-                    Style="{StaticResource ActionButtonStyle}"
-                    Background="{DynamicResource BusBuddy.Brush.Semantic.Success}"
-                    Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}"
-                    AutomationProperties.Name="Save Vehicle"/>
-                <syncfusion:ButtonAdv Label="Cancel"
-                    Command="{Binding CancelEditCommand}"
-                    Style="{StaticResource ActionButtonStyle}"
-                    Background="{DynamicResource ButtonBackgroundBrush}"
-                    AutomationProperties.Name="Cancel Vehicle Edit"/>
-                        </StackPanel>
-
-                        <!-- Loading Indicator -->
-                        <StackPanel Grid.Row="8" Grid.Column="0" Grid.ColumnSpan="2"
-                                   HorizontalAlignment="Center"
-                                   Margin="0,10">
+                    <!-- Detail form -->
+                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                        <StackPanel>
                             <StackPanel.Style>
                                 <Style TargetType="StackPanel">
-                                    <Setter Property="Visibility" Value="Collapsed"/>
                                     <Style.Triggers>
-                                        <DataTrigger Binding="{Binding IsBusy}" Value="True">
-                                            <Setter Property="Visibility" Value="Visible"/>
+                                        <DataTrigger Binding="{Binding SelectedVehicle}" Value="{x:Null}">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
                                         </DataTrigger>
                                     </Style.Triggers>
                                 </Style>
                             </StackPanel.Style>
-                            <TextBlock Text="Processing..."
-                                      HorizontalAlignment="Center"
-                                      Foreground="{DynamicResource PrimaryTextBrush}"/>
+
+                            <TextBlock Text="Vehicle Details" FontSize="16" FontWeight="SemiBold"
+                                       Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"
+                                       Margin="0,0,0,12"/>
+
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+
+                                <TextBlock Grid.Row="0" Grid.Column="0" Text="Bus Number:" Style="{StaticResource FormLabelStyle}"/>
+                                <syncfusion:SfTextBoxExt Grid.Row="0" Grid.Column="1"
+                                                         Text="{Binding SelectedVehicle.BusNumber, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                         Watermark="Enter bus number"
+                                                         AutomationProperties.Name="Bus Number"/>
+
+                                <TextBlock Grid.Row="1" Grid.Column="0" Text="Make:" Style="{StaticResource FormLabelStyle}"/>
+                                <syncfusion:SfTextBoxExt Grid.Row="1" Grid.Column="1"
+                                                         Text="{Binding SelectedVehicle.Make, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                         Watermark="Manufacturer"
+                                                         AutomationProperties.Name="Make"/>
+
+                                <TextBlock Grid.Row="2" Grid.Column="0" Text="Model:" Style="{StaticResource FormLabelStyle}"/>
+                                <syncfusion:SfTextBoxExt Grid.Row="2" Grid.Column="1"
+                                                         Text="{Binding SelectedVehicle.Model, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                         Watermark="Model"
+                                                         AutomationProperties.Name="Model"/>
+
+                                <TextBlock Grid.Row="3" Grid.Column="0" Text="License Plate:" Style="{StaticResource FormLabelStyle}"/>
+                                <syncfusion:SfTextBoxExt Grid.Row="3" Grid.Column="1"
+                                                         Text="{Binding SelectedVehicle.LicenseNumber, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                         Watermark="Plate number"
+                                                         AutomationProperties.Name="License Number"/>
+
+                                <TextBlock Grid.Row="4" Grid.Column="0" Text="VIN:" Style="{StaticResource FormLabelStyle}"/>
+                                <syncfusion:SfTextBoxExt Grid.Row="4" Grid.Column="1"
+                                                         Text="{Binding SelectedVehicle.VINNumber, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                         Watermark="Optional VIN"
+                                                         AutomationProperties.Name="VIN Number"/>
+
+                                <TextBlock Grid.Row="5" Grid.Column="0" Text="Capacity:" Style="{StaticResource FormLabelStyle}"/>
+                                <syncfusion:IntegerTextBox Grid.Row="5" Grid.Column="1"
+                                                           Style="{StaticResource VehicleIntegerTextBox}"
+                                                           Value="{Binding SelectedVehicle.SeatingCapacity, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                           AutomationProperties.Name="Seating Capacity"/>
+
+                                <TextBlock Grid.Row="6" Grid.Column="0" Text="Year:" Style="{StaticResource FormLabelStyle}"/>
+                                <syncfusion:IntegerTextBox Grid.Row="6" Grid.Column="1"
+                                                           Style="{StaticResource VehicleIntegerTextBox}"
+                                                           Value="{Binding SelectedVehicle.Year, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                           AutomationProperties.Name="Year"/>
+
+                                <TextBlock Grid.Row="7" Grid.Column="0" Text="Status:" Style="{StaticResource FormLabelStyle}"/>
+                                <syncfusion:ComboBoxAdv Grid.Row="7" Grid.Column="1"
+                                                        ItemsSource="{Binding OperationalStatusOptions}"
+                                                        SelectedItem="{Binding SelectedVehicle.Status, Mode=TwoWay}"
+                                                        AutomationProperties.Name="Vehicle Status"/>
+
+                                <StackPanel Grid.Row="8" Grid.Column="0" Grid.ColumnSpan="2"
+                                            Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,8,0,0">
+                                    <syncfusion:ButtonAdv Label="Save"
+                                                          Command="{Binding SaveVehicleCommand}"
+                                                          Style="{StaticResource VehicleSuccessButton}"
+                                                          AutomationProperties.Name="Save Vehicle"/>
+                                    <syncfusion:ButtonAdv Label="Cancel"
+                                                          Command="{Binding CancelEditCommand}"
+                                                          Style="{StaticResource VehicleToolbarButton}"
+                                                          AutomationProperties.Name="Cancel Vehicle Edit"/>
+                                </StackPanel>
+
+                                <StackPanel Grid.Row="9" Grid.Column="0" Grid.ColumnSpan="2"
+                                            HorizontalAlignment="Center" Margin="0,12,0,0">
+                                    <StackPanel.Style>
+                                        <Style TargetType="StackPanel">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsBusy}" Value="True">
+                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </StackPanel.Style>
+                                    <TextBlock Text="Processing..."
+                                               Foreground="{DynamicResource BusBuddy.Brush.Text.Secondary}"/>
+                                </StackPanel>
+                            </Grid>
                         </StackPanel>
-                    </Grid>
-                </StackPanel>
-            </ScrollViewer>
+                    </ScrollViewer>
+                </Grid>
+            </Border>
         </Grid>
 
-        <!-- Status Bar -->
-    <Border Grid.Row="3"
-           Background="{DynamicResource BusBuddy.Brush.Panel.Header}"
-               Height="30"
-               Margin="0,10,0,0"
-               CornerRadius="2">
+        <!-- Status bar -->
+        <Border Grid.Row="3" Background="{DynamicResource BusBuddy.Brush.Panel.Header}"
+                Height="32" Margin="0,12,0,0" CornerRadius="2">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
@@ -333,19 +327,17 @@
                 </Grid.ColumnDefinitions>
 
                 <TextBlock Grid.Column="0"
-                          Text="{Binding StatusMessage}"
-                          Foreground="{DynamicResource BusBuddy.Brush.Text.Secondary}"
-                          VerticalAlignment="Center"
-                          Margin="10,0"/>
+                           Text="{Binding StatusMessage}"
+                           Foreground="{DynamicResource BusBuddy.Brush.Text.Secondary}"
+                           VerticalAlignment="Center" Margin="12,0"/>
 
                 <TextBlock Grid.Column="1"
-                          Foreground="{DynamicResource BusBuddy.Brush.Text.Secondary}"
-                          VerticalAlignment="Center"
-                          Margin="0,0,10,0">
+                           Foreground="{DynamicResource BusBuddy.Brush.Text.Secondary}"
+                           VerticalAlignment="Center" Margin="0,0,12,0">
                     <TextBlock.Text>
-                        <MultiBinding StringFormat="Total Vehicles: {0} | Selected: {1}">
+                        <MultiBinding StringFormat="Total: {0} | Selected: {1}">
                             <Binding Path="TotalVehicleCount"/>
-                            <Binding Path="SelectedVehicle.BusNumber"/>
+                            <Binding Path="SelectedVehicle.BusNumber" FallbackValue="—"/>
                         </MultiBinding>
                     </TextBlock.Text>
                 </TextBlock>

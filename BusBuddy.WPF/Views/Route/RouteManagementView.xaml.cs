@@ -7,9 +7,10 @@ using System.Windows.Controls.Primitives;
 using System.Windows.Automation;
 using System.Windows.Media;
 using System.Windows.Threading;
-using Syncfusion.SfSkinManager; // Syncfusion WPF Theming — see official docs: https://help.syncfusion.com/wpf/themes/overview
+using Syncfusion.SfSkinManager;
+using BusBuddy.WPF;
+using Microsoft.Extensions.DependencyInjection;
 using BusBuddy.WPF.ViewModels.Route;
-using CommunityToolkit.Mvvm.Input; // IAsyncRelayCommand
 
 namespace BusBuddy.WPF.Views.Route
 {
@@ -35,10 +36,10 @@ namespace BusBuddy.WPF.Views.Route
                 // Ensure DataContext is set so bindings/commands are active
                 try
                 {
-                    if (this.DataContext is null)
+                    if (DataContext is null)
                     {
-                        this.DataContext = new RouteManagementViewModel();
-                        Logger.Information("RouteManagementView DataContext set to RouteManagementViewModel");
+                        DataContext = App.ServiceProvider.GetRequiredService<RouteManagementViewModel>();
+                        Logger.Information("RouteManagementView DataContext resolved from DI");
                     }
                 }
                 catch (Exception ex)
@@ -86,30 +87,12 @@ namespace BusBuddy.WPF.Views.Route
                 _auditRun = true;
             }
             _loadStartedUtc = DateTime.UtcNow;
-            var vm = DataContext;
 
             try
             {
-                // Preferred: await a documented async command exposed by the ViewModel
-                if (vm is not null &&
-                    vm.GetType().GetProperty("RefreshCommand")?.GetValue(vm) is IAsyncRelayCommand asyncCmd)
+                if (DataContext is RouteManagementViewModel routeVm)
                 {
-                    await asyncCmd.ExecuteAsync(null);
-                }
-                else
-                {
-                    // Fallback: reflectively await LoadRoutesAsync if present (public or non-public)
-                    var mi = vm?.GetType().GetMethod(
-                        "LoadRoutesAsync",
-                        System.Reflection.BindingFlags.Instance |
-                        System.Reflection.BindingFlags.Public |
-                        System.Reflection.BindingFlags.NonPublic);
-
-                    if (mi != null && typeof(Task).IsAssignableFrom(mi.ReturnType))
-                    {
-                        var task = (Task)mi.Invoke(vm, null)!;
-                        await task.ConfigureAwait(true);
-                    }
+                    await routeVm.InitializeAsync().ConfigureAwait(true);
                 }
 
                 _isDataReady = true;
@@ -135,9 +118,9 @@ namespace BusBuddy.WPF.Views.Route
         {
             try
             {
-                if (DataContext is RouteManagementViewModel vm && vm.AssignStudentsCommand.CanExecute(null))
+                if (DataContext is RouteManagementViewModel vm && vm.OpenRouteAssignmentCommand.CanExecute(null))
                 {
-                    vm.AssignStudentsCommand.Execute(null);
+                    vm.OpenRouteAssignmentCommand.Execute(null);
                 }
             }
             catch (Exception ex)

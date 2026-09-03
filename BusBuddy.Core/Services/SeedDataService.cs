@@ -643,6 +643,43 @@ Jordan,Lee,3,Sam,Lee,200 Oak Ave,Oakridge,CO,County,,555-0101,,,,,,,,
                     return 0;
                 }
 
+                List<Destination> activeSchools;
+                try
+                {
+                    activeSchools = await context.Destinations
+                        .Where(d => d.IsActive && !d.IsDeleted && d.DestinationType == DestinationTypes.School)
+                        .ToListAsync();
+                }
+                catch (InvalidOperationException)
+                {
+                    activeSchools = context.Destinations
+                        .Where(d => d.IsActive && !d.IsDeleted && d.DestinationType == DestinationTypes.School)
+                        .ToList();
+                }
+
+                if (activeSchools.Count == 1)
+                {
+                    var school = activeSchools[0];
+                    foreach (var student in students)
+                    {
+                        student.School = school.Name;
+                        student.DestinationId = school.DestinationId;
+                    }
+
+                    Logger.Information(
+                        "CSV import linked {Count} students to sole active school {School} (DestinationId={DestinationId})",
+                        students.Count,
+                        school.Name,
+                        school.DestinationId);
+                }
+                else if (activeSchools.Count > 1)
+                {
+                    foreach (var student in students)
+                    {
+                        BusBuddy.Core.Utilities.StudentSchoolLinker.SyncDestinationFromSchoolName(student, activeSchools);
+                    }
+                }
+
                 context.Families.AddRange(families);
                 context.Students.AddRange(students);
                 await context.SaveChangesAsync();

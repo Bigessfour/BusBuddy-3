@@ -16,6 +16,9 @@
                 <!-- Load Syncfusion styles (no duplicate brushes, minimal control styles) -->
                 <ResourceDictionary Source="Resources/SyncfusionStyles.xaml" />
 
+                <!-- Form input alignment + caret-friendly typography (app-wide) -->
+                <ResourceDictionary Source="Resources/BusBuddyInputStyles.xaml" />
+
                 <!-- One Fluent brush dictionary at a time; SyncfusionThemeManager swaps this on theme change -->
                 <ResourceDictionary Source="Resources/Themes/FluentDarkTheme.xaml"/>
 

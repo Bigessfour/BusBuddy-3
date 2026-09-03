@@ -27,8 +27,17 @@ namespace BusBuddy.WPF.Views.Student
     public partial class StudentsView : ChromelessWindow
     {
         private static readonly ILogger Logger = Log.ForContext<StudentsView>();
-        public StudentsView()
+        private readonly StudentsViewStartup _startup;
+        private readonly int? _editStudentId;
+
+        public StudentsView() : this(StudentsViewStartup.None, null)
         {
+        }
+
+        public StudentsView(StudentsViewStartup startup, int? editStudentId)
+        {
+            _startup = startup;
+            _editStudentId = editStudentId;
             InitializeComponent();
 
             // Apply Syncfusion theme via central manager (FluentDark with FluentLight fallback)
@@ -51,7 +60,10 @@ namespace BusBuddy.WPF.Views.Student
                 else if (sp != null)
                 {
                     var factory = sp.GetService<IBusBuddyDbContextFactory>() ?? new BusBuddyDbContextFactory();
-                    DataContext = new StudentsViewModel(factory, sp.GetService<AddressService>() ?? new AddressService());
+                    DataContext = new StudentsViewModel(
+                        factory,
+                        sp.GetService<IStudentService>(),
+                        sp.GetService<AddressService>() ?? new AddressService());
                     Logger.Information("StudentsView DataContext constructed via factory fallback");
                 }
                 else
@@ -67,7 +79,12 @@ namespace BusBuddy.WPF.Views.Student
                 DataContext = new StudentsViewModel();
             }
 
-            // Global interaction diagnostics (button, selection, text, validation) for observability
+            if (DataContext is StudentsViewModel viewModel && _editStudentId.HasValue)
+            {
+                viewModel.PendingEditStudentId = _editStudentId;
+            }
+
+            // Global interaction diagnostics
             try { AddHandler(ButtonBase.ClickEvent, new RoutedEventHandler(OnAnyButtonClick), true); } catch { }
             try { AddHandler(Selector.SelectionChangedEvent, new SelectionChangedEventHandler(OnAnySelectionChanged), true); } catch { }
             try { AddHandler(TextBoxBase.TextChangedEvent, new TextChangedEventHandler(OnAnyTextChanged), true); } catch { }
@@ -100,6 +117,11 @@ namespace BusBuddy.WPF.Views.Student
                     var editReady = vm.EditStudentCommand != null;
                     var delReady = vm.DeleteStudentCommand != null;
                     Logger.Information("Command readiness — Add:{Add} Edit:{Edit} Delete:{Del}", addReady, editReady, delReady);
+
+                    if (_startup != StudentsViewStartup.None)
+                    {
+                        _ = RunStartupActionAsync(vm);
+                    }
 
                     // If no selection yet, select first row to enable edit/delete
                     if (vm.SelectedStudent == null && vm.Students.Count > 0)
@@ -143,6 +165,18 @@ namespace BusBuddy.WPF.Views.Student
                 }), System.Windows.Threading.DispatcherPriority.Background);
             }
             catch { }
+        }
+
+        private async System.Threading.Tasks.Task RunStartupActionAsync(StudentsViewModel vm)
+        {
+            try
+            {
+                await vm.CompleteStartupActionAsync(_startup).ConfigureAwait(true);
+            }
+            catch (System.Exception ex)
+            {
+                Logger.Error(ex, "StudentsView startup action {Startup} failed", _startup);
+            }
         }
 
         private void OnAnyButtonClick(object? sender, RoutedEventArgs e)

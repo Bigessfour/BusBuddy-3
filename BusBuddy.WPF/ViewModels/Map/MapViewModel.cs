@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System.Windows.Input;
 using BusBuddy.WPF.Commands; // Use local RelayCommand instead
 using BusBuddy.Core.Mapping;
+using BusBuddy.Core.Services.GoogleMaps;
 using BusBuddy.Core.Services.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
@@ -678,41 +679,13 @@ namespace BusBuddy.WPF.ViewModels.Map
         /// </summary>
         private async Task<Point[]?> TryRefreshDrivePathAsync(RouteModel route)
         {
-            if (_routingService is null)
+            var refresh = await RouteDrivePathRefresher.TryRefreshAsync(_routingService, route).ConfigureAwait(true);
+            if (!refresh.Success || refresh.Path is null || refresh.Path.Points.Count == 0)
             {
                 return null;
             }
 
-            var stops = RouteWaypointSerializer.Parse(route.WaypointsJson);
-            if (stops.Count < 2)
-            {
-                return null;
-            }
-
-            try
-            {
-                var origin = stops[0];
-                var destination = stops[^1];
-                var intermediates = stops.Skip(1).Take(stops.Count - 2).ToList();
-                var path = await _routingService.ComputeDrivePathAsync(origin, destination, intermediates);
-                if (!path.Succeeded || path.Points.Count == 0)
-                {
-                    Logger.Warning("Drive path refresh skipped for route {RouteId}: {Error}", route.RouteId, path.Error);
-                    return null;
-                }
-
-                route.WaypointsJson = RouteWaypointSerializer.FromEncodedPolyline(
-                    path.EncodedPolyline!, path.Points);
-                Logger.Information(
-                    "Drive path refreshed RouteId={RouteId} DistanceMeters={Distance} Duration={Duration}",
-                    route.RouteId, path.DistanceMeters, path.Duration);
-                return path.Points.Select(p => new Point(p.Latitude, p.Longitude)).ToArray();
-            }
-            catch (Exception ex)
-            {
-                Logger.Warning(ex, "Drive path refresh failed — using stored waypoints");
-                return null;
-            }
+            return refresh.Path.Points.Select(p => new Point(p.Latitude, p.Longitude)).ToArray();
         }
 
         private async Task ExportRouteDataAsync()

@@ -3,30 +3,61 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using Syncfusion.Windows.Controls.Input;
+using Syncfusion.Windows.Tools.Controls;
 
 namespace BusBuddy.WPF.Utilities;
 
 /// <summary>
-/// Syncfusion SfMaskedEdit and SfTextBoxExt ignore NumPad keys on Windows when focus is on an inner TextBox.
+/// Syncfusion SfTextBoxExt, SfMaskedEdit, and editable ComboBoxAdv host an inner <see cref="TextBox"/>
+/// that ignores NumPad keys on Windows. This helper injects digits into the caret host.
+/// Register once at app startup via <see cref="RegisterApplicationWide"/>.
 /// </summary>
 public static class NumpadInputHelper
 {
-    public static void HandlePreviewKeyDown(KeyEventArgs e)
+    private static bool _registered;
+
+    /// <summary>Attach a tunneling PreviewKeyDown handler to all <see cref="Window"/> instances.</summary>
+    public static void RegisterApplicationWide()
     {
-        var isNumPadDigit = e.Key is >= Key.NumPad0 and <= Key.NumPad9;
-        var isDecimal = e.Key is Key.Decimal or Key.OemPeriod;
-        if (!isNumPadDigit && !isDecimal)
+        if (_registered)
         {
             return;
         }
 
-        var insert = isNumPadDigit
-            ? ((int)(e.Key - Key.NumPad0)).ToString()
-            : ".";
+        _registered = true;
+        EventManager.RegisterClassHandler(
+            typeof(Window),
+            UIElement.PreviewKeyDownEvent,
+            new KeyEventHandler(OnWindowPreviewKeyDown),
+            handledEventsToo: true);
+    }
+
+    private static void OnWindowPreviewKeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Handled)
+        {
+            return;
+        }
+
+        HandlePreviewKeyDown(e);
+    }
+
+    public static void HandlePreviewKeyDown(KeyEventArgs e)
+    {
+        if (!TryGetInsertText(e.Key, out var insert))
+        {
+            return;
+        }
+
+        if (TryInsertIntoFocusedTextBox(insert))
+        {
+            e.Handled = true;
+            return;
+        }
 
         if (TryGetHost<SfTextBoxExt>(out var textExt))
         {
-            InsertIntoTextBox(textExt, insert);
+            InsertIntoSfTextBoxExt(textExt, insert);
             e.Handled = true;
             return;
         }
@@ -38,11 +69,53 @@ public static class NumpadInputHelper
             return;
         }
 
-        if (TryGetHost<TextBox>(out var textBox))
+        if (TryGetHost<ComboBoxAdv>(out var combo) && combo.IsEditable)
         {
-            InsertIntoTextBox(textBox, insert);
-            e.Handled = true;
+            if (combo.Template?.FindName("PART_EditableTextBox", combo) is TextBox comboEditor)
+            {
+                InsertIntoTextBox(comboEditor, insert);
+                e.Handled = true;
+            }
         }
+    }
+
+    private static bool TryGetInsertText(Key key, out string insert)
+    {
+        insert = string.Empty;
+        if (key is >= Key.NumPad0 and <= Key.NumPad9)
+        {
+            insert = ((int)(key - Key.NumPad0)).ToString();
+            return true;
+        }
+
+        if (key is Key.Decimal or Key.OemPeriod)
+        {
+            insert = ".";
+            return true;
+        }
+
+        return false;
+    }
+
+    private static bool TryInsertIntoFocusedTextBox(string insert)
+    {
+        if (Keyboard.FocusedElement is TextBox focusedTextBox)
+        {
+            InsertIntoTextBox(focusedTextBox, insert);
+            return true;
+        }
+
+        if (Keyboard.FocusedElement is DependencyObject focused)
+        {
+            var inner = FindDescendant<TextBox>(focused);
+            if (inner is not null)
+            {
+                InsertIntoTextBox(inner, insert);
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static bool TryGetHost<T>(out T host) where T : DependencyObject
@@ -82,23 +155,45 @@ public static class NumpadInputHelper
         return null;
     }
 
-    private static void InsertIntoTextBox(SfTextBoxExt textExt, string insert)
+    private static T? FindDescendant<T>(DependencyObject? parent) where T : DependencyObject
     {
+        if (parent is null)
+        {
+            return null;
+        }
+
+        var count = VisualTreeHelper.GetChildrenCount(parent);
+        for (var i = 0; i < count; i++)
+        {
+            var child = VisualTreeHelper.GetChild(parent, i);
+            if (child is T match)
+            {
+                return match;
+            }
+
+            var nested = FindDescendant<T>(child);
+            if (nested is not null)
+            {
+                return nested;
+            }
+        }
+
+        return null;
+    }
+
+    private static void InsertIntoSfTextBoxExt(SfTextBoxExt textExt, string insert)
+    {
+        if (textExt.Template?.FindName("PART_TextBox", textExt) is TextBox inner)
+        {
+            InsertIntoTextBox(inner, insert);
+            return;
+        }
+
         var start = textExt.SelectionStart;
         var len = textExt.SelectionLength;
         var current = textExt.Text ?? string.Empty;
-        if (len > 0 && start >= 0 && start + len <= current.Length)
-        {
-            current = current.Remove(start, len);
-        }
-
-        if (start < 0 || start > current.Length)
-        {
-            start = current.Length;
-        }
-
-        textExt.Text = current.Insert(start, insert);
-        textExt.SelectionStart = start + insert.Length;
+        textExt.Text = Splice(current, start, len, insert);
+        textExt.SelectionStart = Math.Min(textExt.Text?.Length ?? 0, start + insert.Length);
         textExt.SelectionLength = 0;
     }
 
@@ -107,26 +202,29 @@ public static class NumpadInputHelper
         var start = textBox.SelectionStart;
         var len = textBox.SelectionLength;
         var current = textBox.Text ?? string.Empty;
-        if (len > 0 && start >= 0 && start + len <= current.Length)
-        {
-            current = current.Remove(start, len);
-        }
-
-        if (start < 0 || start > current.Length)
-        {
-            start = current.Length;
-        }
-
-        textBox.Text = current.Insert(start, insert);
-        textBox.SelectionStart = start + insert.Length;
+        textBox.Text = Splice(current, start, len, insert);
+        textBox.SelectionStart = Math.Min(textBox.Text?.Length ?? 0, start + insert.Length);
         textBox.SelectionLength = 0;
     }
 
     private static void InsertIntoMaskedEdit(SfMaskedEdit maskedEdit, string insert)
     {
+        if (maskedEdit.Template?.FindName("PART_TextBox", maskedEdit) is TextBox inner)
+        {
+            InsertIntoTextBox(inner, insert);
+            return;
+        }
+
         var current = maskedEdit.Value?.ToString() ?? string.Empty;
         var start = maskedEdit.SelectionStart;
         var len = maskedEdit.SelectionLength;
+        maskedEdit.Value = Splice(current, start, len, insert);
+        maskedEdit.SelectionStart = Math.Min(maskedEdit.Value?.ToString()?.Length ?? 0, start + insert.Length);
+        maskedEdit.SelectionLength = 0;
+    }
+
+    private static string Splice(string current, int start, int len, string insert)
+    {
         if (len > 0 && start >= 0 && start + len <= current.Length)
         {
             current = current.Remove(start, len);
@@ -137,8 +235,6 @@ public static class NumpadInputHelper
             start = current.Length;
         }
 
-        maskedEdit.Value = current.Insert(start, insert);
-        maskedEdit.SelectionStart = start + insert.Length;
-        maskedEdit.SelectionLength = 0;
+        return current.Insert(start, insert);
     }
 }

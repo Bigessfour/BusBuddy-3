@@ -4,6 +4,8 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:syncfusion="http://schemas.syncfusion.com/wpf"
+             xmlns:sys="clr-namespace:System;assembly=mscorlib"
+             xmlns:models="clr-namespace:BusBuddy.Core.Models;assembly=BusBuddy.Core"
              mc:Ignorable="d"
              d:DesignHeight="600" d:DesignWidth="1000">
 
@@ -13,6 +15,13 @@
                 <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/SyncfusionV30_Validated_ResourceDictionary.xaml"/>
             </ResourceDictionary.MergedDictionaries>
             <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+            <ObjectDataProvider x:Key="RouteTimeSlotValues"
+                                MethodName="GetValues"
+                                ObjectType="{x:Type sys:Enum}">
+                <ObjectDataProvider.MethodParameters>
+                    <x:Type TypeName="models:RouteTimeSlot" />
+                </ObjectDataProvider.MethodParameters>
+            </ObjectDataProvider>
             <Style x:Key="RouteToolbarButton" TargetType="syncfusion:ButtonAdv">
                 <Setter Property="SizeMode" Value="Normal"/>
                 <Setter Property="IconWidth" Value="0"/>
@@ -99,7 +108,7 @@
                     <!-- Manage Selected Route (opens full assignment UI) -->
             <syncfusion:ButtonAdv Name="ManageRouteButton" Label="Manage Route"
                 Style="{StaticResource RouteToolbarButton}"
-                Command="{Binding AssignStudentsCommand}"
+                Command="{Binding OpenRouteAssignmentCommand}"
                 IsEnabled="{Binding IsRouteSelected}"
                 SizeMode="Normal"
                 CornerRadius="4"
@@ -136,38 +145,16 @@
                 Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}"
                 AutomationProperties.Name="Generate Transfer Routes"
                 AutomationProperties.HelpText="Generate separate transfer fleet drafts"/>
-            <syncfusion:ButtonAdv Name="ViewMapButton" Label="View Map"
+            <syncfusion:ButtonAdv Name="RefreshDrivePathButton" Label="Drive Path"
                             Style="{StaticResource RouteToolbarButton}"
-                            Command="{Binding ViewMapCommand}"
+                            Command="{Binding RefreshDrivePathCommand}"
                 SizeMode="Normal"
                 CornerRadius="4"
                 Background="{DynamicResource BusBuddy.Brush.Semantic.Info}"
                 Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}"
-                AutomationProperties.Name="View Map"
-                AutomationProperties.HelpText="Open route map in map view"/>
+                AutomationProperties.Name="Refresh Drive Path"
+                AutomationProperties.HelpText="Compute road polyline via Google Routes API for the selected route"/>
                     <Separator Margin="10,0"/>
-
-                    <!-- Assignment Operations -->
-            <syncfusion:ButtonAdv Name="AssignStudentsButton" Label="Assign Students"
-                Style="{StaticResource RouteToolbarButton}"
-                Command="{Binding AssignStudentsCommand}"
-                IsEnabled="{Binding IsRouteSelected}"
-                SizeMode="Normal"
-                CornerRadius="4"
-                Background="{DynamicResource BusBuddy.Brush.SafetyOrange}"
-                Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}"
-                AutomationProperties.Name="Assign Students to Route"
-                AutomationProperties.HelpText="Assign students to the selected route"/>
-            <syncfusion:ButtonAdv Name="AssignVehicleButton" Label="Assign Vehicle"
-                Style="{StaticResource RouteToolbarButton}"
-                Command="{Binding AssignVehicleCommand}"
-                IsEnabled="{Binding IsRouteSelected}"
-                SizeMode="Normal"
-                CornerRadius="4"
-                Background="{DynamicResource BusBuddy.Brush.Semantic.Warning}"
-                Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}"
-                AutomationProperties.Name="Assign Vehicle to Route"
-                AutomationProperties.HelpText="Assign a bus to the selected route"/>
                 </StackPanel>
 
                 <!-- Export and Print Actions -->
@@ -202,13 +189,6 @@
                             Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}"
                             AutomationProperties.Name="Print Schedule"
                             AutomationProperties.HelpText="Print route schedules"/>
-            <syncfusion:ButtonAdv Name="PrintRouteMapsButton" Label="Route Map"
-                            Style="{StaticResource RouteToolbarButton}"
-                            Command="{Binding PrintRouteMapsCommand}"
-                Background="{DynamicResource BusBuddy.Brush.Semantic.Warning}" Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}"
-                            AutomationProperties.Name="Print Route Maps"
-                            AutomationProperties.HelpText="Print route maps for the selected route"/>
-
                     <Separator Margin="10,0"/>
 
                     <!-- Quick Actions -->
@@ -268,11 +248,50 @@
             </syncfusion:SfDataGrid.Columns>
         </syncfusion:SfDataGrid>
 
-            <!-- Stops editor (DataContext expected to be RouteAssignmentViewModel when opened in Manage dialog) -->
-            <Border Grid.Row="1" Background="{DynamicResource BusBuddy.Brush.Surface.Medium}" CornerRadius="3" Padding="8">
-                <StackPanel>
-                    <TextBlock Text="Tip: Select a route and click 'Manage Route' to add/move/delete stops and assign students."/>
-                </StackPanel>
+            <!-- Vehicle assignment panel -->
+            <Border Grid.Row="1" Background="{DynamicResource BusBuddy.Brush.Surface.Medium}" CornerRadius="3" Padding="10,8">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="180"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="140"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0" Text="Assign bus:" VerticalAlignment="Center" Margin="0,0,8,0"
+                               Foreground="{DynamicResource BusBuddy.Brush.Text.Secondary}"/>
+                    <syncfusion:ComboBoxAdv Grid.Column="1"
+                                            Name="AssignBusCombo"
+                                            ItemsSource="{Binding AvailableBuses}"
+                                            DisplayMemberPath="BusNumber"
+                                            SelectedItem="{Binding SelectedBus, Mode=TwoWay}"
+                                            MaxDropDownHeight="240"
+                                            AutomationProperties.Name="Assign Bus Selector"
+                                            AutomationProperties.HelpText="Select an active bus to assign to the selected route"/>
+                    <TextBlock Grid.Column="2" Text="Time slot:" VerticalAlignment="Center" Margin="16,0,8,0"
+                               Foreground="{DynamicResource BusBuddy.Brush.Text.Secondary}"/>
+                    <syncfusion:ComboBoxAdv Grid.Column="3"
+                                            Name="AssignTimeSlotCombo"
+                                            SelectedItem="{Binding SelectedTimeSlot, Mode=TwoWay}"
+                                            ItemsSource="{Binding Source={StaticResource RouteTimeSlotValues}}"
+                                            AutomationProperties.Name="Assign Time Slot"
+                                            AutomationProperties.HelpText="AM, PM, or both for vehicle assignment"/>
+                    <syncfusion:ButtonAdv Grid.Column="4"
+                                          Name="ApplyVehicleAssignmentButton"
+                                          Label="Apply Assignment"
+                                          Style="{StaticResource RouteToolbarButton}"
+                                          Command="{Binding AssignVehicleCommand}"
+                                          Margin="12,0,0,0"
+                                          Background="{DynamicResource BusBuddy.Brush.Semantic.Warning}"
+                                          Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}"
+                                          AutomationProperties.Name="Apply Vehicle Assignment"
+                                          AutomationProperties.HelpText="Assign the selected bus to the selected route for the chosen time slot"/>
+                    <TextBlock Grid.Column="5" VerticalAlignment="Center" Margin="16,0,0,0"
+                               Foreground="{DynamicResource BusBuddy.Brush.Text.Secondary}"
+                               TextWrapping="Wrap"
+                               Text="Select a route in the grid, pick a bus and time slot, then click Apply Assignment or use the toolbar button."/>
+                </Grid>
             </Border>
         </Grid>
 
@@ -284,8 +303,15 @@
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
-                <TextBlock Grid.Column="0" Text="{Binding StatusMessage}"
-                          VerticalAlignment="Center" Foreground="{DynamicResource BusBuddy.Brush.Text.Secondary}"/>
+                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding StatusMessage}"
+                              VerticalAlignment="Center" Foreground="{DynamicResource BusBuddy.Brush.Text.Secondary}"/>
+                    <TextBlock Text="Loading..."
+                              Margin="12,0,0,0"
+                              FontStyle="Italic"
+                              Foreground="{DynamicResource BusBuddy.Brush.Primary}"
+                              Visibility="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                </StackPanel>
 
                 <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
                     <TextBlock Text="Total Routes: " Foreground="{DynamicResource BusBuddy.Brush.Text.Secondary}"/>

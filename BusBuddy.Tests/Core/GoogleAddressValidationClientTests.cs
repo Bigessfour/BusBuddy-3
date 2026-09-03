@@ -16,7 +16,7 @@ public class GoogleAddressValidationClientTests
     private static GoogleMapsOptions TestOptions => new()
     {
         ApiKey = "test-key",
-        QuotaProject = "new-coursera-490518",
+        QuotaProject = "busbuddy-507301",
         EnableUspsCass = true,
         RegionCode = "US"
     };

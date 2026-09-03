@@ -100,34 +100,7 @@ public partial class PickupStopForm : ChromelessWindow
 
     private void PickupStopForm_PreviewKeyDown(object sender, KeyEventArgs e)
     {
-        var isNumPadDigit = e.Key is >= Key.NumPad0 and <= Key.NumPad9;
-        var isDecimal = e.Key is Key.Decimal or Key.OemPeriod;
-        if (!isNumPadDigit && !isDecimal || Keyboard.FocusedElement is not SfTextBoxExt textExt)
-        {
-            return;
-        }
-
-        var insert = isNumPadDigit
-            ? ((int)(e.Key - Key.NumPad0)).ToString()
-            : ".";
-
-        var start = textExt.SelectionStart;
-        var len = textExt.SelectionLength;
-        var current = textExt.Text ?? string.Empty;
-        if (len > 0 && start >= 0 && start + len <= current.Length)
-        {
-            current = current.Remove(start, len);
-        }
-
-        if (start < 0 || start > current.Length)
-        {
-            start = current.Length;
-        }
-
-        textExt.Text = current.Insert(start, insert);
-        textExt.SelectionStart = start + insert.Length;
-        textExt.SelectionLength = 0;
-        e.Handled = true;
+        NumpadInputHelper.HandlePreviewKeyDown(e);
     }
 
     private void StopPickMap_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)

@@ -4,7 +4,7 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
 using System.Runtime.CompilerServices;
-using System.Threading.Tasks;
+using System.Threading;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
@@ -14,19 +14,20 @@ using BusBuddy.WPF.Views.Map;
 using System.Text.RegularExpressions;
 using BusBuddy.Core.Models;
 using BusBuddy.Core.Services;
+using BusBuddy.Core.Services.GoogleMaps;
 using BusBuddy.Core.Services.RouteDetermination;
 using BusBuddy.Core;
 using BusBuddy.Core.Data;
 using BusBuddy.Core.Data.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using BusBuddy.Core.Utilities;
 using BusBuddy.WPF;
 using BusBuddy.WPF.Commands;
 using CommunityToolkit.Mvvm.Input;
 using Serilog;
 using CommunityToolkit.Mvvm.Messaging;
 using BusBuddy.WPF.Messages;
-using BusBuddy.Core.Utilities;
 using BusBuddy.WPF.Utilities;
 
 namespace BusBuddy.WPF.ViewModels.Student
@@ -42,6 +43,9 @@ namespace BusBuddy.WPF.ViewModels.Student
         private readonly BusBuddyDbContext _context;
         private readonly AddressService _addressService;
         private readonly IStudentService? _studentService; // Prefer service for persistence
+        private readonly IMapsGeoService? _mapsGeoService;
+        private readonly IPlacesAutocompleteService? _placesAutocomplete;
+        private readonly PlacesAddressAutocompleteCoordinator _addressAutocomplete;
         private Core.Models.Student _student;
         private string _formTitle = "Add New Student";
         private string _addressValidationMessage = string.Empty;
@@ -60,9 +64,24 @@ namespace BusBuddy.WPF.ViewModels.Student
         }
 
         // Primary constructor for DI usage
-        public StudentFormViewModel(IStudentService studentService, Core.Models.Student? student = null, bool enableValidation = true)
+        public StudentFormViewModel(
+            IStudentService studentService,
+            Core.Models.Student? student = null,
+            bool enableValidation = true,
+            IMapsGeoService? mapsGeoService = null,
+            IPlacesAutocompleteService? placesAutocomplete = null)
         {
             _studentService = studentService;
+            _mapsGeoService = mapsGeoService ?? App.ServiceProvider?.GetService<IMapsGeoService>();
+            _placesAutocomplete = placesAutocomplete ?? App.ServiceProvider?.GetService<IPlacesAutocompleteService>();
+            _addressAutocomplete = new PlacesAddressAutocompleteCoordinator(_placesAutocomplete);
+            _addressAutocomplete.PropertyChanged += (_, e) =>
+            {
+                if (e.PropertyName == nameof(PlacesAddressAutocompleteCoordinator.IsPopupOpen))
+                {
+                    OnPropertyChanged(nameof(IsAddressSuggestionPopupOpen));
+                }
+            };
             _context = TryCreateDbContextViaDi() ?? new BusBuddyDbContext();
             _addressService = new AddressService();
             DisableAddressValidation = !enableValidation; // Allow tests to enable validation
@@ -86,6 +105,7 @@ namespace BusBuddy.WPF.ViewModels.Student
 
             try { _student.PropertyChanged += OnStudentPropertyChanged; } catch { }
             InitializeCommands();
+            RegisterCatalogRefreshHandlers();
             _ = LoadDataAsync();
             if (DisableAddressValidation)
             {
@@ -97,6 +117,16 @@ namespace BusBuddy.WPF.ViewModels.Student
         // Fallback constructor when DI is unavailable
         public StudentFormViewModel(Core.Models.Student? student = null, bool enableValidation = true)
         {
+            _mapsGeoService = App.ServiceProvider?.GetService<IMapsGeoService>();
+            _placesAutocomplete = App.ServiceProvider?.GetService<IPlacesAutocompleteService>();
+            _addressAutocomplete = new PlacesAddressAutocompleteCoordinator(_placesAutocomplete);
+            _addressAutocomplete.PropertyChanged += (_, e) =>
+            {
+                if (e.PropertyName == nameof(PlacesAddressAutocompleteCoordinator.IsPopupOpen))
+                {
+                    OnPropertyChanged(nameof(IsAddressSuggestionPopupOpen));
+                }
+            };
             _context = TryCreateDbContextViaDi() ?? new BusBuddyDbContext();
             _addressService = new AddressService();
             DisableAddressValidation = !enableValidation; // Allow tests to enable validation
@@ -119,12 +149,23 @@ namespace BusBuddy.WPF.ViewModels.Student
 
             try { _student.PropertyChanged += OnStudentPropertyChanged; } catch { }
             InitializeCommands();
+            RegisterCatalogRefreshHandlers();
             _ = LoadDataAsync();
             if (DisableAddressValidation)
             {
                 AddressValidationMessage = "Address validation disabled";
                 AddressValidationColor = Brushes.Gray;
             }
+        }
+
+        private void RegisterCatalogRefreshHandlers()
+        {
+            WeakReferenceMessenger.Default.Register<PickupStopCatalogChangedMessage>(
+                this,
+                async (_, _) => await LoadPickupStopsAsync().ConfigureAwait(true));
+            WeakReferenceMessenger.Default.Register<SchoolCatalogChangedMessage>(
+                this,
+                async (_, _) => await LoadSchoolsAsync().ConfigureAwait(true));
         }
 
         #region Properties
@@ -189,10 +230,7 @@ namespace BusBuddy.WPF.ViewModels.Student
         public ObservableCollection<string> AvailableRoutes { get; }
 
         /// <summary>Grade pick list for ComboBoxAdv ItemsSource (replaces XAML PriorityBinding fallback).</summary>
-        public IReadOnlyList<string> AvailableGrades { get; } =
-        [
-            "K", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"
-        ];
+        public IReadOnlyList<string> AvailableGrades { get; } = StudentGradeCatalog.All;
 
         /// <summary>US state abbreviations for ComboBoxAdv ItemsSource (replaces XAML PriorityBinding fallback).</summary>
         public IReadOnlyList<string> AvailableStates { get; } =
@@ -421,6 +459,15 @@ namespace BusBuddy.WPF.ViewModels.Student
             set => SetProperty(ref _disableAddressValidation, value);
         }
 
+        /// <summary>Google Places suggestions for the home-address field (empty when key missing).</summary>
+        public ObservableCollection<PlaceAutocompleteSuggestion> AddressSuggestions => _addressAutocomplete.Suggestions;
+
+        /// <summary>True when Places Autocomplete is configured for type-ahead.</summary>
+        public bool IsAddressAutocompleteEnabled =>
+            _addressAutocomplete.IsEnabled && !DisableAddressValidation;
+
+        public bool IsAddressSuggestionPopupOpen => _addressAutocomplete.IsPopupOpen;
+
         #endregion
 
         #region Commands
@@ -484,6 +531,61 @@ namespace BusBuddy.WPF.ViewModels.Student
 
         #region Command Handlers
 
+        public async Task RefreshAddressSuggestionsAsync(string? input) =>
+            await _addressAutocomplete.RefreshSuggestionsAsync(input).ConfigureAwait(true);
+
+        /// <summary>
+        /// Applies a Places suggestion to street/city/state/ZIP. Validation still runs on save.
+        /// </summary>
+        public async Task ApplyAddressSuggestionAsync(PlaceAutocompleteSuggestion? suggestion)
+        {
+            var details = await _addressAutocomplete.ApplySuggestionAsync(suggestion).ConfigureAwait(true);
+            if (suggestion is null)
+            {
+                return;
+            }
+
+            if (details is null)
+            {
+                AddressValidationMessage = "Could not load address details for that suggestion.";
+                AddressValidationColor = Brushes.Orange;
+                return;
+            }
+
+            if (!string.IsNullOrWhiteSpace(details.StreetLine))
+            {
+                Student.HomeAddress = details.StreetLine;
+            }
+            else if (!string.IsNullOrWhiteSpace(suggestion.PrimaryText))
+            {
+                Student.HomeAddress = suggestion.PrimaryText;
+            }
+
+            if (!string.IsNullOrWhiteSpace(details.City))
+            {
+                Student.City = details.City;
+            }
+
+            if (!string.IsNullOrWhiteSpace(details.State))
+            {
+                Student.State = details.State;
+            }
+
+            if (!string.IsNullOrWhiteSpace(details.Zip))
+            {
+                Student.Zip = details.Zip;
+            }
+
+            Student.Latitude = null;
+            Student.Longitude = null;
+            _addressValidationFailed = false;
+            AddressValidationMessage = "Address selected — click Validate Address before save.";
+            AddressValidationColor = Brushes.Blue;
+            Logger.Information(
+                "Places suggestion applied PlaceIdPrefix={PlaceIdPrefix}",
+                suggestion.PlaceId[..Math.Min(8, suggestion.PlaceId.Length)]);
+        }
+
         /// <summary>
         /// Validate the student's address via Google Address Validation (when configured).
         /// </summary>
@@ -507,10 +609,10 @@ namespace BusBuddy.WPF.ViewModels.Student
                     return;
                 }
 
-                var mapsClient = App.ServiceProvider?.GetService<BusBuddy.Core.Services.GoogleMaps.GoogleAddressValidationClient>();
-                if (mapsClient is not null)
+                var mapsGeo = _mapsGeoService ?? App.ServiceProvider?.GetService<IMapsGeoService>();
+                if (mapsGeo is not null)
                 {
-                    var maps = await mapsClient.ValidateAndGeocodeAsync(
+                    var maps = await mapsGeo.ValidateAndGeocodeAsync(
                         Student.HomeAddress, Student.City, Student.State, Student.Zip);
                     if (maps.Ok)
                     {
@@ -525,9 +627,12 @@ namespace BusBuddy.WPF.ViewModels.Student
                         }
 
                         _addressValidationFailed = false;
+                        var precisionNote = string.IsNullOrWhiteSpace(maps.Precision)
+                            ? string.Empty
+                            : $" ({maps.Precision} precision)";
                         AddressValidationMessage = string.IsNullOrWhiteSpace(maps.FormattedAddress)
-                            ? "Address validated (Google Maps)."
-                            : $"Address validated: {maps.FormattedAddress}";
+                            ? $"Address validated via Google Maps{precisionNote}."
+                            : $"Address validated{precisionNote}: {maps.FormattedAddress}";
                         AddressValidationColor = Brushes.Green;
                         Logger.Information("Address validation successful via Maps Platform");
                         await SuggestNearestPickupStopAsync().ConfigureAwait(true);
@@ -536,8 +641,9 @@ namespace BusBuddy.WPF.ViewModels.Student
 
                     if (maps.MappingUnconfigured)
                     {
-                        ApplyLocalAddressValidationFallback(
-                            "Google Maps API key not configured (set GOOGLE_MAPS_API_KEY). Local format check:");
+                        await ApplyLocalAddressValidationFallbackAsync(
+                            "Google Maps API key not configured (set GOOGLE_MAPS_API_KEY). Local format check:")
+                            .ConfigureAwait(true);
                         return;
                     }
 
@@ -548,8 +654,9 @@ namespace BusBuddy.WPF.ViewModels.Student
                     return;
                 }
 
-                ApplyLocalAddressValidationFallback(
-                    "Maps Address Validation is not registered in DI. Local format check:");
+                await ApplyLocalAddressValidationFallbackAsync(
+                    "Maps Address Validation is not registered in DI. Local format check:")
+                    .ConfigureAwait(true);
             }
             catch (Exception ex)
             {
@@ -561,9 +668,9 @@ namespace BusBuddy.WPF.ViewModels.Student
         }
 
         /// <summary>
-        /// When Google Maps is unavailable, still give the clerk visible feedback via local format rules.
+        /// When Google Maps is unavailable, validate format then attempt IGeocodingService for coordinates.
         /// </summary>
-        private void ApplyLocalAddressValidationFallback(string prefix)
+        private async Task ApplyLocalAddressValidationFallbackAsync(string prefix)
         {
             var local = ValidateAddressComponents(
                 Student.HomeAddress ?? string.Empty,
@@ -571,20 +678,72 @@ namespace BusBuddy.WPF.ViewModels.Student
                 Student.State ?? string.Empty,
                 Student.Zip ?? string.Empty);
 
-            if (local.IsValid)
-            {
-                _addressValidationFailed = false;
-                AddressValidationMessage = $"{prefix} street/city/state/ZIP look OK. GPS geocode skipped.";
-                AddressValidationColor = Brushes.Orange;
-                Logger.Warning("Address local format OK; Maps validation unavailable");
-            }
-            else
+            if (!local.IsValid)
             {
                 _addressValidationFailed = true;
                 AddressValidationMessage = $"{prefix} {local.ErrorMessage}";
                 AddressValidationColor = Brushes.Red;
                 Logger.Warning("Address local format failed: {Error}", local.ErrorMessage);
+                return;
             }
+
+            if (await TryGeocodeStudentAddressAsync().ConfigureAwait(true))
+            {
+                _addressValidationFailed = false;
+                AddressValidationMessage = $"{prefix} format OK; GPS coordinates captured.";
+                AddressValidationColor = Brushes.Green;
+                await SuggestNearestPickupStopAsync().ConfigureAwait(true);
+                return;
+            }
+
+            _addressValidationFailed = false;
+            AddressValidationMessage = $"{prefix} street/city/state/ZIP look OK. GPS geocode unavailable.";
+            AddressValidationColor = Brushes.Orange;
+            Logger.Warning("Address local format OK; geocoding unavailable");
+        }
+
+        /// <summary>
+        /// Resolves latitude/longitude via Maps validation client or registered IGeocodingService.
+        /// </summary>
+        private async Task<bool> TryGeocodeStudentAddressAsync()
+        {
+            if (Student.Latitude.HasValue && Student.Longitude.HasValue)
+            {
+                return true;
+            }
+
+            if (string.IsNullOrWhiteSpace(Student.HomeAddress))
+            {
+                return false;
+            }
+
+            var mapsGeo = _mapsGeoService ?? App.ServiceProvider?.GetService<IMapsGeoService>();
+            if (mapsGeo is not null)
+            {
+                var maps = await mapsGeo.ValidateAndGeocodeAsync(
+                    Student.HomeAddress, Student.City, Student.State, Student.Zip).ConfigureAwait(true);
+                if (maps.Ok && maps.Latitude.HasValue && maps.Longitude.HasValue)
+                {
+                    Student.Latitude = (decimal)maps.Latitude.Value;
+                    Student.Longitude = (decimal)maps.Longitude.Value;
+                    return true;
+                }
+            }
+
+            var geocoder = App.ServiceProvider?.GetService<IGeocodingService>();
+            if (geocoder is not null && !ReferenceEquals(geocoder, mapsGeo))
+            {
+                var geo = await geocoder.GeocodeAsync(
+                    Student.HomeAddress, Student.City, Student.State, Student.Zip).ConfigureAwait(true);
+                if (geo.HasValue)
+                {
+                    Student.Latitude = (decimal)geo.Value.latitude;
+                    Student.Longitude = (decimal)geo.Value.longitude;
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         /// <summary>
@@ -655,9 +814,18 @@ namespace BusBuddy.WPF.ViewModels.Student
 
         private async Task SaveStudentAsync()
         {
+            using (Serilog.Context.LogContext.PushProperty("Operation", "SaveStudent"))
+            using (Serilog.Context.LogContext.PushProperty("StudentId", Student.StudentId))
+            using (Serilog.Context.LogContext.PushProperty("EditMode", IsEditMode))
+            {
             try
             {
-                Logger.Information("Saving student {StudentName}", Student.StudentName);
+                Logger.Information(
+                    "Saving student Name={StudentName} Grade={Grade} DestinationId={DestinationId} School={School}",
+                    Student.StudentName,
+                    Student.Grade,
+                    Student.DestinationId,
+                    Student.School);
                 ClearAllFieldErrors();
 
                 // Hard guard: prevent saving with blank name (even if validation bypass flag is set)
@@ -689,18 +857,34 @@ namespace BusBuddy.WPF.ViewModels.Student
                     HasValidationErrors = false;
                     Logger.Warning("Bypassing student validation due to BUSBUDDY_SKIP_STUDENT_VALIDATION flag");
                 }
-                else if (!DisableAddressValidation && !string.IsNullOrWhiteSpace(Student.HomeAddress))
+                else
                 {
-                    await ValidateAddressAsync();
-                    if (_addressValidationFailed)
+                    if (_studentService is not null)
                     {
-                        ReportFieldValidation([(StudentFormFields.HomeAddress, "Correct the address before saving.")]);
-                        return;
+                        var serviceErrors = await ValidateWithServiceAsync().ConfigureAwait(true);
+                        if (serviceErrors.Count > 0)
+                        {
+                            Logger.Information("Service validation failed: {Errors}", serviceErrors.Select(e => e.Message));
+                            ReportFieldValidation(serviceErrors);
+                            return;
+                        }
+                    }
+
+                    if (!DisableAddressValidation && !string.IsNullOrWhiteSpace(Student.HomeAddress))
+                    {
+                        await ValidateAddressAsync();
+                        if (_addressValidationFailed)
+                        {
+                            ValidationStatus = "Address could not be validated — you can still save.";
+                            ValidationStatusBrush = Brushes.Orange;
+                            Logger.Warning("Address validation failed before save; continuing (non-blocking)");
+                        }
                     }
                 }
 
                 // Normalize loose inputs (format but don't block)
                 Student.HomePhone = NormalizePhone(Student.HomePhone);
+                Student.CellPhone = NormalizePhone(Student.CellPhone);
                 Student.EmergencyPhone = NormalizePhone(Student.EmergencyPhone);
                 Student.Zip = NormalizeZip(Student.Zip);
                 StudentSpecialNeedsHelper.SyncLegacySpecialNeedsText(Student);
@@ -723,15 +907,28 @@ namespace BusBuddy.WPF.ViewModels.Student
                     Student.CreatedBy = Environment.UserName;
                 }
 
+                StudentSchoolLinker.SyncDestinationFromSchoolName(Student, AvailableSchools.ToList());
                 StudentRecordNormalizer.NormalizeForPersistence(Student);
+
+                if (!string.IsNullOrWhiteSpace(Student.HomeAddress)
+                    && (!Student.Latitude.HasValue || !Student.Longitude.HasValue))
+                {
+                    var geocoded = await TryGeocodeStudentAddressAsync().ConfigureAwait(true);
+                    if (geocoded)
+                    {
+                        Logger.Information("Geocoded student address before save");
+                    }
+                }
+
+                var studentService = _studentService ?? App.ServiceProvider?.GetService<IStudentService>();
 
                 // Prefer StudentService when available (normal flow). If skipping validation,
                 // avoid service-level validation and use direct EF save instead.
-                if (_studentService != null && !ShouldSkipValidation())
+                if (studentService != null && !ShouldSkipValidation())
                 {
                     if (IsEditMode)
                     {
-                        var updated = await _studentService.UpdateStudentAsync(Student);
+                        var updated = await studentService.UpdateStudentAsync(Student);
                         if (!updated)
                         {
                             throw new InvalidOperationException("Update operation reported no changes.");
@@ -739,11 +936,16 @@ namespace BusBuddy.WPF.ViewModels.Student
                     }
                     else
                     {
-                        Student = await _studentService.AddStudentAsync(Student);
+                        Student = await studentService.AddStudentAsync(Student);
                     }
                 }
                 else
                 {
+                    if (studentService is null)
+                    {
+                        Logger.Warning("IStudentService unavailable — saving student via direct EF (no service validation/geocode)");
+                    }
+
                     // Fallback direct EF save if service not available
                     // or when skipping validation
                     if (IsEditMode)
@@ -757,8 +959,15 @@ namespace BusBuddy.WPF.ViewModels.Student
                     await _context.SaveChangesAsync();
                 }
 
-                Logger.Information("Successfully saved student {StudentId} - {StudentName}",
-                    Student.StudentId, Student.StudentName);
+                var persistencePath = studentService != null && !ShouldSkipValidation() ? "IStudentService" : "DirectEf";
+                Logger.Information(
+                    "Successfully saved student StudentId={StudentId} Name={StudentName} DestinationId={DestinationId} Latitude={Latitude} Longitude={Longitude} Persistence={PersistencePath}",
+                    Student.StudentId,
+                    Student.StudentName,
+                    Student.DestinationId,
+                    Student.Latitude,
+                    Student.Longitude,
+                    persistencePath);
 
                 // Broadcast that a student has been saved so list views can refresh immediately
                 try { WeakReferenceMessenger.Default.Send(new StudentSavedMessage(Student)); } catch { }
@@ -768,13 +977,9 @@ namespace BusBuddy.WPF.ViewModels.Student
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Error saving student");
+                Logger.Error(ex, "Error saving student StudentId={StudentId} Name={StudentName}", Student.StudentId, Student.StudentName);
                 var message = DatabaseUserMessage.ForOperation(ex, "save the student");
-                if (message.Contains("student number", StringComparison.OrdinalIgnoreCase))
-                {
-                    ReportFieldValidation([(StudentFormFields.StudentNumber, message)]);
-                }
-                else if (message.Contains("grade", StringComparison.OrdinalIgnoreCase))
+                if (message.Contains("grade", StringComparison.OrdinalIgnoreCase))
                 {
                     ReportFieldValidation([(StudentFormFields.Grade, message)]);
                 }
@@ -784,10 +989,20 @@ namespace BusBuddy.WPF.ViewModels.Student
                     ReportFieldValidation([(StudentFormFields.DateOfBirth,
                         "A date field could not be saved. Clear Date of Birth or pick the date again, then retry.")]);
                 }
+                else if (message.Contains("route", StringComparison.OrdinalIgnoreCase))
+                {
+                    ReportFieldValidation([(StudentFormFields.AMRoute, message)]);
+                }
+                else if (message.Contains("ZIP", StringComparison.OrdinalIgnoreCase)
+                         || message.Contains("zip", StringComparison.OrdinalIgnoreCase))
+                {
+                    ReportFieldValidation([(StudentFormFields.Zip, message)]);
+                }
                 else
                 {
                     SetGlobalError(message);
                 }
+            }
             }
         }
 
@@ -832,6 +1047,11 @@ namespace BusBuddy.WPF.ViewModels.Student
                 if (e.PropertyName == nameof(Core.Models.Student.RequiresSpecialNeedsBus))
                 {
                     RefreshAvailableRoutes();
+                }
+
+                if (e.PropertyName == nameof(Core.Models.Student.HomeAddress))
+                {
+                    _ = RefreshAddressSuggestionsAsync(Student.HomeAddress);
                 }
 
                 _saveRelay?.NotifyCanExecuteChanged();
@@ -928,8 +1148,7 @@ namespace BusBuddy.WPF.ViewModels.Student
                 ValidationStatusBrush = Brushes.Blue;
 
                 var sp = App.ServiceProvider;
-                var geocoder = sp?.GetService<IGeocodingService>();
-                var mapsClient = sp?.GetService<BusBuddy.Core.Services.GoogleMaps.GoogleAddressValidationClient>();
+                var mapsGeo = _mapsGeoService ?? sp?.GetService<IMapsGeoService>();
                 var mapVm = sp?.GetService<MapViewModel>();
 
                 (double latitude, double longitude)? coords = null;
@@ -937,9 +1156,9 @@ namespace BusBuddy.WPF.ViewModels.Student
                 {
                     coords = ((double)Student.Latitude.Value, (double)Student.Longitude.Value);
                 }
-                else if (geocoder is not null)
+                else if (mapsGeo is not null)
                 {
-                    coords = await geocoder.GeocodeAsync(Student.HomeAddress, Student.City, Student.State, Student.Zip);
+                    coords = await mapsGeo.GeocodeAsync(Student.HomeAddress, Student.City, Student.State, Student.Zip);
                     if (coords.HasValue)
                     {
                         Student.Latitude = (decimal)coords.Value.latitude;
@@ -966,7 +1185,7 @@ namespace BusBuddy.WPF.ViewModels.Student
                     ValidationStatus = "✓ Location plotted on map";
                     ValidationStatusBrush = Brushes.Green;
                 }
-                else if (mapsClient is null || string.IsNullOrWhiteSpace(mapsClient.ResolvedApiKey))
+                else if (mapsGeo is null || !mapsGeo.IsConfigured)
                 {
                     ValidationStatus = "Mapping is not configured (missing GOOGLE_MAPS_API_KEY).";
                     ValidationStatusBrush = Brushes.Orange;
@@ -1410,11 +1629,15 @@ namespace BusBuddy.WPF.ViewModels.Student
                         }
                     }
 
-                    foreach (var (name, isSpecial) in defaultRoutes)
+                    if (dbRoutes.Count == 0)
                     {
-                        if (routeNameSet.Add(name))
+                        Logger.Warning("No routes in database — using placeholder route names for empty catalog");
+                        foreach (var (name, isSpecial) in defaultRoutes)
                         {
-                            _routeCatalog.Add((name, isSpecial));
+                            if (routeNameSet.Add(name))
+                            {
+                                _routeCatalog.Add((name, isSpecial));
+                            }
                         }
                     }
 
@@ -1618,6 +1841,59 @@ namespace BusBuddy.WPF.ViewModels.Student
             return errors;
         }
 
+        /// <summary>Run service-layer rules before persist so VM and DB stay aligned.</summary>
+        private async Task<List<(string FieldKey, string Message)>> ValidateWithServiceAsync()
+        {
+            if (_studentService is null)
+            {
+                return [];
+            }
+
+            var messages = await _studentService.ValidateStudentAsync(Student).ConfigureAwait(true);
+            return messages.Select(MapServiceErrorToField).ToList();
+        }
+
+        private static (string FieldKey, string Message) MapServiceErrorToField(string message)
+        {
+            if (message.Contains("AM Route", StringComparison.OrdinalIgnoreCase))
+            {
+                return (StudentFormFields.AMRoute, message);
+            }
+
+            if (message.Contains("PM Route", StringComparison.OrdinalIgnoreCase))
+            {
+                return (StudentFormFields.PMRoute, message);
+            }
+
+            if (message.Contains("ZIP", StringComparison.OrdinalIgnoreCase)
+                || message.Contains("zip code", StringComparison.OrdinalIgnoreCase))
+            {
+                return (StudentFormFields.Zip, message);
+            }
+
+            if (message.Contains("home phone", StringComparison.OrdinalIgnoreCase))
+            {
+                return (StudentFormFields.HomePhone, message);
+            }
+
+            if (message.Contains("emergency phone", StringComparison.OrdinalIgnoreCase))
+            {
+                return (StudentFormFields.EmergencyPhone, message);
+            }
+
+            if (message.Contains("grade", StringComparison.OrdinalIgnoreCase))
+            {
+                return (StudentFormFields.Grade, message);
+            }
+
+            if (message.Contains("name", StringComparison.OrdinalIgnoreCase))
+            {
+                return (StudentFormFields.StudentName, message);
+            }
+
+            return (StudentFormFields.HomeAddress, message);
+        }
+
         /// <summary>
         /// Build a list of validation errors for diagnostics when Save fails.
         /// </summary>
@@ -1747,6 +2023,8 @@ namespace BusBuddy.WPF.ViewModels.Student
         public void Dispose()
         {
             try { if (_student != null) _student.PropertyChanged -= OnStudentPropertyChanged; } catch { }
+            try { WeakReferenceMessenger.Default.UnregisterAll(this); } catch { }
+            _addressAutocomplete.Dispose();
             _context?.Dispose();
             GC.SuppressFinalize(this);
         }

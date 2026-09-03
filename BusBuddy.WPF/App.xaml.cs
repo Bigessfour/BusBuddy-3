@@ -350,6 +350,10 @@ namespace BusBuddy.WPF
             DispatcherUnhandledException += OnDispatcherUnhandledException;
             AppDomain.CurrentDomain.UnhandledException += OnDomainUnhandledException;
 
+            // Syncfusion inputs ignore NumPad on inner TextBox hosts — fix app-wide.
+            NumpadInputHelper.RegisterApplicationWide();
+            InputCaretHelper.RegisterApplicationWide();
+
             try
             {
                 Log.Information("🚌 Initializing BusBuddy application");
@@ -506,12 +510,16 @@ namespace BusBuddy.WPF
                 services.AddTransient<BusBuddy.WPF.ViewModels.Driver.DriverScheduleViewModel>();
                 services.AddTransient<BusBuddy.WPF.ViewModels.Reports.ReportsViewModel>();
                 services.AddTransient<BusBuddy.WPF.ViewModels.Student.StudentsViewModel>();
+                services.AddTransient<BusBuddy.WPF.ViewModels.Student.StudentFormViewModel>(sp =>
+                    new BusBuddy.WPF.ViewModels.Student.StudentFormViewModel(
+                        sp.GetRequiredService<IStudentService>()));
                 services.AddTransient<BusBuddy.WPF.ViewModels.Route.RouteManagementViewModel>(sp =>
                     new BusBuddy.WPF.ViewModels.Route.RouteManagementViewModel(
                         sp.GetRequiredService<IBusBuddyDbContextFactory>(),
                         sp.GetService<IRouteService>(),
                         sp.GetService<BusBuddy.Core.Services.RouteDetermination.IRouteDeterminationService>(),
-                        sp.GetService<BusBuddy.Core.Services.Interfaces.IDestinationService>()));
+                        sp.GetService<BusBuddy.Core.Services.Interfaces.IDestinationService>(),
+                        sp.GetService<BusBuddy.Core.Services.Interfaces.IRoutingService>()));
                 services.AddTransient<BusBuddy.WPF.ViewModels.Driver.DriverFormViewModel>();
                 services.AddTransient<BusBuddy.WPF.ViewModels.Driver.DriversViewModel>();
                 // Shared map VM: singleton + IServiceScopeFactory so scoped student/bus services are not captured
@@ -526,19 +534,6 @@ namespace BusBuddy.WPF
 
                 ServiceProvider = services.BuildServiceProvider();
 
-                // Register ViewModels for dependency injection (cleaned duplicate block during VM dedup)
-                services.AddTransient<BusBuddy.WPF.ViewModels.MainWindowViewModel>();
-                services.AddTransient<BusBuddy.WPF.ViewModels.Dashboard.DashboardViewModel>();
-                services.AddTransient<BusBuddy.WPF.ViewModels.Student.StudentsViewModel>();
-                services.AddTransient<BusBuddy.WPF.ViewModels.Route.RouteManagementViewModel>(sp =>
-                    new BusBuddy.WPF.ViewModels.Route.RouteManagementViewModel(
-                        sp.GetRequiredService<IBusBuddyDbContextFactory>(),
-                        sp.GetService<IRouteService>(),
-                        sp.GetService<BusBuddy.Core.Services.RouteDetermination.IRouteDeterminationService>(),
-                        sp.GetService<BusBuddy.Core.Services.Interfaces.IDestinationService>()));
-                services.AddTransient<BusBuddy.WPF.ViewModels.Driver.DriverFormViewModel>();
-                services.AddTransient<BusBuddy.WPF.ViewModels.Bus.BusFormViewModel>();
-                services.AddTransient<BusBuddy.WPF.Views.Bus.BusForm>();
                 // Seed database with JSON data if empty
                 Task.Run(async () =>
                 {

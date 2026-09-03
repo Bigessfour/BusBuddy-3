@@ -6,7 +6,9 @@ using System.Windows;
 using System.Windows.Input;
 using BusBuddy.Core.Data;
 using BusBuddy.Core.Services.Interfaces;
+using BusBuddy.Core.Services.GoogleMaps;
 using BusBuddy.Core.Utilities;
+using BusBuddy.WPF.Utilities;
 using BusBuddy.WPF.ViewModels;
 using BusBuddy.WPF.ViewModels.Map;
 using CommunityToolkit.Mvvm.Input;
@@ -15,7 +17,7 @@ using Serilog;
 
 namespace BusBuddy.WPF.ViewModels.Student;
 
-public sealed class SchoolDestinationFormViewModel : BaseViewModel
+public sealed class SchoolDestinationFormViewModel : BaseViewModel, IDisposable
 {
     private static readonly new ILogger Logger = Log.ForContext<SchoolDestinationFormViewModel>();
 
@@ -26,6 +28,7 @@ public sealed class SchoolDestinationFormViewModel : BaseViewModel
 
     private readonly IDestinationService _destinations;
     private readonly BusBuddyDbContext? _context;
+    private readonly PlacesAddressAutocompleteCoordinator _addressAutocomplete;
 
     private string _name = string.Empty;
     private string _address = string.Empty;
@@ -46,6 +49,15 @@ public sealed class SchoolDestinationFormViewModel : BaseViewModel
     {
         _destinations = destinations ?? throw new ArgumentNullException(nameof(destinations));
         _context = TryCreateDbContextViaDi();
+        var places = App.ServiceProvider?.GetService<IPlacesAutocompleteService>();
+        _addressAutocomplete = new PlacesAddressAutocompleteCoordinator(places);
+        _addressAutocomplete.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(PlacesAddressAutocompleteCoordinator.IsPopupOpen))
+            {
+                OnPropertyChanged(nameof(IsAddressSuggestionPopupOpen));
+            }
+        };
         // Do NOT gate CanExecute — ButtonAdv often looks enabled while CanExecute=false → silent no-op.
         // Validate inside SaveAsync and surface ValidationMessage instead.
         SaveCommand = new AsyncRelayCommand(SaveAsync);
@@ -155,11 +167,20 @@ public sealed class SchoolDestinationFormViewModel : BaseViewModel
     /// <summary>True after a successful save that stored school GPS.</summary>
     public bool SavedWithGps { get; private set; }
 
+    /// <summary>Destination id from the last successful save (for catalog refresh messages).</summary>
+    public int? SavedDestinationId { get; private set; }
+
     public string ValidationMessage
     {
         get => _validationMessage;
         set => SetProperty(ref _validationMessage, value);
     }
+
+    public ObservableCollection<PlaceAutocompleteSuggestion> AddressSuggestions => _addressAutocomplete.Suggestions;
+
+    public bool IsAddressSuggestionPopupOpen => _addressAutocomplete.IsPopupOpen;
+
+    public bool IsAddressAutocompleteEnabled => _addressAutocomplete.IsEnabled;
 
     public ICommand SaveCommand { get; }
     public ICommand CancelCommand { get; }
@@ -243,6 +264,7 @@ public sealed class SchoolDestinationFormViewModel : BaseViewModel
                 lon).ConfigureAwait(true);
 
             SavedWithGps = school.Latitude.HasValue && school.Longitude.HasValue;
+            SavedDestinationId = school.DestinationId;
             Logger.Information(
                 "School cataloged DestinationId={Id} Name={Name} HasGps={HasGps}",
                 school.DestinationId, school.Name, SavedWithGps);
@@ -324,6 +346,50 @@ public sealed class SchoolDestinationFormViewModel : BaseViewModel
         return TimeSpan.TryParse(cleaned, CultureInfo.InvariantCulture, out value);
     }
 
+    public async Task RefreshAddressSuggestionsAsync(string? input) =>
+        await _addressAutocomplete.RefreshSuggestionsAsync(input).ConfigureAwait(true);
+
+    public async Task<bool> ApplyAddressSuggestionAsync(PlaceAutocompleteSuggestion? suggestion)
+    {
+        var details = await _addressAutocomplete.ApplySuggestionAsync(suggestion).ConfigureAwait(true);
+        if (suggestion is null || details is null)
+        {
+            return false;
+        }
+
+        if (!string.IsNullOrWhiteSpace(details.StreetLine))
+        {
+            Address = details.StreetLine;
+        }
+        else if (!string.IsNullOrWhiteSpace(suggestion.PrimaryText))
+        {
+            Address = suggestion.PrimaryText;
+        }
+
+        if (!string.IsNullOrWhiteSpace(details.City))
+        {
+            City = details.City;
+        }
+
+        if (!string.IsNullOrWhiteSpace(details.State))
+        {
+            State = details.State;
+        }
+
+        if (!string.IsNullOrWhiteSpace(details.Zip))
+        {
+            ZipCode = details.Zip;
+        }
+
+        if (details.Latitude.HasValue && details.Longitude.HasValue)
+        {
+            ApplyMapClick(details.Latitude.Value, details.Longitude.Value);
+        }
+
+        ValidationMessage = "Address selected from Google Places — save to persist.";
+        return true;
+    }
+
     private bool HasUsableGps() =>
         _hasMapPick
         && Math.Abs(_latitudeValue) > 0.0001
@@ -338,20 +404,32 @@ public sealed class SchoolDestinationFormViewModel : BaseViewModel
             return ((decimal)_latitudeValue, (decimal)_longitudeValue);
         }
 
-        var geocoder = App.ServiceProvider?.GetService<IGeocodingService>();
-        if (geocoder is null)
+        var mapsGeo = App.ServiceProvider?.GetService<IMapsGeoService>();
+        if (mapsGeo is null)
         {
-            Logger.Warning("IGeocodingService not registered; school will save without GPS unless map/coords set");
+            Logger.Warning("IMapsGeoService not registered; school will save without GPS unless map/coords set");
             return (null, null);
         }
 
-        var coords = await geocoder.GeocodeAsync(Address, City, State, ZipCode).ConfigureAwait(true);
-        if (coords is { } pair)
+        if (!mapsGeo.IsConfigured)
         {
-            return ((decimal)pair.latitude, (decimal)pair.longitude);
+            Logger.Warning("Google Maps API key not configured; school will save without GPS unless map/coords set");
+            return (null, null);
         }
 
-        Logger.Warning("School address geocode returned no coordinates");
+        var result = await mapsGeo.ValidateAndGeocodeAsync(Address, City, State, ZipCode).ConfigureAwait(true);
+        if (result.Ok && result.Latitude.HasValue && result.Longitude.HasValue)
+        {
+            return ((decimal)result.Latitude.Value, (decimal)result.Longitude.Value);
+        }
+
+        Logger.Warning("School address validation/geocode failed: {Error}", result.ErrorMessage);
         return (null, null);
+    }
+
+    public void Dispose()
+    {
+        _addressAutocomplete.Dispose();
+        _context?.Dispose();
     }
 }

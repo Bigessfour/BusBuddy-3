@@ -530,8 +530,7 @@ public class StudentService : IStudentService
                 // Grade validation
                 if (!string.IsNullOrWhiteSpace(student.Grade))
                 {
-                    var validGrades = new[] { "Pre-K", "K", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12" };
-                    if (!validGrades.Contains(student.Grade))
+                    if (!StudentGradeCatalog.IsValid(student.Grade))
                     {
                         errors.Add("Invalid grade level");
                     }

@@ -39,6 +39,11 @@ public class MainWindowClerkPathTests
         var source = XamlViewFile.Read("ViewModels/Vehicle/VehicleManagementViewModel.cs");
         Assert.That(source, Does.Not.Contain("LoadSampleData"));
         Assert.That(source, Does.Not.Contain("BUS001"));
+        Assert.That(source, Does.Not.Contain("Vehicles.Max(v => v.BusId)"));
+        Assert.That(source, Does.Not.Contain("catch { /* ignore service failure */ }"));
+        Assert.That(source, Does.Contain("await _busService.AddBusAsync"));
+        Assert.That(source, Does.Contain("await _busService.DeleteBusAsync"));
+        Assert.That(source, Does.Contain("Log.ForContext<VehicleManagementViewModel>"));
     }
 
     [Test]
@@ -100,7 +105,7 @@ public class MainWindowClerkPathTests
     }
 
     [Test]
-    public void TransferAndBusForms_UseTextBoxExtAndIntegerInputs()
+    public void TransferForm_UsesTextBoxExtAndMaskedTime()
     {
         var transfer = XamlViewFile.Read("Views/Student/StudentSchoolTransferForm.xaml");
         Assert.That(transfer, Does.Contain("SfTextBoxExt Text=\"{Binding PickupAddress"));
@@ -111,13 +116,42 @@ public class MainWindowClerkPathTests
         Assert.That(transferVm, Does.Contain("Replace(\"_\""),
             "Time parse must strip SfMaskedEdit prompt chars");
 
-        var bus = XamlViewFile.Read("Views/Bus/BusForm.xaml");
-        Assert.That(bus, Does.Contain("IntegerTextBox"));
-        Assert.That(bus, Does.Contain("Value=\"{Binding Year"));
-        Assert.That(bus, Does.Contain("SfTextBoxExt Height=\"40\""));
-
         var fuel = XamlViewFile.Read("Views/Fuel/FuelDialog.xaml");
         Assert.That(fuel, Does.Contain("Mode=TwoWay, UpdateSourceTrigger=PropertyChanged"));
         Assert.That(fuel, Does.Contain("SfTextBoxExt"));
+    }
+
+    [Test]
+    public void BusForm_IsRemoved_FleetUsesVehicleFleetLauncher()
+    {
+        Assert.That(XamlViewFile.Exists("Views/Bus/BusForm.xaml"), Is.False);
+        Assert.That(XamlViewFile.Exists("ViewModels/Bus/BusFormViewModel.cs"), Is.False);
+
+        var main = XamlViewFile.Read("Views/Main/MainWindow.xaml.cs");
+        Assert.That(main, Does.Contain("VehicleFleetLauncher.ShowDialog"));
+        Assert.That(main, Does.Contain("VehicleManagementStartup.AddVehicle"));
+        Assert.That(main, Does.Not.Contain("new BusForm"));
+    }
+
+    [Test]
+    public void SettingsView_BindsAllViewModelPreferences()
+    {
+        var xaml = XamlViewFile.Read("Views/Settings/SettingsView.xaml");
+        Assert.That(xaml, Does.Contain("SelectedTheme"));
+        Assert.That(xaml, Does.Contain("EnableActivityLogging"));
+        Assert.That(xaml, Does.Contain("ShowDashboardOnStartup"));
+        Assert.That(xaml, Does.Contain("StatusMessage"));
+        Assert.That(xaml, Does.Contain("IsBusy"));
+        Assert.That(xaml, Does.Contain("IsEditable=\"False\""));
+        Assert.That(xaml, Does.Contain("AutomationProperties.Name=\"Enable activity logging\""));
+        Assert.That(xaml, Does.Contain("AutomationProperties.Name=\"Show dashboard on startup\""));
+        Assert.That(xaml, Does.Contain("SettingsPrimaryButton"));
+
+        var vm = XamlViewFile.Read("ViewModels/Settings/SettingsViewModel.cs");
+        Assert.That(vm, Does.Contain("UserSettingsKeys"));
+        Assert.That(vm, Does.Contain("Log.ForContext<SettingsViewModel>"));
+
+        var main = XamlViewFile.Read("Views/Main/MainWindow.xaml.cs");
+        Assert.That(main, Does.Contain("TryShowDashboardOnStartup"));
     }
 }

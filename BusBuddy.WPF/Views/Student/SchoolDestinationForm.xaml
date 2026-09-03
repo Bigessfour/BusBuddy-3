@@ -64,12 +64,37 @@
                                              AutomationProperties.Name="School name"/>
 
                     <TextBlock Text="Street address *" Margin="0,0,0,4"/>
-                    <syncfusion:SfTextBoxExt x:Name="SchoolAddressBox"
-                                             AutoCompleteMode="None"
-                                             ShowClearButton="True"
-                                             Watermark="1105 Parkview Ave"
-                                             Height="40" Margin="0,0,0,10"
-                                             AutomationProperties.Name="School street address"/>
+                    <Grid Margin="0,0,0,10">
+                        <syncfusion:SfTextBoxExt x:Name="SchoolAddressBox"
+                                                 AutoCompleteMode="None"
+                                                 ShowClearButton="True"
+                                                 Watermark="1105 Parkview Ave"
+                                                 Height="40"
+                                                 TextChanged="SchoolAddressBox_TextChanged"
+                                                 AutomationProperties.Name="School street address"/>
+                        <Popup x:Name="SchoolAddressSuggestionsPopup"
+                               PlacementTarget="{Binding ElementName=SchoolAddressBox}"
+                               Placement="Bottom"
+                               AllowsTransparency="True"
+                               StaysOpen="False"
+                               IsOpen="{Binding IsAddressSuggestionPopupOpen}">
+                            <Border MinWidth="{Binding ActualWidth, ElementName=SchoolAddressBox}"
+                                    Background="{DynamicResource BusBuddy.Brush.Surface.Medium}"
+                                    BorderBrush="{DynamicResource BusBuddy.Brush.Surface.Border}"
+                                    BorderThickness="1"
+                                    CornerRadius="4"
+                                    Padding="2">
+                                <ListBox x:Name="SchoolAddressSuggestionsList"
+                                         ItemsSource="{Binding AddressSuggestions}"
+                                         DisplayMemberPath="DisplayText"
+                                         MaxHeight="180"
+                                         BorderThickness="0"
+                                         Background="Transparent"
+                                         SelectionChanged="SchoolAddressSuggestionsList_SelectionChanged"
+                                         AutomationProperties.Name="School address suggestions"/>
+                            </Border>
+                        </Popup>
+                    </Grid>
 
                     <TextBlock Text="City *" Margin="0,0,0,4"/>
                     <syncfusion:SfTextBoxExt x:Name="SchoolCityBox"

@@ -91,12 +91,49 @@ namespace BusBuddy.WPF.Utilities
             _suppressPersist = true;
             try
             {
-                ApplyApplicationTheme(ThemePreferenceStore.Load());
+                var theme = ResolveSavedThemeName();
+                ApplyApplicationTheme(theme);
             }
             finally
             {
                 _suppressPersist = false;
             }
+        }
+
+        /// <summary>
+        /// Preview a theme without persisting (Settings combo before Save).
+        /// </summary>
+        public static void ApplyApplicationThemePreview(string? themeName)
+        {
+            _suppressPersist = true;
+            try
+            {
+                ApplyApplicationTheme(themeName);
+            }
+            finally
+            {
+                _suppressPersist = false;
+            }
+        }
+
+        private static string ResolveSavedThemeName()
+        {
+            try
+            {
+                var settings = BusBuddy.WPF.App.ServiceProvider?.GetService(typeof(BusBuddy.Core.Services.IUserSettingsService))
+                    as BusBuddy.Core.Services.IUserSettingsService;
+                if (settings is not null)
+                {
+                    settings.LoadSettingsAsync().GetAwaiter().GetResult();
+                    return NormalizeThemeName(settings.CachedTheme);
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Warning(ex, "[Theme] Could not load theme from IUserSettingsService; falling back to ThemePreferenceStore");
+            }
+
+            return ThemePreferenceStore.Load();
         }
 
         /// <summary>
@@ -141,7 +178,7 @@ namespace BusBuddy.WPF.Utilities
 
                 if (!_suppressPersist)
                 {
-                    ThemePreferenceStore.Save(name);
+                    PersistThemePreference(name);
                 }
 
                 Logger.Information("Theme changed to {ThemeName} at application scope", name);
@@ -182,6 +219,28 @@ namespace BusBuddy.WPF.Utilities
             NormalizeThemeName(themeName) == FALLBACK_THEME
                 ? "Resources/Themes/FluentLightTheme.xaml"
                 : "Resources/Themes/FluentDarkTheme.xaml";
+
+        private static void PersistThemePreference(string themeName)
+        {
+            try
+            {
+                var settings = BusBuddy.WPF.App.ServiceProvider?.GetService(typeof(BusBuddy.Core.Services.IUserSettingsService))
+                    as BusBuddy.Core.Services.IUserSettingsService;
+                if (settings is not null)
+                {
+                    settings.SetSettingAsync(BusBuddy.Core.Services.UserSettingsKeys.Theme, themeName)
+                        .GetAwaiter().GetResult();
+                    settings.SaveSettingsAsync().GetAwaiter().GetResult();
+                    return;
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Warning(ex, "[Theme] Could not persist theme via IUserSettingsService; using ThemePreferenceStore");
+            }
+
+            ThemePreferenceStore.Save(themeName);
+        }
 
         private static void SwapThemeBrushDictionary(string themeName)
         {
