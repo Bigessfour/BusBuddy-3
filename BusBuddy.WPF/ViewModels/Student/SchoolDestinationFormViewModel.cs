@@ -357,33 +357,30 @@ public sealed class SchoolDestinationFormViewModel : BaseViewModel, IDisposable
             return false;
         }
 
-        if (!string.IsNullOrWhiteSpace(details.StreetLine))
+        var applied = PlaceAddressApplier.Apply(suggestion, details);
+        if (!string.IsNullOrWhiteSpace(applied.Street))
         {
-            Address = details.StreetLine;
-        }
-        else if (!string.IsNullOrWhiteSpace(suggestion.PrimaryText))
-        {
-            Address = suggestion.PrimaryText;
+            Address = applied.Street;
         }
 
-        if (!string.IsNullOrWhiteSpace(details.City))
+        if (!string.IsNullOrWhiteSpace(applied.City))
         {
-            City = details.City;
+            City = applied.City;
         }
 
-        if (!string.IsNullOrWhiteSpace(details.State))
+        if (!string.IsNullOrWhiteSpace(applied.State))
         {
-            State = details.State;
+            State = applied.State;
         }
 
-        if (!string.IsNullOrWhiteSpace(details.Zip))
+        if (!string.IsNullOrWhiteSpace(applied.Zip))
         {
-            ZipCode = details.Zip;
+            ZipCode = applied.Zip;
         }
 
-        if (details.Latitude.HasValue && details.Longitude.HasValue)
+        if (applied.Latitude.HasValue && applied.Longitude.HasValue)
         {
-            ApplyMapClick(details.Latitude.Value, details.Longitude.Value);
+            ApplyMapClick(applied.Latitude.Value, applied.Longitude.Value);
         }
 
         ValidationMessage = "Address selected from Google Places — save to persist.";
