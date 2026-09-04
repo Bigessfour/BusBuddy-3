@@ -48,6 +48,12 @@ namespace BusBuddy.Core.Services
         Task<SpecialNeedsPrepSummary> SeedSpecialNeedsTransportPrepAsync();
 
         /// <summary>
+        /// Seed school/student coordinates and one route polyline for the district map.
+        /// Does not assign live bus GPS — fleet tracking is deferred.
+        /// </summary>
+        Task EnsureMapDemoGeoAsync();
+
+        /// <summary>
         /// Clear all seeded data (use with caution!)
         /// </summary>
         Task ClearSeedDataAsync();

@@ -156,7 +156,7 @@
 
                 <syncfusion:ButtonAdv Label="Center on Fleet"
                               AutomationProperties.Name="Center on Fleet"
-                              ToolTip="Center map on fleet"
+                              ToolTip="Center map on plotted students and route stops"
                               Command="{Binding CenterOnFleetCommand}"
                               Background="{DynamicResource ButtonBackgroundBrush}"
                               Foreground="{DynamicResource ButtonForegroundBrush}"
@@ -166,7 +166,7 @@
 
                 <syncfusion:ButtonAdv Label="Show All Buses"
                               AutomationProperties.Name="Show All Buses"
-                              ToolTip="Show all active buses"
+                              ToolTip="Fleet GPS tracking is not enabled yet"
                               Command="{Binding ShowAllBusesCommand}"
                               Background="{DynamicResource ButtonBackgroundBrush}"
                               Foreground="{DynamicResource ButtonForegroundBrush}"
@@ -268,13 +268,14 @@
                                                           Background="{DynamicResource ButtonBackgroundBrush}"
                                                           Foreground="{DynamicResource ButtonForegroundBrush}"
                                                           IsCheckable="True"
+                                                          IsEnabled="False"
                                                           IsChecked="{Binding IsLiveTrackingEnabled, Mode=TwoWay}"
                                                           Label="Live"
                                                           SizeMode="Normal"
                                                           IconWidth="0"
                                                           IconHeight="0"
                                                           SmallIcon="{x:Null}"
-                                                          ToolTip="Enable real-time bus position updates"
+                                                          ToolTip="Fleet GPS tracking is not enabled yet"
                                                           AutomationProperties.Name="Live tracking"/>
                                 </Grid>
 
@@ -287,7 +288,8 @@
                                            Margin="0,0,0,4"/>
 
                                 <syncfusion:ComboBoxAdv SelectedIndex="{Binding TrackingIntervalIndex, Mode=TwoWay}"
-                                                        ToolTip="How often live tracking refreshes"
+                                                        IsEnabled="False"
+                                                        ToolTip="Fleet GPS tracking is not enabled yet"
                                                         AutomationProperties.Name="Tracking update frequency">
                                     <syncfusion:ComboBoxItemAdv Content="5 seconds"/>
                                     <syncfusion:ComboBoxItemAdv Content="10 seconds"/>
@@ -336,7 +338,7 @@
 
                                 <syncfusion:ButtonAdv Label="Track Selected"
                                                       AutomationProperties.Name="Track Selected Bus"
-                                                      ToolTip="Track the selected bus on the map"
+                                                      ToolTip="Fleet GPS tracking is not enabled yet"
                                                       Command="{Binding TrackSelectedBusCommand}"
                                                       Background="{DynamicResource ButtonBackgroundBrush}"
                                                       Foreground="{DynamicResource ButtonForegroundBrush}"
@@ -377,14 +379,15 @@
                             <maps:SfMap x:Name="GeoMap"
                                         HorizontalAlignment="Stretch"
                                         VerticalAlignment="Stretch"
-                                        IsHitTestVisible="False"
-                                        EnableZoom="False"
-                                        EnablePan="False"
+                                        IsHitTestVisible="True"
+                                        EnableZoom="True"
+                                        EnablePan="True"
+                                        IsManipulationEnabled="True"
                                         ZoomLevel="{Binding MapZoomLevel, Mode=TwoWay}">
                                 <maps:SfMap.Layers>
                                     <maps:ImageryLayer x:Name="DistrictImageryLayer"
                                                        LayerType="OSM"
-                                                       Center="{Binding MapCenter}"
+                                                       Center="{Binding MapCenter, Mode=TwoWay}"
                                                        Markers="{Binding MapMarkers}"/>
                                 </maps:SfMap.Layers>
                             </maps:SfMap>

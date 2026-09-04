@@ -561,10 +561,11 @@ namespace BusBuddy.WPF
 
                         // Also support plain array JSON via SeedDataService (uses StudentJsonPath)
                         await seedSvc.SeedFromJsonAsync();
+                        await seedSvc.EnsureMapDemoGeoAsync();
                     }
                     catch (Exception seedEx)
                     {
-                        Log.Warning(seedEx, "⚠️ Failed to seed database with JSON data: {Error}", seedEx.Message);
+                        Log.Warning(seedEx, "Failed to seed database (JSON or map demo geo): {Error}", seedEx.Message);
                     }
                 }); Log.Information("✅ Full DI container configured successfully for UI application");
             }

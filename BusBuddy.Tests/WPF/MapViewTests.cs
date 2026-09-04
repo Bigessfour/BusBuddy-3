@@ -24,7 +24,10 @@ public class MapViewTests
         Assert.That(xaml, Does.Not.Contain("MappingName=\"CurrentLocation\""));
         Assert.That(xaml, Does.Contain("Content=\"Zoom In\""));
         Assert.That(xaml, Does.Contain("Content=\"Zoom Out\""));
-        Assert.That(xaml, Does.Contain("Center=\"{Binding MapCenter}\""));
+        Assert.That(xaml, Does.Contain("EnableZoom=\"True\""));
+        Assert.That(xaml, Does.Contain("EnablePan=\"True\""));
+        Assert.That(xaml, Does.Contain("IsHitTestVisible=\"True\""));
+        Assert.That(xaml, Does.Contain("Center=\"{Binding MapCenter, Mode=TwoWay}\""));
         Assert.That(xaml, Does.Contain("Markers=\"{Binding MapMarkers}\""));
         Assert.That(xaml, Does.Contain("SelectedItem=\"{Binding SelectedRoute, Mode=TwoWay}\""));
         Assert.That(xaml, Does.Contain("ItemsSource=\"{Binding Routes}\""));

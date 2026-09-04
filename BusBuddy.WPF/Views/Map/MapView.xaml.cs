@@ -47,6 +47,7 @@ namespace BusBuddy.WPF.Views.Map
                         if (vmFromDi is not null)
                         {
                             DataContext = vmFromDi;
+                            AttachViewModel(vmFromDi);
                             Logger.Debug("MapViewModel resolved from DI and set as DataContext");
                         }
                     }
@@ -85,13 +86,15 @@ namespace BusBuddy.WPF.Views.Map
                 }
 
                 ApplyDistrictImagery(DataContext as MapViewModel);
-                TryResetView();
                 ToggleOsmAttribution(true);
                 if (MapControl is not null)
                 {
                     MapControl.IsHitTestVisible = true;
                     MapControl.EnablePan = true;
                     MapControl.EnableZoom = true;
+                    MapControl.IsManipulationEnabled = true;
+                    MapControl.MouseLeftButtonUp += (_, _) => CaptureVisualMapState();
+                    MapControl.MouseWheel += (_, _) => Dispatcher.BeginInvoke(CaptureVisualMapState);
                     SyncMapControlFromViewModel(DataContext as MapViewModel);
                 }
 
@@ -237,9 +240,27 @@ namespace BusBuddy.WPF.Views.Map
                 return;
             }
 
-            if (e.PropertyName is nameof(MapViewModel.MapZoomLevel) or nameof(MapViewModel.MapCenter))
+            if (e.PropertyName == nameof(MapViewModel.MapZoomLevel))
             {
-                Dispatcher.Invoke(() => SyncMapControlFromViewModel(vm));
+                Dispatcher.Invoke(() =>
+                {
+                    if (MapControl is not null)
+                    {
+                        MapControl.ZoomLevel = vm.MapZoomLevel;
+                    }
+                });
+                return;
+            }
+
+            if (e.PropertyName == nameof(MapViewModel.MapCenter))
+            {
+                Dispatcher.Invoke(() =>
+                {
+                    if (_currentLayer is ImageryLayer imagery)
+                    {
+                        imagery.Center = vm.MapCenter;
+                    }
+                });
             }
         }
 
@@ -254,6 +275,24 @@ namespace BusBuddy.WPF.Views.Map
             if (_currentLayer is ImageryLayer imagery)
             {
                 imagery.Center = vm.MapCenter;
+            }
+        }
+
+        private void CaptureVisualMapState()
+        {
+            if (DataContext is not MapViewModel vm)
+            {
+                return;
+            }
+
+            if (MapControl is not null)
+            {
+                vm.MapZoomLevel = MapControl.ZoomLevel;
+            }
+
+            if (_currentLayer is ImageryLayer imagery)
+            {
+                vm.MapCenter = imagery.Center;
             }
         }
 
@@ -452,9 +491,13 @@ namespace BusBuddy.WPF.Views.Map
         private void OnZoomOutRequested(object? sender, EventArgs e) => Dispatcher.Invoke(() => ApplyZoom(-1));
         private void OnCenterRequested(object? sender, EventArgs e) => Dispatcher.Invoke(() =>
         {
-            if (DataContext is MapViewModel vm)
+            if (DataContext is MapViewModel vm && vm.MapMarkers.Count > 0)
             {
-                vm.CenterOnMarkers();
+                CenterOnCurrentMarkers();
+            }
+            else
+            {
+                TryResetView();
             }
         });
         private void OnViewResetRequested(object? sender, EventArgs e) => Dispatcher.Invoke(TryResetView);
@@ -477,7 +520,7 @@ namespace BusBuddy.WPF.Views.Map
                     if (mk.LongitudeDegrees > maxLon) maxLon = mk.LongitudeDegrees;
                 }
 
-                ApplyCenter((minLat + maxLat) / 2d, (minLon + maxLon) / 2d, MapDefaults.DefaultZoomLevel);
+                ApplyCenter((minLat + maxLat) / 2d, (minLon + maxLon) / 2d, MapDefaults.SchoolZoomLevel);
             }
             catch (Exception ex)
             {

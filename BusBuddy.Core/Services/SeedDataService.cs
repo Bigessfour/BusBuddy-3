@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
 using BusBuddy.Core.Data;
+using BusBuddy.Core.Mapping;
 using BusBuddy.Core.Models;
 using Microsoft.Extensions.Configuration;
 
@@ -798,9 +799,44 @@ Jordan,Lee,3,Sam,Lee,200 Oak Ave,Oakridge,CO,County,,555-0101,,,,,,,,
             await SeedStudentsFromCsvAsync();
             await SeedRoutesAsync(8);
             await SeedActivitiesAsync(25);
-            await SeedSpecialNeedsTransportPrepAsync();
+            await EnsureMapDemoGeoAsync();
 
             Logger.Information("Development data seeding completed");
+        }
+
+        /// <inheritdoc />
+        public async Task EnsureMapDemoGeoAsync()
+        {
+            try
+            {
+                await SeedSpecialNeedsTransportPrepAsync();
+
+                using var context = _contextFactory.CreateWriteDbContext();
+
+                var route = await context.Routes.FirstOrDefaultAsync(r => r.RouteName == "Special Needs Route")
+                    ?? await context.Routes.FirstOrDefaultAsync(r => r.IsActive);
+
+                if (route is not null && string.IsNullOrWhiteSpace(route.WaypointsJson))
+                {
+                    route.WaypointsJson = RouteWaypointSerializer.FromPairs(new[]
+                    {
+                        (38.1535, -102.7195),
+                        (38.1550, -102.7210),
+                        (38.1565, -102.7180),
+                        (38.1535, -102.7195)
+                    });
+                }
+
+                await context.SaveChangesAsync();
+                Logger.Information(
+                    "Map demo geo ensured SchoolStudentsSeeded=true RouteHasWaypoints={HasWaypoints}",
+                    route is not null && !string.IsNullOrWhiteSpace(route.WaypointsJson));
+            }
+            catch (Exception ex)
+            {
+                Logger.Warning(ex, "EnsureMapDemoGeoAsync failed");
+                throw;
+            }
         }
 
         /// <inheritdoc />

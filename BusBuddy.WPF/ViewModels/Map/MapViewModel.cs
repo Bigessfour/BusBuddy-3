@@ -29,6 +29,8 @@ namespace BusBuddy.WPF.ViewModels.Map
 {
     /// <summary>
     /// ViewModel for the Syncfusion SfMap surface (OpenStreetMap + Maps Platform geocoding).
+    /// Plots student addresses, school destinations, and route trails/waypoints.
+    /// Live fleet GPS tracking is deferred and stays off.
     /// </summary>
     public class MapViewModel : BaseViewModel
     {
@@ -66,6 +68,7 @@ namespace BusBuddy.WPF.ViewModels.Map
         private byte[]? _latestMapSnapshotPng; // Holds last captured map snapshot (PNG bytes) for PDF embedding
         private Point _mapCenter = new(MapDefaults.FallbackLatitude, MapDefaults.FallbackLongitude);
         private int _mapZoomLevel = MapDefaults.DefaultZoomLevel;
+        private const string RouteWaypointPrefix = "WP ";
 
         /// <summary>
         /// Points representing the currently selected route polyline — consumed by view to draw MapPolyline.
@@ -163,14 +166,31 @@ namespace BusBuddy.WPF.ViewModels.Map
         }
 
         /// <summary>
-        /// Live tracking toggle state (bound to ButtonAdv)
+        /// Live fleet GPS tracking — deferred. The toggle stays off until AVL is wired.
         /// </summary>
         public bool IsLiveTrackingEnabled
         {
             get => _isLiveTrackingEnabled;
             set
             {
-                if (SetProperty(ref _isLiveTrackingEnabled, value))
+                if (value)
+                {
+                    StatusMessage = "Fleet GPS tracking is not enabled yet";
+                    Logger.Information("Live tracking requested — fleet GPS is deferred");
+                    if (_isLiveTrackingEnabled)
+                    {
+                        _ = SetProperty(ref _isLiveTrackingEnabled, false);
+                        UpdateLiveTrackingTimer();
+                    }
+                    else
+                    {
+                        OnPropertyChanged();
+                    }
+
+                    return;
+                }
+
+                if (SetProperty(ref _isLiveTrackingEnabled, false))
                 {
                     UpdateLiveTrackingTimer();
                 }
@@ -353,11 +373,12 @@ namespace BusBuddy.WPF.ViewModels.Map
 
         /// <summary>
         /// Center point for the OSM imagery layer (latitude = X, longitude = Y per Syncfusion).
+        /// Public setter required for TwoWay ZoomLevel/Center bindings.
         /// </summary>
         public Point MapCenter
         {
             get => _mapCenter;
-            private set => SetProperty(ref _mapCenter, value);
+            set => SetProperty(ref _mapCenter, value);
         }
 
         /// <summary>
@@ -366,7 +387,7 @@ namespace BusBuddy.WPF.ViewModels.Map
         public int MapZoomLevel
         {
             get => _mapZoomLevel;
-            private set => SetProperty(ref _mapZoomLevel, value);
+            set => SetProperty(ref _mapZoomLevel, Math.Clamp(value, 1, 18));
         }
 
         /// <summary>
@@ -602,8 +623,21 @@ namespace BusBuddy.WPF.ViewModels.Map
             {
                 await LoadRoutesAsync();
                 await LoadActiveBusesAsync();
-                Logger.Information("InitializeMapDataAsync completed Routes={RouteCount} Buses={BusCount} Markers={MarkerCount}",
-                    Routes.Count, ActiveBuses.Count, MapMarkers.Count);
+                var routeWithTrail = Routes.FirstOrDefault(r => !string.IsNullOrWhiteSpace(r.WaypointsJson));
+                if (routeWithTrail is not null)
+                {
+                    SelectedRoute = routeWithTrail;
+                    await UpdateMapForRouteAsync(routeWithTrail.RouteName ?? "Route");
+                }
+                else
+                {
+                    var (schoolLat, schoolLon) = await ResolveSchoolAnchorAsync();
+                    SetMapView(schoolLat, schoolLon, MapDefaults.SchoolZoomLevel);
+                }
+
+                Logger.Information(
+                    "InitializeMapDataAsync completed Routes={RouteCount} Buses={BusCount} Markers={MarkerCount} Trail={HasTrail}",
+                    Routes.Count, ActiveBuses.Count, MapMarkers.Count, routeWithTrail is not null);
             }
             catch (Exception ex)
             {
@@ -786,11 +820,23 @@ namespace BusBuddy.WPF.ViewModels.Map
                 await UpdatePolylineAsync(points);
                 if (points.Length > 0)
                 {
+                    ClearRouteWaypointMarkers();
+                    for (var i = 0; i < points.Length; i++)
+                    {
+                        var label = i == 0
+                            ? RouteWaypointPrefix + "Start"
+                            : i == points.Length - 1
+                                ? RouteWaypointPrefix + "End"
+                                : $"{RouteWaypointPrefix}Stop {i}";
+                        PlotStop(points[i].X, points[i].Y, null, label);
+                    }
+
                     CenterOnPoints(points);
-                    StatusMessage = $"Route {routeName}: {points.Length} points";
+                    StatusMessage = $"Route {routeName}: trail and {points.Length} waypoints";
                 }
                 else
                 {
+                    ClearRouteWaypointMarkers();
                     StatusMessage = $"Route {routeName} has no waypoints to display";
                 }
                 Logger.Information("Map updated for route: {RouteName} with {Count} points", routeName, points.Length);
@@ -863,42 +909,21 @@ namespace BusBuddy.WPF.ViewModels.Map
         {
             try
             {
-                StatusMessage = "Centering map on fleet...";
-                if (ActiveBuses.Count == 0)
-                {
-                    await LoadActiveBusesAsync();
-                }
-
-                var busesWithGps = ActiveBuses
-                    .Where(b => b.CurrentLatitude.HasValue && b.CurrentLongitude.HasValue)
-                    .ToList();
-
-                if (busesWithGps.Count > 0)
-                {
-                    var avgLat = busesWithGps.Average(b => (double)b.CurrentLatitude!.Value);
-                    var avgLon = busesWithGps.Average(b => (double)b.CurrentLongitude!.Value);
-                    SetMapView(avgLat, avgLon, MapDefaults.DefaultZoomLevel);
-                    StatusMessage = $"Centered on {busesWithGps.Count} active bus(es)";
-                    Logger.Information("Centered map on fleet centroid {Lat},{Lon}", avgLat, avgLon);
-                    return;
-                }
-
                 if (MapMarkers.Count > 0)
                 {
                     CenterOnMarkers();
-                    StatusMessage = "Centered on plotted markers";
+                    StatusMessage = "Centered on plotted stops";
                     return;
                 }
 
-                SetMapView(MapDefaults.FallbackLatitude, MapDefaults.FallbackLongitude, MapDefaults.DefaultZoomLevel);
-                StatusMessage = ActiveBuses.Count == 0
-                    ? "No active buses — centered on district"
-                    : "No bus GPS yet — centered on district";
+                var (schoolLat, schoolLon) = await ResolveSchoolAnchorAsync();
+                SetMapView(schoolLat, schoolLon, MapDefaults.SchoolZoomLevel);
+                StatusMessage = "Centered on school — fleet GPS is not enabled yet";
             }
             catch (Exception ex)
             {
                 Logger.Warning(ex, "CenterOnFleet failed");
-                StatusMessage = "Could not center on fleet";
+                StatusMessage = "Could not center map";
             }
         }
 
@@ -930,45 +955,14 @@ namespace BusBuddy.WPF.ViewModels.Map
                 if (pt.Y > maxLon) maxLon = pt.Y;
             }
 
-            SetMapView((minLat + maxLat) / 2d, (minLon + maxLon) / 2d, MapDefaults.DefaultZoomLevel);
+            SetMapView((minLat + maxLat) / 2d, (minLon + maxLon) / 2d, MapDefaults.SchoolZoomLevel);
         }
 
         private async Task ShowAllBusesAsync()
         {
-            StatusMessage = "Showing all buses...";
-            Logger.Information("Show all buses requested");
-            try
-            {
-                if (ActiveBuses.Count == 0)
-                {
-                    await LoadActiveBusesAsync();
-                }
-
-                var plotted = 0;
-                foreach (var bus in ActiveBuses)
-                {
-                    if (!bus.CurrentLatitude.HasValue || !bus.CurrentLongitude.HasValue)
-                    {
-                        continue;
-                    }
-
-                    PlotStop((double)bus.CurrentLatitude.Value, (double)bus.CurrentLongitude.Value, null, $"Bus {bus.BusNumber}");
-                    plotted++;
-                }
-
-                StatusMessage = plotted == 0
-                    ? (ActiveBuses.Count == 0 ? "No active buses loaded" : "Active buses have no GPS coordinates")
-                    : $"Plotted {plotted} buses";
-                if (plotted > 0)
-                {
-                    CenterOnMarkers();
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger.Warning(ex, "ShowAllBuses failed");
-                StatusMessage = "Could not plot buses";
-            }
+            StatusMessage = "Fleet GPS tracking is not enabled yet";
+            Logger.Information("Show all buses skipped — fleet GPS is deferred");
+            await Task.CompletedTask;
         }
 
         private async Task ShowRoutesAsync()
@@ -1024,22 +1018,8 @@ namespace BusBuddy.WPF.ViewModels.Map
 
         private void TrackSelectedBus()
         {
-            if (SelectedBus is null)
-            {
-                StatusMessage = "No bus selected to track";
-                return;
-            }
-
-            if (!SelectedBus.CurrentLatitude.HasValue || !SelectedBus.CurrentLongitude.HasValue)
-            {
-                StatusMessage = $"Bus {SelectedBus.BusNumber} has no GPS coordinates";
-                return;
-            }
-
-            PlotStop((double)SelectedBus.CurrentLatitude.Value, (double)SelectedBus.CurrentLongitude.Value, null, $"Bus {SelectedBus.BusNumber}");
-            StatusMessage = $"Tracking bus {SelectedBus.BusNumber}";
-            Logger.Information("Tracking selected bus {BusNumber}", SelectedBus.BusNumber);
-            CenterOnMarkers();
+            StatusMessage = "Fleet GPS tracking is not enabled yet";
+            Logger.Information("Track selected bus skipped — fleet GPS is deferred");
         }
 
         private void ResetView()
@@ -1089,11 +1069,23 @@ namespace BusBuddy.WPF.ViewModels.Map
                 existing = MapMarker.FromDegrees(latitude, longitude, label);
                 MapMarkers.Add(existing);
                 Logger.Information("Added new stop marker at ({Lat}, {Lon}) Label={Label}", latitude, longitude, label ?? "<auto>");
+                if (studentNames != null)
+                {
+                    foreach (var name in studentNames)
+                    {
+                        existing.AddStudent(name);
+                    }
+                }
+
                 NotifyMapMarkersChanged();
+                return existing;
             }
-            else if (!string.IsNullOrWhiteSpace(label))
+
+            var mutated = false;
+            if (!string.IsNullOrWhiteSpace(label))
             {
-                existing.Label = label; // explicit override
+                existing.Label = label;
+                mutated = true;
             }
 
             if (studentNames != null)
@@ -1102,6 +1094,13 @@ namespace BusBuddy.WPF.ViewModels.Map
                 {
                     existing.AddStudent(name);
                 }
+
+                mutated = true;
+            }
+
+            if (mutated)
+            {
+                NotifyMapMarkersChanged();
             }
 
             return existing;
@@ -1516,6 +1515,17 @@ namespace BusBuddy.WPF.ViewModels.Map
                 ordered
                     .Where(s => s.Latitude.HasValue && s.Longitude.HasValue)
                     .Select(s => ((double)s.Latitude!.Value, (double)s.Longitude!.Value)));
+        }
+
+        private void ClearRouteWaypointMarkers()
+        {
+            for (var i = MapMarkers.Count - 1; i >= 0; i--)
+            {
+                if (MapMarkers[i].Label?.StartsWith(RouteWaypointPrefix, StringComparison.Ordinal) == true)
+                {
+                    MapMarkers.RemoveAt(i);
+                }
+            }
         }
 
         /// <summary>
