@@ -763,6 +763,8 @@ namespace BusBuddy.Core.Services
                     using var context = _contextFactory.CreateDbContext();
                     return await context.Buses
                         .AsNoTracking()
+                        .Include(b => b.AMRoutes)
+                        .Include(b => b.PMRoutes)
                         .Where(b => b.Status == "Active")
                         .ToListAsync();
                 }

@@ -6,6 +6,7 @@ using System.Windows.Input;
 using System.Windows.Documents;
 using System.Windows.Media.TextFormatting;
 using System.Windows.Automation; // AutomationProperties for accessibility checks
+using Syncfusion.Windows.Controls.Input;
 using Syncfusion.Windows.Shared; // ChromelessWindow per Syncfusion WPF docs
 using Syncfusion.SfSkinManager; // SfSkinManager per official docs
 using BusBuddy.WPF.ViewModels.Student;
@@ -172,15 +173,39 @@ namespace BusBuddy.WPF.Views.Student
                 return;
             }
 
+            if (TryFocusInnerEditable(target))
+            {
+                return;
+            }
+
             if (!target.Focus())
             {
                 Keyboard.Focus(target);
             }
 
-            if (target is System.Windows.Controls.TextBox textBox)
+            if (target is TextBox textBox)
             {
                 textBox.CaretIndex = textBox.Text?.Length ?? 0;
             }
+        }
+
+        private static bool TryFocusInnerEditable(FrameworkElement target)
+        {
+            TextBox? inner = target switch
+            {
+                SfMaskedEdit maskedEdit => maskedEdit.Template?.FindName("PART_TextBox", maskedEdit) as TextBox,
+                SfTextBoxExt textExt => textExt.Template?.FindName("PART_TextBox", textExt) as TextBox,
+                _ => null,
+            };
+
+            if (inner is null)
+            {
+                return false;
+            }
+
+            inner.Focus();
+            inner.CaretIndex = inner.Text?.Length ?? 0;
+            return true;
         }
 
         private void ClearFieldErrorForControl(string? controlName)
@@ -340,6 +365,7 @@ namespace BusBuddy.WPF.Views.Student
         private void OnContentRendered(object? sender, System.EventArgs e)
         {
             Logger.Information("StudentForm ContentRendered — Ready for user interaction");
+            InputCaretHelper.RefreshCaretsInSubtree(this);
             // One-time UI audit after visual tree is ready
             try { AuditButtonsAccessibility(); }
             catch (System.Exception ex) { Logger.Warning(ex, "StudentForm: UI audit failed"); }

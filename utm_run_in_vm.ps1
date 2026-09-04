@@ -9,6 +9,14 @@
 # Or double-click: utm_run_in_vm.cmd
 #
 # From Mac host (preflight only): ./run-wpf.sh
+#
+# Hot Reload (faster UI iteration — no full restart for many C# edits):
+#   powershell -NoProfile -ExecutionPolicy Bypass -File .\utm_run_in_vm.ps1 -Watch
+#   (or double-click utm_watch_in_vm.cmd)
+
+param(
+    [switch]$Watch
+)
 
 $ErrorActionPreference = "Stop"
 
@@ -260,8 +268,7 @@ try {
     if (Test-IsWebDavOrNetworkPath -Path $projectRoot) {
         Sync-BusBuddyToLocal -Source $sharedRoot -Destination $localBuildRoot
         $projectRoot = $localBuildRoot
-    }
-    elseif ($zDriveRoot -and $projectRoot -ne $localBuildRoot) {
+    } elseif ($zDriveRoot -and $projectRoot -ne $localBuildRoot) {
         $localSln = Join-Path $localBuildRoot "BusBuddy.sln"
         $shouldSync = -not (Test-Path -LiteralPath $localSln)
         if (-not $shouldSync) {
@@ -310,7 +317,7 @@ try {
             $name = $line.Substring(0, $eq).Trim()
             $value = $line.Substring($eq + 1).Trim().Trim('"').Trim("'")
             if ($name.Length -gt 0) {
-                $env:$name = $value
+                Set-Item -Path "env:$name" -Value $value
             }
         }
         Write-Host "Loaded keys/.env from share." -ForegroundColor Cyan
@@ -327,14 +334,36 @@ try {
     & dotnet build BusBuddy.WPF\BusBuddy.WPF.csproj -c Debug -p:EnableWindowsTargeting=true --no-restore --no-incremental
     if ($LASTEXITCODE -ne 0) { throw "dotnet build failed ($LASTEXITCODE)" }
 
+    if ($Watch) {
+        Write-Host ""
+        Write-Host "Starting BusBuddy with Hot Reload (dotnet watch)..." -ForegroundColor Green
+        Write-Host "  Edit C# / XAML on Mac, sync to C:\dev\BusBuddy-3, and save — supported changes apply without a full restart." -ForegroundColor DarkGray
+        Write-Host "  Ctrl+C to stop. Ctrl+R in this window forces a rebuild/restart." -ForegroundColor DarkGray
+        # Polling helps when the tree is on a UTM share (Z:) instead of C:\dev.
+        $env:DOTNET_USE_POLLING_FILE_WATCHER = '1'
+        $env:DOTNET_WATCH_RESTART_ON_RUDE_EDIT = '1'
+        & dotnet watch run --project BusBuddy.WPF\BusBuddy.WPF.csproj -c Debug -p:EnableWindowsTargeting=true --non-interactive
+        if ($LASTEXITCODE -ne 0) { throw "dotnet watch failed ($LASTEXITCODE)" }
+        return
+    }
+
     Write-Host ""
     Write-Host "Launching BusBuddy WPF..." -ForegroundColor Green
-    Start-Process -FilePath "dotnet" `
-        -ArgumentList @("run", "--project", "BusBuddy.WPF\BusBuddy.WPF.csproj", "-c", "Debug", "--no-build") `
-        -WorkingDirectory $projectRoot `
-        -WindowStyle Normal
-
-    Write-Host "Launch requested — look for the BusBuddy window on the VM desktop." -ForegroundColor Green
+    $exe = Join-Path $projectRoot "BusBuddy.WPF\bin\Debug\net9.0-windows\BusBuddy.WPF.exe"
+    if (-not (Test-Path -LiteralPath $exe)) {
+        throw "Built executable not found: $exe"
+    }
+    $launch = Start-Process -FilePath $exe `
+        -WorkingDirectory (Split-Path -Parent $exe) `
+        -WindowStyle Normal `
+        -PassThru
+    Start-Sleep -Seconds 3
+    if ($null -eq $launch -or $launch.HasExited) {
+        $log = Join-Path (Split-Path -Parent $exe) "logs\runtime-errors.log"
+        $hint = if (Test-Path -LiteralPath $log) { Get-Content -LiteralPath $log -Tail 5 -ErrorAction SilentlyContinue } else { @() }
+        throw "BusBuddy exited during startup. Check logs under $(Split-Path -Parent $exe)\logs and Logs. $hint"
+    }
+    Write-Host "BusBuddy running (PID $($launch.Id)) — check the VM desktop for the main window." -ForegroundColor Green
 } catch {
     Write-Host ""
     Write-Host "FAILED: $($_.Exception.Message)" -ForegroundColor Red

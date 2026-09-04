@@ -81,7 +81,7 @@ public class StudentFormViewModelSaveTests
             .Setup(s => s.ValidateStudentAsync(It.IsAny<Student>()))
             .ReturnsAsync(new List<string> { "AM Route 'Route Z' does not exist" });
 
-        var vm = new StudentFormViewModel(studentService.Object, enableValidation: false)
+        var vm = new StudentFormViewModel(studentService.Object, student: null, enableValidation: false)
         {
             Student =
             {
@@ -113,7 +113,7 @@ public class StudentFormViewModelSaveTests
     public async Task SaveStudentAsync_BlankName_DoesNotCallService()
     {
         var studentService = new Mock<IStudentService>();
-        var vm = new StudentFormViewModel(studentService.Object, enableValidation: false)
+        var vm = new StudentFormViewModel(studentService.Object, student: null, enableValidation: false)
         {
             Student =
             {
@@ -145,6 +145,6 @@ public class StudentFormViewModelSaveTests
         var xaml = XamlViewFile.Read("Views/Student/StudentForm.xaml");
         Assert.That(xaml, Does.Contain("AddressSuggestionsPopup"));
         Assert.That(xaml, Does.Contain("ItemsSource=\"{Binding AddressSuggestions}\""));
-        Assert.That(xaml, Does.Contain("IsOpen=\"{Binding IsAddressSuggestionPopupOpen}\""));
+        Assert.That(xaml, Does.Contain("IsOpen=\"{Binding IsAddressSuggestionPopupOpen, Mode=OneWay}\""));
     }
 }

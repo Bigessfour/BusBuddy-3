@@ -4,7 +4,8 @@ using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using System.Windows.Input;
-using BusBuddy.WPF.Commands; // Use local RelayCommand instead
+using BusBuddy.WPF.Commands;
+using CommunityToolkit.Mvvm.Input;
 using BusBuddy.Core.Mapping;
 using BusBuddy.Core.Services.GoogleMaps;
 using BusBuddy.Core.Services.Interfaces;
@@ -61,7 +62,10 @@ namespace BusBuddy.WPF.ViewModels.Map
     ];
         private ObservableCollection<BusBuddy.Core.Models.Bus> _activeBuses = new();
         private BusBuddy.Core.Models.Bus? _selectedBus;
+        private BusBuddy.WPF.Commands.RelayCommand? _trackSelectedBusRelay;
         private byte[]? _latestMapSnapshotPng; // Holds last captured map snapshot (PNG bytes) for PDF embedding
+        private Point _mapCenter = new(MapDefaults.FallbackLatitude, MapDefaults.FallbackLongitude);
+        private int _mapZoomLevel = MapDefaults.DefaultZoomLevel;
 
         /// <summary>
         /// Points representing the currently selected route polyline — consumed by view to draw MapPolyline.
@@ -83,6 +87,7 @@ namespace BusBuddy.WPF.ViewModels.Map
         public event EventHandler? ZoomOutRequested;
         public event EventHandler? CenterRequested;
         public event EventHandler? ViewResetRequested;
+        public event EventHandler? MapMarkersChanged;
 
         /// <summary>
         /// Latest captured map snapshot in PNG format (used for embedding into route PDF exports).
@@ -103,33 +108,47 @@ namespace BusBuddy.WPF.ViewModels.Map
             _busService = busService;
             _scopeFactory = scopeFactory;
 
-            LoadRoutesCommand = new RelayCommand(async _ => await LoadRoutesAsync());
-            RefreshMapCommand = new RelayCommand(async _ => await RefreshMapAsync());
-            ExportRouteDataCommand = new RelayCommand(async _ => await ExportRouteDataAsync(), _ => SelectedRoute != null);
-            ZoomInCommand = new RelayCommand(_ => ZoomIn());
-            ZoomOutCommand = new RelayCommand(_ => ZoomOut());
+            LoadRoutesCommand = new AsyncRelayCommand(LoadRoutesAsync);
+            RefreshMapCommand = new AsyncRelayCommand(RefreshMapAsync);
+            ExportRouteDataCommand = new AsyncRelayCommand(ExportRouteDataAsync, () => SelectedRoute != null);
+            ZoomInCommand = new BusBuddy.WPF.Commands.RelayCommand(_ => ZoomIn());
+            ZoomOutCommand = new BusBuddy.WPF.Commands.RelayCommand(_ => ZoomOut());
 
             // Commands referenced by XAML (map toolbar)
-            CenterOnFleetCommand = new RelayCommand(_ => CenterOnFleet());
-            ShowAllBusesCommand = new RelayCommand(_ => ShowAllBuses());
-            ShowRoutesCommand = new RelayCommand(_ => ShowRoutes());
-            ShowSchoolsCommand = new RelayCommand(_ => ShowSchools());
-            TrackSelectedBusCommand = new RelayCommand(_ => TrackSelectedBus(), _ => SelectedBus != null);
-            ResetViewCommand = new RelayCommand(_ => ResetView());
+            CenterOnFleetCommand = new AsyncRelayCommand(CenterOnFleetAsync);
+            ShowAllBusesCommand = new AsyncRelayCommand(ShowAllBusesAsync);
+            ShowRoutesCommand = new AsyncRelayCommand(ShowRoutesAsync);
+            ShowSchoolsCommand = new AsyncRelayCommand(ShowSchoolsAsync);
+            TrackSelectedBusCommand = _trackSelectedBusRelay = new BusBuddy.WPF.Commands.RelayCommand(_ => TrackSelectedBus(), _ => SelectedBus != null);
+            ResetViewCommand = new BusBuddy.WPF.Commands.RelayCommand(_ => ResetView());
 
             // Print current route map/directions
-            PrintRouteMapsCommand = new RelayCommand(_ => OnPrintRequested(), _ => true);
+            PrintRouteMapsCommand = new BusBuddy.WPF.Commands.RelayCommand(_ => OnPrintRequested(), _ => true);
 
             // Eligibility route PDF generation
-            GenerateEligibilityRoutePdfCommand = new RelayCommand(async _ => await GenerateEligibilityRoutePdfAndSaveAsync(), _ => true);
+            GenerateEligibilityRoutePdfCommand = new AsyncRelayCommand(GenerateEligibilityRoutePdfAndSaveAsync);
 
             // Add marker (stop) plotting command. Accepts parameter forms documented in AddMarkerFromParam.
-            AddMarkerCommand = new RelayCommand(p => AddMarkerFromParam(p));
-            BulkPlotEligibleStudentsCommand = new RelayCommand(async _ => await BulkPlotEligibleStudentsAsync());
+            AddMarkerCommand = new BusBuddy.WPF.Commands.RelayCommand(p => AddMarkerFromParam(p));
+            BulkPlotEligibleStudentsCommand = new AsyncRelayCommand(BulkPlotEligibleStudentsAsync);
 
             MapMarkers = new ObservableCollection<MapMarker>();
+            MapMarkers.CollectionChanged += (_, _) => NotifyMapMarkersChanged();
 
-            _ = InitializeMapDataAsync();
+            _ = InitializeMapDataSafeAsync();
+        }
+
+        private async Task InitializeMapDataSafeAsync()
+        {
+            try
+            {
+                await InitializeMapDataAsync();
+            }
+            catch (Exception ex)
+            {
+                Logger.Warning(ex, "Initial map data load failed");
+                StatusMessage = "Map data load failed";
+            }
         }
 
         #region Properties
@@ -333,6 +352,88 @@ namespace BusBuddy.WPF.ViewModels.Map
         public ObservableCollection<MapMarker> MapMarkers { get; private set; } = new();
 
         /// <summary>
+        /// Center point for the OSM imagery layer (latitude = X, longitude = Y per Syncfusion).
+        /// </summary>
+        public Point MapCenter
+        {
+            get => _mapCenter;
+            private set => SetProperty(ref _mapCenter, value);
+        }
+
+        /// <summary>
+        /// Zoom level bound to SfMap.ZoomLevel.
+        /// </summary>
+        public int MapZoomLevel
+        {
+            get => _mapZoomLevel;
+            private set => SetProperty(ref _mapZoomLevel, value);
+        }
+
+        /// <summary>
+        /// Updates map center and optional zoom for view bindings.
+        /// </summary>
+        public void SetMapView(double latitude, double longitude, int? zoomLevel = null)
+        {
+            MapCenter = new Point(latitude, longitude);
+            if (zoomLevel.HasValue)
+            {
+                MapZoomLevel = zoomLevel.Value;
+            }
+        }
+
+        private void NotifyMapMarkersChanged()
+        {
+            OnPropertyChanged(nameof(MapMarkers));
+            try
+            {
+                MapMarkersChanged?.Invoke(this, EventArgs.Empty);
+            }
+            catch (Exception ex)
+            {
+                Logger.Warning(ex, "MapMarkersChanged event dispatch failed");
+            }
+        }
+
+        private async Task<(double Lat, double Lon)?> TryGeocodeStudentAsync(
+            BusBuddy.Core.Models.Student student,
+            IServiceScope? scope)
+        {
+            if (_geocodingService is not null)
+            {
+                try
+                {
+                    var geo = await _geocodingService.GeocodeAsync(
+                        student.HomeAddress, student.City, student.State, student.Zip);
+                    if (geo.HasValue)
+                    {
+                        return (geo.Value.latitude, geo.Value.longitude);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Logger.Warning(ex, "IGeocodingService geocode failed for student {Id}", student.StudentId);
+                }
+            }
+
+            var mapsGeo = scope?.ServiceProvider.GetService<IMapsGeoService>()
+                ?? App.ServiceProvider?.GetService<IMapsGeoService>();
+            if (mapsGeo is null || !mapsGeo.IsConfigured)
+            {
+                return null;
+            }
+
+            try
+            {
+                return await mapsGeo.GeocodeAsync(student.HomeAddress, student.City, student.State, student.Zip);
+            }
+            catch (Exception ex)
+            {
+                Logger.Warning(ex, "IMapsGeoService geocode failed for student {Id}", student.StudentId);
+                return null;
+            }
+        }
+
+        /// <summary>
         /// Active buses list shown in SfDataGrid
         /// </summary>
         public ObservableCollection<BusBuddy.Core.Models.Bus> ActiveBuses
@@ -363,7 +464,13 @@ namespace BusBuddy.WPF.ViewModels.Map
         public BusBuddy.Core.Models.Bus? SelectedBus
         {
             get => _selectedBus;
-            set => SetProperty(ref _selectedBus, value);
+            set
+            {
+                if (SetProperty(ref _selectedBus, value))
+                {
+                    _trackSelectedBusRelay?.RaiseCanExecuteChanged();
+                }
+            }
         }
 
         /// <summary>
@@ -449,9 +556,7 @@ namespace BusBuddy.WPF.ViewModels.Map
             {
                 Logger.Information("Selected route changed to: {RouteName}", SelectedRoute.RouteName ?? "Unknown");
                 StatusMessage = $"Selected: {SelectedRoute.RouteName ?? "Unknown Route"}";
-
-                // Trigger map update for selected route
-                _ = Task.Run(async () => await UpdateMapForRouteAsync(SelectedRoute.RouteName ?? "Unknown"));
+                _ = UpdateMapForRouteAsync(SelectedRoute.RouteName ?? "Unknown");
             }
             catch (Exception ex)
             {
@@ -575,13 +680,15 @@ namespace BusBuddy.WPF.ViewModels.Map
         /// </summary>
         private async Task BulkPlotEligibleStudentsAsync()
         {
-            using var scope = _scopeFactory?.CreateScope();
-            var studentService = ResolveStudentService(scope);
-            if (studentService is null)
+            try
             {
-                StatusMessage = "Student service unavailable";
-                return;
-            }
+                using var scope = _scopeFactory?.CreateScope();
+                var studentService = ResolveStudentService(scope);
+                if (studentService is null)
+                {
+                    StatusMessage = "Student service unavailable";
+                    return;
+                }
             StatusMessage = "Loading students...";
             List<BusBuddy.Core.Models.Student> students;
             try
@@ -606,35 +713,35 @@ namespace BusBuddy.WPF.ViewModels.Map
 
             foreach (var stu in students)
             {
-                double? lat = (double?)stu.Latitude; // Student entity uses decimal?; cast carefully
-                double? lon = (double?)stu.Longitude;
-                if ((!lat.HasValue || !lon.HasValue) && _geocodingService != null)
+                double? lat = stu.Latitude.HasValue ? (double)stu.Latitude.Value : null;
+                double? lon = stu.Longitude.HasValue ? (double)stu.Longitude.Value : null;
+                if (!lat.HasValue || !lon.HasValue)
                 {
-                    try
+                    var geo = await TryGeocodeStudentAsync(stu, scope);
+                    if (geo.HasValue)
                     {
-                        var geo = await _geocodingService.GeocodeAsync(stu.HomeAddress, stu.City, stu.State, stu.Zip);
-                        if (geo.HasValue)
+                        lat = geo.Value.Lat;
+                        lon = geo.Value.Lon;
+                        stu.Latitude = (decimal)lat.Value;
+                        stu.Longitude = (decimal)lon.Value;
+                        if (await studentService.UpdateStudentAsync(stu))
                         {
-                            lat = geo.Value.latitude;
-                            lon = geo.Value.longitude;
                             geocoded++;
                         }
-                    }
-                    catch (Exception ex)
-                    {
-                        Logger.Warning(ex, "Geocode failed for student {Id}", stu.StudentId);
-                        continue; // skip
+                        else
+                        {
+                            Logger.Warning("Bulk plot: failed persisting geocode for student {Id}", stu.StudentId);
+                        }
                     }
                 }
 
                 if (!lat.HasValue || !lon.HasValue)
                 {
-                    continue; // cannot plot
+                    continue;
                 }
 
                 eligibleCount++;
 
-                // Plot marker; label with name (or ID) — clustering handled in PlotStop
                 try
                 {
                     PlotStop(lat.Value, lon.Value, new[] { stu.StudentName ?? stu.StudentNumber ?? "Student" }, stu.StudentName);
@@ -646,8 +753,20 @@ namespace BusBuddy.WPF.ViewModels.Map
                 }
             }
 
-            StatusMessage = $"Plotted {plotted} markers (In system {eligibleCount}, Geocoded {geocoded})";
+            StatusMessage = plotted == 0
+                ? $"No plottable students ({students.Count} in DB; geocoded {geocoded})"
+                : $"Plotted {plotted} markers (In system {eligibleCount}, Geocoded {geocoded})";
             Logger.Information("Bulk plot complete InSystem={Eligible} Geocoded={Geocoded} Plotted={Plotted} Total={Total}", eligibleCount, geocoded, plotted, students.Count);
+            if (plotted > 0)
+            {
+                CenterOnMarkers();
+            }
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Bulk plot students failed");
+                StatusMessage = "Plot students failed — see logs";
+            }
         }
 
         private async Task UpdateMapForRouteAsync(string routeName)
@@ -665,6 +784,15 @@ namespace BusBuddy.WPF.ViewModels.Map
                 }
 
                 await UpdatePolylineAsync(points);
+                if (points.Length > 0)
+                {
+                    CenterOnPoints(points);
+                    StatusMessage = $"Route {routeName}: {points.Length} points";
+                }
+                else
+                {
+                    StatusMessage = $"Route {routeName} has no waypoints to display";
+                }
                 Logger.Information("Map updated for route: {RouteName} with {Count} points", routeName, points.Length);
             }
             catch (Exception ex)
@@ -717,32 +845,105 @@ namespace BusBuddy.WPF.ViewModels.Map
 
         private void ZoomIn()
         {
-            StatusMessage = "Zooming in...";
-            Logger.Information("Map zoom in requested");
-            try { ZoomInRequested?.Invoke(this, EventArgs.Empty); } catch (Exception ex) { Logger.Warning(ex, "ZoomIn event dispatch failed"); }
+            var next = Math.Clamp(MapZoomLevel + 1, 1, 18);
+            SetMapView(MapCenter.X, MapCenter.Y, next);
+            StatusMessage = $"Zoom level {next}";
+            Logger.Debug("Map zoom in to {Zoom}", next);
         }
 
         private void ZoomOut()
         {
-            StatusMessage = "Zooming out...";
-            Logger.Information("Map zoom out requested");
-            try { ZoomOutRequested?.Invoke(this, EventArgs.Empty); } catch (Exception ex) { Logger.Warning(ex, "ZoomOut event dispatch failed"); }
+            var next = Math.Clamp(MapZoomLevel - 1, 1, 18);
+            SetMapView(MapCenter.X, MapCenter.Y, next);
+            StatusMessage = $"Zoom level {next}";
+            Logger.Debug("Map zoom out to {Zoom}", next);
         }
 
-        // Map toolbar commands bound from XAML (center / buses / routes / schools)
-        private void CenterOnFleet()
+        private async Task CenterOnFleetAsync()
         {
-            StatusMessage = "Centering map on fleet...";
-            Logger.Information("Center on fleet requested");
-            try { CenterRequested?.Invoke(this, EventArgs.Empty); } catch (Exception ex) { Logger.Warning(ex, "Center event dispatch failed"); }
+            try
+            {
+                StatusMessage = "Centering map on fleet...";
+                if (ActiveBuses.Count == 0)
+                {
+                    await LoadActiveBusesAsync();
+                }
+
+                var busesWithGps = ActiveBuses
+                    .Where(b => b.CurrentLatitude.HasValue && b.CurrentLongitude.HasValue)
+                    .ToList();
+
+                if (busesWithGps.Count > 0)
+                {
+                    var avgLat = busesWithGps.Average(b => (double)b.CurrentLatitude!.Value);
+                    var avgLon = busesWithGps.Average(b => (double)b.CurrentLongitude!.Value);
+                    SetMapView(avgLat, avgLon, MapDefaults.DefaultZoomLevel);
+                    StatusMessage = $"Centered on {busesWithGps.Count} active bus(es)";
+                    Logger.Information("Centered map on fleet centroid {Lat},{Lon}", avgLat, avgLon);
+                    return;
+                }
+
+                if (MapMarkers.Count > 0)
+                {
+                    CenterOnMarkers();
+                    StatusMessage = "Centered on plotted markers";
+                    return;
+                }
+
+                SetMapView(MapDefaults.FallbackLatitude, MapDefaults.FallbackLongitude, MapDefaults.DefaultZoomLevel);
+                StatusMessage = ActiveBuses.Count == 0
+                    ? "No active buses — centered on district"
+                    : "No bus GPS yet — centered on district";
+            }
+            catch (Exception ex)
+            {
+                Logger.Warning(ex, "CenterOnFleet failed");
+                StatusMessage = "Could not center on fleet";
+            }
         }
 
-        private void ShowAllBuses()
+        /// <summary>Centers the map on the current marker set.</summary>
+        public void CenterOnMarkers()
+        {
+            if (MapMarkers.Count == 0)
+            {
+                return;
+            }
+
+            CenterOnPoints(MapMarkers.Select(m => new Point(m.LatitudeDegrees, m.LongitudeDegrees)));
+        }
+
+        private void CenterOnPoints(IEnumerable<Point> points)
+        {
+            var list = points.ToList();
+            if (list.Count == 0)
+            {
+                return;
+            }
+
+            double minLat = double.MaxValue, maxLat = double.MinValue, minLon = double.MaxValue, maxLon = double.MinValue;
+            foreach (var pt in list)
+            {
+                if (pt.X < minLat) minLat = pt.X;
+                if (pt.X > maxLat) maxLat = pt.X;
+                if (pt.Y < minLon) minLon = pt.Y;
+                if (pt.Y > maxLon) maxLon = pt.Y;
+            }
+
+            SetMapView((minLat + maxLat) / 2d, (minLon + maxLon) / 2d, MapDefaults.DefaultZoomLevel);
+        }
+
+        private async Task ShowAllBusesAsync()
         {
             StatusMessage = "Showing all buses...";
             Logger.Information("Show all buses requested");
             try
             {
+                if (ActiveBuses.Count == 0)
+                {
+                    await LoadActiveBusesAsync();
+                }
+
                 var plotted = 0;
                 foreach (var bus in ActiveBuses)
                 {
@@ -760,30 +961,32 @@ namespace BusBuddy.WPF.ViewModels.Map
                     : $"Plotted {plotted} buses";
                 if (plotted > 0)
                 {
-                    CenterRequested?.Invoke(this, EventArgs.Empty);
+                    CenterOnMarkers();
                 }
             }
             catch (Exception ex)
             {
                 Logger.Warning(ex, "ShowAllBuses failed");
+                StatusMessage = "Could not plot buses";
             }
         }
 
-        private void ShowRoutes()
+        private async Task ShowRoutesAsync()
         {
             StatusMessage = "Showing routes on map...";
             Logger.Information("Show routes requested");
             try
             {
-                _ = LoadAllRoutesOnMapAsync();
+                await LoadAllRoutesOnMapAsync();
             }
             catch (Exception ex)
             {
                 Logger.Warning(ex, "ShowRoutes failed");
+                StatusMessage = "Could not show routes";
             }
         }
 
-        private async void ShowSchools()
+        private async Task ShowSchoolsAsync()
         {
             StatusMessage = "Showing schools on map...";
             Logger.Information("Show schools requested");
@@ -807,11 +1010,15 @@ namespace BusBuddy.WPF.ViewModels.Map
                 StatusMessage = plotted == 0
                     ? "No schools with coordinates — add a school destination"
                     : $"Showing {plotted} school(s) on map";
-                ViewResetRequested?.Invoke(this, EventArgs.Empty);
+                if (plotted > 0)
+                {
+                    CenterOnMarkers();
+                }
             }
             catch (Exception ex)
             {
                 Logger.Warning(ex, "ShowSchools failed");
+                StatusMessage = "Could not show schools";
             }
         }
 
@@ -832,7 +1039,7 @@ namespace BusBuddy.WPF.ViewModels.Map
             PlotStop((double)SelectedBus.CurrentLatitude.Value, (double)SelectedBus.CurrentLongitude.Value, null, $"Bus {SelectedBus.BusNumber}");
             StatusMessage = $"Tracking bus {SelectedBus.BusNumber}";
             Logger.Information("Tracking selected bus {BusNumber}", SelectedBus.BusNumber);
-            CenterRequested?.Invoke(this, EventArgs.Empty);
+            CenterOnMarkers();
         }
 
         private void ResetView()
@@ -843,7 +1050,7 @@ namespace BusBuddy.WPF.ViewModels.Map
             {
                 RouteLinePoints.Clear();
                 RouteLineUpdated?.Invoke(this, new RouteLineEventArgs(RouteLinePoints));
-                ViewResetRequested?.Invoke(this, EventArgs.Empty);
+                SetMapView(MapDefaults.FallbackLatitude, MapDefaults.FallbackLongitude, MapDefaults.DefaultZoomLevel);
                 StatusMessage = "Map view reset";
             }
             catch (Exception ex)
@@ -882,6 +1089,7 @@ namespace BusBuddy.WPF.ViewModels.Map
                 existing = MapMarker.FromDegrees(latitude, longitude, label);
                 MapMarkers.Add(existing);
                 Logger.Information("Added new stop marker at ({Lat}, {Lon}) Label={Label}", latitude, longitude, label ?? "<auto>");
+                NotifyMapMarkersChanged();
             }
             else if (!string.IsNullOrWhiteSpace(label))
             {

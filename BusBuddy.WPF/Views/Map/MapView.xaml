@@ -24,7 +24,28 @@
                 <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/ButtonAdvTextOnly.xaml"/>
             </ResourceDictionary.MergedDictionaries>
             <Style TargetType="syncfusion:ButtonAdv" BasedOn="{StaticResource {x:Type syncfusion:ButtonAdv}}">
-                <Setter Property="Padding" Value="10,6"/>
+                <Setter Property="SizeMode" Value="Normal"/>
+                <Setter Property="IconWidth" Value="0"/>
+                <Setter Property="IconHeight" Value="0"/>
+                <Setter Property="SmallIcon" Value="{x:Null}"/>
+                <Setter Property="Padding" Value="10,8"/>
+                <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            </Style>
+            <Style x:Key="MapOverlayWpfButtonStyle" TargetType="Button">
+                <Setter Property="Height" Value="40"/>
+                <Setter Property="MinWidth" Value="88"/>
+                <Setter Property="Padding" Value="12,8"/>
+                <Setter Property="Margin" Value="4,0"/>
+                <Setter Property="Background" Value="{DynamicResource ButtonBackgroundBrush}"/>
+                <Setter Property="Foreground" Value="{DynamicResource ButtonForegroundBrush}"/>
+                <Setter Property="BorderThickness" Value="0"/>
+                <Setter Property="Cursor" Value="Hand"/>
+            </Style>
+            <Style x:Key="MapOverlayButtonStyle" TargetType="syncfusion:ButtonAdv" BasedOn="{StaticResource {x:Type syncfusion:ButtonAdv}}">
+                <Setter Property="Height" Value="40"/>
+                <Setter Property="Padding" Value="12,8"/>
+                <Setter Property="MinWidth" Value="88"/>
+                <Setter Property="Margin" Value="4,0"/>
             </Style>
             <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
         </ResourceDictionary>
@@ -90,17 +111,16 @@
                         </StackPanel>
                     </Border>
 
-                    <!-- Layer selector — values map to InitializeMapLayer(..) via MapLayerComboBox_SelectionChanged -->
+                    <!-- Layer selector — OSM only until additional providers are wired -->
                     <syncfusion:ComboBoxAdv x:Name="MapLayerComboBox"
                                             Width="150"
                                             Height="32"
                                             Margin="16,0"
-                                            SelectedIndex="0"
-                                            SelectionChanged="MapLayerComboBox_SelectionChanged"
+                                            ItemsSource="{Binding MapLayers}"
+                                            SelectedItem="{Binding SelectedMapLayer, Mode=TwoWay}"
+                                            IsEditable="False"
                                             ToolTip="Map tile layer"
-                                            AutomationProperties.Name="Map layer">
-                        <syncfusion:ComboBoxItemAdv Content="OpenStreetMap"/>
-                    </syncfusion:ComboBoxAdv>
+                                            AutomationProperties.Name="Map layer"/>
                 </StackPanel>
             </Grid>
         </Border>
@@ -154,7 +174,21 @@
                               Margin="0,4"
                               HorizontalAlignment="Stretch"/>
 
-                <TextBlock Text="Map Layers &amp; Overlays" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryTextBrush}" Margin="0,0,0,4"/>
+                <TextBlock Text="Map Layers &amp; Overlays" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}" Margin="0,12,0,4"/>
+
+                <TextBlock Text="Route"
+                           FontSize="12"
+                           Foreground="{DynamicResource BusBuddy.Brush.Text.Secondary}"
+                           Margin="0,0,0,4"/>
+                <syncfusion:ComboBoxAdv ItemsSource="{Binding Routes}"
+                                        DisplayMemberPath="RouteName"
+                                        SelectedItem="{Binding SelectedRoute, Mode=TwoWay}"
+                                        IsEditable="False"
+                                        MaxDropDownHeight="240"
+                                        Margin="0,0,0,8"
+                                        ToolTip="Select a route to display on the map"
+                                        AutomationProperties.Name="Route selector"/>
+
                 <syncfusion:ButtonAdv Label="Show Routes"
                               AutomationProperties.Name="Show Routes"
                               ToolTip="Toggle route overlays"
@@ -176,15 +210,6 @@
                               HorizontalAlignment="Stretch"/>
 
                 <TextBlock Text="Students" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryTextBrush}" Margin="0,12,0,4"/>
-                <!-- SfDataGrid for stops / buses (Finish map UI element; Syncfusion Sf* only + RAG cited components) -->
-                <syncfusion:SfDataGrid ItemsSource="{Binding ActiveBuses}" AutoGenerateColumns="False" Height="90" Margin="0,4,0,8"
-                                       AllowFiltering="True" ColumnSizer="Star">
-                    <syncfusion:SfDataGrid.Columns>
-                        <syncfusion:GridTextColumn HeaderText="Bus" MappingName="BusNumber" Width="70"/>
-                        <syncfusion:GridTextColumn HeaderText="Status" MappingName="Status"/>
-                        <syncfusion:GridTextColumn HeaderText="Location" MappingName="CurrentLocation" Width="90"/>
-                    </syncfusion:SfDataGrid.Columns>
-                </syncfusion:SfDataGrid>
                     <!-- Plot students already in the system (auto geocode missing coordinates) -->
                     <syncfusion:ButtonAdv Label="Plot Students"
                                           ToolTip="Geocode and plot every student in the system — no geofence"
@@ -245,6 +270,10 @@
                                                           IsCheckable="True"
                                                           IsChecked="{Binding IsLiveTrackingEnabled, Mode=TwoWay}"
                                                           Label="Live"
+                                                          SizeMode="Normal"
+                                                          IconWidth="0"
+                                                          IconHeight="0"
+                                                          SmallIcon="{x:Null}"
                                                           ToolTip="Enable real-time bus position updates"
                                                           AutomationProperties.Name="Live tracking"/>
                                 </Grid>
@@ -340,15 +369,25 @@
                                 <DataTemplate x:Key="StudentMarkerTemplate">
                                     <StackPanel Orientation="Vertical" Margin="-8,-24,0,0">
                                         <Ellipse Width="12" Height="12" Fill="{DynamicResource BusBuddy.Brush.Semantic.Error}" Stroke="{DynamicResource BusBuddy.Brush.Text.Primary}" StrokeThickness="1"/>
-                                        <TextBlock Text="{Binding Label}" FontSize="11" Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}" Background="#AA2B2B2B" Padding="4,1" Margin="-12,2,0,0"/>
+                                        <TextBlock Text="{Binding Label}" FontSize="11" Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}" Background="{DynamicResource BusBuddy.Brush.Surface.Medium}" Padding="4,1" Margin="-12,2,0,0"/>
                                     </StackPanel>
                                 </DataTemplate>
                             </Grid.Resources>
-                            <!-- SfMap — per official docs: https://help.syncfusion.com/wpf/maps/getting-started -->
+                            <!-- SfMap — OSM layer declared in markup (same pattern as SchoolDestinationForm) -->
                             <maps:SfMap x:Name="GeoMap"
-                                        EnableZoom="True"
-                                        EnablePan="True"
-                                        ZoomLevel="13" />
+                                        HorizontalAlignment="Stretch"
+                                        VerticalAlignment="Stretch"
+                                        IsHitTestVisible="False"
+                                        EnableZoom="False"
+                                        EnablePan="False"
+                                        ZoomLevel="{Binding MapZoomLevel, Mode=TwoWay}">
+                                <maps:SfMap.Layers>
+                                    <maps:ImageryLayer x:Name="DistrictImageryLayer"
+                                                       LayerType="OSM"
+                                                       Center="{Binding MapCenter}"
+                                                       Markers="{Binding MapMarkers}"/>
+                                </maps:SfMap.Layers>
+                            </maps:SfMap>
 
                             <!-- Map Loading — SfBusyIndicator pattern per docs: https://help.syncfusion.com/wpf/busy-indicator/getting-started -->
                             <Border x:Name="MapLoadingIndicator"
@@ -381,57 +420,38 @@
                                 HorizontalAlignment="Right"
                                 VerticalAlignment="Top"
                                 Margin="32,32,32,0">
-                        <syncfusion:ButtonAdv Label="+"
-                                              ToolTip="Zoom In"
-                                              AutomationProperties.Name="Zoom In"
-                                              Command="{Binding ZoomInCommand}"
-                                              Background="{DynamicResource ButtonBackgroundBrush}"
-                                              Foreground="{DynamicResource ButtonForegroundBrush}"
-                                              Width="44" Height="40"
-                                              FontSize="18"
-                                              FontWeight="Bold"
-                                              SizeMode="Normal"
-                                              Margin="4,0"/>
-                        <syncfusion:ButtonAdv Label="-"
-                                              ToolTip="Zoom Out"
-                                              AutomationProperties.Name="Zoom Out"
-                                              Command="{Binding ZoomOutCommand}"
-                                              Background="{DynamicResource ButtonBackgroundBrush}"
-                                              Foreground="{DynamicResource ButtonForegroundBrush}"
-                                              Width="44" Height="40"
-                                              FontSize="18"
-                                              FontWeight="Bold"
-                                              SizeMode="Normal"
-                                              Margin="4,0"/>
+                        <Button Content="Zoom In"
+                                Style="{StaticResource MapOverlayWpfButtonStyle}"
+                                ToolTip="Zoom in"
+                                AutomationProperties.Name="Zoom In"
+                                Command="{Binding ZoomInCommand}"/>
+                        <Button Content="Zoom Out"
+                                Style="{StaticResource MapOverlayWpfButtonStyle}"
+                                ToolTip="Zoom out"
+                                AutomationProperties.Name="Zoom Out"
+                                Command="{Binding ZoomOutCommand}"/>
                         <syncfusion:ButtonAdv Label="Home"
+                                              Style="{StaticResource MapOverlayButtonStyle}"
                                               ToolTip="Reset map view"
                                               AutomationProperties.Name="Reset Map View"
                                               Command="{Binding ResetViewCommand}"
                                               Background="{DynamicResource ButtonBackgroundBrush}"
-                                              Foreground="{DynamicResource ButtonForegroundBrush}"
-                                              Height="40"
-                                              Padding="10,8"
-                                              SizeMode="Normal"
-                                              Margin="4,0"/>
+                                              Foreground="{DynamicResource ButtonForegroundBrush}"/>
                         <syncfusion:ButtonAdv Label="Refresh"
+                                              Style="{StaticResource MapOverlayButtonStyle}"
                                               ToolTip="Refresh Map"
                                               AutomationProperties.Name="Refresh Map"
                                               Command="{Binding RefreshMapCommand}"
                                               Background="{DynamicResource ButtonBackgroundBrush}"
                                               Foreground="{DynamicResource ButtonForegroundBrush}"
-                                              Height="40"
-                                              Padding="10,8"
-                                              SizeMode="Normal"
                                               Margin="8,0,0,0"/>
                         <syncfusion:ButtonAdv Label="Print"
+                                              Style="{StaticResource MapOverlayButtonStyle}"
                                               ToolTip="Print Route Map"
                                               AutomationProperties.Name="Print Route Map"
                                               Command="{Binding PrintRouteMapsCommand}"
                                               Background="{DynamicResource ButtonBackgroundBrush}"
                                               Foreground="{DynamicResource ButtonForegroundBrush}"
-                                              Height="40"
-                                              Padding="10,8"
-                                              SizeMode="Normal"
                                               Margin="8,0,0,0"/>
                     </StackPanel>
 

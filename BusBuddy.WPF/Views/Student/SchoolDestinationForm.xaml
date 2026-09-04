@@ -77,7 +77,7 @@
                                Placement="Bottom"
                                AllowsTransparency="True"
                                StaysOpen="False"
-                               IsOpen="{Binding IsAddressSuggestionPopupOpen}">
+                               IsOpen="{Binding IsAddressSuggestionPopupOpen, Mode=OneWay}">
                             <Border MinWidth="{Binding ActualWidth, ElementName=SchoolAddressBox}"
                                     Background="{DynamicResource BusBuddy.Brush.Surface.Medium}"
                                     BorderBrush="{DynamicResource BusBuddy.Brush.Surface.Border}"

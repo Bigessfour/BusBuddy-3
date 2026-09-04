@@ -174,15 +174,16 @@ namespace BusBuddy.WPF.Views.Main
                     return;
                 }
 
-                settings.LoadSettingsAsync().GetAwaiter().GetResult();
+                settings.LoadSettingsAsync().ConfigureAwait(false).GetAwaiter().GetResult();
                 if (!settings.ShowDashboardOnStartup)
                 {
                     Logger.Information("Dashboard on startup disabled in user settings");
                     return;
                 }
 
-                Logger.Information("Opening dashboard on startup per user settings");
-                ShowViewInWindow(new DashboardView(), "Dashboard", 1050, 720);
+                Logger.Information("Opening dashboard on startup per user settings (non-modal)");
+                ShowViewInWindow(new DashboardView(), "Dashboard", 1050, 720, modal: false);
+                Activate();
             }
             catch (Exception ex)
             {
@@ -754,33 +755,64 @@ namespace BusBuddy.WPF.Views.Main
         private void OnAssignmentRoutesGenerated(object? sender, EventArgs e) => RefreshRoutesGrid();
 
         /// <summary>
-        /// Navigate to Route management view
+        /// Navigate to Route management view (header nav — full planner window).
         /// </summary>
         private void RouteManagementButton_Click(object sender, RoutedEventArgs e)
         {
             Logger.Debug("RouteManagementButton_Click event triggered");
-            Logger.Information("Route assignment workspace requested");
+            Logger.Information("Route management navigation requested");
             try
             {
-                if (MainDockingManager != null)
-                {
-                    try
-                    {
-                        MainDockingManager.ActivateWindow(RouteAssignmentsHeader);
-                        Logger.Information("Route Assignments pane activation attempted via header lookup");
-                    }
-                    catch (Exception inner)
-                    {
-                        Logger.Warning(inner, "ActivateWindow for Route Assignments failed; focusing pane");
-                        RouteAssignmentPane?.Focus();
-                    }
-                }
+                ShowViewInWindow(new RouteManagementView(), "Route Management", 1200, 800);
+                RefreshRoutesGrid();
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Error activating Route Assignments view");
-                MessageBox.Show($"Error opening Route Assignments: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                Logger.Error(ex, "Error opening Route Management view");
+                MessageBox.Show($"Error opening Route Management: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
+        }
+
+        /// <summary>
+        /// Activates the Route Assignments dock tab (bus/driver assignment workflow).
+        /// </summary>
+        private void ActivateRouteAssignmentsPane()
+        {
+            if (MainDockingManager is null)
+            {
+                return;
+            }
+
+            ActivateDockPane(RouteAssignmentPane, RouteAssignmentsHeader);
+        }
+
+        /// <summary>
+        /// Activates a DockingManager child by element, falling back to header text.
+        /// </summary>
+        private void ActivateDockPane(FrameworkElement? pane, string headerFallback)
+        {
+            if (MainDockingManager is null || pane is null)
+            {
+                return;
+            }
+
+            var header = DockingManager.GetHeader(pane)?.ToString();
+            if (string.IsNullOrWhiteSpace(header))
+            {
+                header = headerFallback;
+            }
+
+            try
+            {
+                MainDockingManager.ActivateWindow(header);
+                Logger.Information("Dock pane activated via header {Header} ({PaneName})", header, pane.Name);
+            }
+            catch (Exception ex)
+            {
+                Logger.Warning(ex, "ActivateWindow failed for header {Header} ({PaneName})", header, pane.Name);
+            }
+
+            pane.Focus();
         }
 
         /// <summary>
@@ -816,32 +848,21 @@ namespace BusBuddy.WPF.Views.Main
         }
 
         /// <summary>
-        /// Show / activate the Map pane inside the DockingManager.
+        /// Open the district map in a dedicated window (consistent with Students / Reports nav).
         /// </summary>
         private void MapButton_Click(object sender, RoutedEventArgs e)
         {
             Logger.Debug("MapButton_Click event triggered");
+            Logger.Information("Map navigation requested");
             try
             {
-                if (MainDockingManager != null)
-                {
-                    try
-                    {
-                        // Activate by header text (Syncfusion ActivateWindow expects string header in current version build context)
-                        MainDockingManager.ActivateWindow(MapHeader);
-                        Logger.Information("Map pane activation attempted via header lookup");
-                    }
-                    catch (Exception inner)
-                    {
-                        Logger.Warning(inner, "Primary ActivateWindow by header failed; attempting manual focus");
-                        var mapPane = this.FindName("MapPane") as ContentControl;
-                        mapPane?.Focus();
-                    }
-                }
+                MapViewLauncher.Show(this);
+                ActivateDockPane(MapPane, MapHeader);
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Error activating Map pane");
+                Logger.Error(ex, "Error opening Map view");
+                MessageBox.Show($"Error opening Map: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -937,7 +958,7 @@ namespace BusBuddy.WPF.Views.Main
         /// <summary>
         /// Opens a UserControl in a modal host window (consistent with Route/Drivers pattern).
         /// </summary>
-        private void ShowViewInWindow(UserControl view, string title, double width = 1100, double height = 750)
+        private void ShowViewInWindow(UserControl view, string title, double width = 1100, double height = 750, bool modal = true)
         {
             var host = new Window
             {
@@ -948,7 +969,14 @@ namespace BusBuddy.WPF.Views.Main
                 Owner = this,
                 Content = view
             };
-            host.ShowDialog();
+            if (modal)
+            {
+                host.ShowDialog();
+            }
+            else
+            {
+                host.Show();
+            }
         }
 
         /// <summary>
@@ -1196,7 +1224,7 @@ namespace BusBuddy.WPF.Views.Main
             Logger.Information("Bus assignment requested: opening Route Assignments");
             try
             {
-                RouteManagementButton_Click(sender, e);
+                ActivateRouteAssignmentsPane();
             }
             catch (Exception ex)
             {

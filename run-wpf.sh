@@ -117,8 +117,13 @@ else
   fi
 fi
 
-# Helpful host IP for when the guest needs to reach Mac-hosted Docker Postgres
-HOST_IP="$(ipconfig getifaddr en0 2>/dev/null || ipconfig getifaddr en1 2>/dev/null || echo 'unknown')"
+# Helpful host IP for when the guest needs to reach Mac-hosted Docker Postgres.
+# UTM shared network: Mac is 192.168.64.1 (stable). Fall back to en0 for bridged/other VMs.
+if ifconfig 2>/dev/null | grep -q 'inet 192.168.64.1 '; then
+  HOST_IP="192.168.64.1"
+else
+  HOST_IP="$(ipconfig getifaddr en0 2>/dev/null || ipconfig getifaddr en1 2>/dev/null || echo 'unknown')"
+fi
 echo "${PFX} Mac host IP for VM (Postgres etc.): ${HOST_IP}   (example BUSBUDDY_CONNECTION: Host=${HOST_IP};...)"
 if [[ "${HOST_IP}" != "unknown" ]]; then
   mkdir -p "${ROOT}/keys"

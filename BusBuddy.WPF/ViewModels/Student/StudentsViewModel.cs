@@ -717,10 +717,9 @@ namespace BusBuddy.WPF.ViewModels.Student
                 }
 
                 var geocoder = sp.GetService<IGeocodingService>();
-                var mapVm = sp.GetService<MapViewModel>();
-                if (mapVm == null)
+                if (geocoder == null)
                 {
-                    StatusMessage = "Map view unavailable";
+                    StatusMessage = "Geocoding not available";
                     return;
                 }
 
@@ -741,7 +740,11 @@ namespace BusBuddy.WPF.ViewModels.Student
                     return;
                 }
 
-                mapVm.PlotStop(lat.Value, lon.Value, new[] { student.StudentName ?? "Student" }, student.StudentName);
+                MapViewLauncher.Show(Application.Current?.MainWindow as Window, vm =>
+                {
+                    vm.PlotStop(lat.Value, lon.Value, new[] { student.StudentName ?? "Student" }, student.StudentName);
+                    vm.CenterOnMarkers();
+                });
 
                 StatusMessage = $"Plotted {student.StudentName}";
             }
@@ -1095,73 +1098,18 @@ namespace BusBuddy.WPF.ViewModels.Student
             try
             {
                 Logger.Information("View map command executed (bulk plot)");
-                StatusMessage = "Plotting students on map...";
+                StatusMessage = "Opening district map...";
 
-                var sp = App.ServiceProvider;
-                if (sp == null)
+                MapViewLauncher.Show(Application.Current?.MainWindow as Window, vm =>
                 {
-                    StatusMessage = "Mapping not available";
-                    return;
-                }
-
-                var geocoder = sp.GetService<IGeocodingService>();
-                var mapVm = sp.GetService<MapViewModel>();
-                if (mapVm == null)
-                {
-                    StatusMessage = "Map view unavailable";
-                    return;
-                }
-
-                // Clear existing student markers; keep any seed markers (e.g., school) by filtering on label
-                for (int i = mapVm.MapMarkers.Count - 1; i >= 0; i--)
-                {
-                    var m = mapVm.MapMarkers[i];
-                    if (!string.IsNullOrWhiteSpace(m.Label) && m.Label.StartsWith("Bus ", StringComparison.Ordinal))
+                    if (vm.BulkPlotEligibleStudentsCommand is IAsyncRelayCommand plotCmd)
                     {
-                        continue;
+                        _ = plotCmd.ExecuteAsync(null);
                     }
-                    mapVm.MapMarkers.RemoveAt(i);
-                }
-
-                // Fire-and-forget each geocode to keep UI responsive
-                _ = Task.Run(async () =>
-                {
-                    foreach (var s in Students.ToList())
+                    else if (vm.BulkPlotEligibleStudentsCommand.CanExecute(null))
                     {
-                        if (string.IsNullOrWhiteSpace(s.HomeAddress))
-                        {
-                            continue;
-                        }
-                        try
-                        {
-                            double? lat = null, lon = null;
-                            if (geocoder != null)
-                            {
-                                var r = await geocoder.GeocodeAsync(s.HomeAddress, s.City, s.State, s.Zip);
-                                if (r != null)
-                                {
-                                    lat = r.Value.latitude;
-                                    lon = r.Value.longitude;
-                                }
-                            }
-                            if (lat == null || lon == null)
-                            {
-                                continue;
-                            }
-
-                            // Marshal to UI thread to update collection
-                            System.Windows.Application.Current.Dispatcher.Invoke(() =>
-                            {
-                                mapVm.PlotStop(lat.Value, lon.Value, new[] { s.StudentName ?? "Student" }, s.StudentName);
-                            });
-                        }
-                        catch (Exception ex)
-                        {
-                            Logger.Warning(ex, "Failed to geocode or plot student {Student}", s.StudentName);
-                        }
+                        vm.BulkPlotEligibleStudentsCommand.Execute(null);
                     }
-
-                    StatusMessage = "Student plotting complete";
                 });
             }
             catch (Exception ex)

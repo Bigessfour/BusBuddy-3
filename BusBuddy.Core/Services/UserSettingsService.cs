@@ -148,7 +148,7 @@ namespace BusBuddy.Core.Services
             try
             {
                 var json = JsonSerializer.Serialize(_settings, JsonOptions);
-                await File.WriteAllTextAsync(_settingsFilePath, json);
+                await File.WriteAllTextAsync(_settingsFilePath, json).ConfigureAwait(false);
 
                 Logger.Information(
                     "User settings saved Theme={Theme} ActivityLogging={ActivityLogging} DashboardOnStartup={DashboardOnStartup} Path={FilePath}",
@@ -171,7 +171,7 @@ namespace BusBuddy.Core.Services
             {
                 if (File.Exists(_settingsFilePath))
                 {
-                    var json = await File.ReadAllTextAsync(_settingsFilePath);
+                    var json = await File.ReadAllTextAsync(_settingsFilePath).ConfigureAwait(false);
 
                     if (!string.IsNullOrWhiteSpace(json))
                     {

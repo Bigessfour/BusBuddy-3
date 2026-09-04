@@ -118,22 +118,17 @@ namespace BusBuddy.WPF.Utilities
 
         private static string ResolveSavedThemeName()
         {
+            // Prefer the lightweight store at startup — avoids sync-over-async on the WPF UI thread.
             try
             {
-                var settings = BusBuddy.WPF.App.ServiceProvider?.GetService(typeof(BusBuddy.Core.Services.IUserSettingsService))
-                    as BusBuddy.Core.Services.IUserSettingsService;
-                if (settings is not null)
-                {
-                    settings.LoadSettingsAsync().GetAwaiter().GetResult();
-                    return NormalizeThemeName(settings.CachedTheme);
-                }
+                return ThemePreferenceStore.Load();
             }
             catch (Exception ex)
             {
-                Logger.Warning(ex, "[Theme] Could not load theme from IUserSettingsService; falling back to ThemePreferenceStore");
+                Logger.Warning(ex, "[Theme] Could not load theme from ThemePreferenceStore; using default");
             }
 
-            return ThemePreferenceStore.Load();
+            return PRIMARY_THEME;
         }
 
         /// <summary>

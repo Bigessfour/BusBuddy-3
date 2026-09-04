@@ -154,4 +154,15 @@ public class MainWindowClerkPathTests
         var main = XamlViewFile.Read("Views/Main/MainWindow.xaml.cs");
         Assert.That(main, Does.Contain("TryShowDashboardOnStartup"));
     }
+
+    [Test]
+    public void MainWindowNavigation_OpensMapAndRouteManagementWindows()
+    {
+        var main = XamlViewFile.Read("Views/Main/MainWindow.xaml.cs");
+        Assert.That(main, Does.Contain("MapViewLauncher.Show"));
+        Assert.That(main, Does.Not.Contain("_mapWindow"));
+        Assert.That(main, Does.Contain("ShowViewInWindow(new RouteManagementView()"));
+        Assert.That(main, Does.Contain("ActivateRouteAssignmentsPane()"));
+        Assert.That(main, Does.Not.Contain("RouteManagementButton_Click(sender, e)"));
+    }
 }

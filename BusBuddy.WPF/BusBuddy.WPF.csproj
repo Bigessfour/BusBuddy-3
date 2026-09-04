@@ -45,6 +45,12 @@
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
   </PropertyGroup>
 
+  <!-- Hot Reload / XAML debugging (Debug only — Visual Studio + dotnet watch) -->
+  <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
+    <DebugType>portable</DebugType>
+    <XamlDebuggingInformation>True</XamlDebuggingInformation>
+  </PropertyGroup>
+
   <!--
     With EnableDefaultPageItems=true, the SDK automatically handles XAML files.
     App.xaml is correctly identified as ApplicationDefinition, and others as Page.

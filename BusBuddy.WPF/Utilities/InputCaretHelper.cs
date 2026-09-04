@@ -56,6 +56,31 @@ public static class InputCaretHelper
             handledEventsToo: true);
     }
 
+    /// <summary>Re-apply inner TextBox alignment and caret brush after templates load (e.g. ChromelessWindow dialogs).</summary>
+    public static void RefreshCaretsInSubtree(DependencyObject root)
+    {
+        if (root is SfTextBoxExt textExt)
+        {
+            ApplyInnerTextBoxAlignment(textExt);
+            textExt.CaretBrush = ResolveCaretBrush();
+        }
+        else if (root is SfMaskedEdit maskedEdit)
+        {
+            ApplyInnerTextBoxAlignment(maskedEdit);
+            maskedEdit.CaretBrush = ResolveCaretBrush();
+        }
+        else if (root is ComboBoxAdv combo)
+        {
+            ApplyInnerTextBoxAlignment(combo);
+        }
+
+        var count = VisualTreeHelper.GetChildrenCount(root);
+        for (var i = 0; i < count; i++)
+        {
+            RefreshCaretsInSubtree(VisualTreeHelper.GetChild(root, i));
+        }
+    }
+
     private static void OnSyncfusionInputLoaded(object sender, RoutedEventArgs e)
     {
         if (sender is not FrameworkElement host)
@@ -137,6 +162,16 @@ public static class InputCaretHelper
 
     private static TextBox? ResolveEditableTextBox(DependencyObject focused)
     {
+        if (focused is SfMaskedEdit maskedEdit)
+        {
+            return maskedEdit.Template?.FindName("PART_TextBox", maskedEdit) as TextBox;
+        }
+
+        if (focused is SfTextBoxExt textExt)
+        {
+            return textExt.Template?.FindName("PART_TextBox", textExt) as TextBox;
+        }
+
         if (focused is TextBox textBox)
         {
             return textBox;

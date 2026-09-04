@@ -10,7 +10,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using BusBuddy.Core.Services.Interfaces;
 using BusBuddy.WPF.ViewModels.Map;
-using BusBuddy.WPF.Views.Map;
+using BusBuddy.WPF.Utilities;
 using System.Text.RegularExpressions;
 using BusBuddy.Core.Models;
 using BusBuddy.Core.Services;
@@ -28,7 +28,6 @@ using CommunityToolkit.Mvvm.Input;
 using Serilog;
 using CommunityToolkit.Mvvm.Messaging;
 using BusBuddy.WPF.Messages;
-using BusBuddy.WPF.Utilities;
 
 namespace BusBuddy.WPF.ViewModels.Student
 {
@@ -918,7 +917,6 @@ namespace BusBuddy.WPF.ViewModels.Student
 
                 var sp = App.ServiceProvider;
                 var mapsGeo = sp?.GetService<IMapsGeoService>();
-                var mapVm = sp?.GetService<MapViewModel>();
 
                 (double latitude, double longitude)? coords = null;
                 if (Student.Latitude.HasValue && Student.Longitude.HasValue)
@@ -935,19 +933,13 @@ namespace BusBuddy.WPF.ViewModels.Student
                     }
                 }
 
-                if (coords.HasValue && mapVm is not null)
+                MapViewLauncher.Show(Application.Current?.MainWindow as Window, vm =>
                 {
-                    mapVm.PlotStop(coords.Value.latitude, coords.Value.longitude, new[] { Student.StudentName }, Student.StudentName);
-                }
-
-                new Window
-                {
-                    Title = "Student location",
-                    Content = new MapView(),
-                    Width = 1100,
-                    Height = 750,
-                    Owner = Application.Current?.MainWindow
-                }.Show();
+                    if (coords.HasValue)
+                    {
+                        vm.PlotStop(coords.Value.latitude, coords.Value.longitude, new[] { Student.StudentName }, Student.StudentName);
+                    }
+                });
 
                 if (coords.HasValue)
                 {
