@@ -171,6 +171,7 @@
                     <syncfusion:GridTextColumn HeaderText="Capacity" MappingName="SeatingCapacity" Width="80"/>
                     <syncfusion:GridTextColumn HeaderText="Year" MappingName="Year" Width="64"/>
                     <syncfusion:GridTextColumn HeaderText="Status" MappingName="Status" Width="100"/>
+                    <syncfusion:GridTextColumn HeaderText="Fleet" MappingName="FleetType" Width="110"/>
                 </syncfusion:SfDataGrid.Columns>
             </syncfusion:SfDataGrid>
 
@@ -219,6 +220,7 @@
 
                             <Grid>
                                 <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
                                     <RowDefinition Height="Auto"/>
                                     <RowDefinition Height="Auto"/>
                                     <RowDefinition Height="Auto"/>
@@ -281,9 +283,17 @@
                                 <syncfusion:ComboBoxAdv Grid.Row="7" Grid.Column="1"
                                                         ItemsSource="{Binding OperationalStatusOptions}"
                                                         SelectedItem="{Binding SelectedVehicle.Status, Mode=TwoWay}"
+                                                        IsEditable="False"
                                                         AutomationProperties.Name="Vehicle Status"/>
 
-                                <StackPanel Grid.Row="8" Grid.Column="0" Grid.ColumnSpan="2"
+                                <TextBlock Grid.Row="8" Grid.Column="0" Text="Fleet type:" Style="{StaticResource FormLabelStyle}"/>
+                                <syncfusion:ComboBoxAdv Grid.Row="8" Grid.Column="1"
+                                                        ItemsSource="{Binding FleetTypeOptions}"
+                                                        SelectedItem="{Binding SelectedVehicle.FleetType, Mode=TwoWay}"
+                                                        IsEditable="False"
+                                                        AutomationProperties.Name="Fleet Type"/>
+
+                                <StackPanel Grid.Row="9" Grid.Column="0" Grid.ColumnSpan="2"
                                             Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,8,0,0">
                                     <syncfusion:ButtonAdv Label="Save"
                                                           Command="{Binding SaveVehicleCommand}"
@@ -295,7 +305,7 @@
                                                           AutomationProperties.Name="Cancel Vehicle Edit"/>
                                 </StackPanel>
 
-                                <StackPanel Grid.Row="9" Grid.Column="0" Grid.ColumnSpan="2"
+                                <StackPanel Grid.Row="10" Grid.Column="0" Grid.ColumnSpan="2"
                                             HorizontalAlignment="Center" Margin="0,12,0,0">
                                     <StackPanel.Style>
                                         <Style TargetType="StackPanel">

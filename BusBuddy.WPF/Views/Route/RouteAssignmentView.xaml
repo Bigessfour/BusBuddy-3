@@ -169,6 +169,7 @@
                                             ItemsSource="{Binding AvailableBuses}"
                                             DisplayMemberPath="BusNumber"
                                             SelectedItem="{Binding SelectedBus, Mode=TwoWay}"
+                                            IsEditable="False"
                                             MaxDropDownHeight="240"
                                             AutomationProperties.Name="Bus Selector"
                                             AutomationProperties.HelpText="Select a bus for the route" />

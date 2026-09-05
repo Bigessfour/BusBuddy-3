@@ -1,7 +1,6 @@
 using System;
 using System.Collections.ObjectModel;
 using System.Threading.Tasks;
-using System.Windows.Input;
 using BusBuddy.Core.Services;
 using BusBuddy.WPF.Services;
 using BusBuddy.WPF.Utilities;
@@ -47,10 +46,12 @@ namespace BusBuddy.WPF.ViewModels.Settings
         private string statusMessage = "Loading settings...";
 
         [ObservableProperty]
+        [NotifyCanExecuteChangedFor(nameof(SaveCommand))]
+        [NotifyCanExecuteChangedFor(nameof(ResetCommand))]
         private bool isBusy;
 
-        public ICommand SaveCommand { get; }
-        public ICommand ResetCommand { get; }
+        public IAsyncRelayCommand SaveCommand { get; }
+        public IAsyncRelayCommand ResetCommand { get; }
 
         partial void OnSelectedThemeChanged(string value)
         {
@@ -61,12 +62,6 @@ namespace BusBuddy.WPF.ViewModels.Settings
 
             Logger.Information("Previewing theme {Theme}", value);
             SyncfusionThemeManager.ApplyApplicationThemePreview(value);
-        }
-
-        partial void OnIsBusyChanged(bool value)
-        {
-            ((AsyncRelayCommand)SaveCommand).NotifyCanExecuteChanged();
-            ((AsyncRelayCommand)ResetCommand).NotifyCanExecuteChanged();
         }
 
         private bool CanSave() => !IsBusy;

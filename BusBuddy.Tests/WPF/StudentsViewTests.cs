@@ -20,8 +20,10 @@ public class StudentsViewTests
         Assert.That(xaml, Does.Contain("Command=\"{Binding AddSchoolCommand}\""));
         Assert.That(xaml, Does.Not.Contain("ShowQuickActionsCommand"));
         Assert.That(xaml, Does.Contain("DisplayMemberPath=\"Name\""));
+        Assert.That(xaml, Does.Contain("SelectedValuePath=\"Name\""));
         Assert.That(xaml, Does.Not.Contain("DisplayMemberPath=\"RouteName\""));
         Assert.That(xaml, Does.Contain("MappingName=\"DestinationId\""));
+        Assert.That(xaml, Does.Contain("HeaderText=\"School ID\""));
         Assert.That(xaml, Does.Contain("MappingName=\"Latitude\""));
         Assert.That(xaml, Does.Contain("MappingName=\"Longitude\""));
     }

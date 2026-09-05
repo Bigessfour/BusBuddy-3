@@ -129,6 +129,23 @@ namespace BusBuddy.WPF.Views.Route
             }
         }
 
+        private async void RoutesDataGrid_CurrentCellEndEdit(object sender, Syncfusion.UI.Xaml.Grid.CurrentCellEndEditEventArgs e)
+        {
+            try
+            {
+                if (DataContext is RouteManagementViewModel vm &&
+                    vm.EditRouteCommand is CommunityToolkit.Mvvm.Input.IAsyncRelayCommand edit &&
+                    edit.CanExecute(null))
+                {
+                    await edit.ExecuteAsync(null).ConfigureAwait(true);
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Saving grid cell edit failed");
+            }
+        }
+
         private void OnUnloadedGuard(object? sender, RoutedEventArgs e)
         {
             if (!_isDataReady)

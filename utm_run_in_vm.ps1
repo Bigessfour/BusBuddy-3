@@ -97,7 +97,7 @@ function Set-BusBuddyPostgresConnection {
         return
     }
 
-    $conn = "Host=$HostIp;Port=5432;Database=busbuddy_test;Username=busbuddy;Password=busbuddy_dev;Include Error Detail=true"
+    $conn = "Host=$HostIp;Port=5432;Database=busbuddy_test;Username=busbuddy;Password=busbuddy_dev;Include Error Detail=true;Timeout=5"
     $env:BUSBUDDY_CONNECTION = $conn
     $env:DatabaseProvider = 'Postgres'
 

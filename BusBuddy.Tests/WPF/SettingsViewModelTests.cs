@@ -2,7 +2,6 @@ using System.Threading.Tasks;
 using BusBuddy.Core.Services;
 using BusBuddy.WPF.Services;
 using BusBuddy.WPF.ViewModels.Settings;
-using CommunityToolkit.Mvvm.Input;
 using FluentAssertions;
 using Moq;
 using NUnit.Framework;
@@ -38,10 +37,7 @@ public class SettingsViewModelTests
         vm.EnableActivityLogging = false;
         vm.ShowDashboardOnStartup = false;
 
-        if (vm.SaveCommand is IAsyncRelayCommand save)
-        {
-            await save.ExecuteAsync(null);
-        }
+        await vm.SaveCommand.ExecuteAsync(null);
 
         settings.Verify(s => s.SetSettingAsync(UserSettingsKeys.Theme, "FluentLight"), Times.Once);
         settings.Verify(s => s.SetSettingAsync(UserSettingsKeys.EnableActivityLogging, false), Times.Once);
@@ -70,10 +66,7 @@ public class SettingsViewModelTests
         var vm = new SettingsViewModel(settings.Object, new Mock<ISkinManagerService>().Object);
         await Task.Delay(100);
 
-        if (vm.ResetCommand is IAsyncRelayCommand reset)
-        {
-            await reset.ExecuteAsync(null);
-        }
+        await vm.ResetCommand.ExecuteAsync(null);
 
         settings.Verify(s => s.ResetSettingsAsync(), Times.Once);
         settings.Verify(s => s.LoadSettingsAsync(), Times.AtLeastOnce);

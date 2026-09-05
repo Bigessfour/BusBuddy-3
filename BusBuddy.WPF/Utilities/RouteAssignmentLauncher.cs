@@ -20,16 +20,20 @@ public static class RouteAssignmentLauncher
             ? new RouteAssignmentView(preselectedRoute)
             : new RouteAssignmentView();
 
+        var effectiveOwner = DialogOwner.Resolve(owner);
         var window = new Window
         {
             Title = preselectedRoute is not null
                 ? $"Route Assignment — {preselectedRoute.RouteName}"
                 : "Route Assignment",
             Content = content,
-            Owner = owner ?? Application.Current?.MainWindow,
+            Owner = effectiveOwner,
             Width = 1200,
             Height = 800,
-            WindowStartupLocation = WindowStartupLocation.CenterOwner,
+            ShowActivated = true,
+            WindowStartupLocation = effectiveOwner is null
+                ? WindowStartupLocation.CenterScreen
+                : WindowStartupLocation.CenterOwner,
         };
         return window.ShowDialog();
     }

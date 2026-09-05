@@ -44,6 +44,14 @@ public class DatabaseUserMessageTests
     }
 
     [Test]
+    public void IsConnectivityFailure_detects_timeout_without_npgsql_wrapper()
+    {
+        DatabaseUserMessage.IsConnectivityFailure(new TimeoutException("The operation has timed out."))
+            .Should()
+            .BeTrue();
+    }
+
+    [Test]
     public void ForOperation_describes_postgres_foreign_key_violation()
     {
         var ex = new DbUpdateException(

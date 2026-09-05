@@ -132,33 +132,33 @@ namespace BusBuddy.WPF.ViewModels.Student
         private void SubscribeToSaveNotifications()
         {
             // Refresh list and show success message immediately when a student is saved from the form
-            WeakReferenceMessenger.Default.Register<StudentSavedMessage>(this, async (_, msg) =>
+            WeakReferenceMessenger.Default.Register<StudentsViewModel, StudentSavedMessage>(this, async (r, _) =>
             {
                 try
                 {
                     Logger.Information("StudentSavedMessage received — refreshing list");
-                    await LoadStudentsAsync();
-                    StatusMessage = "Successfully Saved";
+                    await r.LoadStudentsAsync();
+                    r.StatusMessage = "Successfully Saved";
                 }
                 catch (Exception ex)
                 {
-                    Logger.Error(ex, "Error refreshing after save");
+                    DatabaseUserMessage.LogFailure(Logger, ex, "Error refreshing after save");
                 }
             });
 
-            WeakReferenceMessenger.Default.Register<StudentsImportedMessage>(this, async (_, msg) =>
+            WeakReferenceMessenger.Default.Register<StudentsViewModel, StudentsImportedMessage>(this, async (r, msg) =>
             {
                 try
                 {
                     Logger.Information("StudentsImportedMessage received — refreshing list Added={Added}", msg.Added);
-                    await LoadStudentsAsync();
-                    StatusMessage = msg.Added == 0
+                    await r.LoadStudentsAsync();
+                    r.StatusMessage = msg.Added == 0
                         ? "No new students imported (file empty or names already exist)"
                         : $"Imported {msg.Added} student(s) from CSV";
                 }
                 catch (Exception ex)
                 {
-                    Logger.Error(ex, "Error refreshing after CSV import");
+                    DatabaseUserMessage.LogFailure(Logger, ex, "Error refreshing after CSV import");
                 }
             });
         }
@@ -418,7 +418,7 @@ namespace BusBuddy.WPF.ViewModels.Student
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Error executing add student command");
+                DatabaseUserMessage.LogFailure(Logger, ex, "Error executing add student command");
                 StatusMessage = $"Error adding student: {ex.Message}";
             }
         }
@@ -450,7 +450,7 @@ namespace BusBuddy.WPF.ViewModels.Student
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Error executing add school command");
+                DatabaseUserMessage.LogFailure(Logger, ex, "Error executing add school command");
                 StatusMessage = $"Error adding school: {ex.Message}";
             }
         }
@@ -479,7 +479,7 @@ namespace BusBuddy.WPF.ViewModels.Student
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Error executing add pickup stop command");
+                DatabaseUserMessage.LogFailure(Logger, ex, "Error executing add pickup stop command");
                 StatusMessage = $"Error adding pickup stop: {ex.Message}";
             }
         }
@@ -509,7 +509,7 @@ namespace BusBuddy.WPF.ViewModels.Student
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Error executing edit student command");
+                DatabaseUserMessage.LogFailure(Logger, ex, "Error executing edit student command");
                 StatusMessage = $"Error editing student: {ex.Message}";
             }
         }
@@ -551,7 +551,7 @@ namespace BusBuddy.WPF.ViewModels.Student
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Error opening school transfer");
+                DatabaseUserMessage.LogFailure(Logger, ex, "Error opening school transfer");
                 StatusMessage = $"Transfer error: {ex.Message}";
             }
         }
@@ -591,7 +591,7 @@ namespace BusBuddy.WPF.ViewModels.Student
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Error executing delete student command");
+                DatabaseUserMessage.LogFailure(Logger, ex, "Error executing delete student command");
             }
         }
 
@@ -652,7 +652,7 @@ namespace BusBuddy.WPF.ViewModels.Student
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Error executing export command");
+                DatabaseUserMessage.LogFailure(Logger, ex, "Error executing export command");
                 StatusMessage = "Error exporting students";
             }
         }
@@ -688,7 +688,7 @@ namespace BusBuddy.WPF.ViewModels.Student
             catch (Exception ex)
             {
                 StatusMessage = "Error validating address";
-                Logger.Error(ex, "Error executing validate address command");
+                DatabaseUserMessage.LogFailure(Logger, ex, "Error executing validate address command");
             }
             finally
             {
@@ -746,11 +746,11 @@ namespace BusBuddy.WPF.ViewModels.Student
                     vm.CenterOnMarkers();
                 });
 
-                StatusMessage = $"Plotted {student.StudentName}";
+                StatusMessage = $"District Map opened — plotted {student.StudentName}";
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Error plotting student on map");
+                DatabaseUserMessage.LogFailure(Logger, ex, "Error plotting student on map");
                 StatusMessage = "Error plotting on map";
             }
         }
@@ -787,7 +787,7 @@ namespace BusBuddy.WPF.ViewModels.Student
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Error saving inline grid edits");
+                DatabaseUserMessage.LogFailure(Logger, ex, "Error saving inline grid edits");
                 StatusMessage = "Error saving changes";
             }
             finally
@@ -857,7 +857,7 @@ namespace BusBuddy.WPF.ViewModels.Student
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Error loading students");
+                DatabaseUserMessage.LogFailure(Logger, ex, "Error loading students");
                 StatusMessage = "Error loading students. Check connection, migrations, and logs.";
             }
             finally
@@ -905,7 +905,7 @@ namespace BusBuddy.WPF.ViewModels.Student
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Error deleting student StudentId={StudentId}", student.StudentId);
+                DatabaseUserMessage.LogFailure(Logger, ex, "Error deleting student StudentId={StudentId}", student.StudentId);
                 MessageBox.Show($"Could not delete student: {ex.Message}", "Delete failed", MessageBoxButton.OK, MessageBoxImage.Error);
             }
             }
@@ -983,7 +983,7 @@ namespace BusBuddy.WPF.ViewModels.Student
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Error executing import students command");
+                DatabaseUserMessage.LogFailure(Logger, ex, "Error executing import students command");
                 StatusMessage = $"Error importing students: {ex.Message}";
             }
             finally
@@ -1041,7 +1041,7 @@ namespace BusBuddy.WPF.ViewModels.Student
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Error executing bulk assign route command");
+                DatabaseUserMessage.LogFailure(Logger, ex, "Error executing bulk assign route command");
                 StatusMessage = "Error in bulk route assignment";
             }
             finally
@@ -1081,7 +1081,7 @@ namespace BusBuddy.WPF.ViewModels.Student
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Error executing route optimization");
+                DatabaseUserMessage.LogFailure(Logger, ex, "Error executing route optimization");
                 StatusMessage = $"Error in route optimization: {ex.Message}";
             }
             finally
@@ -1098,7 +1098,7 @@ namespace BusBuddy.WPF.ViewModels.Student
             try
             {
                 Logger.Information("View map command executed (bulk plot)");
-                StatusMessage = "Opening district map...";
+                StatusMessage = "Opening district map with student locations...";
 
                 MapViewLauncher.Show(Application.Current?.MainWindow as Window, vm =>
                 {
@@ -1111,10 +1111,12 @@ namespace BusBuddy.WPF.ViewModels.Student
                         vm.BulkPlotEligibleStudentsCommand.Execute(null);
                     }
                 });
+
+                StatusMessage = "District Map opened — student homes plot as pins";
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Error executing view map command");
+                DatabaseUserMessage.LogFailure(Logger, ex, "Error executing view map command");
                 StatusMessage = "Error opening map view";
             }
         }
@@ -1138,7 +1140,7 @@ namespace BusBuddy.WPF.ViewModels.Student
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Error getting route suggestions");
+                DatabaseUserMessage.LogFailure(Logger, ex, "Error getting route suggestions");
                 StatusMessage = "Error getting route suggestions";
             }
         }
@@ -1156,7 +1158,7 @@ namespace BusBuddy.WPF.ViewModels.Student
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Error showing summary");
+                DatabaseUserMessage.LogFailure(Logger, ex, "Error showing summary");
                 StatusMessage = "Error generating summary";
             }
         }
@@ -1224,7 +1226,7 @@ namespace BusBuddy.WPF.ViewModels.Student
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Error loading reference data");
+                DatabaseUserMessage.LogFailure(Logger, ex, "Error loading reference data");
             }
         }
 

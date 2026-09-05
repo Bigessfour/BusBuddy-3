@@ -3,6 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
+using Serilog;
 
 namespace BusBuddy.Core.Utilities;
 
@@ -49,6 +50,23 @@ public static class DatabaseUserMessage
         {
             return false;
         }
+    }
+
+    /// <summary>
+    /// Logs connectivity timeouts as Warning so they do not land in errors-actionable.
+    /// Real application failures stay Error.
+    /// </summary>
+    public static void LogFailure(Serilog.ILogger logger, Exception exception, string messageTemplate, params object?[]? propertyValues)
+    {
+        ArgumentNullException.ThrowIfNull(logger);
+
+        if (IsConnectivityFailure(exception))
+        {
+            logger.Warning(exception, messageTemplate, propertyValues);
+            return;
+        }
+
+        logger.Error(exception, messageTemplate, propertyValues);
     }
 
     public static string ForOperation(Exception exception, string operationDescription)

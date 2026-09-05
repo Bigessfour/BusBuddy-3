@@ -20,32 +20,84 @@ public static class MapViewLauncher
 
     public static void Show(Window? owner, Action<MapViewModel>? configure = null)
     {
+        var effectiveOwner = DialogOwner.Resolve(owner, _mapWindow);
+
         if (_mapWindow is { IsLoaded: true })
         {
             Logger.Debug("Activating existing district map window");
+            TrySetOwner(_mapWindow, effectiveOwner);
             ApplyConfigure(configure);
-            _mapWindow.Activate();
-            _mapWindow.Focus();
+            BringToFront(_mapWindow);
             return;
         }
 
-        Logger.Information("Opening district map window");
+        Logger.Information("Opening district map window Owner={Owner}", effectiveOwner?.GetType().Name ?? "(none)");
         var mapView = new MapView();
         _mapWindow = new Window
         {
             Title = "District Map",
             Width = 1200,
             Height = 900,
-            WindowStartupLocation = owner is null
+            ShowActivated = true,
+            WindowStartupLocation = effectiveOwner is null
                 ? WindowStartupLocation.CenterScreen
                 : WindowStartupLocation.CenterOwner,
-            Owner = owner,
+            Owner = effectiveOwner,
             Content = mapView,
         };
 
         _mapWindow.Closed += (_, _) => _mapWindow = null;
-        _mapWindow.Loaded += (_, _) => ApplyConfigure(configure);
+        _mapWindow.Loaded += (_, _) =>
+        {
+            ApplyConfigure(configure);
+            BringToFront(_mapWindow);
+        };
         _mapWindow.Show();
+        BringToFront(_mapWindow);
+    }
+
+    internal static Window? ResolveOwner(Window? requested) => DialogOwner.Resolve(requested, _mapWindow);
+
+    private static void TrySetOwner(Window map, Window? owner)
+    {
+        if (owner is null || ReferenceEquals(map, owner) || ReferenceEquals(map.Owner, owner))
+        {
+            return;
+        }
+
+        for (var walk = owner.Owner; walk is not null; walk = walk.Owner)
+        {
+            if (ReferenceEquals(walk, map))
+            {
+                return;
+            }
+        }
+
+        try
+        {
+            map.Owner = owner;
+        }
+        catch (Exception ex)
+        {
+            Logger.Debug(ex, "Could not reparent district map owner");
+        }
+    }
+
+    private static void BringToFront(Window? window)
+    {
+        if (window is null)
+        {
+            return;
+        }
+
+        if (window.WindowState == WindowState.Minimized)
+        {
+            window.WindowState = WindowState.Normal;
+        }
+
+        window.Show();
+        window.Activate();
+        window.Focus();
     }
 
     private static void ApplyConfigure(Action<MapViewModel>? configure)

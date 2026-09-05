@@ -141,7 +141,7 @@ public class StudentService : IStudentService
         }
         catch (Exception ex)
         {
-            Logger.Error(ex, "Error retrieving all students");
+            DatabaseUserMessage.LogFailure(Logger, ex, "Error retrieving all students");
             throw;
         }
         finally
@@ -172,7 +172,7 @@ public class StudentService : IStudentService
         }
         catch (Exception ex)
         {
-            Logger.Error(ex, "Error retrieving student with ID: {StudentId}", studentId);
+            DatabaseUserMessage.LogFailure(Logger, ex, "Error retrieving student with ID: {StudentId}", studentId);
             throw;
         }
     }
@@ -201,7 +201,7 @@ public class StudentService : IStudentService
         }
         catch (Exception ex)
         {
-            Logger.Error(ex, "Error retrieving students by grade: {Grade}", grade);
+            DatabaseUserMessage.LogFailure(Logger, ex, "Error retrieving students by grade: {Grade}", grade);
             throw;
         }
     }
@@ -220,7 +220,7 @@ public class StudentService : IStudentService
         }
         catch (Exception ex)
         {
-            Logger.Error(ex, "Error retrieving students by route: {RouteName}", routeName);
+            DatabaseUserMessage.LogFailure(Logger, ex, "Error retrieving students by route: {RouteName}", routeName);
             throw;
         }
     }
@@ -239,7 +239,7 @@ public class StudentService : IStudentService
         }
         catch (Exception ex)
         {
-            Logger.Error(ex, "Error retrieving active students");
+            DatabaseUserMessage.LogFailure(Logger, ex, "Error retrieving active students");
             throw;
         }
     }
@@ -258,7 +258,7 @@ public class StudentService : IStudentService
         }
         catch (Exception ex)
         {
-            Logger.Error(ex, "Error retrieving students by school: {School}", school);
+            DatabaseUserMessage.LogFailure(Logger, ex, "Error retrieving students by school: {School}", school);
             throw;
         }
     }
@@ -287,7 +287,7 @@ public class StudentService : IStudentService
         }
         catch (Exception ex)
         {
-            Logger.Error(ex, "Error searching students with term: {SearchTerm}", searchTerm);
+            DatabaseUserMessage.LogFailure(Logger, ex, "Error searching students with term: {SearchTerm}", searchTerm);
             throw;
         }
     }
@@ -312,7 +312,7 @@ public class StudentService : IStudentService
         }
         catch (Exception ex)
         {
-            Logger.Error(ex, "Error retrieving students for route ID: {RouteId}", routeId);
+            DatabaseUserMessage.LogFailure(Logger, ex, "Error retrieving students for route ID: {RouteId}", routeId);
             return new List<Student>();
         }
     }
@@ -379,7 +379,7 @@ public class StudentService : IStudentService
         }
         catch (Exception ex)
         {
-            Logger.Error(ex, "Error adding student: {StudentName}", student.StudentName);
+            DatabaseUserMessage.LogFailure(Logger, ex, "Error adding student: {StudentName}", student.StudentName);
             throw;
         }
     }
@@ -446,7 +446,7 @@ public class StudentService : IStudentService
         }
         catch (Exception ex)
         {
-            Logger.Error(ex, "Error updating student with ID: {StudentId}", student.StudentId);
+            DatabaseUserMessage.LogFailure(Logger, ex, "Error updating student with ID: {StudentId}", student.StudentId);
             throw;
         }
     }
@@ -487,7 +487,7 @@ public class StudentService : IStudentService
         }
         catch (Exception ex)
         {
-            Logger.Error(ex, "Error deleting student with ID: {StudentId}", studentId);
+            DatabaseUserMessage.LogFailure(Logger, ex, "Error deleting student with ID: {StudentId}", studentId);
             throw;
         }
     }
@@ -593,7 +593,7 @@ public class StudentService : IStudentService
                     }
                     catch (Exception ex)
                     {
-                        Logger.Error(ex, "Error validating AM route: {AMRoute}", student.AMRoute);
+                        DatabaseUserMessage.LogFailure(Logger, ex, "Error validating AM route: {AMRoute}", student.AMRoute);
                         errors.Add($"AM Route '{student.AMRoute}' does not exist");
                     }
                 }
@@ -610,7 +610,7 @@ public class StudentService : IStudentService
                     }
                     catch (Exception ex)
                     {
-                        Logger.Error(ex, "Error validating PM route: {PMRoute}", student.PMRoute);
+                        DatabaseUserMessage.LogFailure(Logger, ex, "Error validating PM route: {PMRoute}", student.PMRoute);
                         errors.Add($"PM Route '{student.PMRoute}' does not exist");
                     }
                 }
@@ -625,7 +625,7 @@ public class StudentService : IStudentService
         }
         catch (Exception ex)
         {
-            Logger.Error(ex, "Error during basic student validation");
+            DatabaseUserMessage.LogFailure(Logger, ex, "Error during basic student validation");
             errors.Add("Validation error occurred");
         }
 
@@ -678,7 +678,7 @@ public class StudentService : IStudentService
         }
         catch (Exception ex)
         {
-            Logger.Error(ex, "Error calculating student statistics");
+            DatabaseUserMessage.LogFailure(Logger, ex, "Error calculating student statistics");
             throw;
         }
     }
@@ -710,7 +710,7 @@ public class StudentService : IStudentService
         }
         catch (Exception ex)
         {
-            Logger.Error(ex, "Error finding students with missing information");
+            DatabaseUserMessage.LogFailure(Logger, ex, "Error finding students with missing information");
             throw;
         }
     }
@@ -763,7 +763,7 @@ public class StudentService : IStudentService
         }
         catch (Exception ex)
         {
-            Logger.Error(ex, "Error assigning routes for student {StudentId}", studentId);
+            DatabaseUserMessage.LogFailure(Logger, ex, "Error assigning routes for student {StudentId}", studentId);
             throw;
         }
     }
@@ -809,7 +809,7 @@ public class StudentService : IStudentService
         }
         catch (Exception ex)
         {
-            Logger.Error(ex, "Error assigning bus stop for student {StudentId}", studentId);
+            DatabaseUserMessage.LogFailure(Logger, ex, "Error assigning bus stop for student {StudentId}", studentId);
             throw;
         }
     }
@@ -854,7 +854,7 @@ public class StudentService : IStudentService
         }
         catch (Exception ex)
         {
-            Logger.Error(ex, "Error updating active status for student {StudentId}", studentId);
+            DatabaseUserMessage.LogFailure(Logger, ex, "Error updating active status for student {StudentId}", studentId);
             throw;
         }
     }
@@ -988,7 +988,7 @@ public class StudentService : IStudentService
         }
         catch (Exception ex)
         {
-            Logger.Error(ex, "Error updating address for student {StudentId}", studentId);
+            DatabaseUserMessage.LogFailure(Logger, ex, "Error updating address for student {StudentId}", studentId);
             throw;
         }
     }
@@ -1053,7 +1053,7 @@ public class StudentService : IStudentService
         }
         catch (Exception ex)
         {
-            Logger.Error(ex, "Error updating contact information for student {StudentId}", studentId);
+            DatabaseUserMessage.LogFailure(Logger, ex, "Error updating contact information for student {StudentId}", studentId);
             throw;
         }
     }
@@ -1119,7 +1119,7 @@ public class StudentService : IStudentService
         }
         catch (Exception ex)
         {
-            Logger.Error(ex, "Error updating emergency contact information for student {StudentId}", studentId);
+            DatabaseUserMessage.LogFailure(Logger, ex, "Error updating emergency contact information for student {StudentId}", studentId);
             throw;
         }
     }
@@ -1200,7 +1200,7 @@ public class StudentService : IStudentService
         }
         catch (Exception ex)
         {
-            Logger.Error(ex, "Error exporting students to CSV");
+            DatabaseUserMessage.LogFailure(Logger, ex, "Error exporting students to CSV");
             throw;
         }
     }
@@ -1269,7 +1269,7 @@ public class StudentService : IStudentService
         }
         catch (Exception ex)
         {
-            Logger.Error(ex, "Error generating diagnostics for student {StudentId}", studentId);
+            DatabaseUserMessage.LogFailure(Logger, ex, "Error generating diagnostics for student {StudentId}", studentId);
             return new Dictionary<string, object> { { "Error", ex.Message } };
         }
     }
@@ -1469,7 +1469,7 @@ public class StudentService : IStudentService
         }
         catch (Exception ex)
         {
-            Logger.Error(ex, "Error generating student operation metrics");
+            DatabaseUserMessage.LogFailure(Logger, ex, "Error generating student operation metrics");
             return new Dictionary<string, object> { { "Error", ex.Message } };
         }
     }

@@ -13,6 +13,7 @@
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/SyncfusionV30_Validated_ResourceDictionary.xaml"/>
+                <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/ButtonAdvTextOnly.xaml"/>
             </ResourceDictionary.MergedDictionaries>
             <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
             <ObjectDataProvider x:Key="RouteTimeSlotValues"
@@ -27,7 +28,8 @@
                 <Setter Property="IconWidth" Value="0"/>
                 <Setter Property="IconHeight" Value="0"/>
                 <Setter Property="SmallIcon" Value="{x:Null}"/>
-                <Setter Property="Margin" Value="0,0,6,0"/>
+                <Setter Property="Padding" Value="12,8"/>
+                <Setter Property="Margin" Value="0,0,8,6"/>
             </Style>
 
         </ResourceDictionary>
@@ -54,16 +56,8 @@
 
         <!-- Enhanced Toolbar -->
     <Border Grid.Row="1" Background="{DynamicResource BusBuddy.Brush.Panel.Header}"
-                CornerRadius="3" Padding="10" Margin="10,10,10,0">
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
-
-                <!-- Main Actions -->
-                <StackPanel Grid.Column="0" Orientation="Horizontal">
-                    <!-- Route Operations -->
+                CornerRadius="3" Padding="10" Margin="10,10,10,0" MinHeight="88">
+            <WrapPanel Orientation="Horizontal">
             <syncfusion:ButtonAdv Name="AddRouteButton" Label="Add Route"
                 Style="{StaticResource RouteToolbarButton}"
                 Command="{Binding AddRouteCommand}"
@@ -76,17 +70,15 @@
             <syncfusion:ButtonAdv Name="EditRouteButton" Label="Edit Route"
                 Style="{StaticResource RouteToolbarButton}"
                 Command="{Binding EditRouteCommand}"
-                IsEnabled="{Binding IsRouteSelected}"
                 SizeMode="Normal"
                 CornerRadius="4"
                 Background="{DynamicResource AccentBackgroundBrush}"
                 Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}"
                 AutomationProperties.Name="Edit Route"
-                AutomationProperties.HelpText="Edit the selected route"/>
+                AutomationProperties.HelpText="Save name, school, special-needs flag, and bus number for the selected route"/>
             <syncfusion:ButtonAdv Name="CopyRouteButton" Label="Copy Route"
                 Style="{StaticResource RouteToolbarButton}"
                 Command="{Binding CopyRouteCommand}"
-                IsEnabled="{Binding IsRouteSelected}"
                 SizeMode="Normal"
                 CornerRadius="4"
                 Background="{DynamicResource AccentBackgroundBrush}"
@@ -96,28 +88,21 @@
             <syncfusion:ButtonAdv Name="DeleteRouteButton" Label="Delete Route"
                 Style="{StaticResource RouteToolbarButton}"
                 Command="{Binding DeleteRouteCommand}"
-                IsEnabled="{Binding IsRouteSelected}"
                 SizeMode="Normal"
                 CornerRadius="4"
                 Background="{DynamicResource BusBuddy.Brush.Semantic.Error}"
                 Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}"
                 AutomationProperties.Name="Delete Route"
                 AutomationProperties.HelpText="Delete the selected route"/>
-                    <Separator Margin="10,0"/>
-
-                    <!-- Manage Selected Route (opens full assignment UI) -->
             <syncfusion:ButtonAdv Name="ManageRouteButton" Label="Manage Route"
                 Style="{StaticResource RouteToolbarButton}"
                 Command="{Binding OpenRouteAssignmentCommand}"
-                IsEnabled="{Binding IsRouteSelected}"
                 SizeMode="Normal"
                 CornerRadius="4"
                 Background="{DynamicResource BusBuddy.Brush.Primary}"
                 Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}"
                 AutomationProperties.Name="Manage Route"
                 AutomationProperties.HelpText="Open the full route assignment and stops editor"/>
-
-                    <!-- Planning Operations -->
             <syncfusion:ButtonAdv Name="GenerateScheduleButton" Label="Generate Schedule"
                             Style="{StaticResource RouteToolbarButton}"
                             Command="{Binding GenerateScheduleCommand}"
@@ -126,7 +111,7 @@
                 Background="{DynamicResource BusBuddy.Brush.FleetGreen}"
                 Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}"
                 AutomationProperties.Name="Generate Schedule"
-                AutomationProperties.HelpText="Generate printable schedule for the selected route"/>
+                AutomationProperties.HelpText="Create a calendar schedule and printable PDF for the selected route"/>
             <syncfusion:ButtonAdv Name="GenerateRoutesButton" Label="Generate Routes"
                             Style="{StaticResource RouteToolbarButton}"
                             Command="{Binding GenerateRoutesCommand}"
@@ -141,6 +126,7 @@
                             Command="{Binding GenerateTransferRoutesCommand}"
                 SizeMode="Normal"
                 CornerRadius="4"
+                MinWidth="132"
                 Background="{DynamicResource BusBuddy.Brush.SafetyOrange}"
                 Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}"
                 AutomationProperties.Name="Generate Transfer Routes"
@@ -154,12 +140,6 @@
                 Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}"
                 AutomationProperties.Name="Refresh Drive Path"
                 AutomationProperties.HelpText="Compute road polyline via Google Routes API for the selected route"/>
-                    <Separator Margin="10,0"/>
-                </StackPanel>
-
-                <!-- Export and Print Actions -->
-                <StackPanel Grid.Column="1" Orientation="Horizontal">
-                    <!-- Export Options -->
             <syncfusion:ButtonAdv Name="ExportCsvButton" Label="Export CSV"
                             Style="{StaticResource RouteToolbarButton}"
                             Command="{Binding ExportCsvCommand}"
@@ -178,8 +158,6 @@
                             Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}"
                             AutomationProperties.Name="Export Report"
                             AutomationProperties.HelpText="Export detailed route report"/>
-
-                    <!-- Print Options -->
             <syncfusion:ButtonAdv Name="PrintScheduleButton" Label="Print Schedule"
                             Style="{StaticResource RouteToolbarButton}"
                             Command="{Binding PrintScheduleCommand}"
@@ -189,23 +167,18 @@
                             Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}"
                             AutomationProperties.Name="Print Schedule"
                             AutomationProperties.HelpText="Print route schedules"/>
-                    <Separator Margin="10,0"/>
-
-                    <!-- Quick Actions -->
                     <syncfusion:ButtonAdv Name="RefreshButton" Label="Refresh"
                             Style="{StaticResource RouteToolbarButton}"
                             Command="{Binding RefreshCommand}"
                             AutomationProperties.Name="Refresh Routes"
                             AutomationProperties.HelpText="Reload route data from database"/>
-
-                    <!-- Quick Filter -->
-                    <syncfusion:SfTextBoxExt Name="QuickSearchBox" Width="150" Margin="10,0,0,0"
+                    <syncfusion:SfTextBoxExt Name="QuickSearchBox" Width="150" Margin="0,0,8,6"
+                                              VerticalAlignment="Center"
                                               Text="{Binding QuickSearchText, UpdateSourceTrigger=PropertyChanged}"
                                               Watermark="Search routes..."
                                               AutomationProperties.Name="Quick Search Routes"
                                               AutomationProperties.HelpText="Type to search routes by name or description"/>
-                </StackPanel>
-            </Grid>
+            </WrapPanel>
         </Border>
 
         <!-- Routes Data Grid and Stops Panel -->
@@ -223,6 +196,8 @@
                               AllowSorting="True"
                               AllowFiltering="True"
                               AllowGrouping="True"
+                              AllowEditing="True"
+                              EditTrigger="OnTap"
                               ShowGroupDropArea="True"
                               ShowRowHeader="True"
                               SelectionMode="Single"
@@ -232,18 +207,31 @@
                               Margin="0,0,0,10"
                               Background="{DynamicResource BusBuddy.Brush.DataGrid.Background}"
                               MouseDoubleClick="RoutesDataGrid_MouseDoubleClick"
+                              CurrentCellEndEdit="RoutesDataGrid_CurrentCellEndEdit"
                               AutomationProperties.Name="Routes Data Grid"
                               AutomationProperties.HelpText="Grid displaying all routes with their assignments and schedule information">
             <syncfusion:SfDataGrid.Columns>
         <syncfusion:GridTextColumn MappingName="RouteName" HeaderText="Route Name" Width="150"/>
         <syncfusion:GridTextColumn MappingName="Description" HeaderText="Description" Width="200"/>
                 <syncfusion:GridCheckBoxColumn MappingName="IsSpecialNeedsRoute" HeaderText="Special Needs" Width="110"/>
-                <syncfusion:GridTextColumn MappingName="School" HeaderText="School" Width="150"/>
-                <syncfusion:GridTextColumn MappingName="Path" HeaderText="Path" Width="200"/>
-                <syncfusion:GridTextColumn MappingName="BusNumber" HeaderText="Bus Number" Width="100"/>
-        <syncfusion:GridDateTimeColumn MappingName="Date" HeaderText="Date" Width="120" DisplayBinding="{Binding Date, StringFormat=MM/dd/yyyy}"/>
-        <syncfusion:GridTextColumn MappingName="StudentCount" HeaderText="Students" Width="90"/>
-        <syncfusion:GridTextColumn MappingName="StopCount" HeaderText="Stops" Width="80"/>
+                <syncfusion:GridComboBoxColumn MappingName="School"
+                                             HeaderText="School"
+                                             Width="160"
+                                             DisplayMemberPath="Name"
+                                             SelectedValuePath="Name"
+                                             ItemsSource="{Binding AvailableSchools}"
+                                             AllowEditing="True"/>
+                <syncfusion:GridTextColumn MappingName="Path" HeaderText="Path" Width="200" AllowEditing="False"/>
+                <syncfusion:GridComboBoxColumn MappingName="BusNumber"
+                                             HeaderText="Bus Number"
+                                             Width="120"
+                                             DisplayMemberPath="BusNumber"
+                                             SelectedValuePath="BusNumber"
+                                             ItemsSource="{Binding AvailableBuses}"
+                                             AllowEditing="True"/>
+        <syncfusion:GridDateTimeColumn MappingName="Date" HeaderText="Date" Width="120" AllowEditing="False" DisplayBinding="{Binding Date, StringFormat=MM/dd/yyyy}"/>
+        <syncfusion:GridTextColumn MappingName="StudentCount" HeaderText="Students" Width="90" AllowEditing="False"/>
+        <syncfusion:GridTextColumn MappingName="StopCount" HeaderText="Stops" Width="80" AllowEditing="False"/>
         <syncfusion:GridCheckBoxColumn MappingName="IsActive" HeaderText="Active" Width="80"/>
             </syncfusion:SfDataGrid.Columns>
         </syncfusion:SfDataGrid>
@@ -265,7 +253,9 @@
                                             Name="AssignBusCombo"
                                             ItemsSource="{Binding AvailableBuses}"
                                             DisplayMemberPath="BusNumber"
-                                            SelectedItem="{Binding SelectedBus, Mode=TwoWay}"
+                                            SelectedValuePath="BusId"
+                                            SelectedValue="{Binding SelectedBusId, Mode=TwoWay}"
+                                            IsEditable="False"
                                             MaxDropDownHeight="240"
                                             AutomationProperties.Name="Assign Bus Selector"
                                             AutomationProperties.HelpText="Select an active bus to assign to the selected route"/>

@@ -235,11 +235,12 @@
                                              MappingName="School"
                                              Width="150"
                                              DisplayMemberPath="Name"
+                                             SelectedValuePath="Name"
                                              ItemsSource="{Binding AvailableSchools}"
                                              AllowEditing="True"/>
-                <syncfusion:GridTextColumn HeaderText="Dest. ID"
+                <syncfusion:GridTextColumn HeaderText="School ID"
                                          MappingName="DestinationId"
-                                         Width="70"
+                                         Width="80"
                                          AllowEditing="False"/>
                 <syncfusion:GridTextColumn HeaderText="Address"
                                          MappingName="HomeAddress"

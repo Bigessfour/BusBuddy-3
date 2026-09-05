@@ -203,6 +203,58 @@ namespace BusBuddy.Tests.Core
             Assert.That(studentsWithCoords, Is.GreaterThanOrEqualTo(3));
         }
 
+        [Test]
+        public async Task SeedSpecialNeedsTransportPrep_DoesNotReplaceExistingRouteBus()
+        {
+            BusBuddyDbContext.SkipGlobalSeedData = true;
+            var options = new DbContextOptionsBuilder<BusBuddyDbContext>()
+                .UseInMemoryDatabase($"SnPrepKeepBus_{Guid.NewGuid()}")
+                .ConfigureWarnings(w => w.Ignore(InMemoryEventId.TransactionIgnoredWarning))
+                .Options;
+
+            await using (var setup = new BusBuddyDbContext(options))
+            {
+                await setup.Database.EnsureCreatedAsync();
+                setup.Buses.Add(new Bus
+                {
+                    BusNumber = "Bus-5",
+                    Year = 2022,
+                    Make = "Thomas",
+                    Model = "Saf-T-Liner",
+                    SeatingCapacity = 12,
+                    VINNumber = "1USERBUS500000001",
+                    LicenseNumber = "SN5",
+                    Status = "Active",
+                    FleetType = "Special Needs",
+                    CreatedDate = DateTime.UtcNow,
+                    CreatedBy = "test"
+                });
+                await setup.SaveChangesAsync();
+                var userBusId = setup.Buses.Single(b => b.BusNumber == "Bus-5").BusId;
+                setup.Routes.Add(new Route
+                {
+                    RouteName = "Special Needs Route",
+                    Date = DateTime.SpecifyKind(DateTime.UtcNow.Date, DateTimeKind.Utc),
+                    IsActive = true,
+                    IsSpecialNeedsRoute = true,
+                    AMVehicleId = userBusId,
+                    PMVehicleId = userBusId,
+                    BusNumber = "Bus-5"
+                });
+                await setup.SaveChangesAsync();
+            }
+
+            var service = new SeedDataService(new TestDbContextFactory(options));
+            await service.SeedSpecialNeedsTransportPrepAsync();
+
+            await using var verify = new BusBuddyDbContext(options);
+            var route = await verify.Routes.SingleAsync(r => r.RouteName == "Special Needs Route");
+            var userBus = await verify.Buses.SingleAsync(b => b.BusNumber == "Bus-5");
+            Assert.That(route.AMVehicleId, Is.EqualTo(userBus.BusId));
+            Assert.That(route.PMVehicleId, Is.EqualTo(userBus.BusId));
+            Assert.That(route.BusNumber, Is.EqualTo("Bus-5"));
+        }
+
         private static string StudentCsv(string dataRow) =>
             "Student,,,Parent,,,,,,,,Joint Parent,,,,,,,Econtact,,\n" +
             "Fname,Lname,Grade,Fname,Lname,Address,City,State,County,Hphone,Cphone,Jparent FirstName,Jparent LastName,Address,City,State,County,Cphone ,Econtact FirstName,Econtact LastName,Econtact Phone\n" +

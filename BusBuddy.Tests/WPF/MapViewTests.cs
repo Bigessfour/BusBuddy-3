@@ -35,4 +35,27 @@ public class MapViewTests
         Assert.That(xaml, Does.Not.Contain("FluentDarkTheme.xaml"));
         Assert.That(xaml, Does.Not.Contain("#AA2B2B2B"));
     }
+
+    [Test]
+    public void MapViewLauncher_PrefersActiveWindowSoModalStudentsCannotHideTheMap()
+    {
+        var launcher = XamlViewFile.Read("Utilities/MapViewLauncher.cs");
+        Assert.That(launcher, Does.Contain("ResolveOwner"));
+        Assert.That(launcher, Does.Contain("IsActive"));
+        Assert.That(launcher, Does.Contain("BringToFront"));
+        Assert.That(launcher, Does.Contain("ShowActivated = true"));
+    }
+
+    [Test]
+    public void StudentsViewMapCommands_OpenDistrictMapWindow()
+    {
+        var xaml = XamlViewFile.Read("Views/Student/StudentsView.xaml");
+        Assert.That(xaml, Does.Contain("Command=\"{Binding ViewMapCommand}\""));
+        Assert.That(xaml, Does.Contain("Command=\"{Binding DataContext.ViewOnMapCommand"));
+
+        var vm = XamlViewFile.Read("ViewModels/Student/StudentsViewModel.cs");
+        Assert.That(vm, Does.Contain("MapViewLauncher.Show"));
+        Assert.That(vm, Does.Contain("BulkPlotEligibleStudentsCommand"));
+        Assert.That(vm, Does.Contain("District Map opened"));
+    }
 }

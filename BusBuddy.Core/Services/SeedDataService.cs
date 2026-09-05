@@ -975,15 +975,27 @@ Jordan,Lee,3,Sam,Lee,200 Oak Ave,Oakridge,CO,County,,555-0101,,,,,,,,
             {
                 route.IsSpecialNeedsRoute = true;
                 route.School = schoolName;
-                route.AMDriverId = driver.DriverId;
-                route.PMDriverId = driver.DriverId;
-                route.AMVehicleId = bus.BusId;
-                route.PMVehicleId = bus.BusId;
-                route.DriverName = driver.DriverName;
-                route.BusNumber = bus.BusNumber;
                 route.IsActive = true;
+                if (!route.AMDriverId.HasValue)
+                {
+                    route.AMDriverId = driver.DriverId;
+                    route.DriverName = driver.DriverName;
+                }
+                if (!route.PMDriverId.HasValue)
+                {
+                    route.PMDriverId = driver.DriverId;
+                }
+                if (!route.AMVehicleId.HasValue)
+                {
+                    route.AMVehicleId = bus.BusId;
+                    route.BusNumber = bus.BusNumber;
+                }
+                if (!route.PMVehicleId.HasValue)
+                {
+                    route.PMVehicleId = bus.BusId;
+                }
                 await context.SaveChangesAsync();
-                messages.Add($"Updated route '{routeName}' with SN driver/bus");
+                messages.Add($"Updated route '{routeName}' special-needs flag without replacing assigned bus/driver");
             }
 
             const string regularRouteName = "North Elementary";

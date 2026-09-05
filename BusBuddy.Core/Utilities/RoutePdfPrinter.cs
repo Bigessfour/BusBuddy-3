@@ -10,17 +10,43 @@ using Serilog;
 namespace BusBuddy.Core.Utilities
 {
     /// <summary>
-    /// Helper to generate a Route Summary PDF for the first active route found.
-    /// Not wired to UI; invoked manually from Program or a quick REPL for smoke verification.
+    /// Builds a printable route-summary PDF (stops, students, assigned bus/driver).
     /// </summary>
     public static class RoutePdfPrinter
     {
-        public static string GenerateFirstActiveRoutePdf(IBusBuddyDbContextFactory contextFactory, string outputDirectory, RouteTimeSlot slot = RouteTimeSlot.AM)
+        public static string GenerateFirstActiveRoutePdf(
+            IBusBuddyDbContextFactory contextFactory,
+            string outputDirectory,
+            RouteTimeSlot slot = RouteTimeSlot.AM)
+        {
+            ArgumentNullException.ThrowIfNull(contextFactory);
+            using var ctx = contextFactory.CreateDbContext();
+            var routeId = ctx.Routes.AsNoTracking()
+                .Where(r => r.IsActive)
+                .OrderBy(r => r.RouteId)
+                .Select(r => r.RouteId)
+                .FirstOrDefault();
+            if (routeId == 0)
+            {
+                throw new InvalidOperationException("No active route found to export.");
+            }
+
+            return GenerateRoutePdf(contextFactory, routeId, outputDirectory, slot);
+        }
+
+        public static string GenerateRoutePdf(
+            IBusBuddyDbContextFactory contextFactory,
+            int routeId,
+            string outputDirectory,
+            RouteTimeSlot slot = RouteTimeSlot.AM)
         {
             var opId = Guid.NewGuid().ToString("N");
             var sw = System.Diagnostics.Stopwatch.StartNew();
             ArgumentNullException.ThrowIfNull(contextFactory);
-            if (string.IsNullOrWhiteSpace(outputDirectory)) outputDirectory = Environment.CurrentDirectory;
+            if (string.IsNullOrWhiteSpace(outputDirectory))
+            {
+                outputDirectory = Environment.CurrentDirectory;
+            }
 
             try
             {
@@ -35,23 +61,23 @@ namespace BusBuddy.Core.Utilities
             using var ctx = contextFactory.CreateDbContext();
             using (Serilog.Context.LogContext.PushProperty("OpId", opId))
             using (Serilog.Context.LogContext.PushProperty("Slot", slot))
+            using (Serilog.Context.LogContext.PushProperty("RouteId", routeId))
             {
                 try
                 {
-                    Log.Information("[RoutePdfPrinter] Begin route PDF generation (OpId={OpId}, OutputDir={Dir}, Slot={Slot})", opId, outputDirectory, slot);
+                    Log.Information(
+                        "[RoutePdfPrinter] Begin route PDF generation (OpId={OpId}, OutputDir={Dir}, Slot={Slot}, RouteId={RouteId})",
+                        opId, outputDirectory, slot, routeId);
 
-                    var route = ctx.Routes.AsNoTracking().OrderBy(r => r.RouteId).FirstOrDefault(r => r.IsActive);
+                    var route = ctx.Routes.AsNoTracking().FirstOrDefault(r => r.RouteId == routeId);
                     if (route == null)
                     {
-                        Log.Warning("[RoutePdfPrinter] No active route found (OpId={OpId})", opId);
-                        throw new InvalidOperationException("No active route found to export.");
+                        Log.Warning("[RoutePdfPrinter] Route {RouteId} not found (OpId={OpId})", routeId, opId);
+                        throw new InvalidOperationException($"Route {routeId} was not found.");
                     }
 
-                    using (Serilog.Context.LogContext.PushProperty("RouteId", route.RouteId))
                     using (Serilog.Context.LogContext.PushProperty("RouteName", route.RouteName))
                     {
-                        Log.Debug("[RoutePdfPrinter] Selected active route {RouteId} - {RouteName} (OpId={OpId})", route.RouteId, route.RouteName, opId);
-
                         var stops = ctx.RouteStops.AsNoTracking()
                             .Where(rs => rs.RouteId == route.RouteId)
                             .OrderBy(rs => rs.StopOrder)
@@ -66,42 +92,26 @@ namespace BusBuddy.Core.Utilities
                             .ToList();
                         Log.Debug("[RoutePdfPrinter] Loaded {StudentCount} students matched for slot {Slot} (OpId={OpId})", students.Count, slot, opId);
 
-                        if (stops.Count == 0)
-                        {
-                            Log.Warning("[RoutePdfPrinter] Route {RouteId} has zero stops (OpId={OpId})", route.RouteId, opId);
-                        }
-                        if (students.Count == 0)
-                        {
-                            Log.Information("[RoutePdfPrinter] No students matched for route {RouteId} and slot {Slot} (OpId={OpId})", route.RouteId, slot, opId);
-                        }
-
-                        Bus? bus = null; // Future: resolve assignment
-                        Driver? driver = null; // Future: resolve assignment
+                        var vehicleId = slot == RouteTimeSlot.PM ? route.PMVehicleId : route.AMVehicleId;
+                        var driverId = slot == RouteTimeSlot.PM ? route.PMDriverId : route.AMDriverId;
+                        Bus? bus = vehicleId.HasValue
+                            ? ctx.Buses.AsNoTracking().FirstOrDefault(b => b.BusId == vehicleId.Value)
+                            : null;
+                        Driver? driver = driverId.HasValue
+                            ? ctx.Drivers.AsNoTracking().FirstOrDefault(d => d.DriverId == driverId.Value)
+                            : null;
 
                         var pdfService = new PdfReportService();
-                        Log.Debug("[RoutePdfPrinter] Invoking PdfReportService.GenerateRouteSummaryReport (OpId={OpId})");
                         var bytes = pdfService.GenerateRouteSummaryReport(route, stops, students, bus, driver, slot);
 
                         var fileName = $"RouteSummary_{route.RouteId}_{slot}_{DateTime.Now:yyyyMMdd_HHmmss}.pdf";
                         var path = Path.Combine(outputDirectory, fileName);
-                        try
-                        {
-                            File.WriteAllBytes(path, bytes);
-                        }
-                        catch (Exception ioEx)
-                        {
-                            Log.Error(ioEx, "[RoutePdfPrinter] Failed writing PDF to {Path} (OpId={OpId})", path, opId);
-                            throw;
-                        }
+                        File.WriteAllBytes(path, bytes);
 
                         sw.Stop();
-                        Log.Information("[RoutePdfPrinter] Route PDF generated (Path={Path}, Size={SizeBytes} bytes, Stops={StopCount}, Students={StudentCount}, ElapsedMs={Elapsed}, OpId={OpId})",
-                            path,
-                            bytes.LongLength,
-                            stops.Count,
-                            students.Count,
-                            sw.ElapsedMilliseconds,
-                            opId);
+                        Log.Information(
+                            "[RoutePdfPrinter] Route PDF generated (Path={Path}, Size={SizeBytes} bytes, Stops={StopCount}, Students={StudentCount}, ElapsedMs={Elapsed}, OpId={OpId})",
+                            path, bytes.LongLength, stops.Count, students.Count, sw.ElapsedMilliseconds, opId);
                         return path;
                     }
                 }

@@ -61,15 +61,22 @@ public sealed class StudentFormCatalogCoordinator
             var dbRoutes = new List<(string Name, bool IsSpecialNeeds)>();
             try
             {
-                dbRoutes = await _context.Routes
+                // Project in memory: Npgsql cannot translate ValueTuple + Distinct + string.Contains.
+                var rows = await _context.Routes
+                    .AsNoTracking()
                     .Where(r => r.IsActive)
-                    .Select(r => new ValueTuple<string, bool>(
-                        r.RouteName,
-                        r.IsSpecialNeedsRoute || r.RouteName.Contains("Special Needs")))
-                    .Distinct()
-                    .OrderBy(n => n.Item1)
+                    .Select(r => new { r.RouteName, r.IsSpecialNeedsRoute })
                     .ToListAsync()
                     .ConfigureAwait(true);
+
+                dbRoutes = rows
+                    .Select(r => (
+                        r.RouteName ?? string.Empty,
+                        StudentSpecialNeedsHelper.IsSpecialNeedsRoute(r.RouteName, r.IsSpecialNeedsRoute)))
+                    .Where(r => !string.IsNullOrWhiteSpace(r.Item1))
+                    .Distinct()
+                    .OrderBy(n => n.Item1)
+                    .ToList();
             }
             catch (Exception ex)
             {

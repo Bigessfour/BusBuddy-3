@@ -161,12 +161,12 @@ namespace BusBuddy.WPF.ViewModels.Student
 
         private void RegisterCatalogRefreshHandlers()
         {
-            WeakReferenceMessenger.Default.Register<PickupStopCatalogChangedMessage>(
+            WeakReferenceMessenger.Default.Register<StudentFormViewModel, PickupStopCatalogChangedMessage>(
                 this,
-                async (_, _) => await _catalog.LoadPickupStopsAsync().ConfigureAwait(true));
-            WeakReferenceMessenger.Default.Register<SchoolCatalogChangedMessage>(
+                async (r, _) => await r._catalog.LoadPickupStopsAsync().ConfigureAwait(true));
+            WeakReferenceMessenger.Default.Register<StudentFormViewModel, SchoolCatalogChangedMessage>(
                 this,
-                async (_, _) => await _catalog.LoadSchoolsAsync().ConfigureAwait(true));
+                async (r, _) => await r._catalog.LoadSchoolsAsync().ConfigureAwait(true));
         }
 
         #region Properties

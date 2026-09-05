@@ -467,6 +467,7 @@ namespace BusBuddy.WPF
                 // services.AddTransient<BusBuddy.WPF.Services.DialogService>();
                 // services.AddTransient<BusBuddy.WPF.Services.NavigationService>();
                 services.AddTransient<BusBuddy.WPF.Services.RouteExportService>();
+                services.AddTransient<BusBuddy.WPF.Services.IRoutePopulationScaffold, BusBuddy.WPF.Services.RoutePopulationScaffold>();
                 services.AddSingleton<BusBuddy.WPF.Services.ISkinManagerService, BusBuddy.WPF.Services.SkinManagerService>();
 
                 // Local AI chat (Ollama by default; graceful fallback when unavailable).

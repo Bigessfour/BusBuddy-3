@@ -40,9 +40,6 @@ namespace BusBuddy.WPF.ViewModels.Vehicle
         [ObservableProperty]
         private bool _isBusy;
 
-        [ObservableProperty]
-        private string _statusMessage = string.Empty;
-
         // Status filter options for the ComboBox
         public List<string> StatusFilterOptions { get; } = new()
         {
@@ -55,13 +52,11 @@ namespace BusBuddy.WPF.ViewModels.Vehicle
         };
 
         // Operational status options for vehicle form
-        public List<string> OperationalStatusOptions { get; } = new()
+        public List<string> FleetTypeOptions { get; } = new()
         {
-            "Active",
-            "InService",
-            "Maintenance",
-            "OutOfService",
-            "Retired"
+            "Regular",
+            "Special Needs",
+            "Activity"
         };
 
         // Total vehicle count for status bar
@@ -231,7 +226,8 @@ namespace BusBuddy.WPF.ViewModels.Vehicle
                     LicenseNumber = "",
                     SeatingCapacity = 40,
                     Year = DateTime.Now.Year,
-                    Status = "Active"
+                    Status = "Active",
+                    FleetType = "Regular"
                 };
 
                 SelectedVehicle = newVehicle;

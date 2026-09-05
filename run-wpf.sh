@@ -161,7 +161,7 @@ $hostIp = "'"${HOST_IP}"'"
 $ipFile = Join-Path $found "keys\mac-host-ip.txt"
 if (Test-Path $ipFile) { $hostIp = (Get-Content $ipFile -Raw).Trim() }
 if ($hostIp -match "^\d") {
-  $env:BUSBUDDY_CONNECTION = "Host=$hostIp;Port=5432;Database=busbuddy_test;Username=busbuddy;Password=busbuddy_dev;Include Error Detail=true"
+  $env:BUSBUDDY_CONNECTION = "Host=$hostIp;Port=5432;Database=busbuddy_test;Username=busbuddy;Password=busbuddy_dev;Include Error Detail=true;Timeout=5"
   $env:DatabaseProvider = "Postgres"
   Write-Output "CONN:$hostIp"
 }

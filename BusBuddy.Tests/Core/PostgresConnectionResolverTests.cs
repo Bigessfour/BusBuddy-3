@@ -36,4 +36,30 @@ public class PostgresConnectionResolverTests
             .Should()
             .Be("192.168.1.78:5432");
     }
+
+    [Test]
+    public void EnsureConnectTimeout_appends_timeout_when_missing()
+    {
+        var withTimeout = PostgresConnectionResolver.EnsureConnectTimeout(
+            "Host=192.168.1.78;Port=5432;Database=busbuddy_test;Username=busbuddy;Password=busbuddy_dev");
+
+        withTimeout.Should().Contain("Timeout=5");
+    }
+
+    [Test]
+    public void EnsureConnectTimeout_leaves_existing_timeout()
+    {
+        var current =
+            "Host=192.168.1.78;Port=5432;Database=busbuddy_test;Username=busbuddy;Password=busbuddy_dev;Timeout=15";
+
+        PostgresConnectionResolver.EnsureConnectTimeout(current).Should().Be(current);
+    }
+
+    [Test]
+    public void BuildConnectionString_includes_short_connect_timeout()
+    {
+        PostgresConnectionResolver.BuildConnectionString("192.168.1.78")
+            .Should()
+            .Contain("Timeout=5");
+    }
 }

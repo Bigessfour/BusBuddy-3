@@ -164,5 +164,9 @@ public class MainWindowClerkPathTests
         Assert.That(main, Does.Contain("ShowViewInWindow(new RouteManagementView()"));
         Assert.That(main, Does.Contain("ActivateRouteAssignmentsPane()"));
         Assert.That(main, Does.Not.Contain("RouteManagementButton_Click(sender, e)"));
+
+        var assignment = XamlViewFile.Read("Utilities/RouteAssignmentLauncher.cs");
+        Assert.That(assignment, Does.Contain("DialogOwner.Resolve"));
+        Assert.That(assignment, Does.Contain("ShowDialog"));
     }
 }

@@ -13,6 +13,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using BusBuddy.Core.Configuration;
 using BusBuddy.Core.Models;
+using BusBuddy.Core.Utilities;
 using Serilog;
 using RouteModel = BusBuddy.Core.Models.Route;
 using System.Text.Json; // Microsoft .NET docs: System.Text.Json for JSON serialization/deserialization
@@ -550,7 +551,7 @@ namespace BusBuddy.WPF.ViewModels.Map
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Error loading routes for the map");
+                DatabaseUserMessage.LogFailure(Logger, ex, "Error loading routes for the map");
                 StatusMessage = "Error loading routes";
                 ShowError("Failed to load routes for district map");
             }
@@ -581,7 +582,7 @@ namespace BusBuddy.WPF.ViewModels.Map
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Error handling route selection change");
+                DatabaseUserMessage.LogFailure(Logger, ex, "Error handling route selection change");
             }
         }
 
@@ -606,7 +607,7 @@ namespace BusBuddy.WPF.ViewModels.Map
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Error refreshing map");
+                DatabaseUserMessage.LogFailure(Logger, ex, "Error refreshing map");
                 StatusMessage = "Error refreshing map";
                 ShowError("Failed to refresh map display");
             }
@@ -731,7 +732,7 @@ namespace BusBuddy.WPF.ViewModels.Map
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Bulk plot: failed loading students");
+                DatabaseUserMessage.LogFailure(Logger, ex, "Bulk plot: failed loading students");
                 StatusMessage = "Load students failed";
                 return;
             }
@@ -788,8 +789,8 @@ namespace BusBuddy.WPF.ViewModels.Map
             }
 
             StatusMessage = plotted == 0
-                ? $"No plottable students ({students.Count} in DB; geocoded {geocoded})"
-                : $"Plotted {plotted} markers (In system {eligibleCount}, Geocoded {geocoded})";
+                ? $"Student plotting complete — no locations ({students.Count} in DB; geocoded {geocoded})"
+                : $"Student plotting complete — {plotted} locations";
             Logger.Information("Bulk plot complete InSystem={Eligible} Geocoded={Geocoded} Plotted={Plotted} Total={Total}", eligibleCount, geocoded, plotted, students.Count);
             if (plotted > 0)
             {
@@ -798,7 +799,7 @@ namespace BusBuddy.WPF.ViewModels.Map
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Bulk plot students failed");
+                DatabaseUserMessage.LogFailure(Logger, ex, "Bulk plot students failed");
                 StatusMessage = "Plot students failed — see logs";
             }
         }
@@ -843,7 +844,7 @@ namespace BusBuddy.WPF.ViewModels.Map
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Failed to update map for route {RouteName}", routeName);
+                DatabaseUserMessage.LogFailure(Logger, ex, "Failed to update map for route {RouteName}", routeName);
             }
         }
 
@@ -1048,7 +1049,7 @@ namespace BusBuddy.WPF.ViewModels.Map
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Failed to request printing");
+                DatabaseUserMessage.LogFailure(Logger, ex, "Failed to request printing");
             }
         }
 
@@ -1157,7 +1158,7 @@ namespace BusBuddy.WPF.ViewModels.Map
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Failed to add marker from parameter");
+                DatabaseUserMessage.LogFailure(Logger, ex, "Failed to add marker from parameter");
                 StatusMessage = "Add marker failed";
             }
         }
@@ -1198,7 +1199,7 @@ namespace BusBuddy.WPF.ViewModels.Map
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Map snapshot capture failed");
+                DatabaseUserMessage.LogFailure(Logger, ex, "Map snapshot capture failed");
                 StatusMessage = "Map snapshot error";
             }
         }
@@ -1225,7 +1226,7 @@ namespace BusBuddy.WPF.ViewModels.Map
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Failed loading students for eligibility route PDF");
+                DatabaseUserMessage.LogFailure(Logger, ex, "Failed loading students for eligibility route PDF");
             }
 
             if (allStudents.Count == 0)
@@ -1341,7 +1342,7 @@ namespace BusBuddy.WPF.ViewModels.Map
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "PDF generation failed for eligibility route");
+                DatabaseUserMessage.LogFailure(Logger, ex, "PDF generation failed for eligibility route");
                 pdf = Array.Empty<byte>();
             }
 
@@ -1418,7 +1419,7 @@ namespace BusBuddy.WPF.ViewModels.Map
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Eligibility PDF wrapper failed");
+                DatabaseUserMessage.LogFailure(Logger, ex, "Eligibility PDF wrapper failed");
                 StatusMessage = "Eligibility PDF error";
             }
         }
