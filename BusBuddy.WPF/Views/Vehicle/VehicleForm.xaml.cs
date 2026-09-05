@@ -1,30 +1,34 @@
 using System.Windows;
+using BusBuddy.WPF.Utilities;
+using BusBuddy.WPF.ViewModels.Vehicle;
 using Serilog;
-using Syncfusion.Windows.Shared;
 using Syncfusion.SfSkinManager;
+using Syncfusion.Windows.Shared;
 
 namespace BusBuddy.WPF.Views.Vehicle
 {
     /// <summary>
-    /// Interaction logic for VehicleForm.xaml
-    /// Step 3: Vehicle form with Syncfusion ChromelessWindow, SkinManager theming, and Core service integration
+    /// Modal host for fleet CRUD. Content is always <see cref="VehicleManagementView"/>.
     /// </summary>
     public partial class VehicleForm : ChromelessWindow
     {
         private static readonly ILogger Log = Serilog.Log.ForContext<VehicleForm>();
-        public VehicleForm()
+
+        public VehicleForm() : this(VehicleManagementStartup.None)
+        {
+        }
+
+        public VehicleForm(VehicleManagementStartup startup)
         {
             InitializeComponent();
+            Content = new VehicleManagementView(startup);
             ApplySyncfusionTheme();
             Loaded += OnLoaded;
         }
 
-        /// <summary>
-        /// Apply Syncfusion theme with FluentDark default and FluentLight fallback
-        /// </summary>
         private void ApplySyncfusionTheme()
         {
-            BusBuddy.WPF.Utilities.SyncfusionThemeManager.ApplyTheme(this);
+            SyncfusionThemeManager.ApplyTheme(this);
         }
 
         protected override void OnClosed(System.EventArgs e)
@@ -36,21 +40,15 @@ namespace BusBuddy.WPF.Views.Vehicle
             }
             catch (System.Exception ex)
             {
-                Log.Error("Error disposing SfSkinManager for {ViewName}: {Error}", GetType().Name, ex.Message);
+                Log.Error(ex, "Error disposing SfSkinManager for {ViewName}", GetType().Name);
             }
+
             base.OnClosed(e);
         }
 
         private void OnLoaded(object sender, RoutedEventArgs e)
         {
-            try
-            {
-                Log.Information("Loaded {ViewName} with theme resource {ResourceKey}", GetType().Name, "BusBuddy.Brush.Primary");
-            }
-            catch
-            {
-                // no-op
-            }
+            Log.Information("Loaded {ViewName}", GetType().Name);
         }
     }
 }

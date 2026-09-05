@@ -12,15 +12,17 @@ namespace BusBuddy.WPF.Services
     public class RoutePopulationScaffold : IRoutePopulationScaffold
     {
         private readonly BusBuddy.Core.Services.IRouteService _routeService;
+        private readonly IStudentService? _studentService;
         private static readonly ILogger Logger = Log.ForContext<RoutePopulationScaffold>();
         private static readonly object _cacheLock = new object();
         private static List<BusBuddy.Core.Models.Route>? _cachedRoutes;
         private static DateTime _lastCacheUpdate = DateTime.MinValue;
         private static readonly TimeSpan _cacheExpiry = TimeSpan.FromMinutes(5); // Cache for 5 minutes
 
-        public RoutePopulationScaffold(BusBuddy.Core.Services.IRouteService routeService)
+        public RoutePopulationScaffold(BusBuddy.Core.Services.IRouteService routeService, IStudentService? studentService = null)
         {
             _routeService = routeService;
+            _studentService = studentService;
         }
 
         public async Task<System.Collections.Generic.List<BusBuddy.Core.Models.Route>> GetOptimizedRoutesAsync()
@@ -46,6 +48,17 @@ namespace BusBuddy.WPF.Services
                 var routeList = result.IsSuccess && result.Value != null
                     ? result.Value.ToList()
                     : new List<BusBuddy.Core.Models.Route>();
+
+                if (_studentService is not null && routeList.Count > 0)
+                {
+                    var students = await _studentService.GetAllStudentsAsync().ConfigureAwait(false) ?? [];
+                    foreach (var route in routeList)
+                    {
+                        route.StudentCount = students.Count(s =>
+                            string.Equals(s.AMRoute, route.RouteName, StringComparison.OrdinalIgnoreCase)
+                            || string.Equals(s.PMRoute, route.RouteName, StringComparison.OrdinalIgnoreCase));
+                    }
+                }
 
                 // Update cache
                 lock (_cacheLock)

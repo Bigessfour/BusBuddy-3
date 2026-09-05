@@ -1,5 +1,7 @@
 using System.Windows;
 using System.Windows.Controls;
+using BusBuddy.WPF.Utilities;
+using BusBuddy.WPF.ViewModels.Vehicle;
 using Serilog;
 
 namespace BusBuddy.WPF.Controls
@@ -21,18 +23,13 @@ namespace BusBuddy.WPF.Controls
             Logger.Information("Add vehicle action requested");
             try
             {
-                var busForm = new BusBuddy.WPF.Views.Bus.BusForm();
-                var result = busForm.ShowDialog();
-                if (result == true)
-                {
-                    MessageBox.Show("Vehicle added successfully!", "Success",
-                        MessageBoxButton.OK, MessageBoxImage.Information);
-                }
+                var owner = Window.GetWindow(this);
+                VehicleFleetLauncher.ShowDialog(owner, VehicleManagementStartup.AddVehicle);
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Error opening Bus form");
-                MessageBox.Show($"Error opening Bus form: {ex.Message}", "Error",
+                Logger.Error(ex, "Error opening vehicle fleet");
+                MessageBox.Show($"Error opening vehicle management: {ex.Message}", "Error",
                     MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }

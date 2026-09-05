@@ -2,10 +2,11 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:syncfusion="http://schemas.syncfusion.com/wpf"
-        xmlns:local="clr-namespace:BusBuddy.WPF.Views.Vehicle"
-        Title="Vehicle Form"
+        Title="Vehicle Management"
         Height="800"
-        Width="1100"
+        Width="1150"
+        MinHeight="640"
+        MinWidth="960"
         WindowStartupLocation="CenterOwner">
 
     <syncfusion:ChromelessWindow.Resources>
@@ -16,6 +17,4 @@
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </syncfusion:ChromelessWindow.Resources>
-
-    <local:VehicleManagementView/>
 </syncfusion:ChromelessWindow>

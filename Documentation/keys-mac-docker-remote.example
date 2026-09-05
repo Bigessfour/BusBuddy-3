@@ -1,0 +1,8 @@
+# Optional: let utm_run_in_vm.ps1 start Mac Docker Postgres via SSH when you launch only from the VM.
+# Copy to keys/mac-docker-remote.txt (gitignored via keys/* patterns — do not commit secrets).
+#
+# Format (one line):
+#   ssh-alias:/absolute/path/to/BusBuddy-3
+#
+# Example (SSH config on the VM must define Host busbuddy-mac -> your Mac):
+#   busbuddy-mac:/Users/stephenmckitrick/Bus_Buddy/BusBuddy-3

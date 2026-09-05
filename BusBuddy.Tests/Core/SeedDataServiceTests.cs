@@ -7,6 +7,7 @@ using BusBuddy.Core.Data;
 using BusBuddy.Core.Models;
 using BusBuddy.Core.Services;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Moq;
 using NUnit.Framework;
 
@@ -151,6 +152,107 @@ namespace BusBuddy.Tests.Core
             {
                 File.Delete(path);
             }
+        }
+
+        [Test]
+        public async Task EnsureMapDemoGeoAsync_SeedsSchoolStudentsAndRouteWaypoints_WithoutBusGps()
+        {
+            BusBuddyDbContext.SkipGlobalSeedData = true;
+            var options = new DbContextOptionsBuilder<BusBuddyDbContext>()
+                .UseInMemoryDatabase($"MapDemoGeo_{Guid.NewGuid()}")
+                .ConfigureWarnings(w => w.Ignore(InMemoryEventId.TransactionIgnoredWarning))
+                .Options;
+            await using (var setup = new BusBuddyDbContext(options))
+            {
+                await setup.Database.EnsureCreatedAsync();
+                setup.Buses.Add(new Bus
+                {
+                    BusNumber = "BUS-001",
+                    Year = 2020,
+                    Make = "Blue Bird",
+                    Model = "Vision",
+                    SeatingCapacity = 72,
+                    VINNumber = "1TESTVIN000000001",
+                    LicenseNumber = "TEST1",
+                    Status = "Active",
+                    CreatedDate = DateTime.UtcNow,
+                    CreatedBy = "test"
+                });
+                await setup.SaveChangesAsync();
+            }
+
+            var service = new SeedDataService(new TestDbContextFactory(options));
+            await service.EnsureMapDemoGeoAsync();
+
+            await using var verify = new BusBuddyDbContext(options);
+            var school = await verify.Destinations.FirstOrDefaultAsync(d => d.Name == "Wiley K-12 School");
+            Assert.That(school, Is.Not.Null);
+            Assert.That(school!.Latitude, Is.Not.Null);
+            Assert.That(school.Longitude, Is.Not.Null);
+
+            var bus = await verify.Buses.FirstAsync(b => b.BusNumber == "BUS-001");
+            Assert.That(bus.CurrentLatitude, Is.Null);
+            Assert.That(bus.CurrentLongitude, Is.Null);
+            Assert.That(bus.GPSTracking, Is.False);
+
+            var route = await verify.Routes.FirstOrDefaultAsync(r => r.RouteName == "Special Needs Route");
+            Assert.That(route, Is.Not.Null);
+            Assert.That(route!.WaypointsJson, Is.Not.Null.And.Not.Empty);
+
+            var studentsWithCoords = await verify.Students.CountAsync(s => s.Latitude != null && s.Longitude != null);
+            Assert.That(studentsWithCoords, Is.GreaterThanOrEqualTo(3));
+        }
+
+        [Test]
+        public async Task SeedSpecialNeedsTransportPrep_DoesNotReplaceExistingRouteBus()
+        {
+            BusBuddyDbContext.SkipGlobalSeedData = true;
+            var options = new DbContextOptionsBuilder<BusBuddyDbContext>()
+                .UseInMemoryDatabase($"SnPrepKeepBus_{Guid.NewGuid()}")
+                .ConfigureWarnings(w => w.Ignore(InMemoryEventId.TransactionIgnoredWarning))
+                .Options;
+
+            await using (var setup = new BusBuddyDbContext(options))
+            {
+                await setup.Database.EnsureCreatedAsync();
+                setup.Buses.Add(new Bus
+                {
+                    BusNumber = "Bus-5",
+                    Year = 2022,
+                    Make = "Thomas",
+                    Model = "Saf-T-Liner",
+                    SeatingCapacity = 12,
+                    VINNumber = "1USERBUS500000001",
+                    LicenseNumber = "SN5",
+                    Status = "Active",
+                    FleetType = "Special Needs",
+                    CreatedDate = DateTime.UtcNow,
+                    CreatedBy = "test"
+                });
+                await setup.SaveChangesAsync();
+                var userBusId = setup.Buses.Single(b => b.BusNumber == "Bus-5").BusId;
+                setup.Routes.Add(new Route
+                {
+                    RouteName = "Special Needs Route",
+                    Date = DateTime.SpecifyKind(DateTime.UtcNow.Date, DateTimeKind.Utc),
+                    IsActive = true,
+                    IsSpecialNeedsRoute = true,
+                    AMVehicleId = userBusId,
+                    PMVehicleId = userBusId,
+                    BusNumber = "Bus-5"
+                });
+                await setup.SaveChangesAsync();
+            }
+
+            var service = new SeedDataService(new TestDbContextFactory(options));
+            await service.SeedSpecialNeedsTransportPrepAsync();
+
+            await using var verify = new BusBuddyDbContext(options);
+            var route = await verify.Routes.SingleAsync(r => r.RouteName == "Special Needs Route");
+            var userBus = await verify.Buses.SingleAsync(b => b.BusNumber == "Bus-5");
+            Assert.That(route.AMVehicleId, Is.EqualTo(userBus.BusId));
+            Assert.That(route.PMVehicleId, Is.EqualTo(userBus.BusId));
+            Assert.That(route.BusNumber, Is.EqualTo("Bus-5"));
         }
 
         private static string StudentCsv(string dataRow) =>

@@ -8,6 +8,12 @@ namespace BusBuddy.Core.Utilities;
 /// </summary>
 public static class EntityFrameworkPostgresExtensions
 {
+    /// <summary>Call once at process startup before any Npgsql connection.</summary>
+    public static void ConfigureNpgsqlAppContext()
+    {
+        AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
+    }
+
     public static DbContextOptionsBuilder UseBusBuddyPostgres(
         this DbContextOptionsBuilder optionsBuilder,
         string connectionString)

@@ -1,6 +1,7 @@
 using System;
 using BusBuddy.Core.Utilities;
 using FluentAssertions;
+using Microsoft.EntityFrameworkCore;
 using Npgsql;
 using NUnit.Framework;
 
@@ -40,5 +41,24 @@ public class DatabaseUserMessageTests
 
         DatabaseUserMessage.ForOperation(ex, "save the student")
             .Should().Be("Failed to save the student: Student number already exists.");
+    }
+
+    [Test]
+    public void IsConnectivityFailure_detects_timeout_without_npgsql_wrapper()
+    {
+        DatabaseUserMessage.IsConnectivityFailure(new TimeoutException("The operation has timed out."))
+            .Should()
+            .BeTrue();
+    }
+
+    [Test]
+    public void ForOperation_describes_postgres_foreign_key_violation()
+    {
+        var ex = new DbUpdateException(
+            "An error occurred while saving the entity changes. See the inner exception for details.",
+            new PostgresException("insert or update on table \"Students\" violates foreign key constraint", severity: string.Empty, invariantSeverity: string.Empty, sqlState: PostgresErrorCodes.ForeignKeyViolation));
+
+        DatabaseUserMessage.ForOperation(ex, "save the student")
+            .Should().Contain("related record is missing");
     }
 }

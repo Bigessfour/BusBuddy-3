@@ -155,7 +155,7 @@ namespace BusBuddy.WPF.ViewModels
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Failed to load data from database; leaving dock grids empty");
+                DatabaseUserMessage.LogFailure(Logger, ex, "Failed to load data from database; leaving dock grids empty");
                 ClearCollections();
                 StatusMessage = DatabaseUserMessage.IsConnectivityFailure(ex)
                     ? "Database unavailable — check Postgres on the Mac host and BUSBUDDY_CONNECTION."

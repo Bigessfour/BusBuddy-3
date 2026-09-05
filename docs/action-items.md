@@ -28,8 +28,10 @@ Canonical hops: [clerk-path.md](./clerk-path.md). **Do not** split `MainWindow.x
 **Next (one hop at a time; prove then check the box)**
 
 - [ ] Hop 2 — Student save / CSV: `DestinationId` + coordinates. VM: Add Student, pick the school, validate address
+    - Code complete 2026-09-03: `StudentSchoolLinker`, grid/bulk/delete via `IStudentService`, school/pickup catalog messages, geocode on validate/save, CSV sole-school link, Hop2 grid columns (`DestinationId`, lat/lon). **VM smoke still open on Windows.**
 - [ ] Hop 3 — Generate Routes: Serilog `Route generation completed`. Stop if a second table is written
 - [ ] Hop 4 — Bus + driver on `Routes.AMVehicleId` / `AMDriverId` (Assign Bus opens Route Assignments)
+    - Vehicle fleet code 2026-09-03: `VehicleManagementViewModel` save/delete via `IBusService`; `BusForm` removed; `VehicleFleetLauncher` is the single entry (MainWindow, QuickActions, Dashboard). **VM smoke still open:** add bus → Serilog `Added vehicle BusId=` → row in `Buses`.
 - [ ] Hop 4b — Pick **one** write: `Route.AM*` vs `RouteAssignments` vs `Schedules` (do not add a fourth)
 - [ ] Hop 5 — `ScheduleService` row for that route
 - [ ] Hop 6 — Fuel / Maintenance records point at that bus (`VehicleFueledId` / `VehicleId`)
@@ -76,6 +78,11 @@ Wave 1 (2026-08-28): implicit ButtonAdv glyph suppression on shell/map/form; Rou
 Wave 2–3 (2026-08-28): DriverForm ComboBox `SelectedValue`+`Content`; Vehicles stub hosts `VehicleManagementView`; Vehicle status bar off Accent blue; Reports/Fuel/Dashboard/Maintenance/Analytics/Timeline/Settings/Schedule glyph collapse + AutomationNames.
 
 - [x] Wave 1 XAML audit (`MainWindow`, `RouteAssignmentView`, `RouteManagementView`, `StudentsView`, `StudentForm`, `MapView`) — remaining: VM smoke
+- [x] **StudentForm vertical audit** — service dry-run, route combos, numpad, student number removed from UI
+- [x] Removed `QuickActionsDialog`; aligned grades via `StudentGradeCatalog`; MainWindow Add/Edit → `StudentsView`
+- [x] **Student views code-complete (2026-09-03)** — all P1 fixes; VM smoke Hops 1–2 remain clerk proof on Windows
+- [ ] **VM smoke (Hop 1):** Add School → Serilog `Added school DestinationId=` → `Destinations` row
+- [ ] **VM smoke (Hop 2):** Add Student → Serilog `Successfully saved student` → `Students` row with `DestinationId` + coords
 - [x] Wave 2 complete (`DriversView`, `DriverForm`, `DriverTrainingChecklistView`, `VehicleManagementView`, `VehiclesView` host, `ReportsView`)
 - [x] Wave 3 complete (remaining pages)
 - [x] Waves 4–5 complete (dialogs + shared controls) — 2026-08-31: unwired ButtonAdv wired or Click-in-XAML; NotificationWindow FindName; VehicleForm ancestor; missing styles; activity editor Syncfusion-only
@@ -88,7 +95,7 @@ Wave 2–3 (2026-08-28): DriverForm ComboBox `SelectedValue`+`Content`; Vehicles
     - [x] US2: Remove GEE DI, client, probe, unofficial Google tiles
     - [x] US1: Address Validation + geocode onto SfMap (Maps client + DI)
     - [x] US3: Routes API drive polyline (fail-open optimizer)
-    - [x] US4: Places type-ahead — skipped (deferred)
+    - [x] US4: Places type-ahead on Student + School forms (`GooglePlacesAutocompleteService`, session tokens)
     - [x] Docs for US2; Maps clients wired
 - [x] **Student contact + school destinations** — parent/emergency fields, Destination School catalog, intake school dropdown, map schools, inter-district `StudentSchoolTransfer` (timed pickup/dropoff) — merged [PR #36](https://github.com/Bigessfour/BusBuddy-3/pull/36)
     - [x] Apply migration `20260817140000_StudentContactFieldsAlignment` — Mac Postgres `dotnet ef database update` works on a **fresh** database (`BUSBUDDY_CONNECTION` → Docker). WPF startup uses `Migrate()`; existing EnsureCreated DBs must be dropped or pointed at a new catalog.

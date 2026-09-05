@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
 using BusBuddy.Core.Data;
+using BusBuddy.Core.Mapping;
 using BusBuddy.Core.Models;
 using Microsoft.Extensions.Configuration;
 
@@ -643,6 +644,43 @@ Jordan,Lee,3,Sam,Lee,200 Oak Ave,Oakridge,CO,County,,555-0101,,,,,,,,
                     return 0;
                 }
 
+                List<Destination> activeSchools;
+                try
+                {
+                    activeSchools = await context.Destinations
+                        .Where(d => d.IsActive && !d.IsDeleted && d.DestinationType == DestinationTypes.School)
+                        .ToListAsync();
+                }
+                catch (InvalidOperationException)
+                {
+                    activeSchools = context.Destinations
+                        .Where(d => d.IsActive && !d.IsDeleted && d.DestinationType == DestinationTypes.School)
+                        .ToList();
+                }
+
+                if (activeSchools.Count == 1)
+                {
+                    var school = activeSchools[0];
+                    foreach (var student in students)
+                    {
+                        student.School = school.Name;
+                        student.DestinationId = school.DestinationId;
+                    }
+
+                    Logger.Information(
+                        "CSV import linked {Count} students to sole active school {School} (DestinationId={DestinationId})",
+                        students.Count,
+                        school.Name,
+                        school.DestinationId);
+                }
+                else if (activeSchools.Count > 1)
+                {
+                    foreach (var student in students)
+                    {
+                        BusBuddy.Core.Utilities.StudentSchoolLinker.SyncDestinationFromSchoolName(student, activeSchools);
+                    }
+                }
+
                 context.Families.AddRange(families);
                 context.Students.AddRange(students);
                 await context.SaveChangesAsync();
@@ -761,9 +799,44 @@ Jordan,Lee,3,Sam,Lee,200 Oak Ave,Oakridge,CO,County,,555-0101,,,,,,,,
             await SeedStudentsFromCsvAsync();
             await SeedRoutesAsync(8);
             await SeedActivitiesAsync(25);
-            await SeedSpecialNeedsTransportPrepAsync();
+            await EnsureMapDemoGeoAsync();
 
             Logger.Information("Development data seeding completed");
+        }
+
+        /// <inheritdoc />
+        public async Task EnsureMapDemoGeoAsync()
+        {
+            try
+            {
+                await SeedSpecialNeedsTransportPrepAsync();
+
+                using var context = _contextFactory.CreateWriteDbContext();
+
+                var route = await context.Routes.FirstOrDefaultAsync(r => r.RouteName == "Special Needs Route")
+                    ?? await context.Routes.FirstOrDefaultAsync(r => r.IsActive);
+
+                if (route is not null && string.IsNullOrWhiteSpace(route.WaypointsJson))
+                {
+                    route.WaypointsJson = RouteWaypointSerializer.FromPairs(new[]
+                    {
+                        (38.1535, -102.7195),
+                        (38.1550, -102.7210),
+                        (38.1565, -102.7180),
+                        (38.1535, -102.7195)
+                    });
+                }
+
+                await context.SaveChangesAsync();
+                Logger.Information(
+                    "Map demo geo ensured SchoolStudentsSeeded=true RouteHasWaypoints={HasWaypoints}",
+                    route is not null && !string.IsNullOrWhiteSpace(route.WaypointsJson));
+            }
+            catch (Exception ex)
+            {
+                Logger.Warning(ex, "EnsureMapDemoGeoAsync failed");
+                throw;
+            }
         }
 
         /// <inheritdoc />
@@ -902,15 +975,27 @@ Jordan,Lee,3,Sam,Lee,200 Oak Ave,Oakridge,CO,County,,555-0101,,,,,,,,
             {
                 route.IsSpecialNeedsRoute = true;
                 route.School = schoolName;
-                route.AMDriverId = driver.DriverId;
-                route.PMDriverId = driver.DriverId;
-                route.AMVehicleId = bus.BusId;
-                route.PMVehicleId = bus.BusId;
-                route.DriverName = driver.DriverName;
-                route.BusNumber = bus.BusNumber;
                 route.IsActive = true;
+                if (!route.AMDriverId.HasValue)
+                {
+                    route.AMDriverId = driver.DriverId;
+                    route.DriverName = driver.DriverName;
+                }
+                if (!route.PMDriverId.HasValue)
+                {
+                    route.PMDriverId = driver.DriverId;
+                }
+                if (!route.AMVehicleId.HasValue)
+                {
+                    route.AMVehicleId = bus.BusId;
+                    route.BusNumber = bus.BusNumber;
+                }
+                if (!route.PMVehicleId.HasValue)
+                {
+                    route.PMVehicleId = bus.BusId;
+                }
                 await context.SaveChangesAsync();
-                messages.Add($"Updated route '{routeName}' with SN driver/bus");
+                messages.Add($"Updated route '{routeName}' special-needs flag without replacing assigned bus/driver");
             }
 
             const string regularRouteName = "North Elementary";

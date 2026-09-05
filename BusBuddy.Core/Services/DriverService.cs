@@ -2,6 +2,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using BusBuddy.Core.Data;
 using BusBuddy.Core.Models;
+using BusBuddy.Core.Utilities;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
 
@@ -116,7 +117,7 @@ namespace BusBuddy.Core.Services
                 }
                 catch (Exception ex)
                 {
-                    Logger.Error(ex, "Error retrieving all drivers");
+                    DatabaseUserMessage.LogFailure(Logger, ex, "Error retrieving all drivers");
                     throw;
                 }
                 finally
@@ -150,7 +151,7 @@ namespace BusBuddy.Core.Services
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Error retrieving driver with ID: {DriverId}", driverId);
+                DatabaseUserMessage.LogFailure(Logger, ex, "Error retrieving driver with ID: {DriverId}", driverId);
                 throw;
             }
         }
@@ -203,7 +204,7 @@ namespace BusBuddy.Core.Services
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Error adding driver: {DriverName}", driver.DriverName);
+                DatabaseUserMessage.LogFailure(Logger, ex, "Error adding driver: {DriverName}", driver.DriverName);
                 throw;
             }
         }
@@ -263,7 +264,7 @@ namespace BusBuddy.Core.Services
                     }
                     else
                     {
-                        Logger.Error(ex, "Concurrency error updating driver: {DriverId}", driver.DriverId);
+                        DatabaseUserMessage.LogFailure(Logger, ex, "Concurrency error updating driver: {DriverId}", driver.DriverId);
                         throw;
                     }
                 }
@@ -277,7 +278,7 @@ namespace BusBuddy.Core.Services
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Error updating driver with ID: {DriverId}", driver.DriverId);
+                DatabaseUserMessage.LogFailure(Logger, ex, "Error updating driver with ID: {DriverId}", driver.DriverId);
                 throw;
             }
         }
@@ -343,7 +344,7 @@ namespace BusBuddy.Core.Services
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Error deleting driver with ID: {DriverId}", driverId);
+                DatabaseUserMessage.LogFailure(Logger, ex, "Error deleting driver with ID: {DriverId}", driverId);
                 throw;
             }
         }
@@ -420,7 +421,7 @@ namespace BusBuddy.Core.Services
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Error retrieving active drivers");
+                DatabaseUserMessage.LogFailure(Logger, ex, "Error retrieving active drivers");
                 throw;
             }
         }
@@ -443,7 +444,7 @@ namespace BusBuddy.Core.Services
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Error retrieving drivers by qualification status: {Status}", status);
+                DatabaseUserMessage.LogFailure(Logger, ex, "Error retrieving drivers by qualification status: {Status}", status);
                 throw;
             }
         }
@@ -466,7 +467,7 @@ namespace BusBuddy.Core.Services
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Error retrieving drivers by license status: {Status}", status);
+                DatabaseUserMessage.LogFailure(Logger, ex, "Error retrieving drivers by license status: {Status}", status);
                 throw;
             }
         }
@@ -526,7 +527,7 @@ namespace BusBuddy.Core.Services
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Error searching drivers with term: {SearchTerm}", searchTerm);
+                DatabaseUserMessage.LogFailure(Logger, ex, "Error searching drivers with term: {SearchTerm}", searchTerm);
                 throw;
             }
         }
@@ -569,7 +570,7 @@ namespace BusBuddy.Core.Services
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Error finding available drivers for route date: {RouteDate}",
+                DatabaseUserMessage.LogFailure(Logger, ex, "Error finding available drivers for route date: {RouteDate}",
                     routeDate.ToShortDateString());
                 throw;
             }
@@ -657,7 +658,7 @@ namespace BusBuddy.Core.Services
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Error assigning driver {DriverId} to route {RouteId}", driverId, routeId);
+                DatabaseUserMessage.LogFailure(Logger, ex, "Error assigning driver {DriverId} to route {RouteId}", driverId, routeId);
                 throw;
             }
         }
@@ -692,7 +693,7 @@ namespace BusBuddy.Core.Services
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Error removing driver from route {RouteId}", routeId);
+                DatabaseUserMessage.LogFailure(Logger, ex, "Error removing driver from route {RouteId}", routeId);
                 throw;
             }
         }
@@ -729,7 +730,7 @@ namespace BusBuddy.Core.Services
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Error getting routes for driver {DriverId}", driverId);
+                DatabaseUserMessage.LogFailure(Logger, ex, "Error getting routes for driver {DriverId}", driverId);
                 throw;
             }
         }
@@ -767,7 +768,7 @@ namespace BusBuddy.Core.Services
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Error checking driver {DriverId} availability", driverId);
+                DatabaseUserMessage.LogFailure(Logger, ex, "Error checking driver {DriverId} availability", driverId);
                 throw;
             }
         }
@@ -835,7 +836,7 @@ namespace BusBuddy.Core.Services
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Error updating license info for driver {DriverId}", driverId);
+                DatabaseUserMessage.LogFailure(Logger, ex, "Error updating license info for driver {DriverId}", driverId);
                 throw;
             }
         }
@@ -888,7 +889,7 @@ namespace BusBuddy.Core.Services
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Error updating qualification info for driver {DriverId}", driverId);
+                DatabaseUserMessage.LogFailure(Logger, ex, "Error updating qualification info for driver {DriverId}", driverId);
                 throw;
             }
         }
@@ -951,7 +952,7 @@ namespace BusBuddy.Core.Services
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Error updating status for driver {DriverId}", driverId);
+                DatabaseUserMessage.LogFailure(Logger, ex, "Error updating status for driver {DriverId}", driverId);
                 throw;
             }
         }
@@ -1047,7 +1048,7 @@ namespace BusBuddy.Core.Services
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Error during driver validation");
+                DatabaseUserMessage.LogFailure(Logger, ex, "Error during driver validation");
                 errors.Add("Validation error occurred");
             }
 
@@ -1098,7 +1099,7 @@ namespace BusBuddy.Core.Services
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Error calculating driver statistics");
+                DatabaseUserMessage.LogFailure(Logger, ex, "Error calculating driver statistics");
                 throw;
             }
         }
@@ -1139,7 +1140,7 @@ namespace BusBuddy.Core.Services
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Error finding drivers needing renewal");
+                DatabaseUserMessage.LogFailure(Logger, ex, "Error finding drivers needing renewal");
                 throw;
             }
         }
@@ -1204,7 +1205,7 @@ namespace BusBuddy.Core.Services
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Error calculating driver assignment metrics");
+                DatabaseUserMessage.LogFailure(Logger, ex, "Error calculating driver assignment metrics");
                 throw;
             }
         }
@@ -1252,7 +1253,7 @@ namespace BusBuddy.Core.Services
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Error exporting drivers to CSV");
+                DatabaseUserMessage.LogFailure(Logger, ex, "Error exporting drivers to CSV");
                 throw;
             }
         }
@@ -1351,7 +1352,7 @@ namespace BusBuddy.Core.Services
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Error while attempting to fix NULL values in Drivers table");
+                DatabaseUserMessage.LogFailure(Logger, ex, "Error while attempting to fix NULL values in Drivers table");
                 // Don't throw — let the calling method handle the original exception
             }
         }
@@ -1440,7 +1441,7 @@ namespace BusBuddy.Core.Services
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Error generating diagnostics for driver {DriverId}", driverId);
+                DatabaseUserMessage.LogFailure(Logger, ex, "Error generating diagnostics for driver {DriverId}", driverId);
                 return new Dictionary<string, object> { { "Error", ex.Message } };
             }
         }
@@ -1511,7 +1512,7 @@ namespace BusBuddy.Core.Services
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Error generating driver operation metrics");
+                DatabaseUserMessage.LogFailure(Logger, ex, "Error generating driver operation metrics");
                 return new Dictionary<string, object> { { "Error", ex.Message } };
             }
         }

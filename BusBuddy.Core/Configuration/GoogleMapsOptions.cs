@@ -18,4 +18,12 @@ public sealed class GoogleMapsOptions
 
     /// <summary>Region code for Address Validation (US).</summary>
     public string RegionCode { get; set; } = "US";
+
+    /// <summary>Places Autocomplete location-bias center (Wiley, CO default).</summary>
+    public double AutocompleteBiasLatitude { get; set; } = 38.0872;
+
+    public double AutocompleteBiasLongitude { get; set; } = -102.6208;
+
+    /// <summary>Places Autocomplete bias radius in meters (~50 mi default).</summary>
+    public double AutocompleteBiasRadiusMeters { get; set; } = 80_000;
 }

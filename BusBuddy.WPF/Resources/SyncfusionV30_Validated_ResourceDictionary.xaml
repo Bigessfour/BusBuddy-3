@@ -80,6 +80,8 @@
                    Color="{StaticResource BusBuddy.Text.Primary}"/>
   <SolidColorBrush x:Key="BusBuddy.Brush.Text.Secondary"
                    Color="{StaticResource BusBuddy.Text.Secondary}"/>
+  <SolidColorBrush x:Key="BusBuddy.Brush.Text.Accent"
+                   Color="{StaticResource BusBuddy.Text.Accent}"/>
   <SolidColorBrush x:Key="BusBuddy.Brush.Text.Disabled"
                    Color="{StaticResource BusBuddy.Text.Disabled}"/>
 

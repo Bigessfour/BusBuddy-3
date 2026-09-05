@@ -1224,6 +1224,7 @@ public class BusBuddyDbContext : DbContext
     {
         try
         {
+            ApplyStudentPersistenceNormalization();
             ApplyAuditFields();
             return base.SaveChanges();
         }
@@ -1242,6 +1243,7 @@ public class BusBuddyDbContext : DbContext
     {
         try
         {
+            ApplyStudentPersistenceNormalization();
             ApplyAuditFields();
             return await base.SaveChangesAsync(cancellationToken);
         }
@@ -1282,6 +1284,15 @@ public class BusBuddyDbContext : DbContext
 
             // Output to debug - in a production app, use proper logging
             System.Diagnostics.Debug.WriteLine(conflictDetails.ToString());
+        }
+    }
+
+    private void ApplyStudentPersistenceNormalization()
+    {
+        foreach (var entry in ChangeTracker.Entries<Student>()
+                     .Where(e => e.State is EntityState.Added or EntityState.Modified))
+        {
+            StudentRecordNormalizer.NormalizeForPersistence(entry.Entity);
         }
     }
 

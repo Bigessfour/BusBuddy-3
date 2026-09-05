@@ -17,9 +17,13 @@ public static class StudentSpecialNeedsHelper
     public static bool IsSpecialNeedsRoute(Route route)
     {
         ArgumentNullException.ThrowIfNull(route);
-        return route.IsSpecialNeedsRoute
-            || route.RouteName.Contains("special needs", StringComparison.OrdinalIgnoreCase);
+        return IsSpecialNeedsRoute(route.RouteName, route.IsSpecialNeedsRoute);
     }
+
+    public static bool IsSpecialNeedsRoute(string? routeName, bool isSpecialNeedsRoute) =>
+        isSpecialNeedsRoute
+        || (!string.IsNullOrWhiteSpace(routeName)
+            && routeName.Contains("special needs", StringComparison.OrdinalIgnoreCase));
 
     public static void SyncLegacySpecialNeedsText(Student student)
     {

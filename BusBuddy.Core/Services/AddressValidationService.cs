@@ -16,13 +16,13 @@ namespace BusBuddy.Core.Services
     public class AddressValidationService : IAddressValidationService
     {
         private readonly IUnitOfWork _unitOfWork;
-        private readonly GoogleAddressValidationClient? _mapsClient;
+        private readonly IMapsGeoService? _mapsGeo;
         private static readonly ILogger Logger = Log.ForContext<AddressValidationService>();
 
-        public AddressValidationService(IUnitOfWork unitOfWork, GoogleAddressValidationClient? mapsClient = null)
+        public AddressValidationService(IUnitOfWork unitOfWork, IMapsGeoService? mapsGeo = null)
         {
             _unitOfWork = unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
-            _mapsClient = mapsClient;
+            _mapsGeo = mapsGeo;
         }
 
         /// <inheritdoc />
@@ -36,16 +36,16 @@ namespace BusBuddy.Core.Services
 
             try
             {
-                if (_mapsClient != null)
+                if (_mapsGeo is not null)
                 {
-                    var maps = await _mapsClient.ValidateAndGeocodeAsync(address, city, state, zip).ConfigureAwait(false);
+                    var maps = await _mapsGeo.ValidateAndGeocodeAsync(address, city, state, zip).ConfigureAwait(false);
                     if (maps.Ok)
                     {
                         return (true, maps.FormattedAddress ?? FormatAddress(address, city, state, zip));
                     }
 
                     // Regex is a last-resort format hint only — never treat as postal success.
-                    if (!string.IsNullOrWhiteSpace(_mapsClient.ResolvedApiKey))
+                    if (_mapsGeo.IsConfigured)
                     {
                         return (false, null);
                     }
@@ -54,7 +54,7 @@ namespace BusBuddy.Core.Services
                     return (false, null);
                 }
 
-                Logger.Warning("Maps Address Validation client not registered — rejecting address as unvalidated");
+                Logger.Warning("Maps geo service not registered — rejecting address as unvalidated");
                 return (false, null);
             }
             catch (Exception ex)

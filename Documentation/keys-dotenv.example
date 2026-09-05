@@ -1,0 +1,4 @@
+# Copy to keys/.env (gitignored). One variable per line.
+# Generate v34.x WPF key: https://www.syncfusion.com/account/downloads
+SYNCFUSION_LICENSE_KEY=
+GOOGLE_MAPS_API_KEY=
