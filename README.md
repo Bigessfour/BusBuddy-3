@@ -71,23 +71,25 @@ Use standard tools:
 
 Legacy PS modules are in `Documentation/Archive/PowerShell-Legacy/` and `Powershell/` (retained for CI/dependency scripts only). See [STEADY-STATE-AND-FINISH-ROADMAP.md](STEADY-STATE-AND-FINISH-ROADMAP.md).
 
-### **Google Cloud & Earth Engine (GEE)**
+### **Google Cloud & Maps Platform**
 
-| Item                  | Value                                                                                             |
-| --------------------- | ------------------------------------------------------------------------------------------------- |
-| Earth Engine project  | `ee-bigessfour`                                                                                   |
-| GCP console project   | [new-coursera-490518](https://console.cloud.google.com/iam-admin/iam?project=new-coursera-490518) |
-| Service account       | `bus-buddy-gee@ee-bigessfour.iam.gserviceaccount.com`                                             |
-| Key file (gitignored) | `keys/bus-buddy-gee-key.json`                                                                     |
+Geo is Google Maps Platform (Address Validation, Places Autocomplete, Routes) plus Syncfusion SfMap/OSM. Earth Engine is **not** an app dependency.
+
+| Item                                    | Value                                                                                       |
+| --------------------------------------- | ------------------------------------------------------------------------------------------- |
+| GCP project (billing / Maps / `gcloud`) | [`busbuddy-507301`](https://console.cloud.google.com/iam-admin/iam?project=busbuddy-507301) |
+| Legacy Coursera project                 | `new-coursera-490518` — billed historically; do not header Maps traffic there               |
+| Earth Engine project                    | `ee-bigessfour` — unused by the app; do not wire                                            |
 
 **First-time setup:**
 
 ```bash
 brew install --cask google-cloud-sdk
 gcloud auth login
+gcloud config set project busbuddy-507301
 ```
 
-On app startup (Mac), Passwords entries load into env. Geo uses the database + OSM map. Google Maps Platform (Address Validation / Routes) is specified in [007](specs/007-maps-platform-geo/spec.md) and **paused** (not wired).
+On app startup (Mac), Passwords entries load into env. Geo uses the database + OSM map. Google Maps Platform clients run when `GOOGLE_MAPS_API_KEY` is set (`X-Goog-User-Project` from `GCP_BILLING_PROJECT` / `GOOGLE_CLOUD_PROJECT` / `GoogleMaps:QuotaProject`, default `busbuddy-507301`). The app fail-opens without a key.
 
 Full reference: [Documentation/GCP-GEE-SECRETS-AND-AUTH.md](Documentation/GCP-GEE-SECRETS-AND-AUTH.md)
 
@@ -455,15 +457,16 @@ dotnet ef migrations add NewMigrationName
 
 **macOS (recommended):** Store in Passwords app; Name = env var. App loads automatically — see [Documentation/GCP-GEE-SECRETS-AND-AUTH.md](Documentation/GCP-GEE-SECRETS-AND-AUTH.md).
 
-| Variable                               | Purpose                                      |
-| -------------------------------------- | -------------------------------------------- |
-| `SYNCFUSION_LICENSE_KEY`               | Syncfusion WPF license (required for UI)     |
-| `XAI_API_KEY` / `GROK_API_KEY`         | Grok / xAI route optimization                |
-| `GOOGLE_MAPS_API_KEY`                  | Maps Platform (when spec 007 US1/US3 resume) |
-| `ConnectionStrings__DefaultConnection` | Database connection                          |
-| `BUSBUDDY_CONNECTION`                  | Postgres override for Docker profiles        |
+| Variable                                       | Purpose                                            |
+| ---------------------------------------------- | -------------------------------------------------- |
+| `SYNCFUSION_LICENSE_KEY`                       | Syncfusion WPF license (required for UI)           |
+| `XAI_API_KEY` / `GROK_API_KEY`                 | Grok / xAI route optimization                      |
+| `GOOGLE_MAPS_API_KEY`                          | Maps Platform Address Validation + Places + Routes |
+| `GCP_BILLING_PROJECT` / `GOOGLE_CLOUD_PROJECT` | Maps quota project (`busbuddy-507301`)             |
+| `ConnectionStrings__DefaultConnection`         | Database connection                                |
+| `BUSBUDDY_CONNECTION`                          | Postgres override for Docker profiles              |
 
-**Windows production:** Set `GOOGLE_MAPS_API_KEY` when Maps clients are wired.
+**Windows production:** Set `GOOGLE_MAPS_API_KEY` and `GCP_BILLING_PROJECT=busbuddy-507301` as machine/user env vars.
 
 **Deprecated / invalid:** Earth Engine (`GEE_*`, `GoogleEarthEngineService`, project `ee-bigessfour` as an app dependency), project `busbuddy-465000`, PowerShell `bbLicense` / SecretManagement flows.
 

@@ -65,10 +65,13 @@ public sealed class GoogleAddressValidationClient : IGeocodingService, IDisposab
 
             if (response.StatusCode == HttpStatusCode.Forbidden)
             {
+                var forbidden = ClassifyMapsForbidden(json);
                 Logger.Warning(
-                    "Address Validation forbidden (API not enabled for key?) — falling back to Geocoding API. ElapsedMs={ElapsedMs}",
+                    "Address Validation forbidden Kind={Kind} Reason={Reason} — falling back to Geocoding API. ElapsedMs={ElapsedMs}",
+                    forbidden.Kind,
+                    forbidden.Reason,
                     sw.ElapsedMilliseconds);
-                return await GeocodeFallbackAsync(key!, line, cancellationToken).ConfigureAwait(false);
+                return await GeocodeFallbackAsync(key!, line, forbidden, cancellationToken).ConfigureAwait(false);
             }
 
             if ((int)response.StatusCode == 429)
@@ -288,10 +291,12 @@ public sealed class GoogleAddressValidationClient : IGeocodingService, IDisposab
     /// <summary>
     /// Demo / restricted API keys often allow Geocoding but block Address Validation
     /// (<c>API_KEY_SERVICE_BLOCKED</c>). Fall back so clerk Validate Address still geocodes.
+    /// HTTP 403 is not treated as "mapping unconfigured" (that flag is missing-key only).
     /// </summary>
     private async Task<MapsGeocodeResult> GeocodeFallbackAsync(
         string key,
         string line,
+        MapsForbiddenInfo addressValidationForbidden,
         CancellationToken cancellationToken)
     {
         var sw = Stopwatch.StartNew();
@@ -312,14 +317,12 @@ public sealed class GoogleAddressValidationClient : IGeocodingService, IDisposab
                 return new MapsGeocodeResult
                 {
                     Ok = false,
-                    MappingUnconfigured = true,
-                    ErrorMessage =
-                        "Address Validation is blocked for this API key, and Geocoding fallback also failed. " +
-                        "Enable Address Validation API (or Geocoding API) in Google Cloud — see https://developers.google.com/maps/get-started"
+                    MappingUnconfigured = false,
+                    ErrorMessage = DescribeMapsForbidden(addressValidationForbidden)
                 };
             }
 
-            return ParseGeocodeJson(json, sw.ElapsedMilliseconds);
+            return ParseGeocodeJson(json, sw.ElapsedMilliseconds, addressValidationForbidden);
         }
         catch (Exception ex)
         {
@@ -327,14 +330,134 @@ public sealed class GoogleAddressValidationClient : IGeocodingService, IDisposab
             return new MapsGeocodeResult
             {
                 Ok = false,
-                MappingUnconfigured = true,
-                ErrorMessage =
-                    "Maps Address Validation is blocked for this key. Enable it in Cloud Console, or ensure Geocoding API works."
+                MappingUnconfigured = false,
+                ErrorMessage = DescribeMapsForbidden(addressValidationForbidden)
             };
         }
     }
 
-    private static MapsGeocodeResult ParseGeocodeJson(string json, long elapsedMs)
+    internal enum MapsForbiddenKind
+    {
+        PermissionDenied,
+        ApiNotEnabled,
+        QuotaProjectDenied,
+        KeyBlocked
+    }
+
+    internal readonly struct MapsForbiddenInfo
+    {
+        public MapsForbiddenKind Kind { get; init; }
+        public string? Reason { get; init; }
+        public string? Message { get; init; }
+    }
+
+    internal static MapsForbiddenInfo ClassifyMapsForbidden(string? json)
+    {
+        if (string.IsNullOrWhiteSpace(json))
+        {
+            return new MapsForbiddenInfo { Kind = MapsForbiddenKind.PermissionDenied };
+        }
+
+        try
+        {
+            using var doc = JsonDocument.Parse(json);
+            if (!doc.RootElement.TryGetProperty("error", out var error))
+            {
+                return ClassifyFromText(json, status: null, reason: null, message: null);
+            }
+
+            string? status = null;
+            if (error.TryGetProperty("status", out var statusEl) && statusEl.ValueKind == JsonValueKind.String)
+            {
+                status = statusEl.GetString();
+            }
+
+            string? message = null;
+            if (error.TryGetProperty("message", out var messageEl) && messageEl.ValueKind == JsonValueKind.String)
+            {
+                message = messageEl.GetString();
+            }
+
+            string? reason = null;
+            if (error.TryGetProperty("details", out var details) && details.ValueKind == JsonValueKind.Array)
+            {
+                foreach (var detail in details.EnumerateArray())
+                {
+                    if (detail.TryGetProperty("reason", out var reasonEl) && reasonEl.ValueKind == JsonValueKind.String)
+                    {
+                        reason = reasonEl.GetString();
+                        if (!string.IsNullOrWhiteSpace(reason))
+                        {
+                            break;
+                        }
+                    }
+                }
+            }
+
+            return ClassifyFromText(json, status, reason, message);
+        }
+        catch (JsonException)
+        {
+            return ClassifyFromText(json, status: null, reason: null, message: null);
+        }
+    }
+
+    private static MapsForbiddenInfo ClassifyFromText(string json, string? status, string? reason, string? message)
+    {
+        var haystack = $"{status} {reason} {message} {json}";
+        var kind = MapsForbiddenKind.PermissionDenied;
+        if (ContainsAny(haystack, "SERVICE_DISABLED", "not been used", "is not enabled", "has not been enabled"))
+        {
+            kind = MapsForbiddenKind.ApiNotEnabled;
+        }
+        else if (ContainsAny(haystack, "USER_PROJECT_DENIED", "CONSUMER_INVALID", "quota project", "user project", "X-Goog-User-Project"))
+        {
+            kind = MapsForbiddenKind.QuotaProjectDenied;
+        }
+        else if (ContainsAny(haystack, "API_KEY_SERVICE_BLOCKED", "API_KEY_INVALID", "API_KEY_HTTP_REFERRER_BLOCKED"))
+        {
+            kind = MapsForbiddenKind.KeyBlocked;
+        }
+
+        return new MapsForbiddenInfo { Kind = kind, Reason = reason, Message = message };
+    }
+
+    private static bool ContainsAny(string haystack, params string[] needles)
+    {
+        foreach (var needle in needles)
+        {
+            if (haystack.Contains(needle, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    internal static string DescribeMapsForbidden(MapsForbiddenInfo forbidden)
+    {
+        return forbidden.Kind switch
+        {
+            MapsForbiddenKind.ApiNotEnabled =>
+                "Address Validation API is not enabled for this API key's Google Cloud project. " +
+                "Enable it on busbuddy-507301 — https://developers.google.com/maps/documentation/address-validation",
+            MapsForbiddenKind.QuotaProjectDenied =>
+                "Maps quota project was rejected (X-Goog-User-Project). Set GCP_BILLING_PROJECT to the project " +
+                "that owns GOOGLE_MAPS_API_KEY (busbuddy-507301); do not header Maps traffic to the legacy Coursera project.",
+            MapsForbiddenKind.KeyBlocked =>
+                "Address Validation is blocked by this API key's restrictions. Enable Address Validation " +
+                "(or Geocoding) for the key — https://developers.google.com/maps/get-started",
+            _ =>
+                "Address Validation returned HTTP 403 (permission denied). Check API enablement, key restrictions, " +
+                "and GCP_BILLING_PROJECT=busbuddy-507301 — https://developers.google.com/maps/get-started"
+        };
+    }
+
+    private static MapsGeocodeResult ParseGeocodeJson(
+        string json,
+        long elapsedMs,
+        MapsForbiddenInfo? addressValidationForbidden = null)
     {
         using var doc = JsonDocument.Parse(json);
         var root = doc.RootElement;
@@ -358,23 +481,33 @@ public sealed class GoogleAddressValidationClient : IGeocodingService, IDisposab
 
             var billingHint = !string.IsNullOrWhiteSpace(apiError) &&
                               apiError.Contains("Billing", StringComparison.OrdinalIgnoreCase);
-            return new MapsGeocodeResult
+            string errorMessage;
+            if (addressValidationForbidden is { } avForbidden &&
+                !string.Equals(status, "ZERO_RESULTS", StringComparison.OrdinalIgnoreCase))
             {
-                Ok = false,
-                MappingUnconfigured = billingHint ||
-                                      string.Equals(status, "REQUEST_DENIED", StringComparison.OrdinalIgnoreCase),
-                ErrorMessage = status switch
+                errorMessage = DescribeMapsForbidden(avForbidden);
+            }
+            else
+            {
+                errorMessage = status switch
                 {
                     "ZERO_RESULTS" => "No geocode match for that address.",
                     "REQUEST_DENIED" when billingHint =>
                         "Google Maps requires billing on the Cloud project for this API key. " +
-                        "Enable billing: https://console.cloud.google.com/billing — then enable Geocoding / Address Validation " +
+                        "Enable billing on busbuddy-507301: https://console.cloud.google.com/billing — then enable Geocoding / Address Validation " +
                         "(https://developers.google.com/maps/get-started).",
                     "REQUEST_DENIED" =>
-                        "Geocoding API denied this key — enable Geocoding (and billing) in Google Cloud: " +
+                        "Geocoding API denied this key — enable Geocoding (and billing) on busbuddy-507301: " +
                         "https://developers.google.com/maps/get-started",
                     _ => $"Geocoding failed ({status ?? "unknown"})."
-                }
+                };
+            }
+
+            return new MapsGeocodeResult
+            {
+                Ok = false,
+                MappingUnconfigured = false,
+                ErrorMessage = errorMessage
             };
         }
 

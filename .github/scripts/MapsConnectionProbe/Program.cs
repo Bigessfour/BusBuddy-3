@@ -19,9 +19,7 @@ internal static class Program
         var options = Options.Create(new GoogleMapsOptions
         {
             ApiKey = key,
-            QuotaProject = Environment.GetEnvironmentVariable("GCP_BILLING_PROJECT")
-                ?? Environment.GetEnvironmentVariable("GOOGLE_CLOUD_PROJECT")
-                ?? "busbuddy-507301",
+            QuotaProject = GoogleMapsOptions.ResolveQuotaProject(),
             RegionCode = "US",
             EnableUspsCass = true,
         });

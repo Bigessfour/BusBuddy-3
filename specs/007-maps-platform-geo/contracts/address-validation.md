@@ -2,7 +2,7 @@
 
 **Provider**: Google Address Validation API
 **Docs**: https://developers.google.com/maps/documentation/address-validation/overview
-**Auth**: `X-Goog-Api-Key` + optional `X-Goog-User-Project: new-coursera-490518`
+**Auth**: `X-Goog-Api-Key` + optional `X-Goog-User-Project: busbuddy-507301`
 
 ## BusBuddy interface (Core)
 

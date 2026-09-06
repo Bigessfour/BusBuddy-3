@@ -93,7 +93,7 @@ No constitution violations requiring justification.
 ## Implementation approach
 
 1. **Constitution + docs** — already amended Geo to v1.1.0; rewrite secrets docs and `AGENTS.md` in polish.
-2. **Options + DI** — `GoogleMapsOptions` (`ApiKey` from `GOOGLE_MAPS_API_KEY`, `RegionCode=US`, `EnableUspsCass=true`, `QuotaProject=new-coursera-490518`). Register `HttpClient` named `GoogleMaps`.
+2. **Options + DI** — `GoogleMapsOptions` (`ApiKey` from `GOOGLE_MAPS_API_KEY`, `RegionCode=US`, `EnableUspsCass=true`, `QuotaProject=busbuddy-507301`, overridable via `GCP_BILLING_PROJECT` / `GOOGLE_CLOUD_PROJECT`). Register `HttpClient` named `GoogleMaps`.
 3. **US1** — `GoogleAddressValidationClient` implements `IAddressValidationService` + `IGeocodingService` (or thin adapters). Production DI must not use `OfflineGeocodingService`.
 4. **US2** — Delete EE types and Drive-only packages; strip `GetGeoJsonAsync`; stop `BootstrapGcpCredentialsForProduction`; remove `GoogleEarthEngine` from all appsettings; remove unofficial Google tiles.
 5. **US3** — `IRoutingService.ComputeDrivePathAsync` → Routes `computeRoutes`; write polyline into `WaypointsJson`.

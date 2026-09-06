@@ -63,12 +63,12 @@ Set `GOOGLE_MAPS_API_KEY` as a machine/user env var when Maps clients are wired 
 
 ## GCP project map (agents must not hallucinate IDs)
 
-| Project ID            | Role                                                          |
-| --------------------- | ------------------------------------------------------------- |
-| `busbuddy-507301`     | **Primary** GCP / billing / Maps Platform / `gcloud` default  |
-| `new-coursera-490518` | Legacy Coursera project (billed; prefer `busbuddy-507301`)    |
-| `ee-bigessfour`       | **Unused by the app** (historical Earth Engine — do not wire) |
-| ~~`busbuddy-465000`~~ | **Invalid** — removed from appsettings                        |
+| Project ID            | Role                                                                                         |
+| --------------------- | -------------------------------------------------------------------------------------------- |
+| `busbuddy-507301`     | **Primary** GCP / billing / Maps Platform / `gcloud` default                                 |
+| `new-coursera-490518` | Legacy Coursera project (billed; prefer `busbuddy-507301`). Do not header Maps traffic there |
+| `ee-bigessfour`       | **Unused by the app** (historical Earth Engine — do not wire)                                |
+| ~~`busbuddy-465000`~~ | **Invalid** — removed from appsettings                                                       |
 
 ## Local checks before PR
 

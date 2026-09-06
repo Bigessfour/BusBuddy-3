@@ -17,7 +17,7 @@
 
 **Purpose**: Config surface for Maps; stop documenting EE as required in appsettings shape
 
-- [x] T001 Add `GoogleMaps` section (ApiKey env placeholder, QuotaProject `new-coursera-490518`, EnableUspsCass true, RegionCode US) to `appsettings.json`, `BusBuddy.WPF/appsettings.json`, and `BusBuddy.Core/appsettings.json`; remove `GoogleEarthEngine` sections from those files
+- [x] T001 Add `GoogleMaps` section (ApiKey env placeholder, QuotaProject `busbuddy-507301`, EnableUspsCass true, RegionCode US) to `appsettings.json`, `BusBuddy.WPF/appsettings.json`, and `BusBuddy.Core/appsettings.json`; remove `GoogleEarthEngine` sections from those files
 - [x] T002 Create `BusBuddy.Core/Configuration/GoogleMapsOptions.cs` (SectionName `GoogleMaps`) matching T001 keys
 - [x] T003 [P] Add `GOOGLE_MAPS_API_KEY` to the Passwords load list in `BusBuddy.WPF/App.xaml.cs` (`LoadApiKeysFromMacPasswords`)
 
@@ -29,7 +29,7 @@
 
 **⚠️ CRITICAL**: No user story work until this phase is complete
 
-- [x] T004 Bind `GoogleMapsOptions` and register Maps `HttpClient` factories in `AddDataServices` / WPF `ConfigureServices` (key from env `GOOGLE_MAPS_API_KEY`)
+- [x] T004 Bind `GoogleMapsOptions` and register Maps `HttpClient` factories in `AddDataServices` / WPF `ConfigureServices` (key from env `GOOGLE_MAPS_API_KEY`; `QuotaProject` from `GCP_BILLING_PROJECT` then `GOOGLE_CLOUD_PROJECT` then JSON/default `busbuddy-507301`)
 - [x] T005 Remove `BootstrapGcpCredentialsForProduction` invocation and `GoogleEarthEngineService` / EE `IGeoDataService` token factory from `BusBuddy.WPF/App.xaml.cs`; keep `IGeoDataService` as DB-backed `GeoDataService` without a bearer token
 - [x] T006 Unconfigured geocode: `GoogleAddressValidationClient` returns null / MappingUnconfigured when key missing (supersedes separate `UnconfiguredGeocodingService`); production DI is not `OfflineGeocodingService`
 - [x] T007 Strip `GetGeoJsonAsync` from `BusBuddy.Core/Services/Interfaces/IGeoDataService.cs` and `BusBuddy.Core/Services/GeoDataService.cs` (DB route methods stay)
