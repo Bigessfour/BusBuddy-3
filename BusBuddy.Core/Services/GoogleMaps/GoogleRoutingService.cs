@@ -3,6 +3,7 @@ using System.Net;
 using System.Text;
 using System.Text.Json;
 using BusBuddy.Core.Configuration;
+using BusBuddy.Core.Mapping;
 using BusBuddy.Core.Services.Interfaces;
 using Microsoft.Extensions.Options;
 using Serilog;
@@ -264,47 +265,5 @@ public sealed class GoogleRoutingService : IRoutingService, IDisposable
         {
             _httpClient.Dispose();
         }
-    }
-}
-
-/// <summary>Google encoded polyline codec (precision 1e-5).</summary>
-public static class EncodedPolylineCodec
-{
-    public static IReadOnlyList<(double Latitude, double Longitude)> Decode(string? encoded)
-    {
-        if (string.IsNullOrWhiteSpace(encoded))
-        {
-            return Array.Empty<(double, double)>();
-        }
-
-        var points = new List<(double, double)>();
-        int index = 0;
-        int lat = 0;
-        int lng = 0;
-
-        while (index < encoded.Length)
-        {
-            lat += DecodeNext(encoded, ref index);
-            lng += DecodeNext(encoded, ref index);
-            points.Add((lat / 1e5, lng / 1e5));
-        }
-
-        return points;
-    }
-
-    private static int DecodeNext(string encoded, ref int index)
-    {
-        int result = 0;
-        int shift = 0;
-        int b;
-        do
-        {
-            b = encoded[index++] - 63;
-            result |= (b & 0x1f) << shift;
-            shift += 5;
-        }
-        while (b >= 0x20);
-
-        return (result & 1) != 0 ? ~(result >> 1) : result >> 1;
     }
 }

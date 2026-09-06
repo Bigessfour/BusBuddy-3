@@ -27,6 +27,8 @@ public class SettingsViewModelTests
             .ReturnsAsync(true);
         settings.Setup(s => s.GetSettingAsync(UserSettingsKeys.ShowDashboardOnStartup, It.IsAny<bool>()))
             .ReturnsAsync(true);
+        settings.Setup(s => s.GetSettingAsync(UserSettingsKeys.EnableRouteGeoExport, It.IsAny<bool>()))
+            .ReturnsAsync(false);
         settings.Setup(s => s.SaveSettingsAsync()).ReturnsAsync(true);
 
         var skin = new Mock<ISkinManagerService>();
@@ -36,12 +38,15 @@ public class SettingsViewModelTests
         vm.SelectedTheme = "FluentLight";
         vm.EnableActivityLogging = false;
         vm.ShowDashboardOnStartup = false;
+        vm.EnableRouteGeoExport = true;
 
         await vm.SaveCommand.ExecuteAsync(null);
 
         settings.Verify(s => s.SetSettingAsync(UserSettingsKeys.Theme, "FluentLight"), Times.Once);
         settings.Verify(s => s.SetSettingAsync(UserSettingsKeys.EnableActivityLogging, false), Times.Once);
         settings.Verify(s => s.SetSettingAsync(UserSettingsKeys.ShowDashboardOnStartup, false), Times.Once);
+        settings.Verify(s => s.SetSettingAsync(UserSettingsKeys.EnableRouteGeoExport, true), Times.Once);
+        settings.Verify(s => s.SetSettingAsync(UserSettingsKeys.DistrictDepotLatitude, It.IsAny<string>()), Times.Once);
         settings.Verify(s => s.SaveSettingsAsync(), Times.Once);
         skin.Verify(s => s.ApplyTheme("FluentLight"), Times.Once);
         vm.StatusMessage.Should().Be("Settings saved");
@@ -61,6 +66,8 @@ public class SettingsViewModelTests
             .ReturnsAsync(true);
         settings.Setup(s => s.GetSettingAsync(UserSettingsKeys.ShowDashboardOnStartup, It.IsAny<bool>()))
             .ReturnsAsync(true);
+        settings.Setup(s => s.GetSettingAsync(UserSettingsKeys.EnableRouteGeoExport, It.IsAny<bool>()))
+            .ReturnsAsync(false);
         settings.Setup(s => s.ResetSettingsAsync()).ReturnsAsync(true);
 
         var vm = new SettingsViewModel(settings.Object, new Mock<ISkinManagerService>().Object);

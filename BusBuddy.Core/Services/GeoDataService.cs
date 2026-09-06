@@ -10,7 +10,7 @@ namespace BusBuddy.Core.Services
 {
     /// <summary>
     /// Database-backed route geography for SfMap. Earth Engine is not used.
-    /// Street geocoding/routing will use Google Maps Platform (spec 007) when resumed.
+    /// Street geocoding/routing is Google Maps Platform (spec 007).
     /// </summary>
     public class GeoDataService : IGeoDataService
     {
@@ -138,8 +138,8 @@ namespace BusBuddy.Core.Services
                 School = "Elementary",
                 WaypointsJson = RouteWaypointSerializer.FromPairs(new[]
                 {
-                    (MapDefaults.FallbackLatitude, MapDefaults.FallbackLongitude),
-                    (MapDefaults.FallbackLatitude + 0.05, MapDefaults.FallbackLongitude + 0.05)
+                    (MapDefaults.UnconfiguredLatitude, MapDefaults.UnconfiguredLongitude),
+                    (MapDefaults.UnconfiguredLatitude + 0.05, MapDefaults.UnconfiguredLongitude + 0.05)
                 })
             }
         ];

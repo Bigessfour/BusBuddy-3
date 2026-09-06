@@ -493,8 +493,8 @@ public class BusBuddyDbContext : DbContext
             entity.HasIndex(e => e.AMDriverId).HasDatabaseName("IX_Routes_AMDriverId");
             entity.HasIndex(e => e.PMDriverId).HasDatabaseName("IX_Routes_PMDriverId");
 
-            // Geo metadata
-            entity.Property(e => e.WaypointsJson).HasMaxLength(4000);
+            // Geo metadata — encoded polyline + stops; do not cap at 4000 (road paths exceed that)
+            entity.Property(e => e.WaypointsJson);
             entity.Property(e => e.DistrictBoundaryShapefilePath).HasMaxLength(500);
             entity.Property(e => e.TownBoundaryShapefilePath).HasMaxLength(500);
         });

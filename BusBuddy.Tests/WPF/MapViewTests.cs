@@ -17,6 +17,8 @@ public class MapViewTests
         Assert.That(xaml, Does.Contain("maps:SfMap"));
         Assert.That(xaml, Does.Contain("Command=\"{Binding BulkPlotEligibleStudentsCommand}\""));
         Assert.That(xaml, Does.Contain("Command=\"{Binding ShowSchoolsCommand}\""));
+        Assert.That(xaml, Does.Contain("Command=\"{Binding ExportRouteDataCommand}\""));
+        Assert.That(xaml, Does.Contain("Label=\"Export Route\""));
         Assert.That(xaml, Does.Not.Contain("GoogleEarth"));
         Assert.That(xaml, Does.Not.Contain("Wiley"));
         Assert.That(xaml, Does.Not.Contain("Add Stop (Demo)"));
@@ -34,6 +36,11 @@ public class MapViewTests
         Assert.That(xaml, Does.Contain("ItemsSource=\"{Binding Routes}\""));
         Assert.That(xaml, Does.Contain("SelectedItem=\"{Binding SelectedMapLayer, Mode=TwoWay}\""));
         Assert.That(xaml, Does.Contain("ZoomLevel=\"{Binding MapZoomLevel, Mode=TwoWay}\""));
+        Assert.That(xaml, Does.Contain("x:Name=\"RouteTrail\""));
+        Assert.That(xaml, Does.Contain("x:Name=\"RouteTrailLayer\""));
+        Assert.That(xaml, Does.Contain("SubShapeFileLayers"));
+        Assert.That(xaml, Does.Contain("maps:MapPolyline"));
+        Assert.That(XamlViewFile.Read("Utilities/MapRouteTrailLayer.cs"), Does.Contain("polyline.Points.Clear"));
         Assert.That(xaml, Does.Contain("ItemsSource=\"{Binding MapLayers}\""));
         Assert.That(xaml, Does.Not.Contain("MapLayerComboBox_SelectionChanged"));
         Assert.That(xaml, Does.Not.Contain("ZoomLevel=\"13\""));
@@ -47,6 +54,18 @@ public class MapViewTests
     }
 
     [Test]
+    public void RetiredLeafletWebViewAndMapWinGis_AreGone()
+    {
+        Assert.That(XamlViewFile.Exists("Views/Map/MapView.xaml"), Is.True);
+        Assert.That(XamlViewFile.Exists("Assets/Map/map.html"), Is.False);
+        Assert.That(XamlViewFile.Exists("Controls/MapWinGISMapControl.cs"), Is.False);
+        Assert.That(XamlViewFile.Read("BusBuddy.WPF.csproj"), Does.Not.Contain("Microsoft.Web.WebView2"));
+        Assert.That(CoreSourceFile.Exists("Services/GeoDataService.cs"), Is.True);
+        Assert.That(CoreSourceFile.Exists("Services/OfflineGeocodingService.cs"), Is.False);
+        Assert.That(CoreSourceFile.Exists("Models/GeoAnalysisResults.cs"), Is.False);
+    }
+
+    [Test]
     public void MapViewLauncher_PrefersActiveWindowSoModalStudentsCannotHideTheMap()
     {
         var launcher = XamlViewFile.Read("Utilities/MapViewLauncher.cs");
@@ -56,6 +75,23 @@ public class MapViewTests
         Assert.That(launcher, Does.Contain("ShowActivated = true"));
         var owner = XamlViewFile.Read("Utilities/DialogOwner.cs");
         Assert.That(owner, Does.Contain("IsActive"));
+    }
+
+    [Test]
+    public void SchoolAndPickupPickMaps_DoNotHardcodeATown()
+    {
+        var schoolXaml = XamlViewFile.Read("Views/Student/SchoolDestinationForm.xaml");
+        Assert.That(schoolXaml, Does.Not.Contain("Lamar"));
+        Assert.That(schoolXaml, Does.Not.Contain("Wiley"));
+
+        var schoolVm = XamlViewFile.Read("ViewModels/Student/SchoolDestinationFormViewModel.cs");
+        Assert.That(schoolVm, Does.Contain("DistrictCameraUi.Resolve"));
+        Assert.That(schoolVm, Does.Not.Contain("38.0872"));
+        Assert.That(schoolVm, Does.Not.Contain("\"Lamar\""));
+
+        var pickupVm = XamlViewFile.Read("ViewModels/Student/PickupStopFormViewModel.cs");
+        Assert.That(pickupVm, Does.Contain("DistrictCameraUi.Resolve"));
+        Assert.That(pickupVm, Does.Not.Contain("38.0872"));
     }
 
     [Test]

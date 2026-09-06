@@ -72,12 +72,7 @@ public static class DensityCellBuilder
         IReadOnlyList<RiderPoint> riders,
         RoutingDistrictSettings settings)
     {
-        if (settings.BoundingBoxMinLat is double minLatCfg &&
-            settings.BoundingBoxMaxLat is double maxLatCfg &&
-            settings.BoundingBoxMinLon is double minLonCfg &&
-            settings.BoundingBoxMaxLon is double maxLonCfg &&
-            maxLatCfg > minLatCfg &&
-            maxLonCfg > minLonCfg)
+        if (settings.TryGetBoundingBox(out var minLatCfg, out var maxLatCfg, out var minLonCfg, out var maxLonCfg))
         {
             return (minLatCfg, maxLatCfg, minLonCfg, maxLonCfg);
         }

@@ -14,7 +14,8 @@ public sealed class RouteDeterminationService : IRouteDeterminationService
 
     private readonly IBusBuddyDbContextFactory _contextFactory;
     private readonly IRouteService _routeService;
-    private readonly RoutingDistrictSettings _settings;
+    private readonly IDistrictSettingsAccessor? _districtAccessor;
+    private readonly RoutingDistrictSettings _settingsFallback;
     private readonly AssignFitnessEvaluator _fitnessEvaluator;
     private readonly IRouteWaypointRebuildService? _waypointRebuild;
 
@@ -23,15 +24,20 @@ public sealed class RouteDeterminationService : IRouteDeterminationService
         IRouteService routeService,
         IOptions<RoutingDistrictSettings>? settings = null,
         AssignFitnessEvaluator? fitnessEvaluator = null,
-        IRouteWaypointRebuildService? waypointRebuild = null)
+        IRouteWaypointRebuildService? waypointRebuild = null,
+        IDistrictSettingsAccessor? districtAccessor = null)
     {
         _contextFactory = contextFactory ?? throw new ArgumentNullException(nameof(contextFactory));
         _routeService = routeService ?? throw new ArgumentNullException(nameof(routeService));
-        _settings = settings?.Value ?? new RoutingDistrictSettings();
+        _settingsFallback = settings?.Value ?? new RoutingDistrictSettings();
+        _districtAccessor = districtAccessor;
         _fitnessEvaluator = fitnessEvaluator
-            ?? new AssignFitnessEvaluator(contextFactory, settings);
+            ?? new AssignFitnessEvaluator(contextFactory, settings, districtAccessor);
         _waypointRebuild = waypointRebuild;
     }
+
+    private RoutingDistrictSettings District =>
+        _districtAccessor?.Current ?? _settingsFallback;
 
     public async Task<RouteGenerationResult> GenerateAndAssignAsync(
         int schoolDestinationId,
@@ -126,11 +132,11 @@ public sealed class RouteDeterminationService : IRouteDeterminationService
         var seating = await ResolveDefaultSeatingAsync(context, options.DefaultSeatingCapacity, cancellationToken)
             .ConfigureAwait(false);
 
-        var cells = DensityCellBuilder.Build(riders, _settings);
+        var cells = DensityCellBuilder.Build(riders, District);
         var packed = new List<(DensityCell Cell, PackedRoute Pack)>();
         foreach (var cell in cells)
         {
-            foreach (var pack in RoutePacker.PackCell(cell, seating, _settings))
+            foreach (var pack in RoutePacker.PackCell(cell, seating, District))
             {
                 packed.Add((cell, pack));
             }
@@ -339,12 +345,12 @@ public sealed class RouteDeterminationService : IRouteDeterminationService
                 school.DismissalTime is TimeSpan dismissal)
             {
                 arrivals = PickupScheduleCalculator.ComputePmDropoffArrivals(
-                    coords, (double)schLat, (double)schLon, dismissal, _settings);
+                    coords, (double)schLat, (double)schLon, dismissal, District);
             }
             else if (school.StartTime is TimeSpan start)
             {
                 arrivals = PickupScheduleCalculator.ComputeAmPickupArrivals(
-                    coords, (double)schLat, (double)schLon, start, _settings, out var underflow);
+                    coords, (double)schLat, (double)schLon, start, District, out var underflow);
                 if (underflow)
                 {
                     warningsForRoute.Add(
@@ -460,8 +466,8 @@ public sealed class RouteDeterminationService : IRouteDeterminationService
 
         var seating = await ResolveDefaultSeatingAsync(context, options.DefaultSeatingCapacity, cancellationToken)
             .ConfigureAwait(false);
-        var cells = DensityCellBuilder.Build(riders, _settings);
-        var packed = cells.SelectMany(c => RoutePacker.PackCell(c, seating, _settings)).ToList();
+        var cells = DensityCellBuilder.Build(riders, District);
+        var packed = cells.SelectMany(c => RoutePacker.PackCell(c, seating, District)).ToList();
         var schoolSlug = SanitizeName(school.Name);
         var prefix = $"Draft-Xfer-{schoolSlug}-";
 
@@ -850,12 +856,12 @@ public sealed class RouteDeterminationService : IRouteDeterminationService
         if (slot == RouteTimeSlotKind.PM && school.DismissalTime is TimeSpan dismissal)
         {
             arrivals = PickupScheduleCalculator.ComputePmDropoffArrivals(
-                coords, (double)schLat, (double)schLon, dismissal, _settings);
+                coords, (double)schLat, (double)schLon, dismissal, District);
         }
         else if (school.StartTime is TimeSpan start)
         {
             arrivals = PickupScheduleCalculator.ComputeAmPickupArrivals(
-                coords, (double)schLat, (double)schLon, start, _settings, out var underflow);
+                coords, (double)schLat, (double)schLon, start, District, out var underflow);
             if (underflow)
             {
                 Logger.Warning(

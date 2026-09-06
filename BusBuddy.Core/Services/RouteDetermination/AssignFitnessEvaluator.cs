@@ -13,15 +13,21 @@ public sealed class AssignFitnessEvaluator
     private static readonly ILogger Logger = Log.ForContext<AssignFitnessEvaluator>();
 
     private readonly IBusBuddyDbContextFactory _contextFactory;
-    private readonly RoutingDistrictSettings _settings;
+    private readonly IDistrictSettingsAccessor? _districtAccessor;
+    private readonly RoutingDistrictSettings _settingsFallback;
 
     public AssignFitnessEvaluator(
         IBusBuddyDbContextFactory contextFactory,
-        IOptions<RoutingDistrictSettings>? settings = null)
+        IOptions<RoutingDistrictSettings>? settings = null,
+        IDistrictSettingsAccessor? districtAccessor = null)
     {
         _contextFactory = contextFactory ?? throw new ArgumentNullException(nameof(contextFactory));
-        _settings = settings?.Value ?? new RoutingDistrictSettings();
+        _settingsFallback = settings?.Value ?? new RoutingDistrictSettings();
+        _districtAccessor = districtAccessor;
     }
+
+    private RoutingDistrictSettings District =>
+        _districtAccessor?.Current ?? _settingsFallback;
 
     public async Task<AssignFitnessResult> EvaluateAsync(
         int studentId,
@@ -85,7 +91,7 @@ public sealed class AssignFitnessEvaluator
         if (capacity > 0 && assigned + 1 > capacity)
         {
             var msg = $"Seating capacity {capacity} would be exceeded ({assigned} already assigned)";
-            if (overrideSeating && _settings.AllowSeatingOverride)
+            if (overrideSeating && District.AllowSeatingOverride)
             {
                 reasons.Add(msg + " (override recorded)");
                 severity = AssignFitnessSeverity.Warn;
@@ -120,10 +126,10 @@ public sealed class AssignFitnessEvaluator
             {
                 var miles = RoutePacker.HaversineMiles(
                     (double)sLat, (double)sLon, (double)schLat, (double)schLon);
-                var minutes = _settings.AverageSpeedMph <= 0
+                var minutes = District.AverageSpeedMph <= 0
                     ? 0
-                    : miles / _settings.AverageSpeedMph * 60.0;
-                if (_settings.MaxRideMinutes is int maxRide && minutes > maxRide)
+                    : miles / District.AverageSpeedMph * 60.0;
+                if (District.MaxRideMinutes is int maxRide && minutes > maxRide)
                 {
                     reasons.Add($"Estimated ride ~{minutes:0} min exceeds soft max {maxRide} min");
                     if (severity == AssignFitnessSeverity.None)
@@ -160,19 +166,19 @@ public sealed class AssignFitnessEvaluator
                 var cLat = peers.Average(p => (double)p.Latitude!.Value);
                 var cLon = peers.Average(p => (double)p.Longitude!.Value);
                 var gapMiles = RoutePacker.HaversineMiles(cLat, cLon, (double)sLat, (double)sLon);
-                var gapMinutes = _settings.AverageSpeedMph <= 0
+                var gapMinutes = District.AverageSpeedMph <= 0
                     ? 0
-                    : gapMiles / _settings.AverageSpeedMph * 60.0;
-                if (gapMinutes > _settings.MaxPickupGapMinutes)
+                    : gapMiles / District.AverageSpeedMph * 60.0;
+                if (gapMinutes > District.MaxPickupGapMinutes)
                 {
                     reasons.Add(
-                        $"Geo outlier vs route cluster (~{gapMinutes:0} min gap > {_settings.MaxPickupGapMinutes} min)");
+                        $"Geo outlier vs route cluster (~{gapMinutes:0} min gap > {District.MaxPickupGapMinutes} min)");
                     if (severity == AssignFitnessSeverity.None)
                     {
                         severity = AssignFitnessSeverity.Warn;
                     }
 
-                    suggestNew = suggestNew || gapMinutes > _settings.MaxPickupGapMinutes * 2;
+                    suggestNew = suggestNew || gapMinutes > District.MaxPickupGapMinutes * 2;
                     Logger.Information(
                         "Assign fitness Warned Student={Id} Route={RouteId} Reasons={Reasons}",
                         studentId, routeId, reasons[^1]);

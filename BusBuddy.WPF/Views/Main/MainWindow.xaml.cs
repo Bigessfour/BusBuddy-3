@@ -946,7 +946,7 @@ namespace BusBuddy.WPF.Views.Main
             Logger.Information("Settings navigation requested");
             try
             {
-                ShowViewInWindow(new SettingsView(), "⚙️ Settings", 640, 520);
+                ShowViewInWindow(new SettingsView(), "⚙️ Settings", 760, 820);
             }
             catch (Exception ex)
             {

@@ -50,7 +50,6 @@ Set `GOOGLE_MAPS_API_KEY` and `GCP_BILLING_PROJECT=busbuddy-507301` as machine/u
 | `MapsGeoService`                  | `IMapsGeoService` + `IGeocodingService` (cached validate/geocode) |
 | `GooglePlacesAutocompleteService` | `IPlacesAutocompleteService` (no-op without key)                  |
 | `GoogleRoutingService`            | `IRoutingService` (drive path + route matrix; fail-open)          |
-| `OfflineGeocodingService`         | Tests/demo only — **not** registered in production DI             |
 
 ## Smoke probe
 

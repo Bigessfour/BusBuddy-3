@@ -1302,9 +1302,7 @@ namespace BusBuddy.WPF.ViewModels.Student
                 return;
             }
 
-            var settings = App.ServiceProvider?
-                .GetService<Microsoft.Extensions.Options.IOptions<BusBuddy.Core.Configuration.RoutingDistrictSettings>>()?
-                .Value;
+            var settings = DistrictCameraUi.CurrentSettings();
             var maxMeters = settings?.StopSuggestMaxMeters ?? 400;
 
             var nearest = await stopService.FindNearestAsync(

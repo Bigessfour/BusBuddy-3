@@ -48,10 +48,13 @@ public sealed class GoogleMapsOptions
     /// <summary>Region code for Address Validation (US).</summary>
     public string RegionCode { get; set; } = "US";
 
-    /// <summary>Places Autocomplete location-bias center (Wiley, CO default).</summary>
-    public double AutocompleteBiasLatitude { get; set; } = 38.0872;
+    /// <summary>
+    /// Optional Places Autocomplete bias. When unset, bias comes from clerk district settings
+    /// (depot / bbox); when those are also unset, autocomplete is region=US with no circle.
+    /// </summary>
+    public double? AutocompleteBiasLatitude { get; set; }
 
-    public double AutocompleteBiasLongitude { get; set; } = -102.6208;
+    public double? AutocompleteBiasLongitude { get; set; }
 
     /// <summary>Places Autocomplete bias radius in meters (~50 mi default).</summary>
     public double AutocompleteBiasRadiusMeters { get; set; } = 80_000;

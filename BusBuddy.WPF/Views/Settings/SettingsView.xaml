@@ -69,7 +69,16 @@
         <Border Grid.Row="1" Background="{DynamicResource BusBuddy.Brush.Surface.Light}"
                 BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1"
                 CornerRadius="8" Padding="24">
-            <StackPanel MaxWidth="560" HorizontalAlignment="Left">
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <StackPanel MaxWidth="640" HorizontalAlignment="Left">
+                <StackPanel.Resources>
+                    <Style x:Key="SettingsFieldInput" TargetType="syncfusion:SfTextBoxExt">
+                        <Setter Property="Height" Value="40"/>
+                        <Setter Property="Padding" Value="8,5"/>
+                        <Setter Property="Margin" Value="0,0,0,10"/>
+                        <Setter Property="HorizontalAlignment" Value="Stretch"/>
+                    </Style>
+                </StackPanel.Resources>
                 <TextBlock Text="Appearance" Style="{StaticResource SettingsSectionHeader}"/>
                 <TextBlock Text="Choose the Fluent theme applied across BusBuddy windows."
                            Style="{StaticResource SettingsHelpText}"/>
@@ -93,6 +102,88 @@
                                                  IsChecked="{Binding ShowDashboardOnStartup, Mode=TwoWay}"
                                                  Margin="0,0,0,20"
                                                  AutomationProperties.Name="Show dashboard on startup"/>
+
+                <TextBlock Text="District Map" Style="{StaticResource SettingsSectionHeader}" Margin="0,8,0,8"/>
+                <TextBlock Text="When on, District Map can save the selected route's waypoints as GeoJSON (stop coordinates, not student names). Leave off if clerks should not write route files."
+                           Style="{StaticResource SettingsHelpText}"/>
+                <syncfusiontools:ToggleButtonExt Content="Enable route GeoJSON export"
+                                                 IsChecked="{Binding EnableRouteGeoExport, Mode=TwoWay}"
+                                                 Margin="0,0,0,20"
+                                                 AutomationProperties.Name="Enable route GeoJSON export"/>
+
+                <TextBlock Text="This district (map &amp; routing)" Style="{StaticResource SettingsSectionHeader}"/>
+                <TextBlock Text="Leave blank to ship this app to another rural district. Maps follow the first school with GPS, then the bus barn, then the bounding box. Unconfigured maps show a US overview until you add a school or pin the barn."
+                           Style="{StaticResource SettingsHelpText}"/>
+
+                <TextBlock Text="Bus barn name" FontWeight="Medium" Margin="0,0,0,6"
+                           Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"/>
+                <syncfusion:SfTextBoxExt Text="{Binding DepotName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                         Style="{StaticResource SettingsFieldInput}"
+                                         AutomationProperties.Name="Bus barn name"/>
+                <TextBlock Text="Bus barn address" FontWeight="Medium" Margin="0,0,0,6"
+                           Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"/>
+                <syncfusion:SfTextBoxExt Text="{Binding DepotAddress, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                         Style="{StaticResource SettingsFieldInput}"
+                                         AutomationProperties.Name="Bus barn address"/>
+                <Grid Margin="0,0,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="80"/>
+                        <ColumnDefinition Width="100"/>
+                    </Grid.ColumnDefinitions>
+                    <syncfusion:SfTextBoxExt Grid.Column="0" Margin="0,0,8,10"
+                                             Text="{Binding DepotCity, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                             Height="40" Padding="8,5"
+                                             AutomationProperties.Name="Bus barn city"/>
+                    <syncfusion:SfTextBoxExt Grid.Column="1" Margin="0,0,8,10"
+                                             Text="{Binding DepotState, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                             Height="40" Padding="8,5"
+                                             AutomationProperties.Name="Bus barn state"/>
+                    <syncfusion:SfTextBoxExt Grid.Column="2" Margin="0,0,0,10"
+                                             Text="{Binding DepotZipCode, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                             Height="40" Padding="8,5"
+                                             AutomationProperties.Name="Bus barn ZIP"/>
+                </Grid>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <syncfusion:SfTextBoxExt Grid.Column="0" Margin="0,0,8,10"
+                                             Text="{Binding DepotLatitudeText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                             Height="40" Padding="8,5"
+                                             AutomationProperties.Name="Bus barn latitude"/>
+                    <syncfusion:SfTextBoxExt Grid.Column="1" Margin="0,0,0,10"
+                                             Text="{Binding DepotLongitudeText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                             Height="40" Padding="8,5"
+                                             AutomationProperties.Name="Bus barn longitude"/>
+                </Grid>
+                <TextBlock Text="Optional bounding box (south, west, north, east) used by route density. Must include every school GPS pin."
+                           Style="{StaticResource SettingsHelpText}"/>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <syncfusion:SfTextBoxExt Grid.Column="0" Margin="0,0,6,10"
+                                             Text="{Binding BoundingBoxMinLatText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                             Height="40" Padding="8,5"
+                                             AutomationProperties.Name="District bounding box minimum latitude"/>
+                    <syncfusion:SfTextBoxExt Grid.Column="1" Margin="0,0,6,10"
+                                             Text="{Binding BoundingBoxMinLonText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                             Height="40" Padding="8,5"
+                                             AutomationProperties.Name="District bounding box minimum longitude"/>
+                    <syncfusion:SfTextBoxExt Grid.Column="2" Margin="0,0,6,10"
+                                             Text="{Binding BoundingBoxMaxLatText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                             Height="40" Padding="8,5"
+                                             AutomationProperties.Name="District bounding box maximum latitude"/>
+                    <syncfusion:SfTextBoxExt Grid.Column="3" Margin="0,0,0,10"
+                                             Text="{Binding BoundingBoxMaxLonText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                             Height="40" Padding="8,5"
+                                             AutomationProperties.Name="District bounding box maximum longitude"/>
+                </Grid>
 
                 <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
                     <syncfusion:ButtonAdv Label="Save"
@@ -120,6 +211,7 @@
                     </TextBlock.Style>
                 </TextBlock>
             </StackPanel>
+            </ScrollViewer>
         </Border>
 
         <Border Grid.Row="2" Background="{DynamicResource BusBuddy.Brush.Panel.Header}"

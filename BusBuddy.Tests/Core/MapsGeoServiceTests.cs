@@ -5,6 +5,7 @@ using BusBuddy.Core.Services.Interfaces;
 using FluentAssertions;
 using Moq;
 using NUnit.Framework;
+using System.Linq;
 
 namespace BusBuddy.Tests.Core;
 
@@ -83,6 +84,43 @@ public class RouteDrivePathRefresherTests
 
         result.Success.Should().BeTrue();
         route.WaypointsJson.Should().Contain("encodedPolyline");
+        route.WaypointsJson.Should().Contain("stops");
+        route.WaypointsJson.Should().NotContain("\"points\"");
+    }
+
+    [Test]
+    public async Task TryRefresh_LegacyDensePoints_AreNotSentAsIntermediates()
+    {
+        var json = """
+            {"encodedPolyline":"_p~iF~ps|U_ulLnnqC_mqNvxq`@","points":[[38.0,-102.0],[38.01,-102.01],[38.02,-102.02]]}
+            """;
+        var route = new Route { WaypointsJson = json };
+        var routing = new Mock<IRoutingService>();
+
+        var result = await RouteDrivePathRefresher.TryRefreshAsync(routing.Object, route);
+
+        result.Skipped.Should().BeTrue();
+        routing.Verify(
+            r => r.ComputeDrivePathAsync(
+                It.IsAny<(double, double)>(),
+                It.IsAny<(double, double)>(),
+                It.IsAny<IReadOnlyList<(double Latitude, double Longitude)>>(),
+                default),
+            Times.Never);
+    }
+
+    [Test]
+    public void CapIntermediateWaypoints_SamplesEvenlyToMax()
+    {
+        var many = Enumerable.Range(0, 80)
+            .Select(i => (38.0 + i * 0.001, -102.0))
+            .ToList();
+
+        var capped = RouteDrivePathRefresher.CapIntermediateWaypoints(many);
+
+        capped.Should().HaveCount(RouteDrivePathRefresher.MaxIntermediateWaypoints);
+        capped[0].Should().Be(many[0]);
+        capped[^1].Should().Be(many[^1]);
     }
 
     [Test]

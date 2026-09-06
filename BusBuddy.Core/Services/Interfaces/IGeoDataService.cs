@@ -4,7 +4,7 @@ namespace BusBuddy.Core.Services.Interfaces
 {
     /// <summary>
     /// Geographic data for mapping visualization. Route geometry comes from the database.
-    /// Street geocoding/routing is Google Maps Platform (spec 007), paused until wired.
+    /// Street geocoding/routing is Google Maps Platform (spec 007).
     /// </summary>
     public interface IGeoDataService
     {

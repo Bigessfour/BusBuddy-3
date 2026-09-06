@@ -25,6 +25,7 @@ public class UserSettingsServiceTests
             await service.SetSettingAsync(UserSettingsKeys.Theme, "FluentLight");
             await service.SetSettingAsync(UserSettingsKeys.EnableActivityLogging, false);
             await service.SetSettingAsync(UserSettingsKeys.ShowDashboardOnStartup, false);
+            await service.SetSettingAsync(UserSettingsKeys.EnableRouteGeoExport, true);
             (await service.SaveSettingsAsync()).Should().BeTrue();
 
             var reloaded = new UserSettingsService(path);
@@ -33,9 +34,13 @@ public class UserSettingsServiceTests
             (await reloaded.GetSettingAsync(UserSettingsKeys.Theme, "FluentDark")).Should().Be("FluentLight");
             (await reloaded.GetSettingAsync(UserSettingsKeys.EnableActivityLogging, true)).Should().BeFalse();
             (await reloaded.GetSettingAsync(UserSettingsKeys.ShowDashboardOnStartup, true)).Should().BeFalse();
+            (await reloaded.GetSettingAsync(UserSettingsKeys.EnableRouteGeoExport, false)).Should().BeTrue();
             reloaded.EnableActivityLogging.Should().BeFalse();
             reloaded.ShowDashboardOnStartup.Should().BeFalse();
+            reloaded.EnableRouteGeoExport.Should().BeTrue();
             reloaded.CachedTheme.Should().Be("FluentLight");
+            reloaded.HasKey(UserSettingsKeys.Theme).Should().BeTrue();
+            reloaded.HasKey("MissingKey").Should().BeFalse();
         }
         finally
         {
@@ -62,6 +67,7 @@ public class UserSettingsServiceTests
             service.CachedTheme.Should().Be("FluentDark");
             service.EnableActivityLogging.Should().BeTrue();
             service.ShowDashboardOnStartup.Should().BeTrue();
+            service.EnableRouteGeoExport.Should().BeFalse();
         }
         finally
         {

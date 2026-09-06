@@ -1,10 +1,13 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using BusBuddy.Core.Mapping;
 using BusBuddy.Core.Models;
 using BusBuddy.Core.Services.Interfaces;
+using BusBuddy.Core.Services;
 using BusBuddy.WPF.ViewModels.Map;
+using CommunityToolkit.Mvvm.Input;
 using Moq;
 using NUnit.Framework;
 
@@ -89,6 +92,105 @@ public class MapViewModelTests
     }
 
     [Test]
+    public async Task ExportRouteDataCommand_WhenDisabledInSettings_DoesNotCallGeoService()
+    {
+        var settings = new Mock<IUserSettingsService>();
+        settings.SetupGet(s => s.EnableRouteGeoExport).Returns(false);
+        var geo = new Mock<IGeoDataService>();
+        geo.Setup(g => g.GetRoutesWithGeoDataAsync()).ReturnsAsync(new List<Route>());
+        geo.Setup(g => g.GetRouteGeoDataAsync(It.IsAny<int>())).ReturnsAsync((Route?)null);
+
+        var vm = await CreateSettledViewModelAsync(geo.Object, settings.Object);
+        vm.SelectedRoute = new Route { RouteId = 7, RouteName = "AM-1" };
+
+        Assert.That(vm.ExportRouteDataCommand.CanExecute(null), Is.True);
+        await ((IAsyncRelayCommand)vm.ExportRouteDataCommand).ExecuteAsync(null);
+
+        Assert.That(vm.StatusMessage, Does.Contain("Settings"));
+        geo.Verify(g => g.GetRouteGeoDataAsync(It.IsAny<int>()), Times.Never);
+    }
+
+    [Test]
+    public void MapViewModelSource_DoesNotInventASampleExportRoute()
+    {
+        var vm = XamlViewFile.Read("ViewModels/Map/MapViewModel.cs");
+        Assert.That(vm, Does.Contain("MapRouteExporter.ExportSelectedAsync"));
+        Assert.That(vm, Does.Not.Contain("Sample Export Route"));
+        Assert.That(vm, Does.Not.Contain("Sample School"));
+    }
+
+    [Test]
+    public async Task SelectingRoute_WithCompactWaypoints_DrawsLineAndStopMarkersWithoutCallingRoutes()
+    {
+        var route = new Route
+        {
+            RouteId = 9,
+            RouteName = "AM-North",
+            WaypointsJson = RouteWaypointSerializer.FromPairs(new[]
+            {
+                (38.15, -102.72),
+                (38.16, -102.71)
+            })
+        };
+        var routing = new Mock<IRoutingService>(MockBehavior.Strict);
+        var vm = await CreateSettledViewModelAsync(routing: routing.Object);
+
+        vm.SelectedRoute = route;
+        await WaitUntilAsync(() => vm.RouteLinePoints.Count >= 2);
+
+        Assert.That(vm.RouteLinePoints, Has.Count.EqualTo(2));
+        Assert.That(vm.MapMarkers.Count(m => m.Label?.StartsWith("WP ", StringComparison.Ordinal) == true), Is.EqualTo(2));
+        routing.VerifyNoOtherCalls();
+    }
+
+    [Test]
+    public async Task SelectingRoute_WithEncodedPolyline_DoesNotPlotEveryVertex()
+    {
+        const string encoded = "_p~iF~ps|U_ulLnnqC_mqNvxq`@";
+        var route = new Route
+        {
+            RouteId = 10,
+            RouteName = "AM-Road",
+            WaypointsJson = RouteWaypointSerializer.FromEncodedPolyline(
+                encoded,
+                new[] { (38.15, -102.72), (38.16, -102.71) })
+        };
+        var vm = await CreateSettledViewModelAsync();
+        vm.SelectedRoute = route;
+        await WaitUntilAsync(() => vm.RouteLinePoints.Count >= 2);
+
+        var decoded = EncodedPolylineCodec.Decode(encoded);
+        Assert.That(vm.RouteLinePoints.Count, Is.EqualTo(decoded.Count));
+        Assert.That(decoded.Count, Is.GreaterThan(2));
+        Assert.That(
+            vm.MapMarkers.Count(m => m.Label?.StartsWith("WP ", StringComparison.Ordinal) == true),
+            Is.EqualTo(2));
+    }
+
+    [Test]
+    public async Task ClearingSelectedRoute_ClearsTheLine()
+    {
+        var route = new Route
+        {
+            RouteId = 11,
+            RouteName = "AM-1",
+            WaypointsJson = RouteWaypointSerializer.FromPairs(new[]
+            {
+                (38.15, -102.72),
+                (38.16, -102.71)
+            })
+        };
+        var vm = await CreateSettledViewModelAsync();
+        vm.SelectedRoute = route;
+        await WaitUntilAsync(() => vm.RouteLinePoints.Count >= 2);
+
+        vm.SelectedRoute = null;
+        await WaitUntilAsync(() => vm.RouteLinePoints.Count == 0);
+
+        Assert.That(vm.RouteLinePoints, Is.Empty);
+    }
+
+    [Test]
     public void MapViewModelSource_ExposesCameraAndMarkerChangeContract()
     {
         var vm = XamlViewFile.Read("ViewModels/Map/MapViewModel.cs");
@@ -103,8 +205,16 @@ public class MapViewModelTests
     {
         var vm = XamlViewFile.Read("ViewModels/Map/MapViewModel.cs");
         Assert.That(vm, Does.Contain("IMapsGeoService"));
+        Assert.That(vm, Does.Contain("ResetCameraToDistrictAsync"));
+        Assert.That(vm, Does.Contain("DistrictCameraUi.ResolveAsync"));
         Assert.That(vm, Does.Contain("DistrictDepot.TryGetCoordinates"));
-        Assert.That(vm, Does.Contain("RouteDrivePathRefresher.TryRefreshAsync"));
+        Assert.That(vm, Does.Contain("MapRouteTrail"));
+        Assert.That(vm, Does.Contain("BindSelectedRoute"));
+        Assert.That(vm, Does.Contain("refreshDrivePath"));
+
+        var trail = XamlViewFile.Read("Utilities/MapRouteTrail.cs");
+        Assert.That(trail, Does.Contain("RouteDrivePathRefresher.TryRefreshAsync"));
+        Assert.That(trail, Does.Contain("MarkerStops"));
 
         var mapsGeo = CoreSourceFile.Read("Services/GoogleMaps/IMapsGeoService.cs");
         Assert.That(mapsGeo, Does.Contain("interface IMapsGeoService"));
@@ -127,20 +237,34 @@ public class MapViewModelTests
         Assert.That(codeBehind, Does.Contain("vm.MapMarkersChanged +="));
         Assert.That(codeBehind, Does.Contain("nameof(MapViewModel.MapCenter)"));
         Assert.That(codeBehind, Does.Contain("nameof(MapViewModel.MapZoomLevel)"));
+        Assert.That(codeBehind, Does.Contain("ReplayRouteLineFromViewModel"));
+        Assert.That(codeBehind, Does.Contain("MapRouteTrailLayer.Apply"));
+        Assert.That(codeBehind, Does.Not.Contain("MapControl.Layers.Add"));
         Assert.That(codeBehind, Does.Not.Contain("MapLayerComboBox_SelectionChanged"));
     }
 
-    private static MapViewModel CreateViewModel()
+    private static MapViewModel CreateViewModel(
+        IGeoDataService? geoData = null,
+        IUserSettingsService? userSettings = null,
+        IRoutingService? routing = null)
     {
-        var geo = new Mock<IGeoDataService>();
-        geo.Setup(g => g.GetRoutesWithGeoDataAsync()).ReturnsAsync(new List<Route>());
-        geo.Setup(g => g.GetRouteGeoDataAsync(It.IsAny<int>())).ReturnsAsync((Route?)null);
-        return new MapViewModel(geo.Object);
+        if (geoData is null)
+        {
+            var geo = new Mock<IGeoDataService>();
+            geo.Setup(g => g.GetRoutesWithGeoDataAsync()).ReturnsAsync(new List<Route>());
+            geo.Setup(g => g.GetRouteGeoDataAsync(It.IsAny<int>())).ReturnsAsync((Route?)null);
+            geoData = geo.Object;
+        }
+
+        return new MapViewModel(geoData, userSettings: userSettings, routingService: routing);
     }
 
-    private static async Task<MapViewModel> CreateSettledViewModelAsync()
+    private static async Task<MapViewModel> CreateSettledViewModelAsync(
+        IGeoDataService? geoData = null,
+        IUserSettingsService? userSettings = null,
+        IRoutingService? routing = null)
     {
-        var vm = CreateViewModel();
+        var vm = CreateViewModel(geoData, userSettings, routing);
         var deadline = DateTime.UtcNow.AddSeconds(3);
         while (DateTime.UtcNow < deadline)
         {
@@ -157,5 +281,19 @@ public class MapViewModelTests
         }
 
         return vm;
+    }
+
+    private static async Task WaitUntilAsync(Func<bool> condition, int timeoutMs = 2000)
+    {
+        var deadline = DateTime.UtcNow.AddMilliseconds(timeoutMs);
+        while (DateTime.UtcNow < deadline)
+        {
+            if (condition())
+            {
+                return;
+            }
+
+            await Task.Delay(20);
+        }
     }
 }

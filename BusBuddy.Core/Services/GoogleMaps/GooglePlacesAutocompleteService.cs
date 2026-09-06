@@ -3,6 +3,7 @@ using System.Net;
 using System.Text;
 using System.Text.Json;
 using BusBuddy.Core.Configuration;
+using BusBuddy.Core.Mapping;
 using Microsoft.Extensions.Options;
 using Serilog;
 
@@ -19,13 +20,19 @@ public sealed class GooglePlacesAutocompleteService : IPlacesAutocompleteService
 
     private readonly HttpClient _httpClient;
     private readonly GoogleMapsOptions _options;
+    private readonly IDistrictSettingsAccessor? _districtSettings;
     private readonly bool _ownsHttpClient;
 
-    public GooglePlacesAutocompleteService(HttpClient httpClient, IOptions<GoogleMapsOptions> options, bool ownsHttpClient = false)
+    public GooglePlacesAutocompleteService(
+        HttpClient httpClient,
+        IOptions<GoogleMapsOptions> options,
+        bool ownsHttpClient = false,
+        IDistrictSettingsAccessor? districtSettings = null)
     {
         _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
         _options = options?.Value ?? throw new ArgumentNullException(nameof(options));
         _ownsHttpClient = ownsHttpClient;
+        _districtSettings = districtSettings;
     }
 
     public bool IsConfigured => !string.IsNullOrWhiteSpace(GoogleAddressValidationClient.ResolveApiKey(_options));
@@ -64,19 +71,18 @@ public sealed class GooglePlacesAutocompleteService : IPlacesAutocompleteService
                 ["includedRegionCodes"] = new[] { "us" },
                 ["includedPrimaryTypes"] = new[] { "street_address", "premise", "subpremise" },
                 ["languageCode"] = "en",
-                ["locationBias"] = new
+            };
+            if (TryResolveAutocompleteBias(out var biasLat, out var biasLon))
+            {
+                body["locationBias"] = new
                 {
                     circle = new
                     {
-                        center = new
-                        {
-                            latitude = _options.AutocompleteBiasLatitude,
-                            longitude = _options.AutocompleteBiasLongitude,
-                        },
+                        center = new { latitude = biasLat, longitude = biasLon },
                         radius = _options.AutocompleteBiasRadiusMeters,
                     },
-                },
-            };
+                };
+            }
             if (!string.IsNullOrWhiteSpace(sessionToken))
             {
                 body["sessionToken"] = sessionToken;
@@ -320,5 +326,27 @@ public sealed class GooglePlacesAutocompleteService : IPlacesAutocompleteService
         }
 
         return ReadText(structured, partName);
+    }
+
+    private bool TryResolveAutocompleteBias(out double latitude, out double longitude)
+    {
+        if (DistrictMapAnchor.TryGetConfiguredCenter(_districtSettings?.Current, out latitude, out longitude))
+        {
+            return true;
+        }
+
+        if (_options.AutocompleteBiasLatitude is double optLat &&
+            _options.AutocompleteBiasLongitude is double optLon &&
+            DistrictMapAnchor.IsValidLatitude(optLat) &&
+            DistrictMapAnchor.IsValidLongitude(optLon))
+        {
+            latitude = optLat;
+            longitude = optLon;
+            return true;
+        }
+
+        latitude = default;
+        longitude = default;
+        return false;
     }
 }

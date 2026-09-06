@@ -127,10 +127,12 @@ namespace BusBuddy.Core.Extensions
             services.AddScoped<IFleetMonitoringService, FleetMonitoringService>();
             // REMOVED: ITicketService - deprecated module
 
-            // Geospatial: Google Maps Platform (Address Validation). Do not register OfflineGeocodingService in production.
+            // Geospatial: Google Maps Platform (Address Validation, Places, Routes) + SfMap/OSM.
             services.AddGoogleMapsOptions(configuration);
             services.Configure<BusBuddy.Core.Configuration.RoutingDistrictSettings>(
                 configuration.GetSection(BusBuddy.Core.Configuration.RoutingDistrictSettings.SectionName));
+            services.AddSingleton<BusBuddy.Core.Configuration.IDistrictSettingsAccessor,
+                BusBuddy.Core.Configuration.DistrictSettingsAccessor>();
             services.AddSingleton(sp =>
             {
                 var opts = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<BusBuddy.Core.Configuration.GoogleMapsOptions>>();
@@ -167,7 +169,8 @@ namespace BusBuddy.Core.Extensions
                 return new BusBuddy.Core.Services.GoogleMaps.GooglePlacesAutocompleteService(
                     new System.Net.Http.HttpClient(),
                     opts,
-                    ownsHttpClient: true);
+                    ownsHttpClient: true,
+                    districtSettings: sp.GetService<BusBuddy.Core.Configuration.IDistrictSettingsAccessor>());
             });
 
             // Register Address Validation Service (delegates to Maps client when key present)

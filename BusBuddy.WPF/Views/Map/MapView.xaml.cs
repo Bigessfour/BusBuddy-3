@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Threading.Tasks;
 using System.Windows;
@@ -11,6 +12,7 @@ using System.IO;
 using System.Printing;
 using BusBuddy.Core.Data;
 using BusBuddy.Core.Mapping;
+using BusBuddy.WPF.Utilities;
 using BusBuddy.WPF.ViewModels.Map;
 using Microsoft.Extensions.DependencyInjection;
 using Serilog;
@@ -29,8 +31,6 @@ namespace BusBuddy.WPF.Views.Map
         private bool _mapLayerInitialized;
         private MapViewModel? _boundViewModel;
         private MapLayer? _currentLayer;
-        private SubShapeFileLayer? _routeSubLayer;
-        private MapPolyline? _routePolyline;
 
         public MapView()
         {
@@ -98,6 +98,7 @@ namespace BusBuddy.WPF.Views.Map
                     SyncMapControlFromViewModel(DataContext as MapViewModel);
                 }
 
+                ReplayRouteLineFromViewModel(DataContext as MapViewModel);
                 _mapLayerInitialized = true;
                 Logger.Information("Map layer ready — pan/zoom enabled");
             }
@@ -124,6 +125,7 @@ namespace BusBuddy.WPF.Views.Map
             {
                 AttachViewModel(newViewModel);
                 ApplyDistrictImagery(newViewModel);
+                ReplayRouteLineFromViewModel(newViewModel);
             }
         }
 
@@ -193,11 +195,6 @@ namespace BusBuddy.WPF.Views.Map
                 {
                     imagery.MarkerTemplate = template;
                 }
-            }
-
-            if (_routeSubLayer is not null && !imagery.SubShapeFileLayers.Contains(_routeSubLayer))
-            {
-                imagery.SubShapeFileLayers.Add(_routeSubLayer);
             }
         }
 
@@ -326,12 +323,14 @@ namespace BusBuddy.WPF.Views.Map
         {
             try
             {
-                if (MapControl is not null)
+                if (DataContext is MapViewModel vm)
                 {
-                    MapControl.ZoomLevel = MapDefaults.DefaultZoomLevel;
+                    _ = vm.ResetCameraToDistrictAsync();
+                    return;
                 }
 
-                ApplyCenter(MapDefaults.FallbackLatitude, MapDefaults.FallbackLongitude, MapDefaults.DefaultZoomLevel);
+                var camera = DistrictCameraUi.Resolve();
+                ApplyCenter(camera.Latitude, camera.Longitude, camera.ZoomLevel);
             }
             catch (Exception ex)
             {
@@ -366,45 +365,24 @@ namespace BusBuddy.WPF.Views.Map
             }
         }
 
-        private void OnRouteLineUpdated(object? sender, MapViewModel.RouteLineEventArgs e)
+        private void OnRouteLineUpdated(object? sender, MapViewModel.RouteLineEventArgs e) =>
+            Dispatcher.Invoke(() => ReplayRouteLine(e.Points));
+
+        private void ReplayRouteLineFromViewModel(MapViewModel? vm)
         {
-            try
+            if (vm is null)
             {
-                if (MapControl is null)
-                {
-                    return;
-                }
-
-                if (_routeSubLayer is null)
-                {
-                    _routeSubLayer = new SubShapeFileLayer();
-                    if (_currentLayer is ImageryLayer imagery)
-                    {
-                        imagery.SubShapeFileLayers.Add(_routeSubLayer);
-                    }
-                    else
-                    {
-                        MapControl.Layers.Add(_routeSubLayer);
-                    }
-                }
-
-                _routePolyline ??= new MapPolyline
-                {
-                    Stroke = Brushes.Gold,
-                    StrokeThickness = 3,
-                };
-                if (!_routeSubLayer.MapElements.Contains(_routePolyline))
-                {
-                    _routeSubLayer.MapElements.Add(_routePolyline);
-                }
-
-                _routePolyline.Points = new System.Collections.ObjectModel.ObservableCollection<Point>(e.Points);
+                return;
             }
-            catch (Exception ex)
-            {
-                Logger.Warning(ex, "Failed updating route polyline");
-            }
+
+            ReplayRouteLine(vm.RouteLinePoints);
         }
+
+        private void ReplayRouteLine(IReadOnlyList<Point> points) =>
+            MapRouteTrailLayer.Apply(
+                RouteTrail ?? FindName("RouteTrail") as MapPolyline,
+                RouteTrailLayer ?? FindName("RouteTrailLayer") as SubShapeFileLayer,
+                points);
 
         private void OnPrintRequested(object? sender, EventArgs e)
         {
@@ -500,7 +478,8 @@ namespace BusBuddy.WPF.Views.Map
                 TryResetView();
             }
         });
-        private void OnViewResetRequested(object? sender, EventArgs e) => Dispatcher.Invoke(TryResetView);
+        private void OnViewResetRequested(object? sender, EventArgs e) => Dispatcher.Invoke(() =>
+            SyncMapControlFromViewModel(DataContext as MapViewModel));
 
         private void CenterOnCurrentMarkers()
         {

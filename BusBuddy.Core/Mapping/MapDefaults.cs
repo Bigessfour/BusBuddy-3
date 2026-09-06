@@ -1,13 +1,23 @@
 namespace BusBuddy.Core.Mapping;
 
 /// <summary>
-/// Fallback map center when no school destination with coordinates exists.
-/// Lamar, CO area — matches SchoolDestinationForm defaults for district clerks.
+/// Camera constants that are not a school district.
+/// Configured geography comes from clerk Settings (depot / bbox) and school destinations.
 /// </summary>
 public static class MapDefaults
 {
-    public const double FallbackLatitude = 38.0872;
-    public const double FallbackLongitude = -102.6208;
-    public const int DefaultZoomLevel = 11;
+    /// <summary>Contiguous-US overview used only when no school, depot, or bbox is configured.</summary>
+    public const double UnconfiguredLatitude = 39.8283;
+
+    public const double UnconfiguredLongitude = -98.5795;
+
+    public const int UnconfiguredZoomLevel = 5;
+
+    /// <summary>Zoom when a district depot or bounding box is configured.</summary>
+    public const int DistrictZoomLevel = 11;
+
     public const int SchoolZoomLevel = 13;
+
+    /// <summary>Alias for district zoom (existing map bindings / tests).</summary>
+    public const int DefaultZoomLevel = DistrictZoomLevel;
 }

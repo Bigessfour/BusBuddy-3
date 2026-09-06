@@ -1,3 +1,4 @@
+using System.Linq;
 using System.Net.Http;
 using BusBuddy.Core.Configuration;
 using BusBuddy.Core.Services.GoogleMaps;
@@ -42,5 +43,8 @@ public class GeocodingServiceRegistrationTests
 
         Assert.That(geocoder, Is.InstanceOf<MapsGeoService>());
         Assert.That(sp.GetRequiredService<IMapsGeoService>(), Is.SameAs(geocoder));
+        var typeNames = typeof(MapsGeoService).Assembly.GetTypes().Select(t => t.Name);
+        Assert.That(typeNames, Does.Not.Contain("OfflineGeocodingService"));
+        Assert.That(typeNames, Does.Not.Contain("TerrainAnalysisResult"));
     }
 }

@@ -191,8 +191,18 @@
 
                 <syncfusion:ButtonAdv Label="Show Routes"
                               AutomationProperties.Name="Show Routes"
-                              ToolTip="Toggle route overlays"
+                              ToolTip="Show the first route that has stored waypoints"
                               Command="{Binding ShowRoutesCommand}"
+                              Background="{DynamicResource ButtonBackgroundBrush}"
+                              Foreground="{DynamicResource ButtonForegroundBrush}"
+                              Padding="10,8"
+                              Margin="0,4"
+                              HorizontalAlignment="Stretch"/>
+
+                <syncfusion:ButtonAdv Label="Export Route"
+                              AutomationProperties.Name="Export Route"
+                              ToolTip="Save the selected route waypoints as GeoJSON. Enable in Settings."
+                              Command="{Binding ExportRouteDataCommand}"
                               Background="{DynamicResource ButtonBackgroundBrush}"
                               Foreground="{DynamicResource ButtonForegroundBrush}"
                               Padding="10,8"
@@ -388,7 +398,17 @@
                                     <maps:ImageryLayer x:Name="DistrictImageryLayer"
                                                        LayerType="OSM"
                                                        Center="{Binding MapCenter, Mode=TwoWay}"
-                                                       Markers="{Binding MapMarkers}"/>
+                                                       Markers="{Binding MapMarkers}">
+                                        <maps:ImageryLayer.SubShapeFileLayers>
+                                            <maps:SubShapeFileLayer x:Name="RouteTrailLayer">
+                                                <maps:SubShapeFileLayer.MapElements>
+                                                    <maps:MapPolyline x:Name="RouteTrail"
+                                                                      Stroke="Gold"
+                                                                      StrokeThickness="3"/>
+                                                </maps:SubShapeFileLayer.MapElements>
+                                            </maps:SubShapeFileLayer>
+                                        </maps:ImageryLayer.SubShapeFileLayers>
+                                    </maps:ImageryLayer>
                                 </maps:SfMap.Layers>
                             </maps:SfMap>
 
