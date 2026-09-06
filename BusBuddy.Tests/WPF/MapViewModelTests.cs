@@ -99,6 +99,28 @@ public class MapViewModelTests
     }
 
     [Test]
+    public void MapViewModel_RequiresMapsGeoDistrictDepotAndDrivePathRefresherInCore()
+    {
+        var vm = XamlViewFile.Read("ViewModels/Map/MapViewModel.cs");
+        Assert.That(vm, Does.Contain("IMapsGeoService"));
+        Assert.That(vm, Does.Contain("DistrictDepot.TryGetCoordinates"));
+        Assert.That(vm, Does.Contain("RouteDrivePathRefresher.TryRefreshAsync"));
+
+        var mapsGeo = CoreSourceFile.Read("Services/GoogleMaps/IMapsGeoService.cs");
+        Assert.That(mapsGeo, Does.Contain("interface IMapsGeoService"));
+        Assert.That(mapsGeo, Does.Contain("IsConfigured"));
+        Assert.That(mapsGeo, Does.Contain("GeocodeAsync"));
+
+        var depot = CoreSourceFile.Read("Mapping/DistrictDepot.cs");
+        Assert.That(depot, Does.Contain("static class DistrictDepot"));
+        Assert.That(depot, Does.Contain("TryGetCoordinates"));
+
+        var refresher = CoreSourceFile.Read("Services/GoogleMaps/RouteDrivePathRefresher.cs");
+        Assert.That(refresher, Does.Contain("static class RouteDrivePathRefresher"));
+        Assert.That(refresher, Does.Contain("TryRefreshAsync"));
+    }
+
+    [Test]
     public void MapViewCodeBehind_SubscribesToMapMarkersChangedWithoutLayerSelectionHandler()
     {
         var codeBehind = XamlViewFile.Read("Views/Map/MapView.xaml.cs");
