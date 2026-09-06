@@ -1,3 +1,4 @@
+using System;
 using BusBuddy.Tests.WPF;
 using NUnit.Framework;
 
@@ -32,6 +33,15 @@ public class MapViewTests
         Assert.That(xaml, Does.Contain("SelectedItem=\"{Binding SelectedRoute, Mode=TwoWay}\""));
         Assert.That(xaml, Does.Contain("ItemsSource=\"{Binding Routes}\""));
         Assert.That(xaml, Does.Contain("SelectedItem=\"{Binding SelectedMapLayer, Mode=TwoWay}\""));
+        Assert.That(xaml, Does.Contain("ZoomLevel=\"{Binding MapZoomLevel, Mode=TwoWay}\""));
+        Assert.That(xaml, Does.Contain("ItemsSource=\"{Binding MapLayers}\""));
+        Assert.That(xaml, Does.Not.Contain("MapLayerComboBox_SelectionChanged"));
+        Assert.That(xaml, Does.Not.Contain("ZoomLevel=\"13\""));
+        Assert.That(xaml, Does.Contain("IsChecked=\"{Binding IsLiveTrackingEnabled, Mode=TwoWay}\""));
+        Assert.That(xaml, Does.Contain("AutomationProperties.Name=\"Live tracking\""));
+        Assert.That(xaml, Does.Contain("AutomationProperties.Name=\"Tracking update frequency\""));
+        Assert.That(CountOccurrences(xaml, "IsEnabled=\"False\""), Is.GreaterThanOrEqualTo(2),
+            "Live tracking ButtonAdv and interval ComboBox must stay disabled until fleet GPS is wired.");
         Assert.That(xaml, Does.Not.Contain("FluentDarkTheme.xaml"));
         Assert.That(xaml, Does.Not.Contain("#AA2B2B2B"));
     }
@@ -59,5 +69,22 @@ public class MapViewTests
         Assert.That(vm, Does.Contain("MapViewLauncher.Show"));
         Assert.That(vm, Does.Contain("BulkPlotEligibleStudentsCommand"));
         Assert.That(vm, Does.Contain("District Map opened"));
+    }
+
+    private static int CountOccurrences(string source, string value)
+    {
+        var count = 0;
+        var start = 0;
+        while (true)
+        {
+            var index = source.IndexOf(value, start, StringComparison.Ordinal);
+            if (index < 0)
+            {
+                return count;
+            }
+
+            count++;
+            start = index + value.Length;
+        }
     }
 }

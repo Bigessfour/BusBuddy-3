@@ -866,32 +866,25 @@ namespace BusBuddy.WPF.Views.Map
 
 #### **Error Type 4: Missing Event Handler**
 
-**❌ WRONG APPROACH - Remove event binding:**
+**❌ WRONG APPROACH - Re-add a MapView SelectionChanged handler:**
+
+MapView layer and route chrome must bind to `MapViewModel` (`MapLayers` / `SelectedMapLayer`, `Routes` / `SelectedRoute`, `MapCenter` / `MapZoomLevel`). A code-behind `MapLayerComboBox_SelectionChanged` handler mixed with those bindings leaves the chrome looking wired while `SfMap` never moves.
 
 ```xml
-<!-- DON'T DO THIS - Loses interactive functionality! -->
-<ComboBox x:Name="MapLayerComboBox">
+<!-- DON'T DO THIS on MapView — fights MVVM camera/layer bindings -->
+<ComboBoxAdv x:Name="MapLayerComboBox"
+             SelectionChanged="MapLayerComboBox_SelectionChanged"/>
 ```
 
-**✅ CORRECT APPROACH - Implement event handler:**
-
-```csharp
-// Step 1: Add event handler to code-behind
-private void MapLayerComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
-{
-    // Implementation following Microsoft WPF patterns
-    if (sender is ComboBox comboBox && comboBox.SelectedItem is ComboBoxItem item)
-    {
-        // Handle selection change
-    }
-}
-```
+**✅ CORRECT APPROACH - Bind MapView to the ViewModel; implement handlers only when XAML already names them:**
 
 ```xml
-<!-- Step 2: Keep event binding intact -->
-<ComboBox x:Name="MapLayerComboBox"
-          SelectionChanged="MapLayerComboBox_SelectionChanged">
+<ComboBoxAdv x:Name="MapLayerComboBox"
+             ItemsSource="{Binding MapLayers}"
+             SelectedItem="{Binding SelectedMapLayer, Mode=TwoWay}"/>
 ```
+
+If some other view's XAML still has `Click="Foo_Click"` or `SelectionChanged="Foo_SelectionChanged"`, implement that handler in the matching code-behind. Do not invent a MapView layer SelectionChanged handler.
 
 #### **Error Type 5: Syncfusion Package Reference Issues**
 

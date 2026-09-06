@@ -77,6 +77,59 @@ public class MapViewModelTests
         Assert.That(vm.MapMarkers[0].Label, Does.Contain("Ada").Or.EqualTo("Updated"));
     }
 
+    [Test]
+    public async Task IsLiveTrackingEnabled_StaysOffAndReportsDeferredGps()
+    {
+        var vm = await CreateSettledViewModelAsync();
+
+        vm.IsLiveTrackingEnabled = true;
+
+        Assert.That(vm.IsLiveTrackingEnabled, Is.False);
+        Assert.That(vm.StatusMessage, Does.Contain("Fleet GPS tracking is not enabled yet"));
+    }
+
+    [Test]
+    public void MapViewModelSource_ExposesCameraAndMarkerChangeContract()
+    {
+        var vm = XamlViewFile.Read("ViewModels/Map/MapViewModel.cs");
+        Assert.That(vm, Does.Contain("public Point MapCenter"));
+        Assert.That(vm, Does.Contain("public int MapZoomLevel"));
+        Assert.That(vm, Does.Contain("public void SetMapView"));
+        Assert.That(vm, Does.Contain("event EventHandler? MapMarkersChanged"));
+    }
+
+    [Test]
+    public void MapViewModel_RequiresMapsGeoDistrictDepotAndDrivePathRefresherInCore()
+    {
+        var vm = XamlViewFile.Read("ViewModels/Map/MapViewModel.cs");
+        Assert.That(vm, Does.Contain("IMapsGeoService"));
+        Assert.That(vm, Does.Contain("DistrictDepot.TryGetCoordinates"));
+        Assert.That(vm, Does.Contain("RouteDrivePathRefresher.TryRefreshAsync"));
+
+        var mapsGeo = CoreSourceFile.Read("Services/GoogleMaps/IMapsGeoService.cs");
+        Assert.That(mapsGeo, Does.Contain("interface IMapsGeoService"));
+        Assert.That(mapsGeo, Does.Contain("IsConfigured"));
+        Assert.That(mapsGeo, Does.Contain("GeocodeAsync"));
+
+        var depot = CoreSourceFile.Read("Mapping/DistrictDepot.cs");
+        Assert.That(depot, Does.Contain("static class DistrictDepot"));
+        Assert.That(depot, Does.Contain("TryGetCoordinates"));
+
+        var refresher = CoreSourceFile.Read("Services/GoogleMaps/RouteDrivePathRefresher.cs");
+        Assert.That(refresher, Does.Contain("static class RouteDrivePathRefresher"));
+        Assert.That(refresher, Does.Contain("TryRefreshAsync"));
+    }
+
+    [Test]
+    public void MapViewCodeBehind_SubscribesToMapMarkersChangedWithoutLayerSelectionHandler()
+    {
+        var codeBehind = XamlViewFile.Read("Views/Map/MapView.xaml.cs");
+        Assert.That(codeBehind, Does.Contain("vm.MapMarkersChanged +="));
+        Assert.That(codeBehind, Does.Contain("nameof(MapViewModel.MapCenter)"));
+        Assert.That(codeBehind, Does.Contain("nameof(MapViewModel.MapZoomLevel)"));
+        Assert.That(codeBehind, Does.Not.Contain("MapLayerComboBox_SelectionChanged"));
+    }
+
     private static MapViewModel CreateViewModel()
     {
         var geo = new Mock<IGeoDataService>();
