@@ -168,6 +168,7 @@
                               AutomationProperties.Name="Show All Buses"
                               ToolTip="Fleet GPS tracking is not enabled yet"
                               Command="{Binding ShowAllBusesCommand}"
+                              IsEnabled="False"
                               Background="{DynamicResource ButtonBackgroundBrush}"
                               Foreground="{DynamicResource ButtonForegroundBrush}"
                               Padding="10,8"
@@ -219,10 +220,20 @@
                               Margin="0,4"
                               HorizontalAlignment="Stretch"/>
 
+                <syncfusion:ButtonAdv Label="Plot Pickup Stops"
+                              AutomationProperties.Name="Plot Pickup Stops"
+                              ToolTip="Show catalog pickup stops (corners and shared boarding points)"
+                              Command="{Binding PlotPickupStopsCommand}"
+                              Background="{DynamicResource ButtonBackgroundBrush}"
+                              Foreground="{DynamicResource ButtonForegroundBrush}"
+                              Padding="10,8"
+                              Margin="0,4"
+                              HorizontalAlignment="Stretch"/>
+
                 <TextBlock Text="Students" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryTextBrush}" Margin="0,12,0,4"/>
                     <!-- Plot students already in the system (auto geocode missing coordinates) -->
                     <syncfusion:ButtonAdv Label="Plot Students"
-                                          ToolTip="Geocode and plot every student in the system — no geofence"
+                                          ToolTip="Plot catalog pickup stops when assigned, otherwise home; geocode missing homes"
                                           Command="{Binding BulkPlotEligibleStudentsCommand}"
                                           AutomationProperties.Name="Plot Students"
                                           Background="{DynamicResource ButtonBackgroundBrush}"
@@ -350,6 +361,7 @@
                                                       AutomationProperties.Name="Track Selected Bus"
                                                       ToolTip="Fleet GPS tracking is not enabled yet"
                                                       Command="{Binding TrackSelectedBusCommand}"
+                                                      IsEnabled="False"
                                                       Background="{DynamicResource ButtonBackgroundBrush}"
                                                       Foreground="{DynamicResource ButtonForegroundBrush}"
                                                       Padding="10,8"

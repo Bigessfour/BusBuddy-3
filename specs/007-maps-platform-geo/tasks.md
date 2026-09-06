@@ -180,6 +180,24 @@
 
 ---
 
+## Phase 8: District Map plot layers (follow-up 2026-09-06)
+
+**Goal**: One MapView/VM tree; plot schools, catalog pickups, and students (stop if assigned, else home) without three separate clicks. Live GPS stays off. Camera stays school → Settings depot/bbox → US overview (no baked town).
+
+**Independent Test**: Unit tests on `MapViewModel` / `MapView.xaml`; VM smoke still required on Windows.
+
+- [x] T042 [P] Add `MapMarkerLabels` prefixes (`School `, `PK `, `WP `) in `BusBuddy.WPF/Utilities/MapMarkerLabels.cs`; merge same-kind or student↔pickup only in `MapViewModel.PlotStop`
+- [x] T043 [US1] Add `PlotPickupStopsCommand` → `IPickupStopService.GetActiveStopsAsync()` in `BusBuddy.WPF/ViewModels/Map/MapViewModel.cs` and **Plot Pickup Stops** in `BusBuddy.WPF/Views/Map/MapView.xaml`
+- [x] T044 [US1] Change bulk/auto student plot to pickup-stop coords when `PickupStopId` is set, else home; geocode home only when both missing; persist on `Student` (`MapViewModel` + `StudentsViewModel.ExecuteViewOnMap`)
+- [x] T045 [US1] On `InitializeMapDataAsync`, auto-plot schools + pickups + students that already have coords (no roster-wide geocode on load)
+- [x] T046 [P] Disable **Show All Buses** and **Track Selected** in `MapView.xaml` until AVL exists (same as Live chrome)
+- [x] T047 Tests in `BusBuddy.Tests/WPF/MapViewTests.cs` and `MapViewModelTests.cs` for prefixes, pickup-vs-home, auto-seed, disabled fleet buttons
+- [x] T048 Update `docs/action-items.md` (plot layers + remaining VM smoke / migration)
+
+Polyline stays XAML `MapPolyline` on `SubShapeFileLayer` (Syncfusion documented API) plus `MapRouteTrailLayer.Refresh`. Quota project remains `busbuddy-507301`. Do not bake Wiley/Lamar into `MapDefaults`.
+
+---
+
 ## Notes
 
 - Constitution already amended to v1.1.0 in `.specify/memory/constitution.md` (this feature)

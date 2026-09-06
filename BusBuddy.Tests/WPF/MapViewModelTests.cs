@@ -1,11 +1,13 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using BusBuddy.Core.Mapping;
 using BusBuddy.Core.Models;
 using BusBuddy.Core.Services.Interfaces;
 using BusBuddy.Core.Services;
+using BusBuddy.WPF.Utilities;
 using BusBuddy.WPF.ViewModels.Map;
 using CommunityToolkit.Mvvm.Input;
 using Moq;
@@ -50,7 +52,7 @@ public class MapViewModelTests
     }
 
     [Test]
-    public async Task SelectedBus_EnablesTrackSelectedBusCommand()
+    public async Task SelectedBus_DoesNotEnableTrackSelectedUntilAvlExists()
     {
         var vm = await CreateSettledViewModelAsync();
 
@@ -58,7 +60,8 @@ public class MapViewModelTests
 
         vm.SelectedBus = new Bus { BusNumber = "BUS-001", Status = "Active" };
 
-        Assert.That(vm.TrackSelectedBusCommand.CanExecute(null), Is.True);
+        Assert.That(vm.TrackSelectedBusCommand.CanExecute(null), Is.False);
+        Assert.That(vm.PlotPickupStopsCommand, Is.Not.Null);
     }
 
     [Test]
@@ -191,6 +194,200 @@ public class MapViewModelTests
     }
 
     [Test]
+    public async Task ResetView_ClearsTrailAndWaypointMarkers()
+    {
+        var route = new Route
+        {
+            RouteId = 12,
+            RouteName = "AM-1",
+            WaypointsJson = RouteWaypointSerializer.FromPairs(new[]
+            {
+                (38.15, -102.72),
+                (38.16, -102.71)
+            })
+        };
+        var vm = await CreateSettledViewModelAsync();
+        vm.SelectedRoute = route;
+        await WaitUntilAsync(() => vm.RouteLinePoints.Count >= 2);
+        Assert.That(vm.MapMarkers.Count(m => m.Label?.StartsWith("WP ", StringComparison.Ordinal) == true), Is.EqualTo(2));
+
+        vm.ResetViewCommand.Execute(null);
+        await WaitUntilAsync(() => vm.RouteLinePoints.Count == 0);
+
+        Assert.That(vm.RouteLinePoints, Is.Empty);
+        Assert.That(vm.MapMarkers.Count(m => m.Label?.StartsWith("WP ", StringComparison.Ordinal) == true), Is.EqualTo(0));
+    }
+
+    [Test]
+    public async Task PlotStop_DoesNotMergeSchoolAndPickupAtSameCoords()
+    {
+        var vm = await CreateSettledViewModelAsync();
+        vm.PlotStop(38.15, -102.72, null, MapMarkerLabels.ForSchool("Wiley"));
+        vm.PlotStop(38.15, -102.72, null, MapMarkerLabels.ForPickup("Oak"));
+
+        Assert.That(vm.MapMarkers, Has.Count.EqualTo(2));
+        Assert.That(vm.MapMarkers.Any(m => m.Label == MapMarkerLabels.ForSchool("Wiley")), Is.True);
+        Assert.That(vm.MapMarkers.Any(m => m.Label == MapMarkerLabels.ForPickup("Oak")), Is.True);
+    }
+
+    [Test]
+    public async Task PlotStop_MergesStudentOntoPickupAndKeepsPkLabel()
+    {
+        var vm = await CreateSettledViewModelAsync();
+        vm.PlotStop(38.16, -102.71, null, MapMarkerLabels.ForPickup("Oak"));
+        vm.PlotStop(38.16, -102.71, new[] { "Ada" }, MapMarkerLabels.ForPickup("Oak"));
+
+        Assert.That(vm.MapMarkers, Has.Count.EqualTo(1));
+        Assert.That(vm.MapMarkers[0].Label, Is.EqualTo(MapMarkerLabels.ForPickup("Oak")));
+        Assert.That(vm.MapMarkers[0].StudentNames, Does.Contain("Ada"));
+    }
+
+    [Test]
+    public async Task InitializeMapData_AutoPlotsSchoolsPickupsAndStudentsWithCoords()
+    {
+        var dest = new Mock<IDestinationService>();
+        dest.Setup(d => d.GetActiveSchoolsAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new[]
+            {
+                new Destination
+                {
+                    Name = "Wiley School",
+                    Latitude = 38.1535m,
+                    Longitude = -102.7195m
+                }
+            });
+
+        var pickups = new Mock<IPickupStopService>();
+        pickups.Setup(p => p.GetActiveStopsAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new[]
+            {
+                new PickupStop
+                {
+                    PickupStopId = 7,
+                    Name = "Oak & 4th",
+                    Latitude = 38.16m,
+                    Longitude = -102.71m
+                }
+            });
+
+        var students = new Mock<IStudentService>();
+        students.Setup(s => s.GetAllStudentsAsync()).ReturnsAsync(
+        [
+            new Student
+            {
+                StudentId = 1,
+                StudentName = "Ada",
+                PickupStopId = 7,
+                Latitude = 38.0m,
+                Longitude = -102.0m
+            },
+            new Student
+            {
+                StudentId = 2,
+                StudentName = "Bea",
+                Latitude = 38.14m,
+                Longitude = -102.73m
+            }
+        ]);
+
+        var geocode = new Mock<IGeocodingService>(MockBehavior.Strict);
+        var vm = await CreateSettledViewModelAsync(
+            destinations: dest.Object,
+            pickupStops: pickups.Object,
+            students: students.Object,
+            geocoding: geocode.Object);
+
+        Assert.That(vm.StatusMessage, Does.StartWith("Map ready"));
+        Assert.That(vm.MapMarkers.Any(m => m.Label == MapMarkerLabels.ForSchool("Wiley School")), Is.True);
+        Assert.That(vm.MapMarkers.Any(m => m.Label == MapMarkerLabels.ForPickup("Oak & 4th")), Is.True);
+        Assert.That(vm.MapMarkers.Any(m => m.Label == "Bea"), Is.True);
+        var pickupMarker = vm.MapMarkers.Single(m => m.Label == MapMarkerLabels.ForPickup("Oak & 4th"));
+        Assert.That(pickupMarker.LatitudeDegrees, Is.EqualTo(38.16).Within(0.0001));
+        Assert.That(pickupMarker.StudentNames, Does.Contain("Ada"));
+        Assert.That(vm.MapMarkers.Any(m => Math.Abs(m.LatitudeDegrees - 38.0) < 0.0001), Is.False);
+        geocode.VerifyNoOtherCalls();
+    }
+
+    [Test]
+    public async Task BulkPlot_UsesPickupStopInsteadOfHomeAndSkipsGeocode()
+    {
+        var pickups = new Mock<IPickupStopService>();
+        pickups.Setup(p => p.GetActiveStopsAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new[]
+            {
+                new PickupStop
+                {
+                    PickupStopId = 9,
+                    Name = "Main & Elm",
+                    Latitude = 38.2m,
+                    Longitude = -102.5m
+                }
+            });
+
+        var students = new Mock<IStudentService>();
+        students.Setup(s => s.GetAllStudentsAsync()).ReturnsAsync(
+        [
+            new Student
+            {
+                StudentId = 3,
+                StudentName = "Cara",
+                PickupStopId = 9,
+                HomeAddress = "1 Home St",
+                City = "Wiley",
+                State = "CO",
+                Zip = "81092"
+            }
+        ]);
+        var geocode = new Mock<IGeocodingService>(MockBehavior.Strict);
+        var vm = await CreateSettledViewModelAsync(
+            pickupStops: pickups.Object,
+            students: students.Object,
+            geocoding: geocode.Object);
+
+        await ((IAsyncRelayCommand)vm.BulkPlotEligibleStudentsCommand).ExecuteAsync(null);
+
+        Assert.That(vm.MapMarkers, Has.Count.EqualTo(1));
+        Assert.That(vm.MapMarkers[0].Label, Is.EqualTo(MapMarkerLabels.ForPickup("Main & Elm")));
+        Assert.That(vm.MapMarkers[0].LatitudeDegrees, Is.EqualTo(38.2).Within(0.0001));
+        students.Verify(s => s.UpdateStudentAsync(It.IsAny<Student>()), Times.Never);
+        geocode.VerifyNoOtherCalls();
+    }
+
+    [Test]
+    public async Task BulkPlot_GeocodesHomeWhenPickupAndStoredCoordsAreMissing()
+    {
+        var students = new Mock<IStudentService>();
+        var stu = new Student
+        {
+            StudentId = 4,
+            StudentName = "Dee",
+            HomeAddress = "2 Home St",
+            City = "Wiley",
+            State = "CO",
+            Zip = "81092"
+        };
+        students.Setup(s => s.GetAllStudentsAsync()).ReturnsAsync([stu]);
+        students.Setup(s => s.UpdateStudentAsync(It.IsAny<Student>())).ReturnsAsync(true);
+
+        var geocode = new Mock<IGeocodingService>();
+        geocode.Setup(g => g.GeocodeAsync("2 Home St", "Wiley", "CO", "81092"))
+            .ReturnsAsync((38.11, -102.66));
+
+        var vm = await CreateSettledViewModelAsync(students: students.Object, geocoding: geocode.Object);
+        await ((IAsyncRelayCommand)vm.BulkPlotEligibleStudentsCommand).ExecuteAsync(null);
+
+        Assert.That(vm.MapMarkers, Has.Count.EqualTo(1));
+        Assert.That(vm.MapMarkers[0].LatitudeDegrees, Is.EqualTo(38.11).Within(0.0001));
+        Assert.That(vm.MapMarkers[0].Label, Is.EqualTo("Dee"));
+        students.Verify(s => s.UpdateStudentAsync(It.Is<Student>(x =>
+            x.StudentId == 4
+            && x.Latitude.HasValue
+            && x.Longitude.HasValue
+            && Math.Abs((double)x.Latitude.Value - 38.11) < 0.0001
+            && Math.Abs((double)x.Longitude.Value - (-102.66)) < 0.0001)), Times.Once);
+    }
+
+    [Test]
     public void MapViewModelSource_ExposesCameraAndMarkerChangeContract()
     {
         var vm = XamlViewFile.Read("ViewModels/Map/MapViewModel.cs");
@@ -208,7 +405,9 @@ public class MapViewModelTests
         Assert.That(vm, Does.Contain("ResetCameraToDistrictAsync"));
         Assert.That(vm, Does.Contain("DistrictCameraUi.ResolveAsync"));
         Assert.That(vm, Does.Contain("DistrictDepot.TryGetCoordinates"));
-        Assert.That(vm, Does.Contain("MapRouteTrail"));
+        Assert.That(vm, Does.Contain("PlotPickupStopsCommand"));
+        Assert.That(vm, Does.Contain("MapMarkerLabels"));
+        Assert.That(vm, Does.Contain("SeedDistrictLayersAsync"));
         Assert.That(vm, Does.Contain("BindSelectedRoute"));
         Assert.That(vm, Does.Contain("refreshDrivePath"));
 
@@ -246,7 +445,11 @@ public class MapViewModelTests
     private static MapViewModel CreateViewModel(
         IGeoDataService? geoData = null,
         IUserSettingsService? userSettings = null,
-        IRoutingService? routing = null)
+        IRoutingService? routing = null,
+        IPickupStopService? pickupStops = null,
+        IDestinationService? destinations = null,
+        IStudentService? students = null,
+        IGeocodingService? geocoding = null)
     {
         if (geoData is null)
         {
@@ -256,20 +459,31 @@ public class MapViewModelTests
             geoData = geo.Object;
         }
 
-        return new MapViewModel(geoData, userSettings: userSettings, routingService: routing);
+        return new MapViewModel(
+            geoData,
+            geocodingService: geocoding,
+            studentService: students,
+            userSettings: userSettings,
+            routingService: routing,
+            pickupStops: pickupStops,
+            destinations: destinations);
     }
 
     private static async Task<MapViewModel> CreateSettledViewModelAsync(
         IGeoDataService? geoData = null,
         IUserSettingsService? userSettings = null,
-        IRoutingService? routing = null)
+        IRoutingService? routing = null,
+        IPickupStopService? pickupStops = null,
+        IDestinationService? destinations = null,
+        IStudentService? students = null,
+        IGeocodingService? geocoding = null)
     {
-        var vm = CreateViewModel(geoData, userSettings, routing);
+        var vm = CreateViewModel(geoData, userSettings, routing, pickupStops, destinations, students, geocoding);
         var deadline = DateTime.UtcNow.AddSeconds(3);
         while (DateTime.UtcNow < deadline)
         {
             if (!vm.IsMapLoading &&
-                (vm.StatusMessage.StartsWith("Loaded", StringComparison.Ordinal) ||
+                (vm.StatusMessage.StartsWith("Map ready", StringComparison.Ordinal) ||
                  vm.StatusMessage.StartsWith("Error", StringComparison.Ordinal) ||
                  vm.StatusMessage.StartsWith("Map data", StringComparison.Ordinal)))
             {

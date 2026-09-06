@@ -708,7 +708,7 @@ namespace BusBuddy.WPF.ViewModels.Student
                 {
                     return;
                 }
-                // Resolve services from WPF App's DI container
+
                 var sp = App.ServiceProvider;
                 if (sp == null)
                 {
@@ -716,21 +716,44 @@ namespace BusBuddy.WPF.ViewModels.Student
                     return;
                 }
 
-                var geocoder = sp.GetService<IGeocodingService>();
-                if (geocoder == null)
+                double? lat = null, lon = null;
+                string? pickupName = null;
+                if (student.PickupStopId is int stopId)
                 {
-                    StatusMessage = "Geocoding not available";
-                    return;
+                    var stopService = sp.GetService<IPickupStopService>();
+                    var stop = stopService is not null
+                        ? await stopService.GetByIdAsync(stopId).ConfigureAwait(true)
+                        : null;
+                    if (stop is not null)
+                    {
+                        lat = (double)stop.Latitude;
+                        lon = (double)stop.Longitude;
+                        pickupName = stop.Name;
+                    }
                 }
 
-                double? lat = null, lon = null;
-                if (geocoder != null)
+                if (lat is null || lon is null)
                 {
-                    var result = await geocoder.GeocodeAsync(student.HomeAddress, student.City, student.State, student.Zip);
-                    if (result != null)
+                    if (student.Latitude.HasValue && student.Longitude.HasValue)
                     {
-                        lat = result.Value.latitude;
-                        lon = result.Value.longitude;
+                        lat = (double)student.Latitude.Value;
+                        lon = (double)student.Longitude.Value;
+                    }
+                    else
+                    {
+                        var geocoder = sp.GetService<IGeocodingService>();
+                        if (geocoder is null)
+                        {
+                            StatusMessage = "Geocoding not available";
+                            return;
+                        }
+
+                        var result = await geocoder.GeocodeAsync(student.HomeAddress, student.City, student.State, student.Zip);
+                        if (result != null)
+                        {
+                            lat = result.Value.latitude;
+                            lon = result.Value.longitude;
+                        }
                     }
                 }
 
@@ -740,13 +763,19 @@ namespace BusBuddy.WPF.ViewModels.Student
                     return;
                 }
 
+                var studentName = student.StudentName ?? "Student";
+                var label = pickupName is not null
+                    ? MapMarkerLabels.ForPickup(pickupName)
+                    : studentName;
                 MapViewLauncher.Show(Application.Current?.MainWindow as Window, vm =>
                 {
-                    vm.PlotStop(lat.Value, lon.Value, new[] { student.StudentName ?? "Student" }, student.StudentName);
+                    vm.PlotStop(lat.Value, lon.Value, new[] { studentName }, label);
                     vm.CenterOnMarkers();
                 });
 
-                StatusMessage = $"District Map opened — plotted {student.StudentName}";
+                StatusMessage = pickupName is not null
+                    ? $"District Map opened — plotted {studentName} at {pickupName}"
+                    : $"District Map opened — plotted {studentName}";
             }
             catch (Exception ex)
             {

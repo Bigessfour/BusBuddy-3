@@ -17,6 +17,8 @@ public class MapViewTests
         Assert.That(xaml, Does.Contain("maps:SfMap"));
         Assert.That(xaml, Does.Contain("Command=\"{Binding BulkPlotEligibleStudentsCommand}\""));
         Assert.That(xaml, Does.Contain("Command=\"{Binding ShowSchoolsCommand}\""));
+        Assert.That(xaml, Does.Contain("Command=\"{Binding PlotPickupStopsCommand}\""));
+        Assert.That(xaml, Does.Contain("Label=\"Plot Pickup Stops\""));
         Assert.That(xaml, Does.Contain("Command=\"{Binding ExportRouteDataCommand}\""));
         Assert.That(xaml, Does.Contain("Label=\"Export Route\""));
         Assert.That(xaml, Does.Not.Contain("GoogleEarth"));
@@ -47,8 +49,8 @@ public class MapViewTests
         Assert.That(xaml, Does.Contain("IsChecked=\"{Binding IsLiveTrackingEnabled, Mode=TwoWay}\""));
         Assert.That(xaml, Does.Contain("AutomationProperties.Name=\"Live tracking\""));
         Assert.That(xaml, Does.Contain("AutomationProperties.Name=\"Tracking update frequency\""));
-        Assert.That(CountOccurrences(xaml, "IsEnabled=\"False\""), Is.GreaterThanOrEqualTo(2),
-            "Live tracking ButtonAdv and interval ComboBox must stay disabled until fleet GPS is wired.");
+        Assert.That(CountOccurrences(xaml, "IsEnabled=\"False\""), Is.GreaterThanOrEqualTo(4),
+            "Live tracking, interval combo, Show All Buses, and Track Selected must stay disabled until fleet GPS is wired.");
         Assert.That(xaml, Does.Not.Contain("FluentDarkTheme.xaml"));
         Assert.That(xaml, Does.Not.Contain("#AA2B2B2B"));
     }
@@ -105,6 +107,8 @@ public class MapViewTests
         Assert.That(vm, Does.Contain("MapViewLauncher.Show"));
         Assert.That(vm, Does.Contain("BulkPlotEligibleStudentsCommand"));
         Assert.That(vm, Does.Contain("District Map opened"));
+        Assert.That(vm, Does.Contain("PickupStopId"));
+        Assert.That(vm, Does.Contain("MapMarkerLabels.ForPickup"));
     }
 
     private static int CountOccurrences(string source, string value)
