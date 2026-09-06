@@ -18,12 +18,12 @@ Students entered in the system are eligible — there is no geofence.
 
 ## Projects (do not invent IDs)
 
-| Project ID            | Role                                                          |
-| --------------------- | ------------------------------------------------------------- |
-| `busbuddy-507301`     | **Primary** GCP / billing / Maps APIs / `gcloud` default      |
-| `new-coursera-490518` | Legacy Coursera project (billed; prefer `busbuddy-507301`)    |
-| `ee-bigessfour`       | **Unused by the app** (historical Earth Engine — do not wire) |
-| ~~`busbuddy-465000`~~ | **Invalid** — never invent                                    |
+| Project ID            | Role                                                                                         |
+| --------------------- | -------------------------------------------------------------------------------------------- |
+| `busbuddy-507301`     | **Primary** GCP / billing / Maps APIs / `gcloud` default                                     |
+| `new-coursera-490518` | Legacy Coursera project (billed; prefer `busbuddy-507301`). Do not header Maps traffic there |
+| `ee-bigessfour`       | **Unused by the app** (historical Earth Engine — do not wire)                                |
+| ~~`busbuddy-465000`~~ | **Invalid** — never invent                                                                   |
 
 ## macOS (dev) — Passwords app
 

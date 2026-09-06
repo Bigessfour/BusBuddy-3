@@ -10,9 +10,9 @@
 - Keep EE “for later satellite” while adding Maps — extra secrets and a dead client; rejected (YAGNI).
 - Nominatim + OSRM — weaker rural rooftops and bulk ToS; extra vendor.
 
-## Decision: Google Maps Platform on `new-coursera-490518`
+## Decision: Google Maps Platform on `busbuddy-507301`
 
-**Rationale**: Same GCP billing console already used. Address Validation (optional USPS CASS) returns standardized components **and** lat/lng ([overview](https://developers.google.com/maps/documentation/address-validation/overview), [validation vs geocoding](https://developers.google.com/maps/architecture/geocoding-address-validation)). Routes API `computeRoutes` / matrix for drive paths ([compute routes](https://developers.google.com/maps/documentation/routes/compute-route-over)). Restrict API key to those APIs.
+**Rationale**: Canonical Maps billing, quota, and `gcloud` project. Address Validation (optional USPS CASS) returns standardized components **and** lat/lng ([overview](https://developers.google.com/maps/documentation/address-validation/overview), [validation vs geocoding](https://developers.google.com/maps/architecture/geocoding-address-validation)). Routes API `computeRoutes` / matrix for drive paths ([compute routes](https://developers.google.com/maps/documentation/routes/compute-route-over)). Restrict API key to those APIs. `new-coursera-490518` remains a legacy billed project; do not send `X-Goog-User-Project` there.
 
 **Alternatives considered**:
 

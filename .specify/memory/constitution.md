@@ -1,12 +1,12 @@
 <!--
 Sync Impact Report
-Version change: 1.1.0 → 1.2.0 (MINOR — Geo: drop shapefile geofence and Earth Engine naming; Maps Platform Address Validation + SfMap)
-Modified: Technology table Geo (shapefiles/eligibility polygons removed; students in the system are eligible; map UI is Syncfusion SfMap)
-Modified: Last Amended 2026-08-31
+Version change: 1.2.0 → 1.2.1 (PATCH — GCP map: primary Maps billing/quota/`gcloud` project is busbuddy-507301)
+Modified: GCP project map (add busbuddy-507301; Coursera is legacy billed only — do not header Maps traffic there)
+Modified: Last Amended 2026-09-06
 Added: none
-Removed: shapefile eligibility; hardcoded district school seed
-Templates: plan/spec/tasks — no mandatory section changes
-Follow-up: AGENTS.md, Documentation/GCP-GEE-SECRETS-AND-AUTH.md, architecture map
+Removed: none
+Templates: no mandatory section changes
+Follow-up: AGENTS.md, Documentation/GCP-GEE-SECRETS-AND-AUTH.md, specs/007-maps-platform-geo, README.md
 -->
 
 # BusBuddy Constitution
@@ -75,11 +75,12 @@ When those conflict with this constitution, **this file wins** until amended und
 
 ### GCP project map (do not hallucinate)
 
-| Project ID            | Role                                                                  |
-| --------------------- | --------------------------------------------------------------------- |
-| `new-coursera-490518` | GCP console / billing / Maps APIs / `gcloud` default                  |
-| `ee-bigessfour`       | **Unused by the app** (historical Earth Engine project — do not wire) |
-| ~~`busbuddy-465000`~~ | **Invalid** — removed; never invent                                   |
+| Project ID            | Role                                                                                         |
+| --------------------- | -------------------------------------------------------------------------------------------- |
+| `busbuddy-507301`     | **Primary** GCP / billing / Maps Platform / `gcloud` default                                 |
+| `new-coursera-490518` | Legacy Coursera project (billed; prefer `busbuddy-507301`). Do not header Maps traffic there |
+| `ee-bigessfour`       | **Unused by the app** (historical Earth Engine project — do not wire)                        |
+| ~~`busbuddy-465000`~~ | **Invalid** — removed; never invent                                                          |
 
 ### Secrets
 
@@ -107,4 +108,4 @@ When those conflict with this constitution, **this file wins** until amended und
 - Runtime tactical detail remains in `.github/copilot-instructions.md` and `AGENTS.md` as long as they stay consistent with this document.
 - Complexity beyond stated requirements must be justified in the PR or rejected.
 
-**Version**: 1.2.0 | **Ratified**: 2026-07-24 | **Last Amended**: 2026-08-31
+**Version**: 1.2.1 | **Ratified**: 2026-07-24 | **Last Amended**: 2026-09-06

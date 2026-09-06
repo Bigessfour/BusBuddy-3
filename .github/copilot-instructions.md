@@ -60,7 +60,7 @@ Failure to use + reference RAG before changes is a violation of these instructio
 **Advanced Features** (implemented with proper architecture):
 
 - XAI integration (e.g., `XAIService`, `OptimizedXAIService`) - when properly architected.
-- Google Maps Platform (Address Validation / Routes) is specified in `specs/007-maps-platform-geo` and paused; do not reintroduce Earth Engine.
+- Google Maps Platform (Address Validation / Places / Routes) is wired when `GOOGLE_MAPS_API_KEY` is set; quota project `busbuddy-507301`. Do not reintroduce Earth Engine.
 - Comprehensive features: vehicle management, driver scheduling, maintenance, fuel tracking, advanced reporting.
 
 **PowerShell Development Automation is DEPRECATED** (see deprecation notice at top of Strict Rules section)
@@ -158,7 +158,7 @@ Run `.github/scripts/setup-solo-ci-governance.sh` (requires `gh` admin) to enabl
 - Use `concurrency` with `cancel-in-progress` on PR workflows.
 - Docs-only changes are skipped via `paths-ignore` on `*.md` and `Documentation/**`.
 - See also **AGENTS.md** for a short agent-facing summary.
-- **GCP / Maps / secrets**: [Documentation/GCP-GEE-SECRETS-AND-AUTH.md](../Documentation/GCP-GEE-SECRETS-AND-AUTH.md) — Passwords, `GOOGLE_MAPS_API_KEY` (paused), billing project `new-coursera-490518`. Earth Engine is not an app dependency.
+- **GCP / Maps / secrets**: [Documentation/GCP-GEE-SECRETS-AND-AUTH.md](../Documentation/GCP-GEE-SECRETS-AND-AUTH.md) — Passwords, `GOOGLE_MAPS_API_KEY`, billing/quota project `busbuddy-507301` (`new-coursera-490518` is legacy billed only; do not header Maps traffic there). Earth Engine is not an app dependency.
 
 **For BusBuddy-specific requirements, also reference:**
 
@@ -246,7 +246,7 @@ To get the best Syncfusion WPF code assistance:
 
 ### **External Service Integrations**
 
-- **Google Maps Platform**: Address Validation + Routes (spec 007, **paused** — not wired). Earth Engine is not used.
+- **Google Maps Platform**: Address Validation + Places + Routes (spec 007, wired when `GOOGLE_MAPS_API_KEY` is set; quota project `busbuddy-507301`). Earth Engine is not used.
 - **Syncfusion Licensing**: Environment variable `${SYNCFUSION_LICENSE_KEY}`
 
 ### **Build Configuration Standards**

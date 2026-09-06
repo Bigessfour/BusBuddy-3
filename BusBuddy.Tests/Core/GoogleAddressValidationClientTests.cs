@@ -115,6 +115,57 @@ public class GoogleAddressValidationClientTests
         Assert.That(result.FormattedAddress, Does.Contain("Mountain View"));
     }
 
+    [Test]
+    public async Task ValidateAndGeocode_ForbiddenApiNotEnabled_DoesNotMarkMappingUnconfigured()
+    {
+        var avJson = """
+            {
+              "error": {
+                "code": 403,
+                "message": "Address Validation API has not been used in project busbuddy-507301 before or it is disabled.",
+                "status": "PERMISSION_DENIED",
+                "details": [{ "reason": "SERVICE_DISABLED" }]
+              }
+            }
+            """;
+        using var http = new HttpClient(new SequenceStubHandler(
+            (HttpStatusCode.Forbidden, avJson),
+            (HttpStatusCode.Forbidden, "denied")));
+        var client = new GoogleAddressValidationClient(http, Microsoft.Extensions.Options.Options.Create(TestOptions));
+
+        var result = await client.ValidateAndGeocodeAsync("100 Main St", "Wiley", "CO", "81092");
+
+        Assert.That(result.Ok, Is.False);
+        Assert.That(result.MappingUnconfigured, Is.False);
+        Assert.That(result.ErrorMessage, Does.Contain("not enabled"));
+    }
+
+    [Test]
+    public async Task ValidateAndGeocode_ForbiddenQuotaProject_DoesNotMarkMappingUnconfigured()
+    {
+        var avJson = """
+            {
+              "error": {
+                "code": 403,
+                "message": "Permission denied on the caller project's quota.",
+                "status": "PERMISSION_DENIED",
+                "details": [{ "reason": "USER_PROJECT_DENIED" }]
+              }
+            }
+            """;
+        using var http = new HttpClient(new SequenceStubHandler(
+            (HttpStatusCode.Forbidden, avJson),
+            (HttpStatusCode.Forbidden, "denied")));
+        var client = new GoogleAddressValidationClient(http, Microsoft.Extensions.Options.Options.Create(TestOptions));
+
+        var result = await client.ValidateAndGeocodeAsync("100 Main St", "Wiley", "CO", "81092");
+
+        Assert.That(result.Ok, Is.False);
+        Assert.That(result.MappingUnconfigured, Is.False);
+        Assert.That(result.ErrorMessage, Does.Contain("quota project"));
+        Assert.That(result.ErrorMessage, Does.Contain("GCP_BILLING_PROJECT"));
+    }
+
     private sealed class StubHandler : HttpMessageHandler
     {
         private readonly HttpStatusCode _status;

@@ -10,15 +10,15 @@
 
 ## Baseline (as of draft)
 
-| Area                  | Current                                                                         | Target                                                                          |
-| --------------------- | ------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
-| Address correctness   | Regex / format checks; optional skip                                            | Postal-grade US validation with standardized components and a clear fail reason |
-| Map coordinates       | Hash scatter (`OfflineGeocodingService`, tests only)                            | Real coordinates from Address Validation, cached on the student                 |
-| Trip / route geometry | Capacity fill + stored stop points; no road graph                               | Drive paths (distance, time, polyline) for school ↔ stops                      |
-| Satellite / EE        | `GoogleEarthEngineService`, `GcpCredentialBootstrap`, invented `:exportGeoJson` | **Removed** from DI, config, secrets, and probes                                |
-| Map UI                | Syncfusion `SfMap` + OSM only (unofficial Google tiles removed)                 | Keep `SfMap` + OSM; Maps Tiles API optional later                               |
-| District eligibility  | Local shapefiles (wrong district)                                               | Students in the system are eligible — no geofence                               |
-| GCP                   | `ee-bigessfour` EE project + broken SA JWT                                      | Billing project `new-coursera-490518` + Maps API key in Passwords               |
+| Area                  | Current                                                                         | Target                                                                                                                                     |
+| --------------------- | ------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| Address correctness   | Regex / format checks; optional skip                                            | Postal-grade US validation with standardized components and a clear fail reason                                                            |
+| Map coordinates       | Hash scatter (`OfflineGeocodingService`, tests only)                            | Real coordinates from Address Validation, cached on the student                                                                            |
+| Trip / route geometry | Capacity fill + stored stop points; no road graph                               | Drive paths (distance, time, polyline) for school ↔ stops                                                                                 |
+| Satellite / EE        | `GoogleEarthEngineService`, `GcpCredentialBootstrap`, invented `:exportGeoJson` | **Removed** from DI, config, secrets, and probes                                                                                           |
+| Map UI                | Syncfusion `SfMap` + OSM only (unofficial Google tiles removed)                 | Keep `SfMap` + OSM; Maps Tiles API optional later                                                                                          |
+| District eligibility  | Local shapefiles (wrong district)                                               | Students in the system are eligible — no geofence                                                                                          |
+| GCP                   | `ee-bigessfour` EE project + broken SA JWT                                      | Billing project `busbuddy-507301` + Maps API key in Passwords (`new-coursera-490518` legacy billed only; do not header Maps traffic there) |
 
 Constitution: this feature **amends** the Geo constraint (Earth Engine → Maps Platform Address Validation + SfMap; no shapefile geofence).
 
@@ -137,7 +137,7 @@ As a clerk, I can pick a suggested street address as I type so I spend less time
 
 ## Assumptions
 
-- Nominated provider is Google Maps Platform (Address Validation with USPS CASS, Routes API) billed on `new-coursera-490518`.
+- Nominated provider is Google Maps Platform (Address Validation with USPS CASS, Routes API) billed on `busbuddy-507301`. `new-coursera-490518` is a legacy billed project; do not header Maps traffic there.
 - Wiley-scale volume is hundreds of students; validate on save; cache; route compute on demand.
 - Renaming `MapView` / `MapViewModel` is out of scope (map UI stays; EE backend goes).
 - `StudentRouteOptimizer` capacity fill remains; routing **adds** path geometry and optional matrix ranking, it does not replace seat-capacity rules in this increment.

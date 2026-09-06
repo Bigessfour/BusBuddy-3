@@ -128,8 +128,7 @@ namespace BusBuddy.Core.Extensions
             // REMOVED: ITicketService - deprecated module
 
             // Geospatial: Google Maps Platform (Address Validation). Do not register OfflineGeocodingService in production.
-            services.Configure<BusBuddy.Core.Configuration.GoogleMapsOptions>(
-                configuration.GetSection(BusBuddy.Core.Configuration.GoogleMapsOptions.SectionName));
+            services.AddGoogleMapsOptions(configuration);
             services.Configure<BusBuddy.Core.Configuration.RoutingDistrictSettings>(
                 configuration.GetSection(BusBuddy.Core.Configuration.RoutingDistrictSettings.SectionName));
             services.AddSingleton(sp =>
@@ -189,6 +188,21 @@ namespace BusBuddy.Core.Extensions
             // Note: Legacy Phase seeders, DataIntegrity, DatabaseNullFix etc. archived in Final-Portfolio-Baseline-2026-06-Legacy-Cleanse.
             // Core seeding is via SeedDataService (Postgres/Docker primary for testing).
 
+            return services;
+        }
+
+        /// <summary>
+        /// Bind <see cref="BusBuddy.Core.Configuration.GoogleMapsOptions"/> then overlay quota project from env.
+        /// Precedence: <c>GCP_BILLING_PROJECT</c>, <c>GOOGLE_CLOUD_PROJECT</c>, JSON, default <c>busbuddy-507301</c>.
+        /// </summary>
+        public static IServiceCollection AddGoogleMapsOptions(this IServiceCollection services, IConfiguration configuration)
+        {
+            services.Configure<BusBuddy.Core.Configuration.GoogleMapsOptions>(
+                configuration.GetSection(BusBuddy.Core.Configuration.GoogleMapsOptions.SectionName));
+            services.PostConfigure<BusBuddy.Core.Configuration.GoogleMapsOptions>(opts =>
+            {
+                opts.QuotaProject = BusBuddy.Core.Configuration.GoogleMapsOptions.ResolveQuotaProject(opts.QuotaProject);
+            });
             return services;
         }
     }
