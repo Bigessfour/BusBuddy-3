@@ -46,7 +46,7 @@ namespace BusBuddy.Core.Services
         private static void EndOpFail(string name, Guid opId, Stopwatch sw, Exception ex, object? routeId = null)
         {
             sw.Stop();
-            Logger.Error(ex, "FAIL  {Op} OpId={OpId} RouteId={RouteId} ElapsedMs={Ms}", name, opId, routeId, sw.ElapsedMilliseconds);
+            DatabaseUserMessage.LogFailure(Logger, ex, "FAIL  {Op} OpId={OpId} RouteId={RouteId} ElapsedMs={Ms}", name, opId, routeId, sw.ElapsedMilliseconds);
         }
 
         public RouteService(IBusBuddyDbContextFactory contextFactory)
@@ -116,7 +116,7 @@ namespace BusBuddy.Core.Services
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Error retrieving active routes");
+                DatabaseUserMessage.LogFailure(Logger, ex, "Error retrieving active routes");
                 return Result.FailureResult<IEnumerable<Route>>($"Error retrieving routes: {ex.Message}");
             }
         }
@@ -146,7 +146,7 @@ namespace BusBuddy.Core.Services
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Error retrieving all routes");
+                DatabaseUserMessage.LogFailure(Logger, ex, "Error retrieving all routes");
                 return Result.FailureResult<IEnumerable<Route>>($"Error retrieving routes: {ex.Message}");
             }
         }
@@ -176,7 +176,7 @@ namespace BusBuddy.Core.Services
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Error retrieving route {RouteId}", id);
+                DatabaseUserMessage.LogFailure(Logger, ex, "Error retrieving route {RouteId}", id);
                 return Result.FailureResult<Route>($"Error retrieving route: {ex.Message}");
             }
         }
@@ -205,7 +205,7 @@ namespace BusBuddy.Core.Services
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Error creating route {RouteName}", route.RouteName);
+                DatabaseUserMessage.LogFailure(Logger, ex, "Error creating route {RouteName}", route.RouteName);
                 return Result.FailureResult<Route>($"Error creating route: {ex.Message}");
             }
         }
@@ -233,7 +233,7 @@ namespace BusBuddy.Core.Services
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Error updating route {RouteId}", route.RouteId);
+                DatabaseUserMessage.LogFailure(Logger, ex, "Error updating route {RouteId}", route.RouteId);
                 return Result.FailureResult<Route>($"Error updating route: {ex.Message}");
             }
         }
@@ -267,7 +267,7 @@ namespace BusBuddy.Core.Services
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Error deleting route {RouteId}", id);
+                DatabaseUserMessage.LogFailure(Logger, ex, "Error deleting route {RouteId}", id);
                 return Result.FailureResult<bool>($"Error deleting route: {ex.Message}");
             }
         }
@@ -298,7 +298,7 @@ namespace BusBuddy.Core.Services
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Error searching routes with term: {SearchTerm}", searchTerm);
+                DatabaseUserMessage.LogFailure(Logger, ex, "Error searching routes with term: {SearchTerm}", searchTerm);
                 return Result.FailureResult<IEnumerable<Route>>($"Error searching routes: {ex.Message}");
             }
         }
@@ -314,7 +314,7 @@ namespace BusBuddy.Core.Services
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Error getting routes for bus {BusId}", busId);
+                DatabaseUserMessage.LogFailure(Logger, ex, "Error getting routes for bus {BusId}", busId);
                 return Task.FromResult(Result.FailureResult<IEnumerable<Route>>($"Error getting routes for bus: {ex.Message}"));
             }
         }
@@ -346,7 +346,7 @@ namespace BusBuddy.Core.Services
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Error checking route number uniqueness: {RouteNumber}", routeNumber);
+                DatabaseUserMessage.LogFailure(Logger, ex, "Error checking route number uniqueness: {RouteNumber}", routeNumber);
                 return Result.FailureResult<bool>($"Error checking route uniqueness: {ex.Message}");
             }
         }
@@ -410,7 +410,7 @@ namespace BusBuddy.Core.Services
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Error creating new route {RouteName}", routeName);
+                DatabaseUserMessage.LogFailure(Logger, ex, "Error creating new route {RouteName}", routeName);
                 return Result.FailureResult<Route>($"Error creating route: {ex.Message}");
             }
         }
@@ -464,7 +464,7 @@ namespace BusBuddy.Core.Services
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Error validating route {RouteId}", routeId);
+                DatabaseUserMessage.LogFailure(Logger, ex, "Error validating route {RouteId}", routeId);
                 return Result.FailureResult<RouteValidationResult>($"Error validating route: {ex.Message}");
             }
         }
@@ -506,7 +506,7 @@ namespace BusBuddy.Core.Services
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Error activating route {RouteId}", routeId);
+                DatabaseUserMessage.LogFailure(Logger, ex, "Error activating route {RouteId}", routeId);
                 return Result.FailureResult<bool>($"Error activating route: {ex.Message}");
             }
         }
@@ -552,7 +552,7 @@ namespace BusBuddy.Core.Services
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Error deactivating route {RouteId}", routeId);
+                DatabaseUserMessage.LogFailure(Logger, ex, "Error deactivating route {RouteId}", routeId);
                 return Result.FailureResult<bool>($"Error deactivating route: {ex.Message}");
             }
         }
@@ -593,7 +593,7 @@ namespace BusBuddy.Core.Services
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Error retrieving stops for route {RouteId}", routeId);
+                DatabaseUserMessage.LogFailure(Logger, ex, "Error retrieving stops for route {RouteId}", routeId);
                 return Result.FailureResult<IEnumerable<RouteStop>>($"Error retrieving route stops: {ex.Message}");
             }
         }
@@ -716,7 +716,7 @@ namespace BusBuddy.Core.Services
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Error reordering stops for route {RouteId}", routeId); // basic existing log
+                DatabaseUserMessage.LogFailure(Logger, ex, "Error reordering stops for route {RouteId}", routeId); // basic existing log
                 return Result.FailureResult<bool>($"Error reordering route stops: {ex.Message}");
             }
         }
@@ -729,7 +729,7 @@ namespace BusBuddy.Core.Services
                 try
                 {
                     var buses = await context.Buses
-                        .Where(b => b.Status == "Active")
+                        .Where(b => b.Status == "Active" || b.Status == "InService")
                         .OrderBy(b => b.BusNumber)
                         .ToListAsync();
                     return Result.SuccessResult(buses);
@@ -744,7 +744,7 @@ namespace BusBuddy.Core.Services
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Error retrieving available buses");
+                DatabaseUserMessage.LogFailure(Logger, ex, "Error retrieving available buses");
                 return Result.FailureResult<List<Bus>>($"Error retrieving buses: {ex.Message}");
             }
         }
@@ -772,7 +772,7 @@ namespace BusBuddy.Core.Services
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Error retrieving available drivers");
+                DatabaseUserMessage.LogFailure(Logger, ex, "Error retrieving available drivers");
                 return Result.FailureResult<List<Driver>>($"Error retrieving drivers: {ex.Message}");
             }
         }
@@ -902,7 +902,7 @@ namespace BusBuddy.Core.Services
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Error assigning student {StudentId} to route {RouteId} ({Slot})", studentId, routeId, timeSlot);
+                DatabaseUserMessage.LogFailure(Logger, ex, "Error assigning student {StudentId} to route {RouteId} ({Slot})", studentId, routeId, timeSlot);
                 return Result.FailureResult<bool>($"Error assigning student to route: {ex.Message}");
             }
         }
@@ -970,7 +970,7 @@ namespace BusBuddy.Core.Services
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Error removing student {StudentId} from route {RouteId} ({Slot})", studentId, routeId, timeSlot);
+                DatabaseUserMessage.LogFailure(Logger, ex, "Error removing student {StudentId} from route {RouteId} ({Slot})", studentId, routeId, timeSlot);
                 return Result.FailureResult<bool>($"Error removing student from route: {ex.Message}");
             }
         }
@@ -998,7 +998,7 @@ namespace BusBuddy.Core.Services
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Error retrieving unassigned students");
+                DatabaseUserMessage.LogFailure(Logger, ex, "Error retrieving unassigned students");
                 return Result.FailureResult<List<Student>>($"Error retrieving students: {ex.Message}");
             }
         }
@@ -1038,7 +1038,7 @@ namespace BusBuddy.Core.Services
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Error retrieving unassigned students for slot {Slot}", timeSlot);
+                DatabaseUserMessage.LogFailure(Logger, ex, "Error retrieving unassigned students for slot {Slot}", timeSlot);
                 return Result.FailureResult<List<Student>>($"Error retrieving students: {ex.Message}");
             }
         }
@@ -1087,7 +1087,7 @@ namespace BusBuddy.Core.Services
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Error retrieving students for route {RouteId} ({Slot})", routeId, timeSlot);
+                DatabaseUserMessage.LogFailure(Logger, ex, "Error retrieving students for route {RouteId} ({Slot})", routeId, timeSlot);
                 return Result.FailureResult<List<Student>>($"Error retrieving students: {ex.Message}");
             }
         }
@@ -1134,7 +1134,7 @@ namespace BusBuddy.Core.Services
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Error auto-assigning students to route {RouteId} ({Slot})", routeId, timeSlot);
+                DatabaseUserMessage.LogFailure(Logger, ex, "Error auto-assigning students to route {RouteId} ({Slot})", routeId, timeSlot);
                 return Result.FailureResult<List<Student>>($"Error auto-assigning students: {ex.Message}");
             }
         }
@@ -1171,7 +1171,7 @@ namespace BusBuddy.Core.Services
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Error retrieving routes with capacity");
+                DatabaseUserMessage.LogFailure(Logger, ex, "Error retrieving routes with capacity");
                 return Result.FailureResult<List<Route>>($"Error retrieving routes: {ex.Message}");
             }
         }
@@ -1204,7 +1204,7 @@ namespace BusBuddy.Core.Services
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Error validating capacity for route {RouteId}", routeId);
+                DatabaseUserMessage.LogFailure(Logger, ex, "Error validating capacity for route {RouteId}", routeId);
                 return Result.FailureResult<bool>($"Error validating route capacity: {ex.Message}");
             }
         }
@@ -1265,7 +1265,7 @@ namespace BusBuddy.Core.Services
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Error calculating route utilization stats");
+                DatabaseUserMessage.LogFailure(Logger, ex, "Error calculating route utilization stats");
                 return Result.FailureResult<RouteUtilizationStats>($"Error calculating route stats: {ex.Message}");
             }
         }
@@ -1312,7 +1312,7 @@ namespace BusBuddy.Core.Services
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Error updating route stop timing for RouteId={RouteId}", routeId);
+                DatabaseUserMessage.LogFailure(Logger, ex, "Error updating route stop timing for RouteId={RouteId}", routeId);
                 return Result.FailureResult<bool>($"Error updating stop timing: {ex.Message}");
             }
         }
@@ -1376,7 +1376,7 @@ namespace BusBuddy.Core.Services
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Error validating assignment of student {StudentId} to route {RouteId} ({Slot})", studentId, routeId, timeSlot);
+                DatabaseUserMessage.LogFailure(Logger, ex, "Error validating assignment of student {StudentId} to route {RouteId} ({Slot})", studentId, routeId, timeSlot);
                 return Result.FailureResult<bool>($"Error validating assignment: {ex.Message}");
             }
         }
@@ -1475,30 +1475,14 @@ namespace BusBuddy.Core.Services
                         return Result.FailureResult<bool>($"Vehicle with ID {vehicleId} not found");
                     }
 
-                    // Availability check (Active status)
-                    if (!string.Equals(bus.Status, "Active", StringComparison.OrdinalIgnoreCase))
+                    // Availability check (Active / In Service)
+                    if (!RouteVehicleLinker.IsAssignableStatus(bus.Status))
                     {
                         Logger.Error("AssignVehicle failed — vehicle {VehicleId} not available (Status: {Status})", vehicleId, bus.Status);
-                        return Result.FailureResult<bool>($"Vehicle {vehicleId} is not available");
+                        return Result.FailureResult<bool>($"Vehicle {bus.BusNumber} is not available (status: {bus.Status})");
                     }
 
-                    // Apply assignment based on time slot
-                    switch (timeSlot)
-                    {
-                        case RouteTimeSlot.AM:
-                            route.AMVehicleId = vehicleId;
-                            break;
-                        case RouteTimeSlot.PM:
-                            route.PMVehicleId = vehicleId;
-                            break;
-                        case RouteTimeSlot.Both:
-                            route.AMVehicleId = vehicleId;
-                            route.PMVehicleId = vehicleId;
-                            break;
-                        default:
-                            Logger.Error("AssignVehicle failed — unsupported time slot {TimeSlot}", timeSlot);
-                            return Result.FailureResult<bool>("Unsupported time slot");
-                    }
+                    RouteVehicleLinker.Apply(route, bus, timeSlot);
 
                     await context.SaveChangesAsync();
                     await transaction.CommitAsync();
@@ -1517,7 +1501,7 @@ namespace BusBuddy.Core.Services
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Error assigning vehicle {VehicleId} to route {RouteId}", vehicleId, routeId);
+                DatabaseUserMessage.LogFailure(Logger, ex, "Error assigning vehicle {VehicleId} to route {RouteId}", vehicleId, routeId);
                 return Result.FailureResult<bool>($"Error assigning vehicle to route: {ex.Message}");
             }
         }
@@ -1579,7 +1563,7 @@ namespace BusBuddy.Core.Services
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Error assigning driver {DriverId} to route {RouteId}", driverId, routeId);
+                DatabaseUserMessage.LogFailure(Logger, ex, "Error assigning driver {DriverId} to route {RouteId}", driverId, routeId);
                 return Result.FailureResult<bool>($"Error assigning driver to route: {ex.Message}");
             }
         }
@@ -1647,7 +1631,7 @@ namespace BusBuddy.Core.Services
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Error adding stop to route {RouteId}", routeId);
+                DatabaseUserMessage.LogFailure(Logger, ex, "Error adding stop to route {RouteId}", routeId);
                 return Result.FailureResult<RouteStop>($"Error adding stop to route: {ex.Message}");
             }
         }
@@ -1702,7 +1686,7 @@ namespace BusBuddy.Core.Services
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Error removing stop {StopId} from route {RouteId}", stopId, routeId);
+                DatabaseUserMessage.LogFailure(Logger, ex, "Error removing stop {StopId} from route {RouteId}", stopId, routeId);
                 return Result.FailureResult<bool>($"Error removing stop from route: {ex.Message}");
             }
         }
@@ -1800,7 +1784,7 @@ namespace BusBuddy.Core.Services
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Error cloning route {RouteId}", sourceRouteId);
+                DatabaseUserMessage.LogFailure(Logger, ex, "Error cloning route {RouteId}", sourceRouteId);
                 return Result.FailureResult<Route>($"Error cloning route: {ex.Message}");
             }
         }
@@ -1831,7 +1815,7 @@ namespace BusBuddy.Core.Services
                 }
                 catch (Exception ex)
                 {
-                    Logger.Error(ex, "Error generating schedule for route {RouteName}", route.RouteName);
+                    DatabaseUserMessage.LogFailure(Logger, ex, "Error generating schedule for route {RouteName}", route.RouteName);
                     // Per Error-Handling.md: log, continue, and optionally notify
                 }
             }

@@ -42,6 +42,7 @@
                 <syncfusion:ComboBoxAdv ItemsSource="{Binding Schools}"
                                         SelectedItem="{Binding FromSchool, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                         DisplayMemberPath="Name"
+                                        IsEditable="False"
                                         Height="40"
                                         Margin="0,0,0,12"
                                         AutomationProperties.Name="From school" />
@@ -50,6 +51,7 @@
                 <syncfusion:ComboBoxAdv ItemsSource="{Binding Schools}"
                                         SelectedItem="{Binding ToSchool, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                         DisplayMemberPath="Name"
+                                        IsEditable="False"
                                         Height="40"
                                         Margin="0,0,0,12"
                                         AutomationProperties.Name="To school" />

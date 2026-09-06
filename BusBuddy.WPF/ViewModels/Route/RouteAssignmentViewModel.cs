@@ -13,6 +13,7 @@ using Microsoft.Extensions.DependencyInjection; // For resolving MapViewModel / 
 using BusBuddy.WPF.ViewModels.Map; // Map markers
 using BusBuddy.WPF.Views.Route;
 using BusBuddy.WPF.Views.Driver;
+using BusBuddy.Core.Services.GoogleMaps;
 using BusBuddy.Core.Services.Interfaces; // IGeocodingService
 using System.Globalization;
 using System.IO; // For PDF export file writing
@@ -2362,7 +2363,7 @@ namespace BusBuddy.WPF.ViewModels.Route
                     return;
                 }
 
-                var geocoder = App.ServiceProvider?.GetService<IGeocodingService>();
+                var mapsGeo = App.ServiceProvider?.GetService<IMapsGeoService>();
 
                 // Remove previous dynamic student markers (keep seeded school anchor)
                 for (int i = mapVm.MapMarkers.Count - 1; i >= 0; i--)
@@ -2397,13 +2398,13 @@ namespace BusBuddy.WPF.ViewModels.Route
                                 lat = (double)s.Latitude.Value;
                                 lon = (double)s.Longitude.Value;
                             }
-                            else if (geocoder != null && !string.IsNullOrWhiteSpace(s.HomeAddress))
+                            else if (mapsGeo is not null && mapsGeo.IsConfigured && !string.IsNullOrWhiteSpace(s.HomeAddress))
                             {
-                                var r = await geocoder.GeocodeAsync(s.HomeAddress, s.City, s.State, s.Zip);
-                                if (r != null)
+                                var r = await mapsGeo.ValidateAndGeocodeAsync(s.HomeAddress, s.City, s.State, s.Zip);
+                                if (r.Ok && r.Latitude.HasValue && r.Longitude.HasValue)
                                 {
-                                    lat = r.Value.latitude;
-                                    lon = r.Value.longitude;
+                                    lat = r.Latitude.Value;
+                                    lon = r.Longitude.Value;
                                 }
                             }
 

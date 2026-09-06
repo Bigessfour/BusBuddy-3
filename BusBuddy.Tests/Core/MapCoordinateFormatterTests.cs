@@ -9,13 +9,13 @@ public class MapCoordinateFormatterTests
     [Test]
     public void FormatLatitude_NorthernHemisphere_UsesNorthSuffix()
     {
-        Assert.That(MapCoordinateFormatter.FormatLatitude(MapDefaults.FallbackLatitude), Is.EqualTo("39.8283N"));
+        Assert.That(MapCoordinateFormatter.FormatLatitude(39.8283), Is.EqualTo("39.8283N"));
     }
 
     [Test]
     public void FormatLongitude_WesternHemisphere_UsesWestSuffix()
     {
-        Assert.That(MapCoordinateFormatter.FormatLongitude(MapDefaults.FallbackLongitude), Is.EqualTo("98.5795W"));
+        Assert.That(MapCoordinateFormatter.FormatLongitude(-98.5795), Is.EqualTo("98.5795W"));
     }
 
     [Test]

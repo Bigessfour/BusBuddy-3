@@ -36,4 +36,22 @@ public sealed class RoutingDistrictSettings
 
     /// <summary>Max walk distance (meters) when suggesting a catalog pickup stop from a geocoded home.</summary>
     public double StopSuggestMaxMeters { get; set; } = 400;
+
+    /// <summary>Bus barn / depot display name (not a school destination).</summary>
+    public string? DepotName { get; set; }
+
+    /// <summary>Street address for the district bus barn.</summary>
+    public string? DepotAddress { get; set; }
+
+    public string? DepotCity { get; set; }
+
+    public string? DepotState { get; set; }
+
+    public string? DepotZipCode { get; set; }
+
+    /// <summary>Depot latitude (degrees). When set with <see cref="DepotLongitude"/>, routes start/end here.</summary>
+    public double? DepotLatitude { get; set; }
+
+    /// <summary>Depot longitude (degrees).</summary>
+    public double? DepotLongitude { get; set; }
 }

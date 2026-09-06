@@ -9,11 +9,20 @@
 # Or double-click: utm_run_in_vm.cmd
 #
 # From Mac host (preflight only): ./run-wpf.sh
+#
+# Hot Reload (faster UI iteration — no full restart for many C# edits):
+#   powershell -NoProfile -ExecutionPolicy Bypass -File .\utm_run_in_vm.ps1 -Watch
+#   (or double-click utm_watch_in_vm.cmd)
+
+param(
+    [switch]$Watch
+)
 
 $ErrorActionPreference = "Stop"
 
 $manualOverride = $null  # e.g. "Z:\" if auto-find fails
 $localBuildRoot = "C:\dev\BusBuddy-3"
+$alternateLocalRoots = @("C:\dev\busbuddy", "C:\dev\BusBuddy")
 
 Write-Host ""
 Write-Host "BusBuddy VM launcher (Windows — NOT macOS)" -ForegroundColor Cyan
@@ -88,7 +97,7 @@ function Set-BusBuddyPostgresConnection {
         return
     }
 
-    $conn = "Host=$HostIp;Port=5432;Database=busbuddy_test;Username=busbuddy;Password=busbuddy_dev;Include Error Detail=true"
+    $conn = "Host=$HostIp;Port=5432;Database=busbuddy_test;Username=busbuddy;Password=busbuddy_dev;Include Error Detail=true;Timeout=5"
     $env:BUSBUDDY_CONNECTION = $conn
     $env:DatabaseProvider = 'Postgres'
 
@@ -101,6 +110,73 @@ function Set-BusBuddyPostgresConnection {
     }
 }
 
+function Invoke-MacEnsurePostgresDocker {
+    param([string]$ProjectRoot)
+
+    if (-not (Get-Command ssh -ErrorAction SilentlyContinue)) {
+        return
+    }
+
+    $remoteConfig = Join-Path $ProjectRoot "keys\mac-docker-remote.txt"
+    if (-not (Test-Path -LiteralPath $remoteConfig)) {
+        return
+    }
+
+    $remoteLine = (Get-Content -LiteralPath $remoteConfig -Raw).Trim()
+    if ([string]::IsNullOrWhiteSpace($remoteLine) -or $remoteLine.StartsWith('#')) {
+        return
+    }
+
+    $sshTarget = $null
+    $repoPath = $null
+    if ($remoteLine -match '^(?<ssh>[^:]+):(?<repo>.+)$') {
+        $sshTarget = $Matches['ssh'].Trim()
+        $repoPath = $Matches['repo'].Trim()
+    } else {
+        $sshTarget = $remoteLine
+    }
+
+    Write-Host "Requesting Postgres start on Mac via SSH ($sshTarget)..." -ForegroundColor Cyan
+    if ($repoPath) {
+        $remoteCmd = "cd '$repoPath' && ./Scripts/ensure-postgres-docker.sh"
+    } else {
+        $remoteCmd = "./Scripts/ensure-postgres-docker.sh"
+    }
+
+    & ssh -o BatchMode=yes -o ConnectTimeout=10 -o StrictHostKeyChecking=accept-new $sshTarget $remoteCmd 2>$null
+}
+
+function Ensure-MacPostgresReady {
+    param(
+        [string]$MacHostIp,
+        [string]$ProjectRoot
+    )
+
+    if ([string]::IsNullOrWhiteSpace($MacHostIp)) {
+        Write-Host "WARNING: Cannot verify Postgres without Mac host IP." -ForegroundColor Yellow
+        return
+    }
+
+    Invoke-MacEnsurePostgresDocker -ProjectRoot $ProjectRoot
+
+    Write-Host "Checking Postgres at ${MacHostIp}:5432..." -ForegroundColor Cyan
+    $maxAttempts = 30
+    for ($i = 1; $i -le $maxAttempts; $i++) {
+        $probe = Test-NetConnection -ComputerName $MacHostIp -Port 5432 -WarningAction SilentlyContinue
+        if ($probe.TcpTestSucceeded) {
+            Write-Host "Postgres is reachable at ${MacHostIp}:5432." -ForegroundColor Green
+            return
+        }
+
+        if ($i -eq 1) {
+            Write-Host "Postgres not ready yet — waiting for Mac Docker (run ./run-wpf.sh on the Mac if this persists)..." -ForegroundColor Yellow
+        }
+        Start-Sleep -Seconds 2
+    }
+
+    throw "Postgres is not available at ${MacHostIp}:5432. On the Mac host run: ./Scripts/ensure-postgres-docker.sh (or ./run-wpf.sh)."
+}
+
 function Find-BusBuddyRoot {
     param([string]$Override)
 
@@ -111,6 +187,8 @@ function Find-BusBuddyRoot {
     $quick = @(
         "Z:\",
         "C:\dev\BusBuddy-3",
+        "C:\dev\busbuddy",
+        "C:\dev\BusBuddy",
         "Z:\Shared with Windows",
         "Z:\BusBuddy-3",
         "D:\Shared with Windows",
@@ -182,18 +260,45 @@ try {
     }
 
     $sharedRoot = $projectRoot
+    $zDriveRoot = $null
+    if (Test-Path -LiteralPath "Z:\BusBuddy.sln") {
+        $zDriveRoot = (Resolve-Path "Z:\").Path
+    }
+
     if (Test-IsWebDavOrNetworkPath -Path $projectRoot) {
         Sync-BusBuddyToLocal -Source $sharedRoot -Destination $localBuildRoot
+        $projectRoot = $localBuildRoot
+    } elseif ($zDriveRoot -and $projectRoot -ne $localBuildRoot) {
+        $localSln = Join-Path $localBuildRoot "BusBuddy.sln"
+        $shouldSync = -not (Test-Path -LiteralPath $localSln)
+        if (-not $shouldSync) {
+            $zTime = (Get-Item -LiteralPath (Join-Path $zDriveRoot "BusBuddy.sln")).LastWriteTimeUtc
+            $localTime = (Get-Item -LiteralPath $localSln).LastWriteTimeUtc
+            $shouldSync = $zTime -gt $localTime
+        }
+        if ($shouldSync) {
+            Write-Host "Shared folder is newer than C:\dev\BusBuddy-3 — syncing before build..." -ForegroundColor Yellow
+            Sync-BusBuddyToLocal -Source $zDriveRoot -Destination $localBuildRoot
+        }
         $projectRoot = $localBuildRoot
     }
 
     Set-Location -LiteralPath $projectRoot
     Write-Host "Building from: $projectRoot" -ForegroundColor Green
 
+    $stampPath = Join-Path $projectRoot "BUILD-STAMP.txt"
+    if (Test-Path -LiteralPath $stampPath) {
+        $stamp = (Get-Content -LiteralPath $stampPath -Raw).Trim()
+        Write-Host "Build stamp: $stamp" -ForegroundColor Magenta
+        Write-Host "  Student form title should show: Add New Student · UX v3 2026-09-02" -ForegroundColor Magenta
+        Write-Host "  If you still see an 'Action blocked' popup, you are NOT running this build." -ForegroundColor Magenta
+    }
+
     $macHostIp = Get-MacHostIpForPostgres -ProjectRoot $sharedRoot
     if (-not $macHostIp) {
         $macHostIp = Get-MacHostIpForPostgres -ProjectRoot $projectRoot
     }
+    Ensure-MacPostgresReady -MacHostIp $macHostIp -ProjectRoot $sharedRoot
     Set-BusBuddyPostgresConnection -HostIp $macHostIp
 
     $keyPath = Join-Path $sharedRoot "keys\bus-buddy-gee-key.json"
@@ -202,13 +307,22 @@ try {
         Write-Host "GEE key loaded from share." -ForegroundColor Cyan
     }
 
-    $licFile = Join-Path $sharedRoot "keys\SYNCFUSION_LICENSE_KEY.txt"
-    if (Test-Path -LiteralPath $licFile) {
-        $lic = (Get-Content -LiteralPath $licFile -Raw).Trim()
-        if ($lic -and $lic.Length -gt 10) {
-            $env:SYNCFUSION_LICENSE_KEY = $lic
-            Write-Host "Syncfusion license loaded from share." -ForegroundColor Cyan
+    $envFile = Join-Path $sharedRoot "keys\.env"
+    if (Test-Path -LiteralPath $envFile) {
+        foreach ($raw in Get-Content -LiteralPath $envFile) {
+            $line = $raw.Trim()
+            if ($line.Length -eq 0 -or $line.StartsWith('#')) { continue }
+            $eq = $line.IndexOf('=')
+            if ($eq -le 0) { continue }
+            $name = $line.Substring(0, $eq).Trim()
+            $value = $line.Substring($eq + 1).Trim().Trim('"').Trim("'")
+            if ($name.Length -gt 0) {
+                Set-Item -Path "env:$name" -Value $value
+            }
         }
+        Write-Host "Loaded keys/.env from share." -ForegroundColor Cyan
+    } else {
+        Write-Host "WARNING: keys\.env not found — create from Documentation/keys-dotenv.example" -ForegroundColor Yellow
     }
 
     Write-Host ""
@@ -217,17 +331,39 @@ try {
     if ($LASTEXITCODE -ne 0) { throw "dotnet restore failed ($LASTEXITCODE)" }
 
     Write-Host "Building WPF..." -ForegroundColor Cyan
-    & dotnet build BusBuddy.WPF\BusBuddy.WPF.csproj -c Debug -p:EnableWindowsTargeting=true --no-restore
+    & dotnet build BusBuddy.WPF\BusBuddy.WPF.csproj -c Debug -p:EnableWindowsTargeting=true --no-restore --no-incremental
     if ($LASTEXITCODE -ne 0) { throw "dotnet build failed ($LASTEXITCODE)" }
+
+    if ($Watch) {
+        Write-Host ""
+        Write-Host "Starting BusBuddy with Hot Reload (dotnet watch)..." -ForegroundColor Green
+        Write-Host "  Edit C# / XAML on Mac, sync to C:\dev\BusBuddy-3, and save — supported changes apply without a full restart." -ForegroundColor DarkGray
+        Write-Host "  Ctrl+C to stop. Ctrl+R in this window forces a rebuild/restart." -ForegroundColor DarkGray
+        # Polling helps when the tree is on a UTM share (Z:) instead of C:\dev.
+        $env:DOTNET_USE_POLLING_FILE_WATCHER = '1'
+        $env:DOTNET_WATCH_RESTART_ON_RUDE_EDIT = '1'
+        & dotnet watch run --project BusBuddy.WPF\BusBuddy.WPF.csproj -c Debug -p:EnableWindowsTargeting=true --non-interactive
+        if ($LASTEXITCODE -ne 0) { throw "dotnet watch failed ($LASTEXITCODE)" }
+        return
+    }
 
     Write-Host ""
     Write-Host "Launching BusBuddy WPF..." -ForegroundColor Green
-    Start-Process -FilePath "dotnet" `
-        -ArgumentList @("run", "--project", "BusBuddy.WPF\BusBuddy.WPF.csproj", "-c", "Debug", "--no-build") `
-        -WorkingDirectory $projectRoot `
-        -WindowStyle Normal
-
-    Write-Host "Launch requested — look for the BusBuddy window on the VM desktop." -ForegroundColor Green
+    $exe = Join-Path $projectRoot "BusBuddy.WPF\bin\Debug\net9.0-windows\BusBuddy.WPF.exe"
+    if (-not (Test-Path -LiteralPath $exe)) {
+        throw "Built executable not found: $exe"
+    }
+    $launch = Start-Process -FilePath $exe `
+        -WorkingDirectory (Split-Path -Parent $exe) `
+        -WindowStyle Normal `
+        -PassThru
+    Start-Sleep -Seconds 3
+    if ($null -eq $launch -or $launch.HasExited) {
+        $log = Join-Path (Split-Path -Parent $exe) "logs\runtime-errors.log"
+        $hint = if (Test-Path -LiteralPath $log) { Get-Content -LiteralPath $log -Tail 5 -ErrorAction SilentlyContinue } else { @() }
+        throw "BusBuddy exited during startup. Check logs under $(Split-Path -Parent $exe)\logs and Logs. $hint"
+    }
+    Write-Host "BusBuddy running (PID $($launch.Id)) — check the VM desktop for the main window." -ForegroundColor Green
 } catch {
     Write-Host ""
     Write-Host "FAILED: $($_.Exception.Message)" -ForegroundColor Red

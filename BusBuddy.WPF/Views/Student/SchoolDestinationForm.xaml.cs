@@ -1,6 +1,7 @@
 using System;
 using System.Windows;
 using System.Windows.Input;
+using BusBuddy.Core.Services.GoogleMaps;
 using BusBuddy.WPF.Utilities;
 using BusBuddy.WPF.ViewModels.Student;
 using CommunityToolkit.Mvvm.Input;
@@ -116,44 +117,43 @@ public partial class SchoolDestinationForm : ChromelessWindow
         }
     }
 
-    /// <summary>
-    /// SfMaskedEdit/some Syncfusion inputs ignore NumPad keys. Inject digits into focused SfTextBoxExt.
-    /// </summary>
+    private void SchoolAddressBox_TextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
+    {
+        _ = _vm.RefreshAddressSuggestionsAsync(SchoolAddressBox.Text);
+    }
+
+    private async void SchoolAddressSuggestionsList_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+    {
+        if (SchoolAddressSuggestionsList.SelectedItem is not PlaceAutocompleteSuggestion suggestion)
+        {
+            return;
+        }
+
+        try
+        {
+            if (await _vm.ApplyAddressSuggestionAsync(suggestion).ConfigureAwait(true))
+            {
+                SchoolAddressBox.Text = _vm.Address;
+                SchoolCityBox.Text = _vm.City;
+                SchoolStateBox.Text = _vm.State;
+                SchoolZipBox.Text = _vm.ZipCode;
+                SchoolLatBox.Value = _vm.LatitudeValue;
+                SchoolLonBox.Value = _vm.LongitudeValue;
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.Warning(ex, "School Places suggestion apply failed");
+        }
+        finally
+        {
+            SchoolAddressSuggestionsList.SelectedItem = null;
+        }
+    }
+
     private void SchoolForm_PreviewKeyDown(object sender, KeyEventArgs e)
     {
-        var isNumPadDigit = e.Key is >= Key.NumPad0 and <= Key.NumPad9;
-        var isDecimal = e.Key is Key.Decimal or Key.OemPeriod;
-        if (!isNumPadDigit && !isDecimal)
-        {
-            return;
-        }
-
-        if (Keyboard.FocusedElement is not SfTextBoxExt textExt)
-        {
-            return;
-        }
-
-        var insert = isNumPadDigit
-            ? ((int)(e.Key - Key.NumPad0)).ToString()
-            : ".";
-
-        var start = textExt.SelectionStart;
-        var len = textExt.SelectionLength;
-        var current = textExt.Text ?? string.Empty;
-        if (len > 0 && start >= 0 && start + len <= current.Length)
-        {
-            current = current.Remove(start, len);
-        }
-
-        if (start < 0 || start > current.Length)
-        {
-            start = current.Length;
-        }
-
-        textExt.Text = current.Insert(start, insert);
-        textExt.SelectionStart = start + insert.Length;
-        textExt.SelectionLength = 0;
-        e.Handled = true;
+        NumpadInputHelper.HandlePreviewKeyDown(e);
     }
 
     private void SchoolPickMap_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)

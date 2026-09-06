@@ -3,6 +3,7 @@ using System.IO;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using BusBuddy.WPF.Utilities;
 using BusBuddy.WPF.ViewModels.Dashboard;
 using BusBuddy.WPF.Views.Analytics;
 using BusBuddy.WPF.Views.Route;
@@ -261,14 +262,7 @@ namespace BusBuddy.WPF.Views.Dashboard
             try
             {
                 Logger.Information("Fleet details view requested");
-                new Window
-                {
-                    Title = "🚌 Vehicle Management",
-                    Content = new VehicleManagementView(),
-                    Width = 1100,
-                    Height = 750,
-                    Owner = Window.GetWindow(this)
-                }.Show();
+                VehicleFleetLauncher.Show(Window.GetWindow(this));
                 Logger.Debug("Fleet details navigation completed");
             }
             catch (Exception ex)

@@ -49,6 +49,9 @@
     <!-- Mocking Framework -->
     <PackageReference Include="Moq" Version="$(MoqVersion)" /> <!-- resolved hardcode to central props -->
 
+    <!-- Direct CommunityToolkit.Mvvm use in WPF unit tests (IAsyncRelayCommand, etc.) -->
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="$(CommunityToolkitMvvmVersion)" />
+
     <!-- Entity Framework In-Memory Database for testing -->
     <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="$(EntityFrameworkVersion)" />
 

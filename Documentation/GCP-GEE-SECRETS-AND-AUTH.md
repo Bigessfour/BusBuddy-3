@@ -1,27 +1,27 @@
 # GCP / Google Maps Platform — Secrets & Authentication
 
-Canonical geo secrets for BusBuddy-3 after Earth Engine was retired (spec [007-maps-platform-geo](../specs/007-maps-platform-geo/spec.md)).
+Canonical geo secrets for BusBuddy-3 (spec [007-maps-platform-geo](../specs/007-maps-platform-geo/spec.md)).
 
 Earth Engine is **not** an app dependency. Do not restore `GEE_*` keys, `GcpCredentialBootstrap`, or `GoogleEarthEngineService`.
 
-## Status (paused)
+## Status (active)
 
-Runtime today: local DB waypoints + Syncfusion SfMap (OpenStreetMap). Address Validation (Maps Platform) geocodes student addresses when `GOOGLE_MAPS_API_KEY` is set. Students entered in the system are eligible — there is no geofence.
+Runtime: local DB waypoints + Syncfusion SfMap (OpenStreetMap tiles). Google Maps Platform provides address validation, Places autocomplete, and drive routing when `GOOGLE_MAPS_API_KEY` is set.
 
-**Next (paused):** Google Maps Platform on billing project `new-coursera-490518`:
+| API                                                                                                        | Use                                                           |
+| ---------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
+| [Address Validation](https://developers.google.com/maps/documentation/address-validation)                  | Student/school validate + geocode (`IMapsGeoService`)         |
+| [Places API (New)](https://developers.google.com/maps/documentation/places/web-service/place-autocomplete) | Address type-ahead on Student + School forms                  |
+| [Routes API](https://developers.google.com/maps/documentation/routes)                                      | `computeRoutes` drive polyline + `computeRouteMatrix` ranking |
 
-| API                                   | Use                              |
-| ------------------------------------- | -------------------------------- |
-| Address Validation (`enableUspsCass`) | Student addresses + lat/lng      |
-| Routes (`computeRoutes`)              | Drive polyline / distance / time |
-
-Implementation is **not** wired yet. Resume from `specs/007-maps-platform-geo/tasks.md` US1 / US3.
+Students entered in the system are eligible — there is no geofence.
 
 ## Projects (do not invent IDs)
 
 | Project ID            | Role                                                          |
 | --------------------- | ------------------------------------------------------------- |
-| `new-coursera-490518` | GCP console / billing / Maps APIs / `gcloud` default          |
+| `busbuddy-507301`     | **Primary** GCP / billing / Maps APIs / `gcloud` default      |
+| `new-coursera-490518` | Legacy Coursera project (billed; prefer `busbuddy-507301`)    |
 | `ee-bigessfour`       | **Unused by the app** (historical Earth Engine — do not wire) |
 | ~~`busbuddy-465000`~~ | **Invalid** — never invent                                    |
 
@@ -29,26 +29,36 @@ Implementation is **not** wired yet. Resume from `specs/007-maps-platform-geo/ta
 
 Entry **Name** = env var. Loaded by `LoadApiKeysFromMacPasswords()` in `BusBuddy.WPF/App.xaml.cs`.
 
-| Env var                                        | Purpose                                                                      |
-| ---------------------------------------------- | ---------------------------------------------------------------------------- |
-| `SYNCFUSION_LICENSE_KEY`                       | Syncfusion WPF                                                               |
-| `Syncfusion_API_Key`                           | Syncfusion MCP assistant                                                     |
-| `XAI_API_KEY` / `GROK_API_KEY`                 | Optional legacy cloud xAI; default AI is local Ollama                        |
-| `GOOGLE_MAPS_API_KEY`                          | Maps Platform (when US1/US3 resume). Restrict to Address Validation + Routes |
-| `GCP_BILLING_PROJECT` / `GOOGLE_CLOUD_PROJECT` | `new-coursera-490518`                                                        |
+| Env var                                        | Purpose                                              |
+| ---------------------------------------------- | ---------------------------------------------------- |
+| `GOOGLE_MAPS_API_KEY`                          | Maps Platform (Address Validation + Places + Routes) |
+| `GCP_BILLING_PROJECT` / `GOOGLE_CLOUD_PROJECT` | `busbuddy-507301`                                    |
+| `SYNCFUSION_LICENSE_KEY`                       | Syncfusion WPF                                       |
+| `Syncfusion_API_Key`                           | Syncfusion MCP assistant                             |
+
+Restrict the Maps key to: Address Validation API, Places API (New), Routes API.
 
 ## Windows production / VM
 
-Set `GOOGLE_MAPS_API_KEY` as a machine/user env var — no Keychain.
+Set `GOOGLE_MAPS_API_KEY` and `GCP_BILLING_PROJECT=busbuddy-507301` as machine/user env vars — no Keychain.
 
-## Services in DI (current)
+## Services in DI
 
-| Type                            | Role                                                   |
-| ------------------------------- | ------------------------------------------------------ |
-| `GeoDataService`                | `IGeoDataService` — routes/waypoints from Postgres     |
-| `GoogleAddressValidationClient` | Production `IGeocodingService` (null when key missing) |
-| `GoogleRoutingService`          | Production `IRoutingService` (fail-open)               |
-| `OfflineGeocodingService`       | Tests/demo only — not registered in production DI      |
+| Type                              | Role                                                              |
+| --------------------------------- | ----------------------------------------------------------------- |
+| `GeoDataService`                  | `IGeoDataService` — routes/waypoints from Postgres                |
+| `MapsGeoService`                  | `IMapsGeoService` + `IGeocodingService` (cached validate/geocode) |
+| `GooglePlacesAutocompleteService` | `IPlacesAutocompleteService` (no-op without key)                  |
+| `GoogleRoutingService`            | `IRoutingService` (drive path + route matrix; fail-open)          |
+| `OfflineGeocodingService`         | Tests/demo only — **not** registered in production DI             |
+
+## Smoke probe
+
+```bash
+.github/scripts/run-maps-connection-probe.sh
+```
+
+Tests Address Validation, Routes, and Places Autocomplete with `GOOGLE_MAPS_API_KEY`.
 
 ## Never commit
 
@@ -57,5 +67,6 @@ Set `GOOGLE_MAPS_API_KEY` as a machine/user env var — no Keychain.
 ## Related
 
 - Spec: `specs/007-maps-platform-geo/`
-- Constitution: `.specify/memory/constitution.md` (Geo = Maps Platform Address Validation + SfMap; no geofence)
+- Quickstart: `specs/007-maps-platform-geo/quickstart.md`
+- Constitution: `.specify/memory/constitution.md`
 - Agent quick ref: `AGENTS.md`

@@ -3,6 +3,7 @@
 # Hybrid Mac (host) + UTM Windows 11 VM launcher for BusBuddy WPF.
 #
 # What it does:
+# - Ensures Mac Docker Postgres is running (Scripts/ensure-postgres-docker.sh).
 # - Fast preflight: dotnet restore + build of the solution with -p:EnableWindowsTargeting=true
 #   (catches compile errors on Mac before switching focus to the VM).
 # - Ensures the UTM VM named "Windows" (or the one with the matching UUID) is running.
@@ -45,6 +46,12 @@ PFX="==>"
 
 echo "${PFX} BusBuddy WPF hybrid launcher (Mac host + UTM VM)"
 echo "${PFX} Project root: ${ROOT}"
+
+echo "${PFX} Ensuring Mac Docker Postgres is up..."
+if ! "${ROOT}/Scripts/ensure-postgres-docker.sh"; then
+  echo "ERROR: Could not start Postgres. Start Docker Desktop on the Mac, then re-run ./run-wpf.sh" >&2
+  exit 1
+fi
 
 # Cursor/PowerShell sessions often put /usr/local/share/dotnet first. That install
 # currently has only the .NET 11 preview SDK, so global.json (9.0.303 + latestMinor)
@@ -110,8 +117,13 @@ else
   fi
 fi
 
-# Helpful host IP for when the guest needs to reach Mac-hosted Docker Postgres
-HOST_IP="$(ipconfig getifaddr en0 2>/dev/null || ipconfig getifaddr en1 2>/dev/null || echo 'unknown')"
+# Helpful host IP for when the guest needs to reach Mac-hosted Docker Postgres.
+# UTM shared network: Mac is 192.168.64.1 (stable). Fall back to en0 for bridged/other VMs.
+if ifconfig 2>/dev/null | grep -q 'inet 192.168.64.1 '; then
+  HOST_IP="192.168.64.1"
+else
+  HOST_IP="$(ipconfig getifaddr en0 2>/dev/null || ipconfig getifaddr en1 2>/dev/null || echo 'unknown')"
+fi
 echo "${PFX} Mac host IP for VM (Postgres etc.): ${HOST_IP}   (example BUSBUDDY_CONNECTION: Host=${HOST_IP};...)"
 if [[ "${HOST_IP}" != "unknown" ]]; then
   mkdir -p "${ROOT}/keys"
@@ -149,7 +161,7 @@ $hostIp = "'"${HOST_IP}"'"
 $ipFile = Join-Path $found "keys\mac-host-ip.txt"
 if (Test-Path $ipFile) { $hostIp = (Get-Content $ipFile -Raw).Trim() }
 if ($hostIp -match "^\d") {
-  $env:BUSBUDDY_CONNECTION = "Host=$hostIp;Port=5432;Database=busbuddy_test;Username=busbuddy;Password=busbuddy_dev;Include Error Detail=true"
+  $env:BUSBUDDY_CONNECTION = "Host=$hostIp;Port=5432;Database=busbuddy_test;Username=busbuddy;Password=busbuddy_dev;Include Error Detail=true;Timeout=5"
   $env:DatabaseProvider = "Postgres"
   Write-Output "CONN:$hostIp"
 }

@@ -113,7 +113,7 @@ namespace BusBuddy.Core.Services
                     catch (Exception ex)
                     {
                         stopwatch.Stop();
-                        Logger.Error(ex, "Error retrieving all bus entities after {Duration}ms",
+                        DatabaseUserMessage.LogFailure(Logger, ex, "Error retrieving all bus entities after {Duration}ms",
                             stopwatch.ElapsedMilliseconds);
 
                         // If we're debugging, break into the debugger for SqlNullValueException
@@ -213,7 +213,7 @@ namespace BusBuddy.Core.Services
                 catch (Exception ex)
                 {
                     stopwatch.Stop();
-                    Logger.Error(ex, "Error retrieving paginated bus entities after {Duration}ms",
+                    DatabaseUserMessage.LogFailure(Logger, ex, "Error retrieving paginated bus entities after {Duration}ms",
                         stopwatch.ElapsedMilliseconds);
                     throw; // Propagate the exception to the caller
                 }
@@ -271,7 +271,7 @@ namespace BusBuddy.Core.Services
                 catch (Exception ex)
                 {
                     stopwatch.Stop();
-                    Logger.Error(ex, "Error retrieving bus entity {BusId} after {Duration}ms",
+                    DatabaseUserMessage.LogFailure(Logger, ex, "Error retrieving bus entity {BusId} after {Duration}ms",
                         busId, stopwatch.ElapsedMilliseconds);
                     throw; // Propagate exception to caller - no fallback to sample data
                 }
@@ -312,7 +312,7 @@ namespace BusBuddy.Core.Services
                         stopwatch.Stop();
                         using (LogContext.PushProperty("Duration", stopwatch.ElapsedMilliseconds))
                         {
-                            Logger.Error(ex, "Database operation AddBus failed after {Duration}ms", stopwatch.ElapsedMilliseconds);
+                            DatabaseUserMessage.LogFailure(Logger, ex, "Database operation AddBus failed after {Duration}ms", stopwatch.ElapsedMilliseconds);
                         }
                         throw;
                     }
@@ -376,7 +376,7 @@ namespace BusBuddy.Core.Services
                         stopwatch.Stop();
                         using (LogContext.PushProperty("Duration", stopwatch.ElapsedMilliseconds))
                         {
-                            Logger.Error(ex, "Database operation UpdateBus failed after {Duration}ms", stopwatch.ElapsedMilliseconds);
+                            DatabaseUserMessage.LogFailure(Logger, ex, "Database operation UpdateBus failed after {Duration}ms", stopwatch.ElapsedMilliseconds);
                         }
                         throw;
                     }
@@ -440,7 +440,7 @@ namespace BusBuddy.Core.Services
                                 stopwatch.Stop();
                                 using (LogContext.PushProperty("Duration", stopwatch.ElapsedMilliseconds))
                                 {
-                                    Logger.Error(ex, "Database operation DeleteBus failed after {Duration}ms", stopwatch.ElapsedMilliseconds);
+                                    DatabaseUserMessage.LogFailure(Logger, ex, "Database operation DeleteBus failed after {Duration}ms", stopwatch.ElapsedMilliseconds);
                                 }
                                 throw;
                             }
@@ -495,7 +495,7 @@ namespace BusBuddy.Core.Services
                     stopwatch.Stop();
                     using (LogContext.PushProperty("Duration", stopwatch.ElapsedMilliseconds))
                     {
-                        Logger.Error(ex, "Failed to retrieve drivers from database after {Duration}ms", stopwatch.ElapsedMilliseconds);
+                        DatabaseUserMessage.LogFailure(Logger, ex, "Failed to retrieve drivers from database after {Duration}ms", stopwatch.ElapsedMilliseconds);
                     }
                     throw; // Propagate exception to caller - no fallback to sample data
                 }
@@ -525,7 +525,7 @@ namespace BusBuddy.Core.Services
                 catch (Exception ex)
                 {
                     stopwatch.Stop();
-                    Logger.Error(ex, "GetDriverById failed after {Duration}ms", stopwatch.ElapsedMilliseconds);
+                    DatabaseUserMessage.LogFailure(Logger, ex, "GetDriverById failed after {Duration}ms", stopwatch.ElapsedMilliseconds);
                     throw;
                 }
             }
@@ -615,7 +615,7 @@ namespace BusBuddy.Core.Services
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Failed to retrieve route entities from database");
+                DatabaseUserMessage.LogFailure(Logger, ex, "Failed to retrieve route entities from database");
                 throw; // Propagate exception to caller - no fallback to sample data
             }
         }
@@ -645,7 +645,7 @@ namespace BusBuddy.Core.Services
                 catch (Exception ex)
                 {
                     stopwatch.Stop();
-                    Logger.Error(ex, "GetActivitiesByDate failed after {Duration}ms", stopwatch.ElapsedMilliseconds);
+                    DatabaseUserMessage.LogFailure(Logger, ex, "GetActivitiesByDate failed after {Duration}ms", stopwatch.ElapsedMilliseconds);
                     throw;
                 }
             }
@@ -688,7 +688,7 @@ namespace BusBuddy.Core.Services
                 }
                 catch (Exception ex)
                 {
-                    Logger.Error(ex, "Failed to retrieve all buses");
+                    DatabaseUserMessage.LogFailure(Logger, ex, "Failed to retrieve all buses");
                     throw;
                 }
             }
@@ -710,7 +710,7 @@ namespace BusBuddy.Core.Services
                 }
                 catch (Exception ex)
                 {
-                    Logger.Error(ex, "Failed to add bus: {BusNumber}", bus.BusNumber);
+                    DatabaseUserMessage.LogFailure(Logger, ex, "Failed to add bus: {BusNumber}", bus.BusNumber);
                     throw;
                 }
             }
@@ -728,7 +728,7 @@ namespace BusBuddy.Core.Services
                 }
                 catch (Exception ex)
                 {
-                    Logger.Error(ex, "Failed to update bus with ID: {BusId}", bus.BusId);
+                    DatabaseUserMessage.LogFailure(Logger, ex, "Failed to update bus with ID: {BusId}", bus.BusId);
                     throw;
                 }
             }
@@ -746,7 +746,7 @@ namespace BusBuddy.Core.Services
                 }
                 catch (Exception ex)
                 {
-                    Logger.Error(ex, "Failed to delete bus with ID: {BusId}", busId);
+                    DatabaseUserMessage.LogFailure(Logger, ex, "Failed to delete bus with ID: {BusId}", busId);
                     throw;
                 }
             }
@@ -763,12 +763,14 @@ namespace BusBuddy.Core.Services
                     using var context = _contextFactory.CreateDbContext();
                     return await context.Buses
                         .AsNoTracking()
+                        .Include(b => b.AMRoutes)
+                        .Include(b => b.PMRoutes)
                         .Where(b => b.Status == "Active")
                         .ToListAsync();
                 }
                 catch (Exception ex)
                 {
-                    Logger.Error(ex, "Failed to retrieve active buses");
+                    DatabaseUserMessage.LogFailure(Logger, ex, "Failed to retrieve active buses");
                     throw;
                 }
             }
@@ -791,7 +793,7 @@ namespace BusBuddy.Core.Services
                 }
                 catch (Exception ex)
                 {
-                    Logger.Error(ex, "Failed to retrieve buses with status: {Status}", status);
+                    DatabaseUserMessage.LogFailure(Logger, ex, "Failed to retrieve buses with status: {Status}", status);
                     throw;
                 }
             }
@@ -814,7 +816,7 @@ namespace BusBuddy.Core.Services
                 }
                 catch (Exception ex)
                 {
-                    Logger.Error(ex, "Failed to retrieve buses with type: {Type}", type);
+                    DatabaseUserMessage.LogFailure(Logger, ex, "Failed to retrieve buses with type: {Type}", type);
                     throw;
                 }
             }
@@ -842,7 +844,7 @@ namespace BusBuddy.Core.Services
                 }
                 catch (Exception ex)
                 {
-                    Logger.Error(ex, "Failed to search buses with term: {SearchTerm}", searchTerm);
+                    DatabaseUserMessage.LogFailure(Logger, ex, "Failed to search buses with term: {SearchTerm}", searchTerm);
                     throw;
                 }
             }
@@ -899,14 +901,14 @@ namespace BusBuddy.Core.Services
                     }
                     catch (Exception ex)
                     {
-                        Logger.Error(ex, "Failed to retrieve buses from database");
+                        DatabaseUserMessage.LogFailure(Logger, ex, "Failed to retrieve buses from database");
                         throw; // Notify caller instead of using sample data
                     }
                 }
                 catch (Exception ex)
                 {
                     stopwatch.Stop();
-                    Logger.Error(ex, "GetBusList_Legacy failed after {Duration}ms", stopwatch.ElapsedMilliseconds);
+                    DatabaseUserMessage.LogFailure(Logger, ex, "GetBusList_Legacy failed after {Duration}ms", stopwatch.ElapsedMilliseconds);
                     throw;
                 }
             }

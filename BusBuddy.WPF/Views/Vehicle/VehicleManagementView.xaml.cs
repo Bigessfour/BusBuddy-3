@@ -19,9 +19,16 @@ namespace BusBuddy.WPF.Views.Vehicle
     public partial class VehicleManagementView : UserControl
     {
         private static readonly ILogger Logger = Log.ForContext<VehicleManagementView>();
-        public VehicleManagementView()
+        private readonly VehicleManagementStartup _startup;
+
+        public VehicleManagementView() : this(VehicleManagementStartup.None)
         {
-            Logger.Debug("VehicleManagementView ctor start");
+        }
+
+        public VehicleManagementView(VehicleManagementStartup startup)
+        {
+            _startup = startup;
+            Logger.Debug("VehicleManagementView ctor start Startup={Startup}", startup);
             try
             {
                 InitializeComponent();
@@ -63,6 +70,11 @@ namespace BusBuddy.WPF.Views.Vehicle
         private void OnLoaded(object? sender, RoutedEventArgs e)
         {
             Logger.Information("VehicleManagementView Loaded");
+            if (_startup != VehicleManagementStartup.None && DataContext is VehicleManagementViewModel vm)
+            {
+                _ = vm.ApplyStartupAsync(_startup);
+            }
+
             try { Dispatcher.BeginInvoke(new Action(AuditButtonsAccessibility), DispatcherPriority.Loaded); } catch (Exception ex) { Logger.Warning(ex, "VehicleManagementView: audit scheduling failed"); }
         }
 

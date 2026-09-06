@@ -6,6 +6,7 @@ using System.Windows.Input;
 using System.Windows.Documents;
 using System.Windows.Media.TextFormatting;
 using System.Windows.Automation; // AutomationProperties for accessibility checks
+using Syncfusion.Windows.Controls.Input;
 using Syncfusion.Windows.Shared; // ChromelessWindow per Syncfusion WPF docs
 using Syncfusion.SfSkinManager; // SfSkinManager per official docs
 using BusBuddy.WPF.ViewModels.Student;
@@ -13,6 +14,7 @@ using BusBuddy.WPF.Utilities; // SyncfusionThemeManager
 using Serilog;
 using Microsoft.Extensions.DependencyInjection;
 using BusBuddy.Core.Services;
+using BusBuddy.Core.Services.GoogleMaps;
 
 namespace BusBuddy.WPF.Views.Student
 {
@@ -54,10 +56,17 @@ namespace BusBuddy.WPF.Views.Student
             {
                 var sp = App.ServiceProvider;
                 var svc = sp?.GetService<IStudentService>();
-                ViewModel = svc != null ? new StudentFormViewModel(svc) : new StudentFormViewModel();
+                ViewModel = svc != null
+                    ? new StudentFormViewModel(svc)
+                    : new StudentFormViewModel();
+                if (svc is null)
+                {
+                    Logger.Warning("StudentForm: IStudentService not in DI — saves may skip service validation");
+                }
             }
-            catch
+            catch (Exception ex)
             {
+                Logger.Warning(ex, "StudentForm: DI resolve failed — using fallback ViewModel");
                 ViewModel = new StudentFormViewModel();
             }
             DataContext = ViewModel;
@@ -87,9 +96,14 @@ namespace BusBuddy.WPF.Views.Student
                 ViewModel = svc != null
                     ? new StudentFormViewModel(svc, student, enableValidation: false)
                     : new StudentFormViewModel(student, enableValidation: false);
+                if (svc is null)
+                {
+                    Logger.Warning("StudentForm: IStudentService not in DI — saves may skip service validation");
+                }
             }
-            catch
+            catch (Exception ex)
             {
+                Logger.Warning(ex, "StudentForm: DI resolve failed — using fallback ViewModel");
                 ViewModel = new StudentFormViewModel(student, enableValidation: false);
             }
 
@@ -100,8 +114,8 @@ namespace BusBuddy.WPF.Views.Student
 
         private void WireStudentFormChrome()
         {
-            TryAttachGlobalErrorListener();
             ViewModel.RequestClose += OnRequestClose;
+            ViewModel.RequestFocusField += OnRequestFocusField;
 
             try
             {
@@ -129,39 +143,99 @@ namespace BusBuddy.WPF.Views.Student
             }
         }
 
-        private void TryAttachGlobalErrorListener()
+        private void OnRequestFocusField(object? sender, string fieldKey)
         {
-            try
+            Dispatcher.BeginInvoke(() => FocusFieldByKey(fieldKey), System.Windows.Threading.DispatcherPriority.Input);
+        }
+
+        private void FocusFieldByKey(string fieldKey)
+        {
+            FrameworkElement? target = fieldKey switch
             {
-                if (ViewModel == null) return;
-                ViewModel.PropertyChanged += (s, e) =>
-                {
-                    try
-                    {
-                        if (e.PropertyName == nameof(ViewModel.HasGlobalError) && ViewModel.HasGlobalError)
-                        {
-                            var msg = ViewModel.GlobalErrorMessage ?? "An error occurred.";
-                            if (ViewModel.HasValidationErrors && ViewModel.ValidationErrors.Count > 0)
-                            {
-                                var first = ViewModel.ValidationErrors.Take(3).ToArray();
-                                msg += "\n\nDetails:" + "\n" + string.Join("\n", first);
-                                if (ViewModel.ValidationErrors.Count > 3)
-                                {
-                                    msg += $"\n(+{ViewModel.ValidationErrors.Count - 3} more)";
-                                }
-                            }
-                            MessageBox.Show(this, msg, "Validation error", MessageBoxButton.OK, MessageBoxImage.Warning);
-                        }
-                    }
-                    catch (System.Exception ex)
-                    {
-                        Logger.Warning(ex, "StudentForm: error listener failed");
-                    }
-                };
+                StudentFormFields.StudentName => StudentNameTextBox,
+                StudentFormFields.Grade => GradeComboBox,
+                StudentFormFields.HomeAddress => HomeAddressTextBox,
+                StudentFormFields.City => CityTextBox,
+                StudentFormFields.State => StateComboBox,
+                StudentFormFields.Zip => ZipMaskedEdit,
+                StudentFormFields.DateOfBirth => DateOfBirthPicker,
+                StudentFormFields.AMRoute => AMRouteComboBox,
+                StudentFormFields.PMRoute => PMRouteComboBox,
+                StudentFormFields.HomePhone => HomePhoneMaskedEdit,
+                StudentFormFields.CellPhone => CellPhoneMaskedEdit,
+                StudentFormFields.EmergencyPhone => EmergencyContactPhoneMaskedEdit,
+                StudentFormFields.School => SchoolComboBox,
+                _ => null,
+            };
+
+            if (target is null)
+            {
+                return;
             }
-            catch (System.Exception ex)
+
+            if (TryFocusInnerEditable(target))
             {
-                Logger.Warning(ex, "StudentForm: failed to attach global error listener");
+                return;
+            }
+
+            if (!target.Focus())
+            {
+                Keyboard.Focus(target);
+            }
+
+            if (target is TextBox textBox)
+            {
+                textBox.CaretIndex = textBox.Text?.Length ?? 0;
+            }
+        }
+
+        private static bool TryFocusInnerEditable(FrameworkElement target)
+        {
+            TextBox? inner = target switch
+            {
+                SfMaskedEdit maskedEdit => maskedEdit.Template?.FindName("PART_TextBox", maskedEdit) as TextBox,
+                SfTextBoxExt textExt => textExt.Template?.FindName("PART_TextBox", textExt) as TextBox,
+                _ => null,
+            };
+
+            if (inner is null)
+            {
+                return false;
+            }
+
+            inner.Focus();
+            inner.CaretIndex = inner.Text?.Length ?? 0;
+            return true;
+        }
+
+        private void ClearFieldErrorForControl(string? controlName)
+        {
+            if (ViewModel is null || string.IsNullOrWhiteSpace(controlName))
+            {
+                return;
+            }
+
+            var fieldKey = controlName switch
+            {
+                nameof(StudentNameTextBox) => StudentFormFields.StudentName,
+                nameof(GradeComboBox) => StudentFormFields.Grade,
+                nameof(HomeAddressTextBox) => StudentFormFields.HomeAddress,
+                nameof(CityTextBox) => StudentFormFields.City,
+                nameof(StateComboBox) => StudentFormFields.State,
+                nameof(ZipMaskedEdit) => StudentFormFields.Zip,
+                nameof(DateOfBirthPicker) => StudentFormFields.DateOfBirth,
+                nameof(AMRouteComboBox) => StudentFormFields.AMRoute,
+                nameof(PMRouteComboBox) => StudentFormFields.PMRoute,
+                nameof(HomePhoneMaskedEdit) => StudentFormFields.HomePhone,
+                nameof(CellPhoneMaskedEdit) => StudentFormFields.CellPhone,
+                nameof(EmergencyContactPhoneMaskedEdit) => StudentFormFields.EmergencyPhone,
+                nameof(SchoolComboBox) => StudentFormFields.School,
+                _ => null,
+            };
+
+            if (fieldKey is not null)
+            {
+                ViewModel.ClearFieldError(fieldKey);
             }
         }
 
@@ -235,10 +309,10 @@ namespace BusBuddy.WPF.Views.Student
         protected override void OnClosed(System.EventArgs e)
         {
             Logger.Information("StudentForm closing, disposing resources");
-            // Unsubscribe from events to prevent memory leaks
             if (ViewModel != null)
             {
                 ViewModel.RequestClose -= OnRequestClose;
+                ViewModel.RequestFocusField -= OnRequestFocusField;
                 ViewModel.Dispose();
             }
             // Remove global handlers where applicable
@@ -263,7 +337,10 @@ namespace BusBuddy.WPF.Views.Student
         private void OnLoaded(object? sender, RoutedEventArgs e)
         {
             FitDialogToWorkArea();
-            Logger.Information("StudentForm Loaded — DataContextType={DataContextType}", DataContext?.GetType().Name ?? "(null)");
+            Title = $"Student Form · {ViewModel.FormTitle}";
+            Logger.Information("StudentForm Loaded — DataContextType={DataContextType} FormTitle={FormTitle}",
+                DataContext?.GetType().Name ?? "(null)", ViewModel.FormTitle);
+            Dispatcher.BeginInvoke(() => FocusFieldByKey(StudentFormFields.StudentName), System.Windows.Threading.DispatcherPriority.Input);
         }
 
         private void FitDialogToWorkArea()
@@ -288,6 +365,7 @@ namespace BusBuddy.WPF.Views.Student
         private void OnContentRendered(object? sender, System.EventArgs e)
         {
             Logger.Information("StudentForm ContentRendered — Ready for user interaction");
+            InputCaretHelper.RefreshCaretsInSubtree(this);
             // One-time UI audit after visual tree is ready
             try { AuditButtonsAccessibility(); }
             catch (System.Exception ex) { Logger.Warning(ex, "StudentForm: UI audit failed"); }
@@ -347,32 +425,6 @@ namespace BusBuddy.WPF.Views.Student
             catch (System.Exception ex)
             {
                 Logger.Warning(ex, "StudentForm: button click logging failed");
-            }
-
-            // After any button click, if the ViewModel has surfaced a global error, show it immediately.
-            try
-            {
-                if (ViewModel?.HasGlobalError == true && !string.IsNullOrWhiteSpace(ViewModel.GlobalErrorMessage))
-                {
-                    // If there are detailed validation errors, include a compact hint
-                    string message = ViewModel.GlobalErrorMessage;
-                    if (ViewModel.HasValidationErrors && ViewModel.ValidationErrors.Count > 0)
-                    {
-                        // Show only first 3 to keep dialog concise
-                        var first = ViewModel.ValidationErrors.Take(3).ToArray();
-                        message += "\n\nDetails:" + "\n" + string.Join("\n", first);
-                        if (ViewModel.ValidationErrors.Count > 3)
-                        {
-                            message += $"\n(+{ViewModel.ValidationErrors.Count - 3} more)";
-                        }
-                    }
-
-                    MessageBox.Show(this, message, "Action blocked", MessageBoxButton.OK, MessageBoxImage.Warning);
-                }
-            }
-            catch (System.Exception ex)
-            {
-                Logger.Warning(ex, "StudentForm: failed to display global error message");
             }
         }
 
@@ -477,6 +529,7 @@ namespace BusBuddy.WPF.Views.Student
                 Logger.Information(
                     "StudentForm SelectionChanged: {Type} Name={Name} Added={Added} Removed={Removed} SelectedIndex={SelectedIndex} SelectedItemType={SelectedItemType}",
                     type, name, added, removed, selectedIndex, selectedType);
+                ClearFieldErrorForControl(name);
             }
             catch (System.Exception ex)
             {
@@ -507,6 +560,7 @@ namespace BusBuddy.WPF.Views.Student
                 }
 
                 Logger.Information("StudentForm TextChanged: {Type} Name={Name} Length={Length}", type, name, length);
+                ClearFieldErrorForControl(name);
             }
             catch (System.Exception ex)
             {
@@ -537,6 +591,27 @@ namespace BusBuddy.WPF.Views.Student
             catch (System.Exception ex)
             {
                 Logger.Warning(ex, "StudentForm: validation logging failed");
+            }
+        }
+
+        private async void AddressSuggestionsList_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (ViewModel is null || AddressSuggestionsList.SelectedItem is not PlaceAutocompleteSuggestion suggestion)
+            {
+                return;
+            }
+
+            try
+            {
+                await ViewModel.ApplyAddressSuggestionAsync(suggestion).ConfigureAwait(true);
+            }
+            catch (Exception ex)
+            {
+                Logger.Warning(ex, "StudentForm: Places suggestion apply failed");
+            }
+            finally
+            {
+                AddressSuggestionsList.SelectedItem = null;
             }
         }
 

@@ -20,6 +20,7 @@ public static class PostgresConnectionResolver
     private const string DefaultDatabase = "busbuddy_test";
     private const string DefaultUser = "busbuddy";
     private const string DefaultPassword = "busbuddy_dev";
+    internal const int ConnectTimeoutSeconds = 5;
 
     /// <summary>
     /// Reads <c>BUSBUDDY_CONNECTION</c>, optionally refreshes the host from <c>keys/mac-host-ip.txt</c>,
@@ -37,7 +38,7 @@ public static class PostgresConnectionResolver
                 return null;
             }
 
-            var built = BuildConnectionString(macHostIp);
+            var built = EnsureConnectTimeout(BuildConnectionString(macHostIp));
             Environment.SetEnvironmentVariable("BUSBUDDY_CONNECTION", built);
             Logger.Information("Set BUSBUDDY_CONNECTION from mac-host-ip.txt -> Host={Host}", macHostIp);
             return built;
@@ -48,21 +49,26 @@ public static class PostgresConnectionResolver
             return current;
         }
 
+        var resolved = current;
         if (!string.IsNullOrWhiteSpace(macHostIp))
         {
-            var refreshed = RefreshHostIfNeeded(current, macHostIp);
-            if (!string.Equals(refreshed, current, StringComparison.Ordinal))
+            resolved = RefreshHostIfNeeded(current, macHostIp);
+            if (!string.Equals(resolved, current, StringComparison.Ordinal))
             {
-                Environment.SetEnvironmentVariable("BUSBUDDY_CONNECTION", refreshed);
                 Logger.Warning(
                     "Refreshed stale Postgres host in BUSBUDDY_CONNECTION: {OldHost} -> {NewHost}",
                     ExtractHost(current),
                     macHostIp);
-                return refreshed;
             }
         }
 
-        return current;
+        resolved = EnsureConnectTimeout(resolved);
+        if (!string.Equals(resolved, current, StringComparison.Ordinal))
+        {
+            Environment.SetEnvironmentVariable("BUSBUDDY_CONNECTION", resolved);
+        }
+
+        return resolved;
     }
 
     /// <summary>
@@ -109,7 +115,26 @@ public static class PostgresConnectionResolver
     }
 
     public static string BuildConnectionString(string host) =>
-        $"Host={host};Port=5432;Database={DefaultDatabase};Username={DefaultUser};Password={DefaultPassword};Include Error Detail=true";
+        $"Host={host};Port=5432;Database={DefaultDatabase};Username={DefaultUser};Password={DefaultPassword};Include Error Detail=true;Timeout={ConnectTimeoutSeconds}";
+
+    /// <summary>
+    /// Caps Npgsql connect wait so an unreachable Mac host fails in seconds, not the 15s default.
+    /// </summary>
+    public static string EnsureConnectTimeout(string connectionString)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(connectionString);
+        if (!IsPostgresConnection(connectionString))
+        {
+            return connectionString;
+        }
+
+        if (Regex.IsMatch(connectionString, @"(^|;)\s*Timeout\s*=", RegexOptions.IgnoreCase))
+        {
+            return connectionString;
+        }
+
+        return connectionString.TrimEnd(';') + $";Timeout={ConnectTimeoutSeconds}";
+    }
 
     internal static string? ExtractHost(string connectionString)
     {

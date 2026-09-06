@@ -10,8 +10,9 @@ using Syncfusion.UI.Xaml.Grid;
 using BusBuddy.WPF.ViewModels;
 using BusBuddy.WPF.Views.Dashboard;
 using BusBuddy.WPF.ViewModels.Route; // Needed for RouteManagementViewModel reference
+using BusBuddy.WPF.ViewModels.Student;
+using BusBuddy.WPF.ViewModels.Vehicle;
 using BusBuddy.WPF.Views.Student;
-using BusBuddy.WPF.Views.Bus;
 using BusBuddy.WPF.Views.Driver;
 using BusBuddy.WPF.Views.Analytics;
 using BusBuddy.WPF.Views.Activity;
@@ -151,6 +152,7 @@ namespace BusBuddy.WPF.Views.Main
             try
             {
                 EnsureMainWindowViewModel();
+                TryShowDashboardOnStartup();
                 Dispatcher.BeginInvoke(new Action(() =>
                 {
                     try { AuditButtonsAccessibility(); } catch (Exception ex2) { Logger.Warning(ex2, "MainWindow: post-load audit failed"); }
@@ -159,6 +161,33 @@ namespace BusBuddy.WPF.Views.Main
             catch (Exception ex)
             {
                 Logger.Warning(ex, "MainWindow_Loaded diagnostics failed");
+            }
+        }
+
+        private void TryShowDashboardOnStartup()
+        {
+            try
+            {
+                var settings = App.ServiceProvider?.GetService<IUserSettingsService>();
+                if (settings is null)
+                {
+                    return;
+                }
+
+                settings.LoadSettingsAsync().ConfigureAwait(false).GetAwaiter().GetResult();
+                if (!settings.ShowDashboardOnStartup)
+                {
+                    Logger.Information("Dashboard on startup disabled in user settings");
+                    return;
+                }
+
+                Logger.Information("Opening dashboard on startup per user settings (non-modal)");
+                ShowViewInWindow(new DashboardView(), "Dashboard", 1050, 720, modal: false);
+                Activate();
+            }
+            catch (Exception ex)
+            {
+                Logger.Warning(ex, "Failed to open dashboard on startup");
             }
         }
 
@@ -607,8 +636,15 @@ namespace BusBuddy.WPF.Views.Main
         {
             Logger.Debug("DashboardButton_Click event triggered");
             Logger.Information("Dashboard navigation requested");
-            // Future: Navigate to dashboard view
-            Logger.Debug("Dashboard navigation logic completed");
+            try
+            {
+                ShowViewInWindow(new DashboardView(), "Dashboard", 1050, 720);
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Error opening Dashboard view");
+                MessageBox.Show($"Error opening Dashboard: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
         private void ThemeSelector_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
@@ -689,12 +725,16 @@ namespace BusBuddy.WPF.Views.Main
         /// </summary>
         private void StudentsButton_Click(object sender, RoutedEventArgs e)
         {
-            Logger.Debug("StudentsButton_Click event triggered");
-            Logger.Information("Students navigation requested");
+            ShowStudentsView(StudentsViewStartup.None);
+        }
+
+        private void ShowStudentsView(StudentsViewStartup startup, int? editStudentId = null)
+        {
+            Logger.Debug("ShowStudentsView startup={Startup} editStudentId={EditStudentId}", startup, editStudentId);
+            Logger.Information("Students navigation requested (startup={Startup})", startup);
             try
             {
-                // Open StudentsView as a top-level window (ChromelessWindow) — do not embed a Window as Content
-                var studentsView = new StudentsView
+                var studentsView = new StudentsView(startup, editStudentId)
                 {
                     Owner = this,
                     WindowStartupLocation = WindowStartupLocation.CenterOwner
@@ -715,33 +755,64 @@ namespace BusBuddy.WPF.Views.Main
         private void OnAssignmentRoutesGenerated(object? sender, EventArgs e) => RefreshRoutesGrid();
 
         /// <summary>
-        /// Navigate to Route management view
+        /// Navigate to Route management view (header nav — full planner window).
         /// </summary>
         private void RouteManagementButton_Click(object sender, RoutedEventArgs e)
         {
             Logger.Debug("RouteManagementButton_Click event triggered");
-            Logger.Information("Route assignment workspace requested");
+            Logger.Information("Route management navigation requested");
             try
             {
-                if (MainDockingManager != null)
-                {
-                    try
-                    {
-                        MainDockingManager.ActivateWindow(RouteAssignmentsHeader);
-                        Logger.Information("Route Assignments pane activation attempted via header lookup");
-                    }
-                    catch (Exception inner)
-                    {
-                        Logger.Warning(inner, "ActivateWindow for Route Assignments failed; focusing pane");
-                        RouteAssignmentPane?.Focus();
-                    }
-                }
+                ShowViewInWindow(new RouteManagementView(), "Route Management", 1200, 800);
+                RefreshRoutesGrid();
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Error activating Route Assignments view");
-                MessageBox.Show($"Error opening Route Assignments: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                Logger.Error(ex, "Error opening Route Management view");
+                MessageBox.Show($"Error opening Route Management: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
+        }
+
+        /// <summary>
+        /// Activates the Route Assignments dock tab (bus/driver assignment workflow).
+        /// </summary>
+        private void ActivateRouteAssignmentsPane()
+        {
+            if (MainDockingManager is null)
+            {
+                return;
+            }
+
+            ActivateDockPane(RouteAssignmentPane, RouteAssignmentsHeader);
+        }
+
+        /// <summary>
+        /// Activates a DockingManager child by element, falling back to header text.
+        /// </summary>
+        private void ActivateDockPane(FrameworkElement? pane, string headerFallback)
+        {
+            if (MainDockingManager is null || pane is null)
+            {
+                return;
+            }
+
+            var header = DockingManager.GetHeader(pane)?.ToString();
+            if (string.IsNullOrWhiteSpace(header))
+            {
+                header = headerFallback;
+            }
+
+            try
+            {
+                MainDockingManager.ActivateWindow(header);
+                Logger.Information("Dock pane activated via header {Header} ({PaneName})", header, pane.Name);
+            }
+            catch (Exception ex)
+            {
+                Logger.Warning(ex, "ActivateWindow failed for header {Header} ({PaneName})", header, pane.Name);
+            }
+
+            pane.Focus();
         }
 
         /// <summary>
@@ -777,32 +848,21 @@ namespace BusBuddy.WPF.Views.Main
         }
 
         /// <summary>
-        /// Show / activate the Map pane inside the DockingManager.
+        /// Open the district map in a dedicated window (consistent with Students / Reports nav).
         /// </summary>
         private void MapButton_Click(object sender, RoutedEventArgs e)
         {
             Logger.Debug("MapButton_Click event triggered");
+            Logger.Information("Map navigation requested");
             try
             {
-                if (MainDockingManager != null)
-                {
-                    try
-                    {
-                        // Activate by header text (Syncfusion ActivateWindow expects string header in current version build context)
-                        MainDockingManager.ActivateWindow(MapHeader);
-                        Logger.Information("Map pane activation attempted via header lookup");
-                    }
-                    catch (Exception inner)
-                    {
-                        Logger.Warning(inner, "Primary ActivateWindow by header failed; attempting manual focus");
-                        var mapPane = this.FindName("MapPane") as ContentControl;
-                        mapPane?.Focus();
-                    }
-                }
+                MapViewLauncher.Show(this);
+                ActivateDockPane(MapPane, MapHeader);
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Error activating Map pane");
+                Logger.Error(ex, "Error opening Map view");
+                MessageBox.Show($"Error opening Map: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -815,20 +875,7 @@ namespace BusBuddy.WPF.Views.Main
             Logger.Information("Buses navigation requested");
             try
             {
-                // Create a window to host the VehicleManagementView
-                var busesWindow = new Window
-                {
-                    Title = "🚐 Bus Management",
-                    Width = 1200,
-                    Height = 800,
-                    WindowStartupLocation = WindowStartupLocation.CenterOwner,
-                    Owner = this,
-                    Content = new VehicleManagementView()
-                };
-
-                Logger.Debug("Showing VehicleManagementView in modal dialog");
-                busesWindow.ShowDialog();
-                Logger.Information("VehicleManagementView dialog closed");
+                VehicleFleetLauncher.ShowDialog(this);
                 RefreshBusesGrid();
             }
             catch (Exception ex)
@@ -857,7 +904,7 @@ namespace BusBuddy.WPF.Views.Main
             Logger.Information("Vehicles navigation requested");
             try
             {
-                ShowViewInWindow(new VehicleManagementView(), "🚌 Vehicle Management", 1100, 750);
+                VehicleFleetLauncher.ShowDialog(this);
             }
             catch (Exception ex)
             {
@@ -911,7 +958,7 @@ namespace BusBuddy.WPF.Views.Main
         /// <summary>
         /// Opens a UserControl in a modal host window (consistent with Route/Drivers pattern).
         /// </summary>
-        private void ShowViewInWindow(UserControl view, string title, double width = 1100, double height = 750)
+        private void ShowViewInWindow(UserControl view, string title, double width = 1100, double height = 750, bool modal = true)
         {
             var host = new Window
             {
@@ -922,7 +969,14 @@ namespace BusBuddy.WPF.Views.Main
                 Owner = this,
                 Content = view
             };
-            host.ShowDialog();
+            if (modal)
+            {
+                host.ShowDialog();
+            }
+            else
+            {
+                host.Show();
+            }
         }
 
         /// <summary>
@@ -949,35 +1003,13 @@ namespace BusBuddy.WPF.Views.Main
         // Button Click Handlers
         private void AddStudent_Click(object sender, RoutedEventArgs e)
         {
-            Logger.Debug("AddStudent_Click event triggered");
-            try
-            {
-                Logger.Debug("Creating new StudentForm dialog");
-                var studentForm = new StudentForm();
-                Logger.Debug("Showing StudentForm modal dialog");
-                var result = studentForm.ShowDialog();
-                Logger.Debug("StudentForm dialog result: {DialogResult}", result);
-                if (result == true)
-                {
-                    Logger.Information("Student added successfully");
-                    Logger.Debug("Student form completed successfully, refreshing data");
-                    RefreshStudentsGrid();
-                }
-                else
-                {
-                    Logger.Debug("Student form was cancelled or closed without saving");
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger.Error(ex, "Error opening Student form");
-                MessageBox.Show($"Error opening Student form: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
+            Logger.Debug("AddStudent_Click — routing to StudentsView add flow");
+            ShowStudentsView(StudentsViewStartup.AddStudent);
         }
 
         private void EditStudent_Click(object sender, RoutedEventArgs e)
         {
-            Logger.Information("Edit student requested");
+            Logger.Information("Edit student requested — routing to StudentsView edit flow");
             try
             {
                 if (DataContext is not MainWindowViewModel mainViewModel)
@@ -997,24 +1029,15 @@ namespace BusBuddy.WPF.Views.Main
                     return;
                 }
 
-                Logger.Information("Opening StudentForm for editing student: {StudentName} (ID: {StudentId})",
+                Logger.Information("Opening StudentsView for edit: {StudentName} (ID: {StudentId})",
                     selectedStudent.StudentName, selectedStudent.StudentId);
 
-                var studentForm = new BusBuddy.WPF.Views.Student.StudentForm();
-                var studentViewModel = new BusBuddy.WPF.ViewModels.Student.StudentFormViewModel(selectedStudent);
-                studentForm.DataContext = studentViewModel;
-
-                var result = studentForm.ShowDialog();
-                if (result == true)
-                {
-                    Logger.Information("Student edited successfully");
-                    RefreshStudentsGrid();
-                }
+                ShowStudentsView(StudentsViewStartup.EditStudent, selectedStudent.StudentId);
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Error opening Student form for editing");
-                MessageBox.Show($"Error opening Student form for editing: {ex.Message}", "Error",
+                Logger.Error(ex, "Error opening Students view for edit");
+                MessageBox.Show($"Error opening student editor: {ex.Message}", "Error",
                     MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
@@ -1023,18 +1046,13 @@ namespace BusBuddy.WPF.Views.Main
         {
             try
             {
-                var busForm = new BusForm();
-                var result = busForm.ShowDialog();
-                if (result == true)
-                {
-                    Logger.Information("Bus added successfully");
-                    RefreshBusesGrid();
-                }
+                VehicleFleetLauncher.ShowDialog(this, VehicleManagementStartup.AddVehicle);
+                RefreshBusesGrid();
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Error opening Bus form");
-                MessageBox.Show($"Error opening Bus form: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                Logger.Error(ex, "Error opening vehicle fleet for add bus");
+                MessageBox.Show($"Error opening vehicle management: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -1206,7 +1224,7 @@ namespace BusBuddy.WPF.Views.Main
             Logger.Information("Bus assignment requested: opening Route Assignments");
             try
             {
-                RouteManagementButton_Click(sender, e);
+                ActivateRouteAssignmentsPane();
             }
             catch (Exception ex)
             {

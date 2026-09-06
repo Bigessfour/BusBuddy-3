@@ -17,6 +17,10 @@ public partial class Route : INotifyPropertyChanged
     private string _routeName = string.Empty;
     private string? _description;
     private bool _isActive = true;
+    private bool _isSpecialNeedsRoute;
+    private int? _studentCount;
+    private int? _stopCount;
+    private string? _school;
 
     [Key]
     public int RouteId { get; set; }
@@ -109,7 +113,18 @@ public partial class Route : INotifyPropertyChanged
 
     /// <summary>When true, only students flagged for special-needs transport should be assigned here.</summary>
     [Display(Name = "Special Needs Route")]
-    public bool IsSpecialNeedsRoute { get; set; }
+    public bool IsSpecialNeedsRoute
+    {
+        get => _isSpecialNeedsRoute;
+        set
+        {
+            if (_isSpecialNeedsRoute != value)
+            {
+                _isSpecialNeedsRoute = value;
+                OnPropertyChanged();
+            }
+        }
+    }
 
     // AM Route Information
     [ForeignKey("AMVehicle")]
@@ -162,10 +177,32 @@ public partial class Route : INotifyPropertyChanged
     public int? EstimatedDuration { get; set; }
 
     [Display(Name = "Student Count")]
-    public int? StudentCount { get; set; }
+    public int? StudentCount
+    {
+        get => _studentCount;
+        set
+        {
+            if (_studentCount != value)
+            {
+                _studentCount = value;
+                OnPropertyChanged();
+            }
+        }
+    }
 
     [Display(Name = "Stop Count")]
-    public int? StopCount { get; set; }
+    public int? StopCount
+    {
+        get => _stopCount;
+        set
+        {
+            if (_stopCount != value)
+            {
+                _stopCount = value;
+                OnPropertyChanged();
+            }
+        }
+    }
 
     [Display(Name = "AM Begin Time")]
     public TimeSpan? AMBeginTime { get; set; }
@@ -179,7 +216,20 @@ public partial class Route : INotifyPropertyChanged
 
     [StringLength(20)]
     [Display(Name = "Bus Number")]
-    public string? BusNumber { get; set; }
+    public string? BusNumber
+    {
+        get => _busNumber;
+        set
+        {
+            if (_busNumber != value)
+            {
+                _busNumber = value;
+                OnPropertyChanged();
+            }
+        }
+    }
+
+    private string? _busNumber;
 
     // Navigation properties
     public virtual Bus? AMVehicle { get; set; }
@@ -197,7 +247,18 @@ public partial class Route : INotifyPropertyChanged
 
     [StringLength(100)]
     [Display(Name = "School")]
-    public string? School { get; set; }
+    public string? School
+    {
+        get => _school;
+        set
+        {
+            if (_school != value)
+            {
+                _school = string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+                OnPropertyChanged();
+            }
+        }
+    }
 
     [StringLength(200)]
     [Display(Name = "Route Description")]

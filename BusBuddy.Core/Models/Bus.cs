@@ -461,6 +461,20 @@ public class Bus : INotifyPropertyChanged
     }
 
     [NotMapped]
+    [Display(Name = "Route")]
+    public string RouteNumber =>
+        AMRoutes.FirstOrDefault()?.RouteName
+        ?? PMRoutes.FirstOrDefault()?.RouteName
+        ?? string.Empty;
+
+    [NotMapped]
+    [Display(Name = "Location")]
+    public string CurrentLocation =>
+        CurrentLatitude.HasValue && CurrentLongitude.HasValue
+            ? $"{CurrentLatitude.Value:0.####}, {CurrentLongitude.Value:0.####}"
+            : "No GPS";
+
+    [NotMapped]
     [Display(Name = "Is Available")]
     public bool IsAvailable => Status == "Active";
 

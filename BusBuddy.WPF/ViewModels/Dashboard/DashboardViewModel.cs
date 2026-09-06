@@ -3,7 +3,6 @@ using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
-using System.Windows.Input;
 using BusBuddy.Core.Models;
 using BusBuddy.Core.Services;
 using BusBuddy.Core.Services.Interfaces;
@@ -41,9 +40,9 @@ namespace BusBuddy.WPF.ViewModels.Dashboard
             _routeOptimizer = routeOptimizer;
             _reportService = reportService;
 
-            RefreshCommand = new RelayCommand(async () => await RefreshDataAsync());
-            OptimizeCommand = new RelayCommand(async () => await OptimizeRoutesAsync());
-            GenerateReportCommand = new RelayCommand(async () => await GenerateReportAsync());
+            RefreshCommand = new AsyncRelayCommand(RefreshDataAsync);
+            OptimizeCommand = new AsyncRelayCommand(OptimizeRoutesAsync);
+            GenerateReportCommand = new AsyncRelayCommand(GenerateReportAsync);
 
             RouteSummaries = new ObservableCollection<DashboardRouteRow>();
             Buses = new ObservableCollection<BusBuddy.Core.Models.Bus>();
@@ -84,9 +83,9 @@ namespace BusBuddy.WPF.ViewModels.Dashboard
         [ObservableProperty]
         private bool isLoading;
 
-        public ICommand RefreshCommand { get; }
-        public ICommand OptimizeCommand { get; }
-        public ICommand GenerateReportCommand { get; }
+        public IAsyncRelayCommand RefreshCommand { get; }
+        public IAsyncRelayCommand OptimizeCommand { get; }
+        public IAsyncRelayCommand GenerateReportCommand { get; }
 
         public async Task RefreshDataAsync()
         {

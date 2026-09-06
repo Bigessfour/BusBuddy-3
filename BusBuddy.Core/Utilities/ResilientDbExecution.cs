@@ -60,8 +60,12 @@ public static class ResilientDbExecution
                 }
                 catch (Exception ex)
                 {
-                    Logger.Error(ex, "Database operation {OperationName} failed permanently after {Attempts} attempts",
-                        operationName, attempt + 1);
+                    DatabaseUserMessage.LogFailure(
+                        Logger,
+                        ex,
+                        "Database operation {OperationName} failed permanently after {Attempts} attempts",
+                        operationName,
+                        attempt + 1);
                     throw;
                 }
             }
@@ -112,7 +116,7 @@ public static class ResilientDbExecution
                 }
                 catch (Exception ex)
                 {
-                    Logger.Error(ex, "Rolling back transaction for operation: {OperationName}", operationName);
+                    DatabaseUserMessage.LogFailure(Logger, ex, "Rolling back transaction for operation: {OperationName}", operationName);
                     await transaction.RollbackAsync();
                     throw;
                 }

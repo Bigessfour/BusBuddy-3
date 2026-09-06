@@ -14,7 +14,9 @@ public sealed class GoogleRoutingService : IRoutingService, IDisposable
 {
     private static readonly ILogger Logger = Log.ForContext<GoogleRoutingService>();
     private static readonly Uri ComputeRoutesUri = new("https://routes.googleapis.com/directions/v2:computeRoutes");
+    private static readonly Uri ComputeRouteMatrixUri = new("https://routes.googleapis.com/distanceMatrix/v2:computeRouteMatrix");
     private const string FieldMask = "routes.duration,routes.distanceMeters,routes.polyline.encodedPolyline";
+    private const string MatrixFieldMask = "originIndex,destinationIndex,duration,distanceMeters,status";
 
     private readonly HttpClient _httpClient;
     private readonly GoogleMapsOptions _options;
@@ -144,6 +146,115 @@ public sealed class GoogleRoutingService : IRoutingService, IDisposable
         {
             Logger.Warning(ex, "Routes computeRoutes failed");
             return new DrivePathResult { Error = "Routing request failed." };
+        }
+    }
+
+    public async Task<IReadOnlyList<RouteMatrixElement>> ComputeRouteMatrixAsync(
+        (double Latitude, double Longitude) origin,
+        IReadOnlyList<(double Latitude, double Longitude)> destinations,
+        CancellationToken cancellationToken = default)
+    {
+        var key = GoogleAddressValidationClient.ResolveApiKey(_options);
+        if (string.IsNullOrWhiteSpace(key))
+        {
+            Logger.Warning("Route matrix skipped — GOOGLE_MAPS_API_KEY not configured");
+            return Array.Empty<RouteMatrixElement>();
+        }
+
+        if (destinations is null || destinations.Count == 0)
+        {
+            return Array.Empty<RouteMatrixElement>();
+        }
+
+        var sw = Stopwatch.StartNew();
+        try
+        {
+            using var request = new HttpRequestMessage(HttpMethod.Post, ComputeRouteMatrixUri);
+            request.Headers.TryAddWithoutValidation("X-Goog-Api-Key", key);
+            request.Headers.TryAddWithoutValidation("X-Goog-FieldMask", MatrixFieldMask);
+            if (!string.IsNullOrWhiteSpace(_options.QuotaProject))
+            {
+                request.Headers.TryAddWithoutValidation("X-Goog-User-Project", _options.QuotaProject);
+            }
+
+            var body = new
+            {
+                origins = new[]
+                {
+                    new { waypoint = new { location = new { latLng = new { latitude = origin.Latitude, longitude = origin.Longitude } } } }
+                },
+                destinations = destinations.Select(d => new
+                {
+                    waypoint = new { location = new { latLng = new { latitude = d.Latitude, longitude = d.Longitude } } }
+                }).ToArray(),
+                travelMode = "DRIVE",
+                routingPreference = "TRAFFIC_UNAWARE"
+            };
+            request.Content = new StringContent(JsonSerializer.Serialize(body), Encoding.UTF8, "application/json");
+
+            using var response = await _httpClient.SendAsync(request, cancellationToken).ConfigureAwait(false);
+            var json = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+            sw.Stop();
+
+            if (!response.IsSuccessStatusCode)
+            {
+                Logger.Warning(
+                    "Route matrix HTTP {Status} ElapsedMs={ElapsedMs}",
+                    (int)response.StatusCode,
+                    sw.ElapsedMilliseconds);
+                return Array.Empty<RouteMatrixElement>();
+            }
+
+            using var doc = JsonDocument.Parse(json);
+            if (!doc.RootElement.TryGetProperty("elements", out var elements) ||
+                elements.ValueKind != JsonValueKind.Array)
+            {
+                return Array.Empty<RouteMatrixElement>();
+            }
+
+            var list = new List<RouteMatrixElement>();
+            foreach (var el in elements.EnumerateArray())
+            {
+                int destIndex = el.TryGetProperty("destinationIndex", out var di) && di.TryGetInt32(out var idx)
+                    ? idx
+                    : list.Count;
+                int? distance = null;
+                if (el.TryGetProperty("distanceMeters", out var dm) && dm.TryGetInt32(out var meters))
+                {
+                    distance = meters;
+                }
+
+                string? duration = null;
+                if (el.TryGetProperty("duration", out var dur) && dur.ValueKind == JsonValueKind.String)
+                {
+                    duration = dur.GetString();
+                }
+
+                string? status = null;
+                if (el.TryGetProperty("status", out var st) && st.ValueKind == JsonValueKind.String)
+                {
+                    status = st.GetString();
+                }
+
+                list.Add(new RouteMatrixElement
+                {
+                    DestinationIndex = destIndex,
+                    DistanceMeters = distance,
+                    Duration = duration,
+                    Error = string.Equals(status, "OK", StringComparison.OrdinalIgnoreCase) ? null : status,
+                });
+            }
+
+            Logger.Information(
+                "Route matrix computed Destinations={Count} ElapsedMs={ElapsedMs}",
+                list.Count,
+                sw.ElapsedMilliseconds);
+            return list;
+        }
+        catch (Exception ex)
+        {
+            Logger.Warning(ex, "Route matrix request failed");
+            return Array.Empty<RouteMatrixElement>();
         }
     }
 

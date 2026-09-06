@@ -5,6 +5,10 @@
     "BusBuddy.Core/Services/StudentService.cs",
     "BusBuddy.Core/Services/SeedDataService.cs",
     "BusBuddy.WPF/Views/Student/StudentsView.xaml.cs",
+    "BusBuddy.WPF/Views/Student/StudentForm.xaml.cs",
+    "BusBuddy.WPF/Views/Student/SchoolDestinationForm.xaml.cs",
+    "BusBuddy.WPF/Views/Student/PickupStopForm.xaml.cs",
+    "BusBuddy.WPF/Views/Student/StudentSchoolTransferForm.xaml.cs",
     "BusBuddy.Core/Services/RouteService.cs",
     "BusBuddy.Core/Services/RouteDetermination/RouteDeterminationService.cs",
     "BusBuddy.Core/Services/RouteDetermination/AssignFitnessEvaluator.cs",
@@ -25,7 +29,10 @@
     "BusBuddy.WPF/Views/Dashboard/DashboardView.xaml.cs",
     "BusBuddy.Core/Services/DashboardMetricsService.cs",
     "BusBuddy.WPF/Utilities/SyncfusionThemeManager.cs",
-    "BusBuddy.WPF/Views/Map/MapView.xaml.cs"
+    "BusBuddy.WPF/Views/Map/MapView.xaml.cs",
+    "BusBuddy.Core/Services/UserSettingsService.cs",
+    "BusBuddy.WPF/Views/Settings/SettingsView.xaml.cs",
+    "BusBuddy.WPF/ViewModels/Settings/SettingsViewModel.cs"
   ],
   "scan_roots": ["BusBuddy.Core", "BusBuddy.WPF", "BusBuddy.Tests"],
   "exclude_dirs": [

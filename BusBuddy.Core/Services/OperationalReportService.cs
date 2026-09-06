@@ -81,13 +81,32 @@ namespace BusBuddy.Core.Services
             var ai = await TryCommentaryAsync(title, facts).ConfigureAwait(false);
             var isCsv = request.AsCsv || kind is OperationalReportKind.CsvExport or OperationalReportKind.ExcelExport;
             var writeSingleRoutePdf = !isCsv
-                && kind == OperationalReportKind.RouteSummary
                 && request.RouteId.HasValue
-                && route is not null;
+                && route is not null
+                && kind is OperationalReportKind.RouteSummary
+                    or OperationalReportKind.DailySchedule
+                    or OperationalReportKind.PrintSchedules;
+            IReadOnlyList<RouteStop> stops = Array.Empty<RouteStop>();
+            if (writeSingleRoutePdf)
+            {
+                try
+                {
+                    var stopsResult = await _routes.GetRouteStopsAsync(route!.RouteId).ConfigureAwait(false);
+                    if (stopsResult is { IsSuccess: true } && stopsResult.Value is not null)
+                    {
+                        stops = stopsResult.Value.ToList();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Logger.Warning(ex, "Route stops unavailable for report RouteId={RouteId}", route!.RouteId);
+                }
+            }
+
             var bytes = isCsv
                 ? Encoding.UTF8.GetBytes(ToCsv(headers, rows))
                 : writeSingleRoutePdf
-                    ? BuildRouteSummaryPdf(route!, students, buses, drivers, ai.Text)
+                    ? BuildRouteSummaryPdf(route!, students, buses, drivers, ai.Text, stops)
                     : _pdf.GenerateTabularReport(title, headers, rows, ai.Text);
             var reportedRows = writeSingleRoutePdf
                 ? students.Count(s =>
@@ -150,7 +169,8 @@ namespace BusBuddy.Core.Services
             IReadOnlyList<Student> students,
             IReadOnlyList<Bus> buses,
             IReadOnlyList<Driver> drivers,
-            string? notes)
+            string? notes,
+            IReadOnlyList<RouteStop>? stops = null)
         {
             var assigned = students
                 .Where(s => string.Equals(s.AMRoute, route.RouteName, StringComparison.OrdinalIgnoreCase)
@@ -164,7 +184,7 @@ namespace BusBuddy.Core.Services
                 : null;
             var pdf = _pdf.GenerateRouteSummaryReport(
                 route,
-                Array.Empty<RouteStop>(),
+                stops ?? Array.Empty<RouteStop>(),
                 assigned,
                 bus,
                 driver,

@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using BusBuddy.Core.Models;
+using BusBuddy.Core.Utilities;
 using Microsoft.Extensions.Caching.Memory;
 using Serilog;
 
@@ -226,7 +227,7 @@ namespace BusBuddy.Core.Services
             catch (Exception ex)
             {
                 stopwatch.Stop();
-                Logger.Error(ex, "Error fetching data for {Key} after {ElapsedMs}ms",
+                DatabaseUserMessage.LogFailure(Logger, ex, "Error fetching data for {Key} after {ElapsedMs}ms",
                     key, stopwatch.ElapsedMilliseconds);
                 throw;
             }

@@ -9,7 +9,7 @@ AI agents (Cursor, Copilot, Claude, Grok, etc.) working in this repo should foll
 - **Full technical rules**: [.github/copilot-instructions.md](.github/copilot-instructions.md) — architecture, Syncfusion, Serilog, RAG/MCP, anti-regression.
 - **Syncfusion WPF skills**: [.cursor/skills/syncfusion-wpf-busbuddy/SKILL.md](.cursor/skills/syncfusion-wpf-busbuddy/SKILL.md) — BusBuddy overlay; vendor skills in `.agents/skills/` (gitignored, install via [.github/scripts/setup-syncfusion-skills.sh](.github/scripts/setup-syncfusion-skills.sh)). NuGet pin `SyncfusionVersion` in `Directory.Build.props` (**34.2.3**); WPF MCP `syncfusion-wpf-assistant` via `.github/scripts/run-syncfusion-mcp.sh` → NuGet `Syncfusion.WPF.MCP` / `search_docs` ([WPF MCP docs](https://help.syncfusion.com/wpf/mcp)). Passwords Name = `SYNCFUSION_API_KEY` / `Syncfusion_API_Key`. Feature: [specs/006-syncfusion-tool-integration/spec.md](specs/006-syncfusion-tool-integration/spec.md).
 - **CI/CD workflow (solo developer)**: same file, section **Solo developer CI/CD workflow** — branch → PR → gates → auto-merge.
-- **GCP / Maps / secrets**: [Documentation/GCP-GEE-SECRETS-AND-AUTH.md](Documentation/GCP-GEE-SECRETS-AND-AUTH.md) — Maps Platform (paused) + Passwords. Earth Engine is not an app dependency.
+- **GCP / Maps / secrets**: [Documentation/GCP-GEE-SECRETS-AND-AUTH.md](Documentation/GCP-GEE-SECRETS-AND-AUTH.md) — Maps Platform (Address Validation + Places + Routes) + Passwords. Earth Engine is not an app dependency.
 - **Architecture map**: [STEADY-STATE-AND-FINISH-ROADMAP.md](STEADY-STATE-AND-FINISH-ROADMAP.md) (BusBuddy-3 Architecture Map section).
 
 ## Mandatory RAG usage
@@ -52,10 +52,10 @@ Loaded by `LoadApiKeysFromMacPasswords()` in `BusBuddy.WPF/App.xaml.cs`.
 | `XAI_API_KEY` / `GROK_API_KEY`                 | Optional legacy xAI cloud key (`XAI:Provider=Xai` only). Default AI path is local Ollama — no key required |
 | `SYNCFUSION_LICENSE_KEY`                       | Syncfusion WPF                                                                                             |
 | `Syncfusion_API_Key`                           | Syncfusion MCP assistant                                                                                   |
-| `GOOGLE_MAPS_API_KEY`                          | Google Maps Platform (Address Validation + Routes) when spec 007 US1/US3 resume. Not required until then.  |
+| `GOOGLE_MAPS_API_KEY`                          | Google Maps Platform (Address Validation + Places + Routes) — optional; fail-open without key              |
 | `GCP_BILLING_PROJECT` / `GOOGLE_CLOUD_PROJECT` | `busbuddy-507301`                                                                                          |
 
-**Setup:** Store Passwords entries (Name = env var). Maps API key is optional until spec 007 US1/US3. There is no Earth Engine setup script.
+**Setup:** Store Passwords entries (Name = env var). Maps API key is optional (app degrades gracefully). There is no Earth Engine setup script.
 
 ### Windows production
 
@@ -114,17 +114,17 @@ Launchers: `./run-wpf.sh` (Mac → UTM), `.\utm_run_in_vm.ps1` (inside VM). Post
 
 ## Key implementation files (quick index)
 
-| Concern               | File                                                                                            |
-| --------------------- | ----------------------------------------------------------------------------------------------- |
-| Passwords load        | `BusBuddy.WPF/App.xaml.cs`                                                                      |
-| Geo (DB + map)        | `GeoDataService`, `MapView` / `MapViewModel` (SfMap)                                            |
-| Geo (Maps Platform)   | [spec 007](specs/007-maps-platform-geo/spec.md) — Address Validation + Routes; not Earth Engine |
-| Geo DI                | `BusBuddy.WPF/App.xaml.cs` → `ConfigureServices`                                                |
-| AI chat (Ollama)      | `BusBuddy.WPF/Services/OllamaChatService.cs`                                                    |
-| CI workflow           | `.github/workflows/ci.yml`                                                                      |
-| Auto-merge            | `.github/workflows/auto-merge.yml`                                                              |
-| RAG indexer           | `rag/index.py`                                                                                  |
-| Spec-Kit constitution | `.specify/memory/constitution.md`                                                               |
+| Concern               | File                                                                                                     |
+| --------------------- | -------------------------------------------------------------------------------------------------------- |
+| Passwords load        | `BusBuddy.WPF/App.xaml.cs`                                                                               |
+| Geo (DB + map)        | `GeoDataService`, `MapView` / `MapViewModel` (SfMap)                                                     |
+| Geo (Maps Platform)   | [spec 007](specs/007-maps-platform-geo/spec.md) — Address Validation + Places + Routes; not Earth Engine |
+| Geo DI                | `BusBuddy.WPF/App.xaml.cs` → `ConfigureServices`                                                         |
+| AI chat (Ollama)      | `BusBuddy.WPF/Services/OllamaChatService.cs`                                                             |
+| CI workflow           | `.github/workflows/ci.yml`                                                                               |
+| Auto-merge            | `.github/workflows/auto-merge.yml`                                                                       |
+| RAG indexer           | `rag/index.py`                                                                                           |
+| Spec-Kit constitution | `.specify/memory/constitution.md`                                                                        |
 
 ## Documentation to keep in sync
 

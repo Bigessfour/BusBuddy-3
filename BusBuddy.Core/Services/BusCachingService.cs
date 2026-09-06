@@ -1,4 +1,5 @@
 using BusBuddy.Core.Models;
+using BusBuddy.Core.Utilities;
 using Microsoft.Extensions.Caching.Memory;
 using Serilog;
 
@@ -83,7 +84,7 @@ namespace BusBuddy.Core.Services
                 }
                 catch (Exception ex)
                 {
-                    Logger.Error(ex, "Error retrieving buses for caching");
+                    DatabaseUserMessage.LogFailure(Logger, ex, "Error retrieving buses for caching");
                     throw;
                 }
 

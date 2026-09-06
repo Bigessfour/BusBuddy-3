@@ -8,10 +8,7 @@
     Docs: https://help.syncfusion.com/wpf/themes/skin-manager
     -->
 
-    <!-- Default styles for Syncfusion inputs — size only; skin paints chrome. -->
-    <Style TargetType="syncfusion:SfTextBoxExt">
-        <Setter Property="MinHeight" Value="30" />
-    </Style>
+    <!-- Default styles for Syncfusion inputs — skin paints chrome; see BusBuddyInputStyles.xaml for alignment. -->
 
     <Style TargetType="{x:Type PasswordBox}">
         <Setter Property="MinHeight" Value="30" />

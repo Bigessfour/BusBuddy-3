@@ -14,15 +14,27 @@ namespace BusBuddy.Core.Services
     public class ActivityLogService : IActivityLogService
     {
         private readonly BusBuddy.Core.Data.BusBuddyDbContext _db;
+        private readonly IUserSettingsService? _userSettings;
         private static readonly ILogger Logger = Log.ForContext<ActivityLogService>();
 
-        public ActivityLogService(BusBuddyDbContext db)
+        public ActivityLogService(BusBuddyDbContext db) : this(db, null)
+        {
+        }
+
+        public ActivityLogService(BusBuddyDbContext db, IUserSettingsService? userSettings)
         {
             _db = db;
+            _userSettings = userSettings;
         }
 
         public async Task LogAsync(string action, string user, string? details = null)
         {
+            if (_userSettings is not null && !_userSettings.EnableActivityLogging)
+            {
+                Logger.Debug("Activity logging disabled — skipping action {Action} for {User}", action, user);
+                return;
+            }
+
             try
             {
                 Logger.Debug("[ACTIVITY_ENTRY] Starting LogActivity - Action: {Action}, User: {User}", action, user);

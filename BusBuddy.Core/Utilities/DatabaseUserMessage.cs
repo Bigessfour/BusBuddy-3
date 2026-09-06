@@ -3,6 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
+using Serilog;
 
 namespace BusBuddy.Core.Utilities;
 
@@ -51,6 +52,23 @@ public static class DatabaseUserMessage
         }
     }
 
+    /// <summary>
+    /// Logs connectivity timeouts as Warning so they do not land in errors-actionable.
+    /// Real application failures stay Error.
+    /// </summary>
+    public static void LogFailure(Serilog.ILogger logger, Exception exception, string messageTemplate, params object?[]? propertyValues)
+    {
+        ArgumentNullException.ThrowIfNull(logger);
+
+        if (IsConnectivityFailure(exception))
+        {
+            logger.Warning(exception, messageTemplate, propertyValues);
+            return;
+        }
+
+        logger.Error(exception, messageTemplate, propertyValues);
+    }
+
     public static string ForOperation(Exception exception, string operationDescription)
     {
         if (IsConnectivityFailure(exception))
@@ -64,7 +82,37 @@ public static class DatabaseUserMessage
                   "and verify port 5432 is allowed through the firewall.";
         }
 
-        return $"Failed to {operationDescription}: {exception.Message}";
+        return $"Failed to {operationDescription}: {DescribeSaveFailure(exception)}";
+    }
+
+    private static string DescribeSaveFailure(Exception exception)
+    {
+        for (var ex = exception; ex is not null; ex = ex.InnerException)
+        {
+            if (ex is PostgresException postgres)
+            {
+                return postgres.SqlState switch
+                {
+                    PostgresErrorCodes.ForeignKeyViolation =>
+                        "A related record is missing (for example an invalid family link). Leave family blank unless a family is set up.",
+                    PostgresErrorCodes.UniqueViolation =>
+                        "That value is already in use (for example student number).",
+                    _ => postgres.MessageText,
+                };
+            }
+
+            if (ex is not DbUpdateException && ex.Message.Contains("See the inner exception", StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            if (ex is not DbUpdateException)
+            {
+                return ex.Message;
+            }
+        }
+
+        return exception.Message;
     }
 
     public static bool IsConnectivityFailure(Exception? exception)

@@ -105,12 +105,12 @@
 
 ## Phase 6: User Story 4 - Address type-ahead (Priority: P3)
 
-**Goal**: Optional Places Autocomplete on student form
+**Goal**: Optional Places Autocomplete on student + school forms
 
 **Independent Test**: No key → no suggestions, no errors
 
-- [x] T028 [P] [US4] **Skipped (deferred)** — Places Autocomplete deferred
-- [x] T029 [US4] **Skipped (deferred)** — no student-form type-ahead in this ship
+- [x] T028 [P] [US4] `GooglePlacesAutocompleteService` + `IPlacesAutocompleteService` (Places API New)
+- [x] T029 [US4] StudentForm + SchoolDestinationForm address autocomplete popups; validate still required on save
 
 ---
 
@@ -160,7 +160,7 @@
 
 ## Implementation Strategy
 
-**Resumed 2026-08-17**: US1 + US3 implemented on `feature/007-maps-us1-implement`. US4 skipped (P3 cut). Open follow-up PR for Maps clients + DI; run `/code-review` on HTTP clients and key handling after merge.
+**Resumed 2026-08-17**: US1 + US3 implemented on `feature/007-maps-us1-implement`. **US4 completed 2026-09-03**: Places Autocomplete on Student + School forms. Open follow-up PR for Maps clients + DI; run `/code-review` on HTTP clients and key handling after merge.
 
 ### User Story 1 first (User Story 1 + Foundational + US2 compile-clean)
 

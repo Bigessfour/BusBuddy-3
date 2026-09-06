@@ -33,6 +33,13 @@ public class StudentSpecialNeedsHelperTests
         route.IsSpecialNeedsRoute = false;
         route.RouteName = "Special Needs Route 2";
         Assert.That(StudentSpecialNeedsHelper.IsSpecialNeedsRoute(route), Is.True);
+
+        Assert.That(
+            StudentSpecialNeedsHelper.IsSpecialNeedsRoute("Special Needs Route", isSpecialNeedsRoute: false),
+            Is.True);
+        Assert.That(
+            StudentSpecialNeedsHelper.IsSpecialNeedsRoute("North Elementary", isSpecialNeedsRoute: false),
+            Is.False);
     }
 
     [Test]

@@ -140,12 +140,32 @@ namespace BusBuddy.Core.Extensions
                     opts,
                     ownsHttpClient: true);
             });
+            services.AddSingleton<BusBuddy.Core.Services.GoogleMaps.IMapsAddressCache>(sp =>
+            {
+                var path = System.IO.Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                    "BusBuddy",
+                    "maps-address-cache.json");
+                return new BusBuddy.Core.Services.GoogleMaps.MapsAddressCache(path);
+            });
+            services.AddSingleton<BusBuddy.Core.Services.GoogleMaps.IMapsGeoService>(sp =>
+                new BusBuddy.Core.Services.GoogleMaps.MapsGeoService(
+                    sp.GetRequiredService<BusBuddy.Core.Services.GoogleMaps.GoogleAddressValidationClient>(),
+                    sp.GetRequiredService<BusBuddy.Core.Services.GoogleMaps.IMapsAddressCache>()));
             services.AddSingleton<IGeocodingService>(sp =>
-                sp.GetRequiredService<BusBuddy.Core.Services.GoogleMaps.GoogleAddressValidationClient>());
+                sp.GetRequiredService<BusBuddy.Core.Services.GoogleMaps.IMapsGeoService>());
             services.AddSingleton<BusBuddy.Core.Services.Interfaces.IRoutingService>(sp =>
             {
                 var opts = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<BusBuddy.Core.Configuration.GoogleMapsOptions>>();
                 return new BusBuddy.Core.Services.GoogleMaps.GoogleRoutingService(
+                    new System.Net.Http.HttpClient(),
+                    opts,
+                    ownsHttpClient: true);
+            });
+            services.AddSingleton<BusBuddy.Core.Services.GoogleMaps.IPlacesAutocompleteService>(sp =>
+            {
+                var opts = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<BusBuddy.Core.Configuration.GoogleMapsOptions>>();
+                return new BusBuddy.Core.Services.GoogleMaps.GooglePlacesAutocompleteService(
                     new System.Net.Http.HttpClient(),
                     opts,
                     ownsHttpClient: true);
@@ -155,10 +175,13 @@ namespace BusBuddy.Core.Extensions
             services.AddScoped<IAddressValidationService>(sp =>
                 new AddressValidationService(
                     sp.GetRequiredService<IUnitOfWork>(),
-                    sp.GetService<BusBuddy.Core.Services.GoogleMaps.GoogleAddressValidationClient>()));
+                    sp.GetService<BusBuddy.Core.Services.GoogleMaps.IMapsGeoService>()));
 
             // Register Activity Log Service
-            services.AddScoped<IActivityLogService, ActivityLogService>();
+            services.AddScoped<IActivityLogService>(sp =>
+                new ActivityLogService(
+                    sp.GetRequiredService<BusBuddyDbContext>(),
+                    sp.GetService<IUserSettingsService>()));
 
             // Register Dashboard Metrics Service
             services.AddScoped<IDashboardMetricsService, DashboardMetricsService>();
