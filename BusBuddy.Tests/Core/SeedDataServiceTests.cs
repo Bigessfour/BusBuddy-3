@@ -22,11 +22,14 @@ namespace BusBuddy.Tests.Core
             var mockFactory = new Mock<IBusBuddyDbContextFactory>();
             var students = new List<Student>();
             var families = new List<Family>();
+            var destinations = new List<Destination>();
             var studentsDbSet = CreateMockDbSet(students);
             var familiesDbSet = CreateMockDbSet(families);
+            var destinationsDbSet = CreateMockDbSet(destinations);
             var mockContext = new Mock<BusBuddyDbContext>();
             mockContext.Setup(c => c.Students).Returns(studentsDbSet.Object);
             mockContext.Setup(c => c.Families).Returns(familiesDbSet.Object);
+            mockContext.Setup(c => c.Destinations).Returns(destinationsDbSet.Object);
             mockFactory.Setup(f => f.CreateDbContext()).Returns(mockContext.Object);
 
             var service = new SeedDataService(mockFactory.Object);

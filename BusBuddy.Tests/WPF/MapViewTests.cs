@@ -41,9 +41,11 @@ public class MapViewTests
     {
         var launcher = XamlViewFile.Read("Utilities/MapViewLauncher.cs");
         Assert.That(launcher, Does.Contain("ResolveOwner"));
-        Assert.That(launcher, Does.Contain("IsActive"));
+        Assert.That(launcher, Does.Contain("DialogOwner.Resolve"));
         Assert.That(launcher, Does.Contain("BringToFront"));
         Assert.That(launcher, Does.Contain("ShowActivated = true"));
+        var owner = XamlViewFile.Read("Utilities/DialogOwner.cs");
+        Assert.That(owner, Does.Contain("IsActive"));
     }
 
     [Test]

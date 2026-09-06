@@ -644,18 +644,21 @@ Jordan,Lee,3,Sam,Lee,200 Oak Ave,Oakridge,CO,County,,555-0101,,,,,,,,
                     return 0;
                 }
 
-                List<Destination> activeSchools;
-                try
+                List<Destination> activeSchools = [];
+                if (context.Destinations is not null)
                 {
-                    activeSchools = await context.Destinations
-                        .Where(d => d.IsActive && !d.IsDeleted && d.DestinationType == DestinationTypes.School)
-                        .ToListAsync();
-                }
-                catch (InvalidOperationException)
-                {
-                    activeSchools = context.Destinations
-                        .Where(d => d.IsActive && !d.IsDeleted && d.DestinationType == DestinationTypes.School)
-                        .ToList();
+                    try
+                    {
+                        activeSchools = await context.Destinations
+                            .Where(d => d.IsActive && !d.IsDeleted && d.DestinationType == DestinationTypes.School)
+                            .ToListAsync();
+                    }
+                    catch (InvalidOperationException)
+                    {
+                        activeSchools = context.Destinations
+                            .Where(d => d.IsActive && !d.IsDeleted && d.DestinationType == DestinationTypes.School)
+                            .ToList();
+                    }
                 }
 
                 if (activeSchools.Count == 1)
@@ -965,7 +968,14 @@ Jordan,Lee,3,Sam,Lee,200 Oak Ave,Oakridge,CO,County,,555-0101,,,,,,,,
                     DriverName = driver.DriverName,
                     BusNumber = bus.BusNumber,
                     AMBeginTime = TimeSpan.FromHours(7) + TimeSpan.FromMinutes(15),
-                    PMBeginTime = TimeSpan.FromHours(15) + TimeSpan.FromMinutes(45)
+                    PMBeginTime = TimeSpan.FromHours(15) + TimeSpan.FromMinutes(45),
+                    WaypointsJson = RouteWaypointSerializer.FromPairs(new[]
+                    {
+                        (38.1535, -102.7195),
+                        (38.1550, -102.7210),
+                        (38.1565, -102.7180),
+                        (38.1535, -102.7195)
+                    })
                 };
                 context.Routes.Add(route);
                 await context.SaveChangesAsync();
@@ -993,6 +1003,16 @@ Jordan,Lee,3,Sam,Lee,200 Oak Ave,Oakridge,CO,County,,555-0101,,,,,,,,
                 if (!route.PMVehicleId.HasValue)
                 {
                     route.PMVehicleId = bus.BusId;
+                }
+                if (string.IsNullOrWhiteSpace(route.WaypointsJson))
+                {
+                    route.WaypointsJson = RouteWaypointSerializer.FromPairs(new[]
+                    {
+                        (38.1535, -102.7195),
+                        (38.1550, -102.7210),
+                        (38.1565, -102.7180),
+                        (38.1535, -102.7195)
+                    });
                 }
                 await context.SaveChangesAsync();
                 messages.Add($"Updated route '{routeName}' special-needs flag without replacing assigned bus/driver");

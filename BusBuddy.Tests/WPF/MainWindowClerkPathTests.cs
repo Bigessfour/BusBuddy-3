@@ -64,7 +64,7 @@ public class MainWindowClerkPathTests
         Assert.That(codeBehind, Does.Contain("GetLatLonFromPoint"));
         Assert.That(codeBehind, Does.Contain("ApplyMapClick"));
         Assert.That(codeBehind, Does.Contain("PushFieldsToViewModel"));
-        Assert.That(codeBehind, Does.Contain("NumPad"));
+        Assert.That(codeBehind, Does.Contain("NumpadInputHelper"));
     }
 
     [Test]
