@@ -54,6 +54,31 @@ internal static class MapMarkerLabels
         || (existing == Kind.Pickup && incoming == Kind.Student)
         || (existing == Kind.Student && incoming == Kind.Pickup);
 
+    public static bool SameSpot(double lat1, double lon1, double lat2, double lon2) =>
+        Math.Abs(lat1 - lat2) < 0.00005 && Math.Abs(lon1 - lon2) < 0.00005;
+
+    public static bool ShouldReplaceLabel(string? existing, string? incoming)
+    {
+        if (string.IsNullOrWhiteSpace(incoming))
+        {
+            return false;
+        }
+
+        var current = GetKind(existing);
+        var next = GetKind(incoming);
+        if (next == Kind.Pickup && current == Kind.Student)
+        {
+            return true;
+        }
+
+        if (current != next)
+        {
+            return false;
+        }
+
+        return current is Kind.Student or Kind.Waypoint || string.IsNullOrWhiteSpace(existing);
+    }
+
     private static string DisplayName(string? name, string fallback) =>
         string.IsNullOrWhiteSpace(name) ? fallback : name.Trim();
 }

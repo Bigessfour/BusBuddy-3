@@ -6,6 +6,7 @@ using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
+using BusBuddy.Core.Mapping;
 using BusBuddy.Core.Models;
 using System.Windows.Data;
 using BusBuddy.Core.Services;
@@ -716,8 +717,7 @@ namespace BusBuddy.WPF.ViewModels.Student
                     return;
                 }
 
-                double? lat = null, lon = null;
-                string? pickupName = null;
+                IReadOnlyDictionary<int, PickupStop>? pickups = null;
                 if (student.PickupStopId is int stopId)
                 {
                     var stopService = sp.GetService<IPickupStopService>();
@@ -726,55 +726,46 @@ namespace BusBuddy.WPF.ViewModels.Student
                         : null;
                     if (stop is not null)
                     {
-                        lat = (double)stop.Latitude;
-                        lon = (double)stop.Longitude;
-                        pickupName = stop.Name;
+                        pickups = StudentPlotLocation.Index([stop]);
                     }
                 }
 
-                if (lat is null || lon is null)
+                var point = StudentPlotLocation.TryFromStored(student, pickups);
+                if (point is null)
                 {
-                    if (student.Latitude.HasValue && student.Longitude.HasValue)
+                    var geocoder = sp.GetService<IGeocodingService>();
+                    if (geocoder is null)
                     {
-                        lat = (double)student.Latitude.Value;
-                        lon = (double)student.Longitude.Value;
+                        StatusMessage = "Geocoding not available";
+                        return;
                     }
-                    else
+
+                    var result = await geocoder.GeocodeAsync(student.HomeAddress, student.City, student.State, student.Zip);
+                    if (result is null)
                     {
-                        var geocoder = sp.GetService<IGeocodingService>();
-                        if (geocoder is null)
-                        {
-                            StatusMessage = "Geocoding not available";
-                            return;
-                        }
-
-                        var result = await geocoder.GeocodeAsync(student.HomeAddress, student.City, student.State, student.Zip);
-                        if (result != null)
-                        {
-                            lat = result.Value.latitude;
-                            lon = result.Value.longitude;
-                        }
+                        StatusMessage = "Could not locate address";
+                        return;
                     }
-                }
 
-                if (lat == null || lon == null)
-                {
-                    StatusMessage = "Could not locate address";
-                    return;
+                    point = new StudentPlotPoint(
+                        result.Value.latitude,
+                        result.Value.longitude,
+                        AtPickup: false,
+                        PickupName: null);
                 }
 
                 var studentName = student.StudentName ?? "Student";
-                var label = pickupName is not null
-                    ? MapMarkerLabels.ForPickup(pickupName)
+                var label = point.Value.AtPickup
+                    ? MapMarkerLabels.ForPickup(point.Value.PickupName)
                     : studentName;
                 MapViewLauncher.Show(Application.Current?.MainWindow as Window, vm =>
                 {
-                    vm.PlotStop(lat.Value, lon.Value, new[] { studentName }, label);
+                    vm.PlotStop(point.Value.Latitude, point.Value.Longitude, new[] { studentName }, label);
                     vm.CenterOnMarkers();
                 });
 
-                StatusMessage = pickupName is not null
-                    ? $"District Map opened — plotted {studentName} at {pickupName}"
+                StatusMessage = point.Value.AtPickup
+                    ? $"District Map opened — plotted {studentName} at {point.Value.PickupName}"
                     : $"District Map opened — plotted {studentName}";
             }
             catch (Exception ex)

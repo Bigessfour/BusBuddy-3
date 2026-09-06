@@ -8,7 +8,6 @@ using BusBuddy.WPF.Commands;
 using CommunityToolkit.Mvvm.Input;
 using BusBuddy.Core.Mapping;
 using BusBuddy.Core.Services;
-using BusBuddy.Core.Services.GoogleMaps;
 using BusBuddy.Core.Services.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
 using BusBuddy.Core.Configuration;
@@ -36,19 +35,14 @@ namespace BusBuddy.WPF.ViewModels.Map
     public class MapViewModel : BaseViewModel
     {
         private readonly IGeoDataService _geoDataService;
-        /// <summary>
-        /// Optional geocoder for converting addresses to coordinates.
-        /// </summary>
-        private readonly IGeocodingService? _geocodingService;
         private readonly IRoutingService? _routingService;
         private readonly BusBuddy.Core.Services.PdfReportService _pdfReportService = new(); // Lightweight stateless service
         private readonly BusBuddy.Core.Services.IStudentService? _studentService; // If available for pulling students
         private readonly IBusService? _busService;
         private readonly IServiceScopeFactory? _scopeFactory;
         private readonly IUserSettingsService? _userSettings;
-        private readonly IPickupStopService? _pickupStops;
-        private readonly IDestinationService? _destinations;
         private readonly MapRouteTrail _trail;
+        private readonly MapDistrictLayers _layers;
         private AsyncRelayCommand? _exportRouteDataRelay;
         // Serilog logger with enrichments for this ViewModel
         private static readonly new Serilog.ILogger Logger = Serilog.Log.ForContext<MapViewModel>();
@@ -111,15 +105,19 @@ namespace BusBuddy.WPF.ViewModels.Map
         public MapViewModel(IGeoDataService geoDataService, IGeocodingService? geocodingService = null, BusBuddy.Core.Services.IStudentService? studentService = null, IBusService? busService = null, IServiceScopeFactory? scopeFactory = null, IRoutingService? routingService = null, IUserSettingsService? userSettings = null, IPickupStopService? pickupStops = null, IDestinationService? destinations = null)
         {
             _geoDataService = geoDataService ?? throw new ArgumentNullException(nameof(geoDataService));
-            _geocodingService = geocodingService; // optional until wired
             _routingService = routingService;
             _studentService = studentService;
             _busService = busService;
             _scopeFactory = scopeFactory;
             _userSettings = userSettings;
-            _pickupStops = pickupStops;
-            _destinations = destinations;
             _trail = new MapRouteTrail(_routingService, _scopeFactory);
+            _layers = new MapDistrictLayers(
+                pickupStops,
+                destinations,
+                studentService,
+                geocodingService,
+                scopeFactory,
+                (lat, lon, names, label) => PlotStop(lat, lon, names, label));
 
             LoadRoutesCommand = new AsyncRelayCommand(LoadRoutesAsync);
             RefreshMapCommand = new AsyncRelayCommand(RefreshMapAsync);
@@ -426,45 +424,6 @@ namespace BusBuddy.WPF.ViewModels.Map
             }
         }
 
-        private async Task<(double Lat, double Lon)?> TryGeocodeStudentAsync(
-            BusBuddy.Core.Models.Student student,
-            IServiceScope? scope)
-        {
-            if (_geocodingService is not null)
-            {
-                try
-                {
-                    var geo = await _geocodingService.GeocodeAsync(
-                        student.HomeAddress, student.City, student.State, student.Zip);
-                    if (geo.HasValue)
-                    {
-                        return (geo.Value.latitude, geo.Value.longitude);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Logger.Warning(ex, "IGeocodingService geocode failed for student {Id}", student.StudentId);
-                }
-            }
-
-            var mapsGeo = scope?.ServiceProvider.GetService<IMapsGeoService>()
-                ?? App.ServiceProvider?.GetService<IMapsGeoService>();
-            if (mapsGeo is null || !mapsGeo.IsConfigured)
-            {
-                return null;
-            }
-
-            try
-            {
-                return await mapsGeo.GeocodeAsync(student.HomeAddress, student.City, student.State, student.Zip);
-            }
-            catch (Exception ex)
-            {
-                Logger.Warning(ex, "IMapsGeoService geocode failed for student {Id}", student.StudentId);
-                return null;
-            }
-        }
-
         /// <summary>
         /// Active buses list shown in SfDataGrid
         /// </summary>
@@ -647,7 +606,7 @@ namespace BusBuddy.WPF.ViewModels.Map
             {
                 await LoadRoutesAsync();
                 await LoadActiveBusesAsync();
-                var (schools, pickups, students) = await SeedDistrictLayersAsync();
+                var seeded = await _layers.SeedAsync();
                 var routeWithTrail = Routes.FirstOrDefault(r => !string.IsNullOrWhiteSpace(r.WaypointsJson));
                 if (routeWithTrail is not null)
                 {
@@ -665,10 +624,10 @@ namespace BusBuddy.WPF.ViewModels.Map
                 }
 
                 StatusMessage =
-                    $"Map ready — {schools} school(s), {pickups} pickup(s), {students} student(s)";
+                    $"Map ready — {seeded.Schools} school(s), {seeded.Pickups} pickup(s), {seeded.Students} student(s)";
                 Logger.Information(
                     "InitializeMapDataAsync completed Routes={RouteCount} Buses={BusCount} Markers={MarkerCount} Schools={Schools} Pickups={Pickups} Students={Students} Trail={HasTrail}",
-                    Routes.Count, ActiveBuses.Count, MapMarkers.Count, schools, pickups, students, routeWithTrail is not null);
+                    Routes.Count, ActiveBuses.Count, MapMarkers.Count, seeded.Schools, seeded.Pickups, seeded.Students, routeWithTrail is not null);
             }
             catch (Exception ex)
             {
@@ -676,55 +635,11 @@ namespace BusBuddy.WPF.ViewModels.Map
             }
         }
 
-        /// <summary>
-        /// Plots schools, catalog pickups, and students that already have coordinates.
-        /// Does not geocode — Plot Students does that on demand.
-        /// </summary>
-        private async Task<(int Schools, int Pickups, int Students)> SeedDistrictLayersAsync()
-        {
-            using var scope = _scopeFactory?.CreateScope();
-            var pickupsCatalog = await LoadPickupCatalogAsync(scope);
-            var schools = await PlotSchoolsCoreAsync(scope);
-            var pickups = PlotPickupCatalog(pickupsCatalog);
-            var students = await PlotStoredStudentLocationsAsync(scope, pickupsCatalog);
-            return (schools, pickups, students);
-        }
-
         private IBusService? ResolveBusService(IServiceScope? scope) =>
             _busService ?? scope?.ServiceProvider.GetService<IBusService>();
 
         private BusBuddy.Core.Services.IStudentService? ResolveStudentService(IServiceScope? scope) =>
             _studentService ?? scope?.ServiceProvider.GetService<BusBuddy.Core.Services.IStudentService>();
-
-        private IPickupStopService? ResolvePickupStops(IServiceScope? scope) =>
-            _pickupStops
-            ?? scope?.ServiceProvider.GetService<IPickupStopService>()
-            ?? App.ServiceProvider?.GetService<IPickupStopService>();
-
-        private IDestinationService? ResolveDestinations(IServiceScope? scope) =>
-            _destinations
-            ?? scope?.ServiceProvider.GetService<IDestinationService>()
-            ?? App.ServiceProvider?.GetService<IDestinationService>();
-
-        private async Task<IReadOnlyDictionary<int, PickupStop>> LoadPickupCatalogAsync(IServiceScope? scope)
-        {
-            var service = ResolvePickupStops(scope);
-            if (service is null)
-            {
-                return new Dictionary<int, PickupStop>();
-            }
-
-            try
-            {
-                var stops = await service.GetActiveStopsAsync();
-                return stops.ToDictionary(s => s.PickupStopId);
-            }
-            catch (Exception ex)
-            {
-                Logger.Warning(ex, "LoadPickupCatalogAsync failed");
-                return new Dictionary<int, PickupStop>();
-            }
-        }
 
         private async Task LoadActiveBusesAsync()
         {
@@ -784,86 +699,20 @@ namespace BusBuddy.WPF.ViewModels.Map
         }
 
         /// <summary>
-        /// Automatically loads all students, geocodes missing home coordinates, and plots markers.
-        /// Catalog pickup stops win over home GPS. Anyone already in the system is eligible — no geofence.
+        /// Loads all students, geocodes missing home coordinates, and plots markers.
+        /// Catalog pickup stops win over home GPS.
         /// </summary>
         private async Task BulkPlotEligibleStudentsAsync()
         {
             try
             {
-                using var scope = _scopeFactory?.CreateScope();
-                var studentService = ResolveStudentService(scope);
-                if (studentService is null)
+                StatusMessage = "Loading students...";
+                var result = await _layers.BulkPlotStudentsAsync();
+                StatusMessage = result.Status;
+                if (result.Plotted > 0)
                 {
-                    StatusMessage = "Student service unavailable";
-                    return;
+                    CenterOnMarkers();
                 }
-            StatusMessage = "Loading students...";
-            List<BusBuddy.Core.Models.Student> students;
-            try
-            {
-                students = await studentService.GetAllStudentsAsync();
-            }
-            catch (Exception ex)
-            {
-                DatabaseUserMessage.LogFailure(Logger, ex, "Bulk plot: failed loading students");
-                StatusMessage = "Load students failed";
-                return;
-            }
-
-            if (students.Count == 0)
-            {
-                StatusMessage = "No students";
-                return;
-            }
-
-            var pickups = await LoadPickupCatalogAsync(scope);
-            int geocoded = 0, eligibleCount = 0, plotted = 0;
-            StatusMessage = $"Plotting {students.Count} students...";
-
-            foreach (var stu in students)
-            {
-                var location = await ResolveStudentPlotLocationAsync(stu, pickups, scope, geocodeMissingHome: true);
-                if (location is null)
-                {
-                    continue;
-                }
-
-                if (location.Value.Geocoded)
-                {
-                    stu.Latitude = (decimal)location.Value.Latitude;
-                    stu.Longitude = (decimal)location.Value.Longitude;
-                    if (await studentService.UpdateStudentAsync(stu))
-                    {
-                        geocoded++;
-                    }
-                    else
-                    {
-                        Logger.Warning("Bulk plot: failed persisting geocode for student {Id}", stu.StudentId);
-                    }
-                }
-
-                eligibleCount++;
-
-                try
-                {
-                    PlotStudentMarker(stu, location.Value);
-                    plotted++;
-                }
-                catch (Exception ex)
-                {
-                    Logger.Warning(ex, "Plot failed for student {Id}", stu.StudentId);
-                }
-            }
-
-            StatusMessage = plotted == 0
-                ? $"Student plotting complete — no locations ({students.Count} in DB; geocoded {geocoded})"
-                : $"Student plotting complete — {plotted} locations";
-            Logger.Information("Bulk plot complete InSystem={Eligible} Geocoded={Geocoded} Plotted={Plotted} Total={Total}", eligibleCount, geocoded, plotted, students.Count);
-            if (plotted > 0)
-            {
-                CenterOnMarkers();
-            }
             }
             catch (Exception ex)
             {
@@ -1060,8 +909,7 @@ namespace BusBuddy.WPF.ViewModels.Map
             Logger.Information("Show schools requested");
             try
             {
-                using var scope = _scopeFactory?.CreateScope();
-                var plotted = await PlotSchoolsCoreAsync(scope);
+                var plotted = await _layers.PlotSchoolsAsync();
                 StatusMessage = plotted == 0
                     ? "No schools with coordinates — add a school destination"
                     : $"Showing {plotted} school(s) on map";
@@ -1083,9 +931,7 @@ namespace BusBuddy.WPF.ViewModels.Map
             Logger.Information("Plot pickup stops requested");
             try
             {
-                using var scope = _scopeFactory?.CreateScope();
-                var catalog = await LoadPickupCatalogAsync(scope);
-                var plotted = PlotPickupCatalog(catalog);
+                var plotted = await _layers.PlotPickupsAsync();
                 StatusMessage = plotted == 0
                     ? "No pickup stops with coordinates — add a pickup stop"
                     : $"Showing {plotted} pickup stop(s) on map";
@@ -1099,128 +945,6 @@ namespace BusBuddy.WPF.ViewModels.Map
                 Logger.Warning(ex, "PlotPickupStops failed");
                 StatusMessage = "Could not show pickup stops";
             }
-        }
-
-        private async Task<int> PlotSchoolsCoreAsync(IServiceScope? scope)
-        {
-            var destService = ResolveDestinations(scope);
-            var schools = destService is not null
-                ? await destService.GetActiveSchoolsAsync()
-                : Array.Empty<Destination>();
-
-            var plotted = 0;
-            foreach (var school in schools.Where(s => s.HasGpsCoordinates))
-            {
-                PlotStop((double)school.Latitude!, (double)school.Longitude!, null, MapMarkerLabels.ForSchool(school.Name));
-                plotted++;
-            }
-
-            return plotted;
-        }
-
-        private int PlotPickupCatalog(IReadOnlyDictionary<int, PickupStop> catalog)
-        {
-            var plotted = 0;
-            foreach (var stop in catalog.Values)
-            {
-                PlotStop((double)stop.Latitude, (double)stop.Longitude, null, MapMarkerLabels.ForPickup(stop.Name));
-                plotted++;
-            }
-
-            return plotted;
-        }
-
-        private async Task<int> PlotStoredStudentLocationsAsync(
-            IServiceScope? scope,
-            IReadOnlyDictionary<int, PickupStop> pickups)
-        {
-            var studentService = ResolveStudentService(scope);
-            if (studentService is null)
-            {
-                return 0;
-            }
-
-            List<BusBuddy.Core.Models.Student> students;
-            try
-            {
-                students = await studentService.GetAllStudentsAsync();
-            }
-            catch (Exception ex)
-            {
-                Logger.Warning(ex, "PlotStoredStudentLocationsAsync failed loading students");
-                return 0;
-            }
-
-            var plotted = 0;
-            foreach (var stu in students)
-            {
-                var location = await ResolveStudentPlotLocationAsync(stu, pickups, scope, geocodeMissingHome: false);
-                if (location is null)
-                {
-                    continue;
-                }
-
-                PlotStudentMarker(stu, location.Value);
-                plotted++;
-            }
-
-            return plotted;
-        }
-
-        private readonly record struct StudentPlotLocation(
-            double Latitude,
-            double Longitude,
-            bool AtPickup,
-            string? PickupName,
-            bool Geocoded);
-
-        private async Task<StudentPlotLocation?> ResolveStudentPlotLocationAsync(
-            BusBuddy.Core.Models.Student student,
-            IReadOnlyDictionary<int, PickupStop> pickups,
-            IServiceScope? scope,
-            bool geocodeMissingHome)
-        {
-            if (student.PickupStopId is int stopId && pickups.TryGetValue(stopId, out var stop))
-            {
-                return new StudentPlotLocation(
-                    (double)stop.Latitude,
-                    (double)stop.Longitude,
-                    AtPickup: true,
-                    PickupName: stop.Name,
-                    Geocoded: false);
-            }
-
-            if (student.Latitude.HasValue && student.Longitude.HasValue)
-            {
-                return new StudentPlotLocation(
-                    (double)student.Latitude.Value,
-                    (double)student.Longitude.Value,
-                    AtPickup: false,
-                    PickupName: null,
-                    Geocoded: false);
-            }
-
-            if (!geocodeMissingHome)
-            {
-                return null;
-            }
-
-            var geo = await TryGeocodeStudentAsync(student, scope);
-            if (!geo.HasValue)
-            {
-                return null;
-            }
-
-            return new StudentPlotLocation(geo.Value.Lat, geo.Value.Lon, AtPickup: false, PickupName: null, Geocoded: true);
-        }
-
-        private void PlotStudentMarker(BusBuddy.Core.Models.Student student, StudentPlotLocation location)
-        {
-            var name = student.StudentName ?? student.StudentNumber ?? "Student";
-            var label = location.AtPickup
-                ? MapMarkerLabels.ForPickup(location.PickupName)
-                : name;
-            PlotStop(location.Latitude, location.Longitude, new[] { name }, label);
         }
 
         private void TrackSelectedBus()
@@ -1287,58 +1011,30 @@ namespace BusBuddy.WPF.ViewModels.Map
         /// <param name="label">Optional explicit label (overrides auto aggregation label if provided).</param>
         public MapMarker PlotStop(double latitude, double longitude, IEnumerable<string>? studentNames = null, string? label = null)
         {
-            const double mergeTolerance = 0.00005; // ~5m tolerance for aggregating to existing marker
             var incomingKind = MapMarkerLabels.GetKind(label);
             var existing = MapMarkers.FirstOrDefault(m =>
-                Math.Abs(m.LatitudeDegrees - latitude) < mergeTolerance
-                && Math.Abs(m.LongitudeDegrees - longitude) < mergeTolerance
+                MapMarkerLabels.SameSpot(m.LatitudeDegrees, m.LongitudeDegrees, latitude, longitude)
                 && MapMarkerLabels.CanMerge(MapMarkerLabels.GetKind(m.Label), incomingKind));
-            if (existing == null)
+            if (existing is null)
             {
                 existing = MapMarker.FromDegrees(latitude, longitude, label);
                 MapMarkers.Add(existing);
                 Logger.Information("Added new stop marker at ({Lat}, {Lon}) Label={Label}", latitude, longitude, label ?? "<auto>");
-                if (studentNames != null)
-                {
-                    foreach (var name in studentNames)
-                    {
-                        existing.AddStudent(name);
-                    }
-                }
-
+                AddStudents(existing, studentNames);
                 NotifyMapMarkersChanged();
                 return existing;
             }
 
             var mutated = false;
-            var existingKind = MapMarkerLabels.GetKind(existing.Label);
-            if (incomingKind == MapMarkerLabels.Kind.Pickup && existingKind == MapMarkerLabels.Kind.Student
-                && !string.IsNullOrWhiteSpace(label))
-            {
-                existing.Label = label;
-                mutated = true;
-            }
-            else if (incomingKind == existingKind && !string.IsNullOrWhiteSpace(label)
-                     && incomingKind != MapMarkerLabels.Kind.Pickup
-                     && incomingKind != MapMarkerLabels.Kind.School)
-            {
-                existing.Label = label;
-                mutated = true;
-            }
-            else if (incomingKind == existingKind && !string.IsNullOrWhiteSpace(label)
-                     && string.IsNullOrWhiteSpace(existing.Label))
+            if (MapMarkerLabels.ShouldReplaceLabel(existing.Label, label))
             {
                 existing.Label = label;
                 mutated = true;
             }
 
-            if (studentNames != null)
+            if (studentNames is not null)
             {
-                foreach (var name in studentNames)
-                {
-                    existing.AddStudent(name);
-                }
-
+                AddStudents(existing, studentNames);
                 mutated = true;
             }
 
@@ -1348,6 +1044,19 @@ namespace BusBuddy.WPF.ViewModels.Map
             }
 
             return existing;
+        }
+
+        private static void AddStudents(MapMarker marker, IEnumerable<string>? names)
+        {
+            if (names is null)
+            {
+                return;
+            }
+
+            foreach (var name in names)
+            {
+                marker.AddStudent(name);
+            }
         }
 
         /// <summary>

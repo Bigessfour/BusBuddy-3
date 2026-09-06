@@ -108,6 +108,7 @@ public class MapViewTests
         Assert.That(vm, Does.Contain("BulkPlotEligibleStudentsCommand"));
         Assert.That(vm, Does.Contain("District Map opened"));
         Assert.That(vm, Does.Contain("PickupStopId"));
+        Assert.That(vm, Does.Contain("StudentPlotLocation.TryFromStored"));
         Assert.That(vm, Does.Contain("MapMarkerLabels.ForPickup"));
     }
 

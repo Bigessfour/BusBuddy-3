@@ -243,6 +243,30 @@ public class MapViewModelTests
     }
 
     [Test]
+    public async Task PlotStop_PickupLabelReplacesStudentNameAtSameSpot()
+    {
+        var vm = await CreateSettledViewModelAsync();
+        vm.PlotStop(38.16, -102.71, new[] { "Ada" }, "Ada");
+        vm.PlotStop(38.16, -102.71, null, MapMarkerLabels.ForPickup("Oak"));
+
+        Assert.That(vm.MapMarkers, Has.Count.EqualTo(1));
+        Assert.That(vm.MapMarkers[0].Label, Is.EqualTo(MapMarkerLabels.ForPickup("Oak")));
+        Assert.That(vm.MapMarkers[0].StudentNames, Does.Contain("Ada"));
+    }
+
+    [Test]
+    public void MapMarkerLabels_PickupOverwritesStudentAndDoesNotOverwriteSchool()
+    {
+        Assert.That(MapMarkerLabels.ShouldReplaceLabel("Ada", MapMarkerLabels.ForPickup("Oak")), Is.True);
+        Assert.That(MapMarkerLabels.ShouldReplaceLabel(MapMarkerLabels.ForPickup("Oak"), "Ada"), Is.False);
+        Assert.That(
+            MapMarkerLabels.ShouldReplaceLabel(MapMarkerLabels.ForSchool("Wiley"), MapMarkerLabels.ForPickup("Oak")),
+            Is.False);
+        Assert.That(MapMarkerLabels.SameSpot(38.15, -102.72, 38.15, -102.72), Is.True);
+        Assert.That(MapMarkerLabels.SameSpot(38.15, -102.72, 38.16, -102.72), Is.False);
+    }
+
+    [Test]
     public async Task InitializeMapData_AutoPlotsSchoolsPickupsAndStudentsWithCoords()
     {
         var dest = new Mock<IDestinationService>();
@@ -401,15 +425,21 @@ public class MapViewModelTests
     public void MapViewModel_RequiresMapsGeoDistrictDepotAndDrivePathRefresherInCore()
     {
         var vm = XamlViewFile.Read("ViewModels/Map/MapViewModel.cs");
-        Assert.That(vm, Does.Contain("IMapsGeoService"));
         Assert.That(vm, Does.Contain("ResetCameraToDistrictAsync"));
         Assert.That(vm, Does.Contain("DistrictCameraUi.ResolveAsync"));
         Assert.That(vm, Does.Contain("DistrictDepot.TryGetCoordinates"));
         Assert.That(vm, Does.Contain("PlotPickupStopsCommand"));
         Assert.That(vm, Does.Contain("MapMarkerLabels"));
-        Assert.That(vm, Does.Contain("SeedDistrictLayersAsync"));
+        Assert.That(vm, Does.Contain("MapDistrictLayers"));
         Assert.That(vm, Does.Contain("BindSelectedRoute"));
         Assert.That(vm, Does.Contain("refreshDrivePath"));
+
+        var layers = XamlViewFile.Read("Utilities/MapDistrictLayers.cs");
+        Assert.That(layers, Does.Contain("StudentPlotLocation.TryFromStored"));
+        Assert.That(layers, Does.Contain("IMapsGeoService"));
+
+        var plotPolicy = CoreSourceFile.Read("Mapping/StudentPlotLocation.cs");
+        Assert.That(plotPolicy, Does.Contain("TryFromStored"));
 
         var trail = XamlViewFile.Read("Utilities/MapRouteTrail.cs");
         Assert.That(trail, Does.Contain("RouteDrivePathRefresher.TryRefreshAsync"));
