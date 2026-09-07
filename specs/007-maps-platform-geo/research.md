@@ -20,9 +20,14 @@
 - Mapbox / HERE — extra vendor; GCP already in play.
 - Maps JavaScript / Navigation SDK — not WPF; constitution requires Syncfusion UI.
 
-## Decision: Keep SfMap + OSM; drop unofficial Google tiles
+## Decision: Google Map Tiles API for District Map (Path A)
 
-**Rationale**: `MapView` already defaults to OSM with attribution. `mt1.google.com/vt` violates Google Maps tile ToS. Map Tiles API is optional later.
+**Rationale**: Plotting Google-validated homes and Routes polylines on OSM violates Maps Platform ToS (no Google content on a non-Google map). Map Tiles API `createSession` + `2dtiles` with visible “Google Maps” attribution is the compliant Syncfusion path. Unofficial `mt1.google.com/vt` scraping remains forbidden.
+
+**Alternatives considered**:
+
+- Keep OSM and strip Google geometry (Path B) — fastest legal freeze; rejects route trails on the map.
+- WebView2 Maps JavaScript (Path C) — clean ToS, heavier for a clerk WPF app.
 
 ## Decision: No geofence — students in the system are eligible
 

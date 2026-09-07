@@ -158,7 +158,7 @@ Run `.github/scripts/setup-solo-ci-governance.sh` (requires `gh` admin) to enabl
 - Use `concurrency` with `cancel-in-progress` on PR workflows.
 - Docs-only changes are skipped via `paths-ignore` on `*.md` and `Documentation/**`.
 - See also **AGENTS.md** for a short agent-facing summary.
-- **GCP / Maps / secrets**: [Documentation/GCP-GEE-SECRETS-AND-AUTH.md](../Documentation/GCP-GEE-SECRETS-AND-AUTH.md) — Passwords, `GOOGLE_MAPS_API_KEY`, billing/quota project `busbuddy-507301` (`new-coursera-490518` is legacy billed only; do not header Maps traffic there). Earth Engine is not an app dependency.
+- **GCP / Maps / secrets**: [Documentation/GCP-GEE-SECRETS-AND-AUTH.md](../Documentation/GCP-GEE-SECRETS-AND-AUTH.md) — Passwords, `GOOGLE_MAPS_API_KEY`, billing/quota project `busbuddy-507301` (`new-coursera-490518` is legacy billed only; do not header Maps traffic there). Earth Engine is not an app dependency. Live GCP inspect: `.github/scripts/gcloud-maps-status.sh` or project MCP `gcloud`.
 
 **For BusBuddy-specific requirements, also reference:**
 
@@ -167,7 +167,7 @@ Run `.github/scripts/setup-solo-ci-governance.sh` (requires `gh` admin) to enabl
 
 ## Mandatory RAG + MCP Tools (BusBuddy Context)
 
-The project [`.cursor/mcp.json`](.cursor/mcp.json) includes two critical tools for full awareness:
+The project [`.cursor/mcp.json`](.cursor/mcp.json) includes these tools:
 
 1. **busbuddy-rag** (local semantic RAG over the entire cleaned codebase)
     - **ALWAYS call first** (see CRITICAL RULE above) before any edit.
@@ -182,13 +182,18 @@ The project [`.cursor/mcp.json`](.cursor/mcp.json) includes two critical tools f
 2. **syncfusion-wpf-assistant** (existing)
     - Prefix prompts as before for UI work.
 
+3. **gcloud** (official `@google-cloud/gcloud-mcp`)
+    - Tool: `run_gcloud_command` against quota project `busbuddy-507301`.
+    - Use for enabled APIs, billing flag, API-key **restrictions/metadata**. Never request `api-keys get-key-string`.
+    - Wrapper: `.github/scripts/run-gcloud-mcp.sh`. Read-only dump: `.github/scripts/gcloud-maps-status.sh`.
+
 **MCP registration** (in `.cursor/mcp.json`):
 
 ```json
-"busbuddy-rag": {
+"gcloud": {
   "type": "stdio",
-  "command": "python",
-  "args": ["-m", "rag.mcp_server"]
+  "command": "bash",
+  "args": [".github/scripts/run-gcloud-mcp.sh"]
 }
 ```
 

@@ -20,7 +20,7 @@ This increment persists on existing student and route columns. No required migra
 
 **Validation**: Reject save when mapping configured, skip-flag off, and `IsDeliverable` is false.
 
-**Mapping to Student**: existing `HomeAddress`, city/state/zip fields, `Latitude`, `Longitude` (confirm exact property names at implement).
+**Mapping to Student**: existing `HomeAddress`, city/state/zip fields, `Latitude`, `Longitude`, optional `PlaceId` (Google place id; durable; lat/lng refresh separately under 30-day cache policy).
 
 ## RoutePath (mapped onto Route.WaypointsJson)
 

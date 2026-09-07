@@ -66,22 +66,22 @@ public class GoogleRoutingServiceTests
     public async Task ComputeRouteMatrix_ReturnsElements()
     {
         var json = """
-            {
-              "elements": [
-                {
-                  "destinationIndex": 0,
-                  "distanceMeters": 5000,
-                  "duration": "600s",
-                  "status": "OK"
-                },
-                {
-                  "destinationIndex": 1,
-                  "distanceMeters": 12000,
-                  "duration": "900s",
-                  "status": "OK"
-                }
-              ]
-            }
+            [
+              {
+                "originIndex": 0,
+                "destinationIndex": 0,
+                "distanceMeters": 5000,
+                "duration": "600s",
+                "condition": "ROUTE_EXISTS"
+              },
+              {
+                "originIndex": 0,
+                "destinationIndex": 1,
+                "distanceMeters": 12000,
+                "duration": "900s",
+                "condition": "ROUTE_EXISTS"
+              }
+            ]
             """;
         using var http = new HttpClient(new StubHandler(HttpStatusCode.OK, json));
         var svc = new GoogleRoutingService(http, Options.Create(new GoogleMapsOptions { ApiKey = "test-key" }));
@@ -94,8 +94,22 @@ public class GoogleRoutingServiceTests
         Assert.That(result[0].DestinationIndex, Is.EqualTo(0));
         Assert.That(result[0].DistanceMeters, Is.EqualTo(5000));
         Assert.That(result[0].Duration, Is.EqualTo("600s"));
+        Assert.That(result[0].Succeeded, Is.True);
         Assert.That(result[1].DestinationIndex, Is.EqualTo(1));
         Assert.That(result[1].DistanceMeters, Is.EqualTo(12000));
+    }
+
+    [Test]
+    public async Task ComputeRouteMatrix_FieldMaskIncludesCondition()
+    {
+        var json = """[{"destinationIndex":0,"distanceMeters":1,"duration":"1s","condition":"ROUTE_EXISTS"}]""";
+        string? fieldMask = null;
+        using var http = new HttpClient(new CapturingStubHandler(HttpStatusCode.OK, json, mask => fieldMask = mask));
+        var svc = new GoogleRoutingService(http, Options.Create(new GoogleMapsOptions { ApiKey = "test-key" }));
+
+        _ = await svc.ComputeRouteMatrixAsync((1, 2), new[] { (3.0, 4.0) });
+
+        Assert.That(fieldMask, Does.Contain("condition"));
     }
 
     [Test]
@@ -134,6 +148,34 @@ public class GoogleRoutingServiceTests
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
             Assert.That(request.Headers.Contains("X-Goog-FieldMask"), Is.True);
+            return Task.FromResult(new HttpResponseMessage(_status) { Content = new StringContent(_body) });
+        }
+    }
+
+    private sealed class CapturingStubHandler : HttpMessageHandler
+    {
+        private readonly HttpStatusCode _status;
+        private readonly string _body;
+        private readonly Action<string?> _onFieldMask;
+
+        public CapturingStubHandler(HttpStatusCode status, string body, Action<string?> onFieldMask)
+        {
+            _status = status;
+            _body = body;
+            _onFieldMask = onFieldMask;
+        }
+
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        {
+            if (request.Headers.TryGetValues("X-Goog-FieldMask", out var values))
+            {
+                _onFieldMask(string.Join(",", values));
+            }
+            else
+            {
+                _onFieldMask(null);
+            }
+
             return Task.FromResult(new HttpResponseMessage(_status) { Content = new StringContent(_body) });
         }
     }

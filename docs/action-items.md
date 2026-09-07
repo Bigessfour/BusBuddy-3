@@ -95,6 +95,13 @@ Wave 2–3 (2026-08-28): DriverForm ComboBox `SelectedValue`+`Content`; Vehicles
     - [x] US2: Remove GEE DI, client, probe, unofficial Google tiles
     - [x] US1: Address Validation + geocode onto SfMap (Maps client + DI)
     - [x] US3: Routes API drive polyline (fail-open optimizer)
+    - [x] Map route line hardening (2026-09-06): XAML-hosted `RouteTrail`, stop vs road split, select draws stored geometry, Routes on Refresh/Drive Path, `WaypointsJson` unbounded (`20260906220000_WidenRouteWaypointsJson`)
+    - [x] Dead map-stack files removed (2026-09-06): Leaflet `map.html`, MapWinGIS stub, WebView2 package, hash `OfflineGeocodingService`, unused `TerrainAnalysisResult`; live-tracking chrome dropped (status line only); `GeoDataService` sample routes removed; MapView ctor DB ping removed
+    - [x] District Map plot layers (2026-09-06): `PlotPickupStopsCommand`; student plot uses catalog stop GPS when present (PK + optional smaller HOME), else geocode/plot home only; auto-seed schools/pickups/students-with-coords on load; SCH/PK/HOME/DEPOT prefixes; depot + dual home/pickup pins; span zoom; persist stop-derived `WaypointsJson`
+    - [ ] Follow-up: drop unused `Route` shapefile path columns (empty `RemoveShapefileColumns` migration never dropped them); unused `AddressValidationControl`; OSM-only layer combo
+    - [ ] VM: District Map opens on school GPS (or Settings depot/bbox); schools + PK pins + student homes/stops without three clicks; pick route with ≥2 geocoded stops → gold trail + Start/End pins only; **Refresh** optional for road path
+    - [ ] Apply migration `20260906220000_WidenRouteWaypointsJson` on Mac Docker Postgres
+    - [ ] Windows VM: `GOOGLE_MAPS_API_KEY` + `GCP_BILLING_PROJECT=busbuddy-507301` (Address Validation and/or Geocoding + Routes enabled) so Plot Students can geocode missing homes
     - [x] US4: Places type-ahead on Student + School forms (`GooglePlacesAutocompleteService`, session tokens)
     - [x] Docs for US2; Maps clients wired
 - [x] **Student contact + school destinations** — parent/emergency fields, Destination School catalog, intake school dropdown, map schools, inter-district `StudentSchoolTransfer` (timed pickup/dropoff) — merged [PR #36](https://github.com/Bigessfour/BusBuddy-3/pull/36)
@@ -133,7 +140,7 @@ Wave 2–3 (2026-08-28): DriverForm ComboBox `SelectedValue`+`Content`; Vehicles
     - Serilog proof: `Maintenance UI loaded Records=` / `Created maintenance record`
 - [x] Google Earth Engine enhancements (beyond current DI/auth) — **superseded by 007**: EE is the wrong product for addresses/trips; see [007 Maps Platform Geo](../specs/007-maps-platform-geo/spec.md)
     - Historical: shared map VM + `IGeocodingService` + SfMap plot (hash geocoder retired with 007 US1)
-- [x] SfMap mapping: official OSM + school-catalog / fallback center, Syncfusion string markers, shared `MapViewModel`, live routes/buses (not sample-only). Earth Engine is not used.
+- [x] SfMap mapping: OSM + school GPS / Settings bus barn / bbox centroid (US overview only when unconfigured). Earth Engine is not used.
 - [x] End-to-end student → assign → report proof test — `BusBuddy.Tests/Core/RouteAssignmentFlowTests.cs` (SeedDataService → StudentService → RouteService → PdfReportService). **UTM Windows VM 2026-08-16:** `Total tests: 1`, `Passed: 1` (built from `C:\dev\BusBuddy-3` after Z:\ sync). Mac host cannot execute WPF testhost; use `./run-wpf.sh` + `utm_run_in_vm.ps1` for GUI.
 - [x] P1 surface proof files (2026-08-31): `StudentsViewTests` (Import/Optimize/Transfer/Add commands in XAML); `ReportsViewTests` (roster/unassigned/route summary/CSV); inventory links `AssignFitnessEvaluatorTests` + `RouteDeterminationServiceTests`
 

@@ -11,8 +11,9 @@ using System.Linq;
 namespace BusBuddy.WPF.Services
 {
     /// <summary>
-    /// Service for mapping between domain models and view models
-    /// with performance tracking
+    /// AutoMapper facade for domain models ↔ view models (Bus, Driver, Route, Student).
+    /// This is object mapping, not geospatial — district map geocoding uses
+    /// <c>IGeocodingService</c> / <c>IMapsGeoService</c>.
     /// </summary>
     public class MappingService : IMappingService
     {
@@ -133,7 +134,7 @@ namespace BusBuddy.WPF.Services
     }
 
     /// <summary>
-    /// Interface for mapping service
+    /// AutoMapper object-mapping API. Do not use this type for map/geo operations.
     /// </summary>
     public interface IMappingService
     {
@@ -149,7 +150,8 @@ namespace BusBuddy.WPF.Services
     public static class AutoMapperExtensions
     {
         /// <summary>
-        /// Adds AutoMapper to the service collection with proper configuration
+        /// Registers AutoMapper (<see cref="MappingProfile"/>) and the object-mapping facade.
+        /// Does not register geospatial services.
         /// </summary>
         public static IServiceCollection AddAutoMapperServices(this IServiceCollection services)
         {

@@ -1,0 +1,18 @@
+{
+  "deny": [
+    "auth print-access-token",
+    "auth print-identity-token",
+    "auth print-refresh-token",
+    "auth application-default print-access-token",
+    "iam service-accounts keys",
+    "kms",
+    "projects delete",
+    "projects undelete",
+    "secrets",
+    "services api-keys create",
+    "services api-keys delete",
+    "services api-keys get-key-string",
+    "services api-keys undelete",
+    "services api-keys update"
+  ]
+}

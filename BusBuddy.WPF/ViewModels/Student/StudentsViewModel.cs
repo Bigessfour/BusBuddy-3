@@ -6,6 +6,7 @@ using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
+using BusBuddy.Core.Mapping;
 using BusBuddy.Core.Models;
 using System.Windows.Data;
 using BusBuddy.Core.Services;
@@ -708,7 +709,7 @@ namespace BusBuddy.WPF.ViewModels.Student
                 {
                     return;
                 }
-                // Resolve services from WPF App's DI container
+
                 var sp = App.ServiceProvider;
                 if (sp == null)
                 {
@@ -716,37 +717,57 @@ namespace BusBuddy.WPF.ViewModels.Student
                     return;
                 }
 
-                var geocoder = sp.GetService<IGeocodingService>();
-                if (geocoder == null)
+                IReadOnlyDictionary<int, PickupStop>? pickups = null;
+                if (student.PickupStopId is int stopId)
                 {
-                    StatusMessage = "Geocoding not available";
-                    return;
-                }
-
-                double? lat = null, lon = null;
-                if (geocoder != null)
-                {
-                    var result = await geocoder.GeocodeAsync(student.HomeAddress, student.City, student.State, student.Zip);
-                    if (result != null)
+                    var stopService = sp.GetService<IPickupStopService>();
+                    var stop = stopService is not null
+                        ? await stopService.GetByIdAsync(stopId).ConfigureAwait(true)
+                        : null;
+                    if (stop is not null)
                     {
-                        lat = result.Value.latitude;
-                        lon = result.Value.longitude;
+                        pickups = StudentPlotLocation.Index([stop]);
                     }
                 }
 
-                if (lat == null || lon == null)
+                var pins = StudentPlotLocation.PinsFromStored(student, pickups);
+                if (pins.Count == 0)
                 {
-                    StatusMessage = "Could not locate address";
-                    return;
+                    var geocoder = sp.GetService<IGeocodingService>();
+                    if (geocoder is null)
+                    {
+                        StatusMessage = "Geocoding not available";
+                        return;
+                    }
+
+                    var result = await geocoder.GeocodeAsync(student.HomeAddress, student.City, student.State, student.Zip);
+                    if (result is null)
+                    {
+                        StatusMessage = "Could not locate address";
+                        return;
+                    }
+
+                    pins = [new StudentPlotPoint(
+                        result.Value.latitude,
+                        result.Value.longitude,
+                        AtPickup: false,
+                        PickupName: null)];
                 }
 
+                var studentName = student.StudentName ?? "Student";
                 MapViewLauncher.Show(Application.Current?.MainWindow as Window, vm =>
                 {
-                    vm.PlotStop(lat.Value, lon.Value, new[] { student.StudentName ?? "Student" }, student.StudentName);
+                    MapStudentPlot.Draw(
+                        (lat, lon, names, label) => vm.PlotStop(lat, lon, names, label),
+                        studentName,
+                        pins);
                     vm.CenterOnMarkers();
                 });
 
-                StatusMessage = $"District Map opened — plotted {student.StudentName}";
+                var boarding = pins[0];
+                StatusMessage = boarding.AtPickup
+                    ? $"District Map opened — plotted {studentName} at {boarding.PickupName}"
+                    : $"District Map opened — plotted {studentName}";
             }
             catch (Exception ex)
             {

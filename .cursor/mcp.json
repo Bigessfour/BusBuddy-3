@@ -9,6 +9,11 @@
       "type": "stdio",
       "command": "bash",
       "args": [".github/scripts/run-busbuddy-rag-mcp.sh"]
+    },
+    "gcloud": {
+      "type": "stdio",
+      "command": "bash",
+      "args": [".github/scripts/run-gcloud-mcp.sh"]
     }
   }
 }

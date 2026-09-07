@@ -23,15 +23,21 @@ public sealed class RouteWaypointRebuildService : IRouteWaypointRebuildService
 {
     private static readonly ILogger Logger = Log.ForContext<RouteWaypointRebuildService>();
     private readonly IBusBuddyDbContextFactory _contextFactory;
-    private readonly RoutingDistrictSettings _districtSettings;
+    private readonly IDistrictSettingsAccessor? _districtAccessor;
+    private readonly RoutingDistrictSettings _districtSettingsFallback;
 
     public RouteWaypointRebuildService(
         IBusBuddyDbContextFactory contextFactory,
-        IOptions<RoutingDistrictSettings>? districtSettings = null)
+        IOptions<RoutingDistrictSettings>? districtSettings = null,
+        IDistrictSettingsAccessor? districtAccessor = null)
     {
         _contextFactory = contextFactory ?? throw new ArgumentNullException(nameof(contextFactory));
-        _districtSettings = districtSettings?.Value ?? new RoutingDistrictSettings();
+        _districtSettingsFallback = districtSettings?.Value ?? new RoutingDistrictSettings();
+        _districtAccessor = districtAccessor;
     }
+
+    private RoutingDistrictSettings DistrictSettings =>
+        _districtAccessor?.Current ?? _districtSettingsFallback;
 
     public async Task RebuildForStudentRoutesAsync(int studentId, CancellationToken cancellationToken = default)
     {
@@ -136,7 +142,7 @@ public sealed class RouteWaypointRebuildService : IRouteWaypointRebuildService
         {
             TryAdd(points, school?.Latitude, school?.Longitude);
         }
-        else if (DistrictDepot.TryGetCoordinates(_districtSettings, out var depotLat, out var depotLon))
+        else if (DistrictDepot.TryGetCoordinates(DistrictSettings, out var depotLat, out var depotLon))
         {
             TryAdd(points, depotLat, depotLon);
         }
@@ -161,7 +167,7 @@ public sealed class RouteWaypointRebuildService : IRouteWaypointRebuildService
 
         if (isPmRoute)
         {
-            if (DistrictDepot.TryGetCoordinates(_districtSettings, out var depotLat, out var depotLon))
+            if (DistrictDepot.TryGetCoordinates(DistrictSettings, out var depotLat, out var depotLon))
             {
                 TryAdd(points, depotLat, depotLon);
             }

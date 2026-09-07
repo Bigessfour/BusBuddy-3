@@ -1,11 +1,13 @@
 using System;
 using System.Collections.ObjectModel;
 using System.Threading.Tasks;
+using BusBuddy.Core.Configuration;
 using BusBuddy.Core.Services;
 using BusBuddy.WPF.Services;
 using BusBuddy.WPF.Utilities;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Microsoft.Extensions.Options;
 using Serilog;
 using Serilog.Context;
 
@@ -17,12 +19,20 @@ namespace BusBuddy.WPF.ViewModels.Settings
 
         private readonly IUserSettingsService _settingsService;
         private readonly ISkinManagerService _skinManagerService;
+        private readonly IDistrictSettingsAccessor? _districtSettings;
+        private readonly RoutingDistrictSettings _appDistrict;
         private bool _suppressThemePreview;
 
-        public SettingsViewModel(IUserSettingsService settingsService, ISkinManagerService skinManagerService)
+        public SettingsViewModel(
+            IUserSettingsService settingsService,
+            ISkinManagerService skinManagerService,
+            IDistrictSettingsAccessor? districtSettings = null,
+            IOptions<RoutingDistrictSettings>? routingDistrict = null)
         {
             _settingsService = settingsService ?? throw new ArgumentNullException(nameof(settingsService));
             _skinManagerService = skinManagerService ?? throw new ArgumentNullException(nameof(skinManagerService));
+            _districtSettings = districtSettings;
+            _appDistrict = routingDistrict?.Value ?? new RoutingDistrictSettings();
 
             AvailableThemes = new ObservableCollection<string> { "FluentDark", "FluentLight" };
             SaveCommand = new AsyncRelayCommand(SaveSettingsAsync, CanSave);
@@ -41,6 +51,42 @@ namespace BusBuddy.WPF.ViewModels.Settings
 
         [ObservableProperty]
         private bool showDashboardOnStartup = true;
+
+        [ObservableProperty]
+        private bool enableRouteGeoExport;
+
+        [ObservableProperty]
+        private string depotName = string.Empty;
+
+        [ObservableProperty]
+        private string depotAddress = string.Empty;
+
+        [ObservableProperty]
+        private string depotCity = string.Empty;
+
+        [ObservableProperty]
+        private string depotState = string.Empty;
+
+        [ObservableProperty]
+        private string depotZipCode = string.Empty;
+
+        [ObservableProperty]
+        private string depotLatitudeText = string.Empty;
+
+        [ObservableProperty]
+        private string depotLongitudeText = string.Empty;
+
+        [ObservableProperty]
+        private string boundingBoxMinLatText = string.Empty;
+
+        [ObservableProperty]
+        private string boundingBoxMinLonText = string.Empty;
+
+        [ObservableProperty]
+        private string boundingBoxMaxLatText = string.Empty;
+
+        [ObservableProperty]
+        private string boundingBoxMaxLonText = string.Empty;
 
         [ObservableProperty]
         private string statusMessage = "Loading settings...";
@@ -81,6 +127,9 @@ namespace BusBuddy.WPF.ViewModels.Settings
                     SelectedTheme = await _settingsService.GetSettingAsync(UserSettingsKeys.Theme, "FluentDark").ConfigureAwait(true);
                     EnableActivityLogging = await _settingsService.GetSettingAsync(UserSettingsKeys.EnableActivityLogging, true).ConfigureAwait(true);
                     ShowDashboardOnStartup = await _settingsService.GetSettingAsync(UserSettingsKeys.ShowDashboardOnStartup, true).ConfigureAwait(true);
+                    EnableRouteGeoExport = await _settingsService.GetSettingAsync(UserSettingsKeys.EnableRouteGeoExport, false).ConfigureAwait(true);
+                    _districtSettings?.OverlayFromUserSettings(_settingsService);
+                    HydrateDistrictFields(_districtSettings?.Current ?? _appDistrict);
                     _suppressThemePreview = false;
 
                     SyncfusionThemeManager.ApplyApplicationThemePreview(SelectedTheme);
@@ -121,6 +170,10 @@ namespace BusBuddy.WPF.ViewModels.Settings
                     await _settingsService.SetSettingAsync(UserSettingsKeys.Theme, SelectedTheme).ConfigureAwait(true);
                     await _settingsService.SetSettingAsync(UserSettingsKeys.EnableActivityLogging, EnableActivityLogging).ConfigureAwait(true);
                     await _settingsService.SetSettingAsync(UserSettingsKeys.ShowDashboardOnStartup, ShowDashboardOnStartup).ConfigureAwait(true);
+                    await _settingsService.SetSettingAsync(UserSettingsKeys.EnableRouteGeoExport, EnableRouteGeoExport).ConfigureAwait(true);
+                    var district = DistrictFromForm();
+                    await DistrictSettingsAccessor.WriteToUserAsync(_settingsService, district).ConfigureAwait(true);
+                    _districtSettings?.Replace(district);
 
                     _skinManagerService.ApplyTheme(SelectedTheme);
                     var saved = await _settingsService.SaveSettingsAsync().ConfigureAwait(true);
@@ -156,6 +209,7 @@ namespace BusBuddy.WPF.ViewModels.Settings
                     IsBusy = true;
                     Logger.Information("Resetting settings to defaults");
                     await _settingsService.ResetSettingsAsync().ConfigureAwait(true);
+                    _districtSettings?.Replace(_appDistrict);
                     await LoadSettingsAsync().ConfigureAwait(true);
                     StatusMessage = "Settings reset to defaults";
                     Logger.Information("Settings reset completed");
@@ -171,5 +225,40 @@ namespace BusBuddy.WPF.ViewModels.Settings
                 }
             }
         }
+
+        private void HydrateDistrictFields(RoutingDistrictSettings district)
+        {
+            DepotName = district.DepotName ?? string.Empty;
+            DepotAddress = district.DepotAddress ?? string.Empty;
+            DepotCity = district.DepotCity ?? string.Empty;
+            DepotState = district.DepotState ?? string.Empty;
+            DepotZipCode = district.DepotZipCode ?? string.Empty;
+            DepotLatitudeText = DistrictSettingsAccessor.FormatCoord(district.DepotLatitude);
+            DepotLongitudeText = DistrictSettingsAccessor.FormatCoord(district.DepotLongitude);
+            BoundingBoxMinLatText = DistrictSettingsAccessor.FormatCoord(district.BoundingBoxMinLat);
+            BoundingBoxMinLonText = DistrictSettingsAccessor.FormatCoord(district.BoundingBoxMinLon);
+            BoundingBoxMaxLatText = DistrictSettingsAccessor.FormatCoord(district.BoundingBoxMaxLat);
+            BoundingBoxMaxLonText = DistrictSettingsAccessor.FormatCoord(district.BoundingBoxMaxLon);
+        }
+
+        private RoutingDistrictSettings DistrictFromForm()
+        {
+            var next = DistrictSettingsAccessor.Copy(_appDistrict);
+            next.DepotName = NullIfBlank(DepotName);
+            next.DepotAddress = NullIfBlank(DepotAddress);
+            next.DepotCity = NullIfBlank(DepotCity);
+            next.DepotState = NullIfBlank(DepotState);
+            next.DepotZipCode = NullIfBlank(DepotZipCode);
+            next.DepotLatitude = DistrictSettingsAccessor.ParseCoord(DepotLatitudeText);
+            next.DepotLongitude = DistrictSettingsAccessor.ParseCoord(DepotLongitudeText);
+            next.BoundingBoxMinLat = DistrictSettingsAccessor.ParseCoord(BoundingBoxMinLatText);
+            next.BoundingBoxMinLon = DistrictSettingsAccessor.ParseCoord(BoundingBoxMinLonText);
+            next.BoundingBoxMaxLat = DistrictSettingsAccessor.ParseCoord(BoundingBoxMaxLatText);
+            next.BoundingBoxMaxLon = DistrictSettingsAccessor.ParseCoord(BoundingBoxMaxLonText);
+            return next;
+        }
+
+        private static string? NullIfBlank(string? value) =>
+            string.IsNullOrWhiteSpace(value) ? null : value.Trim();
     }
 }

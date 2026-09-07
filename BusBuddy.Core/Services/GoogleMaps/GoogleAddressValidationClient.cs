@@ -246,17 +246,25 @@ public sealed class GoogleAddressValidationClient : IGeocodingService, IDisposab
 
         double? lat = null;
         double? lon = null;
-        if (result.TryGetProperty("geocode", out var geocode) &&
-            geocode.TryGetProperty("location", out var location))
+        string? placeId = null;
+        if (result.TryGetProperty("geocode", out var geocode))
         {
-            if (location.TryGetProperty("latitude", out var latEl) && latEl.TryGetDouble(out var latVal))
+            if (geocode.TryGetProperty("placeId", out var placeEl) && placeEl.ValueKind == JsonValueKind.String)
             {
-                lat = latVal;
+                placeId = placeEl.GetString();
             }
 
-            if (location.TryGetProperty("longitude", out var lonEl) && lonEl.TryGetDouble(out var lonVal))
+            if (geocode.TryGetProperty("location", out var location))
             {
-                lon = lonVal;
+                if (location.TryGetProperty("latitude", out var latEl) && latEl.TryGetDouble(out var latVal))
+                {
+                    lat = latVal;
+                }
+
+                if (location.TryGetProperty("longitude", out var lonEl) && lonEl.TryGetDouble(out var lonVal))
+                {
+                    lon = lonVal;
+                }
             }
         }
 
@@ -273,6 +281,7 @@ public sealed class GoogleAddressValidationClient : IGeocodingService, IDisposab
             {
                 Ok = false,
                 FormattedAddress = formatted,
+                PlaceId = placeId,
                 Precision = precision,
                 ErrorMessage = "Address could not be confirmed as deliverable."
             };
@@ -284,6 +293,7 @@ public sealed class GoogleAddressValidationClient : IGeocodingService, IDisposab
             FormattedAddress = formatted,
             Latitude = lat,
             Longitude = lon,
+            PlaceId = placeId,
             Precision = precision
         };
     }
@@ -302,9 +312,16 @@ public sealed class GoogleAddressValidationClient : IGeocodingService, IDisposab
         var sw = Stopwatch.StartNew();
         try
         {
-            var uri =
-                $"https://maps.googleapis.com/maps/api/geocode/json?address={Uri.EscapeDataString(line)}&key={Uri.EscapeDataString(key)}";
-            using var response = await _httpClient.GetAsync(uri, cancellationToken).ConfigureAwait(false);
+            // Prefer X-Goog-Api-Key header so the key is not written into HTTP access logs as a query param.
+            var uri = $"https://maps.googleapis.com/maps/api/geocode/json?address={Uri.EscapeDataString(line)}";
+            using var request = new HttpRequestMessage(HttpMethod.Get, uri);
+            request.Headers.TryAddWithoutValidation("X-Goog-Api-Key", key);
+            if (!string.IsNullOrWhiteSpace(_options.QuotaProject))
+            {
+                request.Headers.TryAddWithoutValidation("X-Goog-User-Project", _options.QuotaProject);
+            }
+
+            using var response = await _httpClient.SendAsync(request, cancellationToken).ConfigureAwait(false);
             var json = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
             sw.Stop();
 
@@ -525,6 +542,12 @@ public sealed class GoogleAddressValidationClient : IGeocodingService, IDisposab
             formatted = fa.GetString();
         }
 
+        string? placeId = null;
+        if (first.TryGetProperty("place_id", out var placeEl) && placeEl.ValueKind == JsonValueKind.String)
+        {
+            placeId = placeEl.GetString();
+        }
+
         double? lat = null;
         double? lon = null;
         if (first.TryGetProperty("geometry", out var geometry) &&
@@ -547,6 +570,7 @@ public sealed class GoogleAddressValidationClient : IGeocodingService, IDisposab
             {
                 Ok = false,
                 FormattedAddress = formatted,
+                PlaceId = placeId,
                 ErrorMessage = "Geocode response missing coordinates."
             };
         }
@@ -561,6 +585,7 @@ public sealed class GoogleAddressValidationClient : IGeocodingService, IDisposab
             FormattedAddress = formatted,
             Latitude = lat,
             Longitude = lon,
+            PlaceId = placeId,
             Precision = "geocode"
         };
     }

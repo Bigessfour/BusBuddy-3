@@ -12,6 +12,7 @@ using BusBuddy.Core.Services.Interfaces;
 using BusBuddy.WPF.ViewModels.Map;
 using BusBuddy.WPF.Utilities;
 using System.Text.RegularExpressions;
+using BusBuddy.Core.Mapping;
 using BusBuddy.Core.Models;
 using BusBuddy.Core.Services;
 using BusBuddy.Core.Services.GoogleMaps;
@@ -897,7 +898,8 @@ namespace BusBuddy.WPF.ViewModels.Student
         }
 
         /// <summary>
-        /// Open map view for student location (real coordinates only — never hash scatter).
+        /// Open map view: PK at the assigned stop when it has GPS, optional HOME pin,
+        /// otherwise geocode/plot home only (never hash scatter).
         /// </summary>
         private async Task ViewOnMapAsync()
         {
@@ -905,7 +907,10 @@ namespace BusBuddy.WPF.ViewModels.Student
             {
                 Logger.Information("Opening map view for student location");
 
-                if (string.IsNullOrWhiteSpace(Student.HomeAddress))
+                var sp = App.ServiceProvider;
+                var pickups = await ResolvePickupCatalogForPlotAsync(sp).ConfigureAwait(true);
+                var pins = StudentPlotLocation.PinsFromStored(Student, pickups);
+                if (pins.Count == 0 && string.IsNullOrWhiteSpace(Student.HomeAddress))
                 {
                     SetGlobalError("Please enter a home address before viewing on map.");
                     return;
@@ -915,38 +920,59 @@ namespace BusBuddy.WPF.ViewModels.Student
                 ValidationStatus = "Loading map preview...";
                 ValidationStatusBrush = Brushes.Blue;
 
-                var sp = App.ServiceProvider;
-                var mapsGeo = sp?.GetService<IMapsGeoService>();
+                var mapsGeo = sp?.GetService<IMapsGeoService>()
+                    ?? sp?.GetService<IGeocodingService>();
 
-                (double latitude, double longitude)? coords = null;
-                if (Student.Latitude.HasValue && Student.Longitude.HasValue)
+                if (pins.Count == 0)
                 {
-                    coords = ((double)Student.Latitude.Value, (double)Student.Longitude.Value);
-                }
-                else if (mapsGeo is not null)
-                {
-                    coords = await mapsGeo.GeocodeAsync(Student.HomeAddress, Student.City, Student.State, Student.Zip);
+                    if (mapsGeo is null)
+                    {
+                        ValidationStatus = "Mapping is not configured (missing GOOGLE_MAPS_API_KEY).";
+                        ValidationStatusBrush = Brushes.Orange;
+                        MapViewLauncher.Show(Application.Current?.MainWindow as Window, _ => { });
+                        return;
+                    }
+
+                    var coords = await mapsGeo.GeocodeAsync(
+                        Student.HomeAddress, Student.City, Student.State, Student.Zip).ConfigureAwait(true);
                     if (coords.HasValue)
                     {
                         Student.Latitude = (decimal)coords.Value.latitude;
                         Student.Longitude = (decimal)coords.Value.longitude;
+                        pins = [new StudentPlotPoint(
+                            coords.Value.latitude,
+                            coords.Value.longitude,
+                            AtPickup: false,
+                            PickupName: null)];
                     }
                 }
 
+                var studentName = Student.StudentName ?? "Student";
                 MapViewLauncher.Show(Application.Current?.MainWindow as Window, vm =>
                 {
-                    if (coords.HasValue)
+                    MapStudentPlot.Draw(
+                        (lat, lon, names, label) => vm.PlotStop(lat, lon, names, label),
+                        studentName,
+                        pins);
+                    if (pins.Count > 0)
                     {
-                        vm.PlotStop(coords.Value.latitude, coords.Value.longitude, new[] { Student.StudentName }, Student.StudentName);
+                        vm.CenterOnMarkers();
                     }
                 });
 
-                if (coords.HasValue)
+                if (pins.Count > 0)
                 {
-                    ValidationStatus = "✓ Location plotted on map";
+                    ValidationStatus = pins[0].AtPickup
+                        ? $"✓ Location plotted at {pins[0].PickupName}"
+                        : "✓ Location plotted on map";
                     ValidationStatusBrush = Brushes.Green;
                 }
-                else if (mapsGeo is null || !mapsGeo.IsConfigured)
+                else if (mapsGeo is IMapsGeoService maps && !maps.IsConfigured)
+                {
+                    ValidationStatus = "Mapping is not configured (missing GOOGLE_MAPS_API_KEY).";
+                    ValidationStatusBrush = Brushes.Orange;
+                }
+                else if (mapsGeo is null)
                 {
                     ValidationStatus = "Mapping is not configured (missing GOOGLE_MAPS_API_KEY).";
                     ValidationStatusBrush = Brushes.Orange;
@@ -958,8 +984,8 @@ namespace BusBuddy.WPF.ViewModels.Student
                 }
 
                 Logger.Information(
-                    "Map view opened for address: {Address}, {City}, {State} {Zip}",
-                    Student.HomeAddress, Student.City, Student.State, Student.Zip);
+                    "Map view opened for address: {Address}, {City}, {State} {Zip} Pins={PinCount}",
+                    Student.HomeAddress, Student.City, Student.State, Student.Zip, pins.Count);
             }
             catch (Exception ex)
             {
@@ -972,6 +998,32 @@ namespace BusBuddy.WPF.ViewModels.Student
             {
                 IsValidating = false;
             }
+        }
+
+        private async Task<IReadOnlyDictionary<int, PickupStop>?> ResolvePickupCatalogForPlotAsync(
+            IServiceProvider? sp)
+        {
+            if (SelectedPickupStop is not null)
+            {
+                return StudentPlotLocation.Index([SelectedPickupStop]);
+            }
+
+            if (Student.PickupStopId is not int stopId)
+            {
+                return null;
+            }
+
+            var listed = AvailablePickupStops.FirstOrDefault(s => s.PickupStopId == stopId);
+            if (listed is not null)
+            {
+                return StudentPlotLocation.Index([listed]);
+            }
+
+            var stopService = sp?.GetService<IPickupStopService>();
+            var stop = stopService is not null
+                ? await stopService.GetByIdAsync(stopId).ConfigureAwait(true)
+                : null;
+            return stop is not null ? StudentPlotLocation.Index([stop]) : null;
         }
 
         /// <summary>
@@ -1302,9 +1354,7 @@ namespace BusBuddy.WPF.ViewModels.Student
                 return;
             }
 
-            var settings = App.ServiceProvider?
-                .GetService<Microsoft.Extensions.Options.IOptions<BusBuddy.Core.Configuration.RoutingDistrictSettings>>()?
-                .Value;
+            var settings = DistrictCameraUi.CurrentSettings();
             var maxMeters = settings?.StopSuggestMaxMeters ?? 400;
 
             var nearest = await stopService.FindNearestAsync(

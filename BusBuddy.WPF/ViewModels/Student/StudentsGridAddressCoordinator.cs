@@ -48,6 +48,11 @@ public sealed class StudentsGridAddressCoordinator
             {
                 student.Latitude = (decimal)maps.Latitude.Value;
                 student.Longitude = (decimal)maps.Longitude.Value;
+                if (!string.IsNullOrWhiteSpace(maps.PlaceId))
+                {
+                    student.PlaceId = maps.PlaceId;
+                }
+
                 await PersistCoordinatesAsync(student).ConfigureAwait(true);
 
                 var precisionSuffix = string.IsNullOrWhiteSpace(maps.Precision)

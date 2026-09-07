@@ -28,6 +28,15 @@ public class PickupStop
     [Column(TypeName = "decimal(11,8)")]
     public decimal Longitude { get; set; }
 
+    /// <summary>
+    /// True when the stop has a real GPS point. Default 0,0 is unset (non-nullable columns).
+    /// </summary>
+    [NotMapped]
+    public bool HasGpsCoordinates =>
+        Latitude is >= -90m and <= 90m
+        && Longitude is >= -180m and <= 180m
+        && (Latitude != 0m || Longitude != 0m);
+
     /// <summary>Corner, Intersection, RuralHome, or other clerk label.</summary>
     [Required]
     [StringLength(20)]

@@ -1315,8 +1315,7 @@ namespace BusBuddy.Core.Migrations
                         .HasColumnType("nvarchar(500)");
 
                     b.Property<string>("WaypointsJson")
-                        .HasMaxLength(4000)
-                        .HasColumnType("nvarchar(4000)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("RouteId");
 

@@ -3,6 +3,7 @@ using System.Net;
 using System.Text;
 using System.Text.Json;
 using BusBuddy.Core.Configuration;
+using BusBuddy.Core.Mapping;
 using BusBuddy.Core.Services.Interfaces;
 using Microsoft.Extensions.Options;
 using Serilog;
@@ -16,7 +17,8 @@ public sealed class GoogleRoutingService : IRoutingService, IDisposable
     private static readonly Uri ComputeRoutesUri = new("https://routes.googleapis.com/directions/v2:computeRoutes");
     private static readonly Uri ComputeRouteMatrixUri = new("https://routes.googleapis.com/distanceMatrix/v2:computeRouteMatrix");
     private const string FieldMask = "routes.duration,routes.distanceMeters,routes.polyline.encodedPolyline";
-    private const string MatrixFieldMask = "originIndex,destinationIndex,duration,distanceMeters,status";
+    private const string MatrixFieldMask =
+        "originIndex,destinationIndex,duration,distanceMeters,condition,status";
 
     private readonly HttpClient _httpClient;
     private readonly GoogleMapsOptions _options;
@@ -206,14 +208,15 @@ public sealed class GoogleRoutingService : IRoutingService, IDisposable
             }
 
             using var doc = JsonDocument.Parse(json);
-            if (!doc.RootElement.TryGetProperty("elements", out var elements) ||
-                elements.ValueKind != JsonValueKind.Array)
+            // REST computeRouteMatrix returns a JSON array of elements (not { "elements": [...] }).
+            if (doc.RootElement.ValueKind != JsonValueKind.Array)
             {
+                Logger.Warning("Route matrix response was not a JSON array");
                 return Array.Empty<RouteMatrixElement>();
             }
 
             var list = new List<RouteMatrixElement>();
-            foreach (var el in elements.EnumerateArray())
+            foreach (var el in doc.RootElement.EnumerateArray())
             {
                 int destIndex = el.TryGetProperty("destinationIndex", out var di) && di.TryGetInt32(out var idx)
                     ? idx
@@ -230,18 +233,19 @@ public sealed class GoogleRoutingService : IRoutingService, IDisposable
                     duration = dur.GetString();
                 }
 
-                string? status = null;
-                if (el.TryGetProperty("status", out var st) && st.ValueKind == JsonValueKind.String)
+                string? condition = null;
+                if (el.TryGetProperty("condition", out var cond) && cond.ValueKind == JsonValueKind.String)
                 {
-                    status = st.GetString();
+                    condition = cond.GetString();
                 }
 
+                var routeExists = string.Equals(condition, "ROUTE_EXISTS", StringComparison.OrdinalIgnoreCase);
                 list.Add(new RouteMatrixElement
                 {
                     DestinationIndex = destIndex,
                     DistanceMeters = distance,
                     Duration = duration,
-                    Error = string.Equals(status, "OK", StringComparison.OrdinalIgnoreCase) ? null : status,
+                    Error = routeExists ? null : (condition ?? "ROUTE_NOT_FOUND"),
                 });
             }
 
@@ -264,47 +268,5 @@ public sealed class GoogleRoutingService : IRoutingService, IDisposable
         {
             _httpClient.Dispose();
         }
-    }
-}
-
-/// <summary>Google encoded polyline codec (precision 1e-5).</summary>
-public static class EncodedPolylineCodec
-{
-    public static IReadOnlyList<(double Latitude, double Longitude)> Decode(string? encoded)
-    {
-        if (string.IsNullOrWhiteSpace(encoded))
-        {
-            return Array.Empty<(double, double)>();
-        }
-
-        var points = new List<(double, double)>();
-        int index = 0;
-        int lat = 0;
-        int lng = 0;
-
-        while (index < encoded.Length)
-        {
-            lat += DecodeNext(encoded, ref index);
-            lng += DecodeNext(encoded, ref index);
-            points.Add((lat / 1e5, lng / 1e5));
-        }
-
-        return points;
-    }
-
-    private static int DecodeNext(string encoded, ref int index)
-    {
-        int result = 0;
-        int shift = 0;
-        int b;
-        do
-        {
-            b = encoded[index++] - 63;
-            result |= (b & 0x1f) << shift;
-            shift += 5;
-        }
-        while (b >= 0x20);
-
-        return (result & 1) != 0 ? ~(result >> 1) : result >> 1;
     }
 }

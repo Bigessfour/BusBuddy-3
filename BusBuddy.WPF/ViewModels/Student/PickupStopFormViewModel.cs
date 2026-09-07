@@ -5,8 +5,10 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
+using BusBuddy.Core.Mapping;
 using BusBuddy.Core.Models;
 using BusBuddy.Core.Services.Interfaces;
+using BusBuddy.WPF.Utilities;
 using BusBuddy.WPF.ViewModels;
 using BusBuddy.WPF.ViewModels.Map;
 using CommunityToolkit.Mvvm.Input;
@@ -18,9 +20,7 @@ public sealed class PickupStopFormViewModel : BaseViewModel
 {
     private static readonly new ILogger Logger = Log.ForContext<PickupStopFormViewModel>();
 
-    public const double DefaultMapLatitude = SchoolDestinationFormViewModel.DefaultMapLatitude;
-    public const double DefaultMapLongitude = SchoolDestinationFormViewModel.DefaultMapLongitude;
-    public const int DefaultMapZoom = SchoolDestinationFormViewModel.DefaultMapZoom;
+    public const int DefaultMapZoom = MapDefaults.SchoolZoomLevel;
 
     private readonly IPickupStopService _pickupStops;
 
@@ -45,8 +45,9 @@ public sealed class PickupStopFormViewModel : BaseViewModel
 
         StopTypeOptions = new ObservableCollection<string>(PickupStopTypes.All);
         MapMarkers = new ObservableCollection<MapViewModel.MapMarker>();
-        MapCenter = new Point(DefaultMapLatitude, DefaultMapLongitude);
-        MapZoomLevel = DefaultMapZoom;
+        var camera = DistrictCameraUi.Resolve();
+        MapCenter = new Point(camera.Latitude, camera.Longitude);
+        MapZoomLevel = camera.ZoomLevel;
     }
 
     public string Title => "Add pickup stop";
@@ -164,8 +165,12 @@ public sealed class PickupStopFormViewModel : BaseViewModel
             return;
         }
 
-        var label = string.IsNullOrWhiteSpace(Name) ? "Pickup stop" : Name.Trim();
-        MapMarkers.Add(MapViewModel.MapMarker.FromDegrees(_latitudeValue, _longitudeValue, label));
+        var label = MapMarkerLabels.ForPickup(string.IsNullOrWhiteSpace(Name) ? "Pickup stop" : Name.Trim());
+        MapMarkers.Add(MapViewModel.MapMarker.FromDegrees(
+            _latitudeValue,
+            _longitudeValue,
+            label,
+            MapMarkerLabels.Kind.Pickup));
         MapCenter = new Point(_latitudeValue, _longitudeValue);
         OnPropertyChanged(nameof(MapCenter));
     }

@@ -8,6 +8,7 @@ using Serilog.Events;
 using BusBuddy.WPF.Views.Main;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Configuration;
+using BusBuddy.Core.Configuration;
 using BusBuddy.Core.Data;
 using BusBuddy.Core.Services;
 using BusBuddy.Core.Services.Interfaces;
@@ -443,8 +444,7 @@ namespace BusBuddy.WPF
                 services.AddDataServices(configuration);
 
                 // Route geography. Maps Platform clients (IGeocodingService / IRoutingService)
-                // are registered in AddDataServices above — do not register OfflineGeocodingService here.
-                // District/town shapefile eligibility was removed: those polygons were for another district.
+                // are registered in AddDataServices above. No hash geocoder; no shapefile geofence.
                 services.AddSingleton<IGeoDataService>(sp =>
                     new GeoDataService(sp.GetService<IBusBuddyDbContextFactory>()));
 
@@ -459,6 +459,8 @@ namespace BusBuddy.WPF
                     BusBuddy.Core.Services.RouteDetermination.RouteDeterminationService>();
                 services.Configure<BusBuddy.Core.Configuration.RoutingDistrictSettings>(
                     configuration.GetSection(BusBuddy.Core.Configuration.RoutingDistrictSettings.SectionName));
+                services.AddSingleton<BusBuddy.Core.Configuration.IDistrictSettingsAccessor,
+                    BusBuddy.Core.Configuration.DistrictSettingsAccessor>();
                 services.AddScoped<IDriverService, DriverService>();
                 services.AddScoped<IRouteService, RouteService>();
                 services.AddScoped<BusBuddy.Core.Services.Interfaces.IBusService, BusService>();
@@ -531,11 +533,12 @@ namespace BusBuddy.WPF
                         studentService: null,
                         busService: null,
                         scopeFactory: sp.GetRequiredService<IServiceScopeFactory>(),
-                        routingService: sp.GetService<BusBuddy.Core.Services.Interfaces.IRoutingService>()));
+                        routingService: sp.GetService<BusBuddy.Core.Services.Interfaces.IRoutingService>(),
+                        userSettings: sp.GetService<IUserSettingsService>(),
+                        districtSettings: sp.GetService<IDistrictSettingsAccessor>()));
 
                 ServiceProvider = services.BuildServiceProvider();
-
-                // Seed database with JSON data if empty
+                ApplyPersistedDistrictSettings();
                 Task.Run(async () =>
                 {
                     try
@@ -594,6 +597,27 @@ namespace BusBuddy.WPF
                 }
             } // end outer catch for ConfigureServices
         } // end ConfigureServices method
+
+        private static void ApplyPersistedDistrictSettings()
+        {
+            try
+            {
+                var settings = ServiceProvider?.GetService<IUserSettingsService>();
+                var district = ServiceProvider?.GetService<IDistrictSettingsAccessor>();
+                if (settings is null || district is null)
+                {
+                    return;
+                }
+
+                settings.LoadSettingsAsync().GetAwaiter().GetResult();
+                district.OverlayFromUserSettings(settings);
+                Log.Information("Applied persisted district geography from user settings");
+            }
+            catch (Exception ex)
+            {
+                Log.Warning(ex, "Could not overlay district geography from user settings");
+            }
+        }
 
         private MainWindow CreateMainWindow()
         {

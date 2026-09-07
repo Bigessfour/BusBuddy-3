@@ -140,15 +140,22 @@ public class MainWindowClerkPathTests
         Assert.That(xaml, Does.Contain("SelectedTheme"));
         Assert.That(xaml, Does.Contain("EnableActivityLogging"));
         Assert.That(xaml, Does.Contain("ShowDashboardOnStartup"));
+        Assert.That(xaml, Does.Contain("EnableRouteGeoExport"));
+        Assert.That(xaml, Does.Contain("DepotLatitudeText"));
+        Assert.That(xaml, Does.Contain("BoundingBoxMinLatText"));
+        Assert.That(xaml, Does.Contain("This district"));
         Assert.That(xaml, Does.Contain("StatusMessage"));
         Assert.That(xaml, Does.Contain("IsBusy"));
         Assert.That(xaml, Does.Contain("IsEditable=\"False\""));
         Assert.That(xaml, Does.Contain("AutomationProperties.Name=\"Enable activity logging\""));
         Assert.That(xaml, Does.Contain("AutomationProperties.Name=\"Show dashboard on startup\""));
+        Assert.That(xaml, Does.Contain("AutomationProperties.Name=\"Enable route GeoJSON export\""));
         Assert.That(xaml, Does.Contain("SettingsPrimaryButton"));
 
         var vm = XamlViewFile.Read("ViewModels/Settings/SettingsViewModel.cs");
         Assert.That(vm, Does.Contain("UserSettingsKeys"));
+        Assert.That(vm, Does.Contain("EnableRouteGeoExport"));
+        Assert.That(vm, Does.Contain("DistrictSettingsAccessor.WriteToUserAsync"));
         Assert.That(vm, Does.Contain("Log.ForContext<SettingsViewModel>"));
 
         var main = XamlViewFile.Read("Views/Main/MainWindow.xaml.cs");

@@ -42,6 +42,8 @@ internal static class XamlViewFile
 /// </summary>
 internal static class CoreSourceFile
 {
+    public static bool Exists(string relativeUnderCore) => Resolve(relativeUnderCore) is not null;
+
     public static string Read(string relativeUnderCore)
     {
         var path = Resolve(relativeUnderCore);

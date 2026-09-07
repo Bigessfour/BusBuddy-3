@@ -1,6 +1,6 @@
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
@@ -9,8 +9,8 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.IO;
 using System.Printing;
-using BusBuddy.Core.Data;
-using BusBuddy.Core.Mapping;
+using System.Threading.Tasks;
+using BusBuddy.WPF.Utilities;
 using BusBuddy.WPF.ViewModels.Map;
 using Microsoft.Extensions.DependencyInjection;
 using Serilog;
@@ -26,11 +26,11 @@ namespace BusBuddy.WPF.Views.Map
     {
         private static readonly ILogger Logger = Log.ForContext<MapView>();
         private SfMap? MapControl => FindName("GeoMap") as SfMap;
+        private GoogleMapTilesImageryLayer? DistrictTilesLayer =>
+            FindName("DistrictImageryLayer") as GoogleMapTilesImageryLayer;
         private bool _mapLayerInitialized;
         private MapViewModel? _boundViewModel;
         private MapLayer? _currentLayer;
-        private SubShapeFileLayer? _routeSubLayer;
-        private MapPolyline? _routePolyline;
 
         public MapView()
         {
@@ -59,7 +59,6 @@ namespace BusBuddy.WPF.Views.Map
 
                 Unloaded += MapView_Unloaded;
                 Loaded += MapView_Loaded;
-                _ = Task.Run(CheckBackendConnectivityAsync);
                 Logger.Information("MapView initialized");
             }
         }
@@ -70,7 +69,7 @@ namespace BusBuddy.WPF.Views.Map
             DataContextChanged += OnDataContextChanged;
         }
 
-        private void MapView_Loaded(object sender, RoutedEventArgs e)
+        private async void MapView_Loaded(object sender, RoutedEventArgs e)
         {
             Loaded -= MapView_Loaded;
             if (_mapLayerInitialized)
@@ -86,7 +85,15 @@ namespace BusBuddy.WPF.Views.Map
                 }
 
                 ApplyDistrictImagery(DataContext as MapViewModel);
-                ToggleOsmAttribution(true);
+                if (DistrictTilesLayer is not null)
+                {
+                    MapTileBootstrap.ApplyOsm(
+                        DistrictTilesLayer,
+                        FindName("MapAttribution") as Border,
+                        FindName("MapAttributionText") as TextBlock,
+                        MapControl);
+                }
+
                 if (MapControl is not null)
                 {
                     MapControl.IsHitTestVisible = true;
@@ -96,6 +103,17 @@ namespace BusBuddy.WPF.Views.Map
                     MapControl.MouseLeftButtonUp += (_, _) => CaptureVisualMapState();
                     MapControl.MouseWheel += (_, _) => Dispatcher.BeginInvoke(CaptureVisualMapState);
                     SyncMapControlFromViewModel(DataContext as MapViewModel);
+                }
+
+                ReplayRouteLineFromViewModel(DataContext as MapViewModel);
+                if (DistrictTilesLayer is not null)
+                {
+                    await MapTileBootstrap.TryApplyGoogleTilesAsync(
+                        DistrictTilesLayer,
+                        FindName("MapAttribution") as Border,
+                        FindName("MapAttributionText") as TextBlock,
+                        MapControl,
+                        App.ServiceProvider).ConfigureAwait(true);
                 }
 
                 _mapLayerInitialized = true;
@@ -124,6 +142,7 @@ namespace BusBuddy.WPF.Views.Map
             {
                 AttachViewModel(newViewModel);
                 ApplyDistrictImagery(newViewModel);
+                ReplayRouteLineFromViewModel(newViewModel);
             }
         }
 
@@ -167,14 +186,18 @@ namespace BusBuddy.WPF.Views.Map
         {
             try
             {
-                var imagery = DistrictImageryLayer;
+                var imagery = DistrictTilesLayer;
                 if (imagery is null)
                 {
                     Logger.Warning("DistrictImageryLayer not found in view");
                     return;
                 }
 
-                imagery.LayerType = LayerType.OSM;
+                if (!imagery.IsGoogleTilesActive)
+                {
+                    imagery.UseOpenStreetMap();
+                }
+
                 ConfigureImageryLayer(imagery, vm);
                 _currentLayer = imagery;
             }
@@ -189,15 +212,22 @@ namespace BusBuddy.WPF.Views.Map
             if (vm is not null)
             {
                 imagery.Markers = vm.MapMarkers;
-                if (TryFindResource("StudentMarkerTemplate") is DataTemplate template)
-                {
-                    imagery.MarkerTemplate = template;
-                }
+                ApplyMarkerTemplates(imagery);
+            }
+        }
+
+        private void ApplyMarkerTemplates(ImageryLayer imagery)
+        {
+            if (TryFindResource("DistrictMarkerTemplateSelector") is DataTemplateSelector selector)
+            {
+                imagery.MarkerTemplateSelector = selector;
+                imagery.MarkerTemplate = null;
+                return;
             }
 
-            if (_routeSubLayer is not null && !imagery.SubShapeFileLayers.Contains(_routeSubLayer))
+            if (TryFindResource("StopMarkerTemplate") is DataTemplate template)
             {
-                imagery.SubShapeFileLayers.Add(_routeSubLayer);
+                imagery.MarkerTemplate = template;
             }
         }
 
@@ -208,15 +238,12 @@ namespace BusBuddy.WPF.Views.Map
         {
             try
             {
-                if (DataContext is not MapViewModel vm || DistrictImageryLayer is not ImageryLayer imagery)
+                if (DataContext is not MapViewModel vm || DistrictTilesLayer is not ImageryLayer imagery)
                 {
                     return;
                 }
 
-                if (TryFindResource("StudentMarkerTemplate") is DataTemplate template)
-                {
-                    imagery.MarkerTemplate = template;
-                }
+                ApplyMarkerTemplates(imagery);
 
                 // Re-assign collection so Syncfusion refreshes marker visuals.
                 imagery.Markers = vm.MapMarkers;
@@ -261,6 +288,12 @@ namespace BusBuddy.WPF.Views.Map
                         imagery.Center = vm.MapCenter;
                     }
                 });
+                return;
+            }
+
+            if (e.PropertyName == nameof(MapViewModel.MapFitRadiusKm))
+            {
+                Dispatcher.Invoke(() => ApplyFitRadius(vm));
             }
         }
 
@@ -275,6 +308,11 @@ namespace BusBuddy.WPF.Views.Map
             if (_currentLayer is ImageryLayer imagery)
             {
                 imagery.Center = vm.MapCenter;
+                if (vm.MapFitRadiusKm > 0)
+                {
+                    imagery.DistanceType = DistanceType.KiloMeter;
+                    imagery.Radius = vm.MapFitRadiusKm;
+                }
             }
         }
 
@@ -293,14 +331,6 @@ namespace BusBuddy.WPF.Views.Map
             if (_currentLayer is ImageryLayer imagery)
             {
                 vm.MapCenter = imagery.Center;
-            }
-        }
-
-        private void ToggleOsmAttribution(bool visible)
-        {
-            if (FindName("OsmAttribution") is Border overlay)
-            {
-                overlay.Visibility = visible ? Visibility.Visible : Visibility.Collapsed;
             }
         }
 
@@ -326,12 +356,14 @@ namespace BusBuddy.WPF.Views.Map
         {
             try
             {
-                if (MapControl is not null)
+                if (DataContext is MapViewModel vm)
                 {
-                    MapControl.ZoomLevel = MapDefaults.DefaultZoomLevel;
+                    _ = vm.ResetCameraToDistrictAsync();
+                    return;
                 }
 
-                ApplyCenter(MapDefaults.FallbackLatitude, MapDefaults.FallbackLongitude, MapDefaults.DefaultZoomLevel);
+                var camera = DistrictCameraUi.Resolve();
+                ApplyCenter(camera.Latitude, camera.Longitude, camera.ZoomLevel);
             }
             catch (Exception ex)
             {
@@ -339,72 +371,24 @@ namespace BusBuddy.WPF.Views.Map
             }
         }
 
-        private async Task CheckBackendConnectivityAsync()
+        private void OnRouteLineUpdated(object? sender, MapViewModel.RouteLineEventArgs e) =>
+            Dispatcher.Invoke(() => ReplayRouteLine(e.Points));
+
+        private void ReplayRouteLineFromViewModel(MapViewModel? vm)
         {
-            try
+            if (vm is null)
             {
-                var sp = App.ServiceProvider;
-                if (sp is null)
-                {
-                    return;
-                }
-
-                using var scope = sp.CreateScope();
-                var contextFactory = scope.ServiceProvider.GetService<IBusBuddyDbContextFactory>();
-                if (contextFactory is null)
-                {
-                    return;
-                }
-
-                using var context = contextFactory.CreateDbContext();
-                var canConnect = await context.Database.CanConnectAsync();
-                Logger.Information("Database connectivity check from MapView: {CanConnect}", canConnect);
+                return;
             }
-            catch (Exception ex)
-            {
-                Logger.Warning(ex, "Backend connectivity check failed");
-            }
+
+            ReplayRouteLine(vm.RouteLinePoints);
         }
 
-        private void OnRouteLineUpdated(object? sender, MapViewModel.RouteLineEventArgs e)
-        {
-            try
-            {
-                if (MapControl is null)
-                {
-                    return;
-                }
-
-                if (_routeSubLayer is null)
-                {
-                    _routeSubLayer = new SubShapeFileLayer();
-                    if (_currentLayer is ImageryLayer imagery)
-                    {
-                        imagery.SubShapeFileLayers.Add(_routeSubLayer);
-                    }
-                    else
-                    {
-                        MapControl.Layers.Add(_routeSubLayer);
-                    }
-                }
-
-                _routePolyline ??= new MapPolyline
-                {
-                    Stroke = Brushes.Gold,
-                    StrokeThickness = 3,
-                };
-                if (!_routeSubLayer.MapElements.Contains(_routePolyline))
-                {
-                    _routeSubLayer.MapElements.Add(_routePolyline);
-                }
-
-                _routePolyline.Points = new System.Collections.ObjectModel.ObservableCollection<Point>(e.Points);
-            }
-            catch (Exception ex)
-            {
-                Logger.Warning(ex, "Failed updating route polyline");
-            }
-        }
+        private void ReplayRouteLine(IReadOnlyList<Point> points) =>
+            MapRouteTrailLayer.Apply(
+                RouteTrail ?? FindName("RouteTrail") as MapPolyline,
+                RouteTrailLayer ?? FindName("RouteTrailLayer") as SubShapeFileLayer,
+                points);
 
         private void OnPrintRequested(object? sender, EventArgs e)
         {
@@ -500,32 +484,34 @@ namespace BusBuddy.WPF.Views.Map
                 TryResetView();
             }
         });
-        private void OnViewResetRequested(object? sender, EventArgs e) => Dispatcher.Invoke(TryResetView);
+        private void OnViewResetRequested(object? sender, EventArgs e) => Dispatcher.Invoke(() =>
+            SyncMapControlFromViewModel(DataContext as MapViewModel));
 
         private void CenterOnCurrentMarkers()
         {
             try
             {
-                if (MapControl is null || DataContext is not MapViewModel vm || vm.MapMarkers.Count == 0)
+                if (DataContext is MapViewModel vm)
                 {
-                    return;
+                    vm.CenterOnMarkers();
+                    ApplyFitRadius(vm);
                 }
-
-                double minLat = double.MaxValue, maxLat = double.MinValue, minLon = double.MaxValue, maxLon = double.MinValue;
-                foreach (var mk in vm.MapMarkers)
-                {
-                    if (mk.LatitudeDegrees < minLat) minLat = mk.LatitudeDegrees;
-                    if (mk.LatitudeDegrees > maxLat) maxLat = mk.LatitudeDegrees;
-                    if (mk.LongitudeDegrees < minLon) minLon = mk.LongitudeDegrees;
-                    if (mk.LongitudeDegrees > maxLon) maxLon = mk.LongitudeDegrees;
-                }
-
-                ApplyCenter((minLat + maxLat) / 2d, (minLon + maxLon) / 2d, MapDefaults.SchoolZoomLevel);
             }
             catch (Exception ex)
             {
                 Logger.Warning(ex, "CenterOnCurrentMarkers failed");
             }
+        }
+
+        private void ApplyFitRadius(MapViewModel vm)
+        {
+            if (_currentLayer is not ImageryLayer imagery || vm.MapFitRadiusKm <= 0)
+            {
+                return;
+            }
+
+            imagery.DistanceType = DistanceType.KiloMeter;
+            imagery.Radius = vm.MapFitRadiusKm;
         }
     }
 }

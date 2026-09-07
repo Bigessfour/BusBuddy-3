@@ -493,8 +493,8 @@ public class BusBuddyDbContext : DbContext
             entity.HasIndex(e => e.AMDriverId).HasDatabaseName("IX_Routes_AMDriverId");
             entity.HasIndex(e => e.PMDriverId).HasDatabaseName("IX_Routes_PMDriverId");
 
-            // Geo metadata
-            entity.Property(e => e.WaypointsJson).HasMaxLength(4000);
+            // Geo metadata — encoded polyline + stops; do not cap at 4000 (road paths exceed that)
+            entity.Property(e => e.WaypointsJson);
             entity.Property(e => e.DistrictBoundaryShapefilePath).HasMaxLength(500);
             entity.Property(e => e.TownBoundaryShapefilePath).HasMaxLength(500);
         });
@@ -643,6 +643,7 @@ public class BusBuddyDbContext : DbContext
             entity.Property(e => e.City).HasMaxLength(50);
             entity.Property(e => e.State).HasMaxLength(2);
             entity.Property(e => e.Zip).HasMaxLength(10);
+            entity.Property(e => e.PlaceId).HasMaxLength(256);
             entity.Property(e => e.HasMedicalNeeds).HasDefaultValue(false);
             entity.Property(e => e.RequiresSpecialNeedsBus).HasDefaultValue(false);
             entity.Property(e => e.RequiresWheelchair).HasDefaultValue(false);

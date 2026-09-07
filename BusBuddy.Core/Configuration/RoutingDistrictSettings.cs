@@ -1,7 +1,8 @@
 namespace BusBuddy.Core.Configuration;
 
 /// <summary>
-/// District routing / density planner settings. Bound from the <c>RoutingDistrict</c> config section.
+/// District routing / density planner settings. Bound from the <c>RoutingDistrict</c> config section
+/// and overlaid by clerk Settings (no baked-in town). Empty bbox/depot means unconfigured.
 /// </summary>
 public sealed class RoutingDistrictSettings
 {
@@ -54,4 +55,32 @@ public sealed class RoutingDistrictSettings
 
     /// <summary>Depot longitude (degrees).</summary>
     public double? DepotLongitude { get; set; }
+
+    public bool TryGetBoundingBox(
+        out double minLat,
+        out double maxLat,
+        out double minLon,
+        out double maxLon)
+    {
+        minLat = maxLat = minLon = maxLon = default;
+        if (BoundingBoxMinLat is not double south ||
+            BoundingBoxMaxLat is not double north ||
+            BoundingBoxMinLon is not double west ||
+            BoundingBoxMaxLon is not double east ||
+            north <= south ||
+            east <= west ||
+            south is < -90 or > 90 ||
+            north is < -90 or > 90 ||
+            west is < -180 or > 180 ||
+            east is < -180 or > 180)
+        {
+            return false;
+        }
+
+        minLat = south;
+        maxLat = north;
+        minLon = west;
+        maxLon = east;
+        return true;
+    }
 }

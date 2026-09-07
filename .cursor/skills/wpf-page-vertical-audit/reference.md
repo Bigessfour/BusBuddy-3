@@ -250,7 +250,7 @@ Canonical entry points — do not call `GoogleAddressValidationClient` from WPF 
 | `StudentsViewModel`              | Grid validate address                                                                     |
 | `SchoolDestinationFormViewModel` | School GPS on save                                                                        |
 | `RouteManagementViewModel`       | **Drive Path** toolbar → `RefreshDrivePathCommand`                                        |
-| `MapViewModel`                   | Optional drive-path refresh when plotting route                                           |
+| `MapViewModel`                   | Draws stored trail on select; Routes refresh on map **Refresh** / Drive Path              |
 | `RouteAssignmentViewModel`       | Plot stops via `IMapsGeoService` when configured                                          |
 
 Key: `GOOGLE_MAPS_API_KEY` (Passwords). Quota project: `busbuddy-507301`. Map tiles remain OSM/SfMap — no Google map tiles.

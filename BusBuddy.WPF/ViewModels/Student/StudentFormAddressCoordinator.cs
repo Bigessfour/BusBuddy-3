@@ -139,6 +139,11 @@ public sealed class StudentFormAddressCoordinator : INotifyPropertyChanged, IDis
 
         student.Latitude = null;
         student.Longitude = null;
+        if (!string.IsNullOrWhiteSpace(suggestion.PlaceId))
+        {
+            student.PlaceId = suggestion.PlaceId;
+        }
+
         ValidationFailed = false;
         ValidationMessage = "Address selected — click Validate Address before save.";
         ValidationColor = Brushes.Blue;
@@ -183,6 +188,11 @@ public sealed class StudentFormAddressCoordinator : INotifyPropertyChanged, IDis
                     if (maps.Longitude.HasValue)
                     {
                         student.Longitude = (decimal)maps.Longitude.Value;
+                    }
+
+                    if (!string.IsNullOrWhiteSpace(maps.PlaceId))
+                    {
+                        student.PlaceId = maps.PlaceId;
                     }
 
                     ValidationFailed = false;
@@ -249,6 +259,11 @@ public sealed class StudentFormAddressCoordinator : INotifyPropertyChanged, IDis
             {
                 student.Latitude = (decimal)maps.Latitude.Value;
                 student.Longitude = (decimal)maps.Longitude.Value;
+                if (!string.IsNullOrWhiteSpace(maps.PlaceId))
+                {
+                    student.PlaceId = maps.PlaceId;
+                }
+
                 return true;
             }
         }

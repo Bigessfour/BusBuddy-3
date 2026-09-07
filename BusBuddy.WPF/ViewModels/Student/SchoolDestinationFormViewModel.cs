@@ -5,8 +5,9 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 using BusBuddy.Core.Data;
-using BusBuddy.Core.Services.Interfaces;
+using BusBuddy.Core.Mapping;
 using BusBuddy.Core.Services.GoogleMaps;
+using BusBuddy.Core.Services.Interfaces;
 using BusBuddy.Core.Utilities;
 using BusBuddy.WPF.Utilities;
 using BusBuddy.WPF.ViewModels;
@@ -21,10 +22,8 @@ public sealed class SchoolDestinationFormViewModel : BaseViewModel, IDisposable
 {
     private static readonly new ILogger Logger = Log.ForContext<SchoolDestinationFormViewModel>();
 
-    /// <summary>Lamar, CO — clerk district default for the pick-map.</summary>
-    public const double DefaultMapLatitude = 38.0872;
-    public const double DefaultMapLongitude = -102.6208;
-    public const int DefaultMapZoom = 13;
+    /// <summary>Zoom for a school pick-map once a district or campus exists.</summary>
+    public const int DefaultMapZoom = MapDefaults.SchoolZoomLevel;
 
     private readonly IDestinationService _destinations;
     private readonly BusBuddyDbContext? _context;
@@ -32,8 +31,8 @@ public sealed class SchoolDestinationFormViewModel : BaseViewModel, IDisposable
 
     private string _name = string.Empty;
     private string _address = string.Empty;
-    private string _city = "Lamar";
-    private string _state = "CO";
+    private string _city = string.Empty;
+    private string _state = string.Empty;
     private string _zipCode = string.Empty;
     private string _startTimeText = "08:00";
     private string _dismissalTimeText = "15:30";
@@ -65,8 +64,19 @@ public sealed class SchoolDestinationFormViewModel : BaseViewModel, IDisposable
         ClearMapPickCommand = new RelayCommand(ClearMapPick);
 
         MapMarkers = new ObservableCollection<MapViewModel.MapMarker>();
-        MapCenter = new Point(DefaultMapLatitude, DefaultMapLongitude);
-        MapZoomLevel = DefaultMapZoom;
+        var camera = DistrictCameraUi.Resolve();
+        MapCenter = new Point(camera.Latitude, camera.Longitude);
+        MapZoomLevel = camera.ZoomLevel;
+        var district = DistrictCameraUi.CurrentSettings();
+        if (!string.IsNullOrWhiteSpace(district?.DepotCity))
+        {
+            _city = district!.DepotCity!.Trim();
+        }
+
+        if (!string.IsNullOrWhiteSpace(district?.DepotState))
+        {
+            _state = district!.DepotState!.Trim().ToUpperInvariant();
+        }
     }
 
     public string Title => "Add school";
@@ -218,7 +228,11 @@ public sealed class SchoolDestinationFormViewModel : BaseViewModel, IDisposable
             return;
         }
 
-        MapMarkers.Add(MapViewModel.MapMarker.FromDegrees(_latitudeValue, _longitudeValue, "School"));
+        MapMarkers.Add(MapViewModel.MapMarker.FromDegrees(
+            _latitudeValue,
+            _longitudeValue,
+            MapMarkerLabels.ForSchool(string.IsNullOrWhiteSpace(Name) ? "School" : Name),
+            MapMarkerLabels.Kind.School));
         MapCenter = new Point(_latitudeValue, _longitudeValue);
         OnPropertyChanged(nameof(MapCenter));
     }

@@ -180,6 +180,28 @@
 
 ---
 
+## Phase 8: District Map plot layers (follow-up 2026-09-06)
+
+**Goal**: One MapView/VM tree; plot schools, catalog pickups, and students (stop if assigned, else home) without three separate clicks. Live GPS stays off. Camera stays school → Settings depot/bbox → US overview (no baked town).
+
+**Independent Test**: Unit tests on `MapViewModel` / `MapView.xaml`; VM smoke still required on Windows.
+
+- [x] T042 [P] Add `MapMarkerLabels` prefixes (`SCH `, `PK `, `HOME `, `WP `, `DEPOT `) + `MapMarker.Kind`; merge same-kind only; Syncfusion school vs stop `MarkerTemplateSelector`
+- [x] T043 [US1] Add `PlotPickupStopsCommand` → `IPickupStopService.GetActiveStopsAsync()` in `BusBuddy.WPF/ViewModels/Map/MapViewModel.cs` and **Plot Pickup Stops** in `BusBuddy.WPF/Views/Map/MapView.xaml`
+- [x] T044 [US1] Student plot: PK when assigned `PickupStop` has GPS; optional smaller HOME pin when home GPS differs; else geocode/plot home only (`StudentPlotLocation`, `MapDistrictLayers`, `StudentsViewModel`, `StudentFormViewModel`)
+- [x] T045 [US1] On `InitializeMapDataAsync`, after routes: depot → schools → active pickups → students with stored coords (no network), then refresh selected route drive path
+- [x] T046 [P] Remove live-tracking chrome (**Show All Buses**, **Track Selected**, interval timer); keep one Fleet GPS status line until AVL exists
+- [x] T047 Tests in `BusBuddy.Tests/WPF/MapViewTests.cs` and `MapViewModelTests.cs` for prefixes, pickup-vs-home, auto-seed, no live-tracking chrome
+- [x] T048 Update `docs/action-items.md` (plot layers + remaining VM smoke / migration)
+- [x] T049 [US1] Seed depot pin (`DEPOT `) and home pins (`HOME `) alongside PK/school; pickup-assigned students keep a home pin when coords differ
+- [x] T050 [P] `MapDefaults.ZoomForBounds` for `CenterOnPoints` (SfMap has no fit-bounds API — Center + ZoomLevel only)
+- [x] T051 Persist `RouteStops`-derived `WaypointsJson` from `GeoDataService` when the column is empty; never overwrite stored JSON (drive-path fail-open)
+- [x] T052 [US1] HOME pins use a smaller `HomeMarkerTemplate` (8px vs 12px PK); skip catalog pickups at 0,0 (`PickupStop.HasGpsCoordinates`)
+
+Polyline stays XAML `MapPolyline` on `SubShapeFileLayer` (Syncfusion documented API) plus `MapRouteTrailLayer.Refresh`. Quota project remains `busbuddy-507301`. Do not bake Wiley/Lamar into `MapDefaults`.
+
+---
+
 ## Notes
 
 - Constitution already amended to v1.1.0 in `.specify/memory/constitution.md` (this feature)

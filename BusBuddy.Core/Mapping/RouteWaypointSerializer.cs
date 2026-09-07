@@ -1,5 +1,4 @@
 using System.Globalization;
-using System.Linq;
 using System.Text;
 using System.Text.Json;
 using Serilog;
@@ -7,8 +6,44 @@ using Serilog;
 namespace BusBuddy.Core.Mapping;
 
 /// <summary>
+/// Compact stop list plus optional Routes API polyline.
+/// Draw <see cref="PathPoints"/>; send <see cref="Stops"/> to Google — never decoded vertices.
+/// </summary>
+public readonly record struct RouteWaypointPayload(
+    IReadOnlyList<(double Latitude, double Longitude)> Stops,
+    IReadOnlyList<(double Latitude, double Longitude)> PathPoints,
+    string? EncodedPolyline)
+{
+    /// <summary>Line geometry: decoded road path, else the stop list.</summary>
+    public IReadOnlyList<(double Latitude, double Longitude)> Points =>
+        PathPoints.Count > 0 ? PathPoints : Stops;
+
+    /// <summary>
+    /// Pins to plot: stored stops, or Start/End of a legacy road path that has no stop list.
+    /// </summary>
+    public IReadOnlyList<(double Latitude, double Longitude)> MarkerStops
+    {
+        get
+        {
+            if (Stops.Count > 0)
+            {
+                return Stops;
+            }
+
+            if (PathPoints.Count >= 2)
+            {
+                return new[] { PathPoints[0], PathPoints[^1] };
+            }
+
+            return PathPoints;
+        }
+    }
+}
+
+/// <summary>
 /// Compact waypoint JSON: either <c>[[lat,lon], ...]</c> or
-/// <c>{"encodedPolyline":"...","points":[[lat,lon],...]}</c> for Routes API results.
+/// <c>{"encodedPolyline":"...","stops":[[lat,lon],...]}</c>.
+/// Legacy <c>points</c> arrays are still read.
 /// </summary>
 public static class RouteWaypointSerializer
 {
@@ -41,24 +76,35 @@ public static class RouteWaypointSerializer
         return sb.ToString();
     }
 
-    /// <summary>Store encoded polyline plus decoded points for map drawing.</summary>
-    public static string FromEncodedPolyline(string encodedPolyline, IEnumerable<(double Latitude, double Longitude)> points)
+    /// <summary>
+    /// Store encoded road polyline plus the stop list used to request it (not decoded vertices).
+    /// </summary>
+    public static string FromEncodedPolyline(
+        string encodedPolyline,
+        IEnumerable<(double Latitude, double Longitude)> stops)
     {
         var payload = new
         {
             encodedPolyline,
-            points = points.Select(p => new[] { p.Latitude, p.Longitude }).ToArray()
+            stops = stops.Select(p => new[] { p.Latitude, p.Longitude }).ToArray()
         };
         var json = JsonSerializer.Serialize(payload);
-        Logger.Debug("Serialized encoded polyline with points");
+        Logger.Debug("Serialized encoded polyline with stop list");
         return json;
     }
 
-    public static IReadOnlyList<(double Latitude, double Longitude)> Parse(string? json)
+    /// <summary>Path points for drawing (decoded polyline or stop-to-stop segments).</summary>
+    public static IReadOnlyList<(double Latitude, double Longitude)> Parse(string? json) =>
+        ParsePayload(json).Points;
+
+    public static IReadOnlyList<(double Latitude, double Longitude)> ParseStops(string? json) =>
+        ParsePayload(json).Stops;
+
+    public static RouteWaypointPayload ParsePayload(string? json)
     {
         if (string.IsNullOrWhiteSpace(json))
         {
-            return Array.Empty<(double, double)>();
+            return EmptyPayload();
         }
 
         try
@@ -66,29 +112,64 @@ public static class RouteWaypointSerializer
             using var doc = JsonDocument.Parse(json);
             if (doc.RootElement.ValueKind == JsonValueKind.Object)
             {
-                if (doc.RootElement.TryGetProperty("points", out var pointsEl) &&
-                    pointsEl.ValueKind == JsonValueKind.Array)
+                string? encoded = null;
+                if (doc.RootElement.TryGetProperty("encodedPolyline", out var encodedEl) &&
+                    encodedEl.ValueKind == JsonValueKind.String)
                 {
-                    return ParseArray(pointsEl);
+                    encoded = encodedEl.GetString();
                 }
 
-                Logger.Warning("Waypoint object JSON missing points array");
-                return Array.Empty<(double, double)>();
+                var stops = ReadCoordinateArray(doc.RootElement, "stops");
+                var legacyPoints = ReadCoordinateArray(doc.RootElement, "points");
+                var decoded = EncodedPolylineCodec.Decode(encoded);
+                var path = decoded.Count >= 2
+                    ? decoded
+                    : legacyPoints.Count > 0
+                        ? legacyPoints
+                        : stops;
+                var stopList = stops.Count > 0
+                    ? stops
+                    : string.IsNullOrWhiteSpace(encoded)
+                        ? legacyPoints
+                        : Array.Empty<(double, double)>();
+
+                if (path.Count == 0 && stopList.Count == 0 && string.IsNullOrWhiteSpace(encoded))
+                {
+                    Logger.Warning("Waypoint object JSON missing stops, points, and encoded polyline");
+                }
+
+                return new RouteWaypointPayload(stopList, path, encoded);
             }
 
             if (doc.RootElement.ValueKind != JsonValueKind.Array)
             {
                 Logger.Warning("Waypoint JSON was not an array");
-                return Array.Empty<(double, double)>();
+                return EmptyPayload();
             }
 
-            return ParseArray(doc.RootElement);
+            var compact = ParseArray(doc.RootElement);
+            return new RouteWaypointPayload(compact, compact, EncodedPolyline: null);
         }
         catch (JsonException ex)
         {
             Logger.Warning(ex, "Waypoint JSON parse failed");
-            return Array.Empty<(double, double)>();
+            return EmptyPayload();
         }
+    }
+
+    private static RouteWaypointPayload EmptyPayload() =>
+        new(Array.Empty<(double, double)>(), Array.Empty<(double, double)>(), EncodedPolyline: null);
+
+    private static IReadOnlyList<(double Latitude, double Longitude)> ReadCoordinateArray(
+        JsonElement root,
+        string name)
+    {
+        if (root.TryGetProperty(name, out var el) && el.ValueKind == JsonValueKind.Array)
+        {
+            return ParseArray(el);
+        }
+
+        return Array.Empty<(double, double)>();
     }
 
     private static IReadOnlyList<(double Latitude, double Longitude)> ParseArray(JsonElement array)

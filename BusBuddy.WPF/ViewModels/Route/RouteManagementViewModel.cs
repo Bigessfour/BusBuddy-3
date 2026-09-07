@@ -18,7 +18,6 @@ using System.Threading;
 using System.IO;
 using Serilog.Context;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Win32;
 using BusBuddy.WPF;
 using BusBuddy.WPF.Services;
 using BusBuddy.WPF.Utilities;
@@ -973,7 +972,7 @@ namespace BusBuddy.WPF.ViewModels.Route
                 using (LogContext.PushProperty("Operation", "ExportRoutesCsv"))
                 {
                     var fileName = $"BusBuddy_Routes_{DateTime.Now:yyyyMMdd_HHmmss}.csv";
-                    var path = PromptSavePath(fileName, "CSV files (*.csv)|*.csv|All files (*.*)|*.*");
+                    var path = ExportFilePrompt.TryGetPath(fileName, "CSV files (*.csv)|*.csv|All files (*.*)|*.*");
                     if (path is null)
                     {
                         StatusMessage = "Export cancelled";
@@ -1012,7 +1011,7 @@ namespace BusBuddy.WPF.ViewModels.Route
                 using (LogContext.PushProperty("Operation", "ExportRouteSummary"))
                 {
                     var fileName = $"BusBuddy_Report_{DateTime.Now:yyyyMMdd_HHmmss}.txt";
-                    var path = PromptSavePath(fileName, "Text files (*.txt)|*.txt|All files (*.*)|*.*");
+                    var path = ExportFilePrompt.TryGetPath(fileName, "Text files (*.txt)|*.txt|All files (*.*)|*.*");
                     if (path is null)
                     {
                         StatusMessage = "Export cancelled";
@@ -1145,34 +1144,6 @@ namespace BusBuddy.WPF.ViewModels.Route
                 Status = "Scheduled"
             }).ConfigureAwait(true);
             return true;
-        }
-
-        private static string? PromptSavePath(string defaultFileName, string filter)
-        {
-            try
-            {
-                if (System.Windows.Application.Current is not null)
-                {
-                    var dialog = new SaveFileDialog
-                    {
-                        FileName = defaultFileName,
-                        Filter = filter,
-                        OverwritePrompt = true
-                    };
-                    return dialog.ShowDialog() == true ? dialog.FileName : null;
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.Debug(ex, "SaveFileDialog unavailable; using documents folder");
-            }
-
-            var exportDir = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
-                "BusBuddy",
-                "Exports");
-            Directory.CreateDirectory(exportDir);
-            return Path.Combine(exportDir, defaultFileName);
         }
 
         private void WriteFallbackCsv(string fullPath)

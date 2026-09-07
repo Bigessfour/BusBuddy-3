@@ -22,7 +22,6 @@
         <AutoMapperVersion>15.1.1</AutoMapperVersion>
         <AutoMapperExtensionsDIVersion>12.0.1</AutoMapperExtensionsDIVersion>
         <CommunityToolkitMvvmVersion>8.4.2</CommunityToolkitMvvmVersion> <!-- patch update -->
-        <WebView2Version>1.0.4129.50</WebView2Version>
         <XamlBehaviorsVersion>1.1.135</XamlBehaviorsVersion>
         <!-- Testing Package Versions (.NET 9 Compatible) -->
         <NUnitVersion>4.6.1</NUnitVersion>
