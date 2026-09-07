@@ -775,6 +775,7 @@ Jordan,Lee,3,Sam,Lee,200 Oak Ave,Oakridge,CO,County,,555-0101,,,,,,,,
                         PMRiders = random.Next(5, 25),
                         IsActive = random.Next(0, 10) > 1 // 90% active
                     });
+                    routes[^1].Session = RouteSession.Infer(routes[^1]);
                 }
 
                 context.Routes.AddRange(routes);

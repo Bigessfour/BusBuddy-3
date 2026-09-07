@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using BusBuddy.Core.Models;
 
 namespace BusBuddy.Core.Models.Trips
 {
@@ -41,7 +42,6 @@ namespace BusBuddy.Core.Models.Trips
         [Display(Name = "Custom Trip Type")]
         public string? CustomType { get; set; }
 
-        [Required]
         [StringLength(100)]
         [Display(Name = "Point of Contact")]
         public string POCName { get; set; } = string.Empty;
@@ -69,6 +69,9 @@ namespace BusBuddy.Core.Models.Trips
         [Display(Name = "Driver")]
         public int? DriverId { get; set; }
 
+        /// <summary>
+        /// Leftover FK. Board trips MUST NOT set this. Route != Trip; never add IsTrip to Route.
+        /// </summary>
         [ForeignKey("Route")]
         [Display(Name = "Route")]
         public int? RouteId { get; set; }
@@ -104,9 +107,129 @@ namespace BusBuddy.Core.Models.Trips
         [Display(Name = "Approval Date")]
         public DateTime? ApprovalDate { get; set; }
 
-        [StringLength(20)]
+        [StringLength(32)]
         [Display(Name = "Status")]
-        public string Status { get; set; } = "Scheduled"; // Scheduled, InProgress, Completed, Cancelled, Pending
+        public string Status { get; set; } = TripStatus.Draft;
+
+        [StringLength(32)]
+        [Display(Name = "Ticket #")]
+        public string? ExternalTicketNo { get; set; }
+
+        [StringLength(16)]
+        [Display(Name = "School Year")]
+        public string SchoolYear { get; set; } = string.Empty;
+
+        [StringLength(8)]
+        [Display(Name = "Requesting School")]
+        public string? RequestingSchool { get; set; }
+
+        [StringLength(200)]
+        [Display(Name = "Team / Activity")]
+        public string? GroupOrActivity { get; set; }
+
+        [Display(Name = "Trip Date")]
+        public DateTime TripDate { get; set; }
+
+        [Display(Name = "Pickup Time")]
+        public TimeSpan? PickupTime { get; set; }
+
+        [Display(Name = "Return Clock Time")]
+        public TimeSpan? ReturnClockTime { get; set; }
+
+        [Display(Name = "Return Next Day")]
+        public bool ReturnIsNextDay { get; set; }
+
+        [StringLength(200)]
+        [Display(Name = "Origin Name")]
+        public string? OriginName { get; set; }
+
+        [Display(Name = "Origin Location")]
+        public int? OriginLocationId { get; set; }
+
+        [ForeignKey(nameof(OriginLocationId))]
+        public virtual Destination? OriginLocation { get; set; }
+
+        [StringLength(200)]
+        [Display(Name = "Destination Name")]
+        public string? DestinationName { get; set; }
+
+        [Display(Name = "Destination Location")]
+        public int? DestinationLocationId { get; set; }
+
+        [ForeignKey(nameof(DestinationLocationId))]
+        public virtual Destination? DestinationLocation { get; set; }
+
+        [Display(Name = "PAX")]
+        public int? PlannedHeadcount { get; set; }
+
+        [Display(Name = "Rode")]
+        public int? ActualHeadcount { get; set; }
+
+        [Column(TypeName = "decimal(8,2)")]
+        [Display(Name = "Planned Miles")]
+        public decimal? PlannedMiles { get; set; }
+
+        [Column(TypeName = "decimal(8,2)")]
+        [Display(Name = "Path Miles")]
+        public decimal? PathMiles { get; set; }
+
+        [Display(Name = "Linked Trip")]
+        public int? LinkedTripId { get; set; }
+
+        [ForeignKey(nameof(LinkedTripId))]
+        public virtual TripEvent? LinkedTrip { get; set; }
+
+        [Display(Name = "Multi-asset")]
+        public bool IsMultiAsset { get; set; }
+
+        [Display(Name = "Overnight pending")]
+        public bool IsOvernightPending { get; set; }
+
+        [StringLength(40)]
+        [Display(Name = "Board Bus #")]
+        public string? AssignedBusNumber { get; set; }
+
+        /// <summary>Board Driver column — alias for <see cref="DriverId"/>.</summary>
+        [NotMapped]
+        public int? AssignedDriverId
+        {
+            get => DriverId;
+            set => DriverId = value;
+        }
+
+        /// <summary>Board Bus # — alias for <see cref="VehicleId"/>. Null when <see cref="IsMultiAsset"/>.</summary>
+        [NotMapped]
+        public int? AssignedBusId
+        {
+            get => VehicleId;
+            set => VehicleId = value;
+        }
+
+        [NotMapped]
+        public bool HasPlace
+        {
+            get
+            {
+                if (DestinationLocationId.HasValue)
+                {
+                    return true;
+                }
+
+                var name = !string.IsNullOrWhiteSpace(DestinationName) ? DestinationName : Destination;
+                return !LocationTypes.IsUnresolvedPlaceName(name);
+            }
+        }
+
+        [NotMapped]
+        public bool HasTimes => PickupTime.HasValue;
+
+        [NotMapped]
+        public bool HasValidatedDestination =>
+            DestinationLocation is not null && DestinationLocation.HasValidatedCoordinates;
+
+        [NotMapped]
+        public bool HasValidatedOrigin =>
+            OriginLocation is not null && OriginLocation.HasValidatedCoordinates;
 
         [Display(Name = "Created Date")]
         public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
@@ -239,8 +362,37 @@ namespace BusBuddy.Core.Models.Trips
                 POCName = pocName,
                 StudentCount = 25,
                 AdultSupervisorCount = 3,
-                Status = "Scheduled"
+                Status = TripStatus.Draft,
+                TripDate = leaveTime.Date,
+                PickupTime = leaveTime.TimeOfDay,
+                DestinationName = destination
             };
+        }
+
+        /// <summary>
+        /// Import / board status. Playoff rows with a ticket and PAX but no place/time stay MissingInfo.
+        /// Import never returns Confirmed.
+        /// </summary>
+        public static string InferBoardStatus(TripEvent trip)
+        {
+            ArgumentNullException.ThrowIfNull(trip);
+
+            if (!trip.HasPlace || !trip.HasTimes)
+            {
+                return TripStatus.MissingInfo;
+            }
+
+            if (trip.IsMultiAsset)
+            {
+                return trip.DriverId.HasValue ? TripStatus.Assigned : TripStatus.Draft;
+            }
+
+            if (trip.DriverId.HasValue || trip.VehicleId.HasValue)
+            {
+                return TripStatus.Assigned;
+            }
+
+            return TripStatus.Draft;
         }
     }
 }

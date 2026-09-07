@@ -163,6 +163,7 @@ namespace BusBuddy.Core.Extensions
                     sp.GetRequiredService<BusBuddyDbContext>(),
                     sp.GetService<IUserSettingsService>()));
             services.AddScoped<IDashboardMetricsService, DashboardMetricsService>();
+            services.AddScoped<ITripEventService, TripEventService>();
             return services;
         }
 

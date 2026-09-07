@@ -31,7 +31,10 @@ public class Student : INotifyPropertyChanged
     public int? FamilyId { get; set; }
     public Family? Family { get; set; }
 
-    /// <summary>Shared district pickup stop (corner/block). Null = use home address as stop (rural).</summary>
+    /// <summary>
+    /// Shared district pickup stop. Null = home pickup.
+    /// A student home is not a catalog stop unless a clerk publishes that address as PickupStop.
+    /// </summary>
     public int? PickupStopId { get; set; }
 
     [ForeignKey(nameof(PickupStopId))]
@@ -259,6 +262,20 @@ public class Student : INotifyPropertyChanged
 
     [NotMapped]
     public string FullAddress => string.Join(", ", new[] { HomeAddress, City, State, Zip }.Where(s => !string.IsNullOrWhiteSpace(s))!);
+
+    /// <summary>Home vs catalog stop. Special needs still uses home pickup on a special-needs route.</summary>
+    [NotMapped]
+    public string PickupMode =>
+        PickupStopId.HasValue ? LocationTypes.PickupModeCatalogStop : LocationTypes.PickupModeHome;
+
+    [NotMapped]
+    public string LocationType => LocationTypes.StudentHome;
+
+    [NotMapped]
+    public bool HasValidatedHomeCoordinates => LocationCoordinate.IsValidated(Latitude, Longitude);
+
+    [NotMapped]
+    public string HomeCoordinateStatus => LocationTypes.ValidationStatus(HasValidatedHomeCoordinates);
 
     /// <summary>Derived age for seating / car-seat rules — do not store separately (use <see cref="DateOfBirth"/>).</summary>
     [NotMapped]

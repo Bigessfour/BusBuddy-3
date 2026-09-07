@@ -1,4 +1,5 @@
 using BusBuddy.Core.Configuration;
+using BusBuddy.Core.Models;
 
 namespace BusBuddy.Core.Mapping;
 
@@ -12,8 +13,7 @@ public static class DistrictDepot
         settings is not null &&
         settings.DepotLatitude is double lat &&
         settings.DepotLongitude is double lon &&
-        lat is >= -90 and <= 90 &&
-        lon is >= -180 and <= 180;
+        LocationCoordinate.IsValidated(lat, lon);
 
     public static bool TryGetCoordinates(
         RoutingDistrictSettings? settings,

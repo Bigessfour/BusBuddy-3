@@ -12,6 +12,7 @@ using BusBuddy.Core.Services.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
 using BusBuddy.Core.Configuration;
 using BusBuddy.Core.Models;
+using BusBuddy.Core.Models.Trips;
 using BusBuddy.Core.Utilities;
 using BusBuddy.WPF.Utilities;
 using Serilog;
@@ -54,8 +55,11 @@ namespace BusBuddy.WPF.ViewModels.Map
         private ObservableCollection<BusBuddy.Core.Models.Bus> _activeBuses = new();
         private BusBuddy.Core.Models.Bus? _selectedBus;
         private byte[]? _latestMapSnapshotPng; // Holds last captured map snapshot (PNG bytes) for PDF embedding
-        private Point _mapCenter = new(MapDefaults.UnconfiguredLatitude, MapDefaults.UnconfiguredLongitude);
-        private int _mapZoomLevel = MapDefaults.UnconfiguredZoomLevel;
+        /// <summary>Lamar/Wiley clerk default per <c>specs/maps.md</c> — not the US-centroid overview.</summary>
+        private const double DistrictDefaultLatitude = 38.0872;
+        private const double DistrictDefaultLongitude = -102.6208;
+        private Point _mapCenter = new(DistrictDefaultLatitude, DistrictDefaultLongitude);
+        private int _mapZoomLevel = MapDefaults.DistrictZoomLevel;
         private double _mapFitRadiusKm;
         private const string RouteWaypointPrefix = MapRouteTrail.WaypointPrefix;
 
@@ -785,9 +789,7 @@ namespace BusBuddy.WPF.ViewModels.Map
                 var (lat, lon, zoom) = await ResolveDistrictCameraAsync();
                 MapFitRadiusKm = 0;
                 SetMapView(lat, lon, zoom);
-                StatusMessage = zoom == MapDefaults.UnconfiguredZoomLevel
-                    ? "Centered on overview — add a school or set the bus barn in Settings"
-                    : "Centered on school — fleet GPS is not enabled yet";
+                StatusMessage = "Centered on district — fleet GPS is not enabled";
             }
             catch (Exception ex)
             {
@@ -809,7 +811,9 @@ namespace BusBuddy.WPF.ViewModels.Map
 
         private void CenterOnPoints(IEnumerable<Point> points)
         {
-            var list = points.ToList();
+            var list = points
+                .Where(p => IsPlottableCoordinate(p.X, p.Y))
+                .ToList();
             if (list.Count == 0)
             {
                 return;
@@ -854,7 +858,7 @@ namespace BusBuddy.WPF.ViewModels.Map
             {
                 var plotted = await _layers.PlotSchoolsAsync();
                 StatusMessage = plotted == 0
-                    ? "No schools with coordinates — add a school destination"
+                    ? "No schools with validated coordinates (needs validation)"
                     : $"Showing {plotted} school(s) on map";
                 if (plotted > 0)
                 {
@@ -876,7 +880,7 @@ namespace BusBuddy.WPF.ViewModels.Map
             {
                 var plotted = await _layers.PlotPickupsAsync();
                 StatusMessage = plotted == 0
-                    ? "No pickup stops with coordinates — add a pickup stop"
+                    ? "No pickup stops with validated coordinates (needs validation)"
                     : $"Showing {plotted} pickup stop(s) on map";
                 if (plotted > 0)
                 {
@@ -890,7 +894,7 @@ namespace BusBuddy.WPF.ViewModels.Map
             }
         }
 
-        /// <summary>Reset camera to school, then depot/bbox, then unconfigured overview.</summary>
+        /// <summary>Reset camera to school, then depot/bbox, then Lamar/Wiley clerk default.</summary>
         public async Task ResetCameraToDistrictAsync()
         {
             try
@@ -899,8 +903,8 @@ namespace BusBuddy.WPF.ViewModels.Map
                 MapFitRadiusKm = 0;
                 SetMapView(lat, lon, zoom);
                 ViewResetRequested?.Invoke(this, EventArgs.Empty);
-                StatusMessage = zoom == MapDefaults.UnconfiguredZoomLevel
-                    ? "No school or district location yet — add a school or set the bus barn in Settings"
+                StatusMessage = IsDistrictDefaultCamera(lat, lon, zoom)
+                    ? "District map — Lamar/Wiley area (add a school or bus barn in Settings to refine)"
                     : "Map view reset";
             }
             catch (Exception ex)
@@ -955,6 +959,16 @@ namespace BusBuddy.WPF.ViewModels.Map
             string? label = null,
             MapMarkerLabels.Kind? kind = null)
         {
+            if (!IsPlottableCoordinate(latitude, longitude))
+            {
+                Logger.Warning(
+                    "Skipped unvalidated map pin at ({Lat}, {Lon}) Label={Label}",
+                    latitude,
+                    longitude,
+                    label ?? "<none>");
+                return MapMarker.FromDegrees(DistrictDefaultLatitude, DistrictDefaultLongitude, label, kind);
+            }
+
             var incomingKind = kind ?? MapMarkerLabels.GetKind(label);
             // Same kind + same spot only — never merge SCH/PK/HOME/DEPOT/WP across kinds.
             var existing = MapMarkers.FirstOrDefault(m =>
@@ -996,6 +1010,56 @@ namespace BusBuddy.WPF.ViewModels.Map
             }
 
             return existing;
+        }
+
+        /// <summary>
+        /// Plot a selected trip only when origin/destination coordinates are validated.
+        /// No 0,0 or US-centroid fallback pins (specs/trips.md, specs/maps.md).
+        /// </summary>
+        public int TryPlotTrip(TripEvent trip)
+        {
+            ArgumentNullException.ThrowIfNull(trip);
+
+            var plotted = 0;
+            plotted += TryPlotTripPlace(
+                trip.OriginLocation,
+                trip.OriginName,
+                MapMarkerLabels.Kind.School);
+            plotted += TryPlotTripPlace(
+                trip.DestinationLocation,
+                trip.DestinationName ?? trip.Destination,
+                MapMarkerLabels.Kind.Waypoint);
+
+            if (plotted == 0)
+            {
+                StatusMessage = "Trip has no validated coordinates; not plotted.";
+                Logger.Information(
+                    "Skipped trip pin Ticket={Ticket} — coordinates missing or unvalidated",
+                    trip.ExternalTicketNo ?? trip.TripEventId.ToString());
+            }
+
+            return plotted;
+        }
+
+        private int TryPlotTripPlace(Destination? place, string? name, MapMarkerLabels.Kind kind)
+        {
+            if (place is null || !place.HasValidatedCoordinates)
+            {
+                return 0;
+            }
+
+            var latitude = (double)place.Latitude!.Value;
+            var longitude = (double)place.Longitude!.Value;
+            if (!IsPlottableCoordinate(latitude, longitude))
+            {
+                return 0;
+            }
+
+            var label = kind == MapMarkerLabels.Kind.School
+                ? MapMarkerLabels.ForSchool(name ?? place.Name)
+                : MapMarkerLabels.WaypointPrefix + (name ?? place.Name);
+            PlotStop(latitude, longitude, null, label, kind);
+            return 1;
         }
 
         private static void ApplyMarkerStyle(MapMarker marker, MapMarkerLabels.Kind kind)
@@ -1145,7 +1209,7 @@ namespace BusBuddy.WPF.ViewModels.Map
             }
 
             var eligibleStudents = allStudents
-                .Where(s => s.Latitude.HasValue && s.Longitude.HasValue)
+                .Where(s => s.HasValidatedHomeCoordinates)
                 .ToList();
 
             if (eligibleStudents.Count == 0)
@@ -1159,7 +1223,7 @@ namespace BusBuddy.WPF.ViewModels.Map
             var schoolCamera = await ResolveDistrictCameraAsync();
             var schoolLat = schoolCamera.Lat;
             var schoolLon = schoolCamera.Lon;
-            var remaining = eligibleStudents.Where(s => s.Latitude.HasValue && s.Longitude.HasValue).ToList();
+            var remaining = eligibleStudents.Where(s => s.HasValidatedHomeCoordinates).ToList();
             var ordered = new List<BusBuddy.Core.Models.Student>();
             double currentLat = startLat, currentLon = startLon;
             while (remaining.Count > 0)
@@ -1415,7 +1479,7 @@ namespace BusBuddy.WPF.ViewModels.Map
         {
             return RouteWaypointSerializer.FromPairs(
                 ordered
-                    .Where(s => s.Latitude.HasValue && s.Longitude.HasValue)
+                    .Where(s => s.HasValidatedHomeCoordinates)
                     .Select(s => ((double)s.Latitude!.Value, (double)s.Longitude!.Value)));
         }
 
@@ -1473,8 +1537,27 @@ namespace BusBuddy.WPF.ViewModels.Map
         {
             using var scope = _scopeFactory?.CreateScope();
             var camera = await DistrictCameraUi.ResolveAsync(scope?.ServiceProvider ?? App.ServiceProvider);
+            if (IsUsCentroidOverview(camera.Latitude, camera.Longitude, camera.ZoomLevel))
+            {
+                return (DistrictDefaultLatitude, DistrictDefaultLongitude, MapDefaults.DistrictZoomLevel);
+            }
+
             return (camera.Latitude, camera.Longitude, camera.ZoomLevel);
         }
+
+        private static bool IsUsCentroidOverview(double latitude, double longitude, int zoomLevel) =>
+            zoomLevel == MapDefaults.UnconfiguredZoomLevel
+            && Math.Abs(latitude - MapDefaults.UnconfiguredLatitude) < 0.01
+            && Math.Abs(longitude - MapDefaults.UnconfiguredLongitude) < 0.01;
+
+        private static bool IsDistrictDefaultCamera(double latitude, double longitude, int zoomLevel) =>
+            zoomLevel == MapDefaults.DistrictZoomLevel
+            && Math.Abs(latitude - DistrictDefaultLatitude) < 0.0001
+            && Math.Abs(longitude - DistrictDefaultLongitude) < 0.0001;
+
+        /// <summary>Reject 0,0, US-centroid overview, and out-of-range coordinates per specs/maps.md.</summary>
+        private static bool IsPlottableCoordinate(double latitude, double longitude) =>
+            LocationCoordinate.IsValidated(latitude, longitude);
 
         #endregion
 

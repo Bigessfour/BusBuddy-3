@@ -496,6 +496,8 @@ namespace BusBuddy.WPF
                 services.AddScoped<IMaintenanceService, MaintenanceService>();
                 services.AddScoped<IScheduleService, ScheduleService>();
                 services.AddScoped<IActivityScheduleService, ActivityScheduleService>();
+                services.AddScoped<BusBuddy.Core.Services.Interfaces.ITripEventService, BusBuddy.Core.Services.TripEventService>();
+                services.AddTransient<BusBuddy.WPF.ViewModels.Activity.ActivityManagementViewModel>();
                 services.AddScoped<BusBuddy.WPF.Services.IDriverAvailabilityService, BusBuddy.WPF.Services.DriverAvailabilityService>();
                 services.AddScoped<ISeedDataService, SeedDataService>();
                 services.AddScoped<IStudentRouteOptimizer, StudentRouteOptimizer>();

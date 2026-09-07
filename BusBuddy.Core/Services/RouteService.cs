@@ -1,6 +1,9 @@
 using BusBuddy.Core.Models;
 using BusBuddy.Core.Data;
+using BusBuddy.Core.Mapping;
 using BusBuddy.Core.Utilities;
+using BusBuddy.Core.Services.GoogleMaps;
+using BusBuddy.Core.Services.Interfaces;
 using BusBuddy.Core.Services.RouteDetermination;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
@@ -26,6 +29,7 @@ namespace BusBuddy.Core.Services
         private readonly IBusBuddyDbContextFactory _contextFactory;
         private readonly IRouteWaypointRebuildService? _waypointRebuild;
         private readonly AssignFitnessEvaluator? _fitnessEvaluator;
+        private readonly IRoutingService? _routingService;
 
         // Minimal op timing helper (basic only; can expand later)
         private static (Guid OpId, Stopwatch Sw) StartOp(string name, object? routeId = null)
@@ -50,14 +54,14 @@ namespace BusBuddy.Core.Services
         }
 
         public RouteService(IBusBuddyDbContextFactory contextFactory)
-            : this(contextFactory, null, null)
+            : this(contextFactory, null, null, null)
         {
         }
 
         public RouteService(
             IBusBuddyDbContextFactory contextFactory,
             IRouteWaypointRebuildService? waypointRebuild)
-            : this(contextFactory, waypointRebuild, null)
+            : this(contextFactory, waypointRebuild, null, null)
         {
         }
 
@@ -65,10 +69,20 @@ namespace BusBuddy.Core.Services
             IBusBuddyDbContextFactory contextFactory,
             IRouteWaypointRebuildService? waypointRebuild,
             AssignFitnessEvaluator? fitnessEvaluator)
+            : this(contextFactory, waypointRebuild, fitnessEvaluator, null)
+        {
+        }
+
+        public RouteService(
+            IBusBuddyDbContextFactory contextFactory,
+            IRouteWaypointRebuildService? waypointRebuild,
+            AssignFitnessEvaluator? fitnessEvaluator,
+            IRoutingService? routingService)
         {
             _contextFactory = contextFactory ?? throw new ArgumentNullException(nameof(contextFactory));
             _waypointRebuild = waypointRebuild;
             _fitnessEvaluator = fitnessEvaluator;
+            _routingService = routingService;
         }
 
         // Context helpers: only dispose when using the concrete runtime factory
@@ -189,6 +203,19 @@ namespace BusBuddy.Core.Services
                 var (context, dispose) = GetWriteContext();
                 try
                 {
+                    if (string.IsNullOrWhiteSpace(route.Session) || !RouteSession.IsKnown(route.Session))
+                    {
+                        route.Session = RouteSession.Infer(route);
+                    }
+                    else if (route.Session == RouteSession.AM)
+                    {
+                        var inferred = RouteSession.Infer(route);
+                        if (inferred != RouteSession.AM)
+                        {
+                            route.Session = inferred;
+                        }
+                    }
+
                     context.Routes.Add(route);
                     await context.SaveChangesAsync();
 
@@ -393,6 +420,7 @@ namespace BusBuddy.Core.Services
                         IsActive = false, // Start inactive until fully configured
                         School = "Default School" // This should come from configuration
                     };
+                    newRoute.Session = RouteSession.Infer(newRoute);
 
                     context.Routes.Add(newRoute);
                     await context.SaveChangesAsync();
@@ -704,6 +732,7 @@ namespace BusBuddy.Core.Services
                     }
 
                     EndOpOk("ReorderRouteStops", opId, sw, routeId, stops.Count);
+                    await RefreshPublishedPathAsync(context, routeId).ConfigureAwait(false);
                     return Result.SuccessResult(changed);
                 }
                 finally
@@ -972,6 +1001,101 @@ namespace BusBuddy.Core.Services
             {
                 DatabaseUserMessage.LogFailure(Logger, ex, "Error removing student {StudentId} from route {RouteId} ({Slot})", studentId, routeId, timeSlot);
                 return Result.FailureResult<bool>($"Error removing student from route: {ex.Message}");
+            }
+        }
+
+        public async Task<Result<RouteRiderException>> RecordRiderExceptionAsync(
+            int routeId,
+            int studentId,
+            DateTime exceptionDate,
+            string? reason = null)
+        {
+            try
+            {
+                if (routeId <= 0 || studentId <= 0)
+                {
+                    return Result.FailureResult<RouteRiderException>("Invalid routeId or studentId");
+                }
+
+                var day = DateTime.SpecifyKind(exceptionDate.Date, DateTimeKind.Utc);
+                var (context, dispose) = GetWriteContext();
+                try
+                {
+                    var route = await context.Routes.FirstOrDefaultAsync(r => r.RouteId == routeId);
+                    if (route is null)
+                    {
+                        return Result.FailureResult<RouteRiderException>($"Route with ID {routeId} not found");
+                    }
+
+                    var student = await context.Students.FirstOrDefaultAsync(s => s.StudentId == studentId);
+                    if (student is null)
+                    {
+                        return Result.FailureResult<RouteRiderException>($"Student with ID {studentId} not found");
+                    }
+
+                    var assigned = string.Equals(student.AMRoute, route.RouteName, StringComparison.OrdinalIgnoreCase)
+                        || string.Equals(student.PMRoute, route.RouteName, StringComparison.OrdinalIgnoreCase);
+                    if (!assigned)
+                    {
+                        return Result.FailureResult<RouteRiderException>(
+                            "Student is not assigned to this route. Same-day not-riding does not unassign the year pairing.");
+                    }
+
+                    var existing = await context.RouteRiderExceptions.FirstOrDefaultAsync(e =>
+                        e.RouteId == routeId
+                        && e.StudentId == studentId
+                        && e.ExceptionDate == day);
+                    if (existing is not null)
+                    {
+                        if (!string.IsNullOrWhiteSpace(reason))
+                        {
+                            existing.Reason = reason.Trim();
+                            await context.SaveChangesAsync();
+                        }
+
+                        Logger.Information(
+                            "Rider exception already recorded RouteId={RouteId} StudentId={StudentId} Date={Date}",
+                            routeId,
+                            studentId,
+                            day);
+                        return Result.SuccessResult(existing);
+                    }
+
+                    var row = new RouteRiderException
+                    {
+                        RouteId = routeId,
+                        StudentId = studentId,
+                        ExceptionDate = day,
+                        Reason = string.IsNullOrWhiteSpace(reason) ? null : reason.Trim(),
+                        CreatedDate = DateTime.UtcNow
+                    };
+                    await context.RouteRiderExceptions.AddAsync(row);
+                    await context.SaveChangesAsync();
+
+                    Logger.Information(
+                        "Recorded rider exception RouteId={RouteId} StudentId={StudentId} Date={Date} — published stops unchanged",
+                        routeId,
+                        studentId,
+                        day);
+                    return Result.SuccessResult(row);
+                }
+                finally
+                {
+                    if (dispose)
+                    {
+                        await context.DisposeAsync();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                DatabaseUserMessage.LogFailure(
+                    Logger,
+                    ex,
+                    "Error recording rider exception RouteId={RouteId} StudentId={StudentId}",
+                    routeId,
+                    studentId);
+                return Result.FailureResult<RouteRiderException>($"Error recording rider exception: {ex.Message}");
             }
         }
 
@@ -1593,6 +1717,12 @@ namespace BusBuddy.Core.Services
                         return Result.FailureResult<RouteStop>($"Route with ID {routeId} not found");
                     }
 
+                    if (!routeStop.HasValidatedCoordinates)
+                    {
+                        return Result.FailureResult<RouteStop>(
+                            "Stop requires a validated location (geocoded lat/lng). Unvalidated coordinates cannot be published waypoints.");
+                    }
+
                     // Normalize and prepare the RouteStop entity
                     routeStop.RouteId = routeId; // enforce association
                     if (routeStop.StopOrder <= 0)
@@ -1617,6 +1747,7 @@ namespace BusBuddy.Core.Services
 
                     Logger.Information("Added stop {StopName} (ID: {RouteStopId}) to route {RouteId} OpId={OpId}",
                         routeStop.StopName, routeStop.RouteStopId, routeId, opId);
+                    await RefreshPublishedPathAsync(context, routeId).ConfigureAwait(false);
                     EndOpOk("AddStop", opId, sw, routeId);
 
                     return Result.SuccessResult(routeStop);
@@ -1673,6 +1804,7 @@ namespace BusBuddy.Core.Services
                     await context.SaveChangesAsync();
 
                     Logger.Information("Removed stop {StopId} from route {RouteId} OpId={OpId}", stopId, routeId, opId);
+                    await RefreshPublishedPathAsync(context, routeId).ConfigureAwait(false);
                     EndOpOk("RemoveStop", opId, sw, routeId);
                     return Result.SuccessResult(true);
                 }
@@ -1727,6 +1859,8 @@ namespace BusBuddy.Core.Services
                         Description = source.Description,
                         IsActive = false,
                         School = source.School,
+                        Session = source.Session,
+                        IsSpecialNeedsRoute = source.IsSpecialNeedsRoute,
                         RouteDescription = source.RouteDescription,
                         Boundaries = source.Boundaries,
                         Path = source.Path,
@@ -1848,6 +1982,51 @@ namespace BusBuddy.Core.Services
             sb.AppendLine($"Stop Time: {stopMinutes} min");
             sb.AppendLine($"Estimated Total Time: {totalMinutes} min");
             return sb.ToString();
+        }
+
+        /// <summary>
+        /// Rebuilds <see cref="Route.WaypointsJson"/> from ordered validated stops, then refreshes
+        /// the Google drive path. Fail-open when routing is unavailable.
+        /// </summary>
+        private async Task RefreshPublishedPathAsync(BusBuddyDbContext context, int routeId)
+        {
+            var route = await context.Routes.FirstOrDefaultAsync(r => r.RouteId == routeId).ConfigureAwait(false);
+            if (route is null)
+            {
+                return;
+            }
+
+            var coords = await context.RouteStops
+                .Where(s => s.RouteId == routeId)
+                .OrderBy(s => s.StopOrder)
+                .ToListAsync()
+                .ConfigureAwait(false);
+
+            var validated = coords
+                .Where(s => s.HasValidatedCoordinates)
+                .Select(s => ((double)s.Latitude!.Value, (double)s.Longitude!.Value))
+                .ToList();
+            if (validated.Count == 0)
+            {
+                return;
+            }
+
+            route.WaypointsJson = RouteWaypointSerializer.FromPairs(validated);
+            if (validated.Count >= 2 && _routingService is not null)
+            {
+                var refresh = await RouteDrivePathRefresher
+                    .TryRefreshAsync(_routingService, route)
+                    .ConfigureAwait(false);
+                if (!refresh.Success && !refresh.Skipped)
+                {
+                    Logger.Warning(
+                        "Drive path refresh after stop change skipped RouteId={RouteId}: {Message}",
+                        routeId,
+                        refresh.Message);
+                }
+            }
+
+            await context.SaveChangesAsync().ConfigureAwait(false);
         }
 
         #endregion

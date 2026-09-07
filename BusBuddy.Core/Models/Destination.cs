@@ -192,7 +192,27 @@ namespace BusBuddy.Core.Models
         /// Whether GPS coordinates are available
         /// </summary>
         [NotMapped]
-        public bool HasGpsCoordinates => Latitude.HasValue && Longitude.HasValue;
+        public bool HasGpsCoordinates => HasValidatedCoordinates;
+
+        /// <summary>
+        /// True when lat/lng are validated (not missing, not 0,0, not the US centroid).
+        /// Unvalidated destinations are not trip pins, waypoints, or Confirm prerequisites.
+        /// </summary>
+        [NotMapped]
+        public bool HasValidatedCoordinates => LocationCoordinate.IsValidated(Latitude, Longitude);
+
+        /// <summary>Spec location type (School, TripDestination, Depot, …). Leftover DestinationType labels map here.</summary>
+        [NotMapped]
+        public string LocationType => LocationTypes.FromDestinationType(DestinationType);
+
+        [NotMapped]
+        public bool IsDistrictFacility => LocationTypes.IsDistrictFacility(DestinationType);
+
+        [NotMapped]
+        public bool SchoolYearStable => LocationTypes.IsSchoolYearStable(DestinationType);
+
+        [NotMapped]
+        public string CoordinateStatus => LocationTypes.ValidationStatus(HasValidatedCoordinates);
     }
 
     /// <summary>
@@ -212,14 +232,18 @@ namespace BusBuddy.Core.Models
         public const string VolunteerWork = "Volunteer Work";
         public const string GraduationCeremony = "Graduation Ceremony";
         public const string Other = "Other";
+        public const string TripDestination = "TripDestination";
 
         public static readonly string[] AllTypes = {
             School, FieldTrip, SportsEvent, AcademicCompetition, CommunityService,
             BandCompetition, DramaPerformance, CareerFair, CulturalExchange,
-            VolunteerWork, GraduationCeremony, Other
+            VolunteerWork, GraduationCeremony, Other, TripDestination
         };
 
         public static bool IsSchool(string? type) =>
             string.Equals(type, School, StringComparison.OrdinalIgnoreCase);
+
+        public static bool IsTripDestination(string? type) =>
+            LocationTypes.FromDestinationType(type) == LocationTypes.TripDestination;
     }
 }

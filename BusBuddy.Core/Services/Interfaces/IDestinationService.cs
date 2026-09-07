@@ -22,7 +22,7 @@ public interface IDestinationService
         CancellationToken cancellationToken = default);
 
     /// <summary>Catalog a school campus. Start and dismissal times are required for route generation.</summary>
-    Task<Destination> AddSchoolAsync(
+        Task<Destination> AddSchoolAsync(
         string name,
         string address,
         string city,
@@ -32,5 +32,23 @@ public interface IDestinationService
         TimeSpan dismissalTime,
         decimal? latitude = null,
         decimal? longitude = null,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// One-off trip site. Coordinates must already be Google-validated; this is not a Route string.
+    /// </summary>
+    Task<Destination> AddTripDestinationAsync(
+        string name,
+        string address,
+        string city,
+        string state,
+        string zipCode,
+        decimal latitude,
+        decimal longitude,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>Match a board name to a validated School or TripDestination. Does not invent a pin.</summary>
+    Task<Destination?> FindValidatedPlaceByNameAsync(
+        string? name,
         CancellationToken cancellationToken = default);
 }

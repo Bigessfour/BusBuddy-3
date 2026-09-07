@@ -373,8 +373,16 @@
                                       Command="{Binding RemoveStudentCommand}"
                                       Style="{StaticResource PrimaryButtonAdv}"
                                       Padding="16,8"
+                                      Margin="0,0,0,10"
                                       AutomationProperties.Name="Remove Student"
-                                      ToolTip="Remove selected student from route" />
+                                      ToolTip="Remove selected student from the year assignment (not a same-day absence)" />
+                <syncfusion:ButtonAdv x:Name="NotRidingTodayButton"
+                                      Label="Not riding today"
+                                      Command="{Binding MarkNotRidingTodayCommand}"
+                                      Style="{StaticResource PrimaryButtonAdv}"
+                                      Padding="16,8"
+                                      AutomationProperties.Name="Not riding today"
+                                      ToolTip="Same-day rider exception — does not delete the stop or year assignment" />
             </StackPanel>
             <!-- Assigned Students -->
             <GroupBox Grid.Column="2"

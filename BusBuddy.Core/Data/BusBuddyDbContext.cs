@@ -76,6 +76,7 @@ public class BusBuddyDbContext : DbContext
     public virtual DbSet<StudentSchedule> StudentSchedules { get; set; } = null!;
     public virtual DbSet<TripEvent> TripEvents { get; set; } = null!;
     public virtual DbSet<RouteStop> RouteStops { get; set; } = null!;
+    public virtual DbSet<RouteRiderException> RouteRiderExceptions { get; set; } = null!;
     public virtual DbSet<SchoolCalendar> SchoolCalendar { get; set; } = null!;
     public virtual DbSet<ActivitySchedule> ActivitySchedule { get; set; } = null!;
     public virtual DbSet<Destination> Destinations { get; set; } = null!;
@@ -445,6 +446,8 @@ public class BusBuddyDbContext : DbContext
             entity.Property(e => e.RouteName).IsRequired().HasMaxLength(50);
             entity.Property(e => e.Description).HasMaxLength(500);
             entity.Property(e => e.IsSpecialNeedsRoute).HasDefaultValue(false);
+            entity.Property(e => e.Session).IsRequired().HasMaxLength(20).HasDefaultValue(RouteSession.AM);
+            entity.HasIndex(e => e.Session).HasDatabaseName("IX_Routes_Session");
 
             // Foreign key column mappings
             entity.Property(e => e.AMVehicleId).HasColumnName("AMVehicleID");
@@ -872,13 +875,22 @@ public class BusBuddyDbContext : DbContext
             // Properties
             entity.Property(e => e.Type).IsRequired();
             entity.Property(e => e.CustomType).HasMaxLength(100);
-            entity.Property(e => e.POCName).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.POCName).IsRequired(false).HasMaxLength(100);
             entity.Property(e => e.POCPhone).HasMaxLength(20);
             entity.Property(e => e.POCEmail).HasMaxLength(100);
             entity.Property(e => e.Destination).HasMaxLength(200);
+            entity.Property(e => e.DestinationName).HasMaxLength(200);
+            entity.Property(e => e.OriginName).HasMaxLength(200);
             entity.Property(e => e.SpecialRequirements).HasMaxLength(500);
             entity.Property(e => e.TripNotes).HasMaxLength(1000);
-            entity.Property(e => e.Status).HasMaxLength(20).HasDefaultValue("Scheduled");
+            entity.Property(e => e.Status).HasMaxLength(32).HasDefaultValue(TripStatus.Draft);
+            entity.Property(e => e.ExternalTicketNo).HasMaxLength(32);
+            entity.Property(e => e.SchoolYear).HasMaxLength(16);
+            entity.Property(e => e.RequestingSchool).HasMaxLength(8);
+            entity.Property(e => e.GroupOrActivity).HasMaxLength(200);
+            entity.Property(e => e.AssignedBusNumber).HasMaxLength(40);
+            entity.Property(e => e.PlannedMiles).HasColumnType("decimal(8,2)");
+            entity.Property(e => e.PathMiles).HasColumnType("decimal(8,2)");
             entity.Property(e => e.ApprovedBy).HasMaxLength(100);
             entity.Property(e => e.CreatedBy).HasMaxLength(100);
             entity.Property(e => e.UpdatedBy).HasMaxLength(100);
@@ -903,6 +915,24 @@ public class BusBuddyDbContext : DbContext
                   .OnDelete(DeleteBehavior.SetNull)
                   .HasConstraintName("FK_TripEvents_Route");
 
+            entity.HasOne(te => te.OriginLocation)
+                  .WithMany()
+                  .HasForeignKey(te => te.OriginLocationId)
+                  .OnDelete(DeleteBehavior.SetNull)
+                  .HasConstraintName("FK_TripEvents_OriginLocation");
+
+            entity.HasOne(te => te.DestinationLocation)
+                  .WithMany()
+                  .HasForeignKey(te => te.DestinationLocationId)
+                  .OnDelete(DeleteBehavior.SetNull)
+                  .HasConstraintName("FK_TripEvents_DestinationLocation");
+
+            entity.HasOne(te => te.LinkedTrip)
+                  .WithMany()
+                  .HasForeignKey(te => te.LinkedTripId)
+                  .OnDelete(DeleteBehavior.SetNull)
+                  .HasConstraintName("FK_TripEvents_LinkedTrip");
+
             // Indexes
             entity.HasIndex(e => e.LeaveTime).HasDatabaseName("IX_TripEvents_LeaveTime");
             entity.HasIndex(e => e.Type).HasDatabaseName("IX_TripEvents_Type");
@@ -910,6 +940,18 @@ public class BusBuddyDbContext : DbContext
             entity.HasIndex(e => e.VehicleId).HasDatabaseName("IX_TripEvents_VehicleId");
             entity.HasIndex(e => e.DriverId).HasDatabaseName("IX_TripEvents_DriverId");
             entity.HasIndex(e => e.RouteId).HasDatabaseName("IX_TripEvents_RouteId");
+            entity.HasIndex(e => e.TripDate).HasDatabaseName("IX_TripEvents_TripDate");
+            var ticketIndex = entity.HasIndex(e => e.ExternalTicketNo)
+                  .IsUnique()
+                  .HasDatabaseName("IX_TripEvents_ExternalTicketNo");
+            if (string.Equals(Database.ProviderName, "Npgsql.EntityFrameworkCore.PostgreSQL", StringComparison.Ordinal))
+            {
+                ticketIndex.HasFilter("\"ExternalTicketNo\" IS NOT NULL");
+            }
+            else
+            {
+                ticketIndex.HasFilter("[ExternalTicketNo] IS NOT NULL");
+            }
             entity.HasIndex(e => new { e.VehicleId, e.LeaveTime }).HasDatabaseName("IX_TripEvents_BusSchedule");
             entity.HasIndex(e => new { e.DriverId, e.LeaveTime }).HasDatabaseName("IX_TripEvents_DriverSchedule");
             entity.HasIndex(e => e.ApprovalRequired).HasDatabaseName("IX_TripEvents_ApprovalRequired");
@@ -936,6 +978,26 @@ public class BusBuddyDbContext : DbContext
             // Indexes
             entity.HasIndex(e => e.RouteId).HasDatabaseName("IX_RouteStops_RouteId");
             entity.HasIndex(e => new { e.RouteId, e.StopOrder }).HasDatabaseName("IX_RouteStops_RouteOrder");
+        });
+
+        modelBuilder.Entity<RouteRiderException>(entity =>
+        {
+            entity.ToTable("RouteRiderExceptions");
+            entity.HasKey(e => e.RouteRiderExceptionId);
+            entity.Property(e => e.Reason).HasMaxLength(200);
+            entity.HasOne(e => e.Route)
+                .WithMany()
+                .HasForeignKey(e => e.RouteId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("FK_RouteRiderExceptions_Route");
+            entity.HasOne(e => e.Student)
+                .WithMany()
+                .HasForeignKey(e => e.StudentId)
+                .OnDelete(DeleteBehavior.Restrict)
+                .HasConstraintName("FK_RouteRiderExceptions_Student");
+            entity.HasIndex(e => new { e.RouteId, e.StudentId, e.ExceptionDate })
+                .IsUnique()
+                .HasDatabaseName("IX_RouteRiderExceptions_RouteStudentDate");
         });
 
         // Configure SchoolCalendar entity

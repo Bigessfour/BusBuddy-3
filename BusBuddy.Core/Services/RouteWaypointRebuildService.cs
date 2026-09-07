@@ -88,6 +88,27 @@ public sealed class RouteWaypointRebuildService : IRouteWaypointRebuildService
             return null;
         }
 
+        var publishedStops = await context.RouteStops.AsNoTracking()
+            .Where(s => s.RouteId == routeId)
+            .OrderBy(s => s.StopOrder)
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+        var publishedCoords = publishedStops
+            .Where(s => s.HasValidatedCoordinates)
+            .Select(s => ((double)s.Latitude!.Value, (double)s.Longitude!.Value))
+            .ToList();
+        if (publishedCoords.Count >= 2)
+        {
+            var fromStops = RouteWaypointSerializer.FromPairs(publishedCoords);
+            route.WaypointsJson = fromStops;
+            await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+            Logger.Information(
+                "Rebuilt WaypointsJson from published stops RouteId={RouteId} Points={Count}",
+                routeId,
+                publishedCoords.Count);
+            return fromStops;
+        }
+
         var students = await context.Students.AsNoTracking()
             .Where(s => s.Active &&
                         (s.AMRoute == route.RouteName || s.PMRoute == route.RouteName))

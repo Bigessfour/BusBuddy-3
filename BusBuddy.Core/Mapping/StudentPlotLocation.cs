@@ -43,7 +43,7 @@ public static class StudentPlotLocation
 
         var pins = new List<StudentPlotPoint>(2);
         var stop = AssignedStop(student, pickups);
-        if (stop is { HasGpsCoordinates: true })
+        if (stop is { HasValidatedCoordinates: true })
         {
             pins.Add(new StudentPlotPoint(
                 (double)stop.Latitude,
@@ -52,9 +52,13 @@ public static class StudentPlotLocation
                 PickupName: stop.Name));
         }
 
-        if (student.Latitude is decimal lat && student.Longitude is decimal lon)
+        if (student.HasValidatedHomeCoordinates)
         {
-            var home = new StudentPlotPoint((double)lat, (double)lon, AtPickup: false, PickupName: null);
+            var home = new StudentPlotPoint(
+                (double)student.Latitude!,
+                (double)student.Longitude!,
+                AtPickup: false,
+                PickupName: null);
             if (pins.Count == 0 || !SameSpot(pins[0].Latitude, pins[0].Longitude, home.Latitude, home.Longitude))
             {
                 pins.Add(home);

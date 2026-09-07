@@ -331,17 +331,18 @@ namespace BusBuddy.WPF.Views.Activity
             TripTypes.Add("Sports Event");
             TripTypes.Add("Academic Competition");
             TripTypes.Add("Special Event");
-            TripTypes.Add("Regular Route");
             TripTypes.Add("Emergency Transport");
             TripTypes.Add("Maintenance");
 
             // Status Options
             StatusOptions.Clear();
-            StatusOptions.Add("Scheduled");
+            StatusOptions.Add("MissingInfo");
+            StatusOptions.Add("Draft");
+            StatusOptions.Add("Assigned");
             StatusOptions.Add("Confirmed");
-            StatusOptions.Add("In Progress");
-            StatusOptions.Add("Completed");
+            StatusOptions.Add("Changed");
             StatusOptions.Add("Cancelled");
+            StatusOptions.Add("Completed");
         }
 
         private void LoadActivityData(ActivitySchedule activity)

@@ -1,3 +1,5 @@
+using BusBuddy.Core.Models;
+
 namespace BusBuddy.Core.Mapping;
 
 /// <summary>
@@ -6,10 +8,10 @@ namespace BusBuddy.Core.Mapping;
 /// </summary>
 public static class MapDefaults
 {
-    /// <summary>Contiguous-US overview used only when no school, depot, or bbox is configured.</summary>
-    public const double UnconfiguredLatitude = 39.8283;
+    /// <summary>Contiguous-US overview used only when no school, depot, or bbox is configured. Never a pin.</summary>
+    public const double UnconfiguredLatitude = LocationCoordinate.UsCentroidLatitude;
 
-    public const double UnconfiguredLongitude = -98.5795;
+    public const double UnconfiguredLongitude = LocationCoordinate.UsCentroidLongitude;
 
     public const int UnconfiguredZoomLevel = 5;
 

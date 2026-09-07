@@ -60,7 +60,7 @@ public class MapViewTests
         Assert.That(XamlViewFile.Read("Utilities/MapRouteTrailLayer.cs"), Does.Contain("polyline.Points.Clear"));
         Assert.That(xaml, Does.Not.Contain("MapLayerComboBox_SelectionChanged"));
         Assert.That(xaml, Does.Not.Contain("ZoomLevel=\"13\""));
-        Assert.That(xaml, Does.Contain("Fleet GPS tracking is not enabled yet"));
+        Assert.That(xaml, Does.Contain("Live fleet GPS tracking is deferred"));
         Assert.That(xaml, Does.Contain("AutomationProperties.Name=\"Fleet GPS status\""));
         Assert.That(xaml, Does.Not.Contain("Show All Buses"));
         Assert.That(xaml, Does.Not.Contain("Track Selected"));
@@ -145,5 +145,24 @@ public class MapViewTests
         Assert.That(form, Does.Contain("StudentPlotLocation.PinsFromStored"));
         Assert.That(form, Does.Contain("MapStudentPlot.Draw"));
         Assert.That(form, Does.Contain("ResolvePickupCatalogForPlotAsync"));
+    }
+
+    [Test]
+    public void TripBoardView_IsNotTheDailyRouteEditor()
+    {
+        var xaml = XamlViewFile.Read("Views/Activity/ActivityManagementView.xaml");
+        Assert.That(xaml, Does.Contain("Trip Board"));
+        Assert.That(xaml, Does.Contain("Import CSV"));
+        Assert.That(xaml, Does.Contain("MappingName=\"ExternalTicketNo\""));
+        Assert.That(xaml, Does.Contain("MappingName=\"PlannedHeadcount\""));
+        Assert.That(xaml, Does.Not.Contain("Regular Route"));
+
+        var dialog = XamlViewFile.Read("Views/Activity/ActivityScheduleEditDialog.xaml.cs");
+        Assert.That(dialog, Does.Not.Contain("Regular Route"));
+        Assert.That(dialog, Does.Contain("MissingInfo"));
+
+        var mapVm = XamlViewFile.Read("ViewModels/Map/MapViewModel.cs");
+        Assert.That(mapVm, Does.Contain("TryPlotTrip"));
+        Assert.That(mapVm, Does.Not.Contain("IsLiveTrackingEnabled"));
     }
 }
