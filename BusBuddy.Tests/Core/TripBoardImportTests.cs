@@ -20,7 +20,12 @@ public class TripBoardImportTests
         private readonly DbContextOptions<BusBuddyDbContext> _options;
         public TestDbContextFactory(DbContextOptions<BusBuddyDbContext> options) => _options = options;
         public BusBuddyDbContext CreateDbContext() => new(_options);
-        public BusBuddyDbContext CreateWriteDbContext() => new(_options);
+        public BusBuddyDbContext CreateWriteDbContext()
+        {
+            var context = new BusBuddyDbContext(_options);
+            context.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.TrackAll;
+            return context;
+        }
     }
 
     private static DbContextOptions<BusBuddyDbContext> CreateOptions() =>

@@ -183,6 +183,7 @@ public sealed class TripEventService : ITripEventService
             if (!string.IsNullOrEmpty(ticket))
             {
                 trip = await context.TripEvents
+                    .AsTracking()
                     .FirstOrDefaultAsync(t => t.ExternalTicketNo == ticket, cancellationToken);
             }
 
@@ -237,6 +238,12 @@ public sealed class TripEventService : ITripEventService
             else
             {
                 trip.UpdatedDate = DateTime.UtcNow;
+                var entry = context.Entry(trip);
+                entry.Property(t => t.DestinationName).IsModified = true;
+                entry.Property(t => t.Destination).IsModified = true;
+                entry.Property(t => t.DestinationLocationId).IsModified = true;
+                entry.Property(t => t.Status).IsModified = true;
+                entry.Property(t => t.UpdatedDate).IsModified = true;
                 updated++;
             }
         }
@@ -264,6 +271,7 @@ public sealed class TripEventService : ITripEventService
     {
         using var context = _contextFactory.CreateWriteDbContext();
         var trip = await context.TripEvents
+            .AsTracking()
             .Include(t => t.DestinationLocation)
             .Include(t => t.Vehicle)
             .FirstOrDefaultAsync(t => t.TripEventId == tripEventId, cancellationToken);
@@ -319,6 +327,7 @@ public sealed class TripEventService : ITripEventService
 
         using var context = _contextFactory.CreateWriteDbContext();
         var trip = await context.TripEvents
+            .AsTracking()
             .Include(t => t.OriginLocation)
             .Include(t => t.DestinationLocation)
             .FirstOrDefaultAsync(t => t.TripEventId == tripEventId, cancellationToken);
