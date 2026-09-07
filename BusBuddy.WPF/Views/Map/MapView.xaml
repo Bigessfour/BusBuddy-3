@@ -361,6 +361,7 @@
                                         ZoomLevel="{Binding MapZoomLevel, Mode=TwoWay}">
                                 <maps:SfMap.Layers>
                                     <utils:GoogleMapTilesImageryLayer x:Name="DistrictImageryLayer"
+                                                       LayerType="OSM"
                                                        Center="{Binding MapCenter, Mode=TwoWay}"
                                                        Radius="{Binding MapFitRadiusKm}"
                                                        DistanceType="KiloMeter"

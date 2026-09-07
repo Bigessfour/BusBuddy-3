@@ -24,7 +24,8 @@ public class MapViewTests
         Assert.That(xaml, Does.Contain("utils:GoogleMapTilesImageryLayer"));
         Assert.That(xaml, Does.Contain("x:Name=\"MapAttribution\""));
         Assert.That(xaml, Does.Contain("Google Maps"));
-        Assert.That(xaml, Does.Not.Contain("LayerType=\"OSM\""));
+        Assert.That(XamlViewFile.Read("Utilities/GoogleMapTilesImageryLayer.cs"), Does.Contain("UrlTemplate"));
+        Assert.That(XamlViewFile.Read("Utilities/GoogleMapTilesImageryLayer.cs"), Does.Contain("LayerType.OSM"));
         Assert.That(xaml, Does.Not.Contain("MapLayerComboBox"));
         Assert.That(xaml, Does.Not.Contain("SelectedMapLayer"));
         Assert.That(xaml, Does.Not.Contain("GoogleEarth"));

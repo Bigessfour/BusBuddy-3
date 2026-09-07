@@ -4,43 +4,31 @@ using Syncfusion.UI.Xaml.Maps;
 namespace BusBuddy.WPF.Utilities;
 
 /// <summary>
-/// Syncfusion imagery layer that serves Map Tiles API roadmap tiles when a URL template is set,
-/// otherwise OpenStreetMap tiles (fail-open without a Maps key / session).
+/// Syncfusion imagery layer for District Map.
+/// Google: sets <see cref="ImageryLayer.UrlTemplate"/> (Map Tiles API).
+/// OSM fail-open: clears UrlTemplate and uses built-in <see cref="LayerType.OSM"/>.
 /// </summary>
 public sealed class GoogleMapTilesImageryLayer : ImageryLayer
 {
-    private string? _urlTemplate;
-    private bool _useGoogleTiles;
-
-    public bool IsGoogleTilesActive => _useGoogleTiles;
+    public bool IsGoogleTilesActive { get; private set; }
 
     /// <summary>
-    /// Applies an official Map Tiles API URL template
-    /// (<c>https://tile.googleapis.com/v1/2dtiles/{z}/{x}/{y}?session=…&amp;key=…</c>).
+    /// Applies an official Map Tiles API URL template with <c>{z}/{x}/{y}</c> placeholders.
+    /// Syncfusion prefers <see cref="ImageryLayer.UrlTemplate"/> over <see cref="LayerType"/>.
     /// </summary>
     public void UseGoogleTiles(string urlTemplate)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(urlTemplate);
-        _urlTemplate = urlTemplate;
-        _useGoogleTiles = true;
+        IsGoogleTilesActive = true;
+        // UrlTemplate takes precedence and ignores LayerType (Syncfusion Maps docs).
+        UrlTemplate = urlTemplate;
     }
 
     public void UseOpenStreetMap()
     {
-        _urlTemplate = null;
-        _useGoogleTiles = false;
-    }
-
-    protected override string GetUri(int X, int Y, int Scale)
-    {
-        if (_useGoogleTiles && !string.IsNullOrWhiteSpace(_urlTemplate))
-        {
-            return _urlTemplate
-                .Replace("{z}", Scale.ToString(), StringComparison.Ordinal)
-                .Replace("{x}", X.ToString(), StringComparison.Ordinal)
-                .Replace("{y}", Y.ToString(), StringComparison.Ordinal);
-        }
-
-        return $"https://tile.openstreetmap.org/{Scale}/{X}/{Y}.png";
+        IsGoogleTilesActive = false;
+        // Clear custom template so built-in OSM provider is used (User-Agent / tile host handled by SfMaps).
+        UrlTemplate = null;
+        LayerType = LayerType.OSM;
     }
 }

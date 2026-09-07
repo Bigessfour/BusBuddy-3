@@ -32,7 +32,7 @@ public static class MapTileBootstrap
             var tiles = services?.GetService<IGoogleMapTileSessionService>();
             if (tiles is null || !tiles.IsConfigured)
             {
-                ApplyOsm(layer, attributionBorder, attributionText);
+                ApplyOsm(layer, attributionBorder, attributionText, mapControl);
                 return false;
             }
 
@@ -41,7 +41,8 @@ public static class MapTileBootstrap
                 .ConfigureAwait(true);
             if (session is null || string.IsNullOrWhiteSpace(session.UrlTemplate))
             {
-                ApplyOsm(layer, attributionBorder, attributionText);
+                Logger.Warning("Map Tiles session unavailable — using OpenStreetMap");
+                ApplyOsm(layer, attributionBorder, attributionText, mapControl);
                 return false;
             }
 
@@ -54,7 +55,7 @@ public static class MapTileBootstrap
         catch (Exception ex)
         {
             Logger.Warning(ex, "Failed enabling Google Map Tiles — keeping OpenStreetMap");
-            ApplyOsm(layer, attributionBorder, attributionText);
+            ApplyOsm(layer, attributionBorder, attributionText, mapControl);
             return false;
         }
     }
@@ -62,10 +63,12 @@ public static class MapTileBootstrap
     public static void ApplyOsm(
         GoogleMapTilesImageryLayer layer,
         Border? attributionBorder,
-        TextBlock? attributionText)
+        TextBlock? attributionText,
+        SfMap? mapControl = null)
     {
         layer.UseOpenStreetMap();
         SetAttribution(attributionBorder, attributionText, useGoogleMaps: false);
+        NudgeZoom(mapControl);
     }
 
     private static void SetAttribution(Border? overlay, TextBlock? text, bool useGoogleMaps)

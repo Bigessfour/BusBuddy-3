@@ -90,7 +90,8 @@ namespace BusBuddy.WPF.Views.Map
                     MapTileBootstrap.ApplyOsm(
                         DistrictTilesLayer,
                         FindName("MapAttribution") as Border,
-                        FindName("MapAttributionText") as TextBlock);
+                        FindName("MapAttributionText") as TextBlock,
+                        MapControl);
                 }
 
                 if (MapControl is not null)
