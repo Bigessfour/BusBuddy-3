@@ -99,25 +99,38 @@ public class RoutePublishedPathTests
     {
         var options = CreateOptions();
         var factory = new TestDbContextFactory(options);
-        var service = new RouteService(factory);
-        var route = (await service.CreateRouteAsync(new Route
+        int routeId;
+        int firstId;
+        int secondId;
+        await using (var seed = factory.CreateWriteDbContext())
         {
-            RouteName = "AM-5",
-            Date = DateTime.Today,
-            IsActive = true,
-            School = "Wiley"
-        })).Value!;
+            var route = new Route
+            {
+                RouteName = "AM-5",
+                Date = DateTime.Today,
+                IsActive = true,
+                School = "Wiley",
+                Session = RouteSession.AM
+            };
+            seed.Routes.Add(route);
+            await seed.SaveChangesAsync();
+            routeId = route.RouteId;
+            var first = Stop("Home", 38.10m, -102.70m, 1, routeId);
+            var second = Stop("School", 38.08m, -102.62m, 2, routeId);
+            seed.RouteStops.AddRange(first, second);
+            await seed.SaveChangesAsync();
+            firstId = first.RouteStopId;
+            secondId = second.RouteStopId;
+        }
 
-        var first = (await service.AddStopToRouteAsync(route.RouteId, Stop("Home", 38.10m, -102.70m, 1))).Value!;
-        var second = (await service.AddStopToRouteAsync(route.RouteId, Stop("School", 38.08m, -102.62m, 2))).Value!;
-
-        var reorder = await service.ReorderRouteStopsAsync(route.RouteId, new List<int> { second.RouteStopId, first.RouteStopId });
+        var service = new RouteService(factory);
+        var reorder = await service.ReorderRouteStopsAsync(routeId, new List<int> { secondId, firstId });
         Assert.That(reorder.IsSuccess, Is.True, reorder.Error);
 
         await using var verify = factory.CreateDbContext();
-        var persisted = await verify.Routes.AsNoTracking().FirstAsync(r => r.RouteId == route.RouteId);
+        var persisted = await verify.Routes.AsNoTracking().FirstAsync(r => r.RouteId == routeId);
         var stops = RouteWaypointSerializer.ParseStops(persisted.WaypointsJson);
-        Assert.That(stops, Has.Count.EqualTo(2));
+        Assert.That(stops, Has.Count.EqualTo(2), persisted.WaypointsJson ?? "<null>");
         Assert.That(stops[0].Latitude, Is.EqualTo(38.08).Within(0.0001));
         Assert.That(stops[1].Latitude, Is.EqualTo(38.10).Within(0.0001));
     }

@@ -305,6 +305,7 @@ public sealed class TripEventService : ITripEventService
 
         trip.Status = TripStatus.Confirmed;
         trip.UpdatedDate = DateTime.UtcNow;
+        context.Entry(trip).Property(t => t.Status).IsModified = true;
         await context.SaveChangesAsync(cancellationToken);
         return Result.Success();
     }
@@ -436,23 +437,14 @@ public sealed class TripEventService : ITripEventService
 
     private static void LinkRelatedTrips(BusBuddyDbContext context, IReadOnlyList<TripBoardRow> rows)
     {
-        var tickets = rows
-            .SelectMany(r => new[] { r.ExternalTicketNo, r.LinkedTicketNo })
-            .Where(t => !string.IsNullOrEmpty(t))
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .ToList();
-        if (tickets.Count == 0)
+        var byTicket = new Dictionary<string, TripEvent>(StringComparer.OrdinalIgnoreCase);
+        foreach (var trip in context.ChangeTracker.Entries<TripEvent>().Select(e => e.Entity))
         {
-            return;
+            if (!string.IsNullOrEmpty(trip.ExternalTicketNo))
+            {
+                byTicket[trip.ExternalTicketNo] = trip;
+            }
         }
-
-        var loaded = context.TripEvents
-            .Where(t => t.ExternalTicketNo != null && tickets.Contains(t.ExternalTicketNo))
-            .ToList();
-        var byTicket = loaded
-            .Where(t => !string.IsNullOrEmpty(t.ExternalTicketNo))
-            .GroupBy(t => t.ExternalTicketNo!, StringComparer.OrdinalIgnoreCase)
-            .ToDictionary(g => g.Key, g => g.First(), StringComparer.OrdinalIgnoreCase);
 
         foreach (var row in rows.Where(r => !string.IsNullOrEmpty(r.LinkedTicketNo)))
         {
@@ -466,7 +458,6 @@ public sealed class TripEventService : ITripEventService
                 && parent.TripEventId != 0)
             {
                 child.LinkedTripId = parent.TripEventId;
-                context.Entry(child).Property(t => t.LinkedTripId).IsModified = true;
             }
         }
 
@@ -486,8 +477,6 @@ public sealed class TripEventService : ITripEventService
             {
                 self.LinkedTripId ??= partner.TripEventId;
                 partner.LinkedTripId ??= self.TripEventId;
-                context.Entry(self).Property(t => t.LinkedTripId).IsModified = true;
-                context.Entry(partner).Property(t => t.LinkedTripId).IsModified = true;
             }
         }
     }
@@ -497,31 +486,26 @@ public sealed class TripEventService : ITripEventService
         TripEvent trip,
         CancellationToken cancellationToken)
     {
-        if (LocationTypes.IsUnresolvedPlaceName(trip.DestinationName)
-            && LocationTypes.IsUnresolvedPlaceName(trip.Destination))
-        {
-            trip.DestinationLocationId = null;
-            trip.DestinationLocation = null;
-            return;
-        }
+        trip.DestinationLocationId = null;
+        trip.DestinationLocation = null;
 
         var name = string.IsNullOrWhiteSpace(trip.DestinationName) ? trip.Destination : trip.DestinationName;
         if (string.IsNullOrWhiteSpace(name) || LocationTypes.IsUnresolvedPlaceName(name))
         {
-            trip.DestinationLocationId = null;
-            trip.DestinationLocation = null;
             return;
         }
 
         var candidates = await context.Destinations
-            .Where(d => d.IsActive && !d.IsDeleted && d.Name == name)
+            .AsNoTracking()
+            .Where(d => d.IsActive && !d.IsDeleted)
             .ToListAsync(cancellationToken);
         var place = candidates.FirstOrDefault(d =>
-            d.HasValidatedCoordinates && LocationTypes.CanBeTripPlace(d.DestinationType));
-        trip.DestinationLocationId = place?.DestinationId;
-        if (place is null)
+            string.Equals(d.Name, name, StringComparison.OrdinalIgnoreCase)
+            && d.HasValidatedCoordinates
+            && LocationTypes.CanBeTripPlace(d.DestinationType));
+        if (place is not null)
         {
-            trip.DestinationLocation = null;
+            trip.DestinationLocationId = place.DestinationId;
         }
     }
 

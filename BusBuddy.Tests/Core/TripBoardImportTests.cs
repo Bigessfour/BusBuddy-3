@@ -7,7 +7,6 @@ using BusBuddy.Core.Services.Trips;
 using BusBuddy.Tests.WPF;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
-using Moq;
 using NUnit.Framework;
 
 namespace BusBuddy.Tests.Core;
@@ -275,19 +274,8 @@ public class TripBoardImportTests
     public async Task RefreshPathMiles_OnlyAfterOriginAndDestinationValidated()
     {
         var factory = new TestDbContextFactory(CreateOptions());
-        var routing = new Mock<IRoutingService>();
-        routing.Setup(r => r.ComputeDrivePathAsync(
-                It.IsAny<(double Latitude, double Longitude)>(),
-                It.IsAny<(double Latitude, double Longitude)>(),
-                It.IsAny<IReadOnlyList<(double Latitude, double Longitude)>>(),
-                It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new DrivePathResult
-            {
-                EncodedPolyline = "abc",
-                DistanceMeters = 16093
-            });
-
-        var service = new TripEventService(factory, routing.Object);
+        var routing = new StubRoutingService { DistanceMeters = 16093 };
+        var service = new TripEventService(factory, routing);
         int skippedId;
         int readyId;
         using (var db = factory.CreateWriteDbContext())
@@ -330,22 +318,10 @@ public class TripBoardImportTests
         }
 
         await service.RefreshPathMilesAsync(skippedId);
-        routing.Verify(
-            r => r.ComputeDrivePathAsync(
-                It.IsAny<(double, double)>(),
-                It.IsAny<(double, double)>(),
-                It.IsAny<IReadOnlyList<(double, double)>>(),
-                It.IsAny<CancellationToken>()),
-            Times.Never);
+        Assert.That(routing.DrivePathCalls, Is.EqualTo(0));
 
         await service.RefreshPathMilesAsync(readyId);
-        routing.Verify(
-            r => r.ComputeDrivePathAsync(
-                It.IsAny<(double, double)>(),
-                It.IsAny<(double, double)>(),
-                It.IsAny<IReadOnlyList<(double, double)>>(),
-                It.IsAny<CancellationToken>()),
-            Times.Once);
+        Assert.That(routing.DrivePathCalls, Is.EqualTo(1));
 
         var stored = await service.GetTripByIdAsync(readyId);
         Assert.That(stored!.PathMiles, Is.EqualTo(10.00m).Within(0.05m));
@@ -374,6 +350,8 @@ public class TripBoardImportTests
         var trip = (await service.GetAllTripsAsync()).Single(t => t.ExternalTicketNo == "319098871");
         var confirmed = await service.ConfirmTripAsync(trip.TripEventId);
         Assert.That(confirmed.IsSuccess, Is.True, confirmed.Error);
+        var afterConfirm = await service.GetTripByIdAsync(trip.TripEventId);
+        Assert.That(afterConfirm!.Status, Is.EqualTo(TripStatus.Confirmed));
 
         await service.ImportBoardCsvAsync(csv);
         trip = (await service.GetAllTripsAsync()).Single(t => t.ExternalTicketNo == "319098871");
@@ -414,6 +392,9 @@ public class TripBoardImportTests
             {Header}
             "Sat, 5 Sep ",HS,Volleyball Tournament - Girls - JV,Denver - See Trip Notes,6:00 AM,11:00 PM,319098871,25,,338,Elby Sneller,25,,Sep 2026
             """;
+        Assert.That(
+            TripBoardCsvParser.Parse(seeNotes).Rows[0].DestinationName,
+            Is.EqualTo("Denver - See Trip Notes"));
         await service.ImportBoardCsvAsync(seeNotes);
         trip = (await service.GetAllTripsAsync()).Single(t => t.ExternalTicketNo == "319098871");
         Assert.That(trip.DestinationLocationId, Is.Null);
@@ -429,6 +410,32 @@ public class TripBoardImportTests
 
         var routeSource = CoreSourceFile.Read("Models/Route.cs");
         Assert.That(routeSource, Does.Not.Contain("public bool IsTrip"));
+    }
+
+    private sealed class StubRoutingService : IRoutingService
+    {
+        public int DrivePathCalls { get; private set; }
+        public int DistanceMeters { get; init; } = 16093;
+
+        public Task<DrivePathResult> ComputeDrivePathAsync(
+            (double Latitude, double Longitude) origin,
+            (double Latitude, double Longitude) destination,
+            IReadOnlyList<(double Latitude, double Longitude)> waypoints,
+            CancellationToken cancellationToken = default)
+        {
+            DrivePathCalls++;
+            return Task.FromResult(new DrivePathResult
+            {
+                EncodedPolyline = "abc",
+                DistanceMeters = DistanceMeters
+            });
+        }
+
+        public Task<IReadOnlyList<RouteMatrixElement>> ComputeRouteMatrixAsync(
+            (double Latitude, double Longitude) origin,
+            IReadOnlyList<(double Latitude, double Longitude)> destinations,
+            CancellationToken cancellationToken = default) =>
+            Task.FromResult<IReadOnlyList<RouteMatrixElement>>(Array.Empty<RouteMatrixElement>());
     }
 
     private static async Task SeedFleetAsync(IBusBuddyDbContextFactory factory)
