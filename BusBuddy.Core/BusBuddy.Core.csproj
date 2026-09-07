@@ -67,4 +67,8 @@
     <!-- No JSON data files included: seeding deprecated for greenfield reset -->
   </ItemGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="BusBuddy.Tests" />
+  </ItemGroup>
+
 </Project>
