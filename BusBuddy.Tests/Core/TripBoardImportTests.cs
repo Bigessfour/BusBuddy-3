@@ -277,9 +277,9 @@ public class TripBoardImportTests
         var factory = new TestDbContextFactory(CreateOptions());
         var routing = new Mock<IRoutingService>();
         routing.Setup(r => r.ComputeDrivePathAsync(
-                It.IsAny<(double, double)>(),
-                It.IsAny<(double, double)>(),
-                It.IsAny<IReadOnlyList<(double, double)>>(),
+                It.IsAny<(double Latitude, double Longitude)>(),
+                It.IsAny<(double Latitude, double Longitude)>(),
+                It.IsAny<IReadOnlyList<(double Latitude, double Longitude)>>(),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(new DrivePathResult
             {
@@ -288,42 +288,48 @@ public class TripBoardImportTests
             });
 
         var service = new TripEventService(factory, routing.Object);
-        using var db = factory.CreateWriteDbContext();
-        var origin = ValidatedDestination("HS", 38.09m, -102.62m);
-        var dest = ValidatedDestination("Strasburg HS", 39.7m, -104.3m);
-        var unvalidated = new Destination
+        int skippedId;
+        int readyId;
+        using (var db = factory.CreateWriteDbContext())
         {
-            Name = "Guess",
-            Address = "x",
-            City = "x",
-            State = "CO",
-            ZipCode = "81052",
-            Latitude = 0m,
-            Longitude = 0m,
-            DestinationType = DestinationTypes.TripDestination
-        };
-        db.Destinations.AddRange(origin, dest, unvalidated);
-        await db.SaveChangesAsync();
+            var origin = ValidatedDestination("HS", 38.09m, -102.62m);
+            var dest = ValidatedDestination("Strasburg HS", 39.7m, -104.3m);
+            var unvalidated = new Destination
+            {
+                Name = "Guess",
+                Address = "x",
+                City = "x",
+                State = "CO",
+                ZipCode = "81052",
+                Latitude = 0m,
+                Longitude = 0m,
+                DestinationType = DestinationTypes.TripDestination
+            };
+            db.Destinations.AddRange(origin, dest, unvalidated);
+            await db.SaveChangesAsync();
 
-        var skipped = new TripEvent
-        {
-            ExternalTicketNo = "skip",
-            TripDate = DateTime.Today,
-            OriginLocationId = origin.DestinationId,
-            DestinationLocationId = unvalidated.DestinationId
-        };
-        db.TripEvents.Add(skipped);
-        var ready = new TripEvent
-        {
-            ExternalTicketNo = "path",
-            TripDate = DateTime.Today,
-            OriginLocationId = origin.DestinationId,
-            DestinationLocationId = dest.DestinationId
-        };
-        db.TripEvents.Add(ready);
-        await db.SaveChangesAsync();
+            var skipped = new TripEvent
+            {
+                ExternalTicketNo = "skip",
+                TripDate = DateTime.Today,
+                OriginLocationId = origin.DestinationId,
+                DestinationLocationId = unvalidated.DestinationId
+            };
+            db.TripEvents.Add(skipped);
+            var ready = new TripEvent
+            {
+                ExternalTicketNo = "path",
+                TripDate = DateTime.Today,
+                OriginLocationId = origin.DestinationId,
+                DestinationLocationId = dest.DestinationId
+            };
+            db.TripEvents.Add(ready);
+            await db.SaveChangesAsync();
+            skippedId = skipped.TripEventId;
+            readyId = ready.TripEventId;
+        }
 
-        await service.RefreshPathMilesAsync(skipped.TripEventId);
+        await service.RefreshPathMilesAsync(skippedId);
         routing.Verify(
             r => r.ComputeDrivePathAsync(
                 It.IsAny<(double, double)>(),
@@ -332,7 +338,7 @@ public class TripBoardImportTests
                 It.IsAny<CancellationToken>()),
             Times.Never);
 
-        await service.RefreshPathMilesAsync(ready.TripEventId);
+        await service.RefreshPathMilesAsync(readyId);
         routing.Verify(
             r => r.ComputeDrivePathAsync(
                 It.IsAny<(double, double)>(),
@@ -341,7 +347,7 @@ public class TripBoardImportTests
                 It.IsAny<CancellationToken>()),
             Times.Once);
 
-        var stored = await service.GetTripByIdAsync(ready.TripEventId);
+        var stored = await service.GetTripByIdAsync(readyId);
         Assert.That(stored!.PathMiles, Is.EqualTo(10.00m).Within(0.05m));
         Assert.That(stored.PlannedMiles, Is.Null);
     }
@@ -418,11 +424,11 @@ public class TripBoardImportTests
     public void TripEvent_DoesNotCloneRouteOrAddIsTrip()
     {
         var tripSource = CoreSourceFile.Read("Models/Trips/TripEvent.cs");
-        Assert.That(tripSource, Does.Not.Contain("IsTrip"));
+        Assert.That(tripSource, Does.Not.Contain("public bool IsTrip"));
         Assert.That(tripSource, Does.Contain("never add IsTrip"));
 
         var routeSource = CoreSourceFile.Read("Models/Route.cs");
-        Assert.That(routeSource, Does.Not.Contain("IsTrip"));
+        Assert.That(routeSource, Does.Not.Contain("public bool IsTrip"));
     }
 
     private static async Task SeedFleetAsync(IBusBuddyDbContextFactory factory)

@@ -788,7 +788,7 @@ public class MapViewModelTests
 
         var layers = XamlViewFile.Read("Utilities/MapDistrictLayers.cs");
         Assert.That(layers, Does.Contain("StudentPlotLocation.PinsFromStored"));
-        Assert.That(layers, Does.Contain("HasGpsCoordinates"));
+        Assert.That(layers, Does.Contain("HasValidatedCoordinates"));
         Assert.That(layers, Does.Contain("MapStudentPlot.Draw"));
         Assert.That(layers, Does.Contain("LoadDistrictLayersAsync"));
         Assert.That(layers, Does.Contain("PlotStoredStudentsAsync"));
@@ -799,7 +799,7 @@ public class MapViewModelTests
 
         var plotPolicy = CoreSourceFile.Read("Mapping/StudentPlotLocation.cs");
         Assert.That(plotPolicy, Does.Contain("PinsFromStored"));
-        Assert.That(plotPolicy, Does.Contain("HasGpsCoordinates"));
+        Assert.That(plotPolicy, Does.Contain("HasValidatedHomeCoordinates"));
 
         var trail = XamlViewFile.Read("Utilities/MapRouteTrail.cs");
         Assert.That(trail, Does.Contain("RouteDrivePathRefresher.TryRefreshAsync"));

@@ -194,7 +194,7 @@ public sealed class TripEventService : ITripEventService
                 CreatedDate = DateTime.UtcNow
             };
 
-            var previousStatus = trip.Status;
+            var previousStatus = TripStatus.Normalize(trip.Status);
             var previousBoard = isNew ? (BoardSnapshot?)null : Snapshot(trip);
             ApplyRow(trip, row, buses, drivers, oos, warnings);
             trip.RouteId = null;
@@ -215,7 +215,11 @@ public sealed class TripEventService : ITripEventService
             {
                 trip.Status = TripStatus.Changed;
             }
-            else if (!IsConfirmedFamily(previousStatus))
+            else if (IsConfirmedFamily(previousStatus))
+            {
+                trip.Status = previousStatus;
+            }
+            else
             {
                 trip.Status = inferred;
             }
@@ -238,7 +242,7 @@ public sealed class TripEventService : ITripEventService
         }
 
         await context.SaveChangesAsync(cancellationToken);
-        await LinkRelatedTripsAsync(context, parsed.Rows, cancellationToken);
+        LinkRelatedTrips(context, parsed.Rows);
         await context.SaveChangesAsync(cancellationToken);
 
         Logger.Information(
@@ -336,9 +340,9 @@ public sealed class TripEventService : ITripEventService
             Array.Empty<(double, double)>(),
             cancellationToken);
 
-        if (path.DistanceMeters is int meters)
+        if (path.DistanceMeters.GetValueOrDefault() > 0)
         {
-            trip.PathMiles = Math.Round((decimal)meters / 1609.344m, 2);
+            trip.PathMiles = Math.Round(path.DistanceMeters!.Value / 1609.344m, 2);
             trip.UpdatedDate = DateTime.UtcNow;
             await context.SaveChangesAsync(cancellationToken);
         }
@@ -430,48 +434,60 @@ public sealed class TripEventService : ITripEventService
         }
     }
 
-    private static async Task LinkRelatedTripsAsync(
-        BusBuddyDbContext context,
-        IReadOnlyList<TripBoardRow> rows,
-        CancellationToken cancellationToken)
+    private static void LinkRelatedTrips(BusBuddyDbContext context, IReadOnlyList<TripBoardRow> rows)
     {
+        var tickets = rows
+            .SelectMany(r => new[] { r.ExternalTicketNo, r.LinkedTicketNo })
+            .Where(t => !string.IsNullOrEmpty(t))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+        if (tickets.Count == 0)
+        {
+            return;
+        }
+
+        var loaded = context.TripEvents
+            .Where(t => t.ExternalTicketNo != null && tickets.Contains(t.ExternalTicketNo))
+            .ToList();
+        var byTicket = loaded
+            .Where(t => !string.IsNullOrEmpty(t.ExternalTicketNo))
+            .GroupBy(t => t.ExternalTicketNo!, StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(g => g.Key, g => g.First(), StringComparer.OrdinalIgnoreCase);
+
         foreach (var row in rows.Where(r => !string.IsNullOrEmpty(r.LinkedTicketNo)))
         {
-            var childKey = row.ExternalTicketNo;
-            if (string.IsNullOrEmpty(childKey))
+            if (string.IsNullOrEmpty(row.ExternalTicketNo))
             {
                 continue;
             }
 
-            var child = await context.TripEvents
-                .FirstOrDefaultAsync(t => t.ExternalTicketNo == childKey, cancellationToken);
-            var parent = await context.TripEvents
-                .FirstOrDefaultAsync(t => t.ExternalTicketNo == row.LinkedTicketNo, cancellationToken);
-            if (child is not null && parent is not null)
+            if (byTicket.TryGetValue(row.ExternalTicketNo, out var child)
+                && byTicket.TryGetValue(row.LinkedTicketNo!, out var parent)
+                && parent.TripEventId != 0)
             {
                 child.LinkedTripId = parent.TripEventId;
+                context.Entry(child).Property(t => t.LinkedTripId).IsModified = true;
             }
         }
 
-        var bothTeams = rows.Where(r => r.LinkBothTeams).ToList();
-        foreach (var row in bothTeams)
+        foreach (var row in rows.Where(r => r.LinkBothTeams && r.TripDate is not null))
         {
-            var self = await context.TripEvents
-                .FirstOrDefaultAsync(t => t.ExternalTicketNo == row.ExternalTicketNo, cancellationToken);
-            if (self is null || row.TripDate is null)
+            if (string.IsNullOrEmpty(row.ExternalTicketNo)
+                || !byTicket.TryGetValue(row.ExternalTicketNo, out var self))
             {
                 continue;
             }
 
-            var partner = await context.TripEvents
-                .Where(t => t.TripEventId != self.TripEventId
-                    && t.TripDate == row.TripDate.Value.Date
-                    && t.DestinationName == row.DestinationName)
-                .FirstOrDefaultAsync(cancellationToken);
+            var partner = byTicket.Values.FirstOrDefault(t =>
+                t.TripEventId != self.TripEventId
+                && t.TripDate.Date == row.TripDate!.Value.Date
+                && string.Equals(t.DestinationName, row.DestinationName, StringComparison.OrdinalIgnoreCase));
             if (partner is not null)
             {
                 self.LinkedTripId ??= partner.TripEventId;
                 partner.LinkedTripId ??= self.TripEventId;
+                context.Entry(self).Property(t => t.LinkedTripId).IsModified = true;
+                context.Entry(partner).Property(t => t.LinkedTripId).IsModified = true;
             }
         }
     }
@@ -485,6 +501,7 @@ public sealed class TripEventService : ITripEventService
             && LocationTypes.IsUnresolvedPlaceName(trip.Destination))
         {
             trip.DestinationLocationId = null;
+            trip.DestinationLocation = null;
             return;
         }
 
@@ -492,6 +509,7 @@ public sealed class TripEventService : ITripEventService
         if (string.IsNullOrWhiteSpace(name) || LocationTypes.IsUnresolvedPlaceName(name))
         {
             trip.DestinationLocationId = null;
+            trip.DestinationLocation = null;
             return;
         }
 
@@ -501,6 +519,10 @@ public sealed class TripEventService : ITripEventService
         var place = candidates.FirstOrDefault(d =>
             d.HasValidatedCoordinates && LocationTypes.CanBeTripPlace(d.DestinationType));
         trip.DestinationLocationId = place?.DestinationId;
+        if (place is null)
+        {
+            trip.DestinationLocation = null;
+        }
     }
 
     internal static string SchoolYearFrom(DateTime date) =>
@@ -616,26 +638,25 @@ public sealed class TripEventService : ITripEventService
 
     private static BoardSnapshot Snapshot(TripEvent trip) => new(
         trip.TripDate.Date,
-        trip.DestinationName,
-        trip.Destination,
-        trip.DestinationLocationId,
-        trip.OriginName,
+        Norm(trip.DestinationName) ?? Norm(trip.Destination),
+        Norm(trip.OriginName),
         trip.PickupTime,
         trip.ReturnClockTime,
         trip.ReturnIsNextDay,
         trip.PlannedHeadcount,
         trip.VehicleId,
         trip.DriverId,
-        trip.AssignedBusNumber,
+        Norm(trip.AssignedBusNumber),
         trip.IsMultiAsset,
-        trip.GroupOrActivity,
-        trip.RequestingSchool);
+        Norm(trip.GroupOrActivity),
+        Norm(trip.RequestingSchool));
+
+    private static string? Norm(string? value) =>
+        string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 
     private readonly record struct BoardSnapshot(
         DateTime TripDate,
         string? DestinationName,
-        string? Destination,
-        int? DestinationLocationId,
         string? OriginName,
         TimeSpan? PickupTime,
         TimeSpan? ReturnClockTime,

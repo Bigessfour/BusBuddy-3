@@ -2003,15 +2003,15 @@ namespace BusBuddy.Core.Services
                 .ConfigureAwait(false);
 
             var validated = coords
-                .Where(s => s.HasValidatedCoordinates)
+                .Where(s => RouteStop.IsValidatedCoordinate(s.Latitude, s.Longitude))
                 .Select(s => ((double)s.Latitude!.Value, (double)s.Longitude!.Value))
                 .ToList();
+            route.WaypointsJson = RouteWaypointSerializer.FromPairs(validated);
             if (validated.Count == 0)
             {
+                await context.SaveChangesAsync().ConfigureAwait(false);
                 return;
             }
-
-            route.WaypointsJson = RouteWaypointSerializer.FromPairs(validated);
             if (validated.Count >= 2 && _routingService is not null)
             {
                 var refresh = await RouteDrivePathRefresher

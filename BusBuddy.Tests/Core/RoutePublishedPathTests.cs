@@ -41,7 +41,7 @@ public class RoutePublishedPathTests
     public void RouteModel_DoesNotMergeTripIntoRoute()
     {
         var routeSource = CoreSourceFile.Read("Models/Route.cs");
-        Assert.That(routeSource, Does.Not.Contain("IsTrip"));
+        Assert.That(routeSource, Does.Not.Contain("public bool IsTrip"));
         Assert.That(routeSource, Does.Contain("never add IsTrip"));
     }
 
