@@ -784,8 +784,6 @@ namespace BusBuddy.WPF.ViewModels.Student
             }
         }
 
-        private static string? NormalizePhone(string? input) => StudentPhoneNormalizer.Normalize(input);
-
         private static string? NormalizeZip(string? input)
         {
             if (string.IsNullOrWhiteSpace(input)) return input;
@@ -1470,14 +1468,6 @@ namespace BusBuddy.WPF.ViewModels.Student
             }
 
             return (StudentFormFields.HomeAddress, message);
-        }
-
-        /// <summary>
-        /// Build a list of validation errors for diagnostics when Save fails.
-        /// </summary>
-        private List<string> GetValidationErrors()
-        {
-            return GetValidationErrorsWithFields().Select(e => e.Message).ToList();
         }
 
         #endregion

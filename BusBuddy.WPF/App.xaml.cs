@@ -465,9 +465,6 @@ namespace BusBuddy.WPF
                 services.AddScoped<IRouteService, RouteService>();
                 services.AddScoped<BusBuddy.Core.Services.Interfaces.IBusService, BusService>();
 
-                // Register UI services (commented out — services don't exist yet)
-                // services.AddTransient<BusBuddy.WPF.Services.DialogService>();
-                // services.AddTransient<BusBuddy.WPF.Services.NavigationService>();
                 services.AddTransient<BusBuddy.WPF.Services.RouteExportService>();
                 services.AddTransient<BusBuddy.WPF.Services.IRoutePopulationScaffold, BusBuddy.WPF.Services.RoutePopulationScaffold>();
                 services.AddSingleton<BusBuddy.WPF.Services.ISkinManagerService, BusBuddy.WPF.Services.SkinManagerService>();
@@ -1129,63 +1126,6 @@ Examples:
 
             value = line[prefix.Length..].Trim();
             return value.Length > 0;
-        }
-
-        /// <summary>
-        /// Creates a safe preview of the license key for logging (masks sensitive parts)
-        /// </summary>
-        private static string GetLicenseKeyPreview(string licenseKey)
-        {
-            if (string.IsNullOrEmpty(licenseKey))
-                return "Not Set";
-
-            if (licenseKey.Length <= 8)
-                return new string('*', licenseKey.Length);
-
-            return licenseKey.Substring(0, 4) + "..." + licenseKey.Substring(licenseKey.Length - 4);
-        }
-
-        /// <summary>
-        /// Provides detailed diagnostic information for Syncfusion licensing issues
-        /// </summary>
-        private static void LogSyncfusionDiagnostics()
-        {
-            var logger = _bootstrapLogger ?? Log.Logger;
-
-            logger.Information("🔍 Syncfusion Diagnostics:");
-            logger.Information("   NuGet pin: 34.2.3 (Directory.Build.props SyncfusionVersion)");
-            logger.Information("   Platform: WPF (.NET 9.0-windows)");
-            logger.Information("   Registration: App() constructor from keys/.env SYNCFUSION_LICENSE_KEY");
-
-            // Check environment variable
-            var envLicenseKey = Environment.GetEnvironmentVariable("SYNCFUSION_LICENSE_KEY");
-            if (string.IsNullOrEmpty(envLicenseKey))
-            {
-                logger.Information("   Environment Variable SYNCFUSION_LICENSE_KEY: Not Set");
-                logger.Information("   💡 To fix: Set SYNCFUSION_LICENSE_KEY environment variable to your license key");
-                logger.Information("   💡 Get license key from: https://www.syncfusion.com/account/downloads");
-            }
-            else
-            {
-                logger.Information("   Environment Variable SYNCFUSION_LICENSE_KEY: Set (length: {Length})", envLicenseKey.Length);
-            }
-
-            // Check for common Syncfusion assemblies
-            try
-            {
-                var syncfusionAssembly = typeof(Syncfusion.Licensing.SyncfusionLicenseProvider).Assembly;
-                logger.Information("   Syncfusion.Licensing Assembly: {Version}", syncfusionAssembly.GetName().Version);
-
-                // Try to get some version info from a main Syncfusion assembly
-                var gridAssembly = System.Reflection.Assembly.LoadFrom(
-                    Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Syncfusion.SfGrid.WPF.dll"));
-                logger.Information("   Syncfusion.SfGrid.WPF Assembly: {Version}", gridAssembly.GetName().Version);
-            }
-            catch (Exception ex)
-            {
-                logger.Warning("   Syncfusion Assembly Check: Error loading - {Error}", ex.Message);
-                logger.Information("   💡 This may indicate missing Syncfusion packages or incorrect installation");
-            }
         }
 
         /// <summary>

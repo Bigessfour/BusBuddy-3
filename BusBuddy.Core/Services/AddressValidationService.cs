@@ -235,29 +235,6 @@ namespace BusBuddy.Core.Services
             }
         }
 
-        private string NormalizeAddress(string address, string? city = null, string? state = null, string? zip = null)
-        {
-            // Basic normalization - capitalize first letters of words, trim extra spaces
-            address = string.Join(" ", address.Split(' ', StringSplitOptions.RemoveEmptyEntries)
-                .Select(w => char.ToUpperInvariant(w[0]) + w.Substring(1).ToLowerInvariant()));
-
-            // Normalize city if provided
-            if (!string.IsNullOrWhiteSpace(city))
-            {
-                city = string.Join(" ", city.Split(' ', StringSplitOptions.RemoveEmptyEntries)
-                    .Select(w => char.ToUpperInvariant(w[0]) + w.Substring(1).ToLowerInvariant()));
-            }
-
-            // Normalize state if provided (ensure uppercase)
-            if (!string.IsNullOrWhiteSpace(state))
-            {
-                state = state.ToUpperInvariant();
-            }
-
-            // Return formatted address
-            return FormatAddress(address, city, state, zip);
-        }
-
         // Address validation methods - simple regex-based validation for forms
         /// <summary>
         /// Simple address validation for student intake forms
