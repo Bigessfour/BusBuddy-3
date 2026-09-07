@@ -343,8 +343,10 @@ public sealed class TripEventService : ITripEventService
 
         if (path.DistanceMeters.GetValueOrDefault() > 0)
         {
-            trip.PathMiles = Math.Round(path.DistanceMeters!.Value / 1609.344m, 2);
+            var miles = Math.Round(path.DistanceMeters!.Value / 1609.344m, 2);
+            trip.PathMiles = miles;
             trip.UpdatedDate = DateTime.UtcNow;
+            context.Entry(trip).Property(t => t.PathMiles).IsModified = true;
             await context.SaveChangesAsync(cancellationToken);
         }
     }
@@ -488,6 +490,12 @@ public sealed class TripEventService : ITripEventService
     {
         trip.DestinationLocationId = null;
         trip.DestinationLocation = null;
+        var tracked = context.Entry(trip);
+        if (tracked.State != EntityState.Detached)
+        {
+            tracked.Property(t => t.DestinationLocationId).CurrentValue = null;
+            tracked.Property(t => t.DestinationLocationId).IsModified = true;
+        }
 
         var name = string.IsNullOrWhiteSpace(trip.DestinationName) ? trip.Destination : trip.DestinationName;
         if (string.IsNullOrWhiteSpace(name) || LocationTypes.IsUnresolvedPlaceName(name))

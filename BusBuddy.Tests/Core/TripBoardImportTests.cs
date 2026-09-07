@@ -361,8 +361,12 @@ public class TripBoardImportTests
             {Header}
             "Sat, 5 Sep ",HS,Volleyball Tournament - Girls - JV,Woodland Park HS,6:00 AM,11:00 PM,319098871,25,,338,Elby Sneller,25,,Sep 2026
             """;
+        Assert.That(
+            TripBoardCsvParser.Parse(moved).Rows[0].DestinationName,
+            Is.EqualTo("Woodland Park HS"));
         await service.ImportBoardCsvAsync(moved);
         trip = (await service.GetAllTripsAsync()).Single(t => t.ExternalTicketNo == "319098871");
+        Assert.That(trip.DestinationName, Is.EqualTo("Woodland Park HS"));
         Assert.That(trip.Status, Is.EqualTo(TripStatus.Changed));
         Assert.That(trip.DestinationName, Is.EqualTo("Woodland Park HS"));
         Assert.That(trip.DestinationLocationId, Is.Null);
@@ -397,6 +401,7 @@ public class TripBoardImportTests
             Is.EqualTo("Denver - See Trip Notes"));
         await service.ImportBoardCsvAsync(seeNotes);
         trip = (await service.GetAllTripsAsync()).Single(t => t.ExternalTicketNo == "319098871");
+        Assert.That(trip.DestinationName, Is.EqualTo("Denver - See Trip Notes"));
         Assert.That(trip.DestinationLocationId, Is.Null);
         Assert.That(trip.Status, Is.EqualTo(TripStatus.MissingInfo));
     }

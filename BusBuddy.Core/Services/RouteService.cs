@@ -695,16 +695,28 @@ namespace BusBuddy.Core.Services
                         var s = stops.First(st => st.RouteStopId == id);
                         if (s.StopOrder != order)
                         {
-                            s.StopOrder = order; // apply only if changed
+                            s.StopOrder = order;
                             s.UpdatedDate = DateTime.UtcNow;
                         }
                         order++;
                     }
 
-                    // Additional defensive: mark StopOrder property modified explicitly (helps some providers/tests)
                     foreach (var s in stops)
                     {
                         context.Entry(s).Property(x => x.StopOrder).IsModified = true;
+                    }
+
+                    var routeEntity = await context.Routes.FirstOrDefaultAsync(r => r.RouteId == routeId);
+                    if (routeEntity is not null)
+                    {
+                        var orderedStops = orderedStopIds
+                            .Select(id => stops.First(s => s.RouteStopId == id))
+                            .ToList();
+                        routeEntity.WaypointsJson = RouteWaypointSerializer.FromPairs(
+                            orderedStops
+                                .Where(s => RouteStop.IsValidatedCoordinate(s.Latitude, s.Longitude))
+                                .Select(s => ((double)s.Latitude!.Value, (double)s.Longitude!.Value)));
+                        context.Entry(routeEntity).Property(r => r.WaypointsJson).IsModified = true;
                     }
 
                     var affected = await context.SaveChangesAsync();
