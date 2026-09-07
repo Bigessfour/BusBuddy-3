@@ -146,9 +146,9 @@
                        Foreground="{DynamicResource PrimaryTextBrush}"
                                            Margin="0,0,0,12"/>
 
-                <syncfusion:ButtonAdv Label="Center on Fleet"
-                              AutomationProperties.Name="Center on Fleet"
-                              ToolTip="Center map on plotted students and route stops"
+                <syncfusion:ButtonAdv Label="Center on Stops"
+                              AutomationProperties.Name="Center on plotted stops"
+                              ToolTip="Center on plotted schools, stops, and route markers (live fleet GPS is deferred)"
                               Command="{Binding CenterOnFleetCommand}"
                               Background="{DynamicResource ButtonBackgroundBrush}"
                               Foreground="{DynamicResource ButtonForegroundBrush}"
@@ -156,7 +156,7 @@
                               Margin="0,4"
                               HorizontalAlignment="Stretch"/>
 
-                <TextBlock Text="Fleet GPS tracking is not enabled yet"
+                <TextBlock Text="Live fleet GPS tracking is deferred — not enabled in this build"
                            FontSize="12"
                            Foreground="{DynamicResource BusBuddy.Brush.Text.Secondary}"
                            TextWrapping="Wrap"

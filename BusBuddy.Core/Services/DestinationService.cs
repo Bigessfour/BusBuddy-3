@@ -126,8 +126,8 @@ public sealed class DestinationService : IDestinationService
             DestinationType = DestinationTypes.School,
             StartTime = startTime,
             DismissalTime = dismissalTime,
-            Latitude = latitude,
-            Longitude = longitude,
+            Latitude = LocationCoordinate.IsValidated(latitude, longitude) ? latitude : null,
+            Longitude = LocationCoordinate.IsValidated(latitude, longitude) ? longitude : null,
             IsActive = true,
             CreatedDate = DateTime.UtcNow,
             UpdatedDate = DateTime.UtcNow,
@@ -139,5 +139,78 @@ public sealed class DestinationService : IDestinationService
             "Added school DestinationId={Id} Name={Name} Start={Start} Dismissal={Dismissal}",
             dest.DestinationId, dest.Name, startTime, dismissalTime);
         return dest;
+    }
+
+    public async Task<Destination> AddTripDestinationAsync(
+        string name,
+        string address,
+        string city,
+        string state,
+        string zipCode,
+        decimal latitude,
+        decimal longitude,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(name);
+        ArgumentException.ThrowIfNullOrWhiteSpace(address);
+        ArgumentException.ThrowIfNullOrWhiteSpace(city);
+        ArgumentException.ThrowIfNullOrWhiteSpace(state);
+        ArgumentException.ThrowIfNullOrWhiteSpace(zipCode);
+        if (LocationTypes.IsUnresolvedPlaceName(name))
+        {
+            throw new ArgumentException(
+                "See Trip Notes / TBD is not a location. Keep DestinationName on the trip until a clerk validates a place.",
+                nameof(name));
+        }
+
+        if (!LocationCoordinate.IsValidated(latitude, longitude))
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(latitude),
+                "Trip destinations require Google-validated coordinates before they can be a pin or Confirmed place.");
+        }
+
+        await using var context = _contextFactory.CreateWriteDbContext();
+        var dest = new Destination
+        {
+            Name = name.Trim(),
+            Address = address.Trim(),
+            City = city.Trim(),
+            State = state.Trim().ToUpperInvariant(),
+            ZipCode = zipCode.Trim(),
+            DestinationType = DestinationTypes.TripDestination,
+            Latitude = latitude,
+            Longitude = longitude,
+            IsActive = true,
+            CreatedDate = DateTime.UtcNow,
+            UpdatedDate = DateTime.UtcNow,
+            CreatedBy = "Clerk"
+        };
+        context.Destinations.Add(dest);
+        await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        Logger.Information(
+            "Added trip destination DestinationId={Id} Name={Name} Type={Type}",
+            dest.DestinationId, dest.Name, dest.LocationType);
+        return dest;
+    }
+
+    public async Task<Destination?> FindValidatedPlaceByNameAsync(
+        string? name,
+        CancellationToken cancellationToken = default)
+    {
+        if (LocationTypes.IsUnresolvedPlaceName(name))
+        {
+            return null;
+        }
+
+        var trimmed = name!.Trim();
+        await using var context = _contextFactory.CreateDbContext();
+        var candidates = await context.Destinations.AsNoTracking()
+            .Where(d => d.IsActive && !d.IsDeleted && d.Name == trimmed)
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+
+        return candidates.FirstOrDefault(d =>
+            d.HasValidatedCoordinates && LocationTypes.CanBeTripPlace(d.DestinationType));
     }
 }

@@ -1,0 +1,34 @@
+---
+description: BusBuddy-3 domain contract
+globs: ["**/*.{cs,xaml}"]
+alwaysApply: true
+---
+
+# BusBuddy-3
+
+Syncfusion WPF .NET 9 desktop app on Windows. Not hosted on AWS.
+Do not add Amplify, Lambda, Mapbox, or a web map control.
+
+## Canonical specs
+
+Before changing Students, Drivers, Buses, Routes, Trips, Locations, or Maps:
+
+1. Read specs/README.md
+2. Read the matching specs/<concept>.md
+3. Reuse existing Core models/services. Do not invent parallel types.
+4. Never commit student PII. Load rosters through clerk forms + Google Address Validation.
+
+Domain specs win over guesswork and over leftover UI.
+
+Hard rules:
+
+- Route != Trip. Never add IsTrip to Route.
+- PickupMode is Home or CatalogStop. Special needs => home pickup.
+- Same-day "not riding" is a rider exception, not a route rewrite.
+- MappingService.cs is AutoMapper, not geospatial maps.
+- Maps: Syncfusion SfMap + official Google tiles (OSM fail-open).
+- Default clerk center: 38.0872, -102.6208. Not MapDefaults US centroid as home view.
+- Live fleet GPS is deferred. Do not enable IsLiveTrackingEnabled to "finish" the map.
+- Plot only validated lat/lng. No 0,0 pins.
+
+If code conflicts with a spec invariant: stop, quote both, propose a reconciliation. Do not implement a hybrid.

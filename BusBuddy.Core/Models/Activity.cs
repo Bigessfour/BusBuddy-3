@@ -271,6 +271,10 @@ public class Activity : INotifyPropertyChanged
         set => AssignedVehicleId = value;
     }
 
+    /// <summary>
+    /// Leftover route-as-trip shortcut. Board trips live on <c>TripEvent</c>, not here.
+    /// Route != Trip; never add IsTrip to Route.
+    /// </summary>
     [Display(Name = "Route ID")]
     [ForeignKey("Route")]
     public int? RouteId

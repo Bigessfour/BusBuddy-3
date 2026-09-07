@@ -249,6 +249,7 @@ namespace BusBuddy.WPF.ViewModels.Route
                 if (SetProperty(ref _selectedAssignedStudent, value))
                 {
                     OnPropertyChanged(nameof(CanRemoveStudent));
+                    OnPropertyChanged(nameof(CanMarkNotRidingToday));
                     RefreshCommandStates();
                 }
             }
@@ -263,6 +264,7 @@ namespace BusBuddy.WPF.ViewModels.Route
                 {
                     OnPropertyChanged(nameof(CanAssignStudent));
                     OnPropertyChanged(nameof(CanRemoveStudent));
+                    OnPropertyChanged(nameof(CanMarkNotRidingToday));
                     OnPropertyChanged(nameof(AssignedStudentCount));
                     OnPropertyChanged(nameof(SelectedRouteBusDisplay));
                     OnPropertyChanged(nameof(SelectedRouteDriverDisplay));
@@ -464,6 +466,7 @@ namespace BusBuddy.WPF.ViewModels.Route
         // Command Availability Properties
         public bool CanAssignStudent => SelectedStudent != null && SelectedRoute != null && !IsLoading;
         public bool CanRemoveStudent => SelectedAssignedStudent != null && SelectedRoute != null && !IsLoading;
+        public bool CanMarkNotRidingToday => CanRemoveStudent;
         public bool CanCreateRoute => !string.IsNullOrWhiteSpace(NewRouteName) && !IsRouteBeingBuilt && !IsLoading;
         public bool CanSaveRoute => SelectedRoute != null && !IsLoading;
         public bool CanActivateRoute => SelectedRoute != null && !SelectedRoute.IsActive && !IsLoading;
@@ -485,6 +488,7 @@ namespace BusBuddy.WPF.ViewModels.Route
         // Existing Commands
         public ICommand AssignStudentCommand { get; private set; } = null!;
         public ICommand RemoveStudentCommand { get; private set; } = null!;
+        public ICommand MarkNotRidingTodayCommand { get; private set; } = null!;
         public ICommand AutoAssignCommand { get; private set; } = null!;
         public ICommand CreateRouteCommand { get; private set; } = null!;
         public ICommand SaveRouteCommand { get; private set; } = null!;
@@ -519,6 +523,7 @@ namespace BusBuddy.WPF.ViewModels.Route
             // Existing Commands
             AssignStudentCommand = new RelayCommand(async () => await AssignStudentAsync(), () => CanAssignStudent);
             RemoveStudentCommand = new RelayCommand(async () => await RemoveStudentAsync(), () => CanRemoveStudent);
+            MarkNotRidingTodayCommand = new RelayCommand(async () => await MarkNotRidingTodayAsync(), () => CanMarkNotRidingToday);
             AutoAssignCommand = new RelayCommand(async () => await AutoAssignStudentsAsync());
             CreateRouteCommand = new RelayCommand(async () => await CreateNewRouteAsync(), () => CanCreateRoute);
             SaveRouteCommand = new RelayCommand(async () => await SaveRouteAsync(), () => CanSaveRoute);
@@ -558,6 +563,7 @@ namespace BusBuddy.WPF.ViewModels.Route
         {
             (AssignStudentCommand as RelayCommand)?.RaiseCanExecuteChanged();
             (RemoveStudentCommand as RelayCommand)?.RaiseCanExecuteChanged();
+            (MarkNotRidingTodayCommand as RelayCommand)?.RaiseCanExecuteChanged();
             (CreateRouteCommand as RelayCommand)?.RaiseCanExecuteChanged();
             (SaveRouteCommand as RelayCommand)?.RaiseCanExecuteChanged();
             (DeleteRouteCommand as RelayCommand)?.RaiseCanExecuteChanged();
@@ -870,6 +876,7 @@ namespace BusBuddy.WPF.ViewModels.Route
 
                 (AssignStudentCommand as RelayCommand)?.RaiseCanExecuteChanged();
                 (RemoveStudentCommand as RelayCommand)?.RaiseCanExecuteChanged();
+                (MarkNotRidingTodayCommand as RelayCommand)?.RaiseCanExecuteChanged();
                 return true;
             }
             catch (Exception ex)
@@ -894,6 +901,58 @@ namespace BusBuddy.WPF.ViewModels.Route
             }
 
             await RemoveStudentCoreAsync(SelectedAssignedStudent);
+        }
+
+        /// <summary>
+        /// Same-day not riding. Does not delete the published stop or the year assignment.
+        /// </summary>
+        private async Task MarkNotRidingTodayAsync()
+        {
+            if (SelectedAssignedStudent == null || SelectedRoute == null || _routeService == null)
+            {
+                return;
+            }
+
+            var student = SelectedAssignedStudent;
+            var route = SelectedRoute;
+            var stopCountBefore = RouteStops.Count;
+            var am = student.AMRoute;
+            var pm = student.PMRoute;
+
+            try
+            {
+                IsLoading = true;
+                var result = await _routeService.RecordRiderExceptionAsync(
+                    route.RouteId,
+                    student.StudentId,
+                    DateTime.Today,
+                    "Not riding today");
+                if (!result.IsSuccess)
+                {
+                    StatusMessage = result.Error ?? "Could not record not-riding exception";
+                    return;
+                }
+
+                StatusMessage =
+                    $"{student.StudentName} not riding today — published stops and year assignment unchanged";
+                Logger.Information(
+                    "Rider exception recorded Student={StudentId} Route={RouteId} Stops={Stops} AMRoute={AM} PMRoute={PM}",
+                    student.StudentId,
+                    route.RouteId,
+                    stopCountBefore,
+                    am,
+                    pm);
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Failed to record rider exception");
+                StatusMessage = $"Failed to mark not riding: {ex.Message}";
+            }
+            finally
+            {
+                IsLoading = false;
+                RefreshCommandStates();
+            }
         }
 
         private async Task<bool> RemoveStudentCoreAsync(BusBuddy.Core.Models.Student student)
@@ -2316,18 +2375,18 @@ namespace BusBuddy.WPF.ViewModels.Route
                             double? lat = null, lon = null;
 
                             // Prefer existing stored coordinates
-                            if (s.Latitude.HasValue && s.Longitude.HasValue)
+                            if (s.HasValidatedHomeCoordinates)
                             {
-                                lat = (double)s.Latitude.Value;
-                                lon = (double)s.Longitude.Value;
+                                lat = (double)s.Latitude!.Value;
+                                lon = (double)s.Longitude!.Value;
                             }
                             else if (mapsGeo is not null && mapsGeo.IsConfigured && !string.IsNullOrWhiteSpace(s.HomeAddress))
                             {
                                 var r = await mapsGeo.ValidateAndGeocodeAsync(s.HomeAddress, s.City, s.State, s.Zip);
-                                if (r.Ok && r.Latitude.HasValue && r.Longitude.HasValue)
+                                if (r.Ok && LocationCoordinate.IsValidated(r.Latitude, r.Longitude))
                                 {
-                                    lat = r.Latitude.Value;
-                                    lon = r.Longitude.Value;
+                                    lat = r.Latitude!.Value;
+                                    lon = r.Longitude!.Value;
                                 }
                             }
 

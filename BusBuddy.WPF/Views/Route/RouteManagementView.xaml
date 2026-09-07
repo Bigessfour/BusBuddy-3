@@ -16,6 +16,9 @@
                 <ResourceDictionary Source="/BusBuddy.WPF;component/Resources/ButtonAdvTextOnly.xaml"/>
             </ResourceDictionary.MergedDictionaries>
             <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+            <ObjectDataProvider x:Key="RouteSessionValues"
+                                ObjectType="{x:Type models:RouteSession}"
+                                MethodName="GetAll"/>
             <ObjectDataProvider x:Key="RouteTimeSlotValues"
                                 MethodName="GetValues"
                                 ObjectType="{x:Type sys:Enum}">
@@ -212,6 +215,11 @@
                               AutomationProperties.HelpText="Grid displaying all routes with their assignments and schedule information">
             <syncfusion:SfDataGrid.Columns>
         <syncfusion:GridTextColumn MappingName="RouteName" HeaderText="Route Name" Width="150"/>
+        <syncfusion:GridComboBoxColumn MappingName="Session"
+                                             HeaderText="Session"
+                                             Width="110"
+                                             ItemsSource="{Binding Source={StaticResource RouteSessionValues}}"
+                                             AllowEditing="True"/>
         <syncfusion:GridTextColumn MappingName="Description" HeaderText="Description" Width="200"/>
                 <syncfusion:GridCheckBoxColumn MappingName="IsSpecialNeedsRoute" HeaderText="Special Needs" Width="110"/>
                 <syncfusion:GridComboBoxColumn MappingName="School"
@@ -266,7 +274,7 @@
                                             SelectedItem="{Binding SelectedTimeSlot, Mode=TwoWay}"
                                             ItemsSource="{Binding Source={StaticResource RouteTimeSlotValues}}"
                                             AutomationProperties.Name="Assign Time Slot"
-                                            AutomationProperties.HelpText="AM, PM, or both for vehicle assignment"/>
+                                            AutomationProperties.HelpText="AM or PM default bus for this session row (two rows for AM and PM)"/>
                     <syncfusion:ButtonAdv Grid.Column="4"
                                           Name="ApplyVehicleAssignmentButton"
                                           Label="Apply Assignment"

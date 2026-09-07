@@ -29,15 +29,28 @@ public class PickupStop
     public decimal Longitude { get; set; }
 
     /// <summary>
-    /// True when the stop has a real GPS point. Default 0,0 is unset (non-nullable columns).
+    /// True when the stop has a validated GPS point. Default 0,0 is unset (non-nullable columns).
+    /// US centroid is not a catalog stop.
     /// </summary>
     [NotMapped]
-    public bool HasGpsCoordinates =>
-        Latitude is >= -90m and <= 90m
-        && Longitude is >= -180m and <= 180m
-        && (Latitude != 0m || Longitude != 0m);
+    public bool HasGpsCoordinates => HasValidatedCoordinates;
 
-    /// <summary>Corner, Intersection, RuralHome, or other clerk label.</summary>
+    [NotMapped]
+    public bool HasValidatedCoordinates => LocationCoordinate.IsValidated(Latitude, Longitude);
+
+    [NotMapped]
+    public string LocationType => LocationTypes.PickupStop;
+
+    [NotMapped]
+    public bool IsDistrictFacility => true;
+
+    [NotMapped]
+    public bool SchoolYearStable => true;
+
+    [NotMapped]
+    public string CoordinateStatus => LocationTypes.ValidationStatus(HasValidatedCoordinates);
+
+    /// <summary>Corner or Intersection. A student home is not a catalog stop unless a clerk publishes it as PickupStop.</summary>
     [Required]
     [StringLength(20)]
     public string StopType { get; set; } = PickupStopTypes.Corner;
@@ -57,7 +70,9 @@ public static class PickupStopTypes
 {
     public const string Corner = "Corner";
     public const string Intersection = "Intersection";
+
+    /// <summary>Leftover label. Do not use for new stops — home pickup stays on the student, not the catalog.</summary>
     public const string RuralHome = "RuralHome";
 
-    public static IReadOnlyList<string> All { get; } = [Corner, Intersection, RuralHome];
+    public static IReadOnlyList<string> All { get; } = [Corner, Intersection];
 }

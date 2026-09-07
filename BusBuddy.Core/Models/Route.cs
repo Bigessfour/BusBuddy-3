@@ -6,9 +6,9 @@ using System.Runtime.CompilerServices;
 namespace BusBuddy.Core.Models;
 
 /// <summary>
-/// Represents a daily route record
-/// Based on Routes Table from BusBuddy Tables schema
-/// Enhanced with proper DateTime handling and NULL safety
+/// Published daily run (one session). Not a trip — never add IsTrip (or equivalent).
+/// Core keys AM and PM as two rows when generated; leftover AM/PM vehicle columns
+/// are default pairings, not a second session structure.
 /// </summary>
 [Table("Routes")]
 public partial class Route : INotifyPropertyChanged
@@ -122,9 +122,22 @@ public partial class Route : INotifyPropertyChanged
             {
                 _isSpecialNeedsRoute = value;
                 OnPropertyChanged();
+                if (value)
+                {
+                    Session = RouteSession.SpecialNeeds;
+                }
             }
         }
     }
+
+    /// <summary>
+    /// Explicit session for this row: AM, PM, Transfer, or SpecialNeeds.
+    /// Generated fleets already persist two rows (name and name-PM).
+    /// </summary>
+    [Required]
+    [StringLength(20)]
+    [Display(Name = "Session")]
+    public string Session { get; set; } = RouteSession.AM;
 
     // AM Route Information
     [ForeignKey("AMVehicle")]

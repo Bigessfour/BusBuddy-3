@@ -47,14 +47,17 @@ public sealed class PickupStopService : IPickupStopService
         CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
-        if (latitude is < -90 or > 90)
+        if (!LocationCoordinate.IsValidated(latitude, longitude))
         {
-            throw new ArgumentOutOfRangeException(nameof(latitude));
+            throw new ArgumentOutOfRangeException(
+                nameof(latitude),
+                "Catalog stops require validated coordinates (not 0,0 or the US centroid).");
         }
 
-        if (longitude is < -180 or > 180)
+        if (string.Equals(stopType, PickupStopTypes.RuralHome, StringComparison.OrdinalIgnoreCase))
         {
-            throw new ArgumentOutOfRangeException(nameof(longitude));
+            // A student home is not a catalog stop unless a clerk publishes it as PickupStop (corner/intersection).
+            stopType = PickupStopTypes.Corner;
         }
 
         var normalizedType = string.IsNullOrWhiteSpace(stopType) ? PickupStopTypes.Corner : stopType.Trim();
@@ -95,6 +98,11 @@ public sealed class PickupStopService : IPickupStopService
         var bestMeters = double.MaxValue;
         foreach (var stop in stops)
         {
+            if (!stop.HasValidatedCoordinates)
+            {
+                continue;
+            }
+
             var miles = RoutePacker.HaversineMiles(latitude, longitude, (double)stop.Latitude, (double)stop.Longitude);
             var meters = miles * 1609.344;
             if (meters <= maxMeters && meters < bestMeters)

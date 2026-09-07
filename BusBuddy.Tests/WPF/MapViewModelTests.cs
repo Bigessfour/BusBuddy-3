@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using BusBuddy.Core.Mapping;
 using BusBuddy.Core.Models;
+using BusBuddy.Core.Models.Trips;
 using BusBuddy.Core.Configuration;
 using BusBuddy.Core.Services.Interfaces;
 using BusBuddy.Core.Services;
@@ -66,6 +67,57 @@ public class MapViewModelTests
         Assert.That(vm, Does.Not.Contain("TrackSelectedBus"));
         Assert.That(vm, Does.Not.Contain("IsLiveTrackingEnabled"));
         Assert.That(vm, Does.Contain("PlotPickupStopsCommand"));
+        Assert.That(vm, Does.Contain("TryPlotTrip"));
+        Assert.That(vm, Does.Contain("HasValidatedHomeCoordinates"));
+    }
+
+    [Test]
+    public async Task TryPlotTrip_SkipsUnvalidatedCoordinates()
+    {
+        var vm = await CreateSettledViewModelAsync();
+        var trip = new TripEvent
+        {
+            DestinationName = "Unknown",
+            DestinationLocation = new Destination
+            {
+                Name = "Unknown",
+                Address = "x",
+                City = "x",
+                State = "CO",
+                ZipCode = "81052",
+                Latitude = 0m,
+                Longitude = 0m,
+                DestinationType = DestinationTypes.TripDestination
+            }
+        };
+
+        Assert.That(vm.TryPlotTrip(trip), Is.EqualTo(0));
+        Assert.That(vm.MapMarkers, Is.Empty);
+        Assert.That(vm.StatusMessage, Does.Contain("not plotted"));
+    }
+
+    [Test]
+    public async Task TryPlotTrip_PlotsValidatedDestination()
+    {
+        var vm = await CreateSettledViewModelAsync();
+        var trip = new TripEvent
+        {
+            DestinationName = "Strasburg HS",
+            DestinationLocation = new Destination
+            {
+                Name = "Strasburg HS",
+                Address = "1 Main",
+                City = "Strasburg",
+                State = "CO",
+                ZipCode = "80136",
+                Latitude = 39.74m,
+                Longitude = -104.32m,
+                DestinationType = DestinationTypes.TripDestination
+            }
+        };
+
+        Assert.That(vm.TryPlotTrip(trip), Is.EqualTo(1));
+        Assert.That(vm.MapMarkers, Has.Count.EqualTo(1));
     }
 
     [Test]
@@ -736,7 +788,7 @@ public class MapViewModelTests
 
         var layers = XamlViewFile.Read("Utilities/MapDistrictLayers.cs");
         Assert.That(layers, Does.Contain("StudentPlotLocation.PinsFromStored"));
-        Assert.That(layers, Does.Contain("HasGpsCoordinates"));
+        Assert.That(layers, Does.Contain("HasValidatedCoordinates"));
         Assert.That(layers, Does.Contain("MapStudentPlot.Draw"));
         Assert.That(layers, Does.Contain("LoadDistrictLayersAsync"));
         Assert.That(layers, Does.Contain("PlotStoredStudentsAsync"));
@@ -747,7 +799,7 @@ public class MapViewModelTests
 
         var plotPolicy = CoreSourceFile.Read("Mapping/StudentPlotLocation.cs");
         Assert.That(plotPolicy, Does.Contain("PinsFromStored"));
-        Assert.That(plotPolicy, Does.Contain("HasGpsCoordinates"));
+        Assert.That(plotPolicy, Does.Contain("HasValidatedHomeCoordinates"));
 
         var trail = XamlViewFile.Read("Utilities/MapRouteTrail.cs");
         Assert.That(trail, Does.Contain("RouteDrivePathRefresher.TryRefreshAsync"));

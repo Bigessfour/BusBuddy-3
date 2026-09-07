@@ -10,6 +10,7 @@ using System.Windows.Media.Imaging;
 using System.IO;
 using System.Printing;
 using System.Threading.Tasks;
+using BusBuddy.Core.Mapping;
 using BusBuddy.WPF.Utilities;
 using BusBuddy.WPF.ViewModels.Map;
 using Microsoft.Extensions.DependencyInjection;
@@ -356,13 +357,28 @@ namespace BusBuddy.WPF.Views.Map
                     return;
                 }
 
-                var camera = DistrictCameraUi.Resolve();
+                var camera = ResolveClerkCamera();
                 ApplyCenter(camera.Latitude, camera.Longitude, camera.ZoomLevel);
             }
             catch (Exception ex)
             {
                 Logger.Warning(ex, "Failed to reset map view");
             }
+        }
+
+        private static (double Latitude, double Longitude, int ZoomLevel) ResolveClerkCamera()
+        {
+            const double districtLat = 38.0872;
+            const double districtLon = -102.6208;
+            var camera = DistrictCameraUi.Resolve();
+            if (camera.ZoomLevel == MapDefaults.UnconfiguredZoomLevel
+                && Math.Abs(camera.Latitude - MapDefaults.UnconfiguredLatitude) < 0.01
+                && Math.Abs(camera.Longitude - MapDefaults.UnconfiguredLongitude) < 0.01)
+            {
+                return (districtLat, districtLon, MapDefaults.DistrictZoomLevel);
+            }
+
+            return camera;
         }
 
         private void OnRouteLineUpdated(object? sender, MapViewModel.RouteLineEventArgs e) =>

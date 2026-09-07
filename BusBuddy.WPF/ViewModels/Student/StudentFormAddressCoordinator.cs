@@ -3,6 +3,7 @@ using System.Runtime.CompilerServices;
 using System.Windows.Media;
 using BusBuddy.Core.Services.GoogleMaps;
 using BusBuddy.Core.Services.Interfaces;
+using BusBuddy.Core.Models;
 using BusBuddy.WPF.Utilities;
 using Microsoft.Extensions.DependencyInjection;
 using Serilog;
@@ -240,7 +241,7 @@ public sealed class StudentFormAddressCoordinator : INotifyPropertyChanged, IDis
 
     public async Task<bool> TryGeocodeAsync(StudentModel student)
     {
-        if (student.Latitude.HasValue && student.Longitude.HasValue)
+        if (LocationCoordinate.IsValidated(student.Latitude, student.Longitude))
         {
             return true;
         }
@@ -312,10 +313,10 @@ public sealed class StudentFormAddressCoordinator : INotifyPropertyChanged, IDis
             return;
         }
 
-        ValidationFailed = false;
-        ValidationMessage = $"{prefix} street/city/state/ZIP look OK. GPS geocode unavailable.";
+        ValidationFailed = true;
+        ValidationMessage = $"{prefix} street/city/state/ZIP look OK. GPS geocode unavailable — needs validation.";
         ValidationColor = Brushes.Orange;
-        Logger.Warning("Address local format OK; geocoding unavailable");
+        Logger.Warning("Address local format OK; geocoding unavailable — not a pin");
     }
 
     private void SetProperty<T>(ref T field, T value, [CallerMemberName] string? propertyName = null)

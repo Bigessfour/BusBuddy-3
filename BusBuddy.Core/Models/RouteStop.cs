@@ -35,6 +35,19 @@ public class RouteStop
     [Display(Name = "Longitude")]
     public decimal? Longitude { get; set; }
 
+    /// <summary>
+    /// True when this stop has a validated coordinate (not missing, not 0,0, not the US centroid).
+    /// Unvalidated locations cannot be published waypoints.
+    /// </summary>
+    [NotMapped]
+    public bool HasValidatedCoordinates => IsValidatedCoordinate(Latitude, Longitude);
+
+    public static bool IsValidatedCoordinate(decimal? latitude, decimal? longitude) =>
+        LocationCoordinate.IsValidated(latitude, longitude);
+
+    public static bool IsValidatedCoordinate(double latitude, double longitude) =>
+        LocationCoordinate.IsValidated(latitude, longitude);
+
     [Required]
     [Display(Name = "Stop Order")]
     public int StopOrder { get; set; } // Order of stop in the route

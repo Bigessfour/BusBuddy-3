@@ -309,10 +309,13 @@ public sealed class RouteDeterminationService : IRouteDeterminationService
             return Fail(opId, schoolDestinationId, FleetKind.HomeToSchool, "School not found");
         }
 
-        if (school.Latitude is not decimal schLat || school.Longitude is not decimal schLon)
+        if (!LocationCoordinate.IsValidated(school.Latitude, school.Longitude))
         {
             return Fail(opId, schoolDestinationId, FleetKind.HomeToSchool, "School GPS required for schedule regen");
         }
+
+        var schLat = school.Latitude!.Value;
+        var schLon = school.Longitude!.Value;
 
         var routes = await context.Routes.AsNoTracking()
             .Where(r => r.IsActive && r.School == school.Name)
@@ -331,7 +334,7 @@ public sealed class RouteDeterminationService : IRouteDeterminationService
 
             var ordered = stopsResult.Value.OrderBy(s => s.StopOrder).ToList();
             var coords = ordered
-                .Where(s => s.Latitude.HasValue && s.Longitude.HasValue)
+                .Where(s => s.HasValidatedCoordinates)
                 .Select(s => ((double)s.Latitude!.Value, (double)s.Longitude!.Value))
                 .ToList();
             if (coords.Count == 0)
@@ -677,6 +680,10 @@ public sealed class RouteDeterminationService : IRouteDeterminationService
             Description = $"008 {fleetKind} {slot} cell {pack.CellId}",
             IsActive = true,
             School = schoolDisplayName,
+            Session = RouteSession.Infer(
+                routeName,
+                isSpecialNeedsRoute: false,
+                description: $"008 {fleetKind} {slot} cell {pack.CellId}"),
             AMRiders = slot == RouteTimeSlotKind.AM ? pack.OrderedStudentIds.Count : null,
             PMRiders = slot == RouteTimeSlotKind.PM ? pack.OrderedStudentIds.Count : null
         }).ConfigureAwait(false);
@@ -753,11 +760,14 @@ public sealed class RouteDeterminationService : IRouteDeterminationService
         CancellationToken cancellationToken,
         IReadOnlyDictionary<int, StudentSchoolTransfer>? transferStopsByStudent = null)
     {
-        if (school.Latitude is not decimal schLat || school.Longitude is not decimal schLon)
+        if (!LocationCoordinate.IsValidated(school.Latitude, school.Longitude))
         {
             failures.Add("School GPS missing — stop times not persisted");
             return;
         }
+
+        var schLat = school.Latitude!.Value;
+        var schLon = school.Longitude!.Value;
 
         await using var ctx = _contextFactory.CreateDbContext();
         var students = await ctx.Students.AsNoTracking()
@@ -798,6 +808,12 @@ public sealed class RouteDeterminationService : IRouteDeterminationService
                     continue;
                 }
 
+                if (!RouteStop.IsValidatedCoordinate(tLat, tLon))
+                {
+                    failures.Add($"Transfer stop for {name} skipped — location is not validated");
+                    continue;
+                }
+
                 stopKeyIndex[transferKey] = meta.Count;
                 coords.Add(((double)tLat, (double)tLon));
                 meta.Add((new List<int> { id }, name, tAddr, tLat, tLon));
@@ -833,6 +849,12 @@ public sealed class RouteDeterminationService : IRouteDeterminationService
             }
             else
             {
+                continue;
+            }
+
+            if (!RouteStop.IsValidatedCoordinate(lat, lon))
+            {
+                failures.Add($"Stop '{stopName}' skipped — location is not validated");
                 continue;
             }
 

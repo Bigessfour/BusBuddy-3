@@ -1,0 +1,96 @@
+# Locations
+
+## Purpose
+
+A location is a named place BusBuddy-3 can send a bus to, pick students up from, or use as a district facility. Locations are the geographic facts behind students, routes, and maps. Trips are not locations; they _use_ locations. See `specs/trips.md`.
+
+BusBuddy-3 is a Syncfusion WPF .NET 9 desktop app on Windows. It is not hosted on AWS. Do not add a cloud gazetteer or a second map stack to satisfy this spec.
+
+## Invariants
+
+- MUST classify every location with exactly one type: `School`, `PickupStop`, `StudentHome`, `Depot`, `Maintenance`, `Fuel`, `TripDestination`.
+- MUST persist a validated street address plus lat/lng before a location can be a route waypoint, map pin, or trip origin/destination.
+- MUST use Google Address Validation + Geocoding as the source of coordinates. Clerks do not type lat/lng as truth.
+- MUST treat district-owned facilities (`School`, `Depot`, `Maintenance`, `Fuel`, published `PickupStop`) as stable for the school year by default.
+- MUST allow `StudentHome` to change mid-year (family move). Keep the student; replace or version the home location.
+- MUST NOT use an unvalidated address as a map pin (no 0,0, no US centroid, no “close enough” guess).
+- MUST NOT treat a student’s home as a shared catalog stop unless a clerk publishes that home as a `PickupStop`.
+- MUST NOT fold trips into this entity. A trip is a one-time movement that _references_ two or more locations.
+- MUST NOT invent a parallel place model. Extend `IDestinationService`, `IPickupStopService`, `IGeoDataService` / `IMapsGeoService`, and `DistrictDepot`.
+- Default map center for clerks with no selection: Lamar/Wiley CO (~38.0872, -102.6208).
+- Exception: facility address correction, new catalog stop, school-year rollover, or a trip to a one-off destination (field, another district, event site).
+
+## Relationships
+
+- `School` ← assigned destination for students; common route end (AM) or start (PM).
+- `PickupStop` ← shared in-town gathering point; route waypoint; many students.
+- `StudentHome` ← one student (or siblings at the same address); waypoint only when pickup mode is `Home` or special needs.
+- `Depot` / `Maintenance` / `Fuel` ← district operations; optional route start/end or deadhead, not a student stop.
+- `TripDestination` ← activity/athletic/field site; used by trips, not by the published daily route unless it is also a school.
+- Location `1` → `0..*` route stops (ordered waypoints on a route session).
+- Location `1` → `0..*` trip origins or destinations.
+
+## Data the app must store
+
+| Field                         | Type         | Required       | Notes                                                                                 |
+| ----------------------------- | ------------ | -------------- | ------------------------------------------------------------------------------------- |
+| LocationId                    | existing key | yes            | Reuse Core identity.                                                                  |
+| Name                          | string       | yes            | “Wiley School”, “Main & 4th”, “Bus Barn”.                                             |
+| LocationType                  | enum         | yes            | See types above.                                                                      |
+| StreetAddress                 | string       | yes            | Human-entered; then validated.                                                        |
+| City / State / PostalCode     | string       | yes            | Colorado district context; do not assume Denver.                                      |
+| FormattedAddress              | string       | after validate | From Google Address Validation.                                                       |
+| Latitude, Longitude           | decimal      | after validate | From geocoder.                                                                        |
+| PlaceId or validation payload | string/json  | recommended    | Enough to re-validate later.                                                          |
+| IsDistrictFacility            | bool         | yes            | True for school, depot, maintenance, fuel, published stops.                           |
+| SchoolYearStable              | bool         | yes            | Default true for district facilities; false for student homes and one-off trip sites. |
+| Active                        | bool         | yes            | Soft-retire. Do not delete if routes/trips reference it.                              |
+| Notes                         | string       | no             | Access notes: driveway, gate, dirt road, no turnaround.                               |
+
+Do not store student names on a location. Homes point _from_ the student record.
+
+## Behaviors / UI
+
+- Clerk records a place on a location form. Save is incomplete until Address Validation + geocode succeed.
+- Failed validation stays editable and is not plotted.
+- District Map plots schools, catalog stops, and geocoded student homes. Depots may plot as operational markers.
+- Route builder adds locations as ordered stops; those stops become Google Routes waypoints.
+- Substitute drivers use the same published locations and times. Do not give them a shadow set of “unofficial” pins.
+- Mid-year new catalog stop: new `PickupStop`, validate, then clerk attaches students and updates the route version.
+- Mid-year student move: new or updated `StudentHome`, validate, re-attach student; do not silently move the old pin.
+
+## Pickup and drop-off use
+
+| Type            | Daily route                                     | Trip             | Map                                             |
+| --------------- | ----------------------------------------------- | ---------------- | ----------------------------------------------- |
+| School          | Yes — destination (AM) / origin (PM)            | Often origin     | Always if active                                |
+| PickupStop      | Yes — in-town pickup/drop                       | Rare             | Always if active                                |
+| StudentHome     | Yes — when pickup mode is Home or special needs | Rare             | Only if geocoded and relevant to selected route |
+| Depot           | Deadhead / pull-out / return                    | Possible staging | Operational                                     |
+| Maintenance     | Not a student stop                              | No               | Operational                                     |
+| Fuel            | Not a student stop                              | No               | Operational                                     |
+| TripDestination | No                                              | Yes              | When a trip is selected                         |
+
+## Out of scope
+
+- Live GPS of buses at these places.
+- Drawing unofficial stops that skip validation.
+- Treating “trip” as a location type.
+- Auto-creating catalog stops from every student home.
+- AWS geocoders or a second tile vendor as source of truth (OSM is fail-open for tiles only).
+
+## Code anchors
+
+| Spec term               | Existing code                         |
+| ----------------------- | ------------------------------------- |
+| Schools / destinations  | `IDestinationService`                 |
+| Published catalog stops | `IPickupStopService`                  |
+| Waypoints / geo access  | `IGeoDataService`, `IMapsGeoService`  |
+| Depot                   | `DistrictDepot`                       |
+| Map pins and center     | `MapViewModel`, SfMap                 |
+| Address → lat/lng       | Google Address Validation + Geocoding |
+| AutoMapper (not maps)   | `MappingService`                      |
+
+## Agent instructions
+
+When changing location or geocode code, read this file plus `specs/students.md`, `specs/routes.md`, `specs/trips.md`, and `specs/maps.md`. Quote the invariant you implemented. If a task is about a sports run, field trip, or one-time manifest, that work belongs in `specs/trips.md` — do not overload Location.

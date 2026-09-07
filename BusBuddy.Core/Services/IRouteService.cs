@@ -36,6 +36,14 @@ namespace BusBuddy.Core.Services
         Task<Result<bool>> AssignStudentToRouteAsync(int studentId, int routeId, RouteTimeSlot timeSlot, bool overrideSeating);
         Task<Result<bool>> RemoveStudentFromRouteAsync(int studentId, int routeId);
         Task<Result<bool>> RemoveStudentFromRouteAsync(int studentId, int routeId, RouteTimeSlot timeSlot);
+        /// <summary>
+        /// Same-day not-riding. Does not delete the published stop, year assignment, or student.
+        /// </summary>
+        Task<Result<RouteRiderException>> RecordRiderExceptionAsync(
+            int routeId,
+            int studentId,
+            DateTime exceptionDate,
+            string? reason = null);
         Task<Result<List<Student>>> GetUnassignedStudentsAsync();
         Task<Result<List<Student>>> GetUnassignedStudentsAsync(RouteTimeSlot timeSlot);
         Task<Result<List<Student>>> GetStudentsForRouteAsync(int routeId, RouteTimeSlot timeSlot);

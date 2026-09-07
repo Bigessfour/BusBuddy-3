@@ -163,7 +163,7 @@ namespace BusBuddy.WPF.ViewModels.Route
             }
         }
 
-        private RouteTimeSlot _selectedTimeSlot = RouteTimeSlot.Both;
+        private RouteTimeSlot _selectedTimeSlot = RouteTimeSlot.AM;
         /// <summary>
         /// Selected time slot (AM/PM/Both) for vehicle assignment.
         /// </summary>
@@ -476,7 +476,8 @@ namespace BusBuddy.WPF.ViewModels.Route
             var q = QuickSearchText.Trim();
             return (r.RouteName?.IndexOf(q, StringComparison.OrdinalIgnoreCase) >= 0)
                    || (r.Description?.IndexOf(q, StringComparison.OrdinalIgnoreCase) >= 0)
-                   || (r.School?.IndexOf(q, StringComparison.OrdinalIgnoreCase) >= 0);
+                   || (r.School?.IndexOf(q, StringComparison.OrdinalIgnoreCase) >= 0)
+                   || (r.Session?.IndexOf(q, StringComparison.OrdinalIgnoreCase) >= 0);
         }
 
         private async Task AddRouteAsync()
@@ -493,7 +494,8 @@ namespace BusBuddy.WPF.ViewModels.Route
                         RouteName = baseName,
                         School = SelectedRoute?.School ?? string.Empty,
                         Date = DateTime.Today,
-                        IsActive = true
+                        IsActive = true,
+                        Session = RouteSession.AM
                     };
                     var result = await _routeService.CreateRouteAsync(newRoute).ConfigureAwait(true);
                     if (!result.IsSuccess || result.Value is null)

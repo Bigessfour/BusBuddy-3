@@ -165,7 +165,7 @@ internal sealed class MapDistrictLayers
     private int PlotSchools(IReadOnlyList<Destination> schools)
     {
         var plotted = 0;
-        foreach (var school in schools.Where(s => s.HasGpsCoordinates))
+        foreach (var school in schools.Where(s => s.HasValidatedCoordinates))
         {
             _plot((double)school.Latitude!, (double)school.Longitude!, null, MapMarkerLabels.ForSchool(school.Name));
             plotted++;
@@ -177,7 +177,7 @@ internal sealed class MapDistrictLayers
     private int PlotPickups(IReadOnlyDictionary<int, PickupStop> catalog)
     {
         var plotted = 0;
-        foreach (var stop in catalog.Values.Where(s => s.HasGpsCoordinates))
+        foreach (var stop in catalog.Values.Where(s => s.HasValidatedCoordinates))
         {
             _plot((double)stop.Latitude, (double)stop.Longitude, null, MapMarkerLabels.ForPickup(stop.Name));
             plotted++;
@@ -288,7 +288,7 @@ internal sealed class MapDistrictLayers
         {
             var geo = await geocoding.GeocodeAsync(
                 student.HomeAddress, student.City, student.State, student.Zip).ConfigureAwait(true);
-            if (geo.HasValue)
+            if (geo.HasValue && LocationCoordinate.IsValidated(geo.Value.latitude, geo.Value.longitude))
             {
                 return (geo.Value.latitude, geo.Value.longitude);
             }
