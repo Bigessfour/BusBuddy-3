@@ -14,6 +14,7 @@ public class MainWindowClerkPathTests
         var xaml = XamlViewFile.Read("Views/Main/MainWindow.xaml");
         Assert.That(xaml, Does.Contain("Click=\"FuelManagementButton_Click\""));
         Assert.That(xaml, Does.Contain("Click=\"Maintenance_Click\""));
+        Assert.That(xaml, Does.Contain("Click=\"SettingsButton_Click\""));
         Assert.That(xaml, Does.Contain("SelectedItem=\"{Binding SelectedStudent, Mode=TwoWay}\""));
         Assert.That(xaml, Does.Contain("SelectedItem=\"{Binding SelectedBus, Mode=TwoWay}\""));
         Assert.That(xaml, Does.Contain("Text=\"{Binding StatusMessage"));
@@ -160,6 +161,10 @@ public class MainWindowClerkPathTests
 
         var main = XamlViewFile.Read("Views/Main/MainWindow.xaml.cs");
         Assert.That(main, Does.Contain("TryShowDashboardOnStartup"));
+        Assert.That(main, Does.Contain("ShowViewInWindow(new SettingsView()"));
+
+        var shell = XamlViewFile.Read("Views/Main/MainWindow.xaml");
+        Assert.That(shell, Does.Contain("Click=\"SettingsButton_Click\""));
     }
 
     [Test]

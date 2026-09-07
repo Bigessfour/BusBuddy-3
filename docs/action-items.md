@@ -49,6 +49,24 @@ Canonical hops: [clerk-path.md](./clerk-path.md). **Do not** split `MainWindow.x
 - [x] Fuel and Maintenance on the main header
 - [x] Drivers **Assign Bus** opens Route Assignments
 
+### P1 — Unreachable Settings (district map config)
+
+`SettingsView` / `SettingsViewModel` still write bus-barn + bbox via `IDistrictSettingsAccessor`. `MapView` reads that for depot camera (`DistrictDepot` / `DistrictCameraUi`). Spec: [maps.md](../specs/maps.md) clerk default ~38.0872, -102.6208 when nothing is selected; Settings is how a clerk replaces that.
+
+- [x] **Wire Settings from the shell.** Header `ButtonAdv` `Click="SettingsButton_Click"` opens existing `SettingsView` (bus barn + bbox). Do not invent a second district-config form. (`feature/settings-shell-button`)
+- [ ] **Proof:** VM: Settings → save depot lat/lng + bbox → Serilog district write → District Map recenters off the US-centroid fallback. Unit: `MainWindowClerkPathTests` asserts `Click="SettingsButton_Click"` (Mac cannot run WPF testhost).
+
+### P2 — Unreachable Activity Timeline
+
+- [ ] **Decide keep vs drop.** `ActivitiesButton_Click` (~888) hosts `ActivityTimelineView`, but no XAML button calls it. VMs are still registered in `App.xaml.cs`. This is an activity-log viewer, not the trip board (`TripEvent`). Either add an Activities header button, or delete the unused Click + consider whether the view stays for later.
+
+### P2 — Startup helpers deleted in [#62](https://github.com/Bigessfour/BusBuddy-3/pull/62) (missing wiring, not proven abandoned)
+
+Both types had **zero callers**; #62 deleted them as dead. They still read like startup that was never hooked. Restore from `938e052^` only if we intend to call them from `App` / `Program` — do not restore unused files.
+
+- [ ] **`SyncfusionCultureFix.ApplyCultureFixes`** — set thread + `FrameworkElement.Language` to invariant culture to avoid Syncfusion XAML star-width parse issues. Restore path: `BusBuddy.WPF/Utilities/SyncfusionCultureFix.cs`. Call once at WPF startup **before** MainWindow XAML loads, or confirm `Program.cs` already covers that (VM smoke 2026-08-16 said no star-width crash). Do not force invariant culture if it would break clerk date/time display.
+- [ ] **`StartupOptimizationService.PreloadCriticalServicesAsync`** — parallel `GetService` of Bus/Route/Driver/Schedule. Restore path: `BusBuddy.WPF/Services/StartupOptimizationService.cs`. Optional perf only; not a clerk-path blocker. If restored, register and await from startup; do not put it back as another orphan.
+
 ### P1 — Syncfusion page-by-page control audit (UI)
 
 Static scan 2026-08-28: **41 XAML surfaces** (1 shell, 18 pages, 18 dialogs, 4 controls), **611** `syncfusion:*` instances across **31** types, **474** `{Binding}` properties. Plus `maps:SfMap` on MapView (different xmlns, not in the 611).
@@ -99,7 +117,7 @@ Wave 2–3 (2026-08-28): DriverForm ComboBox `SelectedValue`+`Content`; Vehicles
     - [x] Dead map-stack files removed (2026-09-06): Leaflet `map.html`, MapWinGIS stub, WebView2 package, hash `OfflineGeocodingService`, unused `TerrainAnalysisResult`; live-tracking chrome dropped (status line only); `GeoDataService` sample routes removed; MapView ctor DB ping removed
     - [x] District Map plot layers (2026-09-06): `PlotPickupStopsCommand`; student plot uses catalog stop GPS when present (PK + optional smaller HOME), else geocode/plot home only; auto-seed schools/pickups/students-with-coords on load; SCH/PK/HOME/DEPOT prefixes; depot + dual home/pickup pins; span zoom; persist stop-derived `WaypointsJson`
     - [ ] Follow-up: drop unused `Route` shapefile path columns (empty `RemoveShapefileColumns` migration never dropped them); unused `AddressValidationControl`; OSM-only layer combo
-    - [ ] VM: District Map opens on school GPS (or Settings depot/bbox); schools + PK pins + student homes/stops without three clicks; pick route with ≥2 geocoded stops → gold trail + Start/End pins only; **Refresh** optional for road path
+    - [ ] VM: District Map opens on school GPS (or Settings depot/bbox — header **Settings** now opens that form); schools + PK pins + student homes/stops without three clicks; pick route with ≥2 geocoded stops → gold trail + Start/End pins only; **Refresh** optional for road path
     - [ ] Apply migration `20260906220000_WidenRouteWaypointsJson` on Mac Docker Postgres
     - [ ] Windows VM: `GOOGLE_MAPS_API_KEY` + `GCP_BILLING_PROJECT=busbuddy-507301` (Address Validation and/or Geocoding + Routes enabled) so Plot Students can geocode missing homes
     - [x] US4: Places type-ahead on Student + School forms (`GooglePlacesAutocompleteService`, session tokens)
@@ -201,6 +219,7 @@ python3 ~/.cursor/skills/function-inventory/scripts/update-function-inventory.py
 | `DriverService`                                          | P1   | `DriverServiceTests` exist; `DriverScheduleView` + `DriverAvailabilityCalculator` (Schedule + ActivitySchedule). Availability calc logs `Drivers=` / `WithOpenDays=`            |
 | `MaintenanceService` / Dashboard metrics / theme manager | P2   | `MaintenanceService` logs CRUD. Dashboard: `DashboardViewModel` logs refresh/optimize/report. Earth Engine retired (spec 007).                                                  |
 | `DashboardView` / `GeoDataService`                       | P2   | VM smoke + Serilog: `Dashboard refresh completed` / `Loaded routes with geo data`                                                                                               |
+| `SettingsView` / `SettingsViewModel`                     | P1   | Bindings + district write covered by `SettingsViewModelTests` / `MainWindowClerkPathTests` (shell Click now wired). **VM:** save depot/bbox then reopen District Map.           |
 
 ---
 
@@ -212,4 +231,4 @@ python3 ~/.cursor/skills/function-inventory/scripts/update-function-inventory.py
 
 ---
 
-_Updated 2026-08-31: clerk-path hop tracker. Now = hop 1 VM smoke. Later = split giant files after hops._
+_Updated 2026-09-07: tracked unreachable Settings/Timeline shell buttons and #62 startup helpers that were deleted as unused callers._

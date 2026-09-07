@@ -93,11 +93,16 @@
                                           Click="Maintenance_Click" FontSize="14" FontWeight="SemiBold"
                                           ToolTip="Maintenance records for a bus"
                                           AutomationProperties.Name="Fleet Maintenance"/>
-                    <syncfusion:ButtonAdv Label="Reports" Padding="15,8"
+                    <syncfusion:ButtonAdv Label="Reports" Margin="0,0,10,0" Padding="15,8"
                                           Background="{DynamicResource BusBuddy.Brush.Primary}" Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}" BorderThickness="0"
                                           Click="ReportsButton_Click" FontSize="14" FontWeight="SemiBold"
                                           ToolTip="Generate and view transportation reports"
                                           AutomationProperties.Name="Reports and Print Routes"/>
+                    <syncfusion:ButtonAdv Label="Settings" Padding="15,8"
+                                          Background="{DynamicResource BusBuddy.Brush.Primary}" Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}" BorderThickness="0"
+                                          Click="SettingsButton_Click" FontSize="14" FontWeight="SemiBold"
+                                          ToolTip="District bus barn, map bounds, and app preferences"
+                                          AutomationProperties.Name="Settings"/>
 
                     <!-- Theme selector — label is required; emoji-only tiles render blank under Fluent. -->
                     <StackPanel Orientation="Horizontal" Margin="20,0,0,0" VerticalAlignment="Center">
