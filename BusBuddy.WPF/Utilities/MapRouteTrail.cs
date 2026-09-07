@@ -44,9 +44,7 @@ internal sealed class MapRouteTrail
 
     public async Task<MapRouteTrailPersist> RefreshStoredPathAsync(Route route, CancellationToken cancellationToken = default)
     {
-        var refresh = await RouteDrivePathRefresher
-            .TryRefreshAsync(_routing, route, cancellationToken)
-            .ConfigureAwait(false);
+        var refresh = await RouteDrivePathRefresher.TryRefreshAsync(_routing, route, cancellationToken).ConfigureAwait(false);
         if (!refresh.Success)
         {
             return new MapRouteTrailPersist(false, false, refresh.Message);

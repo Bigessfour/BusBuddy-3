@@ -438,12 +438,21 @@ public class MapViewModelTests
                 It.IsAny<(double, double)>(),
                 It.IsAny<IReadOnlyList<(double Latitude, double Longitude)>>(),
                 default))
-            .ReturnsAsync(new DrivePathResult
+            .ReturnsAsync(() =>
             {
-                EncodedPolyline = "_p~iF~ps|U_ulLnnqC_mqNvxq`@",
-                Points = [(38.15, -102.72), (38.155, -102.715), (38.16, -102.71)],
-                DistanceMeters = 400,
-                Duration = "45s"
+                var drivePoints = new[]
+                {
+                    (38.15, -102.72),
+                    (38.155, -102.715),
+                    (38.16, -102.71),
+                };
+                return new DrivePathResult
+                {
+                    EncodedPolyline = EncodedPolylineCodec.Encode(drivePoints),
+                    Points = drivePoints,
+                    DistanceMeters = 400,
+                    Duration = "45s"
+                };
             });
 
         var vm = await CreateSettledViewModelAsync(

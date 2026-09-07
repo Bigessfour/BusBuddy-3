@@ -31,6 +31,36 @@ public static class EncodedPolylineCodec
         return points;
     }
 
+    public static string Encode(IEnumerable<(double Latitude, double Longitude)> points)
+    {
+        var sb = new System.Text.StringBuilder();
+        var lastLat = 0;
+        var lastLng = 0;
+        foreach (var (lat, lon) in points)
+        {
+            var iLat = (int)Math.Round(lat * 1e5);
+            var iLng = (int)Math.Round(lon * 1e5);
+            EncodeSigned(iLat - lastLat, sb);
+            EncodeSigned(iLng - lastLng, sb);
+            lastLat = iLat;
+            lastLng = iLng;
+        }
+
+        return sb.ToString();
+    }
+
+    private static void EncodeSigned(int value, System.Text.StringBuilder sb)
+    {
+        var v = value < 0 ? ~(value << 1) : value << 1;
+        while (v >= 0x20)
+        {
+            sb.Append((char)((0x20 | (v & 0x1f)) + 63));
+            v >>= 5;
+        }
+
+        sb.Append((char)(v + 63));
+    }
+
     private static bool TryDecodeNext(string encoded, ref int index, out int value)
     {
         value = 0;
