@@ -18,6 +18,7 @@ flowchart TB
     MaintView[MaintenanceView]
     SchedView[DriverScheduleView]
     MapView[MapView]
+    SettingsView[SettingsView]
     Theme[SyncfusionThemeManager]
   end
   subgraph core [P1 Core]
@@ -53,6 +54,7 @@ flowchart TB
   Students --> MapsValidate
   MapView --> Geo
   MapView --> MapsValidate
+  SettingsView --> MapView
   RouteAssign --> RouteDet
   Reports --> ReportsSvc
   ReportsSvc --> Pdf
