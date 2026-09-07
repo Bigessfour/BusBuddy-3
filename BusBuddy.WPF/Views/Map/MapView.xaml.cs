@@ -156,9 +156,6 @@ namespace BusBuddy.WPF.Views.Map
 
             DetachViewModel(_boundViewModel);
             _boundViewModel = vm;
-            vm.ZoomInRequested += OnZoomInRequested;
-            vm.ZoomOutRequested += OnZoomOutRequested;
-            vm.CenterRequested += OnCenterRequested;
             vm.ViewResetRequested += OnViewResetRequested;
             vm.RouteLineUpdated += OnRouteLineUpdated;
             vm.PrintRequested += OnPrintRequested;
@@ -176,9 +173,6 @@ namespace BusBuddy.WPF.Views.Map
             viewModel.RouteLineUpdated -= OnRouteLineUpdated;
             viewModel.PrintRequested -= OnPrintRequested;
             viewModel.MapMarkersChanged -= OnMapMarkersChanged;
-            viewModel.ZoomInRequested -= OnZoomInRequested;
-            viewModel.ZoomOutRequested -= OnZoomOutRequested;
-            viewModel.CenterRequested -= OnCenterRequested;
             viewModel.ViewResetRequested -= OnViewResetRequested;
             viewModel.PropertyChanged -= OnViewModelPropertyChanged;
         }
@@ -464,42 +458,6 @@ namespace BusBuddy.WPF.Views.Map
             }
         }
 
-        private void ApplyZoom(int delta)
-        {
-            try
-            {
-                if (MapControl is null)
-                {
-                    return;
-                }
-
-                var current = MapControl.ZoomLevel;
-                var target = Math.Clamp(current + delta, 1, 18);
-                MapControl.ZoomLevel = target;
-                if (DataContext is MapViewModel vm)
-                {
-                    vm.SetMapView(vm.MapCenter.X, vm.MapCenter.Y, target);
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger.Warning(ex, "ApplyZoom failed");
-            }
-        }
-
-        private void OnZoomInRequested(object? sender, EventArgs e) => Dispatcher.Invoke(() => ApplyZoom(+1));
-        private void OnZoomOutRequested(object? sender, EventArgs e) => Dispatcher.Invoke(() => ApplyZoom(-1));
-        private void OnCenterRequested(object? sender, EventArgs e) => Dispatcher.Invoke(() =>
-        {
-            if (DataContext is MapViewModel vm && vm.MapMarkers.Count > 0)
-            {
-                CenterOnCurrentMarkers();
-            }
-            else
-            {
-                TryResetView();
-            }
-        });
         private void OnViewResetRequested(object? sender, EventArgs e) => Dispatcher.Invoke(() =>
             SyncMapControlFromViewModel(DataContext as MapViewModel));
 

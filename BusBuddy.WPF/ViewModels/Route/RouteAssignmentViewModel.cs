@@ -20,7 +20,6 @@ using System.IO; // For PDF export file writing
 using System.Threading; // For debounce timer
 using System.Text.RegularExpressions; // Start time validation
 
-
 namespace BusBuddy.WPF.ViewModels.Route
 {
     /// <summary>
@@ -483,8 +482,6 @@ namespace BusBuddy.WPF.ViewModels.Route
 
         // Available TimeSlots for ComboBox binding
         public Array TimeSlots => Enum.GetValues<BusBuddy.Core.Models.RouteTimeSlot>();
-
-
 
         #region Commands
 
@@ -1013,22 +1010,6 @@ namespace BusBuddy.WPF.ViewModels.Route
             {
                 IsLoading = false;
             }
-        }
-
-        /// <summary>
-        /// Lightweight helper to keep SelectedRoute.StudentCount in sync without a full reload.
-        /// </summary>
-        private void IncrementRouteStudentCount(BusBuddy.Core.Models.Route route, int delta)
-        {
-            try
-            {
-                var current = route.StudentCount ?? 0;
-                var updated = current + delta;
-                if (updated < 0) updated = 0;
-                route.StudentCount = updated;
-                OnPropertyChanged(nameof(AssignedStudentCount));
-            }
-            catch { }
         }
 
         private async Task AutoAssignStudentsAsync()
@@ -2000,59 +1981,6 @@ namespace BusBuddy.WPF.ViewModels.Route
             }
         }
 
-
-
-        private void CreateNewRoute()
-        {
-            try
-            {
-                var routeName = $"Route {AvailableRoutes.Count + 1}";
-                var newRoute = new BusBuddy.Core.Models.Route
-                {
-                    RouteName = routeName,
-                    Date = DateTime.Today,
-                    IsActive = true,
-                    School = "Default School" // Required property
-                };
-
-                AvailableRoutes.Add(newRoute);
-                SelectedRoute = newRoute;
-
-                StatusMessage = $"Created new route: {routeName}";
-                Logger.Information("Created new route {RouteName}", routeName);
-            }
-            catch (Exception ex)
-            {
-                Logger.Error(ex, "Failed to create new route");
-                StatusMessage = $"Error creating route: {ex.Message}";
-            }
-        }
-
-        private async void SaveRoute()
-        {
-            if (SelectedRoute == null)
-            {
-                return;
-            }
-
-            try
-            {
-                // if (_routeService != null)
-                // {
-                //     await _routeService.SaveRouteAsync(SelectedRoute);
-                // }
-                StatusMessage = $"Saved route: {SelectedRoute.RouteName}";
-                Logger.Information("Saved route {RouteName}", SelectedRoute.RouteName);
-            }
-            catch (Exception ex)
-            {
-                Logger.Error(ex, "Failed to save route");
-                StatusMessage = $"Error saving route: {ex.Message}";
-                MessageBox.Show($"Failed to save route: {ex.Message}", "Error",
-                    MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-        }
-
         private async void DeleteRoute()
         {
             if (SelectedRoute == null)
@@ -2105,11 +2033,6 @@ namespace BusBuddy.WPF.ViewModels.Route
                 Height = 800,
                 Owner = Application.Current?.MainWindow
             }.Show();
-        }
-
-        private async void RefreshData()
-        {
-            _ = RefreshDataAsync();
         }
 
         private void GenerateReport()

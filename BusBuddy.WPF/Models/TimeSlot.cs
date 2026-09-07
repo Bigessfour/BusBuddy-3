@@ -38,45 +38,4 @@ namespace BusBuddy.WPF.Models
         FieldTrip = 6
     }
 
-    /// <summary>
-    /// Extension methods for TimeSlot enum
-    /// </summary>
-    public static class TimeSlotExtensions
-    {
-        /// <summary>
-        /// Gets the display name for a TimeSlot enum value
-        /// </summary>
-        public static string GetDisplayName(this TimeSlot timeSlot)
-        {
-            var fieldInfo = timeSlot.GetType().GetField(timeSlot.ToString());
-            if (fieldInfo == null)
-            {
-
-                return timeSlot.ToString();
-            }
-
-
-            var attributes = (DisplayAttribute[])fieldInfo.GetCustomAttributes(typeof(DisplayAttribute), false);
-
-            return attributes.Length > 0 ? attributes[0].Name ?? timeSlot.ToString() : timeSlot.ToString();
-        }
-
-        /// <summary>
-        /// Gets the description for a TimeSlot enum value
-        /// </summary>
-        public static string GetDescription(this TimeSlot timeSlot)
-        {
-            var fieldInfo = timeSlot.GetType().GetField(timeSlot.ToString());
-            if (fieldInfo == null)
-            {
-
-                return timeSlot.ToString();
-            }
-
-
-            var attributes = (DescriptionAttribute[])fieldInfo.GetCustomAttributes(typeof(DescriptionAttribute), false);
-
-            return attributes.Length > 0 ? attributes[0].Description : timeSlot.ToString();
-        }
-    }
 }

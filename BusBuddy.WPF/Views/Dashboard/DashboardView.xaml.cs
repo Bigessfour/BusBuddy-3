@@ -198,11 +198,6 @@ namespace BusBuddy.WPF.Views.Dashboard
             }
         }
 
-        private Task LoadFleetStatusAsync() => RefreshFromViewModelAsync();
-        private Task LoadRouteMetricsAsync() => RefreshFromViewModelAsync();
-        private Task LoadStudentCountsAsync() => RefreshFromViewModelAsync();
-        private Task LoadActiveAlertsAsync() => RefreshFromViewModelAsync();
-
         private async Task RefreshFromViewModelAsync()
         {
             if (DataContext is DashboardViewModel vm)

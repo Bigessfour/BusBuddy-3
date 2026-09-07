@@ -25,18 +25,6 @@ public class RouteAssignment
 
     [Required]
     public DateTime AssignmentDate { get; set; } = DateTime.Today;
-    [Flags]
-    public enum DaysOfWeek
-    {
-        None = 0,
-        Monday = 1,
-        Tuesday = 2,
-        Wednesday = 4,
-        Thursday = 8,
-        Friday = 16,
-        Saturday = 32,
-        Sunday = 64
-    }
 
     public int? GuardianId { get; set; }
     public Guardian? Guardian { get; set; }

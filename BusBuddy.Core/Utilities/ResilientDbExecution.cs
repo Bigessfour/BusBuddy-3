@@ -75,81 +75,6 @@ public static class ResilientDbExecution
     }
 
     /// <summary>
-    /// Executes a database command with transaction support and resilient error handling
-    /// </summary>
-    /// <param name="context">Database context</param>
-    /// <param name="operation">The database operation to execute</param>
-    /// <param name="operationName">Name of the operation for logging</param>
-    /// <param name="useTransaction">Whether to wrap in a transaction</param>
-    /// <returns>Task representing the operation</returns>
-    public static async Task ExecuteWithTransactionAsync(
-        DbContext context,
-        Func<Task> operation,
-        string operationName,
-        bool useTransaction = true)
-    {
-        ArgumentNullException.ThrowIfNull(context);
-        ArgumentNullException.ThrowIfNull(operation);
-        ArgumentException.ThrowIfNullOrWhiteSpace(operationName);
-
-        using (LogContext.PushProperty("Operation", operationName))
-        using (LogContext.PushProperty("UseTransaction", useTransaction))
-        {
-            if (!useTransaction)
-            {
-                await operation();
-                return;
-            }
-
-            var strategy = context.Database.CreateExecutionStrategy();
-            await strategy.ExecuteAsync(async () =>
-            {
-                using var transaction = await context.Database.BeginTransactionAsync();
-                try
-                {
-                    Logger.Debug("Starting transactional database operation: {OperationName}", operationName);
-
-                    await operation();
-                    await transaction.CommitAsync();
-
-                    Logger.Debug("Successfully completed transactional operation: {OperationName}", operationName);
-                }
-                catch (Exception ex)
-                {
-                    DatabaseUserMessage.LogFailure(Logger, ex, "Rolling back transaction for operation: {OperationName}", operationName);
-                    await transaction.RollbackAsync();
-                    throw;
-                }
-            });
-        }
-    }
-
-    /// <summary>
-    /// Validates database connectivity with detailed diagnostics
-    /// </summary>
-    /// <param name="context">Database context to test</param>
-    /// <returns>True if connection is healthy</returns>
-    public static async Task<bool> ValidateConnectionAsync(DbContext context)
-    {
-        ArgumentNullException.ThrowIfNull(context);
-
-        using (LogContext.PushProperty("Operation", "ConnectionValidation"))
-        {
-            try
-            {
-                Logger.Debug("Validating database connection");
-
-                return await context.Database.CanConnectAsync();
-            }
-            catch (Exception ex)
-            {
-                Logger.Warning(ex, "Database connection validation failed with exception");
-                return false;
-            }
-        }
-    }
-
-    /// <summary>
     /// Determines if an exception warrants a retry attempt
     /// </summary>
     private static bool ShouldRetry(Exception exception, int currentAttempt, int maxRetries)
@@ -159,7 +84,6 @@ public static class ResilientDbExecution
 
             return false;
         }
-
 
         return exception switch
         {
