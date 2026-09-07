@@ -11,6 +11,7 @@ EXPECTED_APIS=(
   addressvalidation.googleapis.com
   places.googleapis.com
   routes.googleapis.com
+  tile.googleapis.com
 )
 
 if ! command -v gcloud >/dev/null 2>&1; then
