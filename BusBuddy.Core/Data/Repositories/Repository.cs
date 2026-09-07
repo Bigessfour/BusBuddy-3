@@ -706,40 +706,5 @@ public class Repository<T> : IRepository<T> where T : class
         return UserContextService.GetCurrentUserForAudit();
     }
 
-    private string GetPrimaryKeyName()
-    {
-        // Common primary key names for different entity types
-        var entityType = typeof(T);
-
-        // Check for common patterns
-        if (entityType.Name == "Student")
-        {
-            return "StudentId";
-        }
-
-        if (entityType.Name == "Driver")
-        {
-            return "DriverId";
-        }
-
-        if (entityType.Name == "Bus")
-        {
-            return "VehicleId";
-        }
-
-        if (entityType.Name == "Route")
-        {
-            return "RouteId";
-        }
-
-        if (entityType.Name == "Activity")
-        {
-            return "ActivityId";
-        }
-
-        // Default to "Id" for BaseEntity types
-        return "Id";
-    }
-
     #endregion
 }

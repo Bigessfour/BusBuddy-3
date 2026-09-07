@@ -136,7 +136,6 @@ namespace BusBuddy.WPF.Utilities
                 return;
             }
 
-
             _globalMode = initialMode;
             _isInitialized = true;
 
@@ -290,7 +289,6 @@ namespace BusBuddy.WPF.Utilities
                 return; // Skip tracking in light mode
             }
 
-
             _operationCounts.AddOrUpdate(operationType, 1, (key, count) => count + 1);
             _totalDurations.AddOrUpdate(operationType, duration, (key, total) => total + duration);
         }
@@ -352,27 +350,6 @@ namespace BusBuddy.WPF.Utilities
         public static ConditionalLogger<T> CreateConditionalLogger<T>(string? contextId = null)
         {
             return new ConditionalLogger<T>(contextId);
-        }
-
-        /// <summary>
-        /// Quick mode switching for development workflows
-        /// </summary>
-        public static class QuickModes
-        {
-            /// <summary>Switch to light mode for quick development cycles</summary>
-            public static void EnableLightMode() => SetGlobalMode(LoggingMode.Light, "Quick-Light");
-
-            /// <summary>Switch to essential mode for minimal logging</summary>
-            public static void EnableEssentialMode() => SetGlobalMode(LoggingMode.Essential, "Quick-Essential");
-
-            /// <summary>Switch to standard mode for normal development</summary>
-            public static void EnableStandardMode() => SetGlobalMode(LoggingMode.Standard, "Quick-Standard");
-
-            /// <summary>Switch to detailed mode for debugging</summary>
-            public static void EnableDetailedMode() => SetGlobalMode(LoggingMode.Detailed, "Quick-Detailed");
-
-            /// <summary>Switch to diagnostic mode for investigation</summary>
-            public static void EnableDiagnosticMode() => SetGlobalMode(LoggingMode.Diagnostic, "Quick-Diagnostic");
         }
 
         /// <summary>
@@ -464,7 +441,6 @@ namespace BusBuddy.WPF.Utilities
                 {
                     return;
                 }
-
 
                 _stopwatch.Stop();
 

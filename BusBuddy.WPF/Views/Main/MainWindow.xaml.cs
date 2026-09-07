@@ -885,34 +885,6 @@ namespace BusBuddy.WPF.Views.Main
             }
         }
 
-        private void AnalyticsButton_Click(object sender, RoutedEventArgs e)
-        {
-            Logger.Information("Analytics navigation requested");
-            try
-            {
-                ShowViewInWindow(new AnalyticsDashboardView(), "📈 Analytics Dashboard", 1100, 800);
-            }
-            catch (Exception ex)
-            {
-                Logger.Error(ex, "Error opening Analytics view");
-                MessageBox.Show($"Error opening Analytics: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-        }
-
-        private void VehiclesButton_Click(object sender, RoutedEventArgs e)
-        {
-            Logger.Information("Vehicles navigation requested");
-            try
-            {
-                VehicleFleetLauncher.ShowDialog(this);
-            }
-            catch (Exception ex)
-            {
-                Logger.Error(ex, "Error opening Vehicles view");
-                MessageBox.Show($"Error opening Vehicles: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-        }
-
         private void ActivitiesButton_Click(object sender, RoutedEventArgs e)
         {
             Logger.Information("Activities navigation requested");
@@ -1417,12 +1389,6 @@ namespace BusBuddy.WPF.Views.Main
         {
             Logger.Debug("ShowWarningMessage called with: {Message}", message);
             MessageBox.Show(message, title, MessageBoxButton.OK, MessageBoxImage.Warning);
-        }
-
-        private void UpdateNavigationSelection(Button selectedButton)
-        {
-            // Future: Update visual selection state
-            Logger.Debug("Navigation selection updated");
         }
 
         /// <summary>

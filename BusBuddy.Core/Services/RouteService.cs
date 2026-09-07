@@ -43,11 +43,6 @@ namespace BusBuddy.Core.Services
             else
                 Logger.Debug("END   {Op} OpId={OpId} RouteId={RouteId} ElapsedMs={Ms}", name, opId, routeId, sw.ElapsedMilliseconds);
         }
-        private static void EndOpFail(string name, Guid opId, Stopwatch sw, Exception ex, object? routeId = null)
-        {
-            sw.Stop();
-            DatabaseUserMessage.LogFailure(Logger, ex, "FAIL  {Op} OpId={OpId} RouteId={RouteId} ElapsedMs={Ms}", name, opId, routeId, sw.ElapsedMilliseconds);
-        }
 
         public RouteService(IBusBuddyDbContextFactory contextFactory)
             : this(contextFactory, null, null)
@@ -1855,11 +1850,3 @@ namespace BusBuddy.Core.Services
     }
 
 }
-
-
-
-
-
-
-
-

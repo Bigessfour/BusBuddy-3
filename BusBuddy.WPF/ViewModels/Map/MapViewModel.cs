@@ -74,10 +74,8 @@ namespace BusBuddy.WPF.ViewModels.Map
         /// </summary>
         public event EventHandler? PrintRequested;
 
-        // Map interaction events (view listens and applies actual SfMap changes)
-        public event EventHandler? ZoomInRequested;
-        public event EventHandler? ZoomOutRequested;
-        public event EventHandler? CenterRequested;
+        // Map interaction events (view listens and applies actual SfMap changes).
+        // Zoom and center flow through MapZoomLevel/MapCenter PropertyChanged, not events.
         public event EventHandler? ViewResetRequested;
         public event EventHandler? MapMarkersChanged;
 

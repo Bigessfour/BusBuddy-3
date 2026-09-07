@@ -22,7 +22,6 @@ namespace BusBuddy.WPF.Views.Route
     {
         // Ensure Serilog per standards — https://learn.microsoft.com/dotnet/core/diagnostics/serilog-logging
         private static readonly ILogger Logger = Log.ForContext<RouteManagementView>();
-        private bool _isDataReady;
         private DateTime _loadStartedUtc;
         private bool _auditRun;
 
@@ -95,8 +94,6 @@ namespace BusBuddy.WPF.Views.Route
                     await routeVm.InitializeAsync().ConfigureAwait(true);
                 }
 
-                _isDataReady = true;
-
                 var elapsedMs = (DateTime.UtcNow - _loadStartedUtc).TotalMilliseconds;
                 Logger.Information("RouteManagementView data ready — time-to-modal-ready {ElapsedMs} ms", elapsedMs);
 
@@ -143,16 +140,6 @@ namespace BusBuddy.WPF.Views.Route
             catch (Exception ex)
             {
                 Logger.Error(ex, "Saving grid cell edit failed");
-            }
-        }
-
-        private void OnUnloadedGuard(object? sender, RoutedEventArgs e)
-        {
-            if (!_isDataReady)
-            {
-                // Prevent premature unload while data is not ready (per request)
-                e.Handled = true;
-                Logger.Warning("Prevented premature unload of RouteManagementView — data not ready");
             }
         }
 
