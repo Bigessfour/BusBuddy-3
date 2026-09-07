@@ -9,6 +9,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.IO;
 using System.Printing;
+using System.Threading.Tasks;
 using BusBuddy.WPF.Utilities;
 using BusBuddy.WPF.ViewModels.Map;
 using Microsoft.Extensions.DependencyInjection;
@@ -25,6 +26,8 @@ namespace BusBuddy.WPF.Views.Map
     {
         private static readonly ILogger Logger = Log.ForContext<MapView>();
         private SfMap? MapControl => FindName("GeoMap") as SfMap;
+        private GoogleMapTilesImageryLayer? DistrictTilesLayer =>
+            FindName("DistrictImageryLayer") as GoogleMapTilesImageryLayer;
         private bool _mapLayerInitialized;
         private MapViewModel? _boundViewModel;
         private MapLayer? _currentLayer;
@@ -66,7 +69,7 @@ namespace BusBuddy.WPF.Views.Map
             DataContextChanged += OnDataContextChanged;
         }
 
-        private void MapView_Loaded(object sender, RoutedEventArgs e)
+        private async void MapView_Loaded(object sender, RoutedEventArgs e)
         {
             Loaded -= MapView_Loaded;
             if (_mapLayerInitialized)
@@ -82,7 +85,14 @@ namespace BusBuddy.WPF.Views.Map
                 }
 
                 ApplyDistrictImagery(DataContext as MapViewModel);
-                ToggleOsmAttribution(true);
+                if (DistrictTilesLayer is not null)
+                {
+                    MapTileBootstrap.ApplyOsm(
+                        DistrictTilesLayer,
+                        FindName("MapAttribution") as Border,
+                        FindName("MapAttributionText") as TextBlock);
+                }
+
                 if (MapControl is not null)
                 {
                     MapControl.IsHitTestVisible = true;
@@ -95,6 +105,16 @@ namespace BusBuddy.WPF.Views.Map
                 }
 
                 ReplayRouteLineFromViewModel(DataContext as MapViewModel);
+                if (DistrictTilesLayer is not null)
+                {
+                    await MapTileBootstrap.TryApplyGoogleTilesAsync(
+                        DistrictTilesLayer,
+                        FindName("MapAttribution") as Border,
+                        FindName("MapAttributionText") as TextBlock,
+                        MapControl,
+                        App.ServiceProvider).ConfigureAwait(true);
+                }
+
                 _mapLayerInitialized = true;
                 Logger.Information("Map layer ready — pan/zoom enabled");
             }
@@ -165,14 +185,18 @@ namespace BusBuddy.WPF.Views.Map
         {
             try
             {
-                var imagery = DistrictImageryLayer;
+                var imagery = DistrictTilesLayer;
                 if (imagery is null)
                 {
                     Logger.Warning("DistrictImageryLayer not found in view");
                     return;
                 }
 
-                imagery.LayerType = LayerType.OSM;
+                if (!imagery.IsGoogleTilesActive)
+                {
+                    imagery.UseOpenStreetMap();
+                }
+
                 ConfigureImageryLayer(imagery, vm);
                 _currentLayer = imagery;
             }
@@ -213,7 +237,7 @@ namespace BusBuddy.WPF.Views.Map
         {
             try
             {
-                if (DataContext is not MapViewModel vm || DistrictImageryLayer is not ImageryLayer imagery)
+                if (DataContext is not MapViewModel vm || DistrictTilesLayer is not ImageryLayer imagery)
                 {
                     return;
                 }
@@ -306,14 +330,6 @@ namespace BusBuddy.WPF.Views.Map
             if (_currentLayer is ImageryLayer imagery)
             {
                 vm.MapCenter = imagery.Center;
-            }
-        }
-
-        private void ToggleOsmAttribution(bool visible)
-        {
-            if (FindName("OsmAttribution") is Border overlay)
-            {
-                overlay.Visibility = visible ? Visibility.Visible : Visibility.Collapsed;
             }
         }
 

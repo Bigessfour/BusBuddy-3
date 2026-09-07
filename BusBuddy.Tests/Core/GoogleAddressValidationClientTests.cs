@@ -29,7 +29,10 @@ public class GoogleAddressValidationClientTests
               "result": {
                 "verdict": { "addressComplete": true, "validationGranularity": "PREMISE" },
                 "address": { "formattedAddress": "100 Main St, Oakridge, CO 80000, USA" },
-                "geocode": { "location": { "latitude": 38.1527, "longitude": -102.7204 } }
+                "geocode": {
+                  "placeId": "ChIJtestplace",
+                  "location": { "latitude": 38.1527, "longitude": -102.7204 }
+                }
               }
             }
             """;
@@ -41,6 +44,7 @@ public class GoogleAddressValidationClientTests
         Assert.That(result.Ok, Is.True);
         Assert.That(result.Latitude, Is.EqualTo(38.1527).Within(0.0001));
         Assert.That(result.Longitude, Is.EqualTo(-102.7204).Within(0.0001));
+        Assert.That(result.PlaceId, Is.EqualTo("ChIJtestplace"));
         Assert.That(result.FormattedAddress, Does.Contain("Oakridge"));
     }
 
@@ -95,14 +99,23 @@ public class GoogleAddressValidationClientTests
             {
               "status": "OK",
               "results": [{
+                "place_id": "ChIJgeocode",
                 "formatted_address": "1600 Amphitheatre Parkway, Mountain View, CA 94043, USA",
                 "geometry": { "location": { "lat": 37.422, "lng": -122.084 } }
               }]
             }
             """;
+        HttpRequestMessage? geocodeRequest = null;
         using var http = new HttpClient(new SequenceStubHandler(
             (HttpStatusCode.Forbidden, "{\"error\":{\"status\":\"PERMISSION_DENIED\"}}"),
-            (HttpStatusCode.OK, geocodeJson)));
+            (HttpStatusCode.OK, geocodeJson),
+            onRequest: req =>
+            {
+                if (req.RequestUri?.AbsolutePath.Contains("geocode", StringComparison.OrdinalIgnoreCase) == true)
+                {
+                    geocodeRequest = req;
+                }
+            }));
         var client = new GoogleAddressValidationClient(http, Microsoft.Extensions.Options.Options.Create(TestOptions));
 
         var result = await client.ValidateAndGeocodeAsync(
@@ -111,8 +124,12 @@ public class GoogleAddressValidationClientTests
         Assert.That(result.Ok, Is.True);
         Assert.That(result.MappingUnconfigured, Is.False);
         Assert.That(result.Precision, Is.EqualTo("geocode"));
+        Assert.That(result.PlaceId, Is.EqualTo("ChIJgeocode"));
         Assert.That(result.Latitude, Is.EqualTo(37.422).Within(0.001));
         Assert.That(result.FormattedAddress, Does.Contain("Mountain View"));
+        Assert.That(geocodeRequest, Is.Not.Null);
+        Assert.That(geocodeRequest!.RequestUri!.Query, Does.Not.Contain("key="));
+        Assert.That(geocodeRequest.Headers.Contains("X-Goog-Api-Key"), Is.True);
     }
 
     [Test]
@@ -189,14 +206,34 @@ public class GoogleAddressValidationClientTests
     private sealed class SequenceStubHandler : HttpMessageHandler
     {
         private readonly Queue<(HttpStatusCode Status, string Body)> _responses;
+        private readonly Action<HttpRequestMessage>? _onRequest;
 
-        public SequenceStubHandler(params (HttpStatusCode Status, string Body)[] responses)
+        public SequenceStubHandler(
+            params (HttpStatusCode Status, string Body)[] responses)
+            : this(null, responses)
+        {
+        }
+
+        public SequenceStubHandler(
+            Action<HttpRequestMessage>? onRequest,
+            params (HttpStatusCode Status, string Body)[] responses)
         {
             _responses = new Queue<(HttpStatusCode, string)>(responses);
+            _onRequest = onRequest;
+        }
+
+        // Convenience overload used by the geocode-header assertion test.
+        public SequenceStubHandler(
+            (HttpStatusCode Status, string Body) first,
+            (HttpStatusCode Status, string Body) second,
+            Action<HttpRequestMessage>? onRequest)
+            : this(onRequest, first, second)
+        {
         }
 
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
+            _onRequest?.Invoke(request);
             var (status, body) = _responses.Dequeue();
             return Task.FromResult(new HttpResponseMessage(status)
             {

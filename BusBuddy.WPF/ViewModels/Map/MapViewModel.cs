@@ -27,7 +27,7 @@ using BusBuddy.WPF;
 namespace BusBuddy.WPF.ViewModels.Map
 {
     /// <summary>
-    /// ViewModel for the Syncfusion SfMap surface (OpenStreetMap + Maps Platform geocoding).
+    /// ViewModel for the Syncfusion SfMap surface (Google Map Tiles when keyed, else OSM + Maps Platform geo).
     /// Plots student addresses, school destinations, and route trails/waypoints.
     /// Fleet GPS / AVL is not wired — the map shows a status line instead of live-tracking chrome.
     /// </summary>
@@ -49,7 +49,6 @@ namespace BusBuddy.WPF.ViewModels.Map
 
         private ObservableCollection<RouteModel> _routes = new();
         private RouteModel? _selectedRoute;
-        private string _selectedMapLayer = "OpenStreetMap";
         private bool _isMapLoading;
         private string _statusMessage = "Ready";
         private ObservableCollection<BusBuddy.Core.Models.Bus> _activeBuses = new();
@@ -162,21 +161,6 @@ namespace BusBuddy.WPF.ViewModels.Map
         {
             get => _isMapLoading;
             set => SetProperty(ref _isMapLoading, value);
-        }
-
-        /// <summary>
-        /// Currently selected map layer (OSM only until Maps tiles resume)
-        /// </summary>
-        public string SelectedMapLayer
-        {
-            get => _selectedMapLayer;
-            set
-            {
-                if (SetProperty(ref _selectedMapLayer, value))
-                {
-                    OnMapLayerChanged();
-                }
-            }
         }
 
         /// <summary>
@@ -360,14 +344,6 @@ namespace BusBuddy.WPF.ViewModels.Map
             set => SetProperty(ref _selectedBus, value);
         }
 
-        /// <summary>
-        /// Available map layer options
-        /// </summary>
-        public ObservableCollection<string> MapLayers { get; } = new()
-        {
-            "OpenStreetMap"
-        };
-
         #endregion
 
         #region Commands
@@ -423,12 +399,6 @@ namespace BusBuddy.WPF.ViewModels.Map
             {
                 IsMapLoading = false;
             }
-        }
-
-        private void OnMapLayerChanged()
-        {
-            Logger.Information("Map layer changed to: {Layer}", SelectedMapLayer);
-            StatusMessage = $"Switched to {SelectedMapLayer} view";
         }
 
         private void OnSelectedRouteChanged()

@@ -114,19 +114,19 @@ Launchers: `./run-wpf.sh` (Mac → UTM), `.\utm_run_in_vm.ps1` (inside VM). Post
 
 ## Key implementation files (quick index)
 
-| Concern               | File                                                                                                        |
-| --------------------- | ----------------------------------------------------------------------------------------------------------- |
-| Passwords load        | `BusBuddy.WPF/App.xaml.cs`                                                                                  |
-| Geo (DB + map)        | `MapView` / `MapViewModel`; camera via `DistrictMapAnchor` (school GPS → Settings depot/bbox → US overview) |
-| Geo (district config) | Settings → bus barn + bbox (`IDistrictSettingsAccessor`); not a baked-in town                               |
-| Geo (Maps Platform)   | [spec 007](specs/007-maps-platform-geo/spec.md) — Address Validation + Places + Routes; not Earth Engine    |
-| Geo (GCP inspect)     | `gcloud` + `.github/scripts/gcloud-maps-status.sh`; Cursor MCP `gcloud` in `.cursor/mcp.json`               |
-| Geo DI                | `BusBuddy.WPF/App.xaml.cs` → `ConfigureServices`                                                            |
-| AI chat (Ollama)      | `BusBuddy.WPF/Services/OllamaChatService.cs`                                                                |
-| CI workflow           | `.github/workflows/ci.yml`                                                                                  |
-| Auto-merge            | `.github/workflows/auto-merge.yml`                                                                          |
-| RAG indexer           | `rag/index.py`                                                                                              |
-| Spec-Kit constitution | `.specify/memory/constitution.md`                                                                           |
+| Concern               | File                                                                                                     |
+| --------------------- | -------------------------------------------------------------------------------------------------------- |
+| Passwords load        | `BusBuddy.WPF/App.xaml.cs`                                                                               |
+| Geo (DB + map)        | `MapView` / `MapViewModel`; Google Map Tiles when keyed (OSM fail-open); camera via `DistrictMapAnchor`  |
+| Geo (district config) | Settings → bus barn + bbox (`IDistrictSettingsAccessor`); not a baked-in town                            |
+| Geo (Maps Platform)   | [spec 007](specs/007-maps-platform-geo/spec.md) — Address Validation + Places + Routes; not Earth Engine |
+| Geo (GCP inspect)     | `gcloud` + `.github/scripts/gcloud-maps-status.sh`; Cursor MCP `gcloud` in `.cursor/mcp.json`            |
+| Geo DI                | `BusBuddy.WPF/App.xaml.cs` → `ConfigureServices`                                                         |
+| AI chat (Ollama)      | `BusBuddy.WPF/Services/OllamaChatService.cs`                                                             |
+| CI workflow           | `.github/workflows/ci.yml`                                                                               |
+| Auto-merge            | `.github/workflows/auto-merge.yml`                                                                       |
+| RAG indexer           | `rag/index.py`                                                                                           |
+| Spec-Kit constitution | `.specify/memory/constitution.md`                                                                        |
 
 ## Documentation to keep in sync
 

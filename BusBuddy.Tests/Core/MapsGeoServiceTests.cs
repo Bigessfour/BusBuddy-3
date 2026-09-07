@@ -5,6 +5,7 @@ using BusBuddy.Core.Services.Interfaces;
 using FluentAssertions;
 using Moq;
 using NUnit.Framework;
+using System.IO;
 using System.Linq;
 
 namespace BusBuddy.Tests.Core;
@@ -24,19 +25,23 @@ public class MapsAddressCacheTests
     [Test]
     public void SetAndTryGet_RoundTripsSuccessfulResult()
     {
-        var cache = new MapsAddressCache();
+        var now = DateTimeOffset.Parse("2026-09-06T12:00:00Z");
+        var cache = new MapsAddressCache(null, new FixedTimeProvider(now));
         var key = MapsAddressCache.BuildCacheKey("1 Main", "Wiley", "CO", "81092");
         var result = new MapsGeocodeResult
         {
             Ok = true,
             Latitude = 37.1,
             Longitude = -102.7,
+            PlaceId = "ChIJ_test",
             Precision = "ROOFTOP",
         };
 
         cache.Set(key, result);
         cache.TryGet(key, out var hit).Should().BeTrue();
         hit!.Latitude.Should().Be(37.1);
+        hit.PlaceId.Should().Be("ChIJ_test");
+        hit.CachedAtUtc.Should().Be(now);
     }
 
     [Test]
@@ -46,6 +51,49 @@ public class MapsAddressCacheTests
         var key = MapsAddressCache.BuildCacheKey("bad", "addr", "CO", "00000");
         cache.Set(key, new MapsGeocodeResult { Ok = false, ErrorMessage = "nope" });
         cache.TryGet(key, out _).Should().BeFalse();
+    }
+
+    [Test]
+    public void TryGet_ExpiresCoordinatesAfterThirtyDays()
+    {
+        var t0 = DateTimeOffset.Parse("2026-08-01T12:00:00Z");
+        var t1 = t0.AddDays(31);
+        var path = Path.Combine(Path.GetTempPath(), $"bb-maps-cache-{Guid.NewGuid():N}.json");
+        try
+        {
+            var cache = new MapsAddressCache(path, new FixedTimeProvider(t0));
+            var key = MapsAddressCache.BuildCacheKey("1 Main", "Wiley", "CO", "81092");
+            cache.Set(key, new MapsGeocodeResult
+            {
+                Ok = true,
+                Latitude = 37.1,
+                Longitude = -102.7,
+                PlaceId = "ChIJ_keep",
+            });
+
+            var later = new MapsAddressCache(path, new FixedTimeProvider(t1));
+            later.TryGet(key, out _).Should().BeFalse();
+
+            var json = File.ReadAllText(path);
+            json.Should().NotContain("37.1");
+            json.Should().NotContain("ChIJ_keep");
+        }
+        finally
+        {
+            if (File.Exists(path))
+            {
+                File.Delete(path);
+            }
+        }
+    }
+
+    private sealed class FixedTimeProvider : TimeProvider
+    {
+        private readonly DateTimeOffset _utcNow;
+
+        public FixedTimeProvider(DateTimeOffset utcNow) => _utcNow = utcNow;
+
+        public override DateTimeOffset GetUtcNow() => _utcNow;
     }
 }
 

@@ -112,16 +112,7 @@
                         </StackPanel>
                     </Border>
 
-                    <!-- Layer selector — OSM only until additional providers are wired -->
-                    <syncfusion:ComboBoxAdv x:Name="MapLayerComboBox"
-                                            Width="150"
-                                            Height="32"
-                                            Margin="16,0"
-                                            ItemsSource="{Binding MapLayers}"
-                                            SelectedItem="{Binding SelectedMapLayer, Mode=TwoWay}"
-                                            IsEditable="False"
-                                            ToolTip="Map tile layer"
-                                            AutomationProperties.Name="Map layer"/>
+                    <!-- Base map provider shown via MapAttribution (Google Maps or OSM) -->
                 </StackPanel>
             </Grid>
         </Border>
@@ -359,7 +350,7 @@
                                                                  HomeTemplate="{StaticResource HomeMarkerTemplate}"
                                                                  StopTemplate="{StaticResource StopMarkerTemplate}"/>
                             </Grid.Resources>
-                            <!-- SfMap — OSM layer declared in markup (same pattern as SchoolDestinationForm) -->
+                            <!-- SfMap — Map Tiles API (Google) when session ready; OSM fail-open via GetUri -->
                             <maps:SfMap x:Name="GeoMap"
                                         HorizontalAlignment="Stretch"
                                         VerticalAlignment="Stretch"
@@ -369,8 +360,7 @@
                                         IsManipulationEnabled="True"
                                         ZoomLevel="{Binding MapZoomLevel, Mode=TwoWay}">
                                 <maps:SfMap.Layers>
-                                    <maps:ImageryLayer x:Name="DistrictImageryLayer"
-                                                       LayerType="OSM"
+                                    <utils:GoogleMapTilesImageryLayer x:Name="DistrictImageryLayer"
                                                        Center="{Binding MapCenter, Mode=TwoWay}"
                                                        Radius="{Binding MapFitRadiusKm}"
                                                        DistanceType="KiloMeter"
@@ -385,7 +375,7 @@
                                                 </maps:SubShapeFileLayer.MapElements>
                                             </maps:SubShapeFileLayer>
                                         </maps:ImageryLayer.SubShapeFileLayers>
-                                    </maps:ImageryLayer>
+                                    </utils:GoogleMapTilesImageryLayer>
                                 </maps:SfMap.Layers>
                             </maps:SfMap>
 
@@ -455,8 +445,8 @@
                                               Margin="8,0,0,0"/>
                     </StackPanel>
 
-                    <!-- OSM Attribution — Visibility toggled from code-behind (ToggleOsmAttribution) when OpenStreetMap is active -->
-                    <Border x:Name="OsmAttribution"
+                    <!-- Map attribution — Google Maps required when Google tiles / content are shown -->
+                    <Border x:Name="MapAttribution"
                             Background="{DynamicResource BusBuddy.Brush.Panel.Header}"
                             Opacity="0.85"
                             CornerRadius="4"
@@ -465,8 +455,9 @@
                             VerticalAlignment="Bottom"
                             Margin="0,0,24,16"
                             Visibility="Collapsed">
-                        <TextBlock Text="© OpenStreetMap contributors"
-                                   FontSize="11"
+                        <TextBlock x:Name="MapAttributionText"
+                                   Text="© OpenStreetMap contributors"
+                                   FontSize="12"
                                    Foreground="{DynamicResource BusBuddy.Brush.Text.Secondary}"/>
                     </Border>
                 </Grid>

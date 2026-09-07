@@ -185,6 +185,17 @@
                                              AutomationProperties.Name="District bounding box maximum longitude"/>
                 </Grid>
 
+                <TextBlock Text="Google Maps" Style="{StaticResource SettingsSectionHeader}" Margin="0,16,0,8"/>
+                <TextBlock Style="{StaticResource SettingsHelpText}">
+                    <Run Text="BusBuddy includes Google Maps features. Use of those features is subject to the"/>
+                    <Hyperlink NavigateUri="https://maps.google.com/help/terms_maps/"
+                               RequestNavigate="OnMapsLegalLinkNavigate">Google Maps End User Terms</Hyperlink>
+                    <Run Text="and the"/>
+                    <Hyperlink NavigateUri="https://policies.google.com/privacy"
+                               RequestNavigate="OnMapsLegalLinkNavigate">Google Privacy Policy</Hyperlink>
+                    <Run Text="."/>
+                </TextBlock>
+
                 <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
                     <syncfusion:ButtonAdv Label="Save"
                                           Command="{Binding SaveCommand}"

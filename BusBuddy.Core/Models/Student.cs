@@ -69,6 +69,14 @@ public class Student : INotifyPropertyChanged
     [Display(Name = "Longitude")]
     public decimal? Longitude { get; set; }
 
+    /// <summary>
+    /// Google place id for this home address (Address Validation / Places). May be stored indefinitely;
+    /// lat/lng are refreshed separately under Maps Platform cache policy.
+    /// </summary>
+    [StringLength(256)]
+    [Display(Name = "Place Id")]
+    public string? PlaceId { get; set; }
+
     [StringLength(50, ErrorMessage = "City cannot exceed 50 characters")]
     [Display(Name = "City")]
     public string? City { get; set; }

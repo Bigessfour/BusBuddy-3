@@ -21,6 +21,12 @@ public class MapViewTests
         Assert.That(xaml, Does.Contain("Label=\"Plot Pickup Stops\""));
         Assert.That(xaml, Does.Contain("Command=\"{Binding ExportRouteDataCommand}\""));
         Assert.That(xaml, Does.Contain("Label=\"Export Route\""));
+        Assert.That(xaml, Does.Contain("utils:GoogleMapTilesImageryLayer"));
+        Assert.That(xaml, Does.Contain("x:Name=\"MapAttribution\""));
+        Assert.That(xaml, Does.Contain("Google Maps"));
+        Assert.That(xaml, Does.Not.Contain("LayerType=\"OSM\""));
+        Assert.That(xaml, Does.Not.Contain("MapLayerComboBox"));
+        Assert.That(xaml, Does.Not.Contain("SelectedMapLayer"));
         Assert.That(xaml, Does.Not.Contain("GoogleEarth"));
         Assert.That(xaml, Does.Not.Contain("Wiley"));
         Assert.That(xaml, Does.Not.Contain("Add Stop (Demo)"));
@@ -43,7 +49,6 @@ public class MapViewTests
         Assert.That(xaml, Does.Not.Contain("StudentMarkerTemplate"));
         Assert.That(xaml, Does.Contain("SelectedItem=\"{Binding SelectedRoute, Mode=TwoWay}\""));
         Assert.That(xaml, Does.Contain("ItemsSource=\"{Binding Routes}\""));
-        Assert.That(xaml, Does.Contain("SelectedItem=\"{Binding SelectedMapLayer, Mode=TwoWay}\""));
         Assert.That(xaml, Does.Contain("ZoomLevel=\"{Binding MapZoomLevel, Mode=TwoWay}\""));
         Assert.That(xaml, Does.Contain("Radius=\"{Binding MapFitRadiusKm}\""));
         Assert.That(xaml, Does.Contain("DistanceType=\"KiloMeter\""));
@@ -52,7 +57,6 @@ public class MapViewTests
         Assert.That(xaml, Does.Contain("SubShapeFileLayers"));
         Assert.That(xaml, Does.Contain("maps:MapPolyline"));
         Assert.That(XamlViewFile.Read("Utilities/MapRouteTrailLayer.cs"), Does.Contain("polyline.Points.Clear"));
-        Assert.That(xaml, Does.Contain("ItemsSource=\"{Binding MapLayers}\""));
         Assert.That(xaml, Does.Not.Contain("MapLayerComboBox_SelectionChanged"));
         Assert.That(xaml, Does.Not.Contain("ZoomLevel=\"13\""));
         Assert.That(xaml, Does.Contain("Fleet GPS tracking is not enabled yet"));

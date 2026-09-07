@@ -100,6 +100,7 @@ namespace BusBuddy.Core.Extensions
             services.AddScoped<IStudentScheduleService, StudentScheduleService>();
             services.AddScoped<IFleetMonitoringService, FleetMonitoringService>();
 
+            // Geospatial: Google Maps Platform (Address Validation, Places, Routes, Map Tiles) + SfMap.
             services.AddGoogleMapsOptions(configuration);
             services.Configure<BusBuddy.Core.Configuration.RoutingDistrictSettings>(
                 configuration.GetSection(BusBuddy.Core.Configuration.RoutingDistrictSettings.SectionName));
