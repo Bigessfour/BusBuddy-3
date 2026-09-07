@@ -228,7 +228,11 @@ public sealed class SchoolDestinationFormViewModel : BaseViewModel, IDisposable
             return;
         }
 
-        MapMarkers.Add(MapViewModel.MapMarker.FromDegrees(_latitudeValue, _longitudeValue, "School"));
+        MapMarkers.Add(MapViewModel.MapMarker.FromDegrees(
+            _latitudeValue,
+            _longitudeValue,
+            MapMarkerLabels.ForSchool(string.IsNullOrWhiteSpace(Name) ? "School" : Name),
+            MapMarkerLabels.Kind.School));
         MapCenter = new Point(_latitudeValue, _longitudeValue);
         OnPropertyChanged(nameof(MapCenter));
     }

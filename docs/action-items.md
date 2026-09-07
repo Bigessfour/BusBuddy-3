@@ -96,8 +96,8 @@ Wave 2–3 (2026-08-28): DriverForm ComboBox `SelectedValue`+`Content`; Vehicles
     - [x] US1: Address Validation + geocode onto SfMap (Maps client + DI)
     - [x] US3: Routes API drive polyline (fail-open optimizer)
     - [x] Map route line hardening (2026-09-06): XAML-hosted `RouteTrail`, stop vs road split, select draws stored geometry, Routes on Refresh/Drive Path, `WaypointsJson` unbounded (`20260906220000_WidenRouteWaypointsJson`)
-    - [x] Dead map-stack files removed (2026-09-06): Leaflet `map.html`, MapWinGIS stub, WebView2 package, hash `OfflineGeocodingService`, unused `TerrainAnalysisResult`
-    - [x] District Map plot layers (2026-09-06): `PlotPickupStopsCommand`; student plot uses catalog stop when `PickupStopId` is set else home; auto-seed schools/pickups/students-with-coords on load; School/PK prefixes; live GPS chrome stays disabled
+    - [x] Dead map-stack files removed (2026-09-06): Leaflet `map.html`, MapWinGIS stub, WebView2 package, hash `OfflineGeocodingService`, unused `TerrainAnalysisResult`; live-tracking chrome dropped (status line only); `GeoDataService` sample routes removed; MapView ctor DB ping removed
+    - [x] District Map plot layers (2026-09-06): `PlotPickupStopsCommand`; student plot uses catalog stop GPS when present (PK + optional smaller HOME), else geocode/plot home only; auto-seed schools/pickups/students-with-coords on load; SCH/PK/HOME/DEPOT prefixes; depot + dual home/pickup pins; span zoom; persist stop-derived `WaypointsJson`
     - [ ] Follow-up: drop unused `Route` shapefile path columns (empty `RemoveShapefileColumns` migration never dropped them); unused `AddressValidationControl`; OSM-only layer combo
     - [ ] VM: District Map opens on school GPS (or Settings depot/bbox); schools + PK pins + student homes/stops without three clicks; pick route with ≥2 geocoded stops → gold trail + Start/End pins only; **Refresh** optional for road path
     - [ ] Apply migration `20260906220000_WidenRouteWaypointsJson` on Mac Docker Postgres

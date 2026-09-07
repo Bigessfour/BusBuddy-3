@@ -9,7 +9,7 @@ AI agents (Cursor, Copilot, Claude, Grok, etc.) working in this repo should foll
 - **Full technical rules**: [.github/copilot-instructions.md](.github/copilot-instructions.md) — architecture, Syncfusion, Serilog, RAG/MCP, anti-regression.
 - **Syncfusion WPF skills**: [.cursor/skills/syncfusion-wpf-busbuddy/SKILL.md](.cursor/skills/syncfusion-wpf-busbuddy/SKILL.md) — BusBuddy overlay; vendor skills in `.agents/skills/` (gitignored, install via [.github/scripts/setup-syncfusion-skills.sh](.github/scripts/setup-syncfusion-skills.sh)). NuGet pin `SyncfusionVersion` in `Directory.Build.props` (**34.2.3**); WPF MCP `syncfusion-wpf-assistant` via `.github/scripts/run-syncfusion-mcp.sh` → NuGet `Syncfusion.WPF.MCP` / `search_docs` ([WPF MCP docs](https://help.syncfusion.com/wpf/mcp)). Passwords Name = `SYNCFUSION_API_KEY` / `Syncfusion_API_Key`. Feature: [specs/006-syncfusion-tool-integration/spec.md](specs/006-syncfusion-tool-integration/spec.md).
 - **CI/CD workflow (solo developer)**: same file, section **Solo developer CI/CD workflow** — branch → PR → gates → auto-merge.
-- **GCP / Maps / secrets**: [Documentation/GCP-GEE-SECRETS-AND-AUTH.md](Documentation/GCP-GEE-SECRETS-AND-AUTH.md) — Maps Platform (Address Validation + Places + Routes) + Passwords. Earth Engine is not an app dependency.
+- **GCP / Maps / secrets**: [Documentation/GCP-GEE-SECRETS-AND-AUTH.md](Documentation/GCP-GEE-SECRETS-AND-AUTH.md) — Maps Platform (Address Validation + Places + Routes) + Passwords. Earth Engine is not an app dependency. Inspect live GCP with `.github/scripts/gcloud-maps-status.sh` or project MCP `gcloud` (`run_gcloud_command`). Do not print API key strings.
 - **Architecture map**: [STEADY-STATE-AND-FINISH-ROADMAP.md](STEADY-STATE-AND-FINISH-ROADMAP.md) (BusBuddy-3 Architecture Map section).
 
 ## Mandatory RAG usage
@@ -120,6 +120,7 @@ Launchers: `./run-wpf.sh` (Mac → UTM), `.\utm_run_in_vm.ps1` (inside VM). Post
 | Geo (DB + map)        | `MapView` / `MapViewModel`; camera via `DistrictMapAnchor` (school GPS → Settings depot/bbox → US overview) |
 | Geo (district config) | Settings → bus barn + bbox (`IDistrictSettingsAccessor`); not a baked-in town                               |
 | Geo (Maps Platform)   | [spec 007](specs/007-maps-platform-geo/spec.md) — Address Validation + Places + Routes; not Earth Engine    |
+| Geo (GCP inspect)     | `gcloud` + `.github/scripts/gcloud-maps-status.sh`; Cursor MCP `gcloud` in `.cursor/mcp.json`               |
 | Geo DI                | `BusBuddy.WPF/App.xaml.cs` → `ConfigureServices`                                                            |
 | AI chat (Ollama)      | `BusBuddy.WPF/Services/OllamaChatService.cs`                                                                |
 | CI workflow           | `.github/workflows/ci.yml`                                                                                  |

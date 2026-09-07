@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
@@ -10,8 +9,6 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.IO;
 using System.Printing;
-using BusBuddy.Core.Data;
-using BusBuddy.Core.Mapping;
 using BusBuddy.WPF.Utilities;
 using BusBuddy.WPF.ViewModels.Map;
 using Microsoft.Extensions.DependencyInjection;
@@ -59,7 +56,6 @@ namespace BusBuddy.WPF.Views.Map
 
                 Unloaded += MapView_Unloaded;
                 Loaded += MapView_Loaded;
-                _ = Task.Run(CheckBackendConnectivityAsync);
                 Logger.Information("MapView initialized");
             }
         }
@@ -191,10 +187,22 @@ namespace BusBuddy.WPF.Views.Map
             if (vm is not null)
             {
                 imagery.Markers = vm.MapMarkers;
-                if (TryFindResource("StudentMarkerTemplate") is DataTemplate template)
-                {
-                    imagery.MarkerTemplate = template;
-                }
+                ApplyMarkerTemplates(imagery);
+            }
+        }
+
+        private void ApplyMarkerTemplates(ImageryLayer imagery)
+        {
+            if (TryFindResource("DistrictMarkerTemplateSelector") is DataTemplateSelector selector)
+            {
+                imagery.MarkerTemplateSelector = selector;
+                imagery.MarkerTemplate = null;
+                return;
+            }
+
+            if (TryFindResource("StopMarkerTemplate") is DataTemplate template)
+            {
+                imagery.MarkerTemplate = template;
             }
         }
 
@@ -210,10 +218,7 @@ namespace BusBuddy.WPF.Views.Map
                     return;
                 }
 
-                if (TryFindResource("StudentMarkerTemplate") is DataTemplate template)
-                {
-                    imagery.MarkerTemplate = template;
-                }
+                ApplyMarkerTemplates(imagery);
 
                 // Re-assign collection so Syncfusion refreshes marker visuals.
                 imagery.Markers = vm.MapMarkers;
@@ -258,6 +263,12 @@ namespace BusBuddy.WPF.Views.Map
                         imagery.Center = vm.MapCenter;
                     }
                 });
+                return;
+            }
+
+            if (e.PropertyName == nameof(MapViewModel.MapFitRadiusKm))
+            {
+                Dispatcher.Invoke(() => ApplyFitRadius(vm));
             }
         }
 
@@ -272,6 +283,11 @@ namespace BusBuddy.WPF.Views.Map
             if (_currentLayer is ImageryLayer imagery)
             {
                 imagery.Center = vm.MapCenter;
+                if (vm.MapFitRadiusKm > 0)
+                {
+                    imagery.DistanceType = DistanceType.KiloMeter;
+                    imagery.Radius = vm.MapFitRadiusKm;
+                }
             }
         }
 
@@ -335,33 +351,6 @@ namespace BusBuddy.WPF.Views.Map
             catch (Exception ex)
             {
                 Logger.Warning(ex, "Failed to reset map view");
-            }
-        }
-
-        private async Task CheckBackendConnectivityAsync()
-        {
-            try
-            {
-                var sp = App.ServiceProvider;
-                if (sp is null)
-                {
-                    return;
-                }
-
-                using var scope = sp.CreateScope();
-                var contextFactory = scope.ServiceProvider.GetService<IBusBuddyDbContextFactory>();
-                if (contextFactory is null)
-                {
-                    return;
-                }
-
-                using var context = contextFactory.CreateDbContext();
-                var canConnect = await context.Database.CanConnectAsync();
-                Logger.Information("Database connectivity check from MapView: {CanConnect}", canConnect);
-            }
-            catch (Exception ex)
-            {
-                Logger.Warning(ex, "Backend connectivity check failed");
             }
         }
 
@@ -485,26 +474,27 @@ namespace BusBuddy.WPF.Views.Map
         {
             try
             {
-                if (MapControl is null || DataContext is not MapViewModel vm || vm.MapMarkers.Count == 0)
+                if (DataContext is MapViewModel vm)
                 {
-                    return;
+                    vm.CenterOnMarkers();
+                    ApplyFitRadius(vm);
                 }
-
-                double minLat = double.MaxValue, maxLat = double.MinValue, minLon = double.MaxValue, maxLon = double.MinValue;
-                foreach (var mk in vm.MapMarkers)
-                {
-                    if (mk.LatitudeDegrees < minLat) minLat = mk.LatitudeDegrees;
-                    if (mk.LatitudeDegrees > maxLat) maxLat = mk.LatitudeDegrees;
-                    if (mk.LongitudeDegrees < minLon) minLon = mk.LongitudeDegrees;
-                    if (mk.LongitudeDegrees > maxLon) maxLon = mk.LongitudeDegrees;
-                }
-
-                ApplyCenter((minLat + maxLat) / 2d, (minLon + maxLon) / 2d, MapDefaults.SchoolZoomLevel);
             }
             catch (Exception ex)
             {
                 Logger.Warning(ex, "CenterOnCurrentMarkers failed");
             }
+        }
+
+        private void ApplyFitRadius(MapViewModel vm)
+        {
+            if (_currentLayer is not ImageryLayer imagery || vm.MapFitRadiusKm <= 0)
+            {
+                return;
+            }
+
+            imagery.DistanceType = DistanceType.KiloMeter;
+            imagery.Radius = vm.MapFitRadiusKm;
         }
     }
 }

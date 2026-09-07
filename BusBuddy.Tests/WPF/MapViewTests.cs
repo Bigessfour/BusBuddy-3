@@ -34,10 +34,19 @@ public class MapViewTests
         Assert.That(xaml, Does.Contain("IsHitTestVisible=\"True\""));
         Assert.That(xaml, Does.Contain("Center=\"{Binding MapCenter, Mode=TwoWay}\""));
         Assert.That(xaml, Does.Contain("Markers=\"{Binding MapMarkers}\""));
+        Assert.That(xaml, Does.Contain("MarkerTemplateSelector=\"{StaticResource DistrictMarkerTemplateSelector}\""));
+        Assert.That(xaml, Does.Contain("x:Key=\"SchoolMarkerTemplate\""));
+        Assert.That(xaml, Does.Contain("x:Key=\"StopMarkerTemplate\""));
+        Assert.That(xaml, Does.Contain("x:Key=\"HomeMarkerTemplate\""));
+        Assert.That(xaml, Does.Contain("HomeTemplate=\"{StaticResource HomeMarkerTemplate}\""));
+        Assert.That(xaml, Does.Contain("MapMarkerTemplateSelector"));
+        Assert.That(xaml, Does.Not.Contain("StudentMarkerTemplate"));
         Assert.That(xaml, Does.Contain("SelectedItem=\"{Binding SelectedRoute, Mode=TwoWay}\""));
         Assert.That(xaml, Does.Contain("ItemsSource=\"{Binding Routes}\""));
         Assert.That(xaml, Does.Contain("SelectedItem=\"{Binding SelectedMapLayer, Mode=TwoWay}\""));
         Assert.That(xaml, Does.Contain("ZoomLevel=\"{Binding MapZoomLevel, Mode=TwoWay}\""));
+        Assert.That(xaml, Does.Contain("Radius=\"{Binding MapFitRadiusKm}\""));
+        Assert.That(xaml, Does.Contain("DistanceType=\"KiloMeter\""));
         Assert.That(xaml, Does.Contain("x:Name=\"RouteTrail\""));
         Assert.That(xaml, Does.Contain("x:Name=\"RouteTrailLayer\""));
         Assert.That(xaml, Does.Contain("SubShapeFileLayers"));
@@ -46,11 +55,12 @@ public class MapViewTests
         Assert.That(xaml, Does.Contain("ItemsSource=\"{Binding MapLayers}\""));
         Assert.That(xaml, Does.Not.Contain("MapLayerComboBox_SelectionChanged"));
         Assert.That(xaml, Does.Not.Contain("ZoomLevel=\"13\""));
-        Assert.That(xaml, Does.Contain("IsChecked=\"{Binding IsLiveTrackingEnabled, Mode=TwoWay}\""));
-        Assert.That(xaml, Does.Contain("AutomationProperties.Name=\"Live tracking\""));
-        Assert.That(xaml, Does.Contain("AutomationProperties.Name=\"Tracking update frequency\""));
-        Assert.That(CountOccurrences(xaml, "IsEnabled=\"False\""), Is.GreaterThanOrEqualTo(4),
-            "Live tracking, interval combo, Show All Buses, and Track Selected must stay disabled until fleet GPS is wired.");
+        Assert.That(xaml, Does.Contain("Fleet GPS tracking is not enabled yet"));
+        Assert.That(xaml, Does.Contain("AutomationProperties.Name=\"Fleet GPS status\""));
+        Assert.That(xaml, Does.Not.Contain("Show All Buses"));
+        Assert.That(xaml, Does.Not.Contain("Track Selected"));
+        Assert.That(xaml, Does.Not.Contain("IsLiveTrackingEnabled"));
+        Assert.That(xaml, Does.Not.Contain("TrackingIntervalIndex"));
         Assert.That(xaml, Does.Not.Contain("FluentDarkTheme.xaml"));
         Assert.That(xaml, Does.Not.Contain("#AA2B2B2B"));
     }
@@ -65,6 +75,17 @@ public class MapViewTests
         Assert.That(CoreSourceFile.Exists("Services/GeoDataService.cs"), Is.True);
         Assert.That(CoreSourceFile.Exists("Services/OfflineGeocodingService.cs"), Is.False);
         Assert.That(CoreSourceFile.Exists("Models/GeoAnalysisResults.cs"), Is.False);
+    }
+
+    [Test]
+    public void MappingService_IsAutoMapperObjectMappingNotGeo()
+    {
+        var mapping = XamlViewFile.Read("Services/MappingService.cs");
+        Assert.That(mapping, Does.Contain("AutoMapper"));
+        Assert.That(mapping, Does.Contain("object mapping"));
+        Assert.That(mapping, Does.Contain("not geospatial"));
+        Assert.That(mapping, Does.Not.Contain("IGeoDataService"));
+        Assert.That(mapping, Does.Not.Contain("SfMap"));
     }
 
     [Test]
@@ -108,24 +129,16 @@ public class MapViewTests
         Assert.That(vm, Does.Contain("BulkPlotEligibleStudentsCommand"));
         Assert.That(vm, Does.Contain("District Map opened"));
         Assert.That(vm, Does.Contain("PickupStopId"));
-        Assert.That(vm, Does.Contain("StudentPlotLocation.TryFromStored"));
-        Assert.That(vm, Does.Contain("MapMarkerLabels.ForPickup"));
+        Assert.That(vm, Does.Contain("StudentPlotLocation.PinsFromStored"));
+        Assert.That(vm, Does.Contain("MapStudentPlot.Draw"));
     }
 
-    private static int CountOccurrences(string source, string value)
+    [Test]
+    public void StudentFormViewOnMap_UsesPickupThenHomePlotRule()
     {
-        var count = 0;
-        var start = 0;
-        while (true)
-        {
-            var index = source.IndexOf(value, start, StringComparison.Ordinal);
-            if (index < 0)
-            {
-                return count;
-            }
-
-            count++;
-            start = index + value.Length;
-        }
+        var form = XamlViewFile.Read("ViewModels/Student/StudentFormViewModel.cs");
+        Assert.That(form, Does.Contain("StudentPlotLocation.PinsFromStored"));
+        Assert.That(form, Does.Contain("MapStudentPlot.Draw"));
+        Assert.That(form, Does.Contain("ResolvePickupCatalogForPlotAsync"));
     }
 }

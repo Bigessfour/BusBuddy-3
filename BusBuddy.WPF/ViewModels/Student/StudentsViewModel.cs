@@ -730,8 +730,8 @@ namespace BusBuddy.WPF.ViewModels.Student
                     }
                 }
 
-                var point = StudentPlotLocation.TryFromStored(student, pickups);
-                if (point is null)
+                var pins = StudentPlotLocation.PinsFromStored(student, pickups);
+                if (pins.Count == 0)
                 {
                     var geocoder = sp.GetService<IGeocodingService>();
                     if (geocoder is null)
@@ -747,25 +747,26 @@ namespace BusBuddy.WPF.ViewModels.Student
                         return;
                     }
 
-                    point = new StudentPlotPoint(
+                    pins = [new StudentPlotPoint(
                         result.Value.latitude,
                         result.Value.longitude,
                         AtPickup: false,
-                        PickupName: null);
+                        PickupName: null)];
                 }
 
                 var studentName = student.StudentName ?? "Student";
-                var label = point.Value.AtPickup
-                    ? MapMarkerLabels.ForPickup(point.Value.PickupName)
-                    : studentName;
                 MapViewLauncher.Show(Application.Current?.MainWindow as Window, vm =>
                 {
-                    vm.PlotStop(point.Value.Latitude, point.Value.Longitude, new[] { studentName }, label);
+                    MapStudentPlot.Draw(
+                        (lat, lon, names, label) => vm.PlotStop(lat, lon, names, label),
+                        studentName,
+                        pins);
                     vm.CenterOnMarkers();
                 });
 
-                StatusMessage = point.Value.AtPickup
-                    ? $"District Map opened — plotted {studentName} at {point.Value.PickupName}"
+                var boarding = pins[0];
+                StatusMessage = boarding.AtPickup
+                    ? $"District Map opened — plotted {studentName} at {boarding.PickupName}"
                     : $"District Map opened — plotted {studentName}";
             }
             catch (Exception ex)

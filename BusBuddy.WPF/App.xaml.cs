@@ -534,7 +534,8 @@ namespace BusBuddy.WPF
                         busService: null,
                         scopeFactory: sp.GetRequiredService<IServiceScopeFactory>(),
                         routingService: sp.GetService<BusBuddy.Core.Services.Interfaces.IRoutingService>(),
-                        userSettings: sp.GetService<IUserSettingsService>()));
+                        userSettings: sp.GetService<IUserSettingsService>(),
+                        districtSettings: sp.GetService<IDistrictSettingsAccessor>()));
 
                 ServiceProvider = services.BuildServiceProvider();
                 ApplyPersistedDistrictSettings();

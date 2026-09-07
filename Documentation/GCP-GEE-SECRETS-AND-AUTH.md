@@ -51,6 +51,24 @@ Set `GOOGLE_MAPS_API_KEY` and `GCP_BILLING_PROJECT=busbuddy-507301` as machine/u
 | `GooglePlacesAutocompleteService` | `IPlacesAutocompleteService` (no-op without key)                  |
 | `GoogleRoutingService`            | `IRoutingService` (drive path + route matrix; fail-open)          |
 
+## gcloud CLI + MCP (project metadata)
+
+`gcloud` is already the way to inspect GCP project, enabled APIs, billing, and API-key **metadata** for `busbuddy-507301`. It does **not** call Address Validation / Places / Routes (those need `GOOGLE_MAPS_API_KEY` via the app or the smoke probe below). Never run `gcloud services api-keys get-key-string`.
+
+**Read-only status (no key material):**
+
+```bash
+.github/scripts/gcloud-maps-status.sh
+```
+
+**Cursor / Grok MCP:** project [`.cursor/mcp.json`](../.cursor/mcp.json) registers `gcloud` → `.github/scripts/run-gcloud-mcp.sh` (`npx @google-cloud/gcloud-mcp`, deny list in `.github/scripts/gcloud-mcp-deny.json`). Reload MCP after pulling. Tool: `run_gcloud_command`. Pin is `CLOUDSDK_CORE_PROJECT=busbuddy-507301`. Not added to global `~/.cursor/mcp.json` (keeps this quota project scoped to BusBuddy).
+
+```bash
+brew install --cask google-cloud-sdk   # if needed
+gcloud auth login
+gcloud config set project busbuddy-507301
+```
+
 ## Smoke probe
 
 ```bash

@@ -28,9 +28,8 @@ namespace BusBuddy.Core.Services
             var stopwatch = Stopwatch.StartNew();
             if (_contextFactory is null)
             {
-                var sample = SampleRoutes();
-                Logger.Warning("GetRoutesWithGeoDataAsync using sample routes — no DbContext factory (Count={Count})", sample.Count);
-                return sample;
+                Logger.Warning("GetRoutesWithGeoDataAsync skipped — no DbContext factory");
+                return [];
             }
 
             Logger.Information("Loading active routes with geo data from database");
@@ -54,7 +53,7 @@ namespace BusBuddy.Core.Services
                 .ThenBy(s => s.StopOrder)
                 .ToListAsync();
 
-            var derivedWaypoints = 0;
+            var derived = new List<(int RouteId, string Json)>();
             foreach (var route in routes)
             {
                 if (!string.IsNullOrWhiteSpace(route.WaypointsJson))
@@ -69,14 +68,16 @@ namespace BusBuddy.Core.Services
                 if (json != "[]")
                 {
                     route.WaypointsJson = json;
-                    derivedWaypoints++;
+                    derived.Add((route.RouteId, json));
                 }
             }
+
+            await PersistDerivedWaypointsAsync(derived).ConfigureAwait(false);
 
             stopwatch.Stop();
             Logger.Information(
                 "Loaded routes with geo data Routes={RouteCount} StopsWithCoords={StopCount} DerivedWaypoints={Derived} ElapsedMs={ElapsedMs}",
-                routes.Count, stops.Count, derivedWaypoints, stopwatch.ElapsedMilliseconds);
+                routes.Count, stops.Count, derived.Count, stopwatch.ElapsedMilliseconds);
 
             return routes;
         }
@@ -86,9 +87,8 @@ namespace BusBuddy.Core.Services
             Logger.Information("Loading geo data for route {RouteId}", routeId);
             if (_contextFactory is null)
             {
-                var sample = SampleRoutes().FirstOrDefault(r => r.RouteId == routeId);
-                Logger.Warning("GetRouteGeoDataAsync using sample route {RouteId} Found={Found}", routeId, sample is not null);
-                return sample;
+                Logger.Warning("GetRouteGeoDataAsync skipped — no DbContext factory RouteId={RouteId}", routeId);
+                return null;
             }
 
             using var context = _contextFactory.CreateDbContext();
@@ -111,7 +111,12 @@ namespace BusBuddy.Core.Services
                 if (json != "[]")
                 {
                     route.WaypointsJson = json;
-                    Logger.Information("Derived {StopCount} waypoints for route {RouteId} {RouteName}", stops.Count, routeId, route.RouteName);
+                    await PersistDerivedWaypointsAsync([(route.RouteId, json)]).ConfigureAwait(false);
+                    Logger.Information(
+                        "Derived and persisted {StopCount} waypoints for route {RouteId} {RouteName}",
+                        stops.Count,
+                        routeId,
+                        route.RouteName);
                 }
                 else
                 {
@@ -126,22 +131,48 @@ namespace BusBuddy.Core.Services
             return route;
         }
 
-        private static List<Route> SampleRoutes() =>
-        [
-            new Route
+        private async Task PersistDerivedWaypointsAsync(IReadOnlyList<(int RouteId, string Json)> derived)
+        {
+            if (derived.Count == 0 || _contextFactory is null)
             {
-                RouteId = 1,
-                RouteName = "Route 1 - Elementary",
-                Description = "Elementary school morning route",
-                Date = DateTime.Today,
-                IsActive = true,
-                School = "Elementary",
-                WaypointsJson = RouteWaypointSerializer.FromPairs(new[]
-                {
-                    (MapDefaults.UnconfiguredLatitude, MapDefaults.UnconfiguredLongitude),
-                    (MapDefaults.UnconfiguredLatitude + 0.05, MapDefaults.UnconfiguredLongitude + 0.05)
-                })
+                return;
             }
-        ];
+
+            try
+            {
+                await using var write = _contextFactory.CreateWriteDbContext();
+                var ids = derived.Select(d => d.RouteId).ToList();
+                var tracked = await write.Routes.Where(r => ids.Contains(r.RouteId)).ToListAsync();
+                var byId = derived.ToDictionary(d => d.RouteId, d => d.Json);
+                var updated = 0;
+                foreach (var route in tracked)
+                {
+                    if (!string.IsNullOrWhiteSpace(route.WaypointsJson))
+                    {
+                        // Drive-path / stored geometry wins — never overwrite.
+                        continue;
+                    }
+
+                    if (!byId.TryGetValue(route.RouteId, out var json))
+                    {
+                        continue;
+                    }
+
+                    route.WaypointsJson = json;
+                    updated++;
+                }
+
+                if (updated > 0)
+                {
+                    await write.SaveChangesAsync();
+                }
+
+                Logger.Information("Persisted derived WaypointsJson Routes={Updated}", updated);
+            }
+            catch (Exception ex)
+            {
+                Logger.Warning(ex, "Persisting derived waypoints failed — in-memory JSON kept");
+            }
+        }
     }
 }

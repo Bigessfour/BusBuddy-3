@@ -37,7 +37,10 @@ public class MapViewCoreDependencyTests
     public async Task RouteDrivePathRefresher_SkipsWhenRoutingServiceMissing()
     {
         Assert.That(typeof(RouteDrivePathRefresher).IsAbstract, Is.True);
-        var result = await RouteDrivePathRefresher.TryRefreshAsync(null, new Route());
+        var stored = RouteWaypointSerializer.FromPairs([(38.15, -102.72), (38.16, -102.71)]);
+        var route = new Route { WaypointsJson = stored };
+        var result = await RouteDrivePathRefresher.TryRefreshAsync(null, route);
         Assert.That(result.Skipped, Is.True);
+        Assert.That(route.WaypointsJson, Is.EqualTo(stored));
     }
 }

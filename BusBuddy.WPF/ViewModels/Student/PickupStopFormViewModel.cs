@@ -165,8 +165,12 @@ public sealed class PickupStopFormViewModel : BaseViewModel
             return;
         }
 
-        var label = string.IsNullOrWhiteSpace(Name) ? "Pickup stop" : Name.Trim();
-        MapMarkers.Add(MapViewModel.MapMarker.FromDegrees(_latitudeValue, _longitudeValue, label));
+        var label = MapMarkerLabels.ForPickup(string.IsNullOrWhiteSpace(Name) ? "Pickup stop" : Name.Trim());
+        MapMarkers.Add(MapViewModel.MapMarker.FromDegrees(
+            _latitudeValue,
+            _longitudeValue,
+            label,
+            MapMarkerLabels.Kind.Pickup));
         MapCenter = new Point(_latitudeValue, _longitudeValue);
         OnPropertyChanged(nameof(MapCenter));
     }

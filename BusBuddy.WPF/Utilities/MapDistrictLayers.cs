@@ -1,7 +1,6 @@
 using BusBuddy.Core.Mapping;
 using BusBuddy.Core.Models;
 using BusBuddy.Core.Services;
-using BusBuddy.Core.Services.GoogleMaps;
 using BusBuddy.Core.Services.Interfaces;
 using BusBuddy.Core.Utilities;
 using Microsoft.Extensions.DependencyInjection;
@@ -9,7 +8,7 @@ using Serilog;
 
 namespace BusBuddy.WPF.Utilities;
 
-internal readonly record struct MapLayerSeedCounts(int Schools, int Pickups, int Students);
+internal readonly record struct MapLayerSeedCounts(int Schools, int Pickups, int Students, int Depots);
 
 internal readonly record struct MapStudentBulkPlot(int Plotted, int Geocoded, int Total, string Status);
 
@@ -27,6 +26,7 @@ internal sealed class MapDistrictLayers
     private readonly IGeocodingService? _geocoding;
     private readonly IServiceScopeFactory? _scopes;
     private readonly Action<double, double, IEnumerable<string>?, string?> _plot;
+    private readonly Func<(double Lat, double Lon, string Name)?>? _depot;
 
     public MapDistrictLayers(
         IPickupStopService? pickups,
@@ -34,7 +34,8 @@ internal sealed class MapDistrictLayers
         IStudentService? students,
         IGeocodingService? geocoding,
         IServiceScopeFactory? scopes,
-        Action<double, double, IEnumerable<string>?, string?> plot)
+        Action<double, double, IEnumerable<string>?, string?> plot,
+        Func<(double Lat, double Lon, string Name)?>? depot = null)
     {
         _pickups = pickups;
         _destinations = destinations;
@@ -42,22 +43,30 @@ internal sealed class MapDistrictLayers
         _geocoding = geocoding;
         _scopes = scopes;
         _plot = plot ?? throw new ArgumentNullException(nameof(plot));
+        _depot = depot;
     }
 
-    public async Task<MapLayerSeedCounts> SeedAsync()
+    /// <summary>
+    /// District pins in fixed order: depot → schools → active pickups → students with stored coords.
+    /// No geocoding / network on this path.
+    /// </summary>
+    public async Task<MapLayerSeedCounts> LoadDistrictLayersAsync()
     {
-        using var scope = _scopes?.CreateScope();
-        var pickupsTask = LoadPickupCatalogAsync(scope);
-        var schoolsTask = LoadSchoolsAsync(scope);
-        var studentsTask = LoadStudentsAsync(scope);
-        await Task.WhenAll(pickupsTask, schoolsTask, studentsTask).ConfigureAwait(true);
-
-        var pickups = await pickupsTask.ConfigureAwait(true);
-        var schoolCount = PlotSchools(await schoolsTask.ConfigureAwait(true));
-        var pickupCount = PlotPickups(pickups);
-        var studentCount = PlotStoredStudents(await studentsTask.ConfigureAwait(true), pickups);
-        return new MapLayerSeedCounts(schoolCount, pickupCount, studentCount);
+        var depotCount = PlotDepot();
+        var schoolCount = await PlotSchoolsAsync().ConfigureAwait(true);
+        var pickupCount = await PlotPickupsAsync().ConfigureAwait(true);
+        var studentCount = await PlotStoredStudentsAsync().ConfigureAwait(true);
+        Logger.Information(
+            "District layers loaded Depots={Depots} Schools={Schools} Pickups={Pickups} Students={Students}",
+            depotCount,
+            schoolCount,
+            pickupCount,
+            studentCount);
+        return new MapLayerSeedCounts(schoolCount, pickupCount, studentCount, depotCount);
     }
+
+    /// <summary>Bus barn pin from <see cref="DistrictDepot"/> / Settings.</summary>
+    public int PlotDepotPins() => PlotDepot();
 
     public async Task<int> PlotSchoolsAsync()
     {
@@ -69,6 +78,15 @@ internal sealed class MapDistrictLayers
     {
         using var scope = _scopes?.CreateScope();
         return PlotPickups(await LoadPickupCatalogAsync(scope).ConfigureAwait(true));
+    }
+
+    /// <summary>Students that already have pickup and/or home GPS — no geocode.</summary>
+    public async Task<int> PlotStoredStudentsAsync()
+    {
+        using var scope = _scopes?.CreateScope();
+        var pickups = await LoadPickupCatalogAsync(scope).ConfigureAwait(true);
+        var students = await LoadStudentsAsync(scope).ConfigureAwait(true);
+        return PlotStoredStudents(students, pickups);
     }
 
     public async Task<MapStudentBulkPlot> BulkPlotStudentsAsync()
@@ -101,8 +119,8 @@ internal sealed class MapDistrictLayers
         var plotted = 0;
         foreach (var stu in students)
         {
-            var point = StudentPlotLocation.TryFromStored(stu, pickups);
-            if (point is null)
+            var points = StudentPlotLocation.PinsFromStored(stu, pickups);
+            if (points.Count == 0)
             {
                 var geo = await TryGeocodeAsync(stu, scope).ConfigureAwait(true);
                 if (geo is null)
@@ -110,7 +128,7 @@ internal sealed class MapDistrictLayers
                     continue;
                 }
 
-                point = new StudentPlotPoint(geo.Value.Lat, geo.Value.Lon, AtPickup: false, PickupName: null);
+                points = [new StudentPlotPoint(geo.Value.Lat, geo.Value.Lon, AtPickup: false, PickupName: null)];
                 stu.Latitude = (decimal)geo.Value.Lat;
                 stu.Longitude = (decimal)geo.Value.Lon;
                 if (await studentService.UpdateStudentAsync(stu).ConfigureAwait(true))
@@ -125,8 +143,7 @@ internal sealed class MapDistrictLayers
 
             try
             {
-                PlotStudent(stu, point.Value);
-                plotted++;
+                plotted += PlotStudentPins(stu, points);
             }
             catch (Exception ex)
             {
@@ -160,7 +177,7 @@ internal sealed class MapDistrictLayers
     private int PlotPickups(IReadOnlyDictionary<int, PickupStop> catalog)
     {
         var plotted = 0;
-        foreach (var stop in catalog.Values)
+        foreach (var stop in catalog.Values.Where(s => s.HasGpsCoordinates))
         {
             _plot((double)stop.Latitude, (double)stop.Longitude, null, MapMarkerLabels.ForPickup(stop.Name));
             plotted++;
@@ -169,29 +186,37 @@ internal sealed class MapDistrictLayers
         return plotted;
     }
 
+    private int PlotDepot()
+    {
+        if (_depot?.Invoke() is not { } depot)
+        {
+            return 0;
+        }
+
+        _plot(depot.Lat, depot.Lon, null, MapMarkerLabels.ForDepot(depot.Name));
+        return 1;
+    }
+
     private int PlotStoredStudents(IReadOnlyList<Student> students, IReadOnlyDictionary<int, PickupStop> pickups)
     {
         var plotted = 0;
         foreach (var stu in students)
         {
-            var point = StudentPlotLocation.TryFromStored(stu, pickups);
-            if (point is null)
-            {
-                continue;
-            }
-
-            PlotStudent(stu, point.Value);
-            plotted++;
+            plotted += PlotStudentPins(stu, StudentPlotLocation.PinsFromStored(stu, pickups));
         }
 
         return plotted;
     }
 
-    private void PlotStudent(Student student, StudentPlotPoint point)
+    private int PlotStudentPins(Student student, IReadOnlyList<StudentPlotPoint> points)
     {
-        var name = student.StudentName ?? student.StudentNumber ?? "Student";
-        var label = point.AtPickup ? MapMarkerLabels.ForPickup(point.PickupName) : name;
-        _plot(point.Latitude, point.Longitude, new[] { name }, label);
+        if (points.Count == 0)
+        {
+            return 0;
+        }
+
+        MapStudentPlot.Draw(_plot, student, points);
+        return 1;
     }
 
     private async Task<IReadOnlyDictionary<int, PickupStop>> LoadPickupCatalogAsync(IServiceScope? scope)
@@ -253,39 +278,27 @@ internal sealed class MapDistrictLayers
 
     private async Task<(double Lat, double Lon)?> TryGeocodeAsync(Student student, IServiceScope? scope)
     {
-        if (_geocoding is not null)
-        {
-            try
-            {
-                var geo = await _geocoding.GeocodeAsync(
-                    student.HomeAddress, student.City, student.State, student.Zip).ConfigureAwait(true);
-                if (geo.HasValue)
-                {
-                    return (geo.Value.latitude, geo.Value.longitude);
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger.Warning(ex, "IGeocodingService geocode failed for student {Id}", student.StudentId);
-            }
-        }
-
-        var mapsGeo = scope?.ServiceProvider.GetService<IMapsGeoService>();
-        if (mapsGeo is null || !mapsGeo.IsConfigured)
+        var geocoding = Resolve(_geocoding, scope);
+        if (geocoding is null)
         {
             return null;
         }
 
         try
         {
-            return await mapsGeo.GeocodeAsync(student.HomeAddress, student.City, student.State, student.Zip)
-                .ConfigureAwait(true);
+            var geo = await geocoding.GeocodeAsync(
+                student.HomeAddress, student.City, student.State, student.Zip).ConfigureAwait(true);
+            if (geo.HasValue)
+            {
+                return (geo.Value.latitude, geo.Value.longitude);
+            }
         }
         catch (Exception ex)
         {
-            Logger.Warning(ex, "IMapsGeoService geocode failed for student {Id}", student.StudentId);
-            return null;
+            Logger.Warning(ex, "IGeocodingService geocode failed for student {Id}", student.StudentId);
         }
+
+        return null;
     }
 
     private static T? Resolve<T>(T? injected, IServiceScope? scope) where T : class =>

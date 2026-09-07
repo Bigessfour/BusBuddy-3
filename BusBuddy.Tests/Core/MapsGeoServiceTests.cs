@@ -140,4 +140,68 @@ public class RouteDrivePathRefresherTests
                 default),
             Times.Never);
     }
+
+    [Test]
+    public async Task TryRefresh_OnFailure_KeepsStoredJson()
+    {
+        var stored = RouteWaypointSerializer.FromPairs(new[]
+        {
+            (38.15, -102.72),
+            (38.16, -102.71),
+        });
+        var route = new Route { RouteId = 2, WaypointsJson = stored };
+        var routing = new Mock<IRoutingService>();
+        routing.Setup(r => r.ComputeDrivePathAsync(
+                It.IsAny<(double, double)>(),
+                It.IsAny<(double, double)>(),
+                It.IsAny<IReadOnlyList<(double Latitude, double Longitude)>>(),
+                default))
+            .ReturnsAsync(new DrivePathResult { Error = "quota" });
+
+        var result = await RouteDrivePathRefresher.TryRefreshAsync(routing.Object, route);
+
+        result.Success.Should().BeFalse();
+        route.WaypointsJson.Should().Be(stored);
+    }
+
+    [Test]
+    public async Task TryRefresh_WhenRoutingMissing_KeepsStoredJson()
+    {
+        var stored = RouteWaypointSerializer.FromPairs(new[]
+        {
+            (38.15, -102.72),
+            (38.16, -102.71),
+        });
+        var route = new Route { RouteId = 3, WaypointsJson = stored };
+
+        var result = await RouteDrivePathRefresher.TryRefreshAsync(null, route);
+
+        result.Skipped.Should().BeTrue();
+        result.Success.Should().BeFalse();
+        route.WaypointsJson.Should().Be(stored);
+    }
+
+    [Test]
+    public async Task TryRefresh_OnException_KeepsStoredJson()
+    {
+        var stored = RouteWaypointSerializer.FromPairs(new[]
+        {
+            (38.15, -102.72),
+            (38.16, -102.71),
+        });
+        var route = new Route { RouteId = 4, WaypointsJson = stored };
+        var routing = new Mock<IRoutingService>();
+        routing.Setup(r => r.ComputeDrivePathAsync(
+                It.IsAny<(double, double)>(),
+                It.IsAny<(double, double)>(),
+                It.IsAny<IReadOnlyList<(double Latitude, double Longitude)>>(),
+                default))
+            .ThrowsAsync(new InvalidOperationException("network down"));
+
+        var result = await RouteDrivePathRefresher.TryRefreshAsync(routing.Object, route);
+
+        result.Success.Should().BeFalse();
+        result.Skipped.Should().BeFalse();
+        route.WaypointsJson.Should().Be(stored);
+    }
 }

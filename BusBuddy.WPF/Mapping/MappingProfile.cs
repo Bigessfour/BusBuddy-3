@@ -6,7 +6,8 @@ using System;
 namespace BusBuddy.WPF.Mapping
 {
     /// <summary>
-    /// AutoMapper profile for mapping between domain models and view models
+    /// AutoMapper profile for domain models ↔ view models (Bus, Driver, Route, Student).
+    /// Not a geospatial map service.
     /// </summary>
     public class MappingProfile : Profile
     {

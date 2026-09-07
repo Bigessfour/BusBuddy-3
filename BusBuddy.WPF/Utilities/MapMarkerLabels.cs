@@ -1,19 +1,31 @@
+using BusBuddy.Core.Mapping;
+
 namespace BusBuddy.WPF.Utilities;
 
 /// <summary>
-/// District-map marker captions. Prefixes keep school, pickup, waypoint, and student pins
-/// from collapsing into one label when coordinates are close.
+/// District-map marker captions and kinds. Prefixes are display-only; merge policy
+/// uses <see cref="Kind"/> on <c>MapMarker</c>, never cross-kind collapse.
+/// Syncfusion: choose visuals with <c>MarkerTemplateSelector</c> (school vs stop templates).
 /// </summary>
-internal static class MapMarkerLabels
+public static class MapMarkerLabels
 {
-    public const string SchoolPrefix = "School ";
+    public const string SchoolPrefix = "SCH ";
     public const string PickupPrefix = "PK ";
+    public const string HomePrefix = "HOME ";
+    public const string DepotPrefix = "DEPOT ";
     public const string WaypointPrefix = MapRouteTrail.WaypointPrefix;
+
+    public const double PrimaryMarkerSize = 12;
+    public const double HomeMarkerSize = 8;
+    public const double PrimaryLabelFontSize = 11;
+    public const double HomeLabelFontSize = 9;
 
     public enum Kind
     {
         School,
         Pickup,
+        Home,
+        Depot,
         Waypoint,
         Student
     }
@@ -23,6 +35,18 @@ internal static class MapMarkerLabels
 
     public static string ForPickup(string? name) =>
         PickupPrefix + DisplayName(name, "Stop");
+
+    public static string ForHome(string? name) =>
+        HomePrefix + DisplayName(name, "Student");
+
+    public static string ForDepot(string? name) =>
+        DepotPrefix + DisplayName(name, "District Bus Barn");
+
+    public static double MarkerSize(Kind kind) =>
+        kind == Kind.Home ? HomeMarkerSize : PrimaryMarkerSize;
+
+    public static double LabelFontSize(Kind kind) =>
+        kind == Kind.Home ? HomeLabelFontSize : PrimaryLabelFontSize;
 
     public static Kind GetKind(string? label)
     {
@@ -36,7 +60,8 @@ internal static class MapMarkerLabels
             return Kind.Waypoint;
         }
 
-        if (label.StartsWith(SchoolPrefix, StringComparison.Ordinal))
+        if (label.StartsWith(SchoolPrefix, StringComparison.Ordinal)
+            || label.StartsWith("School ", StringComparison.Ordinal))
         {
             return Kind.School;
         }
@@ -46,32 +71,27 @@ internal static class MapMarkerLabels
             return Kind.Pickup;
         }
 
+        if (label.StartsWith(HomePrefix, StringComparison.Ordinal))
+        {
+            return Kind.Home;
+        }
+
+        if (label.StartsWith(DepotPrefix, StringComparison.Ordinal))
+        {
+            return Kind.Depot;
+        }
+
         return Kind.Student;
     }
 
-    public static bool CanMerge(Kind existing, Kind incoming) =>
-        existing == incoming
-        || (existing == Kind.Pickup && incoming == Kind.Student)
-        || (existing == Kind.Student && incoming == Kind.Pickup);
+    /// <summary>Same kind only — never merge school↔pickup↔home↔depot↔waypoint.</summary>
+    public static bool CanMerge(Kind existing, Kind incoming) => existing == incoming;
 
-    public static bool SameSpot(double lat1, double lon1, double lat2, double lon2) =>
-        Math.Abs(lat1 - lat2) < 0.00005 && Math.Abs(lon1 - lon2) < 0.00005;
+    public static bool IsSchoolVisual(Kind kind) => kind == Kind.School;
 
-    public static bool ShouldReplaceLabel(string? existing, string? incoming)
+    public static bool ShouldReplaceLabel(string? existing, string? incoming, Kind current, Kind next)
     {
-        if (string.IsNullOrWhiteSpace(incoming))
-        {
-            return false;
-        }
-
-        var current = GetKind(existing);
-        var next = GetKind(incoming);
-        if (next == Kind.Pickup && current == Kind.Student)
-        {
-            return true;
-        }
-
-        if (current != next)
+        if (string.IsNullOrWhiteSpace(incoming) || current != next)
         {
             return false;
         }

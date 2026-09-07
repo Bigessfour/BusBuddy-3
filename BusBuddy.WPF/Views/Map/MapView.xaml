@@ -13,6 +13,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:local="clr-namespace:BusBuddy.WPF.Views.Map"
              xmlns:viewModels="clr-namespace:BusBuddy.WPF.ViewModels.Map"
+             xmlns:utils="clr-namespace:BusBuddy.WPF.Utilities"
              mc:Ignorable="d"
              d:DesignHeight="800" d:DesignWidth="1200"
              d:DataContext="{d:DesignInstance viewModels:MapViewModel}">
@@ -132,7 +133,7 @@
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
 
-            <!-- Control Panel — Commands bind to MapViewModel (CenterOnFleet, ShowAllBuses, ShowRoutes, ShowSchools) -->
+            <!-- Control Panel — Commands bind to MapViewModel (CenterOnFleet, ShowRoutes, ShowSchools) -->
     <Border Grid.Column="0"
             Background="{DynamicResource PrimaryBackgroundBrush}"
             BorderBrush="{DynamicResource BorderBrush}"
@@ -164,16 +165,12 @@
                               Margin="0,4"
                               HorizontalAlignment="Stretch"/>
 
-                <syncfusion:ButtonAdv Label="Show All Buses"
-                              AutomationProperties.Name="Show All Buses"
-                              ToolTip="Fleet GPS tracking is not enabled yet"
-                              Command="{Binding ShowAllBusesCommand}"
-                              IsEnabled="False"
-                              Background="{DynamicResource ButtonBackgroundBrush}"
-                              Foreground="{DynamicResource ButtonForegroundBrush}"
-                              Padding="10,8"
-                              Margin="0,4"
-                              HorizontalAlignment="Stretch"/>
+                <TextBlock Text="Fleet GPS tracking is not enabled yet"
+                           FontSize="12"
+                           Foreground="{DynamicResource BusBuddy.Brush.Text.Secondary}"
+                           TextWrapping="Wrap"
+                           Margin="0,8,0,4"
+                           AutomationProperties.Name="Fleet GPS status"/>
 
                 <TextBlock Text="Map Layers &amp; Overlays" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}" Margin="0,12,0,4"/>
 
@@ -255,71 +252,6 @@
                             </StackPanel>
                         </Border>
 
-                        <!-- Live Tracking — ButtonAdv toggle documented here: https://help.syncfusion.com/wpf/button/toggle-state -->
-            <Border Background="{DynamicResource PrimaryBackgroundBrush}"
-                BorderBrush="{DynamicResource BorderBrush}"
-                                BorderThickness="1"
-                                CornerRadius="8"
-                                Padding="16"
-                                Margin="0,0,0,16">
-                            <StackPanel>
-                                <TextBlock Text="Live Tracking"
-                                           FontSize="16"
-                                           FontWeight="SemiBold"
-                       Foreground="{DynamicResource PrimaryTextBrush}"
-                                           Margin="0,0,0,12"/>
-
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="Auto"/>
-                                    </Grid.ColumnDefinitions>
-
-                                    <TextBlock Grid.Column="0"
-                                               Text="Real-time Updates"
-                                               FontSize="14"
-                                               Foreground="{DynamicResource PrimaryTextBrush}"
-                                               VerticalAlignment="Center"/>
-
-                                    <!-- Use documented ButtonAdv toggle: https://help.syncfusion.com/wpf/button/toggle-state -->
-                                    <syncfusion:ButtonAdv Grid.Column="1"
-                                                          MinWidth="80"
-                                                          Height="28"
-                                                          HorizontalAlignment="Right"
-                                                          Background="{DynamicResource ButtonBackgroundBrush}"
-                                                          Foreground="{DynamicResource ButtonForegroundBrush}"
-                                                          IsCheckable="True"
-                                                          IsEnabled="False"
-                                                          IsChecked="{Binding IsLiveTrackingEnabled, Mode=TwoWay}"
-                                                          Label="Live"
-                                                          SizeMode="Normal"
-                                                          IconWidth="0"
-                                                          IconHeight="0"
-                                                          SmallIcon="{x:Null}"
-                                                          ToolTip="Fleet GPS tracking is not enabled yet"
-                                                          AutomationProperties.Name="Live tracking"/>
-                                </Grid>
-
-                                <!-- Theme standard Separator via SfSkinManager key -->
-                                <Separator Margin="0,8" Style="{DynamicResource WPFSeparatorStyle}"/>
-
-                                <TextBlock Text="Update Frequency"
-                                           FontSize="12"
-                                           Foreground="{DynamicResource PrimaryTextBrush}"
-                                           Margin="0,0,0,4"/>
-
-                                <syncfusion:ComboBoxAdv SelectedIndex="{Binding TrackingIntervalIndex, Mode=TwoWay}"
-                                                        IsEnabled="False"
-                                                        ToolTip="Fleet GPS tracking is not enabled yet"
-                                                        AutomationProperties.Name="Tracking update frequency">
-                                    <syncfusion:ComboBoxItemAdv Content="5 seconds"/>
-                                    <syncfusion:ComboBoxItemAdv Content="10 seconds"/>
-                                    <syncfusion:ComboBoxItemAdv Content="30 seconds"/>
-                                    <syncfusion:ComboBoxItemAdv Content="1 minute"/>
-                                </syncfusion:ComboBoxAdv>
-                            </StackPanel>
-                        </Border>
-
                         <!-- Bus List — SfDataGrid usage follows Getting Started: https://help.syncfusion.com/wpf/datagrid/getting-started -->
             <Border Background="{DynamicResource PrimaryBackgroundBrush}"
                 BorderBrush="{DynamicResource BorderBrush}"
@@ -356,17 +288,6 @@
                                                                    Width="80"/>
                                     </syncfusion:SfDataGrid.Columns>
                                 </syncfusion:SfDataGrid>
-
-                                <syncfusion:ButtonAdv Label="Track Selected"
-                                                      AutomationProperties.Name="Track Selected Bus"
-                                                      ToolTip="Fleet GPS tracking is not enabled yet"
-                                                      Command="{Binding TrackSelectedBusCommand}"
-                                                      IsEnabled="False"
-                                                      Background="{DynamicResource ButtonBackgroundBrush}"
-                                                      Foreground="{DynamicResource ButtonForegroundBrush}"
-                                                      Padding="10,8"
-                                                      Margin="0,8,0,0"
-                                                      HorizontalAlignment="Stretch"/>
                             </StackPanel>
                         </Border>
                     </StackPanel>
@@ -389,13 +310,54 @@
                             MinHeight="400">
                         <Grid>
                             <Grid.Resources>
-                                <!-- Simple marker template (pin image could be added later) -->
-                                <DataTemplate x:Key="StudentMarkerTemplate">
-                                    <StackPanel Orientation="Vertical" Margin="-8,-24,0,0">
-                                        <Ellipse Width="12" Height="12" Fill="{DynamicResource BusBuddy.Brush.Semantic.Error}" Stroke="{DynamicResource BusBuddy.Brush.Text.Primary}" StrokeThickness="1"/>
-                                        <TextBlock Text="{Binding Label}" FontSize="11" Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}" Background="{DynamicResource BusBuddy.Brush.Surface.Medium}" Padding="4,1" Margin="-12,2,0,0"/>
+                                <!-- Syncfusion MarkerTemplateSelector: school vs stop (docs MapLayer.MarkerTemplateSelector) -->
+                                <DataTemplate x:Key="SchoolMarkerTemplate">
+                                    <StackPanel Orientation="Vertical" Margin="-10,-28,0,0">
+                                        <Ellipse Width="16" Height="16"
+                                                 Fill="{DynamicResource BusBuddy.Brush.Primary}"
+                                                 Stroke="{DynamicResource BusBuddy.Brush.Text.OnPrimary}"
+                                                 StrokeThickness="2"/>
+                                        <TextBlock Text="{Binding Label}"
+                                                   FontSize="11"
+                                                   FontWeight="SemiBold"
+                                                   Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"
+                                                   Background="{DynamicResource BusBuddy.Brush.Surface.Medium}"
+                                                   Padding="4,1"
+                                                   Margin="-16,2,0,0"/>
                                     </StackPanel>
                                 </DataTemplate>
+                                <DataTemplate x:Key="StopMarkerTemplate">
+                                    <StackPanel Orientation="Vertical" Margin="-8,-24,0,0">
+                                        <Ellipse Width="12" Height="12"
+                                                 Fill="{DynamicResource BusBuddy.Brush.Semantic.Error}"
+                                                 Stroke="{DynamicResource BusBuddy.Brush.Text.Primary}"
+                                                 StrokeThickness="1"/>
+                                        <TextBlock Text="{Binding Label}"
+                                                   FontSize="11"
+                                                   Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"
+                                                   Background="{DynamicResource BusBuddy.Brush.Surface.Medium}"
+                                                   Padding="4,1"
+                                                   Margin="-12,2,0,0"/>
+                                    </StackPanel>
+                                </DataTemplate>
+                                <DataTemplate x:Key="HomeMarkerTemplate">
+                                    <StackPanel Orientation="Vertical" Margin="-6,-18,0,0">
+                                        <Ellipse Width="8" Height="8"
+                                                 Fill="{DynamicResource BusBuddy.Brush.Semantic.Error}"
+                                                 Stroke="{DynamicResource BusBuddy.Brush.Text.Primary}"
+                                                 StrokeThickness="1"/>
+                                        <TextBlock Text="{Binding Label}"
+                                                   FontSize="9"
+                                                   Foreground="{DynamicResource BusBuddy.Brush.Text.Primary}"
+                                                   Background="{DynamicResource BusBuddy.Brush.Surface.Medium}"
+                                                   Padding="3,1"
+                                                   Margin="-10,2,0,0"/>
+                                    </StackPanel>
+                                </DataTemplate>
+                                <utils:MapMarkerTemplateSelector x:Key="DistrictMarkerTemplateSelector"
+                                                                 SchoolTemplate="{StaticResource SchoolMarkerTemplate}"
+                                                                 HomeTemplate="{StaticResource HomeMarkerTemplate}"
+                                                                 StopTemplate="{StaticResource StopMarkerTemplate}"/>
                             </Grid.Resources>
                             <!-- SfMap — OSM layer declared in markup (same pattern as SchoolDestinationForm) -->
                             <maps:SfMap x:Name="GeoMap"
@@ -410,7 +372,10 @@
                                     <maps:ImageryLayer x:Name="DistrictImageryLayer"
                                                        LayerType="OSM"
                                                        Center="{Binding MapCenter, Mode=TwoWay}"
-                                                       Markers="{Binding MapMarkers}">
+                                                       Radius="{Binding MapFitRadiusKm}"
+                                                       DistanceType="KiloMeter"
+                                                       Markers="{Binding MapMarkers}"
+                                                       MarkerTemplateSelector="{StaticResource DistrictMarkerTemplateSelector}">
                                         <maps:ImageryLayer.SubShapeFileLayers>
                                             <maps:SubShapeFileLayer x:Name="RouteTrailLayer">
                                                 <maps:SubShapeFileLayer.MapElements>

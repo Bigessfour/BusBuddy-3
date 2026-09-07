@@ -89,6 +89,14 @@ gcloud auth login
 gcloud config set project busbuddy-507301
 ```
 
+Inspect enabled Maps APIs and API-key restrictions (metadata only, no key strings):
+
+```bash
+.github/scripts/gcloud-maps-status.sh
+```
+
+Cursor loads the official gcloud MCP from [`.cursor/mcp.json`](.cursor/mcp.json) (`gcloud` → `.github/scripts/run-gcloud-mcp.sh`). Reload MCP after clone. Live Address Validation / Places / Routes calls still use `GOOGLE_MAPS_API_KEY`, not `gcloud`.
+
 On app startup (Mac), Passwords entries load into env. Geo uses the database + OSM map. Google Maps Platform clients run when `GOOGLE_MAPS_API_KEY` is set (`X-Goog-User-Project` from `GCP_BILLING_PROJECT` / `GOOGLE_CLOUD_PROJECT` / `GoogleMaps:QuotaProject`, default `busbuddy-507301`). The app fail-opens without a key.
 
 Full reference: [Documentation/GCP-GEE-SECRETS-AND-AUTH.md](Documentation/GCP-GEE-SECRETS-AND-AUTH.md)

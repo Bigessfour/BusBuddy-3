@@ -32,6 +32,45 @@ public class StudentPlotLocationTests
     }
 
     [Test]
+    public void PinsFromStored_IncludesPickupAndHomeWhenBothExist()
+    {
+        var pickups = StudentPlotLocation.Index(
+        [
+            new PickupStop { PickupStopId = 7, Name = "Oak", Latitude = 38.16m, Longitude = -102.71m }
+        ]);
+        var student = new Student
+        {
+            PickupStopId = 7,
+            Latitude = 38.0m,
+            Longitude = -102.0m
+        };
+
+        var pins = StudentPlotLocation.PinsFromStored(student, pickups);
+
+        Assert.That(pins, Has.Count.EqualTo(2));
+        Assert.That(pins[0].AtPickup, Is.True);
+        Assert.That(pins[1].AtPickup, Is.False);
+        Assert.That(pins[1].Latitude, Is.EqualTo(38.0).Within(0.0001));
+    }
+
+    [Test]
+    public void PinsFromStored_SkipsDuplicateHomeWhenSameAsPickup()
+    {
+        var pickups = StudentPlotLocation.Index(
+        [
+            new PickupStop { PickupStopId = 7, Name = "Oak", Latitude = 38.16m, Longitude = -102.71m }
+        ]);
+        var student = new Student
+        {
+            PickupStopId = 7,
+            Latitude = 38.16m,
+            Longitude = -102.71m
+        };
+
+        Assert.That(StudentPlotLocation.PinsFromStored(student, pickups), Has.Count.EqualTo(1));
+    }
+
+    [Test]
     public void TryFromStored_UsesHomeWhenNoPickup()
     {
         var student = new Student { Latitude = 38.14m, Longitude = -102.73m };
@@ -62,5 +101,69 @@ public class StudentPlotLocationTests
 
         Assert.That(indexed[3].Name, Is.EqualTo("Elm"));
         Assert.That(StudentPlotLocation.Index(null), Is.Empty);
+    }
+
+    [Test]
+    public void PinsFromStored_PickupWithoutCoords_PlotsHomeOnly()
+    {
+        var pickups = StudentPlotLocation.Index(
+        [
+            new PickupStop { PickupStopId = 7, Name = "Oak", Latitude = 0m, Longitude = 0m }
+        ]);
+        var student = new Student
+        {
+            PickupStopId = 7,
+            Latitude = 38.14m,
+            Longitude = -102.73m
+        };
+
+        var pins = StudentPlotLocation.PinsFromStored(student, pickups);
+
+        Assert.That(pins, Has.Count.EqualTo(1));
+        Assert.That(pins[0].AtPickup, Is.False);
+        Assert.That(pins[0].Latitude, Is.EqualTo(38.14).Within(0.0001));
+    }
+
+    [Test]
+    public void PinsFromStored_PickupWithoutCoordsAndNoHome_IsEmpty()
+    {
+        var pickups = StudentPlotLocation.Index(
+        [
+            new PickupStop { PickupStopId = 7, Name = "Oak" }
+        ]);
+        var student = new Student { PickupStopId = 7, HomeAddress = "1 Main" };
+
+        Assert.That(StudentPlotLocation.PinsFromStored(student, pickups), Is.Empty);
+    }
+
+    [Test]
+    public void PinsFromStored_UsesNavigationPickupWhenCatalogMissing()
+    {
+        var student = new Student
+        {
+            PickupStopId = 7,
+            PickupStop = new PickupStop
+            {
+                PickupStopId = 7,
+                Name = "Oak",
+                Latitude = 38.16m,
+                Longitude = -102.71m
+            }
+        };
+
+        var pins = StudentPlotLocation.PinsFromStored(student, new Dictionary<int, PickupStop>());
+
+        Assert.That(pins, Has.Count.EqualTo(1));
+        Assert.That(pins[0].AtPickup, Is.True);
+        Assert.That(pins[0].PickupName, Is.EqualTo("Oak"));
+    }
+
+    [Test]
+    public void PickupStop_HasGpsCoordinates_RejectsUnsetOrigin()
+    {
+        Assert.That(new PickupStop().HasGpsCoordinates, Is.False);
+        Assert.That(
+            new PickupStop { Latitude = 38.16m, Longitude = -102.71m }.HasGpsCoordinates,
+            Is.True);
     }
 }
