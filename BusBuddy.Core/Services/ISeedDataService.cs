@@ -16,11 +16,32 @@ namespace BusBuddy.Core.Services
         Task SeedStudentsFromCsvAsync();
 
         /// <summary>
-        /// Import students from a user-selected CSV (Fname, Lname, Grade, Address header).
+        /// Import students from a user-selected CSV. Two header shapes are accepted:
+        /// <list type="bullet">
+        /// <item>Roster format — one header row of named columns including <c>StudentName</c>; carries the
+        /// assigned campus, AM/PM route, and special-needs / aide flags. See
+        /// <c>Documentation/STUDENT-ROSTER-INTAKE.md</c>.</item>
+        /// <item>Legacy family-export format — group row, then a header row with
+        /// <c>Fname, Lname, Grade, Address</c>.</item>
+        /// </list>
         /// Returns the number of students added (existing names are skipped).
-        /// Throws <see cref="InvalidOperationException"/> when the header is not the expected format.
+        /// Latitude/longitude are never read from CSV; coordinates come from Address Validation.
+        /// Throws <see cref="InvalidOperationException"/> when the header matches neither format.
         /// </summary>
         Task<int> ImportStudentsFromCsvAsync(string csvPath);
+
+        /// <summary>
+        /// Repairs student-to-route linkage so every assigned <c>AMRoute</c>/<c>PMRoute</c> resolves:
+        /// route names that differ from an existing route only by word order are rewritten to the
+        /// existing spelling, and any name with no route row at all gets one created.
+        /// <para>
+        /// Needed because <c>StudentService.ValidateStudentAsync</c> matches <c>Routes.RouteName</c>
+        /// exactly, so a student assigned to a route that does not exist cannot be saved — or even
+        /// edited — from the form.
+        /// </para>
+        /// </summary>
+        /// <returns>The number of route rows created.</returns>
+        Task<int> EnsureRoutesForStudentAssignmentsAsync();
 
         /// <summary>
         /// Seed sample drivers for development/testing

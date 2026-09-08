@@ -45,6 +45,18 @@ Desktop WPF cannot use Android/iOS/HTTP-referrer restrictions. For a single dist
 2. Prefer **IP address** restriction for that clerk workstation (or a small outbound proxy), not an unrestricted key on a shared machine.
 3. Never put the key in `appsettings` or commit it. Prefer Passwords (macOS) / machine env (Windows).
 
+Every Google call sends the key in the `X-Goog-Api-Key` header (never in the URL) — the endpoints below are the ones that document header auth:
+
+| Client                            | Endpoint                                                                                                          |
+| --------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `GoogleAddressValidationClient`   | `POST addressvalidation.googleapis.com/v1:validateAddress`                                                        |
+| Geocoding fallback (same client)  | `GET geocode.googleapis.com/v4/geocode/address/{address}?regionCode=` + `X-Goog-FieldMask`                        |
+| `GooglePlacesAutocompleteService` | `POST places.googleapis.com/v1/places:autocomplete`                                                               |
+| `GoogleRoutingService`            | `POST routes.googleapis.com/directions/v2:computeRoutes` + `X-Goog-FieldMask`                                     |
+| `GoogleMapTileSessionService`     | `POST tile.googleapis.com/v1/createSession`; `GET …/v1/2dtiles/{z}/{x}/{y}`; `GET …/tile/v1/viewport` (copyright) |
+
+The Map Tiles session token is scoped to the session and tiles are not written to the local tile cache; the `viewport` copyright string is displayed in the District Map attribution as the Map Tiles API Policies require.
+
 ## Windows production / VM
 
 Set `GOOGLE_MAPS_API_KEY` and `GCP_BILLING_PROJECT=busbuddy-507301` as machine/user env vars — no Keychain.
@@ -57,7 +69,7 @@ Set `GOOGLE_MAPS_API_KEY` and `GCP_BILLING_PROJECT=busbuddy-507301` as machine/u
 | `MapsGeoService`                  | `IMapsGeoService` + `IGeocodingService` (cached validate/geocode) |
 | `GooglePlacesAutocompleteService` | `IPlacesAutocompleteService` (no-op without key)                  |
 | `GoogleRoutingService`            | `IRoutingService` (drive path + route matrix; fail-open)          |
-| `GoogleMapTileSessionService`     | `IGoogleMapTileSessionService` (Map Tiles createSession)           |
+| `GoogleMapTileSessionService`     | `IGoogleMapTileSessionService` (Map Tiles createSession)          |
 
 ## gcloud CLI + MCP (project metadata)
 

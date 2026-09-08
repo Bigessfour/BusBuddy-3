@@ -42,6 +42,24 @@ public class StudentSpecialNeedsHelperTests
             Is.False);
     }
 
+    /// <summary>
+    /// The district's canonical Bus 5 route name, as spelled in the clerk's database. Both
+    /// name-based matchers have to recognise it, or a special-needs run is treated as an ordinary
+    /// route and the AM/PM session is mislabelled.
+    /// </summary>
+    [Test]
+    [TestCase("AM Special Needs Bus 5")]
+    [TestCase("AM Bus 5 Special Needs")]
+    public void CanonicalSpecialNeedsRouteName_IsRecognisedByBothMatchers(string routeName)
+    {
+        Assert.That(
+            StudentSpecialNeedsHelper.IsSpecialNeedsRoute(routeName, isSpecialNeedsRoute: false),
+            Is.True);
+        Assert.That(
+            RouteSession.Infer(routeName, isSpecialNeedsRoute: false, description: null),
+            Is.EqualTo(RouteSession.SpecialNeeds));
+    }
+
     [Test]
     public void SyncLegacySpecialNeedsText_SetsAndClearsSentinel()
     {

@@ -35,6 +35,12 @@ IGNORE_DIRS = {
     "experiments", "Powershell", "Scripts/legacy", ".agents/skills"
 }
 
+# Whole path segments that must never enter the vector store. This indexer does not read
+# .gitignore, so gitignored-but-local directories are otherwise indexed: `keys/` holds secrets and
+# real student rosters, `artifacts/` holds database dumps of live student rows. specs/students.md
+# forbids student PII leaving the clerk's machine, and a queryable RAG store is not local-only.
+IGNORE_PATH_SEGMENTS = {"keys", "artifacts"}
+
 # File extensions worth indexing for project context
 INDEX_EXTENSIONS = {
     ".cs", ".xaml", ".md", ".py", ".json", ".yml", ".yaml", ".txt",
@@ -62,11 +68,14 @@ def is_always_include(rel_posix: str, basename: str) -> bool:
     return False
 
 def should_ignore(path: str) -> bool:
-    path_lower = path.lower()
+    path_lower = path.replace(os.sep, "/").lower()
     for ign in IGNORE_DIRS:
         if ign.lower() in path_lower:
             return True
-    return False
+
+    # Segment match, not substring, so "monkeys.md" or "artifacts-notes.md" are still indexed.
+    padded = f"/{path_lower.strip('/')}/"
+    return any(f"/{segment}/" in padded for segment in IGNORE_PATH_SEGMENTS)
 
 def get_language(ext: str) -> str:
     mapping = {

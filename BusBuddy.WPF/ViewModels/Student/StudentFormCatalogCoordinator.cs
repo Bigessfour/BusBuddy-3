@@ -1,7 +1,10 @@
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
 using System.Windows;
 using BusBuddy.Core.Data;
 using BusBuddy.Core.Models;
 using BusBuddy.Core.Services.Interfaces;
+using BusBuddy.WPF.Utilities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Serilog;
@@ -9,9 +12,11 @@ using Serilog;
 namespace BusBuddy.WPF.ViewModels.Student;
 
 /// <summary>
-/// Loads route, pickup-stop, and school catalogs for the student form.
+/// Loads the route, pickup-stop, and school catalogs for the student form, and owns which pickup
+/// stop the student boards at. specs/students.md keeps <c>PickupMode</c> derived: there is no mode
+/// field here, only a catalog stop or the absence of one, which means home pickup.
 /// </summary>
-public sealed class StudentFormCatalogCoordinator
+public sealed class StudentFormCatalogCoordinator : INotifyPropertyChanged
 {
     private static readonly ILogger Logger = Log.ForContext<StudentFormCatalogCoordinator>();
 
@@ -21,8 +26,11 @@ public sealed class StudentFormCatalogCoordinator
     private readonly System.Collections.ObjectModel.ObservableCollection<string> _availableRoutes;
     private readonly System.Collections.ObjectModel.ObservableCollection<PickupStop> _availablePickupStops;
     private readonly System.Collections.ObjectModel.ObservableCollection<Destination> _availableSchools;
-    private readonly Action<PickupStop?> _syncSelectedPickupStop;
     private readonly Action<Destination?> _syncSelectedSchool;
+
+    private PickupStop? _selectedPickupStop;
+    private string _pickupStopHint =
+        "Assign a catalog stop near the home address, or use home as stop (rural).";
 
     public StudentFormCatalogCoordinator(
         BusBuddyDbContext context,
@@ -31,7 +39,6 @@ public sealed class StudentFormCatalogCoordinator
         System.Collections.ObjectModel.ObservableCollection<string> availableRoutes,
         System.Collections.ObjectModel.ObservableCollection<PickupStop> availablePickupStops,
         System.Collections.ObjectModel.ObservableCollection<Destination> availableSchools,
-        Action<PickupStop?> syncSelectedPickupStop,
         Action<Destination?> syncSelectedSchool)
     {
         _context = context;
@@ -40,8 +47,85 @@ public sealed class StudentFormCatalogCoordinator
         _availableRoutes = availableRoutes;
         _availablePickupStops = availablePickupStops;
         _availableSchools = availableSchools;
-        _syncSelectedPickupStop = syncSelectedPickupStop;
         _syncSelectedSchool = syncSelectedSchool;
+    }
+
+    public event PropertyChangedEventHandler? PropertyChanged;
+
+    /// <summary>The catalog stop this student boards at. Null means the bus comes to the home.</summary>
+    public PickupStop? SelectedPickupStop
+    {
+        get => _selectedPickupStop;
+        set
+        {
+            if (!SetProperty(ref _selectedPickupStop, value))
+            {
+                return;
+            }
+
+            _student.PickupStopId = value?.PickupStopId;
+            if (value is not null)
+            {
+                _student.BusStop = value.Name;
+            }
+
+            OnPropertyChanged(nameof(UsesHomeAsPickupStop));
+            PickupStopHint = value is null
+                ? "No catalog stop selected — home address will be used when generating routes."
+                : $"Boarding at {value.Name}.";
+        }
+    }
+
+    /// <summary>Derived, never stored: no catalog stop means home pickup.</summary>
+    public bool UsesHomeAsPickupStop => !_student.PickupStopId.HasValue;
+
+    public string PickupStopHint
+    {
+        get => _pickupStopHint;
+        private set => SetProperty(ref _pickupStopHint, value);
+    }
+
+    /// <summary>
+    /// Offers the nearest catalog stop within the district's walk radius. Requires validated
+    /// coordinates: an unvalidated address has no position to measure from.
+    /// </summary>
+    public async Task SuggestNearestPickupStopAsync()
+    {
+        if (_student.Latitude is not decimal lat || _student.Longitude is not decimal lon)
+        {
+            PickupStopHint = "Validate the home address first to suggest a nearby catalog stop.";
+            return;
+        }
+
+        var stopService = App.ServiceProvider?.GetService<IPickupStopService>();
+        if (stopService is null)
+        {
+            PickupStopHint = "Pickup stop service is not available.";
+            return;
+        }
+
+        var maxMeters = DistrictCameraUi.CurrentSettings()?.StopSuggestMaxMeters ?? 400;
+        var nearest = await stopService
+            .FindNearestAsync((double)lat, (double)lon, maxMeters)
+            .ConfigureAwait(true);
+        if (nearest is null)
+        {
+            PickupStopHint = $"No catalog stop within {maxMeters:F0} m — use home as stop or add a pickup stop.";
+            return;
+        }
+
+        SelectedPickupStop = nearest;
+        PickupStopHint = $"Suggested {nearest.Name} (within {maxMeters:F0} m of home).";
+    }
+
+    /// <summary>Rural / driveway pickup: clear the catalog stop so routing uses the home address.</summary>
+    public void UseHomeAsPickupStop()
+    {
+        SelectedPickupStop = null;
+        _student.PickupStopId = null;
+        _student.BusStop = "Home address";
+        PickupStopHint = "Using home address as pickup stop (rural / driveway).";
+        OnPropertyChanged(nameof(UsesHomeAsPickupStop));
     }
 
     public async Task LoadAllAsync()
@@ -50,14 +134,6 @@ public sealed class StudentFormCatalogCoordinator
         {
             Logger.Information("Loading form data");
 
-            var defaultRoutes = new[]
-            {
-                ("Route A", false),
-                ("Route B", false),
-                ("Route C", false),
-                ("Route D", false),
-                ("Special Needs Route", true),
-            };
             var dbRoutes = new List<(string Name, bool IsSpecialNeeds)>();
             try
             {
@@ -98,14 +174,9 @@ public sealed class StudentFormCatalogCoordinator
 
                 if (dbRoutes.Count == 0)
                 {
-                    Logger.Warning("No routes in database — using placeholder route names for empty catalog");
-                    foreach (var (name, isSpecial) in defaultRoutes)
-                    {
-                        if (routeNameSet.Add(name))
-                        {
-                            _routeCatalog.Add((name, isSpecial));
-                        }
-                    }
+                    // No placeholders: AMRoute/PMRoute are validated against the Routes table on save,
+                    // so a made-up name would either be rejected or persist a route that does not exist.
+                    Logger.Warning("No active routes in database — route pickers will be empty until routes are created");
                 }
 
                 RefreshAvailableRoutes();
@@ -206,7 +277,7 @@ public sealed class StudentFormCatalogCoordinator
 
                 if (_student.PickupStopId is int stopId)
                 {
-                    _syncSelectedPickupStop(_availablePickupStops.FirstOrDefault(s => s.PickupStopId == stopId));
+                    SelectedPickupStop = _availablePickupStops.FirstOrDefault(s => s.PickupStopId == stopId);
                 }
             }).ConfigureAwait(true);
         }
@@ -271,4 +342,19 @@ public sealed class StudentFormCatalogCoordinator
 
         return dispatcher.InvokeAsync(action).Task;
     }
+
+    private bool SetProperty<T>(ref T field, T value, [CallerMemberName] string? propertyName = null)
+    {
+        if (Equals(field, value))
+        {
+            return false;
+        }
+
+        field = value;
+        OnPropertyChanged(propertyName);
+        return true;
+    }
+
+    private void OnPropertyChanged([CallerMemberName] string? propertyName = null) =>
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
 }

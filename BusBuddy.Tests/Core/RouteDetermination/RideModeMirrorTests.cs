@@ -10,7 +10,7 @@ public class RideModeMirrorTests
     [Test]
     public void AmOnly_RetainsStopOnPmMirror()
     {
-        var mode = StudentRideModeHelper.FromRouteNames("Draft-School-R0C0-1", null);
+        var mode = StudentRideModeHelper.FromFlags(ridesAm: true, ridesPm: false);
         Assert.That(mode, Is.EqualTo(StudentRideMode.AM));
         Assert.That(StudentRideModeHelper.RetainStopOnPmMirror(mode), Is.True);
         Assert.That(StudentRideModeHelper.RetainStopOnAmMirror(mode), Is.False);
@@ -19,7 +19,7 @@ public class RideModeMirrorTests
     [Test]
     public void PmOnly_RetainsStopOnAmMirror()
     {
-        var mode = StudentRideModeHelper.FromRouteNames(null, "Draft-School-R0C0-1-PM");
+        var mode = StudentRideModeHelper.FromFlags(ridesAm: false, ridesPm: true);
         Assert.That(mode, Is.EqualTo(StudentRideMode.PM));
         Assert.That(StudentRideModeHelper.RetainStopOnAmMirror(mode), Is.True);
     }
@@ -27,7 +27,7 @@ public class RideModeMirrorTests
     [Test]
     public void Both_RetainsOnBothMirrors()
     {
-        var mode = StudentRideModeHelper.FromRouteNames("AM-1", "PM-1");
+        var mode = StudentRideModeHelper.FromFlags(ridesAm: true, ridesPm: true);
         Assert.That(mode, Is.EqualTo(StudentRideMode.Both));
         Assert.That(StudentRideModeHelper.RetainStopOnPmMirror(mode), Is.True);
         Assert.That(StudentRideModeHelper.RetainStopOnAmMirror(mode), Is.True);

@@ -23,23 +23,25 @@ Before architectural, auth, CI, or cross-cutting changes:
 **High-value RAG queries:**
 
 - `"Google Maps Platform GOOGLE_MAPS_API_KEY Address Validation Routes"`
-- `"solo developer CI/CD auto-merge Build and Test CodeQL"`
+- `"solo developer CI/CD auto-merge Build and Test"`
 - `"Postgres BUSBUDDY_CONNECTION docker-compose profiles"`
 - `"BusBuddy-3 architecture diagram services CI Docker"`
 - `"BusBuddy constitution Spec-Kit hybrid Mac Windows Ollama"`
 
 ## CI/CD quick reference
 
-| Step                    | Action                                                     |
-| ----------------------- | ---------------------------------------------------------- |
-| Branch                  | `feature/<short-description>` from `master`                |
-| Open PR                 | Target `master`; auto-merge enables automatically          |
-| Merge gates             | `Build & Test`, `Security (CodeQL)` must pass              |
-| Merge                   | Squash auto-merge when gates pass (no reviewer required)   |
-| Direct push to `master` | Blocked by branch rules — use PRs                          |
-| Optional                | Run **Docker CI simulation** workflow manually             |
-| Release                 | Push to `master` publishes WPF artifact (non-blocking job) |
-| Local pre-push          | `.github/scripts/validate-ci-local.sh`                     |
+| Step                    | Action                                                      |
+| ----------------------- | ----------------------------------------------------------- |
+| Branch                  | `feature/<short-description>` from `master`                 |
+| Open PR                 | Target `master`; auto-merge enables automatically           |
+| Merge gates             | `Build & Test` must pass (repo is private — see note below) |
+| Merge                   | Squash auto-merge when gates pass (no reviewer required)    |
+| Direct push to `master` | Blocked by branch rules — use PRs                           |
+| Optional                | Run **Docker CI simulation** workflow manually              |
+| Release                 | Push to `master` publishes WPF artifact (non-blocking job)  |
+| Local pre-push          | `.github/scripts/validate-ci-local.sh`                      |
+
+**No CodeQL gate.** This repo is private, and GitHub code scanning on private repositories requires a paid GitHub Code Security license (available on Team/Enterprise only — not Free or Pro). `codeql-action/analyze` cannot upload its SARIF without one, so a `Security (CodeQL)` check would fail permanently and block every PR. The job was removed from `ci.yml` and from the required checks in the `Master solo-dev gates` ruleset. Do not re-add it while the repo is private.
 
 ## Secrets & authentication
 
@@ -108,7 +110,7 @@ Durable rules: [.specify/memory/constitution.md](.specify/memory/constitution.md
 | ---------- | -------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------- |
 | Mac        | Core, Docker Postgres, RAG/MCP, Passwords secrets; `EnableWindowsTargeting` is in `Directory.Build.props` (CLI `-p:` still fine) | Claim WPF runs natively on macOS                  |
 | Windows VM | Full Syncfusion WPF; shared folder; env / shared `keys/`                                                                         | Assume macOS Passwords/Keychain                   |
-| Either     | Local Ollama for app AI; PR → Build & Test + CodeQL                                                                              | Invent AWS/cloud app hosting for BusBuddy runtime |
+| Either     | Local Ollama for app AI; PR → Build & Test                                                                                       | Invent AWS/cloud app hosting for BusBuddy runtime |
 
 Launchers: `./run-wpf.sh` (Mac → UTM), `.\utm_run_in_vm.ps1` (inside VM). Postgres from VM uses Mac host IP (`run-wpf.sh` / `ipconfig getifaddr en0`).
 

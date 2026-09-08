@@ -147,4 +147,15 @@ public class StudentFormViewModelSaveTests
         Assert.That(xaml, Does.Contain("ItemsSource=\"{Binding AddressSuggestions}\""));
         Assert.That(xaml, Does.Contain("IsOpen=\"{Binding IsAddressSuggestionPopupOpen, Mode=OneWay}\""));
     }
+
+    [Test]
+    public void StudentFormXaml_PickupComboAndActionButtonsFollowSyncfusionIconAndDisplayRules()
+    {
+        var xaml = XamlViewFile.Read("Views/Student/StudentForm.xaml");
+        Assert.That(xaml, Does.Contain("Property=\"LargeIcon\" Value=\"{x:Null}\""));
+        Assert.That(xaml, Does.Contain("DisplayMemberPath=\"Name\""));
+        Assert.That(xaml, Does.Not.Contain("SelectedValuePath"));
+        Assert.That(xaml, Does.Contain("Name=\"PickupStopComboBox\""));
+        Assert.That(xaml, Does.Contain("Style=\"{StaticResource StudentFormActionButtonStyle}\""));
+    }
 }

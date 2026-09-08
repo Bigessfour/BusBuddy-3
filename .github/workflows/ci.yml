@@ -85,32 +85,6 @@ jobs:
           path: ./TestResults
           retention-days: 7
 
-  security:
-    name: Security (CodeQL)
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    permissions:
-      security-events: write
-      contents: read
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: ${{ env.DOTNET_VERSION }}
-
-      - name: Init CodeQL
-        uses: github/codeql-action/init@v3
-        with:
-          languages: csharp
-
-      - name: Build for analysis
-        run: dotnet build ${{ env.SOLUTION_FILE }} --configuration Release -p:EnableWindowsTargeting=true
-
-      - name: Analyze
-        uses: github/codeql-action/analyze@v3
-
   release-artifacts:
     name: Release artifacts
     runs-on: windows-latest

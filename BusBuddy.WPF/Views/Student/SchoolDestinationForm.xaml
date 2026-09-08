@@ -40,7 +40,7 @@
                 CornerRadius="5"
                 Padding="12,10"
                 Margin="0,0,0,12">
-            <TextBlock Text="Add school (required before Generate Routes)"
+            <TextBlock Text="{Binding Headline}"
                        FontSize="16"
                        FontWeight="Bold"
                        Foreground="{DynamicResource BusBuddy.Brush.Text.OnPrimary}"
@@ -61,6 +61,7 @@
                                              AutoCompleteMode="None"
                                              ShowClearButton="True"
                                              Height="40" Margin="0,0,0,10"
+                                             IsEnabled="{Binding CanEditSchoolDetails}"
                                              AutomationProperties.Name="School name"/>
 
                     <TextBlock Text="Street address *" Margin="0,0,0,4"/>
@@ -70,6 +71,7 @@
                                                  ShowClearButton="True"
                                                  Watermark="1105 Parkview Ave"
                                                  Height="40"
+                                                 IsEnabled="{Binding CanEditSchoolDetails}"
                                                  TextChanged="SchoolAddressBox_TextChanged"
                                                  AutomationProperties.Name="School street address"/>
                         <Popup x:Name="SchoolAddressSuggestionsPopup"
@@ -101,6 +103,7 @@
                                              AutoCompleteMode="None"
                                              ShowClearButton="True"
                                              Height="40" Margin="0,0,0,10"
+                                             IsEnabled="{Binding CanEditSchoolDetails}"
                                              AutomationProperties.Name="School city"/>
 
                     <Grid Margin="0,0,0,10">
@@ -114,6 +117,7 @@
                             <syncfusion:SfTextBoxExt x:Name="SchoolStateBox"
                                                      AutoCompleteMode="None"
                                                      Height="40"
+                                                     IsEnabled="{Binding CanEditSchoolDetails}"
                                                      AutomationProperties.Name="School state"/>
                         </StackPanel>
                         <StackPanel Grid.Column="2">
@@ -121,6 +125,7 @@
                             <syncfusion:SfTextBoxExt x:Name="SchoolZipBox"
                                                      AutoCompleteMode="None"
                                                      Height="40"
+                                                     IsEnabled="{Binding CanEditSchoolDetails}"
                                                      AutomationProperties.Name="School ZIP"/>
                         </StackPanel>
                     </Grid>
@@ -165,6 +170,7 @@
                                                   MinValue="-90"
                                                   MaxValue="90"
                                                   Height="40"
+                                                  IsEnabled="{Binding CanEditSchoolDetails}"
                                                   AutomationProperties.Name="School latitude"/>
                         <syncfusion:DoubleTextBox x:Name="SchoolLonBox"
                                                   Grid.Column="2"
@@ -172,12 +178,14 @@
                                                   MinValue="-180"
                                                   MaxValue="180"
                                                   Height="40"
+                                                  IsEnabled="{Binding CanEditSchoolDetails}"
                                                   AutomationProperties.Name="School longitude"/>
                     </Grid>
                     <syncfusion:ButtonAdv Label="Clear map pin"
                                           Command="{Binding ClearMapPickCommand}"
                                           SizeMode="Normal" IconWidth="0" IconHeight="0" SmallIcon="{x:Null}"
                                           HorizontalAlignment="Left"
+                                          IsEnabled="{Binding CanEditSchoolDetails}"
                                           AutomationProperties.Name="Clear school map pin"/>
                 </StackPanel>
             </ScrollViewer>
@@ -223,7 +231,7 @@
                                   Margin="0,0,10,0"
                                   AutomationProperties.Name="Cancel add school"/>
             <syncfusion:ButtonAdv x:Name="SaveSchoolButton"
-                                  Label="Save school"
+                                  Label="{Binding SaveButtonLabel}"
                                   Click="SaveSchoolButton_Click"
                                   SizeMode="Normal" IconWidth="0" IconHeight="0" SmallIcon="{x:Null}"
                                   IsDefault="True"

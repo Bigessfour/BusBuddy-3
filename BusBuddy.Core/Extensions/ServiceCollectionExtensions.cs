@@ -66,7 +66,6 @@ namespace BusBuddy.Core.Extensions
             services.AddScoped<IBusRepository, BusBuddy.Core.Data.Repositories.BusRepository>();
             services.AddScoped<IDriverRepository, BusBuddy.Core.Data.Repositories.DriverRepository>();
             services.AddScoped<IRouteRepository, BusBuddy.Core.Data.Repositories.RouteRepository>();
-            services.AddScoped<IStudentRepository, BusBuddy.Core.Data.Repositories.StudentRepository>();
             services.AddScoped<IFuelRepository, BusBuddy.Core.Data.Repositories.FuelRepository>();
             services.AddScoped<IMaintenanceRepository, BusBuddy.Core.Data.Repositories.MaintenanceRepository>();
             services.AddScoped<IScheduleRepository, BusBuddy.Core.Data.Repositories.ScheduleRepository>();

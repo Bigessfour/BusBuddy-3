@@ -63,6 +63,98 @@ public sealed class GoogleMapTileSessionService : IGoogleMapTileSessionService, 
         return created;
     }
 
+    /// <inheritdoc />
+    public async Task<string?> GetViewportCopyrightAsync(
+        string mapType,
+        int zoom,
+        MapViewportBounds bounds,
+        CancellationToken cancellationToken = default)
+    {
+        var key = GoogleAddressValidationClient.ResolveApiKey(_options);
+        if (string.IsNullOrWhiteSpace(key))
+        {
+            return null;
+        }
+
+        var session = await GetSessionAsync(mapType, cancellationToken).ConfigureAwait(false);
+        if (session is null)
+        {
+            return null;
+        }
+
+        try
+        {
+            using var request = new HttpRequestMessage(HttpMethod.Get, BuildViewportUri(session.SessionToken, key, zoom, bounds));
+            request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+            using var response = await _httpClient.SendAsync(request, cancellationToken).ConfigureAwait(false);
+            if (!response.IsSuccessStatusCode)
+            {
+                Logger.Debug("Map Tiles viewport HTTP {Status}", (int)response.StatusCode);
+                return null;
+            }
+
+            var json = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+            return ParseViewportCopyright(json);
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            Logger.Debug(ex, "Map Tiles viewport request failed");
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// <c>GET https://tile.googleapis.com/tile/v1/viewport?session=...&amp;key=...&amp;zoom=...&amp;north=...&amp;south=...&amp;east=...&amp;west=...</c>
+    /// (2D Tiles "Viewport information requests").
+    /// </summary>
+    internal static Uri BuildViewportUri(string sessionToken, string apiKey, int zoom, MapViewportBounds bounds)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(sessionToken);
+        ArgumentException.ThrowIfNullOrWhiteSpace(apiKey);
+        var inv = System.Globalization.CultureInfo.InvariantCulture;
+        var z = MapDefaults.ClampZoom(zoom).ToString(inv);
+        return new Uri(
+            "https://tile.googleapis.com/tile/v1/viewport"
+            + "?session=" + Uri.EscapeDataString(sessionToken)
+            + "&key=" + Uri.EscapeDataString(apiKey)
+            + "&zoom=" + z
+            + "&north=" + Math.Clamp(bounds.North, -90, 90).ToString(inv)
+            + "&south=" + Math.Clamp(bounds.South, -90, 90).ToString(inv)
+            + "&east=" + Math.Clamp(bounds.East, -180, 180).ToString(inv)
+            + "&west=" + Math.Clamp(bounds.West, -180, 180).ToString(inv));
+    }
+
+    /// <summary>Viewport response body is <c>{"copyright": "Map data ©2026 Google", "maxZoomRects": [...]}</c>.</summary>
+    internal static string? ParseViewportCopyright(string? json)
+    {
+        if (string.IsNullOrWhiteSpace(json))
+        {
+            return null;
+        }
+
+        try
+        {
+            using var doc = JsonDocument.Parse(json);
+            if (doc.RootElement.ValueKind == JsonValueKind.Object
+                && doc.RootElement.TryGetProperty("copyright", out var copyrightEl)
+                && copyrightEl.ValueKind == JsonValueKind.String)
+            {
+                var text = copyrightEl.GetString();
+                return string.IsNullOrWhiteSpace(text) ? null : text.Trim();
+            }
+        }
+        catch (JsonException)
+        {
+            // Fall through: attribution simply stays on the static Google label.
+        }
+
+        return null;
+    }
+
     internal static string NormalizeMapType(string? mapType) =>
         string.Equals(mapType, MapBasemap.MapTypeSatellite, StringComparison.OrdinalIgnoreCase)
             ? MapBasemap.MapTypeSatellite

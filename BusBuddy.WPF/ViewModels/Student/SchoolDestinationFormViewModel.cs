@@ -6,8 +6,10 @@ using System.Windows;
 using System.Windows.Input;
 using BusBuddy.Core.Data;
 using BusBuddy.Core.Mapping;
+using BusBuddy.Core.Models;
 using BusBuddy.Core.Services.GoogleMaps;
 using BusBuddy.Core.Services.Interfaces;
+using BusBuddy.Core.Services.RouteDetermination;
 using BusBuddy.Core.Utilities;
 using BusBuddy.WPF.Utilities;
 using BusBuddy.WPF.ViewModels;
@@ -28,6 +30,7 @@ public sealed class SchoolDestinationFormViewModel : BaseViewModel, IDisposable
     private readonly IDestinationService _destinations;
     private readonly BusBuddyDbContext? _context;
     private readonly PlacesAddressAutocompleteCoordinator _addressAutocomplete;
+    private readonly Destination? _editingSchool;
 
     private string _name = string.Empty;
     private string _address = string.Empty;
@@ -45,8 +48,24 @@ public sealed class SchoolDestinationFormViewModel : BaseViewModel, IDisposable
     public event EventHandler<bool?>? RequestClose;
 
     public SchoolDestinationFormViewModel(IDestinationService destinations)
+        : this(destinations, editingSchool: null)
+    {
+    }
+
+    /// <summary>
+    /// Opens the form on an existing campus so a clerk can correct its bell times. Only the times are
+    /// writable: <see cref="IDestinationService"/> exposes <c>UpdateSchoolTimesAsync</c> and no general
+    /// campus update, so name, address, and GPS stay read-only rather than silently discarding edits.
+    /// </summary>
+    public static SchoolDestinationFormViewModel ForSchoolTimes(
+        IDestinationService destinations,
+        Destination school) =>
+        new(destinations, school ?? throw new ArgumentNullException(nameof(school)));
+
+    private SchoolDestinationFormViewModel(IDestinationService destinations, Destination? editingSchool)
     {
         _destinations = destinations ?? throw new ArgumentNullException(nameof(destinations));
+        _editingSchool = editingSchool;
         _context = TryCreateDbContextViaDi();
         var places = App.ServiceProvider?.GetService<IPlacesAutocompleteService>();
         _addressAutocomplete = new PlacesAddressAutocompleteCoordinator(places);
@@ -77,9 +96,32 @@ public sealed class SchoolDestinationFormViewModel : BaseViewModel, IDisposable
         {
             _state = district!.DepotState!.Trim().ToUpperInvariant();
         }
+
+        if (editingSchool is not null)
+        {
+            PrefillFrom(editingSchool);
+        }
     }
 
-    public string Title => "Add school";
+    /// <summary>True when the form was opened to correct an existing campus's bell times.</summary>
+    public bool IsTimesOnlyEdit => _editingSchool is not null;
+
+    /// <summary>False in times-only mode, where the campus identity and GPS are not editable.</summary>
+    public bool CanEditSchoolDetails => !IsTimesOnlyEdit;
+
+    public string Title => IsTimesOnlyEdit ? "Edit school times" : "Add school";
+
+    public string Headline => IsTimesOnlyEdit
+        ? $"Edit bell times for {_editingSchool!.Name}"
+        : "Add school (required before Generate Routes)";
+
+    public string SaveButtonLabel => IsTimesOnlyEdit ? "Save times" : "Save school";
+
+    /// <summary>Start time stored by the last successful times-only save.</summary>
+    public TimeSpan? SavedStartTime { get; private set; }
+
+    /// <summary>Dismissal time stored by the last successful times-only save.</summary>
+    public TimeSpan? SavedDismissalTime { get; private set; }
 
     public string Name
     {
@@ -237,8 +279,35 @@ public sealed class SchoolDestinationFormViewModel : BaseViewModel, IDisposable
         OnPropertyChanged(nameof(MapCenter));
     }
 
+    private void PrefillFrom(Destination school)
+    {
+        _name = school.Name;
+        _address = school.Address;
+        _city = school.City;
+        _state = school.State;
+        _zipCode = school.ZipCode;
+        _startTimeText = school.StartTime?.ToString(@"hh\:mm", CultureInfo.InvariantCulture) ?? string.Empty;
+        _dismissalTimeText = school.DismissalTime?.ToString(@"hh\:mm", CultureInfo.InvariantCulture) ?? string.Empty;
+
+        if (school.Latitude.HasValue && school.Longitude.HasValue)
+        {
+            _latitudeValue = (double)school.Latitude.Value;
+            _longitudeValue = (double)school.Longitude.Value;
+            _hasMapPick = true;
+            RefreshMapMarker();
+        }
+
+        _mapHint = "Campus location is read-only here. Bell times drive Generate Routes stop times.";
+    }
+
     private async Task SaveAsync()
     {
+        if (IsTimesOnlyEdit)
+        {
+            await SaveSchoolTimesAsync(_editingSchool!).ConfigureAwait(true);
+            return;
+        }
+
         Logger.Information(
             "Save school clicked NameLen={NameLen} AddressLen={AddrLen} City={City} State={State} ZipLen={ZipLen} Start={Start} Dismissal={Dismissal} HasGps={HasGps}",
             Name.Length, Address.Length, City, State, ZipCode.Length, StartTimeText, DismissalTimeText, HasUsableGps());
@@ -292,6 +361,79 @@ public sealed class SchoolDestinationFormViewModel : BaseViewModel, IDisposable
             Logger.Warning(ex, "Add school failed");
             ValidationMessage = DatabaseUserMessage.ForOperation(ex, "save the school");
         }
+    }
+
+    /// <summary>
+    /// Persists bell times for an existing campus, then asks the route planner to regenerate stop
+    /// times so published routes stay consistent with the new schedule. A blank box clears that time.
+    /// </summary>
+    private async Task SaveSchoolTimesAsync(Destination school)
+    {
+        if (!TryParseOptionalTime(StartTimeText, out var start))
+        {
+            ValidationMessage = "Start time must be HH:mm";
+            return;
+        }
+
+        if (!TryParseOptionalTime(DismissalTimeText, out var dismissal))
+        {
+            ValidationMessage = "Dismissal time must be HH:mm";
+            return;
+        }
+
+        try
+        {
+            if (!await _destinations.UpdateSchoolTimesAsync(school.DestinationId, start, dismissal).ConfigureAwait(true))
+            {
+                ValidationMessage = "Failed to save school times";
+                return;
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.Warning(ex, "Update school times failed DestinationId={DestinationId}", school.DestinationId);
+            ValidationMessage = DatabaseUserMessage.ForOperation(ex, "save the school times");
+            return;
+        }
+
+        school.StartTime = start;
+        school.DismissalTime = dismissal;
+        SavedStartTime = start;
+        SavedDismissalTime = dismissal;
+        SavedDestinationId = school.DestinationId;
+        StatusMessage = "School times saved";
+        Logger.Information("School times saved DestinationId={DestinationId}", school.DestinationId);
+
+        var planner = App.ServiceProvider?.GetService<IRouteDeterminationService>();
+        if (planner is not null && start.HasValue)
+        {
+            var regen = await planner
+                .RegenerateSchedulesForSchoolAsync(school.DestinationId)
+                .ConfigureAwait(true);
+            StatusMessage = regen.Success
+                ? $"School times saved; regenerated schedules on {regen.RoutesUpdated} route(s)"
+                : $"School times saved; schedule regen: {regen.Error}";
+        }
+
+        RequestClose?.Invoke(this, true);
+    }
+
+    /// <summary>An empty box means "no time recorded"; anything else must parse as HH:mm.</summary>
+    private static bool TryParseOptionalTime(string? text, out TimeSpan? value)
+    {
+        value = null;
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            return true;
+        }
+
+        if (!TryParseTime(text, out var parsed))
+        {
+            return false;
+        }
+
+        value = parsed;
+        return true;
     }
 
     private static BusBuddyDbContext? TryCreateDbContextViaDi()

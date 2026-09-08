@@ -95,13 +95,27 @@
                             AutomationProperties.Name="Edit Student"
                             AutomationProperties.HelpText="Opens form to edit the currently selected student"
                             ToolTip="Edit selected student"/>
-                    <syncfusion:ButtonAdv Name="DeleteStudentButton" Label="Delete Student"
-                            Command="{Binding DeleteStudentCommand}"
+                    <!-- Archive, not delete: specs/students.md forbids deleting a student to end service. -->
+                    <syncfusion:ButtonAdv Name="ArchiveStudentButton" Label="Archive Student"
+                            Command="{Binding ArchiveStudentCommand}"
                             IsEnabled="{Binding HasSelectedStudent}"
                             Style="{StaticResource StudentsToolbarButton}"
-                            AutomationProperties.Name="Delete Student"
-                            AutomationProperties.HelpText="Removes the currently selected student from the system"
-                            ToolTip="Delete selected student"/>
+                            AutomationProperties.Name="Archive Student"
+                            AutomationProperties.HelpText="Stops service for the selected student while keeping the record and its history. Restores an already-archived student."
+                            ToolTip="Archive (or restore) selected student — the record and its history are kept"/>
+                    <syncfusion:ButtonAdv Name="ShowIncompleteButton" Label="Incomplete Records"
+                            Command="{Binding ShowIncompleteRecordsCommand}"
+                            Style="{StaticResource StudentsToolbarButton}"
+                            AutomationProperties.Name="Show Incomplete Records"
+                            AutomationProperties.HelpText="Lists students missing required intake data or an unvalidated address. Refresh returns to the full roster."
+                            ToolTip="Show students whose intake is incomplete"/>
+                    <syncfusion:ButtonAdv Name="ValidateAddressButton" Label="Validate Address"
+                            Command="{Binding ValidateAddressCommand}"
+                            IsEnabled="{Binding HasSelectedStudent}"
+                            Style="{StaticResource StudentsToolbarButton}"
+                            AutomationProperties.Name="Validate Address"
+                            AutomationProperties.HelpText="Validates the selected student's home address and stores the resulting coordinates"
+                            ToolTip="Validate the selected student's address and store lat/lng"/>
                     <syncfusion:ButtonAdv Name="SchoolTransferButton" Label="School Transfer"
                             Command="{Binding SchoolTransferCommand}"
                             IsEnabled="{Binding HasSelectedStudent}"
@@ -159,6 +173,12 @@
                                               Watermark="Quick search..."
                                               AutomationProperties.Name="Quick Search"
                                               AutomationProperties.HelpText="Type to search students by name, ID, or route"/>
+                    <!-- Archived students stay loadable; this chooses whether they are shown. -->
+                    <syncfusion:ComboBoxAdv Name="ActiveFilterCombo" Width="130" Margin="8,0,0,0"
+                                              ItemsSource="{Binding AvailableActiveFilters}"
+                                              SelectedItem="{Binding ActiveFilter, Mode=TwoWay}"
+                                              AutomationProperties.Name="Active Status Filter"
+                                              AutomationProperties.HelpText="Show active students, archived students, or all"/>
                 </StackPanel>
             </Grid>
         </Border>
@@ -231,16 +251,18 @@
                                              Width="80"
                                              ItemsSource="{Binding AvailableGrades}"
                                              AllowEditing="True"/>
+                <!-- DestinationId is the school of record; the School string below is a read-only
+                     mirror kept visible for rows written before the FK existed. -->
                 <syncfusion:GridComboBoxColumn HeaderText="School"
-                                             MappingName="School"
+                                             MappingName="DestinationId"
                                              Width="150"
                                              DisplayMemberPath="Name"
-                                             SelectedValuePath="Name"
+                                             SelectedValuePath="DestinationId"
                                              ItemsSource="{Binding AvailableSchools}"
                                              AllowEditing="True"/>
-                <syncfusion:GridTextColumn HeaderText="School ID"
-                                         MappingName="DestinationId"
-                                         Width="80"
+                <syncfusion:GridTextColumn HeaderText="School (recorded)"
+                                         MappingName="School"
+                                         Width="150"
                                          AllowEditing="False"/>
                 <syncfusion:GridTextColumn HeaderText="Address"
                                          MappingName="HomeAddress"
@@ -257,6 +279,10 @@
                 <syncfusion:GridTextColumn HeaderText="Longitude"
                                          MappingName="Longitude"
                                          Width="90"
+                                         AllowEditing="False"/>
+                <syncfusion:GridTextColumn HeaderText="Home GPS"
+                                         MappingName="HomeCoordinateStatus"
+                                         Width="120"
                                          AllowEditing="False"/>
                 <syncfusion:GridMaskColumn HeaderText="Phone"
                                            MappingName="HomePhone"
@@ -278,9 +304,28 @@
                                              Width="120"
                                              ItemsSource="{Binding AvailableRoutes}"
                                              AllowEditing="True"/>
+                <!-- specs/students.md: AM/PM eligibility is recorded per student and is independent
+                     of whether a route has been assigned yet. -->
+                <syncfusion:GridCheckBoxColumn HeaderText="Rides AM"
+                                             MappingName="RidesAm"
+                                             Width="80"
+                                             AllowEditing="True"/>
+                <syncfusion:GridCheckBoxColumn HeaderText="Rides PM"
+                                             MappingName="RidesPm"
+                                             Width="80"
+                                             AllowEditing="True"/>
+                <syncfusion:GridTextColumn HeaderText="School Year"
+                                         MappingName="SchoolYear"
+                                         Width="100"
+                                         AllowEditing="True"/>
+                <syncfusion:GridTextColumn HeaderText="Intake Status"
+                                         MappingName="IntakeStatus"
+                                         Width="150"
+                                         AllowEditing="False"/>
                 <syncfusion:GridCheckBoxColumn HeaderText="Active"
                                              MappingName="Active"
-                                             Width="80"/>
+                                             Width="80"
+                                             AllowEditing="False"/>
                 <syncfusion:GridTemplateColumn HeaderText="Actions" Width="120" AllowFiltering="False" AllowSorting="False">
                     <syncfusion:GridTemplateColumn.CellTemplate>
                         <DataTemplate>

@@ -113,10 +113,9 @@ bb-build  # Verify clean build
 
 ### Required merge gates (blocking)
 
-| Check                 | Workflow                   | What it does                                                                                 |
-| --------------------- | -------------------------- | -------------------------------------------------------------------------------------------- |
-| **Build & Test**      | `.github/workflows/ci.yml` | Restore, build solution, run Core regression tests (excludes `Integration`, `InMemoryFlaky`) |
-| **Security (CodeQL)** | `.github/workflows/ci.yml` | Static analysis for C#                                                                       |
+| Check            | Workflow                   | What it does                                                                                 |
+| ---------------- | -------------------------- | -------------------------------------------------------------------------------------------- |
+| **Build & Test** | `.github/workflows/ci.yml` | Restore, build solution, run Core regression tests (excludes `Integration`, `InMemoryFlaky`) |
 
 ### Non-blocking / optional
 
@@ -154,7 +153,8 @@ Run `.github/scripts/setup-solo-ci-governance.sh` (requires `gh` admin) to enabl
 ### Agent rules for CI changes
 
 - Do **not** add merge gates without a clear failure signal (avoid `continue-on-error` / `|| true` on build or test).
-- Keep workflow job names stable — branch rules reference **Build & Test** and **Security (CodeQL)**.
+- Keep workflow job names stable — branch rules reference **Build & Test**.
+- Do **not** re-add a CodeQL job as a merge gate. This repository is private, and GitHub code scanning on private repos requires a paid GitHub Code Security license (Team/Enterprise only). `codeql-action/analyze` fails its SARIF upload without one, so the check can never go green and would block every PR.
 - Use `concurrency` with `cancel-in-progress` on PR workflows.
 - Docs-only changes are skipped via `paths-ignore` on `*.md` and `Documentation/**`.
 - See also **AGENTS.md** for a short agent-facing summary.

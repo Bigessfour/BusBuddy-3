@@ -115,8 +115,8 @@ namespace BusBuddy.WPF.Views.Student
                 {
                     var addReady = vm.AddStudentCommand != null;
                     var editReady = vm.EditStudentCommand != null;
-                    var delReady = vm.DeleteStudentCommand != null;
-                    Logger.Information("Command readiness — Add:{Add} Edit:{Edit} Delete:{Del}", addReady, editReady, delReady);
+                    var archiveReady = vm.ArchiveStudentCommand != null;
+                    Logger.Information("Command readiness — Add:{Add} Edit:{Edit} Archive:{Archive}", addReady, editReady, archiveReady);
 
                     if (_startup != StudentsViewStartup.None)
                     {

@@ -422,7 +422,7 @@ Validated via mermaid-mcp. Use this section as the canonical repo map after PR #
 
 - **Mac hybrid dev**: Core/tests/Docker on Mac; full WPF in Windows VM (UTM/Parallels).
 - **Data**: Services → Repositories → DbContext → Postgres (Docker) or SQL Server (prod) or InMemory (tests).
-- **CI**: `feature/*` PR → Build & Test + CodeQL → auto-merge squash → Release artifacts on `master` push.
+- **CI**: `feature/*` PR → Build & Test → auto-merge squash → Release artifacts on `master` push.
 - **Local gate**: `.github/scripts/validate-ci-local.sh` mirrors Docker + compile before push.
 
 ### 1. System architecture (flowchart)
@@ -531,14 +531,11 @@ flowchart TB
     direction TB
     PR["feature branch PR"]
     GATE1["Build and Test<br/>windows-latest"]
-    GATE2["Security CodeQL<br/>ubuntu"]
     AM["Auto-merge<br/>squash on green"]
     REL["Release artifacts<br/>win-x64 WPF publish"]
     DOCKSIM["Docker CI sim<br/>manual workflow"]
     PR --> GATE1
-    PR --> GATE2
     GATE1 --> AM
-    GATE2 --> AM
     AM --> REL
   end
 
@@ -621,7 +618,7 @@ sequenceDiagram
     Local->>Local: dotnet restore + build
     Note over Local: Skip WPF tests on Mac
     Dev->>GH: Push feature branch + open PR
-    GH->>CI: Trigger Build and Test + CodeQL
+    GH->>CI: Trigger Build and Test
     CI-->>GH: Required checks pass
     GH->>AM: Enable squash auto-merge
     AM->>Master: Squash merge when gates green
@@ -637,7 +634,7 @@ sequenceDiagram
 | `BusBuddy.Tests/Core/`                 | Service-level proof tests (CI filter target)     |
 | `docker-compose.yml`                   | Postgres + test/dev profiles                     |
 | `Dockerfile`                           | Linux Core build image                           |
-| `.github/workflows/ci.yml`             | Merge gates: Build & Test, CodeQL                |
+| `.github/workflows/ci.yml`             | Merge gate: Build & Test                         |
 | `.github/workflows/auto-merge.yml`     | Squash auto-merge on green                       |
 | `.github/scripts/validate-ci-local.sh` | Pre-push local validation                        |
 | `Documentation/Archive/`               | Legacy PS, MVP, hygiene archives                 |

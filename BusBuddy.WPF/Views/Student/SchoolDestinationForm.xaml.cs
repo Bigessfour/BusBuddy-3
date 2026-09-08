@@ -25,9 +25,13 @@ public partial class SchoolDestinationForm : ChromelessWindow
         SyncfusionThemeManager.ApplyTheme(this);
         DataContext = _vm;
 
-        // Seed controls from VM defaults — do not rely on Text DP bindings (they were not updating the VM).
+        // Seed controls from the VM — do not rely on Text DP bindings (they were not updating the VM).
+        // In times-only edit mode the VM arrives prefilled from the campus being corrected.
+        SchoolNameBox.Text = _vm.Name;
+        SchoolAddressBox.Text = _vm.Address;
         SchoolCityBox.Text = _vm.City;
         SchoolStateBox.Text = _vm.State;
+        SchoolZipBox.Text = _vm.ZipCode;
         SchoolStartBox.Text = _vm.StartTimeText;
         SchoolDismissalBox.Text = _vm.DismissalTimeText;
         SchoolLatBox.Value = _vm.LatitudeValue;
@@ -102,6 +106,15 @@ public partial class SchoolDestinationForm : ChromelessWindow
 
     private void PushFieldsToViewModel()
     {
+        if (_vm.IsTimesOnlyEdit)
+        {
+            // Only the two time boxes are writable here, and a blank box means "clear this time" —
+            // substituting a default would invent a bell schedule the campus never published.
+            _vm.StartTimeText = SchoolStartBox.Text?.Trim() ?? string.Empty;
+            _vm.DismissalTimeText = SchoolDismissalBox.Text?.Trim() ?? string.Empty;
+            return;
+        }
+
         _vm.Name = SchoolNameBox.Text?.Trim() ?? string.Empty;
         _vm.Address = SchoolAddressBox.Text?.Trim() ?? string.Empty;
         _vm.City = SchoolCityBox.Text?.Trim() ?? string.Empty;
@@ -119,6 +132,11 @@ public partial class SchoolDestinationForm : ChromelessWindow
 
     private void SchoolAddressBox_TextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
     {
+        if (!_vm.CanEditSchoolDetails)
+        {
+            return;
+        }
+
         _ = _vm.RefreshAddressSuggestionsAsync(SchoolAddressBox.Text);
     }
 
@@ -160,7 +178,7 @@ public partial class SchoolDestinationForm : ChromelessWindow
     {
         try
         {
-            if (SchoolPickLayer is null)
+            if (SchoolPickLayer is null || !_vm.CanEditSchoolDetails)
             {
                 return;
             }

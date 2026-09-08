@@ -10,6 +10,7 @@ using System.Windows.Media.Imaging;
 using System.IO;
 using System.Printing;
 using System.Threading.Tasks;
+using System.Windows.Threading;
 using BusBuddy.Core.Mapping;
 using BusBuddy.WPF.Utilities;
 using BusBuddy.WPF.ViewModels.Map;
@@ -29,9 +30,13 @@ namespace BusBuddy.WPF.Views.Map
         private SfMap? MapControl => FindName("GeoMap") as SfMap;
         private GoogleMapTilesImageryLayer? DistrictTilesLayer =>
             FindName("DistrictImageryLayer") as GoogleMapTilesImageryLayer;
+        private static readonly TimeSpan AttributionDebounce = TimeSpan.FromMilliseconds(750);
         private bool _mapLayerInitialized;
         private MapViewModel? _boundViewModel;
         private MapLayer? _currentLayer;
+        private DispatcherTimer? _attributionTimer;
+        private MapInteractionDiagnostics? _diagnostics;
+        private bool _pendingCameraSync;
 
         public MapView()
         {
@@ -60,6 +65,7 @@ namespace BusBuddy.WPF.Views.Map
 
                 Unloaded += MapView_Unloaded;
                 Loaded += MapView_Loaded;
+                Loaded += MapView_ReattachDiagnostics;
                 Logger.Information("MapView initialized");
             }
         }
@@ -88,6 +94,7 @@ namespace BusBuddy.WPF.Views.Map
                 ApplyDistrictImagery(DataContext as MapViewModel);
                 if (DistrictTilesLayer is not null)
                 {
+                    // OSM is the XAML default; this only sets the attribution text (no tile reload).
                     MapTileBootstrap.ApplyOsm(
                         DistrictTilesLayer,
                         FindName("MapAttribution") as Border,
@@ -97,24 +104,30 @@ namespace BusBuddy.WPF.Views.Map
 
                 if (MapControl is not null)
                 {
-                    MapControl.IsHitTestVisible = true;
-                    MapControl.EnablePan = true;
-                    MapControl.EnableZoom = true;
-                    MapControl.IsManipulationEnabled = true;
-                    MapControl.MouseLeftButtonUp += (_, _) => CaptureVisualMapState();
-                    MapControl.MouseWheel += (_, _) => Dispatcher.BeginInvoke(CaptureVisualMapState);
+                    ReportViewportSize(DataContext as MapViewModel);
                     SyncMapControlFromViewModel(DataContext as MapViewModel);
                 }
+
+                // Interaction trace (Map:InteractionDiagnostics / BUSBUDDY_MAP_DIAGNOSTICS) — attached before the
+                // Google tile swap so the first tile burst and any camera error land in the breadcrumbs.
+                _diagnostics ??= MapInteractionDiagnostics.TryAttach(
+                    MapControl,
+                    DistrictTilesLayer,
+                    App.ServiceProvider?.GetService<Microsoft.Extensions.Configuration.IConfiguration>());
 
                 ReplayRouteLineFromViewModel(DataContext as MapViewModel);
                 if (DistrictTilesLayer is not null)
                 {
-                    await MapTileBootstrap.TryApplyGoogleTilesAsync(
+                    var googleTiles = await MapTileBootstrap.TryApplyGoogleTilesAsync(
                         DistrictTilesLayer,
                         FindName("MapAttribution") as Border,
                         FindName("MapAttributionText") as TextBlock,
                         MapControl,
                         App.ServiceProvider).ConfigureAwait(true);
+                    if (googleTiles)
+                    {
+                        ScheduleAttributionRefresh();
+                    }
                 }
 
                 _mapLayerInitialized = true;
@@ -122,12 +135,30 @@ namespace BusBuddy.WPF.Views.Map
             }
             catch (Exception ex)
             {
+                _diagnostics?.RecordError("MapView.Loaded", ex);
                 Logger.Error(ex, "Failed to initialize map on Loaded");
             }
         }
 
+        /// <summary>Tab switches unload/reload the view; the one-shot Loaded handler above has already run by then.</summary>
+        private void MapView_ReattachDiagnostics(object sender, RoutedEventArgs e)
+        {
+            if (!_mapLayerInitialized || _diagnostics is not null)
+            {
+                return;
+            }
+
+            _diagnostics = MapInteractionDiagnostics.TryAttach(
+                MapControl,
+                DistrictTilesLayer,
+                App.ServiceProvider?.GetService<Microsoft.Extensions.Configuration.IConfiguration>());
+        }
+
         private void MapView_Unloaded(object sender, RoutedEventArgs e)
         {
+            _attributionTimer?.Stop();
+            _diagnostics?.Dispose();
+            _diagnostics = null;
             DetachViewModel(_boundViewModel);
             _boundViewModel = null;
         }
@@ -270,6 +301,8 @@ namespace BusBuddy.WPF.Views.Map
                     {
                         MapControl.ZoomLevel = vm.MapZoomLevel;
                     }
+
+                    ScheduleAttributionRefresh();
                 });
                 return;
             }
@@ -278,20 +311,64 @@ namespace BusBuddy.WPF.Views.Map
             {
                 Dispatcher.Invoke(() =>
                 {
-                    if (_currentLayer is ImageryLayer imagery)
+                    if (_currentLayer is ImageryLayer imagery
+                        && !TrySetLayerCenter(imagery, vm.MapCenter))
                     {
-                        imagery.Center = vm.MapCenter;
+                        _pendingCameraSync = true;
                     }
-                });
-                return;
-            }
 
-            if (e.PropertyName == nameof(MapViewModel.MapFitRadiusKm))
-            {
-                Dispatcher.Invoke(() => ApplyFitRadius(vm));
+                    ScheduleAttributionRefresh();
+                });
             }
         }
 
+        /// <summary>
+        /// Debounced Map Tiles viewport request (Google copyright text for the tiles on screen).
+        /// Pan/wheel raise MapCenter/MapZoomLevel many times per second; only the settled camera is billed.
+        /// </summary>
+        private void ScheduleAttributionRefresh()
+        {
+            if (DistrictTilesLayer is not { IsGoogleTilesActive: true })
+            {
+                return;
+            }
+
+            _attributionTimer ??= new DispatcherTimer(DispatcherPriority.Background)
+            {
+                Interval = AttributionDebounce,
+            };
+            _attributionTimer.Tick -= OnAttributionTimerTick;
+            _attributionTimer.Tick += OnAttributionTimerTick;
+            _attributionTimer.Stop();
+            _attributionTimer.Start();
+        }
+
+        private async void OnAttributionTimerTick(object? sender, EventArgs e)
+        {
+            _attributionTimer?.Stop();
+            if (DistrictTilesLayer is null)
+            {
+                return;
+            }
+
+            try
+            {
+                await MapTileBootstrap.RefreshGoogleAttributionAsync(
+                    DistrictTilesLayer,
+                    FindName("MapAttributionText") as TextBlock,
+                    MapControl,
+                    App.ServiceProvider).ConfigureAwait(true);
+            }
+            catch (Exception ex)
+            {
+                Logger.Debug(ex, "Attribution refresh failed");
+            }
+        }
+
+        /// <summary>
+        /// Camera is Center + ZoomLevel only (TwoWay bindings carry wheel/drag back to the view model).
+        /// Same-value sets are no-ops on the dependency properties, so this never double-loads tiles.
+        /// </summary>
         private void SyncMapControlFromViewModel(MapViewModel? vm)
         {
             if (vm is null || MapControl is null)
@@ -302,83 +379,73 @@ namespace BusBuddy.WPF.Views.Map
             MapControl.ZoomLevel = vm.MapZoomLevel;
             if (_currentLayer is ImageryLayer imagery)
             {
-                imagery.Center = vm.MapCenter;
-                if (vm.MapFitRadiusKm > 0)
-                {
-                    imagery.DistanceType = DistanceType.KiloMeter;
-                    imagery.Radius = vm.MapFitRadiusKm;
-                }
+                _pendingCameraSync = !TrySetLayerCenter(imagery, vm.MapCenter);
             }
         }
 
-        private void CaptureVisualMapState()
+        private bool TrySetLayerCenter(ImageryLayer imagery, Point center)
         {
-            if (DataContext is not MapViewModel vm)
+            if (!CanApplyLayerCenter())
+            {
+                return false;
+            }
+
+            imagery.Center = center;
+            return true;
+        }
+
+        private bool CanApplyLayerCenter()
+        {
+            var map = MapControl;
+            var layer = DistrictTilesLayer;
+            if (map is null || layer is null)
+            {
+                return false;
+            }
+
+            if (map.ActualWidth <= 0 || map.ActualHeight <= 0)
+            {
+                return false;
+            }
+
+            if (PresentationSource.FromVisual(map) is null || PresentationSource.FromVisual(layer) is null)
+            {
+                return false;
+            }
+
+            try
+            {
+                _ = layer.TransformToVisual(map);
+                return true;
+            }
+            catch (InvalidOperationException)
+            {
+                return false;
+            }
+        }
+
+        /// <summary>Feeds the real SfMap pixel size to span-fit zoom (<c>MapDefaults.ZoomForBounds</c>).</summary>
+        private void GeoMap_SizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            ReportViewportSize(DataContext as MapViewModel);
+            if (_pendingCameraSync)
+            {
+                SyncMapControlFromViewModel(DataContext as MapViewModel);
+            }
+        }
+
+        private void ReportViewportSize(MapViewModel? vm)
+        {
+            if (vm is null || MapControl is null)
             {
                 return;
             }
 
-            if (MapControl is not null)
+            var size = new Size(MapControl.ActualWidth, MapControl.ActualHeight);
+            if (size.Width > 0 && size.Height > 0)
             {
-                vm.MapZoomLevel = MapControl.ZoomLevel;
+                vm.MapViewportSize = size;
             }
-
-            if (_currentLayer is ImageryLayer imagery)
-            {
-                vm.MapCenter = imagery.Center;
-            }
-        }
-
-        private void ApplyCenter(double latitude, double longitude, int? zoomLevel = null)
-        {
-            if (DataContext is MapViewModel vm)
-            {
-                vm.SetMapView(latitude, longitude, zoomLevel);
-            }
-
-            if (MapControl is not null && zoomLevel.HasValue)
-            {
-                MapControl.ZoomLevel = zoomLevel.Value;
-            }
-
-            if (_currentLayer is ImageryLayer imagery)
-            {
-                imagery.Center = new Point(latitude, longitude);
-            }
-        }
-
-        private void TryResetView()
-        {
-            try
-            {
-                if (DataContext is MapViewModel vm)
-                {
-                    _ = vm.ResetCameraToDistrictAsync();
-                    return;
-                }
-
-                var camera = ResolveClerkCamera();
-                ApplyCenter(camera.Latitude, camera.Longitude, camera.ZoomLevel);
-            }
-            catch (Exception ex)
-            {
-                Logger.Warning(ex, "Failed to reset map view");
-            }
-        }
-
-        private static (double Latitude, double Longitude, int ZoomLevel) ResolveClerkCamera()
-        {
-            const double districtLat = 38.0872;
-            const double districtLon = -102.6208;
-            var camera = DistrictCameraUi.Resolve();
-            if (camera.ZoomLevel == MapDefaults.UnconfiguredZoomLevel
-                && Math.Abs(camera.Latitude - MapDefaults.UnconfiguredLatitude) < 0.01
-                && Math.Abs(camera.Longitude - MapDefaults.UnconfiguredLongitude) < 0.01)
-            {
-                return (districtLat, districtLon, MapDefaults.DistrictZoomLevel);
-            }
-
-            return camera;
         }
 
         private void OnRouteLineUpdated(object? sender, MapViewModel.RouteLineEventArgs e) =>
@@ -460,32 +527,5 @@ namespace BusBuddy.WPF.Views.Map
 
         private void OnViewResetRequested(object? sender, EventArgs e) => Dispatcher.Invoke(() =>
             SyncMapControlFromViewModel(DataContext as MapViewModel));
-
-        private void CenterOnCurrentMarkers()
-        {
-            try
-            {
-                if (DataContext is MapViewModel vm)
-                {
-                    vm.CenterOnMarkers();
-                    ApplyFitRadius(vm);
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger.Warning(ex, "CenterOnCurrentMarkers failed");
-            }
-        }
-
-        private void ApplyFitRadius(MapViewModel vm)
-        {
-            if (_currentLayer is not ImageryLayer imagery || vm.MapFitRadiusKm <= 0)
-            {
-                return;
-            }
-
-            imagery.DistanceType = DistanceType.KiloMeter;
-            imagery.Radius = vm.MapFitRadiusKm;
-        }
     }
 }

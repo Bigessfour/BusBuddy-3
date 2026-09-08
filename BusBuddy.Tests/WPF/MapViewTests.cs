@@ -24,8 +24,16 @@ public class MapViewTests
         Assert.That(xaml, Does.Contain("utils:GoogleMapTilesImageryLayer"));
         Assert.That(xaml, Does.Contain("x:Name=\"MapAttribution\""));
         Assert.That(xaml, Does.Contain("Google Maps"));
-        Assert.That(XamlViewFile.Read("Utilities/GoogleMapTilesImageryLayer.cs"), Does.Contain("UrlTemplate"));
-        Assert.That(XamlViewFile.Read("Utilities/GoogleMapTilesImageryLayer.cs"), Does.Contain("LayerType.OSM"));
+        var tileLayer = XamlViewFile.Read("Utilities/GoogleMapTilesImageryLayer.cs");
+        // Tiles resolve through the GetUri extension point; UrlTemplate's HttpClient path can wedge the layer.
+        Assert.That(tileLayer, Does.Contain("protected override string GetUri"));
+        Assert.That(tileLayer, Does.Contain("MapBasemap.ResolveTileUrl"));
+        // The ImageryLayer.UrlTemplate property must stay unset (its HttpClient path wedges the layer on 403/429).
+        Assert.That(tileLayer, Does.Not.Match(@"(?<![\w.])UrlTemplate\s*="));
+        Assert.That(tileLayer, Does.Not.Contain("this.UrlTemplate"));
+        Assert.That(tileLayer, Does.Not.Contain("base.UrlTemplate"));
+        Assert.That(tileLayer, Does.Contain("LayerType.OSM"));
+        Assert.That(tileLayer, Does.Contain("CanCacheTiles = false"));
         Assert.That(xaml, Does.Not.Contain("MapLayerComboBox"));
         Assert.That(xaml, Does.Not.Contain("SelectedMapLayer"));
         Assert.That(xaml, Does.Not.Contain("GoogleEarth"));
@@ -51,8 +59,13 @@ public class MapViewTests
         Assert.That(xaml, Does.Contain("SelectedItem=\"{Binding SelectedRoute, Mode=TwoWay}\""));
         Assert.That(xaml, Does.Contain("ItemsSource=\"{Binding Routes}\""));
         Assert.That(xaml, Does.Contain("ZoomLevel=\"{Binding MapZoomLevel, Mode=TwoWay}\""));
-        Assert.That(xaml, Does.Contain("Radius=\"{Binding MapFitRadiusKm}\""));
-        Assert.That(xaml, Does.Contain("DistanceType=\"KiloMeter\""));
+        // Camera is Center + ZoomLevel; ImageryLayer.Radius doubles the bounds and re-fits on every resize.
+        Assert.That(xaml, Does.Not.Contain("Radius=\"{Binding"));
+        Assert.That(xaml, Does.Not.Contain("MapFitRadiusKm"));
+        Assert.That(xaml, Does.Contain("MaxZoom=\"19\""));
+        Assert.That(xaml, Does.Contain("SizeChanged=\"GeoMap_SizeChanged\""));
+        Assert.That(xaml, Does.Contain("DataContext.ShowDetailLabels"));
+        Assert.That(xaml, Does.Contain("AncestorType={x:Type local:MapView}"));
         Assert.That(xaml, Does.Contain("x:Name=\"RouteTrail\""));
         Assert.That(xaml, Does.Contain("x:Name=\"RouteTrailLayer\""));
         Assert.That(xaml, Does.Contain("SubShapeFileLayers"));
@@ -68,6 +81,15 @@ public class MapViewTests
         Assert.That(xaml, Does.Not.Contain("TrackingIntervalIndex"));
         Assert.That(xaml, Does.Not.Contain("FluentDarkTheme.xaml"));
         Assert.That(xaml, Does.Not.Contain("#AA2B2B2B"));
+    }
+
+    [Test]
+    public void MarkerTemplateSelector_UnwrapsSyncfusionCustomDataSymbol()
+    {
+        // Syncfusion passes CustomDataSymbol (Data = bound marker) to SelectTemplate, never the marker itself.
+        var source = XamlViewFile.Read("Utilities/MapMarkerTemplateSelector.cs");
+        Assert.That(source, Does.Contain("CustomDataSymbol symbol => symbol.Data as MapViewModel.MapMarker"));
+        Assert.That(source, Does.Contain("Unwrap(item)"));
     }
 
     [Test]
@@ -129,7 +151,9 @@ public class MapViewTests
         Assert.That(xaml, Does.Contain("Command=\"{Binding ViewMapCommand}\""));
         Assert.That(xaml, Does.Contain("Command=\"{Binding DataContext.ViewOnMapCommand"));
 
-        var vm = XamlViewFile.Read("ViewModels/Student/StudentsViewModel.cs");
+        // Folder-scoped: the map wiring must exist in the Students view-model layer, but which
+        // collaborator holds it is a structural choice this test must not freeze.
+        var vm = XamlViewFile.ReadFolder("ViewModels/Student");
         Assert.That(vm, Does.Contain("MapViewLauncher.Show"));
         Assert.That(vm, Does.Contain("BulkPlotEligibleStudentsCommand"));
         Assert.That(vm, Does.Contain("District Map opened"));
@@ -141,7 +165,7 @@ public class MapViewTests
     [Test]
     public void StudentFormViewOnMap_UsesPickupThenHomePlotRule()
     {
-        var form = XamlViewFile.Read("ViewModels/Student/StudentFormViewModel.cs");
+        var form = XamlViewFile.ReadFolder("ViewModels/Student");
         Assert.That(form, Does.Contain("StudentPlotLocation.PinsFromStored"));
         Assert.That(form, Does.Contain("MapStudentPlot.Draw"));
         Assert.That(form, Does.Contain("ResolvePickupCatalogForPlotAsync"));

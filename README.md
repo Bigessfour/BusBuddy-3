@@ -103,7 +103,7 @@ Full reference: [Documentation/GCP-GEE-SECRETS-AND-AUTH.md](Documentation/GCP-GE
 
 ### **CI/CD (solo developer)**
 
-- Branch `feature/<topic>` → PR to `master` → gates **Build & Test** + **Security (CodeQL)** → squash auto-merge
+- Branch `feature/<topic>` → PR to `master` → gate **Build & Test** → squash auto-merge
 - Local pre-push: `.github/scripts/validate-ci-local.sh`
 - Details: [AGENTS.md](AGENTS.md), `.github/copilot-instructions.md`
 

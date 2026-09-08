@@ -5,11 +5,19 @@ namespace BusBuddy.Core.Utilities;
 /// <summary>
 /// Keeps <see cref="Student.School"/> and <see cref="Student.DestinationId"/> aligned with the destinations catalog.
 /// </summary>
+/// <remarks>
+/// specs/students.md treats the school as a destination reference, so <see cref="Student.DestinationId"/>
+/// is the source of truth and <see cref="Student.School"/> is a display mirror. The string is still
+/// honoured as an *input* when no FK is set, which is what keeps pre-<c>DestinationId</c> rows and CSV
+/// imports working.
+/// </remarks>
 public static class StudentSchoolLinker
 {
     /// <summary>
-    /// Sets <see cref="Student.DestinationId"/> from <see cref="Student.School"/> when a catalog match exists.
-    /// When only <see cref="Student.DestinationId"/> is set, back-fills <see cref="Student.School"/> from the catalog.
+    /// Reconciles the school FK and its display mirror. When <see cref="Student.DestinationId"/> is set
+    /// it wins and <see cref="Student.School"/> is rewritten from the catalog; when it is not, a matching
+    /// <see cref="Student.School"/> string resolves the FK. An unmatched string is left alone so legacy
+    /// free-text rows survive a round-trip.
     /// </summary>
     public static void SyncDestinationFromSchoolName(Student student, IReadOnlyList<Destination> schools)
     {
@@ -25,6 +33,20 @@ public static class StudentSchoolLinker
             return;
         }
 
+        if (student.DestinationId is > 0)
+        {
+            var byId = catalog.FirstOrDefault(d => d.DestinationId == student.DestinationId);
+            if (byId is not null)
+            {
+                student.School = byId.Name;
+                return;
+            }
+
+            // FK points at a destination that is not in the catalog we were handed — drop it rather
+            // than leave the record claiming a school that cannot be resolved.
+            student.DestinationId = null;
+        }
+
         if (!string.IsNullOrWhiteSpace(student.School))
         {
             var match = catalog.FirstOrDefault(
@@ -33,17 +55,31 @@ public static class StudentSchoolLinker
             {
                 student.DestinationId = match.DestinationId;
                 student.School = match.Name;
-                return;
             }
         }
+    }
 
-        if (student.DestinationId is > 0)
+    /// <summary>
+    /// Refreshes the <see cref="Student.School"/> display mirror from a loaded
+    /// <see cref="Student.Destination"/> navigation. No-op when the navigation was not included or the
+    /// row predates <c>DestinationId</c>, so the legacy string stays visible.
+    /// </summary>
+    public static void HydrateSchoolName(Student student)
+    {
+        ArgumentNullException.ThrowIfNull(student);
+        if (student.Destination is { } destination && !string.IsNullOrWhiteSpace(destination.Name))
         {
-            var byId = catalog.FirstOrDefault(d => d.DestinationId == student.DestinationId);
-            if (byId is not null)
-            {
-                student.School = byId.Name;
-            }
+            student.School = destination.Name;
+        }
+    }
+
+    /// <summary>Bulk form of <see cref="HydrateSchoolName"/> for roster reads.</summary>
+    public static void HydrateSchoolNames(IEnumerable<Student> students)
+    {
+        ArgumentNullException.ThrowIfNull(students);
+        foreach (var student in students)
+        {
+            HydrateSchoolName(student);
         }
     }
 }

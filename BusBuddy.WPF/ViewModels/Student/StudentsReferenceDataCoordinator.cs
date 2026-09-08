@@ -22,6 +22,28 @@ public sealed class StudentsReferenceDataCoordinator
         _contextFactory = contextFactory ?? throw new ArgumentNullException(nameof(contextFactory));
     }
 
+    /// <summary>
+    /// <see cref="LoadAsync"/> for callers that treat missing reference data as a degraded dropdown
+    /// rather than a failure — the grid stays usable when the catalog query fails.
+    /// </summary>
+    public async Task LoadSafeAsync(
+        ObservableCollection<string> availableGrades,
+        ObservableCollection<Destination> availableSchools,
+        ObservableCollection<string> availableRoutes,
+        List<Destination> schoolCatalog,
+        List<RouteModel> routeCatalog)
+    {
+        try
+        {
+            await LoadAsync(availableGrades, availableSchools, availableRoutes, schoolCatalog, routeCatalog)
+                .ConfigureAwait(true);
+        }
+        catch (Exception ex)
+        {
+            DatabaseUserMessage.LogFailure(Logger, ex, "Error loading reference data");
+        }
+    }
+
     public async Task LoadAsync(
         ObservableCollection<string> availableGrades,
         ObservableCollection<Destination> availableSchools,

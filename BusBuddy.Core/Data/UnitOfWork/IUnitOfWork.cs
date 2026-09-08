@@ -13,7 +13,6 @@ public interface IUnitOfWork : IDisposable
     IBusRepository Buses { get; }
     IDriverRepository Drivers { get; }
     IRouteRepository Routes { get; }
-    IStudentRepository Students { get; }
     IFuelRepository FuelRecords { get; }
     IMaintenanceRepository MaintenanceRecords { get; }
     IScheduleRepository Schedules { get; }

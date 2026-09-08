@@ -20,7 +20,6 @@ public class StudentService : IStudentService
     private static readonly ILogger Logger = Log.ForContext<StudentService>();
     private readonly IBusBuddyDbContextFactory _contextFactory;
     private readonly IGeocodingService? _geocodingService; // optional geocoder
-    private static readonly SemaphoreSlim _semaphore = new(1, 1);
 
     // Centralized, flexible US phone validation:
     // Accepts optional +1 country code, spaces/dots/dashes, optional parentheses around area code, and optional extensions.
@@ -95,9 +94,13 @@ public class StudentService : IStudentService
 
     #region Read Operations
 
+    /// <summary>
+    /// Roster read. Includes Destination and PickupStop so <see cref="Student.Destination"/> is
+    /// populated — the legacy <see cref="Student.School"/> string mirror is only a display fallback
+    /// (specs/students.md: DestinationId is the school of record).
+    /// </summary>
     public async Task<List<Student>> GetAllStudentsAsync()
     {
-        await _semaphore.WaitAsync();
         try
         {
             Logger.Information("Retrieving all students from database");
@@ -106,8 +109,12 @@ public class StudentService : IStudentService
             {
                 var students = await context.Students
                     .AsNoTracking() // Use AsNoTracking for better performance in read operations
+                    .Include(s => s.Destination)
+                    .Include(s => s.PickupStop)
                     .OrderBy(s => s.StudentName)
                     .ToListAsync();
+
+                StudentSchoolLinker.HydrateSchoolNames(students);
 
                 // Diagnostics: verify commonly used fields are materialized
                 try
@@ -144,10 +151,6 @@ public class StudentService : IStudentService
             DatabaseUserMessage.LogFailure(Logger, ex, "Error retrieving all students");
             throw;
         }
-        finally
-        {
-            _semaphore.Release();
-        }
     }
 
     public async Task<Student?> GetStudentByIdAsync(int studentId)
@@ -158,9 +161,18 @@ public class StudentService : IStudentService
             var (context, dispose) = GetReadContext();
             try
             {
-                return await context.Students
+                var student = await context.Students
                     .AsNoTracking() // Use AsNoTracking for better performance in read operations
+                    .Include(s => s.Destination)
+                    .Include(s => s.PickupStop)
                     .FirstOrDefaultAsync(s => s.StudentId == studentId);
+
+                if (student != null)
+                {
+                    StudentSchoolLinker.HydrateSchoolName(student);
+                }
+
+                return student;
             }
             finally
             {
@@ -211,12 +223,22 @@ public class StudentService : IStudentService
         try
         {
             Logger.Information("Retrieving students on route: {RouteName}", routeName);
-            // Don't dispose the context here as it might be needed after the method returns
-            var context = _contextFactory.CreateDbContext();
-            return await context.Students
-                .Where(s => s.AMRoute == routeName || s.PMRoute == routeName)
-                .OrderBy(s => s.StudentName)
-                .ToListAsync();
+            var (context, dispose) = GetReadContext();
+            try
+            {
+                return await context.Students
+                    .AsNoTracking()
+                    .Where(s => s.AMRoute == routeName || s.PMRoute == routeName)
+                    .OrderBy(s => s.StudentName)
+                    .ToListAsync();
+            }
+            finally
+            {
+                if (dispose)
+                {
+                    await context.DisposeAsync();
+                }
+            }
         }
         catch (Exception ex)
         {
@@ -230,12 +252,24 @@ public class StudentService : IStudentService
         try
         {
             Logger.Information("Retrieving active students");
-            // Don't dispose the context here as it might be needed after the method returns
-            var context = _contextFactory.CreateDbContext();
-            return await context.Students
-                .Where(s => s.Active)
-                .OrderBy(s => s.StudentName)
-                .ToListAsync();
+            var (context, dispose) = GetReadContext();
+            try
+            {
+                return await context.Students
+                    .AsNoTracking()
+                    .Include(s => s.Destination)
+                    .Include(s => s.PickupStop)
+                    .Where(s => s.Active)
+                    .OrderBy(s => s.StudentName)
+                    .ToListAsync();
+            }
+            finally
+            {
+                if (dispose)
+                {
+                    await context.DisposeAsync();
+                }
+            }
         }
         catch (Exception ex)
         {
@@ -249,12 +283,26 @@ public class StudentService : IStudentService
         try
         {
             Logger.Information("Retrieving students from school: {School}", school);
-            // Don't dispose the context here as it might be needed after the method returns
-            var context = _contextFactory.CreateDbContext();
-            return await context.Students
-                .Where(s => s.School == school)
-                .OrderBy(s => s.StudentName)
-                .ToListAsync();
+            var (context, dispose) = GetReadContext();
+            try
+            {
+                // Match on the Destination FK first (source of truth) and fall back to the legacy
+                // School string so rows written before DestinationId existed still resolve.
+                return await context.Students
+                    .AsNoTracking()
+                    .Include(s => s.Destination)
+                    .Where(s => (s.Destination != null && s.Destination.Name == school)
+                                || (s.DestinationId == null && s.School == school))
+                    .OrderBy(s => s.StudentName)
+                    .ToListAsync();
+            }
+            finally
+            {
+                if (dispose)
+                {
+                    await context.DisposeAsync();
+                }
+            }
         }
         catch (Exception ex)
         {
@@ -265,15 +313,55 @@ public class StudentService : IStudentService
 
     public async Task<List<Student>> SearchStudentsAsync(string searchTerm)
     {
+        ArgumentNullException.ThrowIfNull(searchTerm);
+
         try
         {
             Logger.Information("Searching students with term: {SearchTerm}", searchTerm);
+
+            if (string.IsNullOrWhiteSpace(searchTerm))
+            {
+                return await GetAllStudentsAsync();
+            }
+
+            // LOWER() on both sides keeps the match case-insensitive on Npgsql, whose LIKE is
+            // case-sensitive, without resorting to the Postgres-only ILIKE.
+            var pattern = $"%{searchTerm.ToLowerInvariant()}%";
             var (context, dispose) = GetReadContext();
             try
             {
+                // string.Contains(term, StringComparison) has no SQL translation — EF throws on Npgsql.
+                // Use LIKE on the server and fall back to in-process matching for the InMemory provider,
+                // which does not implement EF.Functions.Like. Mirrors DriverService.SearchDriversAsync.
+                var isInMemory = context.Database.ProviderName != null &&
+                                 context.Database.ProviderName.Contains("InMemory", StringComparison.OrdinalIgnoreCase);
+
+                if (isInMemory)
+                {
+                    var all = await context.Students
+                        .AsNoTracking()
+                        .Include(s => s.Destination)
+                        .Include(s => s.PickupStop)
+                        .ToListAsync();
+
+                    return all
+                        .Where(s =>
+                            (!string.IsNullOrEmpty(s.StudentName) && s.StudentName.Contains(searchTerm, StringComparison.OrdinalIgnoreCase)) ||
+                            (!string.IsNullOrEmpty(s.StudentNumber) && s.StudentNumber.Contains(searchTerm, StringComparison.OrdinalIgnoreCase)))
+                        .OrderBy(s => s.StudentName, StringComparer.OrdinalIgnoreCase)
+                        .ToList();
+                }
+
+                // CA1311: ToLowerInvariant has no SQL translation; ToLower() is the form EF maps to
+                // the database LOWER() function, which is what runs here.
+#pragma warning disable CA1311
                 return await context.Students
-                    .Where(s => s.StudentName.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
-                               (s.StudentNumber != null && s.StudentNumber.Contains(searchTerm, StringComparison.OrdinalIgnoreCase)))
+                    .AsNoTracking()
+                    .Include(s => s.Destination)
+                    .Include(s => s.PickupStop)
+                    .Where(s => EF.Functions.Like(s.StudentName.ToLower(), pattern) ||
+                               (s.StudentNumber != null && EF.Functions.Like(s.StudentNumber.ToLower(), pattern)))
+#pragma warning restore CA1311
                     .OrderBy(s => s.StudentName)
                     .ToListAsync();
             }
@@ -451,28 +539,117 @@ public class StudentService : IStudentService
         }
     }
 
-    public async Task<bool> DeleteStudentAsync(int studentId)
+    public async Task<bool> UpdateHomeGeocodeAsync(
+        int studentId,
+        decimal? latitude,
+        decimal? longitude,
+        string? placeId)
     {
+        if (studentId <= 0)
+        {
+            return false;
+        }
+
+        var (context, dispose) = GetWriteContext();
         try
         {
-            Logger.Information("Deleting student with ID: {StudentId}", studentId);
+            var row = await context.Students
+                .AsTracking()
+                .FirstOrDefaultAsync(s => s.StudentId == studentId)
+                .ConfigureAwait(false);
+            if (row is null)
+            {
+                return false;
+            }
+
+            row.Latitude = latitude;
+            row.Longitude = longitude;
+            if (!string.IsNullOrWhiteSpace(placeId))
+            {
+                row.PlaceId = placeId;
+            }
+
+            row.UpdatedDate = DateTime.UtcNow;
+            var saved = await context.SaveChangesAsync().ConfigureAwait(false);
+            Logger.Information(
+                "Home geocode persisted StudentId={StudentId} HasCoords={HasCoords}",
+                studentId,
+                latitude.HasValue && longitude.HasValue);
+            return saved > 0;
+        }
+        finally
+        {
+            if (dispose)
+            {
+                await context.DisposeAsync().ConfigureAwait(false);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Archives a student — the spec-sanctioned way to end service. specs/students.md: "MUST NOT
+    /// delete a student to end service. Archive or set inactive so history and route versions remain."
+    /// </summary>
+    public Task<bool> ArchiveStudentAsync(int studentId) =>
+        UpdateStudentActiveStatusAsync(studentId, isActive: false);
+
+    /// <summary>Returns an archived student to active service.</summary>
+    public Task<bool> RestoreStudentAsync(int studentId) =>
+        UpdateStudentActiveStatusAsync(studentId, isActive: true);
+
+    /// <summary>
+    /// Permanently removes a student row. Not part of the clerk flow — ending service is
+    /// <see cref="ArchiveStudentAsync"/>. This exists only for data-entry mistakes (a row created in
+    /// error that has no history) and refuses to run for anything else.
+    /// </summary>
+    /// <param name="studentId">Student to purge.</param>
+    /// <param name="reason">Operator-supplied justification; recorded in the log. Required.</param>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when the student is still active, or has schedule/transfer history. Archive instead.
+    /// </exception>
+    public async Task<bool> PurgeStudentRecordAsync(int studentId, string reason)
+    {
+        if (string.IsNullOrWhiteSpace(reason))
+        {
+            throw new ArgumentException("A purge reason is required.", nameof(reason));
+        }
+
+        try
+        {
             var (context, dispose) = GetWriteContext();
             try
             {
                 var student = await context.Students.FindAsync(studentId);
-                if (student != null)
+                if (student == null)
                 {
-                    context.Students.Remove(student);
-                    var result = await context.SaveChangesAsync();
-
-                    var success = result > 0;
-                    if (success)
-                    {
-                        Logger.Information("Successfully deleted student: {StudentName}", student.StudentName);
-                    }
-
-                    return success;
+                    Logger.Warning("Student with ID {StudentId} not found for purge", studentId);
+                    return false;
                 }
+
+                // Gate 1: an active student is in service. Ending service is an archive, never a delete.
+                if (student.Active)
+                {
+                    throw new InvalidOperationException(
+                        $"Student {studentId} is active. Archive the student instead of deleting the record.");
+                }
+
+                // Gate 2: history must outlive the row. specs/students.md requires history and route
+                // versions to remain, so a student that has any is not purgeable.
+                var scheduleCount = await context.StudentSchedules.CountAsync(x => x.StudentId == studentId);
+                var transferCount = await context.StudentSchoolTransfers.CountAsync(x => x.StudentId == studentId);
+                if (scheduleCount > 0 || transferCount > 0)
+                {
+                    throw new InvalidOperationException(
+                        $"Student {studentId} has {scheduleCount} schedule and {transferCount} transfer history rows. " +
+                        "Archived students with history cannot be purged.");
+                }
+
+                Logger.Warning(
+                    "Purging student record {StudentId} — reason: {Reason}", studentId, reason);
+
+                context.Students.Remove(student);
+                var result = await context.SaveChangesAsync();
+                return result > 0;
             }
             finally
             {
@@ -481,13 +658,14 @@ public class StudentService : IStudentService
                     await context.DisposeAsync();
                 }
             }
-
-            Logger.Warning("Student with ID {StudentId} not found for deletion", studentId);
-            return false;
+        }
+        catch (InvalidOperationException)
+        {
+            throw;
         }
         catch (Exception ex)
         {
-            DatabaseUserMessage.LogFailure(Logger, ex, "Error deleting student with ID: {StudentId}", studentId);
+            DatabaseUserMessage.LogFailure(Logger, ex, "Error purging student record {StudentId}", studentId);
             throw;
         }
     }
@@ -683,6 +861,11 @@ public class StudentService : IStudentService
         }
     }
 
+    /// <summary>
+    /// The "incomplete records" surface required by specs/students.md ("Unvalidated addresses show as
+    /// incomplete"). Covers both missing intake fields and an address that has never produced
+    /// coordinates — the latter is what keeps a student off the map.
+    /// </summary>
     public async Task<List<Student>> GetStudentsWithMissingInfoAsync()
     {
         try
@@ -692,11 +875,36 @@ public class StudentService : IStudentService
             var (context, dispose) = GetReadContext();
             try
             {
+                // Mirrors Student.HasValidatedHomeCoordinates / LocationCoordinate.IsValidated in SQL:
+                // null, 0,0, and the US-centroid placeholder (39.8283, -98.5795 ± 0.01) are all "no pin".
+                const decimal zeroEpsilon = 0.000001m;
+                const decimal centroidLatLow = (decimal)LocationCoordinate.UsCentroidLatitude - 0.01m;
+                const decimal centroidLatHigh = (decimal)LocationCoordinate.UsCentroidLatitude + 0.01m;
+                const decimal centroidLonLow = (decimal)LocationCoordinate.UsCentroidLongitude - 0.01m;
+                const decimal centroidLonHigh = (decimal)LocationCoordinate.UsCentroidLongitude + 0.01m;
+
                 return await context.Students
-                    .Where(s => string.IsNullOrEmpty(s.ParentGuardian) ||
-                               string.IsNullOrEmpty(s.EmergencyPhone) ||
-                               string.IsNullOrEmpty(s.HomeAddress) ||
-                               string.IsNullOrEmpty(s.Grade))
+                    .AsNoTracking()
+                    .Include(s => s.Destination)
+                    // Mirrors Student.IsIntakeIncomplete in SQL (that property is [NotMapped]).
+                    // Keep the two in step: a record the grid labels incomplete must be reachable here.
+                    .Where(s => s.Active &&
+                               (string.IsNullOrEmpty(s.ParentGuardian) ||
+                                string.IsNullOrEmpty(s.EmergencyPhone) ||
+                                string.IsNullOrEmpty(s.HomeAddress) ||
+                                string.IsNullOrEmpty(s.Grade) ||
+                                string.IsNullOrEmpty(s.SchoolYear) ||
+                                s.DestinationId == null ||
+                                (!s.RidesAm && !s.RidesPm) ||
+                                (s.PickupStopId == null &&
+                                 (s.Latitude == null ||
+                                  s.Longitude == null ||
+                                  s.Latitude < -90m || s.Latitude > 90m ||
+                                  s.Longitude < -180m || s.Longitude > 180m ||
+                                  (s.Latitude > -zeroEpsilon && s.Latitude < zeroEpsilon &&
+                                   s.Longitude > -zeroEpsilon && s.Longitude < zeroEpsilon) ||
+                                  (s.Latitude > centroidLatLow && s.Latitude < centroidLatHigh &&
+                                   s.Longitude > centroidLonLow && s.Longitude < centroidLonHigh)))))
                     .OrderBy(s => s.StudentName)
                     .ToListAsync();
             }
@@ -768,52 +976,6 @@ public class StudentService : IStudentService
         }
     }
 
-    public async Task<bool> AssignStudentToBusStopAsync(int studentId, string? busStop)
-    {
-        try
-        {
-            Logger.Information("Assigning student {StudentId} to bus stop: {BusStop}", studentId, busStop);
-
-            var (context, dispose) = GetWriteContext();
-            bool success;
-            string? studentName = null;
-            try
-            {
-                var student = await context.Students.FindAsync(studentId);
-                if (student == null)
-                {
-                    Logger.Warning("Student with ID {StudentId} not found", studentId);
-                    return false;
-                }
-
-                studentName = student.StudentName;
-                student.BusStop = busStop;
-
-                var result = await context.SaveChangesAsync();
-                success = result > 0;
-            }
-            finally
-            {
-                if (dispose)
-                {
-                    await context.DisposeAsync();
-                }
-            }
-
-            if (success)
-            {
-                Logger.Information("Successfully assigned bus stop for student: {StudentName}", studentName ?? "(unknown)");
-            }
-
-            return success;
-        }
-        catch (Exception ex)
-        {
-            DatabaseUserMessage.LogFailure(Logger, ex, "Error assigning bus stop for student {StudentId}", studentId);
-            throw;
-        }
-    }
-
     public async Task<bool> UpdateStudentActiveStatusAsync(int studentId, bool isActive)
     {
         try
@@ -825,7 +987,11 @@ public class StudentService : IStudentService
             string? studentName = null;
             try
             {
-                var student = await context.Students.FindAsync(studentId);
+                // BusBuddyDbContext defaults to NoTracking, so a Find-then-mutate would silently save
+                // nothing unless the caller happened to hand us a TrackAll context. Ask for tracking.
+                var student = await context.Students
+                    .AsTracking()
+                    .FirstOrDefaultAsync(s => s.StudentId == studentId);
                 if (student == null)
                 {
                     Logger.Warning("Student with ID {StudentId} not found", studentId);
@@ -834,6 +1000,7 @@ public class StudentService : IStudentService
 
                 studentName = student.StudentName;
                 student.Active = isActive;
+                student.UpdatedDate = DateTime.UtcNow;
                 var result = await context.SaveChangesAsync();
                 success = result > 0;
             }
@@ -967,6 +1134,8 @@ public class StudentService : IStudentService
                 student.City = city;
                 student.State = state;
                 student.Zip = zip;
+                // Explicit, because the context may have been created with NoTracking.
+                context.Entry(student).State = EntityState.Modified;
 
                 var result = await context.SaveChangesAsync();
                 success = result > 0;
@@ -989,137 +1158,6 @@ public class StudentService : IStudentService
         catch (Exception ex)
         {
             DatabaseUserMessage.LogFailure(Logger, ex, "Error updating address for student {StudentId}", studentId);
-            throw;
-        }
-    }
-
-    public async Task<bool> UpdateStudentContactInfoAsync(int studentId, string parentGuardian, string homePhone, string emergencyPhone)
-    {
-        try
-        {
-            Logger.Information("Updating contact information for student {StudentId}", studentId);
-
-            // Validate phone number formats — configurable
-            if (!string.IsNullOrWhiteSpace(homePhone) && !IsValidPhone(homePhone))
-            {
-                if (PhoneValidationOff() || PhoneValidationWarnOnly())
-                    Logger.Warning("Home phone failed validation but proceeding (mode)");
-                else
-                    throw new ArgumentException("Invalid home phone number format");
-            }
-
-            if (!string.IsNullOrWhiteSpace(emergencyPhone) && !IsValidPhone(emergencyPhone))
-            {
-                if (PhoneValidationOff() || PhoneValidationWarnOnly())
-                    Logger.Warning("Emergency phone failed validation but proceeding (mode)");
-                else
-                    throw new ArgumentException("Invalid emergency phone number format");
-            }
-
-            var (context, dispose) = GetWriteContext();
-            bool success;
-            string? studentName = null;
-            try
-            {
-                var student = await context.Students.FindAsync(studentId);
-                if (student == null)
-                {
-                    Logger.Warning("Student with ID {StudentId} not found", studentId);
-                    return false;
-                }
-
-                studentName = student.StudentName;
-                student.ParentGuardian = parentGuardian;
-                student.HomePhone = homePhone;
-                student.EmergencyPhone = emergencyPhone;
-
-                var result = await context.SaveChangesAsync();
-                success = result > 0;
-            }
-            finally
-            {
-                if (dispose)
-                {
-                    await context.DisposeAsync();
-                }
-            }
-
-            if (success)
-            {
-                Logger.Information("Successfully updated contact information for student: {StudentName}", studentName ?? "(unknown)");
-            }
-
-            return success;
-        }
-        catch (Exception ex)
-        {
-            DatabaseUserMessage.LogFailure(Logger, ex, "Error updating contact information for student {StudentId}", studentId);
-            throw;
-        }
-    }
-
-    public async Task<bool> UpdateEmergencyContactAsync(int studentId, string alternativeContact, string alternativePhone, string doctorName, string doctorPhone)
-    {
-        try
-        {
-            Logger.Information("Updating emergency contact information for student {StudentId}", studentId);
-
-            // Validate phone number formats — configurable
-            if (!string.IsNullOrWhiteSpace(alternativePhone) && !IsValidPhone(alternativePhone))
-            {
-                if (PhoneValidationOff() || PhoneValidationWarnOnly())
-                    Logger.Warning("Alternative contact phone failed validation but proceeding (mode)");
-                else
-                    throw new ArgumentException("Invalid alternative contact phone number format");
-            }
-
-            if (!string.IsNullOrWhiteSpace(doctorPhone) && !IsValidPhone(doctorPhone))
-            {
-                if (PhoneValidationOff() || PhoneValidationWarnOnly())
-                    Logger.Warning("Doctor phone failed validation but proceeding (mode)");
-                else
-                    throw new ArgumentException("Invalid doctor phone number format");
-            }
-
-            var (context, dispose) = GetWriteContext();
-            bool success;
-            string? studentName = null;
-            try
-            {
-                var student = await context.Students.FindAsync(studentId);
-                if (student == null)
-                {
-                    Logger.Warning("Student with ID {StudentId} not found", studentId);
-                    return false;
-                }
-
-                studentName = student.StudentName;
-                student.AlternativeContact = alternativeContact;
-                student.AlternativePhone = alternativePhone;
-                student.DoctorName = doctorName;
-                student.DoctorPhone = doctorPhone;
-
-                var result = await context.SaveChangesAsync();
-                success = result > 0;
-            }
-            finally
-            {
-                if (dispose)
-                {
-                    await context.DisposeAsync();
-                }
-            }
-
-            if (success)
-            {
-                Logger.Information("Successfully updated emergency contact information for student: {StudentName}", studentName ?? "(unknown)");
-            }
-
-            return success;
-        }
-        catch (Exception ex)
-        {
-            DatabaseUserMessage.LogFailure(Logger, ex, "Error updating emergency contact information for student {StudentId}", studentId);
             throw;
         }
     }
@@ -1474,25 +1512,6 @@ public class StudentService : IStudentService
         }
     }
 #endif
-
-    #endregion
-
-    #region Data Seeding
-
-    /// <summary>
-    /// District JSON seed is retired. Add students through intake or CSV import.
-    /// </summary>
-    public Task<SeedResult> SeedDistrictDataAsync()
-    {
-        Logger.Information("District JSON seed skipped — students are added through intake or CSV import");
-        return Task.FromResult(new SeedResult
-        {
-            Success = true,
-            RecordsSeeded = 0,
-            Duration = TimeSpan.Zero,
-            CompletedAt = DateTime.UtcNow
-        });
-    }
 
     #endregion
 }
