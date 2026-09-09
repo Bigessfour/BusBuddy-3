@@ -1590,8 +1590,6 @@ namespace BusBuddy.Core.Services
                 var (context, dispose) = GetWriteContext();
                 try
                 {
-                    await using var transaction = await context.Database.BeginTransactionAsync();
-
                     var route = await context.Routes.FindAsync(routeId);
                     if (route == null)
                     {
@@ -1615,8 +1613,9 @@ namespace BusBuddy.Core.Services
 
                     RouteVehicleLinker.Apply(route, bus, timeSlot);
 
+                    // Single SaveChanges is atomic; do not wrap in BeginTransactionAsync —
+                    // NpgsqlRetryingExecutionStrategy rejects user-initiated transactions.
                     await context.SaveChangesAsync();
-                    await transaction.CommitAsync();
 
                     Logger.Information("Assigned vehicle {VehicleId} to route {RouteId} for {TimeSlot} OpId={OpId}", vehicleId, routeId, timeSlot, opId);
                     EndOpOk("AssignVehicle", opId, sw, routeId);
@@ -1770,7 +1769,8 @@ namespace BusBuddy.Core.Services
             catch (Exception ex)
             {
                 DatabaseUserMessage.LogFailure(Logger, ex, "Error adding stop to route {RouteId}", routeId);
-                return Result.FailureResult<RouteStop>($"Error adding stop to route: {ex.Message}");
+                var detail = ex.GetBaseException().Message;
+                return Result.FailureResult<RouteStop>($"Error adding stop to route: {detail}");
             }
         }
 

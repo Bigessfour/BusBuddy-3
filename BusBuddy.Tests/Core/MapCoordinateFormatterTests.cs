@@ -1,3 +1,4 @@
+using System;
 using BusBuddy.Core.Mapping;
 using NUnit.Framework;
 
@@ -115,11 +116,86 @@ public class MapCoordinateFormatterTests
     }
 
     [Test]
-    public void RadiusKilometers_CountySpan_IsLargerThanNeighborhood()
+    public void ZoomForBounds_WiderViewportFitsDeeper()
     {
-        var county = MapDefaults.RadiusKilometers(38.0, 38.2, -103.0, -102.0);
-        var block = MapDefaults.RadiusKilometers(38.15, 38.151, -102.72, -102.719);
-        Assert.That(county, Is.GreaterThan(block));
-        Assert.That(county, Is.GreaterThan(20));
+        var narrow = MapDefaults.ZoomForBounds(38.0, 38.2, -103.0, -102.0, 400, 300);
+        var wide = MapDefaults.ZoomForBounds(38.0, 38.2, -103.0, -102.0, 2400, 1400);
+        Assert.That(wide, Is.GreaterThan(narrow));
+    }
+
+    [Test]
+    public void ZoomForBounds_DefaultOverloadMatchesDefaultViewport()
+    {
+        Assert.That(
+            MapDefaults.ZoomForBounds(38.0, 38.2, -103.0, -102.0),
+            Is.EqualTo(MapDefaults.ZoomForBounds(
+                38.0, 38.2, -103.0, -102.0,
+                MapDefaults.DefaultViewportWidth, MapDefaults.DefaultViewportHeight)));
+    }
+
+    [Test]
+    public void ZoomForBounds_InvalidViewportFallsBackToDefault()
+    {
+        var expected = MapDefaults.ZoomForBounds(38.0, 38.2, -103.0, -102.0);
+        Assert.That(MapDefaults.ZoomForBounds(38.0, 38.2, -103.0, -102.0, 0, 0), Is.EqualTo(expected));
+        Assert.That(MapDefaults.ZoomForBounds(38.0, 38.2, -103.0, -102.0, double.NaN, -5), Is.EqualTo(expected));
+    }
+
+    [Test]
+    public void ZoomForBounds_CountySpanFitsInsideDefaultViewport()
+    {
+        // 1 degree of longitude at zoom z spans 256 * 2^z / 360 px; the fit must leave the padded width unexceeded.
+        const double minLon = -103.0, maxLon = -102.0;
+        var zoom = MapDefaults.ZoomForBounds(38.0, 38.2, minLon, maxLon);
+        var worldPx = MapDefaults.TilePixels * Math.Pow(2, zoom);
+        var spanPx = worldPx * (maxLon - minLon) / 360d;
+        Assert.That(spanPx, Is.LessThanOrEqualTo(MapDefaults.DefaultViewportWidth * MapDefaults.FitPaddingFraction));
+
+        var nextWorldPx = MapDefaults.TilePixels * Math.Pow(2, zoom + 1);
+        var nextSpanPx = nextWorldPx * (maxLon - minLon) / 360d;
+        Assert.That(nextSpanPx, Is.GreaterThan(MapDefaults.DefaultViewportWidth * MapDefaults.FitPaddingFraction),
+            "one more zoom step would overflow the padded viewport, so this is the tightest fit");
+    }
+
+    [Test]
+    public void ZoomForBounds_TallSpanIsTightestFitOnLatitudeAxis()
+    {
+        // Tall, narrow box: latitude is the binding axis. Mercator Y covers [-π, π] for the whole world,
+        // so the pixel height of the span is worldPx * ΔY / 2π.
+        const double minLat = 37.6, maxLat = 38.6, minLon = -102.7, maxLon = -102.6;
+        var zoom = MapDefaults.ZoomForBounds(minLat, maxLat, minLon, maxLon);
+
+        static double MercY(double lat)
+        {
+            var sin = Math.Sin(lat * Math.PI / 180d);
+            return Math.Log((1 + sin) / (1 - sin)) / 2d;
+        }
+
+        var dy = Math.Abs(MercY(maxLat) - MercY(minLat));
+        var spanPx = MapDefaults.TilePixels * Math.Pow(2, zoom) * dy / (2 * Math.PI);
+        var usable = MapDefaults.DefaultViewportHeight * MapDefaults.FitPaddingFraction;
+        Assert.That(spanPx, Is.LessThanOrEqualTo(usable));
+        Assert.That(spanPx * 2, Is.GreaterThan(usable), "one more zoom step would overflow the padded height");
+    }
+
+    [Test]
+    public void ClampZoom_AndDetailLabels_FollowImageryLayerRange()
+    {
+        Assert.That(MapDefaults.ClampZoom(0), Is.EqualTo(MapDefaults.MinZoomLevel));
+        Assert.That(MapDefaults.ClampZoom(99), Is.EqualTo(MapDefaults.MaxZoomLevel));
+        Assert.That(MapDefaults.MaxZoomLevel, Is.EqualTo(19));
+        Assert.That(MapDefaults.ShowsDetailLabels(MapDefaults.DetailLabelZoomLevel - 1), Is.False);
+        Assert.That(MapDefaults.ShowsDetailLabels(MapDefaults.DetailLabelZoomLevel), Is.True);
+        Assert.That(MapDefaults.SchoolZoomLevel, Is.GreaterThanOrEqualTo(MapDefaults.DetailLabelZoomLevel),
+            "a school-zoomed view must always show captions");
+    }
+
+    [Test]
+    public void ResolveTileUrl_ExpandsOfficialMapTilesTemplate()
+    {
+        var template = MapBasemap.TileUrlTemplate("sess-1", "key-1");
+        var url = MapBasemap.ResolveTileUrl(template, 12, 845, 1611);
+        Assert.That(url, Does.StartWith("https://tile.googleapis.com/v1/2dtiles/12/845/1611?"));
+        Assert.That(url, Does.Not.Contain("{"));
     }
 }

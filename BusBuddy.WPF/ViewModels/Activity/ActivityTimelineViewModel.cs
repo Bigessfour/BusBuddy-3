@@ -7,21 +7,28 @@ using System.Windows.Media;
 using BusBuddy.Core.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Serilog;
 
 namespace BusBuddy.WPF.ViewModels.Activity
 {
     public partial class ActivityTimelineViewModel : ObservableObject
     {
-        private readonly IActivityLogService _logService;
+        private static readonly ILogger Logger = Log.ForContext<ActivityTimelineViewModel>();
+        private readonly IActivityLogService? _logService;
 
-        public ActivityTimelineViewModel(IActivityLogService logService)
+        public ActivityTimelineViewModel(IActivityLogService? logService)
         {
-            _logService = logService ?? throw new ArgumentNullException(nameof(logService));
+            _logService = logService;
             RefreshCommand = new AsyncRelayCommand(RefreshTimelineAsync);
             InitializeDateRanges();
             InitializeEventTypes();
             InitializeEventLegend();
             SelectedDateRange = DateRanges.First(d => d.Range == DateRange.LastWeek);
+            if (_logService is null)
+            {
+                Logger.Warning("ActivityTimeline opened without IActivityLogService — timeline cannot load");
+            }
+
             _ = RefreshTimelineAsync();
         }
 
@@ -141,6 +148,13 @@ namespace BusBuddy.WPF.ViewModels.Activity
 
         private async Task RefreshTimelineAsync()
         {
+            if (_logService is null)
+            {
+                HasNoData = true;
+                Logger.Warning("Activity timeline refresh skipped — IActivityLogService is not registered");
+                return;
+            }
+
             try
             {
                 IsLoading = true;
@@ -170,9 +184,16 @@ namespace BusBuddy.WPF.ViewModels.Activity
                 }
 
                 HasNoData = TimelineEvents.Count == 0;
+                Logger.Information(
+                    "Activity timeline refreshed Rows={Count} HasNoData={HasNoData} Start={Start} End={End}",
+                    TimelineEvents.Count,
+                    HasNoData,
+                    StartDate,
+                    EndDate);
             }
-            catch
+            catch (Exception ex)
             {
+                Logger.Error(ex, "Activity timeline refresh failed");
                 HasNoData = true;
             }
             finally

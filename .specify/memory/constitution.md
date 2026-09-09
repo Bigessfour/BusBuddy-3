@@ -98,8 +98,8 @@ When those conflict with this constitution, **this file wins** until amended und
 1. Retrieve RAG context when the change is architectural or cross-cutting.
 2. Author or update a feature under `specs/NNN-short-name/` via Spec-Kit skills.
 3. Implement against the plan/tasks; keep constitution compliance.
-4. Update architecture map in `STEADY-STATE-AND-FINISH-ROADMAP.md` when structure changes; re-index RAG.
-5. Open PR; wait for Build & Test + CodeQL; auto-merge.
+4. Update architecture map in `Documentation/diagrams/busbuddy-3-architecture.md` when structure changes; re-index RAG.
+5. Open PR; wait for Build & Test; auto-merge.
 
 ## Governance
 
@@ -108,4 +108,4 @@ When those conflict with this constitution, **this file wins** until amended und
 - Runtime tactical detail remains in `.github/copilot-instructions.md` and `AGENTS.md` as long as they stay consistent with this document.
 - Complexity beyond stated requirements must be justified in the PR or rejected.
 
-**Version**: 1.2.1 | **Ratified**: 2026-07-24 | **Last Amended**: 2026-09-06
+**Version**: 1.2.2 | **Ratified**: 2026-07-24 | **Last Amended**: 2026-09-09

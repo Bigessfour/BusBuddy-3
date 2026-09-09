@@ -11,6 +11,42 @@ public static class StudentRecordNormalizer
     {
         NormalizeOptionalForeignKeys(student);
         NormalizeDateTimes(student);
+        NormalizeSchoolYear(student);
+        EnforceSpecialNeedsHomePickup(student);
+    }
+
+    /// <summary>
+    /// SchoolYear is required by the domain contract; default a blank one to the current year so an
+    /// intake row is never orphaned from its year.
+    /// </summary>
+    public static void NormalizeSchoolYear(Student student)
+    {
+        ArgumentNullException.ThrowIfNull(student);
+        student.SchoolYear = string.IsNullOrWhiteSpace(student.SchoolYear)
+            ? CurrentSchoolYear()
+            : student.SchoolYear.Trim();
+    }
+
+    /// <summary>
+    /// specs/students.md: special needs forces home pickup, so a catalog stop cannot stay attached.
+    /// </summary>
+    public static void EnforceSpecialNeedsHomePickup(Student student)
+    {
+        ArgumentNullException.ThrowIfNull(student);
+        if (student.RequiresSpecialNeedsBus)
+        {
+            student.PickupStopId = null;
+        }
+    }
+
+    /// <summary>School year label in <c>2026-2027</c> form; rolls over on 1 July.</summary>
+    public static string CurrentSchoolYear(DateTime? asOf = null)
+    {
+        var date = asOf ?? DateTime.UtcNow;
+        var startYear = date.Month >= 7 ? date.Year : date.Year - 1;
+        return string.Create(
+            System.Globalization.CultureInfo.InvariantCulture,
+            $"{startYear}-{startYear + 1}");
     }
 
     public static void NormalizeOptionalForeignKeys(Student student)

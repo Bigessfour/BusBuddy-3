@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.IO;
+using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
@@ -10,6 +11,7 @@ using Serilog;
 using BusBuddy.Core.Data;
 using BusBuddy.Core.Mapping;
 using BusBuddy.Core.Models;
+using BusBuddy.Core.Utilities;
 using Microsoft.Extensions.Configuration;
 
 namespace BusBuddy.Core.Services
@@ -123,9 +125,17 @@ namespace BusBuddy.Core.Services
                     return;
                 }
 
+                // A JSON roster written before RidesAm/RidesPm existed states only the route columns.
+                // Without this the whole seed lands not-eligible for either run.
+                var inferred = students.Count(StudentRideModeHelper.ApplyRouteDerivedEligibility);
+
                 context.Students.AddRange(students);
                 await context.SaveChangesAsync();
-                Logger.Information("Seeded {Count} students from JSON: {Path}", students.Count, jsonPath);
+                Logger.Information(
+                    "Seeded {Count} students from JSON: {Path} (eligibility inferred from routes for {Inferred})",
+                    students.Count,
+                    jsonPath,
+                    inferred);
             }
             catch (Exception ex)
             {
@@ -375,11 +385,13 @@ namespace BusBuddy.Core.Services
             return await ImportFromCsvTextAsync(csvData, skipIfAlreadySeeded: false, createdBy: "CsvImport");
         }
 
+        // Synthetic tokens only. Never put anything resembling a real child, address, or phone
+        // in this file — specs/students.md forbids committing student PII to git.
         private static string GetEmbeddedSampleCsv() => @"
 Student,,,Parent,,,,,,,,Joint Parent,,,,,,,Econtact,,
 Fname,Lname,Grade,Fname,Lname,Address,City,State,County,Hphone,Cphone,Jparent FirstName,Jparent LastName,Address,City,State,County,Cphone ,Econtact FirstName,Econtact LastName,Econtact Phone
-Alex,Rivera,7,Pat,Rivera,100 Main St,Oakridge,CO,County,,555-0100,,,,,,,,
-Jordan,Lee,3,Sam,Lee,200 Oak Ave,Oakridge,CO,County,,555-0101,,,,,,,,
+TEST_STUDENT_01,SEEDDATA,7,TEST_GUARDIAN_01,SEEDDATA,100 Test St,TESTVILLE,CO,TEST COUNTY,,555-0100,,,,,,,,
+TEST_STUDENT_02,SEEDDATA,3,TEST_GUARDIAN_02,SEEDDATA,200 Test St,TESTVILLE,CO,TEST COUNTY,,555-0101,,,,,,,,
 ";
 
         private async Task<int> ImportFromCsvTextAsync(string csvData, bool skipIfAlreadySeeded, string createdBy)
@@ -399,6 +411,14 @@ Jordan,Lee,3,Sam,Lee,200 Oak Ave,Oakridge,CO,County,,555-0101,,,,,,,,
                 }
                 // Top-up logic: if fewer students than CSV rows, import delta; if any exist and meet/exceed count, skip.
                 var lines = csvData.Trim().Split(new[] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries);
+
+                // Roster format (single header row, explicit column names) carries campus, route,
+                // and special-needs columns that the legacy family-export format cannot express.
+                if (lines.Length >= 1 && IsRosterHeader(lines[0]))
+                {
+                    return await ImportRosterCsvAsync(context, lines, createdBy);
+                }
+
                 if (lines.Length < 3)
                 {
                     Logger.Warning("No student data found in CSV.");
@@ -417,7 +437,8 @@ Jordan,Lee,3,Sam,Lee,200 Oak Ave,Oakridge,CO,County,,555-0101,,,,,,,,
                 if (idxFname < 0 || idxLname < 0 || idxGrade < 0 || idxAddress < 0)
                 {
                     throw new InvalidOperationException(
-                        "CSV is not in the expected student format. Expected a header row with Fname, Lname, Grade, and Address.");
+                        "CSV is not in the expected student format. Expected either a roster header row containing " +
+                        "StudentName, or a legacy family-export header row with Fname, Lname, Grade, and Address.");
                 }
 
                 int idxParentFname = header.Length > 3 ? Array.IndexOf(header, "Fname", 3) : -1;
@@ -610,6 +631,11 @@ Jordan,Lee,3,Sam,Lee,200 Oak Ave,Oakridge,CO,County,,555-0101,,,,,,,,
                         CreatedDate = DateTime.UtcNow,
                         CreatedBy = createdBy
                     };
+                    // The legacy family export carries no route or eligibility columns, so this leaves
+                    // both runs off. Eligibility is stated, not assumed (specs/students.md) — a clerk
+                    // ticks the AM/PM boxes on the form, or a roster CSV that names routes states it.
+                    StudentRideModeHelper.ApplyRouteDerivedEligibility(student);
+
                     if (skipIfAlreadySeeded)
                     {
                         student.FamilyId = family.FamilyId;
@@ -617,84 +643,543 @@ Jordan,Lee,3,Sam,Lee,200 Oak Ave,Oakridge,CO,County,,555-0101,,,,,,,,
                     students.Add(student);
                 }
 
-                if (!skipIfAlreadySeeded)
-                {
-                    HashSet<string> existingNames;
-                    try
-                    {
-                        existingNames = (await context.Students.Select(s => s.StudentName).ToListAsync())
-                            .Where(n => !string.IsNullOrWhiteSpace(n))
-                            .ToHashSet(StringComparer.OrdinalIgnoreCase);
-                    }
-                    catch (InvalidOperationException)
-                    {
-                        existingNames = context.Students.Select(s => s.StudentName)
-                            .Where(n => !string.IsNullOrWhiteSpace(n))
-                            .ToHashSet(StringComparer.OrdinalIgnoreCase)!;
-                    }
-
-                    students.RemoveAll(s => existingNames.Contains(s.StudentName));
-                    var usedFamilies = new HashSet<Family>(students.Select(s => s.Family).Where(f => f != null)!);
-                    families.RemoveAll(f => !usedFamilies.Contains(f));
-                }
-
-                if (students.Count == 0)
-                {
-                    Logger.Information("CSV import added 0 students (empty file or all names already present).");
-                    return 0;
-                }
-
-                List<Destination> activeSchools = [];
-                if (context.Destinations is not null)
-                {
-                    try
-                    {
-                        activeSchools = await context.Destinations
-                            .Where(d => d.IsActive && !d.IsDeleted && d.DestinationType == DestinationTypes.School)
-                            .ToListAsync();
-                    }
-                    catch (InvalidOperationException)
-                    {
-                        activeSchools = context.Destinations
-                            .Where(d => d.IsActive && !d.IsDeleted && d.DestinationType == DestinationTypes.School)
-                            .ToList();
-                    }
-                }
-
-                if (activeSchools.Count == 1)
-                {
-                    var school = activeSchools[0];
-                    foreach (var student in students)
-                    {
-                        student.School = school.Name;
-                        student.DestinationId = school.DestinationId;
-                    }
-
-                    Logger.Information(
-                        "CSV import linked {Count} students to sole active school {School} (DestinationId={DestinationId})",
-                        students.Count,
-                        school.Name,
-                        school.DestinationId);
-                }
-                else if (activeSchools.Count > 1)
-                {
-                    foreach (var student in students)
-                    {
-                        BusBuddy.Core.Utilities.StudentSchoolLinker.SyncDestinationFromSchoolName(student, activeSchools);
-                    }
-                }
-
-                context.Families.AddRange(families);
-                context.Students.AddRange(students);
-                await context.SaveChangesAsync();
-                Logger.Information("Imported {Count} students from CSV.", students.Count);
-                return students.Count;
+                return await FinalizeImportAsync(context, students, families, dedupeByName: !skipIfAlreadySeeded);
             }
             catch (Exception ex)
             {
                 Logger.Error(ex, "Error seeding students from CSV");
                 throw;
             }
+        }
+
+        /// <summary>
+        /// Shared tail for both CSV formats: drop names that already exist, link campuses to the
+        /// Destinations catalog, then persist.
+        /// </summary>
+        private static async Task<int> FinalizeImportAsync(
+            BusBuddyDbContext context,
+            List<Student> students,
+            List<Family> families,
+            bool dedupeByName)
+        {
+            if (dedupeByName)
+            {
+                HashSet<string> existingNames;
+                try
+                {
+                    existingNames = (await context.Students.Select(s => s.StudentName).ToListAsync())
+                        .Where(n => !string.IsNullOrWhiteSpace(n))
+                        .ToHashSet(StringComparer.OrdinalIgnoreCase);
+                }
+                catch (InvalidOperationException)
+                {
+                    existingNames = context.Students.Select(s => s.StudentName)
+                        .Where(n => !string.IsNullOrWhiteSpace(n))
+                        .ToHashSet(StringComparer.OrdinalIgnoreCase)!;
+                }
+
+                students.RemoveAll(s => existingNames.Contains(s.StudentName));
+                var usedFamilies = new HashSet<Family>(students.Select(s => s.Family).Where(f => f != null)!);
+                families.RemoveAll(f => !usedFamilies.Contains(f));
+            }
+
+            if (students.Count == 0)
+            {
+                Logger.Information("CSV import added 0 students (empty file or all names already present).");
+                return 0;
+            }
+
+            List<Destination> activeSchools = [];
+            if (context.Destinations is not null)
+            {
+                try
+                {
+                    activeSchools = await context.Destinations
+                        .Where(d => d.IsActive && !d.IsDeleted && d.DestinationType == DestinationTypes.School)
+                        .ToListAsync();
+                }
+                catch (InvalidOperationException)
+                {
+                    activeSchools = context.Destinations
+                        .Where(d => d.IsActive && !d.IsDeleted && d.DestinationType == DestinationTypes.School)
+                        .ToList();
+                }
+            }
+
+            if (activeSchools.Count > 0)
+            {
+                var soleSchoolFallbacks = 0;
+                foreach (var student in students)
+                {
+                    // A roster that names the campus per child owns that value. Only fill in from the
+                    // catalog when the row left the campus blank, otherwise a single-school district
+                    // would silently rewrite every multi-campus roster onto one destination.
+                    if (string.IsNullOrWhiteSpace(student.School) && activeSchools.Count == 1)
+                    {
+                        student.School = activeSchools[0].Name;
+                        student.DestinationId = activeSchools[0].DestinationId;
+                        soleSchoolFallbacks++;
+                        continue;
+                    }
+
+                    BusBuddy.Core.Utilities.StudentSchoolLinker.SyncDestinationFromSchoolName(student, activeSchools);
+                }
+
+                var unlinked = students.Count(s => s.DestinationId is null or 0);
+                Logger.Information(
+                    "CSV import campus linking Students={Count} SoleSchoolFallback={Fallback} Unlinked={Unlinked}",
+                    students.Count,
+                    soleSchoolFallbacks,
+                    unlinked);
+            }
+
+            context.Families.AddRange(families);
+            context.Students.AddRange(students);
+            await context.SaveChangesAsync();
+            Logger.Information("Imported {Count} students from CSV.", students.Count);
+            return students.Count;
+        }
+
+        /// <summary>
+        /// Columns the roster format understands. Anything else in the header is ignored with a warning
+        /// so a clerk's extra bookkeeping column does not fail the whole import.
+        /// </summary>
+        private static readonly string[] RosterColumns =
+        [
+            "StopNumber", "PickupTime", "StudentName", "Grade", "School", "SchoolYear",
+            "HomeAddress", "City", "State", "Zip",
+            "GuardianName", "GuardianPhone", "HomePhone", "EmergencyContactName", "EmergencyContactPhone",
+            "PickupMode", "PickupStopId", "AMRoute", "PMRoute", "RidesAm", "RidesPm",
+            "RequiresSpecialNeedsBus", "RequiresAide", "RequiresWheelchair", "RequiresSeatBelt",
+            "HasMedicalNeeds", "Active", "TransportationNotes"
+        ];
+
+        /// <summary>
+        /// Columns the roster carries for the clerk's benefit that this importer does not read.
+        /// Stop order and times belong to the route (specs/routes.md), not to the child.
+        /// </summary>
+        private static readonly string[] RosterRouteOnlyColumns = ["StopNumber", "PickupTime"];
+
+        /// <summary>A roster CSV declares its columns on the first line and always includes StudentName.</summary>
+        private static bool IsRosterHeader(string line) =>
+            SplitCsvLine(line).Any(f => string.Equals(f, "StudentName", StringComparison.OrdinalIgnoreCase));
+
+        /// <summary>
+        /// Splits one CSV line honouring double-quoted fields (needed because roster directions and
+        /// notes contain commas). Embedded newlines are not supported — keep one record per line.
+        /// </summary>
+        private static string[] SplitCsvLine(string line)
+        {
+            var fields = new List<string>();
+            var current = new StringBuilder();
+            var inQuotes = false;
+
+            for (var i = 0; i < line.Length; i++)
+            {
+                var c = line[i];
+                if (inQuotes)
+                {
+                    if (c != '"')
+                    {
+                        current.Append(c);
+                    }
+                    else if (i + 1 < line.Length && line[i + 1] == '"')
+                    {
+                        current.Append('"');
+                        i++;
+                    }
+                    else
+                    {
+                        inQuotes = false;
+                    }
+                }
+                else if (c == '"')
+                {
+                    inQuotes = true;
+                }
+                else if (c == ',')
+                {
+                    fields.Add(current.ToString().Trim());
+                    current.Clear();
+                }
+                else
+                {
+                    current.Append(c);
+                }
+            }
+
+            fields.Add(current.ToString().Trim());
+            return [.. fields];
+        }
+
+        private static bool ParseRosterBool(string value, bool defaultValue = false) =>
+            ParseRosterBoolOrNull(value) ?? defaultValue;
+
+        /// <summary>
+        /// Tri-state parse: null means the roster said nothing, so the caller can fall back to
+        /// inference instead of treating silence as <c>false</c>.
+        /// </summary>
+        private static bool? ParseRosterBoolOrNull(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return null;
+            }
+
+            return value.Trim().ToLowerInvariant() switch
+            {
+                "true" or "yes" or "y" or "1" or "x" => true,
+                "false" or "no" or "n" or "0" => false,
+                _ => null
+            };
+        }
+
+        /// <summary>
+        /// Imports the roster format: one header row of named columns, one row per child.
+        /// Unlike the legacy family-export format this carries the assigned campus, AM/PM route,
+        /// and the special-needs / aide flags, so a special-needs run imports without losing them.
+        /// Latitude/Longitude are deliberately never read here — coordinates come from Address
+        /// Validation, not from a typed roster (specs/students.md).
+        /// </summary>
+        private static async Task<int> ImportRosterCsvAsync(
+            BusBuddyDbContext context,
+            string[] lines,
+            string createdBy)
+        {
+            var header = SplitCsvLine(lines[0]);
+            int Col(string name) =>
+                Array.FindIndex(header, h => string.Equals(h, name, StringComparison.OrdinalIgnoreCase));
+
+            foreach (var column in header.Where(h => !string.IsNullOrWhiteSpace(h)))
+            {
+                if (!RosterColumns.Contains(column, StringComparer.OrdinalIgnoreCase))
+                {
+                    Logger.Warning("Roster CSV column {Column} is not mapped to a Student field; ignoring it.", column);
+                }
+                else if (RosterRouteOnlyColumns.Contains(column, StringComparer.OrdinalIgnoreCase))
+                {
+                    Logger.Information(
+                        "Roster CSV column {Column} is retained for the clerk but is not read by the importer.",
+                        column);
+                }
+            }
+
+            int idxName = Col("StudentName");
+            int idxGrade = Col("Grade");
+            int idxSchool = Col("School");
+            int idxSchoolYear = Col("SchoolYear");
+            int idxAddress = Col("HomeAddress");
+            int idxCity = Col("City");
+            int idxState = Col("State");
+            int idxZip = Col("Zip");
+            int idxGuardian = Col("GuardianName");
+            int idxGuardianPhone = Col("GuardianPhone");
+            int idxHomePhone = Col("HomePhone");
+            int idxEmergencyName = Col("EmergencyContactName");
+            int idxEmergencyPhone = Col("EmergencyContactPhone");
+            int idxPickupMode = Col("PickupMode");
+            int idxPickupStopId = Col("PickupStopId");
+            int idxAmRoute = Col("AMRoute");
+            int idxPmRoute = Col("PMRoute");
+            int idxRidesAm = Col("RidesAm");
+            int idxRidesPm = Col("RidesPm");
+            int idxSpecialNeeds = Col("RequiresSpecialNeedsBus");
+            int idxAide = Col("RequiresAide");
+            int idxWheelchair = Col("RequiresWheelchair");
+            int idxSeatBelt = Col("RequiresSeatBelt");
+            int idxMedical = Col("HasMedicalNeeds");
+            int idxActive = Col("Active");
+            int idxNotes = Col("TransportationNotes");
+
+            var studentNum = await NextStudentNumberAsync(context);
+            var families = new List<Family>();
+            var students = new List<Student>();
+
+            for (var i = 1; i < lines.Length; i++)
+            {
+                var row = lines[i];
+                if (string.IsNullOrWhiteSpace(row) || row.All(c => c == ','))
+                {
+                    continue;
+                }
+
+                var cols = SplitCsvLine(row);
+                string Value(int idx) => idx >= 0 && idx < cols.Length ? cols[idx] : string.Empty;
+
+                var studentName = Value(idxName);
+                if (string.IsNullOrWhiteSpace(studentName))
+                {
+                    Logger.Warning("Skipping roster row {Row}: missing StudentName.", i + 1);
+                    continue;
+                }
+
+                var requiresSpecialNeedsBus = ParseRosterBool(Value(idxSpecialNeeds));
+                var pickupMode = Value(idxPickupMode);
+                var wantsCatalogStop = string.Equals(
+                    pickupMode, LocationTypes.PickupModeCatalogStop, StringComparison.OrdinalIgnoreCase);
+
+                // specs/students.md pickup rule 3: special needs forces home pickup on a special-needs
+                // route. Refuse the row rather than importing a contradictory record.
+                if (requiresSpecialNeedsBus && wantsCatalogStop)
+                {
+                    Logger.Warning(
+                        "Skipping roster row {Row}: RequiresSpecialNeedsBus is true but PickupMode is {Mode}. " +
+                        "Special-needs riders are home pickup.",
+                        i + 1,
+                        pickupMode);
+                    continue;
+                }
+
+                int? pickupStopId = null;
+                if (int.TryParse(Value(idxPickupStopId), NumberStyles.Integer, CultureInfo.InvariantCulture, out var stopId)
+                    && stopId > 0)
+                {
+                    pickupStopId = stopId;
+                }
+
+                // A catalog stop is only real if it points at a published PickupStop.
+                if (wantsCatalogStop && pickupStopId is null)
+                {
+                    Logger.Warning(
+                        "Skipping roster row {Row}: PickupMode is CatalogStop but no PickupStopId was supplied.",
+                        i + 1);
+                    continue;
+                }
+
+                if (!wantsCatalogStop)
+                {
+                    pickupStopId = null;
+                }
+
+                var amRoute = Value(idxAmRoute);
+                var pmRoute = Value(idxPmRoute);
+
+                // specs/students.md: "MUST allow AM eligibility, PM eligibility, both, or neither,
+                // independently." A roster column states it outright; otherwise the assigned route is
+                // the statement — the same rule the database backfill uses. Silence is never "both".
+                var ridesAm = ParseRosterBoolOrNull(Value(idxRidesAm)) ?? !string.IsNullOrWhiteSpace(amRoute);
+                var ridesPm = ParseRosterBoolOrNull(Value(idxRidesPm)) ?? !string.IsNullOrWhiteSpace(pmRoute);
+
+                var guardianName = Value(idxGuardian);
+                var guardianPhone = Value(idxGuardianPhone);
+                var address = Value(idxAddress);
+                var city = Value(idxCity);
+                var state = Value(idxState);
+                var zip = Value(idxZip);
+
+                // Siblings share one home and one guardian; they are separate students in one family.
+                var family = families.LastOrDefault(f =>
+                    string.Equals(f.ParentGuardian, guardianName, StringComparison.OrdinalIgnoreCase) &&
+                    string.Equals(f.Address, address, StringComparison.OrdinalIgnoreCase));
+                if (family is null && (!string.IsNullOrWhiteSpace(guardianName) || !string.IsNullOrWhiteSpace(address)))
+                {
+                    family = new Family
+                    {
+                        ParentGuardian = guardianName,
+                        Address = address,
+                        City = city,
+                        HomePhone = Value(idxHomePhone),
+                        CellPhone = guardianPhone,
+                        EmergencyContact = Value(idxEmergencyName),
+                        CreatedDate = DateTime.UtcNow,
+                        CreatedBy = createdBy
+                    };
+                    families.Add(family);
+                }
+
+                var student = new Student
+                {
+                    StudentName = studentName,
+                    Grade = string.IsNullOrWhiteSpace(Value(idxGrade)) ? null : Value(idxGrade),
+                    School = Value(idxSchool),
+                    HomeAddress = address,
+                    City = city,
+                    State = state,
+                    Zip = zip,
+                    ParentGuardian = guardianName,
+                    CellPhone = guardianPhone,
+                    HomePhone = Value(idxHomePhone),
+                    EmergencyContactName = Value(idxEmergencyName),
+                    EmergencyPhone = Value(idxEmergencyPhone),
+                    PickupStopId = pickupStopId,
+                    AMRoute = amRoute,
+                    PMRoute = pmRoute,
+                    RidesAm = ridesAm,
+                    RidesPm = ridesPm,
+                    SchoolYear = Value(idxSchoolYear),
+                    RequiresSpecialNeedsBus = requiresSpecialNeedsBus,
+                    RequiresAide = ParseRosterBool(Value(idxAide)),
+                    RequiresWheelchair = ParseRosterBool(Value(idxWheelchair)),
+                    RequiresSeatBelt = ParseRosterBool(Value(idxSeatBelt)),
+                    HasMedicalNeeds = ParseRosterBool(Value(idxMedical)),
+                    TransportationNotes = string.IsNullOrWhiteSpace(Value(idxNotes)) ? null : Value(idxNotes),
+                    Active = ParseRosterBool(Value(idxActive), defaultValue: true),
+                    StudentNumber = $"STU{studentNum++.ToString("D4", CultureInfo.InvariantCulture)}",
+                    Family = family,
+                    CreatedDate = DateTime.UtcNow,
+                    CreatedBy = createdBy
+                };
+
+                StudentSpecialNeedsHelper.SyncLegacySpecialNeedsText(student);
+                students.Add(student);
+            }
+
+            Logger.Information(
+                "Roster CSV parsed Rows={Rows} Students={Students} SpecialNeeds={SpecialNeeds} " +
+                "HomePickup={HomePickup} RidesAm={RidesAm} RidesPm={RidesPm}",
+                lines.Length - 1,
+                students.Count,
+                students.Count(s => s.RequiresSpecialNeedsBus),
+                students.Count(s => s.PickupStopId is null),
+                students.Count(s => s.RidesAm),
+                students.Count(s => s.RidesPm));
+
+            // A student whose AMRoute has no matching Routes row fails ValidateStudentAsync, which
+            // would lock the clerk out of editing the record at all.
+            await ReconcileRouteAssignmentsAsync(context, students, createdBy);
+
+            return await FinalizeImportAsync(context, students, families, dedupeByName: true);
+        }
+
+        /// <summary>
+        /// Reduces a route name to its lowercase word set so word-order variants of the same route
+        /// collapse together — a roster written "AM Bus 5 Special Needs" names the same run the
+        /// database already calls "AM Special Needs Bus 5".
+        /// </summary>
+        private static string RouteNameKey(string routeName) =>
+            string.Join(
+                ' ',
+                routeName
+                    .Split(new[] { ' ', '\t', '-', '_', '#', '.', ',', '/' }, StringSplitOptions.RemoveEmptyEntries)
+                    .Select(t => t.ToLowerInvariant())
+                    .OrderBy(t => t, StringComparer.Ordinal));
+
+        /// <summary>
+        /// Makes every imported AM/PM route name resolvable by <c>StudentService.ValidateStudentAsync</c>,
+        /// which matches <c>Routes.RouteName</c> exactly:
+        /// <list type="number">
+        /// <item>A name that differs from an existing route only by word order is rewritten to the
+        /// existing spelling, so the database stays the single source of truth for canonical names
+        /// and no roster file has to be edited.</item>
+        /// <item>A name with no route at all gets a route row created for it.</item>
+        /// </list>
+        /// </summary>
+        private static async Task<int> ReconcileRouteAssignmentsAsync(
+            BusBuddyDbContext context,
+            List<Student> students,
+            string createdBy)
+        {
+            List<Route> existingRoutes;
+            try
+            {
+                existingRoutes = await context.Routes.ToListAsync();
+            }
+            catch (InvalidOperationException)
+            {
+                // Fallback for mocks lacking IAsyncQueryProvider, as elsewhere in this file.
+                existingRoutes = context.Routes.ToList();
+            }
+
+            var canonicalByKey = new Dictionary<string, string>(StringComparer.Ordinal);
+            foreach (var route in existingRoutes.Where(r => !string.IsNullOrWhiteSpace(r.RouteName)))
+            {
+                canonicalByKey.TryAdd(RouteNameKey(route.RouteName), route.RouteName);
+            }
+
+            string? Canonicalize(string? assigned, string studentName, string slot)
+            {
+                if (string.IsNullOrWhiteSpace(assigned))
+                {
+                    return assigned;
+                }
+
+                if (!canonicalByKey.TryGetValue(RouteNameKey(assigned), out var canonical))
+                {
+                    return assigned;
+                }
+
+                if (!string.Equals(canonical, assigned, StringComparison.Ordinal))
+                {
+                    Logger.Information(
+                        "Roster {Slot} route {Assigned} matched existing route {Canonical} by name variant; " +
+                        "using the existing spelling for {StudentName}.",
+                        slot,
+                        assigned,
+                        canonical,
+                        studentName);
+                }
+
+                return canonical;
+            }
+
+            foreach (var student in students)
+            {
+                student.AMRoute = Canonicalize(student.AMRoute, student.StudentName, "AM");
+                student.PMRoute = Canonicalize(student.PMRoute, student.StudentName, "PM");
+            }
+
+            var missing = students
+                .SelectMany(s => new[] { s.AMRoute, s.PMRoute })
+                .Where(name => !string.IsNullOrWhiteSpace(name))
+                .Select(name => name!.Trim())
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .Where(name => !canonicalByKey.ContainsKey(RouteNameKey(name)))
+                .ToList();
+
+            if (missing.Count == 0)
+            {
+                return 0;
+            }
+
+            var todayUtc = DateTime.SpecifyKind(DateTime.UtcNow.Date, DateTimeKind.Utc);
+            foreach (var name in missing)
+            {
+                var isSpecialNeeds = StudentSpecialNeedsHelper.IsSpecialNeedsRoute(name, false);
+                context.Routes.Add(new Route
+                {
+                    RouteName = name,
+                    Description = "Created from roster import so assigned students validate.",
+                    Date = todayUtc,
+                    IsActive = true,
+                    IsSpecialNeedsRoute = isSpecialNeeds,
+                    Session = RouteSession.Infer(name, isSpecialNeeds, null)
+                });
+
+                Logger.Information(
+                    "Created route {RouteName} from roster import Session={Session} SpecialNeeds={SpecialNeeds}",
+                    name,
+                    RouteSession.Infer(name, isSpecialNeeds, null),
+                    isSpecialNeeds);
+            }
+
+            await context.SaveChangesAsync();
+            return missing.Count;
+        }
+
+        /// <inheritdoc />
+        public async Task<int> EnsureRoutesForStudentAssignmentsAsync()
+        {
+            using var context = _contextFactory.CreateWriteDbContext();
+
+            // AsTracking because BusBuddyDbContext defaults to NoTracking, and the canonical-spelling
+            // rewrite below has to persist.
+            var assigned = await context.Students
+                .AsTracking()
+                .Where(s => s.AMRoute != null || s.PMRoute != null)
+                .ToListAsync();
+
+            var created = await ReconcileRouteAssignmentsAsync(
+                context, assigned, "EnsureRoutesForStudentAssignments");
+
+            var rewritten = await context.SaveChangesAsync();
+            Logger.Information(
+                "Route assignment repair complete StudentsInspected={Students} RoutesCreated={Created} " +
+                "StudentRowsRewritten={Rewritten}",
+                assigned.Count,
+                created,
+                rewritten);
+
+            return created;
         }
 
         private static async Task<int> NextStudentNumberAsync(BusBuddyDbContext context)
@@ -804,6 +1289,10 @@ Jordan,Lee,3,Sam,Lee,200 Oak Ave,Oakridge,CO,County,,555-0101,,,,,,,,
             await SeedRoutesAsync(8);
             await SeedActivitiesAsync(25);
             await EnsureMapDemoGeoAsync();
+
+            // Leave no student pointing at a route name that has no Routes row, or the form refuses
+            // to save them (StudentService.ValidateStudentAsync matches RouteName exactly).
+            await EnsureRoutesForStudentAssignmentsAsync();
 
             Logger.Information("Development data seeding completed");
         }
@@ -1038,43 +1527,48 @@ Jordan,Lee,3,Sam,Lee,200 Oak Ave,Oakridge,CO,County,,555-0101,,,,,,,,
                 messages.Add($"Created regular route '{regularRouteName}'");
             }
 
+            // Synthetic tokens only — never anything that could be mistaken for a real child.
+            // specs/students.md: student PII must not be committed to git.
             var specialStudentSpecs = new[]
             {
                 new
                 {
-                    Name = "Ashley Johnson",
+                    Name = "TEST_STUDENT_SN_01",
+                    Guardian = "TEST_GUARDIAN_SN_01",
                     Grade = "5",
-                    Address = "456 Pine Avenue",
-                    City = "Wiley",
+                    Address = "100 Test St",
+                    City = "TESTVILLE",
                     Lat = 38.1512m,
                     Lon = -102.7210m,
                     Wheelchair = false,
                     Aide = true,
-                    Notes = "Requires aide assistance boarding"
+                    Notes = "TEST DATA: requires aide assistance boarding"
                 },
                 new
                 {
-                    Name = "Noah Martinez",
+                    Name = "TEST_STUDENT_SN_02",
+                    Guardian = "TEST_GUARDIAN_SN_02",
                     Grade = "3",
-                    Address = "118 Cedar Ln",
-                    City = "Wiley",
+                    Address = "200 Test St",
+                    City = "TESTVILLE",
                     Lat = 38.1548m,
                     Lon = -102.7162m,
                     Wheelchair = true,
                     Aide = true,
-                    Notes = "Wheelchair lift; secure tie-downs required"
+                    Notes = "TEST DATA: wheelchair lift; secure tie-downs required"
                 },
                 new
                 {
-                    Name = "Sophia Reed",
+                    Name = "TEST_STUDENT_SN_03",
+                    Guardian = "TEST_GUARDIAN_SN_03",
                     Grade = "7",
-                    Address = "902 County Road 25",
-                    City = "Wiley",
+                    Address = "300 Test St",
+                    City = "TESTVILLE",
                     Lat = 38.1485m,
                     Lon = -102.7248m,
                     Wheelchair = false,
                     Aide = false,
-                    Notes = "Seat belt harness; monitor at drop-off"
+                    Notes = "TEST DATA: seat belt harness; monitor at drop-off"
                 }
             };
 
@@ -1092,11 +1586,11 @@ Jordan,Lee,3,Sam,Lee,200 Oak Ave,Oakridge,CO,County,,555-0101,,,,,,,,
                         HomeAddress = spec.Address,
                         City = spec.City,
                         State = "CO",
-                        Zip = "81092",
+                        Zip = "00000",
                         Latitude = spec.Lat,
                         Longitude = spec.Lon,
-                        ParentGuardian = $"{spec.Name.Split(' ')[0]} Parent",
-                        CellPhone = "(719) 555-0100",
+                        ParentGuardian = spec.Guardian,
+                        CellPhone = "555-0100",
                         School = schoolName,
                         DestinationId = school.DestinationId,
                         RequiresSpecialNeedsBus = true,
@@ -1107,6 +1601,11 @@ Jordan,Lee,3,Sam,Lee,200 Oak Ave,Oakridge,CO,County,,555-0101,,,,,,,,
                         TransportationNotes = spec.Notes,
                         AMRoute = routeName,
                         PMRoute = routeName,
+                        // Assigned to both runs, so state eligibility for both — the model no longer
+                        // assumes it and the grid/scheduler read these flags, not the route strings.
+                        RidesAm = true,
+                        RidesPm = true,
+                        SchoolYear = StudentRecordNormalizer.CurrentSchoolYear(),
                         Active = true,
                         EnrollmentDate = todayUtc,
                         CreatedDate = DateTime.UtcNow,
@@ -1128,6 +1627,8 @@ Jordan,Lee,3,Sam,Lee,200 Oak Ave,Oakridge,CO,County,,555-0101,,,,,,,,
                     existing.Longitude ??= spec.Lon;
                     existing.AMRoute = routeName;
                     existing.PMRoute = routeName;
+                    existing.RidesAm = true;
+                    existing.RidesPm = true;
                     existing.TransportationNotes = spec.Notes;
                     StudentSpecialNeedsHelper.SyncLegacySpecialNeedsText(existing);
                     snCount++;
@@ -1137,10 +1638,12 @@ Jordan,Lee,3,Sam,Lee,200 Oak Ave,Oakridge,CO,County,,555-0101,,,,,,,,
             await context.SaveChangesAsync();
             messages.Add($"Prepared {snCount} special-needs student(s) on '{routeName}'");
 
+            // Synthetic tokens only — see note on specialStudentSpecs above.
+            // Both rows deliberately share one address so sibling grouping stays exercised.
             var regularStudentSpecs = new[]
             {
-                new { Name = "Emma Smith", Grade = "3", Address = "123 Oak Street", City = "Wiley", Lat = 38.1555m, Lon = -102.7180m },
-                new { Name = "Michael Smith", Grade = "1", Address = "123 Oak Street", City = "Wiley", Lat = 38.1556m, Lon = -102.7181m }
+                new { Name = "TEST_STUDENT_REG_01", Grade = "3", Address = "400 Test St", City = "TESTVILLE", Lat = 38.1555m, Lon = -102.7180m },
+                new { Name = "TEST_STUDENT_REG_02", Grade = "1", Address = "400 Test St", City = "TESTVILLE", Lat = 38.1556m, Lon = -102.7181m }
             };
 
             var regCount = 0;
@@ -1157,15 +1660,18 @@ Jordan,Lee,3,Sam,Lee,200 Oak Ave,Oakridge,CO,County,,555-0101,,,,,,,,
                         HomeAddress = spec.Address,
                         City = spec.City,
                         State = "CO",
-                        Zip = "81092",
+                        Zip = "00000",
                         Latitude = spec.Lat,
                         Longitude = spec.Lon,
-                        ParentGuardian = "John Smith",
-                        CellPhone = "(719) 555-0200",
+                        ParentGuardian = "TEST_GUARDIAN_REG",
+                        CellPhone = "555-0200",
                         School = schoolName,
                         DestinationId = school.DestinationId,
-                        AMRoute = "North Elementary",
-                        PMRoute = "North Elementary",
+                        AMRoute = regularRouteName,
+                        PMRoute = regularRouteName,
+                        RidesAm = true,
+                        RidesPm = true,
+                        SchoolYear = StudentRecordNormalizer.CurrentSchoolYear(),
                         Active = true,
                         EnrollmentDate = todayUtc,
                         CreatedDate = DateTime.UtcNow,
@@ -1186,14 +1692,17 @@ Jordan,Lee,3,Sam,Lee,200 Oak Ave,Oakridge,CO,County,,555-0101,,,,,,,,
                     existing.Longitude ??= spec.Lon;
                     if (string.IsNullOrWhiteSpace(existing.AMRoute))
                     {
-                        existing.AMRoute = "North Elementary";
+                        existing.AMRoute = regularRouteName;
                     }
 
                     if (string.IsNullOrWhiteSpace(existing.PMRoute))
                     {
-                        existing.PMRoute = "North Elementary";
+                        existing.PMRoute = regularRouteName;
                     }
 
+                    // Assigned to both runs on this seed, so both are stated.
+                    existing.RidesAm = true;
+                    existing.RidesPm = true;
                     regCount++;
                 }
             }

@@ -71,14 +71,16 @@ public sealed class StudentsGridAddressCoordinator
             if (maps.MappingUnconfigured)
             {
                 Logger.Warning("Validate address — mapping unconfigured for student {StudentId}", student.StudentId);
-                return maps.ErrorMessage ?? "Mapping is not configured (set GOOGLE_MAPS_API_KEY).";
+                return WithStoredPinNote(
+                    student,
+                    maps.ErrorMessage ?? "Mapping is not configured (set GOOGLE_MAPS_API_KEY).");
             }
 
             Logger.Warning(
                 "Address validation failed for student {StudentId}: {Error}",
                 student.StudentId,
                 maps.ErrorMessage);
-            return maps.ErrorMessage ?? "Address could not be validated.";
+            return WithStoredPinNote(student, maps.ErrorMessage ?? "Address could not be validated.");
         }
 
         var geocoder = App.ServiceProvider?.GetService<IGeocodingService>();
@@ -109,16 +111,46 @@ public sealed class StudentsGridAddressCoordinator
             student.StudentId,
             validation.IsValid);
         return validation.IsValid
-            ? "Address format is valid (GPS unavailable)"
+            ? WithStoredPinNote(student, "Address format is valid (GPS unavailable)")
             : $"Address validation failed: {validation.Error}";
+    }
+
+    private static string WithStoredPinNote(StudentModel student, string message)
+    {
+        if (!student.HasValidatedHomeCoordinates)
+        {
+            return message;
+        }
+
+        return $"{message} Stored lat/lng on this record were kept — they are not missing.";
     }
 
     private async Task PersistCoordinatesAsync(StudentModel student)
     {
-        var studentService = _studentService ?? App.ServiceProvider?.GetService<IStudentService>();
-        if (studentService is not null && student.StudentId > 0)
+        if (student.StudentId <= 0)
         {
-            await studentService.UpdateStudentAsync(student).ConfigureAwait(true);
+            return;
+        }
+
+        var studentService = _studentService ?? App.ServiceProvider?.GetService<IStudentService>();
+        if (studentService is null)
+        {
+            Logger.Warning("Cannot persist geocode — IStudentService unavailable");
+            return;
+        }
+
+        try
+        {
+            await studentService.UpdateHomeGeocodeAsync(
+                student.StudentId,
+                student.Latitude,
+                student.Longitude,
+                student.PlaceId).ConfigureAwait(true);
+        }
+        catch (Exception ex)
+        {
+            Logger.Warning(ex, "Failed to persist geocode for StudentId={StudentId}", student.StudentId);
+            throw;
         }
     }
 }

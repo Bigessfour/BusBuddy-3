@@ -11,9 +11,11 @@ using StudentModel = BusBuddy.Core.Models.Student;
 
 namespace BusBuddy.WPF.ViewModels.Student;
 
-/// <summary>Bulk AM/PM route assignment from the students grid.</summary>
+/// <summary>Bulk AM/PM route assignment and route optimization from the students grid.</summary>
 public sealed class StudentsBulkRouteCoordinator
 {
+    private const int MaxBatch = 500;
+
     private static readonly ILogger Logger = Log.ForContext<StudentsBulkRouteCoordinator>();
 
     private readonly IBusBuddyDbContextFactory _contextFactory;
@@ -23,6 +25,40 @@ public sealed class StudentsBulkRouteCoordinator
     {
         _contextFactory = contextFactory ?? throw new ArgumentNullException(nameof(contextFactory));
         _studentService = studentService;
+    }
+
+    /// <summary>
+    /// Students a bulk assignment should touch: the selected row when there is one, otherwise every
+    /// visible student still missing an AM or PM route, capped at <see cref="MaxBatch"/>.
+    /// </summary>
+    public static IReadOnlyList<StudentModel> SelectCandidates(
+        IReadOnlyList<StudentModel> visibleStudents,
+        StudentModel? selectedStudent)
+    {
+        List<StudentModel> candidates = selectedStudent is not null
+            ? [selectedStudent]
+            : visibleStudents
+                .Where(s => string.IsNullOrWhiteSpace(s.AMRoute) || string.IsNullOrWhiteSpace(s.PMRoute))
+                .ToList();
+
+        if (candidates.Count > MaxBatch)
+        {
+            candidates = candidates.Take(MaxBatch).ToList();
+            Logger.Warning("Bulk assignment candidate list truncated to {MaxBatch}", MaxBatch);
+        }
+
+        return candidates;
+    }
+
+    /// <summary>
+    /// Assigns unassigned students to active routes, then asks local Ollama (or mock AI) for
+    /// commentary. Routes are daily published runs, never trips (specs/routes.md).
+    /// </summary>
+    public async Task<StudentRouteOptimizeResult> OptimizeUnassignedAsync()
+    {
+        var optimizer = App.ServiceProvider?.GetService<IStudentRouteOptimizer>()
+            ?? new StudentRouteOptimizer(new RouteService(_contextFactory));
+        return await optimizer.OptimizeUnassignedAsync();
     }
 
     public async Task<(int Affected, int Errors, string RouteName)> AssignAsync(

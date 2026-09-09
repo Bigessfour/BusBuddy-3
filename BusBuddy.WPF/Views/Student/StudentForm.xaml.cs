@@ -93,9 +93,11 @@ namespace BusBuddy.WPF.Views.Student
             {
                 var sp = App.ServiceProvider;
                 var svc = sp?.GetService<IStudentService>();
+                // Edit mode validates too. specs/students.md requires address validation on every write
+                // path; opening an existing record must not be a way to skip it.
                 ViewModel = svc != null
-                    ? new StudentFormViewModel(svc, student, enableValidation: false)
-                    : new StudentFormViewModel(student, enableValidation: false);
+                    ? new StudentFormViewModel(svc, student, enableValidation: true)
+                    : new StudentFormViewModel(student, enableValidation: true);
                 if (svc is null)
                 {
                     Logger.Warning("StudentForm: IStudentService not in DI — saves may skip service validation");
@@ -104,7 +106,7 @@ namespace BusBuddy.WPF.Views.Student
             catch (Exception ex)
             {
                 Logger.Warning(ex, "StudentForm: DI resolve failed — using fallback ViewModel");
-                ViewModel = new StudentFormViewModel(student, enableValidation: false);
+                ViewModel = new StudentFormViewModel(student, enableValidation: true);
             }
 
             DataContext = ViewModel;

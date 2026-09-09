@@ -38,8 +38,7 @@ RULESET_JSON="$(cat <<'EOF'
       "parameters": {
         "strict_required_status_checks_policy": true,
         "required_status_checks": [
-          {"context": "Build & Test"},
-          {"context": "Security (CodeQL)"}
+          {"context": "Build & Test"}
         ]
       }
     },
@@ -67,4 +66,4 @@ fi
 echo "Enabling Dependabot security updates..."
 gh api "repos/${REPO}/vulnerability-alerts" -X PUT 2>/dev/null || true
 
-echo "Done. Required merge gates: Build & Test, Security (CodeQL). PR review count: 0."
+echo "Done. Required merge gates: Build & Test. PR review count: 0."

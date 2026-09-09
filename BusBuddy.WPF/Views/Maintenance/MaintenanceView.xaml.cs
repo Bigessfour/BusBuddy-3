@@ -18,6 +18,12 @@ public partial class MaintenanceView : UserControl
 
         try
         {
+            if (App.ServiceProvider is null)
+            {
+                Logger.Warning("MaintenanceView opened before ServiceProvider was ready");
+                return;
+            }
+
             var maintenanceService = App.ServiceProvider.GetRequiredService<IMaintenanceService>();
             var busService = App.ServiceProvider.GetRequiredService<IBusService>();
             DataContext = new MaintenanceViewModel(maintenanceService, busService);

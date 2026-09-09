@@ -19,6 +19,7 @@ public static class EntityFrameworkPostgresExtensions
         string connectionString)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(connectionString);
+        ConfigureNpgsqlAppContext();
 
         return optionsBuilder.UseNpgsql(
             connectionString,

@@ -1,4 +1,5 @@
 using System.IO;
+using System.Linq;
 using NUnit.Framework;
 
 namespace BusBuddy.Tests.WPF;
@@ -16,6 +17,32 @@ internal static class XamlViewFile
         }
 
         return File.ReadAllText(path);
+    }
+
+    /// <summary>
+    /// Concatenates every <c>*.cs</c> under a folder. Use this instead of <see cref="Read"/> when the
+    /// assertion is that some wiring exists in a layer, not that it lives in one particular file —
+    /// otherwise splitting a class into collaborators fails the test without changing behaviour.
+    /// </summary>
+    public static string ReadFolder(string relativeFolderUnderWpf)
+    {
+        var dir = TestContext.CurrentContext.TestDirectory;
+        while (dir is not null)
+        {
+            var candidate = Path.Combine(dir, "BusBuddy.WPF", relativeFolderUnderWpf);
+            if (Directory.Exists(candidate))
+            {
+                return string.Join(
+                    "\n",
+                    Directory.EnumerateFiles(candidate, "*.cs", SearchOption.AllDirectories)
+                        .OrderBy(p => p, System.StringComparer.Ordinal)
+                        .Select(File.ReadAllText));
+            }
+
+            dir = Directory.GetParent(dir)?.FullName;
+        }
+
+        throw new DirectoryNotFoundException($"Missing BusBuddy.WPF/{relativeFolderUnderWpf}");
     }
 
     private static string? Resolve(string relativeUnderWpf)

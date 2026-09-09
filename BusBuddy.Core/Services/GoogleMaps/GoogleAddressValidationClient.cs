@@ -299,6 +299,21 @@ public sealed class GoogleAddressValidationClient : IGeocodingService, IDisposab
     }
 
     /// <summary>
+    /// Geocoding API v4 forward-geocode request for one unstructured address line.
+    /// Docs: https://developers.google.com/maps/documentation/geocoding/geocoding — the API key and
+    /// response field mask travel as <c>X-Goog-Api-Key</c> / <c>X-Goog-FieldMask</c> headers (documented for v4;
+    /// the legacy <c>maps/api/geocode/json</c> endpoint only documents <c>?key=</c>, which would put the key in URL logs).
+    /// </summary>
+    internal static Uri BuildGeocodeV4Uri(string line, string? regionCode)
+    {
+        var region = string.IsNullOrWhiteSpace(regionCode) ? "US" : regionCode.Trim();
+        return new Uri(
+            "https://geocode.googleapis.com/v4/geocode/address/"
+            + Uri.EscapeDataString(line)
+            + "?regionCode=" + Uri.EscapeDataString(region));
+    }
+
+    /// <summary>
     /// Demo / restricted API keys often allow Geocoding but block Address Validation
     /// (<c>API_KEY_SERVICE_BLOCKED</c>). Fall back so clerk Validate Address still geocodes.
     /// HTTP 403 is not treated as "mapping unconfigured" (that flag is missing-key only).
@@ -312,10 +327,9 @@ public sealed class GoogleAddressValidationClient : IGeocodingService, IDisposab
         var sw = Stopwatch.StartNew();
         try
         {
-            // Prefer X-Goog-Api-Key header so the key is not written into HTTP access logs as a query param.
-            var uri = $"https://maps.googleapis.com/maps/api/geocode/json?address={Uri.EscapeDataString(line)}";
-            using var request = new HttpRequestMessage(HttpMethod.Get, uri);
+            using var request = new HttpRequestMessage(HttpMethod.Get, BuildGeocodeV4Uri(line, _options.RegionCode));
             request.Headers.TryAddWithoutValidation("X-Goog-Api-Key", key);
+            request.Headers.TryAddWithoutValidation("X-Goog-FieldMask", GeocodeV4FieldMask);
             if (!string.IsNullOrWhiteSpace(_options.QuotaProject))
             {
                 request.Headers.TryAddWithoutValidation("X-Goog-User-Project", _options.QuotaProject);
@@ -327,19 +341,22 @@ public sealed class GoogleAddressValidationClient : IGeocodingService, IDisposab
 
             if (!response.IsSuccessStatusCode)
             {
+                var geocodeForbidden = ClassifyMapsForbidden(json);
                 Logger.Warning(
-                    "Geocoding fallback HTTP {Status} ElapsedMs={ElapsedMs}",
+                    "Geocoding v4 fallback HTTP {Status} Kind={Kind} Reason={Reason} ElapsedMs={ElapsedMs}",
                     (int)response.StatusCode,
+                    geocodeForbidden.Kind,
+                    geocodeForbidden.Reason,
                     sw.ElapsedMilliseconds);
                 return new MapsGeocodeResult
                 {
                     Ok = false,
                     MappingUnconfigured = false,
-                    ErrorMessage = DescribeMapsForbidden(addressValidationForbidden)
+                    ErrorMessage = DescribeGeocodeFailure(response.StatusCode, geocodeForbidden, addressValidationForbidden)
                 };
             }
 
-            return ParseGeocodeJson(json, sw.ElapsedMilliseconds, addressValidationForbidden);
+            return ParseGeocodeJson(json, sw.ElapsedMilliseconds);
         }
         catch (Exception ex)
         {
@@ -471,94 +488,94 @@ public sealed class GoogleAddressValidationClient : IGeocodingService, IDisposab
         };
     }
 
-    private static MapsGeocodeResult ParseGeocodeJson(
-        string json,
-        long elapsedMs,
-        MapsForbiddenInfo? addressValidationForbidden = null)
+    /// <summary>Only the fields the clerk record needs (Geocoding v4 "Choose fields to return").</summary>
+    internal const string GeocodeV4FieldMask =
+        "results.placeId,results.location,results.formattedAddress,results.granularity";
+
+    /// <summary>
+    /// v4 returns HTTP errors as <c>{"error":{code,status,message,details}}</c> (no legacy <c>status</c> field).
+    /// A 403 on Geocoding usually shares the Address Validation root cause (key restrictions / project), so
+    /// the Address Validation classification is reported unless Geocoding itself gave a more specific one.
+    /// </summary>
+    internal static string DescribeGeocodeFailure(
+        HttpStatusCode statusCode,
+        MapsForbiddenInfo geocodeForbidden,
+        MapsForbiddenInfo addressValidationForbidden)
+    {
+        if (statusCode == HttpStatusCode.NotFound)
+        {
+            return "No geocode match for that address.";
+        }
+
+        if (statusCode == HttpStatusCode.Forbidden || statusCode == HttpStatusCode.Unauthorized)
+        {
+            var billingHint = geocodeForbidden.Message?.Contains("Billing", StringComparison.OrdinalIgnoreCase) == true;
+            if (billingHint)
+            {
+                return "Google Maps requires billing on the Cloud project for this API key. " +
+                       "Enable billing on busbuddy-507301: https://console.cloud.google.com/billing — then enable Geocoding / Address Validation " +
+                       "(https://developers.google.com/maps/get-started).";
+            }
+
+            return geocodeForbidden.Kind == MapsForbiddenKind.PermissionDenied
+                ? DescribeMapsForbidden(addressValidationForbidden)
+                : DescribeMapsForbidden(geocodeForbidden)
+                    .Replace("Address Validation API is not enabled", "Geocoding API is not enabled", StringComparison.Ordinal)
+                    .Replace("Address Validation is blocked", "Geocoding is blocked", StringComparison.Ordinal);
+        }
+
+        return (int)statusCode == 429
+            ? "Geocoding rate limited — try again later."
+            : $"Geocoding failed (HTTP {(int)statusCode}).";
+    }
+
+    /// <summary>
+    /// Parses a Geocoding API v4 <c>GeocodeAddressResponse</c>:
+    /// <c>results[].placeId</c>, <c>results[].location.{latitude,longitude}</c>, <c>results[].formattedAddress</c>,
+    /// <c>results[].granularity</c> (ROOFTOP / RANGE_INTERPOLATED / GEOMETRIC_CENTER / APPROXIMATE).
+    /// </summary>
+    internal static MapsGeocodeResult ParseGeocodeJson(string json, long elapsedMs)
     {
         using var doc = JsonDocument.Parse(json);
         var root = doc.RootElement;
-        var status = root.TryGetProperty("status", out var st) && st.ValueKind == JsonValueKind.String
-            ? st.GetString()
-            : null;
-
-        if (!string.Equals(status, "OK", StringComparison.OrdinalIgnoreCase))
-        {
-            string? apiError = null;
-            if (root.TryGetProperty("error_message", out var em) && em.ValueKind == JsonValueKind.String)
-            {
-                apiError = em.GetString();
-            }
-
-            Logger.Warning(
-                "Geocoding fallback status={Status} Err={Err} ElapsedMs={ElapsedMs}",
-                status,
-                apiError,
-                elapsedMs);
-
-            var billingHint = !string.IsNullOrWhiteSpace(apiError) &&
-                              apiError.Contains("Billing", StringComparison.OrdinalIgnoreCase);
-            string errorMessage;
-            if (addressValidationForbidden is { } avForbidden &&
-                !string.Equals(status, "ZERO_RESULTS", StringComparison.OrdinalIgnoreCase))
-            {
-                errorMessage = DescribeMapsForbidden(avForbidden);
-            }
-            else
-            {
-                errorMessage = status switch
-                {
-                    "ZERO_RESULTS" => "No geocode match for that address.",
-                    "REQUEST_DENIED" when billingHint =>
-                        "Google Maps requires billing on the Cloud project for this API key. " +
-                        "Enable billing on busbuddy-507301: https://console.cloud.google.com/billing — then enable Geocoding / Address Validation " +
-                        "(https://developers.google.com/maps/get-started).",
-                    "REQUEST_DENIED" =>
-                        "Geocoding API denied this key — enable Geocoding (and billing) on busbuddy-507301: " +
-                        "https://developers.google.com/maps/get-started",
-                    _ => $"Geocoding failed ({status ?? "unknown"})."
-                };
-            }
-
-            return new MapsGeocodeResult
-            {
-                Ok = false,
-                MappingUnconfigured = false,
-                ErrorMessage = errorMessage
-            };
-        }
 
         if (!root.TryGetProperty("results", out var results) ||
             results.ValueKind != JsonValueKind.Array ||
             results.GetArrayLength() == 0)
         {
+            Logger.Warning("Geocoding v4 fallback returned no results ElapsedMs={ElapsedMs}", elapsedMs);
             return new MapsGeocodeResult { Ok = false, ErrorMessage = "No geocode match for that address." };
         }
 
         var first = results[0];
         string? formatted = null;
-        if (first.TryGetProperty("formatted_address", out var fa) && fa.ValueKind == JsonValueKind.String)
+        if (first.TryGetProperty("formattedAddress", out var fa) && fa.ValueKind == JsonValueKind.String)
         {
             formatted = fa.GetString();
         }
 
         string? placeId = null;
-        if (first.TryGetProperty("place_id", out var placeEl) && placeEl.ValueKind == JsonValueKind.String)
+        if (first.TryGetProperty("placeId", out var placeEl) && placeEl.ValueKind == JsonValueKind.String)
         {
             placeId = placeEl.GetString();
         }
 
+        var precision = "geocode";
+        if (first.TryGetProperty("granularity", out var granularityEl) && granularityEl.ValueKind == JsonValueKind.String)
+        {
+            precision = granularityEl.GetString() ?? precision;
+        }
+
         double? lat = null;
         double? lon = null;
-        if (first.TryGetProperty("geometry", out var geometry) &&
-            geometry.TryGetProperty("location", out var location))
+        if (first.TryGetProperty("location", out var location))
         {
-            if (location.TryGetProperty("lat", out var latEl) && latEl.TryGetDouble(out var latVal))
+            if (location.TryGetProperty("latitude", out var latEl) && latEl.TryGetDouble(out var latVal))
             {
                 lat = latVal;
             }
 
-            if (location.TryGetProperty("lng", out var lonEl) && lonEl.TryGetDouble(out var lonVal))
+            if (location.TryGetProperty("longitude", out var lonEl) && lonEl.TryGetDouble(out var lonVal))
             {
                 lon = lonVal;
             }
@@ -571,12 +588,14 @@ public sealed class GoogleAddressValidationClient : IGeocodingService, IDisposab
                 Ok = false,
                 FormattedAddress = formatted,
                 PlaceId = placeId,
+                Precision = precision,
                 ErrorMessage = "Geocode response missing coordinates."
             };
         }
 
         Logger.Information(
-            "Geocoding fallback OK Precision=geocode ElapsedMs={ElapsedMs}",
+            "Geocoding v4 fallback OK Precision={Precision} ElapsedMs={ElapsedMs}",
+            precision,
             elapsedMs);
 
         return new MapsGeocodeResult
@@ -586,7 +605,7 @@ public sealed class GoogleAddressValidationClient : IGeocodingService, IDisposab
             Latitude = lat,
             Longitude = lon,
             PlaceId = placeId,
-            Precision = "geocode"
+            Precision = precision
         };
     }
 }

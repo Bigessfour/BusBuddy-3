@@ -65,7 +65,8 @@ As a maintainer, I amend the constitution only via explicit PR with version/date
 
 - `AGENTS.md`
 - `.github/copilot-instructions.md`
-- `STEADY-STATE-AND-FINISH-ROADMAP.md` (Architecture Map)
+- `Documentation/diagrams/busbuddy-3-architecture.md` (Architecture Map)
+- `STEADY-STATE-AND-FINISH-ROADMAP.md` (stub → archive; historical only)
 - `Documentation/GCP-GEE-SECRETS-AND-AUTH.md`
 
 ## Success Criteria _(mandatory)_

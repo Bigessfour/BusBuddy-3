@@ -105,7 +105,7 @@ BusBuddy.WPF/
 ├── Controls/                       # ✅ Custom controls
 ├── Converters/                     # ✅ Value converters
 ├── Documentation/                  # ✅ Project documentation
-│   ├── PROFESSIONAL_DEVELOPMENT_GAPS.md
+│   ├── (gaps wishlist archived — see Documentation/Archive/2026-09-Doc-Trim/)
 │   └── SYNCFUSION_API_REFERENCE.md
 ├── Extensions/                     # ✅ Extension methods
 ├── Models/                         # ✅ UI-specific models

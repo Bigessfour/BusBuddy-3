@@ -98,9 +98,10 @@ public class BusBuddyDbContext : DbContext
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
         ArgumentNullException.ThrowIfNull(optionsBuilder);
-        // Snapshot is SQL Server-shaped while Mac applies the same chain via Npgsql.
-        // Do not regenerate the snapshot against Npgsql until a single-provider cutover;
-        // EF 9 otherwise reports pending model changes on store-type drift.
+        // The model snapshot is now Npgsql-shaped (Postgres is the runtime provider). The migration
+        // chain itself stays provider-neutral via MigrationSql, so scaffold new migrations against
+        // Npgsql only. This warning stays suppressed because a SQL Server run still sees store-type
+        // drift against the Npgsql snapshot.
         optionsBuilder.ConfigureWarnings(w =>
             w.Ignore(RelationalEventId.PendingModelChangesWarning));
         if (!optionsBuilder.IsConfigured)
@@ -647,11 +648,14 @@ public class BusBuddyDbContext : DbContext
             entity.Property(e => e.State).HasMaxLength(2);
             entity.Property(e => e.Zip).HasMaxLength(10);
             entity.Property(e => e.PlaceId).HasMaxLength(256);
+            entity.Property(e => e.SchoolYear).HasMaxLength(9);
             entity.Property(e => e.HasMedicalNeeds).HasDefaultValue(false);
             entity.Property(e => e.RequiresSpecialNeedsBus).HasDefaultValue(false);
             entity.Property(e => e.RequiresWheelchair).HasDefaultValue(false);
             entity.Property(e => e.RequiresSeatBelt).HasDefaultValue(false);
             entity.Property(e => e.RequiresAide).HasDefaultValue(false);
+            entity.Property(e => e.RidesAm).HasDefaultValue(false);
+            entity.Property(e => e.RidesPm).HasDefaultValue(false);
 
             // Audit fields
             entity.Property(e => e.CreatedBy).HasMaxLength(100);
@@ -663,6 +667,12 @@ public class BusBuddyDbContext : DbContext
             entity.HasIndex(e => e.Grade).HasDatabaseName("IX_Students_Grade");
             entity.HasIndex(e => e.School).HasDatabaseName("IX_Students_School");
             entity.HasIndex(e => e.Active).HasDatabaseName("IX_Students_Active");
+
+            // AMRoute/PMRoute are still route *names* with no FK (see specs/routes.md follow-up).
+            // Index them so roster-by-route reads and rename audits stop table-scanning.
+            entity.HasIndex(e => e.AMRoute).HasDatabaseName("IX_Students_AMRoute");
+            entity.HasIndex(e => e.PMRoute).HasDatabaseName("IX_Students_PMRoute");
+            entity.HasIndex(e => e.SchoolYear).HasDatabaseName("IX_Students_SchoolYear");
 
             entity.HasOne(e => e.Destination)
                 .WithMany()
@@ -717,10 +727,12 @@ public class BusBuddyDbContext : DbContext
             entity.Property(e => e.PickupAddress).HasMaxLength(300);
             entity.Property(e => e.DropoffAddress).HasMaxLength(300);
             entity.Property(e => e.Notes).HasMaxLength(1000);
+            // Restrict: a transfer is assignment history. specs/students.md requires history to survive
+            // end-of-service, so it must not be cascade-deleted with the student row.
             entity.HasOne(e => e.Student)
                 .WithMany()
                 .HasForeignKey(e => e.StudentId)
-                .OnDelete(DeleteBehavior.Cascade);
+                .OnDelete(DeleteBehavior.Restrict);
             entity.HasOne(e => e.FromDestination)
                 .WithMany()
                 .HasForeignKey(e => e.FromDestinationId)
@@ -765,11 +777,13 @@ public class BusBuddyDbContext : DbContext
                   .OnDelete(DeleteBehavior.Cascade)
                   .HasConstraintName("FK_Guardians_Family");
 
-            // Relationships - One Family has many Students
+            // Relationships - One Family has many Students.
+            // Restrict, not Cascade: specs/students.md forbids deleting a student to end service, so a
+            // family delete must not be able to wipe its students (and cascade on to their schedules).
             entity.HasMany(f => f.Students)
                   .WithOne(s => s.Family)
                   .HasForeignKey(s => s.FamilyId)
-                  .OnDelete(DeleteBehavior.Cascade)
+                  .OnDelete(DeleteBehavior.Restrict)
                   .HasConstraintName("FK_Students_Family");
         });
 
@@ -840,10 +854,12 @@ public class BusBuddyDbContext : DbContext
             entity.Property(e => e.UpdatedBy).HasMaxLength(100);
 
             // Relationships
+            // specs/students.md: history must survive a student row removal, so a schedule assignment
+            // blocks the delete instead of vanishing with it. Purge clears history explicitly first.
             entity.HasOne(ss => ss.Student)
                   .WithMany(s => s.StudentSchedules)
                   .HasForeignKey(ss => ss.StudentId)
-                  .OnDelete(DeleteBehavior.Cascade)
+                  .OnDelete(DeleteBehavior.Restrict)
                   .HasConstraintName("FK_StudentSchedules_Student");
 
             entity.HasOne(ss => ss.Schedule)

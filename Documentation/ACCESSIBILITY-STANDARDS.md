@@ -373,9 +373,11 @@ Add to `.github/workflows/ci-build-test.yml`:
       }
 ```
 
-## 📚 **IMPLEMENTATION CHECKLIST**
+## Implementation checklist
 
-### **Phase 2 Accessibility Tasks**
+### Phase 2 Accessibility Tasks — **out of ship scope**
+
+These boxes are **not** part of the clerk-path ship tracker ([docs/action-items.md](../docs/action-items.md)). Keep this section as a reference backlog only; do not treat unchecked items as current due-outs.
 
 - [ ] **Color Contrast Audit**: Test all color combinations in both themes
 - [ ] **Keyboard Navigation**: Implement logical tab order for all views
@@ -384,7 +386,7 @@ Add to `.github/workflows/ci-build-test.yml`:
 - [ ] **Text Scaling**: Support Windows text scaling 100%-200%
 - [ ] **High Contrast Mode**: Test with Windows high contrast themes
 
-### **Testing Requirements**
+### Testing Requirements — **out of ship scope**
 
 - [ ] **Manual Testing**: Test with actual screen readers (NVDA, JAWS)
 - [ ] **Keyboard Only**: Navigate entire application using only keyboard

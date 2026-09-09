@@ -21,6 +21,7 @@ namespace BusBuddy.WPF.Views.Reports
             _filePath = filePath;
             InitializeComponent();
             Loaded += PdfPreviewWindow_Loaded;
+            Closed += PdfPreviewWindow_Closed;
         }
 
         private void PdfPreviewWindow_Loaded(object sender, RoutedEventArgs e)
@@ -29,8 +30,9 @@ namespace BusBuddy.WPF.Views.Reports
             {
                 if (File.Exists(_filePath))
                 {
-                    using var fs = File.OpenRead(_filePath);
-                    Viewer?.Load(fs);
+                    // Load(string) keeps the file in the viewer. Load(Stream) plus dispose races
+                    // PdfViewer's background VirtualizationList.FetchItemCount and can terminate the process.
+                    Viewer?.Load(_filePath);
                     Logger.Information("PDF loaded into internal viewer: {File}", _filePath);
                 }
                 else
@@ -42,6 +44,18 @@ namespace BusBuddy.WPF.Views.Reports
             catch (Exception ex)
             {
                 Logger.Error(ex, "Failed loading PDF into viewer");
+            }
+        }
+
+        private void PdfPreviewWindow_Closed(object? sender, EventArgs e)
+        {
+            try
+            {
+                Viewer?.Unload(true);
+            }
+            catch (Exception ex)
+            {
+                Logger.Debug(ex, "PdfViewer Unload on close failed");
             }
         }
 

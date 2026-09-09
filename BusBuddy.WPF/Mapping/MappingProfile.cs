@@ -58,58 +58,9 @@ namespace BusBuddy.WPF.Mapping
                 .ForMember(dest => dest.PMBeginTime, opt => opt.Ignore())
                 .ForMember(dest => dest.Distance, opt => opt.MapFrom(src => src.DistanceMiles));
 
-            // Student mappings
-            CreateMap<Student, StudentViewModel>()
-                .ForMember(dest => dest.FullName, opt => opt.MapFrom(src => src.StudentName))
-                .ForMember(dest => dest.FirstName, opt => opt.MapFrom(src => ExtractFirstName(src.StudentName)))
-                .ForMember(dest => dest.LastName, opt => opt.MapFrom(src => ExtractLastName(src.StudentName)))
-                .ForMember(dest => dest.GradeDisplay, opt => opt.MapFrom(src => $"Grade {src.Grade}"))
-                .ForMember(dest => dest.AddressFormatted, opt => opt.MapFrom(src =>
-                    FormatAddress(src.HomeAddress, src.City, src.State, src.Zip)))
-                .ForMember(dest => dest.Address, opt => opt.MapFrom(src => src.HomeAddress))
-                .ForMember(dest => dest.ZipCode, opt => opt.MapFrom(src => src.Zip))
-                .ForMember(dest => dest.ParentName, opt => opt.MapFrom(src => src.ParentGuardian))
-                .ForMember(dest => dest.ParentPhone, opt => opt.MapFrom(src => src.HomePhone))
-                .ForMember(dest => dest.IsActive, opt => opt.MapFrom(src => src.Active));
-
-            CreateMap<StudentViewModel, Student>()
-                .ForMember(dest => dest.StudentName, opt => opt.MapFrom(src => $"{src.FirstName} {src.LastName}"))
-                .ForMember(dest => dest.HomeAddress, opt => opt.MapFrom(src => src.Address))
-                .ForMember(dest => dest.Zip, opt => opt.MapFrom(src => src.ZipCode))
-                .ForMember(dest => dest.ParentGuardian, opt => opt.MapFrom(src => src.ParentName))
-                .ForMember(dest => dest.HomePhone, opt => opt.MapFrom(src => src.ParentPhone))
-                .ForMember(dest => dest.Active, opt => opt.MapFrom(src => src.IsActive));
-        }
-
-        // Helper methods for name extraction
-        private string ExtractFirstName(string fullName)
-        {
-            if (string.IsNullOrEmpty(fullName))
-            {
-                return string.Empty;
-            }
-
-
-            var parts = fullName.Split(' ');
-            return parts.FirstOrDefault() ?? string.Empty;
-        }
-
-        private string ExtractLastName(string fullName)
-        {
-            if (string.IsNullOrEmpty(fullName))
-            {
-                return string.Empty;
-            }
-
-
-            var parts = fullName.Split(' ');
-            if (parts.Length <= 1)
-            {
-                return string.Empty;
-            }
-
-
-            return string.Join(" ", parts.Skip(1));
+            // No Student <-> StudentViewModel mapping: the student UI binds Core.Models.Student
+            // directly. The old DTO split StudentName into first/last and typed Grade as int, both of
+            // which contradict the Core model.
         }
 
         // Helper methods for the mappings
@@ -184,49 +135,5 @@ namespace BusBuddy.WPF.Mapping
             return (int)(pmMinutes - amMinutes);
         }
 
-        private string FormatAddress(string? address, string? city, string? state, string? zipCode)
-        {
-            if (string.IsNullOrWhiteSpace(address))
-            {
-
-                return "No address on file";
-            }
-
-
-            var parts = new List<string>();
-            if (!string.IsNullOrWhiteSpace(address))
-            {
-                parts.Add(address);
-            }
-
-
-            var cityStateParts = new List<string>();
-            if (!string.IsNullOrWhiteSpace(city))
-            {
-                cityStateParts.Add(city);
-            }
-
-
-            if (!string.IsNullOrWhiteSpace(state))
-            {
-                cityStateParts.Add(state);
-            }
-
-
-            if (cityStateParts.Count > 0)
-            {
-                parts.Add(string.Join(", ", cityStateParts));
-            }
-
-
-            if (!string.IsNullOrWhiteSpace(zipCode))
-            {
-
-                parts.Add(zipCode);
-            }
-
-
-            return string.Join(" ", parts);
-        }
     }
 }

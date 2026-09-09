@@ -30,11 +30,50 @@ public static class MapDefaults
 
     public const int MaxFitZoomLevel = 16;
 
+    /// <summary>Lowest tile zoom the imagery layer accepts.</summary>
+    public const int MinZoomLevel = 1;
+
     /// <summary>
-    /// SfMap has no fit-bounds API (ImageryLayer is Center + ZoomLevel).
-    /// Derive zoom from the lat/lon span so a county-wide pin set is not clipped at school zoom (13).
+    /// Syncfusion <c>ImageryLayer</c> clamps wheel zoom at 19 (OpenStreetMap's deepest level).
+    /// Keep the view model on the same ceiling so a wheel zoom never round-trips to a different value.
     /// </summary>
-    public static int ZoomForBounds(double minLat, double maxLat, double minLon, double maxLon)
+    public const int MaxZoomLevel = 19;
+
+    /// <summary>
+    /// Home / pickup / waypoint captions are hidden below this zoom so a county-wide
+    /// plot reads as dots instead of overlapping text. Schools and depots always keep their caption.
+    /// </summary>
+    public const int DetailLabelZoomLevel = 12;
+
+    /// <summary>Viewport assumed when the view has not reported its pixel size yet.</summary>
+    public const double DefaultViewportWidth = 1024;
+
+    public const double DefaultViewportHeight = 768;
+
+    /// <summary>Web Mercator tile edge in device-independent pixels.</summary>
+    public const double TilePixels = 256;
+
+    /// <summary>Fraction of the viewport the fitted bounds may occupy (keeps edge pins off the border).</summary>
+    public const double FitPaddingFraction = 0.85;
+
+    /// <summary>
+    /// Span-fit zoom for an unknown viewport (uses <see cref="DefaultViewportWidth"/> x <see cref="DefaultViewportHeight"/>).
+    /// </summary>
+    public static int ZoomForBounds(double minLat, double maxLat, double minLon, double maxLon) =>
+        ZoomForBounds(minLat, maxLat, minLon, maxLon, DefaultViewportWidth, DefaultViewportHeight);
+
+    /// <summary>
+    /// SfMap has no fit-bounds API (ImageryLayer is Center + ZoomLevel), and its <c>Radius</c> fit
+    /// doubles the bounds before solving. This is the standard Web Mercator "bounds zoom" solve:
+    /// the largest integer zoom where the bounds still fit inside the padded viewport on both axes.
+    /// </summary>
+    public static int ZoomForBounds(
+        double minLat,
+        double maxLat,
+        double minLon,
+        double maxLon,
+        double viewportWidth,
+        double viewportHeight)
     {
         var latSpan = Math.Abs(maxLat - minLat);
         var lonSpan = Math.Abs(maxLon - minLon);
@@ -43,41 +82,77 @@ public static class MapDefaults
             return SchoolZoomLevel;
         }
 
-        var midLat = (minLat + maxLat) / 2d;
-        var lonAdjusted = lonSpan * Math.Cos(midLat * Math.PI / 180d);
-        var span = Math.Max(latSpan, lonAdjusted) * 1.6;
-        if (span < 1e-8)
-        {
-            return SchoolZoomLevel;
-        }
+        var width = IsUsableLength(viewportWidth) ? viewportWidth : DefaultViewportWidth;
+        var height = IsUsableLength(viewportHeight) ? viewportHeight : DefaultViewportHeight;
+        var usableWidth = width * FitPaddingFraction;
+        var usableHeight = height * FitPaddingFraction;
 
-        var zoom = Math.Log2(360d / span);
-        return (int)Math.Clamp(Math.Round(zoom), MinFitZoomLevel, MaxFitZoomLevel);
+        // Fractions of the whole Web Mercator world: Y spans [-π, π] (2π total), X spans 360°.
+        var latFraction = Math.Abs(MercatorY(maxLat) - MercatorY(minLat)) / (2d * Math.PI);
+        var lonFraction = lonSpan / 360d;
+
+        var latZoom = latFraction > 1e-12
+            ? Math.Log2(usableHeight / TilePixels / latFraction)
+            : double.MaxValue;
+        var lonZoom = lonFraction > 1e-12
+            ? Math.Log2(usableWidth / TilePixels / lonFraction)
+            : double.MaxValue;
+
+        var zoom = Math.Floor(Math.Min(latZoom, lonZoom));
+        return (int)Math.Clamp(zoom, MinFitZoomLevel, MaxFitZoomLevel);
     }
+
+    /// <summary>Clamp any requested tile zoom into the imagery layer's range.</summary>
+    public static int ClampZoom(int zoomLevel) => Math.Clamp(zoomLevel, MinZoomLevel, MaxZoomLevel);
+
+    /// <summary>True when home/pickup/waypoint captions should render at this zoom.</summary>
+    public static bool ShowsDetailLabels(int zoomLevel) => zoomLevel >= DetailLabelZoomLevel;
 
     /// <summary>
-    /// Half-diagonal of the bounds in kilometers (padding included) for
-    /// <c>ImageryLayer.Radius</c> + <c>DistanceType.KiloMeter</c>.
+    /// Inverse of <see cref="ZoomForBounds(double,double,double,double,double,double)"/>: the geographic
+    /// box the viewport shows for a Center + ZoomLevel camera (Web Mercator, 256px tiles). Used for the
+    /// Map Tiles API viewport request that returns the required Google copyright string.
     /// </summary>
-    public static double RadiusKilometers(double minLat, double maxLat, double minLon, double maxLon)
+    public static MapViewportBounds BoundsForViewport(
+        double centerLat,
+        double centerLon,
+        int zoomLevel,
+        double viewportWidth,
+        double viewportHeight)
     {
-        var km = HaversineKm(minLat, minLon, maxLat, maxLon) / 2d * 1.25;
-        if (km < 1e-3)
-        {
-            return 3d;
-        }
+        var width = IsUsableLength(viewportWidth) ? viewportWidth : DefaultViewportWidth;
+        var height = IsUsableLength(viewportHeight) ? viewportHeight : DefaultViewportHeight;
+        var worldPixels = TilePixels * Math.Pow(2d, ClampZoom(zoomLevel));
 
-        return Math.Clamp(km, 1d, 400d);
+        var halfLonSpan = Math.Min(180d, width / worldPixels * 180d);
+        var halfMercatorSpan = Math.Min(Math.PI, height / worldPixels * Math.PI);
+
+        var centerY = MercatorY(Math.Clamp(centerLat, -MaxMercatorLatitude, MaxMercatorLatitude));
+        var north = InverseMercatorY(centerY + halfMercatorSpan);
+        var south = InverseMercatorY(centerY - halfMercatorSpan);
+        var east = Math.Clamp(centerLon + halfLonSpan, -180d, 180d);
+        var west = Math.Clamp(centerLon - halfLonSpan, -180d, 180d);
+        return new MapViewportBounds(north, south, east, west);
     }
 
-    private static double HaversineKm(double lat1, double lon1, double lat2, double lon2)
+    private const double MaxMercatorLatitude = 85.05112878;
+
+    private static bool IsUsableLength(double value) =>
+        !double.IsNaN(value) && !double.IsInfinity(value) && value > 0;
+
+    private static double MercatorY(double latitude)
     {
-        const double earthKm = 6371.0;
-        var dLat = (lat2 - lat1) * Math.PI / 180d;
-        var dLon = (lon2 - lon1) * Math.PI / 180d;
-        var a = Math.Sin(dLat / 2d) * Math.Sin(dLat / 2d)
-            + Math.Cos(lat1 * Math.PI / 180d) * Math.Cos(lat2 * Math.PI / 180d)
-              * Math.Sin(dLon / 2d) * Math.Sin(dLon / 2d);
-        return earthKm * 2d * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1d - a));
+        var clamped = Math.Clamp(latitude, -MaxMercatorLatitude, MaxMercatorLatitude);
+        var sin = Math.Sin(clamped * Math.PI / 180d);
+        return Math.Log((1d + sin) / (1d - sin)) / 2d;
+    }
+
+    private static double InverseMercatorY(double y)
+    {
+        var clamped = Math.Clamp(y, -Math.PI, Math.PI);
+        return Math.Clamp(Math.Atan(Math.Sinh(clamped)) * 180d / Math.PI, -MaxMercatorLatitude, MaxMercatorLatitude);
     }
 }
+
+/// <summary>Geographic bounds (degrees) of the tiles currently on screen.</summary>
+public readonly record struct MapViewportBounds(double North, double South, double East, double West);

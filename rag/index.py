@@ -30,15 +30,44 @@ CHROMA_BATCH_SIZE = 5000  # ChromaDB default max batch ~5461
 
 # Directories and patterns to completely ignore (first-attempt legacy + build artifacts)
 IGNORE_DIRS = {
-    "Archive", "bin", "obj", ".git", "__pycache__", ".vs", "TestResults",
-    "Documentation/Archive", "node_modules", "rag/chroma_db", ".rag_db",
-    "experiments", "Powershell", "Scripts/legacy", ".agents/skills"
+    "Archive",
+    "bin",
+    "obj",
+    ".git",
+    "__pycache__",
+    ".vs",
+    "TestResults",
+    "Documentation/Archive",
+    "node_modules",
+    "rag/chroma_db",
+    ".rag_db",
+    "experiments",
+    "Powershell",
+    "Scripts/legacy",
+    ".agents/skills",
 }
+
+# Whole path segments that must never enter the vector store. This indexer does not read
+# .gitignore, so gitignored-but-local directories are otherwise indexed: `keys/` holds secrets and
+# real student rosters, `artifacts/` holds database dumps of live student rows. specs/students.md
+# forbids student PII leaving the clerk's machine, and a queryable RAG store is not local-only.
+IGNORE_PATH_SEGMENTS = {"keys", "artifacts"}
 
 # File extensions worth indexing for project context
 INDEX_EXTENSIONS = {
-    ".cs", ".xaml", ".md", ".py", ".json", ".yml", ".yaml", ".txt",
-    ".csproj", ".sln", ".props", ".targets", ".config"
+    ".cs",
+    ".xaml",
+    ".md",
+    ".py",
+    ".json",
+    ".yml",
+    ".yaml",
+    ".txt",
+    ".csproj",
+    ".sln",
+    ".props",
+    ".targets",
+    ".config",
 }
 
 # Extra files to always include even if extension would otherwise skip them.
@@ -47,13 +76,15 @@ INDEX_EXTENSIONS = {
 ALWAYS_INCLUDE = {
     "README.md",
     "AGENTS.md",
-    "STEADY-STATE-AND-FINISH-ROADMAP.md",
     "DEVELOPMENT-GUIDE.md",
+    "docs/action-items.md",
+    "Documentation/diagrams/busbuddy-3-architecture.md",
     "Documentation/GCP-GEE-SECRETS-AND-AUTH.md",
     ".cursor/mcp.json",
     ".github/copilot-instructions.md",
     ".specify/memory/constitution.md",
 }
+
 
 def is_always_include(rel_posix: str, basename: str) -> bool:
     """True if this file is pinned via basename or full relative path."""
@@ -61,22 +92,40 @@ def is_always_include(rel_posix: str, basename: str) -> bool:
         return True
     return False
 
+
 def should_ignore(path: str) -> bool:
-    path_lower = path.lower()
+    path_lower = path.replace(os.sep, "/").lower()
     for ign in IGNORE_DIRS:
         if ign.lower() in path_lower:
             return True
-    return False
+
+    # Segment match, not substring, so "monkeys.md" or "artifacts-notes.md" are still indexed.
+    padded = f"/{path_lower.strip('/')}/"
+    return any(f"/{segment}/" in padded for segment in IGNORE_PATH_SEGMENTS)
+
 
 def get_language(ext: str) -> str:
     mapping = {
-        ".cs": "csharp", ".xaml": "xaml", ".md": "markdown",
-        ".py": "python", ".json": "json", ".yml": "yaml", ".yaml": "yaml",
-        ".csproj": "xml", ".sln": "text", ".props": "xml"
+        ".cs": "csharp",
+        ".xaml": "xaml",
+        ".md": "markdown",
+        ".py": "python",
+        ".json": "json",
+        ".yml": "yaml",
+        ".yaml": "yaml",
+        ".csproj": "xml",
+        ".sln": "text",
+        ".props": "xml",
     }
     return mapping.get(ext.lower(), "text")
 
-def chunk_text(content: str, file_path: str, max_lines: int = MAX_CHUNK_LINES, overlap: int = OVERLAP_LINES) -> List[Dict[str, Any]]:
+
+def chunk_text(
+    content: str,
+    file_path: str,
+    max_lines: int = MAX_CHUNK_LINES,
+    overlap: int = OVERLAP_LINES,
+) -> List[Dict[str, Any]]:
     """Chunk by lines for code-friendliness with overlap and line metadata."""
     if not content.strip():
         return []
@@ -89,26 +138,33 @@ def chunk_text(content: str, file_path: str, max_lines: int = MAX_CHUNK_LINES, o
         text = "".join(chunk_lines)
         start_line = i + 1
         end_line = i + len(chunk_lines)
-        chunks.append({
-            "id": f"{file_path}:{start_line}-{end_line}:{chunk_id}",
-            "text": text,
-            "metadata": {
-                "file": file_path,
-                "start_line": start_line,
-                "end_line": end_line,
-                "language": get_language(Path(file_path).suffix),
-                "chunk_type": "code" if Path(file_path).suffix in {".cs", ".xaml"} else "doc"
+        chunks.append(
+            {
+                "id": f"{file_path}:{start_line}-{end_line}:{chunk_id}",
+                "text": text,
+                "metadata": {
+                    "file": file_path,
+                    "start_line": start_line,
+                    "end_line": end_line,
+                    "language": get_language(Path(file_path).suffix),
+                    "chunk_type": "code"
+                    if Path(file_path).suffix in {".cs", ".xaml"}
+                    else "doc",
+                },
             }
-        })
+        )
         chunk_id += 1
         i += max_lines - overlap
     return chunks
+
 
 def collect_files(root: Path) -> List[Path]:
     files: List[Path] = []
     for dirpath, dirnames, filenames in os.walk(root):
         # Prune ignored directories in-place
-        dirnames[:] = [d for d in dirnames if not should_ignore(os.path.join(dirpath, d))]
+        dirnames[:] = [
+            d for d in dirnames if not should_ignore(os.path.join(dirpath, d))
+        ]
         for fname in filenames:
             fpath = Path(dirpath) / fname
             rel = str(fpath.relative_to(root))
@@ -119,6 +175,7 @@ def collect_files(root: Path) -> List[Path]:
             if ext in INDEX_EXTENSIONS or is_always_include(rel_posix, fpath.name):
                 files.append(fpath)
     return sorted(files)
+
 
 def main():
     root = Path.cwd()
@@ -132,8 +189,7 @@ def main():
 
     client = chromadb.PersistentClient(path=str(DB_PATH))
     collection = client.get_or_create_collection(
-        name=COLLECTION_NAME,
-        metadata={"hnsw:space": "cosine"}
+        name=COLLECTION_NAME, metadata={"hnsw:space": "cosine"}
     )
 
     # Clear previous for clean re-index (idempotent for portfolio baseline)
@@ -165,7 +221,9 @@ def main():
         texts = [c["text"] for c in batch]
         metadatas = [c["metadata"] for c in batch]
         ids = [c["id"] for c in batch]
-        embeddings = model.encode(texts, show_progress_bar=True, convert_to_numpy=True).tolist()
+        embeddings = model.encode(
+            texts, show_progress_bar=True, convert_to_numpy=True
+        ).tolist()
         collection.add(
             ids=ids,
             documents=texts,
@@ -177,6 +235,7 @@ def main():
     print(f"✅ RAG index complete. Collection now has {collection.count()} chunks.")
     print(f"   DB location: {DB_PATH}")
     print("   Next: run the MCP server or query tool for agent use.")
+
 
 if __name__ == "__main__":
     main()

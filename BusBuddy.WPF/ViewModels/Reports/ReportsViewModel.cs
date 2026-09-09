@@ -260,6 +260,7 @@ namespace BusBuddy.WPF.ViewModels.Reports
 
                 StatusMessage = result;
                 LastReportGenerated = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+                Logger.Information("Report generated Name={Report} Result={Result}", reportName, result);
                 GeneratedReports.Insert(0, new ReportEntry
                 {
                     Name = reportName,

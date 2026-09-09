@@ -174,6 +174,8 @@ public sealed class StudentSchoolTransferViewModel : BaseViewModel
             {
                 Schools.Add(s);
             }
+
+            Logger.Information("School transfer schools loaded Count={Count} StudentId={StudentId}", Schools.Count, _studentId);
         }
         catch (Exception ex)
         {
@@ -192,6 +194,12 @@ public sealed class StudentSchoolTransferViewModel : BaseViewModel
         if (!CanSave || FromSchool is null || ToSchool is null)
         {
             ValidationMessage = "From/To schools, pickup & dropoff locations, and times (dropoff after pickup) are required.";
+            Logger.Warning(
+                "School transfer save blocked StudentId={StudentId} CanSave={CanSave} FromSchool={From} ToSchool={To}",
+                _studentId,
+                CanSave,
+                FromSchool?.DestinationId,
+                ToSchool?.DestinationId);
             return;
         }
 
@@ -218,6 +226,11 @@ public sealed class StudentSchoolTransferViewModel : BaseViewModel
                 CreatedBy = Environment.UserName
             });
             StatusMessage = "Transfer saved";
+            Logger.Information(
+                "School transfer saved StudentId={StudentId} From={From} To={To}",
+                _studentId,
+                FromSchool.DestinationId,
+                ToSchool.DestinationId);
             RequestClose?.Invoke(this, true);
         }
         catch (Exception ex)

@@ -12,6 +12,7 @@ using BusBuddy.Core.Services;
 using BusBuddy.WPF.Utilities;
 using BusBuddy.WPF.ViewModels.Map;
 using CommunityToolkit.Mvvm.Input;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
 using Moq;
 using NUnit.Framework;
@@ -29,10 +30,11 @@ public class MapViewModelTests
         var vm = await CreateSettledViewModelAsync();
 
         vm.SetMapView(38.1, -102.7, 99);
-        Assert.That(vm.MapZoomLevel, Is.EqualTo(18));
+        Assert.That(vm.MapZoomLevel, Is.EqualTo(MapDefaults.MaxZoomLevel));
+        Assert.That(vm.MapZoomLevel, Is.EqualTo(19), "SfMap ImageryLayer wheel zoom clamps at 19");
 
         vm.SetMapView(38.1, -102.7, 0);
-        Assert.That(vm.MapZoomLevel, Is.EqualTo(1));
+        Assert.That(vm.MapZoomLevel, Is.EqualTo(MapDefaults.MinZoomLevel));
 
         vm.SetMapView(38.1535, -102.7195, MapDefaults.SchoolZoomLevel);
         Assert.That(vm.MapCenter.X, Is.EqualTo(38.1535).Within(0.0001));
@@ -53,8 +55,90 @@ public class MapViewModelTests
         Assert.That(vm.MapCenter.Y, Is.EqualTo(-102.5).Within(0.0001));
         Assert.That(vm.MapZoomLevel, Is.EqualTo(MapDefaults.ZoomForBounds(38.0, 38.2, -103.0, -102.0)));
         Assert.That(vm.MapZoomLevel, Is.LessThan(MapDefaults.SchoolZoomLevel));
-        Assert.That(vm.MapFitRadiusKm, Is.EqualTo(MapDefaults.RadiusKilometers(38.0, 38.2, -103.0, -102.0)).Within(0.01));
-        Assert.That(vm.MapFitRadiusKm, Is.GreaterThan(20));
+    }
+
+    [Test]
+    public async Task CenterOnMarkers_UsesReportedViewportSize()
+    {
+        var vm = await CreateSettledViewModelAsync();
+        vm.PlotStop(38.0, -102.0, null, "A");
+        vm.PlotStop(38.2, -103.0, null, "B");
+
+        vm.MapViewportSize = new System.Windows.Size(400, 300);
+        vm.CenterOnMarkers();
+        var small = vm.MapZoomLevel;
+
+        vm.MapViewportSize = new System.Windows.Size(2400, 1400);
+        vm.CenterOnMarkers();
+        var large = vm.MapZoomLevel;
+
+        Assert.That(large, Is.GreaterThan(small), "a wider viewport fits the same span at a deeper zoom");
+        Assert.That(small, Is.EqualTo(MapDefaults.ZoomForBounds(38.0, 38.2, -103.0, -102.0, 400, 300)));
+        Assert.That(large, Is.EqualTo(MapDefaults.ZoomForBounds(38.0, 38.2, -103.0, -102.0, 2400, 1400)));
+    }
+
+    [Test]
+    public async Task MapViewportSize_IgnoresEmptyOrInvalidSizes()
+    {
+        var vm = await CreateSettledViewModelAsync();
+        var before = vm.MapViewportSize;
+
+        vm.MapViewportSize = System.Windows.Size.Empty;
+        vm.MapViewportSize = new System.Windows.Size(0, 400);
+        vm.MapViewportSize = new System.Windows.Size(double.NaN, 400);
+
+        Assert.That(vm.MapViewportSize, Is.EqualTo(before));
+        Assert.That(before.Width, Is.EqualTo(MapDefaults.DefaultViewportWidth));
+        Assert.That(before.Height, Is.EqualTo(MapDefaults.DefaultViewportHeight));
+    }
+
+    [Test]
+    public async Task ZoomCommands_StepAroundCurrentCenterAndToggleDetailLabels()
+    {
+        var vm = await CreateSettledViewModelAsync();
+        vm.SetMapView(38.1535, -102.7195, MapDefaults.DetailLabelZoomLevel - 1);
+        var center = vm.MapCenter;
+        Assert.That(vm.ShowDetailLabels, Is.False);
+
+        var raised = new List<string>();
+        vm.PropertyChanged += (_, e) => raised.Add(e.PropertyName ?? string.Empty);
+
+        vm.ZoomInCommand.Execute(null);
+        Assert.That(vm.MapZoomLevel, Is.EqualTo(MapDefaults.DetailLabelZoomLevel));
+        Assert.That(vm.ShowDetailLabels, Is.True);
+        Assert.That(vm.MapCenter, Is.EqualTo(center), "zoom must not move the camera");
+        Assert.That(raised, Does.Contain(nameof(MapViewModel.MapZoomLevel)));
+        Assert.That(raised, Does.Contain(nameof(MapViewModel.ShowDetailLabels)));
+        Assert.That(raised, Does.Not.Contain(nameof(MapViewModel.MapCenter)));
+
+        vm.ZoomOutCommand.Execute(null);
+        Assert.That(vm.MapZoomLevel, Is.EqualTo(MapDefaults.DetailLabelZoomLevel - 1));
+        Assert.That(vm.ShowDetailLabels, Is.False);
+
+        vm.SetMapView(38.1535, -102.7195, MapDefaults.MaxZoomLevel);
+        vm.ZoomInCommand.Execute(null);
+        Assert.That(vm.MapZoomLevel, Is.EqualTo(MapDefaults.MaxZoomLevel));
+        Assert.That(vm.StatusMessage, Does.Contain("maximum zoom"));
+    }
+
+    [Test]
+    public async Task MapMarker_LabelChangeRaisesPropertyChanged()
+    {
+        var vm = await CreateSettledViewModelAsync();
+        var marker = vm.PlotStop(38.1, -102.7, new[] { "Ada" });
+        var changed = 0;
+        marker.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(MapViewModel.MapMarker.Label))
+            {
+                changed++;
+            }
+        };
+
+        vm.PlotStop(38.1, -102.7, new[] { "Ben" });
+
+        Assert.That(changed, Is.EqualTo(1));
+        Assert.That(marker.Label, Does.StartWith("2 students"));
     }
 
     [Test]
@@ -680,6 +764,35 @@ public class MapViewModelTests
     }
 
     [Test]
+    public async Task ApplyDistrictSettings_ReplotsDepotAndRecentersAwayFromUsCentroid()
+    {
+        var district = new DistrictSettingsAccessor(Options.Create(new RoutingDistrictSettings()));
+        var vm = await CreateSettledViewModelAsync(districtSettings: district);
+
+        district.Replace(new RoutingDistrictSettings
+        {
+            DepotName = "Settings Barn",
+            DepotLatitude = 38.1541,
+            DepotLongitude = -102.7201,
+            BoundingBoxMinLat = 38.05,
+            BoundingBoxMaxLat = 38.25,
+            BoundingBoxMinLon = -102.80,
+            BoundingBoxMaxLon = -102.40
+        });
+
+        await vm.ApplyDistrictSettingsAsync();
+
+        Assert.That(vm.MapMarkers.Any(m => m.Label == MapMarkerLabels.ForDepot("Settings Barn")), Is.True);
+        Assert.That(vm.MapCenter.X, Is.EqualTo(38.1541).Within(0.0001));
+        Assert.That(vm.MapCenter.Y, Is.EqualTo(-102.7201).Within(0.0001));
+        Assert.That(vm.MapZoomLevel, Is.EqualTo(MapDefaults.DistrictZoomLevel));
+        Assert.That(vm.MapZoomLevel, Is.Not.EqualTo(MapDefaults.UnconfiguredZoomLevel));
+        Assert.That(Math.Abs(vm.MapCenter.X - MapDefaults.UnconfiguredLatitude), Is.GreaterThan(0.5));
+        // Must not be the Lamar/Wiley US-fail-open remapping alone.
+        Assert.That(Math.Abs(vm.MapCenter.X - 38.0872), Is.GreaterThan(0.01));
+    }
+
+    [Test]
     public async Task PlotStop_DoesNotMergeHomeAndPickupAtSameCoords()
     {
         var vm = await CreateSettledViewModelAsync();
@@ -820,15 +933,87 @@ public class MapViewModelTests
     }
 
     [Test]
+    public void MapInteractionDiagnostics_IsGatedByConfigWithEnvOverride()
+    {
+        var previous = Environment.GetEnvironmentVariable(MapInteractionDiagnostics.EnvironmentOverride);
+        try
+        {
+            Environment.SetEnvironmentVariable(MapInteractionDiagnostics.EnvironmentOverride, null);
+            var on = new ConfigurationBuilder()
+                .AddInMemoryCollection(new Dictionary<string, string?> { [MapInteractionDiagnostics.ConfigKey] = "true" })
+                .Build();
+            var off = new ConfigurationBuilder().Build();
+
+            Assert.That(MapInteractionDiagnostics.IsEnabled(on), Is.True);
+            Assert.That(MapInteractionDiagnostics.IsEnabled(off), Is.False);
+            Assert.That(MapInteractionDiagnostics.IsEnabled(null), Is.False);
+
+            Environment.SetEnvironmentVariable(MapInteractionDiagnostics.EnvironmentOverride, "0");
+            Assert.That(MapInteractionDiagnostics.IsEnabled(on), Is.False, "env var wins over config");
+            Environment.SetEnvironmentVariable(MapInteractionDiagnostics.EnvironmentOverride, "1");
+            Assert.That(MapInteractionDiagnostics.IsEnabled(off), Is.True);
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable(MapInteractionDiagnostics.EnvironmentOverride, previous);
+        }
+    }
+
+    [Test]
+    public void MapInteractionDiagnostics_BreadcrumbsNameKeysNotCharacters()
+    {
+        Assert.That(
+            MapInteractionDiagnostics.DescribeKey(System.Windows.Input.Key.A, System.Windows.Input.ModifierKeys.Control),
+            Is.EqualTo("Control+A"));
+        Assert.That(
+            MapInteractionDiagnostics.DescribeKey(System.Windows.Input.Key.OemPlus, System.Windows.Input.ModifierKeys.None),
+            Is.EqualTo("OemPlus"));
+
+        var line = MapInteractionDiagnostics.FormatBreadcrumb(1234, "wheel", "delta=120");
+        Assert.That(line, Does.StartWith("+   1234ms"));
+        Assert.That(line, Does.Contain("wheel"));
+        Assert.That(line, Does.EndWith("delta=120"));
+
+        // Never log the resolved tile URL (session token + key): the layer event carries indices only.
+        var layer = XamlViewFile.Read("Utilities/GoogleMapTilesImageryLayer.cs");
+        Assert.That(layer, Does.Contain("TileRequestedEventArgs(Scale, X, Y"));
+        var diag = XamlViewFile.Read("Utilities/MapInteractionDiagnostics.cs");
+        Assert.That(diag, Does.Not.Contain("ResolveTileUrl"));
+        Assert.That(diag, Does.Not.Contain("UrlTemplate"));
+        Assert.That(diag, Does.Contain("map-interactions-.log"));
+        Assert.That(diag, Does.Contain("PresentationTraceSources.DataBindingSource"));
+        Assert.That(diag, Does.Contain("UnhandledException += OnDispatcherUnhandledException"));
+    }
+
+    [Test]
     public void MapViewCodeBehind_SubscribesToMapMarkersChangedWithoutLayerSelectionHandler()
     {
         var codeBehind = XamlViewFile.Read("Views/Map/MapView.xaml.cs");
         Assert.That(codeBehind, Does.Contain("vm.MapMarkersChanged +="));
         Assert.That(codeBehind, Does.Contain("nameof(MapViewModel.MapCenter)"));
-        Assert.That(codeBehind, Does.Contain("nameof(MapViewModel.MapFitRadiusKm)"));
-        Assert.That(codeBehind, Does.Contain("vm.CenterOnMarkers()"));
-        Assert.That(codeBehind, Does.Contain("DistanceType.KiloMeter"));
+        Assert.That(codeBehind, Does.Contain("GeoMap_SizeChanged"));
+        Assert.That(codeBehind, Does.Contain("vm.MapViewportSize = size"));
+        // Camera is Center + ZoomLevel; no Radius fit, no zoom nudge, no dead camera helpers.
+        Assert.That(codeBehind, Does.Not.Contain("MapFitRadiusKm"));
+        Assert.That(codeBehind, Does.Not.Contain("imagery.Radius"));
+        Assert.That(codeBehind, Does.Not.Contain("DistanceType.KiloMeter"));
+        Assert.That(codeBehind, Does.Not.Contain("CaptureVisualMapState"));
+        Assert.That(codeBehind, Does.Not.Contain("ResolveClerkCamera"));
         Assert.That(codeBehind, Does.Not.Contain("SchoolZoomLevel"));
+        var bootstrap = XamlViewFile.Read("Utilities/MapTileBootstrap.cs");
+        Assert.That(bootstrap, Does.Not.Contain("NudgeZoom"));
+        Assert.That(bootstrap, Does.Not.Contain("ZoomLevel ="));
+        // Map Tiles API Policies: viewport copyright shown for the tiles on screen, debounced per settled camera.
+        Assert.That(bootstrap, Does.Contain("RefreshGoogleAttributionAsync"));
+        Assert.That(bootstrap, Does.Contain("GetViewportCopyrightAsync"));
+        Assert.That(bootstrap, Does.Contain("MapDefaults.BoundsForViewport"));
+        Assert.That(codeBehind, Does.Contain("ScheduleAttributionRefresh"));
+        Assert.That(codeBehind, Does.Contain("_attributionTimer"));
+        // VM interaction trace: attached on Loaded, re-attached after tab switches, disposed on Unloaded.
+        Assert.That(codeBehind, Does.Contain("MapInteractionDiagnostics.TryAttach"));
+        Assert.That(codeBehind, Does.Contain("MapView_ReattachDiagnostics"));
+        Assert.That(codeBehind, Does.Contain("_diagnostics?.Dispose()"));
+        Assert.That(codeBehind, Does.Contain("_diagnostics?.RecordError(\"MapView.Loaded\""));
         Assert.That(codeBehind, Does.Contain("ReplayRouteLineFromViewModel"));
         Assert.That(codeBehind, Does.Contain("MapRouteTrailLayer.Apply"));
         Assert.That(codeBehind, Does.Contain("ApplyMarkerTemplates"));

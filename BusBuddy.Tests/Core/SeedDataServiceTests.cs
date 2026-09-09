@@ -158,6 +158,312 @@ namespace BusBuddy.Tests.Core
         }
 
         [Test]
+        public async Task ImportStudentsFromCsvAsync_RosterFormat_RoundTripsSpecialNeedsCampusAndSiblings()
+        {
+            var options = new DbContextOptionsBuilder<BusBuddyDbContext>()
+                .UseInMemoryDatabase($"RosterImport_{Guid.NewGuid()}")
+                .Options;
+            await using var context = new BusBuddyDbContext(options);
+            await context.Database.EnsureCreatedAsync();
+            var service = new SeedDataService(new TestDbContextFactory(options));
+
+            var path = Path.Combine(Path.GetTempPath(), $"busbuddy-roster-{Guid.NewGuid():N}.csv");
+            await File.WriteAllTextAsync(path, RosterCsv(
+                "3,6:47,TEST_STUDENT_01,,TEST_HS,2026-2027,100 Test St,,,,TEST_GUARDIAN_01,555-0100,,,Home,TEST_SN_ROUTE,,true,true,false,false,false,true,\"Stop 3, side gate\"",
+                "5,7:00,TEST_STUDENT_02,,TEST_ES,2026-2027,200 Test St,,,,TEST_GUARDIAN_02,555-0101,,,Home,TEST_SN_ROUTE,,true,true,false,false,false,true,",
+                "5,7:00,TEST_STUDENT_03,,TEST_ES,2026-2027,200 Test St,,,,TEST_GUARDIAN_02,555-0101,,,Home,TEST_SN_ROUTE,,true,true,false,false,false,true,"));
+            try
+            {
+                var added = await service.ImportStudentsFromCsvAsync(path);
+                Assert.That(added, Is.EqualTo(3));
+
+                var first = context.Students.Single(s => s.StudentName == "TEST_STUDENT_01");
+
+                // The whole point of the roster format: these survive the round trip.
+                Assert.That(first.RequiresSpecialNeedsBus, Is.True);
+                Assert.That(first.RequiresAide, Is.True);
+                Assert.That(first.School, Is.EqualTo("TEST_HS"));
+                Assert.That(first.AMRoute, Is.EqualTo("TEST_SN_ROUTE"));
+                Assert.That(first.PMRoute, Is.Empty);
+                Assert.That(first.PickupStopId, Is.Null, "special needs is home pickup");
+                Assert.That(first.Active, Is.True);
+                Assert.That(first.Latitude, Is.Null, "coordinates come from Address Validation");
+                Assert.That(first.Longitude, Is.Null);
+                Assert.That(first.TransportationNotes, Does.Contain("side gate"), "quoted comma preserved");
+                Assert.That(first.StudentNumber, Is.EqualTo("STU0001"));
+
+                // Two campuses on one roster must not collapse onto one.
+                Assert.That(context.Students.Select(s => s.School).Distinct().Count(), Is.EqualTo(2));
+
+                // Siblings at one address with one guardian are separate students in one family.
+                var siblings = context.Students
+                    .Where(s => s.StudentName == "TEST_STUDENT_02" || s.StudentName == "TEST_STUDENT_03")
+                    .ToList();
+                Assert.That(siblings, Has.Count.EqualTo(2));
+                Assert.That(siblings.Select(s => s.FamilyId).Distinct().Count(), Is.EqualTo(1));
+
+                // Re-import is a no-op, same as the legacy format.
+                Assert.That(await service.ImportStudentsFromCsvAsync(path), Is.EqualTo(0));
+            }
+            finally
+            {
+                File.Delete(path);
+            }
+        }
+
+        [Test]
+        public async Task ImportStudentsFromCsvAsync_RosterFormat_KeepsPerStudentCampus_WhenOneActiveSchool()
+        {
+            var options = new DbContextOptionsBuilder<BusBuddyDbContext>()
+                .UseInMemoryDatabase($"RosterCampus_{Guid.NewGuid()}")
+                .Options;
+            await using var context = new BusBuddyDbContext(options);
+            await context.Database.EnsureCreatedAsync();
+            context.Destinations.Add(new Destination
+            {
+                Name = "TEST_CATALOG_SCHOOL",
+                DestinationType = DestinationTypes.School,
+                City = "TESTVILLE",
+                State = "CO",
+                IsActive = true
+            });
+            await context.SaveChangesAsync();
+
+            var service = new SeedDataService(new TestDbContextFactory(options));
+            var path = Path.Combine(Path.GetTempPath(), $"busbuddy-roster-{Guid.NewGuid():N}.csv");
+            await File.WriteAllTextAsync(path, RosterCsv(
+                "1,7:00,TEST_STUDENT_11,,TEST_HS,2026-2027,100 Test St,,,,TEST_GUARDIAN_11,555-0100,,,Home,TEST_SN_ROUTE,,true,true,false,false,false,true,",
+                "2,7:05,TEST_STUDENT_12,,,2026-2027,200 Test St,,,,TEST_GUARDIAN_12,555-0101,,,Home,TEST_SN_ROUTE,,true,true,false,false,false,true,"));
+            try
+            {
+                Assert.That(await service.ImportStudentsFromCsvAsync(path), Is.EqualTo(2));
+
+                // A roster that names the campus keeps it even when the catalog has exactly one school.
+                Assert.That(
+                    context.Students.Single(s => s.StudentName == "TEST_STUDENT_11").School,
+                    Is.EqualTo("TEST_HS"));
+
+                // A blank campus still falls back to the sole active school (legacy behaviour).
+                Assert.That(
+                    context.Students.Single(s => s.StudentName == "TEST_STUDENT_12").School,
+                    Is.EqualTo("TEST_CATALOG_SCHOOL"));
+            }
+            finally
+            {
+                File.Delete(path);
+            }
+        }
+
+        [Test]
+        public async Task ImportStudentsFromCsvAsync_RosterFormat_RejectsSpecialNeedsOnCatalogStop()
+        {
+            var options = new DbContextOptionsBuilder<BusBuddyDbContext>()
+                .UseInMemoryDatabase($"RosterBadPickup_{Guid.NewGuid()}")
+                .Options;
+            await using var context = new BusBuddyDbContext(options);
+            await context.Database.EnsureCreatedAsync();
+            var service = new SeedDataService(new TestDbContextFactory(options));
+
+            var path = Path.Combine(Path.GetTempPath(), $"busbuddy-roster-{Guid.NewGuid():N}.csv");
+            await File.WriteAllTextAsync(path, RosterCsv(
+                // specs/students.md pickup rule 3: special needs is home pickup, never a catalog stop.
+                "1,7:00,TEST_STUDENT_21,,TEST_HS,2026-2027,100 Test St,,,,TEST_GUARDIAN_21,555-0100,,,CatalogStop,TEST_SN_ROUTE,,true,true,false,false,false,true,",
+                // CatalogStop without a published PickupStopId is incomplete and is also skipped.
+                "2,7:05,TEST_STUDENT_22,,TEST_HS,2026-2027,200 Test St,,,,TEST_GUARDIAN_22,555-0101,,,CatalogStop,TEST_ROUTE,,false,false,false,false,false,true,",
+                "3,7:10,TEST_STUDENT_23,,TEST_HS,2026-2027,300 Test St,,,,TEST_GUARDIAN_23,555-0102,,,Home,TEST_SN_ROUTE,,true,true,false,false,false,true,"));
+            try
+            {
+                Assert.That(await service.ImportStudentsFromCsvAsync(path), Is.EqualTo(1));
+                Assert.That(context.Students.Single().StudentName, Is.EqualTo("TEST_STUDENT_23"));
+            }
+            finally
+            {
+                File.Delete(path);
+            }
+        }
+
+        [Test]
+        public async Task ImportStudentsFromCsvAsync_RosterFormat_AmOnlyRowIsNotPmEligible()
+        {
+            var options = new DbContextOptionsBuilder<BusBuddyDbContext>()
+                .UseInMemoryDatabase($"RosterEligibility_{Guid.NewGuid()}")
+                .Options;
+            await using var context = new BusBuddyDbContext(options);
+            await context.Database.EnsureCreatedAsync();
+            var service = new SeedDataService(new TestDbContextFactory(options));
+
+            var path = Path.Combine(Path.GetTempPath(), $"busbuddy-roster-{Guid.NewGuid():N}.csv");
+            await File.WriteAllTextAsync(path, RosterCsv(
+                // AM route assigned, PM column blank — exactly the shape of an AM-only special-needs run.
+                "3,6:47,TEST_STUDENT_AMONLY,,TEST_HS,2026-2027,100 Test St,,,,TEST_GUARDIAN_01,555-0100,,,Home,TEST_SN_ROUTE,,true,true,false,false,false,true,",
+                // Both routes assigned.
+                "4,6:55,TEST_STUDENT_BOTH,,TEST_HS,2026-2027,200 Test St,,,,TEST_GUARDIAN_02,555-0101,,,Home,TEST_ROUTE_A,TEST_ROUTE_A,false,false,false,false,false,true,"));
+            try
+            {
+                Assert.That(await service.ImportStudentsFromCsvAsync(path), Is.EqualTo(2));
+
+                var amOnly = context.Students.Single(s => s.StudentName == "TEST_STUDENT_AMONLY");
+                Assert.That(amOnly.RidesAm, Is.True, "AMRoute is assigned, so the AM run is stated");
+                Assert.That(
+                    amOnly.RidesPm,
+                    Is.False,
+                    "a blank PMRoute must never import as PM-eligible — specs/students.md requires AM and PM independently");
+                Assert.That(amOnly.SchoolYear, Is.EqualTo("2026-2027"), "SchoolYear comes from the roster column");
+
+                var both = context.Students.Single(s => s.StudentName == "TEST_STUDENT_BOTH");
+                Assert.That(both.RidesAm, Is.True);
+                Assert.That(both.RidesPm, Is.True);
+            }
+            finally
+            {
+                File.Delete(path);
+            }
+        }
+
+        [Test]
+        public async Task ImportStudentsFromCsvAsync_RosterFormat_ExplicitEligibilityColumnsWinOverRoutes()
+        {
+            var options = new DbContextOptionsBuilder<BusBuddyDbContext>()
+                .UseInMemoryDatabase($"RosterExplicitFlags_{Guid.NewGuid()}")
+                .Options;
+            await using var context = new BusBuddyDbContext(options);
+            await context.Database.EnsureCreatedAsync();
+            var service = new SeedDataService(new TestDbContextFactory(options));
+
+            var path = Path.Combine(Path.GetTempPath(), $"busbuddy-roster-{Guid.NewGuid():N}.csv");
+            await File.WriteAllTextAsync(
+                path,
+                "StudentName,School,SchoolYear,HomeAddress,PickupMode,AMRoute,PMRoute,RidesAm,RidesPm\n" +
+                // PM-eligible next term but not yet assigned a PM route: eligibility is not assignment.
+                "TEST_STUDENT_STATED,TEST_HS,2026-2027,100 Test St,Home,TEST_ROUTE_A,,true,true\n");
+            try
+            {
+                Assert.That(await service.ImportStudentsFromCsvAsync(path), Is.EqualTo(1));
+
+                var stated = context.Students.Single();
+                Assert.That(stated.RidesPm, Is.True, "an explicit RidesPm column outranks the blank PMRoute");
+                Assert.That(stated.PMRoute, Is.Empty);
+            }
+            finally
+            {
+                File.Delete(path);
+            }
+        }
+
+        [Test]
+        public async Task ImportStudentsFromCsvAsync_RosterFormat_CreatesMissingRouteAndKeepsExistingSpelling()
+        {
+            var options = new DbContextOptionsBuilder<BusBuddyDbContext>()
+                .UseInMemoryDatabase($"RosterRoutes_{Guid.NewGuid()}")
+                .Options;
+            await using var context = new BusBuddyDbContext(options);
+            await context.Database.EnsureCreatedAsync();
+
+            // The route already exists under the district's spelling.
+            context.Routes.Add(new Route
+            {
+                RouteName = "AM TEST_SN Bus 5",
+                Date = DateTime.SpecifyKind(DateTime.UtcNow.Date, DateTimeKind.Utc),
+                IsActive = true,
+                IsSpecialNeedsRoute = true
+            });
+            await context.SaveChangesAsync();
+
+            var service = new SeedDataService(new TestDbContextFactory(options));
+            var path = Path.Combine(Path.GetTempPath(), $"busbuddy-roster-{Guid.NewGuid():N}.csv");
+            await File.WriteAllTextAsync(
+                path,
+                "StudentName,School,SchoolYear,HomeAddress,PickupMode,AMRoute,PMRoute\n" +
+                // Same run, different word order than the route row.
+                "TEST_STUDENT_31,TEST_HS,2026-2027,100 Test St,Home,AM Bus 5 TEST_SN,\n" +
+                // A route nobody has created yet.
+                "TEST_STUDENT_32,TEST_HS,2026-2027,200 Test St,Home,TEST_ROUTE_BRAND_NEW,\n");
+            try
+            {
+                Assert.That(await service.ImportStudentsFromCsvAsync(path), Is.EqualTo(2));
+
+                Assert.That(
+                    context.Students.Single(s => s.StudentName == "TEST_STUDENT_31").AMRoute,
+                    Is.EqualTo("AM TEST_SN Bus 5"),
+                    "a word-order variant must resolve to the existing route spelling, not create a second route");
+                Assert.That(context.Routes.Count(r => r.IsSpecialNeedsRoute), Is.EqualTo(1));
+
+                var created = context.Routes.Single(r => r.RouteName == "TEST_ROUTE_BRAND_NEW");
+                Assert.That(created.IsActive, Is.True, "students assigned to it must pass route validation");
+            }
+            finally
+            {
+                File.Delete(path);
+            }
+        }
+
+        [Test]
+        public async Task EnsureRoutesForStudentAssignmentsAsync_CreatesRouteForAlreadyAssignedStudents()
+        {
+            var options = new DbContextOptionsBuilder<BusBuddyDbContext>()
+                .UseInMemoryDatabase($"RouteRepair_{Guid.NewGuid()}")
+                .Options;
+            await using var context = new BusBuddyDbContext(options);
+            await context.Database.EnsureCreatedAsync();
+            context.Students.Add(new Student
+            {
+                StudentName = "TEST_STUDENT_41",
+                HomeAddress = "100 Test St",
+                AMRoute = "AM TEST_SN Bus 5",
+                RidesAm = true,
+                Active = true
+            });
+            await context.SaveChangesAsync();
+
+            var service = new SeedDataService(new TestDbContextFactory(options));
+            var created = await service.EnsureRoutesForStudentAssignmentsAsync();
+
+            Assert.That(created, Is.EqualTo(1));
+            var route = context.Routes.Single();
+            Assert.That(route.RouteName, Is.EqualTo("AM TEST_SN Bus 5"));
+            Assert.That(route.IsSpecialNeedsRoute, Is.False, "TEST_SN is not the 'special needs' token");
+
+            // Second run is a no-op — the route now exists.
+            Assert.That(await service.EnsureRoutesForStudentAssignmentsAsync(), Is.EqualTo(0));
+        }
+
+        [Test]
+        public async Task EnsureRoutesForStudentAssignmentsAsync_RewritesVariantSpellingToExistingRoute()
+        {
+            var options = new DbContextOptionsBuilder<BusBuddyDbContext>()
+                .UseInMemoryDatabase($"RouteRepairVariant_{Guid.NewGuid()}")
+                .Options;
+            await using var context = new BusBuddyDbContext(options);
+            await context.Database.EnsureCreatedAsync();
+            context.Routes.Add(new Route
+            {
+                RouteName = "AM Special Needs Bus 5",
+                Date = DateTime.SpecifyKind(DateTime.UtcNow.Date, DateTimeKind.Utc),
+                IsActive = true,
+                IsSpecialNeedsRoute = true
+            });
+            context.Students.Add(new Student
+            {
+                StudentName = "TEST_STUDENT_42",
+                HomeAddress = "100 Test St",
+                AMRoute = "AM Bus 5 Special Needs",
+                RidesAm = true,
+                Active = true
+            });
+            await context.SaveChangesAsync();
+
+            var service = new SeedDataService(new TestDbContextFactory(options));
+            Assert.That(await service.EnsureRoutesForStudentAssignmentsAsync(), Is.EqualTo(0), "no new route needed");
+
+            await using var verify = new BusBuddyDbContext(options);
+            Assert.That(
+                verify.Students.Single().AMRoute,
+                Is.EqualTo("AM Special Needs Bus 5"),
+                "the student row is corrected to the canonical spelling so route validation passes");
+            Assert.That(verify.Routes.Count(), Is.EqualTo(1));
+        }
+
+        [Test]
         public async Task EnsureMapDemoGeoAsync_SeedsSchoolStudentsAndRouteWaypoints_WithoutBusGps()
         {
             BusBuddyDbContext.SkipGlobalSeedData = true;
@@ -257,6 +563,17 @@ namespace BusBuddy.Tests.Core
             Assert.That(route.PMVehicleId, Is.EqualTo(userBus.BusId));
             Assert.That(route.BusNumber, Is.EqualTo("Bus-5"));
         }
+
+        /// <summary>
+        /// Roster format: one header row of named columns. Synthetic tokens only — this file is
+        /// git-tracked and specs/students.md forbids committing student PII.
+        /// </summary>
+        private static string RosterCsv(params string[] dataRows) =>
+            "StopNumber,PickupTime,StudentName,Grade,School,SchoolYear,HomeAddress,City,State,Zip," +
+            "GuardianName,GuardianPhone,EmergencyContactName,EmergencyContactPhone,PickupMode,AMRoute,PMRoute," +
+            "RequiresSpecialNeedsBus,RequiresAide,RequiresWheelchair,RequiresSeatBelt,HasMedicalNeeds,Active," +
+            "TransportationNotes\n" +
+            string.Join("\n", dataRows) + "\n";
 
         private static string StudentCsv(string dataRow) =>
             "Student,,,Parent,,,,,,,,Joint Parent,,,,,,,Econtact,,\n" +

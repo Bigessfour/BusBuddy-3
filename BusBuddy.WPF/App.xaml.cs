@@ -22,6 +22,7 @@ using Serilog.Formatting.Json;
 using Serilog.Settings.Configuration;
 using System.Threading.Tasks;
 using BusBuddy.WPF.Utilities;
+using BusBuddy.WPF.Logging;
 using Syncfusion.Licensing;
 
 namespace BusBuddy.WPF
@@ -350,6 +351,11 @@ namespace BusBuddy.WPF
             // Add global error handlers for runtime error capture
             DispatcherUnhandledException += OnDispatcherUnhandledException;
             AppDomain.CurrentDomain.UnhandledException += OnDomainUnhandledException;
+            TaskScheduler.UnobservedTaskException += OnUnobservedTaskException;
+
+            LoggingModeManager.Initialize(LoggingModeManager.LoggingMode.Standard);
+            WpfTraceSerilogListener.Attach();
+            UiSurfaceProbe.Register();
 
             // Syncfusion inputs ignore NumPad on inner TextBox hosts — fix app-wide.
             NumpadInputHelper.RegisterApplicationWide();
@@ -367,6 +373,7 @@ namespace BusBuddy.WPF
 
                 // Setup minimal DI for Students, Routes, Buses, Drivers (synchronous)
                 ConfigureServices();
+                RuntimeCapabilityLogger.WriteStartupSnapshot(ServiceProvider);
 
                 // Removed redundant explicit district JSON seeding. Seeding now handled via EF Core 9 UseSeeding/UseAsyncSeeding
 
@@ -504,7 +511,9 @@ namespace BusBuddy.WPF
                 // Register ViewModels for dependency injection (standardized on subfolder organization for dedup)
                 services.AddTransient<BusBuddy.WPF.ViewModels.MainWindowViewModel>();
                 services.AddTransient<BusBuddy.WPF.ViewModels.Dashboard.DashboardViewModel>();
-                services.AddTransient<BusBuddy.WPF.ViewModels.Activity.ActivityTimelineViewModel>();
+                services.AddTransient<BusBuddy.WPF.ViewModels.Activity.ActivityTimelineViewModel>(sp =>
+                    new BusBuddy.WPF.ViewModels.Activity.ActivityTimelineViewModel(
+                        sp.GetService<IActivityLogService>()));
                 services.AddTransient<BusBuddy.WPF.ViewModels.Settings.SettingsViewModel>();
                 services.AddTransient<BusBuddy.WPF.ViewModels.Analytics.AnalyticsDashboardViewModel>();
                 services.AddTransient<BusBuddy.WPF.ViewModels.Fuel.FuelManagementViewModel>();
@@ -535,6 +544,7 @@ namespace BusBuddy.WPF
                         routingService: sp.GetService<BusBuddy.Core.Services.Interfaces.IRoutingService>(),
                         userSettings: sp.GetService<IUserSettingsService>(),
                         districtSettings: sp.GetService<IDistrictSettingsAccessor>()));
+                services.AddSingleton<BusBuddy.WPF.Services.IDistrictMapSync, BusBuddy.WPF.Services.DistrictMapSync>();
 
                 ServiceProvider = services.BuildServiceProvider();
                 ApplyPersistedDistrictSettings();
@@ -720,6 +730,12 @@ namespace BusBuddy.WPF
         }
 
         // Global error handler for non-UI thread exceptions
+        private void OnUnobservedTaskException(object? sender, UnobservedTaskExceptionEventArgs e)
+        {
+            Log.Error(e.Exception, "Unobserved task exception — {Message}", e.Exception.Message);
+            e.SetObserved();
+        }
+
         private void OnDomainUnhandledException(object sender, UnhandledExceptionEventArgs e)
         {
             var logger = Log.Logger;

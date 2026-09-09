@@ -29,6 +29,15 @@ public class PostgresConnectionResolverTests
     }
 
     [Test]
+    public void RefreshHostIfNeeded_leaves_loopback_host_unchanged()
+    {
+        var current =
+            "Host=localhost;Port=5432;Database=busbuddy_test;Username=busbuddy;Password=local-test";
+
+        PostgresConnectionResolver.RefreshHostIfNeeded(current, "192.168.64.1").Should().Be(current);
+    }
+
+    [Test]
     public void DescribeEndpoint_returns_host_and_port()
     {
         PostgresConnectionResolver.DescribeEndpoint(

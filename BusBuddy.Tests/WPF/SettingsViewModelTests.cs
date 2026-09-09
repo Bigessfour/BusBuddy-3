@@ -1,8 +1,11 @@
 using System.Threading.Tasks;
+using BusBuddy.Core.Configuration;
+using BusBuddy.Core.Mapping;
 using BusBuddy.Core.Services;
 using BusBuddy.WPF.Services;
 using BusBuddy.WPF.ViewModels.Settings;
 using FluentAssertions;
+using Microsoft.Extensions.Options;
 using Moq;
 using NUnit.Framework;
 
@@ -53,6 +56,75 @@ public class SettingsViewModelTests
     }
 
     [Test]
+    public async Task SaveSettingsAsync_WritesDistrictAndSyncsMap_NotUsCentroid()
+    {
+        var settings = CreateSettingsMock();
+        settings.Setup(s => s.SaveSettingsAsync()).ReturnsAsync(true);
+
+        var accessor = new DistrictSettingsAccessor(Options.Create(new RoutingDistrictSettings()));
+        var mapSync = new Mock<IDistrictMapSync>();
+        mapSync.Setup(m => m.ApplyDistrictGeographyAsync(default)).Returns(Task.CompletedTask);
+
+        var vm = new SettingsViewModel(
+            settings.Object,
+            new Mock<ISkinManagerService>().Object,
+            accessor,
+            districtMapSync: mapSync.Object);
+
+        await Task.Delay(100);
+        vm.DepotName = "Hop Settings Depot";
+        vm.DepotLatitudeText = "38.0872";
+        vm.DepotLongitudeText = "-102.6208";
+        vm.BoundingBoxMinLatText = "38.05";
+        vm.BoundingBoxMinLonText = "-102.80";
+        vm.BoundingBoxMaxLatText = "38.25";
+        vm.BoundingBoxMaxLonText = "-102.40";
+
+        await vm.SaveCommand.ExecuteAsync(null);
+
+        settings.Verify(s => s.SetSettingAsync(UserSettingsKeys.DistrictDepotLatitude, "38.0872"), Times.Once);
+        settings.Verify(s => s.SetSettingAsync(UserSettingsKeys.DistrictDepotLongitude, "-102.6208"), Times.Once);
+        settings.Verify(s => s.SetSettingAsync(UserSettingsKeys.DistrictBoundingBoxMinLat, "38.0500"), Times.Once);
+
+        Assert.That(DistrictDepot.TryGetCoordinates(accessor.Current, out var lat, out var lon), Is.True);
+        Assert.That(lat, Is.EqualTo(38.0872).Within(0.0001));
+        Assert.That(lon, Is.EqualTo(-102.6208).Within(0.0001));
+
+        var camera = DistrictMapAnchor.ResolveCamera(accessor.Current);
+        Assert.That(camera.Latitude, Is.EqualTo(38.0872).Within(0.0001));
+        Assert.That(camera.Longitude, Is.EqualTo(-102.6208).Within(0.0001));
+        Assert.That(camera.ZoomLevel, Is.EqualTo(MapDefaults.DistrictZoomLevel));
+        Assert.That(camera.ZoomLevel, Is.Not.EqualTo(MapDefaults.UnconfiguredZoomLevel));
+        Assert.That(Math.Abs(camera.Latitude - MapDefaults.UnconfiguredLatitude), Is.GreaterThan(0.5));
+
+        mapSync.Verify(m => m.ApplyDistrictGeographyAsync(default), Times.Once);
+        vm.StatusMessage.Should().Be("Settings saved");
+    }
+
+    [Test]
+    public async Task SaveSettingsAsync_DoesNotSyncMapWhenPersistFails()
+    {
+        var settings = CreateSettingsMock();
+        settings.Setup(s => s.SaveSettingsAsync()).ReturnsAsync(false);
+        var mapSync = new Mock<IDistrictMapSync>();
+
+        var vm = new SettingsViewModel(
+            settings.Object,
+            new Mock<ISkinManagerService>().Object,
+            new DistrictSettingsAccessor(Options.Create(new RoutingDistrictSettings())),
+            districtMapSync: mapSync.Object);
+
+        await Task.Delay(100);
+        vm.DepotLatitudeText = "38.0872";
+        vm.DepotLongitudeText = "-102.6208";
+
+        await vm.SaveCommand.ExecuteAsync(null);
+
+        mapSync.Verify(m => m.ApplyDistrictGeographyAsync(It.IsAny<System.Threading.CancellationToken>()), Times.Never);
+        vm.StatusMessage.Should().Be("Failed to save settings");
+    }
+
+    [Test]
     public async Task ResetSettingsAsync_ReloadsDefaults()
     {
         var settings = new Mock<IUserSettingsService>();
@@ -78,5 +150,23 @@ public class SettingsViewModelTests
         settings.Verify(s => s.ResetSettingsAsync(), Times.Once);
         settings.Verify(s => s.LoadSettingsAsync(), Times.AtLeastOnce);
         vm.StatusMessage.Should().Be("Settings reset to defaults");
+    }
+
+    private static Mock<IUserSettingsService> CreateSettingsMock()
+    {
+        var settings = new Mock<IUserSettingsService>();
+        settings.SetupGet(s => s.EnableActivityLogging).Returns(true);
+        settings.SetupGet(s => s.ShowDashboardOnStartup).Returns(true);
+        settings.SetupGet(s => s.CachedTheme).Returns("FluentDark");
+        settings.Setup(s => s.LoadSettingsAsync()).Returns(Task.CompletedTask);
+        settings.Setup(s => s.GetSettingAsync(UserSettingsKeys.Theme, It.IsAny<string>()))
+            .ReturnsAsync("FluentDark");
+        settings.Setup(s => s.GetSettingAsync(UserSettingsKeys.EnableActivityLogging, It.IsAny<bool>()))
+            .ReturnsAsync(true);
+        settings.Setup(s => s.GetSettingAsync(UserSettingsKeys.ShowDashboardOnStartup, It.IsAny<bool>()))
+            .ReturnsAsync(true);
+        settings.Setup(s => s.GetSettingAsync(UserSettingsKeys.EnableRouteGeoExport, It.IsAny<bool>()))
+            .ReturnsAsync(false);
+        return settings;
     }
 }

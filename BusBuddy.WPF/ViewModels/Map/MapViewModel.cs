@@ -60,7 +60,7 @@ namespace BusBuddy.WPF.ViewModels.Map
         private const double DistrictDefaultLongitude = -102.6208;
         private Point _mapCenter = new(DistrictDefaultLatitude, DistrictDefaultLongitude);
         private int _mapZoomLevel = MapDefaults.DistrictZoomLevel;
-        private double _mapFitRadiusKm;
+        private Size _mapViewportSize = new(MapDefaults.DefaultViewportWidth, MapDefaults.DefaultViewportHeight);
         private const string RouteWaypointPrefix = MapRouteTrail.WaypointPrefix;
 
         /// <summary>
@@ -269,26 +269,49 @@ namespace BusBuddy.WPF.ViewModels.Map
         }
 
         /// <summary>
-        /// Zoom level bound to SfMap.ZoomLevel.
+        /// Zoom level bound to SfMap.ZoomLevel (TwoWay). Clamped to the imagery layer's 1..19 range so a
+        /// wheel zoom never round-trips to a different value. Camera is Center + ZoomLevel only — the
+        /// Syncfusion <c>Radius</c> fit is not used (it doubles the bounds and re-fits on every resize).
         /// </summary>
         public int MapZoomLevel
         {
             get => _mapZoomLevel;
-            set => SetProperty(ref _mapZoomLevel, Math.Clamp(value, 1, 18));
+            set
+            {
+                if (SetProperty(ref _mapZoomLevel, MapDefaults.ClampZoom(value)))
+                {
+                    OnPropertyChanged(nameof(ShowDetailLabels));
+                }
+            }
         }
 
         /// <summary>
-        /// Kilometers around <see cref="MapCenter"/> for ImageryLayer Radius (DistanceType KiloMeter).
-        /// Zero means the view should not override zoom with a radius.
+        /// Home / pickup / waypoint captions render only from <see cref="MapDefaults.DetailLabelZoomLevel"/> up;
+        /// school and depot captions always render. Bound by the marker templates.
         /// </summary>
-        public double MapFitRadiusKm
+        public bool ShowDetailLabels => MapDefaults.ShowsDetailLabels(MapZoomLevel);
+
+        /// <summary>
+        /// SfMap pixel size reported by the view (SizeChanged) so span fits use the real viewport.
+        /// Falls back to <see cref="MapDefaults.DefaultViewportWidth"/> x <see cref="MapDefaults.DefaultViewportHeight"/>.
+        /// </summary>
+        public Size MapViewportSize
         {
-            get => _mapFitRadiusKm;
-            set => SetProperty(ref _mapFitRadiusKm, value);
+            get => _mapViewportSize;
+            set
+            {
+                if (value.IsEmpty || value.Width <= 0 || value.Height <= 0
+                    || double.IsNaN(value.Width) || double.IsNaN(value.Height))
+                {
+                    return;
+                }
+
+                SetProperty(ref _mapViewportSize, value);
+            }
         }
 
         /// <summary>
-        /// Updates map center and optional zoom for view bindings.
+        /// Updates map center and optional zoom for the TwoWay SfMap / ImageryLayer bindings.
         /// </summary>
         public void SetMapView(double latitude, double longitude, int? zoomLevel = null)
         {
@@ -755,22 +778,23 @@ namespace BusBuddy.WPF.ViewModels.Map
             StatusMessage = $"Error: {message}";
         }
 
-        private void ZoomIn()
-        {
-            MapFitRadiusKm = 0;
-            var next = Math.Clamp(MapZoomLevel + 1, 1, 18);
-            SetMapView(MapCenter.X, MapCenter.Y, next);
-            StatusMessage = $"Zoom level {next}";
-            Logger.Debug("Map zoom in to {Zoom}", next);
-        }
+        private void ZoomIn() => StepZoom(+1);
 
-        private void ZoomOut()
+        private void ZoomOut() => StepZoom(-1);
+
+        /// <summary>Zoom around the current center; only <see cref="MapZoomLevel"/> changes so one tile reload runs.</summary>
+        private void StepZoom(int delta)
         {
-            MapFitRadiusKm = 0;
-            var next = Math.Clamp(MapZoomLevel - 1, 1, 18);
-            SetMapView(MapCenter.X, MapCenter.Y, next);
+            var next = MapDefaults.ClampZoom(MapZoomLevel + delta);
+            if (next == MapZoomLevel)
+            {
+                StatusMessage = delta > 0 ? "Already at maximum zoom" : "Already at minimum zoom";
+                return;
+            }
+
+            MapZoomLevel = next;
             StatusMessage = $"Zoom level {next}";
-            Logger.Debug("Map zoom out to {Zoom}", next);
+            Logger.Debug("Map zoom {Direction} to {Zoom}", delta > 0 ? "in" : "out", next);
         }
 
         private async Task CenterOnFleetAsync()
@@ -785,7 +809,6 @@ namespace BusBuddy.WPF.ViewModels.Map
                 }
 
                 var (lat, lon, zoom) = await ResolveDistrictCameraAsync();
-                MapFitRadiusKm = 0;
                 SetMapView(lat, lon, zoom);
                 StatusMessage = "Centered on district — fleet GPS is not enabled";
             }
@@ -826,11 +849,17 @@ namespace BusBuddy.WPF.ViewModels.Map
                 if (pt.Y > maxLon) maxLon = pt.Y;
             }
 
+            // Fit against the real SfMap viewport (view reports it); SfMap has no fit-bounds API.
             SetMapView(
                 (minLat + maxLat) / 2d,
                 (minLon + maxLon) / 2d,
-                MapDefaults.ZoomForBounds(minLat, maxLat, minLon, maxLon));
-            MapFitRadiusKm = MapDefaults.RadiusKilometers(minLat, maxLat, minLon, maxLon);
+                MapDefaults.ZoomForBounds(
+                    minLat,
+                    maxLat,
+                    minLon,
+                    maxLon,
+                    MapViewportSize.Width,
+                    MapViewportSize.Height));
         }
 
         private async Task ShowRoutesAsync()
@@ -898,7 +927,6 @@ namespace BusBuddy.WPF.ViewModels.Map
             try
             {
                 var (lat, lon, zoom) = await ResolveDistrictCameraAsync();
-                MapFitRadiusKm = 0;
                 SetMapView(lat, lon, zoom);
                 ViewResetRequested?.Invoke(this, EventArgs.Empty);
                 StatusMessage = IsDistrictDefaultCamera(lat, lon, zoom)
@@ -909,6 +937,31 @@ namespace BusBuddy.WPF.ViewModels.Map
             {
                 Logger.Warning(ex, "ResetCameraToDistrict failed");
                 StatusMessage = "Could not reset map";
+            }
+        }
+
+        /// <summary>
+        /// After Settings persist depot/bbox: replot the DEPOT pin and recenter.
+        /// Never leaves the camera on the MapDefaults US-centroid overview.
+        /// </summary>
+        public async Task ApplyDistrictSettingsAsync()
+        {
+            try
+            {
+                ClearDepotMarkers();
+                var depotCount = _layers.PlotDepotPins();
+                await ResetCameraToDistrictAsync().ConfigureAwait(true);
+                Logger.Information(
+                    "District map refreshed after Settings write DepotMarkers={DepotCount} CenterLat={Lat:F4} CenterLon={Lon:F4} Zoom={Zoom}",
+                    depotCount,
+                    MapCenter.X,
+                    MapCenter.Y,
+                    MapZoomLevel);
+            }
+            catch (Exception ex)
+            {
+                Logger.Warning(ex, "ApplyDistrictSettings failed");
+                StatusMessage = "Could not refresh district map after Settings save";
             }
         }
 
@@ -1481,6 +1534,19 @@ namespace BusBuddy.WPF.ViewModels.Map
                     .Select(s => ((double)s.Latitude!.Value, (double)s.Longitude!.Value)));
         }
 
+        private void ClearDepotMarkers() => ClearMarkersOfKind(MapMarkerLabels.Kind.Depot);
+
+        private void ClearMarkersOfKind(MapMarkerLabels.Kind kind)
+        {
+            for (var i = MapMarkers.Count - 1; i >= 0; i--)
+            {
+                if (MapMarkers[i].Kind == kind)
+                {
+                    MapMarkers.RemoveAt(i);
+                }
+            }
+        }
+
         private void ClearRouteWaypointMarkers()
         {
             for (var i = MapMarkers.Count - 1; i >= 0; i--)
@@ -1534,7 +1600,10 @@ namespace BusBuddy.WPF.ViewModels.Map
         private async Task<(double Lat, double Lon, int Zoom)> ResolveDistrictCameraAsync()
         {
             using var scope = _scopeFactory?.CreateScope();
-            var camera = await DistrictCameraUi.ResolveAsync(scope?.ServiceProvider ?? App.ServiceProvider);
+            // Prefer the injected accessor (same singleton Settings.Replace updates).
+            var camera = await DistrictCameraUi.ResolveAsync(
+                scope?.ServiceProvider ?? App.ServiceProvider,
+                _districtSettings?.Current);
             if (IsUsCentroidOverview(camera.Latitude, camera.Longitude, camera.ZoomLevel))
             {
                 return (DistrictDefaultLatitude, DistrictDefaultLongitude, MapDefaults.DistrictZoomLevel);
@@ -1567,9 +1636,26 @@ namespace BusBuddy.WPF.ViewModels.Map
         /// Lightweight marker model compatible with Syncfusion markers binding.
         /// <see cref="Kind"/> drives merge policy and <c>MarkerTemplateSelector</c> (school vs stop).
         /// </summary>
-        public sealed class MapMarker
+        public sealed class MapMarker : INotifyPropertyChanged
         {
-            public string? Label { get; set; }
+            private string? _label;
+
+            public event PropertyChangedEventHandler? PropertyChanged;
+
+            /// <summary>Caption bound by the marker templates; raises change so aggregation rewrites show live.</summary>
+            public string? Label
+            {
+                get => _label;
+                set
+                {
+                    if (!string.Equals(_label, value, StringComparison.Ordinal))
+                    {
+                        _label = value;
+                        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Label)));
+                    }
+                }
+            }
+
             public double MarkerSize { get; set; } = MapMarkerLabels.PrimaryMarkerSize;
             public double LabelFontSize { get; set; } = MapMarkerLabels.PrimaryLabelFontSize;
             public MapMarkerLabels.Kind Kind { get; set; } = MapMarkerLabels.Kind.Student;

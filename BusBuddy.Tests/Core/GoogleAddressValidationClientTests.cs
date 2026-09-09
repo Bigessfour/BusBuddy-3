@@ -95,13 +95,14 @@ public class GoogleAddressValidationClientTests
     [Test]
     public async Task ValidateAndGeocode_Forbidden_FallsBackToGeocoding()
     {
+        // Geocoding API v4 GeocodeAddressResponse shape (camelCase, location.latitude/longitude, granularity).
         var geocodeJson = """
             {
-              "status": "OK",
               "results": [{
-                "place_id": "ChIJgeocode",
-                "formatted_address": "1600 Amphitheatre Parkway, Mountain View, CA 94043, USA",
-                "geometry": { "location": { "lat": 37.422, "lng": -122.084 } }
+                "placeId": "ChIJgeocode",
+                "formattedAddress": "1600 Amphitheatre Parkway, Mountain View, CA 94043, USA",
+                "location": { "latitude": 37.422, "longitude": -122.084 },
+                "granularity": "ROOFTOP"
               }]
             }
             """;
@@ -123,13 +124,77 @@ public class GoogleAddressValidationClientTests
 
         Assert.That(result.Ok, Is.True);
         Assert.That(result.MappingUnconfigured, Is.False);
-        Assert.That(result.Precision, Is.EqualTo("geocode"));
+        Assert.That(result.Precision, Is.EqualTo("ROOFTOP"));
         Assert.That(result.PlaceId, Is.EqualTo("ChIJgeocode"));
         Assert.That(result.Latitude, Is.EqualTo(37.422).Within(0.001));
+        Assert.That(result.Longitude, Is.EqualTo(-122.084).Within(0.001));
         Assert.That(result.FormattedAddress, Does.Contain("Mountain View"));
         Assert.That(geocodeRequest, Is.Not.Null);
-        Assert.That(geocodeRequest!.RequestUri!.Query, Does.Not.Contain("key="));
+        // Documented v4 endpoint + header auth (the legacy maps/api/geocode/json only documents ?key=).
+        Assert.That(geocodeRequest!.RequestUri!.Host, Is.EqualTo("geocode.googleapis.com"));
+        Assert.That(geocodeRequest.RequestUri.AbsolutePath, Does.StartWith("/v4/geocode/address/"));
+        Assert.That(geocodeRequest.RequestUri.Query, Does.Not.Contain("key="));
+        Assert.That(geocodeRequest.RequestUri.Query, Does.Contain("regionCode=US"));
         Assert.That(geocodeRequest.Headers.Contains("X-Goog-Api-Key"), Is.True);
+        Assert.That(geocodeRequest.Headers.Contains("X-Goog-FieldMask"), Is.True);
+    }
+
+    [Test]
+    public void BuildGeocodeV4Uri_EscapesAddressAndDefaultsRegion()
+    {
+        var uri = GoogleAddressValidationClient.BuildGeocodeV4Uri("100 Main St, Wiley, CO 81092", null);
+
+        Assert.That(uri.Host, Is.EqualTo("geocode.googleapis.com"));
+        Assert.That(uri.AbsolutePath, Is.EqualTo("/v4/geocode/address/100%20Main%20St%2C%20Wiley%2C%20CO%2081092"));
+        Assert.That(uri.Query, Is.EqualTo("?regionCode=US"));
+    }
+
+    [Test]
+    public void ParseGeocodeJson_V4EmptyResults_IsNoMatch()
+    {
+        var result = GoogleAddressValidationClient.ParseGeocodeJson("""{"results":[]}""", 1);
+
+        Assert.That(result.Ok, Is.False);
+        Assert.That(result.ErrorMessage, Does.Contain("No geocode match"));
+    }
+
+    [Test]
+    public void ParseGeocodeJson_V4MissingLocation_ReportsMissingCoordinates()
+    {
+        var result = GoogleAddressValidationClient.ParseGeocodeJson(
+            """{"results":[{"placeId":"ChIJx","formattedAddress":"Somewhere","granularity":"APPROXIMATE"}]}""",
+            1);
+
+        Assert.That(result.Ok, Is.False);
+        Assert.That(result.PlaceId, Is.EqualTo("ChIJx"));
+        Assert.That(result.Precision, Is.EqualTo("APPROXIMATE"));
+        Assert.That(result.ErrorMessage, Does.Contain("missing coordinates"));
+    }
+
+    [Test]
+    public void DescribeGeocodeFailure_MapsV4HttpStatuses()
+    {
+        var avForbidden = GoogleAddressValidationClient.ClassifyMapsForbidden(
+            """{"error":{"status":"PERMISSION_DENIED","details":[{"reason":"SERVICE_DISABLED"}]}}""");
+        var geoDenied = GoogleAddressValidationClient.ClassifyMapsForbidden(
+            """{"error":{"status":"PERMISSION_DENIED"}}""");
+
+        Assert.That(
+            GoogleAddressValidationClient.DescribeGeocodeFailure(HttpStatusCode.NotFound, geoDenied, avForbidden),
+            Does.Contain("No geocode match"));
+        Assert.That(
+            GoogleAddressValidationClient.DescribeGeocodeFailure((HttpStatusCode)429, geoDenied, avForbidden),
+            Does.Contain("rate limited"));
+        // Generic PERMISSION_DENIED on Geocoding → report the more specific Address Validation cause.
+        Assert.That(
+            GoogleAddressValidationClient.DescribeGeocodeFailure(HttpStatusCode.Forbidden, geoDenied, avForbidden),
+            Does.Contain("not enabled"));
+
+        var geoDisabled = GoogleAddressValidationClient.ClassifyMapsForbidden(
+            """{"error":{"status":"PERMISSION_DENIED","details":[{"reason":"SERVICE_DISABLED"}]}}""");
+        Assert.That(
+            GoogleAddressValidationClient.DescribeGeocodeFailure(HttpStatusCode.Forbidden, geoDisabled, avForbidden),
+            Does.Contain("Geocoding API is not enabled"));
     }
 
     [Test]

@@ -24,7 +24,6 @@ public class UnitOfWork : IUnitOfWork
     private IBusRepository? _buses;
     private IDriverRepository? _drivers;
     private IRouteRepository? _routes;
-    private IStudentRepository? _students;
     private IFuelRepository? _fuelRecords;
     private IMaintenanceRepository? _maintenanceRecords;
     private IScheduleRepository? _schedules;
@@ -61,11 +60,6 @@ public class UnitOfWork : IUnitOfWork
     public IRouteRepository Routes
     {
         get { return _routes ??= new RouteRepository(_context, _userContextService); }
-    }
-
-    public IStudentRepository Students
-    {
-        get { return _students ??= new StudentRepository(_context, _userContextService); }
     }
 
     public IFuelRepository FuelRecords
@@ -493,67 +487,6 @@ public class DriverRepository : Repository<Driver>, IDriverRepository
     public IEnumerable<Driver> GetDriversWithCompletedTraining() => Find(d => d.TrainingComplete);
     public IEnumerable<Driver> GetDriversWithExpiringLicenses(int withinDays = 30) => GetAll();
     public bool IsDriverAvailable(int driverId, DateTime checkDate, TimeSpan startTime, TimeSpan endTime) => true;
-}
-
-public class StudentRepository : Repository<Student>, IStudentRepository
-{
-    public StudentRepository(BusBuddyDbContext context, IUserContextService userContextService) : base(context, userContextService) { }
-
-    // Implement all interface methods (updated for model alignment)
-    public async Task<IEnumerable<Student>> GetActiveStudentsAsync() => await FindAsync(s => s.Active);
-    public async Task<IEnumerable<Student>> GetStudentsByGradeAsync(string grade) => await FindAsync(s => s.Grade == grade);
-    public async Task<IEnumerable<Student>> GetStudentsByRouteAsync(int? routeId)
-    {
-        if (routeId == null)
-        {
-            return new List<Student>();
-        }
-
-        string routeStr = routeId.Value.ToString();
-        return await FindAsync(s => s.AMRoute == routeStr || s.PMRoute == routeStr);
-    }
-    public async Task<IEnumerable<Student>> GetStudentsWithoutRouteAsync() => await FindAsync(s => string.IsNullOrEmpty(s.AMRoute) && string.IsNullOrEmpty(s.PMRoute));
-    public async Task<Student?> GetStudentByNameAsync(string studentName) => await FirstOrDefaultAsync(s => s.StudentName.Contains(studentName));
-    public async Task<IEnumerable<Student>> SearchStudentsByNameAsync(string searchTerm) => await FindAsync(s => s.StudentName.Contains(searchTerm));
-    public async Task<IEnumerable<Student>> GetStudentsWithSpecialNeedsAsync() => await FindAsync(s => s.RequiresSpecialNeedsBus || !string.IsNullOrEmpty(s.SpecialNeeds));
-    public async Task<IEnumerable<Student>> GetStudentsWithMedicalConditionsAsync() => await FindAsync(s => !string.IsNullOrEmpty(s.MedicalNotes));
-    public async Task<IEnumerable<Student>> GetStudentsRequiringSpecialTransportationAsync() => await FindAsync(s => s.RequiresSpecialNeedsBus || !string.IsNullOrEmpty(s.SpecialNeeds) || !string.IsNullOrEmpty(s.SpecialAccommodations));
-    public async Task<IEnumerable<Student>> GetStudentsWithEmergencyContactsAsync() => await FindAsync(s => !string.IsNullOrEmpty(s.EmergencyPhone));
-    public async Task<IEnumerable<Student>> GetStudentsWithoutEmergencyContactsAsync() => await FindAsync(s => string.IsNullOrEmpty(s.EmergencyPhone));
-    public async Task<IEnumerable<Student>> GetStudentsByTransportationTypeAsync(string transportationType) => await FindAsync(s => s.TransportationNotes != null && s.TransportationNotes.Contains(transportationType));
-    public async Task<IEnumerable<Student>> GetStudentsEligibleForRouteAsync(int routeId) => await FindAsync(s => s.AMRoute == routeId.ToString() || s.PMRoute == routeId.ToString());
-    public async Task<int> GetStudentCountByRouteAsync(int routeId) => await CountAsync(s => s.AMRoute == routeId.ToString() || s.PMRoute == routeId.ToString());
-    public async Task<Dictionary<string, int>> GetStudentCountByRouteAsync() => await Task.FromResult(new Dictionary<string, int>());
-    public async Task<int> GetTotalStudentCountAsync() => await CountAsync();
-    public async Task<int> GetActiveStudentCountAsync() => await CountAsync(s => s.Active);
-    public async Task<Dictionary<string, int>> GetStudentCountByGradeAsync() => await Task.FromResult(new Dictionary<string, int>());
-    public async Task<Dictionary<string, int>> GetStudentCountByTransportationTypeAsync() => await Task.FromResult(new Dictionary<string, int>());
-    // TODO: Age property not available on Student model - return all students for now
-    public async Task<IEnumerable<Student>> GetStudentsByAgeRangeAsync(int minAge, int maxAge) => await GetAllAsync();
-    public async Task<IEnumerable<Student>> GetStudentsByParentEmailAsync(string email) => await FindAsync(s => s.ParentEmail != null && s.ParentEmail.Contains(email));
-    public async Task<IEnumerable<Student>> GetStudentsByParentPhoneAsync(string phone) => await FindAsync(s => s.HomePhone == phone || s.CellPhone == phone || s.EmergencyPhone == phone || s.AlternativePhone == phone);
-    public async Task<IEnumerable<Student>> GetStudentsWithIncompleteContactInfoAsync() => await FindAsync(s => string.IsNullOrEmpty(s.ParentGuardian) || (string.IsNullOrEmpty(s.HomePhone) && string.IsNullOrEmpty(s.CellPhone)));
-    public async Task<IEnumerable<Student>> GetStudentsBySchoolAsync(string schoolName) => await FindAsync(s => s.School == schoolName);
-    public async Task<IEnumerable<Student>> GetStudentsWithActivityPermissionsAsync() => await FindAsync(s => s.PhotoPermission || s.FieldTripPermission);
-    public async Task<IEnumerable<Student>> GetStudentsWithoutActivityPermissionsAsync() => await FindAsync(s => !s.PhotoPermission && !s.FieldTripPermission);
-
-    // Synchronous methods
-    public IEnumerable<Student> GetActiveStudents() => Find(s => s.Active);
-    public IEnumerable<Student> GetStudentsByGrade(string grade) => Find(s => s.Grade == grade);
-    public IEnumerable<Student> GetStudentsByRoute(int? routeId)
-    {
-        if (routeId == null)
-        {
-            return new List<Student>();
-        }
-
-        string routeStr = routeId.Value.ToString();
-        return Find(s => s.AMRoute == routeStr || s.PMRoute == routeStr);
-    }
-    public IEnumerable<Student> GetStudentsWithoutRoute() => Find(s => string.IsNullOrEmpty(s.AMRoute) && string.IsNullOrEmpty(s.PMRoute));
-    public IEnumerable<Student> GetStudentsWithSpecialNeeds() => Find(s => s.RequiresSpecialNeedsBus || !string.IsNullOrEmpty(s.SpecialNeeds));
-    public IEnumerable<Student> SearchStudentsByName(string searchTerm) => Find(s => s.StudentName.Contains(searchTerm));
-    public int GetStudentCountByRoute(int routeId) => Count(s => s.AMRoute == routeId.ToString() || s.PMRoute == routeId.ToString());
 }
 
 public class FuelRepository : Repository<Fuel>, IFuelRepository

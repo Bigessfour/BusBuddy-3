@@ -1168,3 +1168,8 @@ BusBuddy.db
 # Local RAG vector store (regenerate with: python -m rag.index)
 rag/chroma_db/
 **/chroma.sqlite3
+
+# Student roster PII — never track (see specs/students.md). Rosters live in artifacts/rosters/
+BusBuddy.Core/Data/student-import-data.json
+**/student-import-data.json
+**/*roster*.json

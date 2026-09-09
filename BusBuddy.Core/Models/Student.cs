@@ -12,13 +12,6 @@ namespace BusBuddy.Core.Models;
 [Table("Students")]
 public class Student : INotifyPropertyChanged
 {
-    // For compatibility with legacy and ViewModel code
-    [NotMapped]
-    public int? RouteId
-    {
-        get => RouteAssignmentId;
-        set => RouteAssignmentId = value;
-    }
     [Key]
     public int StudentId { get; set; }
 
@@ -122,15 +115,6 @@ public class Student : INotifyPropertyChanged
     [Display(Name = "Emergency Contact Phone")]
     public string? EmergencyPhone { get; set; }
 
-    /// <summary>Form alias for emergency phone (same column as <see cref="EmergencyPhone"/>).</summary>
-    [NotMapped]
-    [Display(Name = "Emergency Contact Phone")]
-    public string? EmergencyContactPhone
-    {
-        get => EmergencyPhone;
-        set => EmergencyPhone = value;
-    }
-
     [StringLength(100, ErrorMessage = "School name cannot exceed 100 characters")]
     [Display(Name = "School")]
     public string? School { get; set; }
@@ -146,6 +130,56 @@ public class Student : INotifyPropertyChanged
     [StringLength(50, ErrorMessage = "PM Route cannot exceed 50 characters")]
     [Display(Name = "PM Route")]
     public string? PMRoute { get; set; }
+
+    /// <summary>
+    /// Morning ride eligibility. Independent of <see cref="RidesPm"/> and independent of whether
+    /// <see cref="AMRoute"/> has been assigned yet — eligibility is not assignment.
+    /// </summary>
+    [Display(Name = "Rides AM")]
+    public bool RidesAm
+    {
+        get => _ridesAm;
+        set
+        {
+            if (_ridesAm == value)
+            {
+                return;
+            }
+
+            _ridesAm = value;
+            OnPropertyChanged();
+        }
+    }
+
+    // Eligibility is stated, never assumed: a CSV or JSON intake that says nothing about the PM run
+    // must not silently mark a child eligible for it. Matches the database default in
+    // 20260907150000_StudentRideEligibilityAndSchoolYear. The new-student *form* opts both on for
+    // clerk convenience, where a human sees the checkboxes before saving.
+    private bool _ridesAm;
+
+    /// <summary>Afternoon ride eligibility. Independent of <see cref="RidesAm"/>.</summary>
+    [Display(Name = "Rides PM")]
+    public bool RidesPm
+    {
+        get => _ridesPm;
+        set
+        {
+            if (_ridesPm == value)
+            {
+                return;
+            }
+
+            _ridesPm = value;
+            OnPropertyChanged();
+        }
+    }
+
+    private bool _ridesPm;
+
+    /// <summary>School year this assignment belongs to, e.g. <c>2026-2027</c>.</summary>
+    [StringLength(9, ErrorMessage = "School year must look like 2026-2027")]
+    [Display(Name = "School Year")]
+    public string? SchoolYear { get; set; }
 
     public bool Active { get; set; } = true;
 
@@ -223,15 +257,6 @@ public class Student : INotifyPropertyChanged
     [Display(Name = "Transportation Notes")]
     public string? TransportationNotes { get; set; }
 
-    /// <summary>UI alias used by StudentForm (maps to <see cref="TransportationNotes"/>).</summary>
-    [NotMapped]
-    [Display(Name = "Special Instructions")]
-    public string? SpecialInstructions
-    {
-        get => TransportationNotes;
-        set => TransportationNotes = value;
-    }
-
     [StringLength(100, ErrorMessage = "Alternative contact cannot exceed 100 characters")]
     [Display(Name = "Alternative Contact")]
     public string? AlternativeContact { get; set; }
@@ -263,10 +288,12 @@ public class Student : INotifyPropertyChanged
     [NotMapped]
     public string FullAddress => string.Join(", ", new[] { HomeAddress, City, State, Zip }.Where(s => !string.IsNullOrWhiteSpace(s))!);
 
-    /// <summary>Home vs catalog stop. Special needs still uses home pickup on a special-needs route.</summary>
+    /// <summary>Home vs catalog stop. Special needs always uses home pickup on a special-needs route.</summary>
     [NotMapped]
     public string PickupMode =>
-        PickupStopId.HasValue ? LocationTypes.PickupModeCatalogStop : LocationTypes.PickupModeHome;
+        PickupStopId.HasValue && !RequiresSpecialNeedsBus
+            ? LocationTypes.PickupModeCatalogStop
+            : LocationTypes.PickupModeHome;
 
     [NotMapped]
     public string LocationType => LocationTypes.StudentHome;
@@ -277,26 +304,63 @@ public class Student : INotifyPropertyChanged
     [NotMapped]
     public string HomeCoordinateStatus => LocationTypes.ValidationStatus(HasValidatedHomeCoordinates);
 
-    /// <summary>Derived age for seating / car-seat rules — do not store separately (use <see cref="DateOfBirth"/>).</summary>
+    /// <summary>
+    /// A home address was entered but Address Validation has not produced lat/lng yet.
+    /// The record saves and stays editable; it just cannot be plotted.
+    /// </summary>
     [NotMapped]
-    [Display(Name = "Age")]
-    public int? AgeYears
+    public bool HasUnvalidatedHomeAddress =>
+        !string.IsNullOrWhiteSpace(HomeAddress) && !HasValidatedHomeCoordinates;
+
+    /// <summary>
+    /// True when the record is missing something a clerk still has to supply. Incomplete records are
+    /// saved, not rejected, and are excluded from map plotting until coordinates exist.
+    /// </summary>
+    [NotMapped]
+    public bool IsIntakeIncomplete =>
+        string.IsNullOrWhiteSpace(SchoolYear)
+        || DestinationId is null
+        || !RidesAnySession
+        || (PickupStopId is null && !HasValidatedHomeCoordinates);
+
+    /// <summary>
+    /// True when the record states at least one session of ride eligibility. Neither flag set means
+    /// eligibility was never stated — imports that carry no route columns land here — and the record
+    /// must surface as incomplete rather than quietly matching no route at all.
+    /// </summary>
+    [NotMapped]
+    public bool RidesAnySession => RidesAm || RidesPm;
+
+    /// <summary>Short grid/status label describing why a record is not yet route-ready.</summary>
+    [NotMapped]
+    [Display(Name = "Intake Status")]
+    public string IntakeStatus
     {
         get
         {
-            if (!DateOfBirth.HasValue)
+            if (HasUnvalidatedHomeAddress && PickupStopId is null)
             {
-                return null;
+                return "Address unvalidated";
             }
 
-            var today = DateTime.Today;
-            var age = today.Year - DateOfBirth.Value.Year;
-            if (DateOfBirth.Value.Date > today.AddYears(-age))
+            if (string.IsNullOrWhiteSpace(SchoolYear))
             {
-                age--;
+                return "School year missing";
             }
 
-            return age < 0 ? null : age;
+            if (DestinationId is null)
+            {
+                return "School unassigned";
+            }
+
+            if (!RidesAnySession)
+            {
+                return "Ride eligibility unstated";
+            }
+
+            return PickupStopId is null && !HasValidatedHomeCoordinates
+                ? "Pickup place incomplete"
+                : "Complete";
         }
     }
 

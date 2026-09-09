@@ -8,12 +8,14 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
+using Serilog;
 using Views = BusBuddy.WPF.Views;
 
 namespace BusBuddy.WPF.ViewModels.Bus
 {
     public partial class BusManagementViewModel : ObservableObject
     {
+        private static readonly ILogger Logger = Log.ForContext<BusManagementViewModel>();
         private readonly IBusService _busService;
 
 
@@ -97,10 +99,9 @@ namespace BusBuddy.WPF.ViewModels.Bus
                     Buses.Add(b);
                 }
 
-                // Update pagination information
-
                 TotalRecords = result.TotalCount;
                 TotalPages = (int)Math.Ceiling(TotalRecords / (double)PageSize);
+                Logger.Information("Buses loaded Count={Count} Page={Page}", Buses.Count, CurrentPage);
 
                 // Ensure currentPage is valid
                 if (CurrentPage > TotalPages && TotalPages > 0)
@@ -109,10 +110,9 @@ namespace BusBuddy.WPF.ViewModels.Bus
                     await LoadBusesAsync();
                 }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                // Handle any exceptions
-                // Could display error message to user
+                Logger.Error(ex, "Failed to load buses");
             }
             finally
             {
@@ -199,6 +199,7 @@ namespace BusBuddy.WPF.ViewModels.Bus
                 {
                     // Add the new bus to the database
                     var addedBus = await _busService.AddBusAsync(dialog.Bus);
+                    Logger.Information("Added bus BusId={BusId} Number={BusNumber}", addedBus.BusId, dialog.Bus.BusNumber);
 
                     // Reload the data
                     await LoadBusesAsync();
@@ -221,7 +222,7 @@ namespace BusBuddy.WPF.ViewModels.Bus
             }
             catch (Exception ex)
             {
-                // Show error notification
+                Logger.Error(ex, "Failed to add bus");
                 var notification = new Views.Bus.NotificationWindow(
                     $"Failed to add bus: {ex.Message}",
                     "Error",
@@ -265,6 +266,7 @@ namespace BusBuddy.WPF.ViewModels.Bus
                 {
                     // Update the bus in the database
                     await _busService.UpdateBusAsync(dialog.Bus);
+                    Logger.Information("Updated bus BusId={BusId} Number={BusNumber}", dialog.Bus.BusId, dialog.Bus.BusNumber);
 
                     // Reload the data
                     await LoadBusesAsync();
@@ -287,6 +289,7 @@ namespace BusBuddy.WPF.ViewModels.Bus
             }
             catch (Exception ex)
             {
+                Logger.Error(ex, "Failed to update bus BusId={BusId}", SelectedBus.BusId);
                 // Show error notification
                 var notification = new Views.Bus.NotificationWindow(
                     $"Failed to update bus: {ex.Message}",
@@ -333,6 +336,7 @@ namespace BusBuddy.WPF.ViewModels.Bus
                 {
                     // Delete the bus from the database
                     await _busService.DeleteBusAsync(busId);
+                    Logger.Information("Deleted bus BusId={BusId} Number={BusNumber}", busId, busNumber);
 
                     // Reload the data
                     await LoadBusesAsync();
@@ -347,7 +351,7 @@ namespace BusBuddy.WPF.ViewModels.Bus
                 }
                 catch (Exception ex)
                 {
-                    // Show error notification
+                    Logger.Error(ex, "Failed to delete bus BusId={BusId}", busId);
                     var notification = new Views.Bus.NotificationWindow(
                         $"Failed to delete bus: {ex.Message}",
                         "Error",

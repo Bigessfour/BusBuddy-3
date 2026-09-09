@@ -53,16 +53,16 @@ public partial class SpecialNeedsTransportFlags : Migration
         if (MigrationSql.IsNpgsql(migrationBuilder))
         {
             migrationBuilder.Sql(
-                "UPDATE \"Students\" SET \"RequiresSpecialNeedsBus\" = TRUE WHERE \"SpecialNeeds\" IS NOT NULL AND BTRIM(\"SpecialNeeds\") <> ''");
+                "UPDATE \"Students\" SET \"RequiresSpecialNeedsBus\" = TRUE WHERE \"SpecialNeeds\" IS NOT NULL AND BTRIM(\"SpecialNeeds\") <> '';");
             migrationBuilder.Sql(
-                "UPDATE \"Routes\" SET \"IsSpecialNeedsRoute\" = TRUE WHERE \"RouteName\" ILIKE '%Special Needs%'");
+                "UPDATE \"Routes\" SET \"IsSpecialNeedsRoute\" = TRUE WHERE \"RouteName\" ILIKE '%Special Needs%';");
         }
         else
         {
             migrationBuilder.Sql(
-                "UPDATE Students SET RequiresSpecialNeedsBus = 1 WHERE SpecialNeeds IS NOT NULL AND LTRIM(RTRIM(SpecialNeeds)) <> ''");
+                "UPDATE Students SET RequiresSpecialNeedsBus = 1 WHERE SpecialNeeds IS NOT NULL AND LTRIM(RTRIM(SpecialNeeds)) <> '';");
             migrationBuilder.Sql(
-                "UPDATE Routes SET IsSpecialNeedsRoute = 1 WHERE RouteName LIKE '%Special Needs%'");
+                "UPDATE Routes SET IsSpecialNeedsRoute = 1 WHERE RouteName LIKE '%Special Needs%';");
         }
     }
 

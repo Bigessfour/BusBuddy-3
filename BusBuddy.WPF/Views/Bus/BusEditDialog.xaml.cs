@@ -1,6 +1,7 @@
 using System;
 using System.Windows;
 using BusBuddy.WPF.ViewModels.Bus;
+using Serilog;
 using Syncfusion.SfSkinManager;
 
 namespace BusBuddy.WPF.Views.Bus
@@ -10,6 +11,7 @@ namespace BusBuddy.WPF.Views.Bus
     /// </summary>
     public partial class BusEditDialog : Window
     {
+        private static readonly ILogger Logger = Log.ForContext<BusEditDialog>();
         public BusBuddy.Core.Models.Bus Bus { get; set; }
 
         public BusEditDialog(BusBuddy.Core.Models.Bus? bus = null)
@@ -32,8 +34,10 @@ namespace BusBuddy.WPF.Views.Bus
         {
             var vm = new BusEditDialogViewModel(Bus);
             DataContext = vm;
+            Logger.Information("BusEditDialog opened BusId={BusId} Number={BusNumber}", Bus.BusId, Bus.BusNumber);
             vm.CloseRequested += accepted =>
             {
+                Logger.Information("BusEditDialog closing Accepted={Accepted} BusId={BusId}", accepted, Bus.BusId);
                 DialogResult = accepted;
                 Close();
             };

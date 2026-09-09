@@ -37,32 +37,32 @@ Ship gate remains project acceptance / smoke checklists — inventory count alon
 
 ## Correctness surfaces
 
-| Tier | Category | Surface | Location | Proof of Function | Minimal Impl Signal |
-|------|----------|---------|----------|-------------------|---------------------|
-| P1 | Core Service | StudentService.StudentService | BusBuddy.Core/Services/StudentService.cs:1 | BusBuddy.Tests/Core/StudentServiceTests.cs | has logic |
-| P1 | Core Service | SeedDataService.SeedDataService | BusBuddy.Core/Services/SeedDataService.cs:1 | BusBuddy.Tests/Core/SeedDataServiceTests.cs | has logic |
-| P1 | Other Public | StudentsView.xaml.StudentsView.xaml | BusBuddy.WPF/Views/Student/StudentsView.xaml.cs:1 | BusBuddy.Tests/WPF/StudentsViewTests.cs | has logic |
-| P1 | Core Service | RouteService.RouteService | BusBuddy.Core/Services/RouteService.cs:1 | BusBuddy.Tests/Core/RouteServiceTests.cs | has logic |
-| P1 | Core Service | RouteDeterminationService.RouteDeterminationService | BusBuddy.Core/Services/RouteDetermination/RouteDeterminationService.cs:1 | BusBuddy.Tests/Core/RouteDetermination/RouteDeterminationSer... | has logic |
-| P1 | Other Public | AssignFitnessEvaluator.AssignFitnessEvaluator | BusBuddy.Core/Services/RouteDetermination/AssignFitnessEvaluator.cs:1 | BusBuddy.Tests/Core/RouteDetermination/AssignFitnessEvaluato... | has logic |
-| P1 | Other Public | StudentRouteOptimizer.StudentRouteOptimizer | BusBuddy.Core/Services/StudentRouteOptimizer.cs:1 | BusBuddy.Tests/Core/StudentRouteOptimizerTests.cs | has logic |
-| P1 | Core Service | OperationalReportService.OperationalReportService | BusBuddy.Core/Services/OperationalReportService.cs:1 | BusBuddy.Tests/Core/OperationalReportServiceTests.cs | has logic |
-| P1 | Core Service | PdfReportService.PdfReportService | BusBuddy.Core/Services/PdfReportService.cs:1 | BusBuddy.Tests/Core/PdfReportServiceTests.cs | has logic |
-| P1 | Other Public | ReportsView.xaml.ReportsView.xaml | BusBuddy.WPF/Views/Reports/ReportsView.xaml.cs:1 | BusBuddy.Tests/WPF/ReportsViewTests.cs | has logic |
-| P2 | Core Service | DriverService.DriverService | BusBuddy.Core/Services/DriverService.cs:1 | BusBuddy.Tests/Core/DriverServiceTests.cs | has logic |
-| P2 | Core Service | ScheduleService.ScheduleService | BusBuddy.Core/Services/ScheduleService.cs:1 | BusBuddy.Tests/Core/ScheduleServiceTests.cs | has logic |
-| P2 | Core Service | MaintenanceService.MaintenanceService | BusBuddy.Core/Services/MaintenanceService.cs:1 | BusBuddy.Tests/Core/MaintenanceServiceTests.cs | has logic |
-| P2 | Other Public | MaintenanceView.xaml.MaintenanceView.xaml | BusBuddy.WPF/Views/Maintenance/MaintenanceView.xaml.cs:1 | BusBuddy.Tests/WPF/MaintenanceViewTests.cs | has logic |
-| P2 | Other Public | DriverScheduleView.xaml.DriverScheduleView.xaml | BusBuddy.WPF/Views/Driver/DriverScheduleView.xaml.cs:1 | BusBuddy.Tests/WPF/DriverScheduleViewTests.cs | has logic |
-| P2 | Other Public | DriverAvailabilityCalculator.DriverAvailabilityCalculator | BusBuddy.Core/Services/DriverAvailabilityCalculator.cs:1 | BusBuddy.Tests/Core/DriverAvailabilityCalculatorTests.cs | has logic |
-| P2 | Core Service | GeoDataService.GeoDataService | BusBuddy.Core/Services/GeoDataService.cs:1 | BusBuddy.Tests/Core/FleetMonitoringServiceTests.cs | has logic |
-| P2 | Core Service | DestinationService.DestinationService | BusBuddy.Core/Services/DestinationService.cs:1 | BusBuddy.Tests/Core/DestinationServiceTests.cs | has logic |
-| P2 | Other Public | GoogleAddressValidationClient.GoogleAddressValidationClient | BusBuddy.Core/Services/GoogleMaps/GoogleAddressValidationClient.cs:1 | BusBuddy.Tests/Core/GoogleAddressValidationClientTests.cs | has logic |
-| P2 | Core Service | GoogleRoutingService.GoogleRoutingService | BusBuddy.Core/Services/GoogleMaps/GoogleRoutingService.cs:1 | BusBuddy.Tests/Core/GoogleRoutingServiceTests.cs | has logic |
-| P2 | Other Public | DashboardView.xaml.DashboardView.xaml | BusBuddy.WPF/Views/Dashboard/DashboardView.xaml.cs:1 | BusBuddy.Tests/WPF/DashboardViewTests.cs | has logic |
-| P2 | Core Service | DashboardMetricsService.DashboardMetricsService | BusBuddy.Core/Services/DashboardMetricsService.cs:1 | BusBuddy.Tests/Core/GapsCoverageTests.cs | has logic |
-| P2 | Other Public | SyncfusionThemeManager.SyncfusionThemeManager | BusBuddy.WPF/Utilities/SyncfusionThemeManager.cs:1 | BusBuddy.Tests/WPF/SyncfusionThemeManagerTests.cs | has logic |
-| P2 | Other Public | MapView.xaml.MapView.xaml | BusBuddy.WPF/Views/Map/MapView.xaml.cs:1 | BusBuddy.Tests/WPF/MapViewTests.cs | has logic |
+| Tier | Category     | Surface                                                     | Location                                                                 | Proof of Function                                               | Minimal Impl Signal |
+| ---- | ------------ | ----------------------------------------------------------- | ------------------------------------------------------------------------ | --------------------------------------------------------------- | ------------------- |
+| P1   | Core Service | StudentService.StudentService                               | BusBuddy.Core/Services/StudentService.cs:1                               | BusBuddy.Tests/Core/StudentServiceTests.cs                      | has logic           |
+| P1   | Core Service | SeedDataService.SeedDataService                             | BusBuddy.Core/Services/SeedDataService.cs:1                              | BusBuddy.Tests/Core/SeedDataServiceTests.cs                     | has logic           |
+| P1   | Other Public | StudentsView.xaml.StudentsView.xaml                         | BusBuddy.WPF/Views/Student/StudentsView.xaml.cs:1                        | BusBuddy.Tests/WPF/StudentsViewTests.cs                         | has logic           |
+| P1   | Core Service | RouteService.RouteService                                   | BusBuddy.Core/Services/RouteService.cs:1                                 | BusBuddy.Tests/Core/RouteServiceTests.cs                        | has logic           |
+| P1   | Core Service | RouteDeterminationService.RouteDeterminationService         | BusBuddy.Core/Services/RouteDetermination/RouteDeterminationService.cs:1 | BusBuddy.Tests/Core/RouteDetermination/RouteDeterminationSer... | has logic           |
+| P1   | Other Public | AssignFitnessEvaluator.AssignFitnessEvaluator               | BusBuddy.Core/Services/RouteDetermination/AssignFitnessEvaluator.cs:1    | BusBuddy.Tests/Core/RouteDetermination/AssignFitnessEvaluato... | has logic           |
+| P1   | Other Public | StudentRouteOptimizer.StudentRouteOptimizer                 | BusBuddy.Core/Services/StudentRouteOptimizer.cs:1                        | BusBuddy.Tests/Core/StudentRouteOptimizerTests.cs               | has logic           |
+| P1   | Core Service | OperationalReportService.OperationalReportService           | BusBuddy.Core/Services/OperationalReportService.cs:1                     | BusBuddy.Tests/Core/OperationalReportServiceTests.cs            | has logic           |
+| P1   | Core Service | PdfReportService.PdfReportService                           | BusBuddy.Core/Services/PdfReportService.cs:1                             | BusBuddy.Tests/Core/PdfReportServiceTests.cs                    | has logic           |
+| P1   | Other Public | ReportsView.xaml.ReportsView.xaml                           | BusBuddy.WPF/Views/Reports/ReportsView.xaml.cs:1                         | BusBuddy.Tests/WPF/ReportsViewTests.cs                          | has logic           |
+| P2   | Core Service | DriverService.DriverService                                 | BusBuddy.Core/Services/DriverService.cs:1                                | BusBuddy.Tests/Core/DriverServiceTests.cs                       | has logic           |
+| P2   | Core Service | ScheduleService.ScheduleService                             | BusBuddy.Core/Services/ScheduleService.cs:1                              | BusBuddy.Tests/Core/ScheduleServiceTests.cs                     | has logic           |
+| P2   | Core Service | MaintenanceService.MaintenanceService                       | BusBuddy.Core/Services/MaintenanceService.cs:1                           | BusBuddy.Tests/Core/MaintenanceServiceTests.cs                  | has logic           |
+| P2   | Other Public | MaintenanceView.xaml.MaintenanceView.xaml                   | BusBuddy.WPF/Views/Maintenance/MaintenanceView.xaml.cs:1                 | BusBuddy.Tests/WPF/MaintenanceViewTests.cs                      | has logic           |
+| P2   | Other Public | DriverScheduleView.xaml.DriverScheduleView.xaml             | BusBuddy.WPF/Views/Driver/DriverScheduleView.xaml.cs:1                   | BusBuddy.Tests/WPF/DriverScheduleViewTests.cs                   | has logic           |
+| P2   | Other Public | DriverAvailabilityCalculator.DriverAvailabilityCalculator   | BusBuddy.Core/Services/DriverAvailabilityCalculator.cs:1                 | BusBuddy.Tests/Core/DriverAvailabilityCalculatorTests.cs        | has logic           |
+| P2   | Core Service | GeoDataService.GeoDataService                               | BusBuddy.Core/Services/GeoDataService.cs:1                               | BusBuddy.Tests/Core/FleetMonitoringServiceTests.cs              | has logic           |
+| P2   | Core Service | DestinationService.DestinationService                       | BusBuddy.Core/Services/DestinationService.cs:1                           | BusBuddy.Tests/Core/DestinationServiceTests.cs                  | has logic           |
+| P2   | Other Public | GoogleAddressValidationClient.GoogleAddressValidationClient | BusBuddy.Core/Services/GoogleMaps/GoogleAddressValidationClient.cs:1     | BusBuddy.Tests/Core/GoogleAddressValidationClientTests.cs       | has logic           |
+| P2   | Core Service | GoogleRoutingService.GoogleRoutingService                   | BusBuddy.Core/Services/GoogleMaps/GoogleRoutingService.cs:1              | BusBuddy.Tests/Core/GoogleRoutingServiceTests.cs                | has logic           |
+| P2   | Other Public | DashboardView.xaml.DashboardView.xaml                       | BusBuddy.WPF/Views/Dashboard/DashboardView.xaml.cs:1                     | BusBuddy.Tests/WPF/DashboardViewTests.cs                        | has logic           |
+| P2   | Core Service | DashboardMetricsService.DashboardMetricsService             | BusBuddy.Core/Services/DashboardMetricsService.cs:1                      | BusBuddy.Tests/Core/GapsCoverageTests.cs                        | has logic           |
+| P2   | Other Public | SyncfusionThemeManager.SyncfusionThemeManager               | BusBuddy.WPF/Utilities/SyncfusionThemeManager.cs:1                       | BusBuddy.Tests/WPF/SyncfusionThemeManagerTests.cs               | has logic           |
+| P2   | Other Public | MapView.xaml.MapView.xaml                                   | BusBuddy.WPF/Views/Map/MapView.xaml.cs:1                                 | BusBuddy.Tests/WPF/MapViewTests.cs                              | has logic           |
 
 ## Philosophy (solo superpower)
 - Track **correctness surfaces** (pages, core services, handlers) — not every tiny helper.
@@ -73,4 +73,4 @@ Ship gate remains project acceptance / smoke checklists — inventory count alon
 - Prefer **minimal required code** that actually does the job.
 - Inventory count alone is not a ship gate.
 
-Next: curate `action-items.md` with verification evidence for P1 surfaces.
+Next: keep open proof boxes only in `action-items.md` (ship SSOT).

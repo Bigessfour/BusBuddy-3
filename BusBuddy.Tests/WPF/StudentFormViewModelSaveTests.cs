@@ -24,6 +24,13 @@ public class StudentFormViewModelSaveTests
         studentService
             .Setup(s => s.ValidateStudentAsync(It.IsAny<Student>()))
             .ReturnsAsync(new List<string>());
+        studentService
+            .Setup(s => s.AddStudentAsync(It.IsAny<Student>()))
+            .ReturnsAsync((Student s) =>
+            {
+                s.StudentId = 42;
+                return s;
+            });
 
         var mapsGeo = new Mock<IMapsGeoService>();
         mapsGeo.Setup(m => m.IsConfigured).Returns(true);
@@ -60,6 +67,10 @@ public class StudentFormViewModelSaveTests
         {
             await asyncSave.ExecuteAsync(null);
         }
+        else
+        {
+            Assert.Fail("SaveCommand should be IAsyncRelayCommand");
+        }
 
         mapsGeo.Verify(
             m => m.ValidateAndGeocodeAsync(
@@ -69,8 +80,10 @@ public class StudentFormViewModelSaveTests
                 "81092",
                 It.IsAny<CancellationToken>()),
             Times.AtLeastOnce);
+        vm.Student.Should().NotBeNull();
         vm.Student.Latitude.Should().Be(37.123m);
         vm.Student.Longitude.Should().Be(-102.456m);
+        studentService.Verify(s => s.AddStudentAsync(It.IsAny<Student>()), Times.Once);
     }
 
     [Test]
@@ -146,5 +159,16 @@ public class StudentFormViewModelSaveTests
         Assert.That(xaml, Does.Contain("AddressSuggestionsPopup"));
         Assert.That(xaml, Does.Contain("ItemsSource=\"{Binding AddressSuggestions}\""));
         Assert.That(xaml, Does.Contain("IsOpen=\"{Binding IsAddressSuggestionPopupOpen, Mode=OneWay}\""));
+    }
+
+    [Test]
+    public void StudentFormXaml_PickupComboAndActionButtonsFollowSyncfusionIconAndDisplayRules()
+    {
+        var xaml = XamlViewFile.Read("Views/Student/StudentForm.xaml");
+        Assert.That(xaml, Does.Contain("Property=\"LargeIcon\" Value=\"{x:Null}\""));
+        Assert.That(xaml, Does.Contain("DisplayMemberPath=\"Name\""));
+        Assert.That(xaml, Does.Not.Contain("SelectedValuePath"));
+        Assert.That(xaml, Does.Contain("Name=\"PickupStopComboBox\""));
+        Assert.That(xaml, Does.Contain("Style=\"{StaticResource StudentFormActionButtonStyle}\""));
     }
 }
