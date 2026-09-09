@@ -86,7 +86,10 @@ public sealed class StudentFormSaveCoordinator
 
                 await NormalizeInputsAsync(student).ConfigureAwait(true);
 
-                if (!await DatabaseUserMessage.CanConnectAsync(_context).ConfigureAwait(true))
+                // Service path uses IStudentService's own DbContextFactory — do not gate on this
+                // form's context (unit tests / design-time often construct an unused context).
+                var usesDirectEf = _studentService is null || _validation.Policy.BypassesServiceValidation;
+                if (usesDirectEf && !await DatabaseUserMessage.CanConnectAsync(_context).ConfigureAwait(true))
                 {
                     _validation.SetGlobalError(DatabaseUserMessage.UnavailableForOperation("save the student"));
                     return;
