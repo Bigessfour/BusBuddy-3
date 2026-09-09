@@ -17,6 +17,12 @@ public partial class DriverScheduleView : UserControl
 
         try
         {
+            if (App.ServiceProvider is null)
+            {
+                Logger.Warning("DriverScheduleView opened before ServiceProvider was ready");
+                return;
+            }
+
             var scheduleService = App.ServiceProvider.GetRequiredService<IScheduleService>();
             DataContext = new DriverScheduleViewModel(scheduleService);
             Logger.Information("DriverScheduleView DataContext set");

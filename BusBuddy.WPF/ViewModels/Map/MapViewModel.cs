@@ -940,6 +940,31 @@ namespace BusBuddy.WPF.ViewModels.Map
             }
         }
 
+        /// <summary>
+        /// After Settings persist depot/bbox: replot the DEPOT pin and recenter.
+        /// Never leaves the camera on the MapDefaults US-centroid overview.
+        /// </summary>
+        public async Task ApplyDistrictSettingsAsync()
+        {
+            try
+            {
+                ClearDepotMarkers();
+                var depotCount = _layers.PlotDepotPins();
+                await ResetCameraToDistrictAsync().ConfigureAwait(true);
+                Logger.Information(
+                    "District map refreshed after Settings write DepotMarkers={DepotCount} CenterLat={Lat:F4} CenterLon={Lon:F4} Zoom={Zoom}",
+                    depotCount,
+                    MapCenter.X,
+                    MapCenter.Y,
+                    MapZoomLevel);
+            }
+            catch (Exception ex)
+            {
+                Logger.Warning(ex, "ApplyDistrictSettings failed");
+                StatusMessage = "Could not refresh district map after Settings save";
+            }
+        }
+
         private void ResetView()
         {
             StatusMessage = "Resetting map view...";
@@ -1509,6 +1534,19 @@ namespace BusBuddy.WPF.ViewModels.Map
                     .Select(s => ((double)s.Latitude!.Value, (double)s.Longitude!.Value)));
         }
 
+        private void ClearDepotMarkers() => ClearMarkersOfKind(MapMarkerLabels.Kind.Depot);
+
+        private void ClearMarkersOfKind(MapMarkerLabels.Kind kind)
+        {
+            for (var i = MapMarkers.Count - 1; i >= 0; i--)
+            {
+                if (MapMarkers[i].Kind == kind)
+                {
+                    MapMarkers.RemoveAt(i);
+                }
+            }
+        }
+
         private void ClearRouteWaypointMarkers()
         {
             for (var i = MapMarkers.Count - 1; i >= 0; i--)
@@ -1562,7 +1600,10 @@ namespace BusBuddy.WPF.ViewModels.Map
         private async Task<(double Lat, double Lon, int Zoom)> ResolveDistrictCameraAsync()
         {
             using var scope = _scopeFactory?.CreateScope();
-            var camera = await DistrictCameraUi.ResolveAsync(scope?.ServiceProvider ?? App.ServiceProvider);
+            // Prefer the injected accessor (same singleton Settings.Replace updates).
+            var camera = await DistrictCameraUi.ResolveAsync(
+                scope?.ServiceProvider ?? App.ServiceProvider,
+                _districtSettings?.Current);
             if (IsUsCentroidOverview(camera.Latitude, camera.Longitude, camera.ZoomLevel))
             {
                 return (DistrictDefaultLatitude, DistrictDefaultLongitude, MapDefaults.DistrictZoomLevel);

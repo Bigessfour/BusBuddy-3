@@ -73,6 +73,8 @@ public static class PostgresConnectionResolver
 
     /// <summary>
     /// Replaces the Postgres host when it differs from the Mac LAN IP supplied by the launcher.
+    /// Loopback hosts (<c>localhost</c> / <c>127.0.0.1</c>) are left alone so Mac-side DbPrep
+    /// and local Docker stay on the published port instead of the UTM shared-network IP.
     /// </summary>
     public static string RefreshHostIfNeeded(string connectionString, string macHostIp)
     {
@@ -85,11 +87,20 @@ public static class PostgresConnectionResolver
         }
 
         var currentHost = ExtractHost(connectionString);
-        return !string.IsNullOrWhiteSpace(currentHost)
-               && !string.Equals(currentHost, macHostIp, StringComparison.OrdinalIgnoreCase)
-            ? ReplaceHost(connectionString, macHostIp)
-            : connectionString;
+        if (string.IsNullOrWhiteSpace(currentHost)
+            || IsLoopbackHost(currentHost)
+            || string.Equals(currentHost, macHostIp, StringComparison.OrdinalIgnoreCase))
+        {
+            return connectionString;
+        }
+
+        return ReplaceHost(connectionString, macHostIp);
     }
+
+    internal static bool IsLoopbackHost(string host) =>
+        string.Equals(host, "localhost", StringComparison.OrdinalIgnoreCase)
+        || string.Equals(host, "127.0.0.1", StringComparison.OrdinalIgnoreCase)
+        || string.Equals(host, "::1", StringComparison.OrdinalIgnoreCase);
 
     public static bool IsPostgresConnection(string? connectionString) =>
         !string.IsNullOrWhiteSpace(connectionString)

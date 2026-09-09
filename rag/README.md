@@ -45,7 +45,8 @@ Run `python -m rag.index` whenever:
 - You want the absolute latest baseline for the agent
 
 Always-included files for RAG (see `ALWAYS_INCLUDE` in `index.py` — basenames **or** repo-relative paths):
-- `README.md`, `AGENTS.md`, `STEADY-STATE-AND-FINISH-ROADMAP.md`, `DEVELOPMENT-GUIDE.md`
+- `README.md`, `AGENTS.md`, `DEVELOPMENT-GUIDE.md`, `docs/action-items.md`
+- `Documentation/diagrams/busbuddy-3-architecture.md`
 - `Documentation/GCP-GEE-SECRETS-AND-AUTH.md`
 - `.github/copilot-instructions.md`, `.cursor/mcp.json`
 - `.specify/memory/constitution.md`

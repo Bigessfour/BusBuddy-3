@@ -348,8 +348,8 @@ namespace BusBuddy.Core.Services
                     for (int i = 0; i < orderedStops.Count; i++)
                     {
                         var stop = orderedStops[i];
-                        var arr = stop.EstimatedArrivalTime == default ? "--:--" : stop.EstimatedArrivalTime.ToString("HH:mm");
-                        var dep = stop.EstimatedDepartureTime == default ? "--:--" : stop.EstimatedDepartureTime.ToString("HH:mm");
+                        var arr = FormatStopClock(stop.ScheduledArrival, stop.EstimatedArrivalTime);
+                        var dep = FormatStopClock(stop.ScheduledDeparture, stop.EstimatedDepartureTime);
                         // Approximate leg miles if coordinates present with previous
                         double legMiles = 0.0;
                         if (i == 0)
@@ -432,6 +432,19 @@ namespace BusBuddy.Core.Services
             span.CopyTo(buffer);
             buffer[^1] = '…';
             return new string(buffer);
+        }
+
+        /// <summary>
+        /// Prefer ScheduledArrival/Departure (TimeSpan wall clock). Fall back to Estimated* DateTime.
+        /// </summary>
+        private static string FormatStopClock(TimeSpan scheduled, DateTime estimated)
+        {
+            if (scheduled != default)
+            {
+                return $"{(int)scheduled.TotalHours:00}:{scheduled.Minutes:00}";
+            }
+
+            return estimated == default ? "--:--" : estimated.ToString("HH:mm");
         }
 
         #region Fallback Text Generation (Used when PDF generation fails)

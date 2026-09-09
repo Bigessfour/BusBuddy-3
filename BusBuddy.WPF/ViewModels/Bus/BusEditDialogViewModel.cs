@@ -3,6 +3,7 @@ using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows.Input;
 using BusBuddy.WPF.Commands;
+using Serilog;
 
 namespace BusBuddy.WPF.ViewModels.Bus
 {
@@ -11,6 +12,7 @@ namespace BusBuddy.WPF.ViewModels.Bus
     /// </summary>
     public class BusEditDialogViewModel : INotifyPropertyChanged
     {
+        private static readonly ILogger Logger = Log.ForContext<BusEditDialogViewModel>();
         private readonly BusBuddy.Core.Models.Bus _bus;
         private string _dialogTitle = "Edit Bus";
         private string _busNumber = string.Empty;
@@ -119,8 +121,19 @@ namespace BusBuddy.WPF.ViewModels.Bus
 
         private void ExecuteSave()
         {
+            if (!CanExecuteSave())
+            {
+                Logger.Warning(
+                    "Bus edit save blocked BusNumber={BusNumber} Capacity={Capacity} Year={Year}",
+                    BusNumber,
+                    Capacity,
+                    Year);
+                return;
+            }
+
             ApplyTo(_bus);
             DialogResult = true;
+            Logger.Information("Bus edit accepted BusId={BusId} Number={BusNumber}", _bus.BusId, BusNumber);
             CloseRequested?.Invoke(true);
         }
 

@@ -54,6 +54,7 @@ namespace BusBuddy.WPF.ViewModels.Activity
             if (_trips is null)
             {
                 StatusMessage = "Trip board is unavailable until services start.";
+                Logger.Warning("Trip board load skipped — ITripEventService is not available");
                 return;
             }
 
@@ -68,6 +69,7 @@ namespace BusBuddy.WPF.ViewModels.Activity
                 }
 
                 StatusMessage = $"Trip board: {Trips.Count} row(s).";
+                Logger.Information("Trip board loaded Rows={Count}", Trips.Count);
             }
             catch (Exception ex)
             {

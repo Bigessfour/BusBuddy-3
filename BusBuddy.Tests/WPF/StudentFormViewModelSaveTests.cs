@@ -24,6 +24,13 @@ public class StudentFormViewModelSaveTests
         studentService
             .Setup(s => s.ValidateStudentAsync(It.IsAny<Student>()))
             .ReturnsAsync(new List<string>());
+        studentService
+            .Setup(s => s.AddStudentAsync(It.IsAny<Student>()))
+            .ReturnsAsync((Student s) =>
+            {
+                s.StudentId = 42;
+                return s;
+            });
 
         var mapsGeo = new Mock<IMapsGeoService>();
         mapsGeo.Setup(m => m.IsConfigured).Returns(true);
@@ -60,6 +67,10 @@ public class StudentFormViewModelSaveTests
         {
             await asyncSave.ExecuteAsync(null);
         }
+        else
+        {
+            Assert.Fail("SaveCommand should be IAsyncRelayCommand");
+        }
 
         mapsGeo.Verify(
             m => m.ValidateAndGeocodeAsync(
@@ -69,8 +80,10 @@ public class StudentFormViewModelSaveTests
                 "81092",
                 It.IsAny<CancellationToken>()),
             Times.AtLeastOnce);
+        vm.Student.Should().NotBeNull();
         vm.Student.Latitude.Should().Be(37.123m);
         vm.Student.Longitude.Should().Be(-102.456m);
+        studentService.Verify(s => s.AddStudentAsync(It.IsAny<Student>()), Times.Once);
     }
 
     [Test]

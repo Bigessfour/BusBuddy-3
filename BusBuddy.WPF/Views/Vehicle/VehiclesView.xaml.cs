@@ -1,4 +1,5 @@
 using System.Windows.Controls;
+using Serilog;
 
 namespace BusBuddy.WPF.Views.Vehicle
 {
@@ -7,9 +8,12 @@ namespace BusBuddy.WPF.Views.Vehicle
     /// </summary>
     public partial class VehiclesView : UserControl
     {
+        private static readonly ILogger Logger = Log.ForContext<VehiclesView>();
+
         public VehiclesView()
         {
             InitializeComponent();
+            Logger.Information("VehiclesView host constructed — child VehicleManagementView owns DataContext");
         }
     }
 }

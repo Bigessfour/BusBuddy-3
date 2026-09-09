@@ -611,7 +611,7 @@ public class StudentServiceIntegrationTests
 - 🎨 [UI Service Integration Guide](../Development/UI-Service-Integration.md)
 - 🔧 [Database Configuration Reference](../DATABASE-CONFIGURATION.md)
 - 🧪 [Testing Standards](../../BusBuddy.Tests/TESTING-STANDARDS.md)
-- 🏗️ [Architecture Overview](../ORGANIZATION-SUMMARY.md)
+- 🏗️ [Architecture Overview](../diagrams/busbuddy-3-architecture.md)
 
 ---
 

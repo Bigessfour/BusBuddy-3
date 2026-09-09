@@ -382,8 +382,8 @@ public sealed class RouteDeterminationService : IRouteDeterminationService
                     var departure = arrival + PickupScheduleCalculator.DefaultDwell;
                     stop.ScheduledArrival = arrival;
                     stop.ScheduledDeparture = departure;
-                    stop.EstimatedArrivalTime = DateTime.Today.Add(arrival);
-                    stop.EstimatedDepartureTime = DateTime.Today.Add(departure);
+                    stop.EstimatedArrivalTime = DistrictWallClock(arrival);
+                    stop.EstimatedDepartureTime = DistrictWallClock(departure);
                     ai++;
                 }
 
@@ -676,7 +676,7 @@ public sealed class RouteDeterminationService : IRouteDeterminationService
         var create = await _routeService.CreateRouteAsync(new Route
         {
             RouteName = routeName,
-            Date = DateTime.Today,
+            Date = DateTime.SpecifyKind(DateTime.Today, DateTimeKind.Unspecified),
             Description = $"008 {fleetKind} {slot} cell {pack.CellId}",
             IsActive = true,
             School = schoolDisplayName,
@@ -915,8 +915,8 @@ public sealed class RouteDeterminationService : IRouteDeterminationService
                     ? $"StudentId={m.StudentIds[0]}"
                     : $"StudentIds={string.Join(",", m.StudentIds)}",
                 CreatedDate = DateTime.UtcNow,
-                EstimatedArrivalTime = DateTime.Today.Add(arrival),
-                EstimatedDepartureTime = DateTime.Today.Add(departure)
+                EstimatedArrivalTime = DistrictWallClock(arrival),
+                EstimatedDepartureTime = DistrictWallClock(departure)
             };
             var add = await _routeService.AddStopToRouteAsync(routeId, stop).ConfigureAwait(false);
             if (!add.IsSuccess)
@@ -932,6 +932,39 @@ public sealed class RouteDeterminationService : IRouteDeterminationService
             .Trim()
             .Replace(' ', '_');
         return string.IsNullOrWhiteSpace(cleaned) ? "School" : cleaned;
+    }
+
+    /// <summary>
+    /// District wall-clock time for stop ETA display (<c>HH:mm</c>).
+    /// Converts Wiley/CO local face time to UTC so Npgsql <c>timestamptz</c> + legacy
+    /// Local readback still formats as the clerk-facing clock (07:00 stays 07:00 MT, not 01:00).
+    /// </summary>
+    private static DateTime DistrictWallClock(TimeSpan timeOfDay)
+    {
+        var localUnspecified = DateTime.SpecifyKind(DateTime.Today.Add(timeOfDay), DateTimeKind.Unspecified);
+        return TimeZoneInfo.ConvertTimeToUtc(localUnspecified, DistrictTimeZone);
+    }
+
+    private static readonly TimeZoneInfo DistrictTimeZone = ResolveDistrictTimeZone();
+
+    private static TimeZoneInfo ResolveDistrictTimeZone()
+    {
+        foreach (var id in new[] { "America/Denver", "Mountain Standard Time" })
+        {
+            try
+            {
+                return TimeZoneInfo.FindSystemTimeZoneById(id);
+            }
+            catch (TimeZoneNotFoundException)
+            {
+                // try next id (IANA on macOS/Linux, Windows registry id on Win)
+            }
+            catch (InvalidTimeZoneException)
+            {
+            }
+        }
+
+        return TimeZoneInfo.Local;
     }
 
     private static async Task<int> ResolveDefaultSeatingAsync(

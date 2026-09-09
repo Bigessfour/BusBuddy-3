@@ -5,12 +5,12 @@ AI agents (Cursor, Copilot, Claude, Grok, etc.) working in this repo should foll
 ## Primary standards
 
 - **Constitution (Spec-Kit)**: [.specify/memory/constitution.md](.specify/memory/constitution.md) — immutable architectural DNA. Use Cursor `/speckit-*` skills (Constitution → Specify → Plan → Tasks → Implement). Feature specs live under `specs/`. **Domain contract:** [specs/README.md](specs/README.md) plus `specs/{students,locations,routes,trips,drivers,buses,maps}.md`. Never run `specify init --here --force` without backing up the constitution.
-- **Due-outs tracker**: [docs/action-items.md](docs/action-items.md) — living checklist (Spec-Kit + Finish items). Historical narrative: [STEADY-STATE-AND-FINISH-ROADMAP.md](STEADY-STATE-AND-FINISH-ROADMAP.md).
+- **Due-outs tracker (ship SSOT)**: [docs/action-items.md](docs/action-items.md) — open work only. Clerk spine: [docs/clerk-path.md](docs/clerk-path.md). Historical finish narrative archived under [Documentation/Archive/2026-06-Steady-State-Finish/](Documentation/Archive/2026-06-Steady-State-Finish/) (root [STEADY-STATE-AND-FINISH-ROADMAP.md](STEADY-STATE-AND-FINISH-ROADMAP.md) is a stub).
 - **Full technical rules**: [.github/copilot-instructions.md](.github/copilot-instructions.md) — architecture, Syncfusion, Serilog, RAG/MCP, anti-regression.
 - **Syncfusion WPF skills**: [.cursor/skills/syncfusion-wpf-busbuddy/SKILL.md](.cursor/skills/syncfusion-wpf-busbuddy/SKILL.md) — BusBuddy overlay; vendor skills in `.agents/skills/` (gitignored, install via [.github/scripts/setup-syncfusion-skills.sh](.github/scripts/setup-syncfusion-skills.sh)). NuGet pin `SyncfusionVersion` in `Directory.Build.props` (**34.2.3**); WPF MCP `syncfusion-wpf-assistant` via `.github/scripts/run-syncfusion-mcp.sh` → NuGet `Syncfusion.WPF.MCP` / `search_docs` ([WPF MCP docs](https://help.syncfusion.com/wpf/mcp)). Passwords Name = `SYNCFUSION_API_KEY` / `Syncfusion_API_Key`. Feature: [specs/006-syncfusion-tool-integration/spec.md](specs/006-syncfusion-tool-integration/spec.md).
 - **CI/CD workflow (solo developer)**: same file, section **Solo developer CI/CD workflow** — branch → PR → gates → auto-merge.
 - **GCP / Maps / secrets**: [Documentation/GCP-GEE-SECRETS-AND-AUTH.md](Documentation/GCP-GEE-SECRETS-AND-AUTH.md) — Maps Platform (Address Validation + Places + Routes) + Passwords. Earth Engine is not an app dependency. Inspect live GCP with `.github/scripts/gcloud-maps-status.sh` or project MCP `gcloud` (`run_gcloud_command`). Do not print API key strings.
-- **Architecture map**: [STEADY-STATE-AND-FINISH-ROADMAP.md](STEADY-STATE-AND-FINISH-ROADMAP.md) (BusBuddy-3 Architecture Map section).
+- **Architecture map**: [Documentation/diagrams/busbuddy-3-architecture.md](Documentation/diagrams/busbuddy-3-architecture.md).
 
 ## Mandatory RAG usage
 
@@ -97,7 +97,7 @@ Requires `gh` CLI with admin access for auto-merge, branch ruleset, Dependabot a
 
 ## Architecture diagram (mandatory for structural changes)
 
-- Source: `STEADY-STATE-AND-FINISH-ROADMAP.md` → **BusBuddy-3 Architecture Map** (Mermaid)
+- Source: [Documentation/diagrams/busbuddy-3-architecture.md](Documentation/diagrams/busbuddy-3-architecture.md)
 - Optional editable: `Documentation/diagrams/busbuddy-3-architecture.mmd` if present
 - Update diagram + run `python -m rag.index` when adding services, CI jobs, or auth flows
 - Hybrid dev: Mac (Core/Docker/Passwords) + Windows VM (full WPF)
@@ -112,7 +112,7 @@ Durable rules: [.specify/memory/constitution.md](.specify/memory/constitution.md
 | Windows VM | Full Syncfusion WPF; shared folder; env / shared `keys/`                                                                         | Assume macOS Passwords/Keychain                   |
 | Either     | Local Ollama for app AI; PR → Build & Test                                                                                       | Invent AWS/cloud app hosting for BusBuddy runtime |
 
-Launchers: `./run-wpf.sh` (Mac → UTM), `.\utm_run_in_vm.ps1` (inside VM). Postgres from VM uses Mac host IP (`run-wpf.sh` / `ipconfig getifaddr en0`).
+Launchers: `./run-wpf.sh` (Mac → UTM), `.\utm_run_in_vm.ps1` (inside VM), `./Scripts/utm-dev-bridge.sh` (SSH sync), `./Scripts/utm-wpf-test.sh` (sync + `dotnet test` on guest WPF testhost). Postgres from VM uses Mac host IP (`run-wpf.sh` / `ipconfig getifaddr en0`).
 
 ## Key implementation files (quick index)
 
@@ -126,6 +126,7 @@ Launchers: `./run-wpf.sh` (Mac → UTM), `.\utm_run_in_vm.ps1` (inside VM). Post
 | Geo DI                | `BusBuddy.WPF/App.xaml.cs` → `ConfigureServices`                                                         |
 | AI chat (Ollama)      | `BusBuddy.WPF/Services/OllamaChatService.cs`                                                             |
 | CI workflow           | `.github/workflows/ci.yml`                                                                               |
+| WPF tests on UTM      | `./Scripts/utm-wpf-test.sh` (SSH → guest `dotnet test`; needs WindowsDesktop)                            |
 | Auto-merge            | `.github/workflows/auto-merge.yml`                                                                       |
 | RAG indexer           | `rag/index.py`                                                                                           |
 | Spec-Kit constitution | `.specify/memory/constitution.md`                                                                        |
@@ -137,5 +138,6 @@ When changing auth, CI, or architecture, update:
 1. `Documentation/GCP-GEE-SECRETS-AND-AUTH.md`
 2. `README.md` (Quick Start + Environment Variables)
 3. `AGENTS.md` (this file)
-4. `STEADY-STATE-AND-FINISH-ROADMAP.md` (architecture map if structural)
-5. Run `python -m rag.index`
+4. `Documentation/diagrams/busbuddy-3-architecture.md` (architecture map if structural)
+5. `docs/action-items.md` (if open ship work changed)
+6. Run `python -m rag.index`

@@ -18,6 +18,12 @@ namespace BusBuddy.WPF.Views.Fuel
 
             try
             {
+                if (App.ServiceProvider is null)
+                {
+                    Logger.Warning("FuelManagementView opened before ServiceProvider was ready");
+                    return;
+                }
+
                 var fuelService = App.ServiceProvider.GetRequiredService<IFuelService>();
                 var busService = App.ServiceProvider.GetRequiredService<IBusService>();
                 DataContext = new FuelManagementViewModel(fuelService, busService);

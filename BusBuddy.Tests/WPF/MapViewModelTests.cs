@@ -764,6 +764,35 @@ public class MapViewModelTests
     }
 
     [Test]
+    public async Task ApplyDistrictSettings_ReplotsDepotAndRecentersAwayFromUsCentroid()
+    {
+        var district = new DistrictSettingsAccessor(Options.Create(new RoutingDistrictSettings()));
+        var vm = await CreateSettledViewModelAsync(districtSettings: district);
+
+        district.Replace(new RoutingDistrictSettings
+        {
+            DepotName = "Settings Barn",
+            DepotLatitude = 38.1541,
+            DepotLongitude = -102.7201,
+            BoundingBoxMinLat = 38.05,
+            BoundingBoxMaxLat = 38.25,
+            BoundingBoxMinLon = -102.80,
+            BoundingBoxMaxLon = -102.40
+        });
+
+        await vm.ApplyDistrictSettingsAsync();
+
+        Assert.That(vm.MapMarkers.Any(m => m.Label == MapMarkerLabels.ForDepot("Settings Barn")), Is.True);
+        Assert.That(vm.MapCenter.X, Is.EqualTo(38.1541).Within(0.0001));
+        Assert.That(vm.MapCenter.Y, Is.EqualTo(-102.7201).Within(0.0001));
+        Assert.That(vm.MapZoomLevel, Is.EqualTo(MapDefaults.DistrictZoomLevel));
+        Assert.That(vm.MapZoomLevel, Is.Not.EqualTo(MapDefaults.UnconfiguredZoomLevel));
+        Assert.That(Math.Abs(vm.MapCenter.X - MapDefaults.UnconfiguredLatitude), Is.GreaterThan(0.5));
+        // Must not be the Lamar/Wiley US-fail-open remapping alone.
+        Assert.That(Math.Abs(vm.MapCenter.X - 38.0872), Is.GreaterThan(0.01));
+    }
+
+    [Test]
     public async Task PlotStop_DoesNotMergeHomeAndPickupAtSameCoords()
     {
         var vm = await CreateSettledViewModelAsync();

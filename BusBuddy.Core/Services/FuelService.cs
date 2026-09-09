@@ -1,6 +1,7 @@
 using BusBuddy.Core.Data;
 using BusBuddy.Core.Models;
 using Microsoft.EntityFrameworkCore;
+using Serilog;
 
 namespace BusBuddy.Core.Services;
 
@@ -9,6 +10,7 @@ namespace BusBuddy.Core.Services;
 /// </summary>
 public class FuelService : IFuelService
 {
+    private static readonly ILogger Logger = Log.ForContext<FuelService>();
     private readonly IBusBuddyDbContextFactory _contextFactory;
 
     public FuelService(IBusBuddyDbContextFactory contextFactory)
@@ -52,6 +54,9 @@ public class FuelService : IFuelService
         using var context = _contextFactory.CreateWriteDbContext();
         context.FuelRecords.Add(fuel);
         await context.SaveChangesAsync();
+        Logger.Information(
+            "Created fuel record {FuelId} VehicleId={VehicleId} Gallons={Gallons}",
+            fuel.FuelId, fuel.VehicleFueledId, fuel.Gallons);
         return fuel;
     }
 

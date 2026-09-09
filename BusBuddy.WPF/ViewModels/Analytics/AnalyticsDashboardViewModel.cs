@@ -7,11 +7,13 @@ using BusBuddy.Core.Services;
 using BusBuddy.Core.Services.Interfaces;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Serilog;
 
 namespace BusBuddy.WPF.ViewModels.Analytics
 {
     public partial class AnalyticsDashboardViewModel : ObservableObject
     {
+        private static readonly ILogger Logger = Log.ForContext<AnalyticsDashboardViewModel>();
         private static readonly string[] KnownBusStatuses = ["Active", "Maintenance", "Out of Service"];
         private static readonly string[] KnownMaintenanceStatuses = ["Scheduled", "In Progress", "Completed"];
 
@@ -95,9 +97,16 @@ namespace BusBuddy.WPF.ViewModels.Analytics
                 FuelRecords = CreatePoints(("30 days", recent.Count));
 
                 StatusMessage = $"Analytics updated — {buses.Count} buses, {fuel.Count} fuel records";
+                Logger.Information(
+                    "Analytics refreshed Buses={Buses} Fuel={Fuel} Maintenance={Maintenance} RoutesSuccess={RouteOk}",
+                    buses.Count,
+                    fuel.Count,
+                    maintenance.Count,
+                    utilization.IsSuccess);
             }
             catch (Exception ex)
             {
+                Logger.Error(ex, "Error loading analytics");
                 StatusMessage = $"Error loading analytics: {ex.Message}";
             }
             finally

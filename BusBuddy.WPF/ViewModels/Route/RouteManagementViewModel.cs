@@ -1125,9 +1125,9 @@ namespace BusBuddy.WPF.ViewModels.Route
                 return false;
             }
 
-            var date = DateTime.SpecifyKind(DateTime.Today, DateTimeKind.Unspecified);
-            var departure = date.Add(route.AMBeginTime ?? TimeSpan.FromHours(7));
-            var arrival = date.Add(route.AMBeginTime ?? TimeSpan.FromHours(7)).AddMinutes(route.EstimatedDuration ?? 45);
+            var day = DateTime.SpecifyKind(DateTime.Today, DateTimeKind.Unspecified);
+            var departure = day.Add(route.AMBeginTime ?? TimeSpan.FromHours(7));
+            var arrival = departure.AddMinutes(route.EstimatedDuration ?? 45);
             if (arrival <= departure)
             {
                 arrival = departure.AddMinutes(45);
@@ -1138,12 +1138,13 @@ namespace BusBuddy.WPF.ViewModels.Route
                 RouteId = route.RouteId,
                 BusId = busId.Value,
                 DriverId = driverId.Value,
-                ScheduleDate = DateTime.SpecifyKind(date, DateTimeKind.Utc),
-                DepartureTime = DateTime.SpecifyKind(departure, DateTimeKind.Utc),
-                ArrivalTime = DateTime.SpecifyKind(arrival, DateTimeKind.Utc),
+                ScheduleDate = day,
+                DepartureTime = departure,
+                ArrivalTime = arrival,
                 Location = route.School,
                 Notes = $"Generated from Route Management for {route.RouteName}",
-                Status = "Scheduled"
+                Status = "Scheduled",
+                CreatedDate = DateTime.UtcNow
             }).ConfigureAwait(true);
             return true;
         }

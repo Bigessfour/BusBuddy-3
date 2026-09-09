@@ -76,6 +76,13 @@ public sealed class DriverTrainingChecklistViewModel : BaseViewModel
             var required = list.Count(r => r.IsRequired && r.IsApplicable);
             var complete = list.Count(r => r.IsRequired && r.IsApplicable && r.IsComplete && !r.IsExpired);
             StatusMessage = $"{complete}/{required} required current";
+            Logger.Information(
+                "Training checklist loaded DriverId={DriverId} Rows={Rows} Complete={Complete}/{Required} Optional={Optional}",
+                _driverId,
+                Records.Count,
+                complete,
+                required,
+                includeOptional);
         }
         catch (Exception ex)
         {

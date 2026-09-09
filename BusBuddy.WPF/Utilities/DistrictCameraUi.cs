@@ -23,7 +23,8 @@ internal static class DistrictCameraUi
         DistrictMapAnchor.ResolveCamera(CurrentSettings(), schoolLatitude, schoolLongitude);
 
     public static async Task<(double Latitude, double Longitude, int ZoomLevel)> ResolveAsync(
-        IServiceProvider? services)
+        IServiceProvider? services,
+        RoutingDistrictSettings? settingsOverride = null)
     {
         double? schoolLat = null;
         double? schoolLon = null;
@@ -39,7 +40,8 @@ internal static class DistrictCameraUi
             }
         }
 
-        var settings = services?.GetService<IDistrictSettingsAccessor>()?.Current
+        var settings = settingsOverride
+            ?? services?.GetService<IDistrictSettingsAccessor>()?.Current
             ?? services?.GetService<IOptions<RoutingDistrictSettings>>()?.Value
             ?? CurrentSettings();
         return DistrictMapAnchor.ResolveCamera(settings, schoolLat, schoolLon);

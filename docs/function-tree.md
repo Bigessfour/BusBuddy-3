@@ -1,6 +1,6 @@
 # BusBuddy Function Tree (overview)
 
-High-level surface area. Due-outs: [action-items.md](./action-items.md). Clerk write path: [clerk-path.md](./clerk-path.md). Generated scan: [function-inventory.generated.md](./function-inventory.generated.md).
+High-level surface area. **Ship SSOT:** [action-items.md](./action-items.md). Clerk write path: [clerk-path.md](./clerk-path.md). Generated scan: [function-inventory.generated.md](./function-inventory.generated.md). Architecture: [../Documentation/diagrams/busbuddy-3-architecture.md](../Documentation/diagrams/busbuddy-3-architecture.md).
 
 ```mermaid
 flowchart TB

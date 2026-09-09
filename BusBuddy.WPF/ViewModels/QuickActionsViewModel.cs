@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows.Input;
 using CommunityToolkit.Mvvm.Input;
+using Serilog;
 
 namespace BusBuddy.WPF.ViewModels
 {
@@ -31,6 +32,7 @@ namespace BusBuddy.WPF.ViewModels
     /// </summary>
     public class QuickActionsViewModel : INotifyPropertyChanged
     {
+        private static readonly ILogger Logger = Log.ForContext<QuickActionsViewModel>();
         private bool _isEnabled = true;
         private ObservableCollection<QuickActionItem> _quickActions = new();
         private readonly Action<string>? _navigationAction;
@@ -73,6 +75,11 @@ namespace BusBuddy.WPF.ViewModels
         public QuickActionsViewModel(Action<string>? navigationAction = null)
         {
             _navigationAction = navigationAction;
+            if (_navigationAction is null)
+            {
+                Logger.Warning("QuickActionsViewModel constructed without navigation callback — clicks will no-op");
+            }
+
             InitializeCommands();
             InitializeQuickActions();
         }
@@ -106,7 +113,7 @@ namespace BusBuddy.WPF.ViewModels
 
         private void ExecuteQuickAddStudent()
         {
-            _navigationAction?.Invoke("Students");
+            Navigate("Students");
         }
 
         private bool CanExecuteQuickAddStudent()
@@ -116,7 +123,7 @@ namespace BusBuddy.WPF.ViewModels
 
         private void ExecuteQuickAddBus()
         {
-            _navigationAction?.Invoke("Buses");
+            Navigate("Buses");
         }
 
         private bool CanExecuteQuickAddBus()
@@ -126,7 +133,7 @@ namespace BusBuddy.WPF.ViewModels
 
         private void ExecuteQuickScheduleTrip()
         {
-            _navigationAction?.Invoke("Schedule");
+            Navigate("Schedule");
         }
 
         private bool CanExecuteQuickScheduleTrip()
@@ -136,7 +143,7 @@ namespace BusBuddy.WPF.ViewModels
 
         private void ExecuteQuickMaintenance()
         {
-            _navigationAction?.Invoke("Maintenance");
+            Navigate("Maintenance");
         }
 
         private bool CanExecuteQuickMaintenance()
@@ -146,7 +153,7 @@ namespace BusBuddy.WPF.ViewModels
 
         private void ExecuteQuickFuelEntry()
         {
-            _navigationAction?.Invoke("Fuel");
+            Navigate("Fuel");
         }
 
         private bool CanExecuteQuickFuelEntry()
@@ -156,7 +163,7 @@ namespace BusBuddy.WPF.ViewModels
 
         private void ExecuteQuickReport()
         {
-            _navigationAction?.Invoke("Activity");
+            Navigate("Activity");
         }
 
         private bool CanExecuteQuickReport()
@@ -166,7 +173,19 @@ namespace BusBuddy.WPF.ViewModels
 
         private void ExecuteQuickExport()
         {
-            _navigationAction?.Invoke("Reports");
+            Navigate("Reports");
+        }
+
+        private void Navigate(string target)
+        {
+            Logger.Information("Quick action navigate Target={Target} HasCallback={HasCallback}", target, _navigationAction is not null);
+            if (_navigationAction is null)
+            {
+                Logger.Warning("Quick action {Target} ignored — no navigation callback", target);
+                return;
+            }
+
+            _navigationAction(target);
         }
 
         private bool CanExecuteQuickExport()

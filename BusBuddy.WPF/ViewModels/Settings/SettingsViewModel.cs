@@ -20,6 +20,7 @@ namespace BusBuddy.WPF.ViewModels.Settings
         private readonly IUserSettingsService _settingsService;
         private readonly ISkinManagerService _skinManagerService;
         private readonly IDistrictSettingsAccessor? _districtSettings;
+        private readonly IDistrictMapSync? _districtMapSync;
         private readonly RoutingDistrictSettings _appDistrict;
         private bool _suppressThemePreview;
 
@@ -27,12 +28,24 @@ namespace BusBuddy.WPF.ViewModels.Settings
             IUserSettingsService settingsService,
             ISkinManagerService skinManagerService,
             IDistrictSettingsAccessor? districtSettings = null,
-            IOptions<RoutingDistrictSettings>? routingDistrict = null)
+            IOptions<RoutingDistrictSettings>? routingDistrict = null,
+            IDistrictMapSync? districtMapSync = null)
         {
             _settingsService = settingsService ?? throw new ArgumentNullException(nameof(settingsService));
             _skinManagerService = skinManagerService ?? throw new ArgumentNullException(nameof(skinManagerService));
             _districtSettings = districtSettings;
+            _districtMapSync = districtMapSync;
             _appDistrict = routingDistrict?.Value ?? new RoutingDistrictSettings();
+
+            if (_districtSettings is null)
+            {
+                Logger.Warning("Settings opened without IDistrictSettingsAccessor — depot/bbox will not overlay the District Map");
+            }
+
+            if (_districtMapSync is null)
+            {
+                Logger.Warning("Settings opened without IDistrictMapSync — save will not recenter the District Map");
+            }
 
             AvailableThemes = new ObservableCollection<string> { "FluentDark", "FluentLight" };
             SaveCommand = new AsyncRelayCommand(SaveSettingsAsync, CanSave);
@@ -181,7 +194,19 @@ namespace BusBuddy.WPF.ViewModels.Settings
 
                     if (saved)
                     {
+                        Logger.Information(
+                            "District write DepotLat={DepotLat} DepotLon={DepotLon} BBoxMinLat={MinLat} BBoxMinLon={MinLon} BBoxMaxLat={MaxLat} BBoxMaxLon={MaxLon}",
+                            district.DepotLatitude,
+                            district.DepotLongitude,
+                            district.BoundingBoxMinLat,
+                            district.BoundingBoxMinLon,
+                            district.BoundingBoxMaxLat,
+                            district.BoundingBoxMaxLon);
                         Logger.Information("Settings saved successfully");
+                        if (_districtMapSync is not null)
+                        {
+                            await _districtMapSync.ApplyDistrictGeographyAsync().ConfigureAwait(true);
+                        }
                     }
                     else
                     {
