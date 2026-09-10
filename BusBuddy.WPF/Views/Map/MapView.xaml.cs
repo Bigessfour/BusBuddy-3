@@ -99,7 +99,8 @@ namespace BusBuddy.WPF.Views.Map
                         DistrictTilesLayer,
                         FindName("MapAttribution") as Border,
                         FindName("MapAttributionText") as TextBlock,
-                        MapControl);
+                        MapControl,
+                        FindName("GoogleMapsLogo") as System.Windows.Controls.Image);
                 }
 
                 if (MapControl is not null)
@@ -123,7 +124,8 @@ namespace BusBuddy.WPF.Views.Map
                         FindName("MapAttribution") as Border,
                         FindName("MapAttributionText") as TextBlock,
                         MapControl,
-                        App.ServiceProvider).ConfigureAwait(true);
+                        App.ServiceProvider,
+                        FindName("GoogleMapsLogo") as System.Windows.Controls.Image).ConfigureAwait(true);
                     if (googleTiles)
                     {
                         ScheduleAttributionRefresh();

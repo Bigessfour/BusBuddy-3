@@ -17,9 +17,9 @@
 
 ## Now
 
-- [ ] **District Map VM:** pan/wheel/Zoom In/Out/Center/Reset; county-wide plot fits; zoom past 12 reveals HOME/PK captions. Pull `logs/map-interactions-*.log` and `logs/ui-diagnostics-*.log` after session; set `BUSBUDDY_MAP_DIAGNOSTICS=0` when signed off
+- [ ] Apply migration `20260906220000_WidenRouteWaypointsJson` on Mac Docker Postgres if not already applied
 
-Optional clerk UI clicks on the VM remain below (same Core services already proved). Do **not** split `MainWindow.xaml.cs` / `StudentsViewModel.cs` in the same session as Map/Settings proof.
+Optional clerk UI clicks / live map pan-wheel smoke remain below. Do **not** split `MainWindow.xaml.cs` / `StudentsViewModel.cs` in the same session as Map/Settings proof.
 
 ---
 
@@ -50,8 +50,9 @@ Spine detail: [clerk-path.md](./clerk-path.md). Prove then check.
 ## Map / Settings (P1)
 
 - [x] **Settings VM:** save depot lat/lng + bbox → Serilog district write → District Map recenters (not US-centroid fallback) (see Done log)
-- [ ] **District Map VM:** pan/wheel/Zoom In/Out/Center/Reset; county-wide plot fits; zoom past 12 reveals HOME/PK captions. Pull `logs/map-interactions-*.log` and `logs/ui-diagnostics-*.log` after session; set `BUSBUDDY_MAP_DIAGNOSTICS=0` when signed off
-- [ ] **Google Map Tiles logo** next to attribution when Google tiles are active ([tile policies](https://developers.google.com/maps/documentation/tile/policies))
+- [x] **District Map VM:** Zoom In/Out/Center/Reset + county fit + HOME/PK captions at zoom≥12 (see Done log)
+- [ ] Optional live District Map smoke on VM: pan/wheel feel + `BUSBUDDY_MAP_DIAGNOSTICS=1` → pull `logs/map-interactions-*.log` / `logs/ui-diagnostics-*.log` → set `=0`
+- [x] **Google Map Tiles logo** next to attribution when Google tiles are active (see Done log)
 - [ ] Apply migration `20260906220000_WidenRouteWaypointsJson` on Mac Docker Postgres if not already applied
 - [ ] Windows VM env: `GOOGLE_MAPS_API_KEY` + `GCP_BILLING_PROJECT=busbuddy-507301` for geocode / Routes
 - [ ] Parked (not ship-blocking): drop unused Route shapefile path columns; unused `AddressValidationControl`; OSM-only layer combo leftovers
@@ -139,3 +140,21 @@ _Updated 2026-09-09: Clerk hops 1–6 closed; Now = Settings / District Map P1._
 - **Evidence:** guest **5 passed / 0 failed** (Settings persist + map sync; ApplyDistrictSettings centers on depot `38.1541,-102.7201`, not US overview / not Lamar remapping alone).
 
 _Updated 2026-09-09: Settings district save closed; Now = District Map VM interactions._
+
+### 2026-09-09 — PR #64 merged + District Map interaction proof
+
+- **Merge:** https://github.com/Bigessfour/BusBuddy-3/pull/64 (`56ce078`) — clerk hops 1–6, Settings→map, SfMap/PDF fixes. CI fix: service-path student save no longer gated on unused form `DbContext.CanConnectAsync`.
+- **Map interactions:** Zoom In/Out toggle `ShowDetailLabels` at zoom 12; `CenterOnFleetCommand` span-fits markers (not US overview); `ResetView` recenters to configured depot. Diagnostics gate covered by `MapInteractionDiagnostics_*` tests.
+- **Harness:** `./Scripts/utm-wpf-test.sh --filter "FullyQualifiedName~MapViewModelTests|…MapCoordinateFormatterTests|…MapViewTests"` → **65 passed**; new Reset/Center tests **6/6**.
+- **Not proved this session:** live pan/wheel feel + pulling `map-interactions-*.log` (optional; same as clerk ribbon clicks).
+
+_Updated 2026-09-09: District Map VM unit proof closed; Now = Google Map Tiles logo._
+
+### 2026-09-09 — Google Map Tiles logo beside attribution
+
+- **Policy:** [Map Tiles API policies](https://developers.google.com/maps/documentation/tile/policies) — show official Google Maps logo (outlined on map) + copyright when Google tiles are active; OSM text-only when fail-open.
+- **UI:** `GoogleMapsLogo` Image in `MapView` attribution stack; `MapTileBootstrap.SetAttribution` toggles logo visibility with basemap.
+- **Assets:** `Assets/Maps/google_maps_on_non_white.png` (and plain-bg variant) as WPF `Resource`.
+- **Harness:** MapView XAML/bootstrap asserts for `GoogleMapsLogo` + pack URI.
+
+_Updated 2026-09-09: Google logo closed; Now = WidenRouteWaypointsJson migration on Docker Postgres._

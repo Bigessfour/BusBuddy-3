@@ -24,7 +24,8 @@ public static class MapTileBootstrap
         Border? attributionBorder,
         TextBlock? attributionText,
         SfMap? mapControl,
-        IServiceProvider? services)
+        IServiceProvider? services,
+        System.Windows.Controls.Image? googleLogo = null)
     {
         ArgumentNullException.ThrowIfNull(layer);
 
@@ -33,7 +34,7 @@ public static class MapTileBootstrap
             var tiles = services?.GetService<IGoogleMapTileSessionService>();
             if (tiles is null || !tiles.IsConfigured)
             {
-                ApplyOsm(layer, attributionBorder, attributionText, mapControl);
+                ApplyOsm(layer, attributionBorder, attributionText, mapControl, googleLogo);
                 return false;
             }
 
@@ -43,19 +44,19 @@ public static class MapTileBootstrap
             if (session is null || string.IsNullOrWhiteSpace(session.UrlTemplate))
             {
                 Logger.Warning("Map Tiles session unavailable — using OpenStreetMap");
-                ApplyOsm(layer, attributionBorder, attributionText, mapControl);
+                ApplyOsm(layer, attributionBorder, attributionText, mapControl, googleLogo);
                 return false;
             }
 
             layer.UseGoogleTiles(session.UrlTemplate);
-            SetAttribution(attributionBorder, attributionText, useGoogleMaps: true);
+            SetAttribution(attributionBorder, attributionText, googleLogo, useGoogleMaps: true);
             Logger.Information("District map using Google Map Tiles API roadmap");
             return true;
         }
         catch (Exception ex)
         {
             Logger.Warning(ex, "Failed enabling Google Map Tiles — keeping OpenStreetMap");
-            ApplyOsm(layer, attributionBorder, attributionText, mapControl);
+            ApplyOsm(layer, attributionBorder, attributionText, mapControl, googleLogo);
             return false;
         }
     }
@@ -64,11 +65,12 @@ public static class MapTileBootstrap
         GoogleMapTilesImageryLayer layer,
         Border? attributionBorder,
         TextBlock? attributionText,
-        SfMap? mapControl = null)
+        SfMap? mapControl = null,
+        System.Windows.Controls.Image? googleLogo = null)
     {
         ArgumentNullException.ThrowIfNull(layer);
         layer.UseOpenStreetMap();
-        SetAttribution(attributionBorder, attributionText, useGoogleMaps: false);
+        SetAttribution(attributionBorder, attributionText, googleLogo, useGoogleMaps: false);
     }
 
     /// <summary>
@@ -123,11 +125,21 @@ public static class MapTileBootstrap
         }
     }
 
-    private static void SetAttribution(Border? overlay, TextBlock? text, bool useGoogleMaps)
+    private static void SetAttribution(
+        Border? overlay,
+        TextBlock? text,
+        System.Windows.Controls.Image? googleLogo,
+        bool useGoogleMaps)
     {
         if (overlay is not null)
         {
             overlay.Visibility = Visibility.Visible;
+        }
+
+        if (googleLogo is not null)
+        {
+            // Map Tiles API policies: show the official Google Maps logo whenever Google tiles are active.
+            googleLogo.Visibility = useGoogleMaps ? Visibility.Visible : Visibility.Collapsed;
         }
 
         if (text is not null)
