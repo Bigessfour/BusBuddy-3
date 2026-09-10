@@ -17,7 +17,7 @@
 
 ## Now
 
-- [ ] Apply migration `20260906220000_WidenRouteWaypointsJson` on Mac Docker Postgres if not already applied
+- [ ] Windows VM env: `GOOGLE_MAPS_API_KEY` + `GCP_BILLING_PROJECT=busbuddy-507301` for geocode / Routes
 
 Optional clerk UI clicks / live map pan-wheel smoke remain below. Do **not** split `MainWindow.xaml.cs` / `StudentsViewModel.cs` in the same session as Map/Settings proof.
 
@@ -53,7 +53,7 @@ Spine detail: [clerk-path.md](./clerk-path.md). Prove then check.
 - [x] **District Map VM:** Zoom In/Out/Center/Reset + county fit + HOME/PK captions at zoom≥12 (see Done log)
 - [ ] Optional live District Map smoke on VM: pan/wheel feel + `BUSBUDDY_MAP_DIAGNOSTICS=1` → pull `logs/map-interactions-*.log` / `logs/ui-diagnostics-*.log` → set `=0`
 - [x] **Google Map Tiles logo** next to attribution when Google tiles are active (see Done log)
-- [ ] Apply migration `20260906220000_WidenRouteWaypointsJson` on Mac Docker Postgres if not already applied
+- [x] Apply migration `20260906220000_WidenRouteWaypointsJson` on Mac Docker Postgres (see Done log)
 - [ ] Windows VM env: `GOOGLE_MAPS_API_KEY` + `GCP_BILLING_PROJECT=busbuddy-507301` for geocode / Routes
 - [ ] Parked (not ship-blocking): drop unused Route shapefile path columns; unused `AddressValidationControl`; OSM-only layer combo leftovers
 
@@ -158,3 +158,10 @@ _Updated 2026-09-09: District Map VM unit proof closed; Now = Google Map Tiles l
 - **Harness:** MapView XAML/bootstrap asserts for `GoogleMapsLogo` + pack URI.
 
 _Updated 2026-09-09: Google logo closed; Now = WidenRouteWaypointsJson migration on Docker Postgres._
+
+### 2026-09-09 — WidenRouteWaypointsJson already on Docker Postgres
+
+- **Check:** `__EFMigrationsHistory` contains `20260906220000_WidenRouteWaypointsJson`; `Routes.WaypointsJson` is unbounded `text` on `busbuddy_test`.
+- **No-op apply:** migration was already present — no schema change required this session.
+
+_Updated 2026-09-09: Migration closed; Now = Windows VM Maps env vars._
