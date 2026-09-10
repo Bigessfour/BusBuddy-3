@@ -13,6 +13,19 @@
 
 **Ship definition:** Clerk path proved on Windows VM + District Map / Settings smoke. Not a11y Phase 2, not portfolio wishlists.
 
+### Ship readiness (2026-09-09)
+
+| Criterion               | Status                                                                                                |
+| ----------------------- | ----------------------------------------------------------------------------------------------------- |
+| Clerk hops 1–6          | **Met** — DbPrep on Docker Postgres + PR #64                                                          |
+| Windows VM proof        | **Met (hybrid)** — UTM WPF testhost for Students/Map/Settings; optional ribbon clicks remain          |
+| District Map / Settings | **Met** — Settings recenter, map Zoom/Center/Reset/labels, Google logo, VM Maps env; PR #65 follow-up |
+| a11y Phase 2 / wishlist | Out of scope                                                                                          |
+
+**Verdict:** Ship-ready. Remaining open boxes are optional live UI confidence, schema hygiene, or decide-later — not blockers.
+
+Open follow-up PR: https://github.com/Bigessfour/BusBuddy-3/pull/65
+
 ---
 
 ## Now
