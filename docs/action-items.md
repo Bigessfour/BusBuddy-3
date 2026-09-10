@@ -17,9 +17,12 @@
 
 ## Now
 
-- [ ] Windows VM env: `GOOGLE_MAPS_API_KEY` + `GCP_BILLING_PROJECT=busbuddy-507301` for geocode / Routes
+Ship P0/P1 core items are closed. Next are optional VM UI smokes or parked cleanup — pick one:
 
-Optional clerk UI clicks / live map pan-wheel smoke remain below. Do **not** split `MainWindow.xaml.cs` / `StudentsViewModel.cs` in the same session as Map/Settings proof.
+- [ ] Optional live District Map smoke on VM: pan/wheel + `BUSBUDDY_MAP_DIAGNOSTICS=1` → pull logs → set `=0`
+- [ ] Parked (not ship-blocking): drop unused Route shapefile path columns; unused `AddressValidationControl`; OSM-only layer combo leftovers
+
+Do **not** split `MainWindow.xaml.cs` / `StudentsViewModel.cs` casually.
 
 ---
 
@@ -54,7 +57,7 @@ Spine detail: [clerk-path.md](./clerk-path.md). Prove then check.
 - [ ] Optional live District Map smoke on VM: pan/wheel feel + `BUSBUDDY_MAP_DIAGNOSTICS=1` → pull `logs/map-interactions-*.log` / `logs/ui-diagnostics-*.log` → set `=0`
 - [x] **Google Map Tiles logo** next to attribution when Google tiles are active (see Done log)
 - [x] Apply migration `20260906220000_WidenRouteWaypointsJson` on Mac Docker Postgres (see Done log)
-- [ ] Windows VM env: `GOOGLE_MAPS_API_KEY` + `GCP_BILLING_PROJECT=busbuddy-507301` for geocode / Routes
+- [x] Windows VM env: `GOOGLE_MAPS_API_KEY` + `GCP_BILLING_PROJECT=busbuddy-507301` for geocode / Routes (see Done log)
 - [ ] Parked (not ship-blocking): drop unused Route shapefile path columns; unused `AddressValidationControl`; OSM-only layer combo leftovers
 
 ---
@@ -165,3 +168,10 @@ _Updated 2026-09-09: Google logo closed; Now = WidenRouteWaypointsJson migration
 - **No-op apply:** migration was already present — no schema change required this session.
 
 _Updated 2026-09-09: Migration closed; Now = Windows VM Maps env vars._
+
+### 2026-09-09 — Windows VM Maps Platform env
+
+- **Set (User scope):** `GOOGLE_MAPS_API_KEY` from Mac Passwords (len=39, value not logged) + `GCP_BILLING_PROJECT=busbuddy-507301`.
+- **Evidence:** guest PowerShell `GOOGLE_MAPS_API_KEY_SET=True`, project=`busbuddy-507301`. New processes pick up User env (restart WPF if already open).
+
+_Updated 2026-09-09: Map/Settings P1 ship items closed; Now = optional live smoke or parked cleanup._
