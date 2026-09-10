@@ -1,7 +1,12 @@
-Map display uses Syncfusion SfMap with OpenStreetMap tiles. District or town shapefiles are not used.
+Map display uses Syncfusion SfMap. Preferred basemap is Google Map Tiles API
+(`tile.googleapis.com`) when `GOOGLE_MAPS_API_KEY` is present; OpenStreetMap is the fail-open.
 
-Route polylines are declared in MapView XAML (`RouteTrail` MapPolyline on `RouteTrailLayer` under the OSM ImageryLayer). `MapRouteTrail` builds line vs stop pins; `MapRouteTrailLayer` mutates the polyline on the UI thread and replays after Loaded.
+Attribution (Map Tiles API policies):
 
-The gold line is the stored road path (decoded `encodedPolyline`, else stop-to-stop segments). Stop pins are the stop list, not every road vertex. Selecting a route draws stored geometry; Google Routes runs on Map **Refresh** or Route Management **Drive Path**.
+- `google_maps_on_non_white.png` — outlined Google Maps logo for busy map backgrounds (shown next to copyright when Google tiles are active).
+- `google_maps_on_white.png` — non-outlined variant for plain panels (kept for future use).
+- Sources: official Maps JS attribution PNGs from `maps.gstatic.com/mapfiles/api-3/images/`.
+- Do not modify the logo artwork. Height in UI is 18px (within 16–19dp policy range).
 
-Clerk map camera: first school destination with GPS, then Settings bus-barn coordinates, then Settings bounding-box centroid. With none of those set, the map uses a US overview until the clerk configures the district.
+Route polylines are declared in MapView XAML (`RouteTrail` MapPolyline). Clerk map camera:
+school GPS → Settings depot → Settings bbox centroid → Lamar/Wiley fail-open (never US-centroid as home view).

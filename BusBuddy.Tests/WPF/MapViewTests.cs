@@ -23,7 +23,13 @@ public class MapViewTests
         Assert.That(xaml, Does.Contain("Label=\"Export Route\""));
         Assert.That(xaml, Does.Contain("utils:GoogleMapTilesImageryLayer"));
         Assert.That(xaml, Does.Contain("x:Name=\"MapAttribution\""));
+        Assert.That(xaml, Does.Contain("x:Name=\"GoogleMapsLogo\""));
+        Assert.That(xaml, Does.Contain("Assets/Maps/google_maps_on_non_white.png"));
+        Assert.That(xaml, Does.Contain("AutomationProperties.Name=\"Google Maps\""));
         Assert.That(xaml, Does.Contain("Google Maps"));
+        var bootstrap = XamlViewFile.Read("Utilities/MapTileBootstrap.cs");
+        Assert.That(bootstrap, Does.Contain("googleLogo.Visibility"));
+        Assert.That(bootstrap, Does.Contain("useGoogleMaps ? Visibility.Visible : Visibility.Collapsed"));
         var tileLayer = XamlViewFile.Read("Utilities/GoogleMapTilesImageryLayer.cs");
         // Tiles resolve through the GetUri extension point; UrlTemplate's HttpClient path can wedge the layer.
         Assert.That(tileLayer, Does.Contain("protected override string GetUri"));

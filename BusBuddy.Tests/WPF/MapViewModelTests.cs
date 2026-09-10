@@ -385,6 +385,46 @@ public class MapViewModelTests
     }
 
     [Test]
+    public async Task ResetView_RecentersToConfiguredDepot_NotUsCentroid()
+    {
+        var district = new DistrictSettingsAccessor(Options.Create(new RoutingDistrictSettings
+        {
+            DepotName = "Reset Barn",
+            DepotLatitude = 38.1541,
+            DepotLongitude = -102.7201
+        }));
+        var vm = await CreateSettledViewModelAsync(districtSettings: district);
+        vm.SetMapView(MapDefaults.UnconfiguredLatitude, MapDefaults.UnconfiguredLongitude, MapDefaults.UnconfiguredZoomLevel);
+
+        vm.ResetViewCommand.Execute(null);
+        await WaitUntilAsync(() =>
+            Math.Abs(vm.MapCenter.X - 38.1541) < 0.001
+            && Math.Abs(vm.MapCenter.Y - (-102.7201)) < 0.001);
+
+        Assert.That(vm.MapCenter.X, Is.EqualTo(38.1541).Within(0.0001));
+        Assert.That(vm.MapCenter.Y, Is.EqualTo(-102.7201).Within(0.0001));
+        Assert.That(vm.MapZoomLevel, Is.EqualTo(MapDefaults.DistrictZoomLevel));
+        Assert.That(vm.MapZoomLevel, Is.Not.EqualTo(MapDefaults.UnconfiguredZoomLevel));
+    }
+
+    [Test]
+    public async Task CenterOnFleetCommand_FitsMarkersLikeCenterOnStops()
+    {
+        var vm = await CreateSettledViewModelAsync();
+        vm.PlotStop(38.10, -102.80, null, MapMarkerLabels.ForHome("A"), MapMarkerLabels.Kind.Home);
+        vm.PlotStop(38.20, -102.60, null, MapMarkerLabels.ForPickup("B"), MapMarkerLabels.Kind.Pickup);
+        vm.MapViewportSize = new System.Windows.Size(800, 600);
+
+        vm.CenterOnFleetCommand.Execute(null);
+
+        Assert.That(vm.MapCenter.X, Is.EqualTo(38.15).Within(0.01));
+        Assert.That(vm.MapCenter.Y, Is.EqualTo(-102.70).Within(0.01));
+        Assert.That(vm.MapZoomLevel, Is.InRange(MapDefaults.MinFitZoomLevel, MapDefaults.MaxFitZoomLevel));
+        Assert.That(vm.MapZoomLevel, Is.Not.EqualTo(MapDefaults.UnconfiguredZoomLevel));
+        Assert.That(vm.ShowDetailLabels, Is.EqualTo(vm.MapZoomLevel >= MapDefaults.DetailLabelZoomLevel));
+    }
+
+    [Test]
     public async Task PlotStop_DoesNotMergeSchoolAndPickupAtSameCoords()
     {
         var vm = await CreateSettledViewModelAsync();

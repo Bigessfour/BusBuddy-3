@@ -161,7 +161,10 @@
   <ItemGroup>
     <InternalsVisibleTo Include="BusBuddy.Tests" />
   </ItemGroup>
+
+  <!-- Official Google Maps attribution logos (Map Tiles API policies). Outlined = on map. -->
   <ItemGroup>
-    <InternalsVisibleTo Include="BusBuddy.Tests" />
+    <Resource Include="Assets\Maps\google_maps_on_non_white.png" />
+    <Resource Include="Assets\Maps\google_maps_on_white.png" />
   </ItemGroup>
 </Project>

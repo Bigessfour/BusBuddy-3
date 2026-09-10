@@ -458,20 +458,31 @@
                                               Margin="8,0,0,0"/>
                     </StackPanel>
 
-                    <!-- Map attribution — Google Maps required when Google tiles / content are shown -->
+                    <!-- Map attribution — Google logo + copyright when Google tiles are active (Map Tiles API policies) -->
                     <Border x:Name="MapAttribution"
                             Background="{DynamicResource BusBuddy.Brush.Panel.Header}"
-                            Opacity="0.85"
+                            Opacity="0.92"
                             CornerRadius="4"
-                            Padding="6,2"
+                            Padding="10,6,10,6"
                             HorizontalAlignment="Right"
                             VerticalAlignment="Bottom"
                             Margin="0,0,24,16"
                             Visibility="Collapsed">
-                        <TextBlock x:Name="MapAttributionText"
-                                   Text="© OpenStreetMap contributors"
-                                   FontSize="12"
-                                   Foreground="{DynamicResource BusBuddy.Brush.Text.Secondary}"/>
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <Image x:Name="GoogleMapsLogo"
+                                   Source="/BusBuddy.WPF;component/Assets/Maps/google_maps_on_non_white.png"
+                                   Height="18"
+                                   Stretch="Uniform"
+                                   Margin="0,0,10,0"
+                                   Visibility="Collapsed"
+                                   SnapsToDevicePixels="True"
+                                   AutomationProperties.Name="Google Maps"/>
+                            <TextBlock x:Name="MapAttributionText"
+                                       Text="© OpenStreetMap contributors"
+                                       FontSize="12"
+                                       VerticalAlignment="Center"
+                                       Foreground="{DynamicResource BusBuddy.Brush.Text.Secondary}"/>
+                        </StackPanel>
                     </Border>
                 </Grid>
             </Border>
