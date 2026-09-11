@@ -30,12 +30,12 @@ public class Maintenance : INotifyPropertyChanged
     public int OdometerReading { get; set; }
 
     [Required]
-    [StringLength(100)]
+    [StringLength(MaintenanceConstraints.MaxWorkLength)]
     [Display(Name = "Maintenance Completed")]
     public string MaintenanceCompleted { get; set; } = string.Empty; // Tires, Windshield, Alignment, Mechanical, Car Wash, Cleaning, Accessory Install
 
     [Required]
-    [StringLength(100)]
+    [StringLength(MaintenanceConstraints.MaxVendorLength)]
     [Display(Name = "Vendor")]
     public string Vendor { get; set; } = string.Empty;
 
@@ -45,7 +45,7 @@ public class Maintenance : INotifyPropertyChanged
     public decimal RepairCost { get; set; }
 
     // Additional properties for enhanced functionality
-    [StringLength(1000)]
+    [StringLength(MaintenanceConstraints.MaxDescriptionLength)]
     [Display(Name = "Description")]
     public string? Description { get; set; }
 
@@ -59,11 +59,11 @@ public class Maintenance : INotifyPropertyChanged
     [Display(Name = "Next Service Odometer")]
     public int? NextServiceOdometer { get; set; }
 
-    [StringLength(20)]
+    [StringLength(MaintenanceConstraints.MaxStatusLength)]
     [Display(Name = "Status")]
     public string Status { get; set; } = "Completed"; // Scheduled, In Progress, Completed
 
-    [StringLength(1000)]
+    [StringLength(MaintenanceConstraints.MaxNotesLength)]
     [Display(Name = "Notes")]
     public string? Notes { get; set; }
 
@@ -75,7 +75,7 @@ public class Maintenance : INotifyPropertyChanged
     [Display(Name = "Work Order Number")]
     public string? WorkOrderNumber { get; set; }
 
-    [StringLength(20)]
+    [StringLength(MaintenanceConstraints.MaxPriorityLength)]
     [Display(Name = "Priority")]
     public string Priority { get; set; } = "Normal"; // Low, Normal, High, Emergency
 

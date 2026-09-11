@@ -102,6 +102,22 @@ Spine detail: [clerk-path.md](./clerk-path.md). Prove then check.
 
 Completed Spec-Kit waves (001–008), Syncfusion audits, student archive/eligibility, Maps Platform geo, and related PRs are **not** tracked here. See GitHub merges and git history.
 
+### 2026-09-11 — MaintenanceView audit remediations
+
+- UTC `Date` on draft + `MaintenanceRecordValidator.ValidateForPersist`
+- Bus `GridComboBoxColumn` (`Vehicles` / `BusId`); closed Status/Priority lists
+- Service: validate, detach Vehicle graph, FK/`DatabaseUserMessage` errors
+- VM: `AsyncRelayCommand` + selection `NotifyCanExecuteChanged`
+- Deleted unused `MaintenanceRecord.cs`; Description max aligned to 500
+- Evidence: Release build green; canvas `maintenance-view-vertical-audit`
+
+### 2026-09-11 — DriverScheduleView audit remediations
+
+- `ScheduleTimestampNormalizer` on Add/Update; hop5 RouteManagement uses UTC day
+- Skip rows with missing Departure/Arrival (no invented 07:00)
+- `AppointmentEditFlag="None"`; `AsyncRelayCommand` + `DatabaseUserMessage` on load
+- Evidence: canvas `driver-schedule-vertical-audit`
+
 ### 2026-09-09 — Hop 1 Add School (Core + Docker Postgres)
 
 - **Acceptance:** `DestinationService.AddSchoolAsync` persists `Destinations` with `DestinationType=School`, `StartTime` / `DismissalTime`, and validated GPS (same path as Students → Add School).

@@ -17,4 +17,17 @@ public class MaintenanceViewTests
         Assert.That(xaml, Does.Contain("Command=\"{Binding DeleteCommand}\""));
         Assert.That(xaml, Does.Contain("Command=\"{Binding RefreshCommand}\""));
     }
+
+    [Test]
+    public void MaintenanceViewXaml_UsesBusComboAndClosedLists()
+    {
+        var xaml = XamlViewFile.Read("Views/Maintenance/MaintenanceView.xaml");
+        Assert.That(xaml, Does.Contain("GridComboBoxColumn"));
+        Assert.That(xaml, Does.Contain("MappingName=\"VehicleId\""));
+        Assert.That(xaml, Does.Contain("ItemsSource=\"{Binding Vehicles}\""));
+        Assert.That(xaml, Does.Contain("SelectedValuePath=\"BusId\""));
+        Assert.That(xaml, Does.Contain("ItemsSource=\"{Binding StatusOptions}\""));
+        Assert.That(xaml, Does.Contain("ItemsSource=\"{Binding PriorityOptions}\""));
+        Assert.That(xaml, Does.Not.Contain("GridNumericColumn MappingName=\"VehicleId\""));
+    }
 }

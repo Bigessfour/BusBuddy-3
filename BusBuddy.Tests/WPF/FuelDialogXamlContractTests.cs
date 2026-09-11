@@ -17,13 +17,15 @@ public class FuelDialogXamlContractTests
         Assert.That(xaml, Does.Contain("OdometerText"));
         Assert.That(xaml, Does.Contain("FuelLocationText"));
         Assert.That(xaml, Does.Contain("IsEditable=\"True\""));
-        Assert.That(xaml, Does.Contain("Command=\"{Binding SaveCommand}\""));
+        Assert.That(xaml, Does.Contain("Click=\"SaveButton_Click\""));
         Assert.That(xaml, Does.Contain("Command=\"{Binding CancelCommand}\""));
         Assert.That(xaml, Does.Contain("GallonsError"));
         Assert.That(xaml, Does.Contain("SfTextBoxExt"));
+        Assert.That(xaml, Does.Contain("FuelConstraints.MaxNotesLength"));
         Assert.That(xaml, Does.Not.Contain("NumberDecimalDigits"));
         Assert.That(xaml, Does.Not.Contain("DoubleTextBox"));
         Assert.That(xaml, Does.Not.Contain("IntegerTextBox"));
+        Assert.That(xaml, Does.Not.Contain("PreviewKeyDown"));
     }
 
     [Test]

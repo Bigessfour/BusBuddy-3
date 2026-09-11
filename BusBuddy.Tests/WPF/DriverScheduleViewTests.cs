@@ -1,7 +1,7 @@
 using BusBuddy.Tests.WPF;
 using NUnit.Framework;
 
-namespace BusBuddy.Tests.Core;
+namespace BusBuddy.Tests.WPF;
 
 [TestFixture]
 [Category("Unit")]
@@ -15,5 +15,6 @@ public class DriverScheduleViewTests
         Assert.That(xaml, Does.Contain("Command=\"{Binding RefreshCommand}\""));
         Assert.That(xaml, Does.Contain("SfScheduler"));
         Assert.That(xaml, Does.Contain("ItemsSource=\"{Binding Appointments}\""));
+        Assert.That(xaml, Does.Contain("AppointmentEditFlag=\"None\""));
     }
 }

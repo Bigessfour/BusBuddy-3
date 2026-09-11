@@ -51,16 +51,32 @@
                                AllowFiltering="True"
                                AllowEditing="True"
                                SelectionMode="Single"
-                               SelectionUnit="Row">
+                               SelectionUnit="Row"
+                               GridLinesVisibility="Both"
+                               AutomationProperties.Name="Maintenance records grid">
             <syncfusion:SfDataGrid.Columns>
-                <syncfusion:GridDateTimeColumn MappingName="Date" HeaderText="Date" Width="110"/>
-                <syncfusion:GridNumericColumn MappingName="VehicleId" HeaderText="Bus ID" Width="80"/>
+                <syncfusion:GridDateTimeColumn MappingName="Date" HeaderText="Date" Width="110" Pattern="ShortDate"/>
+                <syncfusion:GridComboBoxColumn MappingName="VehicleId"
+                                               HeaderText="Bus"
+                                               Width="120"
+                                               DisplayMemberPath="BusNumber"
+                                               SelectedValuePath="BusId"
+                                               ItemsSource="{Binding Vehicles}"
+                                               AllowEditing="True"/>
                 <syncfusion:GridNumericColumn MappingName="OdometerReading" HeaderText="Odometer" Width="100"/>
                 <syncfusion:GridTextColumn MappingName="MaintenanceCompleted" HeaderText="Work" Width="160"/>
                 <syncfusion:GridTextColumn MappingName="Vendor" HeaderText="Vendor" Width="140"/>
                 <syncfusion:GridNumericColumn MappingName="RepairCost" HeaderText="Cost" Width="90"/>
-                <syncfusion:GridTextColumn MappingName="Status" HeaderText="Status" Width="110"/>
-                <syncfusion:GridTextColumn MappingName="Priority" HeaderText="Priority" Width="90"/>
+                <syncfusion:GridComboBoxColumn MappingName="Status"
+                                               HeaderText="Status"
+                                               Width="120"
+                                               ItemsSource="{Binding StatusOptions}"
+                                               AllowEditing="True"/>
+                <syncfusion:GridComboBoxColumn MappingName="Priority"
+                                               HeaderText="Priority"
+                                               Width="100"
+                                               ItemsSource="{Binding PriorityOptions}"
+                                               AllowEditing="True"/>
                 <syncfusion:GridTextColumn MappingName="Notes" HeaderText="Notes" Width="200"/>
             </syncfusion:SfDataGrid.Columns>
         </syncfusion:SfDataGrid>

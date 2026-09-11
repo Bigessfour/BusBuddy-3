@@ -36,10 +36,13 @@
                               HorizontalAlignment="Left" Margin="0,0,0,12"
                               AutomationProperties.Name="Refresh driver schedule"/>
 
+        <!-- Read-only calendar: hop 5 write is Route Management → AddScheduleAsync -->
         <syncfusion:SfScheduler Grid.Row="2"
                                 ViewType="Week"
                                 ItemsSource="{Binding Appointments}"
-                                FirstDayOfWeek="Monday">
+                                FirstDayOfWeek="Monday"
+                                AppointmentEditFlag="None"
+                                AutomationProperties.Name="Driver schedule calendar">
             <syncfusion:SfScheduler.AppointmentMapping>
                 <syncfusion:AppointmentMapping
                     Subject="Subject"

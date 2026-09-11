@@ -1125,7 +1125,7 @@ namespace BusBuddy.WPF.ViewModels.Route
                 return false;
             }
 
-            var day = DateTime.SpecifyKind(DateTime.Today, DateTimeKind.Unspecified);
+            var day = DateTime.SpecifyKind(DateTime.UtcNow.Date, DateTimeKind.Utc);
             var departure = day.Add(route.AMBeginTime ?? TimeSpan.FromHours(7));
             var arrival = departure.AddMinutes(route.EstimatedDuration ?? 45);
             if (arrival <= departure)

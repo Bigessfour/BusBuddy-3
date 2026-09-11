@@ -1,11 +1,14 @@
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Windows;
-using System.Windows.Input;
+using BusBuddy.Core.Models;
 using BusBuddy.Core.Services;
 using BusBuddy.Core.Services.Interfaces;
-using BusBuddy.WPF.Commands;
+using BusBuddy.Core.Utilities;
+using CommunityToolkit.Mvvm.Input;
 using Serilog;
+using MaintenanceModel = BusBuddy.Core.Models.Maintenance;
+using BusModel = BusBuddy.Core.Models.Bus;
 
 namespace BusBuddy.WPF.ViewModels.Maintenance;
 
@@ -14,33 +17,43 @@ public class MaintenanceViewModel : BaseViewModel
     private static readonly new ILogger Logger = Log.ForContext<MaintenanceViewModel>();
     private readonly IMaintenanceService _maintenanceService;
     private readonly IBusService _busService;
-    private BusBuddy.Core.Models.Maintenance? _selectedRecord;
+    private MaintenanceModel? _selectedRecord;
 
     public MaintenanceViewModel(IMaintenanceService maintenanceService, IBusService busService)
     {
         _maintenanceService = maintenanceService;
         _busService = busService;
-        RefreshCommand = new RelayCommand(async _ => await LoadAsync());
-        AddCommand = new RelayCommand(async _ => await AddAsync());
-        SaveCommand = new RelayCommand(async _ => await SaveAsync(), _ => SelectedRecord != null);
-        DeleteCommand = new RelayCommand(async _ => await DeleteAsync(), _ => SelectedRecord != null);
+        RefreshCommand = new AsyncRelayCommand(LoadAsync);
+        AddCommand = new AsyncRelayCommand(AddAsync);
+        SaveCommand = new AsyncRelayCommand(SaveAsync, () => SelectedRecord != null);
+        DeleteCommand = new AsyncRelayCommand(DeleteAsync, () => SelectedRecord != null);
         Logger.Information("MaintenanceViewModel constructed — loading records");
         _ = LoadAsync();
     }
 
-    public ObservableCollection<BusBuddy.Core.Models.Maintenance> Records { get; } = new();
-    public ObservableCollection<BusBuddy.Core.Models.Bus> Vehicles { get; } = new();
+    public ObservableCollection<MaintenanceModel> Records { get; } = new();
+    public ObservableCollection<BusModel> Vehicles { get; } = new();
 
-    public BusBuddy.Core.Models.Maintenance? SelectedRecord
+    public IReadOnlyList<string> StatusOptions { get; } = MaintenanceRecordValidator.AllowedStatuses;
+    public IReadOnlyList<string> PriorityOptions { get; } = MaintenanceRecordValidator.AllowedPriorities;
+
+    public MaintenanceModel? SelectedRecord
     {
         get => _selectedRecord;
-        set => SetProperty(ref _selectedRecord, value);
+        set
+        {
+            if (SetProperty(ref _selectedRecord, value))
+            {
+                SaveCommand.NotifyCanExecuteChanged();
+                DeleteCommand.NotifyCanExecuteChanged();
+            }
+        }
     }
 
-    public ICommand RefreshCommand { get; }
-    public ICommand AddCommand { get; }
-    public ICommand SaveCommand { get; }
-    public ICommand DeleteCommand { get; }
+    public IAsyncRelayCommand RefreshCommand { get; }
+    public IAsyncRelayCommand AddCommand { get; }
+    public IAsyncRelayCommand SaveCommand { get; }
+    public IAsyncRelayCommand DeleteCommand { get; }
 
     private async Task LoadAsync()
     {
@@ -72,8 +85,8 @@ public class MaintenanceViewModel : BaseViewModel
         catch (Exception ex)
         {
             stopwatch.Stop();
-            Logger.Error(ex, "Failed to load maintenance records after {ElapsedMs}ms", stopwatch.ElapsedMilliseconds);
-            StatusMessage = "Load failed";
+            DatabaseUserMessage.LogFailure(Logger, ex, "Failed to load maintenance records after {ElapsedMs}ms", stopwatch.ElapsedMilliseconds);
+            StatusMessage = DatabaseUserMessage.ForOperation(ex, "load maintenance records");
         }
     }
 
@@ -90,16 +103,16 @@ public class MaintenanceViewModel : BaseViewModel
         try
         {
             Logger.Information("Preparing draft maintenance row VehicleId={VehicleId}", firstBus.BusId);
-            var draft = new BusBuddy.Core.Models.Maintenance
+            var draft = new MaintenanceModel
             {
-                Date = DateTime.Today,
+                Date = DateTime.SpecifyKind(DateTime.UtcNow.Date, DateTimeKind.Utc),
                 VehicleId = firstBus.BusId,
                 OdometerReading = firstBus.CurrentOdometer ?? 0,
                 MaintenanceCompleted = string.Empty,
                 Vendor = string.Empty,
                 RepairCost = 0,
-                Status = "Scheduled",
-                Priority = "Normal"
+                Status = MaintenanceRecordValidator.AllowedStatuses[0],
+                Priority = MaintenanceRecordValidator.AllowedPriorities[1]
             };
             Records.Insert(0, draft);
             SelectedRecord = draft;
@@ -111,6 +124,8 @@ public class MaintenanceViewModel : BaseViewModel
             Logger.Error(ex, "Failed to add maintenance record");
             StatusMessage = "Add failed";
         }
+
+        await Task.CompletedTask;
     }
 
     private async Task SaveAsync()
@@ -137,12 +152,24 @@ public class MaintenanceViewModel : BaseViewModel
                 StatusMessage = "Saved";
                 Logger.Information("Saved maintenance record {MaintenanceId}", SelectedRecord.MaintenanceId);
             }
+
             await LoadAsync();
+        }
+        catch (ArgumentException ex)
+        {
+            Logger.Warning(ex, "Maintenance validation failed for {MaintenanceId}", SelectedRecord.MaintenanceId);
+            StatusMessage = ex.Message;
         }
         catch (Exception ex)
         {
-            Logger.Error(ex, "Failed to save maintenance record {MaintenanceId}", SelectedRecord.MaintenanceId);
-            StatusMessage = "Save failed";
+            DatabaseUserMessage.LogFailure(
+                Logger,
+                ex,
+                "Failed to save maintenance record {MaintenanceId}",
+                SelectedRecord.MaintenanceId);
+            StatusMessage = ex is InvalidOperationException
+                ? ex.Message
+                : DatabaseUserMessage.ForOperation(ex, "save maintenance record");
         }
     }
 
@@ -186,8 +213,8 @@ public class MaintenanceViewModel : BaseViewModel
         }
         catch (Exception ex)
         {
-            Logger.Error(ex, "Failed to delete maintenance record {MaintenanceId}", id);
-            StatusMessage = "Delete failed";
+            DatabaseUserMessage.LogFailure(Logger, ex, "Failed to delete maintenance record {MaintenanceId}", id);
+            StatusMessage = DatabaseUserMessage.ForOperation(ex, "delete maintenance record");
         }
     }
 }

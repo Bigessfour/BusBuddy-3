@@ -8,11 +8,14 @@ namespace BusBuddy.Core.Services;
 /// </summary>
 public static class FuelRecordValidator
 {
-    private static readonly HashSet<string> AllowedFuelTypes = new(StringComparer.OrdinalIgnoreCase)
+    private static readonly HashSet<string> AllowedFuelTypeSet = new(StringComparer.OrdinalIgnoreCase)
     {
         "Gasoline",
         "Diesel"
     };
+
+    /// <summary>Canonical fuel type labels for closed ComboBox lists.</summary>
+    public static IReadOnlyList<string> AllowedFuelTypes { get; } = new[] { "Gasoline", "Diesel" };
 
     /// <summary>Throws <see cref="ArgumentException"/> when the record cannot be saved.</summary>
     public static void ValidateForPersist(Fuel fuel)
@@ -27,20 +30,13 @@ public static class FuelRecordValidator
             throw new ArgumentException("A bus must be selected.", nameof(fuel));
         }
 
-        var location = fuel.FuelLocation?.Trim() ?? string.Empty;
-        if (string.IsNullOrWhiteSpace(location))
+        var locationError = GetLocationError(fuel.FuelLocation);
+        if (locationError != null)
         {
-            throw new ArgumentException("Fuel location is required.", nameof(fuel));
+            throw new ArgumentException(locationError, nameof(fuel));
         }
 
-        if (location.Length > FuelConstraints.MaxLocationLength)
-        {
-            throw new ArgumentException(
-                $"Fuel location cannot exceed {FuelConstraints.MaxLocationLength} characters.",
-                nameof(fuel));
-        }
-
-        fuel.FuelLocation = location;
+        fuel.FuelLocation = fuel.FuelLocation!.Trim();
 
         var fuelType = fuel.FuelType?.Trim() ?? string.Empty;
         if (string.IsNullOrWhiteSpace(fuelType))
@@ -55,7 +51,7 @@ public static class FuelRecordValidator
                 nameof(fuel));
         }
 
-        if (!AllowedFuelTypes.Contains(fuelType))
+        if (!AllowedFuelTypeSet.Contains(fuelType))
         {
             throw new ArgumentException(
                 "Fuel type must be Gasoline or Diesel.",
@@ -65,19 +61,21 @@ public static class FuelRecordValidator
         fuel.FuelType = AllowedFuelTypes.First(t =>
             string.Equals(t, fuelType, StringComparison.OrdinalIgnoreCase));
 
-        if (!fuel.Gallons.HasValue || fuel.Gallons.Value <= 0)
+        var gallonsError = GetGallonsError(text: null, gallons: fuel.Gallons);
+        if (gallonsError != null)
         {
-            throw new ArgumentException("Gallons must be greater than zero.", nameof(fuel));
+            throw new ArgumentException(gallonsError, nameof(fuel));
         }
 
-        if (fuel.Gallons.Value > 9999.999m)
+        if (fuel.Gallons!.Value > 9999.999m)
         {
             throw new ArgumentException("Gallons exceeds the allowed maximum.", nameof(fuel));
         }
 
-        if (fuel.PricePerGallon.HasValue && fuel.PricePerGallon.Value < 0)
+        var priceError = GetPriceError(text: null, price: fuel.PricePerGallon);
+        if (priceError != null)
         {
-            throw new ArgumentException("Price per gallon cannot be negative.", nameof(fuel));
+            throw new ArgumentException(priceError, nameof(fuel));
         }
 
         if (fuel.TotalCost.HasValue && fuel.TotalCost.Value < 0)
@@ -96,5 +94,82 @@ public static class FuelRecordValidator
                 $"Notes cannot exceed {FuelConstraints.MaxNotesLength} characters.",
                 nameof(fuel));
         }
+    }
+
+    public static string? GetLocationError(string? location)
+    {
+        var trimmed = location?.Trim() ?? string.Empty;
+        if (string.IsNullOrWhiteSpace(trimmed))
+        {
+            return "Location is required.";
+        }
+
+        if (trimmed.Length > FuelConstraints.MaxLocationLength)
+        {
+            return $"Max {FuelConstraints.MaxLocationLength} characters.";
+        }
+
+        return null;
+    }
+
+    public static string? GetBusError(bool busSelected) =>
+        busSelected ? null : "Select a bus.";
+
+    public static string? GetGallonsError(string? text, decimal? gallons)
+    {
+        if (text != null)
+        {
+            if (string.IsNullOrWhiteSpace(text))
+            {
+                return "Gallons are required.";
+            }
+
+            if (FuelNumericText.IsIntermediateNumber(text))
+            {
+                return null;
+            }
+
+            if (!FuelNumericText.TryParseDecimal(text, out _))
+            {
+                return "Enter a valid number (e.g. 102 or 102.5).";
+            }
+        }
+
+        if (!gallons.HasValue || gallons.Value <= 0)
+        {
+            return "Gallons must be greater than zero.";
+        }
+
+        return null;
+    }
+
+    public static string? GetPriceError(string? text, decimal? price)
+    {
+        if (text != null
+            && !string.IsNullOrWhiteSpace(text)
+            && !FuelNumericText.IsIntermediateNumber(text)
+            && !FuelNumericText.TryParseDecimal(text, out _))
+        {
+            return "Enter a valid price (e.g. 6.99).";
+        }
+
+        if (price.HasValue && price.Value < 0)
+        {
+            return "Price cannot be negative.";
+        }
+
+        return null;
+    }
+
+    public static string? GetOdometerError(string? text)
+    {
+        if (string.IsNullOrWhiteSpace(text) || FuelNumericText.IsIntermediateNumber(text))
+        {
+            return null;
+        }
+
+        return int.TryParse(text, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.CurrentCulture, out _)
+            ? null
+            : "Enter a whole number for odometer.";
     }
 }
